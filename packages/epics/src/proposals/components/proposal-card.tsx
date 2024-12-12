@@ -1,7 +1,6 @@
 import { Text } from '@radix-ui/themes';
-import { Card, Button, Badge, StatusBadge } from '@hypha-platform/ui';
+import { Card, Button, Badge, StatusBadge, Skeleton } from '@hypha-platform/ui';
 import Image from 'next/image';
-import { Skeleton } from '@hypha-platform/ui';
 
 type CreatorType = {
   avatar?: string;
@@ -14,7 +13,7 @@ type ProposalCardProps = {
   title?: string;
   commitment?: number;
   status?: string;
-  isLoading?: boolean | undefined;
+  isLoading?: boolean;
 };
 
 const voted = false;
@@ -28,9 +27,12 @@ export const ProposalCard: React.FC<ProposalCardProps> = ({
 }) => {
   return (
     <Card className="w-full h-full p-6 mb-2 flex">
-      {isLoading ? (
-        <Skeleton width={64} height={64} className="rounded-lg mr-3" />
-      ) : (
+      <Skeleton
+        width="64px"
+        height="64px"
+        loading={isLoading}
+        className="rounded-lg mr-3"
+      >
         <Image
           className="rounded-lg mr-3"
           src={creator?.avatar ?? ''}
@@ -42,40 +44,46 @@ export const ProposalCard: React.FC<ProposalCardProps> = ({
               : 'Creator Avatar'
           }
         />
-      )}
+      </Skeleton>
+
       <div className="flex justify-between items-center w-full">
         <div className="flex flex-col">
           <div className="flex gap-x-1">
-            <Badge isLoading={isLoading} variant="action">
-              Proposal
-            </Badge>
-            <Badge isLoading={isLoading} variant="actionOutline">
-              Recurring
-            </Badge>
-            <Badge isLoading={isLoading} variant="actionOutline">
-              {commitment}%
-            </Badge>
-            <StatusBadge status={status} isLoading={isLoading} />
+            <Skeleton loading={isLoading}>
+              <Badge variant="action">Proposal</Badge>
+            </Skeleton>
+            <Skeleton loading={isLoading}>
+              <Badge variant="actionOutline">Recurring</Badge>
+            </Skeleton>
+            <Skeleton loading={isLoading}>
+              <Badge variant="actionOutline">{commitment}%</Badge>
+            </Skeleton>
+            <StatusBadge isLoading={isLoading} status={status} />
           </div>
-          {isLoading ? (
-            <Skeleton height={26} width={160} className="my-1" />
-          ) : (
+
+          <Skeleton
+            height="26px"
+            width="160px"
+            loading={isLoading}
+            className="my-1"
+          >
             <Text className="text-3">{title}</Text>
-          )}
-          {isLoading ? (
-            <Skeleton height={16} width={80} />
-          ) : (
+          </Skeleton>
+
+          <Skeleton height="16px" width="80px" loading={isLoading}>
             <Text className="text-xs text-gray-500">
               {creator?.name} {creator?.surname}
             </Text>
-          )}
+          </Skeleton>
         </div>
+
         <div>
-          {isLoading ? (
-            <div>
-              <Skeleton height={32} width={86} className="rounded-lg" />
-            </div>
-          ) : (
+          <Skeleton
+            height="32px"
+            width="86px"
+            loading={isLoading}
+            className="rounded-lg"
+          >
             <div>
               {voted ? (
                 <Button
@@ -95,7 +103,7 @@ export const ProposalCard: React.FC<ProposalCardProps> = ({
                 </Button>
               )}
             </div>
-          )}
+          </Skeleton>
         </div>
       </div>
     </Card>

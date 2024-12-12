@@ -1,14 +1,14 @@
 import { FC } from 'react';
 import { Button } from '@hypha-platform/ui';
 
-type AgreementsLoadMoreProps = {
+type SectionLoadMoreProps = {
   onClick: () => void;
   children?: React.ReactNode;
   isLoading?: boolean;
   disabled?: boolean;
 };
 
-export const AgreementsLoadMore: FC<AgreementsLoadMoreProps> = ({
+export const SectionLoadMore: FC<SectionLoadMoreProps> = ({
   onClick,
   children,
   isLoading,

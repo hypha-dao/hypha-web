@@ -8,3 +8,6 @@ export * from './menu-left';
 export * from './menu-top';
 export * from './footer';
 export * from './tabs';
+export * from './section-filter';
+export * from './section-load-more';
+export * from './section-tabs';

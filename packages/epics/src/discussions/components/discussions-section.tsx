@@ -1,11 +1,13 @@
 'use client';
 import { FC } from 'react';
-import { DiscussionTabs } from './discussion-tabs';
-import { DiscussionFilter } from './discussion-filter';
-import DiscussionList from './discussion-list';
-import { DiscussionsLoadMore } from './discussions-load-more';
+import { DiscussionsList } from './discussion-list';
 import { Text } from '@radix-ui/themes';
 import { useDiscussionsSection } from '../hooks/use-discussions-section';
+import {
+  SectionFilter,
+  SectionLoadMore,
+  SectionTabs,
+} from '@hypha-platform/ui/server';
 
 type DiscussionSectionProps = Record<string, never>;
 
@@ -17,28 +19,33 @@ export const DiscussionsSection: FC<DiscussionSectionProps> = () => {
     isLoading,
     loadMore,
     pagination,
+    filterOptions,
+    tabs,
   } = useDiscussionsSection();
 
   const renderContent = () => {
     return (
       <>
-        <DiscussionFilter
+        <SectionFilter
           value={activeFilter}
           onChange={setActiveFilter}
           count={pagination?.total || 0}
+          label="Discussions"
+          filterOptions={filterOptions}
         />
-        <DiscussionTabs
+        <SectionTabs
           activeTab={activeFilter}
           setActiveTab={setActiveFilter}
+          tabs={tabs}
         />
         {Array.from({ length: pages }).map((_, index) => (
-          <DiscussionList
+          <DiscussionsList
             page={index + 1}
             key={index}
             activeFilter={activeFilter}
           />
         ))}
-        <DiscussionsLoadMore
+        <SectionLoadMore
           onClick={loadMore}
           disabled={pagination?.totalPages === pages}
           isLoading={isLoading}
@@ -48,7 +55,7 @@ export const DiscussionsSection: FC<DiscussionSectionProps> = () => {
               ? 'No more discussions'
               : 'Load more discussions'}
           </Text>
-        </DiscussionsLoadMore>
+        </SectionLoadMore>
       </>
     );
   };

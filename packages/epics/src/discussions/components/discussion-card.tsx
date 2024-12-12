@@ -33,14 +33,11 @@ const customCardTitleStyles: React.CSSProperties = {
   fontSize: '18px',
 };
 
-const truncateWithEllipsis: (inputText: string, maxLength: number) => string = (
-  inputText,
-  maxLength
-) => {
-  if (inputText.length > maxLength) {
-    return inputText.slice(0, maxLength) + '...';
-  }
-  return inputText;
+const truncatedDescription: React.CSSProperties = {
+  display: '-webkit-box',
+  WebkitLineClamp: 3,
+  WebkitBoxOrient: 'vertical',
+  overflow: 'hidden',
 };
 
 export const DiscussionCard: React.FC<DiscussionCardProps> = ({
@@ -58,27 +55,26 @@ export const DiscussionCard: React.FC<DiscussionCardProps> = ({
         style={customCardHeaderStyles}
         className="p-0 rounded-tl-md rounded-tr-md overflow-hidden"
       >
-        {isLoading ? (
-          <Skeleton className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full" />
-        ) : (
+        <Skeleton loading={isLoading} height="150px" width="250px">
           <img
             className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
             src={image}
             alt={title}
           />
-        )}
+        </Skeleton>
       </CardHeader>
       <CardContent className="pt-5 relative">
         <div className="flex flex-col items-start mb-5">
-          {isLoading ? (
-            <Skeleton width={120} height={18} />
-          ) : (
+          <Skeleton width="120px" height="18px" loading={isLoading}>
             <CardTitle style={customCardTitleStyles}>{title}</CardTitle>
-          )}
+          </Skeleton>
           <div className="mt-2 flex items-center">
-            {isLoading ? (
-              <Skeleton width={12} height={12} className="rounded-md" />
-            ) : (
+            <Skeleton
+              width="12px"
+              height="12px"
+              className="rounded-md"
+              loading={isLoading}
+            >
               <Avatar>
                 <AvatarImage
                   className="rounded-md"
@@ -88,42 +84,37 @@ export const DiscussionCard: React.FC<DiscussionCardProps> = ({
                   alt="logo"
                 />
               </Avatar>
-            )}
-            {isLoading ? (
-              <Skeleton width={50} height={16} className="ml-2" />
-            ) : (
+            </Skeleton>
+            <Skeleton
+              width="50px"
+              height="16px"
+              className="ml-2"
+              loading={isLoading}
+            >
               <Text className="ml-2 text-xs text-gray-500">
                 {creator?.name} {creator?.surname}
               </Text>
-            )}
+            </Skeleton>
           </div>
         </div>
         <div className="flex flex-grow text-xs text-gray-500 mb-4">
-          {isLoading ? (
-            <Skeleton width={200} height={48} />
-          ) : (
-            <div>
-              {description ? truncateWithEllipsis(description, 100) : null}
-            </div>
-          )}
+          <Skeleton width="200px" height="48px" loading={isLoading}>
+            <div style={truncatedDescription}>{description}</div>
+          </Skeleton>
         </div>
         <div className="flex flex-grow gap-2 text-xs text-gray-500 items-center">
-          {isLoading ? (
-            <Skeleton width={16} height={16} />
-          ) : (
+          <Skeleton width="16px" height="16px" loading={isLoading}>
             <div className="flex">
               <EyeOpenIcon className="mr-1" width={16} />
               <div>{views}</div>
             </div>
-          )}
-          {isLoading ? (
-            <Skeleton width={16} height={16} />
-          ) : (
+          </Skeleton>
+          <Skeleton width="16px" height="16px" loading={isLoading}>
             <div className="flex ml-3">
               <ChatBubbleIcon className="mr-1" width={16} />
               <div>{comments}</div>
             </div>
-          )}
+          </Skeleton>
         </div>
       </CardContent>
     </Card>

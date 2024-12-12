@@ -1,17 +1,17 @@
 'use client';
 import { FC } from 'react';
-import { ProposalList } from './proposal-list';
+import { MembersList } from './members-list';
 import { Text } from '@radix-ui/themes';
-import { useProposalsSection } from '../hooks/use-proposals-section';
+import { useMembersSection } from '../../hooks/use-members-section';
 import {
   SectionFilter,
   SectionLoadMore,
   SectionTabs,
 } from '@hypha-platform/ui/server';
 
-type ProposalSectionProps = Record<string, never>;
+type MemberSectionProps = Record<string, never>;
 
-export const ProposalsSection: FC<ProposalSectionProps> = () => {
+export const MembersSection: FC<MemberSectionProps> = () => {
   const {
     pages,
     activeFilter,
@@ -21,7 +21,7 @@ export const ProposalsSection: FC<ProposalSectionProps> = () => {
     pagination,
     filterOptions,
     tabs,
-  } = useProposalsSection();
+  } = useMembersSection();
 
   return (
     <div className="flex flex-col w-full justify-center items-center">
@@ -29,7 +29,7 @@ export const ProposalsSection: FC<ProposalSectionProps> = () => {
         value={activeFilter}
         onChange={setActiveFilter}
         count={pagination?.total || 0}
-        label="Proposals"
+        label="Members"
         filterOptions={filterOptions}
       />
       <SectionTabs
@@ -38,11 +38,7 @@ export const ProposalsSection: FC<ProposalSectionProps> = () => {
         tabs={tabs}
       />
       {Array.from({ length: pages }).map((_, index) => (
-        <ProposalList
-          page={index + 1}
-          key={index}
-          activeFilter={activeFilter}
-        />
+        <MembersList page={index + 1} key={index} activeFilter={activeFilter} />
       ))}
       <SectionLoadMore
         onClick={loadMore}
@@ -51,8 +47,8 @@ export const ProposalsSection: FC<ProposalSectionProps> = () => {
       >
         <Text>
           {pagination?.totalPages === pages
-            ? 'No more proposals'
-            : 'Load more proposals'}
+            ? 'No more members'
+            : 'Load more members'}
         </Text>
       </SectionLoadMore>
     </div>

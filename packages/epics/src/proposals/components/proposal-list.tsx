@@ -7,7 +7,7 @@ type ProposalListProps = {
   activeFilter: string;
 };
 
-const ProposalList: FC<ProposalListProps> = ({ page, activeFilter }) => {
+export const ProposalList: FC<ProposalListProps> = ({ page, activeFilter }) => {
   const { proposals, isLoading } = useProposals({
     page,
     ...(activeFilter !== 'all' && { filter: { status: activeFilter } }),
@@ -28,5 +28,3 @@ const ProposalList: FC<ProposalListProps> = ({ page, activeFilter }) => {
     </div>
   );
 };
-
-export default ProposalList;

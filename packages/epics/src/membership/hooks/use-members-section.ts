@@ -1,11 +1,11 @@
 import React from 'react';
-import { useProposals } from './use-proposals';
+import { useMembers } from './use-members';
 
-export const useProposalsSection = () => {
+export const useMembersSection = () => {
   const [activeFilter, setActiveFilter] = React.useState('all');
   const [pages, setPages] = React.useState(1);
 
-  const { isLoading, pagination } = useProposals({
+  const { isLoading, pagination } = useMembers({
     ...(activeFilter !== 'all' && { filter: { status: activeFilter } }),
   });
 
@@ -26,8 +26,8 @@ export const useProposalsSection = () => {
   const tabs = [
     { label: 'All', value: 'all' },
     { label: 'Active', value: 'active' },
-    { label: 'On voting', value: 'voting' },
-    { label: 'Completed', value: 'completed' },
+    { label: 'Inactive', value: 'inactive' },
+    { label: 'Applicants', value: 'applicant' },
     { label: 'Rejected', value: 'rejected' },
   ];
 

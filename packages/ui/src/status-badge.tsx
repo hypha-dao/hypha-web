@@ -7,6 +7,8 @@ const BADGE_VARIANTS: Record<string, BadgeProps> = {
   voting: { variant: 'warning', children: 'On voting' },
   completed: { variant: 'action', children: 'Completed' },
   rejected: { variant: 'destructive', children: 'Rejected' },
+  inactive: { variant: 'outlined', children: 'Inactive' },
+  applicant: { variant: 'warning', children: 'Applicant' },
 };
 export const StatusBadge = ({
   status,

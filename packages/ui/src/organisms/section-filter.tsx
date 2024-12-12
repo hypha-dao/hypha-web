@@ -2,25 +2,31 @@ import { FC } from 'react';
 import { FilterMenu } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 
-type AgreementFilterProps = {
+type FilterOption = {
+  label: string;
+  value: string;
+};
+
+type SectionFilterProps = {
   value: string;
   onChange: (value: string) => void;
   count: number;
+  label: string;
+  filterOptions: FilterOption[];
 };
 
-export const AgreementFilter: FC<AgreementFilterProps> = ({
+export const SectionFilter: FC<SectionFilterProps> = ({
   value,
   onChange,
   count,
+  label,
+  filterOptions,
 }) => {
-  const filterOptions = [
-    { label: 'All', value: 'all' },
-    { label: 'Most recent', value: 'most-recent' },
-  ];
-
   return (
     <div className="flex justify-between items-center mt-6 w-full">
-      <Text className="text-lg">Agreements | {count}</Text>
+      <Text className="text-lg">
+        {label} | {count}
+      </Text>
       <div className="flex items-center">
         <FilterMenu value={value} onChange={onChange} options={filterOptions} />
       </div>

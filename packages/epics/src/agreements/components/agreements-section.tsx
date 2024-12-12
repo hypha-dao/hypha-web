@@ -1,11 +1,13 @@
 'use client';
 import { FC } from 'react';
-import { AgreementTabs } from './agreement-tabs';
-import { AgreementFilter } from './agreement-filter';
-import AgreementsList from './agreements-list';
-import { AgreementsLoadMore } from './agreements-load-more';
+import { AgreementsList } from './agreements-list';
 import { Text } from '@radix-ui/themes';
 import { useAgreementsSection } from '../hooks/use-agreements-section';
+import {
+  SectionFilter,
+  SectionLoadMore,
+  SectionTabs,
+} from '@hypha-platform/ui/server';
 
 type AgreementsSectionProps = Record<string, never>;
 
@@ -17,16 +19,24 @@ export const AgreementsSection: FC<AgreementsSectionProps> = () => {
     isLoading,
     loadMore,
     pagination,
+    filterOptions,
+    tabs,
   } = useAgreementsSection();
 
   return (
     <div className="flex flex-col w-full justify-center items-center">
-      <AgreementFilter
+      <SectionFilter
         value={activeFilter}
         onChange={setActiveFilter}
         count={pagination?.total || 0}
+        label="Agreements"
+        filterOptions={filterOptions}
       />
-      <AgreementTabs activeTab={activeFilter} setActiveTab={setActiveFilter} />
+      <SectionTabs
+        activeTab={activeFilter}
+        setActiveTab={setActiveFilter}
+        tabs={tabs}
+      />
       {Array.from({ length: pages }).map((_, index) => (
         <AgreementsList
           page={index + 1}
@@ -34,7 +44,7 @@ export const AgreementsSection: FC<AgreementsSectionProps> = () => {
           activeFilter={activeFilter}
         />
       ))}
-      <AgreementsLoadMore
+      <SectionLoadMore
         onClick={loadMore}
         disabled={pagination?.totalPages === pages}
         isLoading={isLoading}
@@ -44,7 +54,7 @@ export const AgreementsSection: FC<AgreementsSectionProps> = () => {
             ? 'No more agreements'
             : 'Load more agreements'}
         </Text>
-      </AgreementsLoadMore>
+      </SectionLoadMore>
     </div>
   );
 };

@@ -1,14 +1,21 @@
 import { FC } from 'react';
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
 
-type DiscussionTabsProps = {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
+type Tab = {
+  label: string;
+  value: string;
 };
 
-export const DiscussionTabs: FC<DiscussionTabsProps> = ({
+type SectionTabsProps = {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+  tabs: Tab[];
+};
+
+export const SectionTabs: FC<SectionTabsProps> = ({
   activeTab,
   setActiveTab,
+  tabs,
 }) => {
   return (
     <Tabs
@@ -17,15 +24,11 @@ export const DiscussionTabs: FC<DiscussionTabsProps> = ({
       className="w-full mt-3 mb-4"
     >
       <TabsList>
-        <TabsTrigger value="all" variant="outlined">
-          All
-        </TabsTrigger>
-        <TabsTrigger value="open" variant="outlined">
-          Open
-        </TabsTrigger>
-        <TabsTrigger value="closed" variant="outlined">
-          Closed
-        </TabsTrigger>
+        {tabs.map((tab) => (
+          <TabsTrigger key={tab.value} value={tab.value} variant="outlined">
+            {tab.label}
+          </TabsTrigger>
+        ))}
       </TabsList>
     </Tabs>
   );

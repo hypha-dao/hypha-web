@@ -44,6 +44,13 @@ const truncateWithEllipsis: (inputText: string, maxLength: number) => string = (
   return inputText;
 };
 
+const truncatedDescription: React.CSSProperties = {
+  display: '-webkit-box',
+  WebkitLineClamp: 3,
+  WebkitBoxOrient: 'vertical',
+  overflow: 'hidden',
+};
+
 export const CardOrganisation: React.FC<DaoCardProps> = ({
   createdDate,
   description,
@@ -89,8 +96,11 @@ export const CardOrganisation: React.FC<DaoCardProps> = ({
             </div>
           </div>
         </div>
-        <div className="flex flex-grow text-xs text-gray-500 mb-4">
-          {truncateWithEllipsis(description, 100)}
+        <div
+          className="flex flex-grow text-xs text-gray-500 mb-4"
+          style={truncatedDescription}
+        >
+          {description}
         </div>
         <div className="flex flex-grow gap-2 text-xs items-center">
           <div className="flex">
