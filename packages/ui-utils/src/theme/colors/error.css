@@ -1,4 +1,4 @@
-@import '../colors/red.css';
+@import '../../colors/red.css';
 
 :root, .light, .light-theme, .dark, .dark-theme {
   --error-1: var(--red-1);

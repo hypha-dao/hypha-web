@@ -1,4 +1,4 @@
-@import '../colors/slate.css';
+@import '../../colors/slate.css';
 
 :root, .light, .light-theme, .dark, .dark-theme {
   --neutral-1: var(--slate-1);
@@ -15,4 +15,6 @@
   --neutral-12: var(--slate-12);
 
   --neutral: var(--neutral-1);
+
+  --neutral-alpha-8: var(--slate-alpha-8);
 }

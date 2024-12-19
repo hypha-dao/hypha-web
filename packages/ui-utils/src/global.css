@@ -2,13 +2,22 @@
  * Don't forget to update your APPs global.css to include this file!
  */
 
-@import './semantic-colors/accent.css';
-@import './semantic-colors/background.css';
-@import './semantic-colors/error.css';
-@import './semantic-colors/neutral.css';
-@import './semantic-colors/success.css';
-@import './semantic-colors/warning.css';
-@import './typography/variables.css';
+@import './theme/colors/accent.css';
+@import './theme/colors/background.css';
+@import './theme/colors/default.css';
+@import './theme/colors/error.css';
+@import './theme/colors/info.css';
+@import './theme/colors/misc.css';
+@import './theme/colors/neutral.css';
+@import './theme/colors/success.css';
+@import './theme/colors/warning.css';
+
+@import './theme/tokens/color.css';
+@import './theme/tokens/space.css';
+
+@import './theme/typography/variables.css';
+
+@import './theme/spacing.css';
 
 @tailwind base;
 @tailwind components;
@@ -34,7 +43,7 @@
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 240 5.9% 10%;
-    --radius: 0.25rem;
+    --radius: 0.4rem;
     --action-light: 217, 91%, 60%;
   }
 

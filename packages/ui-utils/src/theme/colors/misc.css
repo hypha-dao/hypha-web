@@ -1,0 +1,11 @@
+:root, .light, .light-theme {
+  --white-to-dark: var(--white);
+  --white-to-dark-2: hsl(var(--white) / 0.9);
+  --dark-to-white: var(--neutral-12);
+  --backdrop: var(--neutral-alpha-8);
+}
+.dark, .dark-theme {
+  --white-to-dark: var(--neutral-1);
+  --white-to-dark-2: hsl(var(--white) / 0.9);
+  --black-to-dark: var(--white);
+}

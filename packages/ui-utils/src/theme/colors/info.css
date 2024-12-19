@@ -1,4 +1,4 @@
-@import '../colors/sky.css';
+@import '../../colors/sky.css';
 
 :root, .light, .light-theme, .dark, .dark-theme {
   --info-1: var(--sky-1);

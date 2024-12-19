@@ -28,6 +28,7 @@ export function buildConfig(appDir: string): Config {
           accent: {
             DEFAULT: 'hsl(var(--accent))',
             foreground: 'hsl(var(--accent-foreground))',
+            contrast: 'hsl(var(--accent-contrast))',
             1: 'hsl(var(--accent-1))',
             2: 'hsl(var(--accent-2))',
             3: 'hsl(var(--accent-3))',
@@ -55,6 +56,14 @@ export function buildConfig(appDir: string): Config {
             10: 'hsl(var(--background-10))',
             11: 'hsl(var(--background-11))',
             12: 'hsl(var(--background-12))',
+          },
+          black: {
+            DEFAULT: 'hsl(var(--black))',
+            contrast: 'hsl(var(--black-contrast))',
+          },
+          white: {
+            DEFAULT: 'hsl(var(--white))',
+            contrast: 'hsl(var(--white-contrast))',
           },
           error: {
             DEFAULT: 'hsl(var(--error))',
@@ -239,6 +248,17 @@ export function buildConfig(appDir: string): Config {
           '3': 'var(--letter-spacing-3)',
           '4': 'var(--letter-spacing-4)',
           '5': 'var(--letter-spacing-5)',
+        },
+        spacing: {
+          '1': 'var(--spacing-1)',
+          '2': 'var(--spacing-2)',
+          '3': 'var(--spacing-3)',
+          '4': 'var(--spacing-4)',
+          '5': 'var(--spacing-5)',
+          '6': 'var(--spacing-6)',
+          '7': 'var(--spacing-7)',
+          '8': 'var(--spacing-8)',
+          '9': 'var(--spacing-9)',
         },
       },
     },

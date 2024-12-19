@@ -11,6 +11,8 @@
   --slate-10: 226deg 5.4% 52.7%;
   --slate-11: 220deg 5.9% 40%;
   --slate-12: 210deg 12.5% 12.5%;
+
+  --slate-alpha-8: hsl(230deg 100% 9% / 27.45%);
 }
 .dark, .dark-theme {
   --slate-1: 240deg 5.6% 7.1%;
@@ -25,4 +27,6 @@
   --slate-10: 222deg 5.2% 49.2%;
   --slate-11: 216deg 6.8% 71%;
   --slate-12: 220deg 9.1% 93.5%;
+
+  --slate-alpha-8: hsl(230deg 100% 9% / 27.45%);
 }

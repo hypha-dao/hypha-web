@@ -1,0 +1,5 @@
+:root {
+  --white-contrast: var(--white);
+  --black-contrast: var(--black);
+  --accent-contrast: var(--white-contrast);
+}

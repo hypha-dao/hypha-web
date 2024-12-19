@@ -1,4 +1,4 @@
-@import '../colors/indigo.css';
+@import '../../colors/indigo.css';
 
 :root, .light, .light-theme, .dark, .dark-theme {
   --accent-1: var(--indigo-1);

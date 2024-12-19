@@ -1,4 +1,4 @@
-@import '../colors/amber.css';
+@import '../../colors/amber.css';
 
 :root, .light, .light-theme, .dark, .dark-theme {
   --warning-1: var(--amber-1);

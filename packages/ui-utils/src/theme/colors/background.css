@@ -1,4 +1,4 @@
-@import '../colors/indigo.css';
+@import '../../colors/gray.css';
 
 :root, .light, .light-theme, .dark, .dark-theme {
   --background-1: var(--gray-1);

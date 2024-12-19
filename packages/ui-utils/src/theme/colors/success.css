@@ -1,4 +1,4 @@
-@import '../colors/green.css';
+@import '../../colors/green.css';
 
 :root, .light, .light-theme, .dark, .dark-theme {
   --success-1: var(--green-1);
