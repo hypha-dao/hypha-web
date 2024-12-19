@@ -27,6 +27,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Carousel, CarouselContent, CarouselItem } from '@hypha-platform/ui';
 import { getDhoPathAgreements } from './constants';
+import { SidebarProvider, Sidebar, SidebarContent } from '@hypha-platform/ui';
 
 const customLogoStyles: React.CSSProperties = {
   width: '128px',
@@ -77,138 +78,140 @@ export default async function DhoLayout({
         </MenuTop.RightSlot>
       </MenuTop>
       <div className="fixed bottom-0 right-0 flex-grow overflow-y-auto top-20 w-full bg-background/5">
-        <Container>
-          <div className="mb-6 flex items-center">
-            <Link
-              href={`/${lang}/my-spaces`}
-              className="cursor-pointer flex items-center"
-            >
-              <ChevronLeftIcon width={16} height={16} />
-              <Text className="text-sm">My Spaces</Text>
-            </Link>
-            <Text className="text-sm text-gray-400 ml-1"> / {dao.title}</Text>
-          </div>
-          <Card className="relative">
-            <Image
-              width={768}
-              height={270}
-              className="rounded-xl max-h-[270px] w-full object-cover"
-              src={dao.logo}
-              alt={dao.title}
-            ></Image>
-            <Avatar style={customLogoStyles} className="border-4">
-              <AvatarImage src={dao.logo} alt="logo" />
-            </Avatar>
-          </Card>
-          <div className="flex justify-end mt-2">
-            <Button
-              asChild
-              variant="ghost"
-              size="sm"
-              className="rounded-lg justify-start p-1 cursor-pointer"
-            >
-              <Share2Icon width={28} height={28} />
-            </Button>
-            <Button
-              disabled={alreadyMember}
-              className="ml-2 rounded-lg"
-              variant={alreadyMember ? 'outline' : 'action'}
-              size="sm"
-            >
-              <PersonIcon className="mr-2" width={16} height={16} />
-              {alreadyMember ? (
-                <Text>Already member</Text>
-              ) : (
-                <Text>Become member</Text>
-              )}
-            </Button>
-          </div>
-          <div className="mt-4">
-            <Text className="text-3xl">{dao.title}</Text>
-          </div>
-          <div className="flex gap-6">
-            <Button
-              asChild
-              variant="ghost"
-              className="rounded-lg justify-start text-gray-400 px-0 cursor-pointer"
-            >
-              <div>
-                <LinkedInLogoIcon width={16} height={16} />
-                <Text className="ml-1 text-xs">HyphaDAO</Text>
-              </div>
-            </Button>
-            <Button
-              asChild
-              variant="ghost"
-              className="rounded-lg justify-start text-gray-400 px-0 cursor-pointer"
-            >
-              <div>
-                <FontAwesomeIcon
-                  className="w-4"
-                  color="bg-primary-foreground"
-                  icon={faXTwitter}
-                />
-                <Text className="ml-1 text-xs">@HyphaDAO</Text>
-              </div>
-            </Button>
-            <Button
-              asChild
-              variant="ghost"
-              className="rounded-lg justify-start text-gray-400 px-0 cursor-pointer"
-            >
-              <div>
-                <Link2Icon width={16} height={16} />
-                <Text className="ml-1 text-xs">hypha.earth</Text>
-              </div>
-            </Button>
-          </div>
-          <div className="mt-6">
-            <Text className="text-sm">{dao.description}</Text>
-          </div>
-          <div className="flex flex-grow gap-2 text-xs items-center mt-6">
-            <div className="flex">
-              <div className="font-bold">128</div>
-              <div className="text-gray-500 ml-1 text-xs">Members</div>
+        <SidebarProvider>
+          <Container>
+            <div className="mb-6 flex items-center">
+              <Link
+                href={`/${lang}/my-spaces`}
+                className="cursor-pointer flex items-center"
+              >
+                <ChevronLeftIcon width={16} height={16} />
+                <Text className="text-sm">My Spaces</Text>
+              </Link>
+              <Text className="text-sm text-gray-400 ml-1"> / {dao.title}</Text>
             </div>
-            <div className="flex ml-3">
-              <div className="font-bold">58</div>
-              <div className="text-gray-500 ml-1 text-xs">
-                Completed projects
+            <Card className="relative">
+              <Image
+                width={768}
+                height={270}
+                className="rounded-xl max-h-[270px] w-full object-cover"
+                src={dao.logo}
+                alt={dao.title}
+              ></Image>
+              <Avatar style={customLogoStyles} className="border-4">
+                <AvatarImage src={dao.logo} alt="logo" />
+              </Avatar>
+            </Card>
+            <div className="flex justify-end mt-2">
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className="rounded-lg justify-start p-1 cursor-pointer"
+              >
+                <Share2Icon width={28} height={28} />
+              </Button>
+              <Button
+                disabled={alreadyMember}
+                className="ml-2 rounded-lg"
+                variant={alreadyMember ? 'outline' : 'action'}
+                size="sm"
+              >
+                <PersonIcon className="mr-2" width={16} height={16} />
+                {alreadyMember ? (
+                  <Text>Already member</Text>
+                ) : (
+                  <Text>Become member</Text>
+                )}
+              </Button>
+            </div>
+            <div className="mt-4">
+              <Text className="text-3xl">{dao.title}</Text>
+            </div>
+            <div className="flex gap-6">
+              <Button
+                asChild
+                variant="ghost"
+                className="rounded-lg justify-start text-gray-400 px-0 cursor-pointer"
+              >
+                <div>
+                  <LinkedInLogoIcon width={16} height={16} />
+                  <Text className="ml-1 text-xs">HyphaDAO</Text>
+                </div>
+              </Button>
+              <Button
+                asChild
+                variant="ghost"
+                className="rounded-lg justify-start text-gray-400 px-0 cursor-pointer"
+              >
+                <div>
+                  <FontAwesomeIcon
+                    className="w-4"
+                    color="bg-primary-foreground"
+                    icon={faXTwitter}
+                  />
+                  <Text className="ml-1 text-xs">@HyphaDAO</Text>
+                </div>
+              </Button>
+              <Button
+                asChild
+                variant="ghost"
+                className="rounded-lg justify-start text-gray-400 px-0 cursor-pointer"
+              >
+                <div>
+                  <Link2Icon width={16} height={16} />
+                  <Text className="ml-1 text-xs">hypha.earth</Text>
+                </div>
+              </Button>
+            </div>
+            <div className="mt-6">
+              <Text className="text-sm">{dao.description}</Text>
+            </div>
+            <div className="flex flex-grow gap-2 text-xs items-center mt-6">
+              <div className="flex">
+                <div className="font-bold">128</div>
+                <div className="text-gray-500 ml-1 text-xs">Members</div>
+              </div>
+              <div className="flex ml-3">
+                <div className="font-bold">58</div>
+                <div className="text-gray-500 ml-1 text-xs">
+                  Completed projects
+                </div>
               </div>
             </div>
-          </div>
-          {children}
-          <div className="border-t-2 border-primary-foreground pt-6">
-            <Text className="text-3">Spaces you might like</Text>
-            <Carousel className="my-8">
-              <CarouselContent>
-                {daos.map((dao) => (
-                  <CarouselItem
-                    key={dao.name}
-                    className="mb-5 w-full sm:w-[454px] max-w-[454px] flex-shrink-0"
-                  >
-                    <Link
-                      className="w-96"
-                      href={getDhoPathAgreements(lang, dao.url as string)}
+            {children}
+            <div className="border-t-2 border-primary-foreground pt-6">
+              <Text className="text-3">Spaces you might like</Text>
+              <Carousel className="my-8">
+                <CarouselContent>
+                  {daos.map((dao) => (
+                    <CarouselItem
+                      key={dao.name}
+                      className="mb-5 w-full sm:w-[454px] max-w-[454px] flex-shrink-0"
                     >
-                      <CardOrganisation
-                        createdDate={dao.date}
-                        description={dao.description as string}
-                        icon={dao.logo}
-                        members={0}
-                        agreements={0}
-                        title={dao.title as string}
-                      />
-                    </Link>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-            </Carousel>
-          </div>
-        </Container>
-        <Footer />
+                      <Link
+                        className="w-96"
+                        href={getDhoPathAgreements(lang, dao.url as string)}
+                      >
+                        <CardOrganisation
+                          createdDate={dao.date}
+                          description={dao.description as string}
+                          icon={dao.logo}
+                          members={0}
+                          agreements={0}
+                          title={dao.title as string}
+                        />
+                      </Link>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+              </Carousel>
+            </div>
+          </Container>
+            {details}
+          </SidebarProvider>
+          <Footer />
       </div>
-      {details}
     </div>
   );
 }

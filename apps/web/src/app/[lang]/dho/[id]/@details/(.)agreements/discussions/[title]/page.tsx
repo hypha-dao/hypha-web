@@ -1,10 +1,16 @@
-import { Locale } from '@hypha-platform/i18n';
+'use client';
+import { Sidebar, SidebarContent, SidebarGroup } from '@hypha-platform/ui';
+import React from 'react';
 
-export default async function DetailsPanel({
-}: {
-  params: { id: string; lang: Locale };
-}) {
+export default function CreateAssignment() {
+
   return (
-    <div>Panel</div>
+    <Sidebar side='right'>
+      <SidebarContent>
+        <SidebarGroup>
+          Hello!
+        </SidebarGroup>
+      </SidebarContent>
+    </Sidebar>
   );
 }
