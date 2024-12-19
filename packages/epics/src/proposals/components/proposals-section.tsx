@@ -34,7 +34,7 @@ export const ProposalsSection: FC<ProposalSectionProps> = () => {
         label="Proposals"
         sortOptions={sortOptions}
       >
-        <Button className="ml-2" variant="action" size="sm">
+        <Button className="ml-2" size="sm">
           <PlusIcon className="mr-2" />
           Create
         </Button>

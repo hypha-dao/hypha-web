@@ -102,7 +102,6 @@ export default async function DhoLayout({
             <Button
               asChild
               variant="ghost"
-              size="sm"
               className="rounded-lg justify-start p-1 cursor-pointer"
             >
               <Share2Icon width={28} height={28} />
@@ -110,15 +109,11 @@ export default async function DhoLayout({
             <Button
               disabled={alreadyMember}
               className="ml-2 rounded-lg"
-              variant={alreadyMember ? 'outline' : 'action'}
-              size="sm"
+              colorVariant={alreadyMember ? 'neutral' : 'accent'}
+              variant={alreadyMember ? 'outline' : 'default'}
             >
               <PersonIcon className="mr-2" width={16} height={16} />
-              {alreadyMember ? (
-                <Text>Already member</Text>
-              ) : (
-                <Text>Become member</Text>
-              )}
+              {alreadyMember ? 'Already member' : 'Become member'}
             </Button>
           </div>
           <div className="mt-4">

@@ -49,9 +49,7 @@ export const ProposalCard: React.FC<ProposalCardProps> = ({
       <div className="flex justify-between items-center w-full">
         <div className="flex flex-col">
           <div className="flex gap-x-1">
-            <Badge variant="action" isLoading={isLoading}>
-              Proposal
-            </Badge>
+            <Badge isLoading={isLoading}>Proposal</Badge>
             <Badge variant="actionOutline" isLoading={isLoading}>
               Recurring
             </Badge>

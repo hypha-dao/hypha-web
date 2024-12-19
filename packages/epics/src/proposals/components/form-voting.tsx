@@ -38,22 +38,26 @@ export const FormVoting = ({
   onReject: () => void;
 }) => {
   return (
-    <div className="flex flex-col gap-4 text-neutral-11">
-      <ProgressLine label="Unity" value={unity} indicatorColor="bg-accent-9" />
-      <ProgressLine
-        label="Quorum"
-        value={quorum}
-        indicatorColor="bg-accent-12"
-      />
+    <div className="flex flex-col gap-5 text-neutral-11">
+      <div className="flex flex-col gap-4">
+        <ProgressLine
+          label="Unity"
+          value={unity}
+          indicatorColor="bg-accent-9"
+        />
+        <ProgressLine
+          label="Quorum"
+          value={quorum}
+          indicatorColor="bg-accent-12"
+        />
+      </div>
       <div className="flex items-center justify-between">
-        <div>{formatTimeRemaining(date)}</div>
+        <div className="text-1">{formatTimeRemaining(date)}</div>
         <div className="flex gap-2">
-          <Button variant="outline" className="rounded-lg" onClick={onReject}>
+          <Button variant="outline" onClick={onReject}>
             Vote no
           </Button>
-          <Button variant="action" onClick={onAccept}>
-            Vote yes
-          </Button>
+          <Button onClick={onAccept}>Vote yes</Button>
         </div>
       </div>
     </div>

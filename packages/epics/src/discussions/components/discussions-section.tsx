@@ -35,7 +35,7 @@ export const DiscussionsSection: FC<DiscussionSectionProps> = () => {
           label="Discussions"
           sortOptions={sortOptions}
         >
-          <Button className="ml-2" variant="action" size="sm">
+          <Button className="ml-2" size="sm">
             <PlusIcon className="mr-2" />
             Create
           </Button>

@@ -21,7 +21,7 @@ export const SectionLoadMore: FC<SectionLoadMoreProps> = ({
         onClick={onClick}
         className="rounded-lg w-fit mt-4"
         variant="outline"
-        size="sm"
+        colorVariant="neutral"
       >
         {children}
       </Button>

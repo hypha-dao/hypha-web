@@ -35,7 +35,7 @@ export const AssetsSection: FC<AssetSectionProps> = () => {
         label="Balance"
         sortOptions={sortOptions}
       >
-        <Button className="ml-2" variant="action" size="sm">
+        <Button className="ml-2" size="sm">
           <PlusIcon className="mr-2" />
           Add Wallet
         </Button>

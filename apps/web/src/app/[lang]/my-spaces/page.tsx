@@ -49,7 +49,7 @@ export default async function Index({ params: { lang } }: PageProps) {
       <Container>
         <Heading
           className="mb-10 mt-3"
-          size="8"
+          size="9"
           color="secondary"
           weight="medium"
           align="center"
@@ -63,7 +63,7 @@ export default async function Index({ params: { lang } }: PageProps) {
               value={filterSettings.value}
               options={filterSettings.options}
             />
-            <Button className="ml-2" variant="action" size="sm">
+            <Button className="ml-2">
               <PlusIcon className="mr-2" />
               Create Space
             </Button>
