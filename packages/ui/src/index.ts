@@ -12,5 +12,7 @@ export * from './image';
 export * from './progress';
 export * from './skeleton';
 export * from './status-badge';
+export * from './sidebar';
 
 export * from './organisms/editor';
+export * from './hooks';
