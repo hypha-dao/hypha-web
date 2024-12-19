@@ -1,6 +1,7 @@
 import { FC } from 'react';
 import { DiscussionCard } from './discussion-card';
 import { useDiscussions } from '../hooks/use-discussions';
+import Link from 'next/link';
 
 type DiscussionsListProps = {
   page: number;
@@ -19,7 +20,10 @@ export const DiscussionsList: FC<DiscussionsListProps> = ({
     <div className="discussion-list w-full">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
         {discussions.map((discussion, index) => (
-          <DiscussionCard key={index} {...discussion} isLoading={isLoading} />
+          // Temporarily hardcode
+          <Link href={`/dho/dao-centar/agreements/discussions/${discussion.title}`}>
+            <DiscussionCard key={index} {...discussion} isLoading={isLoading} />
+          </Link>
         ))}
       </div>
       {isLoading ? (
