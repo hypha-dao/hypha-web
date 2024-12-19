@@ -40,9 +40,11 @@ const alreadyMember = true;
 
 export default async function DhoLayout({
   children,
+  details,
   params: { id: daoSlug, lang },
 }: {
   children: React.ReactNode;
+  details: React.ReactNode;
   params: { id: string; lang: Locale };
 }) {
   const newtoken = await getAccessToken();
@@ -206,6 +208,7 @@ export default async function DhoLayout({
         </Container>
         <Footer />
       </div>
+      {details}
     </div>
   );
 }
