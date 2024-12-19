@@ -8,6 +8,7 @@
 @import './semantic-colors/neutral.css';
 @import './semantic-colors/success.css';
 @import './semantic-colors/warning.css';
+@import './typography/variables.css';
 
 @tailwind base;
 @tailwind components;
@@ -64,6 +65,11 @@
   * {
     @apply border-border;
   }
+
+  html {
+    font-size: 62.5%;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
