@@ -4,6 +4,8 @@ import TailwindAnimate from 'tailwindcss-animate';
 
 import type { Config } from 'tailwindcss';
 
+const fontConfig = {};
+
 export function buildConfig(appDir: string): Config {
   return {
     darkMode: ['class'],
@@ -168,17 +170,7 @@ export function buildConfig(appDir: string): Config {
           md: `calc(var(--radius) - 2px)`,
           sm: 'calc(var(--radius) - 4px)',
         },
-        fontSize: {
-          '1': '14px',
-          '2': '16px',
-          '3': '18px',
-          '4': '20px',
-          '5': '24px',
-          '6': '30px',
-          '7': '36px',
-          '8': '48px',
-          '9': '60px',
-        },
+
         keyframes: {
           'accordion-down': {
             from: { height: '0' },
@@ -192,6 +184,61 @@ export function buildConfig(appDir: string): Config {
         animation: {
           'accordion-down': 'accordion-down 0.2s ease-out',
           'accordion-up': 'accordion-up 0.2s ease-out',
+        },
+        fontFamily: {
+          text: ['var(--font-text)'],
+          code: ['var(--font-code)'],
+          emphasis: ['var(--font-emphasis)'],
+          quote: ['var(--font-quote)'],
+        },
+        fontWeight: {
+          light: 'var(--font-weight-light)',
+          regular: 'var(--font-weight-regular)',
+          medium: 'var(--font-weight-medium)',
+          bold: 'var(--font-weight-bold)',
+        },
+        lineHeight: {
+          '1': 'var(--line-height-1)',
+          '2': 'var(--line-height-2)',
+          '3': 'var(--line-height-3)',
+          '4': 'var(--line-height-4)',
+          '5': 'var(--line-height-5)',
+          '6': 'var(--line-height-6)',
+          '7': 'var(--line-height-7)',
+          '8': 'var(--line-height-8)',
+          '9': 'var(--line-height-9)',
+        },
+        fontSize: {
+          xs: ['var(--font-size-xs)', 'var(--line-height-1)'],
+          sm: ['var(--font-size-sm)', 'var(--line-height-2)'],
+          base: ['var(--font-size-base)', 'var(--line-height-3)'],
+          lg: ['var(--font-size-lg)', 'var(--line-height-5)'],
+          xl: ['var(--font-size-xl)', 'var(--line-height-5)'],
+          '2xl': ['var(--font-size-2xl)', '32rem'],
+          '3xl': ['var(--font-size-3xl)', 'var(--line-height-7)'],
+          '4xl': ['var(--font-size-4xl)', 'var(--line-height-8)'],
+          '5xl': ['var(--font-size-5xl)', '1'],
+          '6xl': ['var(--font-size-6xl)', '1'],
+          '7xl': ['var(--font-size-7xl)', '1'],
+          '8xl': ['var(--font-size-8xl)', '1'],
+          '9xl': ['var(--font-size-9xl)', '1'],
+
+          '1': ['var(--font-size-1)', 'var(--line-height-1)'],
+          '2': ['var(--font-size-2)', 'var(--line-height-2)'],
+          '3': ['var(--font-size-3)', 'var(--line-height-3)'],
+          '4': ['var(--font-size-4)', 'var(--line-height-4)'],
+          '5': ['var(--font-size-5)', 'var(--line-height-5)'],
+          '6': ['var(--font-size-6)', 'var(--line-height-6)'],
+          '7': ['var(--font-size-7)', 'var(--line-height-7)'],
+          '8': ['var(--font-size-8)', 'var(--line-height-8)'],
+          '9': ['var(--font-size-9)', 'var(--line-height-9)'],
+        },
+        letterSpacing: {
+          '1': 'var(--letter-spacing-1)',
+          '2': 'var(--letter-spacing-2)',
+          '3': 'var(--letter-spacing-3)',
+          '4': 'var(--letter-spacing-4)',
+          '5': 'var(--letter-spacing-5)',
         },
       },
     },
