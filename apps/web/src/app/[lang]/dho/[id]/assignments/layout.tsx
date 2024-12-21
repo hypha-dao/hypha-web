@@ -6,7 +6,7 @@ export default async function DhoLayout({
 }: {
   children: React.ReactNode;
   modal: React.ReactNode;
-  params: { id: string; lang: Locale };
+  params: Promise<{ id: string; lang: Locale }>;
 }) {
   return (
     <>

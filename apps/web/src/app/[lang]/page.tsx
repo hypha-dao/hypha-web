@@ -3,10 +3,14 @@ import Link from 'next/link';
 import { Button } from '@hypha-platform/ui';
 
 type PageProps = {
-  params: { lang: Locale; id: string };
+  params: Promise<{ lang: Locale; id: string }>;
 };
 
-export default async function Index({ params: { lang } }: PageProps) {
+export default async function Index(props: PageProps) {
+  const params = await props.params;
+
+  const { lang } = params;
+
   return (
     <div>
       <div>IndexPage</div>

@@ -17,7 +17,7 @@ import { Text } from '@radix-ui/themes';
 import { PlusIcon } from '@radix-ui/react-icons';
 
 type PageProps = {
-  params: { lang: Locale; id: string };
+  params: Promise<{ lang: Locale; id: string }>;
 };
 
 type OptionType = {
@@ -30,7 +30,11 @@ type SpacesFilterType = {
   options: OptionType[];
 };
 
-export default async function Index({ params: { lang } }: PageProps) {
+export default async function Index(props: PageProps) {
+  const params = await props.params;
+
+  const { lang } = params;
+
   const newtoken = await getAccessToken();
   const daos = await getDaoList({ token: newtoken.accessJWT });
 

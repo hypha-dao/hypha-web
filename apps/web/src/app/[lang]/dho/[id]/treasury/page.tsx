@@ -13,10 +13,14 @@ import {
 } from '@hypha-platform/epics';
 
 type PageProps = {
-  params: { lang: Locale; id: string };
+  params: Promise<{ lang: Locale; id: string }>;
 };
 
-export default function TreasuryPage({ params: { lang, id } }: PageProps) {
+export default async function TreasuryPage(props: PageProps) {
+  const params = await props.params;
+
+  const { lang, id } = params;
+
   return (
     <div>
       <Tabs value="treasury" className="w-full mt-16">

@@ -13,10 +13,14 @@ import {
 } from '@hypha-platform/epics';
 
 type PageProps = {
-  params: { lang: Locale; id: string };
+  params: Promise<{ lang: Locale; id: string }>;
 };
 
-export default function MembershipPage({ params: { lang, id } }: PageProps) {
+export default async function MembershipPage(props: PageProps) {
+  const params = await props.params;
+
+  const { lang, id } = params;
+
   return (
     <div>
       <Tabs value="membership" className="w-full mt-16">

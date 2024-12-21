@@ -38,13 +38,16 @@ const customLogoStyles: React.CSSProperties = {
 
 const alreadyMember = true;
 
-export default async function DhoLayout({
-  children,
-  params: { id: daoSlug, lang },
-}: {
+export default async function DhoLayout(props: {
   children: React.ReactNode;
-  params: { id: string; lang: Locale };
+  params: Promise<{ id: string; lang: Locale }>;
 }) {
+  const params = await props.params;
+
+  const { id: daoSlug, lang } = params;
+
+  const { children } = props;
+
   const newtoken = await getAccessToken();
   const dao = await getDaoDetail({ token: newtoken.accessJWT, daoSlug });
   const daos = await getDaoList({ token: newtoken.accessJWT });

@@ -5,12 +5,14 @@ import { PATH_SEGMENT_DHO_ID } from '../constants';
 import { PATH_ASSIGNMENTS_CREATE } from './create/constants';
 
 type PageProps = {
-  params: { lang: Locale; id: string };
+  params: Promise<{ lang: Locale; id: string }>;
 };
 
-export default async function AssignmentsPage({
-  params: { lang, id },
-}: PageProps) {
+export default async function AssignmentsPage(props: PageProps) {
+  const params = await props.params;
+
+  const { lang, id } = params;
+
   const createAssignmentPat = PATH_ASSIGNMENTS_CREATE.replace(
     PATH_SEGMENT_LANG,
     lang
