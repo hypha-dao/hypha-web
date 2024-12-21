@@ -97,7 +97,7 @@
     "@testing-library/react": "^16.0.0",
     "@types/jest": "29.5.14",
     "@types/negotiator": "^0.6.3",
-    "@types/node": "18.16.9",
+    "@types/node": "22.10.2",
     "@types/react": "18.3.1",
     "@types/react-dom": "18.3.0",
     "@typescript-eslint/eslint-plugin": "8.18.1",
