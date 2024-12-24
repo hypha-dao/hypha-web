@@ -73,7 +73,7 @@
     "@nx/vite": "20.3.0",
     "@nx/web": "20.3.0",
     "@nx/workspace": "20.3.0",
-    "@playwright/test": "^1.36.0",
+    "@playwright/test": "^1.49.1",
     "@storybook/addon-actions": "^8.4.7",
     "@storybook/addon-essentials": "8.4.7",
     "@storybook/addon-interactions": "8.4.7",
