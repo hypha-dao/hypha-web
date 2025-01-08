@@ -1,0 +1,58 @@
+{
+  "version": "1.0.0",
+  "rules": {
+    "priorities": [
+      {
+        "source": ".cursor/",
+        "weight": 1,
+        "description": "Primary documentation and project notes",
+        "ignore_patterns": [
+          "*.tmp",
+          "*.log"
+        ]
+      }
+    ],
+    "context_initialization": {
+      "description": "Starting point for each interaction",
+      "steps": {
+        "ALWAYS_READ": [
+          ".cursor/PROJECT_OVERVIEW.md",
+          ".cursor/TODOS.md",
+          ".cursor/ARCHITECTURE.md"
+        ]
+      }
+    },
+    "operational_protocol": {
+      "description": "How to approach tasks",
+      "before_action": [
+        "Create a MECE task breakdown"
+      ],
+      "code_changes": [
+        "Read relevant code sections before editing",
+        "Preserve existing functionality",
+        "Maintain type safety"
+      ]
+    },
+    "safety_requirements": {
+      "code": [
+        "NEVER break type safety",
+        "ALWAYS maintain proper error handling",
+        "ALWAYS document new code"
+      ],
+      "security": [
+        "No sensitive data in code",
+        "Validate all inputs"
+      ],
+      "performance": [
+        "Consider memory usage",
+        "Optimize expensive operations"
+      ]
+    },
+    "style_preferences": {
+      "source": ".prettierrc",
+      "formatting": "prettier",
+      "preferred_quotes": "single",
+      "sync_with_prettier": true
+    }
+  }
+}
