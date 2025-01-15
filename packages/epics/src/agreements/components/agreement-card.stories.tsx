@@ -23,7 +23,7 @@ export const Primary: Story = {
     views: 100,
     comments: 100,
     isLoading: false,
-    withoutAvatar: false,
+    hasAvatar: true,
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

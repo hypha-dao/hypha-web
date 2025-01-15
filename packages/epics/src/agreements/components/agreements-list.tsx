@@ -9,7 +9,7 @@ type AgreementsListProps = {
   activeFilter: string;
   basePath: string;
   agreementsProp?: AgreementItem[];
-  withoutAvatar?: boolean;
+  hasAvatar?: boolean;
 };
 
 export const AgreementsList: FC<AgreementsListProps> = ({
@@ -17,7 +17,7 @@ export const AgreementsList: FC<AgreementsListProps> = ({
   activeFilter,
   basePath,
   agreementsProp,
-  withoutAvatar,
+  hasAvatar,
 }) => {
   const { agreements, isLoading } = useAgreements({
     page,
@@ -33,7 +33,7 @@ export const AgreementsList: FC<AgreementsListProps> = ({
             scroll={false}
           >
             <AgreementCard
-              withoutAvatar={withoutAvatar}
+              hasAvatar={hasAvatar}
               key={index}
               {...agreement}
               isLoading={isLoading}

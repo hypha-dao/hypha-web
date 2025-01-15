@@ -18,7 +18,7 @@ type AgreementCardProps = {
   views?: number;
   comments?: CardCommentProps[];
   isLoading?: boolean;
-  withoutAvatar?: boolean;
+  hasAvatar?: boolean;
 };
 
 export const AgreementCard: React.FC<AgreementCardProps> = ({
@@ -29,11 +29,11 @@ export const AgreementCard: React.FC<AgreementCardProps> = ({
   views,
   comments,
   isLoading,
-  withoutAvatar,
+  hasAvatar,
 }) => {
   return (
     <Card className="w-full h-full p-5 mb-2 flex">
-      {withoutAvatar ? null : (
+      {!hasAvatar ? null : (
         <Skeleton
           width="64px"
           height="64px"
