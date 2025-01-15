@@ -1,4 +1,4 @@
-import { Creator } from "../agreements";
+import { Creator } from '../agreements';
 
 export type ProposalItem = {
   commitment: number;

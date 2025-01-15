@@ -1,4 +1,4 @@
-import { AgreementItem } from "../agreements";
+import { AgreementItem } from '../agreements';
 
 export type MemberItem = {
   name: string;
