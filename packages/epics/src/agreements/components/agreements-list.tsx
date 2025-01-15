@@ -2,17 +2,22 @@ import { FC } from 'react';
 import { AgreementCard } from './agreement-card';
 import { useAgreements } from '../hooks/use-agreements';
 import Link from 'next/link';
+import { AgreementItem } from '@hypha-platform/graphql/rsc';
 
 type AgreementsListProps = {
   page: number;
   activeFilter: string;
   basePath: string;
+  agreementsProp?: AgreementItem[];
+  withoutAvatar?: boolean;
 };
 
 export const AgreementsList: FC<AgreementsListProps> = ({
   page,
   activeFilter,
   basePath,
+  agreementsProp,
+  withoutAvatar,
 }) => {
   const { agreements, isLoading } = useAgreements({
     page,
@@ -20,11 +25,22 @@ export const AgreementsList: FC<AgreementsListProps> = ({
   });
   return (
     <div className="agreement-list w-full">
-      {agreements.map((agreement, index) => (
-        <Link href={`${basePath}/${agreement.slug}`} key={index} scroll={false}>
-          <AgreementCard key={index} {...agreement} isLoading={isLoading} />
-        </Link>
-      ))}
+      {(agreementsProp ? agreementsProp : agreements).map(
+        (agreement, index) => (
+          <Link
+            href={`${basePath}/${agreement.slug}`}
+            key={index}
+            scroll={false}
+          >
+            <AgreementCard
+              withoutAvatar={withoutAvatar}
+              key={index}
+              {...agreement}
+              isLoading={isLoading}
+            />
+          </Link>
+        )
+      )}
       {isLoading ? (
         <div>
           <AgreementCard isLoading={isLoading} />

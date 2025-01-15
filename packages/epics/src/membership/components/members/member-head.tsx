@@ -1,5 +1,5 @@
-import { Skeleton, Image, Badge, StatusBadge } from "@hypha-platform/ui";
-import { Text } from "@radix-ui/themes";
+import { Skeleton, Image, Badge, StatusBadge } from '@hypha-platform/ui';
+import { Text } from '@radix-ui/themes';
 
 export type MemberHeadProps = {
   avatar?: string;

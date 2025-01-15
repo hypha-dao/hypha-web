@@ -18,6 +18,7 @@ type AgreementCardProps = {
   views?: number;
   comments?: CardCommentProps[];
   isLoading?: boolean;
+  withoutAvatar?: boolean;
 };
 
 export const AgreementCard: React.FC<AgreementCardProps> = ({
@@ -28,27 +29,30 @@ export const AgreementCard: React.FC<AgreementCardProps> = ({
   views,
   comments,
   isLoading,
+  withoutAvatar,
 }) => {
   return (
     <Card className="w-full h-full p-5 mb-2 flex">
-      <Skeleton
-        width="64px"
-        height="64px"
-        loading={isLoading}
-        className="rounded-lg mr-3"
-      >
-        <Image
+      {withoutAvatar ? null : (
+        <Skeleton
+          width="64px"
+          height="64px"
+          loading={isLoading}
           className="rounded-lg mr-3"
-          src={creator?.avatar ?? ''}
-          height={64}
-          width={64}
-          alt={
-            creator?.name && creator?.surname
-              ? `${creator.name} ${creator.surname}`
-              : 'Creator Avatar'
-          }
-        />
-      </Skeleton>
+        >
+          <Image
+            className="rounded-lg mr-3"
+            src={creator?.avatar ?? ''}
+            height={64}
+            width={64}
+            alt={
+              creator?.name && creator?.surname
+                ? `${creator.name} ${creator.surname}`
+                : 'Creator Avatar'
+            }
+          />
+        </Skeleton>
+      )}
 
       <div className="flex justify-between items-center w-full">
         <div className="flex flex-col">
