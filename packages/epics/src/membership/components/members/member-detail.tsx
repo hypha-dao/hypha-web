@@ -149,7 +149,7 @@ export const MemberDetail = ({
         activeFilter={activeFilter}
         agreementsProp={paginatedAgreements}
         basePath=""
-        withoutAvatar={true}
+        hasAvatar={true}
       />
       <SectionLoadMore
         onClick={loadMore}
