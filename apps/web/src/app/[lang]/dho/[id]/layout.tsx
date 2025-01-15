@@ -146,7 +146,9 @@ export default async function DhoLayout({
           </div>
           <div className="flex ml-3">
             <div className="font-bold text-1">58</div>
-            <div className="text-neutral-11 ml-1 text-1">Completed projects</div>
+            <div className="text-neutral-11 ml-1 text-1">
+              Completed projects
+            </div>
           </div>
         </div>
         {children}
