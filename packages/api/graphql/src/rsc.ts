@@ -10,7 +10,7 @@ export * from './query/dao/list';
 export * from './query/dao/user-daos';
 export * from './query/discussions';
 export * from './query/inner-spaces';
-export * from './query/members/list';
+export * from './query/members';
 export * from './query/outer-spaces/list';
 export * from './query/payouts/list';
 export * from './query/proposals';

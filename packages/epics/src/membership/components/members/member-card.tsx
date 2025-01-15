@@ -1,6 +1,7 @@
 import { Text } from '@radix-ui/themes';
 import { Card, Badge, StatusBadge, Skeleton, Image } from '@hypha-platform/ui';
 import { SewingPinFilledIcon } from '@radix-ui/react-icons';
+import { SpaceType, AgreementItem } from '@hypha-platform/graphql/rsc';
 
 export type MemberCardProps = {
   name?: string;
@@ -11,6 +12,10 @@ export type MemberCardProps = {
   commitment?: number;
   status?: string;
   isLoading?: boolean;
+  about?: string;
+  slug?: string;
+  spaces?: SpaceType[];
+  agreements?: AgreementItem[];
   minimize?: boolean;
 };
 

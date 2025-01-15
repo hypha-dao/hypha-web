@@ -1,3 +1,4 @@
+'use client';
 import { MemberHead } from './member-head';
 import { Skeleton, Button, Separator, FilterMenu } from '@hypha-platform/ui';
 import { RxCross1 } from 'react-icons/rx';
@@ -113,8 +114,9 @@ export const MemberDetail = ({
           </div>
         ) : (
           <div className="flex flex-row gap-3 overflow-x-auto">
-            {member.spaces?.map((space) => (
+            {member.spaces?.map((space, index) => (
               <Image
+                key={`${space.name} ${index}`}
                 width={40}
                 height={40}
                 src={space.logo ?? ''}

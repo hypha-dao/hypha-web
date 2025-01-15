@@ -1,4 +1,4 @@
-import { Creator } from '../members/types';
+import { Creator } from "../agreements";
 
 export type Comment = {
   creator?: Creator;

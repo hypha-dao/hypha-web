@@ -2,6 +2,7 @@ import { FC } from 'react';
 import { MemberCard } from './member-card';
 import { useMembers } from '../../hooks/use-members';
 import { MemberCardProps } from './member-card';
+import Link from 'next/link';
 
 type MembersListProps = {
   page: number;
@@ -9,6 +10,7 @@ type MembersListProps = {
   membersProp?: MemberCardProps[];
   isLoadingProp?: boolean;
   minimize?: boolean;
+  basePath?: string;
 };
 
 export const MembersList: FC<MembersListProps> = ({
@@ -17,6 +19,7 @@ export const MembersList: FC<MembersListProps> = ({
   membersProp,
   isLoadingProp,
   minimize,
+  basePath,
 }) => {
   const { members, isLoading } = useMembers({
     page,
@@ -25,12 +28,18 @@ export const MembersList: FC<MembersListProps> = ({
   return (
     <div className="member-list w-full">
       {(membersProp ? membersProp : members).map((member, index) => (
-        <MemberCard
-          minimize={minimize}
-          key={index}
-          {...member}
-          isLoading={isLoading}
-        />
+        <Link
+          href={`${basePath}/${member.slug}`}
+          key={`${member.nickname} ${index}`}
+          scroll={false}
+        >
+          <MemberCard
+            minimize={minimize ?? false}
+            key={index}
+            {...member}
+            isLoading={isLoading}
+          />
+        </Link>
       ))}
 
       {(isLoading || isLoadingProp) && (

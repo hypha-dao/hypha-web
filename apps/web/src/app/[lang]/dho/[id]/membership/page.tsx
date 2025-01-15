@@ -22,7 +22,7 @@ export default async function MembershipPage(props: PageProps) {
       <NavigationTabs lang={lang} id={id} activeTab="membership" />
       <OuterSpacesSection />
       <InnerSpacesSection basePath={`${basePath}/space`} />
-      <MembersSection />
+      <MembersSection basePath={`${basePath}/person`} />
     </div>
   );
 }

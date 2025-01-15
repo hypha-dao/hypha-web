@@ -1,24 +1,6 @@
 import { data } from './list.mock';
-
-export type MemberItem = {
-  name: string;
-  surname: string;
-  nickname: string;
-  location: string;
-  avatar: string;
-  commitment: number;
-  status: string;
-  isLoading?: boolean;
-};
-
-type PaginationMetadata = {
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
-};
+import { PaginationMetadata } from '../types';
+import { MemberItem } from './types';
 
 type PaginatedResponse<T> = {
   members: T[];

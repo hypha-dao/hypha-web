@@ -11,9 +11,11 @@ import {
 import { Button } from '@hypha-platform/ui';
 import { PlusIcon } from '@radix-ui/react-icons';
 
-type MemberSectionProps = Record<string, never>;
+type MemberSectionProps = {
+  basePath: string;
+};
 
-export const MembersSection: FC<MemberSectionProps> = () => {
+export const MembersSection: FC<MemberSectionProps> = ({ basePath }) => {
   const {
     pages,
     activeFilter,
@@ -45,7 +47,12 @@ export const MembersSection: FC<MemberSectionProps> = () => {
         tabs={filterOptions}
       />
       {Array.from({ length: pages }).map((_, index) => (
-        <MembersList page={index + 1} key={index} activeFilter={activeFilter} />
+        <MembersList
+          basePath={basePath}
+          page={index + 1}
+          key={index}
+          activeFilter={activeFilter}
+        />
       ))}
       <SectionLoadMore
         onClick={loadMore}
