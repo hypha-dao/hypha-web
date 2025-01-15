@@ -76,7 +76,7 @@ export const ProposalHead = ({
           </Skeleton>
 
           <Skeleton height="16px" width="80px" loading={isLoading}>
-            <Text className="text-1 text-gray-500">
+            <Text className="text-1 text-neutral-11">
               {creator?.name} {creator?.surname}
             </Text>
           </Skeleton>

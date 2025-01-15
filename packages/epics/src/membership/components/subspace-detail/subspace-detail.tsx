@@ -56,7 +56,7 @@ export const SubspaceDetail = ({
         src={image ?? ''}
         alt={title ?? ''}
       />
-      <div className="text-2 text-gray-500">{content}</div>
+      <div className="text-2 text-neutral-11">{content}</div>
       <Separator />
       <div className="flex justify-between">
         <div className="text-4 font-medium">Members</div>

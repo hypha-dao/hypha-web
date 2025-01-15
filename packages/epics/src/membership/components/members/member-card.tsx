@@ -76,12 +76,12 @@ export const MemberCard: React.FC<MemberCardProps> = ({
           </Skeleton>
 
           <Skeleton height="16px" width="80px" loading={isLoading}>
-            <Text className="text-1 text-gray-500">@{nickname}</Text>
+            <Text className="text-1 text-neutral-11">@{nickname}</Text>
           </Skeleton>
         </div>
 
         <Skeleton width="96px" height="16px" loading={isLoading}>
-          <div className="flex h-full justify-end items-end text-gray-500">
+          <div className="flex h-full justify-end items-end text-neutral-11">
             <SewingPinFilledIcon className="mr-1" />
             <Text className="text-1">{location}</Text>
           </div>

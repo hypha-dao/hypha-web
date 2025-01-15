@@ -69,7 +69,7 @@ export const MemberHead = ({
           </Skeleton>
 
           <Skeleton height="16px" width="80px" loading={isLoading}>
-            <Text className="text-1 text-gray-500">@{nickname}</Text>
+            <Text className="text-1 text-neutral-11">@{nickname}</Text>
           </Skeleton>
         </div>
       </div>

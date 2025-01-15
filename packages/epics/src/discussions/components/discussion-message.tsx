@@ -77,7 +77,7 @@ export const DiscussionMessage = ({
             loading={isLoading}
             className="rounded-lg mr-2 mt-2"
           >
-            <div className="text-gray-500 font-normal text-1 mt-1">
+            <div className="text-neutral-11 font-normal text-1 mt-1">
               {message}
             </div>
           </Skeleton>

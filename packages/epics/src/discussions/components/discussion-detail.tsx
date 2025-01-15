@@ -59,7 +59,7 @@ export const DiscussionDetail = ({
         loading={isLoading}
         className="rounded-lg"
       >
-        <div className="text-2 text-gray-500">{content}</div>
+        <div className="text-2 text-neutral-11">{content}</div>
       </Skeleton>
       <div className="flex w-full justify-end">
         <Skeleton

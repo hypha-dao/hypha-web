@@ -102,7 +102,7 @@ export const CardOrganisation: React.FC<DaoCardProps> = ({
           width="100%"
           height="26px"
         >
-          <div className="flex flex-grow text-1 text-gray-500 mb-4 line-clamp-3">
+          <div className="flex flex-grow text-1 text-neutral-11 mb-4 line-clamp-3">
             {description}
           </div>
         </Skeleton>
@@ -110,13 +110,13 @@ export const CardOrganisation: React.FC<DaoCardProps> = ({
           <div className="flex">
             <Skeleton loading={isLoading} height="16px" width="80px">
               <div className="font-bold text-1">{members}</div>
-              <div className="text-gray-500 ml-1 text-1">Members</div>
+              <div className="text-neutral-11 ml-1 text-1">Members</div>
             </Skeleton>
           </div>
           <div className="flex ml-3">
             <Skeleton loading={isLoading} height="16px" width="80px">
               <div className="font-bold text-1">{agreements}</div>
-              <div className="text-gray-500 ml-1 text-1">Agreements</div>
+              <div className="text-neutral-11 ml-1 text-1">Agreements</div>
             </Skeleton>
           </div>
         </div>

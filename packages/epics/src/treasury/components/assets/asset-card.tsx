@@ -50,7 +50,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
             </Text>
           </Skeleton>
           <Skeleton width="80px" height="16px" loading={isLoading}>
-            <Text className="text-1 text-gray-500">{symbol}</Text>
+            <Text className="text-1 text-neutral-11">{symbol}</Text>
           </Skeleton>
         </div>
       </div>

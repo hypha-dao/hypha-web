@@ -63,7 +63,7 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
           </Skeleton>
         </div>
 
-        <div className="flex flex-grow text-1 text-gray-500 mb-4">
+        <div className="flex flex-grow text-1 text-neutral-11 mb-4">
           <Skeleton width="200px" height="48px" loading={isLoading}>
             <div className="line-clamp-3">{description}</div>
           </Skeleton>

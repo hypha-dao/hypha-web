@@ -9,7 +9,7 @@ const amountVariants = cva('', {
   variants: {
     variant: {
       default: 'text-3',
-      ghost: 'text-gray-500 text-1',
+      ghost: 'text-neutral-11 text-1',
     },
     size: {
       default: 'text-lg',

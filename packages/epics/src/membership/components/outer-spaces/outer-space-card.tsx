@@ -69,7 +69,7 @@ export const OuterSpaceCard: React.FC<OuterSpaceCardProps> = ({
           </Skeleton>
         </div>
 
-        <div className="flex flex-grow text-1 text-gray-500 mb-4">
+        <div className="flex flex-grow text-1 text-neutral-11 mb-4">
           <Skeleton width="328px" height="28px" loading={isLoading}>
             <div className="line-clamp-3">{description}</div>
           </Skeleton>
@@ -86,7 +86,7 @@ export const OuterSpaceCard: React.FC<OuterSpaceCardProps> = ({
               loading={isLoading}
               className="ml-1"
             >
-              <div className="text-gray-500 ml-1">Members</div>
+              <div className="text-neutral-11 ml-1">Members</div>
             </Skeleton>
           </div>
 
@@ -100,7 +100,7 @@ export const OuterSpaceCard: React.FC<OuterSpaceCardProps> = ({
               loading={isLoading}
               className="ml-1"
             >
-              <div className="text-gray-500 ml-1">Projects</div>
+              <div className="text-neutral-11 ml-1">Projects</div>
             </Skeleton>
           </div>
         </div>

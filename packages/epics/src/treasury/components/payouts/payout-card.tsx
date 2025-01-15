@@ -65,13 +65,13 @@ export const PayoutCard: React.FC<PayoutCardProps> = ({
             loading={isLoading}
             className="my-1"
           >
-            <Text className="text-1 text-gray-500">
+            <Text className="text-1 text-neutral-11">
               {name} {surname}
             </Text>
           </Skeleton>
         </div>
         <Skeleton width="96px" height="16px" loading={isLoading}>
-          <div className="flex h-full justify-end items-end text-gray-500">
+          <div className="flex h-full justify-end items-end text-neutral-11">
             <CalendarIcon className="mr-1" />
             <Text className="text-1">{date ? formatDate(date) : null}</Text>
           </div>

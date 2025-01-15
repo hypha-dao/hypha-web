@@ -68,7 +68,7 @@ export const AgreementHead = ({
           </Skeleton>
 
           <Skeleton height="16px" width="80px" loading={isLoading}>
-            <Text className="text-xs text-gray-500">
+            <Text className="text-xs text-neutral-11">
               {creator?.name} {creator?.surname}
             </Text>
           </Skeleton>
