@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { AgreementItem } from '@hypha-platform/graphql/rsc';
 
 export const useMemberDetails = (agreements: AgreementItem[]) => {
@@ -9,21 +9,27 @@ export const useMemberDetails = (agreements: AgreementItem[]) => {
 
   const agreementsPerPage = 4;
 
-  const filteredAgreements = agreements.filter((agreement) =>
-    activeFilter === 'all' ? true : agreement.status === activeFilter
+  const filteredAgreements = useMemo(() => {
+    return agreements.filter((agreement) =>
+      activeFilter === 'all' ? true : agreement.status === activeFilter
+    );
+  }, [agreements, activeFilter]);
+
+  const paginatedAgreements = useMemo(() => {
+    return filteredAgreements.slice(0, pages * agreementsPerPage);
+  }, [filteredAgreements, pages]);
+
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredAgreements.length / agreementsPerPage);
+  }, [filteredAgreements]);
+
+  const pagination = useMemo(
+    () => ({
+      totalPages,
+      hasNextPage: pages < totalPages,
+    }),
+    [totalPages, pages]
   );
-
-  const paginatedAgreements = filteredAgreements.slice(
-    0,
-    pages * agreementsPerPage
-  );
-
-  const totalPages = Math.ceil(filteredAgreements.length / agreementsPerPage);
-
-  const pagination = {
-    totalPages,
-    hasNextPage: pages < totalPages,
-  };
 
   const loadMore = useCallback(() => {
     if (!pagination.hasNextPage) return;
