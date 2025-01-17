@@ -12,25 +12,15 @@ type AgreementsListProps = {
 export const AgreementsList: FC<AgreementsListProps> = ({
   basePath,
   agreements,
-  isLoading
+  isLoading,
 }) => {
   return (
     <div className="agreement-list w-full">
-      {agreements?.map(
-        (agreement, index) => (
-          <Link
-            href={`${basePath}/${agreement.slug}`}
-            key={index}
-            scroll={false}
-          >
-            <AgreementCard
-              key={index}
-              {...agreement}
-              isLoading={false}
-            />
-          </Link>
-        )
-      )}
+      {agreements?.map((agreement, index) => (
+        <Link href={`${basePath}/${agreement.slug}`} key={index} scroll={false}>
+          <AgreementCard key={index} {...agreement} isLoading={false} />
+        </Link>
+      ))}
       {isLoading ? (
         <div>
           <AgreementCard isLoading={isLoading} />
