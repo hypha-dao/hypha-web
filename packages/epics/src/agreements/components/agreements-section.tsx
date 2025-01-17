@@ -1,8 +1,9 @@
 'use client';
+
 import { FC } from 'react';
 import { AgreementsList } from './agreements-list';
 import { Text } from '@radix-ui/themes';
-import { useAgreementsSection } from '../hooks/use-agreements-section';
+import { useAgreements } from '../hooks/use-agreements';
 import {
   SectionFilter,
   SectionLoadMore,
@@ -15,15 +16,19 @@ type AgreementsSectionProps = {
 
 export const AgreementsSection: FC<AgreementsSectionProps> = ({ basePath }) => {
   const {
-    pages,
+    agreements,
+    pagination,
+    isLoading,
     activeFilter,
     setActiveFilter,
-    isLoading,
+    pages,
     loadMore,
-    pagination,
     sortOptions,
     filterOptions,
-  } = useAgreementsSection();
+  } = useAgreements({
+    page: 1,
+    filter: 'all',
+  });
 
   return (
     <div className="flex flex-col w-full justify-center items-center">
@@ -39,17 +44,16 @@ export const AgreementsSection: FC<AgreementsSectionProps> = ({ basePath }) => {
         setActiveTab={setActiveFilter}
         tabs={filterOptions}
       />
-      {Array.from({ length: pages }).map((_, index) => (
-        <AgreementsList
-          page={index + 1}
-          key={index}
-          activeFilter={activeFilter}
-          basePath={basePath}
-        />
-      ))}
+
+      <AgreementsList
+        agreements={agreements}
+        basePath={basePath}
+        isLoading={isLoading}
+      />
+
       <SectionLoadMore
         onClick={loadMore}
-        disabled={pagination?.totalPages === pages}
+        disabled={pagination?.totalPages === pages || isLoading}
         isLoading={isLoading}
       >
         <Text>

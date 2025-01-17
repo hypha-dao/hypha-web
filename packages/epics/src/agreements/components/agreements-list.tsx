@@ -1,30 +1,36 @@
 import { FC } from 'react';
+import { AgreementItem } from '@hypha-platform/graphql/rsc';
 import { AgreementCard } from './agreement-card';
-import { useAgreements } from '../hooks/use-agreements';
 import Link from 'next/link';
 
 type AgreementsListProps = {
-  page: number;
-  activeFilter: string;
   basePath: string;
+  agreements?: AgreementItem[];
+  isLoading?: boolean;
 };
 
 export const AgreementsList: FC<AgreementsListProps> = ({
-  page,
-  activeFilter,
   basePath,
+  agreements,
+  isLoading
 }) => {
-  const { agreements, isLoading } = useAgreements({
-    page,
-    ...(activeFilter !== 'all' && { filter: { status: activeFilter } }),
-  });
   return (
     <div className="agreement-list w-full">
-      {agreements.map((agreement, index) => (
-        <Link href={`${basePath}/${agreement.slug}`} key={index} scroll={false}>
-          <AgreementCard key={index} {...agreement} isLoading={isLoading} />
-        </Link>
-      ))}
+      {agreements?.map(
+        (agreement, index) => (
+          <Link
+            href={`${basePath}/${agreement.slug}`}
+            key={index}
+            scroll={false}
+          >
+            <AgreementCard
+              key={index}
+              {...agreement}
+              isLoading={false}
+            />
+          </Link>
+        )
+      )}
       {isLoading ? (
         <div>
           <AgreementCard isLoading={isLoading} />
