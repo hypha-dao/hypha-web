@@ -10,6 +10,7 @@ import { Lato, Source_Sans_3 } from 'next/font/google';
 import clsx from 'clsx';
 import { ButtonProfile } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
+import { IPFSProvider } from '@hypha-platform/ipfs';
 
 const lato = Lato({
   subsets: ['latin'],
@@ -51,33 +52,35 @@ export default async function RootLayout({
         enableSystem
         disableTransitionOnChange
       >
-        <MenuTop
-          withLogo={true}
-          navItems={[
-            {
-              label: 'Network',
-              href: `/${lang}/network`,
-            },
-            {
-              label: 'My Spaces',
-              href: `/${lang}/my-spaces`,
-            },
-            {
-              label: 'Wallet',
-              href: `/${lang}/wallet`,
-            },
-          ]}
-        >
-          <MenuTop.RightSlot>
-            <ButtonProfile
-              avatarSrc="https://images.unsplash.com/photo-1544005313-94ddf0286df2?&w=64&h=64&dpr=2&q=70&crop=faces&fit=crop"
-              userName="Jane Doe"
-            />
-          </MenuTop.RightSlot>
-        </MenuTop>
-        <div className="pt-9 w-screen">{children}</div>
-        {modal}
-        <Footer />
+        <IPFSProvider>
+          <MenuTop
+            withLogo={true}
+            navItems={[
+              {
+                label: 'Network',
+                href: `/${lang}/network`,
+              },
+              {
+                label: 'My Spaces',
+                href: `/${lang}/my-spaces`,
+              },
+              {
+                label: 'Wallet',
+                href: `/${lang}/wallet`,
+              },
+            ]}
+          >
+            <MenuTop.RightSlot>
+              <ButtonProfile
+                avatarSrc="https://images.unsplash.com/photo-1544005313-94ddf0286df2?&w=64&h=64&dpr=2&q=70&crop=faces&fit=crop"
+                userName="Jane Doe"
+              />
+            </MenuTop.RightSlot>
+          </MenuTop>
+          <div className="pt-9 w-screen">{children}</div>
+          {modal}
+          <Footer />
+        </IPFSProvider>
       </ThemeProvider>
     </Html>
   );
