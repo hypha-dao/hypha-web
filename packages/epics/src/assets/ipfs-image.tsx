@@ -1,24 +1,24 @@
 'use client';
 
-import Image from 'next/image';
 import { useIPFSFile } from '@hypha-platform/ipfs';
+import { Image } from '@hypha-platform/ui';
 
 interface IPFSImageProps {
-  src: string;
+  cid: string;
   alt?: string;
   width?: number;
   height?: number;
   className?: string;
 }
 
-export default function IPFSImage({
-  src,
+export function IPFSImage({
+  cid,
   alt = '',
   width = 400,
   height = 400,
   className,
 }: IPFSImageProps) {
-  const { srcUrl, isLoading, error } = useIPFSFile(src);
+  const { srcUrl, isLoading, error } = useIPFSFile(cid);
 
   if (isLoading) {
     return (
@@ -40,7 +40,7 @@ export default function IPFSImage({
             ? error.message
             : 'Failed to load image from IPFS'}
         </p>
-        <p className="text-xs text-gray-400 mt-1">CID: {src}</p>
+        <p className="text-xs text-gray-400 mt-1">CID: {cid}</p>
       </div>
     );
   }

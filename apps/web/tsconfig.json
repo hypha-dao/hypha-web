@@ -29,7 +29,8 @@
     ".next/types/**/*.ts",
     "../../packages/i18n/src/get-dictionaries.ts",
     "../../packages/i18n/src/i18n-config.ts",
-    "../../packages/i18n/src/middleware.ts"
+    "../../packages/i18n/src/middleware.ts",
+    "../../packages/epics/src/assets/ipfs-image.tsx"
   ],
   "exclude": ["node_modules", "jest.config.ts", "**/*.spec.ts", "**/*.test.ts"]
 }

@@ -81,7 +81,7 @@ export const useIPFSFile = (cid: string | null): UseIPFSFileResult => {
     error,
     isLoading,
     mutate,
-  } = useSWR(cid, fetcher, {
+  } = useSWR(isConnected ? cid : null, fetcher, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     dedupingInterval: 1000 * 60 * 60, // 1 hour

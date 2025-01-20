@@ -1,5 +1,6 @@
 import type { StorybookConfig } from '@storybook/react-vite';
 
+import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { mergeConfig } from 'vite';
 import svgr from 'vite-plugin-svgr';
@@ -23,7 +24,16 @@ const config: StorybookConfig = {
   viteFinal: async (config) =>
     mergeConfig(config, {
       plugins: [nxViteTsPaths(), svgr()],
-      define: { 'process.env': {} },
+      define: {
+        'process.env': {
+          NEXT_PUBLIC_IPFS_HOST: process.env.NEXT_PUBLIC_IPFS_HOST,
+          NEXT_PUBLIC_IPFS_PORT: process.env.NEXT_PUBLIC_IPFS_PORT,
+          NEXT_PUBLIC_IPFS_PROTOCOL: process.env.NEXT_PUBLIC_IPFS_PROTOCOL,
+          NEXT_PUBLIC_IPFS_PROJECT_ID: process.env.NEXT_PUBLIC_IPFS_PROJECT_ID,
+          NEXT_PUBLIC_IPFS_PROJECT_SECRET:
+            process.env.NEXT_PUBLIC_IPFS_PROJECT_SECRET,
+        },
+      },
     }),
 };
 

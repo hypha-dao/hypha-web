@@ -1,7 +1,7 @@
 import { Locale } from '@hypha-platform/i18n';
 import Link from 'next/link';
 import { Button } from '@hypha-platform/ui';
-import IPFSImage from './ipfs-image';
+import { IPFSImage } from '@hypha-platform/epics';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -24,7 +24,7 @@ export default async function Index(props: PageProps) {
         </Button>
       </div>
       <IPFSImage
-        src="Qmf5r8wKfCSXps1477uk4Y77upcui31btsuZ4dHLfqN6Jj"
+        cid="Qmf5r8wKfCSXps1477uk4Y77upcui31btsuZ4dHLfqN6Jj"
         alt="IPFS Image"
         width={300}
         height={300}
