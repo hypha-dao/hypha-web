@@ -22,7 +22,7 @@ export const useAgreements = ({
   filter?: FilterParams;
 }): UseAgreementsReturn => {
   const { data, isLoading } = useSWR(['agreements', page, filter], () =>
-    fetchAgreements({ page, filter }),
+    fetchAgreements({ page, filter })
   );
 
   return {

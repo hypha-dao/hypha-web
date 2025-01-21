@@ -5,7 +5,7 @@ import { provider } from '../provider';
 export const spaceFactoryContract = new ethers.Contract(
   process.env.DAO_SPACE_FACTORY_ADDRESS!,
   spaceFactoryAbi,
-  provider,
+  provider
 );
 
 export const isMember = async (spaceId: number, userAddress: string) => {

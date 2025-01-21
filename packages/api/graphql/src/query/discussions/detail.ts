@@ -2,7 +2,7 @@ import { data } from './list.mock';
 import { DiscussionItem } from './types';
 
 export const getDiscussionBySlug = async (
-  slug: string,
+  slug: string
 ): Promise<DiscussionItem | undefined> => {
   return new Promise((resolve) => {
     setTimeout(() => {

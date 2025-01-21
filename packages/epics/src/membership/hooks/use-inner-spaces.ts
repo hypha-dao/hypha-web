@@ -22,7 +22,7 @@ export const useInnerSpaces = ({
   sort?: SortParams;
 }): UseInnerSpacesReturn => {
   const { data, isLoading } = useSWR(['innerSpaces', page, sort], () =>
-    fetchInnerSpaces({ page, sort }),
+    fetchInnerSpaces({ page, sort })
   );
 
   return {

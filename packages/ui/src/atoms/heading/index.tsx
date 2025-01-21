@@ -60,7 +60,7 @@ const Heading = React.forwardRef<HTMLHeadingElement, HeadingProps>(
       children,
       ...props
     },
-    ref,
+    ref
   ) => {
     const Comp = asChild ? Slot : 'div';
     return (
@@ -72,7 +72,7 @@ const Heading = React.forwardRef<HTMLHeadingElement, HeadingProps>(
         {children}
       </Comp>
     );
-  },
+  }
 );
 
 Heading.displayName = 'Heading';

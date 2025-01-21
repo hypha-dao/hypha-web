@@ -2,7 +2,7 @@ import { data } from './list.mock';
 import { AgreementItem } from './types';
 
 export const getAgreementBySlug = async (
-  slug: string,
+  slug: string
 ): Promise<AgreementItem | undefined> => {
   return new Promise((resolve) => {
     setTimeout(() => {

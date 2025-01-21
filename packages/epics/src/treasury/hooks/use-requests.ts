@@ -23,7 +23,7 @@ export const useRequests = ({
   sort?: SortParams;
 }): UseRequestsReturn => {
   const { data, isLoading } = useSWR(['requests', page, sort], () =>
-    fetchRequests({ page, sort }),
+    fetchRequests({ page, sort })
   );
 
   return {

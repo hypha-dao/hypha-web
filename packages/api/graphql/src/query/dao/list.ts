@@ -41,7 +41,7 @@ const toDaoList = (data: DaoListQuery) => {
       invariant(dao.memberAggregate, 'Expected non-null DAO member aggregate');
       invariant(
         dao.proposalAggregate,
-        'Expected non-null DAO proposal aggregate',
+        'Expected non-null DAO proposal aggregate'
       );
       return {
         id: dao.docId,

@@ -22,7 +22,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             'placeholder:text-muted-foreground placeholder:text-2 placeholder:text-medium',
             leftIcon && 'pl-12',
             rightIcon && 'pr-12',
-            className,
+            className
           )}
           ref={ref}
           {...props}
@@ -34,7 +34,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         )}
       </div>
     );
-  },
+  }
 );
 Input.displayName = 'Input';
 

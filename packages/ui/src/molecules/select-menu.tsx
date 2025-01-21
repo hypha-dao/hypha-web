@@ -29,7 +29,7 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
             variant === 'default',
           'text-sm bg-transparent text-violet9 border-none hover:bg-transparent':
             variant === 'ghost',
-        },
+        }
       )}
       aria-label="Food"
     >
@@ -60,7 +60,7 @@ export const SelectItem = React.forwardRef<
     <Select.Item
       className={clsx(
         'text-[13px] leading-none text-violet11 rounded-[3px] flex items-center h-[25px] pr-[35px] pl-[25px] relative select-none data-[disabled]:text-mauve8 data-[disabled]:pointer-events-none data-[highlighted]:outline-none data-[highlighted]:bg-violet9 data-[highlighted]:text-violet1',
-        className,
+        className
       )}
       {...props}
       ref={forwardedRef}

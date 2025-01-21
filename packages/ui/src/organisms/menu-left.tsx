@@ -22,7 +22,7 @@ export const MenuLeft = ({
       id="menu-left"
       className={clsx(
         'fixed top-0 left-0 h-full flex flex-col w-20 items-center py-4 space-y-8 bg-background-2',
-        className,
+        className
       )}
     >
       <div id="active-dao">

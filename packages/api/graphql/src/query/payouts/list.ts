@@ -53,7 +53,7 @@ export const fetchPayouts = async ({
       const totalPages = Math.ceil(total / pageSize);
       const totalValue = payouts.reduce(
         (sum, payout) => sum + (payout.value || 0),
-        0,
+        0
       );
 
       resolve({

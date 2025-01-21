@@ -2,7 +2,7 @@ import { data } from './list.mock';
 import { InnerSpaceType } from './types';
 
 export const getSubspaceBySlug = async (
-  slug: string,
+  slug: string
 ): Promise<InnerSpaceType | undefined> => {
   return new Promise((resolve) => {
     setTimeout(() => {

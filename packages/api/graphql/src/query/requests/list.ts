@@ -54,7 +54,7 @@ export const fetchRequests = async ({
       const totalPages = Math.ceil(total / pageSize);
       const totalValue = requests.reduce(
         (sum, request) => sum + (request.value || 0),
-        0,
+        0
       );
 
       resolve({

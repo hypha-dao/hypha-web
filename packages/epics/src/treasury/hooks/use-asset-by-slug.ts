@@ -5,7 +5,7 @@ import useSWR from 'swr';
 
 export const useAssetBySlug = (slug: string) => {
   const { data, isLoading } = useSWR(['asset-by-slug', slug], ([_, slug]) =>
-    getAssetBySlug(slug),
+    getAssetBySlug(slug)
   );
   return { data, isLoading };
 };

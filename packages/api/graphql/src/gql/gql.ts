@@ -22,13 +22,13 @@ const documents = {
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-  source: '\n  query activeDao($regexp: String!) {\n    queryDao @cascade(fields: ["settings"]) {\n      docId\n      details_daoName_n\n\n      settings(filter: { settings_daoUrl_s: { regexp: $regexp } }) {\n        settings_daoDescription_s\n        settings_daoTitle_s\n        settings_daoName_n\n        settings_logo_s\n        settings_primaryColor_s\n        settings_secondaryColor_s\n      }\n    }\n  }\n',
+  source: '\n  query activeDao($regexp: String!) {\n    queryDao @cascade(fields: ["settings"]) {\n      docId\n      details_daoName_n\n\n      settings(filter: { settings_daoUrl_s: { regexp: $regexp } }) {\n        settings_daoDescription_s\n        settings_daoTitle_s\n        settings_daoName_n\n        settings_logo_s\n        settings_primaryColor_s\n        settings_secondaryColor_s\n      }\n    }\n  }\n'
 ): typeof import('./graphql').ActiveDaoDocument;
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-  source: '\n  query daoList(\n    $order: DaoOrder\n    $filter: DaoFilter\n    $first: Int!\n    $offset: Int!\n  ) {\n    queryDao(order: $order, filter: $filter, first: $first, offset: $offset) {\n      docId\n      details_daoName_n\n      createdDate\n\n      settings {\n        settings_daoDescription_s\n        settings_daoTitle_s\n        settings_daoName_n\n        settings_logo_s\n        settings_primaryColor_s\n        settings_secondaryColor_s\n        settings_daoUrl_s\n      }\n      memberAggregate {\n        count\n      }\n      proposalAggregate {\n        count\n      }\n    }\n  }\n',
+  source: '\n  query daoList(\n    $order: DaoOrder\n    $filter: DaoFilter\n    $first: Int!\n    $offset: Int!\n  ) {\n    queryDao(order: $order, filter: $filter, first: $first, offset: $offset) {\n      docId\n      details_daoName_n\n      createdDate\n\n      settings {\n        settings_daoDescription_s\n        settings_daoTitle_s\n        settings_daoName_n\n        settings_logo_s\n        settings_primaryColor_s\n        settings_secondaryColor_s\n        settings_daoUrl_s\n      }\n      memberAggregate {\n        count\n      }\n      proposalAggregate {\n        count\n      }\n    }\n  }\n'
 ): typeof import('./graphql').DaoListDocument;
 
 export function graphql(source: string) {

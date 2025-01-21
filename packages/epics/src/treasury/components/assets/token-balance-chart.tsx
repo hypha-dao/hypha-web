@@ -37,7 +37,7 @@ const sortOptions = [
 const filterLast6Months = (data: OneChartPoint[]) => {
   const currentDate = new Date();
   const sixMonthsAgo = new Date(
-    currentDate.setMonth(currentDate.getMonth() - 6),
+    currentDate.setMonth(currentDate.getMonth() - 6)
   );
 
   return data.filter((item) => new Date(item.date) >= sixMonthsAgo);

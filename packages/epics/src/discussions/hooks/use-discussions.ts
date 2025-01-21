@@ -19,7 +19,7 @@ export const useDiscussions = ({
   filter,
 }: PaginationParams): UseDiscussionsReturn => {
   const { data, isLoading } = useSWR(['discussions', page, filter], () =>
-    fetchDiscussions({ page, filter }),
+    fetchDiscussions({ page, filter })
   );
 
   return {

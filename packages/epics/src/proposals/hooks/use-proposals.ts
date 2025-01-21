@@ -22,7 +22,7 @@ export const useProposals = ({
   filter?: FilterParams;
 }): UseProposalsReturn => {
   const { data, isLoading } = useSWR(['proposals', page, filter], () =>
-    fetchProposals({ page, filter }),
+    fetchProposals({ page, filter })
   );
 
   return {

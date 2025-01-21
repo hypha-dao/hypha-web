@@ -23,7 +23,7 @@ export const usePayouts = ({
   filter?: FilterParams;
 }): UsePayoutsReturn => {
   const { data, isLoading } = useSWR(['payouts', page, filter], () =>
-    fetchPayouts({ page, filter }),
+    fetchPayouts({ page, filter })
   );
 
   return {

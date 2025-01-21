@@ -22,7 +22,7 @@ export const useMembers = ({
   filter?: FilterParams;
 }): UseMembersReturn => {
   const { data, isLoading } = useSWR(['members', page, filter], () =>
-    fetchMembers({ page, filter }),
+    fetchMembers({ page, filter })
   );
 
   return {

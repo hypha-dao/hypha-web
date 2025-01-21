@@ -15,7 +15,7 @@ export function buildConfig(appDir: string): Config {
     content: [
       join(
         appDir,
-        '{src,pages,components,app}/**/*!(*.stories|*.spec).{ts,tsx,html}',
+        '{src,pages,components,app}/**/*!(*.stories|*.spec).{ts,tsx,html}'
       ),
       '../../packages/ui/src/**/*!(*.stories|*.spec).{ts,tsx,html}',
       '../../packages/epics/src/**/*!(*.stories|*.spec).{ts,tsx,html}',

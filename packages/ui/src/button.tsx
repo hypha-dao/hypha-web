@@ -100,7 +100,7 @@ const buttonVariants = cva(
         className: 'text-error-11 hover:bg-error-3 hover:text-error-12',
       },
     ],
-  },
+  }
 );
 
 export interface ButtonProps
@@ -116,13 +116,13 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <Comp
         className={cn(
-          buttonVariants({ variant, size, className, colorVariant }),
+          buttonVariants({ variant, size, className, colorVariant })
         )}
         ref={ref}
         {...rest}
       />
     );
-  },
+  }
 );
 Button.displayName = 'Button';
 

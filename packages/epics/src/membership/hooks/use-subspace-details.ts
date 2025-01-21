@@ -10,7 +10,7 @@ export const useSubspaceDetails = (members: MemberCardProps[]) => {
   const membersPerPage = 4;
 
   const filteredMembers = members.filter((member) =>
-    activeFilter === 'all' ? true : member.status === activeFilter,
+    activeFilter === 'all' ? true : member.status === activeFilter
   );
 
   const paginatedMembers = filteredMembers.slice(0, pages * membersPerPage);

@@ -22,7 +22,7 @@ export const useOuterSpaces = ({
   sort?: SortParams;
 }): UseOuterSpacesReturn => {
   const { data, isLoading } = useSWR(['outerSpaces', page, sort], () =>
-    fetchOuterSpaces({ page, sort }),
+    fetchOuterSpaces({ page, sort })
   );
 
   return {

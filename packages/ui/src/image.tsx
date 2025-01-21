@@ -7,7 +7,7 @@ export let Image = NextImage;
 const UnoptimizedImage = forwardRef<HTMLImageElement, ImageProps>(
   function Image(props, ref) {
     return <NextImage ref={ref} {...props} unoptimized />;
-  },
+  }
 ) as typeof NextImage;
 
 /**

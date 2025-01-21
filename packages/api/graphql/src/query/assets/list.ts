@@ -26,7 +26,7 @@ export const fetchAssets = async ({
       const totalPages = Math.ceil(total / pageSize);
       const balance = assets.reduce(
         (sum, asset) => sum + (asset.usdEqual || 0),
-        0,
+        0
       );
 
       resolve({

@@ -15,7 +15,7 @@ export default async function AssignmentsPage(props: PageProps) {
 
   const createAssignmentPat = PATH_ASSIGNMENTS_CREATE.replace(
     PATH_SEGMENT_LANG,
-    lang,
+    lang
   ).replace(PATH_SEGMENT_DHO_ID, id);
   console.debug('AssignmentsPage', { createAssignmentPat });
   return <AssignmentsGraph />;

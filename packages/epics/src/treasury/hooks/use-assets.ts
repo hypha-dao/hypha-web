@@ -23,7 +23,7 @@ export const useAssets = ({
   filter?: FilterParams;
 }): UseAssetsReturn => {
   const { data, isLoading } = useSWR(['assets', page, filter], () =>
-    fetchAssets({ page, filter }),
+    fetchAssets({ page, filter })
   );
 
   return {
