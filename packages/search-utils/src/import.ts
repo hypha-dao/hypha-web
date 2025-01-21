@@ -3,7 +3,7 @@ import { client } from './client';
 // Fetch and index objects in Algolia
 const processRecords = async () => {
   const datasetRequest = await fetch(
-    'https://dashboard.algolia.com/sample_datasets/movie.json'
+    'https://dashboard.algolia.com/sample_datasets/movie.json',
   );
   const movies = await datasetRequest.json();
   return await client.saveObjects({
