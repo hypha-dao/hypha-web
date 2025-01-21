@@ -6,7 +6,7 @@ const twMerge = extendTailwindMerge({
     classGroups: {
       'font-size': [
         {
-          text: ['1', '2', '3', '4', '5', '6', '7', '8', '9'],
+          text: ['xs', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
         },
       ],
     },
@@ -16,3 +16,7 @@ const twMerge = extendTailwindMerge({
 export const cn = function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 };
+
+export function prefix(prefix: string, classes: string[]): string {
+  return classes.map((cls) => `${prefix}${cls}`).join(' ');
+}

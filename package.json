@@ -58,6 +58,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "commander": "^13.1.0",
+    "cmdk": "^1.0.0",
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.38.4",
     "drizzle-seed": "^0.3.1",
