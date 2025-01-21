@@ -55,6 +55,7 @@
     "@web3auth/ethereum-provider": "^9.5.2",
     "@web3auth/modal": "^9.5.2",
     "@web3auth/modal-react-hooks": "^9.5.2",
+    "algoliasearch": "^5.19.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "commander": "^13.1.0",
