@@ -1,0 +1,17 @@
+.cmdGroupHeading [cmdk-group-heading] {
+  height: var(--line-height-8);
+  padding-left: var(--spacing-1);
+  padding-right: var(--spacing-1);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: hsl(var(--muted-foreground));
+  text-align: center;
+  display: flex;
+  align-items: center;
+}
+
+.cmdItem [cmdk-item] {
+  height: var(--line-height-8);
+  padding-left: var(--spacing-1);
+  padding-right: var(--spacing-1);
+}

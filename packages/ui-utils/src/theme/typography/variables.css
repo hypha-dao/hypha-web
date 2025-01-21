@@ -29,6 +29,7 @@
   --font-size-8: 3.5rem;
   --font-size-9: 6rem;
 
+  --font-size-xs: var(--font-size-1);
   --font-size-sm: var(--font-size-2);
   --font-size-base: var(--font-size-3);
   --font-size-lg: var(--font-size-4);
