@@ -5,7 +5,6 @@ import { db } from '../db';
 
 export class PostgresSpaceConfigRepository implements SpaceConfigRepository {
   async findBySpaceSlug(spaceSlug: string): Promise<SpaceConfig | null> {
-    console.debug('findBySpaceSlug', { spaceSlug });
     const [result] = await db
       .select()
       .from(spaceConfigs)

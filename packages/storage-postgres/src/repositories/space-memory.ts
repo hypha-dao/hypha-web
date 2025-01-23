@@ -1,12 +1,12 @@
 import { Space, SpaceRepository } from '@hypha-platform/model';
 
 export class MemorySpaceRepository implements SpaceRepository {
-  async findById(id: string): Promise<Space | null> {
+  async findById(id: number): Promise<Space | null> {
     return {
       id,
-      slug: 'test',
-      title: 'Test',
-      description: 'Test',
+      slug: 'mock-space-from-memory',
+      title: 'Mock Space from Memory',
+      description: 'Mock Space from Memory',
       logoUrl: 'https://example.com/logo.png',
       leadImage: 'https://example.com/lead-image.png',
     };
@@ -14,10 +14,10 @@ export class MemorySpaceRepository implements SpaceRepository {
 
   async findBySlug(slug: string): Promise<Space | null> {
     return {
-      id: '1',
+      id: 1,
       slug,
-      title: 'Test',
-      description: 'Test',
+      title: 'Mock Space from Memory',
+      description: 'Mock Space from Memory',
       logoUrl: 'https://example.com/logo.png',
       leadImage: 'https://example.com/lead-image.png',
     };

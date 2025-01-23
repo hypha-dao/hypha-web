@@ -1,9 +1,4 @@
-import {
-  CoreConfig,
-  CreateSpaceInput,
-  getScopedContainer,
-  UpdateSpaceInput,
-} from '@hypha-platform/core';
+import { CoreConfig, getScopedContainer } from '@hypha-platform/core';
 import { SpaceService } from '@hypha-platform/core';
 
 const config: CoreConfig = {
@@ -15,16 +10,7 @@ const config: CoreConfig = {
   },
 };
 
-export async function createSpace(input: CreateSpaceInput) {
-  'use server';
-
-  const container = await getScopedContainer(config);
-  const spaceService = new SpaceService(container);
-
-  return spaceService.create(input);
-}
-
-export async function readSpaceById(id: string) {
+export async function readSpaceById(id: number) {
   'use server';
 
   const container = await getScopedContainer(config);
@@ -40,13 +26,4 @@ export async function readSpaceBySlug(slug: string) {
   const spaceService = new SpaceService(container);
 
   return spaceService.getBySlug(slug);
-}
-
-export async function updateSpace(id: string, input: UpdateSpaceInput) {
-  'use server';
-
-  const container = await getScopedContainer(config);
-  const spaceService = new SpaceService(container);
-
-  return spaceService.update(id, input);
 }

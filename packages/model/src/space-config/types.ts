@@ -6,6 +6,6 @@ export interface SpaceConfig {
     member?: 'postgres' | 'memory';
     comment?: 'postgres' | 'memory';
   };
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt?: Date | null;
+  updatedAt?: Date | null;
 }

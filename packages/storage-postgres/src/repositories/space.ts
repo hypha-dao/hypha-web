@@ -4,7 +4,7 @@ import { db } from '../db';
 import { spaces } from '../schema/space';
 
 export class PostgresSpaceRepository implements SpaceRepository {
-  async findById(id: string): Promise<Space | null> {
+  async findById(id: number): Promise<Space | null> {
     const results = await db.select().from(spaces).where(eq(spaces.id, id));
     return results[0] || null;
   }
