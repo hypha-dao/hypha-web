@@ -1,8 +1,9 @@
 export interface Space {
-  id: number;
+  id: string;
   logoUrl: string;
   leadImage: string;
   title: string;
   description: string;
   slug: string;
+  parentId?: string;
 }

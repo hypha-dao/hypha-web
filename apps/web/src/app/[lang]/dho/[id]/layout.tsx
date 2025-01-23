@@ -26,6 +26,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Carousel, CarouselContent, CarouselItem } from '@hypha-platform/ui';
 import { getDhoPathAgreements } from './constants';
+import { readSpaceBySlug } from '../../../actions/space';
 
 const customLogoStyles: React.CSSProperties = {
   width: '128px',
@@ -49,6 +50,9 @@ export default async function DhoLayout({
   const params = await props.params;
 
   const { id: daoSlug, lang } = params;
+
+  const space = await readSpaceBySlug(daoSlug);
+  console.debug('DhoLayout', { space });
 
   const newtoken = await getAccessToken();
   const dao = await getDaoDetail({ token: newtoken.accessJWT, daoSlug });
