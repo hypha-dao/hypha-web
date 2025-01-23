@@ -1,9 +1,9 @@
 {
-  "name": "model",
+  "name": "core",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "packages/model/src",
+  "sourceRoot": "packages/core/src",
   "projectType": "library",
   "tags": [],
-  "// targets": "to see all targets run: nx show project model --web",
+  "// targets": "to see all targets run: nx show project core --web",
   "targets": {}
 }
