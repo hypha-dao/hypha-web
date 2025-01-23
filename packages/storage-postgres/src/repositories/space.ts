@@ -4,7 +4,7 @@ import { db } from '../db';
 import { spaces } from '../schema/space';
 
 export class PostgresSpaceRepository implements SpaceRepository {
-  async findById(id: string): Promise<Space | null> {
+  async findById(id: number): Promise<Space | null> {
     const results = await db.select().from(spaces).where(eq(spaces.id, id));
     return results[0] || null;
   }
@@ -14,23 +14,18 @@ export class PostgresSpaceRepository implements SpaceRepository {
     return results[0] || null;
   }
 
-  async findChildren(parentId: string): Promise<Space[]> {
-    return db.select().from(spaces).where(eq(spaces.parentId, parentId));
-  }
-
   async create(space: Omit<Space, 'id'>): Promise<Space> {
-    const id = crypto.randomUUID();
     const [created] = await db
       .insert(spaces)
-      .values({ ...space, id })
+      .values({ ...space })
       .returning();
-    return created;
+    return created as Space;
   }
 
-  async update(id: string, space: Partial<Space>): Promise<Space> {
+  async update(id: number, space: Partial<Space>): Promise<Space> {
     const [updated] = await db
       .update(spaces)
-      .set({ ...space, updatedAt: new Date() })
+      .set({ ...space, [spaces.updatedAt.name]: new Date() })
       .where(eq(spaces.id, id))
       .returning();
 
@@ -41,7 +36,7 @@ export class PostgresSpaceRepository implements SpaceRepository {
     return updated;
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: number): Promise<void> {
     await db.delete(spaces).where(eq(spaces.id, id));
   }
 

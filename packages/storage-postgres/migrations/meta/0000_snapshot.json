@@ -1,5 +1,5 @@
 {
-  "id": "79d9ebeb-8ae1-4399-b2aa-c2d9878043ea",
+  "id": "ead2ce84-466e-49d3-ac8d-7c71facf951a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -10,7 +10,7 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "serial",
           "primaryKey": true,
           "notNull": true
         },
@@ -46,9 +46,9 @@
         },
         "parent_id": {
           "name": "parent_id",
-          "type": "text",
+          "type": "serial",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",
