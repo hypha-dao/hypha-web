@@ -1,0 +1,31 @@
+{
+  "name": "storage-postgres",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/storage-postgres/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project storage-postgres --web",
+  "targets": {
+    "generate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "drizzle-kit generate",
+        "cwd": "packages/storage-postgres"
+      }
+    },
+    "push": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "drizzle-kit push",
+        "cwd": "packages/storage-postgres"
+      }
+    },
+    "studio": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "drizzle-kit studio",
+        "cwd": "packages/storage-postgres"
+      }
+    }
+  }
+}
