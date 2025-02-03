@@ -4,6 +4,7 @@ export * from './profile';
 export * from './proposals';
 export * from './agreements';
 export * from './membership';
+export * from './search';
 export * from './treasury';
 export * from './discussions';
 export * from './common/constants';
