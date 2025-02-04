@@ -5,7 +5,7 @@ import {
   MembersSection,
 } from '@hypha-platform/epics';
 import { NavigationTabs } from '../_components/navigation-tabs';
-import { Paths } from 'apps/web/src/app/constants';
+import { Paths } from '@hypha-platform/tools';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;

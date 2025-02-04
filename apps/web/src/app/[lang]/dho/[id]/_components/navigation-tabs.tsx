@@ -1,6 +1,6 @@
 import { Locale } from '@hypha-platform/i18n';
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
-import { Paths } from 'apps/web/src/app/constants';
+import { Paths } from '@hypha-platform/tools';
 import Link from 'next/link';
 
 export function NavigationTabs({

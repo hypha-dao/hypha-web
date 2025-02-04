@@ -2,7 +2,7 @@
 
 import { CreateForm } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
-import { Paths } from 'apps/web/src/app/constants';
+import { Paths } from '@hypha-platform/tools';
 import { useParams } from 'next/navigation';
 
 export default function Discussion() {

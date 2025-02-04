@@ -2,7 +2,7 @@
 
 import { MemberDetail, useMemberBySlug } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
-import { Paths } from 'apps/web/src/app/constants';
+import { Paths } from '@hypha-platform/tools';
 import { useParams } from 'next/navigation';
 import { useSpaces } from 'packages/epics/src/membership/hooks/use-spaces';
 

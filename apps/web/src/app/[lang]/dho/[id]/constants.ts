@@ -1,6 +1,6 @@
 import { Locale } from '@hypha-platform/i18n';
 import { PATH_LANG } from '../../constants';
-import { Paths } from '../../../constants';
+import { Paths } from '@hypha-platform/tools';
 
 export const PATH_SEGMENT_DHO_ID = ':id';
 

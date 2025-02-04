@@ -3,7 +3,7 @@
 import { CreateForm } from '@hypha-platform/epics';
 import { SidePanel } from '../../_components/side-panel';
 import { useParams } from 'next/navigation';
-import { Paths } from 'apps/web/src/app/constants';
+import { Paths } from '@hypha-platform/tools';
 import { Locale } from '@hypha-platform/i18n';
 
 export default function Loading() {

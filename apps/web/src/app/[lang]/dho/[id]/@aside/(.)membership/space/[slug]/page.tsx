@@ -3,7 +3,7 @@
 import { SubspaceDetail, useSubspaceBySlug } from '@hypha-platform/epics';
 import { useParams } from 'next/navigation';
 import { SidePanel } from '../../../_components/side-panel';
-import { Paths } from 'apps/web/src/app/constants';
+import { Paths } from '@hypha-platform/tools';
 import { Locale } from '@hypha-platform/i18n';
 
 type PageProps = {

@@ -4,7 +4,7 @@ import { MemberDetail, useMemberBySlug } from '@hypha-platform/epics';
 import { useParams } from 'next/navigation';
 import { SidePanel } from '../../../_components/side-panel';
 import { useSpaces } from 'packages/epics/src/membership/hooks/use-spaces';
-import { Paths } from 'apps/web/src/app/constants';
+import { Paths } from '@hypha-platform/tools';
 import { Locale } from '@hypha-platform/i18n';
 
 export default function Member() {

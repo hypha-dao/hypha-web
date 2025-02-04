@@ -3,7 +3,7 @@ import { Container } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { SpaceGroupSlider, Search } from '@hypha-platform/epics';
 import { readAllSpaces } from '../actions/space';
-import { Paths } from '../constants';
+import { Paths } from '@hypha-platform/tools';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;

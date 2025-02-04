@@ -3,7 +3,7 @@ import { AssetDetail } from '@hypha-platform/epics';
 import { SidePanel } from '../../../@aside/_components/side-panel';
 import { useAssetBySlug } from '@hypha-platform/epics';
 import { useParams } from 'next/navigation';
-import { Paths } from 'apps/web/src/app/constants';
+import { Paths } from '@hypha-platform/tools';
 import { Locale } from '@hypha-platform/i18n';
 
 export default function Treasury() {

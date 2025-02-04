@@ -2,7 +2,7 @@
 
 import { ProposalDetail, useProposalBySlug } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
-import { Paths } from 'apps/web/src/app/constants';
+import { Paths } from '@hypha-platform/tools';
 import { useParams } from 'next/navigation';
 
 type PageProps = {

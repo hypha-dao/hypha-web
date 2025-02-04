@@ -2,7 +2,7 @@ import { DiscussionDetail } from '@hypha-platform/epics';
 import { getDiscussionBySlug } from '@hypha-platform/graphql/rsc';
 import { getCommentsByDiscussionSlug } from '@hypha-platform/graphql/rsc';
 import { Locale } from '@hypha-platform/i18n';
-import { Paths } from 'apps/web/src/app/constants';
+import { Paths } from '@hypha-platform/tools';
 
 type PageProps = {
   params: Promise<{ slug: string; id: string; lang: string }>;
