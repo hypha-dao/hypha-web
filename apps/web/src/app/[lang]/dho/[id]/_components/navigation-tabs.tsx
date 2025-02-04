@@ -1,5 +1,6 @@
 import { Locale } from '@hypha-platform/i18n';
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
+import { Paths } from 'apps/web/src/app/constants';
 import Link from 'next/link';
 
 export function NavigationTabs({
@@ -21,7 +22,7 @@ export function NavigationTabs({
           variant="ghost"
         >
           <Link
-            href={`/${lang}/dho/${id}/agreements`}
+            href={Paths.dho.agreements(lang as Locale, id as string)}
             className="w-full"
             passHref
           >
@@ -35,7 +36,7 @@ export function NavigationTabs({
           variant="ghost"
         >
           <Link
-            href={`/${lang}/dho/${id}/membership`}
+            href={Paths.dho.membership(lang as Locale, id as string)}
             className="w-full"
             passHref
           >
@@ -49,7 +50,7 @@ export function NavigationTabs({
           variant="ghost"
         >
           <Link
-            href={`/${lang}/dho/${id}/treasury`}
+            href={Paths.dho.treasury(lang as Locale, id as string)}
             className="w-full"
             passHref
           >

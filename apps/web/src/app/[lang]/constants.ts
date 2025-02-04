@@ -1,4 +1,4 @@
-import { PATH_ROOT } from '../constants';
+export const PATH_ROOT = '/';
 
 export const PATH_SEGMENT_LANG = ':lang';
 

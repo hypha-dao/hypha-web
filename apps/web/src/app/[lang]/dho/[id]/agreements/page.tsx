@@ -5,6 +5,7 @@ import {
   ProposalsSection,
 } from '@hypha-platform/epics';
 import { NavigationTabs } from '../_components/navigation-tabs';
+import { Paths } from 'apps/web/src/app/constants';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -15,7 +16,7 @@ export default async function AgreementsPage(props: PageProps) {
 
   const { lang, id } = params;
 
-  const basePath = `/${lang}/dho/${id}`;
+  const basePath = Paths.dho.base;
 
   return (
     <div>

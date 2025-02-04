@@ -1,6 +1,8 @@
 'use client';
 
 import { AgreementDetail, useAgreementBySlug } from '@hypha-platform/epics';
+import { Locale } from '@hypha-platform/i18n';
+import { Paths } from 'apps/web/src/app/constants';
 import { useParams } from 'next/navigation';
 
 type PageProps = {
@@ -13,7 +15,7 @@ export default function Agreements(props: PageProps) {
 
   return (
     <AgreementDetail
-      closeUrl={`/${lang}/dho/${id}/agreements`}
+      closeUrl={Paths.dho.agreements(lang as Locale, id as string)}
       onSetActiveFilter={() => console.log('set active filter')}
       content={data?.content || ''}
       creator={data?.creator}

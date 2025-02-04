@@ -1,6 +1,8 @@
 'use client';
 
 import { SubspaceDetail, useSubspaceBySlug } from '@hypha-platform/epics';
+import { Locale } from '@hypha-platform/i18n';
+import { Paths } from 'apps/web/src/app/constants';
 import { useParams } from 'next/navigation';
 
 type PageProps = {
@@ -13,7 +15,7 @@ export default function Subspace(props: PageProps) {
 
   return (
     <SubspaceDetail
-      closeUrl={`/${lang}/dho/${id}/membership`}
+      closeUrl={Paths.dho.membership(lang as Locale, id as string)}
       title={data?.title}
       image={data?.image}
       content={data?.description}

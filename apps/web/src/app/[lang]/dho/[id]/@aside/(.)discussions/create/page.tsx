@@ -3,6 +3,8 @@
 import { CreateForm } from '@hypha-platform/epics';
 import { SidePanel } from '../../_components/side-panel';
 import { useParams } from 'next/navigation';
+import { Paths } from 'apps/web/src/app/constants';
+import { Locale } from '@hypha-platform/i18n';
 
 export default function Loading() {
   const { id, lang } = useParams();
@@ -16,7 +18,7 @@ export default function Loading() {
           name: 'Name',
           surname: 'Surname',
         }}
-        closeUrl={`/${lang}/dho/${id}/agreements`}
+        closeUrl={Paths.dho.agreements(lang as Locale, id as string)}
         type="Discussion"
       />
     </SidePanel>

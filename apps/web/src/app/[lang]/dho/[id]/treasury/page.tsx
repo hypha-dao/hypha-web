@@ -5,6 +5,7 @@ import {
   RequestsSection,
 } from '@hypha-platform/epics';
 import { NavigationTabs } from '../_components/navigation-tabs';
+import { Paths } from 'apps/web/src/app/constants';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -15,7 +16,7 @@ export default async function TreasuryPage(props: PageProps) {
 
   const { lang, id } = params;
 
-  const basePath = `/${lang}/dho/${id}/treasury`;
+  const basePath = Paths.dho.treasury(lang as Locale, id as string);
 
   return (
     <div>

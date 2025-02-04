@@ -4,6 +4,8 @@ import { MemberDetail, useMemberBySlug } from '@hypha-platform/epics';
 import { useParams } from 'next/navigation';
 import { SidePanel } from '../../../_components/side-panel';
 import { useSpaces } from 'packages/epics/src/membership/hooks/use-spaces';
+import { Paths } from 'apps/web/src/app/constants';
+import { Locale } from '@hypha-platform/i18n';
 
 export default function Member() {
   const { slug, id, lang } = useParams();
@@ -16,7 +18,7 @@ export default function Member() {
   return (
     <SidePanel>
       <MemberDetail
-        closeUrl={`/${lang}/dho/${id}/membership`}
+        closeUrl={Paths.dho.membership(lang as Locale, id as string)}
         member={{
           avatar: data?.avatar,
           name: data?.name,
@@ -27,7 +29,7 @@ export default function Member() {
           about: data?.about,
         }}
         isLoading={isLoading}
-        basePath={`/${lang}/dho/${id}/agreements`}
+        basePath={Paths.dho.agreements(lang as Locale, id as string)}
         spaces={spaces}
       />
     </SidePanel>

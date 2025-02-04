@@ -1,6 +1,8 @@
 import { DiscussionDetail } from '@hypha-platform/epics';
 import { getDiscussionBySlug } from '@hypha-platform/graphql/rsc';
 import { getCommentsByDiscussionSlug } from '@hypha-platform/graphql/rsc';
+import { Locale } from '@hypha-platform/i18n';
+import { Paths } from 'apps/web/src/app/constants';
 
 type PageProps = {
   params: Promise<{ slug: string; id: string; lang: string }>;
@@ -20,7 +22,7 @@ export default async function Agreements(props: PageProps) {
       content={discussion?.content ?? ''}
       image={discussion?.image ?? ''}
       messages={data}
-      closeUrl={`/${lang}/dho/${id}/agreements`}
+      closeUrl={Paths.dho.agreements(lang as Locale, id as string)}
     />
   );
 }

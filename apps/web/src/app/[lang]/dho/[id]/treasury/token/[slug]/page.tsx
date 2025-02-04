@@ -3,6 +3,8 @@ import { AssetDetail } from '@hypha-platform/epics';
 import { SidePanel } from '../../../@aside/_components/side-panel';
 import { useAssetBySlug } from '@hypha-platform/epics';
 import { useParams } from 'next/navigation';
+import { Paths } from 'apps/web/src/app/constants';
+import { Locale } from '@hypha-platform/i18n';
 
 export default function Treasury() {
   const { slug, lang, id } = useParams();
@@ -11,7 +13,7 @@ export default function Treasury() {
   return (
     <SidePanel>
       <AssetDetail
-        closeUrl={`/${lang}/dho/${id}/treasury`}
+        closeUrl={Paths.dho.treasury(lang as Locale, id as string)}
         assetHeadProps={{
           icon: data?.icon ?? '',
           name: data?.name ?? '',

@@ -3,6 +3,7 @@ import { Container } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { SpaceGroupSlider, Search } from '@hypha-platform/epics';
 import { readAllSpaces } from '../actions/space';
+import { Paths } from '../constants';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -14,7 +15,7 @@ export default async function Index(props: PageProps) {
   const { lang } = params;
 
   const getDhoPathAgreements = (id: string) => {
-    return `/${lang}/dho/${id}/agreements`;
+    return Paths.dho.agreements(lang, id);
   };
 
   const spaces = await readAllSpaces();

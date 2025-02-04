@@ -1,6 +1,8 @@
 'use client';
 
 import { MemberDetail, useMemberBySlug } from '@hypha-platform/epics';
+import { Locale } from '@hypha-platform/i18n';
+import { Paths } from 'apps/web/src/app/constants';
 import { useParams } from 'next/navigation';
 import { useSpaces } from 'packages/epics/src/membership/hooks/use-spaces';
 
@@ -14,7 +16,7 @@ export default function Member() {
 
   return (
     <MemberDetail
-      closeUrl={`/${lang}/dho/${id}/membership`}
+      closeUrl={Paths.dho.membership(lang as Locale, id as string)}
       member={{
         avatar: data?.avatar,
         name: data?.name,
@@ -25,7 +27,7 @@ export default function Member() {
         about: data?.about,
       }}
       isLoading={isLoading}
-      basePath={`/${lang}/dho/${id}/agreements`}
+      basePath={Paths.dho.agreements(lang as Locale, id as string)}
       spaces={spaces}
     />
   );
