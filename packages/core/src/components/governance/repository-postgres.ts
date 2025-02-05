@@ -1,7 +1,7 @@
 import { eq, sql } from 'drizzle-orm';
 import { Document, DocumentState } from './types';
 import { DocumentRepository } from './repository';
-import { db, documents } from '@hypha-platform/storage-postgres';
+import { db, documents, NewDocument } from '@hypha-platform/storage-postgres';
 
 export class DocumentRepositoryPostgres implements DocumentRepository {
   private select() {
@@ -38,9 +38,9 @@ export class DocumentRepositoryPostgres implements DocumentRepository {
     return {
       id: row.id,
       creatorId: row.creatorId,
-      title: row.title ?? '',
-      description: row.description ?? '',
-      slug: row.slug ?? '',
+      title: row.title,
+      description: row.description,
+      slug: row.slug,
       state: row.state,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
@@ -70,5 +70,15 @@ export class DocumentRepositoryPostgres implements DocumentRepository {
   async findAll(): Promise<Document[]> {
     const results = await db.select(this.select()).from(documents);
     return results.map(this.mapToDocument);
+  }
+
+  async create(values: NewDocument): Promise<Document> {
+    const [inserted] = await db.insert(documents).values(values).returning();
+    const [result] = await db
+      .select(this.select())
+      .from(documents)
+      .where(eq(documents.id, inserted.id))
+      .limit(1);
+    return this.mapToDocument(result);
   }
 }
