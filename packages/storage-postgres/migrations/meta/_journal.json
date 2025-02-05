@@ -85,6 +85,13 @@
       "when": 1738749155007,
       "tag": "0011_freezing_roughhouse",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1738750584948,
+      "tag": "0012_crazy_energizer",
+      "breakpoints": true
     }
   ]
 }

@@ -70,7 +70,6 @@ async function main() {
         columns: {
           title: f.loremIpsum(),
           description: f.loremIpsum({ sentencesCount: 10 }),
-          state: f.default({ defaultValue: 'discussion' }), // Start all documents in discussion state
         },
       },
       documentDiscussions: {
@@ -84,7 +83,7 @@ async function main() {
         count: 1, // One transition to put it into discussion state
         columns: {
           fromState: f.default({ defaultValue: 'discussion' }),
-          toState: f.default({ defaultValue: 'discussion' }),
+          toState: f.default({ defaultValue: 'proposal' }),
           reason: f.loremIpsum({ sentencesCount: 1 }),
         },
       },

@@ -9,6 +9,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { commonDateFields } from '../shared';
 import { people } from '../people';
+
 export const documentStateEnum = pgEnum('document_state', [
   'discussion',
   'proposal',
@@ -22,10 +23,23 @@ export const documents = pgTable('documents', {
     .references(() => people.id),
   title: text('title'),
   description: text('description'),
-  state: documentStateEnum('state').default('discussion'),
   slug: varchar('slug', { length: 255 }),
   ...commonDateFields,
 });
+
+// Helper function to get current state
+export const getCurrentState = (documentId: number) => sql<
+  (typeof documentStateEnum.enumValues)[number]
+>`
+  SELECT COALESCE(
+    (SELECT dst.to_state
+     FROM document_state_transitions dst
+     WHERE dst.document_id = ${documentId}
+     ORDER BY dst.created_at DESC
+     LIMIT 1),
+    'discussion'
+  )
+`;
 
 export type Document = InferSelectModel<typeof documents>;
 export type NewDocument = InferInsertModel<typeof documents>;
