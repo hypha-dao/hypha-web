@@ -1,0 +1,1 @@
+ALTER TABLE "document_discussions" DROP CONSTRAINT "document_discussions_parent_id_document_discussions_id_fk";
