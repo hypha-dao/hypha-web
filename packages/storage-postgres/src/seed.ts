@@ -3,7 +3,14 @@ import { faker } from '@faker-js/faker';
 
 import { seed, reset } from 'drizzle-seed';
 
-import { people, memberships, spaces, documents } from './schema';
+import {
+  people,
+  memberships,
+  spaces,
+  documents,
+  documentDiscussions,
+  documentStateTransitions,
+} from './schema';
 
 const AVATAR_URLS = Array.from({ length: 10 }, () => faker.image.avatar());
 const SPACE_LOGO_URLS = Array.from({ length: 10 }, () =>
@@ -21,8 +28,26 @@ const SPACE_LEAD_IMAGE_URLS = Array.from({ length: 10 }, () =>
 
 async function main() {
   const db = drizzle(process.env.BRANCH_DB_URL! || process.env.DEFAULT_DB_URL!);
-  await reset(db, { people, memberships, spaces, documents });
-  await seed(db, { people, memberships, spaces, documents }).refine((f) => {
+
+  // Reset all tables
+  await reset(db, {
+    people,
+    memberships,
+    spaces,
+    documents,
+    documentDiscussions,
+    documentStateTransitions,
+  });
+
+  // Seed data
+  await seed(db, {
+    people,
+    memberships,
+    spaces,
+    documents,
+    documentDiscussions,
+    documentStateTransitions,
+  }).refine((f) => {
     return {
       people: {
         // count: 1000,
@@ -45,9 +70,22 @@ async function main() {
         columns: {
           title: f.loremIpsum(),
           description: f.loremIpsum({ sentencesCount: 10 }),
-          state: f.valuesFromArray({
-            values: ['discussion', 'proposal', 'agreement'],
-          }),
+          state: f.default({ defaultValue: 'discussion' }), // Start all documents in discussion state
+        },
+      },
+      documentDiscussions: {
+        count: 5, // Create 5 discussions per document
+        columns: {
+          content: f.loremIpsum({ sentencesCount: 3 }),
+          // parentId will be null for top-level comments
+        },
+      },
+      documentStateTransitions: {
+        count: 1, // One transition to put it into discussion state
+        columns: {
+          fromState: f.default({ defaultValue: 'discussion' }),
+          toState: f.default({ defaultValue: 'discussion' }),
+          reason: f.loremIpsum({ sentencesCount: 1 }),
         },
       },
       spaces: {
