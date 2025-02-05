@@ -7,8 +7,8 @@ import {
   text,
   varchar,
 } from 'drizzle-orm/pg-core';
-import { commonDateFields } from './shared';
-import { people } from './people';
+import { commonDateFields } from '../shared';
+import { people } from '../people';
 export const documentStateEnum = pgEnum('document_state', [
   'discussion',
   'proposal',
