@@ -1,13 +1,26 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { DocumentRepositoryPostgres } from './repository-postgres';
-import { db, documents, people } from '@hypha-platform/storage-postgres';
+import {
+  db,
+  documents,
+  NewDocument,
+  people,
+  type Document,
+} from '@hypha-platform/storage-postgres';
 import { eq } from 'drizzle-orm';
 
 describe('DocumentRepositoryPostgres Integration', () => {
   let repository: DocumentRepositoryPostgres;
-  let testDocumentId: number;
   let testPersonId: number;
   const testEmail = `test-${Date.now()}@example.com`; // Ensure unique email
+
+  let testDocuments: Document[] = [];
+
+  const createDocument = async (values: NewDocument) => {
+    const [document] = await db.insert(documents).values(values).returning();
+    testDocuments.push(document);
+    return document;
+  };
 
   beforeAll(async () => {
     repository = new DocumentRepositoryPostgres();
@@ -24,39 +37,29 @@ describe('DocumentRepositoryPostgres Integration', () => {
 
     testPersonId = person.id;
 
-    // Create a test document with only required fields
-    const [document] = await db
-      .insert(documents)
-      .values({
-        creatorId: testPersonId,
-      })
-      .returning();
-
-    testDocumentId = document.id;
-
-    // Update with optional fields
-    await db
-      .update(documents)
-      .set({
-        title: 'Test Document',
-        description: 'Test Description',
-        slug: 'test-document',
-      } as any)
-      .where(eq(documents.id, testDocumentId));
+    // Create a test document with all fields
+    await createDocument({
+      creatorId: testPersonId,
+      title: 'Test Document',
+      description: 'Test Description',
+      slug: 'test-document',
+    } as NewDocument);
   });
 
   afterAll(async () => {
-    // Clean up only the test data we created
-    if (testDocumentId) {
-      await db.delete(documents).where(eq(documents.id, testDocumentId));
-    }
+    // Clean up test documents
+    testDocuments.forEach(async (document) => {
+      await db.delete(documents).where(eq(documents.id, document.id));
+    });
+
+    // Clean up test person
     if (testPersonId) {
       await db.delete(people).where(eq(people.id, testPersonId));
     }
   });
 
   it('should find a document by id', async () => {
-    const document = await repository.findById(testDocumentId);
+    const document = await repository.findById(testDocuments[0].id);
 
     expect(document).not.toBeNull();
     expect(document?.title).toBe('Test Document');
