@@ -10,6 +10,7 @@ import {
   type NewPerson,
 } from '@hypha-platform/storage-postgres';
 import { eq } from 'drizzle-orm';
+import { before } from 'node:test';
 
 describe('DocumentRepositoryPostgres', () => {
   let repository: DocumentRepositoryPostgres;
@@ -30,7 +31,7 @@ describe('DocumentRepositoryPostgres', () => {
     return document;
   };
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     repository = new DocumentRepositoryPostgres();
 
     // Create a test person
@@ -49,7 +50,7 @@ describe('DocumentRepositoryPostgres', () => {
     } as NewDocument);
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     // Clean up test documents
     for (const document of testDocuments) {
       await db.delete(documents).where(eq(documents.id, document.id));
@@ -77,6 +78,24 @@ describe('DocumentRepositoryPostgres', () => {
     it('should return null when document is not found by id', async () => {
       const nonExistentId = 99999;
       const document = await repository.findById(nonExistentId);
+
+      expect(document).toBeNull();
+    });
+  });
+
+  describe('findBySlug', () => {
+    it('should find a document by slug', async () => {
+      const document = await repository.findBySlug('test-document');
+
+      expect(document).not.toBeNull();
+      expect(document?.title).toBe('Test Document');
+      expect(document?.description).toBe('Test Description');
+      expect(document?.id).toBe(testDocuments[0].id);
+      expect(document?.creatorId).toBe(testPeople[0].id);
+    });
+
+    it('should return null when document is not found by slug', async () => {
+      const document = await repository.findBySlug('non-existent-document');
 
       expect(document).toBeNull();
     });
