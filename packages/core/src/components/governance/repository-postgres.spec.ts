@@ -3,7 +3,7 @@ import { DocumentRepositoryPostgres } from './repository-postgres';
 import {
   db,
   documents,
-  NewDocument,
+  type NewDocument,
   people,
   type Document,
   type Person,
@@ -11,6 +11,7 @@ import {
 } from '@hypha-platform/storage-postgres';
 import { eq } from 'drizzle-orm';
 import { faker } from '@faker-js/faker';
+import { Document as DomainDocument, CreateDocument } from './types';
 
 describe('DocumentRepositoryPostgres', () => {
   let repository: DocumentRepositoryPostgres;
@@ -23,9 +24,7 @@ describe('DocumentRepositoryPostgres', () => {
     return person;
   };
 
-  const createDocument = async (
-    values: Omit<Document, 'id' | 'createdAt' | 'updatedAt'>,
-  ) => {
+  const createDocument = async (values: CreateDocument) => {
     const [document] = await db.insert(documents).values(values).returning();
     testDocuments.push(document);
     return document;
@@ -120,23 +119,31 @@ describe('DocumentRepositoryPostgres', () => {
         email: faker.internet.email(),
       });
 
-      const newDocument = await repository.create({
+      const slug = `new-document-${Date.now()}`;
+      const values: CreateDocument = {
         creatorId: person.id,
         title: 'New Document',
         description: 'New Description',
-        slug: `new-document-${Date.now()}`,
-      } as NewDocument);
-      testDocuments.push(newDocument);
+        slug,
+      };
+      const newDocument = await repository.create(values);
 
       expect(newDocument.id).toBeDefined();
       expect(newDocument.title).toBe('New Document');
       expect(newDocument.description).toBe('New Description');
-      expect(newDocument.slug).toBe(newDocument.slug);
+      expect(newDocument.slug).toBe(slug);
       expect(newDocument.creatorId).toBe(person.id);
 
       // Verify we can find the created document
       const found = await repository.findById(newDocument.id);
       expect(found).toEqual(newDocument);
+
+      // Add to testDocuments for cleanup
+      const [created] = await db
+        .select()
+        .from(documents)
+        .where(eq(documents.id, newDocument.id));
+      testDocuments.push(created);
     });
 
     it('should create a document with only required fields', async () => {
@@ -146,21 +153,27 @@ describe('DocumentRepositoryPostgres', () => {
         email: faker.internet.email(),
       });
 
-      const newDocument = await repository.create({
+      const values: CreateDocument = {
         creatorId: person.id,
-      } as NewDocument);
-
-      testDocuments.push(newDocument);
+      };
+      const newDocument = await repository.create(values);
 
       expect(newDocument.id).toBeDefined();
       expect(newDocument.creatorId).toBe(person.id);
       expect(newDocument.title).toBeNull();
       expect(newDocument.description).toBeNull();
       expect(newDocument.slug).toBeNull();
+
+      // Add to testDocuments for cleanup
+      const [created] = await db
+        .select()
+        .from(documents)
+        .where(eq(documents.id, newDocument.id));
+      testDocuments.push(created);
     });
 
     it('should fail if creatorId is missing', async () => {
-      await expect(repository.create({} as NewDocument)).rejects.toThrow();
+      await expect(repository.create({} as CreateDocument)).rejects.toThrow();
     });
   });
 });

@@ -1,7 +1,9 @@
 import { eq, sql } from 'drizzle-orm';
-import { Document, DocumentState } from './types';
+import { Document, DocumentState, CreateDocument } from './types';
 import { DocumentRepository } from './repository';
-import { db, documents, NewDocument } from '@hypha-platform/storage-postgres';
+import { db, documents } from '@hypha-platform/storage-postgres';
+import { nullToUndefined } from '../../utils';
+import invariant from 'tiny-invariant';
 
 export class DocumentRepositoryPostgres implements DocumentRepository {
   private select() {
@@ -35,11 +37,13 @@ export class DocumentRepositoryPostgres implements DocumentRepository {
     updatedAt: Date;
     state: DocumentState;
   }): Document {
+    // TODO: figure out how to type this correctly on db level
+    invariant(row.slug, 'slug is required');
     return {
       id: row.id,
       creatorId: row.creatorId,
-      title: row.title,
-      description: row.description,
+      title: nullToUndefined(row.title),
+      description: nullToUndefined(row.description),
       slug: row.slug,
       state: row.state,
       createdAt: row.createdAt,
@@ -72,7 +76,7 @@ export class DocumentRepositoryPostgres implements DocumentRepository {
     return results.map(this.mapToDocument);
   }
 
-  async create(values: NewDocument): Promise<Document> {
+  async create(values: CreateDocument): Promise<Document> {
     const [inserted] = await db.insert(documents).values(values).returning();
     const [result] = await db
       .select(this.select())
