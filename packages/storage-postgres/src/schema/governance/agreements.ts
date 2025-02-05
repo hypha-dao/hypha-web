@@ -1,4 +1,4 @@
-import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
+import { InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
 import { integer, pgTable, serial, timestamp } from 'drizzle-orm/pg-core';
 import { commonDateFields } from '../shared';
 import { people } from '../people';
@@ -6,19 +6,18 @@ import { documents } from './document';
 import { agreementStateEnum } from './types';
 
 export const documentAgreements = pgTable('document_agreements', {
-  id: serial('id').primaryKey(),
+  ...commonDateFields,
   documentId: integer('document_id')
     .notNull()
     .references(() => documents.id),
   finalState: agreementStateEnum('final_state').notNull(),
   ratifiedAt: timestamp('ratified_at'),
-  ...commonDateFields,
 });
 
 export const documentAgreementSignatures = pgTable(
   'document_agreement_signatures',
   {
-    id: serial('id').primaryKey(),
+    ...commonDateFields,
     agreementId: integer('agreement_id')
       .notNull()
       .references(() => documentAgreements.id),
@@ -26,7 +25,6 @@ export const documentAgreementSignatures = pgTable(
       .notNull()
       .references(() => people.id),
     signedAt: timestamp('signed_at').notNull().defaultNow(),
-    ...commonDateFields,
   },
 );
 

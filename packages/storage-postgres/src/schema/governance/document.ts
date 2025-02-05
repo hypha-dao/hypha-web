@@ -1,12 +1,5 @@
 import { InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
-import {
-  integer,
-  pgEnum,
-  pgTable,
-  serial,
-  text,
-  varchar,
-} from 'drizzle-orm/pg-core';
+import { integer, pgEnum, pgTable, text, varchar } from 'drizzle-orm/pg-core';
 import { commonDateFields } from '../shared';
 import { people } from '../people';
 
@@ -17,14 +10,13 @@ export const documentStateEnum = pgEnum('document_state', [
 ]);
 
 export const documents = pgTable('documents', {
-  id: serial('id').primaryKey(),
+  ...commonDateFields,
   creatorId: integer('creator_id')
     .notNull()
     .references(() => people.id),
   title: text('title'),
   description: text('description'),
   slug: varchar('slug', { length: 255 }),
-  ...commonDateFields,
 });
 
 // SQL expression to query documents with their current state

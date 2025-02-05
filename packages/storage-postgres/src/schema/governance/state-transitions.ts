@@ -6,7 +6,7 @@ import { documents } from './document';
 import { governanceStateEnum } from './types';
 
 export const documentStateTransitions = pgTable('document_state_transitions', {
-  id: serial('id').primaryKey(),
+  ...commonDateFields,
   documentId: integer('document_id')
     .notNull()
     .references(() => documents.id),
@@ -16,7 +16,6 @@ export const documentStateTransitions = pgTable('document_state_transitions', {
     .notNull()
     .references(() => people.id),
   reason: text('reason'),
-  ...commonDateFields,
 });
 
 export type DocumentStateTransition = InferSelectModel<

@@ -7,14 +7,13 @@ import { spaces } from './space';
 export const memberships = pgTable(
   'memberships',
   {
-    id: serial('id').primaryKey(),
+    ...commonDateFields,
     personId: integer('person_id')
       .notNull()
       .references(() => people.id),
     spaceId: integer('space_id')
       .notNull()
       .references(() => spaces.id),
-    ...commonDateFields,
   },
   (table) => [
     uniqueIndex('person_space_idx').on(table.personId, table.spaceId),

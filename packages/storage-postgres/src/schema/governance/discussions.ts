@@ -1,11 +1,16 @@
-import { InferInsertModel, InferSelectModel, relations } from 'drizzle-orm';
+import {
+  InferInsertModel,
+  InferSelectModel,
+  relations,
+  sql,
+} from 'drizzle-orm';
 import { integer, pgTable, serial, text } from 'drizzle-orm/pg-core';
 import { commonDateFields } from '../shared';
 import { people } from '../people';
 import { documents } from './document';
 
 export const documentDiscussions = pgTable('document_discussions', {
-  id: serial('id').primaryKey(),
+  ...commonDateFields,
   documentId: integer('document_id')
     .notNull()
     .references(() => documents.id),
@@ -14,7 +19,6 @@ export const documentDiscussions = pgTable('document_discussions', {
     .notNull()
     .references(() => people.id),
   content: text('content').notNull(),
-  ...commonDateFields,
 });
 
 export const documentDiscussionsRelations = relations(

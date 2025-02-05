@@ -1,4 +1,4 @@
-import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
+import { InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
 import {
   integer,
   pgTable,
@@ -13,20 +13,19 @@ import { documents } from './document';
 import { voteTypeEnum } from './types';
 
 export const documentProposals = pgTable('document_proposals', {
-  id: serial('id').primaryKey(),
+  ...commonDateFields,
   documentId: integer('document_id')
     .notNull()
     .references(() => documents.id),
   votingStartsAt: timestamp('voting_starts_at').notNull(),
   votingEndsAt: timestamp('voting_ends_at').notNull(),
   minVotesRequired: integer('min_votes_required').notNull(),
-  ...commonDateFields,
 });
 
 export const documentVotes = pgTable(
   'document_votes',
   {
-    id: serial('id').primaryKey(),
+    ...commonDateFields,
     proposalId: integer('proposal_id')
       .notNull()
       .references(() => documentProposals.id),
@@ -35,7 +34,6 @@ export const documentVotes = pgTable(
       .references(() => people.id),
     vote: voteTypeEnum('vote').notNull(),
     comment: text('comment'),
-    ...commonDateFields,
   },
   (table) => [
     {
