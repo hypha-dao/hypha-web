@@ -15,7 +15,7 @@ import { Document as DomainDocument, CreateDocument } from './types';
 
 describe('DocumentRepositoryPostgres', () => {
   let repository: DocumentRepositoryPostgres;
-  let testDocuments: Document[] = [];
+  let testDocuments: (Document | DomainDocument)[] = [];
   let testPeople: Person[] = [];
 
   const createPerson = async (values: NewPerson) => {
@@ -34,7 +34,7 @@ describe('DocumentRepositoryPostgres', () => {
     repository = new DocumentRepositoryPostgres();
   });
 
-  afterEach(async () => {
+  afterAll(async () => {
     // Clean up test documents first (they reference people)
     for (const document of testDocuments) {
       await db.delete(documents).where(eq(documents.id, document.id));
@@ -127,6 +127,7 @@ describe('DocumentRepositoryPostgres', () => {
         slug,
       };
       const newDocument = await repository.create(values);
+      testDocuments.push(newDocument);
 
       expect(newDocument.id).toBeDefined();
       expect(newDocument.title).toBe('New Document');
@@ -137,13 +138,6 @@ describe('DocumentRepositoryPostgres', () => {
       // Verify we can find the created document
       const found = await repository.findById(newDocument.id);
       expect(found).toEqual(newDocument);
-
-      // Add to testDocuments for cleanup
-      const [created] = await db
-        .select()
-        .from(documents)
-        .where(eq(documents.id, newDocument.id));
-      testDocuments.push(created);
     });
 
     it('should create a document with only required fields', async () => {
@@ -155,21 +149,17 @@ describe('DocumentRepositoryPostgres', () => {
 
       const values: CreateDocument = {
         creatorId: person.id,
+        // TODO: improve slug type
+        slug: `test-document-${Date.now()}`,
       };
       const newDocument = await repository.create(values);
+      testDocuments.push(newDocument);
 
       expect(newDocument.id).toBeDefined();
       expect(newDocument.creatorId).toBe(person.id);
-      expect(newDocument.title).toBeNull();
-      expect(newDocument.description).toBeNull();
-      expect(newDocument.slug).toBeNull();
-
-      // Add to testDocuments for cleanup
-      const [created] = await db
-        .select()
-        .from(documents)
-        .where(eq(documents.id, newDocument.id));
-      testDocuments.push(created);
+      expect(newDocument.title).toBeUndefined();
+      expect(newDocument.description).toBeUndefined();
+      expect(newDocument.slug).toBe(values.slug);
     });
 
     it('should fail if creatorId is missing', async () => {
