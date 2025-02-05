@@ -11,7 +11,7 @@ import {
 } from '@hypha-platform/storage-postgres';
 import { eq } from 'drizzle-orm';
 
-describe('DocumentRepositoryPostgres Integration', () => {
+describe('DocumentRepositoryPostgres', () => {
   let repository: DocumentRepositoryPostgres;
   const testEmail = `test-${Date.now()}@example.com`; // Ensure unique email
 
@@ -63,20 +63,22 @@ describe('DocumentRepositoryPostgres Integration', () => {
     testPeople = [];
   });
 
-  it('should find a document by id', async () => {
-    const document = await repository.findById(testDocuments[0].id);
+  describe('findById', () => {
+    it('should find a document by id', async () => {
+      const document = await repository.findById(testDocuments[0].id);
 
-    expect(document).not.toBeNull();
-    expect(document?.title).toBe('Test Document');
-    expect(document?.description).toBe('Test Description');
-    expect(document?.slug).toBe('test-document');
-    expect(document?.creatorId).toBe(testPeople[0].id);
-  });
+      expect(document).not.toBeNull();
+      expect(document?.title).toBe('Test Document');
+      expect(document?.description).toBe('Test Description');
+      expect(document?.slug).toBe('test-document');
+      expect(document?.creatorId).toBe(testPeople[0].id);
+    });
 
-  it('should return null when document is not found by id', async () => {
-    const nonExistentId = 99999;
-    const document = await repository.findById(nonExistentId);
+    it('should return null when document is not found by id', async () => {
+      const nonExistentId = 99999;
+      const document = await repository.findById(nonExistentId);
 
-    expect(document).toBeNull();
+      expect(document).toBeNull();
+    });
   });
 });
