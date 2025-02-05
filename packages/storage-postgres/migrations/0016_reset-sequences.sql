@@ -1,0 +1,10 @@
+SELECT setval('document_state_transitions_id_seq', (SELECT MAX(id) FROM document_state_transitions));
+SELECT setval('document_discussions_id_seq', (SELECT MAX(id) FROM document_discussions));
+SELECT setval('document_proposals_id_seq', (SELECT MAX(id) FROM document_proposals));
+SELECT setval('document_votes_id_seq', (SELECT MAX(id) FROM document_votes));
+SELECT setval('document_agreement_signatures_id_seq', (SELECT MAX(id) FROM document_agreement_signatures));
+SELECT setval('document_agreements_id_seq', (SELECT MAX(id) FROM document_agreements));
+SELECT setval('documents_id_seq', (SELECT MAX(id) FROM documents));
+SELECT setval('memberships_id_seq', (SELECT MAX(id) FROM memberships));
+SELECT setval('people_id_seq', (SELECT MAX(id) FROM people));
+SELECT setval('spaces_id_seq', (SELECT MAX(id) FROM spaces));
