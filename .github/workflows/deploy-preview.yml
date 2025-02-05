@@ -96,6 +96,76 @@ jobs:
         id: deploy
         run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }}) >> $GITHUB_OUTPUT
 
+<<<<<<< HEAD
+=======
+      - name: Comment URL to PR
+        uses: actions/github-script@v6
+        id: comment-deployment-url-script
+        with:
+          script: |
+            // Get pull requests that are open for current ref.
+            const pullRequests = await github.rest.pulls.list({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                head: `${context.repo.owner}:${context.ref.replace('refs/heads/', '')}`
+            })
+
+            // Set issue number for following calls from context (if on pull request event) or from above variable.
+            const issueNumber = context.issue.number || pullRequests.data[0].number
+
+            // Retrieve existing bot comments for the PR
+            const {data: comments} = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+            })
+            const botComment = comments.find(comment => {
+                return comment.user.type === 'Bot' && comment.body.includes('The latest updates on your projects')
+            })
+
+            const previewUrl = '${{ steps.deploy.outputs.preview_url }}'
+            const projectName = context.repo.repo
+            const currentTime = new Date().toLocaleString('en-US', {
+                timeZone: 'UTC',
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            })
+
+            const tableHeader = '| Name | Status | Preview | Comments | Updated (UTC) |'
+            const tableDivider = '| :--- | :----- | :------ | :------- | :------ |'
+            const tableRow = `| **${projectName}** | ✅ Ready ([Inspect](${previewUrl})) | [Visit Preview](${previewUrl}) | 💬 [**Add feedback**](https://vercel.live/open-feedback/${previewUrl.split('//')[1]}?via=pr-comment-feedback-link) | ${currentTime} |`
+
+            const output = [
+                '**The latest updates on your projects**. Learn more about [Vercel for Git ↗︎](https://vercel.link/github-learn-more)',
+                '',
+                tableHeader,
+                tableDivider,
+                tableRow
+            ].join('\n')
+
+            // If we have a comment, update it, otherwise create a new one
+            if (botComment) {
+                github.rest.issues.updateComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    comment_id: botComment.id,
+                    body: output
+                })
+            } else {
+                github.rest.issues.createComment({
+                    issue_number: issueNumber,
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    body: output
+                })
+            }
+
+>>>>>>> b2525b1 (feat(#287): Governance Entities Interface)
   main:
     needs: [deploy-preview, detect-changes]
     runs-on: ubuntu-latest
