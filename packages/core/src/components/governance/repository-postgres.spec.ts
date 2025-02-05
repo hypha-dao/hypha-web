@@ -6,15 +6,23 @@ import {
   NewDocument,
   people,
   type Document,
+  type Person,
+  type NewPerson,
 } from '@hypha-platform/storage-postgres';
 import { eq } from 'drizzle-orm';
 
 describe('DocumentRepositoryPostgres Integration', () => {
   let repository: DocumentRepositoryPostgres;
-  let testPersonId: number;
   const testEmail = `test-${Date.now()}@example.com`; // Ensure unique email
 
   let testDocuments: Document[] = [];
+  let testPeople: Person[] = [];
+
+  const createPerson = async (values: NewPerson) => {
+    const [person] = await db.insert(people).values(values).returning();
+    testPeople.push(person);
+    return person;
+  };
 
   const createDocument = async (values: NewDocument) => {
     const [document] = await db.insert(documents).values(values).returning();
@@ -25,21 +33,16 @@ describe('DocumentRepositoryPostgres Integration', () => {
   beforeAll(async () => {
     repository = new DocumentRepositoryPostgres();
 
-    // Create a test person first
-    const [person] = await db
-      .insert(people)
-      .values({
-        name: 'Test',
-        surname: 'User',
-        email: testEmail,
-      })
-      .returning();
-
-    testPersonId = person.id;
+    // Create a test person
+    const person = await createPerson({
+      name: 'Test',
+      surname: 'User',
+      email: testEmail,
+    });
 
     // Create a test document with all fields
     await createDocument({
-      creatorId: testPersonId,
+      creatorId: person.id,
       title: 'Test Document',
       description: 'Test Description',
       slug: 'test-document',
@@ -48,14 +51,16 @@ describe('DocumentRepositoryPostgres Integration', () => {
 
   afterAll(async () => {
     // Clean up test documents
-    testDocuments.forEach(async (document) => {
+    for (const document of testDocuments) {
       await db.delete(documents).where(eq(documents.id, document.id));
-    });
-
-    // Clean up test person
-    if (testPersonId) {
-      await db.delete(people).where(eq(people.id, testPersonId));
     }
+    testDocuments = [];
+
+    // Clean up test people
+    for (const person of testPeople) {
+      await db.delete(people).where(eq(people.id, person.id));
+    }
+    testPeople = [];
   });
 
   it('should find a document by id', async () => {
@@ -65,7 +70,7 @@ describe('DocumentRepositoryPostgres Integration', () => {
     expect(document?.title).toBe('Test Document');
     expect(document?.description).toBe('Test Description');
     expect(document?.slug).toBe('test-document');
-    expect(document?.creatorId).toBe(testPersonId);
+    expect(document?.creatorId).toBe(testPeople[0].id);
   });
 
   it('should return null when document is not found by id', async () => {
