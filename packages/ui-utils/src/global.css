@@ -11,6 +11,7 @@
 @import './theme/colors/neutral.css';
 @import './theme/colors/success.css';
 @import './theme/colors/warning.css';
+@import './theme/colors/charts.css';
 
 @import './theme/tokens/color.css';
 @import './theme/tokens/space.css';
