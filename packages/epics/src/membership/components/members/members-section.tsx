@@ -25,6 +25,7 @@ export const MembersSection: FC<MemberSectionProps> = ({ basePath }) => {
     pagination,
     sortOptions,
     filterOptions,
+    members,
   } = useMembersSection();
 
   return (
@@ -32,7 +33,7 @@ export const MembersSection: FC<MemberSectionProps> = ({ basePath }) => {
       <SectionFilter
         value={activeFilter}
         onChange={setActiveFilter}
-        count={pagination?.total || 0}
+        count={members?.length || 0}
         label="Members"
         sortOptions={sortOptions}
       >
