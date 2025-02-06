@@ -1,4 +1,6 @@
-:root, .light, .light-theme {
+:root,
+.light,
+.light-theme {
   --gray-1: 0deg 0% 98.8%;
   --gray-2: 0deg 0% 97.6%;
   --gray-3: 0deg 0% 94.1%;
@@ -12,7 +14,8 @@
   --gray-11: 0deg 0% 39.2%;
   --gray-12: 0deg 0% 12.5%;
 }
-.dark, .dark-theme {
+.dark,
+.dark-theme {
   --gray-1: 0deg 0% 6.7%;
   --gray-2: 0deg 0% 9.8%;
   --gray-3: 0deg 0% 13.3%;
