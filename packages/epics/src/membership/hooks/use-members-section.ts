@@ -10,7 +10,7 @@ export const useMembersSection = () => {
   const [activeFilter, setActiveFilter] = React.useState('all');
   const [pages, setPages] = React.useState(1);
 
-  const { isLoading, pagination, members } = useMembers({
+  const { isLoading, pagination } = useMembers({
     ...(activeFilter !== 'all' && { filter: { status: activeFilter } }),
   });
 
@@ -33,6 +33,5 @@ export const useMembersSection = () => {
     setActiveFilter,
     sortOptions,
     filterOptions,
-    members,
   };
 };

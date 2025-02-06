@@ -25,7 +25,6 @@ export const MembersSection: FC<MemberSectionProps> = ({ basePath }) => {
     pagination,
     sortOptions,
     filterOptions,
-    members,
   } = useMembersSection();
 
   return (
@@ -33,7 +32,7 @@ export const MembersSection: FC<MemberSectionProps> = ({ basePath }) => {
       <SectionFilter
         value={activeFilter}
         onChange={setActiveFilter}
-        count={members?.length || 0}
+        count={pagination?.total || 0}
         label="Members"
         sortOptions={sortOptions}
       >
@@ -42,14 +41,14 @@ export const MembersSection: FC<MemberSectionProps> = ({ basePath }) => {
           Invite member
         </Button>
       </SectionFilter>
-      {members?.length === 0 ? null : (
+      {pagination?.total === 0 ? null : (
         <SectionTabs
           activeTab={activeFilter}
           setActiveTab={setActiveFilter}
           tabs={filterOptions}
         />
       )}
-      {members?.length === 0 ? (
+      {pagination?.total === 0 ? (
         <Text className="text-neutra-11 mt-2 mb-6">List is empty</Text>
       ) : (
         Array.from({ length: pages }).map((_, index) => (
@@ -61,7 +60,7 @@ export const MembersSection: FC<MemberSectionProps> = ({ basePath }) => {
           />
         ))
       )}
-      {members?.length === 0 ? null : (
+      {pagination?.total === 0 ? null : (
         <SectionLoadMore
           onClick={loadMore}
           disabled={pagination?.totalPages === pages}
