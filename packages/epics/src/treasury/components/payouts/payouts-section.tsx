@@ -33,25 +33,37 @@ export const PayoutsSection: FC<PayoutSectionProps> = () => {
         label="Payouts"
         sortOptions={sortOptions}
       />
-      <SectionTabs
-        activeTab={activeFilter}
-        setActiveTab={setActiveFilter}
-        tabs={filterOptions}
-      />
-      {Array.from({ length: pages }).map((_, index) => (
-        <PayoutsList page={index + 1} key={index} activeFilter={activeFilter} />
-      ))}
-      <SectionLoadMore
-        onClick={loadMore}
-        disabled={pagination?.totalPages === pages}
-        isLoading={isLoading}
-      >
-        <Text>
-          {pagination?.totalPages === pages
-            ? 'No more payouts'
-            : 'Load more payouts'}
-        </Text>
-      </SectionLoadMore>
+      {pagination?.totalPages === 0 ? null : (
+        <SectionTabs
+          activeTab={activeFilter}
+          setActiveTab={setActiveFilter}
+          tabs={filterOptions}
+        />
+      )}
+      {pagination?.totalPages === 0 ? (
+        <Text className="text-neutral-11 mt-2 mb-6">List is empty</Text>
+      ) : (
+        Array.from({ length: pages }).map((_, index) => (
+          <PayoutsList
+            page={index + 1}
+            key={index}
+            activeFilter={activeFilter}
+          />
+        ))
+      )}
+      {pagination?.totalPages === 0 ? null : (
+        <SectionLoadMore
+          onClick={loadMore}
+          disabled={pagination?.totalPages === pages}
+          isLoading={isLoading}
+        >
+          <Text>
+            {pagination?.totalPages === pages
+              ? 'No more payouts'
+              : 'Load more payouts'}
+          </Text>
+        </SectionLoadMore>
+      )}
     </div>
   );
 };
