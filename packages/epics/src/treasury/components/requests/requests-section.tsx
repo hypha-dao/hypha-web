@@ -35,20 +35,26 @@ export const RequestsSection: FC<RequestsSectionProps> = () => {
           Payout Request
         </Button>
       </SectionFilter>
-      {Array.from({ length: pages }).map((_, index) => (
-        <RequestsList page={index + 1} key={index} activeSort={activeSort} />
-      ))}
-      <SectionLoadMore
-        onClick={loadMore}
-        disabled={pagination?.totalPages === pages}
-        isLoading={isLoading}
-      >
-        <Text>
-          {pagination?.totalPages === pages
-            ? 'No more requests'
-            : 'Load more requests'}
-        </Text>
-      </SectionLoadMore>
+      {pagination?.totalPages === 0 ? (
+        <Text className="text-neutral-11 mt-2 mb-6">List is empty</Text>
+      ) : (
+        Array.from({ length: pages }).map((_, index) => (
+          <RequestsList page={index + 1} key={index} activeSort={activeSort} />
+        ))
+      )}
+      {pagination?.totalPages === 0 ? null : (
+        <SectionLoadMore
+          onClick={loadMore}
+          disabled={pagination?.totalPages === pages}
+          isLoading={isLoading}
+        >
+          <Text>
+            {pagination?.totalPages === pages
+              ? 'No more requests'
+              : 'Load more requests'}
+          </Text>
+        </SectionLoadMore>
+      )}
     </div>
   );
 };
