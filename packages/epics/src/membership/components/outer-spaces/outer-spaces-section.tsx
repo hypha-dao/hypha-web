@@ -35,10 +35,10 @@ export const OuterSpacesSection: FC<OuterSpacesSectionProps> = () => {
           Invite space
         </Button>
       </SectionFilter>
-      {Array.from({ length: pages }).map((_, index) => (
+      {pagination?.totalPages === 0 ? <Text className="text-neutral-11 mt-2 mb-6">List is empty</Text> : Array.from({ length: pages }).map((_, index) => (
         <OuterSpacesList page={index + 1} key={index} activeSort={activeSort} />
       ))}
-      <SectionLoadMore
+      {pagination?.totalPages === 0 ? null : <SectionLoadMore
         onClick={loadMore}
         disabled={pagination?.totalPages === pages}
         isLoading={isLoading}
@@ -48,7 +48,7 @@ export const OuterSpacesSection: FC<OuterSpacesSectionProps> = () => {
             ? 'No more outer spaces'
             : 'Load more outer spaces'}
         </Text>
-      </SectionLoadMore>
+      </SectionLoadMore>}
     </div>
   );
 };
