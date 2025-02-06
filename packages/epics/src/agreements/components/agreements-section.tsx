@@ -34,12 +34,12 @@ export const AgreementsSection: FC<AgreementsSectionProps> = ({ basePath }) => {
         label="Agreements"
         sortOptions={sortOptions}
       />
-      <SectionTabs
+      {pagination?.totalPages === 0 ? null : <SectionTabs
         activeTab={activeFilter}
         setActiveTab={setActiveFilter}
         tabs={filterOptions}
-      />
-      {Array.from({ length: pages }).map((_, index) => (
+      />}
+      {pagination?.totalPages === 0 ? <Text className='text-neutral-11 mt-2 mb-6'>List is empty</Text> : Array.from({ length: pages }).map((_, index) => (
         <AgreementsList
           page={index + 1}
           key={index}
@@ -47,7 +47,7 @@ export const AgreementsSection: FC<AgreementsSectionProps> = ({ basePath }) => {
           basePath={basePath}
         />
       ))}
-      <SectionLoadMore
+      {pagination?.totalPages === 0 ? null : <SectionLoadMore
         onClick={loadMore}
         disabled={pagination?.totalPages === pages}
         isLoading={isLoading}
@@ -57,7 +57,7 @@ export const AgreementsSection: FC<AgreementsSectionProps> = ({ basePath }) => {
             ? 'No more agreements'
             : 'Load more agreements'}
         </Text>
-      </SectionLoadMore>
+      </SectionLoadMore>}
     </div>
   );
 };
