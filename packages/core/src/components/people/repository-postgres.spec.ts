@@ -36,7 +36,6 @@ describe('PeopleRepositoryPostgres', () => {
       const result = await peopleRepository.findAll({
         pagination: { page: 1, pageSize: 2 },
       });
-      console.debug(result);
 
       // Assert
       expect(result.data).toHaveLength(2);

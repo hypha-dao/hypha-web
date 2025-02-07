@@ -8,44 +8,33 @@ import {
   type Document,
   type Person,
   type NewPerson,
+  schema,
 } from '@hypha-platform/storage-postgres';
 import { eq } from 'drizzle-orm';
 import { faker } from '@faker-js/faker';
+import { seed, reset } from 'drizzle-seed';
 import { Document as DomainDocument, CreateDocument } from './types';
 
 describe('DocumentRepositoryPostgres', () => {
   let repository: DocumentRepositoryPostgres;
-  let testDocuments: (Document | DomainDocument)[] = [];
-  let testPeople: Person[] = [];
 
   const createPerson = async (values: NewPerson) => {
     const [person] = await db.insert(people).values(values).returning();
-    testPeople.push(person);
     return person;
   };
 
   const createDocument = async (values: CreateDocument) => {
     const [document] = await db.insert(documents).values(values).returning();
-    testDocuments.push(document);
     return document;
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     repository = new DocumentRepositoryPostgres();
+    await reset(db, schema);
   });
 
   afterAll(async () => {
-    // Clean up test documents first (they reference people)
-    for (const document of testDocuments) {
-      await db.delete(documents).where(eq(documents.id, document.id));
-    }
-    testDocuments = [];
-
-    // Then clean up test people
-    for (const person of testPeople) {
-      await db.delete(people).where(eq(people.id, person.id));
-    }
-    testPeople = [];
+    await reset(db, schema);
   });
 
   describe('findById', () => {
@@ -127,7 +116,6 @@ describe('DocumentRepositoryPostgres', () => {
         slug,
       };
       const newDocument = await repository.create(values);
-      testDocuments.push(newDocument);
 
       expect(newDocument.id).toBeDefined();
       expect(newDocument.title).toBe('New Document');
@@ -153,7 +141,6 @@ describe('DocumentRepositoryPostgres', () => {
         slug: `test-document-${Date.now()}`,
       };
       const newDocument = await repository.create(values);
-      testDocuments.push(newDocument);
 
       expect(newDocument.id).toBeDefined();
       expect(newDocument.creatorId).toBe(person.id);
