@@ -11,7 +11,7 @@ import {
   documentDiscussions,
   documentStateTransitions,
 } from './schema';
-import { sql } from 'drizzle-orm';
+import { resetIndexes } from './utils/reset-index';
 
 const AVATAR_URLS = Array.from({ length: 10 }, () => faker.image.avatar());
 const SPACE_LOGO_URLS = Array.from({ length: 10 }, () =>
@@ -106,25 +106,7 @@ async function main() {
       },
     };
   });
-
-  const tables = [
-    'document_state_transitions',
-    'document_discussions',
-    'document_proposals',
-    'document_votes',
-    'document_agreement_signatures',
-    'document_agreements',
-    'documents',
-    'memberships',
-    'people',
-    'spaces',
-  ].map(async (table) => {
-    await db.execute(
-      sql`SELECT setval(${table + '_id_seq'}::regclass, COALESCE((SELECT MAX(id) FROM ${sql.identifier(table)}), 1000));`,
-    );
-  });
-
-  await Promise.all(tables);
+  await resetIndexes(db);
 }
 
 main();

@@ -1,66 +1,42 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import {
   db,
-  documents,
-  memberships,
   people,
+  resetIndexes,
+  schema,
 } from '@hypha-platform/storage-postgres';
-import { eq } from 'drizzle-orm';
+import { seed, reset } from 'drizzle-seed';
+
 import { PeopleRepositoryPostgres } from './repository-postgres';
 
 describe('PeopleRepositoryPostgres', () => {
-  const repository = new PeopleRepositoryPostgres(db);
-
-  const peopleToDelete = [];
+  const peopleRepository = new PeopleRepositoryPostgres(db);
 
   beforeEach(async () => {
-    // Delete in correct order to handle foreign key constraints
-    await db.delete(memberships);
-    await db.delete(documents);
-    await db.delete(people);
+    await reset(db, schema);
   });
 
-  // Clean up the database before each test
-  afterAll(async () => {
-    for (const id of peopleToDelete) {
-      // Delete memberships first
-      await db.delete(memberships).where(eq(memberships.personId, id));
-      // Then delete the person
-      await db.delete(people).where(eq(people.id, id));
-    }
-  });
+  // Clean up after all tests
+  afterEach(async () => {});
 
   describe('findAll', () => {
     it('should return paginated results', async () => {
-      // Arrange: Insert test data
-      const testPeople = [
-        {
-          name: 'John',
-          surname: 'Doe',
-          email: 'john@example.com',
-          slug: 'john-doe',
-        },
-        {
-          name: 'Jane',
-          surname: 'Smith',
-          email: 'jane@example.com',
-          slug: 'jane-smith',
-        },
-        {
-          name: 'Bob',
-          surname: 'Johnson',
-          email: 'bob@example.com',
-          slug: 'bob-johnson',
-        },
-      ];
-
-      const dbPeople = await db.insert(people).values(testPeople).returning();
-      peopleToDelete.push(...dbPeople.map((person) => person.id));
+      await seed(db, {
+        people,
+      }).refine((f) => {
+        return {
+          people: {
+            count: 3,
+          },
+        };
+      });
+      await resetIndexes(db);
 
       // Act: Call findAll with pagination
-      const result = await repository.findAll({
+      const result = await peopleRepository.findAll({
         pagination: { page: 1, pageSize: 2 },
       });
+      console.debug(result);
 
       // Assert
       expect(result.data).toHaveLength(2);
@@ -85,7 +61,7 @@ describe('PeopleRepositoryPostgres', () => {
 
     it('should return empty results when no people exist', async () => {
       // Act
-      const result = await repository.findAll({
+      const result = await peopleRepository.findAll({
         pagination: { page: 1, pageSize: 10 },
       });
 
