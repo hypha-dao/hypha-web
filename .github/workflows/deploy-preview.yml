@@ -135,6 +135,12 @@ jobs:
           database: ${{ env.NEON_DATABASE_NAME }}
           api_key: ${{ env.NEON_API_KEY }}
 
+      - name: Run Migrations
+        if: needs.detect-changes.outputs.has_migrations == 'true'
+        run: |
+          echo "BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}" >> .env
+          npx nx run storage-postgres:migrate:production
+
       - run: npx nx affected -t lint test build
         env:
           BRANCH_DB_URL: ${{ needs.create-branch.outputs.db_url_with_pooler }}
