@@ -1,9 +1,3 @@
-export * from './governance';
-export * from './membership';
-export * from './people';
-export * from './space-config';
-export * from './space';
-
 import { memberships } from './membership';
 import { people } from './people';
 import { spaces } from './space';
@@ -13,6 +7,12 @@ import {
   documentAgreementSignatures,
 } from './governance/agreements';
 import { documentProposals } from './governance/proposals';
+
+export * from './governance';
+export * from './membership';
+export * from './people';
+export * from './space-config';
+export * from './space';
 
 export const schema = {
   documentAgreements,
