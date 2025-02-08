@@ -1,4 +1,5 @@
-import { applyMigrations, schema } from '@hypha-platform/storage-postgres';
+import { applyMigrations } from '../migrate';
+import { schema } from '../schema/index';
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Client } from 'pg';
 import { afterAll, afterEach, beforeEach } from 'vitest';
