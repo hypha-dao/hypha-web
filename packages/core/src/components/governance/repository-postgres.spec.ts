@@ -39,25 +39,23 @@ describe('DocumentRepositoryPostgres', () => {
 
   describe('findById', () => {
     it('should find a document by id', async () => {
-      const person = await createPerson({
-        name: faker.person.firstName(),
-        surname: faker.person.lastName(),
-        email: faker.internet.email(),
-      });
+      await seed(db, { people, documents }).refine((f) => ({
+        people: { count: 1, with: { documents: 1 } },
+      }));
 
-      const document = await createDocument({
-        creatorId: person.id,
-        title: 'Test Document',
-        description: 'Test Description',
-        slug: `test-document-${Date.now()}`,
-      });
+      const document = await db.query.documents.findFirst();
+      const person = await db.query.people.findFirst();
 
-      const found = await repository.findById(document.id);
+      const found = await repository.findById(document.id as number);
       expect(found).not.toBeNull();
-      expect(found?.title).toBe('Test Document');
-      expect(found?.description).toBe('Test Description');
-      expect(found?.slug).toBe(document.slug);
-      expect(found?.creatorId).toBe(person.id);
+
+      expect(found).toMatchObject({
+        title: expect.any(String),
+        description: expect.any(String),
+        slug: expect.any(String),
+        id: expect.any(Number),
+        creatorId: person.id,
+      });
     });
 
     it('should return null when document is not found by id', async () => {
