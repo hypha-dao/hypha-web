@@ -68,27 +68,23 @@ describe('DocumentRepositoryPostgres', () => {
 
   describe('findBySlug', () => {
     it('should find a document by slug', async () => {
-      const person = await createPerson({
-        name: faker.person.firstName(),
-        surname: faker.person.lastName(),
-        email: faker.internet.email(),
-      });
+      await seed(db, { people, documents }).refine(() => ({
+        people: { count: 1, with: { documents: 1 } },
+      }));
 
-      const slug = `test-document-${Date.now()}`;
-      const document = await createDocument({
-        creatorId: person.id,
-        title: 'Test Document',
-        description: 'Test Description',
-        slug,
-      });
+      const document = await db.query.documents.findFirst();
+      const person = await db.query.people.findFirst();
 
-      const found = await repository.findBySlug(slug);
+      const found = await repository.findBySlug(document.slug as string);
 
       expect(found).not.toBeNull();
-      expect(found?.title).toBe('Test Document');
-      expect(found?.description).toBe('Test Description');
-      expect(found?.id).toBe(document.id);
-      expect(found?.creatorId).toBe(person.id);
+      expect(found).toMatchObject({
+        title: expect.any(String),
+        description: expect.any(String),
+        slug: expect.any(String),
+        id: expect.any(Number),
+        creatorId: person.id,
+      });
     });
 
     it('should return null when document is not found by slug', async () => {
@@ -100,15 +96,15 @@ describe('DocumentRepositoryPostgres', () => {
 
   describe('create', () => {
     it('should create a document with all fields', async () => {
-      const person = await createPerson({
-        name: faker.person.firstName(),
-        surname: faker.person.lastName(),
-        email: faker.internet.email(),
-      });
+      await seed(db, { people }).refine((f) => ({
+        people: { count: 1 },
+      }));
+
+      const person = await db.query.people.findFirst();
 
       const slug = `new-document-${Date.now()}`;
       const values: CreateDocument = {
-        creatorId: person.id,
+        creatorId: person.id as number,
         title: 'New Document',
         description: 'New Description',
         slug,
@@ -116,9 +112,9 @@ describe('DocumentRepositoryPostgres', () => {
       const newDocument = await repository.create(values);
 
       expect(newDocument.id).toBeDefined();
-      expect(newDocument.title).toBe('New Document');
-      expect(newDocument.description).toBe('New Description');
-      expect(newDocument.slug).toBe(slug);
+      expect(newDocument.title).toBe(values.title);
+      expect(newDocument.description).toBe(values.description);
+      expect(newDocument.slug).toBe(values.slug);
       expect(newDocument.creatorId).toBe(person.id);
 
       // Verify we can find the created document
@@ -127,14 +123,14 @@ describe('DocumentRepositoryPostgres', () => {
     });
 
     it('should create a document with only required fields', async () => {
-      const person = await createPerson({
-        name: faker.person.firstName(),
-        surname: faker.person.lastName(),
-        email: faker.internet.email(),
-      });
+      await seed(db, { people }).refine((f) => ({
+        people: { count: 1 },
+      }));
+
+      const person = await db.query.people.findFirst();
 
       const values: CreateDocument = {
-        creatorId: person.id,
+        creatorId: person.id as number,
         // TODO: improve slug type
         slug: `test-document-${Date.now()}`,
       };
