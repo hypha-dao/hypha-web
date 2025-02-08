@@ -10,9 +10,10 @@ import {
   documents,
   documentDiscussions,
   documentStateTransitions,
+  schema,
 } from './schema';
 import { resetIndexes } from './utils/reset-index';
-
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 const AVATAR_URLS = Array.from({ length: 10 }, () => faker.image.avatar());
 const SPACE_LOGO_URLS = Array.from({ length: 10 }, () =>
   faker.image.url({
@@ -106,7 +107,7 @@ async function main() {
       },
     };
   });
-  await resetIndexes(db);
+  await resetIndexes(db as unknown as NodePgDatabase<typeof schema>);
 }
 
 main();

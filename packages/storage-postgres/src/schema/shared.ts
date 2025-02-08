@@ -1,4 +1,3 @@
-import { sql } from 'drizzle-orm';
 import { integer, timestamp } from 'drizzle-orm/pg-core';
 
 export const commonDateFields = {

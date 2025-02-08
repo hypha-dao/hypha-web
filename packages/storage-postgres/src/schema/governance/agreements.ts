@@ -1,5 +1,5 @@
-import { InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
-import { integer, pgTable, serial, timestamp } from 'drizzle-orm/pg-core';
+import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
+import { integer, pgTable, timestamp } from 'drizzle-orm/pg-core';
 import { commonDateFields } from '../shared';
 import { people } from '../people';
 import { documents } from './document';
