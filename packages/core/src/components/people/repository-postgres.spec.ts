@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   db,
   people,
@@ -17,7 +17,9 @@ describe('PeopleRepositoryPostgres', () => {
   });
 
   // Clean up after all tests
-  afterEach(async () => {});
+  afterAll(async () => {
+    await reset(db, schema);
+  });
 
   describe('findAll', () => {
     it('should return paginated results', async () => {
