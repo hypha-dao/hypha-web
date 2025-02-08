@@ -7,6 +7,7 @@ import {
   documentAgreementSignatures,
 } from './governance/agreements';
 import { documentProposals } from './governance/proposals';
+import { documents } from './governance/document';
 
 export * from './governance';
 export * from './membership';
@@ -18,6 +19,7 @@ export const schema = {
   documentAgreements,
   documentAgreementSignatures,
   documentProposals,
+  documents,
   memberships,
   people,
   spaceConfigs,

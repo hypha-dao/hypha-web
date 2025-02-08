@@ -1,13 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import {
-  db,
-  people,
-  resetIndexes,
-  schema,
-} from '@hypha-platform/storage-postgres';
+import { people, resetIndexes, schema } from '@hypha-platform/storage-postgres';
 import { seed, reset } from 'drizzle-seed';
-
 import { PeopleRepositoryPostgres } from './repository-postgres';
+import { db } from '../../test-utils/setup';
 
 describe('PeopleRepositoryPostgres', () => {
   const peopleRepository = new PeopleRepositoryPostgres(db);
@@ -23,15 +18,22 @@ describe('PeopleRepositoryPostgres', () => {
 
   describe('findAll', () => {
     it('should return paginated results', async () => {
-      await seed(db, {
-        people,
-      }).refine((f) => {
-        return {
-          people: {
-            count: 3,
+      await seed(db, { people }).refine((f) => ({
+        people: {
+          count: 3,
+          columns: {
+            id: f.int({
+              isUnique: true,
+            }),
+            email: f.valuesFromArray({
+              values: ['test@test.com', 'test2@test.com', 'test3@test.com'],
+            }),
+            slug: f.valuesFromArray({
+              values: ['test', 'test2', 'test3'],
+            }),
           },
-        };
-      });
+        },
+      }));
       await resetIndexes(db);
 
       // Act: Call findAll with pagination

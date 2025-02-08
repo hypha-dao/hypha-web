@@ -68,6 +68,24 @@
         "production": {}
       }
     },
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": ["{workspaceRoot}/coverage/packages/core"],
+      "options": {
+        "passWithNoTests": true,
+        "reportsDirectory": "../../coverage/packages/core"
+      },
+      "configurations": {
+        "local": {
+          "dependsOn": ["db:start"],
+          "env": {
+            "BRANCH_DB_URL": "postgres://postgres:postgres@localhost:5432/postgres",
+            "DEFAULT_DB_URL": "postgres://postgres:postgres@localhost:5432/postgres"
+          }
+        },
+        "production": {}
+      }
+    },
     "db:start": {
       "executor": "nx:run-commands",
       "options": {

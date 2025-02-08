@@ -1,46 +1,31 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { DocumentRepositoryPostgres } from './repository-postgres';
-import {
-  db,
-  documents,
-  type NewDocument,
-  people,
-  type Document,
-  type Person,
-  type NewPerson,
-  schema,
-} from '@hypha-platform/storage-postgres';
-import { eq } from 'drizzle-orm';
-import { faker } from '@faker-js/faker';
+import { documents, people, schema } from '@hypha-platform/storage-postgres';
 import { seed, reset } from 'drizzle-seed';
-import { Document as DomainDocument, CreateDocument } from './types';
+import { CreateDocument } from './types';
+import { db } from '../../test-utils/setup';
 
 describe('DocumentRepositoryPostgres', () => {
   let repository: DocumentRepositoryPostgres;
 
-  const createPerson = async (values: NewPerson) => {
-    const [person] = await db.insert(people).values(values).returning();
-    return person;
-  };
-
-  const createDocument = async (values: CreateDocument) => {
-    const [document] = await db.insert(documents).values(values).returning();
-    return document;
-  };
-
   beforeEach(async () => {
     repository = new DocumentRepositoryPostgres();
-    await reset(db, schema);
-  });
-
-  afterAll(async () => {
-    await reset(db, schema);
   });
 
   describe('findById', () => {
     it('should find a document by id', async () => {
       await seed(db, { people, documents }).refine((f) => ({
-        people: { count: 1, with: { documents: 1 } },
+        people: {
+          count: 1,
+          with: { documents: 1 },
+          columns: {
+            id: f.int({
+              minValue: 1,
+              maxValue: 3,
+              isUnique: true,
+            }),
+          },
+        },
       }));
 
       const document = await db.query.documents.findFirst();
@@ -68,8 +53,12 @@ describe('DocumentRepositoryPostgres', () => {
 
   describe('findBySlug', () => {
     it('should find a document by slug', async () => {
-      await seed(db, { people, documents }).refine(() => ({
+      await seed(db, { people, documents }).refine((f) => ({
         people: { count: 1, with: { documents: 1 } },
+        documents: {
+          count: 1,
+          columns: { slug: f.string({ isUnique: true }) },
+        },
       }));
 
       const document = await db.query.documents.findFirst();

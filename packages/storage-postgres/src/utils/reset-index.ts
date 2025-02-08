@@ -1,9 +1,9 @@
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Database } from '..';
 import { sql } from 'drizzle-orm';
-
+import { schema } from '../schema';
 export const resetIndexes = async (
-  db: NodePgDatabase<Record<string, never>> | Database,
+  db: NodePgDatabase<typeof schema> | Database,
 ) => {
   const tables = [
     'document_state_transitions',

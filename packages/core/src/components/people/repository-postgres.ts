@@ -16,9 +16,13 @@ import type { Database } from '@hypha-platform/storage-postgres';
 import { nullToUndefined } from '../../utils/null-to-undefined';
 import invariant from 'tiny-invariant';
 import { PaginatedResponse } from '../../shared/types';
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { schema } from '@hypha-platform/storage-postgres';
 
 export class PeopleRepositoryPostgres implements PeopleRepository {
-  constructor(private db: Database = defaultDb) {}
+  constructor(
+    private db: Database | NodePgDatabase<typeof schema> = defaultDb,
+  ) {}
 
   private mapToDomainPerson(dbPerson: DbPerson): Person {
     invariant(dbPerson.slug, 'Person must have a slug');

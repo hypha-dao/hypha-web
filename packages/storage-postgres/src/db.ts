@@ -1,7 +1,7 @@
 import { neonConfig, Pool } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { WebSocket } from 'ws';
-import * as schema from './schema';
+import { schema } from './schema';
 import { loadEnvConfig } from '@next/env';
 import path from 'path';
 import { drizzle as drizzleNode } from 'drizzle-orm/node-postgres';
