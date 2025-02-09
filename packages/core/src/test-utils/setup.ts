@@ -12,6 +12,8 @@ const { combinedEnv } = loadEnvConfig(cwd);
 const connectionString =
   combinedEnv?.BRANCH_DB_URL || combinedEnv?.DEFAULT_DB_URL;
 
+console.debug('setup.ts', { connectionString });
+
 let client: Client;
 let db: NodePgDatabase<typeof schema>;
 

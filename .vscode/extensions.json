@@ -6,6 +6,7 @@
     "GitHub.vscode-pull-request-github",
     "mhutchie.git-graph",
     "ms-playwright.playwright",
-    "nrwl.angular-console"
+    "nrwl.angular-console",
+    "rphlmr.vscode-drizzle-orm"
   ]
 }

@@ -1,12 +1,22 @@
 import { eq, sql } from 'drizzle-orm';
 import { Document, DocumentState, CreateDocument } from './types';
 import { DocumentRepository } from './repository';
-import { db, documents } from '@hypha-platform/storage-postgres';
+import {
+  Database,
+  documents,
+  schema,
+  db as defaultDb,
+} from '@hypha-platform/storage-postgres';
 import { nullToUndefined } from '../../utils';
 import invariant from 'tiny-invariant';
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 
 export class DocumentRepositoryPostgres implements DocumentRepository {
-  private select() {
+  constructor(
+    private db: Database | NodePgDatabase<typeof schema> = defaultDb,
+  ) {}
+
+  private fields() {
     return {
       id: documents.id,
       creatorId: documents.creatorId,
@@ -27,6 +37,7 @@ export class DocumentRepositoryPostgres implements DocumentRepository {
         `.as('state'),
     };
   }
+
   private mapToDocument(row: {
     id: number;
     creatorId: number;
@@ -52,8 +63,8 @@ export class DocumentRepositoryPostgres implements DocumentRepository {
   }
 
   async findById(id: number): Promise<Document | null> {
-    const result = await db
-      .select(this.select())
+    const result = await this.db
+      .select(this.fields())
       .from(documents)
       .where(eq(documents.id, id))
       .limit(1);
@@ -62,8 +73,8 @@ export class DocumentRepositoryPostgres implements DocumentRepository {
   }
 
   async findBySlug(slug: string): Promise<Document | null> {
-    const result = await db
-      .select(this.select())
+    const result = await this.db
+      .select(this.fields())
       .from(documents)
       .where(eq(documents.slug, slug))
       .limit(1);
@@ -72,14 +83,17 @@ export class DocumentRepositoryPostgres implements DocumentRepository {
   }
 
   async findAll(): Promise<Document[]> {
-    const results = await db.select(this.select()).from(documents);
+    const results = await this.db.select(this.fields()).from(documents);
     return results.map(this.mapToDocument);
   }
 
   async create(values: CreateDocument): Promise<Document> {
-    const [inserted] = await db.insert(documents).values(values).returning();
-    const [result] = await db
-      .select(this.select())
+    const [inserted] = await this.db
+      .insert(documents)
+      .values(values)
+      .returning();
+    const [result] = await this.db
+      .select(this.fields())
       .from(documents)
       .where(eq(documents.id, inserted.id))
       .limit(1);

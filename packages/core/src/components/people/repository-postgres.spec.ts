@@ -5,9 +5,10 @@ import { PeopleRepositoryPostgres } from './repository-postgres';
 import { db } from '../../test-utils/setup';
 
 describe('PeopleRepositoryPostgres', () => {
-  const peopleRepository = new PeopleRepositoryPostgres(db);
+  let peopleRepository: PeopleRepositoryPostgres;
 
   beforeEach(async () => {
+    peopleRepository = new PeopleRepositoryPostgres(db);
     await reset(db, schema);
   });
 

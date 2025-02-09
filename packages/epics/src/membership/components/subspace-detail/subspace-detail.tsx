@@ -23,14 +23,8 @@ export const SubspaceDetail = ({
   members,
   closeUrl,
 }: SubspaceDetailProps) => {
-  const {
-    isLoading,
-    loadMore,
-    pagination,
-    paginatedMembers,
-    activeFilter,
-    setActiveFilter,
-  } = useSubspaceDetails(members ?? []);
+  const { isLoading, loadMore, pagination, activeFilter, setActiveFilter } =
+    useSubspaceDetails(members ?? []);
 
   const filterSettings = {
     value: activeFilter,

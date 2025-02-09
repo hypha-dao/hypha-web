@@ -5,7 +5,6 @@ import {
 } from './repository';
 import { Person } from './types';
 import {
-  db as defaultDb,
   memberships,
   people,
   Person as DbPerson,
@@ -17,7 +16,7 @@ import { nullToUndefined } from '../../utils/null-to-undefined';
 import invariant from 'tiny-invariant';
 import { PaginatedResponse } from '../../shared/types';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { schema } from '@hypha-platform/storage-postgres';
+import { schema, db as defaultDb } from '@hypha-platform/storage-postgres';
 
 export class PeopleRepositoryPostgres implements PeopleRepository {
   constructor(

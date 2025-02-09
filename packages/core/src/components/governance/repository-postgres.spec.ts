@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { DocumentRepositoryPostgres } from './repository-postgres';
-import { documents, people, schema } from '@hypha-platform/storage-postgres';
-import { seed, reset } from 'drizzle-seed';
+import { documents, people } from '@hypha-platform/storage-postgres';
+import { seed } from 'drizzle-seed';
 import { CreateDocument } from './types';
 import { db } from '../../test-utils/setup';
 
@@ -9,7 +9,7 @@ describe('DocumentRepositoryPostgres', () => {
   let repository: DocumentRepositoryPostgres;
 
   beforeEach(async () => {
-    repository = new DocumentRepositoryPostgres();
+    repository = new DocumentRepositoryPostgres(db);
   });
 
   describe('findById', () => {
