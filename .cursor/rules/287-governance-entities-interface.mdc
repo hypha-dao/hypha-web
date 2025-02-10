@@ -1,0 +1,82 @@
+---
+description: This issue outlines the database schema design for documents with state-based workflow management (discussion → proposal → agreement).
+globs: 
+---
+## Description
+
+This issue outlines the database schema design for documents with state-based workflow management (discussion → proposal → agreement).
+
+### Current Implementation
+
+- Basic document table with:
+  - Primary fields (id, creator_id, title, description)
+  - State enum ('discussion', 'proposal', 'agreement')
+  - Slug for URL-friendly identifiers
+  - Timestamps (created_at, updated_at)
+
+### Proposed Schema Enhancement
+
+#### 1. State Transition Management
+
+- New `document_state_transitions` table to track:
+  - State changes history
+  - Who made the change
+  - Transition timestamps
+  - Reason for transition
+
+#### 2. Discussion Phase
+
+- New `document_discussions` table for:
+  - Threaded discussions (parent-child relationship)
+  - Comment tracking
+  - Author attribution
+  - Timestamps
+
+#### 3. Proposal Phase
+
+- `document_proposals` table for:
+  - Voting period management
+  - Minimum vote requirements
+- `document_votes` table for:
+  - Individual votes (yes/no/abstain)
+  - Vote comments
+  - One vote per person enforcement
+
+#### 4. Agreement Phase
+
+- `document_agreements` table for:
+  - Final state (accepted/rejected)
+  - Ratification tracking
+- `document_agreement_signatures` table for:
+  - Individual signatures
+  - Signature timestamps
+
+### Key Features
+
+- Complete audit trail of document lifecycle
+- Clear separation of state-specific functionality
+- Strong data integrity through constraints
+- Flexible for future extensions
+- Efficient querying capabilities
+
+### Technical Considerations
+
+- PostgreSQL-specific features utilized
+- Appropriate indexing strategy
+- Referential integrity through foreign keys
+- Timestamp tracking across all tables
+
+### Next Steps
+
+- [ ] Review and approve schema design
+- [ ] Create migration scripts
+- [ ] Implement repository layer changes
+- [ ] Add service layer logic for state transitions
+- [ ] Update API endpoints to support new functionality
+
+### Questions to Address
+
+- Retention policy for historical data
+- Access control requirements per state
+- Performance considerations for large datasets
+- Backup and recovery strategy
