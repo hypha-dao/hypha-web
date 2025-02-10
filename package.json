@@ -59,7 +59,7 @@
     "clsx": "^2.1.1",
     "commander": "^13.1.0",
     "date-fns": "^4.1.0",
-    "drizzle-orm": "^0.38.4",
+    "drizzle-orm": "^0.39.2",
     "drizzle-seed": "^0.3.1",
     "embla-carousel-react": "^8.5.1",
     "ethers": "^6.13.5",
