@@ -3,17 +3,15 @@ import { drizzle } from 'drizzle-orm/neon-serverless';
 import { WebSocket } from 'ws';
 import { schema } from './schema';
 import { loadEnvConfig } from '@next/env';
-import path from 'path';
+import * as path from 'path';
 import { NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import invariant from 'tiny-invariant';
-
-type Database = NeonHttpDatabase<typeof schema>;
 
 const cwd = path.join(process.cwd(), '../../');
 const { combinedEnv } = loadEnvConfig(cwd);
 
 const connectionString =
-  combinedEnv?.BRANCH_DB_URL || combinedEnv?.DEFAULT_DB_URL;
+  combinedEnv['BRANCH_DB_URL'] || combinedEnv['DEFAULT_DB_URL'];
 
 invariant(
   connectionString,
@@ -33,4 +31,7 @@ if (connectionString.includes('localhost')) {
 const pool = new Pool({ connectionString });
 
 export const db = drizzle(pool, { schema });
+
+type Database = NeonHttpDatabase<typeof schema> | typeof db;
+
 export type { Database };
