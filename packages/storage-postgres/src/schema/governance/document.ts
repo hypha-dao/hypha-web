@@ -1,12 +1,18 @@
-import { InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
+import { InferInsertModel, InferSelectModel, SQL, sql } from 'drizzle-orm';
 import { integer, pgEnum, pgTable, text, varchar } from 'drizzle-orm/pg-core';
 import { commonDateFields } from '../shared';
 import { people } from '../people';
 
+export enum DocumentState {
+  DISCUSSION = 'discussion',
+  PROPOSAL = 'proposal',
+  AGREEMENT = 'agreement',
+}
+
 export const documentStateEnum = pgEnum('document_state', [
-  'discussion',
-  'proposal',
-  'agreement',
+  DocumentState.DISCUSSION,
+  DocumentState.PROPOSAL,
+  DocumentState.AGREEMENT,
 ]);
 
 export const documents = pgTable('documents', {
