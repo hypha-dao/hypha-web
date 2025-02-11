@@ -42,30 +42,38 @@ export const AssetsSection: FC<AssetSectionProps> = ({ basePath }) => {
           Add Wallet
         </Button>
       </SectionFilter>
-      <SectionTabs
-        activeTab={activeFilter}
-        setActiveTab={setActiveFilter}
-        tabs={filterOptions}
-      />
-      {Array.from({ length: pages }).map((_, index) => (
-        <AssetsList
-          basePath={basePath}
-          page={index + 1}
-          key={`${basePath}-${index + 1}`}
-          activeFilter={activeFilter}
+      {pagination?.totalPages === 0 ? null : (
+        <SectionTabs
+          activeTab={activeFilter}
+          setActiveTab={setActiveFilter}
+          tabs={filterOptions}
         />
-      ))}
-      <SectionLoadMore
-        onClick={loadMore}
-        disabled={pagination?.totalPages === pages}
-        isLoading={isLoading}
-      >
-        <Text>
-          {pagination?.totalPages === pages
-            ? 'No more assets'
-            : 'Load more assets'}
-        </Text>
-      </SectionLoadMore>
+      )}
+      {pagination?.totalPages === 0 ? (
+        <Text className="text-neutra-11 mt-2 mb-6">List is empty</Text>
+      ) : (
+        Array.from({ length: pages }).map((_, index) => (
+          <AssetsList
+            basePath={basePath}
+            page={index + 1}
+            key={`${basePath}-${index + 1}`}
+            activeFilter={activeFilter}
+          />
+        ))
+      )}
+      {pagination?.totalPages === 0 ? null : (
+        <SectionLoadMore
+          onClick={loadMore}
+          disabled={pagination?.totalPages === pages}
+          isLoading={isLoading}
+        >
+          <Text>
+            {pagination?.totalPages === pages
+              ? 'No more assets'
+              : 'Load more assets'}
+          </Text>
+        </SectionLoadMore>
+      )}
     </div>
   );
 };
