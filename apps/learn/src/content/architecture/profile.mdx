@@ -1,0 +1,69 @@
+# Profile Manager Smart Contract Documentation
+
+## Overview
+
+The Profile Manager smart contract allows users to create, read, update, and delete their profiles on the Base mainnet. Each profile contains a username, description, and profile image URL.
+
+## Contract Address
+
+0x073aF258B3F9f46D3E7B91374e92C1CF7dAD27dA
+
+## Methods
+
+### 1. Create Profile
+
+Creates a new profile for the connected wallet address.
+
+```javascript
+async function createProfile(username: string, description: string, profileImg: string):
+```
+
+### 2. Edit Profile
+
+Modifies an existing profile.
+
+```javascript
+async function editProfile(username: string, description: string, profileImg: string):
+```
+
+### 3. Delete Profile
+
+Removes the caller's profile.
+
+```javascript
+async function deleteProfile():
+```
+
+### 4. Get Profile
+
+Retrieves profile data for a given address.
+
+```javascript
+async function getProfile(address: string)
+```
+
+**Returns:**
+
+- Profile object containing username, description, profileImg, and exists status
+
+**Example:** (not tested)
+
+```javascript
+try {
+  const profile = await profileManager.getProfile(userAddress);
+  console.log('Profile:', {
+    username: profile[0],
+    description: profile[1],
+    profileImg: profile[2],
+    exists: profile[3],
+  });
+} catch (error) {
+  console.error('Profile retrieval failed:', error);
+}
+```
+
+Best Practices (from Claude)
+
+1. Always wait for transactions to be mined before updating UI
+2. Implement proper error handling for all contract interactions
+3. Use events to keep UI in sync with blockchain s
