@@ -34,30 +34,38 @@ export const AgreementsSection: FC<AgreementsSectionProps> = ({ basePath }) => {
         label="Agreements"
         sortOptions={sortOptions}
       />
-      <SectionTabs
-        activeTab={activeFilter}
-        setActiveTab={setActiveFilter}
-        tabs={filterOptions}
-      />
-      {Array.from({ length: pages }).map((_, index) => (
-        <AgreementsList
-          page={index + 1}
-          key={index}
-          activeFilter={activeFilter}
-          basePath={basePath}
+      {pagination?.totalPages === 0 ? null : (
+        <SectionTabs
+          activeTab={activeFilter}
+          setActiveTab={setActiveFilter}
+          tabs={filterOptions}
         />
-      ))}
-      <SectionLoadMore
-        onClick={loadMore}
-        disabled={pagination?.totalPages === pages}
-        isLoading={isLoading}
-      >
-        <Text>
-          {pagination?.totalPages === pages
-            ? 'No more agreements'
-            : 'Load more agreements'}
-        </Text>
-      </SectionLoadMore>
+      )}
+      {pagination?.totalPages === 0 ? (
+        <Text className="text-neutral-11 mt-2 mb-6">List is empty</Text>
+      ) : (
+        Array.from({ length: pages }).map((_, index) => (
+          <AgreementsList
+            page={index + 1}
+            key={index}
+            activeFilter={activeFilter}
+            basePath={basePath}
+          />
+        ))
+      )}
+      {pagination?.totalPages === 0 ? null : (
+        <SectionLoadMore
+          onClick={loadMore}
+          disabled={pagination?.totalPages === pages}
+          isLoading={isLoading}
+        >
+          <Text>
+            {pagination?.totalPages === pages
+              ? 'No more agreements'
+              : 'Load more agreements'}
+          </Text>
+        </SectionLoadMore>
+      )}
     </div>
   );
 };
