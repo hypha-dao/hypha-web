@@ -1,0 +1,28 @@
+:root, .light, .light-theme {
+  --gray-1: 0deg 0% 98.8%;
+  --gray-2: 0deg 0% 97.6%;
+  --gray-3: 0deg 0% 94.1%;
+  --gray-4: 0deg 0% 91%;
+  --gray-5: 0deg 0% 87.8%;
+  --gray-6: 0deg 0% 85.1%;
+  --gray-7: 0deg 0% 80.8%;
+  --gray-8: 0deg 0% 73.3%;
+  --gray-9: 0deg 0% 55.3%;
+  --gray-10: 0deg 0% 51.4%;
+  --gray-11: 0deg 0% 39.2%;
+  --gray-12: 0deg 0% 12.5%;
+}
+.dark, .dark-theme {
+  --gray-1: 0deg 0% 6.7%;
+  --gray-2: 0deg 0% 9.8%;
+  --gray-3: 0deg 0% 13.3%;
+  --gray-4: 0deg 0% 16.5%;
+  --gray-5: 0deg 0% 19.2%;
+  --gray-6: 0deg 0% 22.7%;
+  --gray-7: 0deg 0% 28.2%;
+  --gray-8: 0deg 0% 37.6%;
+  --gray-9: 0deg 0% 43.1%;
+  --gray-10: 0deg 0% 48.2%;
+  --gray-11: 0deg 0% 70.6%;
+  --gray-12: 0deg 0% 93.3%;
+}

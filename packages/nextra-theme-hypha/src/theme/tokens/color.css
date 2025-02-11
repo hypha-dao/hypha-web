@@ -1,0 +1,10 @@
+:root {
+  --white-contrast: var(--white);
+  --black-contrast: var(--black);
+  --accent-contrast: var(--white-contrast);
+
+  --accent-surface: var(--accent-2);
+  --error-surface: var(--error-2);
+  --warn-surface: var(--warn-2);
+  --neutral-surface: var(--neutral-2);
+}

@@ -1,0 +1,9 @@
+{
+  "name": "nextra-theme-hypha",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/nextra-theme-hypha/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project nextra-theme-hypha --web",
+  "targets": {}
+}

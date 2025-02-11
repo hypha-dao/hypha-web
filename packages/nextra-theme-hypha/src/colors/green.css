@@ -1,0 +1,28 @@
+:root, .light, .light-theme {
+  --green-1: 140deg 60% 99%;
+  --green-2: 137deg 46.7% 97.1%;
+  --green-3: 139deg 47.1% 93.3%;
+  --green-4: 140deg 49.1% 89.2%;
+  --green-5: 142deg 43.9% 83.9%;
+  --green-6: 144deg 41.4% 77.3%;
+  --green-7: 146deg 39.5% 68.2%;
+  --green-8: 151deg 40.2% 54.1%;
+  --green-9: 151deg 54.7% 41.6%;
+  --green-10: 152deg 56.3% 38.6%;
+  --green-11: 154deg 59.8% 32.2%;
+  --green-12: 155deg 40.5% 16.5%;
+}
+.dark, .dark-theme {
+  --green-1: 154deg 20% 6.9%;
+  --green-2: 153deg 20% 8.8%;
+  --green-3: 152deg 40.6% 12.5%;
+  --green-4: 154deg 55.3% 14.9%;
+  --green-5: 154deg 52.1% 18.8%;
+  --green-6: 153deg 46.2% 23.3%;
+  --green-7: 152deg 44.4% 28.2%;
+  --green-8: 151deg 45% 33.5%;
+  --green-9: 151deg 54.7% 41.6%;
+  --green-10: 151deg 55.1% 44.5%;
+  --green-11: 151deg 65.1% 53.9%;
+  --green-12: 144deg 69.6% 82%;
+}

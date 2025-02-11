@@ -41,6 +41,7 @@
 - [tools](./packages/tools/README.md): Utility tools and helpers
 - [ui](./packages/ui/README.md): Package that hosts the UI component library
 - [ui-utils](./packages/ui-utils/README.md): Package that hosts UI utility functions and helpers
+- [nextra-theme-hypha](./packages//nextra-theme-hypha/README.md):
 
 ## Local Development
 

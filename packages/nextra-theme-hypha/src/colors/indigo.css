@@ -1,0 +1,28 @@
+:root, .light, .light-theme {
+  --indigo-1: 240deg 33.3% 99.4%;
+  --indigo-2: 225deg 100% 98.4%;
+  --indigo-3: 222deg 89.5% 96.3%;
+  --indigo-4: 224deg 100% 94.1%;
+  --indigo-5: 224deg 100% 91.2%;
+  --indigo-6: 225deg 100% 87.8%;
+  --indigo-7: 226deg 86.7% 82.4%;
+  --indigo-8: 226deg 75.4% 74.5%;
+  --indigo-9: 226deg 70% 55.5%;
+  --indigo-10: 226deg 65.2% 51.6%;
+  --indigo-11: 226deg 55.7% 50.4%;
+  --indigo-12: 226deg 49.6% 24.1%;
+}
+.dark, .dark-theme {
+  --indigo-1: 231deg 29.2% 9.4%;
+  --indigo-2: 230deg 31% 11.4%;
+  --indigo-3: 225deg 50.5% 19%;
+  --indigo-4: 225deg 54.3% 24.9%;
+  --indigo-5: 225deg 51.6% 30%;
+  --indigo-6: 226deg 46.7% 35.3%;
+  --indigo-7: 226deg 44.5% 41%;
+  --indigo-8: 226deg 45.1% 47.8%;
+  --indigo-9: 226deg 70% 55.5%;
+  --indigo-10: 228deg 72.7% 61.2%;
+  --indigo-11: 228deg 100% 81%;
+  --indigo-12: 224deg 100% 92%;
+}
