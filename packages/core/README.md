@@ -17,6 +17,38 @@ src/
   └── context/        # Context management
 ```
 
+### Service Repository Pattern
+
+```mermaid
+flowchart TD
+    WebApp --> ServerActions
+    MobileApp --> API
+
+    ServerActions --> PeopleService
+    ServerActions --> SpaceService
+    ServerActions --> DocumentService
+
+    API --> PeopleService
+    API --> SpaceService
+    API --> DocumentService
+
+    PeopleService --> PeopleRepoPostgres
+    PeopleService --> PeopleRepoEvm
+    SpaceService --> SpaceRepoPostgres
+    SpaceService --> SpaceRepoEVM
+    DocumentService --> DocumentRepoPostgres
+    DocumentService --> DocumentRepoEvm
+
+    PeopleRepoPostgres --> A
+    SpaceRepoPostgres --> A
+    DocumentRepoPostgres --> A
+    PeopleRepoEvm --> B
+    SpaceRepoEVM --> B
+    DocumentRepoEvm --> B
+    A@{ shape: cyl, label: "PostgreSQL" }
+    B@{ shape: cyl, label: "SmartContracts" }
+```
+
 ## Usage
 
 ```typescript
