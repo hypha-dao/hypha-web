@@ -2,26 +2,44 @@
  * Don't forget to update your APPs global.css to include this file!
  */
 
-@import './theme/colors/accent.css';
-@import './theme/colors/background.css';
-@import './theme/colors/default.css';
-@import './theme/colors/error.css';
-@import './theme/colors/info.css';
-@import './theme/colors/misc.css';
-@import './theme/colors/neutral.css';
-@import './theme/colors/success.css';
-@import './theme/colors/warning.css';
+@import './theme/colors/accent.css' layer(base);
+@import './theme/colors/background.css' layer(base);
+@import './theme/colors/default.css' layer(base);
+@import './theme/colors/error.css' layer(base);
+@import './theme/colors/info.css' layer(base);
+@import './theme/colors/misc.css' layer(base);
+@import './theme/colors/neutral.css' layer(base);
+@import './theme/colors/success.css' layer(base);
+@import './theme/colors/warning.css' layer(base);
 
-@import './theme/tokens/color.css';
-@import './theme/tokens/space.css';
+@import './theme/tokens/color.css' layer(base);
+@import './theme/tokens/space.css' layer(base);
 
-@import './theme/typography/variables.css';
+@import './theme/typography/variables.css' layer(base);
 
-@import './theme/spacing.css';
+@import './theme/spacing.css' layer(base);
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@config './tailwind.config.ts';
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+}
 
 @layer base {
   :root {
@@ -72,7 +90,7 @@
 
 @layer base {
   * {
-    @apply border-border;
+    /* @apply border-border; */
   }
 
   html {
@@ -80,7 +98,7 @@
   }
 
   body {
-    @apply bg-background text-foreground text-base;
+    /* @apply bg-background text-foreground text-base; */
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
