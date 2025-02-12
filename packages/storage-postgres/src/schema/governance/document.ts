@@ -1,7 +1,8 @@
-import { InferInsertModel, InferSelectModel, SQL, sql } from 'drizzle-orm';
+import { InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
 import { integer, pgEnum, pgTable, text, varchar } from 'drizzle-orm/pg-core';
 import { commonDateFields } from '../shared';
 import { people } from '../people';
+import { spaces } from '../space';
 
 export enum DocumentState {
   DISCUSSION = 'discussion',
@@ -20,6 +21,9 @@ export const documents = pgTable('documents', {
   creatorId: integer('creator_id')
     .notNull()
     .references(() => people.id),
+  spaceId: integer('space_id')
+    .notNull()
+    .references(() => spaces.id),
   title: text('title'),
   description: text('description'),
   slug: varchar('slug', { length: 255 }),

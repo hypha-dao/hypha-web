@@ -20,6 +20,7 @@ export type UpdateDocument = {
 
 export type CreateDocument = {
   creatorId: number;
+  spaceId: number;
   title?: string | null;
   description?: string | null;
   slug?: string | null;

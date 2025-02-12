@@ -1,6 +1,6 @@
 import { eq, sql } from 'drizzle-orm';
 import { Document, CreateDocument, UpdateDocument } from './types';
-import { DocumentRepository } from './repository';
+import { DocumentRepository, ReadManyDocumentConfig } from './repository';
 
 import {
   Database,
@@ -8,6 +8,7 @@ import {
   db as defaultDb,
   type DocumentState,
   schema,
+  spaces,
 } from '@hypha-platform/storage-postgres';
 
 import { nullToUndefined } from '../../utils';
@@ -108,6 +109,25 @@ export class DocumentRepositoryPostgres implements DocumentRepository {
 
   async readAll(): Promise<Document[]> {
     const results = await this.db.select(this.fields()).from(documents);
+    return results.map(this.mapToDocument);
+  }
+
+  async readAllBySpaceSlug(
+    { spaceSlug }: { spaceSlug: string },
+    config: ReadManyDocumentConfig,
+  ): Promise<Document[]> {
+    const {
+      pagination: { page = 1, pageSize = 10 },
+    } = config;
+
+    const offset = (page - 1) * pageSize;
+
+    const results = await this.db
+      .select(this.fields())
+      .from(documents)
+      .innerJoin(spaces, eq(spaces.id, documents.spaceId))
+      .where(eq(spaces.slug, spaceSlug));
+
     return results.map(this.mapToDocument);
   }
 
