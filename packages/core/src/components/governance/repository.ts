@@ -1,10 +1,11 @@
 import { Repository } from '../../container/types';
-import { PaginationParams } from '../../shared';
+import { FilterParams, PaginationParams } from '../../shared';
 import { Document, CreateDocument, UpdateDocument } from './types';
 
-export type ReadManyDocumentConfig = {
-  pagination: PaginationParams<Document>;
-};
+export interface ReadManyDocumentConfig {
+  pagination?: PaginationParams<Document>;
+  filter?: FilterParams<Document>;
+}
 
 export interface DocumentRepository extends Repository {
   readById(id: number): Promise<Document | null>;

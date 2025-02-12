@@ -15,6 +15,8 @@ import { nullToUndefined } from '../../utils';
 import invariant from 'tiny-invariant';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { StorageType } from '../../config/types';
+import { defaultConfig } from '../../shared/defaults';
+import { getPaginationParams } from '../../utils/pagination';
 
 export class DocumentRepositoryPostgres implements DocumentRepository {
   constructor(
@@ -114,19 +116,17 @@ export class DocumentRepositoryPostgres implements DocumentRepository {
 
   async readAllBySpaceSlug(
     { spaceSlug }: { spaceSlug: string },
-    config: ReadManyDocumentConfig,
+    config: ReadManyDocumentConfig = defaultConfig,
   ): Promise<Document[]> {
-    const {
-      pagination: { page = 1, pageSize = 10 },
-    } = config;
-
-    const offset = (page - 1) * pageSize;
+    const { pageSize, offset } = getPaginationParams(config?.pagination);
 
     const results = await this.db
       .select(this.fields())
       .from(documents)
       .innerJoin(spaces, eq(spaces.id, documents.spaceId))
-      .where(eq(spaces.slug, spaceSlug));
+      .where(eq(spaces.slug, spaceSlug))
+      .limit(pageSize)
+      .offset(offset);
 
     return results.map(this.mapToDocument);
   }
