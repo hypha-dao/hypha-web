@@ -3,7 +3,7 @@ import { FilterParams, PaginationParams } from '../../shared';
 import { Document, CreateDocument, UpdateDocument } from './types';
 
 export interface ReadManyDocumentConfig {
-  pagination?: PaginationParams<Document>;
+  pagination?: PaginationParams;
   filter?: FilterParams<Document>;
 }
 
