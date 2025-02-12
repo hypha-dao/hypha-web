@@ -1,8 +1,8 @@
-import { SpaceRepository } from '../components/space/repository';
-import { SpaceConfigRepository } from '../components/space-config/repository';
-import { DocumentRepository } from '../components/governance/repository';
-import { RepositoryToken } from './repository-registry';
-import { PeopleRepository } from '../components';
+import { type SpaceRepository } from '../components/space/repository';
+import { type SpaceConfigRepository } from '../components/space-config/repository';
+import { type DocumentRepository } from '../components/governance/repository';
+import { type RepositoryToken } from './repository-registry';
+import { type PeopleRepository } from '../components';
 
 const Config = Symbol('Config');
 const SpaceRepository = Symbol(
