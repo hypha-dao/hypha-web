@@ -40,7 +40,7 @@ describe('PeopleRepositoryPostgres', () => {
       await resetIndexes(db);
 
       // Act: Call findAll with pagination
-      const result = await peopleRepository.findAll({
+      const result = await peopleRepository.readAll({
         pagination: { page: 1, pageSize: 2 },
       });
 
@@ -67,7 +67,7 @@ describe('PeopleRepositoryPostgres', () => {
 
     it('should return empty results when no people exist', async () => {
       // Act
-      const result = await peopleRepository.findAll({
+      const result = await peopleRepository.readAll({
         pagination: { page: 1, pageSize: 10 },
       });
 

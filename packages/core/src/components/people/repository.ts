@@ -2,26 +2,22 @@ import { Repository } from '../../container';
 import { PaginatedResponse, PaginationParams } from '../../shared';
 import { Person } from './types';
 
-export type PeopleFindAllConfig = {
-  pagination: PaginationParams<Person>;
-};
-
-export type PeopleFindBySpaceConfig = {
+export type ReadManyPeopleConfig = {
   pagination: PaginationParams<Person>;
 };
 
 export interface PeopleRepository extends Repository {
-  findAll(config: PeopleFindAllConfig): Promise<PaginatedResponse<Person>>;
-  findById(id: number): Promise<Person | null>;
-  findBySpaceId(
+  readAll(config: ReadManyPeopleConfig): Promise<PaginatedResponse<Person>>;
+  readById(id: number): Promise<Person | null>;
+  readBySpaceId(
     { spaceId }: { spaceId: number },
-    config: PeopleFindBySpaceConfig,
+    config: ReadManyPeopleConfig,
   ): Promise<PaginatedResponse<Person>>;
-  findBySpaceSlug(
+  readBySpaceSlug(
     { spaceSlug }: { spaceSlug: string },
-    config: PeopleFindBySpaceConfig,
+    config: ReadManyPeopleConfig,
   ): Promise<PaginatedResponse<Person>>;
-  findBySlug({ slug }: { slug: string }): Promise<Person>;
+  readBySlug({ slug }: { slug: string }): Promise<Person>;
   create(person: Person): Promise<Person>;
   update(person: Person): Promise<Person>;
   delete(id: number): Promise<void>;

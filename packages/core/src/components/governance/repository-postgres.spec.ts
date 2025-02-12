@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { DocumentRepositoryPostgres } from './repository-postgres';
-import { documents, people } from '@hypha-platform/storage-postgres';
+import { documents, people, spaces } from '@hypha-platform/storage-postgres';
 import { seed } from 'drizzle-seed';
 import { CreateDocument } from './types';
 import { db } from '../../test-utils/setup';
 import invariant from 'tiny-invariant';
+import { Column } from 'drizzle-orm';
 
 describe('DocumentRepositoryPostgres', () => {
   let documentRepository: DocumentRepositoryPostgres;
@@ -15,7 +16,7 @@ describe('DocumentRepositoryPostgres', () => {
 
   describe('findById', () => {
     it('should find a document by id', async () => {
-      await seed(db, { people, documents }).refine((f) => ({
+      await seed(db, { spaces, people, documents }).refine((f) => ({
         people: {
           count: 1,
           with: { documents: 1 },
@@ -58,7 +59,7 @@ describe('DocumentRepositoryPostgres', () => {
 
   describe('findBySlug', () => {
     it('should find a document by slug', async () => {
-      await seed(db, { people, documents }).refine((f) => ({
+      await seed(db, { spaces, people, documents }).refine((f) => ({
         people: { count: 1, with: { documents: 1 } },
         documents: {
           count: 1,
@@ -95,17 +96,54 @@ describe('DocumentRepositoryPostgres', () => {
     });
   });
 
+  describe('readAllBySpaceSlug', () => {
+    it('should find all documents within a given space', async () => {
+      const [person] = await db.insert(people).values({}).returning();
+      const [spaceOne, spaceTwo] = await db
+        .insert(spaces)
+        .values([
+          { title: 'Test Space 1', slug: 'test-space-1' },
+          { title: 'Test Space 2', slug: 'test-space-2' },
+        ])
+        .returning();
+
+      const [one, two] = await db
+        .insert(documents)
+        .values([
+          { creatorId: person.id, spaceId: spaceOne.id, slug: 'doc-1' },
+          { creatorId: person.id, spaceId: spaceOne.id, slug: 'doc-2' },
+          { creatorId: person.id, spaceId: spaceTwo.id, slug: 'doc-3' },
+        ])
+        .returning();
+
+      invariant(spaceOne, 'there should be a space');
+
+      const repository = new DocumentRepositoryPostgres(db);
+      const docs = await repository.readAllBySpaceSlug(
+        {
+          spaceSlug: spaceOne.slug,
+        },
+        { pagination: { page: 1, pageSize: 10 } },
+      );
+
+      expect(docs).toHaveLength(2);
+    });
+  });
+
   describe('create', () => {
     it('should create a document with all fields', async () => {
-      await seed(db, { people }).refine((f) => ({
+      await seed(db, { spaces, people }).refine((f) => ({
         people: { count: 1 },
+        spaces: { count: 1 },
       }));
 
       const person = await db.query.people.findFirst();
+      const space = await db.query.spaces.findFirst();
 
       const slug = `new-document-${Date.now()}`;
       const values: CreateDocument = {
         creatorId: person?.id as number,
+        spaceId: space?.id as number,
         title: 'New Document',
         description: 'New Description',
         slug,
@@ -124,14 +162,17 @@ describe('DocumentRepositoryPostgres', () => {
     });
 
     it('should create a document with only required fields', async () => {
-      await seed(db, { people }).refine((f) => ({
+      await seed(db, { spaces, people }).refine((f) => ({
         people: { count: 1 },
+        spaces: { count: 1 },
       }));
 
       const person = await db.query.people.findFirst();
+      const space = await db.query.spaces.findFirst();
 
       const values: CreateDocument = {
         creatorId: person?.id as number,
+        spaceId: space?.id as number,
         // TODO: improve slug type
         slug: `test-document-${Date.now()}`,
       };
@@ -153,7 +194,7 @@ describe('DocumentRepositoryPostgres', () => {
 
   describe('update', async () => {
     it('should update document', async () => {
-      await seed(db, { people, documents }).refine(() => ({
+      await seed(db, { people, documents, spaces }).refine(() => ({
         people: { count: 1, with: { documents: 1 } },
       }));
       const [document] = await documentRepository.readAll();

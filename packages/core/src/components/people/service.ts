@@ -1,8 +1,4 @@
-import {
-  PeopleRepository,
-  PeopleFindAllConfig,
-  PeopleFindBySpaceConfig,
-} from './repository';
+import { PeopleRepository, ReadManyPeopleConfig } from './repository';
 import { Container } from '../../container/types';
 import { Tokens } from '../../container/tokens';
 import { Person } from './types';
@@ -17,22 +13,22 @@ export class PeopleService {
 
   async findBySpaceId(
     { spaceId }: { spaceId: number },
-    config: PeopleFindBySpaceConfig = {
+    config: ReadManyPeopleConfig = {
       pagination: { page: 1, pageSize: 10 },
     },
   ): Promise<PaginatedResponse<Person>> {
-    return this.repository.findBySpaceId({ spaceId }, config);
+    return this.repository.readBySpaceId({ spaceId }, config);
   }
 
   async findBySpaceSlug(
     { spaceSlug }: { spaceSlug: string },
-    config: PeopleFindBySpaceConfig,
+    config: ReadManyPeopleConfig,
   ): Promise<PaginatedResponse<Person>> {
-    return this.repository.findBySpaceSlug({ spaceSlug }, config);
+    return this.repository.readBySpaceSlug({ spaceSlug }, config);
   }
 
   async findBySlug({ slug }: { slug: string }): Promise<Person> {
-    return this.repository.findBySlug({ slug });
+    return this.repository.readBySlug({ slug });
   }
 
   async create(person: Person): Promise<Person> {
@@ -40,9 +36,9 @@ export class PeopleService {
   }
 
   async readAll(
-    config: PeopleFindAllConfig,
+    config: ReadManyPeopleConfig,
   ): Promise<PaginatedResponse<Person>> {
-    return this.repository.findAll(config);
+    return this.repository.readAll(config);
   }
 
   async update(person: Person): Promise<Person> {

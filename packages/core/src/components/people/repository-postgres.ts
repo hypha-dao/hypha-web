@@ -12,11 +12,7 @@ import {
   type Database,
 } from '@hypha-platform/storage-postgres';
 
-import {
-  PeopleFindAllConfig,
-  PeopleFindBySpaceConfig,
-  PeopleRepository,
-} from './repository';
+import { ReadManyPeopleConfig, PeopleRepository } from './repository';
 import { Person } from './types';
 import { nullToUndefined } from '../../utils/null-to-undefined';
 import { PaginatedResponse } from '../../shared/types';
@@ -64,8 +60,8 @@ export class PeopleRepositoryPostgres implements PeopleRepository {
     return 'postgres';
   }
 
-  async findAll(
-    config: PeopleFindAllConfig,
+  async readAll(
+    config: ReadManyPeopleConfig,
   ): Promise<PaginatedResponse<Person>> {
     const {
       pagination: { page = 1, pageSize = 10 },
@@ -96,7 +92,7 @@ export class PeopleRepositoryPostgres implements PeopleRepository {
     };
   }
 
-  async findById(id: number): Promise<Person | null> {
+  async readById(id: number): Promise<Person | null> {
     const [dbPerson] = await this.db
       .select()
       .from(people)
@@ -106,9 +102,9 @@ export class PeopleRepositoryPostgres implements PeopleRepository {
     return dbPerson ? this.mapToDomainPerson(dbPerson) : null;
   }
 
-  async findBySpaceId(
+  async readBySpaceId(
     { spaceId }: { spaceId: number },
-    config: PeopleFindBySpaceConfig,
+    config: ReadManyPeopleConfig,
   ): Promise<PaginatedResponse<Person>> {
     const {
       pagination: { page = 1, pageSize = 10 },
@@ -141,13 +137,13 @@ export class PeopleRepositoryPostgres implements PeopleRepository {
     };
   }
 
-  async findBySpaceSlug(
+  async readBySpaceSlug(
     {
       spaceSlug,
     }: {
       spaceSlug: string;
     },
-    config: PeopleFindBySpaceConfig,
+    config: ReadManyPeopleConfig,
   ): Promise<PaginatedResponse<Person>> {
     const {
       pagination: { page = 1, pageSize = 10 },
@@ -181,7 +177,7 @@ export class PeopleRepositoryPostgres implements PeopleRepository {
     };
   }
 
-  async findBySlug({ slug }: { slug: string }): Promise<Person> {
+  async readBySlug({ slug }: { slug: string }): Promise<Person> {
     const [dbPerson] = await this.db
       .select()
       .from(people)

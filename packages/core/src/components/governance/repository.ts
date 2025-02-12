@@ -1,11 +1,20 @@
 import { Repository } from '../../container/types';
+import { PaginationParams } from '../../shared';
 import { Document, CreateDocument, UpdateDocument } from './types';
+
+export type ReadManyDocumentConfig = {
+  pagination: PaginationParams<Document>;
+};
 
 export interface DocumentRepository extends Repository {
   readById(id: number): Promise<Document | null>;
   readBySlug(slug: string): Promise<Document | null>;
   // TODO: add optional filter (state)
-  readAll(): Promise<Document[]>;
+  readAll(config: ReadManyDocumentConfig): Promise<Document[]>;
+  readAllBySpaceSlug(
+    { spaceSlug }: { spaceSlug: string },
+    config?: ReadManyDocumentConfig,
+  ): Promise<Document[]>;
   create(values: CreateDocument): Promise<Document>;
   update(values: UpdateDocument): Promise<Document>;
   // delete(id: number): Promise<void>;
