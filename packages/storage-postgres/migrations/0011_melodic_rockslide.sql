@@ -1,3 +1,6 @@
+DROP TYPE IF EXISTS "public"."agreement_state";
+DROP TYPE IF EXISTS "public"."governance_state";
+DROP TYPE IF EXISTS "public"."vote_type";
 CREATE TYPE "public"."agreement_state" AS ENUM('accepted', 'rejected');--> statement-breakpoint
 CREATE TYPE "public"."governance_state" AS ENUM('discussion', 'proposal', 'agreement');--> statement-breakpoint
 CREATE TYPE "public"."vote_type" AS ENUM('yes', 'no', 'abstain');--> statement-breakpoint

@@ -5,7 +5,6 @@ import { seed } from 'drizzle-seed';
 import { CreateDocument } from './types';
 import { db } from '../../test-utils/setup';
 import invariant from 'tiny-invariant';
-import { Column } from 'drizzle-orm';
 
 describe('DocumentRepositoryPostgres', () => {
   let documentRepository: DocumentRepositoryPostgres;
@@ -20,13 +19,6 @@ describe('DocumentRepositoryPostgres', () => {
         people: {
           count: 1,
           with: { documents: 1 },
-          columns: {
-            id: f.int({
-              minValue: 1,
-              maxValue: 3,
-              isUnique: true,
-            }),
-          },
         },
       }));
 
