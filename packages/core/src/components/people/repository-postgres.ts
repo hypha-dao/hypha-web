@@ -20,6 +20,7 @@ import {
 import { Person } from './types';
 import { nullToUndefined } from '../../utils/null-to-undefined';
 import { PaginatedResponse } from '../../shared/types';
+import { StorageType } from '../../config/types';
 
 export class PeopleRepositoryPostgres implements PeopleRepository {
   constructor(
@@ -57,6 +58,10 @@ export class PeopleRepositoryPostgres implements PeopleRepository {
       updatedAt: people.updatedAt,
       total: sql<number>`cast(count(*) over() as integer)`,
     };
+  }
+
+  getStorageType(): StorageType {
+    return 'postgres';
   }
 
   async findAll(

@@ -1,15 +1,19 @@
 import { eq, sql } from 'drizzle-orm';
-import { Document, DocumentState, CreateDocument } from './types';
+import { Document, CreateDocument, UpdateDocument } from './types';
 import { DocumentRepository } from './repository';
+
 import {
   Database,
   documents,
-  schema,
   db as defaultDb,
+  type DocumentState,
+  schema,
 } from '@hypha-platform/storage-postgres';
+
 import { nullToUndefined } from '../../utils';
 import invariant from 'tiny-invariant';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { StorageType } from '../../config/types';
 
 export class DocumentRepositoryPostgres implements DocumentRepository {
   constructor(
@@ -25,16 +29,16 @@ export class DocumentRepositoryPostgres implements DocumentRepository {
       slug: documents.slug,
       createdAt: documents.createdAt,
       updatedAt: documents.updatedAt,
-      state: sql<DocumentState>`
-          COALESCE(
-            (SELECT dst.to_state
-             FROM document_state_transitions dst
-             WHERE dst.document_id = ${documents.id}
-             ORDER BY dst.created_at DESC
-             LIMIT 1),
-            'discussion'
-          )
-        `.as('state'),
+      state: sql<DocumentState>`COALESCE(
+        (
+          SELECT dst.to_state
+          FROM document_state_transitions dst
+          WHERE dst.document_id = ${documents.id}
+          ORDER BY dst.created_at DESC
+          LIMIT 1
+        ),
+        'discussion'
+      )`,
     };
   }
 
@@ -62,17 +66,37 @@ export class DocumentRepositoryPostgres implements DocumentRepository {
     };
   }
 
-  async findById(id: number): Promise<Document | null> {
-    const result = await this.db
+  getStorageType(): StorageType {
+    return 'postgres';
+  }
+
+  async create(values: CreateDocument): Promise<Document> {
+    const [inserted] = await this.db
+      .insert(documents)
+      .values(values)
+      .returning();
+
+    const [result] = await this.db
+      .select(this.fields())
+      .from(documents)
+      .where(eq(documents.id, inserted.id))
+      .limit(1);
+    return this.mapToDocument(result);
+  }
+
+  async readById(id: number): Promise<Document> {
+    const [result] = await this.db
       .select(this.fields())
       .from(documents)
       .where(eq(documents.id, id))
       .limit(1);
 
-    return result[0] ? this.mapToDocument(result[0]) : null;
+    invariant(result, `Document with id ${id} not found`);
+
+    return this.mapToDocument(result);
   }
 
-  async findBySlug(slug: string): Promise<Document | null> {
+  async readBySlug(slug: string): Promise<Document | null> {
     const result = await this.db
       .select(this.fields())
       .from(documents)
@@ -82,21 +106,24 @@ export class DocumentRepositoryPostgres implements DocumentRepository {
     return result[0] ? this.mapToDocument(result[0]) : null;
   }
 
-  async findAll(): Promise<Document[]> {
+  async readAll(): Promise<Document[]> {
     const results = await this.db.select(this.fields()).from(documents);
     return results.map(this.mapToDocument);
   }
 
-  async create(values: CreateDocument): Promise<Document> {
-    const [inserted] = await this.db
-      .insert(documents)
-      .values(values)
+  async update(values: UpdateDocument) {
+    const [updated] = await this.db
+      .update(documents)
+      .set({
+        title: values.title,
+        slug: values.slug,
+        description: values.description,
+      })
+      .where(eq(documents.id, values.id))
       .returning();
-    const [result] = await this.db
-      .select(this.fields())
-      .from(documents)
-      .where(eq(documents.id, inserted.id))
-      .limit(1);
-    return this.mapToDocument(result);
+
+    invariant(updated, `Document with id ${values.id} not found`);
+
+    return this.readById(values.id);
   }
 }

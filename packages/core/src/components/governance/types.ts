@@ -1,8 +1,4 @@
-export enum DocumentState {
-  DISCUSSION = 'discussion',
-  PROPOSAL = 'proposal',
-  AGREEMENT = 'agreement',
-}
+import { DocumentState } from '@hypha-platform/storage-postgres';
 
 export type Document = {
   id: number;
@@ -13,6 +9,13 @@ export type Document = {
   state: DocumentState;
   createdAt: Date;
   updatedAt: Date;
+};
+
+export type UpdateDocument = {
+  id: number;
+  title?: string;
+  description?: string;
+  slug?: string;
 };
 
 export type CreateDocument = {

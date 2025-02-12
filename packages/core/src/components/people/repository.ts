@@ -1,3 +1,4 @@
+import { Repository } from '../../container';
 import { PaginatedResponse, PaginationParams } from '../../shared';
 import { Person } from './types';
 
@@ -9,7 +10,7 @@ export type PeopleFindBySpaceConfig = {
   pagination: PaginationParams<Person>;
 };
 
-export interface PeopleRepository {
+export interface PeopleRepository extends Repository {
   findAll(config: PeopleFindAllConfig): Promise<PaginatedResponse<Person>>;
   findById(id: number): Promise<Person | null>;
   findBySpaceId(
