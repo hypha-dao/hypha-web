@@ -1,4 +1,4 @@
-import { eq, sql } from 'drizzle-orm';
+import { eq, sql, and } from 'drizzle-orm';
 import { Document, CreateDocument, UpdateDocument } from './types';
 import { DocumentRepository, ReadManyDocumentConfig } from './repository';
 
@@ -120,11 +120,42 @@ export class DocumentRepositoryPostgres implements DocumentRepository {
   ): Promise<Document[]> {
     const { pageSize, offset } = getPaginationParams(config?.pagination);
 
+    // Create a type-safe filter
+    const filter = Object.entries(config.filter || {})
+      .map(([key, value]) => {
+        if (key === 'state') {
+          return eq(
+            sql<DocumentState>`COALESCE(
+              (
+                SELECT dst.to_state
+                FROM document_state_transitions dst
+                WHERE dst.document_id = ${documents.id}
+                ORDER BY dst.created_at DESC
+                LIMIT 1
+              ),
+              'discussion'
+            )`,
+            value as DocumentState,
+          );
+        }
+
+        // Handle other document columns
+        const column = key as keyof typeof documents.$inferSelect;
+        if (column in documents) {
+          return eq(documents[column], value as any);
+        }
+        return undefined;
+      })
+      .filter(
+        (condition): condition is ReturnType<typeof eq> =>
+          condition !== undefined,
+      );
+
     const results = await this.db
       .select(this.fields())
       .from(documents)
       .innerJoin(spaces, eq(spaces.id, documents.spaceId))
-      .where(eq(spaces.slug, spaceSlug))
+      .where(and(eq(spaces.slug, spaceSlug), ...filter))
       .limit(pageSize)
       .offset(offset);
 

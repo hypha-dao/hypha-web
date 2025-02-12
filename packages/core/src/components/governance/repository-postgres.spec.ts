@@ -1,6 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { DocumentRepositoryPostgres } from './repository-postgres';
-import { documents, people, spaces } from '@hypha-platform/storage-postgres';
+import {
+  documents,
+  documentStateTransitions,
+  people,
+  spaces,
+} from '@hypha-platform/storage-postgres';
 import { seed } from 'drizzle-seed';
 import { CreateDocument } from './types';
 import { db } from '../../test-utils/setup';
@@ -108,17 +113,69 @@ describe('DocumentRepositoryPostgres', () => {
         ])
         .returning();
 
-      invariant(spaceOne, 'there should be a space');
-
       const repository = new DocumentRepositoryPostgres(db);
       const docs = await repository.readAllBySpaceSlug(
         {
           spaceSlug: spaceOne.slug,
         },
-        { pagination: { page: 1, pageSize: 10 } },
+        {
+          pagination: { page: 1, pageSize: 10 },
+        },
       );
 
       expect(docs.map((d) => d.slug)).toStrictEqual(['doc-1', 'doc-2']);
+    });
+
+    it('should filter by state', async () => {
+      const [person] = await db.insert(people).values({}).returning();
+      const [targetSpace, otherSpace] = await db
+        .insert(spaces)
+        .values([
+          { title: 'Test Space 1', slug: 'test-space-1' },
+          { title: 'Test Space 2', slug: 'test-space-2' },
+        ])
+        .returning();
+
+      const [, two] = await db
+        .insert(documents)
+        .values([
+          { creatorId: person.id, spaceId: targetSpace.id, slug: 'doc-1' },
+          { creatorId: person.id, spaceId: targetSpace.id, slug: 'doc-2' },
+          { creatorId: person.id, spaceId: otherSpace.id, slug: 'doc-3' },
+        ])
+        .returning();
+
+      await db
+        .insert(documentStateTransitions)
+        .values([
+          {
+            documentId: two.id,
+            fromState: 'discussion',
+            toState: 'proposal',
+            transitionedBy: person.id,
+          },
+        ])
+        .returning();
+
+      const repository = new DocumentRepositoryPostgres(db);
+
+      const discussions = await repository.readAllBySpaceSlug(
+        { spaceSlug: targetSpace.slug },
+        {
+          pagination: { page: 1, pageSize: 10 },
+          filter: { state: 'discussion' },
+        },
+      );
+      const proposals = await repository.readAllBySpaceSlug(
+        { spaceSlug: targetSpace.slug },
+        {
+          pagination: { page: 1, pageSize: 10 },
+          filter: { state: 'proposal' },
+        },
+      );
+
+      expect(discussions.map((d) => d.slug)).toStrictEqual(['doc-1']);
+      expect(proposals.map((d) => d.slug)).toStrictEqual(['doc-2']);
     });
   });
 
