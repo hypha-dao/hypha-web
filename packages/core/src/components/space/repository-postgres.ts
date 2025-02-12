@@ -2,8 +2,12 @@ import { asc, eq } from 'drizzle-orm';
 import { db, spaces, memberships } from '@hypha-platform/storage-postgres';
 import { Space } from './types';
 import { SpaceRepository } from './repository';
+import { StorageType } from '../../config/types';
 
 export class SpacePostgresRepository implements SpaceRepository {
+  getStorageType(): StorageType {
+    return 'postgres';
+  }
   async findAll(): Promise<Space[]> {
     const results = await db.select().from(spaces).orderBy(asc(spaces.title));
     return results;

@@ -1,7 +1,12 @@
 import { Space } from './types';
 import { SpaceRepository } from './repository';
+import { StorageType } from '../../config/types';
 
 export class SpaceInMemoryRepository implements SpaceRepository {
+  getStorageType(): StorageType {
+    return 'memory';
+  }
+
   async findAll(): Promise<Space[]> {
     throw new Error('Not implemented');
   }
