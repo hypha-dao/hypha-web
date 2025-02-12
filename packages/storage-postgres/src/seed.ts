@@ -3,7 +3,7 @@ import { faker } from '@faker-js/faker';
 import { seed, reset } from 'drizzle-seed';
 
 import { resetIndexes } from './utils/reset-index';
-import { documents, memberships, people, spaces } from './schema';
+import { documents, memberships, people, schema, spaces } from './schema';
 
 const AVATAR_URLS = Array.from({ length: 10 }, () => faker.image.avatar());
 const SPACE_LOGO_URLS = Array.from({ length: 10 }, () =>
