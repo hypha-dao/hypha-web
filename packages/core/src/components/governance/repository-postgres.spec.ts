@@ -118,7 +118,7 @@ describe('DocumentRepositoryPostgres', () => {
         { pagination: { page: 1, pageSize: 10 } },
       );
 
-      expect(docs).toHaveLength(2);
+      expect(docs.map((d) => d.slug)).toStrictEqual(['doc-1', 'doc-2']);
     });
   });
 
