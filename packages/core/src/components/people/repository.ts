@@ -3,7 +3,7 @@ import { PaginatedResponse, PaginationParams } from '../../shared';
 import { Person } from './types';
 
 export type ReadManyPeopleConfig = {
-  pagination: PaginationParams<Person>;
+  pagination: PaginationParams;
 };
 
 export interface PeopleRepository extends Repository {
