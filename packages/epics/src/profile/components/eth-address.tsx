@@ -1,8 +1,8 @@
 import { CopyIcon } from '@radix-ui/react-icons';
 
 interface EthAdressProps {
-  address?: string,
-  hasCopyButton?: boolean,
+  address?: string;
+  hasCopyButton?: boolean;
 }
 
 export const EthAddress = ({ address, hasCopyButton }: EthAdressProps) => {
@@ -15,9 +15,12 @@ export const EthAddress = ({ address, hasCopyButton }: EthAdressProps) => {
   if (!address) return null;
 
   return (
-    <div onClick={() => copyToClipboard(address)} className="w-full flex justify-between">
+    <div
+      onClick={() => copyToClipboard(address)}
+      className="w-full flex justify-between"
+    >
       {`${address.slice(0, 6)}…${address.slice(-4)}`}
-      {hasCopyButton ? <CopyIcon className='icon-sm ml-2' /> : null}
+      {hasCopyButton ? <CopyIcon className="icon-sm ml-2" /> : null}
     </div>
   );
 };
