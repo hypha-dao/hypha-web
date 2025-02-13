@@ -1,6 +1,5 @@
 'use client';
 
-import { useAuthentication } from '@hypha-platform/authentication';
 import {
   Button,
   DropdownMenu,
@@ -11,7 +10,6 @@ import {
   DropdownMenuTrigger,
 } from '@hypha-platform/ui';
 import { PersonAvatar } from './person-avatar';
-import { useProfile } from '../hooks/use-profile';
 import { EthAddress } from './eth-address';
 
 export type ButtonProfileProps = {
@@ -51,21 +49,5 @@ export const ButtonProfile = ({
         <Button onClick={login}>Sign in</Button>
       )}
     </div>
-  );
-};
-
-export const ConnectedButtonProfile = () => {
-  const { isAuthenticated, login, logout, user } = useAuthentication();
-  const { profile } = useProfile({ address: user?.wallet?.address });
-
-  return (
-    <ButtonProfile
-      avatarSrc={profile?.avatar}
-      userName={profile?.name}
-      address={user?.wallet?.address}
-      isConnected={isAuthenticated}
-      login={login}
-      logout={logout}
-    />
   );
 };
