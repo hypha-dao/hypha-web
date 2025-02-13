@@ -2,7 +2,7 @@ import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { pgTable, integer, text, unique } from 'drizzle-orm/pg-core';
 import { people } from '../people';
 import { commonDateFields } from '../shared';
-import { documentProposals } from './proposals';
+import { documentProposals } from './document-proposals';
 import { voteTypeEnum } from './types';
 
 export const documentVotes = pgTable(

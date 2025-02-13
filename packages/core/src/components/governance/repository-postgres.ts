@@ -32,16 +32,7 @@ export class DocumentRepositoryPostgres implements DocumentRepository {
       slug: documents.slug,
       createdAt: documents.createdAt,
       updatedAt: documents.updatedAt,
-      state: sql<DocumentState>`COALESCE(
-        (
-          SELECT dst.to_state
-          FROM document_state_transitions dst
-          WHERE dst.document_id = ${documents.id}
-          ORDER BY dst.created_at DESC
-          LIMIT 1
-        ),
-        'discussion'
-      )`,
+      state: documents.state,
     };
   }
 
@@ -123,22 +114,6 @@ export class DocumentRepositoryPostgres implements DocumentRepository {
     // Create a type-safe filter
     const filter = Object.entries(config.filter || {})
       .map(([key, value]) => {
-        if (key === 'state') {
-          return eq(
-            sql<DocumentState>`COALESCE(
-              (
-                SELECT dst.to_state
-                FROM document_state_transitions dst
-                WHERE dst.document_id = ${documents.id}
-                ORDER BY dst.created_at DESC
-                LIMIT 1
-              ),
-              'discussion'
-            )`,
-            value as DocumentState,
-          );
-        }
-
         // Handle other document columns
         const column = key as keyof typeof documents.$inferSelect;
         if (column in documents) {

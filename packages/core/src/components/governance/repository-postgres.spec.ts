@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { DocumentRepositoryPostgres } from './repository-postgres';
 import {
   documents,
-  documentStateTransitions,
+  DocumentState,
   people,
   spaces,
 } from '@hypha-platform/storage-postgres';
@@ -136,24 +136,17 @@ describe('DocumentRepositoryPostgres', () => {
         ])
         .returning();
 
-      const [, two] = await db
+      await db
         .insert(documents)
         .values([
           { creatorId: person.id, spaceId: targetSpace.id, slug: 'doc-1' },
-          { creatorId: person.id, spaceId: targetSpace.id, slug: 'doc-2' },
-          { creatorId: person.id, spaceId: otherSpace.id, slug: 'doc-3' },
-        ])
-        .returning();
-
-      await db
-        .insert(documentStateTransitions)
-        .values([
           {
-            documentId: two.id,
-            fromState: 'discussion',
-            toState: 'proposal',
-            transitionedBy: person.id,
+            creatorId: person.id,
+            spaceId: targetSpace.id,
+            slug: 'doc-2',
+            state: DocumentState.PROPOSAL,
           },
+          { creatorId: person.id, spaceId: otherSpace.id, slug: 'doc-3' },
         ])
         .returning();
 

@@ -78,6 +78,13 @@
       "when": 1738743437884,
       "tag": "0010_aromatic_makkari",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1739456207914,
+      "tag": "0011_strong_chimera",
+      "breakpoints": true
     }
   ]
 }

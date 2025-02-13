@@ -3,11 +3,12 @@ import { people } from './people';
 import { spaces } from './space';
 import { spaceConfigs } from './space-config';
 import {
-  documentAgreements,
-  documentAgreementSignatures,
-} from './governance/agreements';
-import { documentProposals } from './governance/proposals';
-import { documents } from './governance/document';
+  documentDiscussions,
+  documentProposals,
+  documentSignatures,
+  documentVotes,
+  documents,
+} from './governance';
 
 export * from './governance';
 export * from './membership';
@@ -16,9 +17,10 @@ export * from './space-config';
 export * from './space';
 
 export const schema = {
-  documentAgreements,
-  documentAgreementSignatures,
+  documentDiscussions,
   documentProposals,
+  documentSignatures,
+  documentVotes,
   documents,
   memberships,
   people,

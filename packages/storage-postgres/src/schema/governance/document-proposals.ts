@@ -8,8 +8,6 @@ export const documentProposals = pgTable('document_proposals', {
   documentId: integer('document_id')
     .notNull()
     .references(() => documents.id),
-  votingStartsAt: timestamp('voting_starts_at').notNull(),
-  votingEndsAt: timestamp('voting_ends_at').notNull(),
   minVotesRequired: integer('min_votes_required').notNull(),
 });
 
