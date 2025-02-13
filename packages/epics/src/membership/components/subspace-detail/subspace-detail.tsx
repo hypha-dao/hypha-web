@@ -27,7 +27,6 @@ export const SubspaceDetail = ({
     isLoading,
     loadMore,
     pagination,
-    paginatedMembers,
     activeFilter,
     setActiveFilter,
   } = useSubspaceDetails(members ?? []);
