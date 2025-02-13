@@ -1,5 +1,5 @@
 {
-  "id": "5ed82e3b-e977-4ca2-ad6d-d37cc4ad6715",
+  "id": "a39afed3-daa2-4f94-a5ea-c0219ed19052",
   "prevId": "dd2f82f3-70b1-4f30-927e-dc7130630063",
   "version": "7",
   "dialect": "postgresql",
@@ -426,7 +426,7 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "default": "'discussion'"
+          "default": "'draft'"
         },
         "voting_starts_at": {
           "name": "voting_starts_at",
@@ -826,32 +826,6 @@
     }
   },
   "enums": {
-    "public.document_state": {
-      "name": "document_state",
-      "schema": "public",
-      "values": [
-        "discussion",
-        "proposal",
-        "agreement"
-      ]
-    },
-    "public.agreement_state": {
-      "name": "agreement_state",
-      "schema": "public",
-      "values": [
-        "accepted",
-        "rejected"
-      ]
-    },
-    "public.governance_state": {
-      "name": "governance_state",
-      "schema": "public",
-      "values": [
-        "discussion",
-        "proposal",
-        "agreement"
-      ]
-    },
     "public.vote_type": {
       "name": "vote_type",
       "schema": "public",
@@ -859,6 +833,15 @@
         "yes",
         "no",
         "abstain"
+      ]
+    },
+    "public.document_state": {
+      "name": "document_state",
+      "schema": "public",
+      "values": [
+        "draft",
+        "discussion",
+        "proposal"
       ]
     }
   },

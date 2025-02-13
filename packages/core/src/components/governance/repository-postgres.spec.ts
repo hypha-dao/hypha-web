@@ -144,7 +144,7 @@ describe('DocumentRepositoryPostgres', () => {
             creatorId: person.id,
             spaceId: targetSpace.id,
             slug: 'doc-2',
-            state: DocumentState.PROPOSAL,
+            state: DocumentState.DISCUSSION,
           },
           { creatorId: person.id, spaceId: otherSpace.id, slug: 'doc-3' },
         ])
@@ -152,23 +152,24 @@ describe('DocumentRepositoryPostgres', () => {
 
       const repository = new DocumentRepositoryPostgres(db);
 
+      // TODO: Only authenticated user can read their own drafts
+      const drafts = await repository.readAllBySpaceSlug(
+        { spaceSlug: targetSpace.slug },
+        {
+          pagination: { page: 1, pageSize: 10 },
+          filter: { state: DocumentState.DRAFT },
+        },
+      );
       const discussions = await repository.readAllBySpaceSlug(
         { spaceSlug: targetSpace.slug },
         {
           pagination: { page: 1, pageSize: 10 },
-          filter: { state: 'discussion' },
-        },
-      );
-      const proposals = await repository.readAllBySpaceSlug(
-        { spaceSlug: targetSpace.slug },
-        {
-          pagination: { page: 1, pageSize: 10 },
-          filter: { state: 'proposal' },
+          filter: { state: DocumentState.DISCUSSION },
         },
       );
 
-      expect(discussions.map((d) => d.slug)).toStrictEqual(['doc-1']);
-      expect(proposals.map((d) => d.slug)).toStrictEqual(['doc-2']);
+      expect(drafts.map((d) => d.slug)).toStrictEqual(['doc-1']);
+      expect(discussions.map((d) => d.slug)).toStrictEqual(['doc-2']);
     });
   });
 

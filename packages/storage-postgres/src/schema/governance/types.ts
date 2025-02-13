@@ -1,14 +1,16 @@
-import { pgEnum } from 'drizzle-orm/pg-core';
+export enum DocumentState {
+  DRAFT = 'draft',
+  DISCUSSION = 'discussion',
+  PROPOSAL = 'proposal',
+}
 
-export const governanceStateEnum = pgEnum('governance_state', [
-  'discussion',
-  'proposal',
-  'agreement',
-]);
+export enum ProposalState {
+  ACCEPTED = 'accepted',
+  REJECTED = 'rejected',
+}
 
-export const voteTypeEnum = pgEnum('vote_type', ['yes', 'no', 'abstain']);
-
-export const agreementStateEnum = pgEnum('agreement_state', [
-  'accepted',
-  'rejected',
-]);
+export enum Vote {
+  YES = 'yes',
+  NO = 'no',
+  ABSTAIN = 'abstain',
+}
