@@ -12,6 +12,11 @@
         "command": "drizzle-kit generate",
         "forwardAllArgs": true,
         "cwd": "packages/storage-postgres"
+      },
+      "configurations": {
+        "local": {
+          "dependsOn": ["db:start"]
+        }
       }
     },
     "push": {
