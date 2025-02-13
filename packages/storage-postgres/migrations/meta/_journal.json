@@ -78,20 +78,6 @@
       "when": 1738743437884,
       "tag": "0010_aromatic_makkari",
       "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "7",
-      "when": 1739183337916,
-      "tag": "0011_melodic_rockslide",
-      "breakpoints": true
-    },
-    {
-      "idx": 12,
-      "version": "7",
-      "when": 1739384648174,
-      "tag": "0012_quiet_sasquatch",
-      "breakpoints": true
     }
   ]
 }
