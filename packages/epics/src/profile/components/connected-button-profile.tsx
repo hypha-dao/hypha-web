@@ -1,3 +1,5 @@
+'use client';
+
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useProfile } from '../hooks/use-profile';
 import { ButtonProfile } from './button-profile';
