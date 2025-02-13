@@ -1,9 +1,15 @@
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
-import { pgTable, integer, text, unique } from 'drizzle-orm/pg-core';
+import { pgTable, integer, text, unique, pgEnum } from 'drizzle-orm/pg-core';
 import { people } from '../people';
 import { commonDateFields } from '../shared';
 import { documentProposals } from './document-proposals';
-import { voteTypeEnum } from './types';
+import { Vote } from './types';
+
+export const voteTypeEnum = pgEnum('vote_type', [
+  Vote.YES,
+  Vote.NO,
+  Vote.ABSTAIN,
+]);
 
 export const documentVotes = pgTable(
   'document_votes',

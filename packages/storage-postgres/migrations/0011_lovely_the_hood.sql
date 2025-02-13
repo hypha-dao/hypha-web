@@ -3,8 +3,6 @@ DROP SEQUENCE IF EXISTS memberships_id_seq CASCADE;
 DROP SEQUENCE IF EXISTS people_id_seq CASCADE;
 DROP SEQUENCE IF EXISTS spaces_id_seq CASCADE;
 
-CREATE TYPE "public"."agreement_state" AS ENUM('accepted', 'rejected');--> statement-breakpoint
-CREATE TYPE "public"."governance_state" AS ENUM('discussion', 'proposal', 'agreement');--> statement-breakpoint
 CREATE TYPE "public"."vote_type" AS ENUM('yes', 'no', 'abstain');--> statement-breakpoint
 CREATE TABLE "document_discussions" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "document_discussions_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1000 CACHE 1),
@@ -42,9 +40,35 @@ CREATE TABLE "document_votes" (
 	"vote" "vote_type" NOT NULL,
 	"comment" text
 );
+-- First remove the default and convert to text
+ALTER TABLE "public"."documents" ALTER COLUMN "state" DROP DEFAULT;--> statement-breakpoint
+ALTER TABLE "public"."documents" ALTER COLUMN "state" SET DATA TYPE text;--> statement-breakpoint
+
+-- Set text default temporarily
+ALTER TABLE "public"."documents" ALTER COLUMN "state" SET DEFAULT 'draft';--> statement-breakpoint
+
+-- Drop and recreate the enum
+DROP TYPE IF EXISTS "public"."document_state";--> statement-breakpoint
+CREATE TYPE "public"."document_state" AS ENUM('draft', 'discussion', 'proposal');--> statement-breakpoint
+
+-- Remove text default before converting
+ALTER TABLE "public"."documents" ALTER COLUMN "state" DROP DEFAULT;--> statement-breakpoint
+
+-- Convert to enum
+ALTER TABLE "public"."documents"
+    ALTER COLUMN "state" SET DATA TYPE "public"."document_state"
+    USING COALESCE(state, 'draft')::"public"."document_state";--> statement-breakpoint
+
+-- Set the enum default
+ALTER TABLE "public"."documents" ALTER COLUMN "state" SET DEFAULT 'draft'::"public"."document_state";--> statement-breakpoint
+
+-- First convert the column to text to avoid enum constraints
+ALTER TABLE "public"."documents" ALTER COLUMN "state" SET DATA TYPE text;--> statement-breakpoint
+
 --> statement-breakpoint
 ALTER TABLE "documents" ALTER COLUMN "id" SET DATA TYPE integer;--> statement-breakpoint
 ALTER TABLE "documents" ALTER COLUMN "id" ADD GENERATED ALWAYS AS IDENTITY (sequence name "documents_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1000 CACHE 1);--> statement-breakpoint
+ALTER TABLE "documents" ALTER COLUMN "state" SET DEFAULT 'draft';--> statement-breakpoint
 ALTER TABLE "memberships" ALTER COLUMN "id" SET DATA TYPE integer;--> statement-breakpoint
 ALTER TABLE "memberships" ALTER COLUMN "id" ADD GENERATED ALWAYS AS IDENTITY (sequence name "memberships_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1000 CACHE 1);--> statement-breakpoint
 ALTER TABLE "people" ALTER COLUMN "id" SET DATA TYPE integer;--> statement-breakpoint
@@ -61,4 +85,4 @@ ALTER TABLE "document_signatures" ADD CONSTRAINT "document_signatures_document_i
 ALTER TABLE "document_signatures" ADD CONSTRAINT "document_signatures_signer_id_people_id_fk" FOREIGN KEY ("signer_id") REFERENCES "public"."people"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "document_votes" ADD CONSTRAINT "document_votes_proposal_id_document_proposals_id_fk" FOREIGN KEY ("proposal_id") REFERENCES "public"."document_proposals"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "document_votes" ADD CONSTRAINT "document_votes_voter_id_people_id_fk" FOREIGN KEY ("voter_id") REFERENCES "public"."people"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "documents" ADD CONSTRAINT "documents_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "documents" ADD CONSTRAINT "documents_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

@@ -10,17 +10,12 @@ import {
 import { commonDateFields } from '../shared';
 import { people } from '../people';
 import { spaces } from '../space';
-
-export enum DocumentState {
-  DISCUSSION = 'discussion',
-  PROPOSAL = 'proposal',
-  AGREEMENT = 'agreement',
-}
+import { DocumentState } from './types';
 
 export const documentStateEnum = pgEnum('document_state', [
+  DocumentState.DRAFT,
   DocumentState.DISCUSSION,
   DocumentState.PROPOSAL,
-  DocumentState.AGREEMENT,
 ]);
 
 export const documents = pgTable('documents', {
@@ -34,7 +29,7 @@ export const documents = pgTable('documents', {
   title: text('title'),
   description: text('description'),
   slug: varchar('slug', { length: 255 }),
-  state: documentStateEnum('state').notNull().default(DocumentState.DISCUSSION),
+  state: documentStateEnum('state').notNull().default(DocumentState.DRAFT),
   votingStartsAt: timestamp('voting_starts_at'),
   votingEndsAt: timestamp('voting_ends_at'),
 });
