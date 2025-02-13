@@ -1,4 +1,5 @@
 import { CopyIcon } from '@radix-ui/react-icons';
+import { copyToClipboard } from '../../../../ui-utils/src/copyToClipboard';
 
 interface EthAdressProps {
   address?: string;
@@ -6,9 +7,9 @@ interface EthAdressProps {
 }
 
 export const EthAddress = ({ address, hasCopyButton }: EthAdressProps) => {
-  const copyToClipboard = (text: string) => {
+  const copy = (text: string) => {
     if (hasCopyButton) {
-      navigator.clipboard.writeText(text);
+      copyToClipboard(text)
     }
   };
 
@@ -16,7 +17,7 @@ export const EthAddress = ({ address, hasCopyButton }: EthAdressProps) => {
 
   return (
     <div
-      onClick={() => copyToClipboard(address)}
+      onClick={() => copy(address)}
       className="w-full flex justify-between"
     >
       {`${address.slice(0, 6)}…${address.slice(-4)}`}
