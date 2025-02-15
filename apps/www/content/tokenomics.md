@@ -1,0 +1,22 @@
+# Tokenomics
+
+## TreehaToken (TREH)
+
+The TreehaToken is a stable coin specifically designed for the Hypha Network ecosystem. Its name is inspired by Trehalose, the crucial molecule that enables nutrient exchange in mycelial networks - nature's own resource-sharing system. Just as mycelial networks (also known as the "Wood Wide Web") allow forests to share resources and thrive, TreehaToken serves as the fundamental resource that enables DAOs to grow and flourish within the Hypha ecosystem.
+
+### Purpose
+
+- Provides a stable, local currency for platform usage payments
+- Enables predictable and sustainable economic interactions within the network
+- Powers the platform's subscription and service fees
+- Mirrors nature's efficient resource distribution systems
+
+### How it Works
+
+- Users receive TreehaTokens when joining the ecosystem
+- Tokens are used to pay for platform services and DAO creation
+- Each payment facilitates resource exchange within the network, similar to how mycelial networks distribute nutrients in nature
+- The stable value ensures transparent and predictable operational costs
+
+This biomimetic tokenomics model creates a sustainable cycle where platform usage directly contributes to ecosystem growth and stability, much like the interconnected root systems of a thriving forest.
+
