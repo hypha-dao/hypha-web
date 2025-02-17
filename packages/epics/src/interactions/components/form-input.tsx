@@ -6,7 +6,7 @@ export const FormInput = () => {
     <Input
       leftIcon={<RxChatBubble />}
       rightIcon={<RxPaperPlane />}
-      placeholder="Type a comments here"
+      placeholder="Type a comment here"
     />
   );
 };
