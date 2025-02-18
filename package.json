@@ -138,7 +138,7 @@
     "@swc/core": "~1.5.29",
     "@swc/helpers": "~0.5.11",
     "@tailwindcss/typography": "^0.5.16",
-    "@testing-library/react": "16.1.0",
+    "@testing-library/react": "16.2.0",
     "@typechain/ethers-v6": "^0.5.0",
     "@typechain/hardhat": "^9.0.0",
     "@types/chai": "^4.2.0",
