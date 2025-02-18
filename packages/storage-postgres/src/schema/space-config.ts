@@ -22,7 +22,8 @@ export const spaceConfigs = pgTable('space_configs', {
       member: 'postgres',
       comment: 'postgres',
     }),
-  ...commonDateFields,
+  createdAt: commonDateFields.createdAt,
+  updatedAt: commonDateFields.updatedAt,
 });
 
 export type SpaceConfig = InferSelectModel<typeof spaceConfigs>;

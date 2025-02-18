@@ -2,7 +2,6 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Database } from '..';
 import { sql } from 'drizzle-orm';
 import { schema } from '../schema';
-
 export const resetIndexes = async (
   db: NodePgDatabase<typeof schema> | Database,
 ) => {
