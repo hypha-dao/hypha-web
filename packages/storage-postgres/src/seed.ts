@@ -3,7 +3,7 @@ import { faker } from '@faker-js/faker';
 import { seed, reset } from 'drizzle-seed';
 
 import { resetIndexes } from './utils/reset-index';
-import { documents, memberships, people, spaces } from './schema';
+import { documents, memberships, people, schema, spaces } from './schema';
 
 const AVATAR_URLS = Array.from({ length: 10 }, () => faker.image.avatar());
 const SPACE_LOGO_URLS = Array.from({ length: 10 }, () =>
@@ -20,7 +20,9 @@ const SPACE_LEAD_IMAGE_URLS = Array.from({ length: 10 }, () =>
 );
 
 async function main() {
-  const db = drizzle(process.env.BRANCH_DB_URL! || process.env.DEFAULT_DB_URL!);
+  const db = drizzle(
+    process.env['BRANCH_DB_URL']! || process.env['DEFAULT_DB_URL']!,
+  );
   await reset(db, { people, memberships, spaces, documents });
   await seed(db, { people, memberships, spaces, documents }).refine((f) => {
     return {
@@ -54,6 +56,7 @@ async function main() {
         // count: 1000,
         with: {
           memberships: 2,
+          documents: 2,
         },
         columns: {
           title: f.companyName(),

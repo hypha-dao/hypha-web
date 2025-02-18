@@ -12,11 +12,11 @@ export class DocumentService {
   }
 
   async getAll(): Promise<Document[]> {
-    return this.repository.findAll();
+    return this.repository.readAll();
   }
 
   async getById(id: number): Promise<Document> {
-    const document = await this.repository.findById(id);
+    const document = await this.repository.readById(id);
     if (!document) {
       throw new DocumentNotFoundError(id);
     }
@@ -24,7 +24,7 @@ export class DocumentService {
   }
 
   async getBySlug(slug: string): Promise<Document> {
-    const document = await this.repository.findBySlug(slug);
+    const document = await this.repository.readBySlug(slug);
     if (!document) {
       throw new DocumentNotFoundError(slug);
     }

@@ -16,8 +16,7 @@ export type FilterParams<T> = {
   [key in keyof T]?: string;
 };
 
-export type PaginationParams<T> = {
+export type PaginationParams = {
   page?: number;
   pageSize?: number;
-  filter?: FilterParams<T>;
 };
