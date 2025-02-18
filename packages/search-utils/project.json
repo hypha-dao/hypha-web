@@ -1,0 +1,17 @@
+{
+  "name": "search-utils",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/search-utils/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project search-utils --web",
+  "targets": {
+    "import": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx src/import.ts",
+        "cwd": "packages/search-utils"
+      }
+    }
+  }
+}
