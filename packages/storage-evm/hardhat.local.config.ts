@@ -3,7 +3,7 @@ import '@nomicfoundation/hardhat-toolbox';
 import 'hardhat-gas-reporter';
 
 const config: HardhatUserConfig = {
-  solidity: '0.8.24',
+  solidity: '0.8.28',
   gasReporter: {
     enabled: process.env.REPORT_GAS ? true : false,
   },
