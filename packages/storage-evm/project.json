@@ -8,13 +8,22 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npx hardhat compile --config packages/storage-evm/hardhat.local.config.ts --tsconfig packages/storage-evm/tsconfig.json"
+        "command": "npx hardhat compile --config hardhat.local.config.ts",
+        "cwd": "packages/storage-evm"
       }
     },
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npx hardhat test --config packages/storage-evm/hardhat.local.config.ts --tsconfig packages/storage-evm/tsconfig.json"
+        "command": "npx hardhat test --config hardhat.local.config.ts",
+        "cwd": "packages/storage-evm"
+      }
+    },
+    "node": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx hardhat node",
+        "cwd": "packages/storage-evm"
       }
     }
   }
