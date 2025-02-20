@@ -6,21 +6,22 @@ This package contains the Ethereum smart contracts and related infrastructure. I
 
 Run these commands from the root of the workspace:
 
+### Run tests
+
 ```shell
-# Get help about available hardhat commands
-nx run storage-evm:hardhat -- help
+npx nx run storage-evm:test
+```
 
-# Run tests
-nx run storage-evm:test
+### Start a local hardhat node
 
-# Run tests with gas reporting
-nx run storage-evm:test -- REPORT_GAS=true
+```shell
+npx nx run storage-evm:node
+```
 
-# Start a local hardhat node
-nx run storage-evm:node
+### Deploy contracts using Hardhat Ignition
 
-# Deploy contracts using Hardhat Ignition
-nx run storage-evm:deploy
+```shell
+npx nx run storage-evm:deploy ./ignition/modules/SpaceFactory.ts --network localhost --reset
 ```
 
 ## Development
