@@ -25,6 +25,13 @@
         "command": "npx hardhat node",
         "cwd": "packages/storage-evm"
       }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx hardhat ignition deploy",
+        "cwd": "packages/storage-evm"
+      }
     }
   }
 }
