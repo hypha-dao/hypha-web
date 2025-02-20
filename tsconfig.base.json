@@ -29,6 +29,12 @@
       "@hypha-platform/i18n/client": ["packages/i18n/src/client.ts"],
       "@hypha-platform/json-rpc": ["packages/api/json-rpc/src/index.ts"],
       "@hypha-platform/lib/utils": ["packages/ui-utils/src/index.ts"],
+      "@hypha-platform/storage-evm/typechain-types": [
+        "packages/storage-evm/typechain-types"
+      ],
+      "@hypha-platform/storage-evm/artifacts/contracts/*": [
+        "packages/storage-evm/artifacts/contracts/*"
+      ],
       "@hypha-platform/storage-postgres": [
         "packages/storage-postgres/src/index.ts"
       ],
