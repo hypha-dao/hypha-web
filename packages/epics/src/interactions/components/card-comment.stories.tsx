@@ -23,6 +23,7 @@ export const Primary: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    expect(canvas.getByText(/Welcome to CardComment!/gi)).toBeTruthy();
+    expect(canvas.getByText(/John/gi)).toBeTruthy();
+    expect(canvas.getByText(/Doe/gi)).toBeTruthy();
   },
 };

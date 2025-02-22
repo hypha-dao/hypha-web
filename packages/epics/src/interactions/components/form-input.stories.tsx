@@ -14,6 +14,8 @@ export const Primary: Story = {
   args: {},
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    expect(canvas.getByText(/Welcome to FormInput!/gi)).toBeTruthy();
+    expect(
+      canvas.getByPlaceholderText(/Type a comment here/i),
+    ).toBeInTheDocument();
   },
 };
