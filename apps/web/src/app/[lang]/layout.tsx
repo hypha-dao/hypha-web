@@ -9,7 +9,7 @@ import { VercelToolbar } from '@vercel/toolbar/next';
 
 import { Lato, Source_Sans_3 } from 'next/font/google';
 import clsx from 'clsx';
-import { ConnectedButtonProfile } from '@hypha-platform/epics';
+import { ConnectedButtonProfile, CommandMenu } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { AuthProvider } from '@hypha-platform/authentication';
 import { enableWeb3Auth } from '@hypha-platform/feature-flags';
@@ -93,6 +93,7 @@ export default async function RootLayout({
             {aside}
           </div>
           <Footer />
+          <CommandMenu />
         </ThemeProvider>
       </AuthProvider>
       {shouldInjectToolbar && <VercelToolbar />}
