@@ -1,38 +1,41 @@
-import { ethers } from 'ethers';
-import { SpaceFactory } from '@hypha-platform/storage-evm/typechain-types';
-import { abi } from '@hypha-platform/storage-evm/artifacts/contracts/SpaceFactory.sol/SpaceFactory.json';
+import { Address, WalletClient, createPublicClient, http, Chain } from 'viem';
 import { SpaceRepository } from './repository';
 import { Space } from './types';
+import { mainnet } from 'viem/chains';
+
+import { getSpace, spaceFactoryAbi } from '@hypha-platform/storage-evm';
 
 export class SpaceEvmRepository implements SpaceRepository {
-  private contract: SpaceFactory;
+  private client: ReturnType<typeof createPublicClient>;
+  private chain: Chain;
 
   constructor(
-    private provider: ethers.Provider,
-    private contractAddress: string,
+    rpcUrl: string,
+    private contractAddress: Address,
+    chain: Chain = mainnet,
   ) {
-    this.contract = new ethers.Contract(
-      contractAddress,
-      abi,
-      provider,
-    ) as unknown as SpaceFactory;
+    this.chain = chain;
+    this.client = createPublicClient({
+      chain: this.chain,
+      transport: http(rpcUrl),
+    });
   }
 
   async findAll(): Promise<Space[]> {
-    const slugs = await this.contract.getAllSlugs();
+    const slugs = (await this.client.readContract({
+      address: this.contractAddress,
+      abi: spaceFactoryAbi,
+      functionName: 'getAllSlugs',
+    })) as string[];
+
     const spaces = await Promise.all(
       slugs.map(async (slug) => {
-        const space = await this.contract.getSpace(slug);
-        return {
-          title: space.title,
-          description: space.description,
-          slug: space.slug,
-          owner: space.owner,
-          createdAt: new Date(Number(space.createdAt) * 1000),
-        };
+        const space = await this.findBySlug(slug);
+        return space as Space;
       }),
     );
-    return spaces;
+
+    return spaces.filter((space): space is Space => space !== null);
   }
 
   async findById(): Promise<Space | null> {
@@ -40,41 +43,41 @@ export class SpaceEvmRepository implements SpaceRepository {
   }
 
   async findBySlug(slug: string): Promise<Space | null> {
-    try {
-      const space = await this.contract.getSpace(slug);
-      return {
-        title: space.title,
-        description: space.description,
-        slug: space.slug,
-        owner: space.owner,
-        createdAt: new Date(Number(space.createdAt) * 1000),
-      };
-    } catch (error) {
-      return null;
-    }
+    const result = await getSpace({ slug });
+
+    return {
+      ...result,
+      createdAt: new Date(Number(result.createdAt) * 1000),
+    };
   }
 
   async create(params: {
     title: string;
     description: string;
     slug: string;
-    signer: ethers.Signer;
+    walletClient: WalletClient;
   }): Promise<Space> {
-    const { title, description, slug, signer } = params;
+    // 1. Simulate the contract write to check for potential errors
+    const { request } = await this.client.simulateContract({
+      address: this.contractAddress,
+      abi: spaceFactoryAbi,
+      functionName: 'createSpace',
+      args: [params.title, params.description, params.slug],
+      account: params.walletClient.account,
+    });
 
-    const connectedContract = this.contract.connect(signer);
-    const tx = await connectedContract.createSpace(title, description, slug);
-    const receipt = await tx.wait();
+    // 2. Execute the contract write
+    const hash = await params.walletClient.writeContract(request);
 
-    const event = receipt.logs[0];
-    const parsedEvent = this.contract.interface.parseLog(event);
+    // 3. Wait for the transaction to be mined
+    const receipt = await this.client.waitForTransactionReceipt({ hash });
 
-    return {
-      slug: parsedEvent.args.slug,
-      title: parsedEvent.args.title,
-      owner: parsedEvent.args.owner,
-      createdAt: new Date(Number(parsedEvent.args.timestamp) * 1000),
-      description: description,
-    };
+    // 4. Fetch and return the newly created space
+    const space = await this.findBySlug(params.slug);
+    if (!space) {
+      throw new Error('Failed to create space');
+    }
+
+    return space;
   }
 }
