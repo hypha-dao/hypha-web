@@ -3,11 +3,11 @@ import { z } from 'zod';
 const envVariables = z.object({
   MAINNET_RPC_URL: z.string().url(),
   SEPOLIA_RPC_URL: z.string().url(),
+  // Base
   BASE_MAINNET_RPC_URL: z.string().url().default('https://mainnet.base.org'),
   BASE_SEPOLIA_RPC_URL: z.string().url().default('https://sepolia.base.org'),
-  // Base
-  MATIC_RPC_URL: z.string().url(),
   // Polygon
+  MATIC_RPC_URL: z.string().url(),
   MUMBAI_RPC_URL: z.string().url(),
   // Blockchain explorers
   ETHERSCAN_API_KEY: z.string().min(1),
