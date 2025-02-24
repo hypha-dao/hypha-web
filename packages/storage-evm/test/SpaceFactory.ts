@@ -1,47 +1,60 @@
-import { loadFixture, time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
-import { expect } from "chai";
-import { ethers } from "hardhat";
+import {
+  loadFixture,
+  time,
+} from '@nomicfoundation/hardhat-toolbox/network-helpers';
+import { expect } from 'chai';
+import { SpaceFactory } from '../typechain-types';
+import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
+import { ethers } from 'hardhat';
 
-describe("SpaceFactory", function() {
-  async function deploySpaceFactoryFixture() {
+describe('SpaceFactory', function () {
+  async function deploySpaceFactoryFixture(): Promise<{
+    spaceFactory: SpaceFactory;
+    owner: SignerWithAddress;
+    otherAccount: SignerWithAddress;
+  }> {
     const [owner, otherAccount] = await ethers.getSigners();
-    const SpaceFactory = await ethers.getContractFactory("SpaceFactory");
+    const SpaceFactory = await ethers.getContractFactory('SpaceFactory');
     const spaceFactory = await SpaceFactory.deploy();
     return { spaceFactory, owner, otherAccount };
   }
-
-  describe("Space Creation", function() {
-    it("Should create a new space", async function() {
-      const { spaceFactory, owner } = await loadFixture(deploySpaceFactoryFixture);
+  describe('Space Creation', function () {
+    it('Should create a new space', async function () {
+      const { spaceFactory, owner } = await loadFixture(
+        deploySpaceFactoryFixture,
+      );
 
       const currentTime = await time.latest();
 
-      await expect(spaceFactory.createSpace(
-        "Test Space",
-        "Test Description",
-        "test-space"
-      )).to.emit(spaceFactory, "SpaceCreated")
+      await expect(
+        spaceFactory.createSpace(
+          'Test Space',
+          'Test Description',
+          'test-space',
+        ),
+      )
+        .to.emit(spaceFactory, 'SpaceCreated')
         .withArgs(
-          "test-space",
-          "Test Space",
+          'test-space',
+          'Test Space',
           await owner.getAddress(),
-          currentTime + 1
+          currentTime + 1,
         );
 
-      const space = await spaceFactory.getSpace("test-space");
-      expect(space.title).to.equal("Test Space");
-      expect(space.description).to.equal("Test Description");
+      const space = await spaceFactory.getSpace('test-space');
+      expect(space.title).to.equal('Test Space');
+      expect(space.description).to.equal('Test Description');
       expect(space.owner).to.equal(await owner.getAddress());
     });
 
-    it("Should not allow duplicate slugs", async function() {
+    it('Should not allow duplicate slugs', async function () {
       const { spaceFactory } = await loadFixture(deploySpaceFactoryFixture);
 
-      await spaceFactory.createSpace("Space 1", "Desc 1", "slug-1");
+      await spaceFactory.createSpace('Space 1', 'Desc 1', 'slug-1');
 
       await expect(
-        spaceFactory.createSpace("Space 2", "Desc 2", "slug-1")
-      ).to.be.revertedWith("Slug already exists");
+        spaceFactory.createSpace('Space 2', 'Desc 2', 'slug-1'),
+      ).to.be.revertedWith('Slug already exists');
     });
   });
 });

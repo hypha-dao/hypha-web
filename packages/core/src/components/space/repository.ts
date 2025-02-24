@@ -1,6 +1,7 @@
 import { Repository } from '../../container/types';
 import { Space } from './types';
 import { ethers } from 'ethers';
+import { WalletClient } from 'viem';
 
 export interface SpaceRepository extends Repository {
   findById(id: number): Promise<Space | null>;
@@ -11,6 +12,6 @@ export interface SpaceRepository extends Repository {
     title: string;
     description: string;
     slug: string;
-    signer: ethers.Signer;
+    walletClient: WalletClient;
   }): Promise<Space>;
 }
