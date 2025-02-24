@@ -19,10 +19,17 @@
         "cwd": "packages/storage-evm"
       }
     },
-    "node": {
+    "node:start": {
       "executor": "nx:run-commands",
       "options": {
         "command": "npx hardhat node",
+        "cwd": "packages/storage-evm"
+      }
+    },
+    "node:stop": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pkill -f 'hardhat node'",
         "cwd": "packages/storage-evm"
       }
     },
@@ -53,11 +60,7 @@
         "command": "wagmi generate",
         "cwd": "packages/storage-evm"
       },
-      "dependsOn": [
-        "compile",
-        "deploy-space-factory-proxy-example",
-        "deploy-space-factory-proxy-upgrade-example"
-      ]
+      "dependsOn": ["compile"]
     }
   }
 }
