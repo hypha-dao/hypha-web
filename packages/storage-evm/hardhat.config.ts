@@ -7,12 +7,7 @@ import '@nomiclabs/hardhat-solhint';
 import 'hardhat-deploy';
 import 'solidity-coverage';
 
-import 'dotenv/config';
-
-import './tasks/utils/accounts';
-import './tasks/utils/balance';
-import './tasks/utils/block-number';
-import './tasks/utils/send-eth';
+import './tasks';
 import { env } from './src/env';
 
 require('@openzeppelin/hardhat-upgrades');
