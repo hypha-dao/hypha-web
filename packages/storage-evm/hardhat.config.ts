@@ -13,40 +13,22 @@ import './tasks/utils/accounts';
 import './tasks/utils/balance';
 import './tasks/utils/block-number';
 import './tasks/utils/send-eth';
+import { env } from './src/env';
 
 require('@openzeppelin/hardhat-upgrades');
 
-// Ethereum
-const MAINNET_RPC_URL =
-  (process.env.MAINNET_RPC_URL as string) ||
-  'https://eth-mainnet.g.alchemy.com/v2/your-api-key';
-const SEPOLIA_RPC_URL =
-  (process.env.SEPOLIA_RPC_URL as string) ||
-  'https://eth-sepolia.g.alchemy.com/v2/your-api-key';
-
-// Base
-const BASE_MAINNET_RPC_URL =
-  (process.env.BASE_MAINNET_RPC_URL as string) || 'https://mainnet.base.org';
-const BASE_SEPOLIA_RPC_URL =
-  (process.env.BASE_SEPOLIA_RPC_URL as string) || 'https://sepolia.base.org';
-
-// Polygon
-const MATIC_RPC_URL =
-  (process.env.MATIC_RPC_URL as string) ||
-  'https://polygon-mainnet.g.alchemy.com/v2/your-api-key';
-const MUMBAI_RPC_URL =
-  (process.env.MUMBAI_RPC_URL as string) ||
-  'https://polygon-mumbai.g.alchemy.com/v2/v3/your-api-key';
-
-// Blockchain explorers
-const ETHERSCAN_API_KEY =
-  (process.env.ETHERSCAN_API_KEY as string) || 'api-key';
-const POLYGONSCAN_API_KEY =
-  (process.env.POLYGONSCAN_API_KEY as string) || 'api-key';
-
-// Import MNEMONIC or single private key
-const MNEMONIC = process.env.MNEMONIC || 'your mnemonic';
-const PRIVATE_KEY = process.env.PRIVATE_KEY;
+const {
+  MAINNET_RPC_URL,
+  SEPOLIA_RPC_URL,
+  BASE_MAINNET_RPC_URL,
+  BASE_SEPOLIA_RPC_URL,
+  MATIC_RPC_URL,
+  MUMBAI_RPC_URL,
+  ETHERSCAN_API_KEY,
+  POLYGONSCAN_API_KEY,
+  MNEMONIC,
+  PRIVATE_KEY,
+} = env;
 
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
