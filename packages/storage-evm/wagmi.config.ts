@@ -15,7 +15,7 @@ const HARDHAT_CHAIN_ID = hardhatChain.id;
  */
 export function getContractAddress(
   contract: string,
-  chain: number = 31337,
+  chain = 31337,
 ): `0x${string}` {
   // Read the deployed addresses file
   const addressesPath = path.join(
