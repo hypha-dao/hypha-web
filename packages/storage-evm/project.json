@@ -33,13 +33,31 @@
         "cwd": "packages/storage-evm"
       }
     },
+    "deploy-space-factory-proxy-example": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx nx run storage-evm:deploy ./ignition/modules/SpaceFactoryProxy.ts --config hardhat.local.config.ts --network localhost",
+        "cwd": "packages/storage-evm"
+      }
+    },
+    "deploy-space-factory-proxy-upgrade-example": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx nx run storage-evm:deploy ./ignition/modules/SpaceFactoryProxyUpgrade.ts --config hardhat.local.config.ts --network localhost",
+        "cwd": "packages/storage-evm"
+      }
+    },
     "build": {
       "executor": "nx:run-commands",
       "options": {
         "command": "wagmi generate",
         "cwd": "packages/storage-evm"
       },
-      "dependsOn": ["^compile"]
+      "dependsOn": [
+        "compile",
+        "deploy-space-factory-proxy-example",
+        "deploy-space-factory-proxy-upgrade-example"
+      ]
     }
   }
 }

@@ -39,14 +39,50 @@ export default defineConfig({
   plugins: [
     hardhat({
       project: '.',
-      include: ['SpaceFactory.sol/**', 'DAOSpaceFactoryImplementation.sol/**'],
+      include: [
+        'SpaceFactory.sol/**',
+        'DAOSpaceFactoryImplementation.sol/**',
+        'SpaceFactoryProxy.sol/**',
+        'SpaceFactoryV1.sol/**',
+        'SpaceFactoryV2.sol/**',
+      ],
       deployments: {
         DAOSpaceFactoryImplementation: {
           [base.id]: '0xff6006c67803a380Db25230F1aEc605790C405a1',
         },
-        SpaceFactory: {
+        SpaceFactoryV1: {
           [HARDHAT_CHAIN_ID]: getContractAddress(
-            'SpaceFactoryModule#SpaceFactory',
+            'SpaceFactoryProxyModule#SpaceFactoryV1',
+            HARDHAT_CHAIN_ID,
+          ),
+        },
+        TransparentUpgradeableProxy: {
+          [HARDHAT_CHAIN_ID]: getContractAddress(
+            'SpaceFactoryProxyModule#TransparentUpgradeableProxy',
+            HARDHAT_CHAIN_ID,
+          ),
+        },
+        ProxyAdmin: {
+          [HARDHAT_CHAIN_ID]: getContractAddress(
+            'SpaceFactoryProxyModule#ProxyAdmin',
+            HARDHAT_CHAIN_ID,
+          ),
+        },
+        ProxiedSpaceFactoryV1: {
+          [HARDHAT_CHAIN_ID]: getContractAddress(
+            'SpaceFactoryV1Module#SpaceFactoryV1',
+            HARDHAT_CHAIN_ID,
+          ),
+        },
+        ProxiedSpaceFactoryV2: {
+          [HARDHAT_CHAIN_ID]: getContractAddress(
+            'SpaceFactoryV2Module#SpaceFactoryV2',
+            HARDHAT_CHAIN_ID,
+          ),
+        },
+        SpaceFactoryV2: {
+          [HARDHAT_CHAIN_ID]: getContractAddress(
+            'SpaceFactoryProxyUpgradeModule#SpaceFactoryV2',
             HARDHAT_CHAIN_ID,
           ),
         },
