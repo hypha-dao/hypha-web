@@ -5,6 +5,13 @@
   "projectType": "library",
   "tags": [],
   "targets": {
+    "run": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx hardhat run",
+        "cwd": "packages/storage-evm"
+      }
+    },
     "compile": {
       "executor": "nx:run-commands",
       "options": {
@@ -19,10 +26,17 @@
         "cwd": "packages/storage-evm"
       }
     },
-    "node": {
+    "node:start": {
       "executor": "nx:run-commands",
       "options": {
         "command": "npx hardhat node",
+        "cwd": "packages/storage-evm"
+      }
+    },
+    "node:stop": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pkill -f 'hardhat node'",
         "cwd": "packages/storage-evm"
       }
     },
@@ -33,13 +47,27 @@
         "cwd": "packages/storage-evm"
       }
     },
+    "deploy-space-factory-proxy-example": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx nx run storage-evm:deploy ./ignition/modules/SpaceFactoryProxy.ts --config hardhat.local.config.ts --network localhost",
+        "cwd": "packages/storage-evm"
+      }
+    },
+    "deploy-space-factory-proxy-upgrade-example": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx nx run storage-evm:deploy ./ignition/modules/SpaceFactoryProxyUpgrade.ts --config hardhat.local.config.ts --network localhost",
+        "cwd": "packages/storage-evm"
+      }
+    },
     "build": {
       "executor": "nx:run-commands",
       "options": {
         "command": "wagmi generate",
         "cwd": "packages/storage-evm"
       },
-      "dependsOn": ["^compile"]
+      "dependsOn": ["compile"]
     }
   }
 }
