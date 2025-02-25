@@ -5,6 +5,13 @@
   "projectType": "library",
   "tags": [],
   "targets": {
+    "run": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx hardhat run",
+        "cwd": "packages/storage-evm"
+      }
+    },
     "compile": {
       "executor": "nx:run-commands",
       "options": {
