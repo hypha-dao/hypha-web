@@ -1,6 +1,4 @@
 'use client';
-// TODO: refactor
-import { useSpaces } from 'packages/epics/src/membership/hooks/use-spaces';
 
 import { useParams } from 'next/navigation';
 
@@ -12,13 +10,13 @@ import { SidePanel } from '@web/app/[lang]/@aside/_components/side-panel';
 import { getDhoPathAgreements } from '@web/app/[lang]/dho/[id]/agreements/constants';
 import { getDhoPathMembership } from '@web/app/[lang]/dho/[id]/membership/constants';
 
-export default function Member() {
+import { createSpaceService } from '@hypha-platform/core';
+
+export default async function Member() {
   const { slug, id, lang } = useParams();
   const { person, isLoading } = useMemberBySlug(slug as string);
-  const { spaces } = useSpaces({
-    page: 1,
-    sort: { sort: 'all' },
-  });
+  const spaceService = createSpaceService();
+  const spaces = await spaceService.getAll();
 
   return (
     <SidePanel>
