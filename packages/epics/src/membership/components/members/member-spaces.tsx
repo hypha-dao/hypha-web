@@ -1,20 +1,17 @@
 import { Skeleton, Image } from '@hypha-platform/ui';
-import { MemberType } from '@hypha-platform/graphql/rsc';
-
-export type SpaceType = {
-  logo?: string;
-  members?: MemberType[];
-  title?: string;
-  description?: string;
-  projects?: number;
-};
+import { Space } from '@hypha-platform/core';
 
 export type MemberSpacesProps = {
-  spaces?: SpaceType[];
+  spaces?: Space[];
   isLoading?: boolean;
+  profileView?: boolean;
 };
 
-export const MemberSpaces = ({ spaces, isLoading }: MemberSpacesProps) => {
+export const MemberSpaces = ({
+  spaces,
+  isLoading,
+  profileView = false,
+}: MemberSpacesProps) => {
   return (
     <div className="flex justify-between items-center">
       {isLoading ? (
@@ -24,9 +21,9 @@ export const MemberSpaces = ({ spaces, isLoading }: MemberSpacesProps) => {
           loading={isLoading}
           className="rounded-lg"
         />
-      ) : (
+      ) : !profileView ? (
         <div className="text-4 mr-4">Spaces</div>
-      )}
+      ) : null}
       {isLoading ? (
         <div className="flex flex-row gap-3 overflow-x-auto">
           <Skeleton
@@ -51,15 +48,22 @@ export const MemberSpaces = ({ spaces, isLoading }: MemberSpacesProps) => {
       ) : (
         <div className="flex flex-row gap-3 overflow-x-auto">
           {spaces?.map((space, index) => (
-            <Image
-              // TODO: space doesn't have id field yet
-              key={index}
-              className="rounded-full"
-              width={40}
-              height={40}
-              src={space.logo ?? ''}
-              alt={space.title ?? ''}
-            />
+            <div>
+              <Image
+                // TODO: space doesn't have id field yet
+                key={index}
+                className="rounded-full h-fit"
+                width={profileView ? 64 : 40}
+                height={profileView ? 64 : 40}
+                src={space.logoUrl ?? ''}
+                alt={space.title ?? ''}
+              />
+              {profileView ? (
+                <div className="text-1 text-ellipsis overflow-hidden text-nowrap max-w-[64px] mt-2">
+                  {space.title}
+                </div>
+              ) : null}
+            </div>
           ))}
         </div>
       )}
