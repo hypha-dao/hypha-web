@@ -19,7 +19,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXTwitter } from '@fortawesome/free-brands-svg-icons';
 
-interface Socials {
+export interface Socials {
   LinkedIn: string;
   X: string;
   Website: string;
@@ -50,140 +50,118 @@ export const PersonHead = ({
   };
 
   return (
-    <div className="flex">
-      <Container>
-        <Card className="relative">
-          <Skeleton height={270} width={768} loading={isLoading}>
-            <Image
-              width={768}
-              height={270}
-              className="rounded-xl max-h-[270px] w-full object-cover"
-              src={background}
-              alt={`Profile Lead Image: ${name} ${surname}`}
+    <div className="flex flex-col">
+      <Card className="relative">
+        <Skeleton height={270} width={768} loading={isLoading}>
+          <Image
+            width={768}
+            height={270}
+            className="rounded-xl max-h-[270px] w-full object-cover"
+            src={background}
+            alt={`Profile Lead Image: ${name} ${surname}`}
+          />
+        </Skeleton>
+        <Avatar style={customLogoStyles}>
+          <Skeleton loading={isLoading} width={128} height={128}>
+            <AvatarImage
+              src={avatar}
+              alt={`Profile Avatar Image: ${name} ${surname}`}
             />
           </Skeleton>
-          <Avatar style={customLogoStyles}>
-            <Skeleton loading={isLoading} width={128} height={128}>
-              <AvatarImage
-                src={avatar}
-                alt={`Profile Avatar Image: ${name} ${surname}`}
+        </Avatar>
+      </Card>
+      <div className="flex justify-end mt-2">
+        <Skeleton loading={isLoading} height={28} width={28}>
+          <Button
+            asChild
+            variant="ghost"
+            colorVariant="neutral"
+            className="rounded-lg justify-start p-1 cursor-pointer"
+          >
+            <Share2Icon width={28} height={28} />
+          </Button>
+        </Skeleton>
+        <Skeleton className="ml-2" loading={isLoading} width={120} height={35}>
+          <Button
+            asChild
+            variant="ghost"
+            colorVariant="accent"
+            className="rounded-lg justify-start cursor-pointer ml-2 bg-accent-3"
+          >
+            <div>
+              <Pencil1Icon className="mr-2" width={16} height={16} />
+              Edit profile
+            </div>
+          </Button>
+        </Skeleton>
+        <Skeleton className="ml-2" loading={isLoading} width={120} height={35}>
+          <Button
+            asChild
+            variant="default"
+            colorVariant="accent"
+            className="rounded-lg justify-start cursor-pointer ml-2"
+          >
+            <div>
+              <CopyIcon className="mr-2" width={16} height={16} />
+              Copy user ID
+            </div>
+          </Button>
+        </Skeleton>
+      </div>
+      <div className="mt-4">
+        <Skeleton loading={isLoading} width={180} height={32}>
+          <Text className="text-7">
+            {name} {surname}
+          </Text>
+        </Skeleton>
+      </div>
+      <div className="flex gap-6 mt-2">
+        <Skeleton loading={isLoading} width={120} height={35}>
+          <Button
+            asChild
+            variant="ghost"
+            className="rounded-lg justify-start text-neutral-11 px-0 cursor-pointer"
+          >
+            <div>
+              <LinkedInLogoIcon width={16} height={16} />
+              <Text className="ml-1 text-1">{socials.LinkedIn}</Text>
+            </div>
+          </Button>
+        </Skeleton>
+        <Skeleton className="ml-2" loading={isLoading} width={120} height={35}>
+          <Button
+            asChild
+            variant="ghost"
+            className="rounded-lg justify-start text-neutral-11 px-0 cursor-pointer"
+          >
+            <div>
+              <FontAwesomeIcon
+                className="w-4"
+                color="bg-primary-foreground"
+                icon={faXTwitter}
               />
-            </Skeleton>
-          </Avatar>
-        </Card>
-        <div className="flex justify-end mt-2">
-          <Skeleton loading={isLoading} height={28} width={28}>
-            <Button
-              asChild
-              variant="ghost"
-              colorVariant="neutral"
-              className="rounded-lg justify-start p-1 cursor-pointer"
-            >
-              <Share2Icon width={28} height={28} />
-            </Button>
-          </Skeleton>
-          <Skeleton
-            className="ml-2"
-            loading={isLoading}
-            width={120}
-            height={35}
+              <Text className="ml-1 text-1">{socials.X}</Text>
+            </div>
+          </Button>
+        </Skeleton>
+        <Skeleton className="ml-2" loading={isLoading} width={120} height={35}>
+          <Button
+            asChild
+            variant="ghost"
+            className="rounded-lg justify-start text-neutral-11 px-0 cursor-pointer"
           >
-            <Button
-              asChild
-              variant="ghost"
-              colorVariant="accent"
-              className="rounded-lg justify-start cursor-pointer ml-2 bg-accent-3"
-            >
-              <div>
-                <Pencil1Icon className="mr-2" width={16} height={16} />
-                Edit profile
-              </div>
-            </Button>
-          </Skeleton>
-          <Skeleton
-            className="ml-2"
-            loading={isLoading}
-            width={120}
-            height={35}
-          >
-            <Button
-              asChild
-              variant="default"
-              colorVariant="accent"
-              className="rounded-lg justify-start cursor-pointer ml-2"
-            >
-              <div>
-                <CopyIcon className="mr-2" width={16} height={16} />
-                Copy user ID
-              </div>
-            </Button>
-          </Skeleton>
-        </div>
-        <div className="mt-4">
-          <Skeleton loading={isLoading} width={180} height={32}>
-            <Text className="text-7">
-              {name} {surname}
-            </Text>
-          </Skeleton>
-        </div>
-        <div className="flex gap-6 mt-2">
-          <Skeleton loading={isLoading} width={120} height={35}>
-            <Button
-              asChild
-              variant="ghost"
-              className="rounded-lg justify-start text-neutral-11 px-0 cursor-pointer"
-            >
-              <div>
-                <LinkedInLogoIcon width={16} height={16} />
-                <Text className="ml-1 text-1">{socials.LinkedIn}</Text>
-              </div>
-            </Button>
-          </Skeleton>
-          <Skeleton
-            className="ml-2"
-            loading={isLoading}
-            width={120}
-            height={35}
-          >
-            <Button
-              asChild
-              variant="ghost"
-              className="rounded-lg justify-start text-neutral-11 px-0 cursor-pointer"
-            >
-              <div>
-                <FontAwesomeIcon
-                  className="w-4"
-                  color="bg-primary-foreground"
-                  icon={faXTwitter}
-                />
-                <Text className="ml-1 text-1">{socials.X}</Text>
-              </div>
-            </Button>
-          </Skeleton>
-          <Skeleton
-            className="ml-2"
-            loading={isLoading}
-            width={120}
-            height={35}
-          >
-            <Button
-              asChild
-              variant="ghost"
-              className="rounded-lg justify-start text-neutral-11 px-0 cursor-pointer"
-            >
-              <div>
-                <Link2Icon width={16} height={16} />
-                <Text className="ml-1 text-1">{socials.Website}</Text>
-              </div>
-            </Button>
-          </Skeleton>
-        </div>
-        <div className="mt-6">
-          <Skeleton loading={isLoading} height={72} width={768}>
-            <Text className="text-2">{about}</Text>
-          </Skeleton>
-        </div>
-      </Container>
+            <div>
+              <Link2Icon width={16} height={16} />
+              <Text className="ml-1 text-1">{socials.Website}</Text>
+            </div>
+          </Button>
+        </Skeleton>
+      </div>
+      <div className="mt-6">
+        <Skeleton loading={isLoading} height={72} width={768}>
+          <Text className="text-2">{about}</Text>
+        </Skeleton>
+      </div>
     </div>
   );
 };
