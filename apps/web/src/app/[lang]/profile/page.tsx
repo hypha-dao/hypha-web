@@ -65,7 +65,7 @@ export default async function Profile(props: ProfilePageProps) {
         </Link>
         <Text className="text-sm text-neutral-11 ml-1">/ Profile Page</Text>
       </div>
-      <PersonHead {...personHeadProps} />
+      <PersonHead {...personHeadProps} lang={lang} />
       <div className="mt-6">
         <MemberSpaces spaces={spaces} profileView />
       </div>
