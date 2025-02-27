@@ -48,10 +48,9 @@ export const MemberSpaces = ({
       ) : (
         <div className="flex flex-row gap-3 overflow-x-auto">
           {spaces?.map((space, index) => (
-            <div>
+            <div key={index}>
               <Image
                 // TODO: space doesn't have id field yet
-                key={index}
                 className="rounded-full h-fit"
                 width={profileView ? 64 : 40}
                 height={profileView ? 64 : 40}
