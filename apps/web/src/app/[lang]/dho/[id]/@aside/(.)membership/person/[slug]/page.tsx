@@ -10,13 +10,9 @@ import { SidePanel } from '@web/app/[lang]/@aside/_components/side-panel';
 import { getDhoPathAgreements } from '@web/app/[lang]/dho/[id]/agreements/constants';
 import { getDhoPathMembership } from '@web/app/[lang]/dho/[id]/membership/constants';
 
-import { createSpaceService } from '@hypha-platform/core';
-
-export default async function Member() {
+export default function Member() {
   const { slug, id, lang } = useParams();
   const { person, isLoading } = useMemberBySlug(slug as string);
-  const spaceService = createSpaceService();
-  const spaces = await spaceService.getAll();
 
   return (
     <SidePanel>
@@ -33,7 +29,7 @@ export default async function Member() {
         }}
         isLoading={isLoading}
         basePath={getDhoPathAgreements(lang as Locale, id as string)}
-        spaces={spaces}
+        spaces={[]}
       />
     </SidePanel>
   );

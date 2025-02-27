@@ -1,4 +1,4 @@
-import { SidePanel } from '../../../_components/side-panel';
+import { SidePanel } from '@web/app/[lang]/@aside/_components/side-panel';
 import { MemberDetail } from '@hypha-platform/epics';
 
 export default function Loading() {
