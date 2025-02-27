@@ -6,14 +6,10 @@ import { Locale } from '@hypha-platform/i18n';
 import { getDhoPathMembership } from '../../constants';
 import { useMemberBySlug } from '@web/hooks/use-member-by-slug';
 import { MemberDetail } from '@hypha-platform/epics';
-import { createSpaceService } from '@hypha-platform/core';
 
-export default async function Member() {
+export default function Member() {
   const { slug, id, lang } = useParams();
   const { person, isLoading } = useMemberBySlug(slug as string);
-
-  const spaceService = createSpaceService();
-  const spaces = await spaceService.getAll();
 
   return (
     <MemberDetail
@@ -29,7 +25,7 @@ export default async function Member() {
       }}
       isLoading={isLoading}
       basePath={getDhoPathAgreements(lang as Locale, id as string)}
-      spaces={spaces}
+      spaces={[]}
     />
   );
 }
