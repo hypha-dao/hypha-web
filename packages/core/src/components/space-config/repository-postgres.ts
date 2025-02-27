@@ -3,8 +3,13 @@ import { SpaceConfig, NewSpaceConfig, UpdateSpaceConfig } from './types';
 import { db } from '@hypha-platform/storage-postgres';
 import { spaceConfigs } from '@hypha-platform/storage-postgres';
 import { SpaceConfigRepository } from './repository';
+import { StorageType } from '../../config/types';
 
 export class SpaceConfigPostgresRepository implements SpaceConfigRepository {
+  getStorageType(): StorageType {
+    return 'postgres';
+  }
+
   async findBySpaceSlug(spaceSlug: string): Promise<SpaceConfig | null> {
     const [result] = await db
       .select()

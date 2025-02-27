@@ -15,12 +15,12 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@web/*": ["apps/web/src/*"],
       "@hypha-platform/authentication": [
         "packages/authentication/src/index.ts"
       ],
       "@hypha-platform/cookie": ["packages/cookie/src/index.ts"],
       "@hypha-platform/core": ["packages/core/src/index.ts"],
+      "@hypha-platform/db-lib": ["packages/db-lib/src/index.ts"],
       "@hypha-platform/epics": ["packages/epics/src/index.ts"],
       "@hypha-platform/feature-flags": ["packages/feature-flags/src/index.ts"],
       "@hypha-platform/graphql": ["packages/api/graphql/src/index.ts"],
@@ -44,7 +44,9 @@
       "@hypha-platform/ui-utils/global.css": [
         "packages/ui-utils/src/global.css"
       ],
-      "@hypha-platform/ui/server": ["packages/ui/src/server.ts"]
+      "@hypha-platform/ui/server": ["packages/ui/src/server.ts"],
+      "@web/*": ["apps/web/src/*"],
+      "@www/*": ["apps/web/src/*"]
     }
   },
   "exclude": ["node_modules", "tmp"]

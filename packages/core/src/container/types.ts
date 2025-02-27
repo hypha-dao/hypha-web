@@ -1,8 +1,10 @@
-import { CoreConfig } from '../config/types';
+import { CoreConfig, StorageType } from '../config/types';
 
 // Base Repository interface
 // eslint-disable-next-line @typescript-eslint/no-empty-interface, @typescript-eslint/no-empty-object-type
-export interface Repository {}
+export interface Repository {
+  getStorageType(): StorageType;
+}
 
 export interface Container {
   config: CoreConfig;
