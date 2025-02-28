@@ -29,7 +29,6 @@ export default function Profile() {
   const { lang } = useParams();
   const router = useRouter();
   const { person } = useMe();
-  const profileData = person?.user;
 
   useEffect(() => {
     if (
@@ -54,17 +53,17 @@ export default function Profile() {
   };
 
   const personHeadProps = {
-    avatar: profileData?.avatarUrl ?? '',
-    name: profileData?.name ?? '',
-    surname: profileData?.surname ?? '',
-    background: profileData?.avatarUrl ?? '',
+    avatar: person?.avatarUrl ?? '',
+    name: person?.name ?? '',
+    surname: person?.surname ?? '',
+    background: person?.avatarUrl ?? '',
     socials: {
-      LinkedIn: profileData?.nickname ?? '',
-      X: profileData?.nickname ?? '',
-      Website: profileData?.nickname ?? '',
+      LinkedIn: person?.nickname ?? '',
+      X: person?.nickname ?? '',
+      Website: person?.nickname ?? '',
     },
     isLoading: false,
-    about: profileData?.description ?? '',
+    about: person?.description ?? '',
   };
 
   return (

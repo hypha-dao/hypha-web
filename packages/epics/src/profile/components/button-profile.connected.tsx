@@ -9,15 +9,14 @@ import { useMe } from '../hooks/use-me';
 export const ConnectedButtonProfile = () => {
   const { isAuthenticated, login, logout, user } = useAuthentication();
   const { person } = useMe();
-  const profileData = person?.user;
 
   const router = useRouter();
   const { lang } = useParams();
 
   return (
     <ButtonProfile
-      avatarSrc={profileData?.avatarUrl}
-      userName={profileData?.name}
+      avatarSrc={person?.avatarUrl ?? ''}
+      userName={person?.name ?? ''}
       address={user?.wallet?.address}
       isConnected={isAuthenticated}
       onLogin={login}
