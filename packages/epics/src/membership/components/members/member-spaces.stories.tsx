@@ -12,33 +12,13 @@ export const Primary: Story = {
   args: {
     spaces: [
       {
-        logo: 'https://github.com/shadcn.png',
+        logoUrl: 'https://github.com/shadcn.png',
         title: 'Hypha Energy Hub',
         description:
           'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt...',
-        members: [
-          {
-            avatar: 'https://github.com/shadcn.png',
-            name: 'Jane',
-            surname: 'Doe',
-          },
-          {
-            avatar: 'https://github.com/shadcn.png',
-            name: 'Jane',
-            surname: 'Doe',
-          },
-          {
-            avatar: 'https://github.com/shadcn.png',
-            name: 'Jane',
-            surname: 'Doe',
-          },
-          {
-            avatar: 'https://github.com/shadcn.png',
-            name: 'Jane',
-            surname: 'Doe',
-          },
-        ],
-        projects: 72,
+        id: 0,
+        leadImage: 'https://github.com/shadcn.png',
+        slug: '',
       },
     ],
     isLoading: false,

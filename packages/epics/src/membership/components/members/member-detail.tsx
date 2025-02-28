@@ -4,7 +4,7 @@ import { RxCross1 } from 'react-icons/rx';
 import Link from 'next/link';
 import { AgreementsSection } from '../../../agreements/components/agreements-section';
 import { MemberSpaces } from './member-spaces';
-import { SpaceType } from './member-spaces';
+import { Space } from '@hypha-platform/core';
 
 type MemberType = {
   avatarUrl?: string;
@@ -21,7 +21,7 @@ export type MemberDetailProps = {
   member: MemberType;
   isLoading: boolean;
   basePath: string;
-  spaces: SpaceType[];
+  spaces: Space[];
 };
 
 export const MemberDetail = ({

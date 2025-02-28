@@ -14,5 +14,5 @@ export async function GET(request: NextRequest) {
 
   const [user] = await db.select().from(people).limit(1);
 
-  return NextResponse.json({ user });
+  return NextResponse.json({ ...user });
 }

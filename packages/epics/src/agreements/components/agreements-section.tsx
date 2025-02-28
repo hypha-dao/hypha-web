@@ -11,9 +11,13 @@ import {
 
 type AgreementsSectionProps = {
   basePath: string;
+  hasAvatar?: boolean;
 };
 
-export const AgreementsSection: FC<AgreementsSectionProps> = ({ basePath }) => {
+export const AgreementsSection: FC<AgreementsSectionProps> = ({
+  basePath,
+  hasAvatar = true,
+}) => {
   const {
     pages,
     activeFilter,
@@ -50,6 +54,7 @@ export const AgreementsSection: FC<AgreementsSectionProps> = ({ basePath }) => {
             key={index}
             activeFilter={activeFilter}
             basePath={basePath}
+            hasAvatar={hasAvatar}
           />
         ))
       )}
