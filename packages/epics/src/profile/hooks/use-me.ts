@@ -5,7 +5,7 @@ import useSWR from 'swr';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { Person } from '@hypha-platform/storage-postgres';
 
-export const useMe = (): { person: Person; isLoading: boolean } => {
+export const useMe = (): { person: Person | undefined; isLoading: boolean } => {
   const { getAccessToken, user } = useAuthentication();
   const endpoint = React.useMemo(() => `/api/v1/people/me/`, []);
 
