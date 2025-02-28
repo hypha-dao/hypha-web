@@ -1,17 +1,18 @@
-import { Locale } from '@hypha-platform/i18n';
+'use client';
+
 import {
   PersonHead,
-  MemberSpaces,
-  SpaceGroupSlider,
   AgreementsSection,
   ProposalsSection,
   DiscussionsSection,
+  MemberSpaces,
+  SpaceGroupSlider,
 } from '@hypha-platform/epics';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Text } from '@radix-ui/themes';
 import { Container } from '@hypha-platform/ui';
-import { createSpaceService } from '@hypha-platform/core';
 import { getDhoPathAgreements } from '../dho/[id]/agreements/constants';
 import {
   Tabs,
@@ -19,39 +20,52 @@ import {
   TabsList,
   TabsContent,
 } from '@hypha-platform/ui/server';
+import { useMe } from '@web/hooks/use-me';
+import { useParams } from 'next/navigation';
+import { Locale } from '@hypha-platform/i18n';
+import { useEffect } from 'react';
 
-const AVATAR_URL = 'https://github.com/shadcn.png';
-const BACKGROUND_URL = 'https://github.com/shadcn.png';
-const ABOUT_TEXT =
-  'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit.';
+export default function Profile() {
+  const { lang } = useParams();
+  const router = useRouter();
+  const { person } = useMe();
+  const profileData = person?.user;
 
-type ProfilePageProps = {
-  params: Promise<{ lang: Locale; id: string }>;
-};
+  useEffect(() => {
+    if (
+      person &&
+      typeof person === 'object' &&
+      Object.keys(person).length === 0
+    ) {
+      router.push(`/${lang}/profile/signup`);
+    }
+  }, [person, lang, router]);
 
-export default async function Profile(props: ProfilePageProps) {
-  const { lang } = await props.params;
+  if (
+    !person ||
+    typeof person !== 'object' ||
+    Object.keys(person).length === 0
+  ) {
+    return null;
+  }
 
   const getHref = (id: string) => {
-    return getDhoPathAgreements(lang, id);
+    return getDhoPathAgreements(lang as Locale, id);
   };
 
   const personHeadProps = {
-    avatar: AVATAR_URL,
-    name: 'Name',
-    surname: 'Surname',
-    background: BACKGROUND_URL,
+    avatar: profileData?.avatarUrl ?? '',
+    name: profileData?.name ?? '',
+    surname: profileData?.surname ?? '',
+    background: profileData?.avatarUrl ?? '',
     socials: {
-      LinkedIn: 'NameSurname',
-      X: '@namesurname',
-      Website: 'namesurname.org',
+      LinkedIn: profileData?.nickname ?? '',
+      X: profileData?.nickname ?? '',
+      Website: profileData?.nickname ?? '',
     },
     isLoading: false,
-    about: ABOUT_TEXT,
+    about: profileData?.description ?? '',
   };
-
-  const spaceService = createSpaceService();
-  const spaces = await spaceService.getAll();
 
   return (
     <Container>
@@ -67,7 +81,7 @@ export default async function Profile(props: ProfilePageProps) {
       </div>
       <PersonHead {...personHeadProps} />
       <div className="mt-6">
-        <MemberSpaces spaces={spaces} profileView />
+        <MemberSpaces spaces={[]} profileView />
       </div>
       <Tabs defaultValue="agreements" className="w-full mt-16">
         <TabsList className="w-full mb-7">
@@ -91,7 +105,7 @@ export default async function Profile(props: ProfilePageProps) {
           <DiscussionsSection basePath="" />
         </TabsContent>
       </Tabs>
-      <SpaceGroupSlider spaces={spaces} type="Hypha" getHref={getHref} />
+      <SpaceGroupSlider spaces={[]} type="Hypha" getHref={getHref} />
     </Container>
   );
 }
