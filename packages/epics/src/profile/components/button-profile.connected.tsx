@@ -9,7 +9,7 @@ import { useMe } from '../hooks/use-me';
 export const ConnectedButtonProfile = () => {
   const { isAuthenticated, login, logout, user } = useAuthentication();
   const { person } = useMe();
-  const profileData = person.user;
+  const profileData = person?.user;
 
   const router = useRouter();
   const { lang } = useParams();
