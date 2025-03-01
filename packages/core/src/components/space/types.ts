@@ -1,11 +1,13 @@
 export interface Space {
-  id: number;
+  id?: number;
   logoUrl?: string | null;
   leadImage?: string | null;
   title: string;
   description: string | null;
   slug: string;
   parentId?: number | null;
+  createdAt: Date;
+  owner: string;
 }
 
 export interface CreateSpaceInput {

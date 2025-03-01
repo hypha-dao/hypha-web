@@ -3,5 +3,6 @@
   "explorer.fileNesting.patterns": {
     "*.ts": "${capture}.ts, ${capture}.typegen.ts, ${capture}.spec.ts, ${capture}.mock.ts, ${capture}.factory.ts",
     "*.tsx": "${capture}.tsx, ${capture}.spec.tsx, ${capture}.test.tsx, ${capture}.connected.tsx, ${capture}.stories.tsx"
-  }
+  },
+  "githubIssues.issueBranchTitle": "${user}/${issueNumber}-${sanitizedIssueTitle}"
 }

@@ -11,7 +11,8 @@
       "vite/client",
       "node",
       "vitest"
-    ]
+    ],
+    "resolveJsonModule": true
   },
   "include": [
     "vite.config.ts",

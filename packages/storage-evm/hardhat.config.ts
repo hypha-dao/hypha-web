@@ -1,4 +1,5 @@
 import '@nomicfoundation/hardhat-toolbox';
+import '@nomicfoundation/hardhat-chai-matchers';
 
 import { HardhatUserConfig } from 'hardhat/config';
 

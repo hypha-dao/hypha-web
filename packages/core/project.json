@@ -15,7 +15,14 @@
       },
       "configurations": {
         "local": {
-          "dependsOn": ["db:start"]
+          "dependsOn": [
+            {
+              "target": "db:start",
+              "projects": "storage-postgres",
+              "params": "forward",
+              "dependencies": true
+            }
+          ]
         },
         "production": {}
       }
