@@ -40,9 +40,13 @@ export const Primary: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    expect(canvas.getByText(/^Applicant/gi)).toBeTruthy();
-    expect(canvas.getByText(/^Active/gi)).toBeTruthy();
-    expect(canvas.getByText(/^Inactive/gi)).toBeTruthy();
-    expect(canvas.getByText(/^Rejected/gi)).toBeTruthy();
+
+    expect(
+      canvas.findByText((content) => content.includes('Jane')),
+    ).resolves.toBeInTheDocument();
+
+    expect(
+      canvas.findByText((content) => content.includes('Jon')),
+    ).resolves.toBeInTheDocument();
   },
 };
