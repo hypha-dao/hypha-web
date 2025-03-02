@@ -10,12 +10,17 @@ import {
 } from '@hypha-platform/ui/server';
 import { Button } from '@hypha-platform/ui';
 import { PlusIcon } from '@radix-ui/react-icons';
+import { UseDocuments } from '../../governance';
 
 type ProposalSectionProps = {
   basePath: string;
+  useDocuments: UseDocuments;
 };
 
-export const ProposalsSection: FC<ProposalSectionProps> = ({ basePath }) => {
+export const ProposalsSection: FC<ProposalSectionProps> = ({
+  basePath,
+  useDocuments,
+}) => {
   const {
     pages,
     activeFilter,
@@ -25,7 +30,7 @@ export const ProposalsSection: FC<ProposalSectionProps> = ({ basePath }) => {
     pagination,
     sortOptions,
     filterOptions,
-  } = useProposalsSection();
+  } = useProposalsSection({ useDocuments });
 
   return (
     <div className="flex flex-col w-full justify-center items-center">
@@ -56,7 +61,7 @@ export const ProposalsSection: FC<ProposalSectionProps> = ({ basePath }) => {
             basePath={basePath}
             page={index + 1}
             key={index}
-            activeFilter={activeFilter}
+            useDocuments={useDocuments}
           />
         ))
       )}

@@ -1,20 +1,24 @@
 import React from 'react';
-import { useAgreements } from './use-agreements';
 import {
   FILTER_OPTIONS_AGREEMENTS,
   SORT_OPTIONS,
 } from '../../common/constants';
+import { UseDocuments } from '../../governance';
 
 const sortOptions = SORT_OPTIONS;
 
 const filterOptions = FILTER_OPTIONS_AGREEMENTS;
 
-export const useAgreementsSection = () => {
+export const useAgreementsSection = ({
+  useDocuments,
+}: {
+  useDocuments: UseDocuments;
+}) => {
   const [activeFilter, setActiveFilter] = React.useState('all');
   const [pages, setPages] = React.useState(1);
 
-  const { isLoading, pagination } = useAgreements({
-    ...(activeFilter !== 'all' && { filter: { status: activeFilter } }),
+  const { isLoading, pagination } = useDocuments({
+    filter: { state: 'agreement' },
   });
 
   React.useEffect(() => {

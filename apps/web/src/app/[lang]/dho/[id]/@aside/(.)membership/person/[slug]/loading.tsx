@@ -1,5 +1,6 @@
 import { MemberDetail } from '@hypha-platform/epics';
 import { SidePanel } from '@web/app/[lang]/@aside/_components/side-panel';
+import { useSpaceDocuments } from '@web/hooks/use-space-documents';
 
 export default function Loading() {
   return (
@@ -10,6 +11,7 @@ export default function Loading() {
         isLoading={true}
         basePath=""
         spaces={[]}
+        useDocuments={useSpaceDocuments}
       />
     </SidePanel>
   );

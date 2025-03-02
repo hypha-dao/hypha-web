@@ -23,7 +23,9 @@ export class PeopleService {
 
   async findBySpaceSlug(
     { spaceSlug }: { spaceSlug: string },
-    config: PeopleFindBySpaceConfig,
+    config: PeopleFindBySpaceConfig = {
+      pagination: { page: 1, pageSize: 10 },
+    },
   ): Promise<PaginatedResponse<Person>> {
     return this.repository.findBySpaceSlug({ spaceSlug }, config);
   }

@@ -4,6 +4,7 @@ import {
   CardHeader,
   CardTitle,
   Skeleton,
+  Image,
 } from '@hypha-platform/ui';
 import { EyeOpenIcon, ChatBubbleIcon } from '@radix-ui/react-icons';
 import { Avatar, AvatarImage } from '@radix-ui/react-avatar';
@@ -47,10 +48,12 @@ export const DiscussionCard: React.FC<DiscussionCardProps> = ({
         className="p-0 rounded-tl-md rounded-tr-md overflow-hidden"
       >
         <Skeleton loading={isLoading} height="150px" width="250px">
-          <img
+          <Image
             className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
-            src={image}
-            alt={title}
+            src={image || '/placeholder/space-lead-image.png'}
+            alt={title || 'TODO: make sure there is a title'}
+            width={250}
+            height={150}
           />
         </Skeleton>
       </CardHeader>

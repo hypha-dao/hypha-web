@@ -1,13 +1,14 @@
-import { FC } from 'react';
 import { AgreementCard } from './agreement-card';
-import { useAgreements } from '../hooks/use-agreements';
 import Link from 'next/link';
+import { UseDocuments } from '../../governance';
+import { FC } from 'react';
 
 type AgreementsListProps = {
   page: number;
   activeFilter: string;
   basePath: string;
   hasAvatar?: boolean;
+  useDocuments: UseDocuments;
 };
 
 export const AgreementsList: FC<AgreementsListProps> = ({
@@ -15,11 +16,13 @@ export const AgreementsList: FC<AgreementsListProps> = ({
   activeFilter,
   basePath,
   hasAvatar,
+  useDocuments,
 }) => {
-  const { agreements, isLoading } = useAgreements({
+  const { documents: agreements, isLoading } = useDocuments({
     page,
-    ...(activeFilter !== 'all' && { filter: { status: activeFilter } }),
+    filter: { state: 'agreement' },
   });
+
   return (
     <div className="agreement-list w-full">
       {agreements.map((agreement) => (

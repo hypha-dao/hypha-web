@@ -8,12 +8,17 @@ import {
   SectionLoadMore,
   SectionTabs,
 } from '@hypha-platform/ui/server';
+import { UseDocuments } from '../../governance';
 
 type AgreementsSectionProps = {
   basePath: string;
+  useDocuments: UseDocuments;
 };
 
-export const AgreementsSection: FC<AgreementsSectionProps> = ({ basePath }) => {
+export const AgreementsSection: FC<AgreementsSectionProps> = ({
+  basePath,
+  useDocuments,
+}) => {
   const {
     pages,
     activeFilter,
@@ -23,7 +28,7 @@ export const AgreementsSection: FC<AgreementsSectionProps> = ({ basePath }) => {
     pagination,
     sortOptions,
     filterOptions,
-  } = useAgreementsSection();
+  } = useAgreementsSection({ useDocuments });
 
   return (
     <div className="flex flex-col w-full justify-center items-center">
@@ -50,6 +55,7 @@ export const AgreementsSection: FC<AgreementsSectionProps> = ({ basePath }) => {
             key={index}
             activeFilter={activeFilter}
             basePath={basePath}
+            useDocuments={useDocuments}
           />
         ))
       )}

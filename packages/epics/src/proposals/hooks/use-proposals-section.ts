@@ -1,17 +1,21 @@
 import React from 'react';
-import { useProposals } from './use-proposals';
 import { FILTER_OPTIONS_PROPOSALS, SORT_OPTIONS } from '../../common/constants';
+import { UseDocuments } from '../../governance';
 
 const sortOptions = SORT_OPTIONS;
 
 const filterOptions = FILTER_OPTIONS_PROPOSALS;
 
-export const useProposalsSection = () => {
+export const useProposalsSection = ({
+  useDocuments,
+}: {
+  useDocuments: UseDocuments;
+}) => {
   const [activeFilter, setActiveFilter] = React.useState('all');
   const [pages, setPages] = React.useState(1);
 
-  const { isLoading, pagination } = useProposals({
-    ...(activeFilter !== 'all' && { filter: { status: activeFilter } }),
+  const { isLoading, pagination } = useDocuments({
+    filter: { state: 'proposal' },
   });
 
   React.useEffect(() => {

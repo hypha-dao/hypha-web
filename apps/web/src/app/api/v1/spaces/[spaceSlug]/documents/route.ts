@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createPeopleService } from '@hypha-platform/core';
+
+import { createDocumentService } from '@hypha-platform/core';
 
 export async function GET(
   request: NextRequest,
@@ -11,25 +12,28 @@ export async function GET(
   const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';
 
   try {
-    // Create the people service with the auth token to get members for this space
-    const peopleService = createPeopleService({ authToken });
+    const documentsService = createDocumentService({ authToken });
 
     // Get URL parameters for pagination
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1', 10);
     const pageSize = parseInt(url.searchParams.get('pageSize') || '10', 10);
+    const state = url.searchParams.get('state');
 
-    // Get members by space slug with pagination
-    const members = await peopleService.findBySpaceSlug(
+    const filter = {
+      ...(state ? { state } : {}),
+    };
+
+    const paginatedDocuments = await documentsService.getAllBySpaceSlug(
       { spaceSlug },
-      { pagination: { page, pageSize } },
+      { pagination: { page, pageSize }, filter },
     );
 
-    return NextResponse.json(members);
+    return NextResponse.json(paginatedDocuments);
   } catch (error) {
-    console.error('Failed to fetch members:', error);
+    console.error('Failed to fetch documents:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch members' },
+      { error: 'Failed to fetch documents' },
       { status: 500 },
     );
   }

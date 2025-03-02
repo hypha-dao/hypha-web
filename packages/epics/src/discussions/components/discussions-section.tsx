@@ -11,13 +11,16 @@ import {
 import { Button } from '@hypha-platform/ui';
 import { PlusIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
+import { UseDocuments } from '../../governance';
 
 type DiscussionSectionProps = {
   basePath: string;
+  useDocuments: UseDocuments;
 };
 
 export const DiscussionsSection: FC<DiscussionSectionProps> = ({
   basePath,
+  useDocuments,
 }) => {
   const {
     pages,
@@ -28,7 +31,7 @@ export const DiscussionsSection: FC<DiscussionSectionProps> = ({
     pagination,
     sortOptions,
     filterOptions,
-  } = useDiscussionsSection();
+  } = useDiscussionsSection({ useDocuments });
 
   return (
     <div className="flex flex-col justify-center items-center">
@@ -60,8 +63,8 @@ export const DiscussionsSection: FC<DiscussionSectionProps> = ({
           <DiscussionsList
             page={index + 1}
             key={index}
-            activeFilter={activeFilter}
             basePath={basePath}
+            useDocuments={useDocuments}
           />
         ))
       )}

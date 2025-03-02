@@ -7,6 +7,7 @@ import { Locale } from '@hypha-platform/i18n';
 import { getDhoPathMembership } from '../../constants';
 import { useMemberBySlug } from '@web/hooks/use-member-by-slug';
 import { MemberDetail } from '@hypha-platform/epics';
+import { useSpaceDocuments } from '@web/hooks/use-space-documents';
 
 export default function Member() {
   const { slug, id, lang } = useParams();
@@ -31,6 +32,7 @@ export default function Member() {
       isLoading={isLoading}
       basePath={getDhoPathAgreements(lang as Locale, id as string)}
       spaces={spaces}
+      useDocuments={useSpaceDocuments}
     />
   );
 }

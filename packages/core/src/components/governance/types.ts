@@ -8,7 +8,7 @@ export type Document = {
   id: number;
   creatorId: number;
   title: string;
-  description: string | null;
+  description?: string;
   slug: string;
   state: DocumentState;
   createdAt: Date;

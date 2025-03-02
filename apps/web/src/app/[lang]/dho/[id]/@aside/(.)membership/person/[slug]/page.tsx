@@ -9,6 +9,7 @@ import { useMemberBySlug } from '@web/hooks/use-member-by-slug';
 import { SidePanel } from '@web/app/[lang]/@aside/_components/side-panel';
 import { getDhoPathAgreements } from '@web/app/[lang]/dho/[id]/agreements/constants';
 import { getDhoPathMembership } from '@web/app/[lang]/dho/[id]/membership/constants';
+import { useSpaceDocuments } from '@web/hooks/use-space-documents';
 
 export default function Member() {
   const { slug, id, lang } = useParams();
@@ -30,6 +31,7 @@ export default function Member() {
         isLoading={isLoading}
         basePath={getDhoPathAgreements(lang as Locale, id as string)}
         spaces={[]}
+        useDocuments={useSpaceDocuments}
       />
     </SidePanel>
   );

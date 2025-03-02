@@ -1,22 +1,22 @@
 import { FC } from 'react';
 import { ProposalCard } from './proposal-card';
-import { useProposals } from '../hooks/use-proposals';
 import Link from 'next/link';
+import { UseDocuments } from '../../governance';
 
 type ProposalListProps = {
   page: number;
-  activeFilter: string;
   basePath: string;
+  useDocuments: UseDocuments;
 };
 
 export const ProposalList: FC<ProposalListProps> = ({
   page,
-  activeFilter,
   basePath,
+  useDocuments,
 }) => {
-  const { proposals, isLoading } = useProposals({
+  const { documents: proposals, isLoading } = useDocuments({
     page,
-    ...(activeFilter !== 'all' && { filter: { status: activeFilter } }),
+    filter: { state: 'proposal' },
   });
   return (
     <div className="proposal-list w-full">

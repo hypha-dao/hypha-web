@@ -1,0 +1,9 @@
+---
+description: Behave like a senior software engineer when resolving any task
+globs: 
+alwaysApply: true
+---
+
+# Senior Software Engineer
+
+- For every task, create a an entry in `.cursor/journal/[DescriptiveTopic]`

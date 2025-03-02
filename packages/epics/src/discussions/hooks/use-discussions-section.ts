@@ -1,20 +1,24 @@
 import React from 'react';
-import { useDiscussions } from './use-discussions';
 import {
   FILTER_OPTIONS_DISCUSSIONS,
   SORT_OPTIONS,
 } from '../../common/constants';
+import { UseDocuments } from '../../governance';
 
 const sortOptions = SORT_OPTIONS;
 
 const filterOptions = FILTER_OPTIONS_DISCUSSIONS;
 
-export const useDiscussionsSection = () => {
+export const useDiscussionsSection = ({
+  useDocuments,
+}: {
+  useDocuments: UseDocuments;
+}) => {
   const [activeFilter, setActiveFilter] = React.useState('all');
   const [pages, setPages] = React.useState(1);
 
-  const { isLoading, pagination } = useDiscussions({
-    ...(activeFilter !== 'all' && { filter: { status: activeFilter } }),
+  const { isLoading, pagination } = useDocuments({
+    filter: { state: 'discussion' },
   });
 
   React.useEffect(() => {

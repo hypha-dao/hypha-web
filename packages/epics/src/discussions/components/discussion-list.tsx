@@ -1,22 +1,22 @@
 import { FC } from 'react';
 import { DiscussionCard } from './discussion-card';
-import { useDiscussions } from '../hooks/use-discussions';
 import Link from 'next/link';
+import { UseDocuments } from '../../governance';
 
 type DiscussionsListProps = {
   page: number;
-  activeFilter: string;
   basePath: string;
+  useDocuments: UseDocuments;
 };
 
 export const DiscussionsList: FC<DiscussionsListProps> = ({
   page,
-  activeFilter,
   basePath,
+  useDocuments,
 }) => {
-  const { discussions, isLoading } = useDiscussions({
+  const { documents: discussions, isLoading } = useDocuments({
     page,
-    ...(activeFilter !== 'all' && { filter: { status: activeFilter } }),
+    filter: { state: 'discussion' },
   });
   return (
     <div className="w-full">
