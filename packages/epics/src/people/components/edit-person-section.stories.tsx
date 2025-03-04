@@ -21,7 +21,7 @@ export const Default: Story = {
     id: 'ndb9suh3qh9q2hlP2120dsxzf',
     isLoading: false,
     closeUrl: '',
-    description: ''
+    description: '',
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
