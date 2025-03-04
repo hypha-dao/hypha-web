@@ -10,6 +10,7 @@ export default function Loading() {
         surname=""
         id=""
         closeUrl=""
+        description=""
         isLoading={true}
       />
     </SidePanel>
