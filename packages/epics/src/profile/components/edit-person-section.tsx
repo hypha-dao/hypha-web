@@ -23,6 +23,7 @@ export type EditPersonSectionProps = EditPersonHeadProps & {
   surname: string;
   id: string;
   closeUrl: string;
+  description: string;
 };
 
 export const EditPersonSection = ({
@@ -32,8 +33,10 @@ export const EditPersonSection = ({
   name,
   surname,
   id,
+  description,
 }: EditPersonSectionProps) => {
   const [files, setFiles] = React.useState<File[]>([]);
+  const [textareaValue, setTextareaValue] = useState(description || '');
 
   const [activeLinks, setActiveLinks] = useState({
     website: false,
@@ -69,6 +72,7 @@ export const EditPersonSection = ({
           </Button>
         </Link>
       </div>
+      <div>{textareaValue}</div>
       <Separator />
       <Skeleton
         width="100%"
@@ -88,7 +92,10 @@ export const EditPersonSection = ({
         loading={isLoading}
         className="rounded-lg"
       >
-        <Textarea />
+        <Textarea
+          value={textareaValue}
+          onChange={(e) => setTextareaValue(e.target.value)}
+        />
       </Skeleton>
       <div className="flex gap-6 flex-col">
         <div className="flex justify-between">
