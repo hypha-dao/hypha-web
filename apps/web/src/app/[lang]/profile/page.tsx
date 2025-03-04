@@ -58,7 +58,7 @@ export default function Profile() {
         </Link>
         <Text className="text-sm text-neutral-11 ml-1">/ Profile Page</Text>
       </div>
-      <PersonHead {...personHeadProps} lang={lang} />
+      <PersonHead {...personHeadProps} lang={lang as Locale} />
       <div className="mt-6">
         <MemberSpaces spaces={[]} profileView />
       </div>
