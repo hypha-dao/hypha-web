@@ -16,12 +16,14 @@ import { Separator } from '@hypha-platform/ui';
 
 import Link from 'next/link';
 import React from 'react';
+import { useEditProfile } from '../../../../../apps/web/src/hooks/use-edit-profile';
 
 export type EditPersonSectionProps = EditPersonHeadProps & {
   avatar: string;
   name: string;
   surname: string;
-  id: string;
+  id: number | null;
+  nickname: string;
   closeUrl: string;
   description: string;
   leadImageUrl: string;
@@ -36,13 +38,16 @@ export const EditPersonSection = ({
   id,
   description,
   leadImageUrl,
+  nickname
 }: EditPersonSectionProps) => {
-  const [textareaValue, setTextareaValue] = useState(description || '');
+  const [descriptionValue, setDescriptionValue] = useState(description || '');
   const [isEditingLeadImage, setIsEditingLeadImage] = useState(false);
   const [newLeadImageUrl, setNewLeadImageUrl] = useState(leadImageUrl || '');
 
+  const { editProfile } = useEditProfile()
+
   useEffect(() => {
-    setTextareaValue(description || '');
+    setDescriptionValue(description || '');
   }, [description]);
 
   const [activeLinks, setActiveLinks] = useState({
@@ -66,6 +71,21 @@ export const EditPersonSection = ({
     setIsEditingLeadImage(false);
   };
 
+  const saveChanges = async () => {
+    try {
+      const updatedProfile = await editProfile({
+        leadImageUrl: newLeadImageUrl,
+        description: descriptionValue,
+        id: id
+      });
+      console.log('Profile updated:', updatedProfile);
+      alert('Profile updated successfully!');
+    } catch (error) {
+      console.error('Error editing profile:', error);
+      alert('Failed to edit profile');
+    }
+  };
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex gap-5 justify-between">
@@ -73,7 +93,7 @@ export const EditPersonSection = ({
           avatar={avatar}
           name={name}
           surname={surname}
-          id={id}
+          nickname={nickname}
           isLoading={isLoading}
         />
         <Link href={closeUrl} scroll={false}>
@@ -123,7 +143,6 @@ export const EditPersonSection = ({
             <Button
               variant="default"
               onClick={handleSaveLeadImageUrl}
-              disabled={!newLeadImageUrl}
             >
               Save
             </Button>
@@ -137,8 +156,8 @@ export const EditPersonSection = ({
         className="rounded-lg"
       >
         <Textarea
-          value={textareaValue}
-          onChange={(e) => setTextareaValue(e.target.value)}
+          value={descriptionValue}
+          onChange={(e) => setDescriptionValue(e.target.value)}
         />
       </Skeleton>
       <div className="flex gap-6 flex-col">
@@ -225,6 +244,7 @@ export const EditPersonSection = ({
           <Button
             variant="default"
             className="rounded-lg justify-start text-white w-fit"
+            onClick={saveChanges}
           >
             Save
           </Button>

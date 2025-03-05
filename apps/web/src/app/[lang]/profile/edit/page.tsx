@@ -13,7 +13,8 @@ export default function Loading() {
       avatar={person?.avatarUrl ?? ''}
       name={person?.name ?? ''}
       surname={person?.surname ?? ''}
-      id={person?.nickname ?? ''}
+      id={person?.id ?? null}
+      nickname={person?.nickname ?? ''}
       description={person?.description ?? ''}
       leadImageUrl={person?.leadImageUrl ?? ''}
       closeUrl={`/${lang}/person`}

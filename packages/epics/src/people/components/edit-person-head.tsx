@@ -5,7 +5,7 @@ import { Text } from '@radix-ui/themes';
 
 export type EditPersonHeadProps = {
   isLoading?: boolean;
-  id?: string;
+  nickname?: string;
 };
 
 export const EditPersonHead = ({
@@ -13,7 +13,7 @@ export const EditPersonHead = ({
   surname,
   avatar,
   isLoading,
-  id,
+  nickname,
 }: EditPersonHeadProps & MemberType) => {
   return (
     <div className="flex items-center">
@@ -47,7 +47,7 @@ export const EditPersonHead = ({
 
           <Skeleton height="16px" width="80px" loading={isLoading}>
             <span className="flex items-center">
-              <Text className="text-1 text-neutral-11">{id}</Text>
+              <Text className="text-1 text-neutral-11">{nickname}</Text>
             </span>
           </Skeleton>
         </div>

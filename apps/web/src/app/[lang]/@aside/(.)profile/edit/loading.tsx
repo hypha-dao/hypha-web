@@ -8,7 +8,8 @@ export default function Loading() {
         avatar=""
         name=""
         surname=""
-        id=""
+        id={null}
+        nickname=""
         closeUrl=""
         description=""
         leadImageUrl=""
