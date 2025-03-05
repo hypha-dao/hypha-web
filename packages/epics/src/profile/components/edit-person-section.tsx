@@ -9,7 +9,7 @@ import {
   Switch,
 } from '@hypha-platform/ui';
 import { RxCross1 } from 'react-icons/rx';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/lib/utils';
 import { Separator } from '@hypha-platform/ui';
@@ -37,6 +37,10 @@ export const EditPersonSection = ({
 }: EditPersonSectionProps) => {
   const [files, setFiles] = React.useState<File[]>([]);
   const [textareaValue, setTextareaValue] = useState(description || '');
+
+  useEffect(() => {
+    setTextareaValue(description || '');
+  }, [description]);
 
   const [activeLinks, setActiveLinks] = useState({
     website: false,
@@ -72,7 +76,6 @@ export const EditPersonSection = ({
           </Button>
         </Link>
       </div>
-      <div>{textareaValue}</div>
       <Separator />
       <Skeleton
         width="100%"
