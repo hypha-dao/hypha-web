@@ -33,8 +33,8 @@ importers:
         specifier: ^3.2.0
         version: 3.2.0(graphql@16.10.0)
       '@middy/core':
-        specifier: ^6.1.3
-        version: 6.1.3
+        specifier: ^6.1.5
+        version: 6.1.5
       '@neondatabase/serverless':
         specifier: ^0.10.4
         version: 0.10.4
@@ -2821,8 +2821,8 @@ packages:
   '@microsoft/tsdoc@0.15.1':
     resolution: {integrity: sha512-4aErSrCR/On/e5G2hDP0wjooqDdauzEbIq8hIkIe5pXV0rtWJZvdCEKL0ykZxex+IxIwBp0eGeV48hQN07dXtw==}
 
-  '@middy/core@6.1.3':
-    resolution: {integrity: sha512-77K0VlG7K9ZvIssjIztfOsH0IQsmp7xpNfwMIpj98x2vkSIlo7weruDEdiCUAmji2xuN60HNyjHSIAKVqI73WQ==}
+  '@middy/core@6.1.5':
+    resolution: {integrity: sha512-0Q03mDG+NuU0clJUZfAVHHqkpt3rXn2jpGO7uD+G+OF9DWGLRpASX0R91kkN9GEbiRtIZ+Njve8V+ECXFEToNQ==}
     engines: {node: '>=20'}
 
   '@module-federation/bridge-react-webpack-plugin@0.8.11':
@@ -19149,7 +19149,7 @@ snapshots:
 
   '@microsoft/tsdoc@0.15.1': {}
 
-  '@middy/core@6.1.3': {}
+  '@middy/core@6.1.5': {}
 
   '@module-federation/bridge-react-webpack-plugin@0.8.11':
     dependencies:
