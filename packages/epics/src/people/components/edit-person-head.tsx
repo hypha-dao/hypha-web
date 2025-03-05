@@ -25,7 +25,7 @@ export const EditPersonHead = ({
       >
         <Image
           className="rounded-lg mr-3"
-          src={avatar ?? ''}
+          src={avatar || '/placeholder/space-avatar-image.png'}
           height={64}
           width={64}
           alt={name && surname ? `${name} ${surname}` : 'Person Avatar'}
