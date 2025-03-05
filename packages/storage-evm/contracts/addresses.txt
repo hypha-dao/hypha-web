@@ -1,0 +1,5 @@
+Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying DAOSpaceFactory...
+DAOSpaceFactory deployed to: 0x1BAB6b37B3646d348AF8F3F43B9735Ff6b13cF0f
+
+
