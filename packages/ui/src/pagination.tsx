@@ -51,6 +51,7 @@ const PaginationLink = ({
     className={cn(
       buttonVariants({
         variant: isActive ? "outline" : "ghost",
+        colorVariant: 'neutral',
         size,
       }),
       className
@@ -62,35 +63,49 @@ PaginationLink.displayName = "PaginationLink"
 
 const PaginationPrevious = ({
   className,
+  disabled,
   ...props
-}: React.ComponentProps<typeof PaginationLink>) => (
-  <PaginationLink
-    aria-label="Go to previous page"
-    size="default"
-    className={cn("gap-1 pl-2.5", className)}
-    {...props}
+}: React.ComponentProps<typeof PaginationLink> & { disabled?: boolean }) => (
+  <div
+    className={cn({
+      'pointer-events-none opacity-50': disabled,
+    })}
   >
-    <ChevronLeft className="h-4 w-4" />
-    <span>Previous</span>
-  </PaginationLink>
-)
-PaginationPrevious.displayName = "PaginationPrevious"
+    <PaginationLink
+      aria-label="Go to previous page"
+      size="default"
+      className={cn("gap-1 pl-2.5", className)}
+      {...props}
+    >
+      <ChevronLeft className="h-4 w-4" />
+      <span>Previous</span>
+    </PaginationLink>
+  </div>
+);
+PaginationPrevious.displayName = "PaginationPrevious";
 
 const PaginationNext = ({
   className,
+  disabled,
   ...props
-}: React.ComponentProps<typeof PaginationLink>) => (
-  <PaginationLink
-    aria-label="Go to next page"
-    size="default"
-    className={cn("gap-1 pr-2.5", className)}
-    {...props}
+}: React.ComponentProps<typeof PaginationLink> & { disabled?: boolean }) => (
+  <div
+    className={cn({
+      'pointer-events-none opacity-50': disabled,
+    })}
   >
-    <span>Next</span>
-    <ChevronRight className="h-4 w-4" />
-  </PaginationLink>
-)
-PaginationNext.displayName = "PaginationNext"
+    <PaginationLink
+      aria-label="Go to next page"
+      size="default"
+      className={cn("gap-1 pr-2.5", className)}
+      {...props}
+    >
+      <span>Next</span>
+      <ChevronRight className="h-4 w-4" />
+    </PaginationLink>
+  </div>
+);
+PaginationNext.displayName = "PaginationNext";
 
 const PaginationEllipsis = ({
   className,
