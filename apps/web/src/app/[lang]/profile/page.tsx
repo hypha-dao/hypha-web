@@ -26,7 +26,7 @@ import { useSpaceDocuments } from '@web/hooks/use-space-documents';
 
 export default function Profile() {
   const { lang } = useParams();
-  const { person } = useMe();
+  const { person, isLoading } = useMe();
 
   const getHref = (id: string) => {
     return getDhoPathAgreements(lang as Locale, id);
@@ -42,7 +42,7 @@ export default function Profile() {
       X: person?.nickname ?? '',
       Website: person?.nickname ?? '',
     },
-    isLoading: false,
+    isLoading: isLoading,
     about: person?.description ?? '',
   };
 
