@@ -54,9 +54,6 @@ Parameters (SpaceCreationParams struct):
 - `votingPowerSource` (uint256): Source of voting power
 - `exitMethod` (uint256): Method ID for leaving the space
 - `joinMethod` (uint256): Method ID for joining the space
-- `createToken` (bool): Boolean to create associated token
-- `tokenName` (string): Name of token (if creating)
-- `tokenSymbol` (string): Symbol of token (if creating)
 
 Returns:
 
@@ -254,9 +251,6 @@ const tx = await factory.createSpace({
   votingPowerSource: 1,
   exitMethod: 1,
   joinMethod: 1,
-  createToken: true,
-  tokenName: 'MyToken',
-  tokenSymbol: 'MTK',
 });
 await tx.wait();
 ```

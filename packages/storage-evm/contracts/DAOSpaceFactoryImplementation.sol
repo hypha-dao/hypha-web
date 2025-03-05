@@ -85,9 +85,11 @@ contract DAOSpaceFactoryImplementation is
     }
 */
     spaceCounter++;
-
+/*
     Executor executor = new Executor(proposalManagerAddress);
     executorToSpaceId[address(executor)] = spaceCounter;
+*/
+    Executor executor = new Executor(msg.sender);
 
     Space storage newSpace = spaces[spaceCounter];
     newSpace.unity = params.unity;
