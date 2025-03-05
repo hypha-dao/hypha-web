@@ -22,6 +22,7 @@ export const Default: Story = {
     isLoading: false,
     closeUrl: '',
     description: '',
+    leadImageUrl: ''
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

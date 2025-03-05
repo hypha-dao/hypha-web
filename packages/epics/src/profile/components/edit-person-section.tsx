@@ -3,12 +3,12 @@ import { EditPersonHead, EditPersonHeadProps } from './edit-person-head';
 import {
   Button,
   Skeleton,
-  FileUploader,
   Textarea,
   Input,
   Switch,
+  Image,
 } from '@hypha-platform/ui';
-import { RxCross1 } from 'react-icons/rx';
+import { RxCross1, RxPencil1 } from 'react-icons/rx';
 import { useState, useEffect } from 'react';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/lib/utils';
@@ -24,6 +24,7 @@ export type EditPersonSectionProps = EditPersonHeadProps & {
   id: string;
   closeUrl: string;
   description: string;
+  leadImageUrl: string;
 };
 
 export const EditPersonSection = ({
@@ -34,9 +35,11 @@ export const EditPersonSection = ({
   surname,
   id,
   description,
+  leadImageUrl,
 }: EditPersonSectionProps) => {
-  const [files, setFiles] = React.useState<File[]>([]);
   const [textareaValue, setTextareaValue] = useState(description || '');
+  const [isEditingLeadImage, setIsEditingLeadImage] = useState(false);
+  const [newLeadImageUrl, setNewLeadImageUrl] = useState(leadImageUrl || '');
 
   useEffect(() => {
     setTextareaValue(description || '');
@@ -54,6 +57,14 @@ export const EditPersonSection = ({
     },
     [activeLinks, setActiveLinks],
   );
+
+  const handleEditLeadImage = () => {
+    setIsEditingLeadImage(!isEditingLeadImage);
+  };
+
+  const handleSaveLeadImageUrl = () => {
+    setIsEditingLeadImage(false);
+  };
 
   return (
     <div className="flex flex-col gap-5">
@@ -83,11 +94,41 @@ export const EditPersonSection = ({
         loading={isLoading}
         className="rounded-lg"
       >
-        <FileUploader
-          value={files}
-          onValueChange={setFiles}
-          onUpload={() => Promise.resolve()}
-        />
+        {leadImageUrl && !isEditingLeadImage ? (
+          <div className="relative">
+            <Image
+              className="rounded-xl max-h-[130px] min-h-[130px] w-full object-cover"
+              width={400}
+              height={130}
+              src={newLeadImageUrl}
+              alt={`Profile Lead Image: ${name} ${surname}`}
+            />
+            <Button
+              variant="ghost"
+              colorVariant="neutral"
+              className="absolute top-2 right-2 p-2 rounded-xl"
+              onClick={handleEditLeadImage}
+            >
+              <RxPencil1 className="w-5 h-5" />
+            </Button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <Input
+              value={newLeadImageUrl}
+              onChange={(e) => setNewLeadImageUrl(e.target.value)}
+              placeholder="New lead image URL"
+              className="w-full min-w-full"
+            />
+            <Button
+              variant="default"
+              onClick={handleSaveLeadImageUrl}
+              disabled={!newLeadImageUrl}
+            >
+              Save
+            </Button>
+          </div>
+        )}
       </Skeleton>
       <Skeleton
         width="100%"

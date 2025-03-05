@@ -17,6 +17,7 @@ export default function Loading() {
         surname={person?.surname ?? ''}
         id={person?.nickname ?? ''}
         description={person?.description ?? ''}
+        leadImageUrl={person?.leadImageUrl ?? ''}
         closeUrl={`/${lang}/person`}
         isLoading={isLoading}
       />
