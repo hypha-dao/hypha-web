@@ -2,11 +2,7 @@
 pragma solidity ^0.8.0;
 
 interface IDAOSpaceFactory {
-    // First, we need to define the struct exactly as it is in the implementation
     struct SpaceCreationParams {
-        string name;
-        string description;
-        string imageUrl;
         uint256 unity;
         uint256 quorum;
         uint256 votingPowerSource;
@@ -24,10 +20,8 @@ interface IDAOSpaceFactory {
         address _joinMethodDirectoryAddress,
         address _proposalManagerAddress,
         address _exitMethodDirectoryAddress
-
     ) external;
     
-    // Make sure the function signature matches exactly
     function createSpace(SpaceCreationParams calldata params) external returns (uint256);
     
     function joinSpace(uint256 _spaceId) external;
@@ -47,7 +41,6 @@ interface IDAOSpaceFactory {
     function isSpaceCreator(uint256 _spaceId, address _userAddress) external view returns (bool);
     
     function getSpaceDetails(uint256 _spaceId) external view returns (
-        string memory name,
         uint256 unity,
         uint256 quorum,
         uint256 votingPowerSource,
@@ -64,9 +57,6 @@ interface IDAOSpaceFactory {
 
     event SpaceCreated(
         uint256 indexed spaceId,
-        string name,
-        string description,
-        string imageUrl,
         uint256 unity,
         uint256 quorum,
         uint256 votingPowerSource,
