@@ -36,11 +36,11 @@ interface PersonHeadProps {
 
 export const PersonHead = ({
   isLoading,
-  avatar = '/placeholder/space-avatar-image.png',
+  avatar,
   name,
   surname,
   about,
-  background = '/placeholder/space-lead-image.png',
+  background,
   socials,
   lang,
 }: PersonHeadProps & MemberType) => {
@@ -59,15 +59,15 @@ export const PersonHead = ({
           <Image
             width={768}
             height={270}
-            className="rounded-xl max-h-[270px] w-full object-cover"
-            src={background}
+            className="rounded-xl max-h-[270px] min-h-[270px] w-full object-cover"
+            src={background || '/placeholder/space-lead-image.png'}
             alt={`Profile Lead Image: ${name} ${surname}`}
           />
         </Skeleton>
         <Avatar style={customLogoStyles}>
           <Skeleton loading={isLoading} width={128} height={128}>
             <AvatarImage
-              src={avatar}
+              src={avatar || '/placeholder/space-avatar-image.png'}
               alt={`Profile Avatar Image: ${name} ${surname}`}
             />
           </Skeleton>
