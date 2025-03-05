@@ -38,13 +38,13 @@ export const EditPersonSection = ({
   id,
   description,
   leadImageUrl,
-  nickname
+  nickname,
 }: EditPersonSectionProps) => {
   const [descriptionValue, setDescriptionValue] = useState(description || '');
   const [isEditingLeadImage, setIsEditingLeadImage] = useState(false);
   const [newLeadImageUrl, setNewLeadImageUrl] = useState(leadImageUrl || '');
 
-  const { editProfile } = useEditProfile()
+  const { editProfile } = useEditProfile();
 
   useEffect(() => {
     setDescriptionValue(description || '');
@@ -76,7 +76,7 @@ export const EditPersonSection = ({
       const updatedProfile = await editProfile({
         leadImageUrl: newLeadImageUrl,
         description: descriptionValue,
-        id: id
+        id: id,
       });
       console.log('Profile updated:', updatedProfile);
       alert('Profile updated successfully!');
@@ -140,10 +140,7 @@ export const EditPersonSection = ({
               placeholder="New lead image URL"
               className="w-full min-w-full"
             />
-            <Button
-              variant="default"
-              onClick={handleSaveLeadImageUrl}
-            >
+            <Button variant="default" onClick={handleSaveLeadImageUrl}>
               Save
             </Button>
           </div>
