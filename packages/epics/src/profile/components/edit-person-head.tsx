@@ -5,7 +5,7 @@ import { Text } from '@radix-ui/themes';
 
 export type EditPersonHeadProps = {
   isLoading?: boolean;
-  id?: string;
+  nickname?: string;
 };
 
 export const EditPersonHead = ({
@@ -13,7 +13,7 @@ export const EditPersonHead = ({
   surname,
   avatar,
   isLoading,
-  id,
+  nickname,
 }: EditPersonHeadProps & MemberType) => {
   return (
     <div className="flex items-center">
@@ -25,7 +25,7 @@ export const EditPersonHead = ({
       >
         <Image
           className="rounded-lg mr-3"
-          src={avatar ?? ''}
+          src={avatar || '/placeholder/space-avatar-image.png'}
           height={64}
           width={64}
           alt={name && surname ? `${name} ${surname}` : 'Person Avatar'}
@@ -47,7 +47,7 @@ export const EditPersonHead = ({
 
           <Skeleton height="16px" width="80px" loading={isLoading}>
             <span className="flex items-center">
-              <Text className="text-1 text-neutral-11">{id}</Text>
+              <Text className="text-1 text-neutral-11">{nickname}</Text>
             </span>
           </Skeleton>
         </div>
