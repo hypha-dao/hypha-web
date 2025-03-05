@@ -16,7 +16,7 @@ import { Separator } from '@hypha-platform/ui';
 
 import Link from 'next/link';
 import React from 'react';
-import { useEditProfile } from '../../../../../apps/web/src/hooks/use-edit-profile';
+import { useEditProfile } from '@web/hooks/use-edit-profile';
 
 export type EditPersonSectionProps = EditPersonHeadProps & {
   avatar: string;
