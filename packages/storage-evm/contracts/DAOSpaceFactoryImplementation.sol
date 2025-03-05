@@ -73,8 +73,8 @@ contract DAOSpaceFactoryImplementation is
       params.unity > 0 && params.unity <= 100,
       'Unity value must be between 1 and 100'
     );
-    require(proposalManagerAddress != address(0), 'ProposalManager not set');
-
+    //require(proposalManagerAddress != address(0), 'ProposalManager not set');
+/*
     if (params.createToken) {
       require(tokenFactoryAddress != address(0), 'TokenFactory not set');
       require(bytes(params.tokenName).length > 0, 'Token name cannot be empty');
@@ -83,7 +83,7 @@ contract DAOSpaceFactoryImplementation is
         'Token symbol cannot be empty'
       );
     }
-
+*/
     spaceCounter++;
 
     Executor executor = new Executor(proposalManagerAddress);
@@ -104,7 +104,7 @@ contract DAOSpaceFactoryImplementation is
     address[] memory initialMembers = new address[](1);
     initialMembers[0] = msg.sender;
     newSpace.members = initialMembers;
-
+/*
     if (params.createToken) {
       address tokenAddress = ITokenFactory(tokenFactoryAddress).deployToken(
         spaceCounter,
@@ -113,7 +113,7 @@ contract DAOSpaceFactoryImplementation is
       );
       newSpace.tokenAddresses.push(tokenAddress);
     }
-
+*/
     emit SpaceCreated(
       spaceCounter,
       params.unity,
