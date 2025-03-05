@@ -11,6 +11,7 @@ export default function Loading() {
         id=""
         closeUrl=""
         description=""
+        leadImageUrl=""
         isLoading={true}
       />
     </SidePanel>
