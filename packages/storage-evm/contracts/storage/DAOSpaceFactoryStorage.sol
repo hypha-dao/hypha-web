@@ -31,6 +31,7 @@ contract DAOSpaceFactoryStorage is Initializable {
   address public tokenFactoryAddress;
   address public joinMethodDirectoryAddress;
   address public proposalManagerAddress;
+  address public exitMethodDirectoryAddress;
 
   struct SpaceMembers {
     address[] spaceMemberAddresses;
@@ -38,5 +39,4 @@ contract DAOSpaceFactoryStorage is Initializable {
   }
   mapping(uint256 => SpaceMembers) internal spaceMembers;
   mapping(address => uint256) public executorToSpaceId;
-  address public exitMethodDirectoryAddress;
 }
