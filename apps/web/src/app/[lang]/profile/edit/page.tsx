@@ -6,7 +6,7 @@ import { useMe } from '@web/hooks/use-me';
 
 export default function Loading() {
   const { lang } = useParams();
-  const { person } = useMe();
+  const { person, isLoading } = useMe();
 
   return (
     <EditPersonSection
@@ -16,7 +16,7 @@ export default function Loading() {
       id={person?.nickname ?? ''}
       description={person?.description ?? ''}
       closeUrl={`/${lang}/person`}
-      isLoading={false}
+      isLoading={isLoading}
     />
   );
 }
