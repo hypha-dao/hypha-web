@@ -1,6 +1,5 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { UploadThingError } from "uploadthing/server";
-import { generateReactHelpers } from "@uploadthing/react";
 
 const f = createUploadthing();
 
@@ -30,6 +29,3 @@ export const ourFileRouter = {
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;
-
-export const { useUploadThing } =
-  generateReactHelpers<OurFileRouter>();
