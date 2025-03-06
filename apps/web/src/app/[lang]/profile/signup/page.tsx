@@ -88,11 +88,10 @@ export default function SignupPage() {
         <div>
           <label>Lead image URL:</label>
           <ImageUploader
-            initialImageUrl={
-              leadImageUrl ??
-              ''
-            }
-            onUploadComplete={(url: string) => {setLeadImageUrl(url)}}
+            initialImageUrl={leadImageUrl ?? ''}
+            onUploadComplete={(url: string) => {
+              setLeadImageUrl(url);
+            }}
           />
         </div>
 
