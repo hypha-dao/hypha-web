@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 
     // Get request body
     const body = await request.json();
-    const { name, surname, email, avatarUrl, description, location, nickname } =
+    const { name, surname, email, avatarUrl, description, location, nickname, leadImageUrl } =
       body;
 
     if (!name || !surname || !nickname || !email) {
@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
       surname,
       email,
       avatarUrl,
+      leadImageUrl,
       description,
       location,
       nickname,

@@ -4,6 +4,8 @@ import React from 'react';
 import { useCreateProfile } from '@web/hooks/use-create-profile';
 import { Button, Input } from '@hypha-platform/ui';
 
+import { ImageUploader } from '@hypha-platform/ui';
+
 export default function SignupPage() {
   const { createProfile } = useCreateProfile();
 
@@ -14,6 +16,7 @@ export default function SignupPage() {
   const [description, setDescription] = React.useState('');
   const [location, setLocation] = React.useState('');
   const [nickname, setNickname] = React.useState('');
+  const [leadImageUrl, setLeadImageUrl] = React.useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,6 +27,7 @@ export default function SignupPage() {
         surname,
         email,
         avatarUrl,
+        leadImageUrl,
         description,
         location,
         nickname,
@@ -78,6 +82,17 @@ export default function SignupPage() {
             type="url"
             value={avatarUrl}
             onChange={(e) => setAvatarUrl(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label>Lead image URL:</label>
+          <ImageUploader
+            initialImageUrl={
+              leadImageUrl ??
+              ''
+            }
+            onUploadComplete={(url: string) => {setLeadImageUrl(url)}}
           />
         </div>
 

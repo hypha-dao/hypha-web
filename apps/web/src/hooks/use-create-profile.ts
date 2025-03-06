@@ -16,6 +16,7 @@ export const useCreateProfile = () => {
       surname: string;
       email: string;
       avatarUrl: string;
+      leadImageUrl: string;
       description: string;
       location: string;
       nickname: string;
