@@ -6,7 +6,7 @@ import { expect } from '@storybook/jest';
 
 const meta = {
   component: SectionPagination,
-  title: 'UI/SectionPagination'
+  title: 'UI/SectionPagination',
 } satisfies Meta<typeof SectionPagination>;
 
 export default meta;
@@ -18,8 +18,8 @@ export const Default: Story = {
     currentPage: 1,
     totalPages: 10,
     onPageChange: () => {
-      console.log('Page changed')
-    }
+      console.log('Page changed');
+    },
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
