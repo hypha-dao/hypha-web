@@ -67,6 +67,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'static.licdn.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'utfs.io'
+      }
     ],
   },
   webpack: (config) => {
