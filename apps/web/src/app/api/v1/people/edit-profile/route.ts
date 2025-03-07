@@ -13,10 +13,13 @@ export async function POST(request: NextRequest) {
 
     // Get request body
     const body = await request.json();
-    const { description, leadImageUrl, id } = body;
+    const { name, surname, nickname, description, leadImageUrl, id } = body;
 
     // Note: id and slug will be handled by the repository
     const personData: Partial<Person> = {
+      name,
+      surname,
+      nickname,
       leadImageUrl,
       description,
       id,

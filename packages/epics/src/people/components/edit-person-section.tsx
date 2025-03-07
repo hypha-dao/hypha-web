@@ -41,6 +41,9 @@ export const EditPersonSection = ({
   nickname,
 }: EditPersonSectionProps) => {
   const [descriptionValue, setDescriptionValue] = useState(description || '');
+  const [nicknameValue, setNicknameValue] = useState(nickname || '');
+  const [nameValue, setNameValue] = useState(name || '');
+  const [surnameValue, setSurnameValue] = useState(surname || '');
   const [isEditingLeadImage, setIsEditingLeadImage] = useState(false);
   const [newLeadImageUrl, setNewLeadImageUrl] = useState(leadImageUrl || '');
 
@@ -49,6 +52,18 @@ export const EditPersonSection = ({
   useEffect(() => {
     setDescriptionValue(description || '');
   }, [description]);
+
+  useEffect(() => {
+    setNicknameValue(nickname || '');
+  }, [nickname]);
+
+  useEffect(() => {
+    setNameValue(name || '');
+  }, [name]);
+
+  useEffect(() => {
+    setSurnameValue(surname || '');
+  }, [surname]);
 
   const [activeLinks, setActiveLinks] = useState({
     website: false,
@@ -74,6 +89,9 @@ export const EditPersonSection = ({
   const saveChanges = async () => {
     try {
       const updatedProfile = await editProfile({
+        name: nameValue,
+        surname: surnameValue,
+        nickname: nicknameValue,
         leadImageUrl: newLeadImageUrl,
         description: descriptionValue,
         id: id,
@@ -91,10 +109,13 @@ export const EditPersonSection = ({
       <div className="flex gap-5 justify-between">
         <EditPersonHead
           avatar={avatar}
-          name={name}
-          surname={surname}
-          nickname={nickname}
+          name={nameValue}
+          surname={surnameValue}
+          nickname={nicknameValue}
           isLoading={isLoading}
+          onNameChange={(e) => setNameValue(e.target.value)}
+          onSurnameChange={(e) => setSurnameValue(e.target.value)}
+          onNicknameChange={(e) => setNicknameValue(e.target.value)}
         />
         <Link href={closeUrl} scroll={false}>
           <Button
