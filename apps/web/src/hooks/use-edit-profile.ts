@@ -12,6 +12,9 @@ export const useEditProfile = () => {
 
   const editProfile = React.useCallback(
     async (data: {
+      name: string;
+      surname: string;
+      nickname: string;
       description: string;
       leadImageUrl: string;
       id: number | null;
