@@ -9,6 +9,7 @@ import type { OurFileRouter } from '@web/app/api/uploadthing/core';
 import Image from 'next/image';
 import { LoaderIcon } from 'lucide-react';
 import { Pencil1Icon } from '@radix-ui/react-icons';
+import { useJwt } from '@web/hooks/use-jwt';
 
 interface ImageUploaderProps {
   initialImageUrl?: string;
@@ -24,8 +25,14 @@ export const ImageUploader = ({
   );
   const [isHovered, setIsHovered] = useState(false);
 
+  const { jwt } = useJwt();
   const { useUploadThing } = generateReactHelpers<OurFileRouter>();
-  const { startUpload, isUploading } = useUploadThing('imageUploader');
+  const { startUpload, isUploading } = useUploadThing('imageUploader', {
+    headers: {
+      Authorization: `Bearer ${jwt}`,
+      'Content-Type': 'application/json',
+    },
+  });
 
   const handleUploadComplete = (res: any) => {
     console.log('Files: ', res);
@@ -83,7 +90,6 @@ export const ImageUploader = ({
           onChange={handleDrop}
           config={{
             appendOnPaste: true,
-            mode: 'auto',
           }}
           content={{
             label: (

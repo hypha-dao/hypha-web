@@ -1,9 +1,13 @@
 import { createUploadthing, type FileRouter } from 'uploadthing/next';
 import { UploadThingError } from 'uploadthing/server';
+import { NextRequest } from 'next/server';
 
 const f = createUploadthing();
 
-const auth = (req: Request) => ({ id: 'fakeId' }); // TODO: replace to real auth validation
+const getAuthToken = async (req: NextRequest) => {
+  const authToken = req.headers.get('Authorization')?.split(' ')[1] || '';
+  return authToken;
+};
 
 export const ourFileRouter = {
   imageUploader: f({
@@ -13,18 +17,18 @@ export const ourFileRouter = {
     },
   })
     .middleware(async ({ req }) => {
-      const user = await auth(req);
+      const authToken = await getAuthToken(req);
 
-      if (!user) throw new UploadThingError('Unauthorized');
+      if (authToken === null || authToken === 'undefined') {
+        throw new UploadThingError('Unauthorized');
+      }
 
-      return { userId: user.id };
+      return { authToken };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      console.log('Upload complete for userId:', metadata.userId);
+      const { authToken } = metadata; // TODO: integrate peopleService with update method
 
-      console.log('file url', file.url);
-
-      return { uploadedBy: metadata.userId };
+      return console.log('File uploaded:', file);
     }),
 } satisfies FileRouter;
 
