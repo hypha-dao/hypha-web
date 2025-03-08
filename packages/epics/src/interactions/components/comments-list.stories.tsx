@@ -45,6 +45,6 @@ export const Primary: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    expect(canvas.getByText(/Welcome to CommentsList!/gi)).toBeTruthy();
+    expect(canvas.getByText(/Comments \| 1/gi)).toBeTruthy();
   },
 };

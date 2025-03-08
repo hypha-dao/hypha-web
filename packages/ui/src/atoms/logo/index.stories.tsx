@@ -11,14 +11,13 @@ const meta: Meta<typeof Logo> = {
 export default meta;
 type Story = StoryObj<typeof Logo>;
 
-export const Primary = {
-  args: {},
-};
-
-export const Heading: Story = {
+export const Primary: Story = {
   args: {},
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    expect(canvas.getByText(/Welcome to Logo!/gi)).toBeTruthy();
+    // Verify that the component renders without throwing errors
+    expect(canvasElement).toBeTruthy();
+    // Verify that the logo element exists in the DOM
+    expect(canvas.getByRole('img', { name: /logo/i })).toBeInTheDocument();
   },
 };
