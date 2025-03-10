@@ -18,8 +18,11 @@ export const Default: Story = {
     avatar: 'https://github.com/shadcn.png',
     name: 'Name',
     surname: 'Surname',
-    id: 'ndb9suh3qh9q2hlP2120dsxzf',
+    nickname: 'namesurname',
     isLoading: false,
+    onNameChange: () => {},
+    onSurnameChange: () => {},
+    onNicknameChange: () => {},
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

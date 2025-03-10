@@ -5,7 +5,6 @@ import {
   Card,
   Avatar,
   AvatarImage,
-  Container,
   Button,
   Skeleton,
 } from '@hypha-platform/ui';
@@ -18,6 +17,8 @@ import {
 } from '@radix-ui/react-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXTwitter } from '@fortawesome/free-brands-svg-icons';
+import Link from 'next/link';
+import { Locale } from '@hypha-platform/i18n';
 
 export interface Socials {
   LinkedIn: string;
@@ -30,16 +31,18 @@ interface PersonHeadProps {
   about: string;
   background: string;
   socials: Socials;
+  lang: Locale;
 }
 
 export const PersonHead = ({
   isLoading,
-  avatar = '/placeholder/space-avatar-image.png',
+  avatar,
   name,
   surname,
   about,
-  background = '/placeholder/space-lead-image.png',
+  background,
   socials,
+  lang,
 }: PersonHeadProps & MemberType) => {
   const customLogoStyles: React.CSSProperties = {
     width: '128px',
@@ -56,15 +59,15 @@ export const PersonHead = ({
           <Image
             width={768}
             height={270}
-            className="rounded-xl max-h-[270px] w-full object-cover"
-            src={background}
+            className="rounded-xl max-h-[270px] min-h-[270px] w-full object-cover"
+            src={background || '/placeholder/space-lead-image.png'}
             alt={`Profile Lead Image: ${name} ${surname}`}
           />
         </Skeleton>
         <Avatar style={customLogoStyles}>
           <Skeleton loading={isLoading} width={128} height={128}>
             <AvatarImage
-              src={avatar}
+              src={avatar || '/placeholder/space-avatar-image.png'}
               alt={`Profile Avatar Image: ${name} ${surname}`}
             />
           </Skeleton>
@@ -82,17 +85,19 @@ export const PersonHead = ({
           </Button>
         </Skeleton>
         <Skeleton className="ml-2" loading={isLoading} width={120} height={35}>
-          <Button
-            asChild
-            variant="ghost"
-            colorVariant="accent"
-            className="rounded-lg justify-start cursor-pointer ml-2 bg-accent-3"
-          >
-            <div>
-              <Pencil1Icon className="mr-2" width={16} height={16} />
-              Edit profile
-            </div>
-          </Button>
+          <Link href={`/${lang}/profile/edit`} scroll={false}>
+            <Button
+              asChild
+              variant="ghost"
+              colorVariant="accent"
+              className="rounded-lg justify-start cursor-pointer ml-2 bg-accent-3"
+            >
+              <div>
+                <Pencil1Icon className="mr-2" width={16} height={16} />
+                Edit profile
+              </div>
+            </Button>
+          </Link>
         </Skeleton>
         <Skeleton className="ml-2" loading={isLoading} width={120} height={35}>
           <Button

@@ -3,26 +3,30 @@ import { EditPersonHead, EditPersonHeadProps } from './edit-person-head';
 import {
   Button,
   Skeleton,
-  FileUploader,
   Textarea,
   Input,
   Switch,
+  Image,
 } from '@hypha-platform/ui';
-import { RxCross1 } from 'react-icons/rx';
-import { useState } from 'react';
+import { RxCross1, RxPencil1 } from 'react-icons/rx';
+import { useState, useEffect } from 'react';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/lib/utils';
 import { Separator } from '@hypha-platform/ui';
 
 import Link from 'next/link';
 import React from 'react';
+import { useEditProfile } from '@web/hooks/use-edit-profile';
 
 export type EditPersonSectionProps = EditPersonHeadProps & {
   avatar: string;
   name: string;
   surname: string;
-  id: string;
+  id: number | null;
+  nickname: string;
   closeUrl: string;
+  description: string;
+  leadImageUrl: string;
 };
 
 export const EditPersonSection = ({
@@ -32,8 +36,34 @@ export const EditPersonSection = ({
   name,
   surname,
   id,
+  description,
+  leadImageUrl,
+  nickname,
 }: EditPersonSectionProps) => {
-  const [files, setFiles] = React.useState<File[]>([]);
+  const [descriptionValue, setDescriptionValue] = useState(description || '');
+  const [nicknameValue, setNicknameValue] = useState(nickname || '');
+  const [nameValue, setNameValue] = useState(name || '');
+  const [surnameValue, setSurnameValue] = useState(surname || '');
+  const [isEditingLeadImage, setIsEditingLeadImage] = useState(false);
+  const [newLeadImageUrl, setNewLeadImageUrl] = useState(leadImageUrl || '');
+
+  const { editProfile } = useEditProfile();
+
+  useEffect(() => {
+    setDescriptionValue(description || '');
+  }, [description]);
+
+  useEffect(() => {
+    setNicknameValue(nickname || '');
+  }, [nickname]);
+
+  useEffect(() => {
+    setNameValue(name || '');
+  }, [name]);
+
+  useEffect(() => {
+    setSurnameValue(surname || '');
+  }, [surname]);
 
   const [activeLinks, setActiveLinks] = useState({
     website: false,
@@ -48,15 +78,44 @@ export const EditPersonSection = ({
     [activeLinks, setActiveLinks],
   );
 
+  const handleEditLeadImage = () => {
+    setIsEditingLeadImage(!isEditingLeadImage);
+  };
+
+  const handleSaveLeadImageUrl = () => {
+    setIsEditingLeadImage(false);
+  };
+
+  const saveChanges = async () => {
+    try {
+      const updatedProfile = await editProfile({
+        name: nameValue,
+        surname: surnameValue,
+        nickname: nicknameValue,
+        leadImageUrl: newLeadImageUrl,
+        description: descriptionValue,
+        id: id,
+      });
+      console.log('Profile updated:', updatedProfile);
+      alert('Profile updated successfully!');
+    } catch (error) {
+      console.error('Error editing profile:', error);
+      alert('Failed to edit profile');
+    }
+  };
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex gap-5 justify-between">
         <EditPersonHead
           avatar={avatar}
-          name={name}
-          surname={surname}
-          id={id}
+          name={nameValue}
+          surname={surnameValue}
+          nickname={nicknameValue}
           isLoading={isLoading}
+          onNameChange={(e) => setNameValue(e.target.value)}
+          onSurnameChange={(e) => setSurnameValue(e.target.value)}
+          onNicknameChange={(e) => setNicknameValue(e.target.value)}
         />
         <Link href={closeUrl} scroll={false}>
           <Button
@@ -76,11 +135,37 @@ export const EditPersonSection = ({
         loading={isLoading}
         className="rounded-lg"
       >
-        <FileUploader
-          value={files}
-          onValueChange={setFiles}
-          onUpload={() => Promise.resolve()}
-        />
+        {leadImageUrl && !isEditingLeadImage ? (
+          <div className="relative">
+            <Image
+              className="rounded-xl max-h-[130px] min-h-[130px] w-full object-cover"
+              width={400}
+              height={130}
+              src={newLeadImageUrl}
+              alt={`Profile Lead Image: ${name} ${surname}`}
+            />
+            <Button
+              variant="ghost"
+              colorVariant="neutral"
+              className="absolute top-2 right-2 p-2 rounded-xl"
+              onClick={handleEditLeadImage}
+            >
+              <RxPencil1 className="w-5 h-5" />
+            </Button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <Input
+              value={newLeadImageUrl}
+              onChange={(e) => setNewLeadImageUrl(e.target.value)}
+              placeholder="New lead image URL"
+              className="w-full min-w-full"
+            />
+            <Button variant="default" onClick={handleSaveLeadImageUrl}>
+              Save
+            </Button>
+          </div>
+        )}
       </Skeleton>
       <Skeleton
         width="100%"
@@ -88,7 +173,10 @@ export const EditPersonSection = ({
         loading={isLoading}
         className="rounded-lg"
       >
-        <Textarea />
+        <Textarea
+          value={descriptionValue}
+          onChange={(e) => setDescriptionValue(e.target.value)}
+        />
       </Skeleton>
       <div className="flex gap-6 flex-col">
         <div className="flex justify-between">
@@ -174,6 +262,7 @@ export const EditPersonSection = ({
           <Button
             variant="default"
             className="rounded-lg justify-start text-white w-fit"
+            onClick={saveChanges}
           >
             Save
           </Button>

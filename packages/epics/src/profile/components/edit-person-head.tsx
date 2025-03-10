@@ -1,11 +1,11 @@
 import { Skeleton } from '@hypha-platform/ui';
 import { MemberType } from '@hypha-platform/graphql/rsc';
 import { Image } from '@hypha-platform/ui';
-import { Text } from '@radix-ui/themes';
+import { Input } from '@hypha-platform/ui';
 
 export type EditPersonHeadProps = {
   isLoading?: boolean;
-  id?: string;
+  nickname?: string;
 };
 
 export const EditPersonHead = ({
@@ -13,8 +13,16 @@ export const EditPersonHead = ({
   surname,
   avatar,
   isLoading,
-  id,
-}: EditPersonHeadProps & MemberType) => {
+  nickname,
+  onNameChange,
+  onSurnameChange,
+  onNicknameChange,
+}: EditPersonHeadProps &
+  MemberType & {
+    onNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onSurnameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onNicknameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  }) => {
   return (
     <div className="flex items-center">
       <Skeleton
@@ -25,7 +33,7 @@ export const EditPersonHead = ({
       >
         <Image
           className="rounded-lg mr-3"
-          src={avatar ?? ''}
+          src={avatar || '/placeholder/space-avatar-image.png'}
           height={64}
           width={64}
           alt={name && surname ? `${name} ${surname}` : 'Person Avatar'}
@@ -40,15 +48,29 @@ export const EditPersonHead = ({
             loading={isLoading}
             className="my-1"
           >
-            <Text className="text-4">
-              {name} {surname}
-            </Text>
+            <div className="flex gap-1 mb-1">
+              <Input
+                value={name}
+                onChange={onNameChange}
+                placeholder="Name"
+                className="text-2"
+              />
+              <Input
+                value={surname}
+                onChange={onSurnameChange}
+                placeholder="Surname"
+                className="text-2"
+              />
+            </div>
           </Skeleton>
 
           <Skeleton height="16px" width="80px" loading={isLoading}>
-            <span className="flex items-center">
-              <Text className="text-1 text-neutral-11">{id}</Text>
-            </span>
+            <Input
+              value={nickname}
+              onChange={onNicknameChange}
+              placeholder="Nickname"
+              className="text-1 text-neutral-11"
+            />
           </Skeleton>
         </div>
       </div>
