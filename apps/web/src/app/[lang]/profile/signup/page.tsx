@@ -5,6 +5,7 @@ import { useCreateProfile } from '@web/hooks/use-create-profile';
 import { Button, Input } from '@hypha-platform/ui';
 
 import { ImageUploader } from '@hypha-platform/ui';
+import { useUploadThingFileUploader } from '@web/hooks/use-uploadthing-file-uploader';
 
 export default function SignupPage() {
   const { createProfile } = useCreateProfile();
@@ -18,6 +19,13 @@ export default function SignupPage() {
   const [nickname, setNickname] = React.useState('');
   const [leadImageUrl, setLeadImageUrl] = React.useState('');
 
+  const { isUploading, uploadedFile, setUploadedFile, handleDrop } =
+    useUploadThingFileUploader({
+      onUploadComplete: (url: string) => {
+        setLeadImageUrl(url);
+      },
+    });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -27,7 +35,7 @@ export default function SignupPage() {
         surname,
         email,
         avatarUrl,
-        leadImageUrl,
+        leadImageUrl: uploadedFile ?? '',
         description,
         location,
         nickname,
@@ -88,10 +96,10 @@ export default function SignupPage() {
         <div>
           <label>Lead image URL:</label>
           <ImageUploader
-            initialImageUrl={leadImageUrl ?? ''}
-            onUploadComplete={(url: string) => {
-              setLeadImageUrl(url);
-            }}
+            isUploading={isUploading}
+            uploadedFile={uploadedFile}
+            setUploadedFile={setUploadedFile}
+            handleDrop={handleDrop}
           />
         </div>
 

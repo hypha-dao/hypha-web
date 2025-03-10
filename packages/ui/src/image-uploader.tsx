@@ -1,58 +1,24 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  generateUploadDropzone,
-  generateReactHelpers,
-} from '@uploadthing/react';
-import type { OurFileRouter } from '@web/app/api/uploadthing/core';
 import Image from 'next/image';
 import { LoaderIcon } from 'lucide-react';
 import { Pencil1Icon } from '@radix-ui/react-icons';
-import { useJwt } from '@web/hooks/use-jwt';
 
 interface ImageUploaderProps {
-  initialImageUrl?: string;
-  onUploadComplete?: (url: string) => void;
+  isUploading: boolean;
+  uploadedFile: string | null;
+  setUploadedFile: (url: string | null) => void;
+  handleDrop: (files: File[]) => void;
 }
 
 export const ImageUploader = ({
-  initialImageUrl,
-  onUploadComplete,
+  isUploading,
+  uploadedFile,
+  setUploadedFile,
+  handleDrop,
 }: ImageUploaderProps) => {
-  const [uploadedFile, setUploadedFile] = useState<string | null>(
-    initialImageUrl || null,
-  );
   const [isHovered, setIsHovered] = useState(false);
-
-  const { jwt } = useJwt();
-  const { useUploadThing } = generateReactHelpers<OurFileRouter>();
-  const { startUpload, isUploading } = useUploadThing('imageUploader', {
-    headers: {
-      Authorization: `Bearer ${jwt}`,
-      'Content-Type': 'application/json',
-    },
-  });
-
-  const handleUploadComplete = (res: any) => {
-    console.log('Files: ', res);
-
-    if (res && res[0]?.url) {
-      setUploadedFile(res[0]?.url);
-      if (onUploadComplete) {
-        onUploadComplete(res[0]?.url);
-      }
-    }
-  };
-
-  const handleDrop = async (acceptedFiles: File[]) => {
-    const res = await startUpload(acceptedFiles);
-    if (res) {
-      handleUploadComplete(res);
-    }
-  };
-
-  const UploadDropzone = generateUploadDropzone<OurFileRouter>();
 
   return (
     <div>
@@ -65,10 +31,12 @@ export const ImageUploader = ({
           className="relative max-h-[150px] min-h-[150px] w-full rounded-lg overflow-hidden"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
-          onClick={() => setUploadedFile(null)}
+          onClick={() => {
+            setUploadedFile(null);
+          }}
         >
           <Image
-            src={uploadedFile}
+            src={uploadedFile || ''}
             alt="Uploaded Image"
             className="w-full h-full object-cover"
             width={554}
@@ -81,34 +49,26 @@ export const ImageUploader = ({
           )}
         </div>
       ) : (
-        <UploadDropzone
-          endpoint="imageUploader"
-          onClientUploadComplete={handleUploadComplete}
-          onUploadError={(error: Error) => {
-            alert(`ERROR! ${error.message}`);
+        <div
+          className="w-full min-h-[150px] flex-row rounded-md border-2 items-center justify-center flex border-neutral-10 bg-transparent border-dashed"
+          onClick={() => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = (e) => {
+              const files = (e.target as HTMLInputElement).files;
+              if (files) {
+                handleDrop(Array.from(files));
+              }
+            };
+            input.click();
           }}
-          onChange={handleDrop}
-          config={{
-            appendOnPaste: true,
-          }}
-          content={{
-            label: (
-              <p className="font-medium text-muted-foreground w-full">
-                <span className="text-accent-11">Upload</span> an image or{' '}
-                <span className="text-accent-11">generate</span> one with AI
-              </p>
-            ),
-            allowedContent: <></>,
-            uploadIcon: <></>,
-            button: <></>,
-          }}
-          appearance={{
-            label: 'w-full',
-            container:
-              'w-full min-h-[150px] flex-row rounded-md border-2 border-neutral-10 bg-transparent border-dashed',
-            button: 'hidden',
-          }}
-        />
+        >
+          <p className="font-medium text-muted-foreground w-full text-center">
+            <span className="text-accent-11">Upload</span> an image or{' '}
+            <span className="text-accent-11">generate</span> one with AI
+          </p>
+        </div>
       )}
     </div>
   );
