@@ -18,8 +18,6 @@ export const ImageUploader = ({
   setUploadedFile,
   handleDrop,
 }: ImageUploaderProps) => {
-  const [isHovered, setIsHovered] = useState(false);
-
   return (
     <div>
       {isUploading ? (
@@ -28,9 +26,7 @@ export const ImageUploader = ({
         </div>
       ) : uploadedFile ? (
         <div
-          className="relative max-h-[150px] min-h-[150px] w-full rounded-lg overflow-hidden"
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
+          className="group relative max-h-[150px] min-h-[150px] w-full rounded-lg overflow-hidden"
           onClick={() => {
             setUploadedFile(null);
           }}
@@ -42,11 +38,9 @@ export const ImageUploader = ({
             width={554}
             height={150}
           />
-          {isHovered && (
-            <div className="absolute inset-0 bg-neutral-800 bg-opacity-50 flex items-center justify-center cursor-pointer">
+          <div className="hidden group-hover:flex absolute inset-0 bg-neutral-800 bg-opacity-50 items-center justify-center cursor-pointer">
               <Pencil1Icon width={24} height={24} />
             </div>
-          )}
         </div>
       ) : (
         <div
