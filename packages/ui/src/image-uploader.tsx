@@ -57,9 +57,7 @@ export const ImageUploader = ({
       ) : uploadedFile ? (
         <div
           className="group relative max-h-[150px] min-h-[150px] w-full rounded-lg overflow-hidden"
-          onClick={() => {
-            onReset();
-          }}
+          onClick={onReset}
         >
           <Image
             src={uploadedFile || ''}
