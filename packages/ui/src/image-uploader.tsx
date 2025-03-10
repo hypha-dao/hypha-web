@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { LoaderIcon } from 'lucide-react';
 import { Pencil1Icon } from '@radix-ui/react-icons';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 
 interface ImageUploaderProps {
   isUploading: boolean;
@@ -19,6 +19,18 @@ export const ImageUploader = ({
   onUpload,
 }: ImageUploaderProps) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (files.length > 0) {
+      const file = files[0];
+      if (file && file.type.startsWith('image')) {
+        const fileUrl = URL.createObjectURL(file);
+        setPreviewUrl(fileUrl);
+      }
+    }
+  }, [files]);
 
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -34,11 +46,28 @@ export const ImageUploader = ({
     (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
       setIsDragging(false);
-      const files = Array.from(e.dataTransfer.files);
-      onUpload(files);
+      const droppedFiles = Array.from(e.dataTransfer.files);
+      setFiles(droppedFiles);
+      onUpload(droppedFiles);
     },
     [onUpload],
   );
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = e.target.files;
+    if (selectedFiles) {
+      const fileArray = Array.from(selectedFiles);
+      setFiles(fileArray);
+      onUpload(fileArray);
+    }
+  };
+
+  const handleReset = () => {
+    setFiles([]);
+    setPreviewUrl(null);
+
+    onReset();
+  };
 
   return (
     <div
@@ -54,13 +83,13 @@ export const ImageUploader = ({
         >
           <LoaderIcon className="animate-spin" />
         </div>
-      ) : uploadedFile ? (
+      ) : uploadedFile || previewUrl ? (
         <div
           className="group relative max-h-[150px] min-h-[150px] w-full rounded-lg overflow-hidden"
-          onClick={onReset}
+          onClick={handleReset}
         >
           <Image
-            src={uploadedFile || ''}
+            src={uploadedFile || previewUrl || ''}
             alt="Uploaded Image"
             className="w-full h-full object-cover"
             width={554}
@@ -80,7 +109,9 @@ export const ImageUploader = ({
             input.onchange = (e) => {
               const files = (e.target as HTMLInputElement).files;
               if (files) {
-                onUpload(Array.from(files));
+                handleFileInputChange({
+                  target: { files },
+                } as React.ChangeEvent<HTMLInputElement>);
               }
             };
             input.click();

@@ -17,12 +17,6 @@ export const Default: Story = {
   args: {
     isUploading: false,
     uploadedFile: '',
-    onReset: () => {
-      console.log('Reset handler');
-    },
-    onUpload: () => {
-      console.log('Upload handler');
-    },
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
