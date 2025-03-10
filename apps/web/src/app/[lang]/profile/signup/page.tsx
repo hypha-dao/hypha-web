@@ -17,12 +17,11 @@ export default function SignupPage() {
   const [description, setDescription] = React.useState('');
   const [location, setLocation] = React.useState('');
   const [nickname, setNickname] = React.useState('');
-  const [leadImageUrl, setLeadImageUrl] = React.useState('');
 
   const { isUploading, uploadedFile, setUploadedFile, handleDrop } =
     useUploadThingFileUploader({
       onUploadComplete: (url: string) => {
-        setLeadImageUrl(url);
+        setUploadedFile(url);
       },
     });
 
@@ -98,8 +97,8 @@ export default function SignupPage() {
           <ImageUploader
             isUploading={isUploading}
             uploadedFile={uploadedFile}
-            setUploadedFile={setUploadedFile}
-            handleDrop={handleDrop}
+            onReset={() => setUploadedFile(null)}
+            onUpload={handleDrop}
           />
         </div>
 

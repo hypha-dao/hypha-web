@@ -17,11 +17,11 @@ export const Default: Story = {
   args: {
     isUploading: false,
     uploadedFile: '',
-    setUploadedFile: () => {
-      console.log('Set uploaded file');
+    onReset: () => {
+      console.log('Reset handler');
     },
-    handleDrop: () => {
-      console.log('Handle drop');
+    onUpload: () => {
+      console.log('Upload handler');
     },
   },
   play: async ({ canvasElement }) => {
