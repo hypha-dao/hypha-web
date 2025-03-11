@@ -21,6 +21,8 @@ export const Primary: Story = {
       avatar: 'https://github.com/shadcn.png',
     },
     isLoading: false,
+    description:
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt',
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
