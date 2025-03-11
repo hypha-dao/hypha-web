@@ -7,45 +7,54 @@ type AgreementsListProps = {
   page: number;
   activeFilter: string;
   basePath: string;
-  hasAvatar?: boolean;
   useDocuments: UseDocuments;
+  gridView: boolean;
 };
 
 export const AgreementsList: FC<AgreementsListProps> = ({
   page,
   activeFilter,
   basePath,
-  hasAvatar,
   useDocuments,
+  gridView,
 }) => {
   const { documents: agreements, isLoading } = useDocuments({
     page,
     filter: { state: 'agreement' },
   });
 
+  const renderCards = () => {
+    return agreements.map((agreement) => (
+      <Link
+        href={`${basePath}/${agreement.slug}`}
+        key={agreement.slug}
+        scroll={false}
+      >
+        <AgreementCard {...agreement} isLoading={isLoading} />
+      </Link>
+    ));
+  };
+
+  const renderSkeletons = () => {
+    const skeletonsCount = gridView ? 3 : 4;
+    return Array.from({ length: skeletonsCount }).map((_, index) => (
+      <AgreementCard key={`skeleton-${index}`} isLoading={true} />
+    ));
+  };
+
   return (
     <div className="agreement-list w-full">
-      {agreements.map((agreement) => (
-        <Link
-          href={`${basePath}/${agreement.slug}`}
-          key={agreement.slug}
-          scroll={false}
-        >
-          <AgreementCard
-            hasAvatar={hasAvatar}
-            {...agreement}
-            isLoading={isLoading}
-          />
-        </Link>
-      ))}
-      {isLoading ? (
-        <div>
-          <AgreementCard isLoading={isLoading} />
-          <AgreementCard isLoading={isLoading} />
-          <AgreementCard isLoading={isLoading} />
-          <AgreementCard isLoading={isLoading} />
+      {gridView ? (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+          {renderCards()}
+          {isLoading && renderSkeletons()}
         </div>
-      ) : null}
+      ) : (
+        <div>
+          {renderCards()}
+          {isLoading && renderSkeletons()}
+        </div>
+      )}
     </div>
   );
 };

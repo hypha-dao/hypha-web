@@ -13,13 +13,13 @@ import { UseDocuments } from '../../governance';
 type AgreementsSectionProps = {
   basePath: string;
   useDocuments: UseDocuments;
-  hasAvatar?: boolean;
+  gridView?: boolean;
 };
 
 export const AgreementsSection: FC<AgreementsSectionProps> = ({
   basePath,
   useDocuments,
-  hasAvatar = true,
+  gridView = false
 }) => {
   const {
     pages,
@@ -58,7 +58,7 @@ export const AgreementsSection: FC<AgreementsSectionProps> = ({
             activeFilter={activeFilter}
             basePath={basePath}
             useDocuments={useDocuments}
-            hasAvatar={hasAvatar}
+            gridView={gridView}
           />
         ))
       )}

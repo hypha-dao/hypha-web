@@ -28,10 +28,12 @@ export default async function AgreementsPage(props: PageProps) {
       <ProposalsSection
         basePath={`${basePath}/proposals`}
         useDocuments={useSpaceDocuments}
+        gridView={true}
       />
       <AgreementsSection
         basePath={`${basePath}/agreements`}
         useDocuments={useSpaceDocuments}
+        gridView={true}
       />
     </div>
   );
