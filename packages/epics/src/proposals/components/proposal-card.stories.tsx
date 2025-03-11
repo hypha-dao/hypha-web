@@ -15,6 +15,7 @@ export const Primary: Story = {
     commitment: 50,
     status: 'active',
     title: 'Proposal 1',
+    leadImage: 'https://github.com/shadcn.png',
     creator: {
       name: 'John',
       surname: 'Doe',
