@@ -271,4 +271,15 @@ export class PeopleRepositoryPostgres implements PeopleRepository {
       return null;
     }
   }
+
+  async verifyAuth(): Promise<boolean> {
+    try {
+      const {
+        rows: [{ user_id }],
+      } = await this.db.execute(sql`SELECT user_id from auth.user_id()`);
+      return !!user_id;
+    } catch {
+      return false;
+    }
+  }
 }

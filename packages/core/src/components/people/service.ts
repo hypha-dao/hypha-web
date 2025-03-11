@@ -12,6 +12,10 @@ export class PeopleService {
     private repository: PeopleRepository,
   ) {}
 
+  async verifyAuth() {
+    return this.repository.verifyAuth();
+  }
+
   async findBySpaceId(
     { spaceId }: { spaceId: number },
     config: PeopleFindBySpaceConfig = {

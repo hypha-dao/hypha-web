@@ -8,8 +8,8 @@ const f = createUploadthing();
 const getAuthenticatedUser = async (req: NextRequest) => {
   const authToken = req.headers.get('Authorization')?.split(' ')[1] || '';
   const peopleService = createPeopleService({ authToken });
-  const user = await peopleService.findMe();
-  return user;
+  const isValidAuthToken = await peopleService.verifyAuth();
+  return isValidAuthToken;
 };
 
 export const ourFileRouter = {
@@ -20,13 +20,13 @@ export const ourFileRouter = {
     },
   })
     .middleware(async ({ req }) => {
-      const user = await getAuthenticatedUser(req);
+      const isValidAuthToken = await getAuthenticatedUser(req);
 
-      if (!user) {
+      if (!isValidAuthToken) {
         throw new UploadThingError('Unauthorized');
       }
 
-      return { userId: user.id };
+      return { isAuthenticated: true };
     })
     .onUploadComplete(async ({ metadata, file }) => {
       console.debug('ourFileRouter.onUploadComplete', { metadata, file });

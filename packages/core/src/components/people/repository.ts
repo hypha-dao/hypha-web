@@ -24,5 +24,6 @@ export interface PeopleRepository {
   create(person: Person): Promise<Person>;
   update(person: Person): Promise<Person>;
   delete(id: number): Promise<void>;
+  verifyAuth(): Promise<boolean>;
   findMe(): Promise<Person | null>;
 }
