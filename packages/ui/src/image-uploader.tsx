@@ -65,7 +65,6 @@ export const ImageUploader = ({
   const handleReset = () => {
     setFiles([]);
     setPreviewUrl(null);
-
     onReset();
   };
 
@@ -75,19 +74,8 @@ export const ImageUploader = ({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {isUploading ? (
-        <div
-          className={`w-full min-h-[150px] flex-row rounded-md border-2 items-center justify-center flex border-neutral-10 bg-transparent border-dashed ${
-            isDragging ? 'bg-neutral-100' : ''
-          }`}
-        >
-          <LoaderIcon className="animate-spin" />
-        </div>
-      ) : uploadedFile || previewUrl ? (
-        <div
-          className="group relative max-h-[150px] min-h-[150px] w-full rounded-lg overflow-hidden"
-          onClick={handleReset}
-        >
+      {uploadedFile || previewUrl ? (
+        <div className="group relative max-h-[150px] min-h-[150px] w-full rounded-lg overflow-hidden">
           <Image
             src={uploadedFile || previewUrl || ''}
             alt="Uploaded Image"
@@ -95,9 +83,19 @@ export const ImageUploader = ({
             width={554}
             height={150}
           />
-          <div className="hidden group-hover:flex absolute inset-0 bg-neutral-800 bg-opacity-50 items-center justify-center cursor-pointer">
-            <Pencil1Icon width={24} height={24} />
-          </div>
+          {isUploading && (
+            <div className="absolute inset-0 bg-neutral-800 bg-opacity-50 flex items-center justify-center">
+              <LoaderIcon className="animate-spin" />
+            </div>
+          )}
+          {!isUploading && (
+            <div
+              className="hidden group-hover:flex absolute inset-0 bg-neutral-800 bg-opacity-50 items-center justify-center cursor-pointer"
+              onClick={handleReset}
+            >
+              <Pencil1Icon width={24} height={24} />
+            </div>
+          )}
         </div>
       ) : (
         <div
