@@ -18,7 +18,7 @@ type CreatorType = {
 
 type DiscussionCardProps = {
   creator?: CreatorType;
-  image?: string;
+  leadImage?: string;
   title?: string;
   description?: string;
   views?: number;
@@ -33,7 +33,7 @@ const customCardHeaderStyles: React.CSSProperties = {
 
 export const DiscussionCard: React.FC<DiscussionCardProps> = ({
   description,
-  image,
+  leadImage,
   views,
   comments,
   title,
@@ -50,7 +50,7 @@ export const DiscussionCard: React.FC<DiscussionCardProps> = ({
         <Skeleton loading={isLoading} height="150px" width="250px">
           <Image
             className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
-            src={image || '/placeholder/space-lead-image.png'}
+            src={leadImage || '/placeholder/space-lead-image.png'}
             alt={title || 'TODO: make sure there is a title'}
             width={250}
             height={150}
