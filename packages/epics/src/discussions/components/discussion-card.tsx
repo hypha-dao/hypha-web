@@ -27,10 +27,6 @@ type DiscussionCardProps = {
   href?: string;
 };
 
-const customCardHeaderStyles: React.CSSProperties = {
-  height: '150px',
-};
-
 export const DiscussionCard: React.FC<DiscussionCardProps> = ({
   description,
   leadImage,
@@ -44,8 +40,7 @@ export const DiscussionCard: React.FC<DiscussionCardProps> = ({
   return (
     <Card className="h-full w-full">
       <CardHeader
-        style={customCardHeaderStyles}
-        className="p-0 rounded-tl-md rounded-tr-md overflow-hidden"
+        className="p-0 rounded-tl-md rounded-tr-md overflow-hidden h-[150px]"
       >
         <Skeleton loading={isLoading} height="150px" width="250px">
           <Image
