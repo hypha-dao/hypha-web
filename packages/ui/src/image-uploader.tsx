@@ -117,10 +117,15 @@ export const ImageUploader = ({
             input.click();
           }}
         >
-          <p className="font-medium text-muted-foreground w-full text-center">
-            <span className="text-accent-11">Upload</span> an image or{' '}
-            <span className="text-accent-11">generate</span> one with AI
-          </p>
+          {isDragging ? (
+            <p className="font-medium text-muted-foreground w-full text-center">
+              <span>Drop the file here</span>
+            </p>
+          ) : (
+            <p className="font-medium text-muted-foreground w-full text-center">
+              <span className="text-accent-11">Upload</span> an image
+            </p>
+          )}
         </div>
       )}
     </div>
