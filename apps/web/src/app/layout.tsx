@@ -41,18 +41,6 @@ export default async function RootLayout({
   const shouldInjectToolbar = process.env.NODE_ENV === 'development';
   return (
     <Html className={clsx(lato.variable, sourceSans.variable)}>
-      <head>
-        <link
-          rel="icon"
-          href="https://hypha.earth/wp-content/uploads/2023/07/cropped-favicon-32x32.png"
-          sizes="32x32"
-        />
-        <link
-          rel="icon"
-          href="https://hypha.earth/wp-content/uploads/2023/07/cropped-favicon-192x192.png"
-          sizes="192x192"
-        />
-      </head>
       <AuthProvider
         config={
           isWeb3AuthEnabled
