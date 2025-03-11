@@ -5,6 +5,7 @@ import {
   CardTitle,
   Skeleton,
   Image,
+  Badge,
 } from '@hypha-platform/ui';
 import { EyeOpenIcon, ChatBubbleIcon } from '@radix-ui/react-icons';
 import { Avatar, AvatarImage } from '@radix-ui/react-avatar';
@@ -51,22 +52,27 @@ export const DiscussionCard: React.FC<DiscussionCardProps> = ({
         </Skeleton>
       </CardHeader>
       <CardContent className="pt-5 relative">
-        <div className="flex flex-col items-start mb-5">
+        <div className="flex gap-x-1 mb-2">
+          <Badge isLoading={isLoading} variant="solid" colorVariant="accent">
+            Discussion
+          </Badge>
+        </div>
+        <div className="flex flex-col items-start mb-4">
           <Skeleton width="120px" height="18px" loading={isLoading}>
             <CardTitle>{title}</CardTitle>
           </Skeleton>
           <div className="mt-2 flex items-center">
             <Skeleton
-              width="12px"
-              height="12px"
+              width="24px"
+              height="24px"
               className="rounded-md"
               loading={isLoading}
             >
               <Avatar>
                 <AvatarImage
                   className="rounded-md"
-                  width={12}
-                  height={12}
+                  width={24}
+                  height={24}
                   src={creator?.avatar}
                   alt="logo"
                 />

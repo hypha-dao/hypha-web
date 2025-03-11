@@ -49,7 +49,7 @@ export const ProposalCard: React.FC<ProposalCardProps> = ({
       <CardContent className="pt-5 relative">
         <div className="flex gap-x-1 mb-2">
           <Badge isLoading={isLoading} variant="solid" colorVariant="accent">
-            Discussion
+            Proposal
           </Badge>
           <Badge isLoading={isLoading} variant="outline" colorVariant="accent">
             {commitment}%
