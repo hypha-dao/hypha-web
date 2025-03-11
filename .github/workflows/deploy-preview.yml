@@ -104,9 +104,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout main branch
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          ref: main
+
+      - name: Checkout repo at PRs branch
+        uses: actions/checkout@v4
+
+      # This line is needed for nx affected to work when CI is running on a PR
+      - name: Track main branch
+        run: git branch --track main origin/main
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -119,6 +127,7 @@ jobs:
           cache: 'pnpm'
 
       - run: pnpm install
+
       - uses: nrwl/nx-set-shas@v4
 
       - run: pnpm run format:check
