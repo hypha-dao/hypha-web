@@ -112,7 +112,7 @@ async function testCreateSpace() {
       quorum: 51, // uint256 quorum requirement
       votingPowerSource: 1, // uint256 voting power source
       exitMethod: 2, // uint256 exit method
-      joinMethod: 2, // uint256 join method
+      joinMethod: 1, // uint256 join method
     };
 
     try {
