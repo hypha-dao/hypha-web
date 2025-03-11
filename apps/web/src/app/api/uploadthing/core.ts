@@ -1,12 +1,15 @@
 import { createUploadthing, type FileRouter } from 'uploadthing/next';
 import { UploadThingError } from 'uploadthing/server';
 import { NextRequest } from 'next/server';
+import { createPeopleService } from '@hypha-platform/core';
 
 const f = createUploadthing();
 
-const getAuthToken = async (req: NextRequest) => {
+const getAuthenticatedUser = async (req: NextRequest) => {
   const authToken = req.headers.get('Authorization')?.split(' ')[1] || '';
-  return authToken;
+  const peopleService = createPeopleService({ authToken });
+  const user = await peopleService.findMe();
+  return user;
 };
 
 export const ourFileRouter = {
@@ -17,18 +20,17 @@ export const ourFileRouter = {
     },
   })
     .middleware(async ({ req }) => {
-      const authToken = await getAuthToken(req);
+      const user = await getAuthenticatedUser(req);
 
-      if (authToken === null || authToken === 'undefined') {
+      if (!user) {
         throw new UploadThingError('Unauthorized');
       }
 
-      return { authToken };
+      return { userId: user.id };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      const { authToken } = metadata; // TODO: integrate peopleService with update method
-
-      return console.log('File uploaded:', file);
+      console.debug('ourFileRouter.onUploadComplete', { metadata, file });
+      return;
     }),
 } satisfies FileRouter;
 
