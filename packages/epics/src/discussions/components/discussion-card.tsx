@@ -84,18 +84,18 @@ export const DiscussionCard: React.FC<DiscussionCardProps> = ({
               className="ml-2"
               loading={isLoading}
             >
-              <Text className="ml-2 text-1 text-gray-500">
+              <Text className="ml-2 text-1 text-neutral-11">
                 {creator?.name} {creator?.surname}
               </Text>
             </Skeleton>
           </div>
         </div>
-        <div className="flex flex-grow text-1 text-gray-500 mb-4">
+        <div className="flex flex-grow text-1 text-neutral-11 mb-4">
           <Skeleton width="200px" height="48px" loading={isLoading}>
-            <div className="line-clamp-3">{description}</div>
+            <div className="line-clamp-2">{description}</div>
           </Skeleton>
         </div>
-        <div className="flex flex-grow gap-2 text-1 text-gray-500 items-center">
+        <div className="flex flex-grow gap-2 text-1 text-neutral-11 items-center">
           <Skeleton width="16px" height="16px" loading={isLoading}>
             <div className="flex">
               <EyeOpenIcon className="mr-1" width={16} />

@@ -35,7 +35,9 @@ export const Primary: Story = {
       },
     ],
     isLoading: false,
-    hasAvatar: false,
+    leadImage: 'https://github.com/shadcn.png',
+    description:
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt',
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

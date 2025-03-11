@@ -1,12 +1,17 @@
 import { Text } from '@radix-ui/themes';
-import { Card, Badge, Skeleton, StatusBadge } from '@hypha-platform/ui';
+import {
+  Card,
+  Badge,
+  Skeleton,
+  StatusBadge,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Image,
+} from '@hypha-platform/ui';
 import { EyeOpenIcon, ChatBubbleIcon } from '@radix-ui/react-icons';
 import { CardCommentProps } from '../../interactions/components/card-comment';
-import { PersonAvatar } from '../../profile/components/person-avatar';
-
-// TODO: load creator data
-const AVATAR_PLACEHOLDER =
-  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?&w=64&h=64&dpr=2&q=70&crop=faces&fit=crop';
+import { Avatar, AvatarImage } from '@radix-ui/react-avatar';
 
 type Creator = {
   avatar?: string;
@@ -22,7 +27,8 @@ type AgreementCardProps = {
   views?: number;
   comments?: CardCommentProps[];
   isLoading?: boolean;
-  hasAvatar?: boolean;
+  leadImage?: string;
+  description?: string;
 };
 
 export const AgreementCard: React.FC<AgreementCardProps> = ({
@@ -33,75 +39,77 @@ export const AgreementCard: React.FC<AgreementCardProps> = ({
   views,
   comments,
   isLoading,
+  leadImage,
+  description,
 }) => {
   return (
-    <Card className="w-full h-full p-5 mb-2 flex items-center">
-      <Skeleton
-        width="64px"
-        height="64px"
-        loading={isLoading}
-        className="rounded-lg mr-3"
-      >
-        <PersonAvatar
-          className="min-w-[64px] min-h-[64px] mr-3"
-          avatarSrc={creator?.avatar}
-          userName={`${creator?.name} ${creator?.surname}`}
-        />
-      </Skeleton>
-
-      <div className="flex justify-between items-center w-full">
-        <div className="grid">
-          <div className="flex gap-x-1">
-            <Badge
-              variant="surface"
-              colorVariant="accent"
-              isLoading={isLoading}
-            >
-              Agreement
-            </Badge>
-            <Badge
-              variant="surface"
-              colorVariant="accent"
-              isLoading={isLoading}
-            >
-              Recurring
-            </Badge>
-            <Badge
-              variant="surface"
-              colorVariant="accent"
-              isLoading={isLoading}
-            >
-              {commitment}%
-            </Badge>
-            <StatusBadge status={status} isLoading={isLoading} />
-          </div>
-
-          <Skeleton
-            height="26px"
-            width="160px"
-            loading={isLoading}
-            className="my-1"
-          >
-            <Text className="text-4 text-ellipsis overflow-hidden text-nowrap mr-3">
-              {title}
-            </Text>
+    <Card className="h-full w-full">
+      <CardHeader className="p-0 rounded-tl-md rounded-tr-md overflow-hidden h-[150px]">
+        <Skeleton loading={isLoading} height="150px" width="250px">
+          <Image
+            className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
+            src={leadImage || '/placeholder/space-lead-image.png'}
+            alt={title || 'TODO: make sure there is a title'}
+            width={250}
+            height={150}
+          />
+        </Skeleton>
+      </CardHeader>
+      <CardContent className="pt-5 relative">
+        <div className="flex gap-x-1 mb-2">
+          <Badge isLoading={isLoading} variant="solid" colorVariant="accent">
+            Agreement
+          </Badge>
+          <Badge isLoading={isLoading} variant="outline" colorVariant="accent">
+            {commitment}%
+          </Badge>
+          <StatusBadge status={status} isLoading={isLoading} />
+        </div>
+        <div className="flex flex-col items-start mb-4">
+          <Skeleton width="120px" height="18px" loading={isLoading}>
+            <CardTitle>{title}</CardTitle>
           </Skeleton>
-
-          <Skeleton height="16px" width="80px" loading={isLoading}>
-            <Text className="text-1 text-neutral-11">
-              {creator?.name} {creator?.surname}
-            </Text>
+          <div className="mt-2 flex items-center">
+            <Skeleton
+              width="24px"
+              height="24px"
+              className="rounded-md"
+              loading={isLoading}
+            >
+              <Avatar>
+                <AvatarImage
+                  className="rounded-md"
+                  width={24}
+                  height={24}
+                  src={creator?.avatar}
+                  alt="logo"
+                />
+              </Avatar>
+            </Skeleton>
+            <Skeleton
+              width="50px"
+              height="16px"
+              className="ml-2"
+              loading={isLoading}
+            >
+              <Text className="ml-2 text-1 text-neutral-11">
+                {creator?.name} {creator?.surname}
+              </Text>
+            </Skeleton>
+          </div>
+        </div>
+        <div className="flex flex-grow text-1 text-neutral-11 mb-4">
+          <Skeleton width="200px" height="48px" loading={isLoading}>
+            <div className="line-clamp-2">{description}</div>
           </Skeleton>
         </div>
-
-        <div className="flex flex-grow gap-2 text-1 text-neutral-11 items-end justify-end h-full">
+        <div className="flex flex-grow gap-2 text-1 text-neutral-11 items-center">
           <Skeleton width="16px" height="16px" loading={isLoading}>
             <div className="flex">
               <EyeOpenIcon className="mr-1" width={16} />
               <div>{views}</div>
             </div>
           </Skeleton>
-
           <Skeleton width="16px" height="16px" loading={isLoading}>
             <div className="flex ml-3">
               <ChatBubbleIcon className="mr-1" width={16} />
@@ -109,7 +117,7 @@ export const AgreementCard: React.FC<AgreementCardProps> = ({
             </div>
           </Skeleton>
         </div>
-      </div>
+      </CardContent>
     </Card>
   );
 };
