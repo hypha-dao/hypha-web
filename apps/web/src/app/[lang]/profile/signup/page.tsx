@@ -41,7 +41,6 @@ export default function SignupPage() {
       });
 
       console.log('Profile created:', newProfile);
-      alert('Profile created successfully!');
     } catch (error) {
       console.error('Error creating profile:', error);
       alert('Failed to create profile');
