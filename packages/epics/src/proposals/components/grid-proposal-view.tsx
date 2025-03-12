@@ -1,5 +1,5 @@
 import { Card, Badge, Image, CardTitle, Skeleton } from '@hypha-platform/ui';
-import { CreatorInfo } from './creator-info';
+import { CreatorInfo } from '../../common/creator-info';
 import { VoteButton } from './vote-button';
 import { ProposalCardProps } from './proposal-card';
 import { CardHeader, CardContent } from '@hypha-platform/ui';

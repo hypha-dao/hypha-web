@@ -1,4 +1,4 @@
-import { CreatorType } from './proposal-head';
+import { CreatorType } from '../proposals/components/proposal-head';
 import { Skeleton } from '@hypha-platform/ui';
 import { Avatar, AvatarImage } from '@radix-ui/react-avatar';
 import { Text } from '@radix-ui/themes';

@@ -6,7 +6,7 @@ import { expect } from '@storybook/jest';
 
 const meta = {
   component: CreatorInfo,
-  title: 'Epics/Proposals/CreatorInfo',
+  title: 'Epics/Common/CreatorInfo',
 } satisfies Meta<typeof CreatorInfo>;
 
 export default meta;

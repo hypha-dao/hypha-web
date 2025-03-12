@@ -30,7 +30,11 @@ export const AgreementsList: FC<AgreementsListProps> = ({
         key={agreement.slug}
         scroll={false}
       >
-        <AgreementCard {...agreement} isLoading={isLoading} />
+        <AgreementCard
+          {...agreement}
+          isLoading={isLoading}
+          gridView={gridView}
+        />
       </Link>
     ));
   };
@@ -38,7 +42,11 @@ export const AgreementsList: FC<AgreementsListProps> = ({
   const renderSkeletons = () => {
     const skeletonsCount = gridView ? 3 : 4;
     return Array.from({ length: skeletonsCount }).map((_, index) => (
-      <AgreementCard key={`skeleton-${index}`} isLoading={true} />
+      <AgreementCard
+        key={`skeleton-${index}`}
+        isLoading={true}
+        gridView={gridView}
+      />
     ));
   };
 
