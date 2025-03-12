@@ -19,7 +19,7 @@ type AgreementsSectionProps = {
 export const AgreementsSection: FC<AgreementsSectionProps> = ({
   basePath,
   useDocuments,
-  gridView = false
+  gridView = false,
 }) => {
   const {
     pages,

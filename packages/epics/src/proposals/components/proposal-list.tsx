@@ -36,7 +36,11 @@ export const ProposalList: FC<ProposalListProps> = ({
   const renderSkeletons = () => {
     const skeletonsCount = gridView ? 3 : 4;
     return Array.from({ length: skeletonsCount }).map((_, index) => (
-      <ProposalCard key={`skeleton-${index}`} isLoading={true} />
+      <ProposalCard
+        key={`skeleton-${index}`}
+        isLoading={true}
+        gridView={gridView}
+      />
     ));
   };
 
