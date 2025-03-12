@@ -28,7 +28,7 @@ export const ProposalList: FC<ProposalListProps> = ({
         key={proposal.slug}
         scroll={false}
       >
-        <ProposalCard {...proposal} isLoading={isLoading} />
+        <ProposalCard {...proposal} isLoading={isLoading} gridView={gridView} />
       </Link>
     ));
   };
