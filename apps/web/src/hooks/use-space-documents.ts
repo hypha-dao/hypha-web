@@ -12,7 +12,7 @@ import { UseDocuments, UseDocumentsReturn } from '@hypha-platform/epics';
 
 export const useSpaceDocuments: UseDocuments = ({
   page = 1,
-  pageSize = 4,
+  pageSize = 3,
   filter,
 }: {
   page?: number;

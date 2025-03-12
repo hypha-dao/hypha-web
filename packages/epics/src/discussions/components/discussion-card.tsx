@@ -5,6 +5,7 @@ import {
   CardTitle,
   Skeleton,
   Image,
+  Badge,
 } from '@hypha-platform/ui';
 import { EyeOpenIcon, ChatBubbleIcon } from '@radix-ui/react-icons';
 import { Avatar, AvatarImage } from '@radix-ui/react-avatar';
@@ -18,7 +19,7 @@ type CreatorType = {
 
 type DiscussionCardProps = {
   creator?: CreatorType;
-  image?: string;
+  leadImage?: string;
   title?: string;
   description?: string;
   views?: number;
@@ -27,13 +28,9 @@ type DiscussionCardProps = {
   href?: string;
 };
 
-const customCardHeaderStyles: React.CSSProperties = {
-  height: '150px',
-};
-
 export const DiscussionCard: React.FC<DiscussionCardProps> = ({
   description,
-  image,
+  leadImage,
   views,
   comments,
   title,
@@ -43,14 +40,11 @@ export const DiscussionCard: React.FC<DiscussionCardProps> = ({
 }) => {
   return (
     <Card className="h-full w-full">
-      <CardHeader
-        style={customCardHeaderStyles}
-        className="p-0 rounded-tl-md rounded-tr-md overflow-hidden"
-      >
+      <CardHeader className="p-0 rounded-tl-md rounded-tr-md overflow-hidden h-[150px]">
         <Skeleton loading={isLoading} height="150px" width="250px">
           <Image
             className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
-            src={image || '/placeholder/space-lead-image.png'}
+            src={leadImage || '/placeholder/space-lead-image.png'}
             alt={title || 'TODO: make sure there is a title'}
             width={250}
             height={150}
@@ -58,22 +52,27 @@ export const DiscussionCard: React.FC<DiscussionCardProps> = ({
         </Skeleton>
       </CardHeader>
       <CardContent className="pt-5 relative">
-        <div className="flex flex-col items-start mb-5">
+        <div className="flex gap-x-1 mb-2">
+          <Badge isLoading={isLoading} variant="solid" colorVariant="accent">
+            Discussion
+          </Badge>
+        </div>
+        <div className="flex flex-col items-start mb-4">
           <Skeleton width="120px" height="18px" loading={isLoading}>
             <CardTitle>{title}</CardTitle>
           </Skeleton>
           <div className="mt-2 flex items-center">
             <Skeleton
-              width="12px"
-              height="12px"
+              width="24px"
+              height="24px"
               className="rounded-md"
               loading={isLoading}
             >
               <Avatar>
                 <AvatarImage
                   className="rounded-md"
-                  width={12}
-                  height={12}
+                  width={24}
+                  height={24}
                   src={creator?.avatar}
                   alt="logo"
                 />
@@ -85,18 +84,18 @@ export const DiscussionCard: React.FC<DiscussionCardProps> = ({
               className="ml-2"
               loading={isLoading}
             >
-              <Text className="ml-2 text-1 text-gray-500">
+              <Text className="ml-2 text-1 text-neutral-11">
                 {creator?.name} {creator?.surname}
               </Text>
             </Skeleton>
           </div>
         </div>
-        <div className="flex flex-grow text-1 text-gray-500 mb-4">
+        <div className="flex flex-grow text-1 text-neutral-11 mb-4">
           <Skeleton width="200px" height="48px" loading={isLoading}>
-            <div className="line-clamp-3">{description}</div>
+            <div className="line-clamp-2">{description}</div>
           </Skeleton>
         </div>
-        <div className="flex flex-grow gap-2 text-1 text-gray-500 items-center">
+        <div className="flex flex-grow gap-2 text-1 text-neutral-11 items-center">
           <Skeleton width="16px" height="16px" loading={isLoading}>
             <div className="flex">
               <EyeOpenIcon className="mr-1" width={16} />

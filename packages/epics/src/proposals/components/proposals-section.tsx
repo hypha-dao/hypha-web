@@ -15,11 +15,13 @@ import { UseDocuments } from '../../governance';
 type ProposalSectionProps = {
   basePath: string;
   useDocuments: UseDocuments;
+  gridView?: boolean;
 };
 
 export const ProposalsSection: FC<ProposalSectionProps> = ({
   basePath,
   useDocuments,
+  gridView = false,
 }) => {
   const {
     pages,
@@ -62,6 +64,7 @@ export const ProposalsSection: FC<ProposalSectionProps> = ({
             page={index + 1}
             key={index}
             useDocuments={useDocuments}
+            gridView={gridView}
           />
         ))
       )}
