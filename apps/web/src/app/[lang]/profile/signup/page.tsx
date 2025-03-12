@@ -4,6 +4,9 @@ import React from 'react';
 import { useCreateProfile } from '@web/hooks/use-create-profile';
 import { Button, Input } from '@hypha-platform/ui';
 
+import { ImageUploader } from '@hypha-platform/ui';
+import { useUploadThingFileUploader } from '@web/hooks/use-uploadthing-file-uploader';
+
 export default function SignupPage() {
   const { createProfile } = useCreateProfile();
 
@@ -15,6 +18,13 @@ export default function SignupPage() {
   const [location, setLocation] = React.useState('');
   const [nickname, setNickname] = React.useState('');
 
+  const { isUploading, uploadedFile, setUploadedFile, handleDrop } =
+    useUploadThingFileUploader({
+      onUploadComplete: (url: string) => {
+        setUploadedFile(url);
+      },
+    });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -24,13 +34,13 @@ export default function SignupPage() {
         surname,
         email,
         avatarUrl,
+        leadImageUrl: uploadedFile ?? '',
         description,
         location,
         nickname,
       });
 
       console.log('Profile created:', newProfile);
-      alert('Profile created successfully!');
     } catch (error) {
       console.error('Error creating profile:', error);
       alert('Failed to create profile');
@@ -78,6 +88,16 @@ export default function SignupPage() {
             type="url"
             value={avatarUrl}
             onChange={(e) => setAvatarUrl(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label>Lead image URL:</label>
+          <ImageUploader
+            isUploading={isUploading}
+            uploadedFile={uploadedFile}
+            onReset={() => setUploadedFile(null)}
+            onUpload={handleDrop}
           />
         </div>
 

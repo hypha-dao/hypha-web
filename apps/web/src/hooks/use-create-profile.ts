@@ -3,12 +3,14 @@
 import React from 'react';
 import { useAuthentication } from '@hypha-platform/authentication';
 import useSWR from 'swr';
+import { useRouter } from 'next/navigation';
 
 export const useCreateProfile = () => {
   const { getAccessToken, user } = useAuthentication();
   const endpoint = React.useMemo(() => '/api/v1/people/create-profile', []);
 
   const { data: jwt } = useSWR(user ? [user.id] : null, () => getAccessToken());
+  const router = useRouter();
 
   const createProfile = React.useCallback(
     async (data: {
@@ -16,6 +18,7 @@ export const useCreateProfile = () => {
       surname: string;
       email: string;
       avatarUrl: string;
+      leadImageUrl: string;
       description: string;
       location: string;
       nickname: string;
@@ -35,6 +38,8 @@ export const useCreateProfile = () => {
 
       if (!response.ok) {
         throw new Error('Failed to create profile');
+      } else {
+        router.push('/my-spaces');
       }
 
       const createdProfile = await response.json();

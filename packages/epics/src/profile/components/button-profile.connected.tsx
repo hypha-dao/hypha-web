@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import { UseAuthentication } from 'packages/authentication/src/shared/types';
 import { UseMe } from '../hooks/types';
+import { useEffect } from 'react';
 
 type ConnectedButtonProfileProps = {
   useAuthentication: UseAuthentication;
@@ -18,10 +19,16 @@ export const ConnectedButtonProfile = ({
   newUserRedirectPath,
 }: ConnectedButtonProfileProps) => {
   const { isAuthenticated, login, logout, user } = useAuthentication();
-  const { person } = useMe({ newUserRedirectPath });
+  const { person, isLoading } = useMe({ newUserRedirectPath });
 
   const router = useRouter();
   const { lang } = useParams();
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && !person?.id) {
+      router.push(newUserRedirectPath);
+    }
+  }, [isAuthenticated, isLoading, person]);
 
   return (
     <ButtonProfile

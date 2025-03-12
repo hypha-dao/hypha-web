@@ -3,11 +3,12 @@ import { join } from 'node:path';
 import TailwindAnimate from 'tailwindcss-animate';
 import TailwindTypography from '@tailwindcss/typography';
 import type { PluginUtils } from 'tailwindcss/types/config';
+import { withUt } from 'uploadthing/tw';
 
 import type { Config } from 'tailwindcss';
 
 export function buildConfig(appDir: string): Config {
-  return {
+  return withUt({
     darkMode: ['class'],
     safelist: ['dark', 'light'],
     content: [
@@ -18,6 +19,7 @@ export function buildConfig(appDir: string): Config {
       '../../packages/ui/src/**/*!(*.stories|*.spec).{ts,tsx,html}',
       '../../packages/epics/src/**/*!(*.stories|*.spec).{ts,tsx,html}',
       ...createGlobPatternsForDependencies(appDir),
+      './node_modules/uploadthing/**/*.{ts,tsx,html}',
     ],
     theme: {
       screens: {
@@ -332,5 +334,5 @@ export function buildConfig(appDir: string): Config {
       },
     },
     plugins: [TailwindAnimate, TailwindTypography],
-  };
+  });
 }

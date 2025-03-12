@@ -1,3 +1,7 @@
+import { ReactNode } from 'react';
+import { NextSSRPlugin } from '@uploadthing/react/next-ssr-plugin';
+import { extractRouterConfig } from 'uploadthing/server';
+import { ourFileRouter } from '@web/app/api/uploadthing/core';
 import { VercelToolbar } from '@vercel/toolbar/next';
 
 import { Lato, Source_Sans_3 } from 'next/font/google';
@@ -81,6 +85,7 @@ export default async function RootLayout({
               />
             </MenuTop.RightSlot>
           </MenuTop>
+          <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
           {children}
           <Footer />
         </ThemeProvider>
