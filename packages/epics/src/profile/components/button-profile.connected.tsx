@@ -19,16 +19,16 @@ export const ConnectedButtonProfile = ({
   newUserRedirectPath,
 }: ConnectedButtonProfileProps) => {
   const { isAuthenticated, login, logout, user } = useAuthentication();
-  const { person } = useMe({ newUserRedirectPath });
+  const { person, isLoading } = useMe({ newUserRedirectPath });
 
   const router = useRouter();
   const { lang } = useParams();
 
   useEffect(() => {
-    if (isAuthenticated && !person) {
+    if (!isLoading && isAuthenticated && !person?.id) {
       router.push(newUserRedirectPath);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isLoading, person]);
 
   return (
     <ButtonProfile
