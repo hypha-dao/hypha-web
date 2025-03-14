@@ -1,4 +1,4 @@
-import { createSpaceService } from '@hypha-platform/core';
+import { createSpaceService } from '@hypha-platform/core/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
