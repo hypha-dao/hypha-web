@@ -1,18 +1,17 @@
 import type { Meta, StoryObj } from '@storybook/react';
 
-import { DocumentListCard } from './document-list-card';
-import { DocumentStats } from './document-stats';
+import { DocumentDetailsHead } from './document-details-head';
 import { within } from '@storybook/testing-library';
 import { expect } from '@storybook/jest';
 
 const meta = {
-  component: DocumentListCard,
-  title: 'Epics/Governance/DocumentListCard',
-} satisfies Meta<typeof DocumentListCard>;
+  component: DocumentDetailsHead,
+  title: 'Epics/Governance/DocumentDetailsHead',
+} satisfies Meta<typeof DocumentDetailsHead>;
 
 export default meta;
 
-type Story = StoryObj<typeof DocumentListCard>;
+type Story = StoryObj<typeof DocumentDetailsHead>;
 
 export const Default: Story = {
   args: {
@@ -36,7 +35,6 @@ export const Default: Story = {
         colorVariant: 'accent',
       },
     ],
-    interactions: <DocumentStats isLoading={false} views={50} comments={50} />,
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
