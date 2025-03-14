@@ -4,7 +4,7 @@ import { seed, reset } from 'drizzle-seed';
 import { people, resetIndexes, schema } from '@hypha-platform/storage-postgres';
 
 import { PeopleRepositoryPostgres } from './repository-postgres';
-import { db } from '../../test-utils/setup';
+import { db } from '../../../setup-tests';
 
 describe('PeopleRepositoryPostgres', () => {
   let peopleRepository: PeopleRepositoryPostgres;
