@@ -14,7 +14,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   args: {
     creator: {
-      avatar: 'https://github.com/shadcn.png',
+      avatarUrl: 'https://github.com/shadcn.png',
       name: 'Name',
       surname: 'Surname',
     },
