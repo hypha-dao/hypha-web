@@ -15,7 +15,7 @@ export const PersonAvatar = ({
   avatarSrc,
   userName,
   className = '',
-  isLoading,
+  isLoading = false,
   size = 'md',
 }: {
   avatarSrc?: string;
