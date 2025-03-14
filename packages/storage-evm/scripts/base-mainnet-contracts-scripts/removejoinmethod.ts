@@ -1,5 +1,26 @@
-require('dotenv').config();
-const { ethers } = require('ethers');
+import dotenv from 'dotenv';
+import { ethers } from 'ethers';
+
+dotenv.config();
+
+// Add these interface definitions
+interface Log {
+  topics: string[];
+  [key: string]: any;
+}
+
+interface TransactionReceipt {
+  logs: Log[];
+  [key: string]: any;
+}
+
+interface ContractTransactionWithWait extends ethers.ContractTransaction {
+  wait(): Promise<TransactionReceipt>;
+}
+
+interface JoinMethodDirectoryInterface {
+  removeJoinMethod: (methodId: number) => Promise<ContractTransactionWithWait>;
+}
 
 const joinMethodDirectoryAbi = [
   {
@@ -17,25 +38,25 @@ const joinMethodDirectoryAbi = [
   }
 ];
 
-async function main() {
+async function main(): Promise<void> {
   // Connect to the network
   const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
   
   // Create a wallet instance
-  const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+  const wallet = new ethers.Wallet(process.env.PRIVATE_KEY || '', provider);
   
   // Get the contract address from .env
-  const contractAddress = process.env.JOIN_METHOD_DIRECTORY_ADDRESS;
+  const contractAddress = process.env.JOIN_METHOD_DIRECTORY_ADDRESS || '';
   
   // Get the method ID from .env
-  const methodId = process.env.JOIN_METHOD;
+  const methodId = parseInt(process.env.JOIN_METHOD || '0');
 
   // Get the contract instance
   const JoinMethodDirectory = new ethers.Contract(
     contractAddress,
     joinMethodDirectoryAbi,
     wallet
-  );
+  ) as ethers.Contract & JoinMethodDirectoryInterface;
 
   console.log(`Removing join method ${methodId}...`);
 

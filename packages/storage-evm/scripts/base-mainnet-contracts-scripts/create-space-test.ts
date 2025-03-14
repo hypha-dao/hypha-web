@@ -1,6 +1,42 @@
-require('dotenv').config();
-const { ethers } = require('ethers');
-const fs = require('fs');
+import dotenv from 'dotenv';
+import { ethers } from 'ethers';
+import fs from 'fs';
+
+dotenv.config();
+
+interface SpaceCreationParams {
+  unity: number;
+  quorum: number;
+  votingPowerSource: number;
+  exitMethod: number;
+  joinMethod: number;
+}
+
+// Enhanced type definitions to fix errors
+interface Log {
+  topics: string[];
+  [key: string]: any;
+}
+
+interface TransactionReceipt {
+  logs: Log[];
+  [key: string]: any;
+}
+
+interface ContractTransactionWithWait extends ethers.ContractTransaction {
+  wait(): Promise<TransactionReceipt>;
+}
+
+interface DAOSpaceFactoryInterface {
+  createSpace: (params: SpaceCreationParams) => Promise<ContractTransactionWithWait>;
+  getSpaceMembers: (spaceId: number) => Promise<string[]>;
+  getSpaceExecutor: (spaceId: number) => Promise<string>;
+}
+
+interface AccountData {
+  privateKey: string;
+  address: string;
+}
 
 const daoSpaceFactoryAbi = [
   {
@@ -89,25 +125,47 @@ const daoSpaceFactoryAbi = [
   }
 ];
 
-async function testCreateSpace() {
+async function testCreateSpace(): Promise<void> {
   const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
   const daoSpaceFactory = new ethers.Contract(
-    process.env.DAO_SPACE_FACTORY_ADDRESS,
+    process.env.DAO_SPACE_FACTORY_ADDRESS || '',
     daoSpaceFactoryAbi,
     provider
-  );
+  ) as ethers.Contract & DAOSpaceFactoryInterface;
 
-  // Read test accounts from file
-  const accountData = JSON.parse(fs.readFileSync('accounts.json', 'utf8'));
+  let accountData: AccountData[] = [];
+  
+  try {
+    // Try to read accounts from file
+    const data = fs.readFileSync('accounts.json', 'utf8');
+    if (data.trim()) {
+      accountData = JSON.parse(data);
+    }
+  } catch (error) {
+    console.log('accounts.json not found or invalid. Using default account.');
+    // Use the account from .env
+    if (process.env.PRIVATE_KEY) {
+      const wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
+      accountData = [{
+        privateKey: process.env.PRIVATE_KEY,
+        address: wallet.address
+      }];
+    }
+  }
+
+  if (accountData.length === 0) {
+    console.error('No accounts found. Please create an accounts.json file or provide a PRIVATE_KEY in .env');
+    return;
+  }
 
   console.log('Testing createSpace function...');
 
   for (let i = 0; i < accountData.length; i++) {
     const wallet = new ethers.Wallet(accountData[i].privateKey, provider);
-    const connectedFactory = daoSpaceFactory.connect(wallet);
+    const connectedFactory = daoSpaceFactory.connect(wallet) as ethers.Contract & DAOSpaceFactoryInterface;
 
     // Test data for space creation matching SpaceCreationParams
-    const spaceParams = {
+    const spaceParams: SpaceCreationParams = {
       unity: 51, // uint256 unity requirement
       quorum: 51, // uint256 quorum requirement
       votingPowerSource: 1, // uint256 voting power source
@@ -123,7 +181,7 @@ async function testCreateSpace() {
       const receipt = await tx.wait();
       
       // Find the SpaceCreated event in the receipt
-      const event = receipt.logs.find(
+      const event = receipt?.logs.find(
         log => log.topics[0] === ethers.id(
           "SpaceCreated(uint256,uint256,uint256,uint256,uint256,uint256,address,address)"
         )
@@ -159,4 +217,4 @@ async function testCreateSpace() {
 }
 
 // Usage
-testCreateSpace().catch(console.error);
+testCreateSpace().catch(console.error); 

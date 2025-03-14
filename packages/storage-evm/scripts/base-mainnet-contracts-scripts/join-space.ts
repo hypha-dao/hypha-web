@@ -1,5 +1,28 @@
-require('dotenv').config();
-const { ethers } = require('ethers');
+import dotenv from 'dotenv';
+import { ethers } from 'ethers';
+
+dotenv.config();
+
+// Add these interface definitions to fix the wait() error
+interface Log {
+  topics: string[];
+  [key: string]: any;
+}
+
+interface TransactionReceipt {
+  logs: Log[];
+  [key: string]: any;
+}
+
+interface ContractTransactionWithWait extends ethers.ContractTransaction {
+  wait(): Promise<TransactionReceipt>;
+}
+
+interface DAOSpaceFactoryInterface {
+  // Update return type to use the enhanced interface
+  joinSpace: (spaceId: number) => Promise<ContractTransactionWithWait>;
+  getSpaceMembers: (spaceId: number) => Promise<string[]>;
+}
 
 const daoSpaceFactoryAbi = [
   {
@@ -36,22 +59,22 @@ const daoSpaceFactoryAbi = [
   }
 ];
 
-async function main() {
+async function main(): Promise<void> {
   // Connect to the network
   const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
   
   // Create a wallet instance
-  const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+  const wallet = new ethers.Wallet(process.env.PRIVATE_KEY || '', provider);
   
   // Get the contract instance
   const daoSpaceFactory = new ethers.Contract(
-    process.env.DAO_SPACE_FACTORY_ADDRESS,
+    process.env.DAO_SPACE_FACTORY_ADDRESS || '',
     daoSpaceFactoryAbi,
     wallet
-  );
+  ) as ethers.Contract & DAOSpaceFactoryInterface;
 
   // Get the space ID from .env
-  const spaceId = process.env.TEST_SPACE_ID;
+  const spaceId = parseInt(process.env.TEST_SPACE_ID || '0');
 
   try {
     // Get current members before joining
@@ -72,7 +95,7 @@ async function main() {
     const membersAfter = await daoSpaceFactory.getSpaceMembers(spaceId);
     console.log('Updated members:', membersAfter);
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error joining space:', error.message);
     throw error;
   }
@@ -83,4 +106,4 @@ main()
   .catch((error) => {
     console.error(error);
     process.exit(1);
-  });
+  }); 

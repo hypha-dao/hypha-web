@@ -1,5 +1,32 @@
-require('dotenv').config();
-const { ethers } = require('ethers');
+import dotenv from 'dotenv';
+import { ethers } from 'ethers';
+
+dotenv.config();
+
+// Add these interface definitions
+interface Log {
+  topics: string[];
+  [key: string]: any;
+}
+
+interface TransactionReceipt {
+  logs: Log[];
+  [key: string]: any;
+}
+
+interface ContractTransactionWithWait extends ethers.ContractTransaction {
+  wait(): Promise<TransactionReceipt>;
+}
+
+interface DAOSpaceFactoryInterface {
+  // Update return type
+  setContracts: (
+    tokenFactoryAddress: string,
+    joinMethodDirectoryAddress: string,
+    exitMethodDirectoryAddress: string,
+    proposalManagerAddress: string
+  ) => Promise<ContractTransactionWithWait>;
+}
 
 const daoSpaceFactoryAbi = [
   {
@@ -32,25 +59,25 @@ const daoSpaceFactoryAbi = [
   }
 ];
 
-async function main() {
+async function main(): Promise<void> {
   // Connect to the network
   const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
   
   // Create a wallet instance
-  const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+  const wallet = new ethers.Wallet(process.env.PRIVATE_KEY || '', provider);
   
   // Get the DAO Space Factory contract instance
   const daoSpaceFactory = new ethers.Contract(
-    process.env.DAO_SPACE_FACTORY_ADDRESS,
+    process.env.DAO_SPACE_FACTORY_ADDRESS || '',
     daoSpaceFactoryAbi,
     wallet
-  );
+  ) as ethers.Contract & DAOSpaceFactoryInterface;
 
   // Use dummy addresses for other contracts
   const dummyAddress = "0x1111111111111111111111111111111111111111";
   
   // Get the real join method directory address from .env
-  const joinMethodDirectoryAddress = process.env.JOIN_METHOD_DIRECTORY_ADDRESS;
+  const joinMethodDirectoryAddress = process.env.JOIN_METHOD_DIRECTORY_ADDRESS || '';
 
   console.log('Setting contracts with the following addresses:');
   console.log('Token Factory:', dummyAddress);
@@ -69,7 +96,7 @@ async function main() {
     console.log('Transaction sent, waiting for confirmation...');
     await tx.wait();
     console.log('Contracts set successfully!');
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error setting contracts:', error.message);
     throw error;
   }

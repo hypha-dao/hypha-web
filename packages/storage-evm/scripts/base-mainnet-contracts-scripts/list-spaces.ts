@@ -1,5 +1,25 @@
-require('dotenv').config();
-const { ethers } = require('ethers');
+import dotenv from 'dotenv';
+import { ethers } from 'ethers';
+
+dotenv.config();
+
+interface SpaceDetails {
+  unity: bigint;
+  quorum: bigint;
+  votingPowerSource: bigint;
+  tokenAddresses: string[];
+  members: string[];
+  exitMethod: bigint;
+  joinMethod: bigint;
+  createdAt: bigint;
+  creator: string;
+  executor: string;
+}
+
+interface DAOSpaceFactoryInterface {
+  getSpaceDetails: (spaceId: number) => Promise<SpaceDetails>;
+  spaceCounter: () => Promise<bigint>;
+}
 
 const daoSpaceFactoryAbi = [
   {
@@ -81,16 +101,16 @@ const daoSpaceFactoryAbi = [
   }
 ];
 
-async function main() {
+async function main(): Promise<void> {
   // Connect to the network
   const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
   
   // Get the contract instance
   const daoSpaceFactory = new ethers.Contract(
-    process.env.DAO_SPACE_FACTORY_ADDRESS,
+    process.env.DAO_SPACE_FACTORY_ADDRESS || '',
     daoSpaceFactoryAbi,
     provider
-  );
+  ) as ethers.Contract & DAOSpaceFactoryInterface;
 
   try {
     // Get total number of spaces
@@ -98,7 +118,7 @@ async function main() {
     console.log(`Total number of spaces: ${spaceCounter}\n`);
 
     // Iterate through all spaces
-    for (let spaceId = 1; spaceId <= spaceCounter; spaceId++) {
+    for (let spaceId = 1; spaceId <= Number(spaceCounter); spaceId++) {
       try {
         const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
         
@@ -119,12 +139,12 @@ async function main() {
         console.log('Number of Members:', spaceDetails.members.length);
         console.log('===============\n');
 
-      } catch (error) {
+      } catch (error: any) {
         console.error(`Error fetching details for space ${spaceId}:`, error.message);
       }
     }
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error:', error.message);
     throw error;
   }
