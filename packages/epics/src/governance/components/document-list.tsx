@@ -54,7 +54,7 @@ export const DocumentList = ({
     <div className="w-full">
       <div
         className={cn(
-          hasGridView ? '' : 'grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2',
+          hasGridView ? 'grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2' : '',
         )}
       >
         {documents.map((document) => (
@@ -64,9 +64,9 @@ export const DocumentList = ({
             scroll={false}
           >
             {hasGridView ? (
-              <DocumentListCard {...document} isLoading={isLoading} />
-            ) : (
               <DocumentCard {...document} isLoading={isLoading} />
+            ) : (
+              <DocumentListCard {...document} isLoading={isLoading} />
             )}
           </Link>
         ))}
