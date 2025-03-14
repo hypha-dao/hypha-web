@@ -13,7 +13,6 @@ interface DocumentListCardProps {
 
 interface Document {
   title?: string;
-  description?: string;
 }
 
 export const DocumentListCard: React.FC<DocumentListCardProps & Document> = ({
