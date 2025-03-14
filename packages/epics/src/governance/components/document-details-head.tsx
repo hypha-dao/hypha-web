@@ -17,12 +17,9 @@ interface Document {
   description?: string;
 }
 
-export const DocumentDetailsHead: React.FC<DocumentDetailsHeadProps & Document> = ({
-  isLoading,
-  title,
-  creator,
-  badges,
-}) => {
+export const DocumentDetailsHead: React.FC<
+  DocumentDetailsHeadProps & Document
+> = ({ isLoading, title, creator, badges }) => {
   return (
     <div className="w-full h-full p-5 flex items-center space-x-3">
       <PersonAvatar
