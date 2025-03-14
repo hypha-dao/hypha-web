@@ -1,0 +1,14 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Follow SOLID principles
+
+Applying SOLID principles to Next.js development can significantly improve maintainability and scalability7:
+
+- Single Responsibility Principle (SRP): Create focused components and pages.
+- Open-Closed Principle (OCP): Use abstractions to promote extensibility.
+- Liskov Substitution Principle (LSP): Ensure interchangeability of derived and base components.
+- Interface Segregation Principle (ISP): Design specific and client-focused interfaces.
+- Dependency Inversion Principle (DIP): Implement dependency injection for better modularity and testability.
