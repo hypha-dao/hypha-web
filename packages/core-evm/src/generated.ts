@@ -3,7 +3,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- * [__View Contract on Base Basescan__](https://basescan.org/address/0xff6006c67803a380Db25230F1aEc605790C405a1)
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0xc8B8454D2F9192FeCAbc2C6F5d88F6434A2a9cd9)
  */
 export const daoSpaceFactoryImplementationAbi = [
   { type: 'constructor', inputs: [], stateMutability: 'nonpayable' },
@@ -171,19 +171,6 @@ export const daoSpaceFactoryImplementationAbi = [
         type: 'uint256',
         indexed: true,
       },
-      { name: 'name', internalType: 'string', type: 'string', indexed: false },
-      {
-        name: 'description',
-        internalType: 'string',
-        type: 'string',
-        indexed: false,
-      },
-      {
-        name: 'imageUrl',
-        internalType: 'string',
-        type: 'string',
-        indexed: false,
-      },
       {
         name: 'unity',
         internalType: 'uint256',
@@ -280,9 +267,6 @@ export const daoSpaceFactoryImplementationAbi = [
         internalType: 'struct IDAOSpaceFactory.SpaceCreationParams',
         type: 'tuple',
         components: [
-          { name: 'name', internalType: 'string', type: 'string' },
-          { name: 'description', internalType: 'string', type: 'string' },
-          { name: 'imageUrl', internalType: 'string', type: 'string' },
           { name: 'unity', internalType: 'uint256', type: 'uint256' },
           { name: 'quorum', internalType: 'uint256', type: 'uint256' },
           {
@@ -292,9 +276,6 @@ export const daoSpaceFactoryImplementationAbi = [
           },
           { name: 'exitMethod', internalType: 'uint256', type: 'uint256' },
           { name: 'joinMethod', internalType: 'uint256', type: 'uint256' },
-          { name: 'createToken', internalType: 'bool', type: 'bool' },
-          { name: 'tokenName', internalType: 'string', type: 'string' },
-          { name: 'tokenSymbol', internalType: 'string', type: 'string' },
         ],
       },
     ],
@@ -330,7 +311,6 @@ export const daoSpaceFactoryImplementationAbi = [
     inputs: [{ name: '_spaceId', internalType: 'uint256', type: 'uint256' }],
     name: 'getSpaceDetails',
     outputs: [
-      { name: 'name', internalType: 'string', type: 'string' },
       { name: 'unity', internalType: 'uint256', type: 'uint256' },
       { name: 'quorum', internalType: 'uint256', type: 'uint256' },
       { name: 'votingPowerSource', internalType: 'uint256', type: 'uint256' },
@@ -515,9 +495,6 @@ export const daoSpaceFactoryImplementationAbi = [
     inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     name: 'spaces',
     outputs: [
-      { name: 'name', internalType: 'string', type: 'string' },
-      { name: 'description', internalType: 'string', type: 'string' },
-      { name: 'imageUrl', internalType: 'string', type: 'string' },
       { name: 'unity', internalType: 'uint256', type: 'uint256' },
       { name: 'quorum', internalType: 'uint256', type: 'uint256' },
       { name: 'votingPowerSource', internalType: 'uint256', type: 'uint256' },
@@ -556,58 +533,16 @@ export const daoSpaceFactoryImplementationAbi = [
 ] as const
 
 /**
- * [__View Contract on Base Basescan__](https://basescan.org/address/0xff6006c67803a380Db25230F1aEc605790C405a1)
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0xc8B8454D2F9192FeCAbc2C6F5d88F6434A2a9cd9)
  */
 export const daoSpaceFactoryImplementationAddress = {
-  8453: '0xff6006c67803a380Db25230F1aEc605790C405a1',
+  8453: '0xc8B8454D2F9192FeCAbc2C6F5d88F6434A2a9cd9',
 } as const
 
 /**
- * [__View Contract on Base Basescan__](https://basescan.org/address/0xff6006c67803a380Db25230F1aEc605790C405a1)
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0xc8B8454D2F9192FeCAbc2C6F5d88F6434A2a9cd9)
  */
 export const daoSpaceFactoryImplementationConfig = {
   address: daoSpaceFactoryImplementationAddress,
   abi: daoSpaceFactoryImplementationAbi,
 } as const
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// SpaceFactoryV1
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-export const spaceFactoryV1Abi = [
-  {
-    type: 'function',
-    inputs: [],
-    name: 'version',
-    outputs: [{ name: '', internalType: 'string', type: 'string' }],
-    stateMutability: 'pure',
-  },
-] as const
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// SpaceFactoryV2
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-export const spaceFactoryV2Abi = [
-  {
-    type: 'function',
-    inputs: [],
-    name: 'name',
-    outputs: [{ name: '', internalType: 'string', type: 'string' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '_name', internalType: 'string', type: 'string' }],
-    name: 'setName',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'version',
-    outputs: [{ name: '', internalType: 'string', type: 'string' }],
-    stateMutability: 'pure',
-  },
-] as const
