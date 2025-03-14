@@ -12,7 +12,7 @@ export const useSpaceCreateWeb2 = (
   const createSpace = React.useCallback(
     async (data: CreateSpaceInput) => {
       invariant(headers, 'no auth header present');
-      return spaceClient.createSpace(data, { endpoint, headers });
+      return spaceClient.createSpaceWeb2(data, { endpoint, headers });
     },
     [headers, endpoint],
   );

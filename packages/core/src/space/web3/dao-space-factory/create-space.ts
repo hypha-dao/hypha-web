@@ -1,9 +1,9 @@
 import {
   daoSpaceFactoryImplementationAbi,
   daoSpaceFactoryImplementationAddress,
-} from '../generated';
+} from '../../../generated';
 
-export const createSpace = ({
+export const createSpaceWeb3 = ({
   unity = 0n,
   quorum = 0n,
   votingPowerSource = 0n,

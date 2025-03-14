@@ -7,7 +7,7 @@ type apiConfig = {
   };
 };
 
-export const createSpace = async (
+export const createSpaceWeb2 = async (
   data: CreateSpaceInput,
   config: apiConfig,
 ): Promise<Space> => {
@@ -27,7 +27,7 @@ export const createSpace = async (
   return createdSpace;
 };
 
-export const updateSpace = async (
+export const updateSpaceWeb2 = async (
   data: UpdateSpaceInput,
   config: apiConfig,
 ): Promise<Space> => {
