@@ -15,6 +15,7 @@ export const useSpaceCreate = () => {
   const { headers, isLoading } = useAuthHeader();
   const [spaceSlug, setSpaceSlug] = React.useState<string>();
   const [state, setState] = React.useState<CreateSpaceServiceState>();
+  console.debug('debug', { state });
 
   const web3Config = useConfig();
   const createSpaceService = React.useMemo(
@@ -42,8 +43,12 @@ export const useSpaceCreate = () => {
         createSpaceService,
         'createSpaceService called before initialisation',
       );
-      const space = await createSpaceService.createSpace(data);
-      setSpaceSlug(space.slug);
+      try {
+        const space = await createSpaceService.createSpace(data);
+        setSpaceSlug(space.slug);
+      } catch (e) {
+        console.error(e);
+      }
     },
     [createSpaceService],
   );
@@ -51,10 +56,13 @@ export const useSpaceCreate = () => {
   return {
     createSpace,
     progress: state?.progress,
+    currentAction: state?.currentAction,
     isLoading,
     isPending: Boolean(
       state?.progress && state.progress >= 0 && state.progress <= 100,
     ),
+    isError: state?.errors.length || 0 > 0,
+    errors: state?.errors,
     spaceSlug,
   };
 };

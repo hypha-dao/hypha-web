@@ -19,14 +19,15 @@ import {
   Web3SpaceCreationError,
   SpaceLinkingError,
 } from '../errors';
-import {} from './';
+import {} from '.';
 import {
   errorTask,
   finishTask,
+  resetService,
   ServiceState,
   startTask,
   subscribeToServiceState,
-} from './service.state';
+} from './create-space-client-service.state';
 
 const mapToCreateSpaceWeb3Input = (
   d: z.infer<typeof schemaCreateSpaceWeb3>,
@@ -47,9 +48,6 @@ type SpaceClientConfig = {
 type Subscriber = (state: any) => void;
 
 export const createSpaceClientService = (config: SpaceClientConfig) => {
-  // Track the current state
-  let _currentState = {};
-
   const { subscribe, send } = createEventSubscription<ServiceState>();
   subscribeToServiceState(send);
 
@@ -64,14 +62,13 @@ export const createSpaceClientService = (config: SpaceClientConfig) => {
 
   return {
     subscribe,
+    reset: resetService,
 
     createSpace: async (data: z.infer<typeof schemaCreateSpace>) => {
       startTask('CREATE_WEB2_SPACE');
       startTask('CREATE_WEB3_SPACE');
       const inputCreateSpaceWeb2 = schemaCreateSpaceWeb2.parse(data);
       const inputCreateSpaceWeb3 = schemaCreateSpaceWeb3.parse(data);
-
-      debugger;
 
       // Launch both creation processes in parallel
       const [web2Result, transactionHash] = await Promise.all([
@@ -122,4 +119,4 @@ export const createSpaceClientService = (config: SpaceClientConfig) => {
   };
 };
 
-export { type ServiceState as CreateSpaceServiceState } from './service.state';
+export { type ServiceState as CreateSpaceServiceState } from './create-space-client-service.state';

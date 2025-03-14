@@ -1,4 +1,5 @@
-import { createStore } from '@xstate/store';
+import { createStore, createStoreWithProducer } from '@xstate/store';
+import { produce } from 'immer';
 
 // Enums and Types
 export enum TaskStatus {
@@ -25,6 +26,7 @@ export type ServiceState = {
   tasks: TaskState;
   progress: number;
   currentAction: string;
+  errors: Array<{ taskName: TaskName; message: string }>;
 };
 
 // Task descriptions for human-readable action messages
@@ -75,6 +77,7 @@ export const initialState: ServiceState = {
   tasks: initialTaskState,
   progress: 0,
   currentAction: '',
+  errors: [],
 };
 
 /**
@@ -106,74 +109,54 @@ const computeProgress = (tasks: TaskState): number => {
 };
 
 // Create the service store with event handlers
-export const serviceStore = createStore({
+export const serviceStore = createStoreWithProducer(produce, {
   context: initialState,
   on: {
     START_TASK: (context, event: StartTaskEvent) => {
-      const updatedTasks = {
-        ...context.tasks,
-        [event.taskName]: {
-          ...context.tasks[event.taskName],
-          status: TaskStatus.IS_PENDING,
-        },
-      };
+      // Direct mutation with Immer
+      context.tasks[event.taskName].status = TaskStatus.IS_PENDING;
 
       // Set the current action based on the task name or use custom description if provided
-      const currentAction =
+      context.currentAction =
         event.customActionDescription || taskActionDescriptions[event.taskName];
 
-      return {
-        ...context,
-        tasks: updatedTasks,
-        progress: computeProgress(updatedTasks),
-        currentAction,
-      };
+      // Update progress
+      context.progress = computeProgress(context.tasks);
     },
 
     FINISH_TASK: (context, event: FinishTaskEvent) => {
-      const updatedTasks = {
-        ...context.tasks,
-        [event.taskName]: {
-          ...context.tasks[event.taskName],
-          status: TaskStatus.IS_DONE,
-        },
-      };
+      // Direct mutation with Immer
+      context.tasks[event.taskName].status = TaskStatus.IS_DONE;
 
       // If all tasks are complete, clear the current action
-      const isAllComplete = Object.values(updatedTasks).every(
+      const isAllComplete = Object.values(context.tasks).every(
         (task) =>
           task.status === TaskStatus.IS_DONE ||
           task.status === TaskStatus.ERROR,
       );
 
-      return {
-        ...context,
-        tasks: updatedTasks,
-        progress: computeProgress(updatedTasks),
-        currentAction: isAllComplete
-          ? 'All tasks completed'
-          : context.currentAction,
-      };
+      // Update progress and current action if all complete
+      context.progress = computeProgress(context.tasks);
+      if (isAllComplete) {
+        context.currentAction = 'All tasks completed';
+      }
     },
 
     ERROR_TASK: (context, event: ErrorTaskEvent) => {
-      const updatedTasks = {
-        ...context.tasks,
-        [event.taskName]: {
-          ...context.tasks[event.taskName],
-          status: TaskStatus.ERROR,
-          message: event.message,
-        },
-      };
+      // Direct mutation with Immer
+      context.tasks[event.taskName].status = TaskStatus.ERROR;
+      context.tasks[event.taskName].message = event.message;
 
-      return {
-        ...context,
-        tasks: updatedTasks,
-        progress: computeProgress(updatedTasks),
-        currentAction: `Error in ${taskActionDescriptions[
-          event.taskName
-        ].replace('...', '')}: ${event.message}`,
-      };
+      // Update progress
+      context.progress = computeProgress(context.tasks);
+
+      // Update current action
+      context.currentAction = `Error in ${taskActionDescriptions[
+        event.taskName
+      ].replace('...', '')}: ${event.message}`;
+
+      // Add to errors array
+      context.errors.push({ taskName: event.taskName, message: event.message });
     },
 
     RESET: () => initialState,

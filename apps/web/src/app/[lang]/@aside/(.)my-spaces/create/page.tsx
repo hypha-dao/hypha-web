@@ -8,12 +8,20 @@ import { Progress } from '@hypha-platform/ui';
 import { useSpaceCreate } from '@web/hooks/use-space-create';
 import { getDhoPathAgreements } from '@web/app/[lang]/dho/[id]/agreements/constants';
 import { Locale } from '@hypha-platform/i18n';
+import { LoadingBackdrop } from '@hypha-platform/ui/server';
 
 export default function AsideCreateSpacePage() {
   const { lang } = useParams();
   const router = useRouter();
-  const { createSpace, progress, isPending, isLoading, spaceSlug } =
-    useSpaceCreate();
+  const {
+    createSpace,
+    currentAction,
+    progress,
+    isPending,
+    isError,
+    isLoading,
+    spaceSlug,
+  } = useSpaceCreate();
 
   const newSpacePath = React.useMemo(
     () => (spaceSlug ? getDhoPathAgreements(lang as Locale, spaceSlug) : null),
@@ -36,24 +44,23 @@ export default function AsideCreateSpacePage() {
 
   return isDone ? null : (
     <SidePanel>
-      {isPending ? (
-        <Progress
-          value={progress}
-          className="h-1"
-          indicatorColor="bg-accent-9"
+      <LoadingBackdrop
+        progress={progress}
+        isLoading={isPending}
+        message={currentAction}
+        className="-m-9"
+      >
+        <CreateSpaceForm
+          creator={{
+            avatar: 'https://github.com/shadcn.png',
+            name: 'Name',
+            surname: 'Surname',
+          }}
+          closeUrl={`/${lang}/my-spaces`}
+          onCreate={createSpace}
+          isLoading={isLoading}
         />
-      ) : null}
-
-      <CreateSpaceForm
-        creator={{
-          avatar: 'https://github.com/shadcn.png',
-          name: 'Name',
-          surname: 'Surname',
-        }}
-        closeUrl={`/${lang}/my-spaces`}
-        onCreate={createSpace}
-        isLoading={isLoading}
-      />
+      </LoadingBackdrop>
     </SidePanel>
   );
 }

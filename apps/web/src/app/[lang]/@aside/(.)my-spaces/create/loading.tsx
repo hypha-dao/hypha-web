@@ -2,10 +2,10 @@
 
 import { CreateSpaceForm } from '@hypha-platform/epics';
 import { SidePanel } from '../../_components/side-panel';
-import { useSpaceCreateWeb3 } from '@web/hooks/space/use-space-create.web3';
+import { useSpaceCreate } from '@web/hooks/use-space-create';
 
 export default function Loading() {
-  const { createSpace } = useSpaceCreateWeb3();
+  const { createSpace } = useSpaceCreate();
   return (
     <SidePanel>
       <CreateSpaceForm
