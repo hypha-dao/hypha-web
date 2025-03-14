@@ -1,0 +1,26 @@
+{
+  "name": "core-evm",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/core-evm/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/packages/core-evm",
+        "main": "packages/core-evm/src/index.ts",
+        "tsConfig": "packages/core-evm/tsconfig.lib.json",
+        "assets": ["packages/core-evm/*.md"]
+      }
+    },
+    "generate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "wagmi generate",
+        "cwd": "packages/core-evm"
+      }
+    }
+  }
+}

@@ -534,6 +534,9 @@ importers:
       jsdom:
         specifier: ~26.0.0
         version: 26.0.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      jsonc-eslint-parser:
+        specifier: ^2.4.0
+        version: 2.4.0
       nx:
         specifier: 20.4.4
         version: 20.4.4(@swc-node/register@1.9.2(@swc/core@1.5.29(@swc/helpers@0.5.15))(@swc/types@0.1.17)(typescript@5.7.2))(@swc/core@1.5.29(@swc/helpers@0.5.15))
