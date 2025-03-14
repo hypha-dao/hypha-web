@@ -19,7 +19,7 @@
         "cwd": "packages/storage-evm"
       }
     },
-    "compile": {
+    "build": {
       "executor": "nx:run-commands",
       "options": {
         "command": "npx hardhat compile --config hardhat.local.config.ts",
@@ -60,14 +60,6 @@
         "command": "npx nx run storage-evm:deploy ./ignition/modules/SpaceFactoryProxyUpgrade.ts --config hardhat.local.config.ts --network localhost",
         "cwd": "packages/storage-evm"
       }
-    },
-    "build": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "wagmi generate",
-        "cwd": "packages/storage-evm"
-      },
-      "dependsOn": ["compile"]
     }
   }
 }
