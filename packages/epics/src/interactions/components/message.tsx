@@ -7,24 +7,24 @@ export type CreatorType = {
   surname?: string;
 };
 
-export type DiscussionMessageProps = {
+export type MessageProps = {
   creator?: CreatorType;
   date?: string;
   message?: string;
-  replies: DiscussionMessageProps[];
+  replies: MessageProps[];
   id?: string;
   isReply?: boolean;
   isLoading?: boolean;
 };
 
-export const DiscussionMessage = ({
+export const Message = ({
   creator,
   date,
   message,
   replies,
   isLoading,
   isReply,
-}: DiscussionMessageProps) => {
+}: MessageProps) => {
   return (
     <div className="mt-4">
       <div className="flex flex-row">
@@ -85,7 +85,7 @@ export const DiscussionMessage = ({
       </div>
       {replies.map((reply) => (
         <div key={reply.id as string} className="ml-4">
-          <DiscussionMessage
+          <Message
             isReply
             replies={reply.replies}
             isLoading={isLoading}

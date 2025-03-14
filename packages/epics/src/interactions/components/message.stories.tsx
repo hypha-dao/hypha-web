@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react';
 
-import { DiscussionMessage } from './discussion-message';
+import { Message } from './message';
 
 const meta = {
-  component: DiscussionMessage,
-  title: 'Epics/Discussions/DiscussionMessage',
-} satisfies Meta<typeof DiscussionMessage>;
+  component: Message,
+  title: 'Epics/Interactions/Message',
+} satisfies Meta<typeof Message>;
 
 export default meta;
 
