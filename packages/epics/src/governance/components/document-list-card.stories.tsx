@@ -23,7 +23,6 @@ export const Default: Story = {
     },
     isLoading: false,
     title: 'Title',
-    state: 'agreement',
     badges: [
       {
         label: 'agreement',
