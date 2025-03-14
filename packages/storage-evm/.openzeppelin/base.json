@@ -10,6 +10,11 @@
       "address": "0xc8B8454D2F9192FeCAbc2C6F5d88F6434A2a9cd9",
       "txHash": "0x05112ef17d8298de581aed0ea39ce41e404e4e2750f80a858e7bb2ff31b35465",
       "kind": "uups"
+    },
+    {
+      "address": "0xBf97ADAcF9d28171cCedBB9189b912f607577B29",
+      "txHash": "0x612f1208c92f3ddb436e41873b5eccee1e0c070dcb7c0ae450f4104b8284397c",
+      "kind": "uups"
     }
   ],
   "impls": {
@@ -626,6 +631,121 @@
               }
             ],
             "numberOfBytes": "64"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.Ownable": [
+            {
+              "contract": "OwnableUpgradeable",
+              "label": "_owner",
+              "type": "t_address",
+              "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:24",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
+    },
+    "d4dade9fe8c577ef0e06c7b0395e4c254d6b52a3e23d411f129ba8693a851a8e": {
+      "address": "0x79375b2A8dB7699672c7aA0E6F02f3404c51c062",
+      "txHash": "0x4d5e8fe5444737868db8f366980be570dc2b4a087dba0ae18de69c23d42fc4df",
+      "layout": {
+        "solcVersion": "0.8.28",
+        "storage": [
+          {
+            "label": "spaceFactory",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_contract(IDAOSpaceFactory)9908",
+            "contract": "JoinMethodDirectoryStorage",
+            "src": "contracts/storage/JoinMethodDirectoryStorage.sol:17"
+          },
+          {
+            "label": "joinMethods",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_mapping(t_uint256,t_contract(IJoinMethod)9898)",
+            "contract": "JoinMethodDirectoryStorage",
+            "src": "contracts/storage/JoinMethodDirectoryStorage.sol:20"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)73_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(OwnableStorage)13_storage": {
+            "label": "struct OwnableUpgradeable.OwnableStorage",
+            "members": [
+              {
+                "label": "_owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_contract(IDAOSpaceFactory)9908": {
+            "label": "contract IDAOSpaceFactory",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IJoinMethod)9898": {
+            "label": "contract IJoinMethod",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_uint256,t_contract(IJoinMethod)9898)": {
+            "label": "mapping(uint256 => contract IJoinMethod)",
+            "numberOfBytes": "32"
           },
           "t_uint256": {
             "label": "uint256",
