@@ -1,6 +1,6 @@
 {
-  "id": "8111067a-5583-4d6c-9c58-9de8d70fc017",
-  "prevId": "c611e8a0-0881-4035-a115-aee3938c93ca",
+  "id": "f3e304ae-0151-436d-a706-5e351bfd4539",
+  "prevId": "8111067a-5583-4d6c-9c58-9de8d70fc017",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -389,6 +389,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "web3_space_id": {
+          "name": "web3_space_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
