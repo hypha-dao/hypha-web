@@ -1,8 +1,8 @@
 import { Locale } from '@hypha-platform/i18n';
 import {
-  DiscussionsSection,
   AgreementsSection,
   ProposalsSection,
+  DocumentSection,
 } from '@hypha-platform/epics';
 import { NavigationTabs } from '../_components/navigation-tabs';
 import { useSpaceDocuments } from '@web/hooks/use-space-documents';
@@ -21,9 +21,10 @@ export default async function AgreementsPage(props: PageProps) {
   return (
     <div>
       <NavigationTabs lang={lang} id={id} activeTab="agreements" />
-      <DiscussionsSection
+      <DocumentSection
         basePath={`${basePath}/discussions`}
         useDocuments={useSpaceDocuments}
+        state="discussions"
       />
       <ProposalsSection
         basePath={`${basePath}/proposals`}

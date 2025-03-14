@@ -1,17 +1,23 @@
-import { DiscussionDetail } from '@hypha-platform/epics';
+import { ProposalDetail } from '@hypha-platform/epics';
 import { SidePanel } from '../../_components/side-panel';
 
 export default function Loading() {
   return (
     <SidePanel>
-      <DiscussionDetail
-        isLoading
-        creator={{ avatarUrl: '', name: '', surname: '' }}
-        title={''}
-        content={''}
-        image={''}
-        messages={[]}
+      <ProposalDetail
         closeUrl={''}
+        onAccept={() => console.log('accept')}
+        onReject={() => console.log('reject')}
+        onSetActiveFilter={() => console.log('set active filter')}
+        content={''}
+        creator={{
+          avatar: '',
+          name: '',
+          surname: '',
+        }}
+        title={''}
+        status={''}
+        isLoading={true}
       />
     </SidePanel>
   );

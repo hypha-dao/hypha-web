@@ -11,16 +11,16 @@ import { type Creator } from '../../people/components/person-label';
 import { type BadgeItem, BadgesList } from '@hypha-platform/ui';
 
 interface Document {
-  title: string;
+  title?: string;
   description?: string;
 }
 
 interface DocumentCardProps {
   isLoading: boolean;
   leadImage?: string;
-  creator: Creator;
+  creator?: Creator;
   badges?: BadgeItem[];
-  interactions: React.ReactNode;
+  interactions?: React.ReactNode;
 }
 
 export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
@@ -44,7 +44,7 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
           <Image
             className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
             src={leadImage || '/placeholder/document-lead-image.png'}
-            alt={title}
+            alt={title || ''}
             width={250}
             height={150}
           />

@@ -1,34 +1,28 @@
-import { Skeleton, Card } from '@hypha-platform/ui';
+import { Skeleton } from '@hypha-platform/ui';
 import { type Creator } from '../../people/components/person-label';
 import { type BadgeItem, BadgesList } from '@hypha-platform/ui';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { Text } from '@radix-ui/themes';
 
-interface DocumentListCardProps {
+export interface DocumentDetailsHeadProps {
   isLoading?: boolean;
   creator?: Creator;
   badges?: BadgeItem[];
-  interactions?: React.ReactNode;
 }
 
-interface Document {
+export interface Document {
   id?: number;
   creatorId?: number;
   title?: string;
   description?: string;
 }
 
-export const DocumentListCard: React.FC<DocumentListCardProps & Document> = ({
-  isLoading,
-  title,
-  creator,
-  badges,
-  interactions,
-}) => {
+export const DocumentDetailsHead: React.FC<
+  DocumentDetailsHeadProps & Document
+> = ({ isLoading, title, creator, badges }) => {
   return (
-    <Card className="w-full h-full p-5 flex items-center">
+    <div className="w-full h-full flex items-center space-x-3">
       <PersonAvatar
-        className="mr-3"
         avatarSrc={creator?.avatarUrl}
         userName={`${creator?.name} ${creator?.surname}`}
         isLoading={isLoading}
@@ -54,8 +48,7 @@ export const DocumentListCard: React.FC<DocumentListCardProps & Document> = ({
             </Text>
           </Skeleton>
         </div>
-        <div className="lex justify-end">{interactions}</div>
       </div>
-    </Card>
+    </div>
   );
 };

@@ -40,7 +40,7 @@ export const ButtonProfile = ({
       {isConnected ? (
         <DropdownMenu>
           <DropdownMenuTrigger>
-            <PersonAvatar avatarSrc={avatarSrc} userName={userName} />
+            <PersonAvatar size="md" avatarSrc={avatarSrc} userName={userName} />
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             {onProfile && (

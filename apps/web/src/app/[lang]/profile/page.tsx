@@ -4,7 +4,7 @@ import {
   PersonHead,
   AgreementsSection,
   ProposalsSection,
-  DiscussionsSection,
+  DocumentSection,
   MemberSpaces,
   SpaceGroupSlider,
 } from '@hypha-platform/epics';
@@ -81,7 +81,11 @@ export default function Profile() {
           <ProposalsSection basePath="" useDocuments={useSpaceDocuments} />
         </TabsContent>
         <TabsContent value="discussions">
-          <DiscussionsSection basePath="" useDocuments={useSpaceDocuments} />
+          <DocumentSection
+            basePath=""
+            useDocuments={useSpaceDocuments}
+            state="discussions"
+          />
         </TabsContent>
       </Tabs>
       <SpaceGroupSlider spaces={[]} type="Hypha" getHref={getHref} />
