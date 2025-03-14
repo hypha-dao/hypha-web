@@ -23,7 +23,7 @@ export const createSpace = ({
   const callConfig = {
     address,
     abi: daoSpaceFactoryImplementationAbi,
-    functionName: 'createSpace',
+    functionName: 'createSpace' as const,
     args: [
       {
         unity,
@@ -32,7 +32,7 @@ export const createSpace = ({
         exitMethod,
         joinMethod,
       },
-    ],
+    ] as const,
   };
   return callConfig;
 };
