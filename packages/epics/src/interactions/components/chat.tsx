@@ -1,21 +1,18 @@
-import { DiscussionMessageProps } from './discussion-message';
-import { DiscussionMessage } from './discussion-message';
-import { FormInput } from '../../interactions/components/form-input';
+import { MessageProps } from './message';
+import { Message } from './message';
+import { FormInput } from './form-input';
 
-export type DiscussionChatProps = {
-  messages: DiscussionMessageProps[];
+export type ChatProps = {
+  messages: MessageProps[];
   isLoading: boolean;
 };
 
-export const DiscussionChat = ({
-  messages,
-  isLoading,
-}: DiscussionChatProps) => {
+export const Chat = ({ messages, isLoading }: ChatProps) => {
   return (
     <div>
       <div className="flex flex-col mb-4">
         {messages.map((message) => (
-          <DiscussionMessage
+          <Message
             key={message.id}
             replies={message.replies}
             isLoading={isLoading}

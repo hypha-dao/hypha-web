@@ -3,14 +3,14 @@ import { Button, Skeleton } from '@hypha-platform/ui';
 import { RxCross1 } from 'react-icons/rx';
 import { Image } from '@hypha-platform/ui';
 import { MagicWandIcon } from '@radix-ui/react-icons';
-import { DiscussionChat } from './discussion-chat';
+import { Chat } from '../../interactions/components/chat';
 
-import { DiscussionMessageProps } from './discussion-message';
+import { MessageProps } from '../../interactions/components/message';
 import Link from 'next/link';
 
 export type DiscussionDetailProps = DiscussionHeadProps & {
   content: string;
-  messages: DiscussionMessageProps[];
+  messages: MessageProps[];
   image: string;
   closeUrl: string;
 };
@@ -74,7 +74,7 @@ export const DiscussionDetail = ({
           </Button>
         </Skeleton>
       </div>
-      <DiscussionChat messages={messages} isLoading={isLoading} />
+      <Chat messages={messages} isLoading={isLoading} />
     </div>
   );
 };
