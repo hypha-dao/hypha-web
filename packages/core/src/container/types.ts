@@ -2,9 +2,6 @@
  * Symbol definitions for all injectable tokens
  */
 export const SYMBOLS = {
-  // Core system symbols
-  StorageType: Symbol('StorageType'),
-
   // Database connections
   Database: {
     AdminConnection: Symbol('Database.AdminConnection'),

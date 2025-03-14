@@ -15,7 +15,6 @@ export const getSpaceDetails = async ({
   const address = daoSpaceFactoryImplementationAddress[chain];
 
   const [
-    name,
     unity,
     quorum,
     votingPowerSource,
@@ -34,7 +33,6 @@ export const getSpaceDetails = async ({
   });
 
   return {
-    name,
     unity,
     quorum,
     votingPowerSource,

@@ -11,16 +11,19 @@ async function main(): Promise<void> {
   console.log('Upgrading with admin address:', adminAddress);
 
   const DAOSpaceFactory = await ethers.getContractFactory(
-    'DAOSpaceFactoryImplementation'  // Make sure this matches your V2 contract name
+    'DAOSpaceFactoryImplementation', // Make sure this matches your V2 contract name
   );
-  
+
   console.log('Upgrading DAOSpaceFactory...');
-  const upgradedContract = await upgrades.upgradeProxy(PROXY_ADDRESS, DAOSpaceFactory);
-  
+  const upgradedContract = await upgrades.upgradeProxy(
+    PROXY_ADDRESS,
+    DAOSpaceFactory,
+  );
+
   await upgradedContract.waitForDeployment();
   console.log(
     'DAOSpaceFactory upgraded at address:',
-    await upgradedContract.getAddress()
+    await upgradedContract.getAddress(),
   );
 }
 
@@ -29,4 +32,4 @@ main()
   .catch((error: Error) => {
     console.error(error);
     process.exit(1);
-  }); 
+  });

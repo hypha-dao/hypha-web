@@ -1,5 +1,5 @@
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
-import { pgTable, serial, text } from 'drizzle-orm/pg-core';
+import { integer, pgTable, serial, text } from 'drizzle-orm/pg-core';
 import { commonDateFields } from './shared';
 
 export const spaces = pgTable('spaces', {
@@ -9,6 +9,7 @@ export const spaces = pgTable('spaces', {
   title: text('title').notNull(),
   description: text('description'),
   slug: text('slug').notNull().unique(),
+  web3SpaceId: integer('web3_space_id'),
   ...commonDateFields,
 });
 

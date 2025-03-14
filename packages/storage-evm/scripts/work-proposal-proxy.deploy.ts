@@ -21,10 +21,7 @@ async function main(): Promise<void> {
   );
 
   await workProposal.waitForDeployment();
-  console.log(
-    'WorkProposal deployed to:',
-    await workProposal.getAddress(),
-  );
+  console.log('WorkProposal deployed to:', await workProposal.getAddress());
 }
 
 main()
@@ -32,4 +29,4 @@ main()
   .catch((error: Error) => {
     console.error(error);
     process.exit(1);
-  }); 
+  });

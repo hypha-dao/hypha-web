@@ -11,10 +11,10 @@ export interface Space {
 export interface CreateSpaceInput {
   title: string;
   description: string;
-  logoUrl: string;
-  leadImage: string;
-  slug: string;
-  parentId?: string;
+  logoUrl?: string;
+  leadImage?: string;
+  slug?: string;
+  parentId?: number;
 }
 
 export interface UpdateSpaceInput {
@@ -23,7 +23,8 @@ export interface UpdateSpaceInput {
   logoUrl?: string;
   leadImage?: string;
   slug?: string;
-  parentId?: string;
+  parentId?: number;
+  web3SpaceId?: number;
 }
 
 export interface SpaceListOptions {

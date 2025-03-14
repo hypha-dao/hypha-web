@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import { type SpaceRepository } from './repository';
-import { Space } from './types';
+import { CreateSpaceInput, Space, UpdateSpaceInput } from './types';
 import { SpaceNotFoundError } from './errors';
 import { SYMBOLS } from '../../container/types';
 
@@ -10,6 +10,16 @@ export class SpaceService {
     @inject(SYMBOLS.Repositories.SpaceRepository)
     private repository: SpaceRepository,
   ) {}
+
+  async create(data: CreateSpaceInput): Promise<Space> {
+    return this.repository.create(data);
+  }
+
+  async updateBySlug(
+    data: { slug: string } & UpdateSpaceInput,
+  ): Promise<Space> {
+    return this.repository.updateBySlug(data);
+  }
 
   async getAll(): Promise<Space[]> {
     return this.repository.findAll();

@@ -1,13 +1,13 @@
 import { useWallets } from '@privy-io/react-auth';
 import { useSetActiveWallet } from '@privy-io/wagmi';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { createSpaceSchema } from '@hypha-platform/epics';
+import { schemaCreateSpaceWeb3 } from '@hypha-platform/core/client';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { z } from 'zod';
 import React from 'react';
-import { createSpace, getSpaceIdFromLogs } from '@hypha-platform/core-evm';
+import { createSpace, getSpaceIdFromLogs } from '@hypha-platform/core-client';
 
-export const useCreateSpace = () => {
+export const useSpaceCreateWeb3 = () => {
   const { wallets } = useWallets();
   const { user } = useAuthentication();
 
@@ -16,18 +16,22 @@ export const useCreateSpace = () => {
   const {
     data: hash,
     writeContract,
+    isPending: isWriteContractPending,
     isSuccess: isWriteContractSuccess,
     isError: isWriteContractError,
   } = useWriteContract();
-  const { data: transactionData } = useWaitForTransactionReceipt({ hash });
+  const { data: transactionData, isLoading: isLoadingTransaction } =
+    useWaitForTransactionReceipt({ hash });
 
-  React.useEffect(() => {
+  const resetWallet = React.useCallback(async () => {
     if (user) {
       const activeWallet = wallets.find(
         (wallet) => wallet.address === user?.wallet?.address,
       );
 
-      if (activeWallet) setActiveWallet(activeWallet);
+      if (activeWallet) {
+        return await setActiveWallet(activeWallet);
+      }
     }
   }, [user, setActiveWallet]);
 
@@ -43,7 +47,8 @@ export const useCreateSpace = () => {
       votingPowerSource,
       exitMethod,
       joinMethod,
-    }: z.infer<typeof createSpaceSchema>) => {
+    }: z.infer<typeof schemaCreateSpaceWeb3>) => {
+      await resetWallet();
       writeContract(
         createSpace({
           unity: BigInt(unity),
@@ -59,7 +64,7 @@ export const useCreateSpace = () => {
   return {
     createSpace: handleCreateSpace,
     spaceId,
-    hash,
+    isLoading: !spaceId,
     isWriteContractError,
     isWriteContractSuccess,
   };

@@ -21,10 +21,7 @@ async function main(): Promise<void> {
   );
 
   await inviteSystem.waitForDeployment();
-  console.log(
-    'InviteSystem deployed to:',
-    await inviteSystem.getAddress(),
-  );
+  console.log('InviteSystem deployed to:', await inviteSystem.getAddress());
 }
 
 main()
@@ -32,4 +29,4 @@ main()
   .catch((error: Error) => {
     console.error(error);
     process.exit(1);
-  }); 
+  });
