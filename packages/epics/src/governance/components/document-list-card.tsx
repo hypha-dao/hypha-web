@@ -6,26 +6,21 @@ import { Text } from '@radix-ui/themes';
 
 interface DocumentListCardProps {
   isLoading?: boolean;
-  creator: Creator;
+  creator?: Creator;
   badges?: BadgeItem[];
   interactions?: React.ReactNode;
 }
 
 interface Document {
-  id: number;
-  creatorId: number;
-  title: string;
+  id?: number;
+  creatorId?: number;
+  title?: string;
   description?: string;
-  slug: string;
-  state: 'agreement' | 'discussion' | 'proposal';
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 export const DocumentListCard: React.FC<DocumentListCardProps & Document> = ({
   isLoading,
   title,
-  state,
   creator,
   badges,
   interactions,
