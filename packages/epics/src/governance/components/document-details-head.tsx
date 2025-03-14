@@ -4,13 +4,13 @@ import { type BadgeItem, BadgesList } from '@hypha-platform/ui';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { Text } from '@radix-ui/themes';
 
-interface DocumentDetailsHeadProps {
+export interface DocumentDetailsHeadProps {
   isLoading?: boolean;
   creator?: Creator;
   badges?: BadgeItem[];
 }
 
-interface Document {
+export interface Document {
   id?: number;
   creatorId?: number;
   title?: string;
@@ -21,7 +21,7 @@ export const DocumentDetailsHead: React.FC<
   DocumentDetailsHeadProps & Document
 > = ({ isLoading, title, creator, badges }) => {
   return (
-    <div className="w-full h-full p-5 flex items-center space-x-3">
+    <div className="w-full h-full flex items-center space-x-3">
       <PersonAvatar
         avatarSrc={creator?.avatarUrl}
         userName={`${creator?.name} ${creator?.surname}`}

@@ -8,7 +8,8 @@ interface DocumentListProps {
   page: number;
   basePath: string;
   useDocuments: UseDocuments;
-  hasGridView: boolean;
+  hasGridView?: boolean;
+  state: 'agreements' | 'proposals' | 'discussions';
 }
 
 interface GridLoadersProps {
@@ -24,12 +25,17 @@ export const DocumentList = ({
   basePath,
   useDocuments,
   hasGridView,
+  state,
 }: DocumentListProps) => {
+  const filterState = {
+    discussions: 'discussion',
+    agreements: 'agreement',
+    proposals: 'proposal',
+  }[state];
   const { documents, isLoading } = useDocuments({
     page,
-    filter: { state: '' },
+    filter: { state: filterState },
   });
-
   const GridLoaders = ({ isLoading }: GridLoadersProps) => {
     return isLoading ? (
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
@@ -54,7 +60,7 @@ export const DocumentList = ({
     <div className="w-full">
       <div
         className={cn(
-          hasGridView ? '' : 'grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2',
+          hasGridView ? 'grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2' : '',
         )}
       >
         {documents.map((document) => (
@@ -64,9 +70,9 @@ export const DocumentList = ({
             scroll={false}
           >
             {hasGridView ? (
-              <DocumentListCard {...document} isLoading={isLoading} />
-            ) : (
               <DocumentCard {...document} isLoading={isLoading} />
+            ) : (
+              <DocumentListCard {...document} isLoading={isLoading} />
             )}
           </Link>
         ))}
