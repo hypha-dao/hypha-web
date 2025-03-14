@@ -17,9 +17,7 @@ export const Default: Story = {
   args: {
     currentPage: 1,
     totalPages: 10,
-    onPageChange: () => {
-      console.log('Page changed');
-    },
+    onPageChange: () => {},
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
