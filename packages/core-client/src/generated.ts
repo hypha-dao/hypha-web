@@ -530,14 +530,14 @@ export const daoSpaceFactoryImplementationAbi = [
     outputs: [],
     stateMutability: 'payable',
   },
-] as const
+] as const;
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0xc8B8454D2F9192FeCAbc2C6F5d88F6434A2a9cd9)
  */
 export const daoSpaceFactoryImplementationAddress = {
   8453: '0xc8B8454D2F9192FeCAbc2C6F5d88F6434A2a9cd9',
-} as const
+} as const;
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0xc8B8454D2F9192FeCAbc2C6F5d88F6434A2a9cd9)
@@ -545,4 +545,4 @@ export const daoSpaceFactoryImplementationAddress = {
 export const daoSpaceFactoryImplementationConfig = {
   address: daoSpaceFactoryImplementationAddress,
   abi: daoSpaceFactoryImplementationAbi,
-} as const
+} as const;
