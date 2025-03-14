@@ -1,6 +1,6 @@
-import { CreateSpaceInput, Space, UpdateSpaceInput } from '../types';
+import { CreateSpaceInput, Space, UpdateSpaceInput } from '../../types';
 
-type apiConfig = {
+export type ApiConfig = {
   endpoint: string;
   headers: {
     Authorization: string;
@@ -9,7 +9,7 @@ type apiConfig = {
 
 export const createSpaceWeb2 = async (
   data: CreateSpaceInput,
-  config: apiConfig,
+  config: ApiConfig,
 ): Promise<Space> => {
   const response = await fetch(config.endpoint, {
     method: 'POST',
@@ -29,7 +29,7 @@ export const createSpaceWeb2 = async (
 
 export const updateSpaceWeb2 = async (
   data: UpdateSpaceInput,
-  config: apiConfig,
+  config: ApiConfig,
 ): Promise<Space> => {
   const response = await fetch(config.endpoint, {
     method: 'POST',

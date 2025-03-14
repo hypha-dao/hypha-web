@@ -1,5 +1,4 @@
-export * from './web2';
-export * from './web3';
+export * from './client';
 export * from './validation';
 export * from './types';
 export * from './errors';

@@ -17,7 +17,6 @@ export const SelectLanguage: React.FC<LangSelectProps> = ({
 
   const handleLangChange = (value: string) => {
     const newPath = path.replace(/^\/[a-z]{2}/, `/${value}`);
-    console.debug('handleLangChange', { path, value, newPath });
     push(newPath);
   };
 

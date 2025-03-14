@@ -1,23 +1,31 @@
 import {
   daoSpaceFactoryImplementationAbi,
   daoSpaceFactoryImplementationAddress,
-} from '../../../generated';
+} from '@core/generated';
+import { base } from 'viem/chains';
 
-export const createSpaceWeb3 = ({
-  unity = 0n,
-  quorum = 0n,
-  votingPowerSource = 0n,
-  exitMethod = 0n,
-  joinMethod = 0n,
-  chain = 8453,
-}: {
+export type CreateSpaceWeb3Input = {
   unity?: bigint;
   quorum?: bigint;
   votingPowerSource?: bigint;
   exitMethod?: bigint;
   joinMethod?: bigint;
+};
+
+export type CreateSpaceWeb3Config = {
   chain?: keyof typeof daoSpaceFactoryImplementationAddress;
-}) => {
+};
+
+export const createSpaceWeb3 = (
+  {
+    unity = 0n,
+    quorum = 0n,
+    votingPowerSource = 0n,
+    exitMethod = 0n,
+    joinMethod = 0n,
+  }: CreateSpaceWeb3Input,
+  { chain = base.id }: CreateSpaceWeb3Config = {},
+) => {
   const address = daoSpaceFactoryImplementationAddress[chain];
 
   const callConfig = {

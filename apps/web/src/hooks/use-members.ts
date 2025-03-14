@@ -21,7 +21,6 @@ export const useMembers: UseMembers = ({
     () => `/api/v1/spaces/${spaceSlug}/members?page=${page}`,
     [spaceSlug, page],
   );
-  console.debug('useMembers', { endpoint });
 
   const { data: response, isLoading } = useSWR([endpoint], ([endpoint]) =>
     fetch(endpoint).then((res) => res.json()),
