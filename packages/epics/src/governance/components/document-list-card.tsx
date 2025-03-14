@@ -12,8 +12,6 @@ interface DocumentListCardProps {
 }
 
 interface Document {
-  id?: number;
-  creatorId?: number;
   title?: string;
   description?: string;
 }
