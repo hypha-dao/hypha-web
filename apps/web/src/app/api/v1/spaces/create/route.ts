@@ -1,23 +1,8 @@
-import { createSpaceService } from '@hypha-platform/core/server';
+import {
+  createSpaceService,
+  schemaCreateSpace,
+} from '@hypha-platform/core/server';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
-
-const createSpaceSchema = z.object({
-  title: z.string().min(1).max(50),
-  description: z.string().min(1).max(300),
-  logoUrl: z.string().url('Logo URL must be a valid URL').optional(),
-  leadImage: z.string().url('Lead image must be a valid URL').optional(),
-  slug: z
-    .string()
-    .min(1)
-    .max(50)
-    .regex(
-      /^[a-z0-9-]+$/,
-      'Slug must contain only lowercase letters, numbers, and hyphens',
-    )
-    .optional(),
-  parentId: z.number().optional(),
-});
 
 export async function POST(request: Request) {
   try {
@@ -28,7 +13,7 @@ export async function POST(request: Request) {
 
     const body = await request.json();
 
-    const validationResult = createSpaceSchema.safeParse(body);
+    const validationResult = schemaCreateSpace.safeParse(body);
 
     if (!validationResult.success) {
       const errors = validationResult.error.format();
