@@ -11,8 +11,7 @@ export default function Loading() {
         onSetActiveFilter={() => console.log('set active filter')}
         content={''}
         creator={{
-          avatar:
-            '',
+          avatar: '',
           name: '',
           surname: '',
         }}

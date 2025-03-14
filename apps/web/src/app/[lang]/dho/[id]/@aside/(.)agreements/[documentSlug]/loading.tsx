@@ -9,8 +9,7 @@ export default function Loading() {
         onSetActiveFilter={() => console.log('set active filter')}
         content={''}
         creator={{
-          avatarUrl:
-            '',
+          avatarUrl: '',
           name: '',
           surname: '',
         }}

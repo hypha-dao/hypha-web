@@ -4,7 +4,6 @@ export * from './people';
 export * from './proposals';
 export * from './agreements';
 export * from './treasury';
-export * from './discussions';
 export * from './common/constants';
 export * from './common/create-form';
 export * from './interactions';
