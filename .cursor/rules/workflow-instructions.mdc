@@ -1,0 +1,17 @@
+---
+description: How to provide coding assistance
+globs: 
+alwaysApply: false
+---
+# Coding workflow preferences
+
+- Focus on the areas of code relevant to the task
+- Do not touch code that is unrelated to the task
+- Write thorough tests for all major functionality
+- Avoid making major changes to the patterns and architecture of how a feature works, after it has shown to work well, unless explicitly instructed
+- Always think about what other methods and areas of code might be affected by code changes
+- NEVER create migrations manually - the folder `./src/migrations` is managed by `payload` directly
+- After creating or modifying collections, run `npx payload generate:db-schema` to update the database schema
+- After generating the db-schema, run `npx payload migrate:create` to generate the migration files
+- Document all significant changes and decisions in the journal system
+- Follow the ontology-based structure for content modeling when adding new concepts or relationships
