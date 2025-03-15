@@ -1,0 +1,68 @@
+---
+description: This is the project's tech stack
+globs: 
+alwaysApply: false
+---
+# Technical Stack
+
+## Frontend
+
+### Core Technologies
+- **Next.js 15.2.1** - React framework for server-side rendering and static site generation
+- **React 19.0.0** - JavaScript library for building user interfaces
+- **TypeScript** - Typed JavaScript for better development experience
+- **Tailwind CSS** - Utility-first CSS framework
+
+### UI Components
+- **Shadcn UI** - Component library built with Radix UI and Tailwind
+- **Radix UI** - Low-level UI components (Dialogs, Avatars, Dropdown menus, etc.)
+- **Embla Carousel** - Carousel/slider component
+- **Lucide React** - Icon library
+
+### State Management & Data Fetching
+- **React Query (TanStack Query)** - Data fetching and caching
+- **SWR** - Data fetching with stale-while-revalidate strategy
+- **React Hook Form** - Form management
+- **Zod** - Schema validation
+
+## Infrastructure
+
+- **Nx** - Build system and monorepo tooling
+
+## Backend
+
+
+### Database
+- **PostgreSQL** - Relational database (via Neon Database serverless)
+- **Drizzle ORM** - TypeScript ORM for database interaction
+
+### Authentication
+- **Privy** - Web3 authentication
+- **Web3Auth** - Blockchain authentication
+- **jose** - JWT handling
+
+## Blockchain Integration
+- **Ethereum** - Smart contract platform
+- **Wagmi** - React hooks for Ethereum
+- **Viem** - TypeScript interface for Ethereum
+- **Hardhat** - Development environment for Ethereum
+- **OpenZeppelin Contracts** - Smart contract library
+
+## Testing & Development
+- **Vitest** - Testing framework for Vite
+- **Jest** - JavaScript testing framework
+- **Playwright** - End-to-end testing
+- **Storybook** - UI component explorer
+- **ESLint** - Code linting
+- **Prettier** - Code formatting
+
+## Internationalization
+- **i18n** - Custom internationalization package
+
+## Deployment
+- **Vercel** - Deployment platform
+
+## Build Tools
+- **Vite** - Build tool and development server
+- **Rollup** - JavaScript module bundler
+- **SWC** - JavaScript/TypeScript compiler
