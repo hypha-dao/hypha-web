@@ -1,17 +1,17 @@
-import { asc, eq } from 'drizzle-orm';
-import slugify from 'slugify';
-import {
-  db as defaultDb,
-  spaces,
-  memberships,
-  schema,
-} from '@hypha-platform/storage-postgres';
+import { db as defaultDb, schema } from '@hypha-platform/storage-postgres';
 import { CreateSpaceInput, Space, UpdateSpaceInput } from '../types';
 import { SpaceRepository } from './repository';
 import { Database } from '@hypha-platform/storage-postgres';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { inject, injectable, optional } from 'inversify';
 import { DatabaseInstance, DatabaseProvider, SYMBOLS } from '../../_container';
+import { createSpace, updateSpaceBySlug } from './mutations';
+import {
+  findAllSpaces,
+  findAllSpacesByMemberId,
+  findSpaceById,
+  findSpaceBySlug,
+} from './queries';
 
 @injectable()
 export class SpacePostgresRepository implements SpaceRepository {
@@ -37,81 +37,29 @@ export class SpacePostgresRepository implements SpaceRepository {
     return this.adminDb;
   }
 
-  async create({
-    title,
-    // TODO: fix slug type
-    slug: maybeSlug,
-    description,
-    ...rest
-  }: CreateSpaceInput): Promise<Space> {
-    const slug = maybeSlug || slugify(title, { lower: true });
-
-    const [newSpace] = await this.db
-      .insert(spaces)
-      .values({
-        title,
-        slug,
-        description,
-        ...rest,
-      })
-      .returning();
-
-    if (!newSpace) {
-      throw new Error('Failed to create space');
-    }
-
-    return newSpace;
+  async create(data: CreateSpaceInput): Promise<Space> {
+    return createSpace(data, { db: this.db as Database });
   }
 
-  async updateBySlug({
-    slug,
-    ...rest
-  }: { slug: string } & UpdateSpaceInput): Promise<Space> {
-    const [updatedSpace] = await this.db
-      .update(spaces)
-      .set({ ...rest })
-      .where(eq(spaces.slug, slug))
-      .returning();
-
-    if (!updatedSpace) {
-      throw new Error('Failed to update space');
-    }
-
-    return updatedSpace;
+  async updateBySlug(
+    data: { slug: string } & UpdateSpaceInput,
+  ): Promise<Space> {
+    return updateSpaceBySlug(data, { db: this.db });
   }
 
   async findAll(): Promise<Space[]> {
-    const results = await this.db
-      .select()
-      .from(spaces)
-      .orderBy(asc(spaces.title));
-    return results;
+    return findAllSpaces({ db: this.db });
   }
 
   async findById(id: number): Promise<Space | null> {
-    const results = await this.db
-      .select()
-      .from(spaces)
-      .where(eq(spaces.id, id));
-    return results[0] || null;
+    return findSpaceById({ id }, { db: this.db });
   }
 
   async findBySlug(slug: string): Promise<Space | null> {
-    const results = await this.db
-      .select()
-      .from(spaces)
-      .where(eq(spaces.slug, slug));
-    return results[0] || null;
+    return findSpaceBySlug({ slug }, { db: this.db });
   }
 
   async findAllByMemberId(memberId: number): Promise<Space[]> {
-    const results = await this.db
-      .select()
-      .from(spaces)
-      .innerJoin(memberships, eq(memberships.spaceId, spaces.id))
-      .where(eq(memberships.personId, memberId))
-      .orderBy(asc(spaces.title));
-
-    return results.map((row) => row.spaces);
+    return findAllSpacesByMemberId({ memberId }, { db: this.db });
   }
 }

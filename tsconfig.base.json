@@ -8,7 +8,7 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "importHelpers": true,
-    "target": "es2015",
+    "target": "es2020",
     "module": "esnext",
     "lib": ["es2020", "dom"],
     "skipLibCheck": true,
@@ -46,7 +46,8 @@
         "packages/ui-utils/src/global.css"
       ],
       "@hypha-platform/ui/server": ["packages/ui/src/server.ts"],
-      "@web/*": ["apps/web/src/*"]
+      "@web/*": ["apps/web/src/*"],
+      "@core/*": ["packages/core/src/*"]
     }
   },
   "exclude": ["node_modules", "tmp"]
