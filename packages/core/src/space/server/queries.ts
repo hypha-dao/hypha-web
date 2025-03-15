@@ -1,10 +1,6 @@
 import { asc, eq } from 'drizzle-orm';
-import { DatabaseInstance } from '@core/_container';
 import { memberships, Space, spaces } from '@hypha-platform/storage-postgres';
-
-type DbConfig = {
-  db: DatabaseInstance;
-};
+import { DbConfig } from '@core/common/server';
 
 export const findAllSpaces = async ({ db }: DbConfig) => {
   const results = await db.select().from(spaces).orderBy(asc(spaces.title));
