@@ -47,7 +47,6 @@ export const getDaoDetail = async ({
   token: string;
   daoSlug: string;
 }) => {
-  console.debug('getDaoDetail', { token, daoId: daoSlug });
   return fetch(process.env.GRAPHQL_URI as string, {
     method: 'POST',
 

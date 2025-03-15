@@ -57,35 +57,33 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <EvmProvider>
-            <MenuTop
-              withLogo={true}
-              navItems={[
-                {
-                  label: 'Network',
-                  href: `/network`,
-                },
-                {
-                  label: 'My Spaces',
-                  href: `/my-spaces`,
-                },
-                {
-                  label: 'Wallet',
-                  href: `/wallet`,
-                },
-              ]}
-            >
-              <MenuTop.RightSlot>
-                <ConnectedButtonProfile
-                  useAuthentication={useAuthentication}
-                  useMe={useMe}
-                  newUserRedirectPath="/profile/signup"
-                />
-              </MenuTop.RightSlot>
-            </MenuTop>
-            {children}
-            <Footer />
-          </EvmProvider>
+          <MenuTop
+            withLogo={true}
+            navItems={[
+              {
+                label: 'Network',
+                href: `/network`,
+              },
+              {
+                label: 'My Spaces',
+                href: `/my-spaces`,
+              },
+              {
+                label: 'Wallet',
+                href: `/wallet`,
+              },
+            ]}
+          >
+            <MenuTop.RightSlot>
+              <ConnectedButtonProfile
+                useAuthentication={useAuthentication}
+                useMe={useMe}
+                newUserRedirectPath="/profile/signup"
+              />
+            </MenuTop.RightSlot>
+          </MenuTop>
+          {children}
+          <Footer />
         </ThemeProvider>
       </AuthProvider>
       {shouldInjectToolbar && <VercelToolbar />}

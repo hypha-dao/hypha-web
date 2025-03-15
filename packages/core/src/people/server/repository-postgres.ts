@@ -1,12 +1,4 @@
-import { eq, sql } from 'drizzle-orm';
-import {
-  people,
-  spaces,
-  memberships,
-  schema,
-  db as defaultDb,
-} from '@hypha-platform/storage-postgres';
-import invariant from 'tiny-invariant';
+import { schema, db as defaultDb } from '@hypha-platform/storage-postgres';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { injectable, inject, optional } from 'inversify';
 import { SYMBOLS } from '../../_container/types';
@@ -23,27 +15,15 @@ import {
   PeopleFindBySpaceConfig,
   PeopleRepository,
 } from './repository';
-
-// Helper function to convert null to undefined
-const nullToUndefined = <T>(value: T | null): T | undefined =>
-  value === null ? undefined : value;
-
-// Type from the database
-type DbPerson = {
-  id: number;
-  name: string | null;
-  surname: string | null;
-  email: string | null;
-  slug: string | null;
-  avatarUrl: string | null;
-  leadImageUrl: string | null;
-  description: string | null;
-  location: string | null;
-  nickname: string | null;
-  createdAt?: Date;
-  updatedAt?: Date;
-  total?: number;
-};
+import {
+  findAllPeople,
+  findPeopleBySpaceSlug,
+  findPersonById,
+  findPersonBySlug,
+  findPersonBySpaceId,
+  findSelf,
+} from './queries';
+import { createPerson, deletePerson, updatePerson } from './mutations';
 
 @injectable()
 export class PeopleRepositoryPostgres implements PeopleRepository {
@@ -67,183 +47,46 @@ export class PeopleRepositoryPostgres implements PeopleRepository {
     }
   }
 
-  private mapToDomainPerson(dbPerson: DbPerson): Person {
-    invariant(dbPerson.slug, 'Person must have a slug');
-
-    return {
-      id: dbPerson.id,
-      name: nullToUndefined(dbPerson.name),
-      surname: nullToUndefined(dbPerson.surname),
-      email: nullToUndefined(dbPerson.email),
-      slug: dbPerson.slug,
-      avatarUrl: nullToUndefined(dbPerson.avatarUrl),
-      leadImageUrl: nullToUndefined(dbPerson.leadImageUrl),
-      description: nullToUndefined(dbPerson.description),
-      location: nullToUndefined(dbPerson.location),
-      nickname: nullToUndefined(dbPerson.nickname),
-    };
-  }
-
-  private fields() {
-    return {
-      id: people.id,
-      slug: people.slug,
-      avatarUrl: people.avatarUrl,
-      description: people.description,
-      email: people.email,
-      location: people.location,
-      name: people.name,
-      surname: people.surname,
-      nickname: people.nickname,
-      createdAt: people.createdAt,
-      updatedAt: people.updatedAt,
-      total: sql<number>`cast(count(*) over() as integer)`,
-    };
-  }
-
   async findAll(
     config: PeopleFindAllConfig,
   ): Promise<PaginatedResponse<Person>> {
-    const {
-      pagination: { page = 1, pageSize = 10 },
-    } = config;
-
-    const offset = (page - 1) * pageSize;
-
-    type ResultRow = DbPerson & { total: number };
-    const dbPeople = (await this.db
-      .select(this.fields())
-      .from(people)
-      .limit(pageSize)
-      .offset(offset)) as ResultRow[];
-
-    const total = dbPeople[0]?.total ?? 0;
-    const totalPages = Math.ceil(total / pageSize);
-
-    return {
-      data: dbPeople.map((row) => this.mapToDomainPerson(row)),
-      pagination: {
-        total,
-        page,
-        pageSize,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPreviousPage: page > 1,
-      },
-    };
+    return findAllPeople({ ...config, db: this.db });
   }
 
   async findById(id: number): Promise<Person | null> {
-    const [dbPerson] = await this.db
-      .select()
-      .from(people)
-      .where(eq(people.id, id))
-      .limit(1);
-
-    return dbPerson ? this.mapToDomainPerson(dbPerson) : null;
+    return findPersonById({ id }, { db: this.db });
   }
 
   async findBySpaceId(
-    { spaceId }: { spaceId: number },
+    data: { spaceId: number },
     config: PeopleFindBySpaceConfig,
   ): Promise<PaginatedResponse<Person>> {
-    const {
-      pagination: { page = 1, pageSize = 10 },
-    } = config;
-
-    const offset = (page - 1) * pageSize;
-
-    type ResultRow = DbPerson & { total: number };
-    const result = (await this.db
-      .select(this.fields())
-      .from(people)
-      .innerJoin(memberships, eq(memberships.personId, people.id))
-      .where(eq(memberships.spaceId, spaceId))
-      .limit(pageSize)
-      .offset(offset)) as ResultRow[];
-
-    const total = result[0]?.total ?? 0;
-    const totalPages = Math.ceil(total / pageSize);
-
-    return {
-      data: result.map(this.mapToDomainPerson),
-      pagination: {
-        total,
-        page,
-        pageSize,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPreviousPage: page > 1,
-      },
-    };
+    return findPersonBySpaceId(data, { ...config, db: this.db });
   }
 
   async findBySpaceSlug(
-    {
-      spaceSlug,
-    }: {
+    data: {
       spaceSlug: string;
     },
     config: PeopleFindBySpaceConfig,
   ): Promise<PaginatedResponse<Person>> {
-    const {
-      pagination: { page = 1, pageSize = 10 },
-    } = config;
-
-    const offset = (page - 1) * pageSize;
-
-    type ResultRow = DbPerson & { total: number };
-    const result = (await this.db
-      .select(this.fields())
-      .from(people)
-      .innerJoin(memberships, eq(memberships.personId, people.id))
-      .innerJoin(spaces, eq(memberships.spaceId, spaces.id))
-      .where(eq(spaces.slug, spaceSlug))
-      .limit(pageSize)
-      .offset(offset)) as ResultRow[];
-
-    const total = result[0]?.total ?? 0;
-    const totalPages = Math.ceil(total / pageSize);
-
-    return {
-      data: result.map(this.mapToDomainPerson),
-      pagination: {
-        total,
-        page,
-        pageSize,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPreviousPage: page > 1,
-      },
-    };
+    return findPeopleBySpaceSlug(data, { ...config, db: this.db });
   }
 
   async findBySlug({ slug }: { slug: string }): Promise<Person> {
-    const [dbPerson] = await this.db
-      .select()
-      .from(people)
-      .where(eq(people.slug, slug))
-      .limit(1);
-
-    return this.mapToDomainPerson(dbPerson);
+    return findPersonBySlug({ slug }, { db: this.db });
   }
 
   async create(person: Person): Promise<Person> {
-    const [dbPerson] = await this.db.insert(people).values(person).returning();
-    return this.mapToDomainPerson(dbPerson);
+    return createPerson(person, { db: this.db });
   }
 
   async update(person: Person): Promise<Person> {
-    const [dbPerson] = await this.db
-      .update(people)
-      .set(person)
-      .where(eq(people.id, person.id))
-      .returning();
-    return this.mapToDomainPerson(dbPerson);
+    return updatePerson(person, { db: this.db });
   }
 
   async delete(id: number): Promise<void> {
-    await this.db.delete(people).where(eq(people.id, id));
+    await deletePerson({ id }, { db: this.db });
   }
 
   /**
@@ -252,23 +95,6 @@ export class PeopleRepositoryPostgres implements PeopleRepository {
    * matching against the sub column in the people table
    */
   async findMe(): Promise<Person | null> {
-    try {
-      // Use Neon's auth.user_id() to get the JWT subject ID
-      // and match it against the sub column in the people table
-      const [dbPerson] = await this.db
-        .select()
-        .from(schema.people)
-        .where(sql`sub = auth.user_id()`)
-        .limit(1);
-
-      if (!dbPerson) {
-        return null;
-      }
-
-      return this.mapToDomainPerson(dbPerson);
-    } catch (error) {
-      console.error('Error finding authenticated user:', error);
-      return null;
-    }
+    return findSelf({ db: this.db });
   }
 }

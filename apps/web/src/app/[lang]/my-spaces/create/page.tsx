@@ -1,10 +1,13 @@
 'use client';
 
+import { useAccount, useEnsName } from 'wagmi';
 import { CreateSpaceForm } from '@hypha-platform/epics';
 import { useParams } from 'next/navigation';
 
-export default function Loading() {
+export default function CreateSpacePage() {
   const { lang } = useParams();
+  const { address } = useAccount();
+  const { data, error, status } = useEnsName({ address });
 
   return (
     <CreateSpaceForm
@@ -15,6 +18,7 @@ export default function Loading() {
         surname: 'Surname',
       }}
       closeUrl={`/${lang}/my-spaces`}
+      onCreate={() => {}}
     />
   );
 }

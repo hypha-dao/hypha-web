@@ -10,9 +10,7 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import invariant from 'tiny-invariant';
-
-const AUTHENTICATED = process.env.DEFAULT_DB_AUTHENTICATED_URL!;
-const ANONYMOUS = process.env.DEFAULT_DB_ANONYMOUS_URL!;
+import { getDb } from '@core/common/server/get-db';
 
 /**
  * Options for creating a user-specific database connection
@@ -55,19 +53,7 @@ export class DatabaseProvider {
    * @param options Override options for this specific request
    */
   getUserDatabase(options: UserDatabaseOptions = {}): DatabaseInstance {
-    // Merge saved options with provided options, with provided taking precedence
-    const effectiveOptions = { ...this.userOptions, ...options };
-
-    const url = effectiveOptions.authToken ? AUTHENTICATED : ANONYMOUS;
-
-    invariant(url, 'connection string is missing');
-
-    // Create Neon connection with auth token for RLS
-    const sql = neon(url, {
-      authToken: effectiveOptions.authToken, // This enables RLS with the user's permissions
-    });
-
-    // Create drizzle instance with the authenticated connection
-    return drizzle(sql, { schema });
+    const { authToken } = { ...this.userOptions, ...options };
+    return getDb({ authToken });
   }
 }

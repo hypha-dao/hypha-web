@@ -14,9 +14,6 @@ export default async function DhoLayout(props: {
   return (
     <div className="flex flex-grow w-full h-full">
       <MenuTop
-        createActionHref={'/[lang]/dho/[id]/assignments/create'
-          .replace('[lang]', lang)
-          .replace('[id]', daoSlug)}
         navItems={[
           {
             label: 'Explore',

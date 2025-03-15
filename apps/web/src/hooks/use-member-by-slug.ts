@@ -12,7 +12,7 @@ export const useMemberBySlug = (slug: string) => {
     () => `/api/v1/people/${personSlug}`,
     [personSlug],
   );
-  console.debug('useMembers', { endpoint });
+
   const { data: person, isLoading } = useSWR(
     jwt ? [endpoint] : null,
     ([endpoint]) =>

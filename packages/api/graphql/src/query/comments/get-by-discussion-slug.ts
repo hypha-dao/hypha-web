@@ -8,8 +8,6 @@ type GetCommentsByDiscussionSlugProps = {
 export const getCommentsByDiscussionSlug = async ({
   slug,
 }: GetCommentsByDiscussionSlugProps): Promise<Comment[]> => {
-  console.debug('getCommentsByDiscussionSlug', { slug });
-
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve(data);

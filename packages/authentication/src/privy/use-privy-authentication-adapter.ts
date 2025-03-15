@@ -1,9 +1,8 @@
-import {
-  getAccessToken as getPrivyAccessToken,
-  usePrivy,
-} from '@privy-io/react-auth';
+import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { AuthHook } from '../shared/types';
 import React from 'react';
+import { useSetActiveWallet } from '@privy-io/wagmi';
+import { useAccount } from 'wagmi';
 
 export function usePrivyAuthenticationAdapter(): AuthHook {
   const {
@@ -14,6 +13,21 @@ export function usePrivyAuthenticationAdapter(): AuthHook {
     logout: privyLogout,
     getAccessToken,
   } = usePrivy();
+
+  const account = useAccount();
+  const { wallets } = useWallets();
+
+  const { setActiveWallet } = useSetActiveWallet();
+
+  React.useEffect(() => {
+    const activeWallet = wallets.find(
+      (wallet) => wallet.address === account.address,
+    );
+
+    if (activeWallet) {
+      setActiveWallet(activeWallet);
+    }
+  }, [account, wallets, setActiveWallet]);
 
   const login = React.useCallback(async (): Promise<void> => {
     privyLogin();

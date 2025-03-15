@@ -20,6 +20,5 @@ export const useDocumentBySlug = (
     fetch(endpoint).then((res) => res.json()),
   );
 
-  console.debug('useDocumentBySlug', { endpoint, document });
   return { document, isLoading };
 };
