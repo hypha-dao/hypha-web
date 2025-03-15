@@ -27,6 +27,8 @@ export interface UpdateSpaceInput {
   web3SpaceId?: number;
 }
 
+export type UpdateSpaceBySlugInput = { slug: string } & UpdateSpaceInput;
+
 export interface SpaceListOptions {
   page?: number;
   pageSize?: number;
@@ -35,3 +37,5 @@ export interface SpaceListOptions {
     direction: 'asc' | 'desc';
   };
 }
+
+export type DeleteSpaceBySlugInput = { slug: string };

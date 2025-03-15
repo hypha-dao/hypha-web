@@ -43,3 +43,27 @@ export const updateSpaceBySlug = async (
 
   return updatedSpace;
 };
+
+/**
+ * Delete a space by slug
+ *
+ * @param slug - The slug of the space to delete
+ * @param db - Database instance
+ * @returns Boolean indicating if the deletion was successful
+ */
+export const deleteSpaceBySlug = async (
+  { slug }: { slug: string },
+  { db }: { db: DatabaseInstance },
+): Promise<boolean> => {
+  try {
+    const result = await db
+      .delete(spaces)
+      .where(eq(spaces.slug, slug))
+      .returning();
+
+    return result.length > 0;
+  } catch (error) {
+    // Silent failure with return value
+    return false;
+  }
+};

@@ -11,6 +11,7 @@ export type getDbConfig = {
 };
 export const getDb = ({ authToken }: getDbConfig) => {
   const url = authToken ? AUTHENTICATED : ANONYMOUS;
+  console.debug('getDb', { url, authToken });
 
   invariant(url, 'connection string is missing');
 

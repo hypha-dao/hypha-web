@@ -2,7 +2,9 @@ import {
   daoSpaceFactoryImplementationAbi,
   daoSpaceFactoryImplementationAddress,
 } from '@core/generated';
+import { schemaCreateSpaceWeb3 } from '@core/space/validation';
 import { base } from 'viem/chains';
+import { z } from 'zod';
 
 export type CreateSpaceWeb3Input = {
   unity?: bigint;
@@ -15,6 +17,16 @@ export type CreateSpaceWeb3Input = {
 export type CreateSpaceWeb3Config = {
   chain?: keyof typeof daoSpaceFactoryImplementationAddress;
 };
+
+export const mapToCreateSpaceWeb3Input = (
+  d: z.infer<typeof schemaCreateSpaceWeb3>,
+): CreateSpaceWeb3Input => ({
+  unity: BigInt(d.unity),
+  quorum: BigInt(d.quorum),
+  votingPowerSource: BigInt(d.votingPowerSource),
+  exitMethod: BigInt(d.exitMethod),
+  joinMethod: BigInt(d.joinMethod),
+});
 
 export const createSpaceWeb3 = (
   {
