@@ -4,7 +4,7 @@ import { FormInput } from './form-input';
 
 export type ChatProps = {
   messages: MessageProps[];
-  isLoading: boolean;
+  isLoading?: boolean;
 };
 
 export const Chat = ({ messages, isLoading }: ChatProps) => {
