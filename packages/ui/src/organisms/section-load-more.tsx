@@ -15,11 +15,11 @@ export const SectionLoadMore: FC<SectionLoadMoreProps> = ({
   disabled,
 }) => {
   return (
-    <div className="w-full flex justify-center mb-8">
+    <div className="w-full flex justify-center">
       <Button
         disabled={disabled || isLoading}
         onClick={onClick}
-        className="rounded-lg w-fit mt-4"
+        className="rounded-lg w-fit"
         variant="outline"
         colorVariant="neutral"
       >

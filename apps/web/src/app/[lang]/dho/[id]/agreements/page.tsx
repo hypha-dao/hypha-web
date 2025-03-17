@@ -19,7 +19,7 @@ export default async function AgreementsPage(props: PageProps) {
   const basePath = `/${lang}/dho/${id}`;
 
   return (
-    <div>
+    <div className="flex flex-col gap-4">
       <NavigationTabs lang={lang} id={id} activeTab="agreements" />
       <DocumentSection
         basePath={`${basePath}/discussions`}

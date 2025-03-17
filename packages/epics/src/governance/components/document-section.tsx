@@ -37,7 +37,7 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
   } = useDocumentsSection({ useDocuments, filterOptionsType: state });
 
   return (
-    <div className="flex flex-col justify-center items-center">
+    <div className="flex flex-col justify-around items-center gap-4">
       <SectionFilter
         value={activeFilter}
         onChange={setActiveFilter}
@@ -62,18 +62,20 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
       {pagination?.totalPages === 0 ? (
         <Text className="text-neutral-11 mt-2 mb-6">List is empty</Text>
       ) : (
-        Array.from({ length: pages }).map((_, index) => (
-          <DocumentGridContainer
-            key={`key ${index}`}
-            basePath={basePath}
-            pagination={{
-              page: index + 1,
-              pageSize: 3,
-              filter: { state: filterState },
-            }}
-            useDocuments={useDocuments}
-          />
-        ))
+        <div className="space-y-2">
+          {Array.from({ length: pages }).map((_, index) => (
+            <DocumentGridContainer
+              key={`key ${index}`}
+              basePath={basePath}
+              pagination={{
+                page: index + 1,
+                pageSize: 3,
+                filter: { state: filterState },
+              }}
+              useDocuments={useDocuments}
+            />
+          ))}
+        </div>
       )}
       {pagination?.totalPages === 0 ? null : (
         <SectionLoadMore
