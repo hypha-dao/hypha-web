@@ -1,4 +1,8 @@
-import { DiscussionHead, DiscussionHeadProps } from './discussion-head';
+import {
+  DocumentDetailsHead,
+  DocumentDetailsHeadProps,
+  Document,
+} from '../../governance/components/document-details-head';
 import { Button, Skeleton } from '@hypha-platform/ui';
 import { RxCross1 } from 'react-icons/rx';
 import { Image } from '@hypha-platform/ui';
@@ -8,12 +12,13 @@ import { Chat } from '../../interactions/components/chat';
 import { MessageProps } from '../../interactions/components/message';
 import Link from 'next/link';
 
-export type DiscussionDetailProps = DiscussionHeadProps & {
-  content: string;
-  messages: MessageProps[];
-  image: string;
-  closeUrl: string;
-};
+export type DiscussionDetailProps = Document &
+  DocumentDetailsHeadProps & {
+    content: string;
+    messages: MessageProps[];
+    image: string;
+    closeUrl: string;
+  };
 
 export const DiscussionDetail = ({
   creator,
@@ -27,7 +32,11 @@ export const DiscussionDetail = ({
   return (
     <div className="flex flex-col gap-5">
       <div className="flex gap-5 justify-between">
-        <DiscussionHead creator={creator} title={title} isLoading={isLoading} />
+        <DocumentDetailsHead
+          creator={creator}
+          title={title}
+          isLoading={isLoading}
+        />
         <Link href={closeUrl} scroll={false}>
           <Button
             variant="ghost"

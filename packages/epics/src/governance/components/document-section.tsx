@@ -1,8 +1,8 @@
 'use client';
 import { FC } from 'react';
-import { DiscussionsList } from './discussion-list';
+import { DocumentGrid } from './document-grid';
 import { Text } from '@radix-ui/themes';
-import { useDiscussionsSection } from '../hooks/use-discussions-section';
+import { useDocumentsSection } from '../hooks/use-documents-section';
 import {
   SectionFilter,
   SectionLoadMore,
@@ -11,16 +11,18 @@ import {
 import { Button } from '@hypha-platform/ui';
 import { PlusIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
-import { UseDocuments } from '../../governance';
+import { UseDocuments } from '..';
 
-type DiscussionSectionProps = {
+type DocumentSectionProps = {
   basePath: string;
   useDocuments: UseDocuments;
+  state: 'agreements' | 'proposals' | 'discussions';
 };
 
-export const DiscussionsSection: FC<DiscussionSectionProps> = ({
+export const DocumentSection: FC<DocumentSectionProps> = ({
   basePath,
   useDocuments,
+  state,
 }) => {
   const {
     pages,
@@ -31,7 +33,8 @@ export const DiscussionsSection: FC<DiscussionSectionProps> = ({
     pagination,
     sortOptions,
     filterOptions,
-  } = useDiscussionsSection({ useDocuments });
+    documents,
+  } = useDocumentsSection({ useDocuments, filterOptionsType: state });
 
   return (
     <div className="flex flex-col justify-center items-center">
@@ -39,7 +42,7 @@ export const DiscussionsSection: FC<DiscussionSectionProps> = ({
         value={activeFilter}
         onChange={setActiveFilter}
         count={pagination?.total || 0}
-        label="Discussions"
+        label={state}
         sortOptions={sortOptions}
       >
         <Link href={`${basePath}/create`} scroll={false}>
@@ -53,20 +56,17 @@ export const DiscussionsSection: FC<DiscussionSectionProps> = ({
         <SectionTabs
           activeTab={activeFilter}
           setActiveTab={setActiveFilter}
-          tabs={filterOptions}
+          tabs={filterOptions || []}
         />
       )}
       {pagination?.totalPages === 0 ? (
         <Text className="text-neutral-11 mt-2 mb-6">List is empty</Text>
       ) : (
-        Array.from({ length: pages }).map((_, index) => (
-          <DiscussionsList
-            page={index + 1}
-            key={index}
-            basePath={basePath}
-            useDocuments={useDocuments}
-          />
-        ))
+        <DocumentGrid
+          basePath={basePath}
+          isLoading={isLoading}
+          documents={documents}
+        />
       )}
       {pagination?.totalPages === 0 ? null : (
         <SectionLoadMore
@@ -75,9 +75,7 @@ export const DiscussionsSection: FC<DiscussionSectionProps> = ({
           isLoading={isLoading}
         >
           <Text>
-            {pagination?.totalPages === pages
-              ? 'No more discussions'
-              : 'Load more discussions'}
+            {pagination?.totalPages === pages ? 'No more' : 'Load more'}
           </Text>
         </SectionLoadMore>
       )}
