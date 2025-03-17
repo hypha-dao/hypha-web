@@ -1,6 +1,5 @@
 'use client';
 import { FC } from 'react';
-import { DocumentGrid } from './document-grid';
 import { Text } from '@radix-ui/themes';
 import { useDocumentsSection } from '../hooks/use-documents-section';
 import {
@@ -12,6 +11,7 @@ import { Button } from '@hypha-platform/ui';
 import { PlusIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
 import { UseDocuments } from '..';
+import { DocumentGridContainer } from './document-grid.container';
 
 type DocumentSectionProps = {
   basePath: string;
@@ -33,7 +33,6 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
     pagination,
     sortOptions,
     filterOptions,
-    documents,
   } = useDocumentsSection({ useDocuments, filterOptionsType: state });
 
   return (
@@ -62,11 +61,13 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
       {pagination?.totalPages === 0 ? (
         <Text className="text-neutral-11 mt-2 mb-6">List is empty</Text>
       ) : (
-        <DocumentGrid
-          basePath={basePath}
-          isLoading={isLoading}
-          documents={documents}
-        />
+        Array.from({ length: pages }).map((_, index) => (
+          <DocumentGridContainer
+            basePath={basePath}
+            pagination={{ page: index + 1, pageSize: 3 }}
+            useDocuments={useDocuments}
+          />
+        ))
       )}
       {pagination?.totalPages === 0 ? null : (
         <SectionLoadMore
