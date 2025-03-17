@@ -64,6 +64,7 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
       ) : (
         Array.from({ length: pages }).map((_, index) => (
           <DocumentGridContainer
+            key={`key ${index}`}
             basePath={basePath}
             pagination={{
               page: index + 1,
