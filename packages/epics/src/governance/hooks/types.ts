@@ -13,6 +13,7 @@ export type UseDocumentsReturn = {
 export type UseDocumentsProps = {
   page?: number;
   filter?: FilterParams<Pick<Document, 'state'>>;
+  pageSize?: number;
 };
 
 export type UseDocuments = (props: UseDocumentsProps) => UseDocumentsReturn;
