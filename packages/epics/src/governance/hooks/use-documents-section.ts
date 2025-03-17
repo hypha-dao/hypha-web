@@ -25,7 +25,7 @@ export const useDocumentsSection = ({
     proposals: 'proposal',
   }[filterOptionsType];
 
-  const { isLoading, pagination, documents } = useDocuments({
+  const { isLoading, pagination } = useDocuments({
     page: pages,
     pageSize: 3,
     filter: { state: filterState },
@@ -50,12 +50,12 @@ export const useDocumentsSection = ({
     isLoading,
     loadMore,
     pagination,
-    documents,
     pages,
     setPages,
     activeFilter,
     setActiveFilter,
     sortOptions,
     filterOptions,
+    filterState,
   };
 };

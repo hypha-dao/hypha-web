@@ -33,6 +33,7 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
     pagination,
     sortOptions,
     filterOptions,
+    filterState,
   } = useDocumentsSection({ useDocuments, filterOptionsType: state });
 
   return (
@@ -64,7 +65,11 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
         Array.from({ length: pages }).map((_, index) => (
           <DocumentGridContainer
             basePath={basePath}
-            pagination={{ page: index + 1, pageSize: 3 }}
+            pagination={{
+              page: index + 1,
+              pageSize: 3,
+              filter: { state: filterState },
+            }}
             useDocuments={useDocuments}
           />
         ))
