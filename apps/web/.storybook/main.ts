@@ -3,6 +3,7 @@ import type { StorybookConfig } from '@storybook/react-vite';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { mergeConfig } from 'vite';
 import svgr from 'vite-plugin-svgr';
+import path from 'path';
 
 const config: StorybookConfig = {
   stories: [
@@ -24,6 +25,17 @@ const config: StorybookConfig = {
     mergeConfig(config, {
       plugins: [nxViteTsPaths(), svgr()],
       define: { 'process.env': {} },
+      resolve: {
+        alias: {
+          'sb-original/image-context': path.resolve(
+            __dirname,
+            './mock-image-context.js',
+          ),
+        },
+      },
+      optimizeDeps: {
+        include: ['sb-original/image-context'],
+      },
     }),
 };
 
