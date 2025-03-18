@@ -7,7 +7,7 @@ import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/lib/utils';
 import { Separator, ImageUploader } from '@hypha-platform/ui';
 import { useUploadThingFileUploader } from '../hooks/use-uploadthing-file-uploader';
-
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import React from 'react';
 import { useEditProfile } from '../hooks/use-edit-profile';
@@ -39,14 +39,16 @@ export const EditPersonSection = ({
   const [nameValue, setNameValue] = useState(name || '');
   const [surnameValue, setSurnameValue] = useState(surname || '');
 
+  const { editProfile } = useEditProfile();
+  const router = useRouter();
+  const { lang } = useParams();
+
   const { isUploading, uploadedFile, setUploadedFile, handleDrop } =
     useUploadThingFileUploader({
       onUploadComplete: (url: string) => {
         setUploadedFile(url);
       },
     });
-
-  const { editProfile } = useEditProfile();
 
   useEffect(() => {
     setUploadedFile(leadImageUrl || '');
@@ -92,7 +94,7 @@ export const EditPersonSection = ({
         id: id,
       });
       console.log('Profile updated:', updatedProfile);
-      alert('Profile updated successfully!');
+      router.push(`/${lang}/profile/`);
     } catch (error) {
       console.error('Error editing profile:', error);
       alert('Failed to edit profile');
