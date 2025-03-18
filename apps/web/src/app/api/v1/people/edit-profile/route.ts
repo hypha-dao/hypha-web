@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createPeopleService, Person } from '@hypha-platform/core';
+import { createPeopleService, Person } from '@hypha-platform/core/server';
 
 export async function POST(request: NextRequest) {
   try {
