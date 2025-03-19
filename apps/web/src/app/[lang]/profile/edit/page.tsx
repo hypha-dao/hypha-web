@@ -3,6 +3,8 @@
 import { EditPersonSection } from '@hypha-platform/epics';
 import { useParams } from 'next/navigation';
 import { useMe } from '@web/hooks/use-me';
+import { useEditProfile } from '@web/hooks/use-edit-profile';
+import { useUploadThingFileUploader } from '@web/hooks/use-uploadthing-file-uploader';
 
 export default function Loading() {
   const { lang } = useParams();
@@ -19,6 +21,8 @@ export default function Loading() {
       leadImageUrl={person?.leadImageUrl ?? ''}
       closeUrl={`/${lang}/profile`}
       isLoading={isLoading}
+      useEditProfile={useEditProfile}
+      useUploadThingFileUploader={useUploadThingFileUploader}
     />
   );
 }
