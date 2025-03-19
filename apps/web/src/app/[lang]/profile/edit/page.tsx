@@ -17,7 +17,7 @@ export default function Loading() {
       nickname={person?.nickname ?? ''}
       description={person?.description ?? ''}
       leadImageUrl={person?.leadImageUrl ?? ''}
-      closeUrl={`/${lang}/person`}
+      closeUrl={`/${lang}/profile`}
       isLoading={isLoading}
     />
   );
