@@ -20,9 +20,6 @@ export const Default: Story = {
     surname: 'Surname',
     nickname: 'namesurname',
     isLoading: false,
-    onNameChange: () => {},
-    onSurnameChange: () => {},
-    onNicknameChange: () => {},
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
