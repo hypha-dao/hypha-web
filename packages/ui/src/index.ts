@@ -27,6 +27,7 @@ export * from './upload/avatar';
 export * from './upload/file';
 export * from './upload/lead-image';
 export * from './upload/image';
+export * from './form';
 
 export * from './organisms/editor';
 export * from './molecules/badges-list';

@@ -22,7 +22,7 @@ export default function EditProfilePage() {
         nickname={person?.nickname ?? ''}
         description={person?.description ?? ''}
         leadImageUrl={person?.leadImageUrl ?? ''}
-        closeUrl={`/${lang}/person`}
+        closeUrl={`/${lang}/profile/`}
         isLoading={isLoading}
         useEditProfile={useEditProfile}
         useUploadThingFileUploader={useUploadThingFileUploader}
