@@ -5,7 +5,7 @@ import { SidePanel } from '../../_components/side-panel';
 import { useParams } from 'next/navigation';
 import { useMe } from '@web/hooks/use-me';
 
-export default function Loading() {
+export default function EditProfilePage() {
   const { lang } = useParams();
   const { person, isLoading } = useMe();
 
