@@ -266,6 +266,9 @@ importers:
       react-dropzone:
         specifier: ^14.3.5
         version: 14.3.8(react@19.0.0)
+      react-hook-form:
+        specifier: ^7.54.2
+        version: 7.54.2(react@19.0.0)
       react-icons:
         specifier: ^5.4.0
         version: 5.5.0(react@19.0.0)
@@ -573,7 +576,11 @@ importers:
 >>>>>>> f5bea9ce (feat(#485): updated pnpm.lock file)
       '@testing-library/react':
         specifier: 16.1.0
+<<<<<<< HEAD
         version: 16.1.0(@testing-library/dom@9.3.4)(@types/react-dom@19.0.4(@types/react@19.0.11))(@types/react@19.0.11)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+=======
+        version: 16.1.0(@testing-library/dom@10.4.0)(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+>>>>>>> c508beb9 (feat(#485): added react-hook-form in edit-person-section)
       '@typechain/ethers-v6':
         specifier: ^0.5.1
         version: 0.5.1(ethers@6.13.5(bufferutil@4.0.9)(utf-8-validate@5.0.10))(typechain@8.3.2(typescript@5.8.2))(typescript@5.8.2)
@@ -14182,6 +14189,12 @@ packages:
     peerDependencies:
       react: '>= 16.8 || 18.0.0'
 
+  react-hook-form@7.54.2:
+    resolution: {integrity: sha512-eHpAUgUjWbZocoQYUHposymRb4ZP6d0uwUnooL2uOybA9/3tPUvoAKqEWK1WaSiTxxOfTpffNZP7QwlnM3/gEg==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: ^16.8.0 || ^17 || ^18 || ^19
+
   react-i18next@15.4.1:
     resolution: {integrity: sha512-ahGab+IaSgZmNPYXdV1n+OYky95TGpFwnKRflX/16dY04DsYYKHtVLjeny7sBSCREEcoMbAgSkFiGLF5g5Oofw==}
     peerDependencies:
@@ -25084,10 +25097,14 @@ snapshots:
       lodash: 4.17.21
       redent: 3.0.0
 
+<<<<<<< HEAD
   '@testing-library/react@16.1.0(@testing-library/dom@9.3.4)(@types/react-dom@19.0.4(@types/react@19.0.11))(@types/react@19.0.11)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
+=======
+  '@testing-library/react@16.1.0(@testing-library/dom@10.4.0)(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
+>>>>>>> c508beb9 (feat(#485): added react-hook-form in edit-person-section)
     dependencies:
       '@babel/runtime': 7.26.10
-      '@testing-library/dom': 9.3.4
+      '@testing-library/dom': 10.4.0
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
     optionalDependencies:
@@ -30715,7 +30732,7 @@ snapshots:
 
   extension-port-stream@3.0.0:
     dependencies:
-      readable-stream: 3.6.2
+      readable-stream: 4.7.0
       webextension-polyfill: 0.10.0
 
   external-editor@3.1.0:
@@ -36104,6 +36121,10 @@ snapshots:
       attr-accept: 2.2.5
       file-selector: 2.1.2
       prop-types: 15.8.1
+      react: 19.0.0
+
+  react-hook-form@7.54.2(react@19.0.0):
+    dependencies:
       react: 19.0.0
 
   react-i18next@15.4.1(i18next@23.16.8)(react-dom@19.0.0(react@19.0.0))(react@19.0.0):

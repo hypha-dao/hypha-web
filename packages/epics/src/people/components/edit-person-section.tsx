@@ -11,6 +11,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import React from 'react';
 import { useEditProfile } from '../hooks/use-edit-profile';
+import { useForm } from 'react-hook-form';
 
 export type EditPersonSectionProps = EditPersonHeadProps & {
   avatar: string;
@@ -21,7 +22,20 @@ export type EditPersonSectionProps = EditPersonHeadProps & {
   closeUrl: string;
   description: string;
   leadImageUrl: string;
+  onNameChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSurnameChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onNicknameChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onDescriptionChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onLeadImageChange?: (files: File[]) => void;
 };
+
+interface EditPersonFormData {
+  name: string;
+  surname: string;
+  nickname: string;
+  description: string;
+  leadImage: string;
+}
 
 export const EditPersonSection = ({
   isLoading,
@@ -33,11 +47,21 @@ export const EditPersonSection = ({
   description,
   nickname,
   leadImageUrl,
+  onNameChange,
+  onSurnameChange,
+  onNicknameChange,
+  onDescriptionChange,
+  onLeadImageChange,
 }: EditPersonSectionProps) => {
-  const [descriptionValue, setDescriptionValue] = useState(description || '');
-  const [nicknameValue, setNicknameValue] = useState(nickname || '');
-  const [nameValue, setNameValue] = useState(name || '');
-  const [surnameValue, setSurnameValue] = useState(surname || '');
+  const { register, setValue, watch, handleSubmit } = useForm<EditPersonFormData>({
+    defaultValues: {
+      name: name || '',
+      surname: surname || '',
+      nickname: nickname || '',
+      description: description || '',
+      leadImage: leadImageUrl || '',
+    }
+  });
 
   const { editProfile } = useEditProfile();
   const router = useRouter();
@@ -55,20 +79,45 @@ export const EditPersonSection = ({
   }, [leadImageUrl]);
 
   useEffect(() => {
-    setDescriptionValue(description || '');
-  }, [description]);
+    setValue('name', name || '');
+    setValue('surname', surname || '');
+    setValue('nickname', nickname || '');
+    setValue('description', description || '');
+    setValue('leadImage', leadImageUrl || '');
+  }, [name, surname, nickname, description, leadImageUrl, setValue]);
 
   useEffect(() => {
-    setNicknameValue(nickname || '');
-  }, [nickname]);
+    const subscription = watch((value: Partial<EditPersonFormData>, { name: fieldName }: { name?: keyof EditPersonFormData }) => {
+      if (!fieldName) return;
 
-  useEffect(() => {
-    setNameValue(name || '');
-  }, [name]);
+      const event = { target: { value: value[fieldName] || '' } };
 
-  useEffect(() => {
-    setSurnameValue(surname || '');
-  }, [surname]);
+      switch (fieldName) {
+        case 'name':
+          onNameChange?.(event as React.ChangeEvent<HTMLInputElement>);
+          break;
+        case 'surname':
+          onSurnameChange?.(event as React.ChangeEvent<HTMLInputElement>);
+          break;
+        case 'nickname':
+          onNicknameChange?.(event as React.ChangeEvent<HTMLInputElement>);
+          break;
+        case 'description':
+          onDescriptionChange?.(event as React.ChangeEvent<HTMLInputElement>);
+          break;
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [watch, onNameChange, onSurnameChange, onNicknameChange, onDescriptionChange]);
+
+  const handleImageUpload = (files: File[]) => {
+    if (files.length > 0) {
+      const fileUrl = URL.createObjectURL(files[0]);
+      setValue('leadImage', fileUrl);
+      onLeadImageChange?.(files);
+    }
+  };
 
   const [activeLinks, setActiveLinks] = useState({
     website: false,
@@ -86,11 +135,11 @@ export const EditPersonSection = ({
   const saveChanges = async () => {
     try {
       const updatedProfile = await editProfile({
-        name: nameValue,
-        surname: surnameValue,
-        nickname: nicknameValue,
-        leadImageUrl: uploadedFile ?? '',
-        description: descriptionValue,
+        name: watch('name'),
+        surname: watch('surname'),
+        nickname: watch('nickname'),
+        leadImageUrl: watch('leadImage'),
+        description: watch('description'),
         id: id,
       });
       console.log('Profile updated:', updatedProfile);
@@ -106,13 +155,13 @@ export const EditPersonSection = ({
       <div className="flex gap-5 justify-between">
         <EditPersonHead
           avatar={avatar}
-          name={nameValue}
-          surname={surnameValue}
-          nickname={nicknameValue}
+          name={watch('name')}
+          surname={watch('surname')}
+          nickname={watch('nickname')}
           isLoading={isLoading}
-          onNameChange={(e) => setNameValue(e.target.value)}
-          onSurnameChange={(e) => setSurnameValue(e.target.value)}
-          onNicknameChange={(e) => setNicknameValue(e.target.value)}
+          onNameChange={(e) => setValue('name', e.target.value)}
+          onSurnameChange={(e) => setValue('surname', e.target.value)}
+          onNicknameChange={(e) => setValue('nickname', e.target.value)}
         />
         <Link href={closeUrl} scroll={false}>
           <Button
@@ -134,9 +183,12 @@ export const EditPersonSection = ({
       >
         <ImageUploader
           isUploading={isUploading}
-          uploadedFile={uploadedFile}
-          onReset={() => setUploadedFile(null)}
-          onUpload={handleDrop}
+          uploadedFile={watch('leadImage')}
+          onReset={() => {
+            setValue('leadImage', '');
+            onLeadImageChange?.([]);
+          }}
+          onUpload={handleImageUpload}
         />
       </Skeleton>
       <Skeleton
@@ -146,8 +198,9 @@ export const EditPersonSection = ({
         className="rounded-lg"
       >
         <Textarea
-          value={descriptionValue}
-          onChange={(e) => setDescriptionValue(e.target.value)}
+          {...register('description')}
+          placeholder="Enter description"
+          disabled={isLoading}
         />
       </Skeleton>
       <div className="flex gap-6 flex-col">
@@ -234,7 +287,7 @@ export const EditPersonSection = ({
           <Button
             variant="default"
             className="rounded-lg justify-start text-white w-fit"
-            onClick={saveChanges}
+            onClick={handleSubmit(saveChanges)}
           >
             Save
           </Button>
