@@ -18,6 +18,7 @@ export default function Loading() {
         isLoading={true}
         useEditProfile={useEditProfile}
         useUploadThingFileUploader={useUploadThingFileUploader}
+        successfulEditCallback={() => {}}
       />
     </SidePanel>
   );
