@@ -4,6 +4,8 @@ import { EditPersonSection } from '@hypha-platform/epics';
 import { SidePanel } from '../../_components/side-panel';
 import { useParams } from 'next/navigation';
 import { useMe } from '@web/hooks/use-me';
+import { useEditProfile } from '@web/hooks/use-edit-profile';
+import { useUploadThingFileUploader } from '@web/hooks/use-uploadthing-file-uploader';
 
 export default function EditProfilePage() {
   const { lang } = useParams();
@@ -21,6 +23,8 @@ export default function EditProfilePage() {
         leadImageUrl={person?.leadImageUrl ?? ''}
         closeUrl={`/${lang}/person`}
         isLoading={isLoading}
+        useEditProfile={useEditProfile}
+        useUploadThingFileUploader={useUploadThingFileUploader}
       />
     </SidePanel>
   );

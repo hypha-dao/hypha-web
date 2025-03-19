@@ -6,12 +6,11 @@ import { useState, useEffect } from 'react';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/lib/utils';
 import { Separator, ImageUploader } from '@hypha-platform/ui';
-import { useUploadThingFileUploader } from '../hooks/use-uploadthing-file-uploader';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import React from 'react';
-import { useEditProfile } from '../hooks/use-edit-profile';
 import { useForm } from 'react-hook-form';
+import { UseEditProfile, UseUploadThingFileUploader } from '../hooks/types';
 
 export type EditPersonSectionProps = EditPersonHeadProps & {
   avatar: string;
@@ -27,6 +26,8 @@ export type EditPersonSectionProps = EditPersonHeadProps & {
   onNicknameChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onDescriptionChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onLeadImageChange?: (files: File[]) => void;
+  useEditProfile?: UseEditProfile;
+  useUploadThingFileUploader?: UseUploadThingFileUploader;
 };
 
 interface EditPersonFormData {
@@ -52,7 +53,12 @@ export const EditPersonSection = ({
   onNicknameChange,
   onDescriptionChange,
   onLeadImageChange,
+  useEditProfile,
+  useUploadThingFileUploader,
 }: EditPersonSectionProps) => {
+  const router = useRouter();
+  const { lang } = useParams();
+
   const { register, setValue, watch, handleSubmit } =
     useForm<EditPersonFormData>({
       defaultValues: {
@@ -64,10 +70,14 @@ export const EditPersonSection = ({
       },
     });
 
+  if (!useEditProfile) {
+    throw new Error('useEditProfile hook is not defined');
+  }
   const { editProfile } = useEditProfile();
-  const router = useRouter();
-  const { lang } = useParams();
 
+  if (!useUploadThingFileUploader) {
+    throw new Error('useUploadThingFileUploader hook is not defined');
+  }
   const { isUploading, uploadedFile, setUploadedFile, handleDrop } =
     useUploadThingFileUploader({
       onUploadComplete: (url: string) => {

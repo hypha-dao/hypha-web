@@ -33,3 +33,33 @@ export type UseMemberSpacesReturn = {
   isLoading: boolean;
 };
 export type UseMemberSpaces = () => UseMemberSpacesReturn;
+
+export type EditProfileData = {
+  name: string;
+  surname: string;
+  nickname: string;
+  description: string;
+  leadImageUrl: string;
+  id: number | null;
+};
+
+export type UseEditProfileReturn = {
+  editProfile: (data: EditProfileData) => Promise<Person>;
+};
+
+export type UseEditProfile = () => UseEditProfileReturn;
+
+export interface UseUploadThingFileUploaderProps {
+  onUploadComplete?: (url: string) => void;
+}
+
+export type UseUploadThingFileUploaderReturn = {
+  isUploading: boolean;
+  uploadedFile: string | null;
+  setUploadedFile: (file: string | null) => void;
+  handleDrop: (files: File[]) => Promise<void>;
+};
+
+export type UseUploadThingFileUploader = (
+  props: UseUploadThingFileUploaderProps,
+) => UseUploadThingFileUploaderReturn;
