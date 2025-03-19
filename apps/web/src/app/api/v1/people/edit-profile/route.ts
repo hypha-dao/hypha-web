@@ -26,6 +26,10 @@ export async function POST(request: NextRequest) {
     };
 
     // Use the PeopleService to create the profile
+    // Ensure id is always present
+    if (!personData.id) {
+      return NextResponse.json({ error: 'Person ID is required' }, { status: 400 });
+    }
     const updatedProfile = await peopleService.update(personData as Person);
 
     return NextResponse.json({ profile: updatedProfile }, { status: 201 });
