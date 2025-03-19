@@ -53,15 +53,16 @@ export const EditPersonSection = ({
   onDescriptionChange,
   onLeadImageChange,
 }: EditPersonSectionProps) => {
-  const { register, setValue, watch, handleSubmit } = useForm<EditPersonFormData>({
-    defaultValues: {
-      name: name || '',
-      surname: surname || '',
-      nickname: nickname || '',
-      description: description || '',
-      leadImage: leadImageUrl || '',
-    }
-  });
+  const { register, setValue, watch, handleSubmit } =
+    useForm<EditPersonFormData>({
+      defaultValues: {
+        name: name || '',
+        surname: surname || '',
+        nickname: nickname || '',
+        description: description || '',
+        leadImage: leadImageUrl || '',
+      },
+    });
 
   const { editProfile } = useEditProfile();
   const router = useRouter();
@@ -87,29 +88,40 @@ export const EditPersonSection = ({
   }, [name, surname, nickname, description, leadImageUrl, setValue]);
 
   useEffect(() => {
-    const subscription = watch((value: Partial<EditPersonFormData>, { name: fieldName }: { name?: keyof EditPersonFormData }) => {
-      if (!fieldName) return;
+    const subscription = watch(
+      (
+        value: Partial<EditPersonFormData>,
+        { name: fieldName }: { name?: keyof EditPersonFormData },
+      ) => {
+        if (!fieldName) return;
 
-      const event = { target: { value: value[fieldName] || '' } };
+        const event = { target: { value: value[fieldName] || '' } };
 
-      switch (fieldName) {
-        case 'name':
-          onNameChange?.(event as React.ChangeEvent<HTMLInputElement>);
-          break;
-        case 'surname':
-          onSurnameChange?.(event as React.ChangeEvent<HTMLInputElement>);
-          break;
-        case 'nickname':
-          onNicknameChange?.(event as React.ChangeEvent<HTMLInputElement>);
-          break;
-        case 'description':
-          onDescriptionChange?.(event as React.ChangeEvent<HTMLInputElement>);
-          break;
-      }
-    });
+        switch (fieldName) {
+          case 'name':
+            onNameChange?.(event as React.ChangeEvent<HTMLInputElement>);
+            break;
+          case 'surname':
+            onSurnameChange?.(event as React.ChangeEvent<HTMLInputElement>);
+            break;
+          case 'nickname':
+            onNicknameChange?.(event as React.ChangeEvent<HTMLInputElement>);
+            break;
+          case 'description':
+            onDescriptionChange?.(event as React.ChangeEvent<HTMLInputElement>);
+            break;
+        }
+      },
+    );
 
     return () => subscription.unsubscribe();
-  }, [watch, onNameChange, onSurnameChange, onNicknameChange, onDescriptionChange]);
+  }, [
+    watch,
+    onNameChange,
+    onSurnameChange,
+    onNicknameChange,
+    onDescriptionChange,
+  ]);
 
   const handleImageUpload = (files: File[]) => {
     if (files.length > 0) {
