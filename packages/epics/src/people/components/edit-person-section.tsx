@@ -6,7 +6,6 @@ import { useState, useEffect } from 'react';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/lib/utils';
 import { Separator, ImageUploader } from '@hypha-platform/ui';
-import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import React from 'react';
 import { useForm } from 'react-hook-form';
@@ -28,6 +27,7 @@ export type EditPersonSectionProps = EditPersonHeadProps & {
   onLeadImageChange?: (files: File[]) => void;
   useEditProfile?: UseEditProfile;
   useUploadThingFileUploader?: UseUploadThingFileUploader;
+  successfulEditCallback?: () => void;
 };
 
 interface EditPersonFormData {
@@ -55,10 +55,8 @@ export const EditPersonSection = ({
   onLeadImageChange,
   useEditProfile,
   useUploadThingFileUploader,
+  successfulEditCallback,
 }: EditPersonSectionProps) => {
-  const router = useRouter();
-  const { lang } = useParams();
-
   const { register, setValue, watch, handleSubmit } =
     useForm<EditPersonFormData>({
       defaultValues: {
@@ -78,12 +76,11 @@ export const EditPersonSection = ({
   if (!useUploadThingFileUploader) {
     throw new Error('useUploadThingFileUploader hook is not defined');
   }
-  const { isUploading, uploadedFile, setUploadedFile, handleDrop } =
-    useUploadThingFileUploader({
-      onUploadComplete: (url: string) => {
-        setUploadedFile(url);
-      },
-    });
+  const { isUploading, setUploadedFile } = useUploadThingFileUploader({
+    onUploadComplete: (url: string) => {
+      setUploadedFile(url);
+    },
+  });
 
   useEffect(() => {
     setUploadedFile(leadImageUrl || '');
@@ -165,7 +162,7 @@ export const EditPersonSection = ({
         id: id,
       });
       console.log('Profile updated:', updatedProfile);
-      router.push(`/${lang}/profile/`);
+      successfulEditCallback;
     } catch (error) {
       console.error('Error editing profile:', error);
       alert('Failed to edit profile');
