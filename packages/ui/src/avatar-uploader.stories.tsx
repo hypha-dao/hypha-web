@@ -9,8 +9,8 @@ const meta = {
     uploadedAvatar: null,
     onReset: () => console.log('Reset clicked'),
     onUpload: (files: File[]) => console.log('Files uploaded:', files),
-    size: 'md'
-  }
+    size: 'md',
+  },
 } satisfies Meta<typeof AvatarUploader>;
 
 export default meta;

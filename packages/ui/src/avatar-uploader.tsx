@@ -62,32 +62,31 @@ export const AvatarUploader = ({
     xs: {
       container: 'w-[12px] h-[12px]',
       image: { width: 12, height: 12 },
-      icon: { width: 8, height: 8 }
+      icon: { width: 8, height: 8 },
     },
     sm: {
       container: 'w-[24px] h-[24px]',
       image: { width: 24, height: 24 },
-      icon: { width: 12, height: 12 }
+      icon: { width: 12, height: 12 },
     },
     md: {
       container: 'w-[40px] h-[40px]',
       image: { width: 40, height: 40 },
-      icon: { width: 20, height: 20 }
+      icon: { width: 20, height: 20 },
     },
     lg: {
       container: 'w-[64px] h-[64px]',
       image: { width: 64, height: 64 },
-      icon: { width: 24, height: 24 }
-    }
+      icon: { width: 24, height: 24 },
+    },
   };
 
   return (
-    <div
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={handleDrop}
-    >
+    <div onDragOver={(e) => e.preventDefault()} onDrop={handleDrop}>
       {uploadedAvatar || previewUrl ? (
-        <div className={`group relative rounded-md overflow-hidden ${sizeMap[size].container}`}>
+        <div
+          className={`group relative rounded-md overflow-hidden ${sizeMap[size].container}`}
+        >
           <Image
             src={uploadedAvatar || previewUrl || ''}
             alt="Uploaded Image"
