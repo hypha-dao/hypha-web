@@ -19,9 +19,9 @@ export const EditPersonHead = ({
   onNicknameChange,
 }: EditPersonHeadProps &
   MemberType & {
-    onNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    onSurnameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    onNicknameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onNameChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onSurnameChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onNicknameChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   }) => {
   return (
     <div className="flex items-center">
