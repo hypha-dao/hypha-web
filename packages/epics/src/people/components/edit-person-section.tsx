@@ -162,7 +162,7 @@ export const EditPersonSection = ({
         id: id,
       });
       console.log('Profile updated:', updatedProfile);
-      successfulEditCallback;
+      successfulEditCallback?.();
     } catch (error) {
       console.error('Error editing profile:', error);
       alert('Failed to edit profile');
