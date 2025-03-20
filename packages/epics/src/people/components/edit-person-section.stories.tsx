@@ -1,9 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { EditPersonSection } from './edit-person-section';
 import { Dispatch, SetStateAction } from 'react';
-import {
-  UseUploadThingFileUploaderReturn,
-} from '../hooks/types';
+import { UseUploadThingFileUploaderReturn } from '../hooks/types';
 
 const mockUseUploadThing = () =>
   ({
@@ -34,7 +32,7 @@ const meta = {
     },
     isLoading: false,
     closeUrl: '#',
-    
+
     useUploadThingFileUploader: mockUseUploadThing,
   },
 } satisfies Meta<typeof EditPersonSection>;
@@ -56,7 +54,7 @@ export const Default: Story = {
     },
     isLoading: false,
     closeUrl: '#',
-    
+
     useUploadThingFileUploader: mockUseUploadThing,
   },
 };

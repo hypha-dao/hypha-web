@@ -3,7 +3,12 @@ import { MemberType } from '@hypha-platform/graphql/rsc';
 import { Image } from '@hypha-platform/ui';
 import { Input } from '@hypha-platform/ui';
 import { UseFormReturn } from 'react-hook-form';
-import { FormMessage, FormField, FormItem, FormControl } from '@hypha-platform/ui';
+import {
+  FormMessage,
+  FormField,
+  FormItem,
+  FormControl,
+} from '@hypha-platform/ui';
 
 interface Person {
   name?: string;
@@ -17,7 +22,7 @@ interface Person {
 export type EditPersonHeadProps = {
   isLoading?: boolean;
   nickname?: string;
-  form?: UseFormReturn<Person>
+  form?: UseFormReturn<Person>;
 };
 
 export const EditPersonHead = ({
@@ -59,11 +64,11 @@ export const EditPersonHead = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                    <Input
-                      placeholder="Name"
-                      className="text-2 text-neutral-11"
-                      {...field}
-                    />
+                      <Input
+                        placeholder="Name"
+                        className="text-2 text-neutral-11"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -75,11 +80,11 @@ export const EditPersonHead = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                    <Input
-                      placeholder="Surname"
-                      className="text-2 text-neutral-11"
-                      {...field}
-                    />
+                      <Input
+                        placeholder="Surname"
+                        className="text-2 text-neutral-11"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -95,11 +100,11 @@ export const EditPersonHead = ({
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                  <Input
-                    placeholder="Nickname"
-                    className="text-1 text-neutral-11"
-                    {...field}
-                  />
+                    <Input
+                      placeholder="Nickname"
+                      className="text-1 text-neutral-11"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
