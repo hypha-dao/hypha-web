@@ -22,7 +22,9 @@ export const ImageUploader = ({
 }: ImageUploaderProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(defaultImageUrl || null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(
+    defaultImageUrl || null,
+  );
 
   useEffect(() => {
     if (files.length > 0) {

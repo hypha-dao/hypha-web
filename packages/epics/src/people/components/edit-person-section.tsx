@@ -54,16 +54,16 @@ export const EditPersonSection = ({
   person,
   useUploadThingFileUploader,
   successfulEditCallback,
-  onEdit
+  onEdit,
 }: EditPersonSectionProps) => {
   const {
     id = undefined,
-    avatarUrl = '', 
-    name = '', 
-    surname = '', 
-    nickname = '', 
-    description = '', 
-    leadImageUrl = '' 
+    avatarUrl = '',
+    name = '',
+    surname = '',
+    nickname = '',
+    description = '',
+    leadImageUrl = '',
   } = person || {};
 
   if (!useUploadThingFileUploader) {
@@ -85,9 +85,9 @@ export const EditPersonSection = ({
       nickname: nickname,
       description: description,
       leadImageUrl: uploadedFile ?? '',
-      id: id
+      id: id,
     },
-    mode: 'onChange'
+    mode: 'onChange',
   });
   const { watch, formState } = form;
 

@@ -3,19 +3,22 @@ import { z } from 'zod';
 const editPersonWeb2Props = {
   id: z.number(),
   name: z.string().min(1, {
-    message: "Name must not be empty"
+    message: 'Name must not be empty',
   }),
   surname: z.string().min(1, {
-    message: "Surname must not be empty"
+    message: 'Surname must not be empty',
   }),
   nickname: z.string().min(1).max(12, {
-    message: "Description length should not exceed 12 characters"
+    message: 'Description length should not exceed 12 characters',
   }),
-  description: z.string().min(1, {
-    message: "Description must not be empty",
-  }).max(300, {
-    message: "Description length should not exceed 300 characters"
-  }),
+  description: z
+    .string()
+    .min(1, {
+      message: 'Description must not be empty',
+    })
+    .max(300, {
+      message: 'Description length should not exceed 300 characters',
+    }),
   leadImageUrl: z.string(),
 };
 

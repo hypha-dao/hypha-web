@@ -7,7 +7,7 @@ import { useMe } from '@web/hooks/use-me';
 import { useEditProfile } from '@web/hooks/use-edit-profile';
 import { useUploadThingFileUploader } from '@web/hooks/use-uploadthing-file-uploader';
 import { z } from 'zod';
-import { schemaEditPersonWeb2 } from '@hypha-platform/core/client'
+import { schemaEditPersonWeb2 } from '@hypha-platform/core/client';
 
 export default function EditProfilePage() {
   const router = useRouter();

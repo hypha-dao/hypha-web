@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-    
+
     const validatedData = validationResult.data;
     // Get the PeopleService using the factory method and pass the auth token
     const peopleService = createPeopleService({ authToken });
