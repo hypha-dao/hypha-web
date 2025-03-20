@@ -10,6 +10,7 @@ interface ImageUploaderProps {
   uploadedFile: string | null;
   onReset: () => void;
   onUpload: (files: File[]) => void;
+  defaultImageUrl?: string;
 }
 
 export const ImageUploader = ({
@@ -17,10 +18,11 @@ export const ImageUploader = ({
   uploadedFile,
   onReset,
   onUpload,
+  defaultImageUrl,
 }: ImageUploaderProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(defaultImageUrl || null);
 
   useEffect(() => {
     if (files.length > 0) {

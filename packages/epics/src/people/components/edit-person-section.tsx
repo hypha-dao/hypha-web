@@ -44,7 +44,6 @@ export type EditPersonSectionProps = {
   closeUrl: string;
   isLoading?: boolean;
   useUploadThingFileUploader?: UseUploadThingFileUploader;
-  onLeadImageChange?: (files: File[]) => void;
   successfulEditCallback?: () => void;
   onEdit?: (values: z.infer<typeof schemaEditPersonWeb2>) => Promise<void>;
 };
@@ -55,7 +54,6 @@ export const EditPersonSection = ({
   person,
   useUploadThingFileUploader,
   successfulEditCallback,
-  onLeadImageChange,
   onEdit
 }: EditPersonSectionProps) => {
   const {
@@ -68,6 +66,17 @@ export const EditPersonSection = ({
     leadImageUrl = '' 
   } = person || {};
 
+  if (!useUploadThingFileUploader) {
+    throw new Error('useUploadThingFileUploader hook is not defined');
+  }
+  const { isUploading, uploadedFile, setUploadedFile, handleDrop } =
+    useUploadThingFileUploader({
+      onUploadComplete: (url: string) => {
+        setUploadedFile(url);
+        form.setValue('leadImageUrl', url);
+      },
+    });
+
   const form = useForm<z.infer<typeof schemaEditPersonWeb2>>({
     resolver: zodResolver(schemaEditPersonWeb2),
     defaultValues: {
@@ -75,27 +84,25 @@ export const EditPersonSection = ({
       surname: surname,
       nickname: nickname,
       description: description,
-      leadImageUrl: leadImageUrl,
+      leadImageUrl: uploadedFile ?? '',
       id: id
     },
     mode: 'onChange'
   });
-  const { setValue, watch, formState } = form;
+  const { watch, formState } = form;
 
   const watchedValues = watch();
 
-  if (!useUploadThingFileUploader) {
-    throw new Error('useUploadThingFileUploader hook is not defined');
-  }
-  const { isUploading, setUploadedFile } = useUploadThingFileUploader({
-    onUploadComplete: (url: string) => {
-      setUploadedFile(url);
-    },
-  });
+  useEffect(() => {
+    if (leadImageUrl) {
+      setUploadedFile(leadImageUrl);
+      form.setValue('leadImageUrl', leadImageUrl);
+    }
+  }, [leadImageUrl]);
 
   useEffect(() => {
-    setUploadedFile(leadImageUrl || '');
-  }, [leadImageUrl]);
+    form.setValue('leadImageUrl', uploadedFile || '');
+  }, [uploadedFile]);
 
   const [activeLinks, setActiveLinks] = useState({
     website: false,
@@ -110,13 +117,6 @@ export const EditPersonSection = ({
     [activeLinks, setActiveLinks],
   );
 
-  const handleImageUpload = (files: File[]) => {
-    if (files.length > 0) {
-      const fileUrl = URL.createObjectURL(files[0]);
-      setValue('leadImageUrl', fileUrl);
-      onLeadImageChange?.(files);
-    }
-  };
   const onSubmit = async (values: z.infer<typeof schemaEditPersonWeb2>) => {
     try {
       if (onEdit) {
@@ -160,14 +160,26 @@ export const EditPersonSection = ({
             loading={isLoading}
             className="rounded-lg"
           >
-            <ImageUploader
-              isUploading={isUploading}
-              uploadedFile={watchedValues.leadImageUrl ?? ''}
-              onReset={() => {
-                setValue('leadImageUrl', '');
-                onLeadImageChange?.([]);
-              }}
-              onUpload={handleImageUpload}
+            <FormField
+              control={form.control}
+              name="leadImageUrl"
+              render={() => (
+                <FormItem>
+                  <FormControl>
+                    <ImageUploader
+                      isUploading={isUploading}
+                      uploadedFile={uploadedFile}
+                      onReset={() => {
+                        setUploadedFile(null);
+                        form.setValue('leadImageUrl', '');
+                      }}
+                      onUpload={handleDrop}
+                      defaultImageUrl={leadImageUrl}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
           </Skeleton>
           <Skeleton

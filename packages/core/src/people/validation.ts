@@ -16,7 +16,7 @@ const editPersonWeb2Props = {
   }).max(300, {
     message: "Description length should not exceed 300 characters"
   }),
-  leadImageUrl: z.string().url({ message: "Lead image must be a valid URL" }).optional(),
+  leadImageUrl: z.string(),
 };
 
 export const schemaEditPersonWeb2 = z.object(editPersonWeb2Props);
