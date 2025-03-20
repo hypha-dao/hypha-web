@@ -2,7 +2,6 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { EditPersonSection } from './edit-person-section';
 import { Dispatch, SetStateAction } from 'react';
 import {
-  UseEditProfile,
   UseUploadThingFileUploaderReturn,
 } from '../hooks/types';
 
@@ -20,37 +19,23 @@ const mockUseUploadThing = () =>
     },
   } satisfies UseUploadThingFileUploaderReturn);
 
-const mockUseEditProfile: UseEditProfile = () => ({
-  editProfile: async (data) => {
-    console.log('Editing profile:', data);
-    return {
-      id: 1,
-      slug: 'john-doe',
-      name: data.name,
-      surname: data.surname,
-      nickname: data.nickname,
-      description: data.description,
-      avatarUrl: '',
-      leadImageUrl: data.leadImageUrl,
-    };
-  },
-});
-
 const meta = {
   component: EditPersonSection,
   title: 'Epics/People/EditPersonSection',
   args: {
+    person: {
+      avatarUrl: '',
+      name: 'John',
+      surname: 'Doe',
+      id: 1,
+      description: 'Test description',
+      nickname: 'johndoe',
+      leadImageUrl: '',
+    },
     isLoading: false,
     closeUrl: '#',
-    avatar: '',
-    name: 'John',
-    surname: 'Doe',
-    id: 1,
-    description: 'Test description',
-    nickname: 'johndoe',
-    leadImageUrl: '',
+    
     useUploadThingFileUploader: mockUseUploadThing,
-    useEditProfile: mockUseEditProfile,
   },
 } satisfies Meta<typeof EditPersonSection>;
 
@@ -60,23 +45,18 @@ type Story = StoryObj<typeof EditPersonSection>;
 
 export const Default: Story = {
   args: {
-    avatar: '',
-    leadImageUrl: '',
-  },
-};
-
-export const Loading: Story = {
-  args: {
-    isLoading: true,
-  },
-};
-
-export const Empty: Story = {
-  args: {
-    name: '',
-    surname: '',
-    nickname: '',
-    description: '',
-    leadImageUrl: '',
+    person: {
+      avatarUrl: '',
+      name: 'John',
+      surname: 'Doe',
+      id: 1,
+      description: 'Test description',
+      nickname: 'johndoe',
+      leadImageUrl: '',
+    },
+    isLoading: false,
+    closeUrl: '#',
+    
+    useUploadThingFileUploader: mockUseUploadThing,
   },
 };
