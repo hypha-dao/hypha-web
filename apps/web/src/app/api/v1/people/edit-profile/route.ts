@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPeopleService, Person } from '@hypha-platform/core/server';
+import { schemaEditPersonWeb2 } from '@core/people';
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,32 +9,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get the PeopleService using the factory method and pass the auth token
-    const peopleService = createPeopleService({ authToken });
-
     // Get request body
     const body = await request.json();
-    const { name, surname, nickname, description, leadImageUrl, id } = body;
 
-    // Note: id and slug will be handled by the repository
-    const personData: Partial<Person> = {
-      name,
-      surname,
-      nickname,
-      leadImageUrl,
-      description,
-      id,
-    };
+    // Validate request body
+    const validationResult = schemaEditPersonWeb2.safeParse(body);
 
-    // Use the PeopleService to create the profile
-    // Ensure id is always present
-    if (!personData.id) {
+    if (!validationResult.success) {
+      const errors = validationResult.error.format();
       return NextResponse.json(
-        { error: 'Person ID is required' },
+        { error: 'Validation failed', details: errors },
         { status: 400 },
       );
     }
-    const updatedProfile = await peopleService.update(personData as Person);
+    
+    const validatedData = validationResult.data;
+    // Get the PeopleService using the factory method and pass the auth token
+    const peopleService = createPeopleService({ authToken });
+    const updatedProfile = await peopleService.update(validatedData as Person);
 
     return NextResponse.json({ profile: updatedProfile }, { status: 201 });
   } catch (error) {

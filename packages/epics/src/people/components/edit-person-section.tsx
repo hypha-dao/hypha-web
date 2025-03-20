@@ -1,7 +1,7 @@
 'use client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useForm } from 'react-hook-form';
+import { useForm, type UseFormReturn } from 'react-hook-form';
 import { schemaEditPersonWeb2 } from '@hypha-platform/core/client';
 
 import {
@@ -33,7 +33,7 @@ interface Person {
   avatarUrl?: string | undefined;
   name?: string;
   surname?: string;
-  id?: number | null;
+  id?: number;
   nickname?: string;
   description?: string;
   leadImageUrl?: string;
@@ -59,6 +59,7 @@ export const EditPersonSection = ({
   onEdit
 }: EditPersonSectionProps) => {
   const {
+    id = undefined,
     avatarUrl = '', 
     name = '', 
     surname = '', 
@@ -75,6 +76,7 @@ export const EditPersonSection = ({
       nickname: nickname,
       description: description,
       leadImageUrl: leadImageUrl,
+      id: id
     },
     mode: 'onChange'
   });
@@ -138,7 +140,7 @@ export const EditPersonSection = ({
               surname={watchedValues.surname}
               nickname={watchedValues.nickname}
               isLoading={isLoading}
-              form={form}
+              form={form as UseFormReturn<Person>}
             />
             <Link href={closeUrl} scroll={false}>
               <Button

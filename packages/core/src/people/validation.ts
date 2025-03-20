@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 const editPersonWeb2Props = {
+  id: z.number(),
   name: z.string().min(1, {
     message: "Name must not be empty"
   }),

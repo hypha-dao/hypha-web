@@ -6,10 +6,11 @@ import { UseFormReturn } from 'react-hook-form';
 import { FormMessage, FormField, FormItem, FormControl } from '@hypha-platform/ui';
 
 interface Person {
-  name: string;
-  surname: string;
-  nickname: string;
-  description: string;
+  name?: string;
+  surname?: string;
+  nickname?: string;
+  id?: number;
+  description?: string;
   leadImageUrl?: string | undefined;
 }
 
