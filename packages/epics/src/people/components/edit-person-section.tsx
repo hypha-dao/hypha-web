@@ -1,9 +1,8 @@
 'use client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useForm, type UseFormReturn } from 'react-hook-form';
+import { useForm, UseFormReturn } from 'react-hook-form';
 import { schemaEditPersonWeb2 } from '@hypha-platform/core/client';
-
 import {
   Button,
   Skeleton,
@@ -21,12 +20,9 @@ import {
 import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/lib/utils';
-
-import React, { useState, useEffect } from 'react';
-
+import { useState } from 'react';
 import { EditPersonHead } from './edit-person-head';
 import { UseUploadThingFileUploader } from '../hooks/types';
-
 import Link from 'next/link';
 
 interface Person {
@@ -48,6 +44,8 @@ export type EditPersonSectionProps = {
   onEdit?: (values: z.infer<typeof schemaEditPersonWeb2>) => Promise<void>;
 };
 
+type FormData = z.infer<typeof schemaEditPersonWeb2>;
+
 export const EditPersonSection = ({
   isLoading,
   closeUrl,
@@ -56,53 +54,27 @@ export const EditPersonSection = ({
   successfulEditCallback,
   onEdit,
 }: EditPersonSectionProps) => {
-  const {
-    id = undefined,
-    avatarUrl = '',
-    name = '',
-    surname = '',
-    nickname = '',
-    description = '',
-    leadImageUrl = '',
-  } = person || {};
+  const form = useForm<FormData>({
+    resolver: zodResolver(schemaEditPersonWeb2),
+    defaultValues: {
+      name: person?.name || '',
+      surname: person?.surname || '',
+      nickname: person?.nickname || '',
+      description: person?.description || '',
+      leadImageUrl: person?.leadImageUrl || '',
+      id: person?.id,
+    },
+    mode: 'onChange',
+  });
 
   if (!useUploadThingFileUploader) {
     throw new Error('useUploadThingFileUploader hook is not defined');
   }
-  const { isUploading, uploadedFile, setUploadedFile, handleDrop } =
-    useUploadThingFileUploader({
-      onUploadComplete: (url: string) => {
-        setUploadedFile(url);
-        form.setValue('leadImageUrl', url);
-      },
-    });
-
-  const form = useForm<z.infer<typeof schemaEditPersonWeb2>>({
-    resolver: zodResolver(schemaEditPersonWeb2),
-    defaultValues: {
-      name: name,
-      surname: surname,
-      nickname: nickname,
-      description: description,
-      leadImageUrl: uploadedFile ?? '',
-      id: id,
+  const { isUploading, handleDrop } = useUploadThingFileUploader({
+    onUploadComplete: (url: string) => {
+      form.setValue('leadImageUrl', url);
     },
-    mode: 'onChange',
   });
-  const { watch, formState } = form;
-
-  const watchedValues = watch();
-
-  useEffect(() => {
-    if (leadImageUrl) {
-      setUploadedFile(leadImageUrl);
-      form.setValue('leadImageUrl', leadImageUrl);
-    }
-  }, [leadImageUrl]);
-
-  useEffect(() => {
-    form.setValue('leadImageUrl', uploadedFile || '');
-  }, [uploadedFile]);
 
   const [activeLinks, setActiveLinks] = useState({
     website: false,
@@ -110,12 +82,10 @@ export const EditPersonSection = ({
     x: false,
   });
 
-  const handleLinkToggle = React.useCallback(
+  const handleLinkToggle =
     (field: keyof typeof activeLinks) => (isActive: boolean) => {
-      setActiveLinks({ ...activeLinks, [field]: isActive });
-    },
-    [activeLinks, setActiveLinks],
-  );
+      setActiveLinks((prev) => ({ ...prev, [field]: isActive }));
+    };
 
   const onSubmit = async (values: z.infer<typeof schemaEditPersonWeb2>) => {
     try {
@@ -135,10 +105,10 @@ export const EditPersonSection = ({
         <div className="flex flex-col gap-5">
           <div className="flex gap-5 justify-between">
             <EditPersonHead
-              avatar={avatarUrl}
-              name={watchedValues.name}
-              surname={watchedValues.surname}
-              nickname={watchedValues.nickname}
+              avatar={person?.avatarUrl || ''}
+              name={form.watch('name')}
+              surname={form.watch('surname')}
+              nickname={form.watch('nickname')}
               isLoading={isLoading}
               form={form as UseFormReturn<Person>}
             />
@@ -154,57 +124,39 @@ export const EditPersonSection = ({
             </Link>
           </div>
           <Separator />
-          <Skeleton
-            width="100%"
-            height="100px"
-            loading={isLoading}
-            className="rounded-lg"
-          >
-            <FormField
-              control={form.control}
-              name="leadImageUrl"
-              render={() => (
-                <FormItem>
-                  <FormControl>
-                    <ImageUploader
-                      isUploading={isUploading}
-                      uploadedFile={uploadedFile}
-                      onReset={() => {
-                        setUploadedFile(null);
-                        form.setValue('leadImageUrl', '');
-                      }}
-                      onUpload={handleDrop}
-                      defaultImageUrl={leadImageUrl}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </Skeleton>
-          <Skeleton
-            width="100%"
-            height="100px"
-            loading={isLoading}
-            className="rounded-lg"
-          >
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter description"
-                      disabled={isLoading}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </Skeleton>
+          <FormField
+            control={form.control}
+            name="leadImageUrl"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <ImageUploader
+                    isUploading={isUploading}
+                    uploadedFile={field.value}
+                    onReset={() => field.onChange('')}
+                    onUpload={handleDrop}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <Textarea
+                    placeholder="Enter description"
+                    disabled={isLoading}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <div className="flex gap-6 flex-col">
             <div className="flex justify-between">
               <Text
@@ -234,7 +186,7 @@ export const EditPersonSection = ({
               <Text
                 className={cn(
                   'text-2',
-                  activeLinks.website ? 'text-neutral-11' : 'text-neutral-8',
+                  activeLinks.linkedin ? 'text-neutral-11' : 'text-neutral-8',
                 )}
               >
                 LinkedIn
@@ -290,7 +242,7 @@ export const EditPersonSection = ({
                 type="submit"
                 variant="default"
                 className="rounded-lg justify-start text-white w-fit"
-                disabled={!formState.isValid}
+                disabled={!form.formState.isValid}
               >
                 Save
               </Button>
