@@ -7,8 +7,6 @@ const meta = {
   args: {
     isUploading: false,
     uploadedFile: null,
-    onReset: () => {},
-    onUpload: () => {},
   },
 } satisfies Meta<typeof ImageUploader>;
 
