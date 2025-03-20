@@ -24,41 +24,49 @@ import { cn } from '@hypha-platform/lib/utils';
 
 import React, { useState, useEffect } from 'react';
 
-import { EditPersonHead, EditPersonHeadProps } from './edit-person-head';
-import { UseEditProfile, UseUploadThingFileUploader } from '../hooks/types';
+import { EditPersonHead } from './edit-person-head';
+import { UseUploadThingFileUploader } from '../hooks/types';
 
 import Link from 'next/link';
 
-export type EditPersonSectionProps = EditPersonHeadProps & {
-  avatar: string;
-  name: string;
-  surname: string;
-  id: number | null;
-  nickname: string;
+interface Person {
+  avatarUrl?: string | undefined;
+  name?: string;
+  surname?: string;
+  id?: number | null;
+  nickname?: string;
+  description?: string;
+  leadImageUrl?: string;
+}
+
+export type EditPersonSectionProps = {
+  person?: Person;
   closeUrl: string;
-  description: string;
-  leadImageUrl: string;
-  useEditProfile?: UseEditProfile;
+  isLoading?: boolean;
   useUploadThingFileUploader?: UseUploadThingFileUploader;
   onLeadImageChange?: (files: File[]) => void;
   successfulEditCallback?: () => void;
+  onEdit?: (values: z.infer<typeof schemaEditPersonWeb2>) => Promise<void>;
 };
 
 export const EditPersonSection = ({
   isLoading,
   closeUrl,
-  avatar,
-  name,
-  surname,
-  id,
-  description,
-  nickname,
-  leadImageUrl,
-  useEditProfile,
+  person,
   useUploadThingFileUploader,
   successfulEditCallback,
   onLeadImageChange,
+  onEdit
 }: EditPersonSectionProps) => {
+  const {
+    avatarUrl = '', 
+    name = '', 
+    surname = '', 
+    nickname = '', 
+    description = '', 
+    leadImageUrl = '' 
+  } = person || {};
+
   const form = useForm<z.infer<typeof schemaEditPersonWeb2>>({
     resolver: zodResolver(schemaEditPersonWeb2),
     defaultValues: {
@@ -70,11 +78,6 @@ export const EditPersonSection = ({
     },
     mode: 'onChange'
   });
-
-  if (!useEditProfile) {
-    throw new Error('useEditProfile hook is not defined');
-  }
-  const { editProfile } = useEditProfile();
   const { setValue, watch, formState } = form;
 
   const watchedValues = watch();
@@ -114,13 +117,10 @@ export const EditPersonSection = ({
   };
   const onSubmit = async (values: z.infer<typeof schemaEditPersonWeb2>) => {
     try {
-      const updatedProfile = await editProfile({
-        ...values,
-        id: id,
-        leadImageUrl: values.leadImageUrl || '',
-      });
-      console.log('Profile updated:', updatedProfile);
-      successfulEditCallback?.();
+      if (onEdit) {
+        await onEdit(values);
+        successfulEditCallback?.();
+      }
     } catch (error) {
       console.error('Error editing profile:', error);
       alert('Failed to edit profile');
@@ -133,7 +133,7 @@ export const EditPersonSection = ({
         <div className="flex flex-col gap-5">
           <div className="flex gap-5 justify-between">
             <EditPersonHead
-              avatar={avatar}
+              avatar={avatarUrl}
               name={watchedValues.name}
               surname={watchedValues.surname}
               nickname={watchedValues.nickname}
