@@ -2,10 +2,21 @@ import { Skeleton } from '@hypha-platform/ui';
 import { MemberType } from '@hypha-platform/graphql/rsc';
 import { Image } from '@hypha-platform/ui';
 import { Input } from '@hypha-platform/ui';
+import { UseFormReturn } from 'react-hook-form';
+import { FormMessage, FormField, FormItem, FormControl } from '@hypha-platform/ui';
+
+interface Person {
+  name: string;
+  surname: string;
+  nickname: string;
+  description: string;
+  leadImageUrl?: string | undefined;
+}
 
 export type EditPersonHeadProps = {
   isLoading?: boolean;
   nickname?: string;
+  form?: UseFormReturn<Person>
 };
 
 export const EditPersonHead = ({
@@ -13,16 +24,8 @@ export const EditPersonHead = ({
   surname,
   avatar,
   isLoading,
-  nickname,
-  onNameChange,
-  onSurnameChange,
-  onNicknameChange,
-}: EditPersonHeadProps &
-  MemberType & {
-    onNameChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    onSurnameChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    onNicknameChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  }) => {
+  form,
+}: EditPersonHeadProps & MemberType) => {
   return (
     <div className="flex items-center">
       <Skeleton
@@ -49,27 +52,57 @@ export const EditPersonHead = ({
             className="my-1"
           >
             <div className="flex gap-1 mb-1">
-              <Input
-                value={name}
-                onChange={onNameChange}
-                placeholder="Name"
-                className="text-2"
+              <FormField
+                control={form?.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                    <Input
+                      placeholder="Name"
+                      className="text-2 text-neutral-11"
+                      {...field}
+                    />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              <Input
-                value={surname}
-                onChange={onSurnameChange}
-                placeholder="Surname"
-                className="text-2"
+              <FormField
+                control={form?.control}
+                name="surname"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                    <Input
+                      placeholder="Surname"
+                      className="text-2 text-neutral-11"
+                      {...field}
+                    />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
           </Skeleton>
 
           <Skeleton height="16px" width="80px" loading={isLoading}>
-            <Input
-              value={nickname}
-              onChange={onNicknameChange}
-              placeholder="Nickname"
-              className="text-1 text-neutral-11"
+            <FormField
+              control={form?.control}
+              name="nickname"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                  <Input
+                    placeholder="Nickname"
+                    className="text-1 text-neutral-11"
+                    {...field}
+                  />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
           </Skeleton>
         </div>

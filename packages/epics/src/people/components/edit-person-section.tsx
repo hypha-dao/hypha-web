@@ -68,13 +68,14 @@ export const EditPersonSection = ({
       description: description,
       leadImageUrl: leadImageUrl,
     },
+    mode: 'onChange'
   });
 
   if (!useEditProfile) {
     throw new Error('useEditProfile hook is not defined');
   }
   const { editProfile } = useEditProfile();
-  const { setValue, watch } = form;
+  const { setValue, watch, formState } = form;
 
   const watchedValues = watch();
 
@@ -137,9 +138,7 @@ export const EditPersonSection = ({
               surname={watchedValues.surname}
               nickname={watchedValues.nickname}
               isLoading={isLoading}
-              onNameChange={(e) => setValue('name', e.target.value)}
-              onSurnameChange={(e) => setValue('surname', e.target.value)}
-              onNicknameChange={(e) => setValue('nickname', e.target.value)}
+              form={form}
             />
             <Link href={closeUrl} scroll={false}>
               <Button
@@ -277,6 +276,7 @@ export const EditPersonSection = ({
                 type="submit"
                 variant="default"
                 className="rounded-lg justify-start text-white w-fit"
+                disabled={!formState.isValid}
               >
                 Save
               </Button>
