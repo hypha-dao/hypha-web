@@ -98,7 +98,9 @@ export default function SignupPage() {
             uploadedFile={uploadedFile}
             onReset={() => setUploadedFile(null)}
             onUpload={handleDrop}
-          />
+          >
+            <ImageUploader.Lead />
+          </ImageUploader>
         </div>
 
         <div>
