@@ -5,7 +5,7 @@ import { schemaCreateSpaceWeb3 } from '@hypha-platform/core/client';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { z } from 'zod';
 import React from 'react';
-import { createSpace, getSpaceIdFromLogs } from '@hypha-platform/core-client';
+import { createSpace, getSpaceIdFromLogs } from '@hypha-platform/evm';
 
 export const useSpaceCreateWeb3 = () => {
   const { wallets } = useWallets();
