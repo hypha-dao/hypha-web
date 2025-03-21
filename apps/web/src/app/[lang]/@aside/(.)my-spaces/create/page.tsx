@@ -5,18 +5,15 @@ import { SidePanel } from '../../_components/side-panel';
 import { useParams, useRouter } from 'next/navigation';
 import React from 'react';
 import { Progress } from '@hypha-platform/ui';
-import { useSpaceCreate } from '@web/hooks/space/use-space-create';
+import { useSpaceCreate } from '@web/hooks/use-space-create';
 import { getDhoPathAgreements } from '@web/app/[lang]/dho/[id]/agreements/constants';
 import { Locale } from '@hypha-platform/i18n';
 
 export default function AsideCreateSpacePage() {
   const { lang } = useParams();
   const router = useRouter();
-  const { createSpace, progress, isLoading, spaceSlug } = useSpaceCreate();
-
-  const shouldRenderProgress = React.useMemo(() => {
-    return isLoading && progress.percent && progress.percent > 0;
-  }, [isLoading, progress]);
+  const { createSpace, progress, isPending, isLoading, spaceSlug } =
+    useSpaceCreate();
 
   const newSpacePath = React.useMemo(
     () => (spaceSlug ? getDhoPathAgreements(lang as Locale, spaceSlug) : null),
@@ -39,9 +36,9 @@ export default function AsideCreateSpacePage() {
 
   return isDone ? null : (
     <SidePanel>
-      {shouldRenderProgress ? (
+      {isPending ? (
         <Progress
-          value={progress.percent}
+          value={progress}
           className="h-1"
           indicatorColor="bg-accent-9"
         />

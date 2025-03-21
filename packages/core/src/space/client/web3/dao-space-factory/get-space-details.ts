@@ -1,17 +1,19 @@
-import { readContract } from '@wagmi/core';
-import { config } from '../../../../../evm/src/config';
+import { readContract, type Config } from '@wagmi/core';
 import {
   daoSpaceFactoryImplementationAbi,
   daoSpaceFactoryImplementationAddress,
-} from '../../../generated';
+} from '@core/generated';
 
-export const getSpaceDetails = async ({
-  spaceId,
-  chain = 8453,
-}: {
-  spaceId: bigint;
-  chain?: keyof typeof daoSpaceFactoryImplementationAddress;
-}) => {
+export const getSpaceDetails = async (
+  {
+    spaceId,
+    chain = 8453,
+  }: {
+    spaceId: bigint;
+    chain?: keyof typeof daoSpaceFactoryImplementationAddress;
+  },
+  config: Config,
+) => {
   const address = daoSpaceFactoryImplementationAddress[chain];
 
   const [

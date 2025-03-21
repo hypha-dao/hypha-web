@@ -1,9 +1,9 @@
-import { readContract } from '@wagmi/core';
-import { config } from '../../../../../evm/src/config';
 import {
   daoSpaceFactoryImplementationAbi,
   daoSpaceFactoryImplementationAddress,
-} from '../../../generated';
+} from '@core/generated';
+import { config } from '@hypha-platform/evm';
+import { readContract } from '@wagmi/core';
 
 export const isMember = async ({
   spaceId,

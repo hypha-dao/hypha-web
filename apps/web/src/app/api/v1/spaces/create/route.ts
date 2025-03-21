@@ -1,6 +1,6 @@
 import {
   createSpaceService,
-  schemaCreateSpace,
+  schemaCreateSpaceWeb2,
 } from '@hypha-platform/core/server';
 import { NextResponse } from 'next/server';
 
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
 
     const body = await request.json();
 
-    const validationResult = schemaCreateSpace.safeParse(body);
+    const validationResult = schemaCreateSpaceWeb2.safeParse(body);
 
     if (!validationResult.success) {
       const errors = validationResult.error.format();

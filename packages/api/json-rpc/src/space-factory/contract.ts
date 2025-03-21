@@ -9,6 +9,5 @@ export const spaceFactoryContract = new ethers.Contract(
 );
 
 export const isMember = async (spaceId: number, userAddress: string) => {
-  console.debug('isMember', spaceId, userAddress);
   return await spaceFactoryContract.isMember(spaceId, userAddress);
 };

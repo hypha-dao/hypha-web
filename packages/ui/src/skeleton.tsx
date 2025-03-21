@@ -12,7 +12,7 @@ function Skeleton({
   className,
   width,
   height,
-  loading = true,
+  loading = false,
   children,
   ...props
 }: SkeletonProps) {
