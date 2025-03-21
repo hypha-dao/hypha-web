@@ -46,3 +46,29 @@ export const updateSpaceWeb2 = async (
   const updatedSpace = await response.json();
   return updatedSpace;
 };
+
+/**
+ * Delete a Web2 space by slug
+ *
+ * @param slug - The slug of the space to delete
+ * @param config - The API configuration
+ * @returns A boolean indicating whether the deletion was successful
+ */
+export const deleteSpaceWeb2 = async (
+  slug: string,
+  config: ApiConfig,
+): Promise<boolean> => {
+  try {
+    const response = await fetch(`/api/v1/spaces/${slug}`, {
+      method: 'DELETE',
+      headers: {
+        ...config.headers,
+      },
+    });
+
+    return response.ok;
+  } catch (error) {
+    console.error(`Failed to delete space with slug ${slug}:`, error);
+    return false;
+  }
+};

@@ -7,7 +7,7 @@ type LoadingBackdrop = {
   isLoading?: boolean;
   progress?: number;
   className?: string;
-  message?: string;
+  message?: React.ReactElement;
 };
 
 export const LoadingBackdrop = ({
