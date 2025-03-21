@@ -4,7 +4,7 @@ import React from 'react';
 import { useCreateProfile } from '@web/hooks/use-create-profile';
 import { Button, Input } from '@hypha-platform/ui';
 
-import { ImageUploader } from '@hypha-platform/ui';
+import { ImageUploader, LeadImageUploader } from '@hypha-platform/ui';
 import { useUploadThingFileUploader } from '@web/hooks/use-uploadthing-file-uploader';
 
 export default function SignupPage() {
@@ -99,7 +99,7 @@ export default function SignupPage() {
             onReset={() => setUploadedFile(null)}
             onUpload={handleDrop}
           >
-            <ImageUploader.Lead />
+            <LeadImageUploader />
           </ImageUploader>
         </div>
 
