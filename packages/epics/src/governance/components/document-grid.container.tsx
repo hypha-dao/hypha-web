@@ -5,14 +5,16 @@ type DocumentGridContainerProps = {
   basePath: string;
   pagination: UseDocumentsProps;
   useDocuments: UseDocuments;
+  activeTab: string;
 };
 
 export const DocumentGridContainer = ({
   basePath,
   pagination,
   useDocuments,
+  activeTab,
 }: DocumentGridContainerProps) => {
-  const { documents, isLoading } = useDocuments({ ...pagination });
+  const { documents, isLoading } = useDocuments({ ...pagination, activeTab });
   return (
     <DocumentGrid
       documents={documents}

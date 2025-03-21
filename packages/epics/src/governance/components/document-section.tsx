@@ -12,7 +12,6 @@ import { PlusIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
 import { DocumentState, UseDocuments } from '..';
 import { DocumentGridContainer } from './document-grid.container';
-import { useDocumentsFilter } from '../hooks/use-documents-filter';
 
 type DocumentSectionProps = {
   basePath: string;
@@ -25,7 +24,6 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
   useDocuments,
   documentState,
 }) => {
-  const { filter } = useDocumentsFilter({ documentState: documentState });
   const {
     pages,
     activeFilter,
@@ -34,6 +32,9 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
     loadMore,
     pagination,
     sortOptions,
+    tabs,
+    activeTab,
+    setActiveTab,
   } = useDocumentsSection({ useDocuments, documentState: documentState });
 
   return (
@@ -54,9 +55,9 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
       </SectionFilter>
       {pagination?.totalPages === 0 ? null : (
         <SectionTabs
-          activeTab={activeFilter}
-          setActiveTab={setActiveFilter}
-          tabs={filter || []}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          tabs={tabs || []}
         />
       )}
       {pagination?.totalPages === 0 ? (
@@ -73,6 +74,7 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
                 filter: { state: documentState },
               }}
               useDocuments={useDocuments}
+              activeTab={activeTab}
             />
           ))}
         </div>
