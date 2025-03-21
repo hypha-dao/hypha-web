@@ -1,10 +1,10 @@
 'use client';
+
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { CreateSpaceFormHeadProps } from './create-space-form-head';
 import {
   Button,
-  Skeleton,
   FileUploader,
   Textarea,
   Input,
@@ -16,7 +16,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  Slider,
 } from '@hypha-platform/ui';
 import { RxCross1 } from 'react-icons/rx';
 import { useState } from 'react';
@@ -28,20 +27,13 @@ import React from 'react';
 
 import { z } from 'zod';
 import { Pencil1Icon } from '@radix-ui/react-icons';
-
-export const createSpaceSchema = z.object({
-  title: z.string().min(1).max(50),
-  description: z.string().min(1).max(300),
-  quorum: z.number().min(1).max(100),
-  unity: z.number().min(1).max(100),
-  votingPowerSource: z.number().min(0).max(100),
-  joinMethod: z.number().min(0).max(100),
-  exitMethod: z.number().min(0).max(100),
-});
+import clsx from 'clsx';
+import { schemaCreateSpace } from '@hypha-platform/core/client';
 
 export type CreateSpaceFormProps = CreateSpaceFormHeadProps & {
+  isLoading?: boolean;
   closeUrl: string;
-  onCreate: (values: z.infer<typeof createSpaceSchema>) => void;
+  onCreate: (values: z.infer<typeof schemaCreateSpace>) => void;
 };
 
 export const CreateSpaceForm = ({
@@ -50,8 +42,8 @@ export const CreateSpaceForm = ({
   closeUrl,
   onCreate,
 }: CreateSpaceFormProps) => {
-  const form = useForm<z.infer<typeof createSpaceSchema>>({
-    resolver: zodResolver(createSpaceSchema),
+  const form = useForm<z.infer<typeof schemaCreateSpace>>({
+    resolver: zodResolver(schemaCreateSpace),
     defaultValues: {
       title: '',
       description: '',
@@ -62,9 +54,6 @@ export const CreateSpaceForm = ({
       exitMethod: 0,
     },
   });
-  const quorum = useWatch({ control: form.control, name: 'quorum' });
-  const unity = useWatch({ control: form.control, name: 'quorum' });
-  console.debug('CreateSpaceForm', { quorum, unity });
   const [files, setFiles] = React.useState<File[]>([]);
 
   const [activeLinks, setActiveLinks] = useState({
@@ -84,7 +73,7 @@ export const CreateSpaceForm = ({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onCreate)}
-        className="flex flex-col gap-5"
+        className={clsx('flex flex-col gap-5', isLoading && 'opacity-50')}
       >
         <div className="flex gap-5 justify-between">
           <div className="flex items-center">
@@ -103,6 +92,7 @@ export const CreateSpaceForm = ({
                         <Input
                           placeholder="Type a title..."
                           className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
+                          disabled={isLoading}
                           {...field}
                         />
                       </FormControl>
@@ -145,6 +135,7 @@ export const CreateSpaceForm = ({
               <FormLabel>Description</FormLabel>
               <FormControl>
                 <Textarea
+                  disabled={isLoading}
                   placeholder="Type a brief description here..."
                   {...field}
                 />
@@ -152,90 +143,6 @@ export const CreateSpaceForm = ({
               <FormDescription>
                 This is the description of your space
               </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="unity"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Unity</FormLabel>
-              <FormControl>
-                <Slider
-                  onValueCommit={([unity]) => field.onChange(unity)}
-                  displayValue
-                  defaultValue={[field.value]}
-                />
-              </FormControl>
-              <FormDescription>
-                This is the required unity of your space
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="quorum"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Quorum</FormLabel>
-              <FormControl>
-                <Slider
-                  onValueCommit={([quorum]) => field.onChange(quorum)}
-                  displayValue
-                  defaultValue={[field.value]}
-                />
-              </FormControl>
-              <FormDescription>
-                This is the required quorum of your space
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="votingPowerSource"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>VotingPowerSource</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormDescription>
-                This is the required votingPowerSource of your space
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="joinMethod"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>JoinMethod</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormDescription>This is the JoinMethod</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="exitMethod"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>ExitMethod</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormDescription>This is the ExitMethod</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -262,6 +169,7 @@ export const CreateSpaceForm = ({
               <Switch
                 checked={activeLinks.website}
                 onCheckedChange={handleLinkToggle('website')}
+                disabled={isLoading}
               />
             </span>
           </div>
@@ -286,6 +194,7 @@ export const CreateSpaceForm = ({
               <Switch
                 checked={activeLinks.linkedin}
                 onCheckedChange={handleLinkToggle('linkedin')}
+                disabled={isLoading}
               />
             </span>
           </div>
@@ -310,25 +219,19 @@ export const CreateSpaceForm = ({
               <Switch
                 checked={activeLinks.x}
                 onCheckedChange={handleLinkToggle('x')}
+                disabled={isLoading}
               />
             </span>
           </div>
         </div>
         <div className="flex justify-end w-full">
-          <Skeleton
-            width="72px"
-            height="35px"
-            loading={isLoading}
-            className="rounded-lg"
+          <Button
+            type="submit"
+            variant={isLoading ? 'outline' : 'default'}
+            disabled={isLoading}
           >
-            <Button
-              type="submit"
-              variant="default"
-              className="rounded-lg justify-start text-white w-fit"
-            >
-              Create
-            </Button>
-          </Skeleton>
+            {isLoading ? 'Creating Space...' : 'Create'}
+          </Button>
         </div>
       </form>
     </Form>

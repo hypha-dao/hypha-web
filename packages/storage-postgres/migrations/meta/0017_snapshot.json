@@ -73,12 +73,8 @@
           "name": "documents_creator_id_people_id_fk",
           "tableFrom": "documents",
           "tableTo": "people",
-          "columnsFrom": [
-            "creator_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["creator_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -86,12 +82,8 @@
           "name": "documents_space_id_spaces_id_fk",
           "tableFrom": "documents",
           "tableTo": "spaces",
-          "columnsFrom": [
-            "space_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["space_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -167,12 +159,8 @@
           "name": "memberships_person_id_people_id_fk",
           "tableFrom": "memberships",
           "tableTo": "people",
-          "columnsFrom": [
-            "person_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["person_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -180,12 +168,8 @@
           "name": "memberships_space_id_spaces_id_fk",
           "tableFrom": "memberships",
           "tableTo": "spaces",
-          "columnsFrom": [
-            "space_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["space_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -289,23 +273,17 @@
         "people_sub_unique": {
           "name": "people_sub_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "sub"
-          ]
+          "columns": ["sub"]
         },
         "people_slug_unique": {
           "name": "people_slug_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "slug"
-          ]
+          "columns": ["slug"]
         },
         "people_email_unique": {
           "name": "people_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {
@@ -313,27 +291,21 @@
           "name": "crud-authenticated-policy-select",
           "as": "PERMISSIVE",
           "for": "SELECT",
-          "to": [
-            "authenticated"
-          ],
+          "to": ["authenticated"],
           "using": "true"
         },
         "crud-authenticated-policy-insert": {
           "name": "crud-authenticated-policy-insert",
           "as": "PERMISSIVE",
           "for": "INSERT",
-          "to": [
-            "authenticated"
-          ],
+          "to": ["authenticated"],
           "withCheck": "(select auth.user_id() = \"people\".\"sub\")"
         },
         "crud-authenticated-policy-update": {
           "name": "crud-authenticated-policy-update",
           "as": "PERMISSIVE",
           "for": "UPDATE",
-          "to": [
-            "authenticated"
-          ],
+          "to": ["authenticated"],
           "using": "(select auth.user_id() = \"people\".\"sub\")",
           "withCheck": "(select auth.user_id() = \"people\".\"sub\")"
         },
@@ -341,9 +313,7 @@
           "name": "crud-authenticated-policy-delete",
           "as": "PERMISSIVE",
           "for": "DELETE",
-          "to": [
-            "authenticated"
-          ],
+          "to": ["authenticated"],
           "using": "(select auth.user_id() = \"people\".\"sub\")"
         }
       },
@@ -412,9 +382,7 @@
         "spaces_slug_unique": {
           "name": "spaces_slug_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "slug"
-          ]
+          "columns": ["slug"]
         }
       },
       "policies": {},
@@ -426,11 +394,7 @@
     "public.document_state": {
       "name": "document_state",
       "schema": "public",
-      "values": [
-        "discussion",
-        "proposal",
-        "agreement"
-      ]
+      "values": ["discussion", "proposal", "agreement"]
     }
   },
   "schemas": {},

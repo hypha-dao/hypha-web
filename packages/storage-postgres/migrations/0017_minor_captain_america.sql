@@ -1,0 +1,1 @@
+ALTER TABLE "spaces" ADD COLUMN "web3_space_id" integer;

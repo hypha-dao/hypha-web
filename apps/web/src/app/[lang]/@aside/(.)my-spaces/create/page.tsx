@@ -2,26 +2,52 @@
 
 import { CreateSpaceForm } from '@hypha-platform/epics';
 import { SidePanel } from '../../_components/side-panel';
-import { useParams } from 'next/navigation';
-import { Card } from '@hypha-platform/ui';
+import { useParams, useRouter } from 'next/navigation';
 import React from 'react';
-import { useCreateSpace } from '@web/hooks/use-create-space';
+import { Progress } from '@hypha-platform/ui';
+import { useSpaceCreate } from '@web/hooks/space/use-space-create';
+import { getDhoPathAgreements } from '@web/app/[lang]/dho/[id]/agreements/constants';
+import { Locale } from '@hypha-platform/i18n';
 
 export default function AsideCreateSpacePage() {
   const { lang } = useParams();
-  const {
-    createSpace,
-    hash,
-    spaceId,
-    isLoading,
-    error,
-    isWriteContractSuccess,
-  } = useCreateSpace();
+  const router = useRouter();
+  const { createSpace, progress, isLoading, spaceSlug } = useSpaceCreate();
 
-  return (
+  const shouldRenderProgress = React.useMemo(() => {
+    return isLoading && progress.percent && progress.percent > 0;
+  }, [isLoading, progress]);
+
+  const newSpacePath = React.useMemo(
+    () => (spaceSlug ? getDhoPathAgreements(lang as Locale, spaceSlug) : null),
+    [spaceSlug],
+  );
+
+  const isDone = React.useMemo(() => {
+    if (!isLoading && !!newSpacePath) return true;
+  }, [isLoading, newSpacePath]);
+
+  React.useEffect(() => {
+    newSpacePath ? router.prefetch(newSpacePath) : null;
+  }, [newSpacePath]);
+
+  React.useEffect(() => {
+    if (!isLoading && newSpacePath) {
+      router.push(newSpacePath);
+    }
+  }, [newSpacePath, isLoading]);
+
+  return isDone ? null : (
     <SidePanel>
+      {shouldRenderProgress ? (
+        <Progress
+          value={progress.percent}
+          className="h-1"
+          indicatorColor="bg-accent-9"
+        />
+      ) : null}
+
       <CreateSpaceForm
-        isLoading={isLoading}
         creator={{
           avatar: 'https://github.com/shadcn.png',
           name: 'Name',
@@ -29,24 +55,8 @@ export default function AsideCreateSpacePage() {
         }}
         closeUrl={`/${lang}/my-spaces`}
         onCreate={createSpace}
+        isLoading={isLoading}
       />
-
-      {error && (
-        <Card className="mt-4 p-4 border-error-9 bg-error-2">
-          <h3 className="font-medium text-error-11">Error</h3>
-          <p className="text-sm text-error-10">{error.message}</p>
-        </Card>
-      )}
-
-      {isWriteContractSuccess && (
-        <Card className="mt-4 p-4 border-accent-9 bg-accent-2">
-          <h3 className="font-medium text-accent-11">Transaction Submitted</h3>
-          <div className="text-sm text-accent-10">
-            {hash && <div>Transaction Hash: {hash}</div>}
-            {spaceId && <div>Space ID: {spaceId}</div>}
-          </div>
-        </Card>
-      )}
     </SidePanel>
   );
 }
