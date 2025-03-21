@@ -6,6 +6,7 @@ import { PrivyAuthProvider } from './privy/provider';
 import { Web3AuthAuthProvider } from './web3auth/provider';
 import { Web3AuthProvider } from '@web3auth/modal-react-hooks';
 import { web3AuthContextConfig } from './web3auth/config';
+import { base } from '@wagmi/core/chains';
 
 export type AuthProviderBaseConfig = {
   type: 'privy' | 'web3auth';
@@ -33,7 +34,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   switch (providerProps.config.type) {
     case 'privy':
       return (
-        <PrivyProvider {...providerProps.config}>
+        <PrivyProvider
+          config={{ defaultChain: base }}
+          appId={providerProps.config.appId}
+        >
           <PrivyAuthProvider>{children}</PrivyAuthProvider>
         </PrivyProvider>
       );
