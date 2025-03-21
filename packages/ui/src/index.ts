@@ -24,6 +24,7 @@ export * from './textarea';
 export * from './switch';
 export * from './slider';
 export * from './image-uploader';
+export * from './form';
 
 export * from './organisms/editor';
 export * from './molecules/badges-list';

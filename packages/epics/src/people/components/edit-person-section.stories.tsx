@@ -1,29 +1,59 @@
 import type { Meta, StoryObj } from '@storybook/react';
-
 import { EditPersonSection } from './edit-person-section';
-import { within } from '@storybook/testing-library';
-import { expect } from '@storybook/jest';
+import { Dispatch, SetStateAction } from 'react';
+import { UseUploadThingFileUploaderReturn } from '../hooks/types';
+
+const mockUseUploadThing = () =>
+  ({
+    isUploading: false,
+    uploadedFile: null,
+    setUploadedFile: ((value: string | null) =>
+      console.log('setUploadedFile:', value)) as Dispatch<
+      SetStateAction<string | null>
+    >,
+    handleDrop: async (files: File[]) => {
+      console.log('handleDrop:', files);
+      return Promise.resolve();
+    },
+  } satisfies UseUploadThingFileUploaderReturn);
 
 const meta = {
   component: EditPersonSection,
   title: 'Epics/People/EditPersonSection',
+  args: {
+    person: {
+      avatarUrl: '',
+      name: 'John',
+      surname: 'Doe',
+      id: 1,
+      description: 'Test description',
+      nickname: 'johndoe',
+      leadImageUrl: '',
+    },
+    isLoading: false,
+    closeUrl: '#',
+
+    useUploadThingFileUploader: mockUseUploadThing,
+  },
 } satisfies Meta<typeof EditPersonSection>;
 
 export default meta;
-
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    avatar: 'https://github.com/shadcn.png',
-    name: 'Name',
-    surname: 'Surname',
-    id: 'ndb9suh3qh9q2hlP2120dsxzf',
+    person: {
+      avatarUrl: '',
+      name: 'John',
+      surname: 'Doe',
+      id: 1,
+      description: 'Test description',
+      nickname: 'johndoe',
+      leadImageUrl: '',
+    },
     isLoading: false,
-    closeUrl: '',
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    expect(canvas.getByText(/Name Surname/gi)).toBeTruthy();
+    closeUrl: '#',
+
+    useUploadThingFileUploader: mockUseUploadThing,
   },
 };

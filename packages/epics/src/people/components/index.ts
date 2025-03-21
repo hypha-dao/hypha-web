@@ -7,3 +7,4 @@ export * from './member-spaces';
 export * from './members-list';
 export * from './members-section';
 export * from './person-head';
+export * from './edit-person-section';
