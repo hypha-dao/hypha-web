@@ -2,14 +2,6 @@ import { Skeleton } from '@hypha-platform/ui';
 import { MemberType } from '@hypha-platform/graphql/rsc';
 import { Image } from '@hypha-platform/ui';
 import { Input } from '@hypha-platform/ui';
-import { UseFormReturn } from 'react-hook-form';
-import {
-  FormMessage,
-  FormField,
-  FormItem,
-  FormControl,
-} from '@hypha-platform/ui';
-
 interface Person {
   name?: string;
   surname?: string;
@@ -22,15 +14,14 @@ interface Person {
 export type EditPersonHeadProps = {
   isLoading?: boolean;
   nickname?: string;
-  form?: UseFormReturn<Person>;
 };
 
 export const EditPersonHead = ({
   name,
   surname,
+  nickname,
   avatar,
   isLoading,
-  form,
 }: EditPersonHeadProps & MemberType) => {
   return (
     <div className="flex items-center">
@@ -58,57 +49,24 @@ export const EditPersonHead = ({
             className="my-1"
           >
             <div className="flex gap-1 mb-1">
-              <FormField
-                control={form?.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        placeholder="Name"
-                        className="text-2 text-neutral-11"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+              <Input
+                placeholder="Name"
+                className="text-2 text-neutral-11"
+                value={name}
               />
-              <FormField
-                control={form?.control}
-                name="surname"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        placeholder="Surname"
-                        className="text-2 text-neutral-11"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+              <Input
+                placeholder="Surname"
+                className="text-2 text-neutral-11"
+                value={surname}
               />
             </div>
           </Skeleton>
 
           <Skeleton height="16px" width="80px" loading={isLoading}>
-            <FormField
-              control={form?.control}
-              name="nickname"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input
-                      placeholder="Nickname"
-                      className="text-1 text-neutral-11"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+            <Input
+              placeholder="Nickname"
+              className="text-1 text-neutral-11"
+              value={nickname}
             />
           </Skeleton>
         </div>
