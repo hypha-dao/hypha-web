@@ -1,0 +1,21 @@
+# Repository Review Configuration
+# Read more: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# -----------------------------------------------------------------------
+# Pattern Format:
+# Each line is a file pattern followed by one or more reviewers required.
+# -----------------------------------------------------------------------
+#
+# [file_pattern] [owner1] [owner2] ...
+#
+# Example:
+# *.js           @js-team  @js-lead
+#  ↑                ↑         ↑
+#  |                |         |
+# File pattern    First     Second
+# (selects files) reviewer  reviewer
+#
+# -----------------------------------------------------------------------
+
+
+* @plitzenberger
