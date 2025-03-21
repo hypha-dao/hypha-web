@@ -18,7 +18,6 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import { ConnectedButtonProfile } from '@hypha-platform/epics';
 import { EvmProvider } from '@hypha-platform/evm';
 import { useMe } from '@web/hooks/use-me';
-import { EvmProvider } from 'packages/core-evm/src';
 
 const lato = Lato({
   subsets: ['latin'],
