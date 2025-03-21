@@ -16,13 +16,12 @@ export default function AsideCreateSpacePage() {
   const { lang } = useParams();
   const router = useRouter();
   const config = useConfig();
-  const { jwt } = useJwt();
+  const { jwt, isLoadingJwt } = useJwt();
   const {
     createSpace,
     currentAction,
     progress,
     isPending,
-    isLoading,
     isError,
     errors,
     space: { slug: spaceSlug },
@@ -30,7 +29,7 @@ export default function AsideCreateSpacePage() {
   } = useCreateSpaceOrchestrator({ authToken: jwt, config });
   console.debug('AsideCreateSpacePage', {
     isPending,
-    isLoading,
+    isLoadingJwt,
     isError,
     progress,
     errors,
@@ -42,18 +41,18 @@ export default function AsideCreateSpacePage() {
   );
 
   const isDone = React.useMemo(() => {
-    if (!isLoading && !!newSpacePath) return true;
-  }, [isLoading, newSpacePath]);
+    if (!isLoadingJwt && !!newSpacePath) return true;
+  }, [isLoadingJwt, newSpacePath]);
 
   React.useEffect(() => {
     newSpacePath ? router.prefetch(newSpacePath) : null;
   }, [newSpacePath]);
 
   React.useEffect(() => {
-    if (!isLoading && newSpacePath) {
+    if (!isLoadingJwt && newSpacePath) {
       router.push(newSpacePath);
     }
-  }, [newSpacePath, isLoading]);
+  }, [newSpacePath, isLoadingJwt]);
 
   return isDone ? null : (
     <SidePanel>
@@ -80,7 +79,7 @@ export default function AsideCreateSpacePage() {
           }}
           closeUrl={`/${lang}/my-spaces`}
           onCreate={createSpace}
-          isLoading={isLoading}
+          isLoading={isLoadingJwt}
         />
       </LoadingBackdrop>
     </SidePanel>

@@ -276,7 +276,6 @@ export const useCreateSpaceOrchestrator = ({
     progress,
     isPending: progress > 0 && progress < 100,
     isError: errors.length > 0,
-    isLoading: !authToken,
     errors,
   };
 };
