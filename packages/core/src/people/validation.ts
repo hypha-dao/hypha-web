@@ -9,7 +9,7 @@ const editPersonWeb2Props = {
     message: 'Surname must not be empty',
   }),
   nickname: z.string().min(1).max(12, {
-    message: 'Description length should not exceed 12 characters',
+    message: 'Nickname length should not exceed 12 characters',
   }),
   description: z
     .string()
