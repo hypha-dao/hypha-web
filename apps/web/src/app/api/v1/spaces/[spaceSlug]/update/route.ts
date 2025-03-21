@@ -1,24 +1,8 @@
-import { createSpaceService } from '@hypha-platform/core/server';
+import {
+  createSpaceService,
+  schemaUpdateSpace,
+} from '@hypha-platform/core/server';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
-
-const schemaUpdateSpace = z.object({
-  title: z.string().min(1).max(50).optional(),
-  description: z.string().min(1).max(300).optional(),
-  logoUrl: z.string().url('Logo URL must be a valid URL').optional(),
-  leadImage: z.string().url('Lead image must be a valid URL').optional(),
-  slug: z
-    .string()
-    .min(1)
-    .max(50)
-    .regex(
-      /^[a-z0-9-]+$/,
-      'Slug must contain only lowercase letters, numbers, and hyphens',
-    )
-    .optional(),
-  web3SpaceId: z.number(),
-  parentId: z.number().optional(),
-});
 
 export async function POST(
   request: Request,
