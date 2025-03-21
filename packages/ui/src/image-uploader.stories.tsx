@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { ImageUploader } from './image-uploader';
+import { AvatarUploader } from './avatar-uploader';
+import { LeadImageUploader } from './lead-image-uploader';
 
 const meta = {
   component: ImageUploader,
@@ -20,7 +22,7 @@ export const WithAvatar: Story = {
   },
   render: (args) => (
     <ImageUploader {...args}>
-      <ImageUploader.Avatar size="lg" />
+      <AvatarUploader size="md" />
     </ImageUploader>
   ),
 };
@@ -32,7 +34,7 @@ export const WithLeadImage: Story = {
   },
   render: (args) => (
     <ImageUploader {...args}>
-      <ImageUploader.Lead />
+      <LeadImageUploader />
     </ImageUploader>
   ),
 };

@@ -26,6 +26,8 @@ export * from './textarea';
 export * from './switch';
 export * from './slider';
 export * from './image-uploader';
+export * from './lead-image-uploader';
+export * from './avatar-uploader';
 
 export * from './organisms/editor';
 export * from './molecules/badges-list';

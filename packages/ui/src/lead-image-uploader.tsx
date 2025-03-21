@@ -1,7 +1,6 @@
-import Image from 'next/image';
+import { ImageUploader, ImageUploaderChildProps } from './image-uploader';
 import { LoaderIcon } from 'lucide-react';
 import { Pencil1Icon } from '@radix-ui/react-icons';
-import { ImageUploaderChildProps } from './image-uploader';
 
 export const LeadImageUploader = ({
   isUploading,
@@ -10,45 +9,62 @@ export const LeadImageUploader = ({
   isDragActive,
   onReset,
 }: ImageUploaderChildProps) => {
+  const leadImageConfig = {
+    accept: {
+      'image/*': ['.png', '.jpg', '.jpeg', '.gif'],
+    },
+    maxFiles: 1,
+  };
+
   return (
-    <div className="w-full min-h-[150px] flex-row rounded-md border-2 items-center justify-center flex border-neutral-10 bg-transparent border-dashed">
-      {uploadedFile || previewUrl ? (
-        <div className="group relative max-h-[150px] min-h-[150px] w-full rounded-lg overflow-hidden">
-          <Image
-            src={uploadedFile || previewUrl || ''}
-            alt="Uploaded Image"
-            className="w-full h-full object-cover"
-            width={554}
-            height={150}
-          />
-          {isUploading && (
-            <div className="absolute inset-0 bg-neutral-800 bg-opacity-50 flex items-center justify-center">
-              <LoaderIcon className="animate-spin" />
-            </div>
-          )}
-          {!isUploading && (
-            <div
-              className="hidden group-hover:flex absolute inset-0 bg-neutral-800 bg-opacity-50 items-center justify-center cursor-pointer"
-              onClick={(e) => {
-                e.stopPropagation();
-                onReset?.();
-              }}
-            >
-              <Pencil1Icon width={24} height={24} />
-            </div>
-          )}
-        </div>
-      ) : (
-        <p className="font-medium text-muted-foreground w-full text-center">
-          {isDragActive ? (
-            'Drop the file here'
-          ) : (
-            <span>
-              <span className="text-accent-11">Upload</span> an image
-            </span>
-          )}
-        </p>
-      )}
-    </div>
+    <ImageUploader
+      uploadedFile={uploadedFile}
+      isUploading={isUploading}
+      onReset={onReset}
+      configuration={leadImageConfig}
+      onUpload={(files) => {
+        console.log('Uploaded files:', files);
+      }}
+    >
+      <div className="w-full min-h-[150px] flex-row rounded-md border-2 items-center justify-center flex border-neutral-10 bg-transparent border-dashed">
+        {uploadedFile || previewUrl ? (
+          <div className="group relative max-h-[150px] min-h-[150px] w-full rounded-lg overflow-hidden">
+            <img
+              src={uploadedFile || previewUrl || ''}
+              alt="Uploaded Image"
+              className="w-full h-full object-cover"
+              width={554}
+              height={150}
+            />
+            {isUploading && (
+              <div className="absolute inset-0 bg-neutral-800 bg-opacity-50 flex items-center justify-center">
+                <LoaderIcon className="animate-spin" width={24} height={24} />
+              </div>
+            )}
+            {!isUploading && (
+              <div
+                className="hidden group-hover:flex absolute inset-0 bg-neutral-800 bg-opacity-50 items-center justify-center cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReset?.();
+                }}
+              >
+                <Pencil1Icon width={24} height={24} />
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="font-medium text-muted-foreground w-full text-center">
+            {isDragActive ? (
+              'Drop the file here'
+            ) : (
+              <span>
+                <span className="text-accent-11">Upload</span> an image
+              </span>
+            )}
+          </p>
+        )}
+      </div>
+    </ImageUploader>
   );
 };

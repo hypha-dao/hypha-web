@@ -2,16 +2,6 @@
 
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { AvatarUploader } from './avatar-uploader';
-import { LeadImageUploader } from './lead-image-uploader';
-
-interface ImageUploaderProps {
-  isUploading?: boolean;
-  uploadedFile?: string | null;
-  onReset?: () => void;
-  onUpload?: (files: File[]) => void;
-  children?: React.ReactNode;
-}
 
 export interface ImageUploaderChildProps {
   isUploading?: boolean;
@@ -21,17 +11,25 @@ export interface ImageUploaderChildProps {
   onReset?: () => void;
 }
 
-type ImageUploaderComponent = React.FC<ImageUploaderProps> & {
-  Avatar: typeof AvatarUploader;
-  Lead: typeof LeadImageUploader;
-};
+interface ImageUploaderProps {
+  isUploading?: boolean;
+  uploadedFile?: string | null;
+  onReset?: () => void;
+  onUpload?: (files: File[]) => void;
+  children?: React.ReactElement<ImageUploaderChildProps>;
+  configuration?: {
+    accept?: Record<string, string[]>;
+    maxFiles?: number;
+  };
+}
 
-export const ImageUploader: ImageUploaderComponent = ({
+export const ImageUploader = ({
   isUploading,
   uploadedFile,
   onReset,
   onUpload,
   children,
+  configuration = {},
 }: ImageUploaderProps) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -49,9 +47,10 @@ export const ImageUploader: ImageUploaderComponent = ({
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: {
+    accept: configuration.accept || {
       'image/*': ['.png', '.jpg', '.jpeg', '.gif'],
     },
+    maxFiles: configuration.maxFiles || 1,
   });
 
   const handleReset = () => {
@@ -59,29 +58,20 @@ export const ImageUploader: ImageUploaderComponent = ({
     onReset?.();
   };
 
-  const childrenWithProps = React.Children.map(children, (child) => {
-    if (React.isValidElement(child)) {
-      return React.cloneElement(
-        child as React.ReactElement<ImageUploaderChildProps>,
-        {
-          isUploading,
-          uploadedFile,
-          previewUrl,
-          isDragActive,
-          onReset: handleReset,
-        },
-      );
-    }
-    return child;
-  });
-
   return (
     <div {...getRootProps()}>
       <input {...getInputProps()} />
-      {childrenWithProps}
+      {React.Children.map(children, (child) =>
+        React.isValidElement(child)
+          ? React.cloneElement(child, {
+              isUploading,
+              uploadedFile,
+              previewUrl,
+              isDragActive,
+              onReset: handleReset,
+            } as ImageUploaderChildProps)
+          : child,
+      )}
     </div>
   );
 };
-
-ImageUploader.Avatar = AvatarUploader;
-ImageUploader.Lead = LeadImageUploader;
