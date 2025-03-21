@@ -5,7 +5,7 @@ const svg = require('@svgr/rollup');
 module.exports = withNx(
   {
     main: './src/index.ts',
-    outputPath: '../../dist/packages/core-evm',
+    outputPath: '../../dist/packages/core-client',
     tsConfig: './tsconfig.lib.json',
     compiler: 'swc',
     external: ['react', 'react-dom', 'react/jsx-runtime'],
