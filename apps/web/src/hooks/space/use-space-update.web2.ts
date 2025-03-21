@@ -12,7 +12,7 @@ export const useSpaceUpdateWeb2 = (endpoint?: string) => {
       invariant(endpoint, 'endpoint is required');
       invariant(headers, 'no auth header present');
 
-      return spaceClient.updateSpace(data, { endpoint, headers });
+      return spaceClient.updateSpaceWeb2(data, { endpoint, headers });
     },
     [endpoint],
   );

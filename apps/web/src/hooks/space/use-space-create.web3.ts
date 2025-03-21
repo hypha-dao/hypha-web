@@ -5,7 +5,10 @@ import { schemaCreateSpaceWeb3 } from '@hypha-platform/core/client';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { z } from 'zod';
 import React from 'react';
-import { createSpace, getSpaceIdFromLogs } from '@hypha-platform/evm';
+import {
+  createSpaceWeb3,
+  getSpaceIdFromLogs,
+} from '@hypha-platform/core/client';
 
 export const useSpaceCreateWeb3 = () => {
   const { wallets } = useWallets();
@@ -50,7 +53,7 @@ export const useSpaceCreateWeb3 = () => {
     }: z.infer<typeof schemaCreateSpaceWeb3>) => {
       await resetWallet();
       writeContract(
-        createSpace({
+        createSpaceWeb3({
           unity: BigInt(unity),
           quorum: BigInt(quorum),
           votingPowerSource: BigInt(votingPowerSource),

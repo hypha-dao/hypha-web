@@ -1,5 +1,5 @@
 import { parseEventLogs } from 'viem';
-import { daoSpaceFactoryImplementationAbi } from '../generated';
+import { daoSpaceFactoryImplementationAbi } from '../../../generated';
 
 /**
  * Extract the SpaceCreated event from transaction logs
