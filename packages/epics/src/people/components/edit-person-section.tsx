@@ -1,11 +1,10 @@
 'use client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useForm, UseFormReturn } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { schemaEditPersonWeb2 } from '@hypha-platform/core/client';
 import {
   Button,
-  Skeleton,
   Textarea,
   Input,
   Switch,
@@ -21,9 +20,9 @@ import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/lib/utils';
 import { useState } from 'react';
-import { EditPersonHead } from './edit-person-head';
 import { UseUploadThingFileUploader } from '../hooks/types';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface Person {
   avatarUrl?: string | undefined;
@@ -53,7 +52,10 @@ export const EditPersonSection = ({
   useUploadThingFileUploader,
   successfulEditCallback,
   onEdit,
-}: EditPersonSectionProps) => {
+  avatarUrl,
+  name,
+  surname,
+}: EditPersonSectionProps & Person) => {
   const form = useForm<FormData>({
     resolver: zodResolver(schemaEditPersonWeb2),
     defaultValues: {
@@ -104,14 +106,73 @@ export const EditPersonSection = ({
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <div className="flex flex-col gap-5">
           <div className="flex gap-5 justify-between">
-            <EditPersonHead
-              avatar={person?.avatarUrl || ''}
-              name={form.watch('name')}
-              surname={form.watch('surname')}
-              nickname={form.watch('nickname')}
-              isLoading={isLoading}
-              form={form as UseFormReturn<Person>}
-            />
+            <div className="flex items-center">
+              <Image
+                className="rounded-lg mr-3"
+                src={avatarUrl || '/placeholder/space-avatar-image.png'}
+                height={64}
+                width={64}
+                alt={name && surname ? `${name} ${surname}` : 'Person Avatar'}
+              />
+              <div className="flex justify-between items-center w-full">
+                <div className="flex flex-col">
+                  <div className="flex gap-1 mb-1">
+                    <FormField
+                      control={form?.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              disabled={isLoading}
+                              placeholder="Name"
+                              className="text-2 text-neutral-11"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form?.control}
+                      name="surname"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              disabled={isLoading}
+                              placeholder="Surname"
+                              className="text-2 text-neutral-11"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form?.control}
+                    name="nickname"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            disabled={isLoading}
+                            placeholder="Nickname"
+                            className="text-1 text-neutral-11"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            </div>
             <Link href={closeUrl} scroll={false}>
               <Button
                 variant="ghost"
@@ -128,7 +189,11 @@ export const EditPersonSection = ({
             control={form.control}
             name="leadImageUrl"
             render={({ field }) => (
-              <FormItem>
+              <FormItem
+                className={cn(
+                  isLoading ? 'pointer-events-none opacity-50' : '',
+                )}
+              >
                 <FormControl>
                   <ImageUploader
                     isUploading={isUploading}
@@ -177,6 +242,7 @@ export const EditPersonSection = ({
                   )}
                 />
                 <Switch
+                  disabled={isLoading}
                   checked={activeLinks.website}
                   onCheckedChange={handleLinkToggle('website')}
                 />
@@ -201,6 +267,7 @@ export const EditPersonSection = ({
                   )}
                 />
                 <Switch
+                  disabled={isLoading}
                   checked={activeLinks.linkedin}
                   onCheckedChange={handleLinkToggle('linkedin')}
                 />
@@ -225,6 +292,7 @@ export const EditPersonSection = ({
                   )}
                 />
                 <Switch
+                  disabled={isLoading}
                   checked={activeLinks.x}
                   onCheckedChange={handleLinkToggle('x')}
                 />
@@ -232,21 +300,14 @@ export const EditPersonSection = ({
             </div>
           </div>
           <div className="flex justify-end w-full">
-            <Skeleton
-              width="72px"
-              height="35px"
-              loading={isLoading}
-              className="rounded-lg"
+            <Button
+              type="submit"
+              variant="default"
+              className="rounded-lg justify-start text-white w-fit"
+              disabled={isLoading || !form.formState.isValid}
             >
-              <Button
-                type="submit"
-                variant="default"
-                className="rounded-lg justify-start text-white w-fit"
-                disabled={!form.formState.isValid}
-              >
-                Save
-              </Button>
-            </Skeleton>
+              Save
+            </Button>
           </div>
         </div>
       </form>
