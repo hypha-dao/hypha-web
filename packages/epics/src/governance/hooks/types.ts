@@ -14,6 +14,7 @@ export type UseDocumentsProps = {
   page?: number;
   filter?: FilterParams<Pick<Document, 'state'>>;
   pageSize?: number;
+  activeTab?: string;
 };
 
 export type UseDocuments = (props: UseDocumentsProps) => UseDocumentsReturn;

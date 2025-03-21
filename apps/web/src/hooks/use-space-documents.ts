@@ -15,10 +15,12 @@ export const useSpaceDocuments: UseDocuments = ({
   page = 1,
   pageSize = 4,
   filter,
+  activeTab,
 }: {
   page?: number;
   pageSize?: number;
   filter?: FilterParams<Pick<Document, 'state'>>;
+  activeTab?: string;
 }): UseDocumentsReturn => {
   const spaceSlug = useSpaceSlug();
 
