@@ -196,16 +196,15 @@ export const useCreateSpaceOrchestrator = ({
       const inputCreateSpaceWeb2 = schemaCreateSpaceWeb2.parse(arg);
       const inputCreateSpaceWeb3 = schemaCreateSpaceWeb3.parse(arg);
 
-      const [web2Result, transactionHash] = await Promise.all([
-        web2
-          .createSpace(inputCreateSpaceWeb2)
-          .then(() => completeTask('CREATE_WEB2_SPACE'))
-          .catch((e) => errorTask('CREATE_WEB2_SPACE', e.message)),
-        web3
-          .createSpace(inputCreateSpaceWeb3)
-          .then(() => completeTask('CREATE_WEB3_SPACE'))
-          .catch((e) => errorTask('CREATE_WEB3_SPACE', e.message)),
-      ]);
+      const web2Result = await web2
+        .createSpace(inputCreateSpaceWeb2)
+        .then(() => completeTask('CREATE_WEB2_SPACE'))
+        .catch((e) => errorTask('CREATE_WEB2_SPACE', e.message));
+
+      const transactionHash = await web3
+        .createSpace(inputCreateSpaceWeb3)
+        .then(() => completeTask('CREATE_WEB3_SPACE'))
+        .catch((e) => errorTask('CREATE_WEB3_SPACE', e.message));
 
       return { web2Result, transactionHash };
     },
