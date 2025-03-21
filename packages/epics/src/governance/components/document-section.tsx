@@ -12,17 +12,20 @@ import { PlusIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
 import { DocumentState, UseDocuments } from '..';
 import { DocumentGridContainer } from './document-grid.container';
+import { FILTER_BY_STATE } from '../constants';
 
 type DocumentSectionProps = {
   basePath: string;
   useDocuments: UseDocuments;
   documentState: DocumentState;
+  label?: string;
 };
 
 export const DocumentSection: FC<DocumentSectionProps> = ({
   basePath,
   useDocuments,
   documentState,
+  label,
 }) => {
   const {
     pages,
@@ -35,7 +38,10 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
     tabs,
     activeTab,
     setActiveTab,
-  } = useDocumentsSection({ useDocuments, documentState: documentState });
+  } = useDocumentsSection({
+    useDocuments,
+    documentState: FILTER_BY_STATE[documentState] as DocumentState,
+  });
 
   return (
     <div className="flex flex-col justify-around items-center gap-4">
@@ -43,7 +49,7 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
         value={activeFilter}
         onChange={setActiveFilter}
         count={pagination?.total || 0}
-        label={`${documentState}s`}
+        label={label || ''}
         sortOptions={sortOptions}
       >
         <Link href={`${basePath}/create`} scroll={false}>
@@ -71,7 +77,9 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
               pagination={{
                 page: index + 1,
                 pageSize: 3,
-                filter: { state: documentState },
+                filter: {
+                  state: FILTER_BY_STATE[documentState] as DocumentState,
+                },
               }}
               useDocuments={useDocuments}
               activeTab={activeTab}
