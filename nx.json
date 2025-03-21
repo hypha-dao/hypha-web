@@ -4,12 +4,24 @@
     "default": [
       "{projectRoot}/**/*",
       "sharedGlobals",
-      { "env": "DEFAULT_DB_URL" },
-      { "env": "DEFAULT_DB_AUTHENTICATED_URL" },
-      { "env": "DEFAULT_DB_ANONYMOUS_URL" },
-      { "env": "BRANCH_DB_URL" },
-      { "env": "NEXT_PUBLIC_PRIVY_APP_ID" },
-      { "env": "PRIVY_APP_SECRET" }
+      {
+        "env": "DEFAULT_DB_URL"
+      },
+      {
+        "env": "DEFAULT_DB_AUTHENTICATED_URL"
+      },
+      {
+        "env": "DEFAULT_DB_ANONYMOUS_URL"
+      },
+      {
+        "env": "BRANCH_DB_URL"
+      },
+      {
+        "env": "NEXT_PUBLIC_PRIVY_APP_ID"
+      },
+      {
+        "env": "PRIVY_APP_SECRET"
+      }
     ],
     "production": [
       "default",
@@ -61,6 +73,20 @@
         "testStorybookTargetName": "test-storybook",
         "staticStorybookTargetName": "static-storybook"
       }
+    },
+    {
+      "plugin": "@nx/vite/plugin",
+      "options": {
+        "buildTargetName": "build",
+        "testTargetName": "vite:test",
+        "serveTargetName": "serve",
+        "devTargetName": "dev",
+        "previewTargetName": "preview",
+        "serveStaticTargetName": "serve-static",
+        "typecheckTargetName": "typecheck",
+        "buildDepsTargetName": "build-deps",
+        "watchDepsTargetName": "watch-deps"
+      }
     }
   ],
   "generators": {
@@ -85,6 +111,11 @@
       "dependsOn": ["^build"]
     },
     "@nx/js:swc": {
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": ["production", "^production"]
+    },
+    "@nx/js:tsc": {
       "cache": true,
       "dependsOn": ["^build"],
       "inputs": ["production", "^production"]
