@@ -1,15 +1,14 @@
 'use client';
 
 import React from 'react';
-import { useAuthentication } from '@hypha-platform/authentication';
-import useSWR from 'swr';
 import { useRouter } from 'next/navigation';
 
-export const useCreateProfile = () => {
-  const { getAccessToken, user } = useAuthentication();
-  const endpoint = React.useMemo(() => '/api/v1/people/create-profile', []);
+import { useAuthHeader } from './use-auth-header';
 
-  const { data: jwt } = useSWR(user ? [user.id] : null, () => getAccessToken());
+export const useCreateProfile = (
+  endpoint: string = '/api/v1/people/create-profile',
+) => {
+  const { headers } = useAuthHeader();
   const router = useRouter();
 
   const createProfile = React.useCallback(
@@ -23,16 +22,13 @@ export const useCreateProfile = () => {
       location: string;
       nickname: string;
     }) => {
-      if (!jwt) {
-        throw new Error('No JWT token available');
+      if (!headers) {
+        throw new Error('No auth headers available');
       }
 
       const response = await fetch(endpoint, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${jwt}`,
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(data),
       });
 
@@ -45,7 +41,7 @@ export const useCreateProfile = () => {
       const createdProfile = await response.json();
       return createdProfile;
     },
-    [endpoint, jwt],
+    [endpoint, headers],
   );
 
   return { createProfile };

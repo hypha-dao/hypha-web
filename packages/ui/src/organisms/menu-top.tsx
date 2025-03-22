@@ -14,7 +14,6 @@ type MenuTopNavItem = {
 type MenuTopProps = {
   activeDao?: Dao;
   navItems: MenuTopNavItem[];
-  createActionHref?: string;
   children?: React.ReactNode;
   withLogo?: boolean;
 };
@@ -22,11 +21,9 @@ type MenuTopProps = {
 export const MenuTop = ({
   activeDao,
   navItems,
-  createActionHref,
   children,
   withLogo,
 }: MenuTopProps) => {
-  console.debug('MenuTopProps', { createActionHref });
   return (
     <div className="fixed top-0 right-0 left-0 flex items-center space-x-10 h-9 px-10 bg-background z-10">
       {withLogo ? <Logo width={140}></Logo> : null}

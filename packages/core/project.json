@@ -19,6 +19,13 @@
         },
         "production": {}
       }
+    },
+    "wagmi:generate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "wagmi generate",
+        "cwd": "packages/core"
+      }
     }
   }
 }

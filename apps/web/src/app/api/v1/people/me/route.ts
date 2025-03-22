@@ -15,7 +15,6 @@ export async function GET() {
       );
     }
 
-    console.debug('getUser', { authToken: authToken.split('.')[2] });
     const peopleService = createPeopleService({ authToken });
     const user = await peopleService.findMe();
 

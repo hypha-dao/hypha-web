@@ -1,7 +1,7 @@
 import {
   FilterParams,
   PaginationMetadata,
-  // TODO: define UI interface separately
+  // TODO: #594 declare UI interface separately
   Person,
 } from '@hypha-platform/core/client';
 
