@@ -94,10 +94,10 @@ export const ImageUploader = ({
           )}
           {!isUploading && (
             <div
-              className="hidden group-hover:flex absolute inset-0 bg-neutral-800 bg-opacity-50 items-center justify-center cursor-pointer"
+              className="hidden group-hover:flex absolute top-2 right-2 bg-white p-2 rounded-lg shadow-md cursor-pointer"
               onClick={handleReset}
             >
-              <Pencil1Icon width={24} height={24} />
+              <Pencil1Icon width={20} height={20} className="text-neutral-1" />
             </div>
           )}
         </div>
