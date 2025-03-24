@@ -52,9 +52,6 @@ export const EditPersonSection = ({
   useUploadThingFileUploader,
   successfulEditCallback,
   onEdit,
-  avatarUrl,
-  name,
-  surname,
 }: EditPersonSectionProps & Person) => {
   const form = useForm<FormData>({
     resolver: zodResolver(schemaEditPersonWeb2),
@@ -109,10 +106,10 @@ export const EditPersonSection = ({
             <div className="flex items-center">
               <Image
                 className="rounded-lg mr-3"
-                src={avatarUrl || '/placeholder/space-avatar-image.png'}
+                src={person?.avatarUrl || '/placeholder/space-avatar-image.png'}
                 height={64}
                 width={64}
-                alt={name && surname ? `${name} ${surname}` : 'Person Avatar'}
+                alt={person?.name && person?.surname ? `${person?.name} ${person?.surname}` : 'Person Avatar'}
               />
               <div className="flex justify-between items-center w-full">
                 <div className="flex flex-col">
