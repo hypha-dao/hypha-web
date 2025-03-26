@@ -24,13 +24,13 @@ import { useState } from 'react';
 import Link from 'next/link';
 
 interface Person {
-  avatarUrl?: File;
+  avatarUrl?: File | string;
   name?: string;
   surname?: string;
   id?: number;
   nickname?: string;
   description?: string;
-  leadImageUrl?: File;
+  leadImageUrl?: File | string;
 }
 
 export type EditPersonSectionProps = {
@@ -53,12 +53,12 @@ export const EditPersonSection = ({
   const form = useForm<FormData>({
     resolver: zodResolver(schemaEditPersonWeb2),
     defaultValues: {
-      avatarUrl: person?.avatarUrl || null,
+      avatarUrl: person?.avatarUrl || '',
       name: person?.name || '',
       surname: person?.surname || '',
       nickname: person?.nickname || '',
       description: person?.description || '',
-      leadImageUrl: person?.leadImageUrl || null,
+      leadImageUrl: person?.leadImageUrl || '',
       id: person?.id,
     },
     mode: 'onChange',

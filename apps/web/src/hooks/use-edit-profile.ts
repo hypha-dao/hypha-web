@@ -17,6 +17,7 @@ export const useEditProfile = () => {
       nickname: string;
       description: string;
       leadImageUrl: string;
+      avatarUrl: string;
       id: number | null;
     }) => {
       if (!jwt) {
