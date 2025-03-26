@@ -24,13 +24,13 @@ import { useState } from 'react';
 import Link from 'next/link';
 
 interface Person {
-  avatarUrl?: string | undefined;
+  avatarUrl?: File;
   name?: string;
   surname?: string;
   id?: number;
   nickname?: string;
   description?: string;
-  leadImageUrl?: string;
+  leadImageUrl?: File;
 }
 
 export type EditPersonSectionProps = {
@@ -53,12 +53,12 @@ export const EditPersonSection = ({
   const form = useForm<FormData>({
     resolver: zodResolver(schemaEditPersonWeb2),
     defaultValues: {
-      avatarUrl: person?.avatarUrl || '',
+      avatarUrl: person?.avatarUrl || null,
       name: person?.name || '',
       surname: person?.surname || '',
       nickname: person?.nickname || '',
       description: person?.description || '',
-      leadImageUrl: person?.leadImageUrl || '',
+      leadImageUrl: person?.leadImageUrl || null,
       id: person?.id,
     },
     mode: 'onChange',
@@ -92,7 +92,7 @@ export const EditPersonSection = ({
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <div className="flex flex-col gap-5">
           <div className="flex gap-5 justify-between">
-            <div className="flex items-center">
+            <div className="flex items-center space-x-2">
               <FormField
                 control={form.control}
                 name="avatarUrl"

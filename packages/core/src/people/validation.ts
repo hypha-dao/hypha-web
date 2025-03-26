@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 const editPersonWeb2Props = {
   id: z.number(),
-  avatarUrl: z.string().url('Avatar URL must be a valid URL'),
+  avatarUrl: z.instanceof(File).optional().nullable(),
   name: z.string().min(1, {
     message: 'Name must not be empty',
   }),
@@ -20,7 +20,7 @@ const editPersonWeb2Props = {
     .max(300, {
       message: 'Description length should not exceed 300 characters',
     }),
-  leadImageUrl: z.string().url('Lead Image URL must be a valid URL'),
+  leadImageUrl: z.instanceof(File).optional().nullable(),
 };
 
 export const schemaEditPersonWeb2 = z.object(editPersonWeb2Props);
