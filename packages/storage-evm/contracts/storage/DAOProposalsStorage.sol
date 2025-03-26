@@ -95,7 +95,5 @@ contract DAOProposalsStorage is Initializable {
   uint256[48] private __gap;
 
   // New storage variables - Add at the end
-  mapping(uint256 => uint256[]) public nestedProposals; // parentProposalId => childProposalIds
-  mapping(uint256 => uint256) public parentProposal; // childProposalId => parentProposalId
   mapping(uint256 => address) public spaceAddresses;
 }

@@ -68,12 +68,6 @@ interface IDAOProposals {
     address editor
   );
 
-  event NestedProposalEdited(
-    uint256 indexed parentProposalId,
-    uint256 indexed childProposalId,
-    uint256 newDuration
-  );
-
   event VoteCast(
     uint256 indexed proposalId,
     address indexed voter,
@@ -91,9 +85,4 @@ interface IDAOProposals {
 
   // Add new event for value tracking
   event ProposalValueSet(uint256 indexed proposalId, uint256 value);
-  event NestedProposalCreated(
-    uint256 indexed parentProposalId,
-    uint256 indexed childProposalId,
-    uint256 spaceId
-  );
 }

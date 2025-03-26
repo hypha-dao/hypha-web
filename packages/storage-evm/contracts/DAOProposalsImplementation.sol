@@ -102,59 +102,6 @@ contract DAOProposalsImplementation is
     );
   }
 
-  function _createNestedProposal(
-    uint256 _parentProposalId,
-    uint256 _childSpaceId,
-    uint256 _duration,
-    address _targetContract,
-    bytes memory _executionData,
-    uint256 _value
-  ) internal returns (uint256) {
-    uint256 childProposalId = _initializeProposal(
-      _childSpaceId,
-      _duration,
-      _targetContract,
-      _executionData
-    );
-
-    proposalValues[childProposalId] = _value;
-
-    nestedProposals[_parentProposalId].push(childProposalId);
-    parentProposal[childProposalId] = _parentProposalId;
-
-    emit NestedProposalCreated(
-      _parentProposalId,
-      childProposalId,
-      _childSpaceId
-    );
-
-    return childProposalId;
-  }
-
-  function _createNestedProposalsForMembers(
-    uint256 _mainProposalId,
-    uint256 _spaceId,
-    uint256 _duration
-  ) internal {
-    address[] memory spaceMembers = spaceFactory.getSpaceMemberAddresses(
-      _spaceId
-    );
-
-    for (uint256 i = 0; i < spaceMembers.length; i++) {
-      address spaceMember = spaceMembers[i];
-      uint256 memberSpaceId = spaceFactory.getSpaceId(spaceMember);
-
-      _createNestedProposal(
-        _mainProposalId,
-        memberSpaceId,
-        _duration,
-        address(this),
-        abi.encodeWithSignature('vote(uint256,bool)', _mainProposalId, true),
-        0
-      );
-    }
-  }
-
   function createProposal(
     ProposalParams calldata params
   ) external override returns (uint256) {
@@ -165,23 +112,17 @@ contract DAOProposalsImplementation is
       params.executionData
     );
 
-    uint256 mainProposalId = _initializeProposal(
+    uint256 proposalId = _initializeProposal(
       params.spaceId,
       params.duration,
       params.targetContract,
       params.executionData
     );
 
-    proposalValues[mainProposalId] = params.value;
-
-    _createNestedProposalsForMembers(
-      mainProposalId,
-      params.spaceId,
-      params.duration
-    );
+    proposalValues[proposalId] = params.value;
 
     emit ProposalCreated(
-      mainProposalId,
+      proposalId,
       params.spaceId,
       block.timestamp,
       params.duration,
@@ -189,7 +130,7 @@ contract DAOProposalsImplementation is
       params.executionData
     );
 
-    return mainProposalId;
+    return proposalId;
   }
 
   function getProposalEndTime(
@@ -202,15 +143,6 @@ contract DAOProposalsImplementation is
   function vote(uint256 _proposalId, bool _support) external override {
     require(address(spaceFactory) != address(0), 'Contracts not initialized');
     ProposalCore storage proposal = proposalsCoreData[_proposalId];
-
-    uint256 parentId = parentProposal[_proposalId];
-    if (parentId != 0) {
-      require(!proposalsCoreData[parentId].expired, 'Parent proposal expired');
-      require(
-        !proposalsCoreData[parentId].executed,
-        'Parent proposal executed'
-      );
-    }
 
     checkProposalExpiration(_proposalId);
     require(block.timestamp >= proposal.startTime, 'Voting not started');
@@ -261,45 +193,6 @@ contract DAOProposalsImplementation is
     emit VoteCast(_proposalId, msg.sender, _support, votingPower);
 
     checkAndExecuteProposal(_proposalId);
-  }
-
-  function editProposal(
-    uint256 _proposalId,
-    ProposalParams calldata params
-  ) external {
-    require(address(spaceFactory) != address(0), 'Contracts not initialized');
-    ProposalCore storage proposal = proposalsCoreData[_proposalId];
-
-    require(msg.sender == proposal.creator, 'Only creator can edit');
-    require(!proposal.expired, 'Proposal has expired');
-    require(!proposal.executed, 'Proposal already executed');
-    require(
-      proposal.yesVotes == 0 && proposal.noVotes == 0,
-      'Voting has started'
-    );
-
-    // Validate new parameters
-    _validateProposalParams(
-      proposal.spaceId,
-      params.duration,
-      params.targetContract,
-      params.executionData
-    );
-
-    // Update proposal core data
-    proposal.duration = params.duration;
-    proposal.targetContract = params.targetContract;
-    proposal.executionData = params.executionData;
-
-    // Update nested proposals if they exist
-    uint256[] storage nestedProposalIds = nestedProposals[_proposalId];
-    for (uint256 i = 0; i < nestedProposalIds.length; i++) {
-      uint256 childId = nestedProposalIds[i];
-      ProposalCore storage childProposal = proposalsCoreData[childId];
-
-      // Update child proposal
-      childProposal.duration = params.duration;
-    }
   }
 
   function checkAndExecuteProposal(uint256 _proposalId) internal {
