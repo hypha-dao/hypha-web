@@ -1,6 +1,7 @@
+'use client';
+
 import { EditPersonSection } from '@hypha-platform/epics';
 import { SidePanel } from '../../_components/side-panel';
-import { useUploadThingFileUploader } from '@web/hooks/use-uploadthing-file-uploader';
 
 export default function Loading() {
   return (
@@ -9,7 +10,10 @@ export default function Loading() {
         person={{}}
         closeUrl=""
         isLoading={true}
-        useUploadThingFileUploader={useUploadThingFileUploader}
+        onEdit={() => {
+          console.log('onEdit');
+          return Promise.resolve();
+        }}
       />
     </SidePanel>
   );

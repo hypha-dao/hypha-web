@@ -37,8 +37,7 @@ export type EditPersonSectionProps = {
   person?: Person;
   closeUrl: string;
   isLoading?: boolean;
-  successfulEditCallback?: () => void;
-  onEdit?: (values: z.infer<typeof schemaEditPersonWeb2>) => Promise<void>;
+  onEdit: (values: z.infer<typeof schemaEditPersonWeb2>) => Promise<void>;
 };
 
 type FormData = z.infer<typeof schemaEditPersonWeb2>;
@@ -47,7 +46,6 @@ export const EditPersonSection = ({
   isLoading,
   closeUrl,
   person,
-  successfulEditCallback,
   onEdit,
 }: EditPersonSectionProps & Person) => {
   const form = useForm<FormData>({
@@ -75,21 +73,9 @@ export const EditPersonSection = ({
       setActiveLinks((prev) => ({ ...prev, [field]: isActive }));
     };
 
-  const onSubmit = async (values: z.infer<typeof schemaEditPersonWeb2>) => {
-    try {
-      if (onEdit) {
-        await onEdit(values);
-        successfulEditCallback?.();
-      }
-    } catch (error) {
-      console.error('Error editing profile:', error);
-      alert('Failed to edit profile');
-    }
-  };
-
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(onEdit)} className="space-y-8">
         <div className="flex flex-col gap-5">
           <div className="flex gap-5 justify-between">
             <div className="flex items-center space-x-2">

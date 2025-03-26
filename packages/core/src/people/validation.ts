@@ -4,7 +4,12 @@ const editPersonWeb2Props = {
   id: z.number(),
   avatarUrl: z.union([
     z.string().url('Avatar URL must be a valid URL'),
-    z.instanceof(File).refine(file => file.size <= 5 * 1024 * 1024, 'File size must be less than 5MB'),
+    z
+      .instanceof(File)
+      .refine(
+        (file) => file.size <= 5 * 1024 * 1024,
+        'File size must be less than 5MB',
+      ),
   ]),
   name: z.string().min(1, {
     message: 'Name must not be empty',
@@ -25,7 +30,12 @@ const editPersonWeb2Props = {
     }),
   leadImageUrl: z.union([
     z.string().url('Lead Image URL must be a valid URL'),
-    z.instanceof(File).refine(file => file.size <= 5 * 1024 * 1024, 'File size must be less than 5MB'),
+    z
+      .instanceof(File)
+      .refine(
+        (file) => file.size <= 5 * 1024 * 1024,
+        'File size must be less than 5MB',
+      ),
   ]),
 };
 

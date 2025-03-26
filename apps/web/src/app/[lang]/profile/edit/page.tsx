@@ -12,15 +12,41 @@ export default function EditProfilePage() {
   const router = useRouter();
   const { lang } = useParams();
   const { person, isLoading } = useMe();
-
   const { editProfile } = useEditProfile();
+  const { handleDrop } = useUploadThingFileUploader({
+    onUploadComplete: () => {
+      console.log('upload complete');
+    },
+  });
+
   const handleEdit = async (values: z.infer<typeof schemaEditPersonWeb2>) => {
     if (!person?.id) return;
-    await editProfile({
-      ...values,
-      id: person.id,
-      leadImageUrl: values.leadImageUrl || '',
-    });
+    try {
+      const updatedValues = { ...values };
+
+      if (updatedValues.avatarUrl instanceof File) {
+        const uploadedUrl = await handleDrop([updatedValues.avatarUrl]);
+        if (uploadedUrl) {
+          updatedValues.avatarUrl = uploadedUrl;
+        }
+      }
+
+      if (updatedValues.leadImageUrl instanceof File) {
+        const uploadedUrl = await handleDrop([updatedValues.leadImageUrl]);
+        if (uploadedUrl) {
+          updatedValues.leadImageUrl = uploadedUrl;
+        }
+      }
+
+      await editProfile({
+        ...updatedValues,
+        avatarUrl: String(updatedValues.avatarUrl || ''),
+        leadImageUrl: String(updatedValues.leadImageUrl || ''),
+      });
+      router.push(`/${lang}/profile/`);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
@@ -28,11 +54,7 @@ export default function EditProfilePage() {
       person={person}
       closeUrl={`/${lang}/profile/`}
       isLoading={isLoading}
-      useUploadThingFileUploader={useUploadThingFileUploader}
       onEdit={handleEdit}
-      successfulEditCallback={() => {
-        router.push(`/${lang}/profile/`);
-      }}
     />
   );
 }
