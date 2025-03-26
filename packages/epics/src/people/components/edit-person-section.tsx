@@ -9,20 +9,19 @@ import {
   Input,
   Switch,
   Separator,
-  ImageUploader,
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
+  UploadLeadImage,
+  UploadAvatar,
 } from '@hypha-platform/ui';
 import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/lib/utils';
 import { useState } from 'react';
-import { UseUploadThingFileUploader } from '../hooks/types';
 import Link from 'next/link';
-import Image from 'next/image';
 
 interface Person {
   avatarUrl?: string | undefined;
@@ -38,7 +37,6 @@ export type EditPersonSectionProps = {
   person?: Person;
   closeUrl: string;
   isLoading?: boolean;
-  useUploadThingFileUploader?: UseUploadThingFileUploader;
   successfulEditCallback?: () => void;
   onEdit?: (values: z.infer<typeof schemaEditPersonWeb2>) => Promise<void>;
 };
@@ -49,13 +47,13 @@ export const EditPersonSection = ({
   isLoading,
   closeUrl,
   person,
-  useUploadThingFileUploader,
   successfulEditCallback,
   onEdit,
 }: EditPersonSectionProps & Person) => {
   const form = useForm<FormData>({
     resolver: zodResolver(schemaEditPersonWeb2),
     defaultValues: {
+      avatarUrl: person?.avatarUrl || '',
       name: person?.name || '',
       surname: person?.surname || '',
       nickname: person?.nickname || '',
@@ -64,15 +62,6 @@ export const EditPersonSection = ({
       id: person?.id,
     },
     mode: 'onChange',
-  });
-
-  if (!useUploadThingFileUploader) {
-    throw new Error('useUploadThingFileUploader hook is not defined');
-  }
-  const { isUploading, handleDrop } = useUploadThingFileUploader({
-    onUploadComplete: (url: string) => {
-      form.setValue('leadImageUrl', url);
-    },
   });
 
   const [activeLinks, setActiveLinks] = useState({
@@ -104,16 +93,17 @@ export const EditPersonSection = ({
         <div className="flex flex-col gap-5">
           <div className="flex gap-5 justify-between">
             <div className="flex items-center">
-              <Image
-                className="rounded-lg mr-3"
-                src={person?.avatarUrl || '/placeholder/space-avatar-image.png'}
-                height={64}
-                width={64}
-                alt={
-                  person?.name && person?.surname
-                    ? `${person?.name} ${person?.surname}`
-                    : 'Person Avatar'
-                }
+              <FormField
+                control={form.control}
+                name="avatarUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <UploadAvatar onChange={field.onChange} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
               <div className="flex justify-between items-center w-full">
                 <div className="flex flex-col">
@@ -190,18 +180,9 @@ export const EditPersonSection = ({
             control={form.control}
             name="leadImageUrl"
             render={({ field }) => (
-              <FormItem
-                className={cn(
-                  isLoading ? 'pointer-events-none opacity-50' : '',
-                )}
-              >
+              <FormItem>
                 <FormControl>
-                  <ImageUploader
-                    isUploading={isUploading}
-                    uploadedFile={field.value}
-                    onReset={() => field.onChange('')}
-                    onUpload={handleDrop}
-                  />
+                  <UploadLeadImage onChange={field.onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
