@@ -85,7 +85,14 @@ export const EditPersonSection = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <UploadAvatar onChange={field.onChange} />
+                      <UploadAvatar
+                        defaultImage={
+                          typeof person?.avatarUrl === 'string'
+                            ? person?.avatarUrl
+                            : undefined
+                        }
+                        onChange={field.onChange}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -168,7 +175,14 @@ export const EditPersonSection = ({
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <UploadLeadImage onChange={field.onChange} />
+                  <UploadLeadImage
+                    defaultImage={
+                      typeof person?.leadImageUrl === 'string'
+                        ? person?.leadImageUrl
+                        : undefined
+                    }
+                    onChange={field.onChange}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
