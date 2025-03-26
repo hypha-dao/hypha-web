@@ -11,9 +11,9 @@ import { toast } from 'sonner';
 
 import { cn, formatBytes } from '@hypha-platform/ui-utils';
 import { useControllableState } from '@hypha-platform/ui-utils';
-import { ScrollArea } from './scroll-area';
-import { Progress } from './progress';
-import { Button } from './button';
+import { ScrollArea } from '../scroll-area';
+import { Progress } from '../progress';
+import { Button } from '../button';
 
 interface FileUploaderProps extends React.HTMLAttributes<HTMLDivElement> {
   /**

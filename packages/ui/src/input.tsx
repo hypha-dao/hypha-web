@@ -9,7 +9,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, leftIcon, rightIcon, ...props }, ref) => {
     return (
-      <div className="relative flex items-center h-6">
+      <div className="relative flex items-center h-6 w-full">
         {leftIcon && (
           <div className="absolute left-2 flex items-center pointer-events-none text-muted-foreground">
             {leftIcon}

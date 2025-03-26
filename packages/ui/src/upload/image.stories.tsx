@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 
-import { ImageUploader } from './image-uploader';
+import { ImageUploader } from './image';
 import { within } from '@storybook/testing-library';
 import { expect } from '@storybook/jest';
 

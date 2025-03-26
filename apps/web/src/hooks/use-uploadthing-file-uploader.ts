@@ -24,28 +24,30 @@ export const useUploadThingFileUploader = ({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
 
-  const handleUploadComplete = (res: { url: string }[]) => {
+  const handleUploadComplete = (res: { url: string }[]): string | null => {
     console.log('Files: ', res);
 
     if (res && res[0]?.url) {
-      setUploadedFile(res[0]?.url);
-      if (onUploadComplete) {
-        onUploadComplete(res[0]?.url);
-      }
+      setUploadedFile(res[0].url);
+      onUploadComplete?.(res[0].url);
+      return res[0].url;
     }
     setIsUploading(false);
+    return null;
   };
 
-  const handleDrop = async (files: File[]) => {
+  const handleDrop = async (files: File[]): Promise<string | null> => {
     setIsUploading(true);
     try {
       const res = await startUpload(files);
       if (res) {
-        handleUploadComplete(res);
+        return handleUploadComplete(res);
       }
+      return null;
     } catch (error) {
       console.error('Upload failed:', error);
       setIsUploading(false);
+      return null;
     }
   };
 
