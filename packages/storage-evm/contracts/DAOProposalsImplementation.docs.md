@@ -8,13 +8,13 @@ The DAO Proposals contract manages the creation, voting, and execution of propos
 
 Proposals are created by a DAO members and are open for voting by all members of the DAO.
 
-Proposals have a voting period and a quorum and unity thresholds.
+Proposals have a voting period, and a quorum and unity thresholds.
 
-Example of quorum threshold (1M1V):
+**Example of quorum threshold (1M1V):**
 
 If the quorum threshold is 30% and the total voting power of the DAO is 10, the threshold is met if the proposal receives 3 votes.
 
-Example of unity threshold:
+**Example of unity threshold:**
 
 If the unity threshold is 50% and the there are 10 yes votes and 5 no votes, the unity is 10/15 (66%) hence the threshold is met.
 
