@@ -2,31 +2,47 @@
 
 ## Overview
 
-The DAO Proposals contract manages the creation, voting, and execution of proposals within DAO spaces. It supports nested proposals, voting power tracking, and automatic execution when voting thresholds are met.
+The DAO Proposals contract manages the creation, voting, and execution of proposals within DAO spaces. It supports voting power tracking and automatic execution when voting thresholds are met.
+
+## How proposals work?
+
+Proposals are created by a DAO members and are open for voting by all members of the DAO.
+
+Proposals have a voting period and a quorum and unity thresholds.
+
+Example of quorum threshold (1M1V):
+
+If the quorum threshold is 30% and the total voting power of the DAO is 10, the threshold is met if the proposal receives 3 votes.
+
+Example of unity threshold:
+
+If the unity threshold is 50% and the there are 10 yes votes and 5 no votes, the unity is 10/15 (66%) hence the threshold is met.
+
+Proposals are automatically executed if both thresholds are met.
+
+Proposals are categorized into passed and not passed. Proposal is passed if it is executed. Proposal is not passed if it has expired. 
+
+Once the voting period has commenced and the proposal has not been executed it can be categorized as not passed. 
 
 ## Function Summary
 
-### Write Functions (7)
+### Write Functions (5)
 
 - `initialize(address initialOwner)`
 - `setContracts(address _spaceFactory, address _directory)`
 - `createProposal(ProposalParams memory params)`
 - `vote(uint256 _proposalId, bool _support)`
-- `editProposal(uint256 _proposalId, ProposalParams memory params)`
 - `checkProposalExpiration(uint256 _proposalId)`
-- `_createNestedProposal(uint256 _parentProposalId, uint256 _childSpaceId, ...)`
 
-### View Functions (4)
+### View Functions (3)
 
 - `getProposalCore(uint256 _proposalId)`
 - `getProposalEndTime(uint256 _proposalId)`
 - `hasVoted(uint256 _proposalId, address _voter)`
-- `nestedProposals(uint256 _proposalId)`
 
 ## Key Features
 
 - Create and manage proposals
-- Support for nested proposals across spaces
 - Dynamic voting power tracking
 - Automatic proposal execution
 - Proposal expiration handling
@@ -70,19 +86,6 @@ Parameters:
 
 - `_proposalId` (uint256): ID of the proposal to vote on
 - `_support` (bool): True for yes vote, false for no vote
-
-### editProposal
-
-Edits an existing proposal before voting starts.
-
-```solidity
-function editProposal(uint256 _proposalId, ProposalParams memory params) external
-```
-
-Parameters:
-
-- `_proposalId` (uint256): ID of the proposal to edit
-- `params` (ProposalParams): New proposal parameters
 
 ### getProposalCore
 
@@ -157,16 +160,6 @@ event ProposalExecuted(
 );
 ```
 
-### NestedProposalCreated
-
-```solidity
-event NestedProposalCreated(
-    uint256 indexed parentProposalId,
-    uint256 indexed childProposalId,
-    uint256 spaceId
-);
-```
-
 ## Integration Guide
 
 ### Web3.js Example
@@ -236,13 +229,8 @@ proposals.on('ProposalCreated', (proposalId, spaceId, startTime, duration, creat
 2. Access Control
 
    - Only space members can create proposals and vote
-   - Only proposal creator can edit before voting starts
 
 3. Execution Conditions
 
    - Requires meeting both unity and quorum thresholds
    - Automatic execution when conditions are met
-
-4. Nested Proposals
-   - Child proposals are linked to parent status
-   - Cannot vote on child if parent is expired/executed
