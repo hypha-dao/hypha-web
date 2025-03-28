@@ -10,10 +10,12 @@ export interface AuthUser {
 export interface AuthHook {
   isAuthenticated: boolean;
   isLoading: boolean;
+  isEmbeddedWallet: boolean;
   user: AuthUser | null;
   login: () => void;
   logout: () => void;
   getAccessToken: () => Promise<string | null>;
+  exportWallet: () => Promise<void>;
 }
 
 export type UseAuthentication = () => AuthHook;

@@ -12,6 +12,7 @@ export function usePrivyAuthenticationAdapter(): AuthHook {
     login: privyLogin,
     logout: privyLogout,
     getAccessToken,
+    exportWallet,
   } = usePrivy();
 
   const account = useAccount();
@@ -49,12 +50,27 @@ export function usePrivyAuthenticationAdapter(): AuthHook {
     };
   }, [privyUser, authenticated]);
 
+  const isEmbeddedWallet = React.useMemo(() => {
+    const connectedWallet = privyUser?.wallet;
+    return !!(
+      connectedWallet?.walletClientType === 'privy' &&
+      connectedWallet.chainType === 'ethereum'
+    );
+  }, [privyUser]);
+
+  const handleExportWallet = React.useCallback(async () => {
+    if (!isEmbeddedWallet) throw new Error('Not an embedded wallet');
+    await exportWallet();
+  }, [exportWallet, isEmbeddedWallet]);
+
   return {
     isAuthenticated: authenticated,
     isLoading: !ready,
+    isEmbeddedWallet,
     user,
     login,
     logout,
     getAccessToken,
+    exportWallet: handleExportWallet,
   };
 }
