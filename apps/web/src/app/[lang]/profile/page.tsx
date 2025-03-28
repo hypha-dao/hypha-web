@@ -23,6 +23,7 @@ import { useMe } from '@web/hooks/use-me';
 import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
 import { useSpaceDocuments } from '@web/hooks/use-space-documents';
+import { useAuthentication } from '@hypha-platform/authentication';
 
 export default function Profile() {
   const { lang } = useParams();
