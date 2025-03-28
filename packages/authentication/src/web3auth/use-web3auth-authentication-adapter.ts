@@ -42,6 +42,10 @@ export const useWeb3AuthAuthenticationAdapter = (): AuthHook => {
     login,
     logout,
     user: { id: address, wallet: { address } },
+    isEmbeddedWallet: false,
+    exportWallet: () => {
+      throw new Error('not implemented');
+    },
     getAccessToken,
   };
 };
