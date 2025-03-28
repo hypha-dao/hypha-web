@@ -1,6 +1,5 @@
 'use client';
 
-import { useAuthentication } from '@hypha-platform/authentication';
 import { MemberType } from '@hypha-platform/graphql/rsc';
 import { Text } from '@radix-ui/themes';
 import {
@@ -8,7 +7,6 @@ import {
   Card,
   Avatar,
   AvatarImage,
-  Container,
   Button,
   Skeleton,
 } from '@hypha-platform/ui';
@@ -21,6 +19,8 @@ import {
 } from '@radix-ui/react-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXTwitter } from '@fortawesome/free-brands-svg-icons';
+import { FaWallet } from 'react-icons/fa';
+import { RxDownload, RxPencil2 } from 'react-icons/rx';
 
 export interface Socials {
   LinkedIn: string;
@@ -33,6 +33,7 @@ interface PersonHeadProps {
   about: string;
   background: string;
   socials: Socials;
+  onExportEmbeededWallet?: () => void;
 }
 
 export const PersonHead = ({
@@ -43,8 +44,8 @@ export const PersonHead = ({
   about,
   background = '/placeholder/space-lead-image.png',
   socials,
+  onExportEmbeededWallet,
 }: PersonHeadProps & MemberType) => {
-  const { exportWallet } = useAuthentication();
   const customLogoStyles: React.CSSProperties = {
     width: '128px',
     height: '128px',
@@ -74,55 +75,25 @@ export const PersonHead = ({
           </Skeleton>
         </Avatar>
       </Card>
-      <div className="flex justify-end mt-2">
-        <Skeleton loading={isLoading} height={28} width={28}>
-          <Button
-            asChild
-            variant="ghost"
-            colorVariant="neutral"
-            className="rounded-lg justify-start p-1 cursor-pointer"
-          >
-            <Share2Icon width={28} height={28} />
-          </Button>
-        </Skeleton>
-        <Skeleton className="ml-2" loading={isLoading} width={120} height={35}>
-          <Button
-            asChild
-            variant="ghost"
-            colorVariant="accent"
-            className="rounded-lg justify-start cursor-pointer ml-2 bg-accent-3"
-            onClick={exportWallet}
-          >
-            <div>
-              <Pencil1Icon className="mr-2" width={16} height={16} />
+      <div className="flex justify-end mt-2 gap-2">
+        {onExportEmbeededWallet ? (
+          <Skeleton loading={isLoading} width={120} height={35}>
+            <Button variant="ghost" onClick={onExportEmbeededWallet}>
+              <RxDownload />
               Export Keys
-            </div>
+            </Button>
+          </Skeleton>
+        ) : null}
+        <Skeleton loading={isLoading} width={120} height={35}>
+          <Button variant="outline" colorVariant="accent">
+            <CopyIcon />
+            Copy user ID
           </Button>
         </Skeleton>
-        <Skeleton className="ml-2" loading={isLoading} width={120} height={35}>
-          <Button
-            asChild
-            variant="ghost"
-            colorVariant="accent"
-            className="rounded-lg justify-start cursor-pointer ml-2 bg-accent-3"
-          >
-            <div>
-              <Pencil1Icon className="mr-2" width={16} height={16} />
-              Edit profile
-            </div>
-          </Button>
-        </Skeleton>
-        <Skeleton className="ml-2" loading={isLoading} width={120} height={35}>
-          <Button
-            asChild
-            variant="default"
-            colorVariant="accent"
-            className="rounded-lg justify-start cursor-pointer ml-2"
-          >
-            <div>
-              <CopyIcon className="mr-2" width={16} height={16} />
-              Copy user ID
-            </div>
+        <Skeleton loading={isLoading} width={120} height={35}>
+          <Button colorVariant="accent">
+            <RxPencil2 />
+            Edit profile
           </Button>
         </Skeleton>
       </div>

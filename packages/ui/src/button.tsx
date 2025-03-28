@@ -5,7 +5,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@hypha-platform/ui-utils';
 
 const buttonVariants = cva(
-  'rounded inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 space-x-2',
+  'cursor-pointer rounded inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 space-x-2',
   {
     variants: {
       variant: {
@@ -53,7 +53,7 @@ const buttonVariants = cva(
         variant: 'outline',
         colorVariant: 'accent',
         className:
-          'border-accent-9 text-accent-9 hover:bg-accent-2 hover:text-accent-11',
+          'border-accent-9 text-accent-11 hover:bg-accent-2 hover:text-accent-12',
       },
       {
         variant: 'outline',
