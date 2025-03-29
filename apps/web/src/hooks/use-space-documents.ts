@@ -15,10 +15,12 @@ export const useSpaceDocuments: UseDocuments = ({
   page = 1,
   pageSize = 4,
   filter,
+  activeTab,
 }: {
   page?: number;
   pageSize?: number;
   filter?: FilterParams<Pick<Document, 'state'>>;
+  activeTab?: string;
 }): UseDocumentsReturn => {
   const spaceSlug = useSpaceSlug();
 
@@ -44,8 +46,36 @@ export const useSpaceDocuments: UseDocuments = ({
     { revalidateOnFocus: true },
   );
 
+  const getDocumentBadges = (document: Document) => {
+    switch (document.state) {
+      case 'proposal':
+        return [
+          {
+            label: 'Proposal',
+            className: 'capitalize',
+            variant: 'solid',
+            colorVariant: 'accent',
+          },
+          {
+            label: 'On voting',
+            className: 'capitalize',
+            variant: 'outline',
+            colorVariant: 'warn',
+          },
+        ];
+      // TODO: added badges for other states when we have a completion state
+    }
+  };
+
+  const parsedData = response?.data.map((document: Document) => {
+    return {
+      ...document,
+      badges: getDocumentBadges(document),
+    };
+  });
+
   return {
-    documents: response?.data || [],
+    documents: parsedData || [],
     pagination: response?.pagination,
     isLoading,
   };

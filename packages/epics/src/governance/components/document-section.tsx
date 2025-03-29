@@ -12,20 +12,21 @@ import { PlusIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
 import { DocumentState, UseDocuments } from '..';
 import { DocumentGridContainer } from './document-grid.container';
-import { useDocumentsFilter } from '../hooks/use-documents-filter';
+import { FILTER_BY_STATE } from '../constants';
 
 type DocumentSectionProps = {
   basePath: string;
   useDocuments: UseDocuments;
   documentState: DocumentState;
+  label?: string;
 };
 
 export const DocumentSection: FC<DocumentSectionProps> = ({
   basePath,
   useDocuments,
   documentState,
+  label,
 }) => {
-  const { filter } = useDocumentsFilter({ documentState: documentState });
   const {
     pages,
     activeFilter,
@@ -34,7 +35,13 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
     loadMore,
     pagination,
     sortOptions,
-  } = useDocumentsSection({ useDocuments, documentState: documentState });
+    tabs,
+    activeTab,
+    setActiveTab,
+  } = useDocumentsSection({
+    useDocuments,
+    documentState: FILTER_BY_STATE[documentState] as DocumentState,
+  });
 
   return (
     <div className="flex flex-col justify-around items-center gap-4">
@@ -42,7 +49,7 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
         value={activeFilter}
         onChange={setActiveFilter}
         count={pagination?.total || 0}
-        label={`${documentState}s`}
+        label={label || ''}
         sortOptions={sortOptions}
       >
         <Link href={`${basePath}/create`} scroll={false}>
@@ -54,9 +61,9 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
       </SectionFilter>
       {pagination?.totalPages === 0 ? null : (
         <SectionTabs
-          activeTab={activeFilter}
-          setActiveTab={setActiveFilter}
-          tabs={filter || []}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          tabs={tabs || []}
         />
       )}
       {pagination?.totalPages === 0 ? (
@@ -70,9 +77,12 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
               pagination={{
                 page: index + 1,
                 pageSize: 3,
-                filter: { state: documentState },
+                filter: {
+                  state: FILTER_BY_STATE[documentState] as DocumentState,
+                },
               }}
               useDocuments={useDocuments}
+              activeTab={activeTab}
             />
           ))}
         </div>
