@@ -26,19 +26,19 @@ export interface Socials {
 }
 
 interface PersonHeadProps {
-  isLoading: boolean;
+  isLoading?: boolean;
   about: string;
   background: string;
   socials: Socials;
 }
 
 export const PersonHead = ({
-  isLoading,
-  avatar = '/placeholder/space-avatar-image.png',
+  isLoading = true,
+  avatar,
   name,
   surname,
   about,
-  background = '/placeholder/space-lead-image.png',
+  background,
   socials,
 }: PersonHeadProps & MemberType) => {
   const customLogoStyles: React.CSSProperties = {
@@ -57,14 +57,14 @@ export const PersonHead = ({
             width={768}
             height={270}
             className="rounded-xl max-h-[270px] w-full object-cover"
-            src={background}
+            src={background || '/placeholder/space-lead-image.png'}
             alt={`Profile Lead Image: ${name} ${surname}`}
           />
         </Skeleton>
         <Avatar style={customLogoStyles}>
           <Skeleton loading={isLoading} width={128} height={128}>
             <AvatarImage
-              src={avatar}
+              src={avatar || '/placeholder/space-avatar-image.png'}
               alt={`Profile Avatar Image: ${name} ${surname}`}
             />
           </Skeleton>
