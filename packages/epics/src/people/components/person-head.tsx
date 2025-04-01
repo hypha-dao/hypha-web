@@ -5,7 +5,6 @@ import {
   Card,
   Avatar,
   AvatarImage,
-  Container,
   Button,
   Skeleton,
 } from '@hypha-platform/ui';
