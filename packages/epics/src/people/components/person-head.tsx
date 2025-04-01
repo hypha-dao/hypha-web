@@ -1,3 +1,6 @@
+'use client';
+
+import { useAuthentication } from '@hypha-platform/authentication';
 import { MemberType } from '@hypha-platform/graphql/rsc';
 import { Text } from '@radix-ui/themes';
 import {
@@ -40,6 +43,7 @@ export const PersonHead = ({
   background = '/placeholder/space-lead-image.png',
   socials,
 }: PersonHeadProps & MemberType) => {
+  const { exportWallet } = useAuthentication();
   const customLogoStyles: React.CSSProperties = {
     width: '128px',
     height: '128px',
@@ -78,6 +82,20 @@ export const PersonHead = ({
             className="rounded-lg justify-start p-1 cursor-pointer"
           >
             <Share2Icon width={28} height={28} />
+          </Button>
+        </Skeleton>
+        <Skeleton className="ml-2" loading={isLoading} width={120} height={35}>
+          <Button
+            asChild
+            variant="ghost"
+            colorVariant="accent"
+            className="rounded-lg justify-start cursor-pointer ml-2 bg-accent-3"
+            onClick={exportWallet}
+          >
+            <div>
+              <Pencil1Icon className="mr-2" width={16} height={16} />
+              Export Keys
+            </div>
           </Button>
         </Skeleton>
         <Skeleton className="ml-2" loading={isLoading} width={120} height={35}>
