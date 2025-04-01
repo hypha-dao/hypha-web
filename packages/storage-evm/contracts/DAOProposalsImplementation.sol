@@ -91,7 +91,16 @@ contract DAOProposalsImplementation is
     bytes calldata _executionData
   ) internal view {
     require(address(spaceFactory) != address(0), 'Contracts not initialized');
-    require(spaceFactory.isMember(_spaceId, msg.sender), 'Not a space member');
+
+    // Allow space factory to create proposals regardless of membership
+    // This is needed for join requests with join method 2
+    if (msg.sender != address(spaceFactory)) {
+      require(
+        spaceFactory.isMember(_spaceId, msg.sender),
+        'Not a space member'
+      );
+    }
+
     require(_duration >= MIN_VOTING_DURATION, 'Duration too short');
     require(_duration <= MAX_VOTING_DURATION, 'Duration too long');
     require(_targetContract != address(0), 'Invalid target contract');

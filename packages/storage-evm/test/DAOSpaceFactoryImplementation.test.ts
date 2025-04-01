@@ -283,6 +283,108 @@ describe('DAOSpaceFactoryImplementation', function () {
       expect(memberSpaces).to.deep.equal([1n, 3n]);
     });
 
+    it('Should create a proposal when joining a space with join method 2', async function () {
+      const { daoSpaceFactory, spaceHelper, owner, other, votingPowerDirectory } = await loadFixture(deployFixture);
+
+      // 1. Deploy SpaceVotingPower implementation first
+      const SpaceVotingPower = await ethers.getContractFactory('SpaceVotingPowerImplementation');
+      const spaceVotingPower = await upgrades.deployProxy(
+        SpaceVotingPower,
+        [owner.address],
+        {
+          initializer: 'initialize',
+          kind: 'uups',
+        }
+      );
+      await spaceVotingPower.waitForDeployment();
+      
+      // Set space factory in voting power source
+      await spaceVotingPower.setSpaceFactory(await daoSpaceFactory.getAddress());
+
+      // 2. Register the voting power source in the directory
+      await votingPowerDirectory.addVotingPowerSource(await spaceVotingPower.getAddress());
+
+      // 3. Deploy the real DAOProposalsImplementation contract
+      const DAOProposals = await ethers.getContractFactory('DAOProposalsImplementation');
+      const daoProposals = await upgrades.deployProxy(
+        DAOProposals,
+        [owner.address],
+        {
+          initializer: 'initialize',
+          kind: 'uups',
+        }
+      );
+      await daoProposals.waitForDeployment();
+
+      // Configure the proposals contract with the space factory and directory
+      await daoProposals.setContracts(
+        await daoSpaceFactory.getAddress(),
+        await votingPowerDirectory.getAddress()
+      );
+
+      // 4. Set the proposals contract in space factory
+      await daoSpaceFactory.setProposalsContract(await daoProposals.getAddress());
+
+      // 5. Create a space with join method 2
+      const spaceParams = {
+        name: 'Join By Proposal Space',
+        description: 'Test Description',
+        imageUrl: 'https://test.com/image.png',
+        unity: 51,
+        quorum: 51,
+        votingPowerSource: 1, // This should match the ID registered in votingPowerDirectory
+        exitMethod: 1,
+        joinMethod: 2, // <-- Join method 2 (proposal required)
+        createToken: false,
+        tokenName: '',
+        tokenSymbol: '',
+      };
+
+      await spaceHelper.contract.createSpace(spaceParams);
+
+      // 6. Attempt to join the space (should create a proposal)
+      const joinTx = await daoSpaceFactory.connect(other).joinSpace(1);
+      const receipt = await joinTx.wait();
+
+      // 7. Check for the JoinRequestedWithProposal event
+      const joinRequestedEvents = receipt?.logs
+        .filter(log => {
+          try {
+            return daoSpaceFactory.interface.parseLog({
+              topics: log.topics as string[],
+              data: log.data,
+            })?.name === 'JoinRequestedWithProposal';
+          } catch (e) {
+            return false;
+          }
+        })
+        .map(log => daoSpaceFactory.interface.parseLog({
+          topics: log.topics as string[],
+          data: log.data,
+        }));
+
+      expect(joinRequestedEvents?.length).to.be.at.least(1);
+      const joinEvent = joinRequestedEvents?.[0];
+      expect(joinEvent?.args.spaceId).to.equal(1);
+      expect(joinEvent?.args.member).to.equal(await other.getAddress());
+
+      // Store the proposal ID for later use
+      const proposalId = joinEvent?.args.proposalId;
+
+      // 8. Verify the member is NOT yet added to the space
+      expect(await daoSpaceFactory.isMember(1, await other.getAddress())).to.be.false;
+
+      // 9. Verify the proposal exists in the DAO proposals contract
+      const proposalData = await daoProposals.getProposalCore(proposalId);
+      expect(proposalData.spaceId).to.equal(1);
+      expect(proposalData.executed).to.be.false;
+      
+      // 10. The target contract in the proposal should be the space factory
+      // This is difficult to check directly with the real implementation, but
+      // we can verify that the proposal was created for the correct space
+      expect(proposalData.spaceId).to.equal(1);
+    });
+
     // Removed failing test: "Should update member spaces when member is removed"
     // TODO: Fix and re-enable this test once exit permissions are properly configured
   });

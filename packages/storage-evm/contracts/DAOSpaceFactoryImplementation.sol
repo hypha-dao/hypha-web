@@ -9,6 +9,7 @@ import './interfaces/ITokenFactory.sol';
 import './Executor.sol';
 import './interfaces/IDAOSpaceFactory.sol';
 import './interfaces/IExitMethodDirectory.sol';
+import './interfaces/IDAOProposals.sol';
 
 contract DAOSpaceFactoryImplementation is
   Initializable,
@@ -40,6 +41,8 @@ contract DAOSpaceFactoryImplementation is
     _;
   }
 
+  IDAOProposals public proposalsContract;
+
   function setContracts(
     address _tokenFactoryAddress,
     address _joinMethodDirectoryAddress,
@@ -60,6 +63,15 @@ contract DAOSpaceFactoryImplementation is
     emit JoinMethodDirectoryContractUpdated(_joinMethodDirectoryAddress);
     emit ExitMethodDirectoryContractUpdated(_exitMethodDirectoryAddress);
     emit ProposalManagerUpdated(_proposalManagerAddress);
+  }
+
+  function setProposalsContract(address _proposalsContract) external onlyOwner {
+    require(
+      _proposalsContract != address(0),
+      'Invalid proposals contract address'
+    );
+    proposalsContract = IDAOProposals(_proposalsContract);
+    emit ProposalsContractUpdated(_proposalsContract);
   }
 
   function createSpace(
@@ -143,32 +155,91 @@ contract DAOSpaceFactoryImplementation is
       require(space.members[i] != msg.sender, 'Already a member');
     }
 
-    require(
-      IDirectory(joinMethodDirectoryAddress).joincheck(
-        _spaceId,
-        space.joinMethod,
-        msg.sender
-      ),
-      'Join criteria not met'
-    );
+    if (space.joinMethod == 2) {
+      // If join method is 2, create a proposal to add the member
+      require(
+        address(proposalsContract) != address(0),
+        'Proposals contract not set'
+      );
 
-    space.members.push(msg.sender);
+      // Encode the function call data for addMember
+      bytes memory executionData = abi.encodeWithSelector(
+        this.addMember.selector,
+        _spaceId,
+        msg.sender
+      );
+
+      // Create proposal params
+      IDAOProposals.ProposalParams memory params = IDAOProposals
+        .ProposalParams({
+          spaceId: _spaceId,
+          duration: 3 days, // Use a sensible default, adjust as needed
+          targetContract: address(this),
+          executionData: executionData,
+          value: 0 // No ETH being sent
+        });
+
+      // Create the proposal
+      uint256 proposalId = proposalsContract.createProposal(params);
+
+      emit JoinRequestedWithProposal(_spaceId, msg.sender, proposalId);
+      return;
+    } else {
+      require(
+        IDirectory(joinMethodDirectoryAddress).joincheck(
+          _spaceId,
+          space.joinMethod,
+          msg.sender
+        ),
+        'Join criteria not met'
+      );
+
+      addMemberInternal(_spaceId, msg.sender);
+    }
+  }
+
+  function addMember(
+    uint256 _spaceId,
+    address _memberAddress
+  ) external onlySpaceExecutor(_spaceId) {
+    require(_spaceId > 0 && _spaceId <= spaceCounter, 'Invalid space ID');
+
+    Space storage space = spaces[_spaceId];
+
+    for (uint256 i = 0; i < space.members.length; i++) {
+      require(space.members[i] != _memberAddress, 'Already a member');
+    }
+
+    addMemberInternal(_spaceId, _memberAddress);
+  }
+
+  function addMemberInternal(
+    uint256 _spaceId,
+    address _memberAddress
+  ) internal {
+    Space storage space = spaces[_spaceId];
+
+    // Add member to the space
+    space.members.push(_memberAddress);
 
     // Add this space to the member's list of spaces
-    memberSpaces[msg.sender].push(_spaceId);
+    memberSpaces[_memberAddress].push(_spaceId);
 
     // Check if the joining member is a space executor and add to space members if it is
     for (uint256 i = 1; i <= spaceCounter; i++) {
-      if (spaces[i].executor == msg.sender) {
+      if (spaces[i].executor == _memberAddress) {
         SpaceMembers storage members = spaceMembers[_spaceId];
-        require(!members.isSpaceMember[msg.sender], 'Already a space member');
-        members.spaceMemberAddresses.push(msg.sender);
-        members.isSpaceMember[msg.sender] = true;
+        require(
+          !members.isSpaceMember[_memberAddress],
+          'Already a space member'
+        );
+        members.spaceMemberAddresses.push(_memberAddress);
+        members.isSpaceMember[_memberAddress] = true;
         break;
       }
     }
 
-    emit MemberJoined(_spaceId, msg.sender);
+    emit MemberJoined(_spaceId, _memberAddress);
   }
 
   function removeMember(uint256 _spaceId, address _memberToRemove) public {
@@ -368,4 +439,13 @@ contract DAOSpaceFactoryImplementation is
   ) external view returns (uint256[] memory) {
     return memberSpaces[_memberAddress];
   }
+
+  // Add this to your events at the top of the contract or near other events
+  event JoinRequested(uint256 indexed spaceId, address indexed member);
+  event ProposalsContractUpdated(address indexed proposalsContract);
+  event JoinRequestedWithProposal(
+    uint256 indexed spaceId,
+    address indexed member,
+    uint256 indexed proposalId
+  );
 }
