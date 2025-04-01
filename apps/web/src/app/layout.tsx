@@ -1,7 +1,7 @@
 import { VercelToolbar } from '@vercel/toolbar/next';
 import { NextSSRPlugin } from '@uploadthing/react/next-ssr-plugin';
 import { extractRouterConfig } from 'uploadthing/server';
-
+import { cookies } from 'next/headers';
 import { Lato, Source_Sans_3 } from 'next/font/google';
 import clsx from 'clsx';
 
@@ -18,6 +18,8 @@ import { ConnectedButtonProfile } from '@hypha-platform/epics';
 import { EvmProvider } from '@hypha-platform/evm';
 import { useMe } from '@web/hooks/use-me';
 import { fileRouter } from '@hypha-platform/core/server';
+import { HYPHA_LOCALE } from '@hypha-platform/cookie';
+import { i18nConfig } from '@hypha-platform/i18n';
 
 const lato = Lato({
   subsets: ['latin'],
@@ -32,6 +34,7 @@ const sourceSans = Source_Sans_3({
   weight: ['900', '700', '400', '300'],
   variable: '--font-body',
 });
+
 export default async function RootLayout({
   children,
 }: {
@@ -39,6 +42,9 @@ export default async function RootLayout({
 }) {
   const isWeb3AuthEnabled = await enableWeb3Auth();
   const shouldInjectToolbar = process.env.NODE_ENV === 'development';
+  const cookieStore = await cookies();
+  const lang = cookieStore.get(HYPHA_LOCALE)?.value || i18nConfig.defaultLocale;
+
   return (
     <Html className={clsx(lato.variable, sourceSans.variable)}>
       <AuthProvider
@@ -66,15 +72,15 @@ export default async function RootLayout({
               navItems={[
                 {
                   label: 'Network',
-                  href: `/network`,
+                  href: `/${lang}/network`,
                 },
                 {
                   label: 'My Spaces',
-                  href: `/my-spaces`,
+                  href: `/${lang}/my-spaces`,
                 },
                 {
                   label: 'Wallet',
-                  href: `/wallet`,
+                  href: `/${lang}/wallet`,
                 },
               ]}
             >
@@ -82,7 +88,7 @@ export default async function RootLayout({
                 <ConnectedButtonProfile
                   useAuthentication={useAuthentication}
                   useMe={useMe}
-                  newUserRedirectPath="/profile/signup"
+                  newUserRedirectPath={`/${lang}/profile/signup`}
                 />
               </MenuTop.RightSlot>
             </MenuTop>
