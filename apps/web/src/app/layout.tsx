@@ -87,7 +87,7 @@ export default async function RootLayout({
               </MenuTop.RightSlot>
             </MenuTop>
             <NextSSRPlugin routerConfig={extractRouterConfig(fileRouter)} />
-            {children}
+            <div className="mb-auto">{children}</div>
             <Footer />
           </EvmProvider>
         </ThemeProvider>

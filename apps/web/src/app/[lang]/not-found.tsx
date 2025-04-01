@@ -1,32 +1,21 @@
-'use client';
-
 import { Button } from '@hypha-platform/ui';
 import { GlobeIcon } from '@radix-ui/react-icons';
-import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 
-export default function NotFound() {
-  const router = useRouter();
-  const { lang } = useParams();
-
-  const transitionToExploreSpaces = () => {
-    router.push(`/${lang}/my-spaces`);
-  };
-
+export default async function NotFound() {
   return (
-    <div className="flex flex-col justify-center items-center gap-6 font-medium">
+    <div className="flex flex-col justify-center items-center gap-6 font-medium h-full py-64">
       <span className="text-9">Oooops! We couldn’t find this page</span>
       <span className="text-4 text-neutral-11">
         The page you are looking for might have been removed, had its name
         changed, or is temporarily unavailable
       </span>
-      <Button
-        colorVariant="accent"
-        className="gap-2"
-        onClick={transitionToExploreSpaces}
-      >
-        <GlobeIcon />
-        Explore Spaces
-      </Button>
+      <Link href="/network">
+        <Button colorVariant="accent" className="gap-2">
+          <GlobeIcon />
+          Explore Spaces
+        </Button>
+      </Link>
     </div>
   );
 }

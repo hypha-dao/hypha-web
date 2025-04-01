@@ -16,7 +16,9 @@ export const Html: React.FC<{
           sizes="192x192"
         />
       </head>
-      <body className="flex flex-col w-full h-full">{children}</body>
+      <body className="flex flex-col w-full h-screen justify-between">
+        {children}
+      </body>
     </html>
   );
 };
