@@ -10,6 +10,7 @@ export interface AuthUser {
 export interface AuthHook {
   isAuthenticated: boolean;
   isLoading: boolean;
+  isEmbeddedWallet: boolean;
   user: AuthUser | null;
   login: () => void;
   logout: () => void;
