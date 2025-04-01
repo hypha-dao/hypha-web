@@ -40,7 +40,7 @@ export default async function RootLayout({
   const isWeb3AuthEnabled = await enableWeb3Auth();
   const shouldInjectToolbar = process.env.NODE_ENV === 'development';
   return (
-    <Html className={clsx(lato.variable, sourceSans.variable)}>
+    <Html className={clsx(lato.variable, sourceSans.variable, 'h-full')}>
       <AuthProvider
         config={
           isWeb3AuthEnabled
@@ -61,34 +61,36 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <EvmProvider>
-            <MenuTop
-              withLogo={true}
-              navItems={[
-                {
-                  label: 'Network',
-                  href: `/network`,
-                },
-                {
-                  label: 'My Spaces',
-                  href: `/my-spaces`,
-                },
-                {
-                  label: 'Wallet',
-                  href: `/wallet`,
-                },
-              ]}
-            >
-              <MenuTop.RightSlot>
-                <ConnectedButtonProfile
-                  useAuthentication={useAuthentication}
-                  useMe={useMe}
-                  newUserRedirectPath="/profile/signup"
-                />
-              </MenuTop.RightSlot>
-            </MenuTop>
-            <NextSSRPlugin routerConfig={extractRouterConfig(fileRouter)} />
-            {children}
-            <Footer />
+            <div className="flex flex-col justify-between h-full">
+              <MenuTop
+                withLogo={true}
+                navItems={[
+                  {
+                    label: 'Network',
+                    href: `/network`,
+                  },
+                  {
+                    label: 'My Spaces',
+                    href: `/my-spaces`,
+                  },
+                  {
+                    label: 'Wallet',
+                    href: `/wallet`,
+                  },
+                ]}
+              >
+                <MenuTop.RightSlot>
+                  <ConnectedButtonProfile
+                    useAuthentication={useAuthentication}
+                    useMe={useMe}
+                    newUserRedirectPath="/profile/signup"
+                  />
+                </MenuTop.RightSlot>
+              </MenuTop>
+              <NextSSRPlugin routerConfig={extractRouterConfig(fileRouter)} />
+              <div className="h-full">{children}</div>
+              <Footer />
+            </div>
           </EvmProvider>
         </ThemeProvider>
       </AuthProvider>
