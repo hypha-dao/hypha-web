@@ -2,10 +2,8 @@ import {
   daoSpaceFactoryImplementationAbi,
   daoSpaceFactoryImplementationAddress,
 } from '@core/generated';
-import { config } from '@hypha-platform/evm';
-import { readContract } from '@wagmi/core';
 
-export const isMember = async ({
+export const isMember = ({
   spaceId,
   memberAddress,
   chain = 8453,
@@ -16,12 +14,10 @@ export const isMember = async ({
 }) => {
   const address = daoSpaceFactoryImplementationAddress[chain];
 
-  const result = await readContract(config, {
+  return {
     address,
     abi: daoSpaceFactoryImplementationAbi,
     functionName: 'isMember',
     args: [spaceId, memberAddress],
-  });
-
-  return result;
+  } as const;
 };

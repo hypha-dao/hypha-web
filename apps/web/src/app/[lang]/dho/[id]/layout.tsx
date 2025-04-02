@@ -1,4 +1,4 @@
-import { SpaceCard } from '@hypha-platform/epics';
+import { JoinSpace, SpaceCard } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import {
   Container,
@@ -11,7 +11,6 @@ import {
   Link2Icon,
   LinkedInLogoIcon,
   Share2Icon,
-  PersonIcon,
   ChevronLeftIcon,
 } from '@radix-ui/react-icons';
 import { Text } from '@radix-ui/themes';
@@ -30,8 +29,6 @@ const customLogoStyles: React.CSSProperties = {
   bottom: '-35px',
   left: '15px',
 };
-
-const alreadyMember = true;
 
 export default async function DhoLayout({
   children,
@@ -89,15 +86,9 @@ export default async function DhoLayout({
           >
             <Share2Icon width={28} height={28} />
           </Button>
-          <Button
-            disabled={alreadyMember}
-            className="ml-2 rounded-lg"
-            colorVariant={alreadyMember ? 'neutral' : 'accent'}
-            variant={alreadyMember ? 'outline' : 'default'}
-          >
-            <PersonIcon className="mr-2" width={16} height={16} />
-            {alreadyMember ? 'Already member' : 'Become member'}
-          </Button>
+          {typeof spaceFromDb.web3SpaceId === 'number' && (
+            <JoinSpace spaceId={spaceFromDb.web3SpaceId} />
+          )}
         </div>
         <div className="mt-4">
           <Text className="text-7">{spaceFromDb.title}</Text>

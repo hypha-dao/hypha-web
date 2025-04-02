@@ -3,7 +3,7 @@ export interface AuthUser {
   email?: string;
   name?: string;
   wallet?: {
-    address?: string;
+    address?: `0x${string}`;
   };
 }
 
