@@ -45,7 +45,7 @@ export function usePrivyAuthenticationAdapter(): AuthHook {
       id: privyUser.id,
       email: privyUser.email?.address,
       ...(privyUser.wallet?.address && {
-        wallet: { address: privyUser.wallet.address },
+        wallet: { address: privyUser.wallet.address as `0x${string}` },
       }),
     };
   }, [privyUser, authenticated]);
