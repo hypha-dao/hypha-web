@@ -9,9 +9,8 @@ type JoinSpaceProps = {
 };
 
 export const JoinSpace = ({ spaceId }: JoinSpaceProps) => {
-  const { isMember, isLoading, error, joinSpace } = useJoinSpace({ spaceId });
+  const { isMember, isLoading, joinSpace } = useJoinSpace({ spaceId });
 
-  console.debug('JoinSpace', { isMember, isLoading, error });
   return (
     <Button
       disabled={isMember || isLoading}
