@@ -149,12 +149,6 @@ export const Footer = () => {
             </Button>
           </div>
         </div>
-        <div
-          className="pb-4 text-gray-400 text-center md:text-left"
-          style={{ fontSize: '12px' }}
-        >
-          Hypha Genossenschaft, Birkenweg 6, 9490, Vaduz Liechtenstein.
-        </div>
       </Container>
     </div>
   );
