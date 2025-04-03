@@ -3,6 +3,7 @@ import { DiscussionCardHead, Space, Creator } from './discussion-card-head';
 import { DocumentLikeButton } from './document-like-button';
 import { DocumentCommentButton } from './document-comment-button';
 import { DocumentShareButton } from './document-share-button';
+import { MarkdownSuspense } from '@hypha-platform/ui/server';
 
 type DiscussionCardProps = {
   description: string;
@@ -41,7 +42,9 @@ export const DiscussionCard = ({
             loading={isLoading}
             className="w-full h-full"
           >
-            <span className="text-1 text-neutral-11">{description}</span>
+            <span className="text-1 text-neutral-11">
+              <MarkdownSuspense content={description || ''}/>
+            </span>
           </Skeleton>
         </div>
       </div>
