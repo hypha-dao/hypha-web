@@ -7,6 +7,7 @@ import { Button, Skeleton, Separator } from '@hypha-platform/ui';
 import { RxCross1 } from 'react-icons/rx';
 import { Image } from '@hypha-platform/ui';
 import Link from 'next/link';
+import { MarkdownSuspense } from '@hypha-platform/ui/server';
 
 type DocumentDetailsProps = Document &
   DocumentDetailsHeadProps & {
@@ -66,7 +67,10 @@ export const DocumentDetails = ({
         loading={isLoading}
         className="rounded-lg"
       >
-        <div className="text-2 text-neutral-11">{description}</div>
+        
+        <div className="text-2 text-white">
+          <MarkdownSuspense content={description || ''} />
+        </div>
       </Skeleton>
       <Separator />
       {interactions}
