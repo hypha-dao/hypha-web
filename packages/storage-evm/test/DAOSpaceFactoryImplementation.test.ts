@@ -1,8 +1,6 @@
 import { ethers, upgrades } from 'hardhat';
 import { expect } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers';
-import { anyValue } from '@nomicfoundation/hardhat-chai-matchers/withArgs';
-import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { SpaceHelper } from './helpers/SpaceHelper';
 
 describe('DAOSpaceFactoryImplementation', function () {
@@ -163,7 +161,7 @@ describe('DAOSpaceFactoryImplementation', function () {
       const { spaceHelper, owner } = await loadFixture(deployFixture);
 
       const tx = await spaceHelper.createDefaultSpace();
-      const receipt = await tx.wait();
+      await tx.wait();
 
       const spaceDetails = await spaceHelper.getSpaceDetails(1);
       const executor = spaceDetails.executor;
@@ -362,13 +360,14 @@ describe('DAOSpaceFactoryImplementation', function () {
       const proposalId = joinEvent?.args.proposalId;
 
       // 8. Verify the member is NOT yet added to the space
-      expect(await daoSpaceFactory.isMember(1, await other.getAddress())).to.be
-        .false;
+      expect(
+        await daoSpaceFactory.isMember(1, await other.getAddress()),
+      ).to.equal(false);
 
       // 9. Verify the proposal exists in the DAO proposals contract
       const proposalData = await daoProposals.getProposalCore(proposalId);
       expect(proposalData.spaceId).to.equal(1);
-      expect(proposalData.executed).to.be.false;
+      expect(proposalData.executed).to.equal(false);
 
       // 10. The target contract in the proposal should be the space factory
       // This is difficult to check directly with the real implementation, but
@@ -400,8 +399,9 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // Join the space
       await spaceHelper.joinSpace(1, other);
-      expect(await daoSpaceFactory.isMember(1, await other.getAddress())).to.be
-        .true;
+      expect(
+        await daoSpaceFactory.isMember(1, await other.getAddress()),
+      ).to.equal(true);
 
       // Get the executor
       const executorAddress = await daoSpaceFactory.getSpaceExecutor(1);
@@ -428,8 +428,9 @@ describe('DAOSpaceFactoryImplementation', function () {
         .withArgs(1, await other.getAddress());
 
       // Verify member was removed
-      expect(await daoSpaceFactory.isMember(1, await other.getAddress())).to.be
-        .false;
+      expect(
+        await daoSpaceFactory.isMember(1, await other.getAddress()),
+      ).to.equal(false);
 
       // Verify member's spaces were updated
       const memberSpaces = await daoSpaceFactory.getMemberSpaces(
