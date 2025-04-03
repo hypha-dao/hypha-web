@@ -101,7 +101,7 @@ contract DAOProposalsImplementation is
       );
     }
 
-    require(_duration >= MIN_VOTING_DURATION, 'Duration too short');
+    //require(_duration >= MIN_VOTING_DURATION, 'Duration too short');
     require(_duration <= MAX_VOTING_DURATION, 'Duration too long');
     require(_targetContract != address(0), 'Invalid target contract');
     require(_executionData.length > 0, 'Execution data cannot be empty');

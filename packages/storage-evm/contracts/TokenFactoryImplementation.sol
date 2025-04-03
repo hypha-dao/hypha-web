@@ -39,21 +39,11 @@ contract TokenFactoryImplementation is
     emit SpacesContractUpdated(_spacesContract);
   }
 
-  modifier onlySpaceFactoryOrAuthorized(uint256 spaceId) {
-    require(
-      msg.sender == spacesContract ||
-        (IDAOSpaceFactory(spacesContract).isSpaceCreator(spaceId, msg.sender) ||
-          msg.sender ==
-          IDAOSpaceFactory(spacesContract).getSpaceExecutor(spaceId)),
-      'Unauthorized: not space factory or authorized caller'
-    );
-    _;
-  }
-
   function deployToken(
     uint256 spaceId,
     string memory name,
-    string memory symbol
+    string memory symbol,
+    uint256 maxSupply
   ) external override returns (address) {
     require(spacesContract != address(0), 'Spaces contract not set');
 
@@ -76,7 +66,8 @@ contract TokenFactoryImplementation is
       symbol,
       executor,
       spacesContract,
-      spaceId
+      spaceId,
+      maxSupply
     );
 
     // Only add token to space if called by authorized party (not space factory)

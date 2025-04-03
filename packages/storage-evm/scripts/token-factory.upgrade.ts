@@ -1,7 +1,7 @@
 import { ethers, upgrades } from 'hardhat';
 
 // Replace this with your actual proxy address when deploying
-const PROXY_ADDRESS = '0x811F1f2f7e78EB8738eda8Aa90eA33210C0d6f76';
+const PROXY_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 async function main(): Promise<void> {
   // Get the deployer's address
@@ -10,19 +10,19 @@ async function main(): Promise<void> {
 
   console.log('Upgrading with admin address:', adminAddress);
 
-  const DAOProposals = await ethers.getContractFactory(
-    'DAOProposalsImplementation',
+  const TokenFactory = await ethers.getContractFactory(
+    'TokenFactoryImplementation', 
   );
 
-  console.log('Upgrading DAOProposals...');
+  console.log('Upgrading TokenFactory...');
   const upgradedContract = await upgrades.upgradeProxy(
     PROXY_ADDRESS,
-    DAOProposals,
+    TokenFactory,
   );
 
   await upgradedContract.waitForDeployment();
   console.log(
-    'DAOProposals upgraded at address:',
+    'TokenFactory upgraded at address:',
     await upgradedContract.getAddress(),
   );
 }

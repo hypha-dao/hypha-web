@@ -14,3 +14,11 @@ OpenJoin deployed to: 0x957e7671Db34773d7d28FedA03Ca762BA3611dc0
 Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying DAOProposals...
 DAOProposals deployed to: 0x811F1f2f7e78EB8738eda8Aa90eA33210C0d6f76
+
+Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying ExitMethodDirectory...
+ExitMethodDirectory deployed to: 0x830ed2DAcF264dD7Fc9BC11E34674AC937B04A06
+
+Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying TokenFactory...
+TokenFactory deployed to: 0xeA9BD28eBB2e6996c5C84eACC64e661f83905eD0

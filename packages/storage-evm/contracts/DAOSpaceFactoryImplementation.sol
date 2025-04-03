@@ -97,11 +97,11 @@ contract DAOSpaceFactoryImplementation is
     }
 */
     spaceCounter++;
-    /*
+    
     Executor executor = new Executor(proposalManagerAddress);
     executorToSpaceId[address(executor)] = spaceCounter;
-*/
-    Executor executor = new Executor(msg.sender);
+
+    //Executor executor = new Executor(msg.sender);
 
     Space storage newSpace = spaces[spaceCounter];
     newSpace.unity = params.unity;
@@ -173,7 +173,7 @@ contract DAOSpaceFactoryImplementation is
       IDAOProposals.ProposalParams memory params = IDAOProposals
         .ProposalParams({
           spaceId: _spaceId,
-          duration: 3 days, // Use a sensible default, adjust as needed
+          duration: 7 days, // Use a sensible default, adjust as needed
           targetContract: address(this),
           executionData: executionData,
           value: 0 // No ETH being sent
