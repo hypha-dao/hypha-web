@@ -32,27 +32,30 @@ interface DAOSpaceFactoryInterface {
 
 // Function to parse addresses from addresses.txt
 function parseAddressesFile(): Record<string, string> {
-  const addressesPath = path.resolve(__dirname, '../../contracts/addresses.txt');
+  const addressesPath = path.resolve(
+    __dirname,
+    '../../contracts/addresses.txt',
+  );
   const fileContent = fs.readFileSync(addressesPath, 'utf8');
-  
+
   const addresses: Record<string, string> = {};
-  
+
   // Extract contract addresses using regex
   const patterns = {
-    'DAOSpaceFactory': /DAOSpaceFactory deployed to: (0x[a-fA-F0-9]{40})/,
-    'JoinMethodDirectory': /JoinMethodDirectory deployed to: (0x[a-fA-F0-9]{40})/,
-    'ExitMethodDirectory': /ExitMethodDirectory deployed to: (0x[a-fA-F0-9]{40})/,
-    'DAOProposals': /DAOProposals deployed to: (0x[a-fA-F0-9]{40})/,
-    'TokenFactory': /TokenFactory deployed to: (0x[a-fA-F0-9]{40})/,
+    DAOSpaceFactory: /DAOSpaceFactory deployed to: (0x[a-fA-F0-9]{40})/,
+    JoinMethodDirectory: /JoinMethodDirectory deployed to: (0x[a-fA-F0-9]{40})/,
+    ExitMethodDirectory: /ExitMethodDirectory deployed to: (0x[a-fA-F0-9]{40})/,
+    DAOProposals: /DAOProposals deployed to: (0x[a-fA-F0-9]{40})/,
+    TokenFactory: /TokenFactory deployed to: (0x[a-fA-F0-9]{40})/,
   };
-  
+
   for (const [key, pattern] of Object.entries(patterns)) {
     const match = fileContent.match(pattern);
     if (match && match[1]) {
       addresses[key] = match[1];
     }
   }
-  
+
   return addresses;
 }
 
@@ -90,15 +93,22 @@ const daoSpaceFactoryAbi = [
 async function main(): Promise<void> {
   // Parse addresses from file
   const addresses = parseAddressesFile();
-  
+
   // Verify all required addresses are available
-  const requiredContracts = ['TokenFactory', 'JoinMethodDirectory', 'ExitMethodDirectory', 'DAOProposals'];
-  const missingContracts = requiredContracts.filter(contract => !addresses[contract]);
-  
+  const requiredContracts = [
+    'TokenFactory',
+    'JoinMethodDirectory',
+    'ExitMethodDirectory',
+    'DAOProposals',
+  ];
+  const missingContracts = requiredContracts.filter(
+    (contract) => !addresses[contract],
+  );
+
   if (missingContracts.length > 0) {
     throw new Error(`Missing addresses for: ${missingContracts.join(', ')}`);
   }
-  
+
   // Connect to the network
   const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
 
@@ -106,8 +116,9 @@ async function main(): Promise<void> {
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY || '', provider);
 
   // Use the DAO Space Factory address from environment or addresses file
-  const daoSpaceFactoryAddress = process.env.DAO_SPACE_FACTORY_ADDRESS || addresses['DAOSpaceFactory'];
-  
+  const daoSpaceFactoryAddress =
+    process.env.DAO_SPACE_FACTORY_ADDRESS || addresses['DAOSpaceFactory'];
+
   if (!daoSpaceFactoryAddress) {
     throw new Error('DAOSpaceFactory address is required but not found');
   }
@@ -130,7 +141,7 @@ async function main(): Promise<void> {
       addresses['TokenFactory'],
       addresses['JoinMethodDirectory'],
       addresses['ExitMethodDirectory'],
-      addresses['DAOProposals']
+      addresses['DAOProposals'],
     );
 
     console.log('Transaction sent, waiting for confirmation...');

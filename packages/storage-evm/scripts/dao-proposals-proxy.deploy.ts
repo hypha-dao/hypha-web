@@ -22,10 +22,7 @@ async function main(): Promise<void> {
   );
 
   await daoProposals.waitForDeployment();
-  console.log(
-    'DAOProposals deployed to:',
-    await daoProposals.getAddress(),
-  );
+  console.log('DAOProposals deployed to:', await daoProposals.getAddress());
 }
 
 main()
@@ -33,4 +30,4 @@ main()
   .catch((error: Error) => {
     console.error(error);
     process.exit(1);
-  }); 
+  });

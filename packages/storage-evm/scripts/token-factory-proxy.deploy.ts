@@ -22,10 +22,7 @@ async function main(): Promise<void> {
   );
 
   await tokenFactory.waitForDeployment();
-  console.log(
-    'TokenFactory deployed to:',
-    await tokenFactory.getAddress(),
-  );
+  console.log('TokenFactory deployed to:', await tokenFactory.getAddress());
 }
 
 main()
@@ -33,4 +30,4 @@ main()
   .catch((error: Error) => {
     console.error(error);
     process.exit(1);
-  }); 
+  });

@@ -11,7 +11,7 @@ async function main(): Promise<void> {
   console.log('Upgrading with admin address:', adminAddress);
 
   const TokenFactory = await ethers.getContractFactory(
-    'TokenFactoryImplementation', 
+    'TokenFactoryImplementation',
   );
 
   console.log('Upgrading TokenFactory...');
@@ -32,4 +32,4 @@ main()
   .catch((error: Error) => {
     console.error(error);
     process.exit(1);
-  }); 
+  });

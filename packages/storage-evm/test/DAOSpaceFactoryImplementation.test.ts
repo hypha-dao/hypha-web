@@ -254,46 +254,62 @@ describe('DAOSpaceFactoryImplementation', function () {
     });
 
     it('Should create a proposal when joining a space with join method 2', async function () {
-      const { daoSpaceFactory, spaceHelper, owner, other, votingPowerDirectory } = await loadFixture(deployFixture);
+      const {
+        daoSpaceFactory,
+        spaceHelper,
+        owner,
+        other,
+        votingPowerDirectory,
+      } = await loadFixture(deployFixture);
 
       // 1. Deploy SpaceVotingPower implementation first
-      const SpaceVotingPower = await ethers.getContractFactory('SpaceVotingPowerImplementation');
+      const SpaceVotingPower = await ethers.getContractFactory(
+        'SpaceVotingPowerImplementation',
+      );
       const spaceVotingPower = await upgrades.deployProxy(
         SpaceVotingPower,
         [owner.address],
         {
           initializer: 'initialize',
           kind: 'uups',
-        }
+        },
       );
       await spaceVotingPower.waitForDeployment();
-      
+
       // Set space factory in voting power source
-      await spaceVotingPower.setSpaceFactory(await daoSpaceFactory.getAddress());
+      await spaceVotingPower.setSpaceFactory(
+        await daoSpaceFactory.getAddress(),
+      );
 
       // 2. Register the voting power source in the directory
-      await votingPowerDirectory.addVotingPowerSource(await spaceVotingPower.getAddress());
+      await votingPowerDirectory.addVotingPowerSource(
+        await spaceVotingPower.getAddress(),
+      );
 
       // 3. Deploy the real DAOProposalsImplementation contract
-      const DAOProposals = await ethers.getContractFactory('DAOProposalsImplementation');
+      const DAOProposals = await ethers.getContractFactory(
+        'DAOProposalsImplementation',
+      );
       const daoProposals = await upgrades.deployProxy(
         DAOProposals,
         [owner.address],
         {
           initializer: 'initialize',
           kind: 'uups',
-        }
+        },
       );
       await daoProposals.waitForDeployment();
 
       // Configure the proposals contract with the space factory and directory
       await daoProposals.setContracts(
         await daoSpaceFactory.getAddress(),
-        await votingPowerDirectory.getAddress()
+        await votingPowerDirectory.getAddress(),
       );
 
       // 4. Set the proposals contract in space factory
-      await daoSpaceFactory.setProposalsContract(await daoProposals.getAddress());
+      await daoSpaceFactory.setProposalsContract(
+        await daoProposals.getAddress(),
+      );
 
       // 5. Create a space with join method 2
       const spaceParams = {
@@ -318,20 +334,24 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // 7. Check for the JoinRequestedWithProposal event
       const joinRequestedEvents = receipt?.logs
-        .filter(log => {
+        .filter((log) => {
           try {
-            return daoSpaceFactory.interface.parseLog({
-              topics: log.topics as string[],
-              data: log.data,
-            })?.name === 'JoinRequestedWithProposal';
+            return (
+              daoSpaceFactory.interface.parseLog({
+                topics: log.topics as string[],
+                data: log.data,
+              })?.name === 'JoinRequestedWithProposal'
+            );
           } catch (e) {
             return false;
           }
         })
-        .map(log => daoSpaceFactory.interface.parseLog({
-          topics: log.topics as string[],
-          data: log.data,
-        }));
+        .map((log) =>
+          daoSpaceFactory.interface.parseLog({
+            topics: log.topics as string[],
+            data: log.data,
+          }),
+        );
 
       expect(joinRequestedEvents?.length).to.be.at.least(1);
       const joinEvent = joinRequestedEvents?.[0];
@@ -342,13 +362,14 @@ describe('DAOSpaceFactoryImplementation', function () {
       const proposalId = joinEvent?.args.proposalId;
 
       // 8. Verify the member is NOT yet added to the space
-      expect(await daoSpaceFactory.isMember(1, await other.getAddress())).to.be.false;
+      expect(await daoSpaceFactory.isMember(1, await other.getAddress())).to.be
+        .false;
 
       // 9. Verify the proposal exists in the DAO proposals contract
       const proposalData = await daoProposals.getProposalCore(proposalId);
       expect(proposalData.spaceId).to.equal(1);
       expect(proposalData.executed).to.be.false;
-      
+
       // 10. The target contract in the proposal should be the space factory
       // This is difficult to check directly with the real implementation, but
       // we can verify that the proposal was created for the correct space
@@ -356,7 +377,9 @@ describe('DAOSpaceFactoryImplementation', function () {
     });
 
     it('Should remove a member from a space', async function () {
-      const { spaceHelper, daoSpaceFactory, owner, other } = await loadFixture(deployFixture);
+      const { spaceHelper, daoSpaceFactory, owner, other } = await loadFixture(
+        deployFixture,
+      );
 
       // Create space with exit method 1 (only executor can remove members)
       const spaceParams = {
@@ -374,34 +397,44 @@ describe('DAOSpaceFactoryImplementation', function () {
       };
 
       await spaceHelper.contract.createSpace(spaceParams);
-      
+
       // Join the space
       await spaceHelper.joinSpace(1, other);
-      expect(await daoSpaceFactory.isMember(1, await other.getAddress())).to.be.true;
-      
+      expect(await daoSpaceFactory.isMember(1, await other.getAddress())).to.be
+        .true;
+
       // Get the executor
       const executorAddress = await daoSpaceFactory.getSpaceExecutor(1);
-      
+
       // Impersonate the executor
-      await ethers.provider.send("hardhat_impersonateAccount", [executorAddress]);
+      await ethers.provider.send('hardhat_impersonateAccount', [
+        executorAddress,
+      ]);
       const executorSigner = await ethers.getSigner(executorAddress);
-      
+
       // Fund the executor
       await owner.sendTransaction({
         to: executorAddress,
-        value: ethers.parseEther("1.0")
+        value: ethers.parseEther('1.0'),
       });
-      
+
       // Remove the member using removeMember (since we're the executor and exit method is 1)
-      await expect(daoSpaceFactory.connect(executorSigner).removeMember(1, await other.getAddress()))
+      await expect(
+        daoSpaceFactory
+          .connect(executorSigner)
+          .removeMember(1, await other.getAddress()),
+      )
         .to.emit(daoSpaceFactory, 'MemberRemoved')
         .withArgs(1, await other.getAddress());
-        
+
       // Verify member was removed
-      expect(await daoSpaceFactory.isMember(1, await other.getAddress())).to.be.false;
-      
+      expect(await daoSpaceFactory.isMember(1, await other.getAddress())).to.be
+        .false;
+
       // Verify member's spaces were updated
-      const memberSpaces = await daoSpaceFactory.getMemberSpaces(await other.getAddress());
+      const memberSpaces = await daoSpaceFactory.getMemberSpaces(
+        await other.getAddress(),
+      );
       expect(memberSpaces.length).to.equal(0);
     });
   });
@@ -452,7 +485,8 @@ describe('DAOSpaceFactoryImplementation', function () {
 
   describe('Space Tokens', function () {
     it('Should allow executor to mint tokens', async function () {
-      const { spaceHelper, tokenFactory, daoSpaceFactory, owner, voter1 } = await loadFixture(deployFixture);
+      const { spaceHelper, tokenFactory, daoSpaceFactory, owner, voter1 } =
+        await loadFixture(deployFixture);
 
       // Create space first
       const spaceParams = {
@@ -470,68 +504,85 @@ describe('DAOSpaceFactoryImplementation', function () {
       };
 
       await spaceHelper.contract.createSpace(spaceParams);
-      
+
       // Deploy token separately
-      const deployTx = await tokenFactory.deployToken(1, 'Space Token', 'STKN', 0, true);
+      const deployTx = await tokenFactory.deployToken(
+        1,
+        'Space Token',
+        'STKN',
+        0,
+        true,
+      );
       const receipt = await deployTx.wait();
-      
+
       // Get token address from event
       const tokenDeployedEvent = receipt?.logs
-        .filter(log => {
+        .filter((log) => {
           try {
-            return tokenFactory.interface.parseLog({
-              topics: log.topics as string[],
-              data: log.data,
-            })?.name === 'TokenDeployed';
+            return (
+              tokenFactory.interface.parseLog({
+                topics: log.topics as string[],
+                data: log.data,
+              })?.name === 'TokenDeployed'
+            );
           } catch (e) {
             return false;
           }
         })
-        .map(log => tokenFactory.interface.parseLog({
-          topics: log.topics as string[],
-          data: log.data,
-        }))[0];
-      
+        .map((log) =>
+          tokenFactory.interface.parseLog({
+            topics: log.topics as string[],
+            data: log.data,
+          }),
+        )[0];
+
       if (!tokenDeployedEvent) {
-        throw new Error("Token deployment event not found");
+        throw new Error('Token deployment event not found');
       }
-      
+
       const tokenAddress = tokenDeployedEvent.args.tokenAddress;
       const token = await ethers.getContractAt('SpaceToken', tokenAddress);
-      
+
       // Get the executor
       const executorAddress = await daoSpaceFactory.getSpaceExecutor(1);
-      
+
       // Impersonate the executor
-      await ethers.provider.send("hardhat_impersonateAccount", [executorAddress]);
+      await ethers.provider.send('hardhat_impersonateAccount', [
+        executorAddress,
+      ]);
       const executorSigner = await ethers.getSigner(executorAddress);
-      
+
       // Fund the executor
       await owner.sendTransaction({
         to: executorAddress,
-        value: ethers.parseEther("1.0")
+        value: ethers.parseEther('1.0'),
       });
-      
+
       // Join the space
       await spaceHelper.joinSpace(1, voter1);
-      
+
       // Mint tokens to voter1
-      const mintAmount = ethers.parseUnits("100", 18);
-      await token.connect(executorSigner).mint(await voter1.getAddress(), mintAmount);
-      
+      const mintAmount = ethers.parseUnits('100', 18);
+      await token
+        .connect(executorSigner)
+        .mint(await voter1.getAddress(), mintAmount);
+
       // Check balance
-      expect(await token.balanceOf(await voter1.getAddress())).to.equal(mintAmount);
+      expect(await token.balanceOf(await voter1.getAddress())).to.equal(
+        mintAmount,
+      );
     });
 
     it('Should create a token with max supply and enforce it', async function () {
-      const { daoSpaceFactory, tokenFactory, owner, voter1 } = await loadFixture(deployFixture);
+      const { daoSpaceFactory, tokenFactory, owner, voter1 } =
+        await loadFixture(deployFixture);
 
       // Deploy a token directly with max supply
       const spaceId = 1;
-      const tokenName = "Limited Token";
-      const tokenSymbol = "LMT";
-      const maxSupply = ethers.parseUnits("1000", 18);
-      
+      const tokenName = 'Limited Token';
+      const tokenSymbol = 'LMT';
+      const maxSupply = ethers.parseUnits('1000', 18);
+
       // Create a space first
       const spaceParams = {
         name: 'Limited Token Space',
@@ -546,61 +597,79 @@ describe('DAOSpaceFactoryImplementation', function () {
         tokenName: '',
         tokenSymbol: '',
       };
-      
+
       await daoSpaceFactory.createSpace(spaceParams);
-      
+
       // Deploy token with max supply
-      const tx = await tokenFactory.deployToken(spaceId, tokenName, tokenSymbol, maxSupply, true);
+      const tx = await tokenFactory.deployToken(
+        spaceId,
+        tokenName,
+        tokenSymbol,
+        maxSupply,
+        true,
+      );
       const receipt = await tx.wait();
-      
+
       // Get token address from event
       const tokenDeployedEvent = receipt?.logs
-        .filter(log => {
+        .filter((log) => {
           try {
-            return tokenFactory.interface.parseLog({
-              topics: log.topics as string[],
-              data: log.data,
-            })?.name === 'TokenDeployed';
+            return (
+              tokenFactory.interface.parseLog({
+                topics: log.topics as string[],
+                data: log.data,
+              })?.name === 'TokenDeployed'
+            );
           } catch (e) {
             return false;
           }
         })
-        .map(log => tokenFactory.interface.parseLog({
-          topics: log.topics as string[],
-          data: log.data,
-        }))[0];
-        
+        .map((log) =>
+          tokenFactory.interface.parseLog({
+            topics: log.topics as string[],
+            data: log.data,
+          }),
+        )[0];
+
       const tokenAddress = tokenDeployedEvent.args.tokenAddress;
       const token = await ethers.getContractAt('SpaceToken', tokenAddress);
-      
+
       // Verify max supply
       expect(await token.maxSupply()).to.equal(maxSupply);
-      
+
       // Get executor
       const executorAddress = await daoSpaceFactory.getSpaceExecutor(spaceId);
-      await ethers.provider.send("hardhat_impersonateAccount", [executorAddress]);
+      await ethers.provider.send('hardhat_impersonateAccount', [
+        executorAddress,
+      ]);
       const executorSigner = await ethers.getSigner(executorAddress);
-      
+
       // Fund the executor with some ETH for transactions
       await owner.sendTransaction({
         to: executorAddress,
-        value: ethers.parseEther("1.0")
+        value: ethers.parseEther('1.0'),
       });
-      
+
       // Mint exactly max supply
-      await token.connect(executorSigner).mint(await owner.getAddress(), maxSupply);
-      
+      await token
+        .connect(executorSigner)
+        .mint(await owner.getAddress(), maxSupply);
+
       // Check balance equals max supply
-      expect(await token.balanceOf(await owner.getAddress())).to.equal(maxSupply);
-      
+      expect(await token.balanceOf(await owner.getAddress())).to.equal(
+        maxSupply,
+      );
+
       // Try to mint more (should fail)
       await expect(
-        token.connect(executorSigner).mint(await voter1.getAddress(), 1)
+        token.connect(executorSigner).mint(await voter1.getAddress(), 1),
       ).to.be.revertedWith('Mint would exceed maximum supply');
     });
 
     it('Should not allow non-executor to mint tokens', async function () {
-      const { spaceHelper, tokenFactory, owner, voter1 } = await loadFixture(deployFixture);
+      const { spaceHelper, tokenFactory, owner, voter1 } = await loadFixture(
+        deployFixture,
+      );
 
       // Create space first
       const spaceParams = {
@@ -618,44 +687,61 @@ describe('DAOSpaceFactoryImplementation', function () {
       };
 
       await spaceHelper.contract.createSpace(spaceParams);
-      
+
       // Deploy token separately
-      const deployTx = await tokenFactory.deployToken(1, 'Space Token', 'STKN', 0, true);
+      const deployTx = await tokenFactory.deployToken(
+        1,
+        'Space Token',
+        'STKN',
+        0,
+        true,
+      );
       const receipt = await deployTx.wait();
-      
+
       // Get token address from event
       const tokenDeployedEvent = receipt?.logs
-        .filter(log => {
+        .filter((log) => {
           try {
-            return tokenFactory.interface.parseLog({
-              topics: log.topics as string[],
-              data: log.data,
-            })?.name === 'TokenDeployed';
+            return (
+              tokenFactory.interface.parseLog({
+                topics: log.topics as string[],
+                data: log.data,
+              })?.name === 'TokenDeployed'
+            );
           } catch (e) {
             return false;
           }
         })
-        .map(log => tokenFactory.interface.parseLog({
-          topics: log.topics as string[],
-          data: log.data,
-        }))[0];
-      
+        .map((log) =>
+          tokenFactory.interface.parseLog({
+            topics: log.topics as string[],
+            data: log.data,
+          }),
+        )[0];
+
       if (!tokenDeployedEvent) {
-        throw new Error("Token deployment event not found");
+        throw new Error('Token deployment event not found');
       }
-      
+
       const tokenAddress = tokenDeployedEvent.args.tokenAddress;
       const token = await ethers.getContractAt('SpaceToken', tokenAddress);
-      
+
       // Try to mint as non-executor (should fail)
-      const mintAmount = ethers.parseUnits("100", 18);
+      const mintAmount = ethers.parseUnits('100', 18);
       await expect(
-        token.connect(voter1).mint(await voter1.getAddress(), mintAmount)
+        token.connect(voter1).mint(await voter1.getAddress(), mintAmount),
       ).to.be.revertedWith('Only executor can call this function');
     });
 
     it('Should deploy a non-transferable token that prevents transfers', async function () {
-      const { spaceHelper, tokenFactory, daoSpaceFactory, owner, voter1, voter2 } = await loadFixture(deployFixture);
+      const {
+        spaceHelper,
+        tokenFactory,
+        daoSpaceFactory,
+        owner,
+        voter1,
+        voter2,
+      } = await loadFixture(deployFixture);
 
       // Create space first
       const spaceParams = {
@@ -673,78 +759,105 @@ describe('DAOSpaceFactoryImplementation', function () {
       };
 
       await spaceHelper.contract.createSpace(spaceParams);
-      
+
       // Deploy non-transferable token
       const deployTx = await tokenFactory.deployToken(
-        1, 'Non-Transferable Token', 'NTTKN', 0, false
+        1,
+        'Non-Transferable Token',
+        'NTTKN',
+        0,
+        false,
       );
       const receipt = await deployTx.wait();
-      
+
       // Get token address from event
       const tokenDeployedEvent = receipt?.logs
-        .filter(log => {
+        .filter((log) => {
           try {
-            return tokenFactory.interface.parseLog({
-              topics: log.topics as string[],
-              data: log.data,
-            })?.name === 'TokenDeployed';
+            return (
+              tokenFactory.interface.parseLog({
+                topics: log.topics as string[],
+                data: log.data,
+              })?.name === 'TokenDeployed'
+            );
           } catch (e) {
             return false;
           }
         })
-        .map(log => tokenFactory.interface.parseLog({
-          topics: log.topics as string[],
-          data: log.data,
-        }))[0];
-      
+        .map((log) =>
+          tokenFactory.interface.parseLog({
+            topics: log.topics as string[],
+            data: log.data,
+          }),
+        )[0];
+
       if (!tokenDeployedEvent) {
-        throw new Error("Token deployment event not found");
+        throw new Error('Token deployment event not found');
       }
-      
+
       const tokenAddress = tokenDeployedEvent.args.tokenAddress;
       const token = await ethers.getContractAt('SpaceToken', tokenAddress);
-      
+
       // Verify token is non-transferable
       expect(await token.transferable()).to.equal(false);
-      
+
       // Get the executor
       const executorAddress = await daoSpaceFactory.getSpaceExecutor(1);
-      
+
       // Impersonate the executor
-      await ethers.provider.send("hardhat_impersonateAccount", [executorAddress]);
+      await ethers.provider.send('hardhat_impersonateAccount', [
+        executorAddress,
+      ]);
       const executorSigner = await ethers.getSigner(executorAddress);
-      
+
       // Fund the executor
       await owner.sendTransaction({
         to: executorAddress,
-        value: ethers.parseEther("1.0")
+        value: ethers.parseEther('1.0'),
       });
-      
+
       // Mint tokens to voter1
-      const mintAmount = ethers.parseUnits("100", 18);
-      await token.connect(executorSigner).mint(await voter1.getAddress(), mintAmount);
-      
+      const mintAmount = ethers.parseUnits('100', 18);
+      await token
+        .connect(executorSigner)
+        .mint(await voter1.getAddress(), mintAmount);
+
       // Check balance
-      expect(await token.balanceOf(await voter1.getAddress())).to.equal(mintAmount);
-      
+      expect(await token.balanceOf(await voter1.getAddress())).to.equal(
+        mintAmount,
+      );
+
       // Try to transfer tokens (should fail)
       await expect(
-        token.connect(voter1).transfer(await voter2.getAddress(), ethers.parseUnits("10", 18))
+        token
+          .connect(voter1)
+          .transfer(await voter2.getAddress(), ethers.parseUnits('10', 18)),
       ).to.be.revertedWith('Token transfers are disabled');
-      
+
       // Try to use transferFrom (should also fail)
-      await token.connect(voter1).approve(await voter2.getAddress(), ethers.parseUnits("10", 18));
+      await token
+        .connect(voter1)
+        .approve(await voter2.getAddress(), ethers.parseUnits('10', 18));
       await expect(
-        token.connect(voter2).transferFrom(
-          await voter1.getAddress(), 
-          await voter2.getAddress(), 
-          ethers.parseUnits("10", 18)
-        )
+        token
+          .connect(voter2)
+          .transferFrom(
+            await voter1.getAddress(),
+            await voter2.getAddress(),
+            ethers.parseUnits('10', 18),
+          ),
       ).to.be.revertedWith('Token transfers are disabled');
     });
 
     it('Should deploy a transferable token that allows transfers', async function () {
-      const { spaceHelper, tokenFactory, daoSpaceFactory, owner, voter1, voter2 } = await loadFixture(deployFixture);
+      const {
+        spaceHelper,
+        tokenFactory,
+        daoSpaceFactory,
+        owner,
+        voter1,
+        voter2,
+      } = await loadFixture(deployFixture);
 
       // Create space first
       const spaceParams = {
@@ -762,79 +875,107 @@ describe('DAOSpaceFactoryImplementation', function () {
       };
 
       await spaceHelper.contract.createSpace(spaceParams);
-      
+
       // Deploy transferable token
       const deployTx = await tokenFactory.deployToken(
-        1, 'Transferable Token', 'TTKN', 0, true
+        1,
+        'Transferable Token',
+        'TTKN',
+        0,
+        true,
       );
       const receipt = await deployTx.wait();
-      
+
       // Get token address from event
       const tokenDeployedEvent = receipt?.logs
-        .filter(log => {
+        .filter((log) => {
           try {
-            return tokenFactory.interface.parseLog({
-              topics: log.topics as string[],
-              data: log.data,
-            })?.name === 'TokenDeployed';
+            return (
+              tokenFactory.interface.parseLog({
+                topics: log.topics as string[],
+                data: log.data,
+              })?.name === 'TokenDeployed'
+            );
           } catch (e) {
             return false;
           }
         })
-        .map(log => tokenFactory.interface.parseLog({
-          topics: log.topics as string[],
-          data: log.data,
-        }))[0];
-      
+        .map((log) =>
+          tokenFactory.interface.parseLog({
+            topics: log.topics as string[],
+            data: log.data,
+          }),
+        )[0];
+
       if (!tokenDeployedEvent) {
-        throw new Error("Token deployment event not found");
+        throw new Error('Token deployment event not found');
       }
-      
+
       const tokenAddress = tokenDeployedEvent.args.tokenAddress;
       const token = await ethers.getContractAt('SpaceToken', tokenAddress);
-      
+
       // Verify token is transferable
       expect(await token.transferable()).to.equal(true);
-      
+
       // Get the executor
       const executorAddress = await daoSpaceFactory.getSpaceExecutor(1);
-      
+
       // Impersonate the executor
-      await ethers.provider.send("hardhat_impersonateAccount", [executorAddress]);
+      await ethers.provider.send('hardhat_impersonateAccount', [
+        executorAddress,
+      ]);
       const executorSigner = await ethers.getSigner(executorAddress);
-      
+
       // Fund the executor
       await owner.sendTransaction({
         to: executorAddress,
-        value: ethers.parseEther("1.0")
+        value: ethers.parseEther('1.0'),
       });
-      
+
       // Mint tokens to voter1
-      const mintAmount = ethers.parseUnits("100", 18);
-      await token.connect(executorSigner).mint(await voter1.getAddress(), mintAmount);
-      
+      const mintAmount = ethers.parseUnits('100', 18);
+      await token
+        .connect(executorSigner)
+        .mint(await voter1.getAddress(), mintAmount);
+
       // Check balance
-      expect(await token.balanceOf(await voter1.getAddress())).to.equal(mintAmount);
-      
-      // Transfer tokens (should succeed)
-      const transferAmount = ethers.parseUnits("10", 18);
-      await token.connect(voter1).transfer(await voter2.getAddress(), transferAmount);
-      
-      // Check balances after transfer
-      expect(await token.balanceOf(await voter1.getAddress())).to.equal(mintAmount - transferAmount);
-      expect(await token.balanceOf(await voter2.getAddress())).to.equal(transferAmount);
-      
-      // Test transferFrom functionality
-      await token.connect(voter1).approve(await owner.getAddress(), transferAmount);
-      await token.connect(owner).transferFrom(
-        await voter1.getAddress(), 
-        await voter2.getAddress(), 
-        transferAmount
+      expect(await token.balanceOf(await voter1.getAddress())).to.equal(
+        mintAmount,
       );
-      
+
+      // Transfer tokens (should succeed)
+      const transferAmount = ethers.parseUnits('10', 18);
+      await token
+        .connect(voter1)
+        .transfer(await voter2.getAddress(), transferAmount);
+
+      // Check balances after transfer
+      expect(await token.balanceOf(await voter1.getAddress())).to.equal(
+        mintAmount - transferAmount,
+      );
+      expect(await token.balanceOf(await voter2.getAddress())).to.equal(
+        transferAmount,
+      );
+
+      // Test transferFrom functionality
+      await token
+        .connect(voter1)
+        .approve(await owner.getAddress(), transferAmount);
+      await token
+        .connect(owner)
+        .transferFrom(
+          await voter1.getAddress(),
+          await voter2.getAddress(),
+          transferAmount,
+        );
+
       // Check balances after transferFrom
-      expect(await token.balanceOf(await voter1.getAddress())).to.equal(mintAmount - transferAmount - transferAmount);
-      expect(await token.balanceOf(await voter2.getAddress())).to.equal(transferAmount + transferAmount);
+      expect(await token.balanceOf(await voter1.getAddress())).to.equal(
+        mintAmount - transferAmount - transferAmount,
+      );
+      expect(await token.balanceOf(await voter2.getAddress())).to.equal(
+        transferAmount + transferAmount,
+      );
     });
   });
 });
