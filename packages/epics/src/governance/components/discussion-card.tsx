@@ -43,7 +43,7 @@ export const DiscussionCard = ({
             className="w-full h-full"
           >
             <span className="text-1 text-neutral-11">
-              <MarkdownSuspense content={description || ''}/>
+              <MarkdownSuspense content={description || ''} />
             </span>
           </Skeleton>
         </div>
