@@ -472,7 +472,7 @@ describe('DAOSpaceFactoryImplementation', function () {
       await spaceHelper.contract.createSpace(spaceParams);
       
       // Deploy token separately
-      const deployTx = await tokenFactory.deployToken(1, 'Space Token', 'STKN', 0);
+      const deployTx = await tokenFactory.deployToken(1, 'Space Token', 'STKN', 0, true);
       const receipt = await deployTx.wait();
       
       // Get token address from event
@@ -550,7 +550,7 @@ describe('DAOSpaceFactoryImplementation', function () {
       await daoSpaceFactory.createSpace(spaceParams);
       
       // Deploy token with max supply
-      const tx = await tokenFactory.deployToken(spaceId, tokenName, tokenSymbol, maxSupply);
+      const tx = await tokenFactory.deployToken(spaceId, tokenName, tokenSymbol, maxSupply, true);
       const receipt = await tx.wait();
       
       // Get token address from event
@@ -620,7 +620,7 @@ describe('DAOSpaceFactoryImplementation', function () {
       await spaceHelper.contract.createSpace(spaceParams);
       
       // Deploy token separately
-      const deployTx = await tokenFactory.deployToken(1, 'Space Token', 'STKN', 0);
+      const deployTx = await tokenFactory.deployToken(1, 'Space Token', 'STKN', 0, true);
       const receipt = await deployTx.wait();
       
       // Get token address from event
@@ -652,6 +652,189 @@ describe('DAOSpaceFactoryImplementation', function () {
       await expect(
         token.connect(voter1).mint(await voter1.getAddress(), mintAmount)
       ).to.be.revertedWith('Only executor can call this function');
+    });
+
+    it('Should deploy a non-transferable token that prevents transfers', async function () {
+      const { spaceHelper, tokenFactory, daoSpaceFactory, owner, voter1, voter2 } = await loadFixture(deployFixture);
+
+      // Create space first
+      const spaceParams = {
+        name: 'Non-Transferable Token Space',
+        description: 'Space with locked token',
+        imageUrl: 'https://test.com/image.png',
+        unity: 51,
+        quorum: 51,
+        votingPowerSource: 1,
+        exitMethod: 1,
+        joinMethod: 1,
+        createToken: false,
+        tokenName: '',
+        tokenSymbol: '',
+      };
+
+      await spaceHelper.contract.createSpace(spaceParams);
+      
+      // Deploy non-transferable token
+      const deployTx = await tokenFactory.deployToken(
+        1, 'Non-Transferable Token', 'NTTKN', 0, false
+      );
+      const receipt = await deployTx.wait();
+      
+      // Get token address from event
+      const tokenDeployedEvent = receipt?.logs
+        .filter(log => {
+          try {
+            return tokenFactory.interface.parseLog({
+              topics: log.topics as string[],
+              data: log.data,
+            })?.name === 'TokenDeployed';
+          } catch (e) {
+            return false;
+          }
+        })
+        .map(log => tokenFactory.interface.parseLog({
+          topics: log.topics as string[],
+          data: log.data,
+        }))[0];
+      
+      if (!tokenDeployedEvent) {
+        throw new Error("Token deployment event not found");
+      }
+      
+      const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+      const token = await ethers.getContractAt('SpaceToken', tokenAddress);
+      
+      // Verify token is non-transferable
+      expect(await token.transferable()).to.equal(false);
+      
+      // Get the executor
+      const executorAddress = await daoSpaceFactory.getSpaceExecutor(1);
+      
+      // Impersonate the executor
+      await ethers.provider.send("hardhat_impersonateAccount", [executorAddress]);
+      const executorSigner = await ethers.getSigner(executorAddress);
+      
+      // Fund the executor
+      await owner.sendTransaction({
+        to: executorAddress,
+        value: ethers.parseEther("1.0")
+      });
+      
+      // Mint tokens to voter1
+      const mintAmount = ethers.parseUnits("100", 18);
+      await token.connect(executorSigner).mint(await voter1.getAddress(), mintAmount);
+      
+      // Check balance
+      expect(await token.balanceOf(await voter1.getAddress())).to.equal(mintAmount);
+      
+      // Try to transfer tokens (should fail)
+      await expect(
+        token.connect(voter1).transfer(await voter2.getAddress(), ethers.parseUnits("10", 18))
+      ).to.be.revertedWith('Token transfers are disabled');
+      
+      // Try to use transferFrom (should also fail)
+      await token.connect(voter1).approve(await voter2.getAddress(), ethers.parseUnits("10", 18));
+      await expect(
+        token.connect(voter2).transferFrom(
+          await voter1.getAddress(), 
+          await voter2.getAddress(), 
+          ethers.parseUnits("10", 18)
+        )
+      ).to.be.revertedWith('Token transfers are disabled');
+    });
+
+    it('Should deploy a transferable token that allows transfers', async function () {
+      const { spaceHelper, tokenFactory, daoSpaceFactory, owner, voter1, voter2 } = await loadFixture(deployFixture);
+
+      // Create space first
+      const spaceParams = {
+        name: 'Transferable Token Space',
+        description: 'Space with liquid token',
+        imageUrl: 'https://test.com/image.png',
+        unity: 51,
+        quorum: 51,
+        votingPowerSource: 1,
+        exitMethod: 1,
+        joinMethod: 1,
+        createToken: false,
+        tokenName: '',
+        tokenSymbol: '',
+      };
+
+      await spaceHelper.contract.createSpace(spaceParams);
+      
+      // Deploy transferable token
+      const deployTx = await tokenFactory.deployToken(
+        1, 'Transferable Token', 'TTKN', 0, true
+      );
+      const receipt = await deployTx.wait();
+      
+      // Get token address from event
+      const tokenDeployedEvent = receipt?.logs
+        .filter(log => {
+          try {
+            return tokenFactory.interface.parseLog({
+              topics: log.topics as string[],
+              data: log.data,
+            })?.name === 'TokenDeployed';
+          } catch (e) {
+            return false;
+          }
+        })
+        .map(log => tokenFactory.interface.parseLog({
+          topics: log.topics as string[],
+          data: log.data,
+        }))[0];
+      
+      if (!tokenDeployedEvent) {
+        throw new Error("Token deployment event not found");
+      }
+      
+      const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+      const token = await ethers.getContractAt('SpaceToken', tokenAddress);
+      
+      // Verify token is transferable
+      expect(await token.transferable()).to.equal(true);
+      
+      // Get the executor
+      const executorAddress = await daoSpaceFactory.getSpaceExecutor(1);
+      
+      // Impersonate the executor
+      await ethers.provider.send("hardhat_impersonateAccount", [executorAddress]);
+      const executorSigner = await ethers.getSigner(executorAddress);
+      
+      // Fund the executor
+      await owner.sendTransaction({
+        to: executorAddress,
+        value: ethers.parseEther("1.0")
+      });
+      
+      // Mint tokens to voter1
+      const mintAmount = ethers.parseUnits("100", 18);
+      await token.connect(executorSigner).mint(await voter1.getAddress(), mintAmount);
+      
+      // Check balance
+      expect(await token.balanceOf(await voter1.getAddress())).to.equal(mintAmount);
+      
+      // Transfer tokens (should succeed)
+      const transferAmount = ethers.parseUnits("10", 18);
+      await token.connect(voter1).transfer(await voter2.getAddress(), transferAmount);
+      
+      // Check balances after transfer
+      expect(await token.balanceOf(await voter1.getAddress())).to.equal(mintAmount - transferAmount);
+      expect(await token.balanceOf(await voter2.getAddress())).to.equal(transferAmount);
+      
+      // Test transferFrom functionality
+      await token.connect(voter1).approve(await owner.getAddress(), transferAmount);
+      await token.connect(owner).transferFrom(
+        await voter1.getAddress(), 
+        await voter2.getAddress(), 
+        transferAmount
+      );
+      
+      // Check balances after transferFrom
+      expect(await token.balanceOf(await voter1.getAddress())).to.equal(mintAmount - transferAmount - transferAmount);
+      expect(await token.balanceOf(await voter2.getAddress())).to.equal(transferAmount + transferAmount);
     });
   });
 });

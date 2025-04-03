@@ -15,6 +15,7 @@ contract SpaceToken is ERC20 {
   ISpaces public immutable spacesContract;
   uint256 public immutable spaceId;
   uint256 public immutable maxSupply;
+  bool public immutable transferable;
 
   constructor(
     string memory name,
@@ -22,7 +23,8 @@ contract SpaceToken is ERC20 {
     address _executor,
     address _spacesContract,
     uint256 _spaceId,
-    uint256 _maxSupply
+    uint256 _maxSupply,
+    bool _transferable
   ) ERC20(name, symbol) {
     require(_executor != address(0), 'Executor cannot be zero address');
     require(
@@ -34,6 +36,7 @@ contract SpaceToken is ERC20 {
     spacesContract = ISpaces(_spacesContract);
     spaceId = _spaceId;
     maxSupply = _maxSupply;
+    transferable = _transferable;
   }
 
   modifier onlyExecutor() {
@@ -55,5 +58,21 @@ contract SpaceToken is ERC20 {
     );
 
     _mint(to, amount);
+  }
+
+  // Override transfer function to respect transferability
+  function transfer(address to, uint256 amount) public override returns (bool) {
+    require(transferable, 'Token transfers are disabled');
+    return super.transfer(to, amount);
+  }
+
+  // Override transferFrom function to respect transferability
+  function transferFrom(
+    address from,
+    address to,
+    uint256 amount
+  ) public override returns (bool) {
+    require(transferable, 'Token transfers are disabled');
+    return super.transferFrom(from, to, amount);
   }
 }

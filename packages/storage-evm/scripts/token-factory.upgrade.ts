@@ -1,7 +1,7 @@
 import { ethers, upgrades } from 'hardhat';
 
 // Replace this with your actual proxy address when deploying
-const PROXY_ADDRESS = '0x0000000000000000000000000000000000000000';
+const PROXY_ADDRESS = '0xeA9BD28eBB2e6996c5C84eACC64e661f83905eD0';
 
 async function main(): Promise<void> {
   // Get the deployer's address

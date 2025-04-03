@@ -10,7 +10,8 @@ interface ITokenFactory {
     uint256 spaceId,
     string memory name,
     string memory symbol,
-    uint256 maxSupply
+    uint256 maxSupply,
+    bool transferable
   ) external returns (address);
 
   event TokenDeployed(
