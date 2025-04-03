@@ -6,6 +6,12 @@
 npx nx run storage-evm:script ./scripts/dao-space-factory-proxy.deploy.ts --network base-mainnet
 ```
 
+### dao-proposals-proxy.deploy
+
+```bash
+npx nx run storage-evm:script ./scripts/dao-proposals-proxy.deploy.ts --network base-mainnet
+```
+
 ### exit-method-directory-proxy.deploy
 
 ```bash
@@ -54,6 +60,12 @@ npx nx run storage-evm:script ./scripts/token-balance-exit-proxy.deploy.ts --net
 npx nx run storage-evm:script ./scripts/token-balance-join-proxy.deploy.ts --network base-mainnet
 ```
 
+### token-factory-proxy.deploy
+
+```bash
+npx nx run storage-evm:script ./scripts/token-factory-proxy.deploy.ts --network base-mainnet
+```
+
 ### token-voting-power-proxy.deploy
 
 ```bash
@@ -82,10 +94,23 @@ npx nx run storage-evm:compile
 
 ```bash
 npx nx run storage-evm:test ./test/DAOSpaceFactoryImplementation.test.ts
+npx nx run storage-evm:test ./test/DAOProposalsImplementation.test.ts
 ```
 
-### Upgrade
+### Upgrade Space Factory
 
 ```bash
 npx nx run storage-evm:script ./scripts/dao-space-factory.upgrade.ts --network base-mainnet
+```
+
+### Upgrade DAO Proposals
+
+```bash
+npx nx run storage-evm:script ./scripts/dao-proposals.upgrade.ts --network base-mainnet
+```
+
+### Upgrade Token Factory
+
+```bash
+npx nx run storage-evm:script ./scripts/token-factory.upgrade.ts --network base-mainnet
 ```
