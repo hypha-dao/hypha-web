@@ -631,6 +631,10 @@ describe('DAOSpaceFactoryImplementation', function () {
           }),
         )[0];
 
+      if (!tokenDeployedEvent) {
+        throw new Error('Token deployment event not found');
+      }
+
       const tokenAddress = tokenDeployedEvent.args.tokenAddress;
       const token = await ethers.getContractAt('SpaceToken', tokenAddress);
 
