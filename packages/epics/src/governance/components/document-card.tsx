@@ -9,6 +9,7 @@ import { Image } from '@hypha-platform/ui';
 import { PersonLabel } from '../../people/components/person-label';
 import { type Creator } from '../../people/components/person-label';
 import { type BadgeItem, BadgesList } from '@hypha-platform/ui';
+import { MarkdownSuspense } from '@hypha-platform/ui/server';
 
 interface Document {
   title?: string;
@@ -70,7 +71,9 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
             height="48px"
             loading={isLoading}
           >
-            <div className="line-clamp-3">{description}</div>
+            <div className="line-clamp-3 w-full">
+              <MarkdownSuspense content={description || ''}/>
+            </div>
           </Skeleton>
         </div>
         {interactions}
