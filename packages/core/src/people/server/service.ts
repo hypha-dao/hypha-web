@@ -38,6 +38,10 @@ export class PeopleService {
     return this.repository.findBySlug({ slug });
   }
 
+  async findById({ id }: { id: number }): Promise<Person | null> {
+    return this.repository.findById(id);
+  }
+
   async create(person: Person): Promise<Person> {
     return this.repository.create(person);
   }
