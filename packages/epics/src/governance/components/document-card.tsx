@@ -72,7 +72,7 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
             loading={isLoading}
           >
             <div className="line-clamp-3 w-full">
-              <MarkdownSuspense content={description || ''}/>
+              <MarkdownSuspense content={description || ''} />
             </div>
           </Skeleton>
         </div>
