@@ -10,6 +10,7 @@ import { useSpaceSlug } from './use-space-slug';
 // TODO: #594 declare UI interface separately
 import { Document } from '@hypha-platform/core/client';
 import { UseDocuments, UseDocumentsReturn } from '@hypha-platform/epics';
+import { usePersonById } from './use-person-by-id';
 
 export const useSpaceDocuments: UseDocuments = ({
   page = 1,
@@ -68,9 +69,11 @@ export const useSpaceDocuments: UseDocuments = ({
   };
 
   const parsedData = response?.data.map((document: Document) => {
+    const { person } = usePersonById(document.creatorId);
     return {
       ...document,
       badges: getDocumentBadges(document),
+      creator: person,
     };
   });
 
