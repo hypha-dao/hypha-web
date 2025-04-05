@@ -86,7 +86,7 @@ export default function Profile() {
           <DocumentSection
             basePath=""
             useDocuments={useSpaceDocuments}
-            documentState="discussion"
+            documentState="completed"
           />
         </TabsContent>
       </Tabs>
