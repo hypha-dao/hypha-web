@@ -40,6 +40,7 @@ export type CreateSpaceFormProps = {
     name?: string;
     surname?: string;
   };
+  parentSpaceId?: number | undefined;
   onCreate: (values: z.infer<typeof schemaCreateSpaceForm>) => void;
 };
 
@@ -48,6 +49,7 @@ export const CreateSpaceForm = ({
   isLoading,
   closeUrl,
   onCreate,
+  parentSpaceId,
 }: CreateSpaceFormProps) => {
   const form = useForm<z.infer<typeof schemaCreateSpaceForm>>({
     resolver: zodResolver(schemaCreateSpaceForm),
@@ -64,6 +66,7 @@ export const CreateSpaceForm = ({
       leadImage: undefined,
       categories: [],
       links: [],
+      parentId: parentSpaceId,
     },
   });
 

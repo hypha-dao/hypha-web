@@ -10,7 +10,7 @@ type Story = StoryObj<typeof InnerSpaceCard>;
 
 export const Primary: Story = {
   args: {
-    logo: 'https://github.com/shadcn.png',
+    leadImageUrl: 'https://github.com/shadcn.png',
     title: 'Legal & Regulatory',
     description:
       'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt...',
@@ -36,7 +36,6 @@ export const Primary: Story = {
         surname: 'Doe',
       },
     ],
-    joinedStatus: true,
     isLoading: false,
   },
 };

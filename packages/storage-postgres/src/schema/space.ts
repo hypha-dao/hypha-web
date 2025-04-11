@@ -15,6 +15,7 @@ export const spaces = pgTable('spaces', {
   categories: jsonb('categories')
     .$type<Array<(typeof categories.enumValues)[number]>>()
     .default([]),
+  parentId: serial('parent_id'),
   ...commonDateFields,
 });
 

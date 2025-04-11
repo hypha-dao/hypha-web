@@ -11,6 +11,7 @@ export interface Space {
   web3SpaceId?: number | null;
   links?: string[] | null;
   categories?: Category[] | null;
+  subspaces?: Space[];
 }
 
 export interface CreateSpaceInput {

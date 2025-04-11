@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Card,
   CardContent,
@@ -9,6 +11,7 @@ import {
 } from '@hypha-platform/ui';
 import { Avatar, AvatarImage } from '@radix-ui/react-avatar';
 import { Text } from '@radix-ui/themes';
+import { useJoinSpace } from '../hooks/use-join-space';
 
 type Member = {
   avatar: string;
@@ -18,31 +21,25 @@ type Member = {
 
 type InnerSpaceCardProps = {
   members?: Member[];
-  logo?: string;
+  leadImageUrl?: string;
   title?: string;
   description?: string;
-  joinedStatus?: boolean;
   isLoading?: boolean;
-};
-
-const customCardHeaderStyles: React.CSSProperties = {
-  height: '150px',
+  spaceId?: number | null | undefined;
 };
 
 export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
   description,
-  logo,
+  leadImageUrl,
   title,
   members,
-  joinedStatus,
   isLoading,
+  spaceId,
 }) => {
+  const { isMember, joinSpace } = useJoinSpace({ spaceId: spaceId as number });
   return (
     <Card className="h-full w-full">
-      <CardHeader
-        style={customCardHeaderStyles}
-        className="p-0 rounded-tl-md rounded-tr-md overflow-hidden"
-      >
+      <CardHeader className="p-0 rounded-tl-md rounded-tr-md overflow-hidden h-[150px]">
         <Skeleton
           width="100%"
           height="100%"
@@ -51,7 +48,7 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
         >
           <Image
             className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
-            src={logo as string}
+            src={leadImageUrl as string}
             alt={title as string}
             width={1200}
             height={400}
@@ -91,20 +88,29 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
           </Skeleton>
 
           <Skeleton width="106px" height="24px" loading={isLoading}>
-            <Text className="ml-2 flex items-center text-1 text-action-light text-nowrap">
-              + other {members ? members.length - 3 : null} members
-            </Text>
+            {members && members.length > 3 ? (
+              <Text className="ml-2 flex items-center text-1 text-action-light text-nowrap">
+                + other {members.length - 3} members
+              </Text>
+            ) : null}
           </Skeleton>
         </div>
 
         <Skeleton width="200px" height="32px" loading={isLoading}>
           <div>
-            {joinedStatus ? (
+            {isMember ? (
               <Button className="rounded-lg w-full" variant="outline">
                 Joined
               </Button>
             ) : (
-              <Button className="rounded-lg w-full" variant="outline">
+              <Button
+                className="rounded-lg w-full"
+                variant="outline"
+                onClick={(e) => {
+                  e.preventDefault();
+                  joinSpace();
+                }}
+              >
                 Join
               </Button>
             )}

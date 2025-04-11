@@ -19,13 +19,17 @@ export default async function MembershipPage(props: PageProps) {
 
   const basePath = getDhoPathMembership(lang as Locale, id as string);
 
-  const spaces = await createSpaceService().getAll();
+  const spaceService = createSpaceService();
+
+  const spaceFromDb = await spaceService.getBySlug({ slug: id });
+
+  const subspaces = spaceFromDb.subspaces;
 
   return (
     <div className="flex flex-col gap-6 py-4">
       <NavigationTabs lang={lang} id={id} activeTab="membership" />
       <SubspaceSection
-        spaces={spaces}
+        spaces={subspaces || []}
         lang={lang}
         getDhoPathAgreements={getDhoPathAgreements}
       />

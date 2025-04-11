@@ -19,9 +19,21 @@ type FindSpaceBySlugInput = { slug: string };
 export const findSpaceBySlug = async (
   { slug }: FindSpaceBySlugInput,
   { db }: DbConfig,
-): Promise<Space | null> => {
+): Promise<(Space & { subspaces: Space[] }) | null> => {
   const results = await db.select().from(spaces).where(eq(spaces.slug, slug));
-  return results[0] || null;
+  const space = results[0];
+
+  if (!space) return null;
+
+  const subspaces = await db
+    .select()
+    .from(spaces)
+    .where(eq(spaces.parentId, space.web3SpaceId!));
+
+  return {
+    ...space,
+    subspaces,
+  };
 };
 
 type FindAllSpacesByMemberIdInput = {

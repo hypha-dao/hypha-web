@@ -11,3 +11,4 @@ export * from './space-group-slider';
 export * from './space-search';
 export * from './subspace-detail';
 export * from './subspace-section';
+export * from './create-subspace-form';
