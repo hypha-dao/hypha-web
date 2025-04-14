@@ -3,12 +3,12 @@ import React, { ChangeEvent, useRef, useState } from 'react';
 import {
   FileText,
   Image as ImageIcon,
-  Paperclip,
   X,
-  File as FileIcon,
+  File as FileIcon
 } from 'lucide-react';
 import { Button } from '../button';
 import { Separator } from '../separator';
+import { Link2Icon } from '@radix-ui/react-icons';
 
 interface AddAttachmentProps {
   onChange?: (files: File[]) => void;
@@ -61,7 +61,7 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({ onChange }) => {
   return (
     <div className="p-4 flex flex-col items-end w-full">
       <Button variant="ghost" onClick={handleClick}>
-        <Paperclip size={16} />
+        <Link2Icon />
         Add Attachment
         <input
           ref={inputRef}
