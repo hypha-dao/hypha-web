@@ -5,4 +5,3 @@ export * from './formatBytes';
 export * from './hooks';
 export * from './copyToClipboard';
 export * from './timePassedSince';
-export * from './shortenAddress';

@@ -13,10 +13,12 @@ export const EthAddress = ({
   return (
     <div
       onClick={() => onClick(address)}
-      className="w-full flex justify-between"
+      className="w-full flex justify-between items-center"
     >
-      {`${address.slice(0, 6)}…${address.slice(-4)}`}
-      <CopyIcon className="icon-sm ml-2" />
+      <span className="text-neutral-9">
+        {`${address.slice(0, 6)}…${address.slice(-4)}`}
+      </span>
+      <CopyIcon className="icon-sm ml-2 cursor-pointer" />
     </div>
   );
 };
