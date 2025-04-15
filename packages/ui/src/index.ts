@@ -29,6 +29,7 @@ export * from './upload/file';
 export * from './upload/lead-image';
 export * from './upload/image';
 export * from './upload/add-attachment';
+export * from './combobox';
 
 export * from './organisms/editor';
 export * from './molecules/badges-list';
