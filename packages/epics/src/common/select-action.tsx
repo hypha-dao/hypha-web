@@ -10,7 +10,7 @@ type ActionProps = {
   icon: React.ReactNode;
 };
 
-type SelectActionProps = {
+export type SelectActionProps = {
   isLoading?: boolean;
   title: string;
   content: string;

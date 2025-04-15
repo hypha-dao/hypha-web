@@ -7,3 +7,4 @@ export * from './link-label';
 export * from './links';
 export * from './select-action';
 export * from './web-links';
+export * from './select-action.drawer';

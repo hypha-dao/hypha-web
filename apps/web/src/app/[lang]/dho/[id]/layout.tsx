@@ -1,8 +1,7 @@
 import {
   JoinSpace,
-  LinkIcon,
+  SelectActionDrawer,
   SpaceCard,
-  LinkLabel,
   WebLinks,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
@@ -25,6 +24,7 @@ import Link from 'next/link';
 import { Carousel, CarouselContent, CarouselItem } from '@hypha-platform/ui';
 import { getDhoPathAgreements } from './agreements/constants';
 import { createSpaceService } from '@hypha-platform/core/server';
+import { SelectCreateAction } from './_components/select-create-action';
 
 export default async function DhoLayout({
   children,
@@ -91,12 +91,7 @@ export default async function DhoLayout({
               Space Settings
             </Link>
           </Button>
-          <Button asChild colorVariant="accent">
-            <Link href={`/${lang}/dho/${daoSlug}/select-create-action`}>
-              <PlusIcon />
-              Create
-            </Link>
-          </Button>
+          <SelectCreateAction />
         </div>
         <div className="flex flex-col mt-4 gap-2">
           <Text className="text-7">{spaceFromDb.title}</Text>

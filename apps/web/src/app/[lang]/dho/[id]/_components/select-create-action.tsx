@@ -1,9 +1,10 @@
-import { SelectAction } from '@hypha-platform/epics';
+import { SelectActionDrawer } from '@hypha-platform/epics';
+import { Button } from '@hypha-platform/ui';
 import {
   ChatBubbleIcon,
   CheckCircledIcon,
-  FileIcon,
   PlusCircledIcon,
+  PlusIcon,
   RocketIcon,
 } from '@radix-ui/react-icons';
 
@@ -54,8 +55,14 @@ export const CREATE_ACTIONS = [
 
 export const SelectCreateAction = () => {
   return (
-    <SelectAction
-      title="Create"
+    <SelectActionDrawer
+      trigger={
+        <Button colorVariant="accent">
+          <PlusIcon />
+          Create
+        </Button>
+      }
+      title={'Create'}
       content="Select an action to contribute, collaborate, make decisions or manage resources within your space."
       actions={CREATE_ACTIONS}
     />
