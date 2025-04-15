@@ -6,6 +6,7 @@ import { expect } from '@storybook/jest';
 
 const meta = {
   component: AgreementFormRecipient,
+  title: 'Epics/Agreements/AgreementFormRecipient',
 } satisfies Meta<typeof AgreementFormRecipient>;
 
 export default meta;
