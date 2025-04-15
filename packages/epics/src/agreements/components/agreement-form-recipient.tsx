@@ -1,15 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { ChevronDownIcon } from '@radix-ui/react-icons';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  Image,
-  Button,
-} from '@hypha-platform/ui';
+import { useState, useMemo, useCallback } from 'react';
+import { Image, Combobox } from '@hypha-platform/ui';
 
 type Member = {
   name: string;
@@ -26,59 +18,67 @@ type Props = {
 export const AgreementFormRecipient = ({ members = [], onChange }: Props) => {
   const [selected, setSelected] = useState<Member | null>(null);
 
-  const handleSelect = (member: Member) => {
-    setSelected(member);
-    onChange?.(member);
-  };
+  const placeholder = 'Select recipient...';
+
+  const options = useMemo(
+    () =>
+      members.map((member) => ({
+        value: `${member.name} ${member.surname}`,
+        label: `${member.name} ${member.surname}`,
+        avatarUrl: member.avatarUrl,
+      })),
+    [members],
+  );
+
+  const handleChange = useCallback(
+    (value: string) => {
+      const found =
+        members.find((m) => `${m.name} ${m.surname}` === value) || null;
+      setSelected(found);
+      onChange?.(found!);
+    },
+    [members, onChange],
+  );
 
   return (
-    <div className="flex flex w-full justify-between">
+    <div className="flex w-full justify-between items-center gap-2">
       <label className="text-sm text-neutral-11">Recipient</label>
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" colorVariant="neutral">
-            {selected && (
+      <div className="flex items-center gap-2 min-w-[220px]">
+        <Combobox
+          options={options}
+          placeholder={placeholder}
+          onChange={handleChange}
+          renderOption={(option) => (
+            <>
               <Image
-                src={selected.avatarUrl}
-                alt={`${selected.name} ${selected.surname}`}
+                src={option.avatarUrl}
+                alt={option.label}
                 width={24}
                 height={24}
                 className="rounded-full"
               />
-            )}
-            <span className="text-sm text-secondary-foreground">
-              {selected
-                ? `${selected.name} ${selected.surname}`
-                : 'Select recipient...'}
-            </span>
-            <ChevronDownIcon className="w-4 h-4 ml-auto" />
-          </Button>
-        </DropdownMenuTrigger>
-
-        <DropdownMenuContent
-          side="bottom"
-          align="start"
-          className="min-w-[220px]"
-        >
-          {members?.map((member, index) => (
-            <DropdownMenuItem
-              key={index}
-              onSelect={() => handleSelect(member)}
-              className="flex items-center gap-2 px-2 py-1.5"
-            >
-              <Image
-                src={member.avatarUrl}
-                alt={`${member.name} ${member.surname}`}
-                width={24}
-                height={24}
-                className="rounded-full"
-              />
-              <span>{`${member.name} ${member.surname}`}</span>
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+              <span>{option.label}</span>
+            </>
+          )}
+          renderValue={(option) =>
+            option ? (
+              <div className="flex items-center gap-2 truncate">
+                <Image
+                  src={option.avatarUrl}
+                  alt={option.label}
+                  width={24}
+                  height={24}
+                  className="rounded-full"
+                />
+                <span className="truncate">{option.label}</span>
+              </div>
+            ) : (
+              placeholder
+            )
+          }
+        />
+      </div>
     </div>
   );
 };
