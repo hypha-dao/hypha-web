@@ -14,6 +14,7 @@ import {
   UploadLeadImage,
   Separator,
   Badge,
+  AddAttachment
 } from '@hypha-platform/ui';
 import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
@@ -50,6 +51,7 @@ export const CreateAgreementForm = ({
       title: '',
       description: '',
       leadImage: undefined,
+      attachments: []
     },
   });
 
@@ -136,6 +138,18 @@ export const CreateAgreementForm = ({
                 />
               </FormControl>
               <FormDescription />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="attachments"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <AddAttachment onChange={field.onChange}/>
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
