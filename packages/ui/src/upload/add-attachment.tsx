@@ -4,7 +4,7 @@ import {
   FileText,
   Image as ImageIcon,
   X,
-  File as FileIcon
+  File as FileIcon,
 } from 'lucide-react';
 import { Button } from '../button';
 import { Separator } from '../separator';
