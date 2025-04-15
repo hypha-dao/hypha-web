@@ -15,6 +15,7 @@ type Member = {
   name: string;
   surname: string;
   avatarUrl: string;
+  id: number;
 };
 
 type Props = {
@@ -22,10 +23,7 @@ type Props = {
   onChange?: (selected: Member) => void;
 };
 
-export default function AgreementFormRecipient({
-  members = [],
-  onChange,
-}: Props) {
+export const AgreementFormRecipient = ({ members = [], onChange }: Props) => {
   const [selected, setSelected] = useState<Member | null>(null);
 
   const handleSelect = (member: Member) => {
@@ -83,4 +81,4 @@ export default function AgreementFormRecipient({
       </DropdownMenu>
     </div>
   );
-}
+};

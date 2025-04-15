@@ -6,6 +6,7 @@ const ALLOWED_IMAGE_FILE_SIZE = 5 * 1024 * 1024;
 const createAgreementWeb2Props = {
   title: z.string().min(1).max(50),
   description: z.string().min(1).max(300),
+  recipient: z.number().optional(),
 };
 
 export const schemaCreateAgreementWeb2 = z.object(createAgreementWeb2Props);
@@ -30,10 +31,7 @@ export const createAgreementFiles = {
       'File must be an image (JPEG, PNG, GIF, WEBP)',
     )
     .optional(),
-  attachments: z
-    .array(
-      z.instanceof(File)
-    ).optional()
+  attachments: z.array(z.instanceof(File)).optional(),
 };
 
 export const schemaCreateAgreementFiles = z.object(createAgreementFiles);

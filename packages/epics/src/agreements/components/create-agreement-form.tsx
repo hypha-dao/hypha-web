@@ -14,7 +14,7 @@ import {
   UploadLeadImage,
   Separator,
   Badge,
-  AddAttachment
+  AddAttachment,
 } from '@hypha-platform/ui';
 import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
@@ -24,6 +24,7 @@ import { ALLOWED_IMAGE_FILE_SIZE } from '@core/space';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { createAgreementFiles, schemaCreateAgreement } from '@core/governance';
+import { AgreementFormRecipient } from './agreement-form-recipient';
 
 import Link from 'next/link';
 
@@ -51,7 +52,8 @@ export const CreateAgreementForm = ({
       title: '',
       description: '',
       leadImage: undefined,
-      attachments: []
+      attachments: [],
+      recipient: undefined,
     },
   });
 
@@ -148,7 +150,19 @@ export const CreateAgreementForm = ({
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <AddAttachment onChange={field.onChange}/>
+                <AddAttachment onChange={field.onChange} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="recipient"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <AgreementFormRecipient onChange={field.onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>
