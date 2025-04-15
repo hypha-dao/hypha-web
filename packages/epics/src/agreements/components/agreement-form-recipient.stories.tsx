@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 
-import AgreementFormRecipient from './agreement-form-recipient';
+import { AgreementFormRecipient } from './agreement-form-recipient';
 import { within } from '@storybook/testing-library';
 import { expect } from '@storybook/jest';
 
@@ -20,16 +20,19 @@ export const Default: Story = {
         avatarUrl: 'https://github.com/shadcn.png',
         name: 'Name',
         surname: 'Surname',
+        id: 0,
       },
       {
         avatarUrl: 'https://github.com/shadcn.png',
         name: 'Name',
         surname: 'Surname',
+        id: 0,
       },
       {
         avatarUrl: 'https://github.com/shadcn.png',
         name: 'Name',
         surname: 'Surname',
+        id: 0,
       },
     ],
   },
