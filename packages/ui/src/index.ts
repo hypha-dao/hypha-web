@@ -30,6 +30,7 @@ export * from './upload/lead-image';
 export * from './upload/image';
 export * from './upload/add-attachment';
 export * from './combobox';
+export * from './date-picker';
 
 export * from './organisms/editor';
 export * from './molecules/badges-list';
