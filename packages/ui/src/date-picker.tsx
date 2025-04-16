@@ -22,7 +22,7 @@ export function DatePicker({
   mode = 'single',
   value,
   onChange,
-  placeholder = 'Pick a date',
+  placeholder = 'Select a date',
   className,
 }: DatePickerProps) {
   const [internalValue, setInternalValue] = React.useState<
@@ -57,14 +57,15 @@ export function DatePicker({
       <PopoverTrigger asChild>
         <Button
           variant="outline"
+          colorVariant="neutral"
           className={cn(
-            'w-[280px] justify-start text-left font-normal',
+            'w-fit justify-start text-left font-normal',
             !selected && 'text-muted-foreground',
             className,
           )}
         >
-          <CalendarIcon className="mr-2 h-4 w-4" />
           {renderLabel()}
+          <CalendarIcon className="mr-2 h-4 w-4" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">
