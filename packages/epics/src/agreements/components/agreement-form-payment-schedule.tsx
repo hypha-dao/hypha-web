@@ -1,6 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
+import {
+  useForm,
+  Controller,
+  useFieldArray,
+  FormProvider,
+} from 'react-hook-form';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -14,6 +20,7 @@ import {
 import { cn } from '@hypha-platform/lib/utils';
 import { ChevronDownIcon, PlusIcon, Cross2Icon } from '@radix-ui/react-icons';
 import { PercentIcon } from 'lucide-react';
+import { isBefore } from 'date-fns';
 
 const options = ['Immediately', 'Future Payment', 'Milestones'] as const;
 type Option = (typeof options)[number];
@@ -24,69 +31,97 @@ type DateRange = {
 };
 
 type Milestone = {
-  id: string;
   percentage: string;
-  dateRange: DateRange | undefined;
+  dateRange: DateRange;
+};
+
+type FormValues = {
+  option: Option;
+  futureDate?: Date;
+  milestones: Milestone[];
 };
 
 type AgreementFormPaymentScheduleProps = {
-  onChange?: (value: {
-    option: Option;
-    futureDate?: Date;
-    milestones?: Milestone[];
-  }) => void;
+  onChange?: (value: FormValues) => void;
 };
 
 export function AgreementFormPaymentSchedule({
   onChange,
 }: AgreementFormPaymentScheduleProps) {
-  const [selectedOption, setSelectedOption] = useState<Option>('Immediately');
-  const [futureDate, setFutureDate] = useState<Date | undefined>();
-  const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const methods = useForm<FormValues>({
+    defaultValues: {
+      option: 'Immediately',
+      futureDate: undefined,
+      milestones: [],
+    },
+    mode: 'onChange',
+  });
 
-  const emitChange = () => {
+  const {
+    control,
+    watch,
+    setValue,
+    formState: { errors },
+  } = methods;
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'milestones',
+  });
+
+  const selectedOption = watch('option');
+  const milestones = watch('milestones');
+  const futureDate = watch('futureDate');
+
+  useEffect(() => {
     onChange?.({
       option: selectedOption,
       futureDate,
       milestones,
     });
-  };
-
-  useEffect(() => {
-    emitChange();
   }, [selectedOption, futureDate, milestones]);
 
-  const addMilestone = () => {
-    setMilestones((prev) => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        percentage: '',
-        dateRange: { from: undefined, to: undefined },
-      },
-    ]);
-  };
-
-  const removeMilestone = (id: string) => {
-    setMilestones((prev) => prev.filter((m) => m.id !== id));
-  };
-
-  const updateMilestone = (
-    id: string,
-    field: 'percentage' | 'dateRange',
-    value: any,
-  ) => {
-    setMilestones((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, [field]: value } : m)),
+  const validateMilestones = () => {
+    const total = milestones.reduce(
+      (sum, m) => sum + Number(m.percentage || 0),
+      0,
     );
+
+    const now = new Date();
+
+    for (let i = 0; i < milestones.length; i++) {
+      const { dateRange } = milestones[i];
+
+      if (!dateRange?.from) return 'Each milestone must have a start date';
+      if (i === 0 && isBefore(dateRange.from, now)) {
+        return 'First milestone must be in the future';
+      }
+      if (
+        i > 0 &&
+        isBefore(dateRange.from!, milestones[i - 1].dateRange.from!)
+      ) {
+        return `Milestone ${i + 1} must be after milestone ${i}`;
+      }
+    }
+
+    if (total > 100) return 'Total percentage cannot exceed 100%';
+    return true;
+  };
+
+  const validateFutureDate = (date: Date | undefined) => {
+    const now = new Date();
+    if (date && isBefore(date, now)) {
+      return 'The future payment date must be later than the current date';
+    }
+    return true;
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex w-full justify-between items-center gap-2">
-        <label className="text-sm text-neutral-11">Payment Schedule</label>
+    <FormProvider {...methods}>
+      <div className="flex flex-col gap-4">
+        <div className="flex w-full justify-between items-center gap-2">
+          <label className="text-sm text-neutral-11">Payment Schedule</label>
 
-        <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -102,7 +137,7 @@ export function AgreementFormPaymentSchedule({
               {options.map((option) => (
                 <DropdownMenuItem
                   key={option}
-                  onSelect={() => setSelectedOption(option)}
+                  onSelect={() => setValue('option', option)}
                   className={cn(
                     selectedOption === option &&
                       'bg-accent text-accent-foreground',
@@ -114,79 +149,109 @@ export function AgreementFormPaymentSchedule({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </div>
 
-      {selectedOption === 'Future Payment' && (
-        <div className="flex w-full justify-between items-center gap-2">
-          <Label className="text-sm text-neutral-11">Date</Label>
-          <DatePicker
-            mode="single"
-            value={futureDate}
-            onChange={(date) => setFutureDate(date as Date)}
-            placeholder="Select a date"
-            className="w-fit"
-          />
-        </div>
-      )}
-
-      {selectedOption === 'Milestones' && (
-        <div className="flex flex-col gap-2 items-end">
-          {milestones.map((milestone, index) => (
-            <div
-              key={milestone.id}
-              className="flex w-full justify-between items-center gap-2"
-            >
-              <Label className="text-sm text-neutral-11 min-w-[80px]">
-                Milestone {index + 1}
-              </Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  placeholder="Type a percentage"
-                  value={milestone.percentage}
-                  onChange={(e) =>
-                    updateMilestone(milestone.id, 'percentage', e.target.value)
-                  }
-                  className="w-[180px]"
-                  leftIcon={<PercentIcon color="white" size="16px" />}
-                  type="number"
-                  min={0}
-                  max={100}
-                />
-                <DatePicker
-                  mode="range"
-                  value={milestone.dateRange}
-                  onChange={(range) =>
-                    updateMilestone(
-                      milestone.id,
-                      'dateRange',
-                      range as DateRange,
-                    )
-                  }
-                  className="w-fit"
-                />
-                <Button
-                  variant="ghost"
-                  colorVariant="neutral"
-                  onClick={() => removeMilestone(milestone.id)}
-                  size="icon"
-                  className="ml-1"
-                >
-                  <Cross2Icon className="w-4 h-4" />
-                </Button>
-              </div>
+        {selectedOption === 'Future Payment' && (
+          <div className="flex flex-col w-full gap-2">
+            <div className="flex w-full justify-between items-center gap-2">
+              <Label className="text-sm text-neutral-11">Date</Label>
+              <Controller
+                control={control}
+                name="futureDate"
+                rules={{
+                  validate: validateFutureDate,
+                }}
+                render={({ field }) => (
+                  <DatePicker
+                    mode="single"
+                    value={field.value}
+                    onChange={(val) => field.onChange(val as Date)}
+                    placeholder="Select a date"
+                    className="w-fit"
+                  />
+                )}
+              />
             </div>
-          ))}
-          <Button
-            variant="ghost"
-            colorVariant="accent"
-            onClick={addMilestone}
-            className="w-fit mt-2"
-          >
-            <PlusIcon className="w-4 h-4 mr-1" />
-            Add
-          </Button>
-        </div>
-      )}
-    </div>
+            {errors.futureDate && (
+              <p className="text-error-9 text-sm ml-auto">
+                {errors.futureDate.message}
+              </p>
+            )}
+          </div>
+        )}
+
+        {selectedOption === 'Milestones' && (
+          <div className="flex flex-col gap-2 items-end">
+            {fields.map((field, index) => (
+              <div
+                key={field.id}
+                className="flex w-full justify-between items-center gap-2"
+              >
+                <Label className="text-sm text-neutral-11 min-w-[80px]">
+                  Milestone {index + 1}
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Controller
+                    control={control}
+                    name={`milestones.${index}.percentage`}
+                    rules={{ required: true, min: 0, max: 100 }}
+                    render={({ field }) => (
+                      <Input
+                        {...field}
+                        placeholder="Type a percentage"
+                        className="w-[180px]"
+                        leftIcon={<PercentIcon color="white" size="16px" />}
+                        type="number"
+                      />
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name={`milestones.${index}.dateRange`}
+                    render={({ field }) => (
+                      <DatePicker
+                        mode="range"
+                        value={field.value}
+                        onChange={(val) => field.onChange(val as DateRange)}
+                        className="w-fit"
+                      />
+                    )}
+                  />
+                  <Button
+                    variant="ghost"
+                    colorVariant="neutral"
+                    onClick={() => remove(index)}
+                    size="icon"
+                    className="ml-1"
+                  >
+                    <Cross2Icon className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+            <Button
+              variant="ghost"
+              colorVariant="accent"
+              onClick={() =>
+                append({
+                  percentage: '',
+                  dateRange: { from: undefined, to: undefined },
+                })
+              }
+              className="w-fit mt-2"
+            >
+              <PlusIcon className="w-4 h-4 mr-1" />
+              Add
+            </Button>
+
+            {selectedOption === 'Milestones' &&
+              validateMilestones() !== true && (
+                <p className="text-error-9 text-sm mt-2">
+                  {validateMilestones() as string}
+                </p>
+              )}
+          </div>
+        )}
+      </div>
+    </FormProvider>
   );
 }
