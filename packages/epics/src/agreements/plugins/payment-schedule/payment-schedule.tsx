@@ -25,7 +25,7 @@ import {
   validateFutureDate,
   DateRange,
   Milestone,
-} from '../validation';
+} from './validation';
 
 const options = ['Immediately', 'Future Payment', 'Milestones'] as const;
 type Option = (typeof options)[number];
@@ -36,27 +36,24 @@ export type FormValues = {
   milestones: Milestone[];
 };
 
-type AgreementFormPaymentScheduleProps = {};
+type PaymentScheduleProps = {};
 
 function useProvidedOrLocalForm() {
   const context = useFormContext<FormValues>();
   const isInsideProvider = !!context?.control;
-
-  const methods = isInsideProvider
-    ? context
-    : useForm<FormValues>({
-        defaultValues: {
-          option: 'Immediately',
-          futureDate: undefined,
-          milestones: [],
-        },
-        mode: 'onChange',
-      });
+  const methods = useForm<FormValues>({
+    defaultValues: {
+      option: 'Immediately',
+      futureDate: undefined,
+      milestones: [],
+    },
+    mode: 'onChange',
+  });
 
   return { methods, isInsideProvider };
 }
 
-export function AgreementFormPaymentSchedule({}: AgreementFormPaymentScheduleProps) {
+export function PaymentSchedule({}: PaymentScheduleProps) {
   const { methods, isInsideProvider } = useProvidedOrLocalForm();
 
   const {
