@@ -37,11 +37,13 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({ onChange }) => {
 
   const renderFileIcon = (file: File) => {
     if (file.type.startsWith('image/')) {
+      const objectURL = URL.createObjectURL(file);
       return (
         <img
-          src={URL.createObjectURL(file)}
+          src={objectURL}
           alt={file.name}
           className="w-5 h-5 object-cover rounded-lg"
+          onLoad={() => URL.revokeObjectURL(objectURL)}
         />
       );
     }
