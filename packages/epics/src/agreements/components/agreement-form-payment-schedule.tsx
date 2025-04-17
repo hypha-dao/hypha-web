@@ -20,20 +20,15 @@ import {
 import { cn } from '@hypha-platform/lib/utils';
 import { ChevronDownIcon, PlusIcon, Cross2Icon } from '@radix-ui/react-icons';
 import { PercentIcon } from 'lucide-react';
-import { validateMilestones, validateFutureDate } from '../validation';
+import {
+  validateMilestones,
+  validateFutureDate,
+  DateRange,
+  Milestone,
+} from '../validation';
 
 const options = ['Immediately', 'Future Payment', 'Milestones'] as const;
 type Option = (typeof options)[number];
-
-type DateRange = {
-  from: Date | undefined;
-  to: Date | undefined;
-};
-
-type Milestone = {
-  percentage: string;
-  dateRange: DateRange;
-};
 
 export type FormValues = {
   option: Option;

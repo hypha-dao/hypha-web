@@ -1,20 +1,20 @@
 import { isBefore } from 'date-fns';
 
-type DateRange = {
+export type DateRange = {
   from: Date | undefined;
   to: Date | undefined;
 };
 
-type Milestone = {
+export type Milestone = {
   percentage: string;
   dateRange: DateRange;
 };
 
 export const validateMilestones = (milestones: Milestone[]): true | string => {
-  const total = milestones.reduce(
-    (sum, m) => sum + Number(m.percentage || 0),
-    0,
-  );
+  const total = milestones.reduce((sum, m) => {
+    const value = Number(m.percentage || 0);
+    return sum + (isNaN(value) ? 0 : value);
+  }, 0);
 
   const now = new Date();
 
