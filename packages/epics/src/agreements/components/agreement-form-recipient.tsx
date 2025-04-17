@@ -23,19 +23,21 @@ export const AgreementFormRecipient = ({ members = [], onChange }: Props) => {
   const options = useMemo(
     () =>
       members.map((member) => ({
-        value: `${member.name} ${member.surname}`,
+        value: String(member.id),
         label: `${member.name} ${member.surname}`,
         avatarUrl: member.avatarUrl,
+        id: member.id,
       })),
     [members],
   );
-
   const handleChange = useCallback(
     (value: string) => {
       const found =
-        members.find((m) => `${m.name} ${m.surname}` === value) || null;
+        members.find((m) => String(m.id) === value) || null;
       setSelected(found);
-      onChange?.(found!);
+      if (found) {
+        onChange?.(found);
+      }
     },
     [members, onChange],
   );
