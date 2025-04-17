@@ -23,16 +23,16 @@ import { Text } from '@radix-ui/themes';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Carousel, CarouselContent, CarouselItem } from '@hypha-platform/ui';
-import { getDhoPathAgreements } from './agreements/constants';
 import { createSpaceService } from '@hypha-platform/core/server';
+import { getDhoPathAgreements } from './@tab/agreements/constants';
 
 export default async function DhoLayout({
   children,
-  aside,
+  tab,
   params,
 }: {
   children: React.ReactNode;
-  aside: React.ReactNode;
+  tab: React.ReactNode;
   params: Promise<{ id: string; lang: Locale }>;
 }) {
   const { id: daoSlug, lang } = await params;
@@ -115,6 +115,7 @@ export default async function DhoLayout({
             <div className="text-gray-500 ml-1 text-1">Agreements</div>
           </div>
         </div>
+        {tab}
         {children}
         <div className="border-t-2 border-primary-foreground pt-6">
           <Text className="text-4 font-medium">Spaces you might like</Text>
@@ -148,7 +149,7 @@ export default async function DhoLayout({
           </Carousel>
         </div>
       </Container>
-      {aside}
+      {/* {aside} */}
     </div>
   );
 }

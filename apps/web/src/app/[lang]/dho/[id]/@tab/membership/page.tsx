@@ -1,3 +1,3 @@
 export default async function Index() {
-  return null;
+  return <div>Membership</div>;
 }
