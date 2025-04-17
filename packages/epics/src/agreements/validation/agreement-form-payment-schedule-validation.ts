@@ -6,15 +6,12 @@ export type DateRange = {
 };
 
 export type Milestone = {
-  percentage: string;
+  percentage: number;
   dateRange: DateRange;
 };
 
 export const validateMilestones = (milestones: Milestone[]): true | string => {
-  const total = milestones.reduce((sum, m) => {
-    const value = Number(m.percentage || 0);
-    return sum + (isNaN(value) ? 0 : value);
-  }, 0);
+  const total = milestones.reduce((sum, m) => sum + m.percentage, 0);
 
   const now = new Date();
 

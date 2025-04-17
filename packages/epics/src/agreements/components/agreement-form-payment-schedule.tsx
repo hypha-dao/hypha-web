@@ -190,7 +190,7 @@ export function AgreementFormPaymentSchedule({}: AgreementFormPaymentSchedulePro
             colorVariant="accent"
             onClick={() =>
               append({
-                percentage: '',
+                percentage: 0,
                 dateRange: { from: undefined, to: undefined },
               })
             }
