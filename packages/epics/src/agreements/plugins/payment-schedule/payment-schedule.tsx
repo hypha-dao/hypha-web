@@ -36,8 +36,6 @@ export type FormValues = {
   milestones: Milestone[];
 };
 
-type PaymentScheduleProps = {};
-
 function useProvidedOrLocalForm() {
   const context = useFormContext<FormValues>();
   const isInsideProvider = !!context?.control;
@@ -53,7 +51,7 @@ function useProvidedOrLocalForm() {
   return { methods, isInsideProvider };
 }
 
-export function PaymentSchedule({}: PaymentScheduleProps) {
+export function PaymentSchedule() {
   const { methods, isInsideProvider } = useProvidedOrLocalForm();
 
   const {
