@@ -162,7 +162,10 @@ export const CreateAgreementForm = ({
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <AgreementFormRecipient onChange={field.onChange} />
+                <AgreementFormRecipient
+                  members={[]}
+                  onChange={field.onChange}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
