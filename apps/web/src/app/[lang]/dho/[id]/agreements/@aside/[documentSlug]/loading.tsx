@@ -1,7 +1,7 @@
 'use client';
 
 import { AgreementDetail } from '@hypha-platform/epics';
-import { SidePanel } from '../../_components/side-panel';
+import { SidePanel } from '../../../@aside/_components/side-panel';
 
 export default function Loading() {
   return (

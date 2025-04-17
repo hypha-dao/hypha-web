@@ -1,10 +1,12 @@
 'use client';
 
 import { CreateAgreementForm } from '@hypha-platform/epics';
-import { SidePanel } from '../../_components/side-panel';
+import { useParams } from 'next/navigation';
+import { SidePanel } from '../../../@aside/_components/side-panel';
 import { useMe } from '@hypha-platform/core/client';
 
-export default function Loading() {
+export default function CreateAgreement() {
+  const { lang, id } = useParams();
   const { person } = useMe();
   return (
     <SidePanel>
@@ -14,11 +16,11 @@ export default function Loading() {
           name: person?.name || '',
           surname: person?.surname || '',
         }}
-        closeUrl={``}
+        closeUrl={`/${lang}/dho/${id}/agreements`}
         onCreate={() => {
           console.log('Publish proposal');
         }}
-        isLoading={true}
+        isLoading={false}
       />
     </SidePanel>
   );

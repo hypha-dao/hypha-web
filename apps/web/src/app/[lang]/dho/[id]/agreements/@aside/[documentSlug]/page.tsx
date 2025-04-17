@@ -1,8 +1,8 @@
 'use client';
 import { AgreementDetail } from '@hypha-platform/epics';
-import { SidePanel } from '../../_components/side-panel';
+import { SidePanel } from '../../../@aside/_components/side-panel';
 import { useParams } from 'next/navigation';
-import { getDhoPathAgreements } from '../../../agreements/constants';
+import { getDhoPathAgreements } from '../../constants';
 import { Locale } from '@hypha-platform/i18n';
 import { useDocumentBySlug } from '@web/hooks/use-document-by-slug';
 import { useDocumentSlug } from '@web/hooks/use-document-slug';
