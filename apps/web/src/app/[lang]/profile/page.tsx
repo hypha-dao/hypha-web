@@ -12,7 +12,7 @@ import Link from 'next/link';
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Text } from '@radix-ui/themes';
 import { Container } from '@hypha-platform/ui';
-import { getDhoPathAgreements } from '../dho/[id]/agreements/constants';
+import { getDhoPathAgreements } from '../dho/[id]/@tab/agreements/constants';
 import {
   Tabs,
   TabsTrigger,

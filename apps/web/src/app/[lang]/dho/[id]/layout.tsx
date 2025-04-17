@@ -1,10 +1,4 @@
-import {
-  JoinSpace,
-  LinkIcon,
-  SpaceCard,
-  LinkLabel,
-  WebLinks,
-} from '@hypha-platform/epics';
+import { JoinSpace, SpaceCard, WebLinks } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import {
   Container,
@@ -13,24 +7,22 @@ import {
   AvatarImage,
   Button,
 } from '@hypha-platform/ui';
-import {
-  Share2Icon,
-  ChevronLeftIcon,
-  PlusIcon,
-  Pencil2Icon,
-} from '@radix-ui/react-icons';
+import { Share2Icon, ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Text } from '@radix-ui/themes';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Carousel, CarouselContent, CarouselItem } from '@hypha-platform/ui';
 import { createSpaceService } from '@hypha-platform/core/server';
 import { getDhoPathAgreements } from './@tab/agreements/constants';
+import { ActionButtons } from './_components/action-buttons';
 
 export default async function DhoLayout({
+  aside,
   children,
   tab,
   params,
 }: {
+  aside: React.ReactNode;
   children: React.ReactNode;
   tab: React.ReactNode;
   params: Promise<{ id: string; lang: Locale }>;
@@ -85,19 +77,9 @@ export default async function DhoLayout({
           {typeof spaceFromDb.web3SpaceId === 'number' && (
             <JoinSpace spaceId={spaceFromDb.web3SpaceId} />
           )}
-          <Button asChild colorVariant="accent" variant={'outline'}>
-            <Link href={`/${lang}/dho/${daoSlug}/select-settings-action`}>
-              <Pencil2Icon />
-              Space Settings
-            </Link>
-          </Button>
-          <Button asChild colorVariant="accent">
-            <Link href={`/${lang}/dho/${daoSlug}/select-create-action`}>
-              <PlusIcon />
-              Create
-            </Link>
-          </Button>
+          <ActionButtons />
         </div>
+
         <div className="flex flex-col mt-4 gap-2">
           <Text className="text-7">{spaceFromDb.title}</Text>
           <WebLinks links={spaceFromDb.links} />
@@ -149,7 +131,7 @@ export default async function DhoLayout({
           </Carousel>
         </div>
       </Container>
-      {/* {aside} */}
+      {aside}
     </div>
   );
 }

@@ -2,9 +2,9 @@ import { Locale } from '@hypha-platform/i18n';
 import { Container } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { SpaceGroupSlider, SpaceSearch } from '@hypha-platform/epics';
-import { getDhoPathAgreements } from '../dho/[id]/agreements/constants';
 import { createSpaceService, Space } from '@hypha-platform/core/server';
 import { Category } from '@hypha-platform/core/client';
+import { getDhoPathAgreements } from '../dho/[id]/@tab/agreements/constants';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
