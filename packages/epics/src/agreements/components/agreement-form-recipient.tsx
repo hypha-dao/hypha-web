@@ -32,8 +32,7 @@ export const AgreementFormRecipient = ({ members = [], onChange }: Props) => {
   );
   const handleChange = useCallback(
     (value: string) => {
-      const found =
-        members.find((m) => String(m.id) === value) || null;
+      const found = members.find((m) => String(m.id) === value) || null;
       setSelected(found);
       if (found) {
         onChange?.(found);
