@@ -2,17 +2,11 @@
 pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+import '@openzeppelin/contracts/access/Ownable.sol';
+import '@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol';
 
-interface ISpaces {
-  function hasToken(
-    uint256 spaceId,
-    address tokenAddress
-  ) external view returns (bool);
-}
-
-contract SpaceToken is ERC20 {
+contract SpaceToken is ERC20, ERC20Burnable, Ownable {
   address public immutable executor;
-  ISpaces public immutable spacesContract;
   uint256 public immutable spaceId;
   uint256 public immutable maxSupply;
   bool public immutable transferable;
@@ -21,19 +15,13 @@ contract SpaceToken is ERC20 {
     string memory name,
     string memory symbol,
     address _executor,
-    address _spacesContract,
     uint256 _spaceId,
     uint256 _maxSupply,
     bool _transferable
-  ) ERC20(name, symbol) {
+  ) ERC20(name, symbol) Ownable(msg.sender) {
     require(_executor != address(0), 'Executor cannot be zero address');
-    require(
-      _spacesContract != address(0),
-      'Spaces contract cannot be zero address'
-    );
 
     executor = _executor;
-    spacesContract = ISpaces(_spacesContract);
     spaceId = _spaceId;
     maxSupply = _maxSupply;
     transferable = _transferable;
@@ -44,13 +32,7 @@ contract SpaceToken is ERC20 {
     _;
   }
 
-  function mint(address to, uint256 amount) public onlyExecutor {
-    // Verify this token is registered to the space
-    require(
-      spacesContract.hasToken(spaceId, address(this)),
-      'Token not registered to space'
-    );
-
+  function mint(address to, uint256 amount) public virtual onlyExecutor {
     // Check against maximum supply
     require(
       maxSupply == 0 || totalSupply() + amount <= maxSupply,
@@ -61,7 +43,10 @@ contract SpaceToken is ERC20 {
   }
 
   // Override transfer function to respect transferability
-  function transfer(address to, uint256 amount) public override returns (bool) {
+  function transfer(
+    address to,
+    uint256 amount
+  ) public virtual override returns (bool) {
     require(transferable, 'Token transfers are disabled');
     return super.transfer(to, amount);
   }
@@ -71,7 +56,7 @@ contract SpaceToken is ERC20 {
     address from,
     address to,
     uint256 amount
-  ) public override returns (bool) {
+  ) public virtual override returns (bool) {
     require(transferable, 'Token transfers are disabled');
     return super.transferFrom(from, to, amount);
   }

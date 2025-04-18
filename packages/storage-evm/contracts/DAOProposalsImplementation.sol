@@ -7,6 +7,7 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import './storage/DAOProposalsStorage.sol';
 import './interfaces/IDAOProposals.sol';
 import './interfaces/IExecutor.sol';
+import './interfaces/IDecayTokenVotingPower.sol';
 
 contract DAOProposalsImplementation is
   Initializable,
@@ -189,14 +190,30 @@ contract DAOProposalsImplementation is
 
     address votingPowerSourceAddr = directoryContract
       .getVotingPowerSourceContract(votingPowerSourceId);
-    IVotingPowerSource votingPowerSource = IVotingPowerSource(
-      votingPowerSourceAddr
-    );
 
-    uint256 votingPower = votingPowerSource.getVotingPower(
-      msg.sender,
-      proposal.spaceId
-    );
+    uint256 votingPower;
+
+    // Check if this is a decaying token voting power source (ID 2)
+    if (votingPowerSourceId == 3) {
+      // For decaying tokens, apply decay before calculating voting power
+      IDecayTokenVotingPower decayVotingPowerSource = IDecayTokenVotingPower(
+        votingPowerSourceAddr
+      );
+      votingPower = decayVotingPowerSource.applyDecayAndGetVotingPower(
+        msg.sender,
+        proposal.spaceId
+      );
+    } else {
+      // For regular voting power sources
+      IVotingPowerSource votingPowerSource = IVotingPowerSource(
+        votingPowerSourceAddr
+      );
+      votingPower = votingPowerSource.getVotingPower(
+        msg.sender,
+        proposal.spaceId
+      );
+    }
+
     require(votingPower > 0, 'No voting power');
 
     proposal.hasVoted[msg.sender] = true;

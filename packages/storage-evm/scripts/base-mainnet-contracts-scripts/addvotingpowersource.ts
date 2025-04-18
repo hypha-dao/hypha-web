@@ -6,7 +6,7 @@ dotenv.config();
 // You can define default addresses here for convenience
 // These will be used if the corresponding environment variables are not set
 const DEFAULT_VOTING_POWER_SOURCE_ADDRESS =
-  '0x87537f0B5B8f34D689d484E743e83F82636E14a7'; // Add your address here when needed
+  '0x6dB5E05B21c68550B63a7404a3B68F81c159DAee'; // Add your address here when needed
 
 // Interface definitions
 interface Log {

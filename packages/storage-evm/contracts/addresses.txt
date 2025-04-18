@@ -13,15 +13,12 @@ OpenJoin deployed to: 0x957e7671Db34773d7d28FedA03Ca762BA3611dc0
 
 Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying DAOProposals...
-DAOProposals deployed to: 0xaC840F8A96EC6A6f9FbfdAae8daF8d9D679fd48B
+DAOProposals deployed to: 0x001bA7a00a259Fb12d7936455e292a60FC2bef14
+OLD 0xaC840F8A96EC6A6f9FbfdAae8daF8d9D679fd48B
 
 Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying ExitMethodDirectory...
 ExitMethodDirectory deployed to: 0x830ed2DAcF264dD7Fc9BC11E34674AC937B04A06
-
-Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
-Deploying TokenFactory...
-TokenFactory deployed to: 0xeA9BD28eBB2e6996c5C84eACC64e661f83905eD0
 
 Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying VotingPowerDirectory...
@@ -40,3 +37,16 @@ Voting power source added successfully with ID: 2
 Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying TokenBalanceJoin...
 TokenBalanceJoin deployed to: 0x41cD69A3a3715B16598415df336a8Cc533CCAF76
+
+Deploying DecayingTokenFactory with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying DecayingTokenFactory...
+DecayingTokenFactory proxy deployed to: 0x299f4D2327933c1f363301dbd2a28379ccD5539b
+
+Deploying RegularTokenFactory with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying RegularTokenFactory...
+RegularTokenFactory proxy deployed to: 0x95A33EC94de2189893884DaD63eAa19f7390144a
+
+Deploying VoteDecayTokenVotingPower with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying VoteDecayTokenVotingPower...
+VoteDecayTokenVotingPower proxy deployed to: 0x6dB5E05B21c68550B63a7404a3B68F81c159DAee
+Voting power source added successfully with ID: 3

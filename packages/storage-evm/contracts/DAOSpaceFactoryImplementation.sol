@@ -5,7 +5,6 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import './storage/DAOSpaceFactoryStorage.sol';
-import './interfaces/ITokenFactory.sol';
 import './Executor.sol';
 import './interfaces/IDAOSpaceFactory.sol';
 import './interfaces/IExitMethodDirectory.sol';
@@ -43,12 +42,10 @@ contract DAOSpaceFactoryImplementation is
   IDAOProposals public proposalsContract;
 
   function setContracts(
-    address _tokenFactoryAddress,
     address _joinMethodDirectoryAddress,
     address _exitMethodDirectoryAddress,
     address _proposalManagerAddress
   ) external onlyOwner {
-    tokenFactoryAddress = _tokenFactoryAddress;
     joinMethodDirectoryAddress = _joinMethodDirectoryAddress;
     exitMethodDirectoryAddress = _exitMethodDirectoryAddress;
     proposalManagerAddress = _proposalManagerAddress;
@@ -105,7 +102,7 @@ contract DAOSpaceFactoryImplementation is
     for (uint256 i = 0; i < space.members.length; i++) {
       require(space.members[i] != msg.sender, 'member');
     }
-
+//add this as a separate contract
     if (space.joinMethod == 2) {
       // If join method is 2, create a proposal to add the member
       require(proposalManagerAddress != address(0), 'Proposal manager not set');
@@ -271,39 +268,28 @@ contract DAOSpaceFactoryImplementation is
     emit MemberRemoved(_spaceId, _memberToRemove);
   }
 
-  function addTokenToSpace(uint256 _spaceId, address _tokenAddress) external {
-    //require(_spaceId > 0 && _spaceId <= spaceCounter, 'Invalid space ID');
-    require(msg.sender == tokenFactoryAddress, 'Only factory can');
-    require(_tokenAddress != address(0), 'no zero address');
-
-    Space storage space = spaces[_spaceId];
-    space.tokenAddresses.push(_tokenAddress);
-  }
-
   function getSpaceMembers(
     uint256 _spaceId
   ) public view returns (address[] memory) {
-    //require(_spaceId > 0 && _spaceId <= spaceCounter, 'Invalid space ID');
     return spaces[_spaceId].members;
   }
-
+/*
   function hasToken(
     uint256 _spaceId,
     address _tokenAddress
   ) external view returns (bool) {
-    //require(_spaceId > 0 && _spaceId <= spaceCounter, 'Invalid space ID');
-
-    Space storage space = spaces[_spaceId];
-    for (uint256 i = 0; i < space.tokenAddresses.length; i++) {
-      if (space.tokenAddresses[i] == _tokenAddress) {
-        return true;
-      }
+    // This function is kept for backward compatibility
+    // But since tokens are now tied directly to spaces via their constructors,
+    // we need to validate that the token's spaceId matches this space
+    try SpaceToken(_tokenAddress).spaceId() returns (uint256 tokenSpaceId) {
+      return tokenSpaceId == _spaceId;
+    } catch {
+      return false;
     }
-    return false;
   }
+  */
 
   function getSpaceExecutor(uint256 _spaceId) external view returns (address) {
-    //require(_spaceId > 0 && _spaceId <= spaceCounter, 'Invalid spc ID');
     return spaces[_spaceId].executor;
   }
 

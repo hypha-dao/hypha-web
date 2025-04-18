@@ -13,30 +13,24 @@ interface IDAOSpaceFactory {
   function initialize(address initialOwner) external;
 
   function setContracts(
-    address _tokenFactoryAddress,
     address _joinMethodDirectoryAddress,
-    address _proposalManagerAddress,
-    address _exitMethodDirectoryAddress
+    address _exitMethodDirectoryAddress,
+    address _proposalManagerAddress
   ) external;
 
   function createSpace(
-    SpaceCreationParams calldata params
+    SpaceCreationParams memory params
   ) external returns (uint256);
 
   function joinSpace(uint256 _spaceId) external;
 
-  function removeMember(uint256 _spaceId, address _memberToRemove) external;
+  function addMember(uint256 _spaceId, address _memberAddress) external;
 
-  function addTokenToSpace(uint256 _spaceId, address _tokenAddress) external;
+  function removeMember(uint256 _spaceId, address _memberToRemove) external;
 
   function getSpaceMembers(
     uint256 _spaceId
   ) external view returns (address[] memory);
-
-  function hasToken(
-    uint256 _spaceId,
-    address _tokenAddress
-  ) external view returns (bool);
 
   function getSpaceExecutor(uint256 _spaceId) external view returns (address);
 
@@ -89,12 +83,13 @@ interface IDAOSpaceFactory {
     uint256 exitMethod,
     uint256 joinMethod,
     address indexed creator,
-    address indexed executor
+    address executor
   );
 
-  event MemberJoined(uint256 indexed spaceId, address indexed member);
+  event MemberJoined(uint256 indexed spaceId, address indexed memberAddress);
   //event DirectoryContractUpdated(address indexed newAddress);
-  event MemberRemoved(uint256 indexed spaceId, address indexed member);
+  event MemberRemoved(uint256 indexed spaceId, address indexed memberAddress);
+
   //event TokenFactoryContractUpdated(address indexed newAddress);
   //event JoinMethodDirectoryContractUpdated(address indexed newAddress);
   //event ProposalManagerUpdated(address indexed newAddress);

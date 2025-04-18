@@ -12,6 +12,12 @@ npx nx run storage-evm:script ./scripts/dao-space-factory-proxy.deploy.ts --netw
 npx nx run storage-evm:script ./scripts/dao-proposals-proxy.deploy.ts --network base-mainnet
 ```
 
+### decaying-token-factory-proxy.deploy
+
+```bash
+npx nx run storage-evm:script ./scripts/decaying-token-factory-proxy.deploy.ts --network base-mainnet
+```
+
 ### exit-method-directory-proxy.deploy
 
 ```bash
@@ -42,6 +48,12 @@ npx nx run storage-evm:script ./scripts/join-method-open-join.deploy.ts --networ
 npx nx run storage-evm:script ./scripts/no-exit.deploy.ts --network base-mainnet
 ```
 
+### regular-token-factory-proxy.deploy
+
+```bash
+npx nx run storage-evm:script ./scripts/regular-token-factory-proxy.deploy.ts --network base-mainnet
+```
+
 ### space-voting-power-proxy.deploy
 
 ```bash
@@ -70,6 +82,12 @@ npx nx run storage-evm:script ./scripts/token-factory-proxy.deploy.ts --network 
 
 ```bash
 npx nx run storage-evm:script ./scripts/token-voting-power-proxy.deploy.ts --network base-mainnet
+```
+
+### vote-decay-token-voting-power-proxy.deploy
+
+```bash
+npx nx run storage-evm:script ./scripts/vote-decay-token-voting-power-proxy.deploy.ts --network base-mainnet
 ```
 
 ### voting-power-directory-proxy.deploy
