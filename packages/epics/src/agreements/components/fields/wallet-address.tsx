@@ -1,12 +1,10 @@
-import { EthAddress } from '../../people/components/eth-address';
+import { EthAddress } from '../../../people/components/eth-address';
 
-interface AgreementFormWalletAddressProps {
+interface WalletAddressProps {
   address: string;
 }
 
-export const AgreementFormWalletAddress = ({
-  address,
-}: AgreementFormWalletAddressProps) => {
+export const WalletAddress = ({ address }: WalletAddressProps) => {
   return (
     <div className="flex w-full items-center justify-between">
       <label className="text-2 text-neutral-11">Wallet Address</label>

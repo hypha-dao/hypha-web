@@ -1,17 +1,17 @@
 import type { Meta, StoryObj } from '@storybook/react';
 
-import { AgreementFormWalletAddress } from './agreement-form-wallet-address';
+import { WalletAddress } from './wallet-address';
 import { within } from '@storybook/testing-library';
 import { expect } from '@storybook/jest';
 
 const meta = {
-  component: AgreementFormWalletAddress,
-  title: 'Epics/Agreements/AgreementFormWalletAddress',
-} satisfies Meta<typeof AgreementFormWalletAddress>;
+  component: WalletAddress,
+  title: 'Epics/Agreements/WalletAddress',
+} satisfies Meta<typeof WalletAddress>;
 
 export default meta;
 
-type Story = StoryObj<typeof AgreementFormWalletAddress>;
+type Story = StoryObj<typeof WalletAddress>;
 
 export const Default: Story = {
   args: {

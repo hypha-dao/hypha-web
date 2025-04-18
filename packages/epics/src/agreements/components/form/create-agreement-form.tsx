@@ -19,12 +19,13 @@ import {
 import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
 import { Creator } from '@hypha-platform/graphql/rsc';
-import { PersonAvatar } from '../../people/components/person-avatar';
+import { PersonAvatar } from '../../../people/components/person-avatar';
 import { ALLOWED_IMAGE_FILE_SIZE } from '@core/space';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { createAgreementFiles, schemaCreateAgreement } from '@core/governance';
-import { AgreementFormRecipient } from './agreement-form-recipient';
+import { paymentFormSchema } from '../../schemas/payment-form-plugin-schema';
+import { PaymentFormPlugin } from './payment-form-plugin';
 
 import Link from 'next/link';
 
@@ -33,11 +34,13 @@ import clsx from 'clsx';
 const schemaCreateAgreementForm =
   schemaCreateAgreement.extend(createAgreementFiles);
 
+const fullSchema = schemaCreateAgreementForm.merge(paymentFormSchema);
+
 export type CreateAgreementFormProps = {
   creator?: Creator;
   isLoading?: boolean;
   closeUrl: string;
-  onCreate: (values: z.infer<typeof schemaCreateAgreementForm>) => void;
+  onCreate: (values: z.infer<typeof fullSchema>) => void;
 };
 
 export const CreateAgreementForm = ({
@@ -46,14 +49,13 @@ export const CreateAgreementForm = ({
   closeUrl,
   onCreate,
 }: CreateAgreementFormProps) => {
-  const form = useForm<z.infer<typeof schemaCreateAgreementForm>>({
-    resolver: zodResolver(schemaCreateAgreementForm),
+  const form = useForm<z.infer<typeof fullSchema>>({
+    resolver: zodResolver(fullSchema),
     defaultValues: {
       title: '',
       description: '',
       leadImage: undefined,
       attachments: [],
-      recipient: undefined,
     },
   });
 
@@ -156,21 +158,7 @@ export const CreateAgreementForm = ({
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="recipient"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <AgreementFormRecipient
-                  members={[]}
-                  onChange={field.onChange}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <PaymentFormPlugin />
         <div className="flex justify-end w-full">
           <Button
             type="submit"

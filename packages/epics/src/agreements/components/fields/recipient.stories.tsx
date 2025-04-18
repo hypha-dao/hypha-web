@@ -1,38 +1,38 @@
 import type { Meta, StoryObj } from '@storybook/react';
 
-import { AgreementFormRecipient } from './agreement-form-recipient';
+import { Recipient } from './recipient';
 import { within } from '@storybook/testing-library';
 import { expect } from '@storybook/jest';
 
 const meta = {
-  component: AgreementFormRecipient,
-  title: 'Epics/Agreements/AgreementFormRecipient',
-} satisfies Meta<typeof AgreementFormRecipient>;
+  component: Recipient,
+  title: 'Epics/Agreements/Recipient',
+} satisfies Meta<typeof Recipient>;
 
 export default meta;
 
-type Story = StoryObj<typeof AgreementFormRecipient>;
+type Story = StoryObj<typeof Recipient>;
 
 export const Default: Story = {
   args: {
-    members: [
+    recipients: [
       {
         avatarUrl: 'https://github.com/shadcn.png',
         name: 'Alice',
         surname: 'Johnson',
-        id: 1,
+        address: '0xc0ffee254729296a45a3885639AC7E10F9d54972',
       },
       {
         avatarUrl: 'https://github.com/shadcn.png',
         name: 'Bob',
         surname: 'Smith',
-        id: 2,
+        address: '0xc0ffee254729296a45a3885639AC7E10F9d54975',
       },
       {
         avatarUrl: 'https://github.com/shadcn.png',
         name: 'Charlie',
         surname: 'Brown',
-        id: 3,
+        address: '0xc0ffee254729296a45a3885639AC7E10F9d54979',
       },
     ],
   },
