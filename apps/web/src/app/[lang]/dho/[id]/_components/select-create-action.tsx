@@ -12,14 +12,14 @@ export const CREATE_ACTIONS = [
     title: 'Propose a Contribution',
     description:
       'Propose a new contribution, such as work, knowledge, capital, or resources, for the space to consider.',
-    href: '#',
+    href: 'agreements/create',
     icon: <RocketIcon />,
   },
   {
     title: 'Make an Agreement',
     description:
       'Define and formalize a mutual understanding, policy, or decision among members of the space.',
-    href: 'agreements/create',
+    href: '#',
     icon: <CheckCircledIcon />,
   },
   {

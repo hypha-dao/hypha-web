@@ -30,6 +30,7 @@ export const createAgreementFiles = {
       'File must be an image (JPEG, PNG, GIF, WEBP)',
     )
     .optional(),
+  attachments: z.array(z.instanceof(File)).optional(),
 };
 
 export const schemaCreateAgreementFiles = z.object(createAgreementFiles);
