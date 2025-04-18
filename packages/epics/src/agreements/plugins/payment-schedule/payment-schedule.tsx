@@ -147,7 +147,10 @@ export function PaymentSchedule() {
                   rules={{
                     required: 'Percentage is required',
                     min: { value: 0, message: 'Percentage must be at least 0' },
-                    max: { value: 100, message: 'Percentage must be at most 100' },
+                    max: {
+                      value: 100,
+                      message: 'Percentage must be at most 100',
+                    },
                     valueAsNumber: true,
                   }}
                   render={({ field }) => (
