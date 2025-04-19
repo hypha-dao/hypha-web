@@ -1,10 +1,9 @@
 'use client';
-import { AssetDetail } from '@hypha-platform/epics';
-import { SidePanel } from '../../../_components/side-panel';
+import { AssetDetail, SidePanel } from '@hypha-platform/epics';
 import { useAssetBySlug } from '@hypha-platform/epics';
 import { useParams } from 'next/navigation';
-import { getDhoPathTreasury } from '../../../../treasury/constants';
 import { Locale } from '@hypha-platform/i18n';
+import { getDhoPathTreasury } from '../../../../@tab/treasury/constants';
 
 export default function Treasury() {
   const { slug, lang, id } = useParams();

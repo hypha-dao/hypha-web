@@ -1,8 +1,7 @@
-import { DepositFunds } from '@hypha-platform/epics';
-import { getDhoPathTreasury } from '../../../treasury/constants';
+import { DepositFunds, SidePanel } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { createSpaceService } from '@hypha-platform/core/server';
-import { SidePanel } from '../../_components/side-panel';
+import { getDhoPathTreasury } from '../../../@tab/treasury/constants';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;

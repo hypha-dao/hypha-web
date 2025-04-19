@@ -1,12 +1,11 @@
 'use client';
-import { AssetDetail } from '@hypha-platform/epics';
-import { SidePanel } from '../../../_components/side-panel';
+import { AssetDetail, SidePanel } from '@hypha-platform/epics';
 
 export default function Loading() {
   return (
     <SidePanel>
       <AssetDetail
-        isLoading={true}
+        isLoading
         assetHeadProps={{
           icon: '',
           name: '',
