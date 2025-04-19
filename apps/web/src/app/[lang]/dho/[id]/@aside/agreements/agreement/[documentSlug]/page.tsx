@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
 import { useDocumentBySlug } from '@web/hooks/use-document-by-slug';
 import { useDocumentSlug } from '@web/hooks/use-document-slug';
-import { getDhoPathAgreements } from '../../../@tab/agreements/constants';
+import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 
 export default function Agreements() {
   const { id, lang } = useParams();

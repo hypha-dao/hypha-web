@@ -11,26 +11,26 @@ export default async function AgreementsPage(props: PageProps) {
 
   const { lang, id } = params;
 
-  const basePath = `/${lang}/dho/${id}`;
+  const basePath = `/${lang}/dho/${id}/agreements`;
 
   return (
     <div className="flex flex-col gap-6 py-4">
       <DocumentSection
-        basePath={`${basePath}/proposals`}
+        basePath={`${basePath}/proposal`}
         useDocuments={useSpaceDocuments}
         documentState="proposal"
         label="Proposals"
         hasSearch={true}
       />
       <DocumentSection
-        basePath={`${basePath}/agreements`}
+        basePath={`${basePath}/agreement`}
         useDocuments={useSpaceDocuments}
         documentState="agreement"
         label="Agreements"
         hasSearch={true}
       />
       <DocumentSection
-        basePath={`${basePath}/agreements`}
+        basePath={`${basePath}/agreement`}
         useDocuments={useSpaceDocuments}
         documentState="agreement"
         label="History"

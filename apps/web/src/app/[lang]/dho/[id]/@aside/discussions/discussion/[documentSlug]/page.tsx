@@ -7,7 +7,7 @@ import { useDocumentBySlug } from '@web/hooks/use-document-by-slug';
 import { useDiscussionByDocumentSlug } from '@web/hooks/use-discussion-by-document-slug';
 
 import { DocumentDetails, Chat, SidePanel } from '@hypha-platform/epics';
-import { getDhoPathAgreements } from '../../../@tab/agreements/constants';
+import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 
 type PageProps = {
   params: Promise<{ slug: string; id: string; lang: string }>;
