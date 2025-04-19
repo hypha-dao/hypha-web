@@ -1,7 +1,6 @@
 'use client';
 
-import { SidePanel } from '../../_components/side-panel';
-import { DocumentDetails, Chat } from '@hypha-platform/epics';
+import { DocumentDetails, Chat, SidePanel } from '@hypha-platform/epics';
 
 type PageProps = {
   params: Promise<{ slug: string; id: string; lang: string }>;

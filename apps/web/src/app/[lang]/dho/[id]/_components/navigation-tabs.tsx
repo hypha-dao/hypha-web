@@ -5,9 +5,9 @@ import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { getDhoPathAgreements } from '../@tab/agreements/constants';
-import { getDhoPathTreasury } from '../_tabs/treasury/constants';
 import { getDhoPathMembership } from '../@tab/membership/constants';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
+import { getDhoPathTreasury } from '../@tab/treasury/constants';
 
 export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
   const pathname = usePathname();

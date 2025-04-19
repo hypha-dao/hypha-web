@@ -1,10 +1,9 @@
 'use client';
 
-import { CreateForm } from '@hypha-platform/epics';
-import { SidePanel } from '../../_components/side-panel';
+import { CreateForm, SidePanel } from '@hypha-platform/epics';
 import { useParams } from 'next/navigation';
-import { getDhoPathAgreements } from '../../../agreements/constants';
 import { Locale } from '@hypha-platform/i18n';
+import { getDhoPathAgreements } from '../../../@tab/agreements/constants';
 export default function Loading() {
   const { id, lang } = useParams();
 

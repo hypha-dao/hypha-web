@@ -1,5 +1,4 @@
-import { CreateForm } from '@hypha-platform/epics';
-import { SidePanel } from '../../_components/side-panel';
+import { CreateForm, SidePanel } from '@hypha-platform/epics';
 
 export default function Loading() {
   return (
