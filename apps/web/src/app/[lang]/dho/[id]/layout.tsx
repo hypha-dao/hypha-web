@@ -66,14 +66,6 @@ export default async function DhoLayout({
           </Avatar>
         </Card>
         <div className="flex justify-end mt-2 gap-2">
-          <Button
-            asChild
-            variant="ghost"
-            colorVariant="neutral"
-            className="rounded-lg justify-start p-1 cursor-pointer"
-          >
-            <Share2Icon width={28} height={28} />
-          </Button>
           {typeof spaceFromDb.web3SpaceId === 'number' && (
             <JoinSpace spaceId={spaceFromDb.web3SpaceId} />
           )}
