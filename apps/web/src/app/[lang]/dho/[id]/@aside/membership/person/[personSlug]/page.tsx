@@ -32,7 +32,10 @@ export default function Member() {
           about: person?.description,
         }}
         isLoading={isLoading}
-        basePath={getDhoPathAgreements(lang as Locale, id as string)}
+        basePath={`${getDhoPathAgreements(
+          lang as Locale,
+          id as string,
+        )}/agreement`}
         spaces={spaces}
         useDocuments={useSpaceDocuments}
       />
