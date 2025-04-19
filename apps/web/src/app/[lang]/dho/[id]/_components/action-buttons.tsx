@@ -2,25 +2,11 @@
 
 import Link from 'next/link';
 
-import { PlusIcon, Pencil2Icon } from '@radix-ui/react-icons';
+import { PlusIcon } from '@radix-ui/react-icons';
 
 import { Button } from '@hypha-platform/ui';
 import { usePathname } from 'next/navigation';
-import { PATH_SEGMENT as PATH_SEGMENT_CREATE_ACTION } from '../@aside/[tab]/select-create-action/contants';
-import { PATH_SEGMENT as PATH_SEGMENT_SETTINGS_ACTION } from '../@aside/[tab]/select-settings-action/contants';
-
-const SEGMENTS = [PATH_SEGMENT_CREATE_ACTION, PATH_SEGMENT_SETTINGS_ACTION];
-
-const cleanPath = (pathname: string) => {
-  return SEGMENTS.reduce(
-    (path, segment) =>
-      path
-        .split('/')
-        .filter((s) => segment !== s)
-        .join('/'),
-    pathname,
-  );
-};
+import { cleanPath } from './clean-path';
 
 export const ActionButtons = () => {
   const pathname = usePathname();
