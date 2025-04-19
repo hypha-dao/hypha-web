@@ -2,16 +2,15 @@
 
 import { useParams } from 'next/navigation';
 
-import { MemberDetail } from '@hypha-platform/epics';
+import { MemberDetail, SidePanel } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 
 import { useMemberBySlug } from '@web/hooks/use-member-by-slug';
-import { SidePanel } from '@web/app/[lang]/@aside/_components/side-panel';
-import { getDhoPathAgreements } from '@web/app/[lang]/dho/[id]/agreements/constants';
-import { getDhoPathMembership } from '@web/app/[lang]/dho/[id]/membership/constants';
 import { useSpaceDocuments } from '@web/hooks/use-space-documents';
 import { usePersonSlug } from '@web/hooks/use-person-slug';
 import { useSpacesByMemberSlug } from '@web/hooks/use-spaces-by-member-slug';
+import { getDhoPathMembership } from '../../../../@tab/membership/constants';
+import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 
 export default function Member() {
   const { id, lang } = useParams();

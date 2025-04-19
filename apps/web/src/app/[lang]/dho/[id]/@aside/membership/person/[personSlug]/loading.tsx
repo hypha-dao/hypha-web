@@ -1,5 +1,4 @@
-import { MemberDetail } from '@hypha-platform/epics';
-import { SidePanel } from '@web/app/[lang]/@aside/_components/side-panel';
+import { MemberDetail, SidePanel } from '@hypha-platform/epics';
 import { useSpaceDocuments } from '@web/hooks/use-space-documents';
 
 export default function Loading() {
