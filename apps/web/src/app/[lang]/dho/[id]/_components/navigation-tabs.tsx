@@ -1,19 +1,18 @@
+'use client';
+
 import { Locale } from '@hypha-platform/i18n';
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
 import Link from 'next/link';
-import { getDhoPathAgreements } from '../agreements/constants';
-import { getDhoPathMembership } from '../membership/constants';
-import { getDhoPathTreasury } from '../treasury/constants';
+import { usePathname } from 'next/navigation';
+import { getDhoPathAgreements } from '../@tab/agreements/constants';
+import { getDhoPathMembership } from '../@tab/membership/constants';
+import { getActiveTabFromPath } from './get-active-tab-from-path';
+import { getDhoPathTreasury } from '../@tab/treasury/constants';
 
-export function NavigationTabs({
-  lang,
-  id,
-  activeTab,
-}: {
-  lang: Locale;
-  id: string;
-  activeTab: string;
-}) {
+export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
+  const pathname = usePathname();
+  const activeTab = getActiveTabFromPath(pathname);
+
   return (
     <Tabs value={activeTab} className="w-full mt-16">
       <TabsList className="w-full mb-4">

@@ -11,7 +11,6 @@ import {
 import { Button } from '@hypha-platform/ui';
 import { CopyIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
-import { Locale } from '@hypha-platform/i18n';
 
 type AssetSectionProps = {
   basePath: string;
@@ -40,7 +39,7 @@ export const AssetsSection: FC<AssetSectionProps> = ({ basePath }) => {
         sortOptions={sortOptions}
       >
         <Button asChild className="ml-2">
-          <Link href={`treasury/deposit`} scroll={false}>
+          <Link href={`${basePath}/deposit`} scroll={false}>
             <CopyIcon />
             Deposit funds
           </Link>

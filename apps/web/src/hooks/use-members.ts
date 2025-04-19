@@ -7,6 +7,7 @@ import { MemberItem, FilterParams } from '@hypha-platform/graphql/rsc';
 import { type UseMembers, type UseMembersReturn } from '@hypha-platform/epics';
 
 import { useSpaceSlug } from './use-space-slug';
+import { useJwt } from '@hypha-platform/core/client';
 
 export const useMembers: UseMembers = ({
   page = 1,
@@ -15,6 +16,7 @@ export const useMembers: UseMembers = ({
   page?: number;
   filter?: FilterParams<MemberItem>;
 }): UseMembersReturn => {
+  const { jwt } = useJwt();
   const spaceSlug = useSpaceSlug();
 
   const endpoint = React.useMemo(
@@ -22,8 +24,15 @@ export const useMembers: UseMembers = ({
     [spaceSlug, page],
   );
 
-  const { data: response, isLoading } = useSWR([endpoint], ([endpoint]) =>
-    fetch(endpoint).then((res) => res.json()),
+  const { data: response, isLoading } = useSWR(
+    jwt ? [endpoint] : null,
+    ([endpoint]) =>
+      fetch(endpoint, {
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+          'Content-Type': 'application/json',
+        },
+      }).then((res) => res.json()),
   );
 
   return {

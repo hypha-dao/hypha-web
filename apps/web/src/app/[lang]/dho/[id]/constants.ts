@@ -1,4 +1,3 @@
-import { Locale } from '@hypha-platform/i18n';
 import { PATH_LANG } from '../../constants';
 export const PATH_SEGMENT_DHO_ID = ':id';
 
