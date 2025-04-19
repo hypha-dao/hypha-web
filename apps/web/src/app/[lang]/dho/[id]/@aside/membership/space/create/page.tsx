@@ -1,8 +1,7 @@
-import { CreateSubspaceForm } from '@hypha-platform/epics';
-import { getDhoPathAgreements } from '../../../../agreements/constants';
+import { CreateSubspaceForm, SidePanel } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { createSpaceService } from '@core/space/server';
-import { SidePanel } from '../../../_components/side-panel';
+import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;

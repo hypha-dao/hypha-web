@@ -1,7 +1,6 @@
 'use client';
 
-import { CreateSpaceForm } from '@hypha-platform/epics';
-import { SidePanel } from '../../../_components/side-panel';
+import { CreateSpaceForm, SidePanel } from '@hypha-platform/epics';
 import React from 'react';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 
