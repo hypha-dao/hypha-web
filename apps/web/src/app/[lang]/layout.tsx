@@ -7,15 +7,12 @@ export const metadata = {
 
 export default async function RootLayout({
   children,
-  aside,
 }: {
   children: React.ReactNode;
-  aside: React.ReactNode;
 }) {
   return (
     <div className="pt-9 w-screen h-full flex justify-normal">
       <div className="w-full h-full">{children}</div>
-      {aside}
     </div>
   );
 }
