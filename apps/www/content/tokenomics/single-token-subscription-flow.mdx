@@ -1,0 +1,136 @@
+# MVP: Single Token Subscription Flow
+
+![static badge](https://img.shields.io/badge/STATUS-DRAFT-orange)
+
+## Overview
+
+This document describes the subscription and usage fee system for DAOs in the Hypha platform. The process involves managing subscription payments through Stripe and converting usage fees to HyphaTokens via our SwapContract.
+
+## Process Flow
+
+1. User attempts to use DAO features
+2. System verifies treasury balance
+3. For new/depleted accounts:
+   - System displays subscription modal
+   - User selects and purchases subscription plan via Stripe
+   - Subscription fees are added to Treasury balance
+4. For active subscriptions:
+   - System deducts usage fees
+   - Fees are converted to HyphaToken
+   - Treasury balance is updated
+
+## Technical Implementation
+
+The subscription system uses a combination of Stripe for fiat payments and our SwapContract for token conversion.
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant H as Hypha V3
+    participant T as Treasury
+    participant SC as SwapContract
+    participant ST as Stripe
+
+    U->>H: Opens Platform
+    activate H
+
+    H->>H: check auth
+    H->>U: go to platform
+    deactivate H
+
+    U->>H: Use DAO
+    activate H
+
+    H->>T: Check Balance
+    activate T
+    T->>H: Balance 0
+    deactivate T
+    H->>U: Display Subscription Modal
+    deactivate H
+
+    U->>H: Subscribe to plan
+    activate H
+    H->>ST: Subscibe to plan
+    activate ST
+    ST->>T: Send Subscription Fee to Treasury
+    ST->>H: Subscription Success
+    deactivate ST
+    H->>T: Check balance
+    activate T
+    T->>H: Balance = Subscription Fee
+    deactivate T
+
+    H->>U: Subscription success
+    deactivate H
+
+    U->>H: Use Dao
+    activate H
+
+    H->>T: Check Balance
+    activate T
+    T->>H: Balance = Subscription Fee
+    H->>T: Deduct Usage Fee
+    T->>SC: Swap Usage Fee to Hypha Token
+    activate SC
+    SC->>T: Sending Hypha Token to Treasury
+    deactivate SC
+    T->>T: Update balance sheet
+    T->>H: Success
+    deactivate T
+    H->>U: All good
+    deactivate H
+```
+
+## Subscription Features
+
+### Payment Processing
+
+- Stripe integration for fiat payments
+- Automatic subscription renewal
+- Flexible plan options
+- Usage-based billing
+
+### Balance Management
+
+- Real-time balance tracking
+- Automatic fee deduction
+- Low balance notifications
+- Usage history tracking
+
+### Token Conversion
+
+- Automatic conversion of usage fees to HyphaToken
+- Transparent fee structure
+- Real-time market rate integration
+- Efficient treasury management
+
+## Security Measures
+
+- Secure payment processing through Stripe
+- Rate limiting on subscription changes
+- Balance verification on all transactions
+- Audit trail of all fee conversions
+- Automated balance reconciliation
+
+## Integration Points
+
+### Stripe Integration
+
+- Subscription plan management
+- Payment processing
+- Invoice generation
+- Payment method management
+
+### Treasury Integration
+
+- Balance tracking
+- Fee collection
+- Token conversion
+- Usage accounting
+
+### User Experience
+
+- Seamless subscription flow
+- Clear balance visibility
+- Usage monitoring tools
+- Subscription management interface
