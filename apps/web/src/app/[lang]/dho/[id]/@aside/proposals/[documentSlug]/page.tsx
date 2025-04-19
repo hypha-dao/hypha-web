@@ -1,12 +1,11 @@
 'use client';
 
-import { ProposalDetail } from '@hypha-platform/epics';
-import { SidePanel } from '../../_components/side-panel';
+import { ProposalDetail, SidePanel } from '@hypha-platform/epics';
 import { useParams } from 'next/navigation';
-import { getDhoPathAgreements } from '../../../agreements/constants';
 import { Locale } from '@hypha-platform/i18n';
 import { useDocumentSlug } from '@web/hooks/use-document-slug';
 import { useDocumentBySlug } from '@web/hooks/use-document-by-slug';
+import { getDhoPathAgreements } from '../../../@tab/agreements/constants';
 
 export default function Agreements() {
   const { id, lang } = useParams();

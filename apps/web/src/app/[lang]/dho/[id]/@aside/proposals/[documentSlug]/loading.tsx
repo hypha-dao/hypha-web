@@ -1,25 +1,24 @@
 'use client';
 
-import { AgreementDetail } from '@hypha-platform/epics';
-import { SidePanel } from '../../../@aside/_components/side-panel';
+import { ProposalDetail, SidePanel } from '@hypha-platform/epics';
 
 export default function Loading() {
   return (
     <SidePanel>
-      <AgreementDetail
+      <ProposalDetail
         closeUrl={''}
+        onAccept={() => console.log('accept')}
+        onReject={() => console.log('reject')}
         onSetActiveFilter={() => console.log('set active filter')}
         content={''}
         creator={{
-          avatarUrl: '',
+          avatar: '',
           name: '',
           surname: '',
         }}
         title={''}
-        commitment={0}
         status={''}
         isLoading={true}
-        comments={[]}
       />
     </SidePanel>
   );
