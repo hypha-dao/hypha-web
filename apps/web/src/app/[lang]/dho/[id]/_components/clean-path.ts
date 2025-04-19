@@ -7,7 +7,7 @@
  */
 export const cleanPath = (
   pathname: string,
-  keepSegments: number = 4,
+  keepSegments = 4,
 ): string => {
   return pathname
     .split('/')
