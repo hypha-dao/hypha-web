@@ -8,6 +8,7 @@ import './storage/DAOProposalsStorage.sol';
 import './interfaces/IDAOProposals.sol';
 import './interfaces/IExecutor.sol';
 import './interfaces/IDecayTokenVotingPower.sol';
+import './interfaces/ISpacePaymentTracker.sol';
 
 contract DAOProposalsImplementation is
   Initializable,
@@ -206,6 +207,24 @@ contract DAOProposalsImplementation is
       }
     }
 */
+
+    // Check if space payment is required and valid
+    if (address(paymentTracker) != address(0)) {
+      // Check if the space has an active subscription
+      if (paymentTracker.isSpaceActive(proposal.spaceId)) {
+        // Space is active, proceed with voting
+      } else {
+        // Space is not active, check if eligible for free trial
+        if (!paymentTracker.hasUsedFreeTrial(proposal.spaceId)) {
+          // Activate free trial for this space
+          paymentTracker.activateFreeTrial(proposal.spaceId);
+        } else {
+          // Not eligible for free trial and not active - reject
+          revert('Space subscription inactive');
+        }
+      }
+    }
+
     (
       ,
       ,
