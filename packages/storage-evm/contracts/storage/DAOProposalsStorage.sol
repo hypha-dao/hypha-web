@@ -92,4 +92,7 @@ contract DAOProposalsStorage is Initializable {
 
   // New storage variables - Add at the end
   mapping(uint256 => address) public spaceAddresses;
+
+  // Track spaces that have activated their free trial
+  mapping(uint256 => bool) public spaceTrialActivated;
 }
