@@ -14,7 +14,7 @@ type Recipient = {
 type RecipientProps = {
   recipients?: Recipient[];
   value?: string;
-  onChange?: (selected: Recipient) => void;
+  onChange?: (selected: Recipient | { address: string }) => void;
 };
 
 export const Recipient = ({
@@ -22,14 +22,18 @@ export const Recipient = ({
   onChange,
   value,
 }: RecipientProps) => {
+  const [selected, setSelected] = useState<
+    Recipient | { address: string } | null
+  >(null);
+  const [manualAddress, setManualAddress] = useState(value || '');
+
   useEffect(() => {
     if (value) {
       const found = recipients.find((r) => r.address === value);
-      setSelected(found || null);
+      setSelected(found || { address: value });
+      setManualAddress(value);
     }
   }, [value, recipients]);
-
-  const [selected, setSelected] = useState<Recipient | null>(null);
 
   const placeholder = 'Select recipient...';
 
@@ -57,7 +61,24 @@ export const Recipient = ({
 
       setSelected(found);
       if (found) {
+        setManualAddress(found.address);
         onChange?.(found);
+      }
+    },
+    [recipients, onChange],
+  );
+
+  const handleAddressChange = useCallback(
+    (address: string) => {
+      setManualAddress(address);
+      const found = recipients.find((r) => r.address === address);
+
+      if (found) {
+        setSelected(found);
+        onChange?.(found);
+      } else {
+        setSelected(null);
+        onChange?.({ address });
       }
     },
     [recipients, onChange],
@@ -104,7 +125,7 @@ export const Recipient = ({
           />
         </div>
       </div>
-      {selected && <WalletAddress address={selected.address} />}
+      <WalletAddress address={manualAddress} onChange={handleAddressChange} />
     </div>
   );
 };
