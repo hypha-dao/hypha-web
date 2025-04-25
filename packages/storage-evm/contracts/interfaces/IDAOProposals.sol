@@ -52,6 +52,9 @@ interface IDAOProposals {
     uint256 _proposalId
   ) external view returns (uint256);
 
+  // New function to get the latest proposal ID
+  function getLatestProposalId() external view returns (uint256);
+
   // Events
   event ProposalCreated(
     uint256 indexed proposalId,
