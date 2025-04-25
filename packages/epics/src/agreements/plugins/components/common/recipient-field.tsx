@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { useFormContext } from 'react-hook-form';
 import { Recipient } from './recipient';
-import { schemaProposeContribution } from '../validation';
+import { schemaProposeContribution } from '../../propose-contribution/validation';
 import {
   FormControl,
   FormField,

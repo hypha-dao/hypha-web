@@ -2,15 +2,13 @@
 
 import { RecipientField } from '../components/common/recipient-field';
 import { TokenPayoutFieldArray } from '../components/common/token-payout-field-array';
-import { PaymentSchedule } from './components/payment-schedule';
 import { Separator } from '@hypha-platform/ui';
 
-export const ProposeContributionPlugin = () => {
+export const PayForExpensesPlugin = () => {
   return (
     <div className="flex flex-col gap-4">
       <RecipientField />
       <Separator />
-      <PaymentSchedule />
       <TokenPayoutFieldArray tokens={[]} name="payouts" />
     </div>
   );
