@@ -1,16 +1,26 @@
-import { EthAddress } from '@hypha-platform/epics';
+import { Input } from '@hypha-platform/ui';
 
 interface WalletAddressProps {
   address: string;
+  onChange?: (address: string) => void;
 }
 
-export const WalletAddress = ({ address }: WalletAddressProps) => {
+export const WalletAddress = ({ address, onChange }: WalletAddressProps) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange?.(e.target.value);
+  };
+
   return (
     <div className="flex w-full items-center justify-between">
       <label className="text-2 text-neutral-11">Wallet Address</label>
-      <span className="flex items-center max-w-[240px] px-2 py-1 bg-secondary border border-neutral-5 rounded-lg">
-        <EthAddress address={address} />
-      </span>
+      <div>
+        <Input
+          value={address}
+          onChange={handleChange}
+          className="max-w-[240px] text-2"
+          placeholder="Enter wallet address"
+        />
+      </div>
     </div>
   );
 };
