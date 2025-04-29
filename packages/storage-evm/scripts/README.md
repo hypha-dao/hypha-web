@@ -144,3 +144,9 @@ npx nx run storage-evm:script ./scripts/token-voting-power.upgrade.ts --network 
 ```bash
 npx nx run storage-evm:script ./scripts/votedecay-voting-power.upgrade.ts --network base-mainnet
 ```
+
+### Deploy KWH ERC20
+
+```bash
+npx nx run storage-evm:script ./scripts/kwh-erc20-proxy.deploy.ts --network base-mainnet
+```
