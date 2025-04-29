@@ -12,6 +12,7 @@ contract KWHERC20Implementation is
   Initializable,
   OwnableUpgradeable,
   UUPSUpgradeable,
+  ERC20Upgradeable,
   KWHERC20Storage,
   IKWHERC20
 {
@@ -23,9 +24,8 @@ contract KWHERC20Implementation is
   function initialize(address initialOwner) public initializer {
     __Ownable_init(initialOwner);
     __UUPSUpgradeable_init();
+    __ERC20_init('Kilowatt Hour Token', 'KWH');
 
-    _name = 'Kilowatt Hour Token';
-    _symbol = 'KWH';
     _decimals = 4;
     mintCounter = 0;
   }
@@ -34,81 +34,9 @@ contract KWHERC20Implementation is
     address newImplementation
   ) internal override onlyOwner {}
 
-  // ERC20 standard functions
-  function name() public view returns (string memory) {
-    return _name;
-  }
-
-  function symbol() public view returns (string memory) {
-    return _symbol;
-  }
-
-  function decimals() public view returns (uint8) {
+  // Override decimals to use our custom value
+  function decimals() public view virtual override returns (uint8) {
     return _decimals;
-  }
-
-  function totalSupply() public view override returns (uint256) {
-    return _totalSupply;
-  }
-
-  function balanceOf(address account) public view override returns (uint256) {
-    return _balances[account];
-  }
-
-  function transfer(address to, uint256 amount) public override returns (bool) {
-    _transfer(msg.sender, to, amount);
-    return true;
-  }
-
-  function allowance(
-    address owner,
-    address spender
-  ) public view override returns (uint256) {
-    return _allowances[owner][spender];
-  }
-
-  function approve(
-    address spender,
-    uint256 amount
-  ) public override returns (bool) {
-    _approve(msg.sender, spender, amount);
-    return true;
-  }
-
-  function transferFrom(
-    address from,
-    address to,
-    uint256 amount
-  ) public override returns (bool) {
-    uint256 currentAllowance = _allowances[from][msg.sender];
-    require(
-      currentAllowance >= amount,
-      'ERC20: transfer amount exceeds allowance'
-    );
-    unchecked {
-      _approve(from, msg.sender, currentAllowance - amount);
-    }
-    _transfer(from, to, amount);
-    return true;
-  }
-
-  function _transfer(address from, address to, uint256 amount) internal {
-    require(from != address(0), 'ERC20: transfer from the zero address');
-    require(to != address(0), 'ERC20: transfer to the zero address');
-
-    uint256 fromBalance = _balances[from];
-    require(fromBalance >= amount, 'ERC20: transfer amount exceeds balance');
-    unchecked {
-      _balances[from] = fromBalance - amount;
-      _balances[to] += amount;
-    }
-  }
-
-  function _approve(address owner, address spender, uint256 amount) internal {
-    require(owner != address(0), 'ERC20: approve from the zero address');
-    require(spender != address(0), 'ERC20: approve to the zero address');
-
-    _allowances[owner][spender] = amount;
   }
 
   // Custom mint function that stores the mint record
@@ -124,8 +52,7 @@ contract KWHERC20Implementation is
     uint256 tokenAmount = kwh;
 
     // Mint tokens to the sender
-    _balances[msg.sender] += tokenAmount;
-    _totalSupply += tokenAmount;
+    _mint(msg.sender, tokenAmount);
 
     // Create and store mint record
     mintCounter++;
@@ -140,8 +67,7 @@ contract KWHERC20Implementation is
     mintRecords.push(newRecord);
     mintRecordIndexes[newRecordId] = mintRecords.length - 1;
 
-    // Emit events
-    emit Transfer(address(0), msg.sender, tokenAmount);
+    // Emit TokenMinted event
     emit TokenMinted(newRecordId, kwh, timestamp, deviceId, msg.sender);
 
     return newRecordId;

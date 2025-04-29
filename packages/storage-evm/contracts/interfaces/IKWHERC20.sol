@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
-interface IKWHERC20 is IERC20Upgradeable {
+interface IKWHERC20 is IERC20 {
   struct MintRecord {
     uint256 kwh;
     uint256 timestamp;
