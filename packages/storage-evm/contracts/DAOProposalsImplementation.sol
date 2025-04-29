@@ -168,14 +168,6 @@ contract DAOProposalsImplementation is
     return proposal.startTime + proposal.duration;
   }
 
-  // Add payment tracker
-  ISpacePaymentTracker public paymentTracker;
-
-  function setPaymentTracker(address _paymentTracker) external onlyOwner {
-    require(_paymentTracker != address(0), 'Invalid payment tracker address');
-    paymentTracker = ISpacePaymentTracker(_paymentTracker);
-  }
-
   function vote(uint256 _proposalId, bool _support) external override {
     require(address(spaceFactory) != address(0), 'Contracts not initialized');
     ProposalCore storage proposal = proposalsCoreData[_proposalId];
@@ -436,5 +428,11 @@ contract DAOProposalsImplementation is
 
   function getLatestProposalId() external view override returns (uint256) {
     return proposalCounter;
+  }
+
+  // Add a function to set the payment tracker (setting the storage variable)
+  function setPaymentTracker(address _paymentTracker) external onlyOwner {
+    require(_paymentTracker != address(0), 'Invalid payment tracker address');
+    paymentTracker = ISpacePaymentTracker(_paymentTracker);
   }
 }
