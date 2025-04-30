@@ -126,6 +126,16 @@
       "address": "0xF5a7Ca524882124B1CD13dB74C8f56A96044c763",
       "txHash": "0x5d3911f045072099ba4d1be53b0b66db630a5b617ecd466d1f0296df88bb7fe7",
       "kind": "uups"
+    },
+    {
+      "address": "0xbb9f405c0313A0393e04aE30e92f5e5b07ca6af1",
+      "txHash": "0x213dc98789dfc3bf1ccca668ec94ed2400790b95d927352e7eb29493368a2ecd",
+      "kind": "uups"
+    },
+    {
+      "address": "0x83B5d4F555A68126bB302685e67767Bb7a2985F0",
+      "txHash": "0xce4c9738d4b35f3e22c8f537cca7519f2f0c518b9f45f6feb7a942e3ac6d597f",
+      "kind": "uups"
     }
   ],
   "impls": {
@@ -6472,13 +6482,20 @@
         }
       }
     },
+<<<<<<< HEAD
     "c15550388c0e2709eedde8fe4940c6e6ecdb0fcff358ee7cde2c244a2526459a": {
       "address": "0x8e19AC1d68ECe72Ea8F50d3C8785344bCd0dA286",
       "txHash": "0x7e29c6fa5c9bde97043f41450cb83ae25de1004691b69c9909e9cb25c77f9a9a",
+=======
+    "343c890127b3f844c86609ef7e2eb9e68e13efc88e884cd39577bea6d795f0ec": {
+      "address": "0xaBEB8A341871143a87041a0E42Cf11dfd96b9F3f",
+      "txHash": "0xfb38153626d262aff49577bf17105478db911eb39bf103e738e2838ca2ec72dd",
+>>>>>>> 3fa5137c (agreements contract deployed, new rpc)
       "layout": {
         "solcVersion": "0.8.28",
         "storage": [
           {
+<<<<<<< HEAD
             "label": "spaces",
             "offset": 0,
             "slot": "0",
@@ -6812,10 +6829,27 @@
             "type": "t_mapping(t_uint256,t_uint256)",
             "contract": "DAOProposalsStorage",
             "src": "contracts/storage/DAOProposalsStorage.sol:86"
+=======
+            "label": "spaceProposals",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_mapping(t_uint256,t_array(t_uint256)dyn_storage)",
+            "contract": "AgreementsStorage",
+            "src": "contracts/storage/AgreementsStorage.sol:8"
+          },
+          {
+            "label": "proposalExists",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_mapping(t_uint256,t_mapping(t_uint256,t_bool))",
+            "contract": "AgreementsStorage",
+            "src": "contracts/storage/AgreementsStorage.sol:11"
+>>>>>>> 3fa5137c (agreements contract deployed, new rpc)
           },
           {
             "label": "__gap",
             "offset": 0,
+<<<<<<< HEAD
             "slot": "5",
             "type": "t_array(t_uint256)48_storage",
             "contract": "DAOProposalsStorage",
@@ -6860,6 +6894,20 @@
             "type": "t_array(t_uint256)dyn_storage",
             "contract": "DAOProposalsStorage",
             "src": "contracts/storage/DAOProposalsStorage.sol:106"
+=======
+            "slot": "2",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "AgreementsStorage",
+            "src": "contracts/storage/AgreementsStorage.sol:17"
+          },
+          {
+            "label": "spaceFactory",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_contract(IDAOSpaceFactory)10788",
+            "contract": "AgreementsImplementation",
+            "src": "contracts/AgreementsImplementation.sol:33"
+>>>>>>> 3fa5137c (agreements contract deployed, new rpc)
           }
         ],
         "types": {
@@ -6905,6 +6953,7 @@
             "label": "uint64",
             "numberOfBytes": "8"
           },
+<<<<<<< HEAD
           "t_array(t_struct(Transaction)8206_storage)dyn_storage": {
             "label": "struct IDAOProposals.Transaction[]",
             "numberOfBytes": "32"
@@ -6912,11 +6961,17 @@
           "t_array(t_uint256)48_storage": {
             "label": "uint256[48]",
             "numberOfBytes": "1536"
+=======
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+>>>>>>> 3fa5137c (agreements contract deployed, new rpc)
           },
           "t_array(t_uint256)dyn_storage": {
             "label": "uint256[]",
             "numberOfBytes": "32"
           },
+<<<<<<< HEAD
           "t_bytes_storage": {
             "label": "bytes",
             "numberOfBytes": "32"
@@ -6945,6 +7000,12 @@
             "label": "mapping(uint256 => address)",
             "numberOfBytes": "32"
           },
+=======
+          "t_contract(IDAOSpaceFactory)10788": {
+            "label": "contract IDAOSpaceFactory",
+            "numberOfBytes": "20"
+          },
+>>>>>>> 3fa5137c (agreements contract deployed, new rpc)
           "t_mapping(t_uint256,t_array(t_uint256)dyn_storage)": {
             "label": "mapping(uint256 => uint256[])",
             "numberOfBytes": "32"
@@ -6953,6 +7014,7 @@
             "label": "mapping(uint256 => bool)",
             "numberOfBytes": "32"
           },
+<<<<<<< HEAD
           "t_mapping(t_uint256,t_struct(ProposalCore)9403_storage)": {
             "label": "mapping(uint256 => struct DAOProposalsStorage.ProposalCore)",
             "numberOfBytes": "32"
@@ -7188,6 +7250,10 @@
           },
           "t_mapping(t_uint256,t_address)": {
             "label": "mapping(uint256 => address)",
+=======
+          "t_mapping(t_uint256,t_mapping(t_uint256,t_bool))": {
+            "label": "mapping(uint256 => mapping(uint256 => bool))",
+>>>>>>> 3fa5137c (agreements contract deployed, new rpc)
             "numberOfBytes": "32"
           },
           "t_uint256": {
@@ -7226,6 +7292,7 @@
           ]
         }
       }
+<<<<<<< HEAD
     },
     "178408c65e2baee405fdde7426ee57a2348c1c4532af9e4df7e65e08a862331c": {
       "address": "0xaEC8FB8DB2CE69D3CA5BD45A4285a975a32226F5",
@@ -10771,6 +10838,8 @@
           ]
         }
       }
+=======
+>>>>>>> 3fa5137c (agreements contract deployed, new rpc)
     }
   }
 }
