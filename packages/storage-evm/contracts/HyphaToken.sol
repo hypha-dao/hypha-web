@@ -8,55 +8,16 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import './storage/HyphaTokenStorage.sol';
 import './interfaces/ISpacePaymentTracker.sol';
+import './interfaces/IHyphaToken.sol';
 
 contract HyphaToken is
   Initializable,
   ERC20Upgradeable,
   OwnableUpgradeable,
   UUPSUpgradeable,
-  HyphaTokenStorage
+  HyphaTokenStorage,
+  IHyphaToken
 {
-  // Events
-  event SpacePaymentProcessed(
-    address indexed user,
-    uint256 spaceId,
-    uint256 durationInDays,
-    uint256 usdcAmount,
-    uint256 hyphaMinted
-  );
-  event HyphaInvestment(
-    address indexed investor,
-    uint256 usdcAmount,
-    uint256 hyphaPurchased
-  );
-  event RewardsDistributed(
-    uint256 amount,
-    uint256 newAccumulatedRewardPerToken
-  );
-  event RewardsClaimed(address indexed user, uint256 amount);
-  event DistributionMultiplierUpdated(uint256 newMultiplier);
-  event SpacesPaymentProcessed(
-    address indexed user,
-    uint256[] spaceIds,
-    uint256[] durationInDays,
-    uint256[] usdcAmounts,
-    uint256 totalHyphaMinted
-  );
-  event SpacesPaymentProcessedWithHypha(
-    address indexed user,
-    uint256[] spaceIds,
-    uint256[] durationInDays,
-    uint256 totalHyphaUsed,
-    uint256 totalHyphaMinted
-  );
-
-  // Add new variable
-  ISpacePaymentTracker public paymentTracker;
-
-  // Constants
-  uint256 public constant USDC_PER_DAY = 367_000; // 0.367 USDC with 6 decimals
-  uint256 public constant HYPHA_PER_DAY = 1_466_666_666_666_666_666; // ~1.47 HYPHA with 18 decimals
-
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
     _disableInitializers();
@@ -75,6 +36,11 @@ contract HyphaToken is
     lastUpdateTime = block.timestamp;
     totalMinted = 0;
     distributionMultiplier = 10; // Initial value
+
+    // Set initial values for the modifiable parameters
+    HYPHA_PRICE_USD = 25 * 10 ** 16; // 0.25 USD with 18 decimals
+    USDC_PER_DAY = 367_000; // 0.367 USDC with 6 decimals
+    HYPHA_PER_DAY = 1_466_666_666_666_666_666; // ~1.47 HYPHA with 18 decimals
   }
 
   function _authorizeUpgrade(
@@ -84,7 +50,10 @@ contract HyphaToken is
   /**
    * @dev Override transfer and transferFrom to make the token non-transferable
    */
-  function transfer(address, uint256) public virtual override returns (bool) {
+  function transfer(
+    address,
+    uint256
+  ) public virtual override(ERC20Upgradeable, IHyphaToken) returns (bool) {
     revert('HYPHA: Transfers disabled');
   }
 
@@ -92,19 +61,19 @@ contract HyphaToken is
     address,
     address,
     uint256
-  ) public virtual override returns (bool) {
+  ) public virtual override(ERC20Upgradeable, IHyphaToken) returns (bool) {
     revert('HYPHA: Transfers disabled');
   }
 
   /**
-   * @dev Pay for multiple spaces with USDC and distribute HYPHA tokens
+   * @dev Pay for multiple spaces with USDC and distribute HYPHA tokens to the rewards pool
    * @param spaceIds Array of space IDs to pay for
    * @param usdcAmounts Array of USDC amounts for each space
    */
   function payForSpaces(
     uint256[] calldata spaceIds,
     uint256[] calldata usdcAmounts
-  ) external {
+  ) external override {
     require(
       spaceIds.length == usdcAmounts.length,
       'Input arrays length mismatch'
@@ -125,37 +94,29 @@ contract HyphaToken is
       totalUsdcAmount = totalUsdcAmount + usdcAmounts[i];
     }
 
-    // Update distribution state before minting new tokens
+    // Update distribution state before adding new tokens to the distribution
     updateDistributionState();
 
     // Transfer total USDC from user
+    // User will have to approve the USDC spenditure, and then the transferFrom will be successful, so two separate transactions
     require(
       usdc.transferFrom(msg.sender, address(this), totalUsdcAmount),
       'USDC transfer failed'
     );
 
-    // Calculate HYPHA tokens to mint based on price
-    uint256 hyphaMinted = (totalUsdcAmount * 10 ** 18) / HYPHA_PRICE_USD;
+    // Calculate equivalent HYPHA tokens based on price (not minted to user)
+    uint256 hyphaEquivalent = (totalUsdcAmount * 10 ** 18) / HYPHA_PRICE_USD;
 
-    // Ensure we don't exceed max supply
+    // Calculate total HYPHA to be distributed
+    uint256 distributionAmount = hyphaEquivalent * (distributionMultiplier + 1);
+
+    // Ensure we don't exceed max supply with distribution
     require(
-      totalMinted + hyphaMinted <= MAX_SUPPLY,
+      totalMinted + distributionAmount <= MAX_SUPPLY,
       'Exceeds max token supply'
     );
 
-    // Mint HYPHA to the user who paid
-    _mint(msg.sender, hyphaMinted);
-    totalMinted = totalMinted + hyphaMinted;
-
-    // Calculate additional HYPHA to be distributed
-    uint256 distributionAmount = hyphaMinted * distributionMultiplier;
-
-    // Ensure we don't exceed max supply with distribution
-    uint256 availableForDistribution = MAX_SUPPLY - totalMinted;
-    if (distributionAmount > availableForDistribution) {
-      distributionAmount = availableForDistribution;
-    }
-
+    // Add all tokens to the distribution pool
     pendingDistribution = pendingDistribution + distributionAmount;
     totalMinted = totalMinted + distributionAmount;
 
@@ -173,7 +134,7 @@ contract HyphaToken is
       spaceIds,
       durationsInDays,
       usdcAmounts,
-      hyphaMinted
+      0 // No HYPHA is directly minted to the user
     );
   }
 
@@ -389,5 +350,29 @@ contract HyphaToken is
       totalHyphaRequired,
       0 // No HYPHA is minted directly to the user
     );
+  }
+
+  /**
+   * @dev Update HYPHA price in USD (governance function)
+   */
+  function setHyphaPrice(uint256 newPrice) external onlyOwner {
+    HYPHA_PRICE_USD = newPrice;
+    emit HyphaPriceUpdated(newPrice);
+  }
+
+  /**
+   * @dev Update USDC per day cost (governance function)
+   */
+  function setUsdcPerDay(uint256 newAmount) external onlyOwner {
+    USDC_PER_DAY = newAmount;
+    emit UsdcPerDayUpdated(newAmount);
+  }
+
+  /**
+   * @dev Update HYPHA per day cost (governance function)
+   */
+  function setHyphaPerDay(uint256 newAmount) external onlyOwner {
+    HYPHA_PER_DAY = newAmount;
+    emit HyphaPerDayUpdated(newAmount);
   }
 }

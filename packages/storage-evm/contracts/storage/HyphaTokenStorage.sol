@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import '../interfaces/ISpacePaymentTracker.sol';
 
 contract HyphaTokenStorage {
   // Fixed max supply
@@ -10,7 +11,13 @@ contract HyphaTokenStorage {
 
   // Core token parameters
   IERC20 public usdc;
-  uint256 public constant HYPHA_PRICE_USD = 25 * 10 ** 16; // 0.25 USD with 18 decimals
+  ISpacePaymentTracker public paymentTracker;
+
+  // Modifiable pricing parameters (no longer constants)
+  uint256 public HYPHA_PRICE_USD; // 0.25 USD with 18 decimals (default)
+  uint256 public USDC_PER_DAY; // 0.367 USDC with 6 decimals (default)
+  uint256 public HYPHA_PER_DAY; // ~1.47 HYPHA with 18 decimals (default)
+
   uint256 public distributionMultiplier; // Can be updated by governance
 
   // Distribution tracking
