@@ -59,7 +59,6 @@ contract DAOProposalsStorage is Initializable {
 
   IDAOSpaceFactory internal spaceFactory;
   IDirectory internal directoryContract;
-  ISpacePaymentTracker public paymentTracker;
 
   uint256 public proposalCounter;
 
