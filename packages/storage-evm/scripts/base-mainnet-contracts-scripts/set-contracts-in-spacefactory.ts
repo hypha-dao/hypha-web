@@ -21,9 +21,8 @@ interface ContractTransactionWithWait extends ethers.ContractTransaction {
 }
 
 interface DAOSpaceFactoryInterface {
-  // Update return type
+  // Updated to match current contract implementation
   setContracts: (
-    tokenFactoryAddress: string,
     joinMethodDirectoryAddress: string,
     exitMethodDirectoryAddress: string,
     proposalManagerAddress: string,
@@ -46,7 +45,6 @@ function parseAddressesFile(): Record<string, string> {
     JoinMethodDirectory: /JoinMethodDirectory deployed to: (0x[a-fA-F0-9]{40})/,
     ExitMethodDirectory: /ExitMethodDirectory deployed to: (0x[a-fA-F0-9]{40})/,
     DAOProposals: /DAOProposals deployed to: (0x[a-fA-F0-9]{40})/,
-    TokenFactory: /TokenFactory deployed to: (0x[a-fA-F0-9]{40})/,
   };
 
   for (const [key, pattern] of Object.entries(patterns)) {
@@ -62,11 +60,6 @@ function parseAddressesFile(): Record<string, string> {
 const daoSpaceFactoryAbi = [
   {
     inputs: [
-      {
-        internalType: 'address',
-        name: '_tokenFactoryAddress',
-        type: 'address',
-      },
       {
         internalType: 'address',
         name: '_joinMethodDirectoryAddress',
@@ -96,7 +89,6 @@ async function main(): Promise<void> {
 
   // Verify all required addresses are available
   const requiredContracts = [
-    'TokenFactory',
     'JoinMethodDirectory',
     'ExitMethodDirectory',
     'DAOProposals',
@@ -131,14 +123,12 @@ async function main(): Promise<void> {
   ) as ethers.Contract & DAOSpaceFactoryInterface;
 
   console.log('Setting contracts with the following addresses:');
-  console.log('Token Factory:', addresses['TokenFactory']);
   console.log('Join Method Directory:', addresses['JoinMethodDirectory']);
   console.log('Exit Method Directory:', addresses['ExitMethodDirectory']);
   console.log('Proposal Manager:', addresses['DAOProposals']);
 
   try {
     const tx = await daoSpaceFactory.setContracts(
-      addresses['TokenFactory'],
       addresses['JoinMethodDirectory'],
       addresses['ExitMethodDirectory'],
       addresses['DAOProposals'],

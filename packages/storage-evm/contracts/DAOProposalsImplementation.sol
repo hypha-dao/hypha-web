@@ -181,7 +181,7 @@ contract DAOProposalsImplementation is
       spaceFactory.isMember(proposal.spaceId, msg.sender),
       'Not a space member'
     );
-
+/*
     // Check if space payment is required and valid
     if (address(paymentTracker) != address(0)) {
       // Check if the space has an active subscription
@@ -198,7 +198,7 @@ contract DAOProposalsImplementation is
         }
       }
     }
-
+*/
     (
       ,
       ,
