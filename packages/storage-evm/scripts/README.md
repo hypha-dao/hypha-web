@@ -144,3 +144,10 @@ npx nx run storage-evm:script ./scripts/token-voting-power.upgrade.ts --network 
 ```bash
 npx nx run storage-evm:script ./scripts/votedecay-voting-power.upgrade.ts --network base-mainnet
 ```
+
+### Deploy Agreements Proxy
+
+```bash
+npx nx run storage-evm:script ./scripts/agreements-proxy.deploy.ts --network base-mainnet
+```
+
