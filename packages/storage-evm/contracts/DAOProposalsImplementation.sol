@@ -404,4 +404,5 @@ contract DAOProposalsImplementation is
       txns
     );
   }
+
 }
