@@ -222,7 +222,7 @@ async function testMultiTransactionProposal(): Promise<void> {
   );
 
   // Use the correct DAO Proposals address from addresses.txt
-  const daoProposalsAddress = '0xaC840F8A96EC6A6f9FbfdAae8daF8d9D679fd48B'; // From addresses.txt
+  const daoProposalsAddress = '0x001bA7a00a259Fb12d7936455e292a60FC2bef14'; // From addresses.txt
   const daoProposals = new ethers.Contract(
     daoProposalsAddress,
     daoProposalsAbi,
