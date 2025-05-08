@@ -6237,6 +6237,14 @@ describe('HyphaToken and Payment Tracking', function () {
       { initializer: 'initialize', kind: 'uups' },
     );
 
+    // Set the destination addresses for the HyphaToken contract
+    // Using owner as mainHypha address and creating a dedicated address for IEX
+    const iexAddress = ethers.Wallet.createRandom().address;
+    await hyphaToken.setDestinationAddresses(
+      iexAddress,
+      await owner.getAddress(),
+    );
+
     // Setup DAOProposals with payment tracker
     const DAOProposals = await ethers.getContractFactory(
       'DAOProposalsImplementation',
@@ -6311,6 +6319,7 @@ describe('HyphaToken and Payment Tracking', function () {
       daoProposals,
       spaceVotingPower,
       votingPowerDirectory,
+      iexAddress, // Add the iexAddress to the returned object
     };
   }
 
@@ -6582,7 +6591,7 @@ describe('HyphaToken and Payment Tracking', function () {
 
     // Claim rewards if available
     if (pendingRewards1 > 0) {
-      await hyphaToken.connect(voter1).claimRewards();
+      await hyphaToken.connect(voter1).claimRewards(await voter1.getAddress());
 
       // Verify balance increased after claiming
       const balanceAfter = await hyphaToken.balanceOf(
@@ -6591,6 +6600,29 @@ describe('HyphaToken and Payment Tracking', function () {
       expect(balanceAfter).to.be.gt(balanceBefore);
     } else {
       console.log('No rewards to claim for voter1');
+    }
+
+    // Test claiming rewards on behalf of another user
+    if (pendingRewards2 > 0) {
+      const voter2BalanceBefore = await hyphaToken.balanceOf(
+        await voter2.getAddress(),
+      );
+
+      // voter1 claims rewards on behalf of voter2
+      await hyphaToken.connect(voter1).claimRewards(await voter2.getAddress());
+
+      // Verify voter2's balance increased even though voter1 initiated the claim
+      const voter2BalanceAfter = await hyphaToken.balanceOf(
+        await voter2.getAddress(),
+      );
+      expect(voter2BalanceAfter).to.be.gt(voter2BalanceBefore);
+      console.log(
+        `voter1 claimed rewards for voter2: ${
+          voter2BalanceAfter - voter2BalanceBefore
+        } HYPHA`,
+      );
+    } else {
+      console.log('No rewards to claim for voter2');
     }
   });
 

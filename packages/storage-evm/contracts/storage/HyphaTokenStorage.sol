@@ -13,6 +13,10 @@ contract HyphaTokenStorage {
   IERC20 public usdc;
   ISpacePaymentTracker public paymentTracker;
 
+  // Destination addresses for transfers
+  address public iexAddress; // Address to receive USDC from payForSpaces and HYPHA from payInHypha
+  address public mainHyphaAddress; // Address to receive USDC from investInHypha
+
   // Modifiable pricing parameters (no longer constants)
   uint256 public HYPHA_PRICE_USD; // 0.25 USD with 18 decimals (default)
   uint256 public USDC_PER_DAY; // 0.367 USDC with 6 decimals (default)
