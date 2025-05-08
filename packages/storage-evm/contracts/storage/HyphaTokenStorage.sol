@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '../interfaces/ISpacesContract.sol';
 
 contract HyphaTokenStorage {
   // Fixed max supply
@@ -13,9 +12,6 @@ contract HyphaTokenStorage {
   IERC20 public usdc;
   uint256 public constant HYPHA_PRICE_USD = 25 * 10 ** 16; // 0.25 USD with 18 decimals
   uint256 public distributionMultiplier; // Can be updated by governance
-
-  // External contracts
-  ISpacesContract public spacesContract;
 
   // Distribution tracking
   uint256 public accumulatedRewardPerToken; // Rewards per token
