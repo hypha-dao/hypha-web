@@ -3226,7 +3226,7 @@ describe('HyphaToken and Payment Tracking', function () {
         [BigInt(spaceId)],
         [BigInt(1)], // 1 day duration
         [usdcAmount],
-        expectedHyphaMinted, // Use calculated value instead of hardcoded amount
+        0, // No HYPHA is directly minted to the user
       );
 
     // Check if space is active in tracker
