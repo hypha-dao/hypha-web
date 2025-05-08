@@ -19,8 +19,8 @@ const config: HardhatUserConfig = {
   solidity: '0.8.28',
   networks: {
     'base-mainnet': {
-      url: BASE_MAINNET_RPC_URL,
-      accounts: [PRIVATE_KEY],
+      url: "https://mainnet.base.org",
+      accounts: [process.env.PRIVATE_KEY],
     },
   },
 };
