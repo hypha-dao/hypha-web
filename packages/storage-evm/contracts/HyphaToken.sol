@@ -42,12 +42,20 @@ contract HyphaToken is
     uint256[] usdcAmounts,
     uint256 totalHyphaMinted
   );
+  event SpacesPaymentProcessedWithHypha(
+    address indexed user,
+    uint256[] spaceIds,
+    uint256[] durationInDays,
+    uint256 totalHyphaUsed,
+    uint256 totalHyphaMinted
+  );
 
   // Add new variable
   ISpacePaymentTracker public paymentTracker;
 
   // Constants
-  uint256 public constant USDC_PER_MONTH = 11 * 10 ** 6; // 11 USDC with 6 decimals (assuming USDC standard)
+  uint256 public constant USDC_PER_DAY = 367_000; // 0.367 USDC with 6 decimals
+  uint256 public constant HYPHA_PER_DAY = 1_466_666_666_666_666_666; // ~1.47 HYPHA with 18 decimals
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -91,34 +99,28 @@ contract HyphaToken is
   /**
    * @dev Pay for multiple spaces with USDC and distribute HYPHA tokens
    * @param spaceIds Array of space IDs to pay for
-   * @param durationsInDays Array of durations in days for each space
    * @param usdcAmounts Array of USDC amounts for each space
    */
   function payForSpaces(
     uint256[] calldata spaceIds,
-    uint256[] calldata durationsInDays,
     uint256[] calldata usdcAmounts
   ) external {
     require(
-      spaceIds.length == durationsInDays.length &&
-        spaceIds.length == usdcAmounts.length,
+      spaceIds.length == usdcAmounts.length,
       'Input arrays length mismatch'
     );
     require(spaceIds.length > 0, 'No spaces specified');
 
-    // Calculate total USDC amount
+    // Calculate total USDC amount and durations
     uint256 totalUsdcAmount = 0;
-    for (uint256 i = 0; i < usdcAmounts.length; i++) {
-      // Calculate minimum required USDC for this space
-      uint256 daysToMonths = durationsInDays[i] / 30;
-      if (durationsInDays[i] % 30 > 0) daysToMonths += 1; // Round up to next month
-      uint256 requiredUsdcAmount = daysToMonths * USDC_PER_MONTH;
+    uint256[] memory durationsInDays = new uint256[](spaceIds.length);
 
-      // Ensure user is paying enough for each space
-      require(
-        usdcAmounts[i] >= requiredUsdcAmount,
-        'Insufficient USDC for space payment'
-      );
+    for (uint256 i = 0; i < usdcAmounts.length; i++) {
+      // Calculate duration in days based on USDC amount
+      durationsInDays[i] = usdcAmounts[i] / USDC_PER_DAY;
+
+      // Ensure minimum payment of 1 day
+      require(durationsInDays[i] > 0, 'Payment too small for space');
 
       totalUsdcAmount = totalUsdcAmount + usdcAmounts[i];
     }
@@ -316,5 +318,76 @@ contract HyphaToken is
   function setPaymentTracker(address _paymentTracker) external onlyOwner {
     require(_paymentTracker != address(0), 'Invalid payment tracker address');
     paymentTracker = ISpacePaymentTracker(_paymentTracker);
+  }
+
+  /**
+   * @dev Pay for multiple spaces directly with HYPHA tokens
+   * @param spaceIds Array of space IDs to pay for
+   * @param hyphaAmounts Array of HYPHA amounts for each space
+   */
+  function payInHypha(
+    uint256[] calldata spaceIds,
+    uint256[] calldata hyphaAmounts
+  ) external {
+    require(
+      spaceIds.length == hyphaAmounts.length,
+      'Input arrays length mismatch'
+    );
+    require(spaceIds.length > 0, 'No spaces specified');
+
+    // Calculate total HYPHA required and durations
+    uint256 totalHyphaRequired = 0;
+    uint256[] memory durationsInDays = new uint256[](spaceIds.length);
+
+    for (uint256 i = 0; i < hyphaAmounts.length; i++) {
+      // Calculate duration in days based on HYPHA amount
+      durationsInDays[i] = hyphaAmounts[i] / HYPHA_PER_DAY;
+
+      // Ensure minimum payment of 1 day
+      require(durationsInDays[i] > 0, 'Payment too small for space');
+
+      totalHyphaRequired = totalHyphaRequired + hyphaAmounts[i];
+    }
+
+    // Check user has sufficient balance
+    require(
+      balanceOf(msg.sender) >= totalHyphaRequired,
+      'Insufficient HYPHA balance'
+    );
+
+    // Update distribution state before burning tokens
+    updateDistributionState();
+
+    // Burn HYPHA tokens from the user's account as payment
+    _burn(msg.sender, totalHyphaRequired);
+
+    // Calculate additional HYPHA to be distributed as rewards
+    uint256 distributionAmount = totalHyphaRequired * distributionMultiplier;
+
+    // Ensure we don't exceed max supply with distribution
+    uint256 availableForDistribution = MAX_SUPPLY - totalMinted;
+    if (distributionAmount > availableForDistribution) {
+      distributionAmount = availableForDistribution;
+    }
+
+    pendingDistribution = pendingDistribution + distributionAmount;
+    totalMinted = totalMinted + distributionAmount;
+
+    // Update payment information for each space
+    for (uint256 i = 0; i < spaceIds.length; i++) {
+      paymentTracker.updateSpacePayment(
+        msg.sender,
+        spaceIds[i],
+        durationsInDays[i]
+      );
+    }
+
+    emit SpacesPaymentProcessedWithHypha(
+      msg.sender,
+      spaceIds,
+      durationsInDays,
+      totalHyphaRequired,
+      0 // No HYPHA is minted directly to the user
+    );
   }
 }

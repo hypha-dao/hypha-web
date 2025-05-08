@@ -370,4 +370,8 @@ contract DAOProposalsImplementation is
       proposal.creator
     );
   }
+
+  function getLatestProposalId() external view override returns (uint256) {
+    return proposalCounter;
+  }
 }

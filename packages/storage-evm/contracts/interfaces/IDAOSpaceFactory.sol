@@ -94,4 +94,6 @@ interface IDAOSpaceFactory {
   //event JoinMethodDirectoryContractUpdated(address indexed newAddress);
   //event ProposalManagerUpdated(address indexed newAddress);
   //event ExitMethodDirectoryContractUpdated(address indexed newAddress);
+
+  function getSpaceId(address _spaceAddress) external view returns (uint256);
 }
