@@ -6,9 +6,8 @@ import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 import './storage/HyphaTokenStorage.sol';
-import './interfaces/ISpacesContract.sol';
+import './interfaces/ISpacePaymentTracker.sol';
 
 contract HyphaToken is
   Initializable,
@@ -17,8 +16,6 @@ contract HyphaToken is
   UUPSUpgradeable,
   HyphaTokenStorage
 {
-  using SafeMath for uint256;
-
   // Events
   event SpacePaymentProcessed(
     address indexed user,
@@ -38,6 +35,19 @@ contract HyphaToken is
   );
   event RewardsClaimed(address indexed user, uint256 amount);
   event DistributionMultiplierUpdated(uint256 newMultiplier);
+  event SpacesPaymentProcessed(
+    address indexed user,
+    uint256[] spaceIds,
+    uint256[] durationInDays,
+    uint256[] usdcAmounts,
+    uint256 totalHyphaMinted
+  );
+
+  // Add new variable
+  ISpacePaymentTracker public paymentTracker;
+
+  // Constants
+  uint256 public constant USDC_PER_MONTH = 11 * 10 ** 6; // 11 USDC with 6 decimals (assuming USDC standard)
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -46,14 +56,14 @@ contract HyphaToken is
 
   function initialize(
     address _usdc,
-    address _spacesContract
+    address _paymentTracker
   ) public initializer {
     __ERC20_init('HYPHA', 'HYPHA');
     __Ownable_init(msg.sender);
     __UUPSUpgradeable_init();
 
     usdc = IERC20(_usdc);
-    spacesContract = ISpacesContract(_spacesContract);
+    paymentTracker = ISpacePaymentTracker(_paymentTracker);
     lastUpdateTime = block.timestamp;
     totalMinted = 0;
     distributionMultiplier = 10; // Initial value
@@ -64,65 +74,103 @@ contract HyphaToken is
   ) internal override onlyOwner {}
 
   /**
-   * @dev Override _transfer to make the token non-transferable
+   * @dev Override transfer and transferFrom to make the token non-transferable
    */
-  function _transfer(address, address, uint256) internal pure override {
+  function transfer(address, uint256) public virtual override returns (bool) {
+    revert('HYPHA: Transfers disabled');
+  }
+
+  function transferFrom(
+    address,
+    address,
+    uint256
+  ) public virtual override returns (bool) {
     revert('HYPHA: Transfers disabled');
   }
 
   /**
-   * @dev Pay for spaces with USDC and distribute HYPHA tokens
-   * @param usdcAmount Amount of USDC paid
-   * @param spaceId ID of the space being paid for
-   * @param durationInDays Duration of the payment in days
+   * @dev Pay for multiple spaces with USDC and distribute HYPHA tokens
+   * @param spaceIds Array of space IDs to pay for
+   * @param durationsInDays Array of durations in days for each space
+   * @param usdcAmounts Array of USDC amounts for each space
    */
   function payForSpaces(
-    uint256 usdcAmount,
-    uint256 spaceId,
-    uint256 durationInDays
+    uint256[] calldata spaceIds,
+    uint256[] calldata durationsInDays,
+    uint256[] calldata usdcAmounts
   ) external {
+    require(
+      spaceIds.length == durationsInDays.length &&
+        spaceIds.length == usdcAmounts.length,
+      'Input arrays length mismatch'
+    );
+    require(spaceIds.length > 0, 'No spaces specified');
+
+    // Calculate total USDC amount
+    uint256 totalUsdcAmount = 0;
+    for (uint256 i = 0; i < usdcAmounts.length; i++) {
+      // Calculate minimum required USDC for this space
+      uint256 daysToMonths = durationsInDays[i] / 30;
+      if (durationsInDays[i] % 30 > 0) daysToMonths += 1; // Round up to next month
+      uint256 requiredUsdcAmount = daysToMonths * USDC_PER_MONTH;
+
+      // Ensure user is paying enough for each space
+      require(
+        usdcAmounts[i] >= requiredUsdcAmount,
+        'Insufficient USDC for space payment'
+      );
+
+      totalUsdcAmount = totalUsdcAmount + usdcAmounts[i];
+    }
+
     // Update distribution state before minting new tokens
     updateDistributionState();
 
-    // Transfer USDC from user
+    // Transfer total USDC from user
     require(
-      usdc.transferFrom(msg.sender, address(this), usdcAmount),
+      usdc.transferFrom(msg.sender, address(this), totalUsdcAmount),
       'USDC transfer failed'
     );
 
     // Calculate HYPHA tokens to mint based on price
-    uint256 hyphaMinted = usdcAmount.mul(10 ** 18).div(HYPHA_PRICE_USD);
+    uint256 hyphaMinted = (totalUsdcAmount * 10 ** 18) / HYPHA_PRICE_USD;
 
     // Ensure we don't exceed max supply
     require(
-      totalMinted.add(hyphaMinted) <= MAX_SUPPLY,
+      totalMinted + hyphaMinted <= MAX_SUPPLY,
       'Exceeds max token supply'
     );
 
     // Mint HYPHA to the user who paid
     _mint(msg.sender, hyphaMinted);
-    totalMinted = totalMinted.add(hyphaMinted);
+    totalMinted = totalMinted + hyphaMinted;
 
     // Calculate additional HYPHA to be distributed
-    uint256 distributionAmount = hyphaMinted.mul(distributionMultiplier);
+    uint256 distributionAmount = hyphaMinted * distributionMultiplier;
 
     // Ensure we don't exceed max supply with distribution
-    uint256 availableForDistribution = MAX_SUPPLY.sub(totalMinted);
+    uint256 availableForDistribution = MAX_SUPPLY - totalMinted;
     if (distributionAmount > availableForDistribution) {
       distributionAmount = availableForDistribution;
     }
 
-    pendingDistribution = pendingDistribution.add(distributionAmount);
-    totalMinted = totalMinted.add(distributionAmount);
+    pendingDistribution = pendingDistribution + distributionAmount;
+    totalMinted = totalMinted + distributionAmount;
 
-    // Update the spaces contract
-    spacesContract.updateSpacePayment(msg.sender, spaceId, durationInDays);
+    // Update payment information for each space
+    for (uint256 i = 0; i < spaceIds.length; i++) {
+      paymentTracker.updateSpacePayment(
+        msg.sender,
+        spaceIds[i],
+        durationsInDays[i]
+      );
+    }
 
-    emit SpacePaymentProcessed(
+    emit SpacesPaymentProcessed(
       msg.sender,
-      spaceId,
-      durationInDays,
-      usdcAmount,
+      spaceIds,
+      durationsInDays,
+      usdcAmounts,
       hyphaMinted
     );
   }
@@ -142,17 +190,17 @@ contract HyphaToken is
     );
 
     // Calculate HYPHA tokens to purchase based on price
-    uint256 hyphaPurchased = usdcAmount.mul(10 ** 18).div(HYPHA_PRICE_USD);
+    uint256 hyphaPurchased = (usdcAmount * 10 ** 18) / HYPHA_PRICE_USD;
 
     // Ensure we don't exceed max supply
     require(
-      totalMinted.add(hyphaPurchased) <= MAX_SUPPLY,
+      totalMinted + hyphaPurchased <= MAX_SUPPLY,
       'Exceeds max token supply'
     );
 
     // Mint HYPHA to the investor
     _mint(msg.sender, hyphaPurchased);
-    totalMinted = totalMinted.add(hyphaPurchased);
+    totalMinted = totalMinted + hyphaPurchased;
 
     emit HyphaInvestment(msg.sender, usdcAmount, hyphaPurchased);
   }
@@ -166,27 +214,28 @@ contract HyphaToken is
     }
 
     // Calculate time elapsed since last update
-    uint256 timeElapsed = block.timestamp.sub(lastUpdateTime);
+    uint256 timeElapsed = block.timestamp - lastUpdateTime;
 
     // Calculate emission rate per second based on pending distribution
     // This distributes all pending rewards over a period (e.g., 1 day)
     uint256 DISTRIBUTION_PERIOD = 1 days;
-    uint256 emissionRate = pendingDistribution.div(DISTRIBUTION_PERIOD);
+    uint256 emissionRate = pendingDistribution / DISTRIBUTION_PERIOD;
 
     // Calculate rewards to distribute in this update
-    uint256 toDistribute = timeElapsed.mul(emissionRate);
+    uint256 toDistribute = timeElapsed * emissionRate;
     if (toDistribute > pendingDistribution) {
       toDistribute = pendingDistribution;
     }
 
     if (toDistribute > 0) {
       // Update accumulated reward per token
-      accumulatedRewardPerToken = accumulatedRewardPerToken.add(
-        toDistribute.div(totalSupply())
-      );
+      accumulatedRewardPerToken =
+        accumulatedRewardPerToken +
+        toDistribute /
+        totalSupply();
 
       // Reduce pending distribution
-      pendingDistribution = pendingDistribution.sub(toDistribute);
+      pendingDistribution = pendingDistribution - toDistribute;
 
       emit RewardsDistributed(toDistribute, accumulatedRewardPerToken);
     }
@@ -212,27 +261,23 @@ contract HyphaToken is
       totalSupply() > 0 &&
       pendingDistribution > 0
     ) {
-      uint256 timeElapsed = block.timestamp.sub(lastUpdateTime);
+      uint256 timeElapsed = block.timestamp - lastUpdateTime;
       uint256 DISTRIBUTION_PERIOD = 1 days;
-      uint256 emissionRate = pendingDistribution.div(DISTRIBUTION_PERIOD);
-      uint256 toDistribute = timeElapsed.mul(emissionRate);
+      uint256 emissionRate = pendingDistribution / DISTRIBUTION_PERIOD;
+      uint256 toDistribute = timeElapsed * emissionRate;
 
       if (toDistribute > pendingDistribution) {
         toDistribute = pendingDistribution;
       }
 
-      currentAccumulator = currentAccumulator.add(
-        toDistribute.div(totalSupply())
-      );
+      currentAccumulator = currentAccumulator + toDistribute / totalSupply();
     }
 
     // New rewards since last claim
-    uint256 newRewards = balance.mul(
-      currentAccumulator.sub(userRewardDebt[user])
-    );
+    uint256 newRewards = balance * (currentAccumulator - userRewardDebt[user]);
 
     // Add any previously unclaimed rewards
-    return unclaimedRewards[user].add(newRewards);
+    return unclaimedRewards[user] + newRewards;
   }
 
   /**
@@ -244,37 +289,17 @@ contract HyphaToken is
     uint256 reward = pendingRewards(msg.sender);
     if (reward > 0) {
       // Ensure we don't exceed max supply
-      require(
-        totalMinted.add(reward) <= MAX_SUPPLY,
-        'Exceeds max token supply'
-      );
+      require(totalMinted + reward <= MAX_SUPPLY, 'Exceeds max token supply');
 
       unclaimedRewards[msg.sender] = 0;
       userRewardDebt[msg.sender] = accumulatedRewardPerToken;
 
       // Mint reward tokens to the user
       _mint(msg.sender, reward);
-      totalMinted = totalMinted.add(reward);
+      totalMinted = totalMinted + reward;
 
       emit RewardsClaimed(msg.sender, reward);
     }
-  }
-
-  /**
-   * @dev Update user's reward state when their balance changes
-   */
-  function _beforeTokenTransfer(
-    address from,
-    address to,
-    uint256 amount
-  ) internal override {
-    // Only allow minting operations (from == address(0))
-    if (from != address(0)) {
-      revert('HYPHA: Transfers disabled');
-    }
-
-    updateDistributionState();
-    super._beforeTokenTransfer(from, to, amount);
   }
 
   /**
@@ -286,9 +311,10 @@ contract HyphaToken is
   }
 
   /**
-   * @dev Set the spaces contract address (governance function)
+   * @dev Set the payment tracker contract address
    */
-  function setSpacesContract(address _spacesContract) external onlyOwner {
-    spacesContract = ISpacesContract(_spacesContract);
+  function setPaymentTracker(address _paymentTracker) external onlyOwner {
+    require(_paymentTracker != address(0), 'Invalid payment tracker address');
+    paymentTracker = ISpacePaymentTracker(_paymentTracker);
   }
 }
