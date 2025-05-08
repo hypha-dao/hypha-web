@@ -396,6 +396,34 @@ async function testAgreementProposal(): Promise<void> {
       ],
     };
 
+    console.log('\n=== DETAILED PROPOSAL INPUT DATA ===');
+    console.log(`Space ID: ${agreementProposalParams.spaceId}`);
+    console.log(
+      `Proposal Duration: ${agreementProposalParams.duration} seconds`,
+    );
+    console.log(
+      `Transaction Count: ${agreementProposalParams.transactions.length}`,
+    );
+
+    // Log detailed transaction data
+    agreementProposalParams.transactions.forEach((tx, index) => {
+      console.log(`\nTransaction #${index + 1}:`);
+      console.log(`- Target Contract: ${tx.target}`);
+      console.log(`- ETH Value: ${tx.value}`);
+      console.log(`- Function: acceptAgreement(uint256,uint256)`);
+      console.log(`- Function Parameters:`);
+      console.log(`  - Space ID: ${spaceId}`);
+      console.log(`  - Proposal ID to accept: ${proposalIdToAccept}`);
+      console.log(`- Function Selector: ${functionSelector}`);
+      console.log(`- Complete Encoded Data: ${encodedData}`);
+      console.log(
+        `- Data Length: ${
+          typeof tx.data === 'string' ? tx.data.length : '(binary)'
+        } bytes`,
+      );
+    });
+    console.log('\n=====================================');
+
     console.log('Agreement Proposal parameters:', {
       spaceId: agreementProposalParams.spaceId,
       duration: agreementProposalParams.duration,
