@@ -52,6 +52,11 @@ interface IHyphaToken {
 
   event HyphaPerDayUpdated(uint256 newAmount);
 
+  event DestinationAddressesUpdated(
+    address indexed iexAddress,
+    address indexed mainHyphaAddress
+  );
+
   // Function signatures
   function initialize(address _usdc, address _paymentTracker) external;
 
@@ -74,7 +79,7 @@ interface IHyphaToken {
 
   function pendingRewards(address user) external view returns (uint256);
 
-  function claimRewards() external;
+  function claimRewards(address account) external;
 
   function setDistributionMultiplier(uint256 newMultiplier) external;
 
@@ -90,4 +95,9 @@ interface IHyphaToken {
   function setUsdcPerDay(uint256 newAmount) external;
 
   function setHyphaPerDay(uint256 newAmount) external;
+
+  function setDestinationAddresses(
+    address _iexAddress,
+    address _mainHyphaAddress
+  ) external;
 }
