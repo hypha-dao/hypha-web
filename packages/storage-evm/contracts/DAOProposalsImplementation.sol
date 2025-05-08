@@ -132,6 +132,14 @@ contract DAOProposalsImplementation is
       params.transactions
     );
 
+    // Check if space payment is active
+    if (address(paymentTracker) != address(0)) {
+      require(
+        paymentTracker.isSpaceActive(params.spaceId),
+        'Space subscription inactive'
+      );
+    }
+
     uint256 proposalId = _initializeProposal(
       params.spaceId,
       params.duration,
@@ -159,6 +167,8 @@ contract DAOProposalsImplementation is
     return proposal.startTime + proposal.duration;
   }
 
+  // Add payment tracker
+  ISpacePaymentTracker public paymentTracker;
 
   function setPaymentTracker(address _paymentTracker) external onlyOwner {
     require(_paymentTracker != address(0), 'Invalid payment tracker address');
@@ -405,4 +415,7 @@ contract DAOProposalsImplementation is
     );
   }
 
+  function getLatestProposalId() external view override returns (uint256) {
+    return proposalCounter;
+  }
 }
