@@ -442,4 +442,14 @@ contract DAOProposalsImplementation is
   ) external view override returns (uint256[] memory) {
     return spaceExecutedProposals[_spaceId];
   }
+
+  // Function to get all executed proposals across all spaces
+  function getAllExecutedProposals()
+    external
+    view
+    override
+    returns (uint256[] memory)
+  {
+    return allExecutedProposals;
+  }
 }
