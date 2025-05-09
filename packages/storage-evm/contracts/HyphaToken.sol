@@ -123,7 +123,7 @@ contract HyphaToken is
     );
 
     // Calculate equivalent HYPHA tokens based on price (not minted to user)
-    uint256 hyphaEquivalent = (totalUsdcAmount * 10 ** 18) / HYPHA_PRICE_USD;
+    uint256 hyphaEquivalent = (totalUsdcAmount * 10 ** 12) / HYPHA_PRICE_USD;
 
     // Calculate total HYPHA to be distributed
     uint256 distributionAmount = hyphaEquivalent * (distributionMultiplier + 1);
@@ -173,7 +173,7 @@ contract HyphaToken is
     );
 
     // Calculate HYPHA tokens to purchase based on price
-    uint256 hyphaPurchased = (usdcAmount * 10 ** 18) / HYPHA_PRICE_USD;
+    uint256 hyphaPurchased = (usdcAmount * 10 ** 12) / HYPHA_PRICE_USD;
 
     // Ensure we don't exceed max supply
     require(
@@ -184,6 +184,8 @@ contract HyphaToken is
     // Mint HYPHA to the investor
     _mint(msg.sender, hyphaPurchased);
     totalMinted = totalMinted + hyphaPurchased;
+    // Update the user's reward debt to prevent claiming rewards from before they had tokens
+    userRewardDebt[msg.sender] = accumulatedRewardPerToken;
 
     emit HyphaInvestment(msg.sender, usdcAmount, hyphaPurchased);
   }
@@ -211,10 +213,11 @@ contract HyphaToken is
     }
 
     if (toDistribute > 0) {
-      // Update accumulated reward per token
+      // Update accumulated reward per token with higher precision
+      uint256 PRECISION = 1e18;
       accumulatedRewardPerToken =
         accumulatedRewardPerToken +
-        toDistribute /
+        (toDistribute * PRECISION) /
         totalSupply();
 
       // Reduce pending distribution
@@ -236,6 +239,7 @@ contract HyphaToken is
     }
 
     uint256 balance = balanceOf(user);
+    uint256 PRECISION = 1e18;
 
     // Get current accumulator value
     uint256 currentAccumulator = accumulatedRewardPerToken;
@@ -253,11 +257,15 @@ contract HyphaToken is
         toDistribute = pendingDistribution;
       }
 
-      currentAccumulator = currentAccumulator + toDistribute / totalSupply();
+      currentAccumulator =
+        currentAccumulator +
+        (toDistribute * PRECISION) /
+        totalSupply();
     }
 
-    // New rewards since last claim
-    uint256 newRewards = balance * (currentAccumulator - userRewardDebt[user]);
+    // New rewards since last claim, accounting for precision
+    uint256 newRewards = (balance *
+      (currentAccumulator - userRewardDebt[user])) / PRECISION;
 
     // Add any previously unclaimed rewards
     return unclaimedRewards[user] + newRewards;
@@ -281,6 +289,7 @@ contract HyphaToken is
       // Mint reward tokens to the user
       _mint(account, reward);
       totalMinted = totalMinted + reward;
+      // We don't need to update userRewardDebt again since we already set it above
 
       emit RewardsClaimed(account, reward);
     }
@@ -396,5 +405,40 @@ contract HyphaToken is
   function setHyphaPerDay(uint256 newAmount) external onlyOwner {
     HYPHA_PER_DAY = newAmount;
     emit HyphaPerDayUpdated(newAmount);
+  }
+
+  /**
+   * @dev Handle reward accounting before any token transfer
+   * @param from Address sending tokens
+   * @param to Address receiving tokens
+   * @param amount Amount of tokens transferred
+   */
+  function _beforeTokenTransfer(
+    address from,
+    address to,
+    uint256 amount
+  ) internal virtual {
+    if (amount > 0) {
+      // Update global distribution state first
+      updateDistributionState();
+
+      // Handle sender rewards (except for minting)
+      if (from != address(0)) {
+        uint256 reward = pendingRewards(from);
+        if (reward > 0) {
+          unclaimedRewards[from] = reward;
+        }
+        userRewardDebt[from] = accumulatedRewardPerToken;
+      }
+
+      // Handle receiver rewards (except for burning)
+      if (to != address(0)) {
+        uint256 reward = pendingRewards(to);
+        if (reward > 0) {
+          unclaimedRewards[to] = reward;
+        }
+        userRewardDebt[to] = accumulatedRewardPerToken;
+      }
+    }
   }
 }

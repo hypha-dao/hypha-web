@@ -3330,6 +3330,9 @@ describe('HyphaToken and Payment Tracking', function () {
 
     // Get the current blockchain timestamp before payment
     const latestBlock = await ethers.provider.getBlock('latest');
+    if (!latestBlock) {
+      throw new Error('Failed to get the latest block');
+    }
     const blockchainTimestamp = latestBlock.timestamp;
     console.log(`Current blockchain timestamp: ${blockchainTimestamp}`);
 
@@ -3386,8 +3389,8 @@ describe('HyphaToken and Payment Tracking', function () {
     // Get the HYPHA price in USD from the contract
     const hyphaPrice = await hyphaToken.HYPHA_PRICE_USD();
 
-    // Calculate expected HYPHA amount: (usdcAmount * 10^18) / HYPHA_PRICE_USD
-    const expectedHyphaPurchased = (usdcAmount * BigInt(10 ** 18)) / hyphaPrice;
+    // Calculate expected HYPHA amount: (usdcAmount * 10^12) / HYPHA_PRICE_USD
+    const expectedHyphaPurchased = (usdcAmount * BigInt(10 ** 12)) / hyphaPrice;
 
     // Invest in HYPHA with dynamic assertion based on contract values
     await expect(hyphaToken.connect(voter1).investInHypha(usdcAmount))
@@ -3622,6 +3625,15 @@ describe('HyphaToken and Payment Tracking', function () {
       expect(executedProposals).to.include(proposalId);
       console.log(
         `Found ${executedProposals.length} executed proposals for space ${spaceId}`,
+      );
+
+      // Also test getAllExecutedProposals function
+      console.log('Testing getAllExecutedProposals function...');
+      const allExecutedProposals = await daoProposals.getAllExecutedProposals();
+      expect(allExecutedProposals.length).to.be.at.least(1);
+      expect(allExecutedProposals).to.include(proposalId);
+      console.log(
+        `Found ${allExecutedProposals.length} executed proposals across all spaces`,
       );
     } else {
       console.log(

@@ -101,4 +101,7 @@ contract DAOProposalsStorage is Initializable {
 
   // New storage variable to track executed proposals by space
   mapping(uint256 => uint256[]) internal spaceExecutedProposals;
+
+  // New storage variable to track all executed proposals
+  uint256[] internal allExecutedProposals;
 }

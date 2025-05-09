@@ -287,6 +287,9 @@ contract DAOProposalsImplementation is
         // Add this proposal to the space's executed proposals list
         spaceExecutedProposals[proposal.spaceId].push(_proposalId);
 
+        // Also add it to the global list of executed proposals
+        allExecutedProposals.push(_proposalId);
+
         address executor = spaceFactory.getSpaceExecutor(proposal.spaceId);
 
         // Convert proposal transactions to Executor.Transaction format
@@ -389,5 +392,15 @@ contract DAOProposalsImplementation is
     uint256 _spaceId
   ) external view override returns (uint256[] memory) {
     return spaceExecutedProposals[_spaceId];
+  }
+
+  // Function to get all executed proposals across all spaces
+  function getAllExecutedProposals()
+    external
+    view
+    override
+    returns (uint256[] memory)
+  {
+    return allExecutedProposals;
   }
 }
