@@ -8,6 +8,7 @@ import './storage/DAOProposalsStorage.sol';
 import './interfaces/IDAOProposals.sol';
 import './interfaces/IExecutor.sol';
 import './interfaces/IDecayTokenVotingPower.sol';
+import './interfaces/ISpacePaymentTracker.sol';
 
 contract DAOProposalsImplementation is
   Initializable,
@@ -132,6 +133,14 @@ contract DAOProposalsImplementation is
       params.transactions
     );
 
+    // Check if space payment is active
+    if (address(paymentTracker) != address(0)) {
+      require(
+        paymentTracker.isSpaceActive(params.spaceId),
+        'Space subscription inactive'
+      );
+    }
+
     uint256 proposalId = _initializeProposal(
       params.spaceId,
       params.duration,
@@ -172,7 +181,24 @@ contract DAOProposalsImplementation is
       spaceFactory.isMember(proposal.spaceId, msg.sender),
       'Not a space member'
     );
-
+    /*
+    // Check if space payment is required and valid
+    if (address(paymentTracker) != address(0)) {
+      // Check if the space has an active subscription
+      if (paymentTracker.isSpaceActive(proposal.spaceId)) {
+        // Space is active, proceed with voting
+      } else {
+        // Space is not active, check if eligible for free trial
+        if (!paymentTracker.hasUsedFreeTrial(proposal.spaceId)) {
+          // Activate free trial for this space
+          paymentTracker.activateFreeTrial(proposal.spaceId);
+        } else {
+          // Not eligible for free trial and not active - reject
+          revert('Space subscription inactive');
+        }
+      }
+    }
+*/
     (
       ,
       ,
@@ -257,6 +283,12 @@ contract DAOProposalsImplementation is
       uint256 yesPercentage = (proposal.yesVotes * 100) / totalVotesCast;
       if (yesPercentage >= unityThreshold) {
         proposal.executed = true;
+
+        // Add this proposal to the space's executed proposals list
+        spaceExecutedProposals[proposal.spaceId].push(_proposalId);
+
+        // Also add it to the global list of executed proposals
+        allExecutedProposals.push(_proposalId);
 
         address executor = spaceFactory.getSpaceExecutor(proposal.spaceId);
 
@@ -343,5 +375,32 @@ contract DAOProposalsImplementation is
       proposal.totalVotingPowerAtSnapshot,
       proposal.creator
     );
+  }
+
+  function getLatestProposalId() external view override returns (uint256) {
+    return proposalCounter;
+  }
+
+  // Add a function to set the payment tracker (setting the storage variable)
+  function setPaymentTracker(address _paymentTracker) external onlyOwner {
+    require(_paymentTracker != address(0), 'Invalid payment tracker address');
+    paymentTracker = ISpacePaymentTracker(_paymentTracker);
+  }
+
+  // Function to get all executed proposals for a specific space
+  function getExecutedProposalsBySpace(
+    uint256 _spaceId
+  ) external view override returns (uint256[] memory) {
+    return spaceExecutedProposals[_spaceId];
+  }
+
+  // Function to get all executed proposals across all spaces
+  function getAllExecutedProposals()
+    external
+    view
+    override
+    returns (uint256[] memory)
+  {
+    return allExecutedProposals;
   }
 }
