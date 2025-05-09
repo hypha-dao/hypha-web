@@ -1,0 +1,70 @@
+# MVP: Single Token Create DAO Flow
+
+![static badge](https://img.shields.io/badge/STATUS-DRAFT-orange)
+
+## Overview
+
+This document describes the flow for creating a DAO using our single token system. The process involves creating an initial balance via our Treasury Smart Contract.
+
+## Technical Implementation
+
+One smart contract manages all spaces and tracks their respective balances.
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant H as Hypha V3
+    participant T as Treasury
+    participant SC as SwapContract
+
+    U->>H: Opens Platform
+    activate H
+
+    H->>H: check auth
+    H->>U: go to platform
+    deactivate H
+
+    U->>H: Create DAO
+    activate H
+
+    H->>T: Register DAO
+    activate T
+    T->>T: Create Balance Entry in the ledger
+    T->>H: Success
+    deactivate T
+    H->>T: Pay creation fee
+    activate T
+    T->>SC: Swap USDC to Hypha
+    activate SC
+    SC->>T: Swapped HyphaToken to Treasury
+    deactivate SC
+    T->>H: Payment Success
+    deactivate T
+    H->>H: Create DAO
+    H->>U: DAO Created
+    deactivate H
+```
+
+## Token Utility
+
+### Why do we need a Token?
+
+1. Raise funds for platform development and maintenance
+2. Enable community governance and decision-making
+3. Create aligned incentives between platform and users
+4. Facilitate value capture from platform usage
+5. Enable future ecosystem expansion and integrations
+
+### Token Economics
+
+- Fixed supply: [Supply amount]
+- Initial distribution: [Distribution details]
+- Vesting schedules: [Vesting details]
+- Treasury allocation: [Allocation details]
+
+## Security Considerations
+
+- Smart contract auditing
+- Rate limiting for token swaps
+- Treasury multi-sig requirements
+- Governance timelock mechanisms
