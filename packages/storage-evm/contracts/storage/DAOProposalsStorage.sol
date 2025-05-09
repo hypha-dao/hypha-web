@@ -91,7 +91,7 @@ contract DAOProposalsStorage is Initializable {
    */
   uint256[48] private __gap;
 
-    // New storage variables - Add at the end
+  // New storage variables - Add at the end
   mapping(uint256 => address) public spaceAddresses;
 
   // Track spaces that have activated their free trial
@@ -99,5 +99,6 @@ contract DAOProposalsStorage is Initializable {
 
   ISpacePaymentTracker public paymentTracker;
 
-
+  // New storage variable to track executed proposals by space
+  mapping(uint256 => uint256[]) internal spaceExecutedProposals;
 }

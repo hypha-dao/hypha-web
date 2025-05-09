@@ -181,7 +181,7 @@ contract DAOProposalsImplementation is
       spaceFactory.isMember(proposal.spaceId, msg.sender),
       'Not a space member'
     );
-/*
+    /*
     // Check if space payment is required and valid
     if (address(paymentTracker) != address(0)) {
       // Check if the space has an active subscription
@@ -284,6 +284,9 @@ contract DAOProposalsImplementation is
       if (yesPercentage >= unityThreshold) {
         proposal.executed = true;
 
+        // Add this proposal to the space's executed proposals list
+        spaceExecutedProposals[proposal.spaceId].push(_proposalId);
+
         address executor = spaceFactory.getSpaceExecutor(proposal.spaceId);
 
         // Convert proposal transactions to Executor.Transaction format
@@ -379,5 +382,12 @@ contract DAOProposalsImplementation is
   function setPaymentTracker(address _paymentTracker) external onlyOwner {
     require(_paymentTracker != address(0), 'Invalid payment tracker address');
     paymentTracker = ISpacePaymentTracker(_paymentTracker);
+  }
+
+  // Function to get all executed proposals for a specific space
+  function getExecutedProposalsBySpace(
+    uint256 _spaceId
+  ) external view override returns (uint256[] memory) {
+    return spaceExecutedProposals[_spaceId];
   }
 }

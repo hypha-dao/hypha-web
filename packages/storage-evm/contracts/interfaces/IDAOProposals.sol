@@ -55,6 +55,11 @@ interface IDAOProposals {
   // New function to get the latest proposal ID
   function getLatestProposalId() external view returns (uint256);
 
+  // New function to get executed proposals for a space
+  function getExecutedProposalsBySpace(
+    uint256 _spaceId
+  ) external view returns (uint256[] memory);
+
   // Events
   event ProposalCreated(
     uint256 indexed proposalId,
