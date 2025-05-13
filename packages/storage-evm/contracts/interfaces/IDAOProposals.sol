@@ -45,7 +45,8 @@ interface IDAOProposals {
       uint256 yesVotes,
       uint256 noVotes,
       uint256 totalVotingPowerAtSnapshot,
-      address creator
+      address creator,
+      Transaction[] memory transactions
     );
 
   function getProposalEndTime(

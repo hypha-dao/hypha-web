@@ -359,10 +359,19 @@ contract DAOProposalsImplementation is
       uint256 yesVotes,
       uint256 noVotes,
       uint256 totalVotingPowerAtSnapshot,
-      address creator
+      address creator,
+      Transaction[] memory transactions
     )
   {
     ProposalCore storage proposal = proposalsCoreData[_proposalId];
+
+    // Create a memory array to hold the transactions
+    Transaction[] memory txns = new Transaction[](proposal.transactions.length);
+
+    // Copy the transactions from storage to memory
+    for (uint i = 0; i < proposal.transactions.length; i++) {
+      txns[i] = proposal.transactions[i];
+    }
 
     return (
       proposal.spaceId,
@@ -373,7 +382,8 @@ contract DAOProposalsImplementation is
       proposal.yesVotes,
       proposal.noVotes,
       proposal.totalVotingPowerAtSnapshot,
-      proposal.creator
+      proposal.creator,
+      txns
     );
   }
 
