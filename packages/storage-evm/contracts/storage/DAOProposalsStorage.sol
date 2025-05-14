@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '../interfaces/IDAOProposals.sol';
 import '../interfaces/IExecutor.sol';
+import '../interfaces/ISpacePaymentTracker.sol';
 
 interface IDAOSpaceFactory {
   function isMember(
@@ -92,4 +93,15 @@ contract DAOProposalsStorage is Initializable {
 
   // New storage variables - Add at the end
   mapping(uint256 => address) public spaceAddresses;
+
+  // Track spaces that have activated their free trial
+  mapping(uint256 => bool) public spaceTrialActivated;
+
+  ISpacePaymentTracker public paymentTracker;
+
+  // New storage variable to track executed proposals by space
+  mapping(uint256 => uint256[]) internal spaceExecutedProposals;
+
+  // New storage variable to track all executed proposals
+  uint256[] internal allExecutedProposals;
 }
