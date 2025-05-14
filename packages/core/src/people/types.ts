@@ -10,6 +10,7 @@ export interface Person {
   description?: string;
   location?: string;
   nickname?: string;
+  address?: string;
 }
 
 export interface EditPersonInput {

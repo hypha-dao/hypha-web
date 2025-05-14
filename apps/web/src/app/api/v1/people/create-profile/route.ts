@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
       location,
       nickname,
       leadImageUrl,
+      address,
     } = body;
 
     if (!name || !surname || !nickname || !email) {
@@ -42,6 +43,7 @@ export async function POST(request: NextRequest) {
       description,
       location,
       nickname,
+      address,
     };
 
     // Use the PeopleService to create the profile

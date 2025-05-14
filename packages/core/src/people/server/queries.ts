@@ -27,6 +27,7 @@ export const getDefaultFields = () => {
     nickname: people.nickname,
     createdAt: people.createdAt,
     updatedAt: people.updatedAt,
+    address: people.address,
     total: sql<number>`cast(count(*) over() as integer)`,
   };
 };
@@ -46,6 +47,7 @@ export const mapToDomainPerson = (dbPerson: DbPerson): Person => {
     description: nullToUndefined(dbPerson.description),
     location: nullToUndefined(dbPerson.location),
     nickname: nullToUndefined(dbPerson.nickname),
+    address: nullToUndefined(dbPerson.address),
   };
 };
 

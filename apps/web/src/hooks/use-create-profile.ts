@@ -21,6 +21,7 @@ export const useCreateProfile = (
       description: string;
       location: string;
       nickname: string;
+      address: string;
     }) => {
       if (!headers) {
         throw new Error('No auth headers available');
