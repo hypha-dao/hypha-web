@@ -1,0 +1,1 @@
+ALTER TABLE "people" ADD COLUMN "web3_address" text;

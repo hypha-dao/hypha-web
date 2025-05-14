@@ -19,6 +19,7 @@ export const people = pgTable(
     name: text('name'),
     surname: text('surname'),
     nickname: text('nickname'),
+    address: text('web3_address'),
     ...commonDateFields,
   },
   (table) => [
