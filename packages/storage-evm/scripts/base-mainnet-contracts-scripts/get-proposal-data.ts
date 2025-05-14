@@ -35,6 +35,16 @@ const daoProposalsAbi = [
         type: 'uint256',
       },
       { internalType: 'address', name: 'creator', type: 'address' },
+      {
+        internalType: 'tuple[]',
+        name: 'transactions',
+        type: 'tuple[]',
+        components: [
+          { internalType: 'address', name: 'target', type: 'address' },
+          { internalType: 'uint256', name: 'value', type: 'uint256' },
+          { internalType: 'bytes', name: 'data', type: 'bytes' },
+        ],
+      },
     ],
     stateMutability: 'view',
     type: 'function',
@@ -160,6 +170,23 @@ function displayProposalInfo(proposalId: number, proposalData: any) {
     `Total voting power: ${proposalData.totalVotingPowerAtSnapshot.toString()}`,
   );
   console.log(`Participation rate: ${stats.participationRate.toFixed(2)}%`);
+
+  // Display transaction data if available
+  if (proposalData.transactions && proposalData.transactions.length > 0) {
+    console.log('\n---------- Transactions ----------');
+    proposalData.transactions.forEach((tx: any, index: number) => {
+      console.log(`\nTransaction #${index + 1}:`);
+      console.log(`Target: ${tx.target}`);
+      console.log(`Value: ${tx.value.toString() || '0'} ETH`);
+      console.log(`Data: ${tx.data}`);
+
+      // Try to decode function signature (first 4 bytes of data)
+      if (tx.data && tx.data.length >= 10) {
+        const functionSelector = tx.data.slice(0, 10);
+        console.log(`Function selector: ${functionSelector}`);
+      }
+    });
+  }
 
   // Additional information about execution/expiration
   if (proposalData.executed) {
