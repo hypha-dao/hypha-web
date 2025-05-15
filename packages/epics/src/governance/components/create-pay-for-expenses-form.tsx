@@ -136,6 +136,7 @@ export const CreatePayForExpensesForm = ({
             }}
             closeUrl={successfulUrl}
             isLoading={false}
+            label="Expenses"
           />
           {plugin}
           <Separator />
