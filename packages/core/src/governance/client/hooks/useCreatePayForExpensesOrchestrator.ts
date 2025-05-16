@@ -12,7 +12,7 @@ import {
   schemaCreateAgreementFiles,
 } from '../../validation';
 
-import { usePayForExpensesMutationsWeb3Rpc } from './usePayForExpensesMutations.web3.rsc';
+import { usePayForExpensesMutationsWeb3Rpc } from './usePayForExpensesMutations.web3.rpc';
 import { useOrchestratorTasks } from './useOrchestratorTasks';
 
 type CreatePayForExpensesArg = z.infer<typeof schemaCreateAgreement> & {
