@@ -1,6 +1,6 @@
 import { type Token } from '../components/common/token-payout-field-array';
 
-export const tokens: Token[] = [
+const tokens: Token[] = [
   {
     symbol: 'WETH',
     icon: '/placeholder/weth-icon.png',
@@ -22,3 +22,9 @@ export const tokens: Token[] = [
     address: '0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42',
   },
 ];
+
+export function useTokens() {
+  return {
+    tokens,
+  };
+}
