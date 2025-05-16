@@ -4,7 +4,7 @@ import { useReadContract } from 'wagmi';
 import { erc20Abi } from 'viem';
 import { Image } from '@hypha-platform/ui';
 import { EthAddress } from '../../people';
-import { tokens } from '../../agreements/plugins/pay-for-expenses/tokens';
+import { useTokens } from '../../agreements/plugins/hooks';
 
 interface ProposalTransactionItemProps {
   recipient?: string;
@@ -17,6 +17,7 @@ export const ProposalTransactionItem = ({
   amount,
   tokenAddress,
 }: ProposalTransactionItemProps) => {
+  const { tokens } = useTokens();
   const token = tokens.find(
     (t) => t.address.toLowerCase() === tokenAddress?.toLowerCase(),
   );

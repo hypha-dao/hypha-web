@@ -12,23 +12,23 @@ import {
   schemaCreateAgreementFiles,
 } from '../../validation';
 
-import { usePayForExpensesMutationsWeb3Rpc } from './usePayForExpensesMutations.web3.rpc';
+import { useDeployFundsMutationsWeb3Rpc } from './useDeployFundsMutations.web3.rpc';
 import { useOrchestratorTasks } from './useOrchestratorTasks';
 
-type CreatePayForExpensesArg = z.infer<typeof schemaCreateAgreement> & {
+type CreateDeployFundsArg = z.infer<typeof schemaCreateAgreement> & {
   payouts: { amount: string; token: string }[];
   recipient: string;
   web3SpaceId?: number;
 };
 
-export const useCreatePayForExpensesOrchestrator = ({
+export const useCreateDeployFundsOrchestrator = ({
   authToken,
   config,
 }: {
   authToken?: string | null;
   config?: Config;
 }) => {
-  const web3 = usePayForExpensesMutationsWeb3Rpc(config);
+  const web3 = useDeployFundsMutationsWeb3Rpc(config);
   const {
     taskState,
     currentAction,
@@ -41,21 +41,21 @@ export const useCreatePayForExpensesOrchestrator = ({
     resetTasks,
   } = useOrchestratorTasks({ authToken });
 
-  const { trigger: createPayForExpenses } = useSWRMutation(
-    'createPayForExpensesOrchestration',
-    async (_: string, { arg }: { arg: CreatePayForExpensesArg }) => {
+  const { trigger: createDeployFunds } = useSWRMutation(
+    'createDeployFundsOrchestration',
+    async (_: string, { arg }: { arg: CreateDeployFundsArg }) => {
       startTask('CREATE_WEB2_AGREEMENT');
       const inputWeb2 = schemaCreateAgreementWeb2.parse(arg);
-      const createdAgreement = await web2.createAgreement(inputWeb2);
+      const createAgreement = await web2.createAgreement(inputWeb2);
       completeTask('CREATE_WEB2_AGREEMENT');
 
-      const web2Slug = createdAgreement?.slug ?? web2.createdAgreement?.slug;
+      const web2Slug = createAgreement?.slug ?? web2.createdAgreement?.slug;
       const web3SpaceId = arg.web3SpaceId;
 
       try {
         if (config && typeof web3SpaceId === 'number') {
           startTask('CREATE_WEB3_AGREEMENT');
-          await web3.createPayForExpenses({
+          await web3.createDeployFunds({
             spaceId: web3SpaceId,
             payouts: arg.payouts,
             recipient: arg.recipient,
@@ -81,7 +81,7 @@ export const useCreatePayForExpensesOrchestrator = ({
       ? [
           web2.createdAgreement.slug,
           agreementFiles.files,
-          web3.createdPayForExpenses?.proposalId,
+          web3.createdDeployFunds?.proposalId,
           'linkingWeb2AndWeb3',
         ]
       : null,
@@ -113,8 +113,8 @@ export const useCreatePayForExpensesOrchestrator = ({
     () =>
       [
         web2.errorCreateAgreementMutation,
-        web3.errorCreatePayForExpenses,
-        web3.errorWaitPayForExpensesFromTransaction,
+        web3.errorCreateDeployFunds,
+        web3.errorWaitDeployFundsFromTransaction,
       ].filter(Boolean),
     [web2, web3],
   );
@@ -122,15 +122,14 @@ export const useCreatePayForExpensesOrchestrator = ({
   const reset = useCallback(() => {
     resetTasks();
     web2.resetCreateAgreementMutation();
-    web3.resetCreatePayForExpensesMutation();
+    web3.resetCreateDeployFundsMutation();
   }, [resetTasks, web2, web3]);
-
   return {
     reset,
-    createPayForExpenses,
+    createDeployFunds,
     agreement: {
       ...updatedWeb2Agreement,
-      ...web3.createdPayForExpenses,
+      ...web3.createdDeployFunds,
     },
     taskState,
     currentAction,

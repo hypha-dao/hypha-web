@@ -12,45 +12,45 @@ import {
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
-import { useCreatePayForExpensesOrchestrator } from '@hypha-platform/core/client';
+import { useCreateDeployFundsOrchestrator } from '@hypha-platform/core/client';
 import { useRouter } from 'next/navigation';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useConfig } from 'wagmi';
 
 type FormValues = z.infer<typeof schemaCreateAgreementForm>;
 
-const fullSchemaCreatePayForExpensesForm =
+const fullSchemaCreateDeployFundsForm =
   schemaCreateAgreementForm.extend(createAgreementFiles);
 
-interface CreatePayForExpensesFormProps {
+interface CreateDeployFundsFormProps {
   spaceId: number | undefined | null;
   web3SpaceId: number | undefined | null;
   successfulUrl: string;
   plugin: React.ReactNode;
 }
 
-export const CreatePayForExpensesForm = ({
+export const CreateDeployFundsForm = ({
   successfulUrl,
   spaceId,
   web3SpaceId,
   plugin,
-}: CreatePayForExpensesFormProps) => {
+}: CreateDeployFundsFormProps) => {
   const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
   const {
-    createPayForExpenses,
+    createDeployFunds,
     reset,
     currentAction,
     isError,
     isPending,
     progress,
     agreement: { slug: agreementSlug },
-  } = useCreatePayForExpensesOrchestrator({ authToken: jwt, config });
+  } = useCreateDeployFundsOrchestrator({ authToken: jwt, config });
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(fullSchemaCreatePayForExpensesForm),
+    resolver: zodResolver(fullSchemaCreateDeployFundsForm),
     defaultValues: {
       title: '',
       description: '',
@@ -82,7 +82,7 @@ export const CreatePayForExpensesForm = ({
       return;
     }
 
-    console.log('pay-for-expenses data', {
+    console.log('deploy-funds data', {
       ...data,
       spaceId: spaceId as number,
       web3SpaceId: typeof web3SpaceId === 'number' ? web3SpaceId : undefined,
@@ -93,7 +93,7 @@ export const CreatePayForExpensesForm = ({
       })),
     });
 
-    await createPayForExpenses({
+    await createDeployFunds({
       ...data,
       spaceId: spaceId as number,
       web3SpaceId: typeof web3SpaceId === 'number' ? web3SpaceId : undefined,
@@ -121,7 +121,6 @@ export const CreatePayForExpensesForm = ({
           <div>{currentAction}</div>
         )
       }
-      className="-m-9"
     >
       <Form {...form}>
         <form
@@ -136,7 +135,7 @@ export const CreatePayForExpensesForm = ({
             }}
             closeUrl={successfulUrl}
             isLoading={false}
-            label="Expenses"
+            label="Funding"
           />
           {plugin}
           <Separator />

@@ -3,9 +3,10 @@
 import { RecipientField } from '../components/common/recipient-field';
 import { TokenPayoutFieldArray } from '../components/common/token-payout-field-array';
 import { Separator } from '@hypha-platform/ui';
-import { tokens } from './tokens';
+import { useTokens } from '../hooks';
 
 export const PayForExpensesPlugin = () => {
+  const { tokens } = useTokens();
   return (
     <div className="flex flex-col gap-4">
       <RecipientField />
