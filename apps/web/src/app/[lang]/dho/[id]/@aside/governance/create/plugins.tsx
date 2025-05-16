@@ -8,7 +8,13 @@ export const PLUGINS = {
   'deploy-funds': DeployFundsPlugin,
 };
 
-export const Plugin = ({ name }: { name: keyof typeof PLUGINS }) => {
+type PluginProps = {
+  name: keyof typeof PLUGINS;
+  spaceSlug?: string;
+};
+
+export const Plugin = ({ name, spaceSlug }: PluginProps) => {
   const PluginCmp = PLUGINS[name];
-  return <PluginCmp />;
+
+  return <PluginCmp spaceSlug={spaceSlug || ''} />;
 };
