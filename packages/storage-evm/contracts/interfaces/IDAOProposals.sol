@@ -45,12 +45,24 @@ interface IDAOProposals {
       uint256 yesVotes,
       uint256 noVotes,
       uint256 totalVotingPowerAtSnapshot,
-      address creator
+      address creator,
+      Transaction[] memory transactions
     );
 
   function getProposalEndTime(
     uint256 _proposalId
   ) external view returns (uint256);
+
+  // New function to get the latest proposal ID
+  function getLatestProposalId() external view returns (uint256);
+
+  // New function to get executed proposals for a space
+  function getExecutedProposalsBySpace(
+    uint256 _spaceId
+  ) external view returns (uint256[] memory);
+
+  // New function to get all executed proposals
+  function getAllExecutedProposals() external view returns (uint256[] memory);
 
   // Events
   event ProposalCreated(
