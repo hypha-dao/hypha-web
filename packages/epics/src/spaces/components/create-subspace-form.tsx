@@ -1,7 +1,7 @@
 'use client';
 
 import { useConfig } from 'wagmi';
-import { CreateSpaceForm } from './create-space-form';
+import { SpaceForm } from './create-space-form';
 import { useParams, useRouter } from 'next/navigation';
 import { useJwt } from '@hypha-platform/core/client';
 import { useCreateSpaceOrchestrator } from '@hypha-platform/core/client';
@@ -56,11 +56,11 @@ export const CreateSubspaceForm = ({
       }
       className="-m-9"
     >
-      <CreateSpaceForm
+      <SpaceForm
         isLoading={false}
         creator={{ name: person?.name, surname: person?.surname }}
         closeUrl={`/${lang}/dho/${id}/membership`}
-        onCreate={createSpace}
+        onSubmit={createSpace}
         parentSpaceId={parentSpaceId as number}
       />
     </LoadingBackdrop>

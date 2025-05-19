@@ -5,20 +5,20 @@ export interface Space {
   logoUrl?: string | null;
   leadImage?: string | null;
   title: string;
-  description: string | null;
+  description: string;
   slug: string;
-  parentId?: number | null;
-  web3SpaceId?: number | null;
-  links?: string[] | null;
-  categories?: Category[] | null;
+  parentId?: number;
+  web3SpaceId?: number;
+  links: string[];
+  categories: Category[];
   subspaces?: Space[];
 }
 
 export interface CreateSpaceInput {
   title: string;
   description: string;
-  logoUrl?: string;
-  leadImage?: string;
+  logoUrl?: string | File;
+  leadImage?: string | File;
   slug?: string;
   parentId?: number;
   links?: string[];

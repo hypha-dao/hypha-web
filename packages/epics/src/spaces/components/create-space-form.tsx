@@ -41,41 +41,41 @@ export type CreateSpaceFormProps = {
     surname?: string;
   };
   parentSpaceId?: number | undefined;
-  onCreate: (values: z.infer<typeof schemaCreateSpaceForm>) => void;
+  defaultValues?: z.infer<typeof schemaCreateSpaceForm>;
+  submitLabel?: string;
+  submitLoadingLabel?: string;
+  onSubmit: (values: z.infer<typeof schemaCreateSpaceForm>) => void;
 };
 
-export const CreateSpaceForm = ({
+const DEFAULT_VALUES = {
+  title: '',
+  // TODO: rename to purpose
+  description: '',
+  logoUrl: undefined,
+  leadImage: undefined,
+  categories: [],
+  links: [],
+  parentId: undefined,
+};
+
+export const SpaceForm = ({
   creator,
   isLoading,
   closeUrl,
-  onCreate,
-  parentSpaceId,
+  onSubmit,
+  defaultValues = DEFAULT_VALUES,
+  submitLabel = 'Create',
+  submitLoadingLabel = 'Creating Space...',
 }: CreateSpaceFormProps) => {
+  console.debug('SpaceForm', { defaultValues });
   const form = useForm<z.infer<typeof schemaCreateSpaceForm>>({
     resolver: zodResolver(schemaCreateSpaceForm),
-    defaultValues: {
-      title: '',
-      // TODO: rename to purpose
-      description: '',
-      quorum: 80,
-      unity: 20,
-      votingPowerSource: 0,
-      joinMethod: 0,
-      exitMethod: 0,
-      logoUrl: undefined,
-      leadImage: undefined,
-      categories: [],
-      links: [],
-      parentId: parentSpaceId,
-    },
+    defaultValues,
   });
 
   return (
     <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onCreate)}
-        className={clsx('flex flex-col gap-5', isLoading && 'opacity-50')}
-      >
+      <form className={clsx('flex flex-col gap-5', isLoading && 'opacity-50')}>
         <div className="flex gap-5 justify-between">
           <div className="flex items-center gap-3">
             <FormField
@@ -85,8 +85,13 @@ export const CreateSpaceForm = ({
                 <FormItem>
                   <FormControl>
                     <UploadAvatar
-                      onChange={field.onChange}
+                      {...field}
                       maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
+                      defaultImage={
+                        typeof defaultValues?.logoUrl === 'string'
+                          ? defaultValues?.logoUrl
+                          : undefined
+                      }
                     />
                   </FormControl>
                   <FormMessage />
@@ -123,16 +128,6 @@ export const CreateSpaceForm = ({
               </div>
             </div>
           </div>
-          <Link href={closeUrl} scroll={false}>
-            <Button
-              variant="ghost"
-              colorVariant="neutral"
-              className="flex items-center"
-            >
-              Close
-              <RxCross1 className="ml-2" />
-            </Button>
-          </Link>
         </div>
         <FormField
           control={form.control}
@@ -141,8 +136,13 @@ export const CreateSpaceForm = ({
             <FormItem>
               <FormControl>
                 <UploadLeadImage
-                  onChange={field.onChange}
+                  {...field}
                   maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
+                  defaultImage={
+                    typeof defaultValues?.leadImage === 'string'
+                      ? defaultValues?.leadImage
+                      : undefined
+                  }
                 />
               </FormControl>
               <FormMessage />
@@ -202,11 +202,14 @@ export const CreateSpaceForm = ({
         />
         <div className="flex justify-end w-full">
           <Button
-            type="submit"
+            onClick={(e) => {
+              e.preventDefault();
+              form.handleSubmit(onSubmit)();
+            }}
             variant={isLoading ? 'outline' : 'default'}
             disabled={isLoading}
           >
-            {isLoading ? 'Creating Space...' : 'Create'}
+            {isLoading ? submitLoadingLabel : submitLabel}
           </Button>
         </div>
       </form>

@@ -1,6 +1,6 @@
 'use client';
 
-import { CreateSpaceForm, SidePanel } from '@hypha-platform/epics';
+import { SpaceForm, SidePanel, ButtonClose } from '@hypha-platform/epics';
 import { useParams, useRouter } from 'next/navigation';
 import React from 'react';
 import { Locale } from '@hypha-platform/i18n';
@@ -36,6 +36,7 @@ export default function AsideCreateSpacePage() {
 
   return progress !== 100 ? (
     <SidePanel>
+      <ButtonClose dropSegment="create" />
       <LoadingBackdrop
         progress={progress}
         isLoading={isPending}
@@ -51,13 +52,13 @@ export default function AsideCreateSpacePage() {
         }
         className="-m-9"
       >
-        <CreateSpaceForm
+        <SpaceForm
           creator={{
             name: person?.name,
             surname: person?.surname,
           }}
           closeUrl={`/${lang}/my-spaces`}
-          onCreate={createSpace}
+          onSubmit={createSpace}
           isLoading={isLoadingJwt}
         />
       </LoadingBackdrop>

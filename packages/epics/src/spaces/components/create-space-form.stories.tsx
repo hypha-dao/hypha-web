@@ -1,17 +1,17 @@
 import type { Meta, StoryObj } from '@storybook/react';
 
-import { CreateSpaceForm } from './create-space-form';
+import { SpaceForm } from './create-space-form';
 import { within } from '@storybook/testing-library';
 import { expect } from '@storybook/jest';
 
 const meta = {
-  component: CreateSpaceForm,
+  component: SpaceForm,
   title: 'Epics/Spaces/CreateSpaceForm',
-} satisfies Meta<typeof CreateSpaceForm>;
+} satisfies Meta<typeof SpaceForm>;
 
 export default meta;
 
-type Story = StoryObj<typeof CreateSpaceForm>;
+type Story = StoryObj<typeof SpaceForm>;
 
 export const Default: Story = {
   args: {

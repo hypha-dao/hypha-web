@@ -63,26 +63,34 @@ export const schemaCreateSpaceWeb3 = z.object(createSpaceWeb3Props);
 
 export const createSpaceFiles = {
   logoUrl: z
-    .instanceof(File)
-    .refine(
-      (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-      'File size must be less than 5MB',
-    )
-    .refine(
-      (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
-      'File must be an image (JPEG, PNG, GIF, WEBP)',
-    )
+    .union([
+      z.string().url('logoUrl URL must be a valid URL'),
+      z
+        .instanceof(File)
+        .refine(
+          (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
+          'File size must be less than 5MB',
+        )
+        .refine(
+          (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
+          'File must be an image (JPEG, PNG, GIF, WEBP)',
+        ),
+    ])
     .optional(),
   leadImage: z
-    .instanceof(File)
-    .refine(
-      (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-      'File size must be less than 5MB',
-    )
-    .refine(
-      (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
-      'File must be an image (JPEG, PNG, GIF, WEBP)',
-    )
+    .union([
+      z.string().url('Lead Image URL must be a valid URL'),
+      z
+        .instanceof(File)
+        .refine(
+          (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
+          'File size must be less than 5MB',
+        )
+        .refine(
+          (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
+          'File must be an image (JPEG, PNG, GIF, WEBP)',
+        ),
+    ])
     .optional(),
 };
 
@@ -98,5 +106,4 @@ export const schemaUpdateSpace = z.object(updateSpaceProps);
 
 export const schemaCreateSpace = z.object({
   ...createSpaceWeb2Props,
-  ...createSpaceWeb3Props,
 });

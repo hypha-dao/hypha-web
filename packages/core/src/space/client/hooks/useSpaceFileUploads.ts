@@ -14,7 +14,7 @@ export type UseSpaceFileUploadsReturn = {
         [K in keyof Files]: string;
       }
     | null;
-  upload: (fileInput: Files) => Promise<void>;
+  upload: (fileInput: Files) => Promise<{ [K in keyof Files]?: string }>;
 };
 
 export const useSpaceFileUploads = (
@@ -29,9 +29,20 @@ export const useSpaceFileUploads = (
 
   const handleUpload = React.useCallback(
     async (fileInput: Files) => {
+      const uploadedUrls: { [K in keyof Files]?: string } = {};
       const uploadPromises = Object.entries(fileInput).map(
         async ([key, file]) => {
           if (!file) return;
+
+          // If file is a string, set it directly as the URL
+          if (typeof file === 'string') {
+            setFiles((prev) => ({
+              ...prev,
+              [key]: file,
+            }));
+            uploadedUrls[key as keyof Files] = file;
+            return file;
+          }
 
           try {
             const result = await upload([file]);
@@ -40,6 +51,8 @@ export const useSpaceFileUploads = (
                 ...prev,
                 [key]: result[0].ufsUrl,
               }));
+              uploadedUrls[key as keyof Files] = result[0].ufsUrl;
+              return result[0].ufsUrl;
             }
           } catch (error) {
             console.error(`Failed to upload file for ${key}:`, error);
@@ -49,6 +62,7 @@ export const useSpaceFileUploads = (
       );
 
       await Promise.all(uploadPromises);
+      return uploadedUrls;
     },
     [upload],
   );
