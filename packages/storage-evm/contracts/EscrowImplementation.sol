@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import './storage/EscrowStorage.sol';
 import './interfaces/IEscrow.sol';
 
@@ -16,7 +16,7 @@ contract EscrowImplementation is
   EscrowStorage,
   IEscrow
 {
-  using SafeERC20Upgradeable for IERC20Upgradeable;
+  using SafeERC20 for IERC20;
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -114,7 +114,7 @@ contract EscrowImplementation is
     }
 
     // Transfer tokens from sender to this contract
-    IERC20Upgradeable token = IERC20Upgradeable(tokenToTransfer);
+    IERC20 token = IERC20(tokenToTransfer);
     token.safeTransferFrom(msg.sender, address(this), amountToTransfer);
 
     // Record the funds received
@@ -142,8 +142,8 @@ contract EscrowImplementation is
     escrow.isCompleted = true;
 
     // Transfer tokens to respective parties
-    IERC20Upgradeable tokenA = IERC20Upgradeable(escrow.tokenA);
-    IERC20Upgradeable tokenB = IERC20Upgradeable(escrow.tokenB);
+    IERC20 tokenA = IERC20(escrow.tokenA);
+    IERC20 tokenB = IERC20(escrow.tokenB);
 
     tokenA.safeTransfer(escrow.partyB, escrow.amountA);
     tokenB.safeTransfer(escrow.partyA, escrow.amountB);
@@ -199,7 +199,7 @@ contract EscrowImplementation is
     }
 
     // Transfer tokens back to the owner
-    IERC20Upgradeable token = IERC20Upgradeable(tokenToWithdraw);
+    IERC20 token = IERC20(tokenToWithdraw);
     token.safeTransfer(msg.sender, amountToWithdraw);
 
     // Update funds record

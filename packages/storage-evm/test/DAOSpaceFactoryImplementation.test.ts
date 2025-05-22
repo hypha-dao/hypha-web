@@ -3898,4 +3898,576 @@ describe('DAOSpaceFactoryImplementation', function () {
       expect(updatedSpaceDetails.votingPowerSource).to.equal(3);
     });
   });
+
+  // Add a new describe block for Escrow tests after all existing tests
+  describe('Escrow Functionality', function () {
+    // We'll create a new fixture for escrow tests
+    async function escrowFixture() {
+      // Get the base deployment first
+      const baseSetup = await loadFixture(deployFixture);
+
+      const {
+        regularTokenFactory,
+        owner,
+        voter1: partyA,
+        voter2: partyB,
+        other,
+      } = baseSetup;
+
+      // Deploy the Escrow contract
+      const EscrowImplementation = await ethers.getContractFactory(
+        'EscrowImplementation',
+      );
+      const escrow = await upgrades.deployProxy(
+        EscrowImplementation,
+        [owner.address], // Initial owner
+        { initializer: 'initialize', kind: 'uups' },
+      );
+
+      // Create a space for token testing
+      const spaceHelper = new SpaceHelper(baseSetup.daoSpaceFactory);
+      await spaceHelper.createDefaultSpace();
+      const spaceId = (await spaceHelper.contract.spaceCounter()).toString();
+
+      // Get the executor for the space
+      const executorAddress = await spaceHelper.contract.getSpaceExecutor(
+        spaceId,
+      );
+      await ethers.provider.send('hardhat_impersonateAccount', [
+        executorAddress,
+      ]);
+      const executorSigner = await ethers.getSigner(executorAddress);
+
+      // Fund the executor
+      await owner.sendTransaction({
+        to: executorAddress,
+        value: ethers.parseEther('1.0'),
+      });
+
+      // Deploy two tokens through the executor for testing escrow
+      // Only mark the first token as a voting token
+      const tokenADeployTx = await regularTokenFactory
+        .connect(executorSigner)
+        .deployToken(
+          spaceId,
+          'Escrow Token A',
+          'ETKA',
+          0, // maxSupply (0 = unlimited)
+          true, // transferable
+          true, // isVotingToken - this one will be the voting token
+        );
+
+      const tokenBDeployTx = await regularTokenFactory
+        .connect(executorSigner)
+        .deployToken(
+          spaceId,
+          'Escrow Token B',
+          'ETKB',
+          0, // maxSupply (0 = unlimited)
+          true, // transferable
+          false, // isVotingToken - set to false to avoid the conflict
+        );
+
+      // Get token addresses from events
+      const tokenAReceipt = await tokenADeployTx.wait();
+      const tokenBReceipt = await tokenBDeployTx.wait();
+
+      const tokenADeployedEvent = tokenAReceipt?.logs
+        .filter((log) => {
+          try {
+            return (
+              regularTokenFactory.interface.parseLog({
+                topics: log.topics as string[],
+                data: log.data,
+              })?.name === 'TokenDeployed'
+            );
+          } catch (_unused) {
+            return false;
+          }
+        })
+        .map((log) =>
+          regularTokenFactory.interface.parseLog({
+            topics: log.topics as string[],
+            data: log.data,
+          }),
+        )[0];
+
+      const tokenBDeployedEvent = tokenBReceipt?.logs
+        .filter((log) => {
+          try {
+            return (
+              regularTokenFactory.interface.parseLog({
+                topics: log.topics as string[],
+                data: log.data,
+              })?.name === 'TokenDeployed'
+            );
+          } catch (_unused) {
+            return false;
+          }
+        })
+        .map((log) =>
+          regularTokenFactory.interface.parseLog({
+            topics: log.topics as string[],
+            data: log.data,
+          }),
+        )[0];
+
+      if (!tokenADeployedEvent || !tokenBDeployedEvent) {
+        throw new Error('Token deployment event not found');
+      }
+
+      const tokenAAddress = tokenADeployedEvent.args.tokenAddress;
+      const tokenBAddress = tokenBDeployedEvent.args.tokenAddress;
+
+      // Get token contracts
+      const tokenA = await ethers.getContractAt(
+        'contracts/RegularSpaceToken.sol:SpaceToken',
+        tokenAAddress,
+      );
+      const tokenB = await ethers.getContractAt(
+        'contracts/RegularSpaceToken.sol:SpaceToken',
+        tokenBAddress,
+      );
+
+      // Mint tokens to partyA and partyB
+      await tokenA
+        .connect(executorSigner)
+        .mint(await partyA.getAddress(), ethers.parseEther('1000'));
+      await tokenB
+        .connect(executorSigner)
+        .mint(await partyB.getAddress(), ethers.parseEther('1000'));
+
+      return {
+        ...baseSetup,
+        escrow,
+        tokenA,
+        tokenB,
+        partyA,
+        partyB,
+        other,
+        executorSigner,
+      };
+    }
+
+    describe('Deployment & Initialization', function () {
+      it('Should set the right owner', async function () {
+        const { escrow, owner } = await loadFixture(escrowFixture);
+        expect(await escrow.owner()).to.equal(owner.address);
+      });
+
+      it('Should initialize with zero escrows', async function () {
+        const { escrow } = await loadFixture(escrowFixture);
+        expect(await escrow.escrowCounter()).to.equal(0);
+      });
+    });
+
+    describe('Creating Escrows', function () {
+      it('Should create an escrow with correct parameters', async function () {
+        const { escrow, tokenA, tokenB, partyA, partyB } = await loadFixture(
+          escrowFixture,
+        );
+
+        const amountA = ethers.parseEther('10');
+        const amountB = ethers.parseEther('20');
+
+        await expect(
+          escrow
+            .connect(partyA)
+            .createEscrow(
+              await partyB.getAddress(),
+              await tokenA.getAddress(),
+              await tokenB.getAddress(),
+              amountA,
+              amountB,
+              false,
+            ),
+        )
+          .to.emit(escrow, 'EscrowCreated')
+          .withArgs(
+            1,
+            await partyA.getAddress(),
+            await partyB.getAddress(),
+            await tokenA.getAddress(),
+            await tokenB.getAddress(),
+            amountA,
+            amountB,
+          );
+
+        // Get the escrow details
+        const escrowDetails = await escrow.getEscrow(1);
+        expect(escrowDetails.partyA).to.equal(await partyA.getAddress());
+        expect(escrowDetails.partyB).to.equal(await partyB.getAddress());
+        expect(escrowDetails.tokenA).to.equal(await tokenA.getAddress());
+        expect(escrowDetails.tokenB).to.equal(await tokenB.getAddress());
+        expect(escrowDetails.amountA).to.equal(amountA);
+        expect(escrowDetails.amountB).to.equal(amountB);
+        expect(escrowDetails.isPartyAFunded).to.be.false;
+        expect(escrowDetails.isPartyBFunded).to.be.false;
+        expect(escrowDetails.isCompleted).to.be.false;
+        expect(escrowDetails.isCancelled).to.be.false;
+      });
+
+      it('Should fail with invalid parameters', async function () {
+        const { escrow, tokenA, tokenB, partyA, partyB } = await loadFixture(
+          escrowFixture,
+        );
+
+        const amountA = ethers.parseEther('10');
+        const amountB = ethers.parseEther('20');
+
+        // Test with zero address for partyB
+        await expect(
+          escrow
+            .connect(partyA)
+            .createEscrow(
+              ethers.ZeroAddress,
+              await tokenA.getAddress(),
+              await tokenB.getAddress(),
+              amountA,
+              amountB,
+              false,
+            ),
+        ).to.be.revertedWith('Invalid party B address');
+
+        // Test with zero address for tokenA
+        await expect(
+          escrow
+            .connect(partyA)
+            .createEscrow(
+              await partyB.getAddress(),
+              ethers.ZeroAddress,
+              await tokenB.getAddress(),
+              amountA,
+              amountB,
+              false,
+            ),
+        ).to.be.revertedWith('Invalid token A address');
+
+        // Test with zero amount for amountA
+        await expect(
+          escrow
+            .connect(partyA)
+            .createEscrow(
+              await partyB.getAddress(),
+              await tokenA.getAddress(),
+              await tokenB.getAddress(),
+              0,
+              amountB,
+              false,
+            ),
+        ).to.be.revertedWith('Amount A must be greater than 0');
+      });
+
+      it('Should create an escrow with immediate funding', async function () {
+        const { escrow, tokenA, tokenB, partyA, partyB } = await loadFixture(
+          escrowFixture,
+        );
+
+        const amountA = ethers.parseEther('10');
+        const amountB = ethers.parseEther('20');
+
+        // Approve tokens for escrow
+        await tokenA
+          .connect(partyA)
+          .approve(await escrow.getAddress(), amountA);
+
+        // Create escrow with immediate funding
+        await escrow
+          .connect(partyA)
+          .createEscrow(
+            await partyB.getAddress(),
+            await tokenA.getAddress(),
+            await tokenB.getAddress(),
+            amountA,
+            amountB,
+            true,
+          );
+
+        // Get the escrow details
+        const escrowDetails = await escrow.getEscrow(1);
+        expect(escrowDetails.isPartyAFunded).to.be.true;
+        expect(escrowDetails.isPartyBFunded).to.be.false;
+      });
+    });
+
+    describe('Funding Escrows', function () {
+      it('Should allow parties to fund their part of the escrow and complete swap', async function () {
+        const { escrow, tokenA, tokenB, partyA, partyB } = await loadFixture(
+          escrowFixture,
+        );
+
+        const amountA = ethers.parseEther('10');
+        const amountB = ethers.parseEther('20');
+
+        // Create escrow
+        await escrow
+          .connect(partyA)
+          .createEscrow(
+            await partyB.getAddress(),
+            await tokenA.getAddress(),
+            await tokenB.getAddress(),
+            amountA,
+            amountB,
+            false,
+          );
+
+        // Get initial balances
+        const initialPartyATokenABalance = await tokenA.balanceOf(
+          await partyA.getAddress(),
+        );
+        const initialPartyBTokenBBalance = await tokenB.balanceOf(
+          await partyB.getAddress(),
+        );
+
+        // Approve tokens for escrow
+        await tokenA
+          .connect(partyA)
+          .approve(await escrow.getAddress(), amountA);
+        await tokenB
+          .connect(partyB)
+          .approve(await escrow.getAddress(), amountB);
+
+        // PartyA funds their part
+        await expect(escrow.connect(partyA).receiveFunds(1))
+          .to.emit(escrow, 'FundsReceived')
+          .withArgs(
+            1,
+            await partyA.getAddress(),
+            await tokenA.getAddress(),
+            amountA,
+          );
+
+        // Check escrow state after partyA funds
+        let escrowDetails = await escrow.getEscrow(1);
+        expect(escrowDetails.isPartyAFunded).to.be.true;
+        expect(escrowDetails.isPartyBFunded).to.be.false;
+        expect(escrowDetails.isCompleted).to.be.false;
+
+        // PartyB funds their part
+        await expect(escrow.connect(partyB).receiveFunds(1))
+          .to.emit(escrow, 'FundsReceived')
+          .withArgs(
+            1,
+            await partyB.getAddress(),
+            await tokenB.getAddress(),
+            amountB,
+          )
+          .to.emit(escrow, 'EscrowCompleted')
+          .withArgs(1, await partyA.getAddress(), await partyB.getAddress());
+
+        // Check escrow state after partyB funds (escrow should be completed)
+        escrowDetails = await escrow.getEscrow(1);
+        expect(escrowDetails.isPartyAFunded).to.be.true;
+        expect(escrowDetails.isPartyBFunded).to.be.true;
+        expect(escrowDetails.isCompleted).to.be.true;
+
+        // Check token balances after completion
+        expect(await tokenA.balanceOf(await partyA.getAddress())).to.equal(
+          initialPartyATokenABalance - amountA,
+        );
+        expect(await tokenB.balanceOf(await partyB.getAddress())).to.equal(
+          initialPartyBTokenBBalance - amountB,
+        );
+        expect(await tokenA.balanceOf(await partyB.getAddress())).to.equal(
+          amountA,
+        );
+        expect(await tokenB.balanceOf(await partyA.getAddress())).to.equal(
+          amountB,
+        );
+      });
+
+      it('Should prevent non-parties from funding an escrow', async function () {
+        const { escrow, tokenA, tokenB, partyA, partyB, other } =
+          await loadFixture(escrowFixture);
+
+        const amountA = ethers.parseEther('10');
+        const amountB = ethers.parseEther('20');
+
+        // Create escrow
+        await escrow
+          .connect(partyA)
+          .createEscrow(
+            await partyB.getAddress(),
+            await tokenA.getAddress(),
+            await tokenB.getAddress(),
+            amountA,
+            amountB,
+            false,
+          );
+
+        // Other address tries to fund the escrow
+        await expect(escrow.connect(other).receiveFunds(1)).to.be.revertedWith(
+          'Sender not part of this escrow',
+        );
+      });
+    });
+
+    describe('Cancellation and Withdrawal', function () {
+      it('Should allow parties to cancel an escrow and withdraw funds', async function () {
+        const { escrow, tokenA, tokenB, partyA, partyB } = await loadFixture(
+          escrowFixture,
+        );
+
+        const amountA = ethers.parseEther('10');
+        const amountB = ethers.parseEther('20');
+
+        // Create escrow
+        await escrow
+          .connect(partyA)
+          .createEscrow(
+            await partyB.getAddress(),
+            await tokenA.getAddress(),
+            await tokenB.getAddress(),
+            amountA,
+            amountB,
+            false,
+          );
+
+        // Approve and fund
+        await tokenA
+          .connect(partyA)
+          .approve(await escrow.getAddress(), amountA);
+        await escrow.connect(partyA).receiveFunds(1);
+
+        const balanceBeforeCancel = await tokenA.balanceOf(
+          await partyA.getAddress(),
+        );
+
+        // Cancel escrow
+        await expect(escrow.connect(partyA).cancelEscrow(1))
+          .to.emit(escrow, 'EscrowCancelled')
+          .withArgs(1, await partyA.getAddress());
+
+        // Check escrow state
+        let escrowDetails = await escrow.getEscrow(1);
+        expect(escrowDetails.isCancelled).to.be.true;
+
+        // PartyA withdraws their funds
+        await expect(escrow.connect(partyA).withdrawFromCancelled(1))
+          .to.emit(escrow, 'FundsWithdrawn')
+          .withArgs(
+            1,
+            await partyA.getAddress(),
+            await tokenA.getAddress(),
+            amountA,
+          );
+
+        // Check escrow state
+        escrowDetails = await escrow.getEscrow(1);
+        expect(escrowDetails.isPartyAFunded).to.be.false;
+
+        // Check token balance after withdrawal
+        const balanceAfterWithdraw = await tokenA.balanceOf(
+          await partyA.getAddress(),
+        );
+        expect(balanceAfterWithdraw).to.equal(balanceBeforeCancel + amountA);
+      });
+
+      it('Should prevent cancelling already completed escrow', async function () {
+        const { escrow, tokenA, tokenB, partyA, partyB } = await loadFixture(
+          escrowFixture,
+        );
+
+        const amountA = ethers.parseEther('10');
+        const amountB = ethers.parseEther('20');
+
+        // Create and fully fund escrow
+        await escrow
+          .connect(partyA)
+          .createEscrow(
+            await partyB.getAddress(),
+            await tokenA.getAddress(),
+            await tokenB.getAddress(),
+            amountA,
+            amountB,
+            false,
+          );
+
+        await tokenA
+          .connect(partyA)
+          .approve(await escrow.getAddress(), amountA);
+        await tokenB
+          .connect(partyB)
+          .approve(await escrow.getAddress(), amountB);
+        await escrow.connect(partyA).receiveFunds(1);
+        await escrow.connect(partyB).receiveFunds(1);
+
+        // Try to cancel completed escrow
+        await expect(escrow.connect(partyA).cancelEscrow(1)).to.be.revertedWith(
+          'Escrow already completed',
+        );
+      });
+    });
+
+    describe('Multiple Escrows and Edge Cases', function () {
+      it('Should handle multiple escrows between the same parties', async function () {
+        const { escrow, tokenA, tokenB, partyA, partyB } = await loadFixture(
+          escrowFixture,
+        );
+
+        // Create first escrow
+        await escrow
+          .connect(partyA)
+          .createEscrow(
+            await partyB.getAddress(),
+            await tokenA.getAddress(),
+            await tokenB.getAddress(),
+            ethers.parseEther('10'),
+            ethers.parseEther('20'),
+            false,
+          );
+
+        // Create second escrow
+        await escrow
+          .connect(partyA)
+          .createEscrow(
+            await partyB.getAddress(),
+            await tokenA.getAddress(),
+            await tokenB.getAddress(),
+            ethers.parseEther('5'),
+            ethers.parseEther('15'),
+            false,
+          );
+
+        // Check both escrows exist
+        expect(await escrow.escrowCounter()).to.equal(2);
+        expect(await escrow.escrowExists(1)).to.be.true;
+        expect(await escrow.escrowExists(2)).to.be.true;
+
+        // Verify details of second escrow
+        const escrow2Details = await escrow.getEscrow(2);
+        expect(escrow2Details.partyA).to.equal(await partyA.getAddress());
+        expect(escrow2Details.partyB).to.equal(await partyB.getAddress());
+        expect(escrow2Details.amountA).to.equal(ethers.parseEther('5'));
+        expect(escrow2Details.amountB).to.equal(ethers.parseEther('15'));
+      });
+
+      it('Should verify escrowExists function correctly identifies valid escrows', async function () {
+        const { escrow, tokenA, tokenB, partyA, partyB } = await loadFixture(
+          escrowFixture,
+        );
+
+        // Check non-existent escrow
+        expect(await escrow.escrowExists(1)).to.be.false;
+
+        // Create an escrow
+        await escrow
+          .connect(partyA)
+          .createEscrow(
+            await partyB.getAddress(),
+            await tokenA.getAddress(),
+            await tokenB.getAddress(),
+            ethers.parseEther('10'),
+            ethers.parseEther('20'),
+            false,
+          );
+
+        // Check escrow now exists
+        expect(await escrow.escrowExists(1)).to.be.true;
+
+        // Non-existent escrow ID still doesn't exist
+        expect(await escrow.escrowExists(999)).to.be.false;
+      });
+    });
+  });
 });

@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
-import '@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol';
 import '../interfaces/IEscrow.sol';
 
 contract EscrowStorage is Initializable {
@@ -20,4 +19,4 @@ contract EscrowStorage is Initializable {
    * variables without shifting down storage in the inheritance chain.
    */
   uint256[49] private __gap;
-} 
+}
