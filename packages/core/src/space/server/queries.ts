@@ -68,8 +68,8 @@ export const findSpaceById = async (
   { id }: { id: number },
   { db }: DbConfig,
 ) => {
-  const results = await db.select().from(spaces).where(eq(spaces.id, id));
-  return results[0] || null;
+  const [space] = await db.select().from(spaces).where(eq(spaces.id, id));
+  return space ? space : null;
 };
 
 type FindSpaceBySlugInput = { slug: string };
@@ -78,7 +78,7 @@ export const findSpaceBySlug = async (
   { slug }: FindSpaceBySlugInput,
   { db }: DbConfig,
 ): Promise<(Space & { subspaces: Space[] }) | null> => {
-  const space = await db.query.spaces.findFirst({
+  const response = await db.query.spaces.findFirst({
     where: (spaces, { eq }) => eq(spaces.slug, slug),
     with: {
       subspaces: true,
@@ -87,7 +87,12 @@ export const findSpaceBySlug = async (
     },
   });
 
-  return space ?? null;
+  if (!response) return null;
+
+  return {
+    ...response,
+    subspaces: response.subspaces ?? [],
+  };
 };
 
 type FindAllSpacesByMemberIdInput = {

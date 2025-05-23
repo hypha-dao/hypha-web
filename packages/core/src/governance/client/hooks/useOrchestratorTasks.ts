@@ -9,7 +9,8 @@ export type TaskName =
   | 'CREATE_WEB2_AGREEMENT'
   | 'CREATE_WEB3_AGREEMENT'
   | 'UPLOAD_FILES'
-  | 'LINK_WEB2_AND_WEB3_AGREEMENT';
+  | 'LINK_WEB2_AND_WEB3_AGREEMENT'
+  | 'UPDATE_WEB2_SPACE';
 
 export type TaskState = {
   [K in TaskName]: {
@@ -28,8 +29,9 @@ export enum TaskStatus {
 export const taskActionDescriptions: Record<TaskName, string> = {
   CREATE_WEB2_AGREEMENT: 'Creating Web2 agreement...',
   CREATE_WEB3_AGREEMENT: 'Creating Web3 agreement...',
-  UPLOAD_FILES: 'Uploading Agreement Files...',
+  UPLOAD_FILES: 'Uploading Files...',
   LINK_WEB2_AND_WEB3_AGREEMENT: 'Linking Web2 and Web3 agreements',
+  UPDATE_WEB2_SPACE: 'Updating Web2 space...',
 };
 
 export const initialTaskState: TaskState = {
@@ -37,6 +39,7 @@ export const initialTaskState: TaskState = {
   CREATE_WEB3_AGREEMENT: { status: TaskStatus.IDLE },
   UPLOAD_FILES: { status: TaskStatus.IDLE },
   LINK_WEB2_AND_WEB3_AGREEMENT: { status: TaskStatus.IDLE },
+  UPDATE_WEB2_SPACE: { status: TaskStatus.IDLE },
 };
 
 export type ProgressAction =

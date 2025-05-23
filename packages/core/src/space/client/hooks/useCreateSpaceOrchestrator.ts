@@ -202,7 +202,13 @@ export const useCreateSpaceOrchestrator = ({
       completeTask('CREATE_WEB2_SPACE');
 
       startTask('CREATE_WEB3_SPACE');
-      const inputCreateSpaceWeb3 = schemaCreateSpaceWeb3.parse(arg);
+      const inputCreateSpaceWeb3 = schemaCreateSpaceWeb3.parse({
+        quorum: 80,
+        unity: 20,
+        votingPowerSource: 0,
+        joinMethod: 0,
+        exitMethod: 0,
+      });
       await web3.createSpace(inputCreateSpaceWeb3);
       completeTask('CREATE_WEB3_SPACE');
 

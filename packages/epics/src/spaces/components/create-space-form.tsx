@@ -41,39 +41,45 @@ export type CreateSpaceFormProps = {
     surname?: string;
   };
   parentSpaceId?: number | undefined;
-  onCreate: (values: z.infer<typeof schemaCreateSpaceForm>) => void;
+  defaultValues?: z.infer<typeof schemaCreateSpaceForm>;
+  submitLabel?: string;
+  submitLoadingLabel?: string;
+  onSubmit: (values: z.infer<typeof schemaCreateSpaceForm>) => void;
 };
 
-export const CreateSpaceForm = ({
+const DEFAULT_VALUES = {
+  title: '',
+  description: '',
+  logoUrl: '',
+  leadImage: '',
+  categories: [],
+  links: [],
+  parentId: null,
+};
+
+export const SpaceForm = ({
   creator,
   isLoading,
   closeUrl,
-  onCreate,
+  onSubmit,
   parentSpaceId,
+  defaultValues = {
+    ...DEFAULT_VALUES,
+    parentId: parentSpaceId,
+  },
+  submitLabel = 'Create',
+  submitLoadingLabel = 'Creating Space...',
 }: CreateSpaceFormProps) => {
+  console.debug('SpaceForm', { defaultValues });
   const form = useForm<z.infer<typeof schemaCreateSpaceForm>>({
     resolver: zodResolver(schemaCreateSpaceForm),
-    defaultValues: {
-      title: '',
-      // TODO: rename to purpose
-      description: '',
-      quorum: 80,
-      unity: 20,
-      votingPowerSource: 2,
-      joinMethod: 0,
-      exitMethod: 0,
-      logoUrl: undefined,
-      leadImage: undefined,
-      categories: [],
-      links: [],
-      parentId: parentSpaceId,
-    },
+    defaultValues,
   });
 
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit(onCreate)}
+        onSubmit={form.handleSubmit(onSubmit)}
         className={clsx('flex flex-col gap-5', isLoading && 'opacity-50')}
       >
         <div className="flex gap-5 justify-between">
@@ -85,8 +91,13 @@ export const CreateSpaceForm = ({
                 <FormItem>
                   <FormControl>
                     <UploadAvatar
-                      onChange={field.onChange}
+                      {...field}
                       maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
+                      defaultImage={
+                        typeof defaultValues?.logoUrl === 'string'
+                          ? defaultValues?.logoUrl
+                          : undefined
+                      }
                     />
                   </FormControl>
                   <FormMessage />
@@ -141,8 +152,13 @@ export const CreateSpaceForm = ({
             <FormItem>
               <FormControl>
                 <UploadLeadImage
-                  onChange={field.onChange}
+                  {...field}
                   maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
+                  defaultImage={
+                    typeof defaultValues?.leadImage === 'string'
+                      ? defaultValues?.leadImage
+                      : undefined
+                  }
                 />
               </FormControl>
               <FormMessage />
@@ -206,7 +222,7 @@ export const CreateSpaceForm = ({
             variant={isLoading ? 'outline' : 'default'}
             disabled={isLoading}
           >
-            {isLoading ? 'Creating Space...' : 'Create'}
+            {isLoading ? submitLoadingLabel : submitLabel}
           </Button>
         </div>
       </form>

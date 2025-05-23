@@ -1,26 +1,20 @@
+'use client';
+
 import { CreateSubspaceForm, SidePanel } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
-import { createSpaceService } from '@core/space/server';
 import { getDhoPathGovernance } from '../../../../@tab/governance/constants';
+import { useSpaceBySlug } from '@hypha-platform/core/client';
+import { useParams } from 'next/navigation';
 
-type PageProps = {
-  params: Promise<{ lang: Locale; id: string }>;
-};
-
-export default async function CreateSubspacePage({ params }: PageProps) {
-  const { lang, id } = await params;
-
-  const spaceService = createSpaceService();
-
-  const spaceFromDb = await spaceService.getBySlug({ slug: id });
-
-  const spaceId = spaceFromDb.id;
+export default function CreateSubspacePage() {
+  const { id: spaceSlug, lang } = useParams<{ id: string; lang: Locale }>();
+  const { space } = useSpaceBySlug(spaceSlug);
 
   return (
     <SidePanel>
       <CreateSubspaceForm
-        successfulUrl={getDhoPathGovernance(lang as Locale, id)}
-        parentSpaceId={spaceId}
+        successfulUrl={getDhoPathGovernance(lang as Locale, spaceSlug)}
+        parentSpaceId={space?.id}
       />
     </SidePanel>
   );

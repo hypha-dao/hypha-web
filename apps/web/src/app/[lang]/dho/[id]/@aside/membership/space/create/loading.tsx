@@ -1,6 +1,6 @@
 'use client';
 
-import { CreateSpaceForm, SidePanel } from '@hypha-platform/epics';
+import { SpaceForm, SidePanel } from '@hypha-platform/epics';
 import React from 'react';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 
@@ -13,13 +13,13 @@ export default function AsideCreateSubspacePage() {
         message={<></>}
         className="-m-9"
       >
-        <CreateSpaceForm
+        <SpaceForm
           creator={{
             name: '',
             surname: '',
           }}
           closeUrl={''}
-          onCreate={() => {
+          onSubmit={() => {
             console.log('onCreate');
           }}
           isLoading={true}
