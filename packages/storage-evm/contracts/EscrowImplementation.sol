@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import './storage/EscrowStorage.sol';
@@ -13,6 +14,7 @@ contract EscrowImplementation is
   Initializable,
   OwnableUpgradeable,
   UUPSUpgradeable,
+  ReentrancyGuardUpgradeable,
   EscrowStorage,
   IEscrow
 {
@@ -26,6 +28,7 @@ contract EscrowImplementation is
   function initialize(address initialOwner) public initializer {
     __Ownable_init(initialOwner);
     __UUPSUpgradeable_init();
+    __ReentrancyGuard_init();
     escrowCounter = 0;
   }
 
@@ -40,7 +43,7 @@ contract EscrowImplementation is
     uint256 _amountA,
     uint256 _amountB,
     bool _sendFundsNow
-  ) external override returns (uint256) {
+  ) external override nonReentrant returns (uint256) {
     require(_partyB != address(0), 'Invalid party B address');
     require(_tokenA != address(0), 'Invalid token A address');
     require(_tokenB != address(0), 'Invalid token B address');
@@ -81,7 +84,9 @@ contract EscrowImplementation is
     return escrowId;
   }
 
-  function receiveFunds(uint256 _escrowId) external override returns (bool) {
+  function receiveFunds(
+    uint256 _escrowId
+  ) external override nonReentrant returns (bool) {
     return _receiveFunds(_escrowId);
   }
 
@@ -172,7 +177,7 @@ contract EscrowImplementation is
 
   function withdrawFromCancelled(
     uint256 _escrowId
-  ) external override returns (bool) {
+  ) external override nonReentrant returns (bool) {
     require(escrowExists(_escrowId), 'Escrow does not exist');
 
     EscrowData storage escrow = escrows[_escrowId];

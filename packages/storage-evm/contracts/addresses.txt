@@ -10,6 +10,7 @@ JoinMethodDirectory deployed to: 0xaa86924F59852f48dD5185469D146BdcF8448D56
 
 Deploying OpenJoin...
 OpenJoin deployed to: 0x957e7671Db34773d7d28FedA03Ca762BA3611dc0
+ID 0
 
 Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying DAOProposals...
@@ -37,6 +38,7 @@ Voting power source added successfully with ID: 2
 Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying TokenBalanceJoin...
 TokenBalanceJoin deployed to: 0x41cD69A3a3715B16598415df336a8Cc533CCAF76
+ID 1
 
 Deploying DecayingTokenFactory with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying DecayingTokenFactory...
