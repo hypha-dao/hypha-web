@@ -25,8 +25,9 @@ export const SETTINGS_ACTIONS = [
     title: 'Voting Method',
     description:
       'Select and configure the voting method for decision-making within your space.',
-    href: '#',
+    href: 'create/change-voting-method',
     icon: <Pencil2Icon />,
+    baseTab: 'governance',
   },
   {
     group: 'Membership',
