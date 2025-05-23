@@ -397,18 +397,31 @@ contract DAOSpaceFactoryImplementation is
   // New function to change voting power source method
   function changeVotingMethod(
     uint256 _spaceId,
-    uint256 _newVotingPowerSource
+    uint256 _newVotingPowerSource,
+    uint256 _newUnity,
+    uint256 _newQuorum
   ) external onlySpaceExecutor(_spaceId) {
     require(_newVotingPowerSource > 0, 'Invalid voting power source');
+    require(_newQuorum > 0 && _newQuorum <= 100, 'Invalid quorum');
+    require(_newUnity > 0 && _newUnity <= 100, 'Invalid unity');
 
     Space storage space = spaces[_spaceId];
     uint256 oldVotingPowerSource = space.votingPowerSource;
+    uint256 oldUnity = space.unity;
+    uint256 oldQuorum = space.quorum;
+
     space.votingPowerSource = _newVotingPowerSource;
+    space.unity = _newUnity;
+    space.quorum = _newQuorum;
 
     emit VotingMethodChanged(
       _spaceId,
       oldVotingPowerSource,
-      _newVotingPowerSource
+      _newVotingPowerSource,
+      oldUnity,
+      _newUnity,
+      oldQuorum,
+      _newQuorum
     );
   }
 
