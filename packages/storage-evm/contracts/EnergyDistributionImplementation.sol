@@ -280,50 +280,40 @@ contract EnergyDistributionImplementation is
     uint256 allocated
   ) internal {
     uint256 remainingToConsume = consumed;
-    int256 totalCost = 0;
+    uint256 remainingUnused = allocated - consumed;
+    int256 unusedValue = 0;
 
-    // Burn consumed amount from collective consumption (only tokens belonging to this member)
-    for (
-      uint256 i = 0;
-      i < collectiveConsumption.length && remainingToConsume > 0;
-      i++
-    ) {
+    // Calculate value of unused tokens and burn consumed tokens
+    for (uint256 i = 0; i < collectiveConsumption.length; i++) {
       if (
         collectiveConsumption[i].owner == memberAddr &&
         collectiveConsumption[i].quantity > 0
       ) {
-        uint256 burnAmount = remainingToConsume >
-          collectiveConsumption[i].quantity
-          ? collectiveConsumption[i].quantity
-          : remainingToConsume;
+        uint256 availableTokens = collectiveConsumption[i].quantity;
 
-        totalCost += int256(burnAmount * collectiveConsumption[i].price);
-        collectiveConsumption[i].quantity -= burnAmount;
-        remainingToConsume -= burnAmount;
+        // First, burn tokens for consumption
+        if (remainingToConsume > 0) {
+          uint256 burnAmount = remainingToConsume > availableTokens
+            ? availableTokens
+            : remainingToConsume;
+          collectiveConsumption[i].quantity -= burnAmount;
+          remainingToConsume -= burnAmount;
+          availableTokens -= burnAmount;
+        }
+
+        // Then, calculate value of remaining unused tokens
+        if (remainingUnused > 0 && availableTokens > 0) {
+          uint256 unusedAmount = remainingUnused > availableTokens
+            ? availableTokens
+            : remainingUnused;
+          unusedValue += int256(unusedAmount * collectiveConsumption[i].price);
+          remainingUnused -= unusedAmount;
+        }
       }
     }
 
-    // Calculate positive cash credit for unused tokens
-    uint256 surplus = allocated - consumed;
-    int256 surplusValue = 0;
-
-    // Value unused tokens at their original price
-    for (uint256 i = 0; i < collectiveConsumption.length && surplus > 0; i++) {
-      if (
-        collectiveConsumption[i].owner == memberAddr &&
-        collectiveConsumption[i].quantity > 0
-      ) {
-        uint256 valueAmount = surplus > collectiveConsumption[i].quantity
-          ? collectiveConsumption[i].quantity
-          : surplus;
-
-        surplusValue += int256(valueAmount * collectiveConsumption[i].price);
-        surplus -= valueAmount;
-      }
-    }
-
-    // Positive balance: value of unused tokens minus cost of consumed tokens
-    cashCreditBalances[memberAddr] = surplusValue - totalCost;
+    // Positive balance: value of unused tokens
+    cashCreditBalances[memberAddr] = unusedValue;
   }
 
   function _processOverConsumption(
@@ -331,10 +321,10 @@ contract EnergyDistributionImplementation is
     uint256 consumed,
     uint256 allocated
   ) internal {
-    int256 totalCost = 0;
     uint256 remainingToConsume = consumed;
+    int256 extraCost = 0;
 
-    // First, burn all allocated tokens for this member
+    // First, burn all allocated tokens for this member (these are "free")
     for (
       uint256 i = 0;
       i < collectiveConsumption.length && remainingToConsume > 0;
@@ -349,13 +339,12 @@ contract EnergyDistributionImplementation is
           ? collectiveConsumption[i].quantity
           : remainingToConsume;
 
-        totalCost += int256(burnAmount * collectiveConsumption[i].price);
         collectiveConsumption[i].quantity -= burnAmount;
         remainingToConsume -= burnAmount;
       }
     }
 
-    // Then burn additional from collective consumption (any owner, starting from cheapest)
+    // Then calculate cost for additional consumption from collective pool
     for (
       uint256 i = 0;
       i < collectiveConsumption.length && remainingToConsume > 0;
@@ -367,14 +356,14 @@ contract EnergyDistributionImplementation is
           ? collectiveConsumption[i].quantity
           : remainingToConsume;
 
-        totalCost += int256(burnAmount * collectiveConsumption[i].price);
+        extraCost += int256(burnAmount * collectiveConsumption[i].price);
         collectiveConsumption[i].quantity -= burnAmount;
         remainingToConsume -= burnAmount;
       }
     }
 
-    // Negative balance: total cost of all consumed tokens
-    cashCreditBalances[memberAddr] = -totalCost;
+    // Negative balance: cost of extra consumption
+    cashCreditBalances[memberAddr] = -extraCost;
   }
 
   function _sortCollectiveConsumptionByPrice() internal {
