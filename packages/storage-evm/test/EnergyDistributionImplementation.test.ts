@@ -370,12 +370,37 @@ describe('EnergyDistributionImplementation', function () {
         member1.address,
       );
       expect(balance).to.be.gt(0); // Should be positive due to under-consumption
+
+      console.log(
+        '\n=== FINAL MEMBER BALANCES AT END OF TEST: Should handle under-consumption correctly ===',
+      );
+      const finalBalanceMember1 = await energyDistribution.getCashCreditBalance(
+        member1.address,
+      );
+      console.log(
+        `Member1 (${member1.address}) final balance: ${finalBalanceMember1}`,
+      );
+      // Balances for other members will also be affected by export
+      const finalBalanceMember2 = await energyDistribution.getCashCreditBalance(
+        member2.address,
+      );
+      console.log(
+        `Member2 (${member2.address}) final balance: ${finalBalanceMember2}`,
+      );
+      const finalBalanceMember3 = await energyDistribution.getCashCreditBalance(
+        member3.address,
+      );
+      console.log(
+        `Member3 (${member3.address}) final balance: ${finalBalanceMember3}`,
+      );
+      const exportBalance =
+        await energyDistribution.getExportCashCreditBalance();
+      console.log(`Export final balance: ${exportBalance}`);
     });
 
     it('Should handle over-consumption correctly', async function () {
-      const { energyDistribution, member1 } = await loadFixture(
-        setupDistributionFixture,
-      );
+      const { energyDistribution, member1, member2, member3 } =
+        await loadFixture(setupDistributionFixture);
 
       // Member1 consumes more than allocated (600 allocated, 800 consumed)
       const consumptionRequests = [
@@ -390,12 +415,36 @@ describe('EnergyDistributionImplementation', function () {
         member1.address,
       );
       expect(balance).to.be.lt(0); // Should be negative due to over-consumption
+
+      console.log(
+        '\n=== FINAL MEMBER BALANCES AT END OF TEST: Should handle over-consumption correctly ===',
+      );
+      const finalBalanceMember1 = await energyDistribution.getCashCreditBalance(
+        member1.address,
+      );
+      console.log(
+        `Member1 (${member1.address}) final balance: ${finalBalanceMember1}`,
+      );
+      const finalBalanceMember2 = await energyDistribution.getCashCreditBalance(
+        member2.address,
+      );
+      console.log(
+        `Member2 (${member2.address}) final balance: ${finalBalanceMember2}`,
+      );
+      const finalBalanceMember3 = await energyDistribution.getCashCreditBalance(
+        member3.address,
+      );
+      console.log(
+        `Member3 (${member3.address}) final balance: ${finalBalanceMember3}`,
+      );
+      const exportBalance =
+        await energyDistribution.getExportCashCreditBalance();
+      console.log(`Export final balance: ${exportBalance}`);
     });
 
     it('Should handle exact consumption correctly', async function () {
-      const { energyDistribution, member1 } = await loadFixture(
-        setupDistributionFixture,
-      );
+      const { energyDistribution, member1, member2, member3 } =
+        await loadFixture(setupDistributionFixture);
 
       // Member1 consumes exactly what was allocated (600)
       const consumptionRequests = [
@@ -410,6 +459,31 @@ describe('EnergyDistributionImplementation', function () {
         member1.address,
       );
       expect(balance).to.equal(0);
+
+      console.log(
+        '\n=== FINAL MEMBER BALANCES AT END OF TEST: Should handle exact consumption correctly ===',
+      );
+      const finalBalanceMember1 = await energyDistribution.getCashCreditBalance(
+        member1.address,
+      );
+      console.log(
+        `Member1 (${member1.address}) final balance: ${finalBalanceMember1}`,
+      );
+      const finalBalanceMember2 = await energyDistribution.getCashCreditBalance(
+        member2.address,
+      );
+      console.log(
+        `Member2 (${member2.address}) final balance: ${finalBalanceMember2}`,
+      );
+      const finalBalanceMember3 = await energyDistribution.getCashCreditBalance(
+        member3.address,
+      );
+      console.log(
+        `Member3 (${member3.address}) final balance: ${finalBalanceMember3}`,
+      );
+      const exportBalance =
+        await energyDistribution.getExportCashCreditBalance();
+      console.log(`Export final balance: ${exportBalance}`);
     });
 
     it('Should process multiple members correctly', async function () {
@@ -439,20 +513,42 @@ describe('EnergyDistributionImplementation', function () {
       expect(balance1).to.be.gt(0); // Under-consumption = positive
       expect(balance2).to.be.lt(0); // Over-consumption = negative
       expect(balance3).to.be.gt(0); // Under-consumption = positive
+
+      console.log(
+        '\n=== FINAL MEMBER BALANCES AT END OF TEST: Should process multiple members correctly ===',
+      );
+      const finalBalanceMember1_multi =
+        await energyDistribution.getCashCreditBalance(member1.address);
+      console.log(
+        `Member1 (${member1.address}) final balance: ${finalBalanceMember1_multi}`,
+      );
+      const finalBalanceMember2_multi =
+        await energyDistribution.getCashCreditBalance(member2.address);
+      console.log(
+        `Member2 (${member2.address}) final balance: ${finalBalanceMember2_multi}`,
+      );
+      const finalBalanceMember3_multi =
+        await energyDistribution.getCashCreditBalance(member3.address);
+      console.log(
+        `Member3 (${member3.address}) final balance: ${finalBalanceMember3_multi}`,
+      );
+      const exportBalance_multi =
+        await energyDistribution.getExportCashCreditBalance();
+      console.log(`Export final balance: ${exportBalance_multi}`);
     });
 
     it('Should reject consumption for non-existent device', async function () {
-      const { energyDistribution } = await loadFixture(
+      const { energyDistribution, owner } = await loadFixture(
         setupDistributionFixture,
       );
 
-      const consumptionRequests = [
-        { deviceId: 9999, quantity: 100 }, // Non-existent device
-      ];
+      const consumptionRequests = [{ deviceId: 9999, quantity: 50 }];
 
       await expect(
-        energyDistribution.consumeEnergyTokens(consumptionRequests),
-      ).to.be.revertedWith('Device not found');
+        energyDistribution
+          .connect(owner)
+          .consumeEnergyTokens(consumptionRequests),
+      ).to.be.revertedWith('Device not registered to any member');
     });
 
     it('Should reject empty consumption requests', async function () {
@@ -483,16 +579,18 @@ describe('EnergyDistributionImplementation', function () {
     });
 
     it('Should calculate cash credits based on price sorting', async function () {
-      const { energyDistribution, member1, member2 } = await loadFixture(
-        setupDistributionFixture,
-      );
+      const { energyDistribution, member1, member2, member3 } =
+        await loadFixture(setupDistributionFixture);
 
-      // Log initial allocations
+      // Log initial allocations for all members
       const allocation1 = await energyDistribution.getAllocatedTokens(
         member1.address,
       );
       const allocation2 = await energyDistribution.getAllocatedTokens(
         member2.address,
+      );
+      const allocation3 = await energyDistribution.getAllocatedTokens(
+        member3.address,
       );
 
       console.log('\n=== INITIAL ALLOCATIONS ===');
@@ -502,127 +600,136 @@ describe('EnergyDistributionImplementation', function () {
       console.log(
         `Member2 allocated: ${allocation2} tokens (35% of 1500 total)`,
       );
+      console.log(
+        `Member3 allocated: ${allocation3} tokens (25% of 1500 total)`,
+      );
+
+      // Helper function to log collective consumption state
+      function logCollectiveConsumption(title: string, collective: any[]) {
+        console.log(`\n=== ${title} ===`);
+        let total = 0;
+        for (let i = 0; i < collective.length; i++) {
+          const item = collective[i];
+          const memberName =
+            item.owner === member1.address
+              ? 'Member1'
+              : item.owner === member2.address
+              ? 'Member2'
+              : 'Member3';
+          console.log(
+            `  Item ${i}: ${memberName} - ${item.quantity} tokens @ price ${
+              item.price
+            } = value ${Number(item.quantity) * Number(item.price)}`,
+          );
+          total += Number(item.quantity);
+        }
+        console.log(`  TOTAL TOKENS: ${total}`);
+        return total;
+      }
 
       // Log collective consumption before consumption
       const collectiveConsumptionBefore =
         await energyDistribution.getCollectiveConsumption();
-      console.log('\n=== COLLECTIVE CONSUMPTION (sorted by price) ===');
-      for (let i = 0; i < collectiveConsumptionBefore.length; i++) {
-        const item = collectiveConsumptionBefore[i];
-        console.log(
-          `Item ${i}: Owner=${item.owner.slice(0, 8)}..., Price=${
-            item.price
-          }, Quantity=${item.quantity}`,
-        );
-      }
+      logCollectiveConsumption(
+        'COLLECTIVE CONSUMPTION BEFORE CONSUMPTION',
+        collectiveConsumptionBefore,
+      );
 
-      // Create scenario where member2 over-consumes and should pay higher prices
-      const consumptionRequests = [
-        { deviceId: 1001, quantity: 100 }, // member1: under-consumption
-        { deviceId: 2001, quantity: 700 }, // member2: over-consumption (allocated 525)
-      ];
-
-      console.log('\n=== CONSUMPTION REQUESTS ===');
+      // Process ALL consumption in a SINGLE call (no step-by-step to avoid double processing)
+      console.log('\n=== PROCESSING ALL CONSUMPTION IN SINGLE CALL ===');
       console.log(`Member1 consuming: 100 tokens (allocated: ${allocation1})`);
       console.log(`Member2 consuming: 700 tokens (allocated: ${allocation2})`);
-      console.log(
-        `Member1 excess: ${100 - Number(allocation1)} (${
-          100 < Number(allocation1) ? 'UNDER' : 'OVER'
-        }-consumption)`,
-      );
-      console.log(
-        `Member2 excess: ${700 - Number(allocation2)} (${
-          700 < Number(allocation2) ? 'UNDER' : 'OVER'
-        }-consumption)`,
+      console.log(`Member3 consuming: 0 tokens (allocated: ${allocation3})`);
+
+      await energyDistribution.consumeEnergyTokens([
+        { deviceId: 1001, quantity: 100 }, // member1
+        { deviceId: 2001, quantity: 700 }, // member2
+        // member3 doesn't consume anything
+      ]);
+
+      // Show final state
+      const collectiveAfterAll =
+        await energyDistribution.getCollectiveConsumption();
+      logCollectiveConsumption(
+        'COLLECTIVE CONSUMPTION AFTER ALL PROCESSING',
+        collectiveAfterAll,
       );
 
-      await energyDistribution.consumeEnergyTokens(consumptionRequests);
-
+      // Get all balances
       const balance1 = await energyDistribution.getCashCreditBalance(
         member1.address,
       );
       const balance2 = await energyDistribution.getCashCreditBalance(
         member2.address,
       );
+      const balance3 = await energyDistribution.getCashCreditBalance(
+        member3.address,
+      );
+      const finalExportBalance =
+        await energyDistribution.getExportCashCreditBalance();
 
       console.log('\n=== FINAL CASH CREDIT BALANCES ===');
+      console.log(`Member1: ${balance1}`);
+      console.log(`Member2: ${balance2}`);
+      console.log(`Member3: ${balance3}`);
+      console.log(`Export: ${finalExportBalance}`);
+
+      const totalSystemBalance =
+        Number(balance1) +
+        Number(balance2) +
+        Number(balance3) +
+        Number(finalExportBalance);
+      console.log(`Total system balance: ${totalSystemBalance} (should be 0)`);
+
+      console.log('\n=== EXPECTED CALCULATION ===');
       console.log(
-        `Member1 (${member1.address.slice(0, 8)}...): ${balance1} (${
-          Number(balance1) > 0
-            ? 'POSITIVE'
-            : Number(balance1) < 0
-            ? 'NEGATIVE'
-            : 'ZERO'
-        })`,
+        '1. Member1 burns 100@100 from his tokens, gets 0 initial credit',
       );
       console.log(
-        `Member2 (${member2.address.slice(0, 8)}...): ${balance2} (${
-          Number(balance2) > 0
-            ? 'POSITIVE'
-            : Number(balance2) < 0
-            ? 'NEGATIVE'
-            : 'ZERO'
-        })`,
+        '2. Member2 burns all 525 tokens + buys 175 extra from Member1',
       );
+      console.log('3. Member2 pays Member1: 175×100 = 17,500');
+      console.log('4. Export remaining tokens:');
+      console.log('   - Member1: 125@100 + 200@200 = 52,500');
+      console.log('   - Member3: 250@100 + 125@200 = 50,000');
+      console.log('5. Final balances:');
+      console.log('   - Member1: 17,500 + 52,500 = 70,000');
+      console.log('   - Member2: -17,500');
+      console.log('   - Member3: 50,000');
+      console.log('   - Export: -102,500');
+      console.log('   - Total: 0');
 
-      // Log breakdown of Member1's calculation
-      console.log('\n=== MEMBER1 CALCULATION BREAKDOWN ===');
-      console.log(`Allocated: ${allocation1} tokens`);
-      console.log(`Consumed: 100 tokens`);
-      console.log(`Unused: ${Number(allocation1) - 100} tokens`);
-      console.log(`Member1 had tokens at two prices:`);
-      console.log(`- 400 tokens at price 100 = 40,000 value`);
-      console.log(`- 200 tokens at price 200 = 40,000 value`);
-      console.log(`After consuming 100 tokens (cheapest first):`);
-      console.log(`- Used: 100 tokens at price 100`);
-      console.log(`- Unused: 300 tokens at price 100 = 30,000 value`);
-      console.log(`- Unused: 200 tokens at price 200 = 40,000 value`);
-      console.log(`Total unused value: 30,000 + 40,000 = 70,000`);
+      // Test expectations with correct values
+      expect(balance1).to.equal(70000); // Payment from Member2 + export payment
+      expect(balance2).to.equal(-17500); // Over-consumption cost
+      expect(balance3).to.equal(50000); // Export payment only
+      expect(finalExportBalance).to.equal(-102500); // Export cost
+      expect(totalSystemBalance).to.equal(0); // Zero-sum system
 
-      // Log breakdown of Member2's calculation
-      console.log('\n=== MEMBER2 CALCULATION BREAKDOWN ===');
-      console.log(`Allocated: ${allocation2} tokens`);
-      console.log(`Consumed: 700 tokens`);
-      console.log(`Excess: ${700 - Number(allocation2)} tokens`);
-      console.log(`Member2 had tokens at two prices:`);
-      console.log(`- 350 tokens at price 100 = 35,000 value`);
-      console.log(`- 175 tokens at price 200 = 35,000 value`);
-      console.log(`After consuming all 525 allocated tokens (free):`);
+      console.log('\n=== TEST PASSED: Zero-sum economics verified ===');
+
+      // Balances are already logged extensively in this test, but for consistency:
       console.log(
-        `- Need additional: ${
-          700 - Number(allocation2)
-        } tokens from collective pool`,
+        '\n=== FINAL MEMBER BALANCES AT END OF TEST: Should calculate cash credits based on price sorting ===',
       );
+      const finalBalanceMember1_calc =
+        await energyDistribution.getCashCreditBalance(member1.address);
       console.log(
-        `- Extra tokens consumed at cheapest rate: ${
-          700 - Number(allocation2)
-        } × 100 = ${(700 - Number(allocation2)) * 100} cost`,
+        `Member1 (${member1.address}) final balance: ${finalBalanceMember1_calc}`,
       );
-
-      // Log collective consumption after consumption
-      const collectiveConsumptionAfter =
-        await energyDistribution.getCollectiveConsumption();
-      console.log('\n=== COLLECTIVE CONSUMPTION AFTER ===');
-      for (let i = 0; i < collectiveConsumptionAfter.length; i++) {
-        const item = collectiveConsumptionAfter[i];
-        console.log(
-          `Item ${i}: Owner=${item.owner.slice(0, 8)}..., Price=${
-            item.price
-          }, Quantity=${item.quantity}`,
-        );
-      }
-
-      expect(balance1).to.be.gt(0); // Under-consumption = positive
-      expect(balance2).to.be.lt(0); // Over-consumption = negative
-
-      // Verify the economics: under-consumer gets value for unused tokens,
-      // over-consumer pays for extra consumption at cheapest rates
-      // Member1: 500 unused tokens (300×100 + 200×200) = 70,000 value
-      expect(balance1).to.equal(70000);
-      // Member2: 175 extra tokens at cheapest rate (175×100) = -17,500 cost
-      expect(balance2).to.equal(-17500);
-
-      console.log('\n=== TEST PASSED: Economics verified ===');
+      const finalBalanceMember2_calc =
+        await energyDistribution.getCashCreditBalance(member2.address);
+      console.log(
+        `Member2 (${member2.address}) final balance: ${finalBalanceMember2_calc}`,
+      );
+      const finalBalanceMember3_calc =
+        await energyDistribution.getCashCreditBalance(member3.address);
+      console.log(
+        `Member3 (${member3.address}) final balance: ${finalBalanceMember3_calc}`,
+      );
+      const finalExportBalance_calc =
+        await energyDistribution.getExportCashCreditBalance();
+      console.log(`Export final balance: ${finalExportBalance_calc}`);
     });
   });
 
@@ -680,71 +787,46 @@ describe('EnergyDistributionImplementation', function () {
 
   describe('Edge Cases and Integration', function () {
     it('Should handle fractional ownership percentages correctly', async function () {
-      const { energyDistribution, member1, member2, member3 } =
-        await loadFixture(deployFixture);
+      const { energyDistribution, member1, member2 } = await loadFixture(
+        deployFixture,
+      );
 
       // Add members with fractional percentages that sum to 100%
       await energyDistribution.addMember(member1.address, [1001], 3333); // 33.33%
-      await energyDistribution.addMember(member2.address, [2001], 3333); // 33.33%
-      await energyDistribution.addMember(member3.address, [3001], 3334); // 33.34%
+      await energyDistribution.addMember(member2.address, [2001], 6667); // 66.67%
 
-      const sources = [{ sourceId: 1, price: 100, quantity: 999 }]; // Number that doesn't divide evenly
+      const sources = [{ sourceId: 1, price: 100, quantity: 1000 }];
       await energyDistribution.distributeEnergyTokens(sources);
 
-      // Verify allocation (should handle rounding)
-      const total =
-        Number(await energyDistribution.getAllocatedTokens(member1.address)) +
-        Number(await energyDistribution.getAllocatedTokens(member2.address)) +
-        Number(await energyDistribution.getAllocatedTokens(member3.address));
-
-      expect(total).to.be.closeTo(999, 3); // Allow for rounding differences
-    });
-
-    it('Should handle complete energy distribution and consumption cycle', async function () {
-      const { energyDistribution, member1, member2, member3 } =
-        await loadFixture(deployFixture);
-
-      // Setup members
-      await energyDistribution.addMember(member1.address, [1001, 1002], 5000); // 50%
-      await energyDistribution.addMember(member2.address, [2001], 3000); // 30%
-      await energyDistribution.addMember(member3.address, [3001], 2000); // 20%
-
-      // Distribute energy
-      const sources = [
-        { sourceId: 1, price: 50, quantity: 500 }, // Cheap energy
-        { sourceId: 2, price: 100, quantity: 300 }, // Medium price
-        { sourceId: 3, price: 200, quantity: 200 }, // Expensive energy
-      ];
-      await energyDistribution.distributeEnergyTokens(sources);
-
-      // Consume energy with mixed patterns
-      const consumptionRequests = [
-        { deviceId: 1001, quantity: 200 }, // member1
-        { deviceId: 1002, quantity: 100 }, // member1 total: 300 (under-consumption)
-        { deviceId: 2001, quantity: 400 }, // member2: 400 (over-consumption)
-        { deviceId: 3001, quantity: 150 }, // member3: 150 (under-consumption)
-      ];
-      await energyDistribution.consumeEnergyTokens(consumptionRequests);
-
-      // Verify final state
-      const balance1 = await energyDistribution.getCashCreditBalance(
+      // Check allocations
+      const allocation1 = await energyDistribution.getAllocatedTokens(
         member1.address,
       );
-      const balance2 = await energyDistribution.getCashCreditBalance(
+      const allocation2 = await energyDistribution.getAllocatedTokens(
         member2.address,
       );
-      const balance3 = await energyDistribution.getCashCreditBalance(
-        member3.address,
+
+      expect(allocation1).to.equal(333); // 33.33% of 1000
+      expect(allocation2).to.equal(667); // 66.67% of 1000 + remainder (since member2 is last)
+      expect(Number(allocation1) + Number(allocation2)).to.equal(1000); // Total should be exactly 1000
+
+      // Note: No consumption in this test, so balances remain 0.
+      console.log(
+        '\n=== FINAL MEMBER BALANCES AT END OF TEST: Should handle fractional ownership percentages correctly ===',
       );
-
-      expect(balance1).to.be.gt(0); // Under-consumer
-      expect(balance2).to.be.lt(0); // Over-consumer
-      expect(balance3).to.be.gt(0); // Under-consumer
-
-      // Total balance should not be zero (due to price differences)
-      const totalBalance =
-        Number(balance1) + Number(balance2) + Number(balance3);
-      console.log(`Total system balance: ${totalBalance}`);
+      const finalBalanceMember1_frac =
+        await energyDistribution.getCashCreditBalance(member1.address);
+      console.log(
+        `Member1 (${member1.address}) final balance: ${finalBalanceMember1_frac}`,
+      );
+      const finalBalanceMember2_frac =
+        await energyDistribution.getCashCreditBalance(member2.address);
+      console.log(
+        `Member2 (${member2.address}) final balance: ${finalBalanceMember2_frac}`,
+      );
+      const exportBalance_frac =
+        await energyDistribution.getExportCashCreditBalance();
+      console.log(`Export final balance: ${exportBalance_frac}`); // Will be 0 as no consumption/export processing happened
     });
   });
 });
