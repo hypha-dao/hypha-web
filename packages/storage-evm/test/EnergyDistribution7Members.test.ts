@@ -69,12 +69,18 @@ describe('EnergyDistribution7Members', function () {
     await energyDistribution.addMember(member7.address, [7001, 7002], 1000); // 10%
     // Total: 100%
 
-    // Distribute energy tokens with mixed prices
+    // Configure battery
+    await energyDistribution.configureBattery(150, 2000); // Price: 150, Max capacity: 2000
+
+    // Set export device ID
+    await energyDistribution.setExportDeviceId(9999);
+
+    // Distribute energy tokens with mixed prices, starting with battery state 0
     const sources = [
-      { sourceId: 1, price: 100, quantity: 1000 }, // Cheap energy
-      { sourceId: 2, price: 200, quantity: 500 }, // Expensive energy
+      { sourceId: 1, price: 100, quantity: 1000 }, // Local production (cheap energy)
+      { sourceId: 2, price: 200, quantity: 500 }, // Import (expensive energy)
     ];
-    await energyDistribution.distributeEnergyTokens(sources);
+    await energyDistribution.distributeEnergyTokens(sources, 0); // Battery state starts at 0
 
     return {
       energyDistribution,
@@ -108,6 +114,188 @@ describe('EnergyDistribution7Members', function () {
       const collectiveConsumption =
         await energyDistribution.getCollectiveConsumption();
       expect(collectiveConsumption).to.have.lengthOf(0);
+    });
+
+    it('Should initialize battery state correctly', async function () {
+      const { energyDistribution } = await loadFixture(deployFixture);
+      const batteryInfo = await energyDistribution.getBatteryInfo();
+      expect(batteryInfo.currentState).to.equal(0);
+      expect(batteryInfo.configured).to.equal(false);
+    });
+
+    it('Should initialize export device ID to 0', async function () {
+      const { energyDistribution } = await loadFixture(deployFixture);
+      expect(await energyDistribution.getExportDeviceId()).to.equal(0);
+    });
+  });
+
+  describe('Battery Management', function () {
+    it('Should configure battery successfully', async function () {
+      const { energyDistribution } = await loadFixture(deployFixture);
+
+      await energyDistribution.configureBattery(150, 2000);
+
+      const batteryInfo = await energyDistribution.getBatteryInfo();
+      expect(batteryInfo.price).to.equal(150);
+      expect(batteryInfo.maxCapacity).to.equal(2000);
+      expect(batteryInfo.configured).to.equal(true);
+      expect(batteryInfo.currentState).to.equal(0);
+    });
+
+    it('Should reject invalid battery configuration', async function () {
+      const { energyDistribution } = await loadFixture(deployFixture);
+
+      await expect(
+        energyDistribution.configureBattery(0, 2000),
+      ).to.be.revertedWith('Battery price must be greater than 0');
+
+      await expect(
+        energyDistribution.configureBattery(150, 0),
+      ).to.be.revertedWith('Battery max capacity must be greater than 0');
+    });
+
+    it('Should only allow owner to configure battery', async function () {
+      const { energyDistribution, other } = await loadFixture(deployFixture);
+
+      await expect(
+        energyDistribution.connect(other).configureBattery(150, 2000),
+      ).to.be.revertedWithCustomError(
+        energyDistribution,
+        'OwnableUnauthorizedAccount',
+      );
+    });
+
+    it('Should handle battery charging (deduct from local production)', async function () {
+      const { energyDistribution, member1 } = await loadFixture(deployFixture);
+
+      await energyDistribution.addMember(member1.address, [1001], 10000); // 100%
+      await energyDistribution.configureBattery(150, 2000);
+
+      // First distribution with battery state 0
+      const sources1 = [
+        { sourceId: 1, price: 100, quantity: 1000 }, // Local production
+      ];
+      await energyDistribution.distributeEnergyTokens(sources1, 0);
+
+      // Check initial allocation
+      const allocation1 = await energyDistribution.getAllocatedTokens(
+        member1.address,
+      );
+      expect(allocation1).to.equal(1000);
+
+      // Second distribution with battery charging (state increases to 300)
+      const sources2 = [
+        { sourceId: 1, price: 100, quantity: 1000 }, // Local production
+      ];
+      await energyDistribution.distributeEnergyTokens(sources2, 300); // Battery charges with 300 units
+
+      // Check that allocation decreased by battery charging amount
+      const allocation2 = await energyDistribution.getAllocatedTokens(
+        member1.address,
+      );
+      expect(allocation2).to.equal(700); // 1000 - 300 (charged to battery)
+
+      // Check battery state
+      const batteryInfo = await energyDistribution.getBatteryInfo();
+      expect(batteryInfo.currentState).to.equal(300);
+    });
+
+    it('Should handle battery discharging (add as production source)', async function () {
+      const { energyDistribution, member1 } = await loadFixture(deployFixture);
+
+      await energyDistribution.addMember(member1.address, [1001], 10000); // 100%
+      await energyDistribution.configureBattery(150, 2000);
+
+      // First distribution with battery charging
+      const sources1 = [
+        { sourceId: 1, price: 100, quantity: 1000 }, // Local production
+      ];
+      await energyDistribution.distributeEnergyTokens(sources1, 500); // Charge battery to 500
+
+      // Second distribution with battery discharging
+      const sources2 = [
+        { sourceId: 1, price: 100, quantity: 800 }, // Local production
+      ];
+      await energyDistribution.distributeEnergyTokens(sources2, 200); // Discharge battery from 500 to 200
+
+      // Check allocation includes battery discharge (300 units at price 150)
+      const allocation = await energyDistribution.getAllocatedTokens(
+        member1.address,
+      );
+      expect(allocation).to.equal(1100); // 800 (local) + 300 (battery discharge)
+
+      // Check collective consumption includes battery discharge
+      const collectiveConsumption =
+        await energyDistribution.getCollectiveConsumption();
+      const batteryDischarge = collectiveConsumption.find(
+        (item) => Number(item.price) === 150 && Number(item.quantity) === 300,
+      );
+      expect(batteryDischarge).to.not.be.undefined;
+
+      // Check battery state
+      const batteryInfo = await energyDistribution.getBatteryInfo();
+      expect(batteryInfo.currentState).to.equal(200);
+    });
+
+    it('Should reject battery discharge when not configured', async function () {
+      const { energyDistribution, member1 } = await loadFixture(deployFixture);
+
+      await energyDistribution.addMember(member1.address, [1001], 10000);
+
+      // Try to discharge battery without configuration
+      const sources = [{ sourceId: 1, price: 100, quantity: 1000 }];
+
+      // This should work fine (no discharge)
+      await energyDistribution.distributeEnergyTokens(sources, 0);
+
+      // But this should fail (trying to discharge from 0 to -100, which means discharging 100)
+      // Actually, this won't fail because we're not going negative. Let me test a proper scenario.
+
+      // First charge without configuration (this should work as charging just reduces local production)
+      await energyDistribution.distributeEnergyTokens(sources, 100);
+
+      // Now try to discharge without configuration (this should fail)
+      await expect(
+        energyDistribution.distributeEnergyTokens(sources, 50),
+      ).to.be.revertedWith('Battery must be configured before discharging');
+    });
+
+    it('Should reject insufficient local production for battery charging', async function () {
+      const { energyDistribution, member1 } = await loadFixture(deployFixture);
+
+      await energyDistribution.addMember(member1.address, [1001], 10000);
+      await energyDistribution.configureBattery(150, 2000);
+
+      const sources = [
+        { sourceId: 1, price: 100, quantity: 300 }, // Local production: only 300
+      ];
+
+      // Try to charge battery with 500 units (more than available local production)
+      await expect(
+        energyDistribution.distributeEnergyTokens(sources, 500),
+      ).to.be.revertedWith(
+        'Insufficient local production for battery charging',
+      );
+    });
+  });
+
+  describe('Export Device Management', function () {
+    it('Should set export device ID successfully', async function () {
+      const { energyDistribution } = await loadFixture(deployFixture);
+
+      await energyDistribution.setExportDeviceId(9999);
+      expect(await energyDistribution.getExportDeviceId()).to.equal(9999);
+    });
+
+    it('Should only allow owner to set export device ID', async function () {
+      const { energyDistribution, other } = await loadFixture(deployFixture);
+
+      await expect(
+        energyDistribution.connect(other).setExportDeviceId(9999),
+      ).to.be.revertedWithCustomError(
+        energyDistribution,
+        'OwnableUnauthorizedAccount',
+      );
     });
   });
 
@@ -332,7 +520,7 @@ describe('EnergyDistribution7Members', function () {
       const sources = [{ sourceId: 1, price: 100, quantity: 1000 }];
 
       await expect(
-        energyDistribution.distributeEnergyTokens(sources),
+        energyDistribution.distributeEnergyTokens(sources, 0),
       ).to.be.revertedWith('Total ownership must be 100%');
     });
 
@@ -340,7 +528,7 @@ describe('EnergyDistribution7Members', function () {
       const { energyDistribution } = await loadFixture(setup7MembersFixture);
 
       await expect(
-        energyDistribution.distributeEnergyTokens([]),
+        energyDistribution.distributeEnergyTokens([], 0),
       ).to.be.revertedWith('No sources provided');
     });
 
@@ -348,7 +536,7 @@ describe('EnergyDistribution7Members', function () {
       const { energyDistribution } = await loadFixture(setup7MembersFixture);
 
       const newSources = [{ sourceId: 3, price: 150, quantity: 2000 }];
-      await energyDistribution.distributeEnergyTokens(newSources);
+      await energyDistribution.distributeEnergyTokens(newSources, 0);
 
       const collectiveConsumption =
         await energyDistribution.getCollectiveConsumption();
@@ -363,7 +551,7 @@ describe('EnergyDistribution7Members', function () {
       const sources = [{ sourceId: 1, price: 100, quantity: 1000 }];
 
       await expect(
-        energyDistribution.connect(other).distributeEnergyTokens(sources),
+        energyDistribution.connect(other).distributeEnergyTokens(sources, 0),
       ).to.be.revertedWithCustomError(
         energyDistribution,
         'OwnableUnauthorizedAccount',
@@ -384,7 +572,7 @@ describe('EnergyDistribution7Members', function () {
       const balance = await energyDistribution.getCashCreditBalance(
         member1.address,
       );
-      expect(balance).to.be.gte(0); // Should get credit for unused tokens via export
+      expect(balance).to.be.gte(0); // Should get credit for unused tokens
 
       console.log(
         '\n=== FINAL MEMBER BALANCES AT END OF TEST: Should handle under-consumption correctly ===',
@@ -456,6 +644,40 @@ describe('EnergyDistribution7Members', function () {
       console.log(`Export final balance: ${exportBalance}`);
     });
 
+    it('Should handle export consumption correctly', async function () {
+      const { energyDistribution, member1 } = await loadFixture(
+        setup7MembersFixture,
+      );
+
+      // First, some regular consumption
+      await energyDistribution.consumeEnergyTokens([
+        { deviceId: 1001, quantity: 100 }, // member1 under-consumes
+        { deviceId: 9999, quantity: 200 }, // export 200 units
+      ]);
+
+      const balance = await energyDistribution.getCashCreditBalance(
+        member1.address,
+      );
+      const exportBalance =
+        await energyDistribution.getExportCashCreditBalance();
+
+      expect(balance).to.be.gte(0); // Under-consumer should get credit
+      expect(exportBalance).to.be.lt(0); // Export should cost money
+
+      console.log(
+        '\n=== FINAL MEMBER BALANCES AT END OF TEST: Should handle export consumption correctly ===',
+      );
+      const finalBalanceMember1 = await energyDistribution.getCashCreditBalance(
+        member1.address,
+      );
+      console.log(
+        `Member1 (${member1.address}) final balance: ${finalBalanceMember1}`,
+      );
+      const finalExportBalance =
+        await energyDistribution.getExportCashCreditBalance();
+      console.log(`Export final balance: ${finalExportBalance}`);
+    });
+
     it('Should process multiple members correctly', async function () {
       const { energyDistribution, member1, member2 } = await loadFixture(
         setup7MembersFixture,
@@ -501,7 +723,7 @@ describe('EnergyDistribution7Members', function () {
         setup7MembersFixture,
       );
 
-      const consumptionRequests = [{ deviceId: 9999, quantity: 50 }];
+      const consumptionRequests = [{ deviceId: 8888, quantity: 50 }]; // Non-export, non-member device
 
       await expect(
         energyDistribution
@@ -665,41 +887,6 @@ describe('EnergyDistribution7Members', function () {
         `Member7 consuming: 80 tokens (allocated: ${allocation7}) - UNDER`,
       );
 
-      // Add detailed logging before export processing
-      console.log('\n=== BEFORE EXPORT PROCESSING ===');
-
-      let totalRemainingTokens = 0;
-      let totalRemainingValue = 0;
-      const collectiveConsumption =
-        await energyDistribution.getCollectiveConsumption();
-
-      for (let i = 0; i < collectiveConsumption.length; i++) {
-        const item = collectiveConsumption[i];
-        if (Number(item.quantity) > 0) {
-          console.log(
-            `  Item ${i}: ${item.owner} - ${item.quantity} tokens @ price ${
-              item.price
-            } = value ${Number(item.quantity) * Number(item.price)}`,
-          );
-          totalRemainingTokens += Number(item.quantity);
-          totalRemainingValue += Number(item.quantity) * Number(item.price);
-        }
-      }
-      console.log(`Total remaining tokens: ${totalRemainingTokens}`);
-      console.log(`Total remaining value: ${totalRemainingValue}`);
-
-      // Check member balances before export
-      console.log('\n=== DETAILED CONSUMPTION PROCESSING ===');
-
-      // Log before any consumption
-      const beforeConsumption =
-        await energyDistribution.getCollectiveConsumption();
-      let totalBeforeConsumption = 0;
-      for (let i = 0; i < beforeConsumption.length; i++) {
-        totalBeforeConsumption += Number(beforeConsumption[i].quantity);
-      }
-      console.log(`Total tokens before consumption: ${totalBeforeConsumption}`);
-
       // Process all consumption in a single call (as originally designed)
       const consumptionTx = await energyDistribution.consumeEnergyTokens([
         { deviceId: 1001, quantity: 100 }, // Member1
@@ -709,30 +896,11 @@ describe('EnergyDistribution7Members', function () {
         { deviceId: 5001, quantity: 300 }, // Member5
         { deviceId: 6001, quantity: 0 }, // Member6
         { deviceId: 7001, quantity: 80 }, // Member7
+        { deviceId: 9999, quantity: 100 }, // Export remaining tokens
       ]);
 
-      // Log after consumption but before processing
-      const afterConsumption =
-        await energyDistribution.getCollectiveConsumption();
-      let totalAfterConsumption = 0;
-      console.log('\n=== COLLECTIVE CONSUMPTION AFTER CONSUMPTION ===');
-      for (let i = 0; i < afterConsumption.length; i++) {
-        if (Number(afterConsumption[i].quantity) > 0) {
-          console.log(
-            `  Item ${i}: ${afterConsumption[i].owner} - ${afterConsumption[i].quantity} tokens @ price ${afterConsumption[i].price}`,
-          );
-        }
-        totalAfterConsumption += Number(afterConsumption[i].quantity);
-      }
-      console.log(`Total tokens after consumption: ${totalAfterConsumption}`);
-      console.log(
-        `Tokens actually consumed: ${
-          totalBeforeConsumption - totalAfterConsumption
-        }`,
-      );
-
-      // Check member balances immediately after consumption
-      console.log('\n=== MEMBER BALANCES IMMEDIATELY AFTER CONSUMPTION ===');
+      // Check member balances after consumption
+      console.log('\n=== MEMBER BALANCES AFTER CONSUMPTION ===');
       let netAfterConsumption = 0;
       for (const member of [
         member1,
@@ -760,55 +928,17 @@ describe('EnergyDistribution7Members', function () {
         `Export balance after consumption: ${exportAfterConsumption}`,
       );
       console.log(
-        `Balance after consumption (should be 0): ${
+        `Total balance (should be 0): ${
           netAfterConsumption + Number(exportAfterConsumption)
         }`,
       );
 
-      // Calculate what the balances SHOULD be based on actual consumption
-      console.log('\n=== EXPECTED VS ACTUAL CALCULATIONS ===');
-      console.log('Expected logic:');
-      console.log(
-        '- Member1: consumed 100 of 300 allocated → 200 unused tokens',
-      );
-      console.log(
-        '- Member2: consumed 400 of 270 allocated → owes for 130 over-consumed tokens',
-      );
-      console.log(
-        '- Member3: consumed 240 of 240 allocated → exact, should be 0',
-      );
-      console.log(
-        '- Member4: consumed 50 of 210 allocated → 160 unused tokens',
-      );
-      console.log(
-        '- Member5: consumed 300 of 180 allocated → owes for 120 over-consumed tokens',
-      );
-      console.log('- Member6: consumed 0 of 150 allocated → 150 unused tokens');
-      console.log('- Member7: consumed 80 of 150 allocated → 70 unused tokens');
-
-      // Check if there are any events that might explain the discrepancy
-      const receipt = await consumptionTx.wait();
-      if (receipt) {
-        console.log('\n=== CONSUMPTION TRANSACTION EVENTS ===');
-        for (const log of receipt.logs) {
-          try {
-            const parsedLog = energyDistribution.interface.parseLog(log);
-            if (parsedLog) {
-              console.log(`Event: ${parsedLog.name}`);
-              console.log(`Args:`, parsedLog.args);
-            }
-          } catch (e) {
-            // Skip unparseable logs
-          }
-        }
-      }
-
-      // Verify zero-sum system (should be exactly 0 with the new distribution logic)
+      // Verify zero-sum system
       expect(netAfterConsumption + Number(exportAfterConsumption)).to.equal(0);
 
       // Verify consumption patterns
       expect(exportAfterConsumption).to.be.lt(0); // Export cost
-      expect(netAfterConsumption).to.be.gte(0); // Under-consumer (export payment possible)
+      expect(netAfterConsumption).to.be.gt(0); // Net positive for members (export payment)
 
       console.log(
         '\n=== TEST PASSED: 7-member zero-sum economics verified ===',
@@ -926,7 +1056,7 @@ describe('EnergyDistribution7Members', function () {
       expect(await energyDistribution.getDeviceOwner(7002)).to.equal(
         member7.address,
       );
-      expect(await energyDistribution.getDeviceOwner(9999)).to.equal(
+      expect(await energyDistribution.getDeviceOwner(8888)).to.equal(
         ethers.ZeroAddress,
       );
     });
@@ -965,6 +1095,22 @@ describe('EnergyDistribution7Members', function () {
         await energyDistribution.getCashCreditBalance(member7.address),
       ).to.equal(0);
     });
+
+    it('Should return correct battery info', async function () {
+      const { energyDistribution } = await loadFixture(setup7MembersFixture);
+
+      const batteryInfo = await energyDistribution.getBatteryInfo();
+      expect(batteryInfo.currentState).to.equal(0);
+      expect(batteryInfo.price).to.equal(150);
+      expect(batteryInfo.maxCapacity).to.equal(2000);
+      expect(batteryInfo.configured).to.equal(true);
+    });
+
+    it('Should return correct export device ID', async function () {
+      const { energyDistribution } = await loadFixture(setup7MembersFixture);
+
+      expect(await energyDistribution.getExportDeviceId()).to.equal(9999);
+    });
   });
 
   describe('Edge Cases and Integration', function () {
@@ -978,7 +1124,7 @@ describe('EnergyDistribution7Members', function () {
       await energyDistribution.addMember(member2.address, [2001], 6667); // 66.67%
 
       const sources = [{ sourceId: 1, price: 100, quantity: 1000 }];
-      await energyDistribution.distributeEnergyTokens(sources);
+      await energyDistribution.distributeEnergyTokens(sources, 0);
 
       // Check allocations
       const allocation1 = await energyDistribution.getAllocatedTokens(
@@ -992,8 +1138,6 @@ describe('EnergyDistribution7Members', function () {
       expect(allocation2).to.equal(667); // 66.67% of 1000 + remainder (since member2 is last)
       expect(Number(allocation1) + Number(allocation2)).to.equal(1000); // Total should be exactly 1000
 
-      // Note: No consumption in this test, so balances remain 0.
-      // Logging balances here would show 0 for members and export.
       console.log(
         '\n=== FINAL MEMBER BALANCES AT END OF TEST: Should handle fractional ownership percentages correctly ===',
       );
@@ -1011,7 +1155,7 @@ describe('EnergyDistribution7Members', function () {
       );
       const exportBalance =
         await energyDistribution.getExportCashCreditBalance();
-      console.log(`Export final balance: ${exportBalance}`); // Will be 0 as no consumption/export processing happened
+      console.log(`Export final balance: ${exportBalance}`);
     });
 
     it('Should handle complex multi-member consumption patterns', async function () {
@@ -1034,6 +1178,7 @@ describe('EnergyDistribution7Members', function () {
         { deviceId: 4001, quantity: 300 }, // member4: over
         { deviceId: 7001, quantity: 10 }, // member7: under
         { deviceId: 7002, quantity: 20 }, // member7: total 30 (still under)
+        { deviceId: 9999, quantity: 50 }, // Export 50 units
         // member3, member5, member6 don't consume
       ]);
 
@@ -1061,7 +1206,7 @@ describe('EnergyDistribution7Members', function () {
       const exportBalance =
         await energyDistribution.getExportCashCreditBalance();
 
-      // Verify system balance (allow for small rounding errors due to precision)
+      // Verify system balance
       const totalBalance =
         Number(balance1) +
         Number(balance2) +
@@ -1071,7 +1216,7 @@ describe('EnergyDistribution7Members', function () {
         Number(balance6) +
         Number(balance7) +
         Number(exportBalance);
-      expect(Math.abs(totalBalance)).to.be.lessThanOrEqual(5000);
+      expect(Math.abs(totalBalance)).to.be.lessThanOrEqual(1);
 
       // Verify consumption patterns
       expect(balance1).to.be.gte(0); // Under-consumer
@@ -1124,6 +1269,83 @@ describe('EnergyDistribution7Members', function () {
       const finalExportBalance_complex =
         await energyDistribution.getExportCashCreditBalance();
       console.log(`Export final balance: ${finalExportBalance_complex}`);
+    });
+
+    it('Should handle battery charging and discharging with consumption', async function () {
+      const { energyDistribution, member1, member2 } = await loadFixture(
+        deployFixture,
+      );
+
+      // Setup simple 2-member system
+      await energyDistribution.addMember(member1.address, [1001], 5000); // 50%
+      await energyDistribution.addMember(member2.address, [2001], 5000); // 50%
+      await energyDistribution.configureBattery(120, 1000);
+      await energyDistribution.setExportDeviceId(9999);
+
+      // Initial distribution with battery charging
+      const sources1 = [
+        { sourceId: 1, price: 100, quantity: 1000 }, // Local production
+      ];
+      await energyDistribution.distributeEnergyTokens(sources1, 200); // Charge battery to 200
+
+      // Members should get tokens from reduced local production
+      const allocation1_1 = await energyDistribution.getAllocatedTokens(
+        member1.address,
+      );
+      const allocation2_1 = await energyDistribution.getAllocatedTokens(
+        member2.address,
+      );
+      expect(allocation1_1).to.equal(400); // 50% of 800 (1000 - 200 to battery)
+      expect(allocation2_1).to.equal(400); // 50% of 800
+
+      // Second distribution with battery discharging
+      const sources2 = [
+        { sourceId: 1, price: 100, quantity: 600 }, // Local production
+      ];
+      await energyDistribution.distributeEnergyTokens(sources2, 100); // Discharge battery from 200 to 100
+
+      // Members should get tokens from local production + battery discharge
+      const allocation1_2 = await energyDistribution.getAllocatedTokens(
+        member1.address,
+      );
+      const allocation2_2 = await energyDistribution.getAllocatedTokens(
+        member2.address,
+      );
+      expect(allocation1_2).to.equal(350); // 50% of 700 (600 local + 100 battery discharge)
+      expect(allocation2_2).to.equal(350); // 50% of 700
+
+      // Check battery state
+      const batteryInfo = await energyDistribution.getBatteryInfo();
+      expect(batteryInfo.currentState).to.equal(100);
+
+      // Test consumption with export
+      await energyDistribution.consumeEnergyTokens([
+        { deviceId: 1001, quantity: 200 }, // member1 under-consumes
+        { deviceId: 2001, quantity: 400 }, // member2 over-consumes
+        { deviceId: 9999, quantity: 50 }, // export
+      ]);
+
+      const balance1 = await energyDistribution.getCashCreditBalance(
+        member1.address,
+      );
+      const balance2 = await energyDistribution.getCashCreditBalance(
+        member2.address,
+      );
+      const exportBalance =
+        await energyDistribution.getExportCashCreditBalance();
+
+      // Verify zero-sum
+      expect(
+        Number(balance1) + Number(balance2) + Number(exportBalance),
+      ).to.equal(0);
+
+      console.log(
+        '\n=== FINAL MEMBER BALANCES AT END OF TEST: Should handle battery charging and discharging with consumption ===',
+      );
+      console.log(`Member1 (${member1.address}) final balance: ${balance1}`);
+      console.log(`Member2 (${member2.address}) final balance: ${balance2}`);
+      console.log(`Export final balance: ${exportBalance}`);
+      console.log(`Battery final state: ${batteryInfo.currentState}`);
     });
   });
 });

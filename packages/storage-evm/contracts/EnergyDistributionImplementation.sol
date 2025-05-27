@@ -24,11 +24,33 @@ contract EnergyDistributionImplementation is
     __UUPSUpgradeable_init();
 
     totalOwnershipPercentage = 0;
+    batteryCurrentState = 0;
+    batteryConfigured = false;
+    exportDeviceId = 0;
   }
 
   function _authorizeUpgrade(
     address newImplementation
   ) internal override onlyOwner {}
+
+  function configureBattery(
+    uint256 price,
+    uint256 maxCapacity
+  ) external override onlyOwner {
+    require(price > 0, 'Battery price must be greater than 0');
+    require(maxCapacity > 0, 'Battery max capacity must be greater than 0');
+
+    batteryPrice = price;
+    batteryMaxCapacity = maxCapacity;
+    batteryConfigured = true;
+
+    emit BatteryConfigured(price, maxCapacity);
+  }
+
+  function setExportDeviceId(uint256 deviceId) external override onlyOwner {
+    exportDeviceId = deviceId;
+    emit ExportDeviceIdSet(deviceId);
+  }
 
   function addMember(
     address memberAddress,
@@ -105,10 +127,32 @@ contract EnergyDistributionImplementation is
   }
 
   function distributeEnergyTokens(
-    EnergySource[] calldata sources
+    EnergySource[] calldata sources,
+    uint256 batteryState
   ) external override onlyOwner {
     require(sources.length > 0, 'No sources provided');
     require(totalOwnershipPercentage == 10000, 'Total ownership must be 100%');
+
+    // Handle battery state changes
+    int256 batteryEnergyChange = 0;
+    uint256 oldBatteryState = batteryCurrentState;
+
+    if (batteryState != batteryCurrentState) {
+      if (batteryState > batteryCurrentState) {
+        // Battery charging - deduct from local production
+        batteryEnergyChange = int256(batteryState - batteryCurrentState);
+      } else {
+        // Battery discharging - add as production source
+        batteryEnergyChange = -int256(batteryCurrentState - batteryState);
+      }
+
+      batteryCurrentState = batteryState;
+      emit BatteryStateChanged(
+        oldBatteryState,
+        batteryState,
+        batteryEnergyChange
+      );
+    }
 
     // Clear previous distribution
     delete collectiveConsumption;
@@ -117,12 +161,49 @@ contract EnergyDistributionImplementation is
     }
 
     uint256 totalQuantity = 0;
+    EnergySource[] memory adjustedSources = new EnergySource[](
+      sources.length + (batteryEnergyChange < 0 ? 1 : 0)
+    );
+    uint256 adjustedSourcesCount = 0;
 
-    // Process each source
+    // Process each source and handle battery charging/discharging
     for (uint256 i = 0; i < sources.length; i++) {
       EnergySource memory source = sources[i];
-      totalQuantity += source.quantity;
 
+      // If this is local production (sourceId 1) and battery is charging, deduct the charging amount
+      if (source.sourceId == 1 && batteryEnergyChange > 0) {
+        require(
+          source.quantity >= uint256(batteryEnergyChange),
+          'Insufficient local production for battery charging'
+        );
+        source.quantity -= uint256(batteryEnergyChange);
+      }
+
+      if (source.quantity > 0) {
+        adjustedSources[adjustedSourcesCount] = source;
+        adjustedSourcesCount++;
+        totalQuantity += source.quantity;
+      }
+    }
+
+    // If battery is discharging, add it as a production source
+    if (batteryEnergyChange < 0) {
+      require(
+        batteryConfigured,
+        'Battery must be configured before discharging'
+      );
+      adjustedSources[adjustedSourcesCount] = EnergySource({
+        sourceId: 999, // Special ID for battery discharge
+        price: batteryPrice,
+        quantity: uint256(-batteryEnergyChange)
+      });
+      adjustedSourcesCount++;
+      totalQuantity += uint256(-batteryEnergyChange);
+    }
+
+    // Distribute energy tokens from all sources (including battery discharge if any)
+    for (uint256 i = 0; i < adjustedSourcesCount; i++) {
+      EnergySource memory source = adjustedSources[i];
       uint256 totalDistributed = 0;
 
       // Distribute to each member based on ownership percentage
@@ -158,7 +239,7 @@ contract EnergyDistributionImplementation is
     // Sort collective consumption by price (ascending)
     _sortCollectiveConsumptionByPrice();
 
-    emit EnergyDistributed(sources.length, totalQuantity);
+    emit EnergyDistributed(adjustedSourcesCount, totalQuantity);
     emit CollectiveConsumptionUpdated(collectiveConsumption.length);
   }
 
@@ -177,6 +258,50 @@ contract EnergyDistributionImplementation is
     require(requests.length > 0, 'No consumption requests provided');
     _sortCollectiveConsumptionByPrice();
 
+    // Separate export requests from regular consumption requests
+    ConsumptionRequest[] memory regularRequests = new ConsumptionRequest[](
+      requests.length
+    );
+    ConsumptionRequest[] memory exportRequests = new ConsumptionRequest[](
+      requests.length
+    );
+    uint256 regularCount = 0;
+    uint256 exportCount = 0;
+
+    for (uint256 i = 0; i < requests.length; i++) {
+      if (requests[i].deviceId == exportDeviceId) {
+        exportRequests[exportCount] = requests[i];
+        exportCount++;
+      } else {
+        regularRequests[regularCount] = requests[i];
+        regularCount++;
+      }
+    }
+
+    // Process regular consumption requests first
+    if (regularCount > 0) {
+      ConsumptionRequest[]
+        memory trimmedRegularRequests = new ConsumptionRequest[](regularCount);
+      for (uint256 i = 0; i < regularCount; i++) {
+        trimmedRegularRequests[i] = regularRequests[i];
+      }
+      _processConsumptionRequests(trimmedRegularRequests);
+    }
+
+    // Process export requests last
+    if (exportCount > 0) {
+      ConsumptionRequest[]
+        memory trimmedExportRequests = new ConsumptionRequest[](exportCount);
+      for (uint256 i = 0; i < exportCount; i++) {
+        trimmedExportRequests[i] = exportRequests[i];
+      }
+      _processExportRequests(trimmedExportRequests);
+    }
+  }
+
+  function _processConsumptionRequests(
+    ConsumptionRequest[] memory requests
+  ) internal {
     // Initialize/clear batch details for all known members
     for (uint256 i = 0; i < memberAddresses.length; i++) {
       delete batchDetails[memberAddresses[i]];
@@ -260,8 +385,6 @@ contract EnergyDistributionImplementation is
             tokensActuallyBought += buyAmount;
           }
         }
-        // If not all needed tokens could be bought (should not happen if system is balanced before export)
-        // For simplicity, we assume all 'needsToBuy' are met or system relies on export for final balance.
         cashCreditBalances[memberAddr] -= costForThisOverConsumer; // Debit the over-consumer
         batchDetails[memberAddr].cashCreditChange -= costForThisOverConsumer;
       }
@@ -280,9 +403,57 @@ contract EnergyDistributionImplementation is
       // Reset for next potential call within same block (if allowed, though unlikely for this design)
       delete batchDetails[memberAddr];
     }
+  }
 
-    // Phase 4: Process export
-    _processExport();
+  function _processExportRequests(
+    ConsumptionRequest[] memory exportRequests
+  ) internal {
+    // Calculate total remaining tokens and their value for export
+    int256 totalExportRevenue = 0;
+    uint256 totalExportedTokens = 0;
+    uint256 totalExportRequested = 0;
+
+    // Sum up all export requests
+    for (uint256 i = 0; i < exportRequests.length; i++) {
+      totalExportRequested += exportRequests[i].quantity;
+    }
+
+    // Export remaining tokens up to the requested amount
+    for (
+      uint256 i = 0;
+      i < collectiveConsumption.length &&
+        totalExportedTokens < totalExportRequested;
+      i++
+    ) {
+      if (collectiveConsumption[i].quantity > 0) {
+        uint256 canExport = totalExportRequested - totalExportedTokens;
+        uint256 exportAmount = canExport > collectiveConsumption[i].quantity
+          ? collectiveConsumption[i].quantity
+          : canExport;
+
+        int256 tokenValue = int256(
+          exportAmount * collectiveConsumption[i].price
+        );
+
+        // Pay the token owner for their exported tokens
+        cashCreditBalances[collectiveConsumption[i].owner] += tokenValue;
+
+        // Track export revenue
+        totalExportRevenue += tokenValue;
+        totalExportedTokens += exportAmount;
+
+        // Remove the exported tokens
+        collectiveConsumption[i].quantity -= exportAmount;
+      }
+    }
+
+    // Record total export cost
+    exportCashCreditBalance = -totalExportRevenue;
+
+    // Emit detailed export event
+    if (totalExportedTokens > 0) {
+      emit EnergyExported(totalExportedTokens, totalExportRevenue);
+    }
   }
 
   function _sortCollectiveConsumptionByPrice() internal {
@@ -297,53 +468,6 @@ contract EnergyDistributionImplementation is
           collectiveConsumption[j + 1] = temp;
         }
       }
-    }
-  }
-
-  function _processExport() internal {
-    // Calculate total remaining tokens and their value
-    int256 totalExportRevenue = 0;
-    uint256 totalExportedTokens = 0;
-    bool tokensToExport = false;
-
-    // Check if there are any tokens left to export
-    for (uint256 i = 0; i < collectiveConsumption.length; i++) {
-      if (collectiveConsumption[i].quantity > 0) {
-        tokensToExport = true;
-        break;
-      }
-    }
-
-    // Only proceed if there are tokens to export
-    if (tokensToExport) {
-      // Export all remaining tokens and calculate revenue
-      for (uint256 i = 0; i < collectiveConsumption.length; i++) {
-        if (collectiveConsumption[i].quantity > 0) {
-          int256 tokenValue = int256(
-            collectiveConsumption[i].quantity * collectiveConsumption[i].price
-          );
-
-          // Pay the token owner for their exported tokens
-          cashCreditBalances[collectiveConsumption[i].owner] += tokenValue;
-          // Note: batchDetails is not used here as it's for intra-batch debits/credits
-
-          // Track export cost
-          totalExportRevenue += tokenValue;
-          totalExportedTokens += collectiveConsumption[i].quantity;
-
-          // Clear the exported tokens
-          collectiveConsumption[i].quantity = 0;
-        }
-      }
-
-      // Record total export cost
-      exportCashCreditBalance = -totalExportRevenue;
-
-      // Emit detailed export event
-      emit EnergyExported(totalExportedTokens, totalExportRevenue);
-    } else {
-      // If no tokens to export, ensure export balance is zero
-      exportCashCreditBalance = 0;
     }
   }
 
@@ -398,5 +522,24 @@ contract EnergyDistributionImplementation is
     returns (int256)
   {
     return exportCashCreditBalance;
+  }
+
+  function getBatteryInfo()
+    external
+    view
+    override
+    returns (BatteryInfo memory)
+  {
+    return
+      BatteryInfo({
+        currentState: batteryCurrentState,
+        price: batteryPrice,
+        maxCapacity: batteryMaxCapacity,
+        configured: batteryConfigured
+      });
+  }
+
+  function getExportDeviceId() external view override returns (uint256) {
+    return exportDeviceId;
   }
 }

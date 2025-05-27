@@ -27,9 +27,18 @@ contract EnergyDistributionStorage is Initializable {
   // Total ownership percentage (should always be 10000)
   uint256 internal totalOwnershipPercentage;
 
+  // Battery management
+  uint256 internal batteryCurrentState;
+  uint256 internal batteryPrice;
+  uint256 internal batteryMaxCapacity;
+  bool internal batteryConfigured;
+
+  // Export device ID for special handling
+  uint256 internal exportDeviceId;
+
   /**
    * @dev This empty reserved space is put in place to allow future versions to add new
    * variables without shifting down storage in the inheritance chain.
    */
-  uint256[43] private __gap; // Reduced by 1 due to new variable
+  uint256[38] private __gap; // Reduced by 5 due to new variables
 }

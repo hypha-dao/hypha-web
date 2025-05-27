@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 interface IEnergyDistribution {
-
-  //source can be battery, import, localproduction. Can be split further. 
+  //add battery function, Zek sends in state of the battery.
+  //source can be battery, import, localproduction. Can be split further.
   struct EnergySource {
     uint256 sourceId;
     uint256 price;
@@ -35,6 +35,13 @@ interface IEnergyDistribution {
     int256 excess; // negative if under-consumed, positive if over-consumed
   }
 
+  struct BatteryInfo {
+    uint256 currentState;
+    uint256 price;
+    uint256 maxCapacity;
+    bool configured;
+  }
+
   function initialize(address initialOwner) external;
 
   function addMember(
@@ -45,11 +52,18 @@ interface IEnergyDistribution {
 
   function removeMember(address memberAddress) external;
 
-  function distributeEnergyTokens(EnergySource[] calldata sources) external;
+  function distributeEnergyTokens(
+    EnergySource[] calldata sources,
+    uint256 batteryState
+  ) external;
 
   function consumeEnergyTokens(
     ConsumptionRequest[] calldata consumptionRequests
   ) external;
+
+  function configureBattery(uint256 price, uint256 maxCapacity) external;
+
+  function setExportDeviceId(uint256 deviceId) external;
 
   function getCashCreditBalance(address member) external view returns (int256);
 
@@ -70,6 +84,10 @@ interface IEnergyDistribution {
 
   function getExportCashCreditBalance() external view returns (int256);
 
+  function getBatteryInfo() external view returns (BatteryInfo memory);
+
+  function getExportDeviceId() external view returns (uint256);
+
   // Events
   event MemberAdded(
     address indexed memberAddress,
@@ -85,4 +103,11 @@ interface IEnergyDistribution {
   );
   event CollectiveConsumptionUpdated(uint256 totalItems);
   event EnergyExported(uint256 totalQuantity, int256 exportValue);
+  event BatteryConfigured(uint256 price, uint256 maxCapacity);
+  event BatteryStateChanged(
+    uint256 oldState,
+    uint256 newState,
+    int256 energyChange
+  );
+  event ExportDeviceIdSet(uint256 deviceId);
 }
