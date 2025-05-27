@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 interface IEnergyDistribution {
   //add battery function, Zek sends in state of the battery.
-  //source can be battery, import, localproduction. Can be split further.
+  // import, localproduction. Can be split further.
   struct EnergySource {
     uint256 sourceId;
     uint256 price;
