@@ -34,8 +34,9 @@ export const SETTINGS_ACTIONS = [
     title: 'Entry Method',
     description:
       'Select and configure the process by which new members join your space.',
-    href: '#',
+    href: 'change-entry-method',
     icon: <Pencil2Icon />,
+    baseTab: 'membership',
   },
   {
     group: 'Membership',
