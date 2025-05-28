@@ -2,7 +2,7 @@ import { SidePanel } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { createSpaceService } from '@core/space/server';
 import { notFound } from 'next/navigation';
-import { getDhoPathGovernance } from '@hypha-platform/epics';
+import { getDhoPathGovernance } from '../../../../@tab/governance/constants';
 import { IssueNewTokenForm } from '@hypha-platform/epics';
 import { Plugin } from '../../../governance/create/plugins';
 
