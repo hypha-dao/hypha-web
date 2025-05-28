@@ -228,20 +228,23 @@ export const schemaIssueNewToken = z.object({
     .refine(
       (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
       'File must be an image (JPEG, PNG, GIF, WEBP)',
-    ),
+    )
+    .optional(),
 
   tokenDescription: z
     .string()
     .min(10, { message: 'Description must be at least 10 characters long' })
     .max(500, { message: 'Description must be at most 500 characters long' }),
 
-  digits: z.preprocess(
-    (val) => Number(val),
-    z
-      .number()
-      .min(0, { message: 'Digits must be 0 or greater' })
-      .max(18, { message: 'Digits must not exceed 18' }),
-  ),
+  // TODO: after MVP
+  // digits: z.preprocess(
+  //   (val) => Number(val),
+  //   z
+  //     .number()
+  //     .min(0, { message: 'Digits must be 0 or greater' })
+  //     .max(18, { message: 'Digits must not exceed 18' }),
+  // ),
+
   type: z.enum(['utility', 'credits', 'ownership', 'voice'], {
     required_error: 'Token type is required',
   }),
@@ -270,7 +273,7 @@ export const schemaCreateAgreementForm = z.object({
   name: schemaIssueNewToken.shape.name,
   symbol: schemaIssueNewToken.shape.symbol,
   icon: schemaIssueNewToken.shape.icon,
-  digits: schemaIssueNewToken.shape.digits,
+  // digits: schemaIssueNewToken.shape.digits,
   type: schemaIssueNewToken.shape.type,
   maxSupply: schemaIssueNewToken.shape.maxSupply,
   tokenDescription: schemaIssueNewToken.shape.tokenDescription,

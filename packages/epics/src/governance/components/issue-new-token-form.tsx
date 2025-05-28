@@ -44,7 +44,7 @@ export const IssueNewTokenForm = ({
       name: '',
       symbol: '',
       icon: undefined,
-      digits: 0,
+      // digits: 0,
       type: undefined,
       maxSupply: 0,
       tokenDescription: '',

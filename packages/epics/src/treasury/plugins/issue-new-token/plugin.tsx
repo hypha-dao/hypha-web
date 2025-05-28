@@ -5,7 +5,7 @@ import {
   TokenSymbolField,
   TokenIconField,
   TokenDescriptionField,
-  TokenDigitsField,
+  // TokenDigitsField,
   TokenTypeField,
   TokenMaxSupplyField,
 } from '../../components';
@@ -17,7 +17,7 @@ export const IssueNewTokenPlugin = () => {
       <TokenSymbolField />
       <TokenIconField />
       <TokenDescriptionField />
-      <TokenDigitsField />
+      {/* <TokenDigitsField /> */}
       <TokenTypeField />
       <TokenMaxSupplyField />
     </div>
