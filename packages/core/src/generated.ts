@@ -1,231 +1,4 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// AgreementsImplementation
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/**
- * [__View Contract on Base Basescan__](https://basescan.org/address/0x83B5d4F555A68126bB302685e67767Bb7a2985F0)
- */
-export const agreementsImplementationAbi = [
-  { type: 'constructor', inputs: [], stateMutability: 'nonpayable' },
-  {
-    type: 'error',
-    inputs: [{ name: 'target', internalType: 'address', type: 'address' }],
-    name: 'AddressEmptyCode',
-  },
-  {
-    type: 'error',
-    inputs: [
-      { name: 'implementation', internalType: 'address', type: 'address' },
-    ],
-    name: 'ERC1967InvalidImplementation',
-  },
-  { type: 'error', inputs: [], name: 'ERC1967NonPayable' },
-  { type: 'error', inputs: [], name: 'FailedCall' },
-  { type: 'error', inputs: [], name: 'InvalidInitialization' },
-  { type: 'error', inputs: [], name: 'NotInitializing' },
-  {
-    type: 'error',
-    inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
-    name: 'OwnableInvalidOwner',
-  },
-  {
-    type: 'error',
-    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
-    name: 'OwnableUnauthorizedAccount',
-  },
-  { type: 'error', inputs: [], name: 'UUPSUnauthorizedCallContext' },
-  {
-    type: 'error',
-    inputs: [{ name: 'slot', internalType: 'bytes32', type: 'bytes32' }],
-    name: 'UUPSUnsupportedProxiableUUID',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'spaceId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      {
-        name: 'proposalId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      {
-        name: 'executor',
-        internalType: 'address',
-        type: 'address',
-        indexed: false,
-      },
-    ],
-    name: 'AgreementAccepted',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'version',
-        internalType: 'uint64',
-        type: 'uint64',
-        indexed: false,
-      },
-    ],
-    name: 'Initialized',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'previousOwner',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      {
-        name: 'newOwner',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-    ],
-    name: 'OwnershipTransferred',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'implementation',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-    ],
-    name: 'Upgraded',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'UPGRADE_INTERFACE_VERSION',
-    outputs: [{ name: '', internalType: 'string', type: 'string' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: '_proposalId', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'acceptAgreement',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '_spaceId', internalType: 'uint256', type: 'uint256' }],
-    name: 'getSpaceProposals',
-    outputs: [{ name: '', internalType: 'uint256[]', type: 'uint256[]' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: '_proposalId', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'hasProposal',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'initialOwner', internalType: 'address', type: 'address' },
-    ],
-    name: 'initialize',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'owner',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'proxiableUUID',
-    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'renounceOwnership',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: '_spaceFactory', internalType: 'address', type: 'address' },
-    ],
-    name: 'setContracts',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'spaceFactory',
-    outputs: [
-      { name: '', internalType: 'contract IDAOSpaceFactory', type: 'address' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address' }],
-    name: 'transferOwnership',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'newImplementation', internalType: 'address', type: 'address' },
-      { name: 'data', internalType: 'bytes', type: 'bytes' },
-    ],
-    name: 'upgradeToAndCall',
-    outputs: [],
-    stateMutability: 'payable',
-  },
-] as const;
-
-/**
- * [__View Contract on Base Basescan__](https://basescan.org/address/0x83B5d4F555A68126bB302685e67767Bb7a2985F0)
- */
-export const agreementsImplementationAddress = {
-  8453: '0x83B5d4F555A68126bB302685e67767Bb7a2985F0',
-} as const;
-
-/**
- * [__View Contract on Base Basescan__](https://basescan.org/address/0x83B5d4F555A68126bB302685e67767Bb7a2985F0)
- */
-export const agreementsImplementationConfig = {
-  address: agreementsImplementationAddress,
-  abi: agreementsImplementationAbi,
-} as const;
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // DAOProposalsImplementation
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -549,27 +322,6 @@ export const daoProposalsImplementationAbi = [
   },
   {
     type: 'function',
-    inputs: [],
-    name: 'getAllExecutedProposals',
-    outputs: [{ name: '', internalType: 'uint256[]', type: 'uint256[]' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '_spaceId', internalType: 'uint256', type: 'uint256' }],
-    name: 'getExecutedProposalsBySpace',
-    outputs: [{ name: '', internalType: 'uint256[]', type: 'uint256[]' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getLatestProposalId',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     inputs: [{ name: '_proposalId', internalType: 'uint256', type: 'uint256' }],
     name: 'getProposalCore',
     outputs: [
@@ -678,15 +430,6 @@ export const daoProposalsImplementationAbi = [
   },
   {
     type: 'function',
-    inputs: [
-      { name: '_paymentTracker', internalType: 'address', type: 'address' },
-    ],
-    name: 'setPaymentTracker',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
     inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     name: 'spaceAddresses',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
@@ -783,6 +526,31 @@ export const daoSpaceFactoryImplementationAbi = [
     type: 'error',
     inputs: [{ name: 'slot', internalType: 'bytes32', type: 'bytes32' }],
     name: 'UUPSUnsupportedProxiableUUID',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'oldJoinMethod',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'newJoinMethod',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'EntryMethodChanged',
   },
   {
     type: 'event',
@@ -923,6 +691,31 @@ export const daoSpaceFactoryImplementationAbi = [
     name: 'Upgraded',
   },
   {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'oldVotingPowerSource',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'newVotingPowerSource',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'VotingMethodChanged',
+  },
+  {
     type: 'function',
     inputs: [],
     name: 'UPGRADE_INTERFACE_VERSION',
@@ -936,6 +729,30 @@ export const daoSpaceFactoryImplementationAbi = [
       { name: '_memberAddress', internalType: 'address', type: 'address' },
     ],
     name: 'addMember',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: '_newJoinMethod', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'changeEntryMethod',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
+      {
+        name: '_newVotingPowerSource',
+        internalType: 'uint256',
+        type: 'uint256',
+      },
+    ],
+    name: 'changeVotingMethod',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -1128,16 +945,6 @@ export const daoSpaceFactoryImplementationAbi = [
   },
   {
     type: 'function',
-    inputs: [
-      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: '_memberToRemove', internalType: 'address', type: 'address' },
-    ],
-    name: 'removeMember',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
     inputs: [],
     name: 'renounceOwnership',
     outputs: [],
@@ -1228,4 +1035,905 @@ export const daoSpaceFactoryImplementationAddress = {
 export const daoSpaceFactoryImplementationConfig = {
   address: daoSpaceFactoryImplementationAddress,
   abi: daoSpaceFactoryImplementationAbi,
+} as const;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// DecayingTokenFactory
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0x299f4D2327933c1f363301dbd2a28379ccD5539b)
+ */
+export const decayingTokenFactoryAbi = [
+  { type: 'constructor', inputs: [], stateMutability: 'nonpayable' },
+  {
+    type: 'error',
+    inputs: [{ name: 'target', internalType: 'address', type: 'address' }],
+    name: 'AddressEmptyCode',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'implementation', internalType: 'address', type: 'address' },
+    ],
+    name: 'ERC1967InvalidImplementation',
+  },
+  { type: 'error', inputs: [], name: 'ERC1967NonPayable' },
+  { type: 'error', inputs: [], name: 'FailedCall' },
+  { type: 'error', inputs: [], name: 'InvalidInitialization' },
+  { type: 'error', inputs: [], name: 'NotInitializing' },
+  {
+    type: 'error',
+    inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
+    name: 'OwnableInvalidOwner',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'OwnableUnauthorizedAccount',
+  },
+  { type: 'error', inputs: [], name: 'UUPSUnauthorizedCallContext' },
+  {
+    type: 'error',
+    inputs: [{ name: 'slot', internalType: 'bytes32', type: 'bytes32' }],
+    name: 'UUPSUnsupportedProxiableUUID',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'newDecayVotingPowerContract',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'DecayVotingPowerContractUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'tokenAddress',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'decayPercentage',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'decayInterval',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'DecayingTokenParameters',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'version',
+        internalType: 'uint64',
+        type: 'uint64',
+        indexed: false,
+      },
+    ],
+    name: 'Initialized',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previousOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'newOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'OwnershipTransferred',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'newSpacesContract',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'SpacesContractUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'tokenAddress',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      { name: 'name', internalType: 'string', type: 'string', indexed: false },
+      {
+        name: 'symbol',
+        internalType: 'string',
+        type: 'string',
+        indexed: false,
+      },
+    ],
+    name: 'TokenDeployed',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'implementation',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'Upgraded',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'tokenAddress',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'VotingTokenSet',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'UPGRADE_INTERFACE_VERSION',
+    outputs: [{ name: '', internalType: 'string', type: 'string' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'decayVotingPowerContract',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: 'name', internalType: 'string', type: 'string' },
+      { name: 'symbol', internalType: 'string', type: 'string' },
+      { name: 'maxSupply', internalType: 'uint256', type: 'uint256' },
+      { name: 'transferable', internalType: 'bool', type: 'bool' },
+      { name: 'isVotingToken', internalType: 'bool', type: 'bool' },
+      { name: 'decayPercentage', internalType: 'uint256', type: 'uint256' },
+      { name: 'decayInterval', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'deployDecayingToken',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'initialOwner', internalType: 'address', type: 'address' },
+    ],
+    name: 'initialize',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '', internalType: 'address', type: 'address' }],
+    name: 'isTokenDeployedByFactory',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'owner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'proxiableUUID',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'renounceOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: '_decayVotingPowerContract',
+        internalType: 'address',
+        type: 'address',
+      },
+    ],
+    name: 'setDecayVotingPowerContract',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_spacesContract', internalType: 'address', type: 'address' },
+    ],
+    name: 'setSpacesContract',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'spacesContract',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address' }],
+    name: 'transferOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'newImplementation', internalType: 'address', type: 'address' },
+      { name: 'data', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'upgradeToAndCall',
+    outputs: [],
+    stateMutability: 'payable',
+  },
+] as const;
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0x299f4D2327933c1f363301dbd2a28379ccD5539b)
+ */
+export const decayingTokenFactoryAddress = {
+  8453: '0x299f4D2327933c1f363301dbd2a28379ccD5539b',
+} as const;
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0x299f4D2327933c1f363301dbd2a28379ccD5539b)
+ */
+export const decayingTokenFactoryConfig = {
+  address: decayingTokenFactoryAddress,
+  abi: decayingTokenFactoryAbi,
+} as const;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// OwnershipTokenFactory
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0xA1eDf096B72226ae2f7BDEb12E9c9C82152BccB6)
+ */
+export const ownershipTokenFactoryAbi = [
+  { type: 'constructor', inputs: [], stateMutability: 'nonpayable' },
+  {
+    type: 'error',
+    inputs: [{ name: 'target', internalType: 'address', type: 'address' }],
+    name: 'AddressEmptyCode',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'implementation', internalType: 'address', type: 'address' },
+    ],
+    name: 'ERC1967InvalidImplementation',
+  },
+  { type: 'error', inputs: [], name: 'ERC1967NonPayable' },
+  { type: 'error', inputs: [], name: 'FailedCall' },
+  { type: 'error', inputs: [], name: 'InvalidInitialization' },
+  { type: 'error', inputs: [], name: 'NotInitializing' },
+  {
+    type: 'error',
+    inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
+    name: 'OwnableInvalidOwner',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'OwnableUnauthorizedAccount',
+  },
+  { type: 'error', inputs: [], name: 'UUPSUnauthorizedCallContext' },
+  {
+    type: 'error',
+    inputs: [{ name: 'slot', internalType: 'bytes32', type: 'bytes32' }],
+    name: 'UUPSUnsupportedProxiableUUID',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      { name: 'name', internalType: 'string', type: 'string', indexed: false },
+      {
+        name: 'symbol',
+        internalType: 'string',
+        type: 'string',
+        indexed: false,
+      },
+    ],
+    name: 'DeployingToken',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'version',
+        internalType: 'uint64',
+        type: 'uint64',
+        indexed: false,
+      },
+    ],
+    name: 'Initialized',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previousOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'newOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'OwnershipTransferred',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'newSpacesContract',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'SpacesContractUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'tokenAddress',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      { name: 'name', internalType: 'string', type: 'string', indexed: false },
+      {
+        name: 'symbol',
+        internalType: 'string',
+        type: 'string',
+        indexed: false,
+      },
+    ],
+    name: 'TokenDeployed',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'implementation',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'Upgraded',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'newVotingPowerContract',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'VotingPowerContractUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'tokenAddress',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'VotingTokenSet',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'UPGRADE_INTERFACE_VERSION',
+    outputs: [{ name: '', internalType: 'string', type: 'string' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: 'name', internalType: 'string', type: 'string' },
+      { name: 'symbol', internalType: 'string', type: 'string' },
+      { name: 'maxSupply', internalType: 'uint256', type: 'uint256' },
+      { name: 'isVotingToken', internalType: 'bool', type: 'bool' },
+    ],
+    name: 'deployOwnershipToken',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'initialOwner', internalType: 'address', type: 'address' },
+    ],
+    name: 'initialize',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '', internalType: 'address', type: 'address' }],
+    name: 'isTokenDeployedByFactory',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'owner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'proxiableUUID',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'renounceOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_spacesContract', internalType: 'address', type: 'address' },
+    ],
+    name: 'setSpacesContract',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: '_votingPowerContract',
+        internalType: 'address',
+        type: 'address',
+      },
+    ],
+    name: 'setVotingPowerContract',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'spacesContract',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address' }],
+    name: 'transferOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'newImplementation', internalType: 'address', type: 'address' },
+      { name: 'data', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'upgradeToAndCall',
+    outputs: [],
+    stateMutability: 'payable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'votingPowerContract',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+] as const;
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0xA1eDf096B72226ae2f7BDEb12E9c9C82152BccB6)
+ */
+export const ownershipTokenFactoryAddress = {
+  8453: '0xA1eDf096B72226ae2f7BDEb12E9c9C82152BccB6',
+} as const;
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0xA1eDf096B72226ae2f7BDEb12E9c9C82152BccB6)
+ */
+export const ownershipTokenFactoryConfig = {
+  address: ownershipTokenFactoryAddress,
+  abi: ownershipTokenFactoryAbi,
+} as const;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// RegularTokenFactory
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0x95A33EC94de2189893884DaD63eAa19f7390144a)
+ */
+export const regularTokenFactoryAbi = [
+  { type: 'constructor', inputs: [], stateMutability: 'nonpayable' },
+  {
+    type: 'error',
+    inputs: [{ name: 'target', internalType: 'address', type: 'address' }],
+    name: 'AddressEmptyCode',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'implementation', internalType: 'address', type: 'address' },
+    ],
+    name: 'ERC1967InvalidImplementation',
+  },
+  { type: 'error', inputs: [], name: 'ERC1967NonPayable' },
+  { type: 'error', inputs: [], name: 'FailedCall' },
+  { type: 'error', inputs: [], name: 'InvalidInitialization' },
+  { type: 'error', inputs: [], name: 'NotInitializing' },
+  {
+    type: 'error',
+    inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
+    name: 'OwnableInvalidOwner',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'OwnableUnauthorizedAccount',
+  },
+  { type: 'error', inputs: [], name: 'UUPSUnauthorizedCallContext' },
+  {
+    type: 'error',
+    inputs: [{ name: 'slot', internalType: 'bytes32', type: 'bytes32' }],
+    name: 'UUPSUnsupportedProxiableUUID',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'version',
+        internalType: 'uint64',
+        type: 'uint64',
+        indexed: false,
+      },
+    ],
+    name: 'Initialized',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previousOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'newOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'OwnershipTransferred',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'newSpacesContract',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'SpacesContractUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'tokenAddress',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      { name: 'name', internalType: 'string', type: 'string', indexed: false },
+      {
+        name: 'symbol',
+        internalType: 'string',
+        type: 'string',
+        indexed: false,
+      },
+    ],
+    name: 'TokenDeployed',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'implementation',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'Upgraded',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'newVotingPowerContract',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'VotingPowerContractUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'tokenAddress',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'VotingTokenSet',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'UPGRADE_INTERFACE_VERSION',
+    outputs: [{ name: '', internalType: 'string', type: 'string' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: 'name', internalType: 'string', type: 'string' },
+      { name: 'symbol', internalType: 'string', type: 'string' },
+      { name: 'maxSupply', internalType: 'uint256', type: 'uint256' },
+      { name: 'transferable', internalType: 'bool', type: 'bool' },
+      { name: 'isVotingToken', internalType: 'bool', type: 'bool' },
+    ],
+    name: 'deployToken',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'initialOwner', internalType: 'address', type: 'address' },
+    ],
+    name: 'initialize',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '', internalType: 'address', type: 'address' }],
+    name: 'isTokenDeployedByFactory',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'owner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'proxiableUUID',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'renounceOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_spacesContract', internalType: 'address', type: 'address' },
+    ],
+    name: 'setSpacesContract',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: '_votingPowerContract',
+        internalType: 'address',
+        type: 'address',
+      },
+    ],
+    name: 'setVotingPowerContract',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'spacesContract',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address' }],
+    name: 'transferOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'newImplementation', internalType: 'address', type: 'address' },
+      { name: 'data', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'upgradeToAndCall',
+    outputs: [],
+    stateMutability: 'payable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'votingPowerContract',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+] as const;
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0x95A33EC94de2189893884DaD63eAa19f7390144a)
+ */
+export const regularTokenFactoryAddress = {
+  8453: '0x95A33EC94de2189893884DaD63eAa19f7390144a',
+} as const;
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0x95A33EC94de2189893884DaD63eAa19f7390144a)
+ */
+export const regularTokenFactoryConfig = {
+  address: regularTokenFactoryAddress,
+  abi: regularTokenFactoryAbi,
 } as const;
