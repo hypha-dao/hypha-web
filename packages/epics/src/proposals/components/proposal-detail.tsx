@@ -95,8 +95,9 @@ export const ProposalDetail = ({
       </Skeleton>
       <MarkdownSuspense>{content}</MarkdownSuspense>
       <AttachmentList attachments={attachments || []} />
-      {proposalDetails?.tokens.map((token) => (
+      {proposalDetails?.tokens.map((token, idx) => (
         <ProposalTokenItem
+          key={idx}
           name={token.name}
           symbol={token.symbol}
           initialSupply={token.maxSupply}
