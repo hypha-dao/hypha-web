@@ -99,7 +99,7 @@ export const ProposalDetail = ({
         <ProposalTokenItem
           name={token.name}
           symbol={token.symbol}
-          initialSupply={token.initialSupply}
+          initialSupply={token.maxSupply}
         />
       ))}
       {proposalDetails?.transfers.map((tx, idx) => (

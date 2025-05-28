@@ -14,6 +14,8 @@ import {
 import {
   regularTokenFactoryAbi,
   regularTokenFactoryAddress,
+  ownershipTokenFactoryAbi,
+  ownershipTokenFactoryAddress,
 } from '@core/generated';
 
 interface CreateTokenArgs {
@@ -36,28 +38,51 @@ export const useIssueTokenMutationsWeb3Rpc = (config?: Config) => {
   } = useSWRMutation(
     config ? [config, 'createIssueToken'] : null,
     async ([cfg], { arg }: { arg: CreateTokenArgs }) => {
-      const isUtilityOrCredits = ['utility', 'credits'].includes(arg.type);
-      console.log('arguments', arg)
-      const txData = isUtilityOrCredits
-        ? [
-            {
-              target: regularTokenFactoryAddress[8453],
-              value: 0,
-              data: encodeFunctionData({
-                abi: regularTokenFactoryAbi,
-                functionName: 'deployToken',
-                args: [
-                  BigInt(arg.spaceId),
-                  arg.name,
-                  arg.symbol,
-                  BigInt(arg.maxSupply),
-                  arg.transferable,
-                  arg.isVotingToken,
-                ],
-              }),
-            },
-          ]
-        : [];
+      const chainId = 8453;
+      let txData: Array<{
+        target: `0x${string}`;
+        value: number;
+        data: `0x${string}`;
+      }> = [];
+
+      if (['utility', 'credits'].includes(arg.type)) {
+        txData = [
+          {
+            target: regularTokenFactoryAddress[chainId],
+            value: 0,
+            data: encodeFunctionData({
+              abi: regularTokenFactoryAbi,
+              functionName: 'deployToken',
+              args: [
+                BigInt(arg.spaceId),
+                arg.name,
+                arg.symbol,
+                BigInt(arg.maxSupply),
+                arg.transferable,
+                arg.isVotingToken,
+              ],
+            }),
+          },
+        ];
+      } else if (arg.type === 'ownership') {
+        txData = [
+          {
+            target: ownershipTokenFactoryAddress[chainId],
+            value: 0,
+            data: encodeFunctionData({
+              abi: ownershipTokenFactoryAbi,
+              functionName: 'deployOwnershipToken',
+              args: [
+                BigInt(arg.spaceId),
+                arg.name,
+                arg.symbol,
+                BigInt(arg.maxSupply),
+                arg.transferable,
+              ],
+            }),
+          },
+        ];
+      }
       const parsedProposal = schemaCreateProposalWeb3.parse({
         spaceId: arg.spaceId,
         duration: 86400,

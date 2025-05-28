@@ -5,7 +5,10 @@ import useSWR from 'swr';
 import { getProposalDetails } from '../web3';
 import React from 'react';
 import { decodeFunctionData, erc20Abi } from 'viem';
-import { regularTokenFactoryAbi } from '@core/generated';
+import {
+  regularTokenFactoryAbi,
+  ownershipTokenFactoryAbi,
+} from '@core/generated';
 
 export const useProposalDetailsWeb3Rpc = ({
   proposalId,
@@ -56,12 +59,13 @@ export const useProposalDetailsWeb3Rpc = ({
     }[] = [];
 
     const tokens: {
+      tokenType: 'regular' | 'ownership';
       spaceId: bigint;
       name: string;
       symbol: string;
-      initialSupply: bigint;
-      transferable: boolean;
+      maxSupply: bigint;
       isVotingToken: boolean;
+      transferable?: boolean;
     }[] = [];
 
     (transactions as any[]).forEach((tx) => {
@@ -87,7 +91,6 @@ export const useProposalDetailsWeb3Rpc = ({
           abi: regularTokenFactoryAbi,
           data: tx.data,
         });
-        console.log(decoded);
         if (decoded.functionName === 'deployToken') {
           const [
             spaceId,
@@ -106,11 +109,38 @@ export const useProposalDetailsWeb3Rpc = ({
           ];
 
           tokens.push({
+            tokenType: 'regular',
             spaceId,
             name,
             symbol,
-            initialSupply,
+            maxSupply: initialSupply,
+            isVotingToken,
             transferable,
+          });
+          return;
+        }
+      } catch {}
+
+      try {
+        const decoded = decodeFunctionData({
+          abi: ownershipTokenFactoryAbi,
+          data: tx.data,
+        });
+        if (decoded.functionName === 'deployOwnershipToken') {
+          const [spaceId, name, symbol, maxSupply, isVotingToken] =
+            decoded.args as unknown as [
+              bigint,
+              string,
+              string,
+              bigint,
+              boolean,
+            ];
+          tokens.push({
+            tokenType: 'ownership',
+            spaceId,
+            name,
+            symbol,
+            maxSupply,
             isVotingToken,
           });
         }
