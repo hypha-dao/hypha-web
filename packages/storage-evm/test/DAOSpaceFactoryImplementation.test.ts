@@ -3596,11 +3596,13 @@ describe('DAOSpaceFactoryImplementation', function () {
       await spaceHelper.createDefaultSpace();
       const spaceId = (await daoSpaceFactory.spaceCounter()).toString();
 
-      // Get the initial voting power source
+      // Get the initial space details
       const initialSpaceDetails = await daoSpaceFactory.getSpaceDetails(
         spaceId,
       );
       const initialVotingPowerSource = initialSpaceDetails.votingPowerSource;
+      const initialUnity = initialSpaceDetails.unity;
+      const initialQuorum = initialSpaceDetails.quorum;
       expect(initialVotingPowerSource).to.equal(1);
 
       // Get the executor
@@ -3618,24 +3620,36 @@ describe('DAOSpaceFactoryImplementation', function () {
         value: ethers.parseEther('1.0'),
       });
 
-      // Change the voting method to 2
+      // Change the voting method to 2, and optionally change unity and quorum too
       const newVotingPowerSource = 2;
+      const newUnity = 60; // Change from default 51 to 60
+      const newQuorum = 30; // Change from default 51 to 30
       const changeTx = await daoSpaceFactory
         .connect(executorSigner)
-        .changeVotingMethod(spaceId, newVotingPowerSource);
+        .changeVotingMethod(spaceId, newVotingPowerSource, newUnity, newQuorum);
 
-      // Verify the event is emitted
+      // Verify the event is emitted with all parameters
       await expect(changeTx)
         .to.emit(daoSpaceFactory, 'VotingMethodChanged')
-        .withArgs(spaceId, initialVotingPowerSource, newVotingPowerSource);
+        .withArgs(
+          spaceId,
+          initialVotingPowerSource,
+          newVotingPowerSource,
+          initialUnity,
+          newUnity,
+          initialQuorum,
+          newQuorum,
+        );
 
-      // Verify the voting power source has been updated
+      // Verify all parameters have been updated
       const updatedSpaceDetails = await daoSpaceFactory.getSpaceDetails(
         spaceId,
       );
       expect(updatedSpaceDetails.votingPowerSource).to.equal(
         newVotingPowerSource,
       );
+      expect(updatedSpaceDetails.unity).to.equal(newUnity);
+      expect(updatedSpaceDetails.quorum).to.equal(newQuorum);
     });
 
     it('Should allow space executor to change the entry method', async function () {
@@ -3698,7 +3712,7 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // Try to change voting method as non-executor (should fail)
       await expect(
-        daoSpaceFactory.connect(other).changeVotingMethod(spaceId, 2),
+        daoSpaceFactory.connect(other).changeVotingMethod(spaceId, 2, 60, 30),
       ).to.be.revertedWith('Not executor');
     });
 
@@ -3741,7 +3755,9 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // Try to set invalid voting method (0)
       await expect(
-        daoSpaceFactory.connect(executorSigner).changeVotingMethod(spaceId, 0),
+        daoSpaceFactory
+          .connect(executorSigner)
+          .changeVotingMethod(spaceId, 0, 51, 51),
       ).to.be.revertedWith('Invalid voting power source');
     });
 
@@ -3851,7 +3867,7 @@ describe('DAOSpaceFactoryImplementation', function () {
       const changeVotingMethodCalldata =
         daoSpaceFactory.interface.encodeFunctionData(
           'changeVotingMethod',
-          [spaceId, 3], // Change to voting method 3
+          [spaceId, 3, 60, 40], // Change to voting method 3, unity 60%, quorum 40%
         );
 
       // Create a proposal to change the voting method
@@ -3885,7 +3901,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       } catch (error) {
         // If the error is "Proposal already executed", we can ignore it
         // This means the first vote was enough to pass the proposal
-        if (!error.toString().includes('Proposal already executed')) {
+        const errorMessage = (error as Error).toString();
+        if (!errorMessage.includes('Proposal already executed')) {
           // If it's a different error, rethrow it
           throw error;
         }
@@ -3896,6 +3913,57 @@ describe('DAOSpaceFactoryImplementation', function () {
         spaceId,
       );
       expect(updatedSpaceDetails.votingPowerSource).to.equal(3);
+    });
+
+    it('Should reject invalid unity and quorum values', async function () {
+      const { spaceHelper, daoSpaceFactory, owner } = await loadFixture(
+        deployFixture,
+      );
+
+      // Create a space
+      await spaceHelper.createDefaultSpace();
+      const spaceId = (await daoSpaceFactory.spaceCounter()).toString();
+
+      // Get the executor
+      const executorAddress = await daoSpaceFactory.getSpaceExecutor(spaceId);
+      await ethers.provider.send('hardhat_impersonateAccount', [
+        executorAddress,
+      ]);
+      const executorSigner = await ethers.getSigner(executorAddress);
+
+      // Fund the executor
+      await owner.sendTransaction({
+        to: executorAddress,
+        value: ethers.parseEther('1.0'),
+      });
+
+      // Try to set invalid unity (0)
+      await expect(
+        daoSpaceFactory
+          .connect(executorSigner)
+          .changeVotingMethod(spaceId, 1, 0, 51),
+      ).to.be.revertedWith('Invalid unity');
+
+      // Try to set invalid unity (> 100)
+      await expect(
+        daoSpaceFactory
+          .connect(executorSigner)
+          .changeVotingMethod(spaceId, 1, 101, 51),
+      ).to.be.revertedWith('Invalid unity');
+
+      // Try to set invalid quorum (0)
+      await expect(
+        daoSpaceFactory
+          .connect(executorSigner)
+          .changeVotingMethod(spaceId, 1, 51, 0),
+      ).to.be.revertedWith('Invalid quorum');
+
+      // Try to set invalid quorum (> 100)
+      await expect(
+        daoSpaceFactory
+          .connect(executorSigner)
+          .changeVotingMethod(spaceId, 1, 51, 101),
+      ).to.be.revertedWith('Invalid quorum');
     });
   });
 });
