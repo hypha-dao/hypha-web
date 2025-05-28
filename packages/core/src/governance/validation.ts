@@ -317,3 +317,20 @@ export const mapToCreateProposalWeb3Input = (
     data: tx.data || '0x',
   })),
 });
+
+export const createChangeEntryMethodFiles = {
+  image: z
+    .instanceof(File)
+    .refine(
+      (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
+      'File size must be less than 5MB',
+    )
+    .refine(
+      (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
+      'File must be an image (JPEG, PNG, GIF, WEBP)',
+    )
+    .optional(),
+  attachments: z.array(z.instanceof(File)).optional(),
+};
+
+export const schemaCreateChangeEntryMethodFiles = z.object(createChangeEntryMethodFiles);
