@@ -334,3 +334,31 @@ export const createChangeEntryMethodFiles = {
 };
 
 export const schemaCreateChangeEntryMethodFiles = z.object(createChangeEntryMethodFiles);
+
+const createChangeEntryMethodWeb2Props = {
+  title: z.string().min(1).max(50),
+  description: z.string().min(1).max(4000),
+  slug: z
+    .string()
+    .min(1)
+    .max(50)
+    .regex(
+      /^[a-z0-9-]+$/,
+      'Slug must contain only lowercase letters, numbers, and hyphens',
+    )
+    .optional(),
+  creatorId: z.number().min(1),
+  spaceId: z.number().min(1),
+  web3ProposalId: z.number().optional(),
+};
+
+export const schemaCreateChangeEntryMethodWeb2 = z.object(createChangeEntryMethodWeb2Props);
+
+export const schemaCreateChangeEntryMethod = z.object({
+  ...createChangeEntryMethodWeb2Props,
+});
+
+export const schemaCreateChangeEntryMethodForm = z.object({
+  ...createChangeEntryMethodWeb2Props,
+  ...createChangeEntryMethodFiles,
+});

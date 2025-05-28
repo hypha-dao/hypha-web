@@ -928,6 +928,31 @@ export const daoSpaceFactoryImplementationAbi = [
         indexed: true,
       },
       {
+        name: 'oldJoinMethod',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'newJoinMethod',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'EntryMethodChanged',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
         name: 'oldVotingPowerSource',
         internalType: 'uint256',
         type: 'uint256',
@@ -1272,6 +1297,16 @@ export const daoSpaceFactoryImplementationAbi = [
     name: 'upgradeToAndCall',
     outputs: [],
     stateMutability: 'payable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: '_newJoinMethod', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'changeEntryMethod',
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
 ] as const;
 
