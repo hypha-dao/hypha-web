@@ -111,8 +111,8 @@ export const useIssueTokenMutationsWeb3Rpc = (config?: Config) => {
                 BigInt(arg.maxSupply),
                 arg.transferable,
                 arg.isVotingToken,
-                BigInt(1), // TODO: temp for MVP
-                BigInt(604800), // TODO: temp for MVP
+                BigInt(arg.decayPercentage), // TODO: temp for MVP
+                BigInt(arg.decayInterval), // TODO: temp for MVP
               ],
             }),
           },

@@ -64,6 +64,8 @@ export const useCreateIssueTokenOrchestrator = ({
             transferable: arg.transferable,
             isVotingToken: arg.isVotingToken,
             type: arg.type,
+            decayPercentage: arg.type === 'voice' ? 1 : undefined,
+            decayInterval: arg.type === 'voice' ? 604800 : undefined,
           });
           completeTask('CREATE_WEB3_AGREEMENT');
         }
