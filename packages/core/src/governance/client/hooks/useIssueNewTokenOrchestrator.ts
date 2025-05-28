@@ -20,7 +20,7 @@ type CreateIssueTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
   maxSupply: number;
   transferable: boolean;
   isVotingToken: boolean;
-  type: string;
+  type: 'voice' | 'ownership' | 'utility' | 'credits';
 };
 
 export const useCreateIssueTokenOrchestrator = ({

@@ -16,6 +16,8 @@ import {
   regularTokenFactoryAddress,
   ownershipTokenFactoryAbi,
   ownershipTokenFactoryAddress,
+  decayingTokenFactoryAbi,
+  decayingTokenFactoryAddress,
 } from '@core/generated';
 
 interface CreateTokenArgs {
@@ -25,7 +27,9 @@ interface CreateTokenArgs {
   maxSupply: number;
   transferable: boolean;
   isVotingToken: boolean;
-  type: string;
+  type: 'utility' | 'credits' | 'ownership' | 'voice';
+  decayPercentage?: number;
+  decayInterval?: number;
 }
 
 export const useIssueTokenMutationsWeb3Rpc = (config?: Config) => {
@@ -39,6 +43,7 @@ export const useIssueTokenMutationsWeb3Rpc = (config?: Config) => {
     config ? [config, 'createIssueToken'] : null,
     async ([cfg], { arg }: { arg: CreateTokenArgs }) => {
       const chainId = 8453;
+
       let txData: Array<{
         target: `0x${string}`;
         value: number;
@@ -82,12 +87,44 @@ export const useIssueTokenMutationsWeb3Rpc = (config?: Config) => {
             }),
           },
         ];
+      } else if (arg.type === 'voice') {
+        if (
+          typeof arg.decayPercentage !== 'number' ||
+          typeof arg.decayInterval !== 'number'
+        ) {
+          throw new Error(
+            'Missing decayPercentage or decayInterval for voice token',
+          );
+        }
+
+        txData = [
+          {
+            target: decayingTokenFactoryAddress[chainId],
+            value: 0,
+            data: encodeFunctionData({
+              abi: decayingTokenFactoryAbi,
+              functionName: 'deployDecayingToken',
+              args: [
+                BigInt(arg.spaceId),
+                arg.name,
+                arg.symbol,
+                BigInt(arg.maxSupply),
+                arg.transferable,
+                arg.isVotingToken,
+                BigInt(1), // TODO: temp for MVP
+                BigInt(604800), // TODO: temp for MVP
+              ],
+            }),
+          },
+        ];
       }
+
       const parsedProposal = schemaCreateProposalWeb3.parse({
         spaceId: arg.spaceId,
-        duration: 86400,
+        duration: 604800,
         transactions: txData,
       });
+
       const proposalArgs = mapToCreateProposalWeb3Input(parsedProposal);
       return writeContract(cfg, createProposal(proposalArgs));
     },

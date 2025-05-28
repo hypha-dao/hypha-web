@@ -8,6 +8,7 @@ import { decodeFunctionData, erc20Abi } from 'viem';
 import {
   regularTokenFactoryAbi,
   ownershipTokenFactoryAbi,
+  decayingTokenFactoryAbi,
 } from '@core/generated';
 
 export const useProposalDetailsWeb3Rpc = ({
@@ -58,15 +59,17 @@ export const useProposalDetailsWeb3Rpc = ({
       value: bigint;
     }[] = [];
 
-    const tokens: {
-      tokenType: 'regular' | 'ownership';
+    const tokens: Array<{
+      tokenType: 'regular' | 'ownership' | 'voice';
       spaceId: bigint;
       name: string;
       symbol: string;
       maxSupply: bigint;
       isVotingToken: boolean;
       transferable?: boolean;
-    }[] = [];
+      decayPercentage?: bigint;
+      decayInterval?: bigint;
+    }> = [];
 
     (transactions as any[]).forEach((tx) => {
       try {
@@ -91,6 +94,7 @@ export const useProposalDetailsWeb3Rpc = ({
           abi: regularTokenFactoryAbi,
           data: tx.data,
         });
+
         if (decoded.functionName === 'deployToken') {
           const [
             spaceId,
@@ -126,6 +130,7 @@ export const useProposalDetailsWeb3Rpc = ({
           abi: ownershipTokenFactoryAbi,
           data: tx.data,
         });
+
         if (decoded.functionName === 'deployOwnershipToken') {
           const [spaceId, name, symbol, maxSupply, isVotingToken] =
             decoded.args as unknown as [
@@ -135,6 +140,7 @@ export const useProposalDetailsWeb3Rpc = ({
               bigint,
               boolean,
             ];
+
           tokens.push({
             tokenType: 'ownership',
             spaceId,
@@ -142,6 +148,48 @@ export const useProposalDetailsWeb3Rpc = ({
             symbol,
             maxSupply,
             isVotingToken,
+          });
+          return;
+        }
+      } catch {}
+
+      try {
+        const decoded = decodeFunctionData({
+          abi: decayingTokenFactoryAbi,
+          data: tx.data,
+        });
+
+        if (decoded.functionName === 'deployDecayingToken') {
+          const [
+            spaceId,
+            name,
+            symbol,
+            maxSupply,
+            transferable,
+            isVotingToken,
+            decayPercentage,
+            decayInterval,
+          ] = decoded.args as unknown as [
+            bigint,
+            string,
+            string,
+            bigint,
+            boolean,
+            boolean,
+            bigint,
+            bigint,
+          ];
+
+          tokens.push({
+            tokenType: 'voice',
+            spaceId,
+            name,
+            symbol,
+            maxSupply,
+            isVotingToken,
+            transferable,
+            decayPercentage,
+            decayInterval,
           });
         }
       } catch {}
