@@ -51,3 +51,24 @@ export interface UpdateAgreementInput {
 export type UpdateAgreementBySlugInput = {
   slug: string;
 } & UpdateAgreementInput;
+
+export interface CreateChangeEntryMethodInput {
+  title: string;
+  description: string;
+  image?: string;
+  attachments?: string[];
+  slug?: string;
+  spaceId: number;
+  creatorId: number;
+}
+
+export interface UpdateChangeEntryMethodInput {
+  image?: string;
+  slug?: string;
+  attachments?: string[];
+  web3ProposalId?: number | null;
+}
+
+export type UpdateChangeEntryMethodBySlugInput = {
+  slug: string;
+} & UpdateChangeEntryMethodInput;

@@ -36,3 +36,29 @@ export async function deleteAgreementBySlugAction(
   // const db = getDb({ authToken });
   return deleteAgreementBySlug(data, { db });
 }
+
+export async function createChangeEntryMethodAction(
+  data: CreateAgreementInput,
+  { authToken }: { authToken?: string },
+) {
+  if (!authToken) throw new Error('authToken is required to create agreement');
+  return createAgreement({ ...data }, { db });
+}
+
+export async function updateChangeEntryMethodBySlugAction(
+  data: UpdateAgreementBySlugInput,
+  { authToken }: { authToken?: string },
+) {
+  // TODO: #602 Define RLS Policies for Spaces Table
+  // const db = getDb({ authToken });
+  return updateAgreementBySlug(data, { db });
+}
+
+export async function deleteChangeEntryMethodBySlugAction(
+  data: { slug: string },
+  { authToken }: { authToken?: string },
+) {
+  // TODO: #602 Define RLS Policies for Spaces Table
+  // const db = getDb({ authToken });
+  return deleteAgreementBySlug(data, { db });
+}
