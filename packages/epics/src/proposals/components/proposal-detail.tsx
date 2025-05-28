@@ -13,7 +13,7 @@ import { CommentsList } from '../../interactions/components/comments-list';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useProposalDetailsWeb3Rpc } from '@core/governance';
-import { ProposalTransactionItem } from '../../governance';
+import { ProposalTransactionItem, ProposalTokenItem } from '../../governance';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
 
 type ProposalDetailProps = ProposalHeadProps & {
@@ -95,6 +95,13 @@ export const ProposalDetail = ({
       </Skeleton>
       <MarkdownSuspense>{content}</MarkdownSuspense>
       <AttachmentList attachments={attachments || []} />
+      {proposalDetails?.tokens.map((token) => (
+        <ProposalTokenItem
+          name={token.name}
+          symbol={token.symbol}
+          initialSupply={token.initialSupply}
+        />
+      ))}
       {proposalDetails?.transfers.map((tx, idx) => (
         <ProposalTransactionItem
           key={idx}
