@@ -242,7 +242,7 @@ export const schemaIssueNewToken = z.object({
       .min(0, { message: 'Digits must be 0 or greater' })
       .max(18, { message: 'Digits must not exceed 18' }),
   ),
-  type: z.enum(['utility', 'credits', 'ownership'], {
+  type: z.enum(['utility', 'credits', 'ownership', 'voice'], {
     required_error: 'Token type is required',
   }),
 

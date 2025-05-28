@@ -30,6 +30,12 @@ const TOKEN_TYPE_OPTIONS = [
     label: 'Ownership Token',
     description: 'reflects stake or equity in the space',
   },
+  {
+    value: 'voice',
+    label: 'Voice Token',
+    description:
+      'provides a voice in management or decision making within the space',
+  },
 ];
 
 export function TokenTypeField() {
