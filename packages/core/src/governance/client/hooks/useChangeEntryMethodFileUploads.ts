@@ -1,11 +1,11 @@
 'use client';
 
 import { useFileUpload } from '@core/assets';
-import { schemaChangeEntryMethodFiles } from '@core/space/validation';
+import { schemaCreateChangeEntryMethodFiles } from '@core/governance/validation';
 import React from 'react';
 import { z } from 'zod';
 
-type Files = z.infer<typeof schemaChangeEntryMethodFiles>;
+type Files = z.infer<typeof schemaCreateChangeEntryMethodFiles>;
 
 export type UseChangeEntryMethodFileUploadsReturn = {
   isLoading: boolean;
