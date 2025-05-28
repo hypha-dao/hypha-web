@@ -87,7 +87,9 @@ export const useProposalDetailsWeb3Rpc = ({
           });
           return;
         }
-      } catch {}
+      } catch (error) {
+        console.error('Failed to decode function data:', error);
+      }
 
       try {
         const decoded = decodeFunctionData({
@@ -123,7 +125,9 @@ export const useProposalDetailsWeb3Rpc = ({
           });
           return;
         }
-      } catch {}
+      } catch (error) {
+        console.error('Failed to decode function data:', error);
+      }
 
       try {
         const decoded = decodeFunctionData({
@@ -151,7 +155,9 @@ export const useProposalDetailsWeb3Rpc = ({
           });
           return;
         }
-      } catch {}
+      } catch (error) {
+        console.error('Failed to decode function data:', error);
+      }
 
       try {
         const decoded = decodeFunctionData({
@@ -192,7 +198,9 @@ export const useProposalDetailsWeb3Rpc = ({
             decayInterval,
           });
         }
-      } catch {}
+      } catch (error) {
+        console.error('Failed to decode function data:', error);
+      }
     });
 
     return {
