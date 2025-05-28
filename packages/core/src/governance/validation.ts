@@ -231,10 +231,10 @@ export const schemaIssueNewToken = z.object({
     )
     .optional(),
 
-  tokenDescription: z
-    .string()
-    .min(10, { message: 'Description must be at least 10 characters long' })
-    .max(500, { message: 'Description must be at most 500 characters long' }),
+  // tokenDescription: z
+  //   .string()
+  //   .min(10, { message: 'Description must be at least 10 characters long' })
+  //   .max(500, { message: 'Description must be at most 500 characters long' }),
 
   // TODO: after MVP
   // digits: z.preprocess(
@@ -276,7 +276,7 @@ export const schemaCreateAgreementForm = z.object({
   // digits: schemaIssueNewToken.shape.digits,
   type: schemaIssueNewToken.shape.type,
   maxSupply: schemaIssueNewToken.shape.maxSupply,
-  tokenDescription: schemaIssueNewToken.shape.tokenDescription,
+  // tokenDescription: schemaIssueNewToken.shape.tokenDescription,
 });
 
 export const schemaCreateProposalWeb3 = z.object({

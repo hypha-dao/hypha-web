@@ -7,10 +7,15 @@ import {
   schemaCreateAgreementForm,
   createAgreementFiles,
   useMe,
+  useCreateIssueTokenOrchestrator,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
+import { useJwt } from '@hypha-platform/core/client';
+import { useConfig } from 'wagmi';
+import { LoadingBackdrop } from '@hypha-platform/ui/server';
+import { useRouter } from 'next/navigation';
 
 type FormValues = z.infer<typeof schemaCreateAgreementForm>;
 
@@ -30,7 +35,19 @@ export const IssueNewTokenForm = ({
   web3SpaceId,
   plugin,
 }: IssueNewTokenFormProps) => {
+  const router = useRouter();
   const { person } = useMe();
+  const { jwt } = useJwt();
+  const config = useConfig();
+  const {
+    createIssueToken,
+    reset,
+    currentAction,
+    isError,
+    isPending,
+    progress,
+    agreement: { slug: agreementSlug },
+  } = useCreateIssueTokenOrchestrator({ authToken: jwt, config });
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schemaIssueNewToken),
@@ -47,35 +64,62 @@ export const IssueNewTokenForm = ({
       // digits: 0,
       type: undefined,
       maxSupply: 0,
-      tokenDescription: '',
+      // tokenDescription: '',
     },
   });
 
+  React.useEffect(() => {
+    if (progress === 100 && agreementSlug) {
+      router.push(successfulUrl);
+    }
+  }, [progress, agreementSlug, router, successfulUrl]);
+
   const handleCreate = async (data: FormValues) => {
-    console.log('Issue new token', data);
+    await createIssueToken({
+      ...data,
+      spaceId: spaceId as number,
+      web3SpaceId: web3SpaceId as number,
+      transferable: true,
+      isVotingToken: false,
+    });
   };
 
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(handleCreate)}
-        className="flex flex-col gap-5"
-      >
-        <CreateAgreementBaseFields
-          creator={{
-            avatar: person?.avatarUrl || '',
-            name: person?.name || '',
-            surname: person?.surname || '',
-          }}
-          closeUrl={successfulUrl}
-          isLoading={false}
-        />
-        {plugin}
-        <Separator />
-        <div className="flex justify-end w-full">
-          <Button type="submit">Publish</Button>
-        </div>
-      </form>
-    </Form>
+    <LoadingBackdrop
+      progress={progress}
+      isLoading={isPending}
+      message={
+        isError ? (
+          <div className="flex flex-col">
+            <div>Ouh Snap. There was an error</div>
+            <Button onClick={reset}>Reset</Button>
+          </div>
+        ) : (
+          <div>{currentAction}</div>
+        )
+      }
+    >
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(handleCreate)}
+          className="flex flex-col gap-5"
+        >
+          <CreateAgreementBaseFields
+            creator={{
+              avatar: person?.avatarUrl || '',
+              name: person?.name || '',
+              surname: person?.surname || '',
+            }}
+            closeUrl={successfulUrl}
+            isLoading={false}
+          />
+          {plugin}
+          <Separator />
+          <div className="flex justify-end w-full">
+            <Button type="submit">Publish</Button>
+          </div>
+        </form>
+      </Form>
+    </LoadingBackdrop>
   );
 };

@@ -7,3 +7,4 @@ export * from './useCreatePayForExpensesOrchestrator';
 export * from './useCreateDeployFundsOrchestrator';
 export * from './useCreateProposeAContributionOrchestrator';
 export * from './useProposeAContributionMutations.web3.rsc';
+export * from './useIssueNewTokenOrchestrator';
