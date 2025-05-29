@@ -45,8 +45,7 @@ export const EntryMethod = ({
 
   const handleChange = useCallback(
     (value: string) => {
-      const found =
-        entryMethods.find((r) => String(r.value) === value) || null;
+      const found = entryMethods.find((r) => String(r.value) === value) || null;
 
       setSelected(found);
       if (found) {

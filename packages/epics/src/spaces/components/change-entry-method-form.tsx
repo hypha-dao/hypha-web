@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter } from 'next/navigation';
 import {
   AddAttachment,
   Button,
@@ -18,7 +18,7 @@ import {
   FormLabel,
   Textarea,
 } from '@hypha-platform/ui';
-import Link from "next/link";
+import Link from 'next/link';
 import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
 import {
@@ -27,15 +27,15 @@ import {
   useCreateChangeEntryMethodOrchestrator,
   useJwt,
   useMe,
-} from "@hypha-platform/core/client";
-import { z } from "zod";
-import { LoadingBackdrop } from "@hypha-platform/ui/server";
-import { useConfig } from "wagmi";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import React from "react";
-import clsx from "clsx";
-import { EntryMethodField } from "./entry-method-field";
+} from '@hypha-platform/core/client';
+import { z } from 'zod';
+import { LoadingBackdrop } from '@hypha-platform/ui/server';
+import { useConfig } from 'wagmi';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import React from 'react';
+import clsx from 'clsx';
+import { EntryMethodField } from './entry-method-field';
 
 const fullSchemaCreateChangeEntryMethodForm =
   schemaCreateChangeEntryMethodForm.extend({});
@@ -98,8 +98,8 @@ export const ChangeEntryMethodForm = ({
     spaceId: spaceId ?? undefined,
     creatorId: person?.id,
     entryMethod: 0,
-  }
-  
+  };
+
   const form = useForm<FormValues>({
     resolver: zodResolver(fullSchemaCreateChangeEntryMethodForm),
     defaultValues,

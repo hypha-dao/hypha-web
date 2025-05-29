@@ -315,7 +315,9 @@ export const createChangeEntryMethodFiles = {
   attachments: z.array(z.instanceof(File)).optional(),
 };
 
-export const schemaCreateChangeEntryMethodFiles = z.object(createChangeEntryMethodFiles);
+export const schemaCreateChangeEntryMethodFiles = z.object(
+  createChangeEntryMethodFiles,
+);
 
 const createChangeEntryMethodWeb2Props = {
   title: z.string().min(1).max(50),
@@ -334,7 +336,9 @@ const createChangeEntryMethodWeb2Props = {
   web3ProposalId: z.number().optional(),
 };
 
-export const schemaCreateChangeEntryMethodWeb2 = z.object(createChangeEntryMethodWeb2Props);
+export const schemaCreateChangeEntryMethodWeb2 = z.object(
+  createChangeEntryMethodWeb2Props,
+);
 
 export const schemaCreateChangeEntryMethod = z.object({
   ...createChangeEntryMethodWeb2Props,
