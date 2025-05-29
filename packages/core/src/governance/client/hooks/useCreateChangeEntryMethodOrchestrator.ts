@@ -21,20 +21,20 @@ type UseCreateChangeEntryMethodOrchestratorInput = {
   config?: Config;
 };
 
-export type TaskName =
+type TaskName =
   | 'CREATE_WEB2_CHANGE_ENTRY_METHOD'
   | 'CREATE_WEB3_CHANGE_ENTRY_METHOD'
   | 'UPLOAD_FILES'
   | 'LINK_WEB2_AND_WEB3_CHANGE_ENTRY_METHOD';
 
-export type TaskState = {
+type TaskState = {
   [K in TaskName]: {
     status: TaskStatus;
     message?: string;
   };
 };
 
-export enum TaskStatus {
+enum TaskStatus {
   IDLE = 'idle',
   IS_PENDING = 'isPending',
   IS_DONE = 'isDone',
@@ -48,7 +48,7 @@ const taskActionDescriptions: Record<TaskName, string> = {
   LINK_WEB2_AND_WEB3_CHANGE_ENTRY_METHOD: 'Linking Web2 and Web3 change entry method',
 };
 
-export type ProgressAction =
+type ProgressAction =
   | { type: 'START_TASK'; taskName: TaskName; message?: string }
   | { type: 'COMPLETE_TASK'; taskName: TaskName; message?: string }
   | { type: 'SET_ERROR'; taskName: TaskName; message: string }
@@ -61,7 +61,7 @@ const initialTaskState: TaskState = {
   LINK_WEB2_AND_WEB3_CHANGE_ENTRY_METHOD: { status: TaskStatus.IDLE },
 };
 
-export const progressStateReducer = (
+const progressStateReducer = (
   state: TaskState,
   action: ProgressAction,
 ): TaskState => {
@@ -102,7 +102,12 @@ const computeProgress = (tasks: TaskState): number => {
   return Math.min(100, Math.max(0, Math.round(progress)));
 };
 
-export const useCreateAgreementOrchestrator = ({
+type CreateChangeEntryMethodArg = z.infer<typeof schemaCreateChangeEntryMethod> & {
+  entryMethod: number;
+  web3SpaceId?: number;
+};
+
+export const useCreateChangeEntryMethodOrchestrator = ({
   authToken,
   config,
 }: UseCreateChangeEntryMethodOrchestratorInput) => {
@@ -147,7 +152,7 @@ export const useCreateAgreementOrchestrator = ({
 
   const { trigger: createChangeEntryMethod } = useSWRMutation(
     'createChangeEntryMethodOrchestration',
-    async (_, { arg }: { arg: z.infer<typeof schemaCreateChangeEntryMethod> }) => {
+    async (_, { arg }: { arg: CreateChangeEntryMethodArg }) => {
       startTask('CREATE_WEB2_CHANGE_ENTRY_METHOD');
       const inputCreateChangeEntryMethodWeb2 = schemaCreateChangeEntryMethodWeb2.parse(arg);
       const createdChangeEntryMethod = await web2.createChangeEntryMethod(
