@@ -15,13 +15,14 @@ import {
   Separator,
   UploadLeadImage,
   Badge,
+  FormLabel,
+  Textarea,
 } from '@hypha-platform/ui';
 import Link from "next/link";
 import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
 import {
   ALLOWED_IMAGE_FILE_SIZE,
-  createAgreementFiles,
   schemaCreateChangeEntryMethodForm,
   useCreateChangeEntryMethodOrchestrator,
   useJwt,
@@ -33,10 +34,10 @@ import { useConfig } from "wagmi";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
-import { PersonAvatar } from "../../people/components/person-avatar";
+import clsx from "clsx";
 
 const fullSchemaCreateChangeEntryMethodForm =
-  schemaCreateChangeEntryMethodForm.extend(createAgreementFiles);
+  schemaCreateChangeEntryMethodForm.extend({});
 
 type FormValues = z.infer<typeof fullSchemaCreateChangeEntryMethodForm>;
 
@@ -44,16 +45,20 @@ interface ChangeEntryMethodFormProps {
   spaceId: number | undefined | null;
   web3SpaceId: number | undefined | null;
   successfulUrl: string;
+  submitLabel?: string;
+  submitLoadingLabel?: string;
 }
 
 export const ChangeEntryMethodForm = ({
   successfulUrl,
   spaceId,
   web3SpaceId,
+  submitLabel,
+  submitLoadingLabel,
 }: ChangeEntryMethodFormProps) => {
   const router = useRouter();
   const { person } = useMe();
-  const { jwt } = useJwt();
+  const { jwt, isLoadingJwt } = useJwt();
   const config = useConfig();
   const {
     createChangeEntryMethod,
@@ -64,19 +69,19 @@ export const ChangeEntryMethodForm = ({
     progress,
     changeEntryMethod: { slug: agreementSlug },
   } = useCreateChangeEntryMethodOrchestrator({ authToken: jwt, config });
+  const defaultValues = {
+    title: '',
+    description: '',
+    image: undefined,
+    attachments: undefined,
+    spaceId: spaceId ?? undefined,
+    creatorId: person?.id,
+    entryMethod: 0,
+  }
   
   const form = useForm<FormValues>({
     resolver: zodResolver(fullSchemaCreateChangeEntryMethodForm),
-    defaultValues: {
-      title: '',
-      description: '',
-      leadImage: undefined,
-      image: undefined,
-      attachments: undefined,
-      spaceId: spaceId ?? undefined,
-      creatorId: person?.id,
-      entryMethod: 0,
-    },
+    defaultValues,
   });
 
   console.log(form);
@@ -114,7 +119,7 @@ export const ChangeEntryMethodForm = ({
     name: person?.name || '',
     surname: person?.surname || '',
   };
-  const isLoading = false;
+  const isLoading = isLoadingJwt;
 
   return (
     <LoadingBackdrop
@@ -134,21 +139,32 @@ export const ChangeEntryMethodForm = ({
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(handleCreate)}
-          className="flex flex-col gap-5"
+          className={clsx('flex flex-col gap-5', isLoading && 'opacity-50')}
         >
           <div className="flex gap-5 justify-between">
             <div className="flex items-center gap-3">
-              <PersonAvatar
-                size="lg"
-                isLoading={isLoading}
-                avatarSrc={creator?.avatar}
-                userName={`${creator?.name} ${creator?.surname}`}
-              />
+              {/* <FormField
+                control={form.control}
+                name="logoUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <UploadAvatar
+                        {...field}
+                        maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
+                        defaultImage={
+                          typeof defaultValues?.logoUrl === 'string'
+                            ? defaultValues?.logoUrl
+                            : undefined
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              /> */}
               <div className="flex justify-between items-center w-full">
                 <div className="flex flex-col">
-                  <Badge className="w-fit" colorVariant="accent">
-                    Change Entry Method
-                  </Badge>
                   <FormField
                     control={form.control}
                     name="title"
@@ -166,34 +182,42 @@ export const ChangeEntryMethodForm = ({
                       </FormItem>
                     )}
                   />
-                  <Text className="text-1 text-neutral-11">
-                    {creator?.name} {creator?.surname}
-                  </Text>
+                  <span className="flex items-center">
+                    <Text className="text-1 text-foreground mr-1">
+                      Created by
+                    </Text>
+                    <Text className="text-1 text-neutral-11">
+                      {creator?.name} {creator?.surname}
+                    </Text>
+                  </span>
                 </div>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              colorVariant="neutral"
-              className="flex items-center"
-              asChild
-            >
-              <Link href={successfulUrl} scroll={false}>
-                <RxCross1 className="ml-2" />
+            <Link href={successfulUrl} scroll={false}>
+              <Button
+                variant="ghost"
+                colorVariant="neutral"
+                className="flex items-center"
+              >
                 Close
-              </Link>
-            </Button>
+                <RxCross1 className="ml-2" />
+              </Button>
+            </Link>
           </div>
-          <Separator />
           <FormField
             control={form.control}
-            name="leadImage"
+            name="image"
             render={({ field }) => (
               <FormItem>
                 <FormControl>
                   <UploadLeadImage
-                    onChange={field.onChange}
+                    {...field}
                     maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
+                    defaultImage={
+                      typeof defaultValues?.image === 'string'
+                        ? defaultValues?.image
+                        : undefined
+                    }
                   />
                 </FormControl>
                 <FormMessage />
@@ -230,10 +254,15 @@ export const ChangeEntryMethodForm = ({
               </FormItem>
             )}
           />
-          {/* {plugin} */}
           <Separator />
           <div className="flex justify-end w-full">
-            <Button type="submit">Change</Button>
+            <Button
+              type="submit"
+              variant={isLoading ? 'outline' : 'default'}
+              disabled={isLoading}
+            >
+              {isLoading ? submitLoadingLabel : submitLabel}
+            </Button>
           </div>
         </form>
       </Form>
