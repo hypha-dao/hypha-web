@@ -23,8 +23,8 @@ export const useChangeEntryMethodFileUploads = (
   authToken?: string | null,
 ): UseChangeEntryMethodFileUploadsReturn => {
   const [files, setFiles] = React.useState<{
-      [K in keyof Files]: Files[K] extends File[] ? string[] : string;
-    }>({} as any);
+    [K in keyof Files]: Files[K] extends File[] ? string[] : string;
+  }>({} as any);
   const [error, setError] = React.useState<string | null>(null);
   const { upload, isUploading } = useFileUpload({
     headers: { Authorization: `Bearer ${authToken}` },
