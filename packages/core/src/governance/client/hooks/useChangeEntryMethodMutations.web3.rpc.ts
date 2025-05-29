@@ -26,7 +26,10 @@ export const useChangeEntryMethodMutationsWeb3Rpc = (config?: Config) => {
     error: errorCreateChangeEntryMethod,
   } = useSWRMutation(
     config ? [config, 'createProposal'] : null,
-    async ([config], { arg }: { arg: { spaceId: number; joinMethod: number } }) => {
+    async (
+      [config],
+      { arg }: { arg: { spaceId: number; joinMethod: number } },
+    ) => {
       const acceptAgreementTx = {
         target: daoSpaceFactoryImplementationAddress[8453],
         value: 0,
@@ -54,7 +57,9 @@ export const useChangeEntryMethodMutationsWeb3Rpc = (config?: Config) => {
     isLoading: isLoadingChangeEntryMethodFromTransaction,
     error: errorWaitChangeEntryMethodFromTransaction,
   } = useSWR(
-    createChangeEntryMethodHash ? [createChangeEntryMethodHash, 'waitFor'] : null,
+    createChangeEntryMethodHash
+      ? [createChangeEntryMethodHash, 'waitFor']
+      : null,
     async ([hash]) => {
       const { logs } = await publicClient.waitForTransactionReceipt({
         hash,

@@ -45,7 +45,8 @@ const taskActionDescriptions: Record<TaskName, string> = {
   CREATE_WEB2_CHANGE_ENTRY_METHOD: 'Creating Web2 change entry method...',
   CREATE_WEB3_CHANGE_ENTRY_METHOD: 'Creating Web3 change entry method...',
   UPLOAD_FILES: 'Uploading Agreement Files...',
-  LINK_WEB2_AND_WEB3_CHANGE_ENTRY_METHOD: 'Linking Web2 and Web3 change entry method',
+  LINK_WEB2_AND_WEB3_CHANGE_ENTRY_METHOD:
+    'Linking Web2 and Web3 change entry method',
 };
 
 type ProgressAction =
@@ -102,7 +103,9 @@ const computeProgress = (tasks: TaskState): number => {
   return Math.min(100, Math.max(0, Math.round(progress)));
 };
 
-type CreateChangeEntryMethodArg = z.infer<typeof schemaCreateChangeEntryMethod> & {
+type CreateChangeEntryMethodArg = z.infer<
+  typeof schemaCreateChangeEntryMethod
+> & {
   entryMethod: number;
   web3SpaceId?: number;
 };
@@ -154,14 +157,16 @@ export const useCreateChangeEntryMethodOrchestrator = ({
     'createChangeEntryMethodOrchestration',
     async (_, { arg }: { arg: CreateChangeEntryMethodArg }) => {
       startTask('CREATE_WEB2_CHANGE_ENTRY_METHOD');
-      const inputCreateChangeEntryMethodWeb2 = schemaCreateChangeEntryMethodWeb2.parse(arg);
+      const inputCreateChangeEntryMethodWeb2 =
+        schemaCreateChangeEntryMethodWeb2.parse(arg);
       const createdChangeEntryMethod = await web2.createChangeEntryMethod(
         inputCreateChangeEntryMethodWeb2,
       );
       completeTask('CREATE_WEB2_CHANGE_ENTRY_METHOD');
 
       let web3ProposalResult = undefined;
-      const web2Slug = createdChangeEntryMethod?.slug ?? web2.createdChangeEntryMethod?.slug;
+      const web2Slug =
+        createdChangeEntryMethod?.slug ?? web2.createdChangeEntryMethod?.slug;
       const web3SpaceId = (arg as any).web3SpaceId;
       const joinMethod = (arg as any).joinMethod;
       try {

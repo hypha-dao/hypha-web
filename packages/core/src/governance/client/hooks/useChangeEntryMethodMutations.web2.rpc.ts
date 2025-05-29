@@ -12,7 +12,9 @@ import {
   deleteChangeEntryMethodBySlugAction,
 } from '@core/governance/server/actions';
 
-export const useChangeEntryMethodMutationsWeb2Rpc = (authToken?: string | null) => {
+export const useChangeEntryMethodMutationsWeb2Rpc = (
+  authToken?: string | null,
+) => {
   const {
     trigger: createChangeEntryMethodMutation,
     reset: resetCreateChangeEntryMethodMutation,
