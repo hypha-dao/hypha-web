@@ -21,11 +21,11 @@ interface ContractTransactionWithWait extends ethers.ContractTransaction {
 }
 
 interface DecayingTokenFactoryInterface {
-  setDecayVotingPowerContract: (
-    decayVotingPowerContract: string,
+  setProposalsContract: (
+    proposalsContract: string,
   ) => Promise<ContractTransactionWithWait>;
   owner(): Promise<string>;
-  decayVotingPowerContract(): Promise<string>;
+  proposalsContract(): Promise<string>;
 }
 
 // Function to parse addresses from addresses.txt
@@ -42,8 +42,7 @@ function parseAddressesFile(): Record<string, string> {
   const patterns = {
     DecayingTokenFactory:
       /DecayingTokenFactory proxy deployed to: (0x[a-fA-F0-9]{40})/,
-    VoteDecayTokenVotingPower:
-      /VoteDecayTokenVotingPower proxy deployed to: (0x[a-fA-F0-9]{40})/,
+    DAOProposals: /DAOProposals deployed to: (0x[a-fA-F0-9]{40})/,
   };
 
   for (const [key, pattern] of Object.entries(patterns)) {
@@ -61,11 +60,11 @@ const decayingTokenFactoryAbi = [
     inputs: [
       {
         internalType: 'address',
-        name: '_decayVotingPowerContract',
+        name: '_proposalsContract',
         type: 'address',
       },
     ],
-    name: 'setDecayVotingPowerContract',
+    name: 'setProposalsContract',
     outputs: [],
     stateMutability: 'nonpayable',
     type: 'function',
@@ -85,7 +84,7 @@ const decayingTokenFactoryAbi = [
   },
   {
     inputs: [],
-    name: 'decayVotingPowerContract',
+    name: 'proposalsContract',
     outputs: [
       {
         internalType: 'address',
@@ -103,10 +102,7 @@ async function main(): Promise<void> {
   const addresses = parseAddressesFile();
 
   // Verify all required addresses are available
-  const requiredContracts = [
-    'DecayingTokenFactory',
-    'VoteDecayTokenVotingPower',
-  ];
+  const requiredContracts = ['DecayingTokenFactory', 'DAOProposals'];
   const missingContracts = requiredContracts.filter(
     (contract) => !addresses[contract],
   );
@@ -144,42 +140,39 @@ async function main(): Promise<void> {
     );
     console.error(`The owner is: ${contractOwner}`);
     throw new Error(
-      'Permission denied: only the contract owner can call setDecayVotingPowerContract',
+      'Permission denied: only the contract owner can call setProposalsContract',
     );
   }
 
   console.log(
-    'Setting decay voting power contract in DecayingTokenFactory with the following address:',
+    'Setting proposals contract in DecayingTokenFactory with the following address:',
   );
-  console.log(
-    'VoteDecayTokenVotingPower:',
-    addresses['VoteDecayTokenVotingPower'],
-  );
+  console.log('DAOProposals:', addresses['DAOProposals']);
 
   try {
-    const tx = await decayingTokenFactory.setDecayVotingPowerContract(
-      addresses['VoteDecayTokenVotingPower'],
+    const tx = await decayingTokenFactory.setProposalsContract(
+      addresses['DAOProposals'],
     );
 
     console.log('Transaction sent, waiting for confirmation...');
     await tx.wait();
     console.log(
-      'Decay voting power contract set successfully in DecayingTokenFactory!',
+      'Proposals contract set successfully in DecayingTokenFactory!',
     );
 
-    // Retrieve and display the set decay voting power contract address
-    console.log('\nRetrieving the set decay voting power contract address...');
-    const setDecayVotingPowerAddress =
-      await decayingTokenFactory.decayVotingPowerContract();
+    // Retrieve and display the set proposals contract address
+    console.log('\nRetrieving the set proposals contract address...');
+    const setProposalsContractAddress =
+      await decayingTokenFactory.proposalsContract();
     console.log(
-      'Current decay voting power contract address:',
-      setDecayVotingPowerAddress,
+      'Current proposals contract address:',
+      setProposalsContractAddress,
     );
 
     // Verify it matches what we set
     if (
-      setDecayVotingPowerAddress.toLowerCase() ===
-      addresses['VoteDecayTokenVotingPower'].toLowerCase()
+      setProposalsContractAddress.toLowerCase() ===
+      addresses['DAOProposals'].toLowerCase()
     ) {
       console.log(
         '✅ Verification successful: The retrieved address matches the one we set',
@@ -188,11 +181,11 @@ async function main(): Promise<void> {
       console.log(
         '❌ Verification failed: The retrieved address does not match the one we set',
       );
-      console.log('Expected:', addresses['VoteDecayTokenVotingPower']);
-      console.log('Retrieved:', setDecayVotingPowerAddress);
+      console.log('Expected:', addresses['DAOProposals']);
+      console.log('Retrieved:', setProposalsContractAddress);
     }
   } catch (error: any) {
-    console.error('Error setting decay voting power contract:', error.message);
+    console.error('Error setting proposals contract:', error.message);
     throw error;
   }
 }
@@ -202,4 +195,4 @@ main()
   .catch((error) => {
     console.error(error);
     process.exit(1);
-  });
+  }); 
