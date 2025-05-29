@@ -31,7 +31,7 @@
     "@openzeppelin/contracts": "^5.2.0",
     "@privy-io/react-auth": "^2.4.3",
     "@privy-io/wagmi": "^1.0.3",
-    "@radix-ui/react-aspect-ratio": "^1.1.2",
+    "@radix-ui/react-aspect-ratio": "^1.1.7",
     "@radix-ui/react-avatar": "^1.1.2",
     "@radix-ui/react-dialog": "^1.1.6",
     "@radix-ui/react-dropdown-menu": "^2.1.4",
