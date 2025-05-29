@@ -129,7 +129,7 @@
     "@nomicfoundation/hardhat-ignition-ethers": "^0.15.0",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.0",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "@nomicfoundation/hardhat-verify": "^2.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.0.14",
     "@nomiclabs/hardhat-solhint": "^4.0.1",
     "@nx-extend/shadcn-ui": "^4.2.1",
     "@nx/devkit": "^20.4.4",
