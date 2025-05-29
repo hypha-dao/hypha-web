@@ -35,6 +35,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
 import clsx from "clsx";
+import { EntryMethodField } from "./entry-method-field";
 
 const fullSchemaCreateChangeEntryMethodForm =
   schemaCreateChangeEntryMethodForm.extend({});
@@ -48,6 +49,26 @@ interface ChangeEntryMethodFormProps {
   submitLabel?: string;
   submitLoadingLabel?: string;
 }
+
+type EntryMethod = {
+  name: string;
+  value: number;
+};
+
+const entryMethods: EntryMethod[] = [
+  {
+    name: 'Open Access',
+    value: 0,
+  },
+  {
+    name: 'Invite Only',
+    value: 2,
+  },
+  {
+    name: 'Token Based',
+    value: 1,
+  },
+];
 
 export const ChangeEntryMethodForm = ({
   successfulUrl,
@@ -254,6 +275,7 @@ export const ChangeEntryMethodForm = ({
               </FormItem>
             )}
           />
+          <EntryMethodField entryMethods={entryMethods} />
           <Separator />
           <div className="flex justify-end w-full">
             <Button
