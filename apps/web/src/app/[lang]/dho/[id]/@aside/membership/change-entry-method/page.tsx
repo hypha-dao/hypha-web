@@ -21,6 +21,8 @@ export default async function ChangeEntryMethodPage({ params }: PageProps) {
   return (
     <SidePanel>
       <ChangeEntryMethodForm
+        submitLabel="Change"
+        submitLoadingLabel="Changing..."
         successfulUrl={getDhoPathGovernance(lang as Locale, spaceSlug)}
         spaceId={spaceId}
         web3SpaceId={web3SpaceId}
