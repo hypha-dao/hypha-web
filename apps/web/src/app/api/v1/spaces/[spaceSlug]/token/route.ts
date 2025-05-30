@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSpaceService } from '@hypha-platform/core/server';
 import { getSpaceDetails } from '@core/space';
 import { publicClient } from '@core/common';
-import { ERC20 } from './_abis';
 import { TOKENS } from './_constants';
+import { getEthBalance, getERC20Balance } from './_getters';
 
 
 export async function GET(
@@ -61,19 +61,13 @@ export async function GET(
       spaceAddress,
     ] = spaceDetails;
 
-    const params = TOKENS[publicClient.chain.id]
+    const assets = TOKENS[publicClient.chain.id]
       .map(({ address }) => address)
       .concat(tokenAdresses)
-      .map(address => [
-        balanceOfParams(address, spaceAddress),
-        symbolParams(address),
-        decimalsParams(address),
-      ]);
-    const result = await Promise.all(params.map(param => {
-      return publicClient.multicall({
-        contracts: param,
-      })
-    }));
+      .map(address => getERC20Balance(publicClient, spaceAddress, address));
+    const ethAsset = getEthBalance(publicClient, spaceAddress);
+
+    const result = await Promise.all([ethAsset].concat(assets));
 
     // TODO: serialize BigInt
     return NextResponse.json(result);
@@ -85,38 +79,3 @@ export async function GET(
     );
   }
 }
-
-const balanceOfParams = (
-  token: `0x${string}`,
-  owner: `0x${string}`,
-) => {
-  return {
-    address: token,
-    abi: ERC20,
-    functionName: 'balanceOf',
-    args: [owner],
-  } as const
-};
-
-const symbolParams = (
-  token: `0x${string}`,
-) => {
-  return {
-    address: token,
-    abi: ERC20,
-    functionName: 'symbol',
-    args: [],
-  } as const
-}
-
-const decimalsParams = (
-  token: `0x${string}`,
-) => {
-  return {
-    address: token,
-    abi: ERC20,
-    functionName: 'decimals',
-    args: [],
-  } as const
-}
-
