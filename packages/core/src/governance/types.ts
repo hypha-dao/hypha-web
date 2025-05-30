@@ -10,6 +10,12 @@ export enum DocumentState {
   AGREEMENT = 'agreement',
 }
 
+export enum EntryMethodType {
+  OPEN_ACCESS = 0,
+  TOKEN_BASED = 1,
+  INVITE_ONLY = 2,
+}
+
 interface Transaction {
   target: string;
   value: number;

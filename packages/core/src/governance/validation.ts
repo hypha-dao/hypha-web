@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { DEFAULT_IMAGE_ACCEPT } from '@core/assets';
 import { isBefore } from 'date-fns';
+import { EntryMethodType } from './types';
 
 const ALLOWED_IMAGE_FILE_SIZE = 5 * 1024 * 1024;
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
@@ -365,5 +366,9 @@ export const schemaCreateChangeEntryMethod = z.object({
 export const schemaCreateChangeEntryMethodForm = z.object({
   ...createChangeEntryMethodWeb2Props,
   ...createChangeEntryMethodFiles,
-  entryMethod: z.number().int().min(0).max(2),
+  entryMethod: z
+    .number()
+    .int()
+    .min(EntryMethodType.OPEN_ACCESS)
+    .max(EntryMethodType.INVITE_ONLY),
 });
