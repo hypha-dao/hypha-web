@@ -4,7 +4,7 @@ import { getSpaceDetails } from '@core/space';
 import { publicClient } from '@core/common';
 import { TOKENS } from './_constants';
 import { getEthBalance, getERC20Balance } from './_getters';
-
+import { formatUnits } from 'viem';
 
 export async function GET(
   _: NextRequest,
@@ -61,16 +61,22 @@ export async function GET(
       spaceAddress,
     ] = spaceDetails;
 
-    const assets = TOKENS[publicClient.chain.id]
+    const customAssets = TOKENS[publicClient.chain.id]
       .map(({ address }) => address)
       .concat(tokenAdresses)
       .map(address => getERC20Balance(publicClient, spaceAddress, address));
     const ethAsset = getEthBalance(publicClient, spaceAddress);
 
-    const result = await Promise.all([ethAsset].concat(assets));
+    const assets = await Promise.all([ethAsset].concat(customAssets));
 
-    // TODO: serialize BigInt
-    return NextResponse.json(result);
+    return NextResponse.json({
+      assets: assets.map(asset => {
+        return {
+          symbol: asset.symbol,
+          value: +formatUnits(asset.amount, asset.decimals),
+        }
+      }),
+    });
   } catch (error) {
     console.error('Failed to fetch assets:', error);
     return NextResponse.json(
