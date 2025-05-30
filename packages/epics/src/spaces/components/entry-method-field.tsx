@@ -7,7 +7,13 @@ import {
 } from '@hypha-platform/ui';
 import { EntryMethod } from './entry-method';
 
-export function EntryMethodField({ entryMethods }: { entryMethods: any[] }) {
+export function EntryMethodField({
+  entryMethods,
+  value,
+}: {
+  entryMethods: any[],
+  value?: any,
+}) {
   const { control } = useFormContext();
   return (
     <FormField
@@ -21,6 +27,7 @@ export function EntryMethodField({ entryMethods }: { entryMethods: any[] }) {
                 field.onChange(entryMethod.value);
               }}
               entryMethods={entryMethods}
+              value={value}
             />
           </FormControl>
           <FormMessage />

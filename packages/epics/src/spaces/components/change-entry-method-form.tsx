@@ -275,7 +275,7 @@ export const ChangeEntryMethodForm = ({
               </FormItem>
             )}
           />
-          <EntryMethodField entryMethods={entryMethods} />
+          <EntryMethodField entryMethods={entryMethods} value={form.getValues().entryMethod} />
           <Separator />
           <div className="flex justify-end w-full">
             <Button

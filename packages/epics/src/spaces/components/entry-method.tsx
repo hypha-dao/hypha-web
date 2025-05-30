@@ -66,6 +66,7 @@ export const EntryMethod = ({
             options={options}
             placeholder={placeholder}
             onChange={handleChange}
+            initialValue={String(manualValue)}
             renderOption={(option) => (
               <>
                 {/* <Image

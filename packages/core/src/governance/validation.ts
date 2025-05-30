@@ -365,5 +365,5 @@ export const schemaCreateChangeEntryMethod = z.object({
 export const schemaCreateChangeEntryMethodForm = z.object({
   ...createChangeEntryMethodWeb2Props,
   ...createChangeEntryMethodFiles,
-  entryMethod: z.number(),
+  entryMethod: z.number().int().min(0).max(2),
 });

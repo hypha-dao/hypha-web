@@ -27,6 +27,7 @@ type ComboboxProps = {
   onChange?: (value: string) => void;
   renderOption?: (option: Option) => React.ReactNode;
   renderValue?: (option: Option | undefined) => React.ReactNode;
+  initialValue?: string;
 };
 
 export function Combobox({
@@ -35,9 +36,10 @@ export function Combobox({
   onChange,
   renderOption,
   renderValue,
+  initialValue = '',
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
-  const [value, setValue] = React.useState('');
+  const [value, setValue] = React.useState(initialValue);
 
   const selectedOption = options.find((option) => option.value === value);
 
