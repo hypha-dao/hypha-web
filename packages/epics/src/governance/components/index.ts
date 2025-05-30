@@ -8,3 +8,5 @@ export * from './create-propose-a-contribution-form';
 export * from './create-proposal-change-voting-method-form';
 export * from './issue-new-token-form';
 export * from './proposal-token-items';
+export * from './proposal-voting-info';
+export * from './proposal-mint-item';

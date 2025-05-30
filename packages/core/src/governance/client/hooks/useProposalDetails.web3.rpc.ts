@@ -9,6 +9,8 @@ import {
   regularTokenFactoryAbi,
   ownershipTokenFactoryAbi,
   decayingTokenFactoryAbi,
+  daoSpaceFactoryImplementationAbi,
+  decayingSpaceTokenAbi,
 } from '@core/generated';
 
 export const useProposalDetailsWeb3Rpc = ({
@@ -69,6 +71,18 @@ export const useProposalDetailsWeb3Rpc = ({
       transferable?: boolean;
       decayPercentage?: bigint;
       decayInterval?: bigint;
+    }> = [];
+
+    const votingMethods: Array<{
+      spaceId: bigint;
+      votingPowerSource: bigint;
+      unity: bigint;
+      quorum: bigint;
+    }> = [];
+
+    const mintings: Array<{
+      member: `0x${string}`;
+      number: bigint;
     }> = [];
 
     (transactions as any[]).forEach((tx) => {
@@ -201,6 +215,48 @@ export const useProposalDetailsWeb3Rpc = ({
       } catch (error) {
         console.error('Failed to decode function data:', error);
       }
+
+      try {
+        const decoded = decodeFunctionData({
+          abi: daoSpaceFactoryImplementationAbi,
+          data: tx.data,
+        });
+
+        if (decoded.functionName === 'changeVotingMethod') {
+          const [spaceId, votingPowerSource, unity, quorum] =
+            decoded.args as unknown as [bigint, bigint, bigint, bigint];
+
+          votingMethods.push({
+            spaceId,
+            votingPowerSource,
+            unity,
+            quorum,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to decode function data:', error);
+      }
+
+      try {
+        const decoded = decodeFunctionData({
+          abi: decayingSpaceTokenAbi,
+          data: tx.data,
+        });
+
+        if (decoded.functionName === 'mint') {
+          const [member, number] = decoded.args as unknown as [
+            `0x${string}`,
+            bigint,
+          ];
+
+          mintings.push({
+            member,
+            number,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to decode function data:', error);
+      }
     });
 
     return {
@@ -224,6 +280,8 @@ export const useProposalDetailsWeb3Rpc = ({
       quorumPercentage,
       transfers,
       tokens,
+      votingMethods,
+      mintings,
     };
   }, [data, quorumTotal]);
 

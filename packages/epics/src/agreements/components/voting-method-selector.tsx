@@ -10,6 +10,7 @@ type VotingMethod = {
   title: string;
   description: string;
   icon?: React.ReactNode;
+  disabled?: boolean;
 };
 
 const votingMethods: VotingMethod[] = [
@@ -30,6 +31,7 @@ const votingMethods: VotingMethod[] = [
     title: '1 Token 1 Vote',
     description: 'Voting power is proportional to the number of tokens held.',
     icon: <PlusCircledIcon />,
+    disabled: true, // TODO: hide for MVP
   },
 ];
 
@@ -42,7 +44,8 @@ export const VotingMethodSelector = ({
 }: VotingMethodSelectorProps) => {
   const [selected, setSelected] = useState<string | null>(null);
 
-  const handleSelect = (id: string) => {
+  const handleSelect = (id: string, disabled?: boolean) => {
+    if (disabled) return;
     setSelected(id);
     if (onChange) {
       onChange(id);
@@ -50,7 +53,7 @@ export const VotingMethodSelector = ({
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {votingMethods.map((method) => (
         <Card
           key={method.id}
@@ -58,10 +61,11 @@ export const VotingMethodSelector = ({
             'flex p-5 cursor-pointer space-x-4 items-center border-2',
             {
               'border-accent-9': selected === method.id,
-              'border-transparent': selected !== method.id,
+              'opacity-50 cursor-not-allowed': method.disabled,
+              'hover:border-accent-5': !method.disabled,
             },
           )}
-          onClick={() => handleSelect(method.id)}
+          onClick={() => handleSelect(method.id, method.disabled)}
         >
           <div>{method.icon}</div>
           <div className="flex flex-col">

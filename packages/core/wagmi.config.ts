@@ -17,6 +17,7 @@ export default defineConfig({
         'RegularTokenFactory.sol/**',
         'DecayingTokenFactory.sol/**',
         'OwnershipTokenFactory.sol/**',
+        'DecayingSpaceToken.sol/**',
       ],
       deployments: {
         DAOSpaceFactoryImplementation: {
@@ -36,6 +37,9 @@ export default defineConfig({
         },
         OwnershipTokenFactory: {
           [base.id]: '0xA1eDf096B72226ae2f7BDEb12E9c9C82152BccB6',
+        },
+        DecayingSpaceToken: {
+          [base.id]: '0xc8995514f8c76b9d9a509b4fdba0d06eb732907e',
         },
       },
     }),

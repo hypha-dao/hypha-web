@@ -6,7 +6,7 @@ import { useCallback, useMemo, useReducer, useState } from 'react';
 import { z } from 'zod';
 import { produce } from 'immer';
 
-import { useIssueTokenMutationsWeb3Rpc } from './useIssueNewTokenMutations.web3.rsc';
+import { useChangeVotingMethodMutationsWeb3Rpc } from './useChangeVotingMethodMutations.web3.rsc';
 import { useAgreementFileUploads } from './useAgreementFileUploads';
 import { useAgreementMutationsWeb2Rsc } from './useAgreementMutations.web2.rsc';
 import {
@@ -85,28 +85,22 @@ const computeProgress = (tasks: TaskState): number => {
   return Math.round(((done + pending * 0.5) / all.length) * 100);
 };
 
-type CreateIssueTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
+type CreateChangeVotingMethodArg = z.infer<typeof schemaCreateAgreementWeb2> & {
   web3SpaceId: number;
-  name: string;
-  symbol: string;
-  maxSupply: number;
-  transferable: boolean;
-  isVotingToken: boolean;
-  decaySettings: {
-    decayInterval: number;
-    decayPercentage: number;
-  };
-  type: 'voice' | 'ownership' | 'utility' | 'credits';
+  members: { member: string; number: number }[];
+  token: `0x${string}` | undefined;
+  quorumAndUnity: { quorum: bigint; unity: bigint };
+  votingMethod: '1m1v' | '1v1v' | '1t1v';
 };
 
-export const useCreateIssueTokenOrchestrator = ({
+export const useCreateChangeVotingMethodOrchestrator = ({
   authToken,
   config,
 }: {
   authToken?: string | null;
   config?: Config;
 }) => {
-  const web3 = useIssueTokenMutationsWeb3Rpc(config);
+  const web3 = useChangeVotingMethodMutationsWeb3Rpc(config);
   const agreementFiles = useAgreementFileUploads(authToken);
   const web2 = useAgreementMutationsWeb2Rsc(authToken);
 
@@ -148,9 +142,9 @@ export const useCreateIssueTokenOrchestrator = ({
     dispatch({ type: 'RESET' });
   }, []);
 
-  const { trigger: createIssueToken } = useSWRMutation(
-    'createIssueTokenOrchestration',
-    async (_: string, { arg }: { arg: CreateIssueTokenArg }) => {
+  const { trigger: createChangeVotingMethod } = useSWRMutation(
+    'createChangeVotingMethodOrchestration',
+    async (_: string, { arg }: { arg: CreateChangeVotingMethodArg }) => {
       startTask('CREATE_WEB2_AGREEMENT');
       const inputWeb2 = schemaCreateAgreementWeb2.parse(arg);
       const createdAgreement = await web2.createAgreement(inputWeb2);
@@ -161,22 +155,12 @@ export const useCreateIssueTokenOrchestrator = ({
       try {
         if (config) {
           startTask('CREATE_WEB3_AGREEMENT');
-          await web3.createIssueToken({
+          await web3.createChangeVotingMethod({
             spaceId: arg.web3SpaceId,
-            name: arg.name,
-            symbol: arg.symbol,
-            maxSupply: arg.maxSupply,
-            transferable: arg.transferable,
-            isVotingToken: arg.isVotingToken,
-            type: arg.type,
-            decayPercentage:
-              arg.type === 'voice'
-                ? arg.decaySettings.decayPercentage
-                : undefined,
-            decayInterval:
-              arg.type === 'voice'
-                ? arg.decaySettings.decayInterval
-                : undefined,
+            members: arg.members,
+            token: arg.token,
+            quorumAndUnity: arg.quorumAndUnity,
+            votingMethod: arg.votingMethod,
           });
           completeTask('CREATE_WEB3_AGREEMENT');
         }
@@ -199,7 +183,7 @@ export const useCreateIssueTokenOrchestrator = ({
       ? [
           web2.createdAgreement.slug,
           agreementFiles.files,
-          web3.createdToken?.proposalId,
+          web3.changeVotingMethodData?.proposalId,
           'linkingWeb2AndWeb3Token',
         ]
       : null,
@@ -231,8 +215,8 @@ export const useCreateIssueTokenOrchestrator = ({
     () =>
       [
         web2.errorCreateAgreementMutation,
-        web3.errorCreateToken,
-        web3.errorWaitTokenFromTx,
+        web3.errorChangeVotingMethod,
+        web3.errorWaitProposalFromTx,
       ].filter(Boolean),
     [web2, web3],
   );
@@ -240,15 +224,15 @@ export const useCreateIssueTokenOrchestrator = ({
   const reset = useCallback(() => {
     resetTasks();
     web2.resetCreateAgreementMutation();
-    web3.resetCreateIssueToken();
+    web3.resetChangeVotingMethod();
   }, [resetTasks, web2, web3]);
 
   return {
     reset,
-    createIssueToken,
+    createChangeVotingMethod,
     agreement: {
       ...updatedWeb2Agreement,
-      ...web3.createdToken,
+      ...web3.changeVotingMethodData,
     },
     taskState,
     currentAction,

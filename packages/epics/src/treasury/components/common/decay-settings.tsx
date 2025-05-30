@@ -11,58 +11,64 @@ import { PercentIcon } from 'lucide-react';
 
 type TimeFormat = 'Minutes' | 'Hours' | 'Days' | 'Weeks' | 'Months';
 
-type DecaySettings = {
+const TIME_FORMAT_TO_SECONDS: Record<TimeFormat, number> = {
+  Minutes: 60,
+  Hours: 3600,
+  Days: 86400,
+  Weeks: 604800,
+  Months: 2592000,
+};
+
+type DecaySettingsInternal = {
   decayPeriod: number | '';
   timeFormat: TimeFormat;
   decayPercent: number | '';
 };
 
+type DecaySettingsOutput = {
+  decayInterval: number;
+  decayPercentage: number;
+};
+
 type DecaySettingsProps = {
-  value?: DecaySettings;
-  onChange?: (value: DecaySettings) => void;
+  value?: DecaySettingsOutput;
+  onChange?: (value: DecaySettingsOutput) => void;
 };
 
 export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
-  const [decayPeriod, setDecayPeriod] = React.useState<number | ''>(
-    value?.decayPeriod ?? '',
-  );
-  const [timeFormat, setTimeFormat] = React.useState<TimeFormat>(
-    value?.timeFormat ?? 'Minutes',
-  );
-  const [decayPercent, setDecayPercent] = React.useState<number | ''>(
-    value?.decayPercent ?? '',
-  );
+  const [decayPeriod, setDecayPeriod] = React.useState<number | ''>(1);
+  const [timeFormat, setTimeFormat] = React.useState<TimeFormat>('Weeks');
+  const [decayPercent, setDecayPercent] = React.useState<number | ''>(5);
 
   React.useEffect(() => {
-    if (value) {
-      setDecayPeriod(value.decayPeriod);
-      setTimeFormat(value.timeFormat);
-      setDecayPercent(value.decayPercent);
-    }
-  }, [value]);
+    notifyChange();
+  }, [decayPeriod, timeFormat, decayPercent]);
 
-  const notifyChange = (newValues: DecaySettings) => {
-    if (onChange) onChange(newValues);
+  const notifyChange = () => {
+    if (onChange && decayPeriod !== '' && decayPercent !== '') {
+      const decayInterval = decayPeriod * TIME_FORMAT_TO_SECONDS[timeFormat];
+      onChange({
+        decayInterval,
+        decayPercentage: decayPercent,
+      });
+    }
   };
 
   const handleDecayPeriodChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     const num = val === '' ? '' : Number(val);
     setDecayPeriod(num);
-    notifyChange({ decayPeriod: num, timeFormat, decayPercent });
   };
 
   const handleTimeFormatChange = (val: string) => {
     const format = val as TimeFormat;
     setTimeFormat(format);
-    notifyChange({ decayPeriod, timeFormat: format, decayPercent });
   };
 
   const handleDecayPercentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     const num = val === '' ? '' : Number(val);
     setDecayPercent(num);
-    notifyChange({ decayPeriod, timeFormat, decayPercent: num });
   };
 
   return (

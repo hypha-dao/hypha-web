@@ -4,7 +4,7 @@ import { CreateAgreementBaseFields } from '@hypha-platform/epics';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  schemaCreateAgreementForm,
+  schemaIssueNewToken,
   createAgreementFiles,
   useMe,
   useCreateIssueTokenOrchestrator,
@@ -17,10 +17,10 @@ import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter } from 'next/navigation';
 
-type FormValues = z.infer<typeof schemaCreateAgreementForm>;
+type FormValues = z.infer<typeof schemaIssueNewToken>;
 
-const schemaIssueNewToken =
-  schemaCreateAgreementForm.extend(createAgreementFiles);
+const fullSchemaIssueNewToken =
+  schemaIssueNewToken.extend(createAgreementFiles);
 
 interface IssueNewTokenFormProps {
   spaceId: number | undefined | null;
@@ -50,7 +50,7 @@ export const IssueNewTokenForm = ({
   } = useCreateIssueTokenOrchestrator({ authToken: jwt, config });
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(schemaIssueNewToken),
+    resolver: zodResolver(fullSchemaIssueNewToken),
     defaultValues: {
       title: '',
       description: '',
@@ -65,6 +65,10 @@ export const IssueNewTokenForm = ({
       type: undefined,
       maxSupply: 0,
       // tokenDescription: '',
+      decaySettings: {
+        decayInterval: 604800,
+        decayPercentage: 1,
+      },
     },
   });
 
@@ -79,8 +83,8 @@ export const IssueNewTokenForm = ({
       ...data,
       spaceId: spaceId as number,
       web3SpaceId: web3SpaceId as number,
-      transferable: true,
-      isVotingToken: false,
+      transferable: data.type === 'voice' ? false : true,
+      isVotingToken: data.type === 'voice' ? true : false,
     });
   };
 

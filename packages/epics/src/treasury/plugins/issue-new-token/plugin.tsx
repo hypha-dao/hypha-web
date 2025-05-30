@@ -9,6 +9,7 @@ import {
   TokenTypeField,
   TokenMaxSupplyField,
 } from '../../components';
+import { DecaySettingsField } from '../../components/common/decay-settings-field';
 
 export const IssueNewTokenPlugin = () => {
   return (
@@ -20,6 +21,7 @@ export const IssueNewTokenPlugin = () => {
       {/* <TokenDigitsField /> */}
       <TokenTypeField />
       <TokenMaxSupplyField />
+      <DecaySettingsField name="decaySettings" />
     </div>
   );
 };

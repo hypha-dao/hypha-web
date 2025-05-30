@@ -205,7 +205,7 @@ export const useCreateSpaceOrchestrator = ({
       const inputCreateSpaceWeb3 = schemaCreateSpaceWeb3.parse({
         quorum: 80,
         unity: 20,
-        votingPowerSource: 0,
+        votingPowerSource: 2,
         joinMethod: 0,
         exitMethod: 0,
       });

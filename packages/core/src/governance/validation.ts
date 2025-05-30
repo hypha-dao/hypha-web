@@ -205,7 +205,26 @@ export const schemaQuorumAndUnity = z.object({
   unity: z.number().min(0).max(100, 'Unity must be between 0-100'),
 });
 
+const decaySettingsSchema = z.object({
+  decayInterval: z
+    .number({
+      required_error: 'Decay interval is required',
+      invalid_type_error: 'Decay interval must be a number',
+    })
+    .positive('Decay interval must be greater than 0'),
+
+  decayPercentage: z
+    .number({
+      required_error: 'Decay percentage is required',
+      invalid_type_error: 'Decay percentage must be a number',
+    })
+    .min(1, 'Decay percentage must be at least 1%')
+    .max(100, 'Decay percentage must not exceed 100%'),
+});
+
 export const schemaIssueNewToken = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
   name: z
     .string()
     .min(2, { message: 'Token name must be at least 2 characters long' })
@@ -258,6 +277,16 @@ export const schemaIssueNewToken = z.object({
         message: 'Max supply must be a non-negative number',
       }),
   ),
+  decaySettings: decaySettingsSchema,
+});
+
+export const schemaChangeVotingMethod = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  members: z.array(schemaMemberWithNumber).optional(),
+  token: z.string().optional(),
+  quorumAndUnity: schemaQuorumAndUnity.optional(),
+  votingMethod: z.enum(['1m1v', '1v1v', '1t1v']).nullable().optional(),
 });
 
 export const schemaCreateAgreementForm = z.object({
@@ -266,17 +295,6 @@ export const schemaCreateAgreementForm = z.object({
   recipient: schemaProposeContribution.shape.recipient,
   payouts: schemaProposeContribution.shape.payouts,
   paymentSchedule: paymentScheduleSchema.optional(),
-  members: z.array(schemaMemberWithNumber).optional(),
-  decaySettings: schemaDecaySettings.optional(),
-  token: z.string().optional(),
-  quorumAndUnity: schemaQuorumAndUnity.optional(),
-  name: schemaIssueNewToken.shape.name,
-  symbol: schemaIssueNewToken.shape.symbol,
-  icon: schemaIssueNewToken.shape.icon,
-  // digits: schemaIssueNewToken.shape.digits,
-  type: schemaIssueNewToken.shape.type,
-  maxSupply: schemaIssueNewToken.shape.maxSupply,
-  // tokenDescription: schemaIssueNewToken.shape.tokenDescription,
 });
 
 export const schemaCreateProposalWeb3 = z.object({

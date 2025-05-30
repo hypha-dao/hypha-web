@@ -1,4 +1,3 @@
-import { addDays } from 'date-fns';
 import { formatISO } from 'date-fns';
 import { FormVoting } from './form-voting';
 import { ProposalHead, ProposalHeadProps } from './proposal-head';
@@ -13,7 +12,12 @@ import { CommentsList } from '../../interactions/components/comments-list';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useProposalDetailsWeb3Rpc } from '@core/governance';
-import { ProposalTransactionItem, ProposalTokenItem } from '../../governance';
+import {
+  ProposalTransactionItem,
+  ProposalTokenItem,
+  ProposalVotingInfo,
+  ProposalMintItem,
+} from '../../governance';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
 
 type ProposalDetailProps = ProposalHeadProps & {
@@ -95,6 +99,14 @@ export const ProposalDetail = ({
       </Skeleton>
       <MarkdownSuspense>{content}</MarkdownSuspense>
       <AttachmentList attachments={attachments || []} />
+      {proposalDetails?.votingMethods.map((method, idx) => (
+        <ProposalVotingInfo
+          key={idx}
+          votingPowerSource={method.votingPowerSource}
+          unity={method.unity}
+          quorum={method.quorum}
+        />
+      ))}
       {proposalDetails?.tokens.map((token, idx) => (
         <ProposalTokenItem
           key={idx}
@@ -111,12 +123,13 @@ export const ProposalDetail = ({
           tokenAddress={tx?.token}
         />
       ))}
+      {proposalDetails?.mintings.map((mint, idx) => (
+        <ProposalMintItem key={idx} member={mint.member} number={mint.number} />
+      ))}
       <FormVoting
         unity={proposalDetails?.yesVotePercentage || 0}
         quorum={proposalDetails?.quorumPercentage || 0}
-        endTime={formatISO(
-          addDays(new Date(proposalDetails?.endTime || new Date()), 2),
-        )}
+        endTime={formatISO(new Date(proposalDetails?.endTime || new Date()))}
         onAccept={handleOnAccept}
         onReject={handleOnReject}
       />

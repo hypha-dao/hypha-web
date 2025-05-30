@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { VotingMethodSelector } from '../../components/voting-method-selector';
 import { Person } from '@core/people';
 import { MemberWithNumberFieldFieldArray } from '../components/common/member-with-number-field-array';
-import { DecaySettingsField } from '../components/common/decay-settings-field';
 import { TokenSelectorField } from '../components/common/token-selector-field';
 import { useTokens } from '@hypha-platform/epics';
 import { QuorumAndUnityChangerField } from '../components/common/quorum-and-unity-change-field';
@@ -18,26 +17,13 @@ export const ChangeVotingMethodPlugin = ({
 }) => {
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const { tokens } = useTokens();
-  const { reset } = useFormContext();
+  const { setValue } = useFormContext();
 
   const handleMethodChange = (method: string | null) => {
     setSelectedMethod(method);
-    reset(
-      {
-        members: [],
-        decaySettings: {
-          decayPeriod: 1,
-          timeFormat: 'Minutes',
-          decayPercent: 1,
-        },
-        token: undefined,
-        quorumAndUnity: { quorum: 0, unity: 0 },
-      },
-      {
-        keepDefaultValues: true,
-        keepValues: false,
-      },
-    );
+    setValue('votingMethod', method as '1m1v' | '1v1v' | '1t1v');
+    setValue('members', []);
+    setValue('token', undefined);
   };
 
   return (
@@ -46,7 +32,6 @@ export const ChangeVotingMethodPlugin = ({
       {selectedMethod === '1v1v' && (
         <>
           <MemberWithNumberFieldFieldArray name="members" members={members} />
-          <DecaySettingsField name="decaySettings" />
         </>
       )}
       {selectedMethod === '1t1v' && (
