@@ -371,4 +371,8 @@ export const schemaCreateChangeEntryMethodForm = z.object({
     .int()
     .min(EntryMethodType.OPEN_ACCESS)
     .max(EntryMethodType.INVITE_ONLY),
+  tokenBase: z.object({
+    amount: z.number().int(),
+    token: z.string(),
+  }).optional(),
 });
