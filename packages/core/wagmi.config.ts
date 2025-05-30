@@ -17,6 +17,7 @@ export default defineConfig({
         'RegularTokenFactory.sol/**',
         'DecayingTokenFactory.sol/**',
         'OwnershipTokenFactory.sol/**',
+        'TokenBalanceJoinImplementation.sol/**',
       ],
       deployments: {
         DAOSpaceFactoryImplementation: {
@@ -36,6 +37,9 @@ export default defineConfig({
         },
         OwnershipTokenFactory: {
           [base.id]: '0xA1eDf096B72226ae2f7BDEb12E9c9C82152BccB6',
+        },
+        TokenBalanceJoinImplementation: {
+          [base.id]: '0x41cD69A3a3715B16598415df336a8Cc533CCAF76',
         },
       },
     }),
