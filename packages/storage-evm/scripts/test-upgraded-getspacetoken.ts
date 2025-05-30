@@ -3,7 +3,9 @@ import { ethers } from 'hardhat';
 const PROXY_ADDRESS = '0x299f4D2327933c1f363301dbd2a28379ccD5539b';
 
 async function main(): Promise<void> {
-  const DecayingTokenFactory = await ethers.getContractFactory('DecayingTokenFactory');
+  const DecayingTokenFactory = await ethers.getContractFactory(
+    'DecayingTokenFactory',
+  );
   const contract = DecayingTokenFactory.attach(PROXY_ADDRESS);
 
   console.log('🧪 Testing getSpaceToken with real space IDs...');
@@ -12,7 +14,7 @@ async function main(): Promise<void> {
   try {
     const result = await contract.getSpaceToken(121);
     console.log('✅ Space ID 121 token address:', result);
-    
+
     if (result !== ethers.ZeroAddress) {
       console.log('🎉 SUCCESS! Token found for space 121');
     } else {
@@ -28,7 +30,7 @@ async function main(): Promise<void> {
     console.log('✅ Space ID 1 token address:', result);
   } catch (error: any) {
     console.error('❌ Space ID 1 still failing:', error.message);
-    
+
     // This suggests there might be an interface issue
     console.log('🔍 This might indicate an interface or override issue');
   }
@@ -42,4 +44,4 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch(console.error); 
+main().catch(console.error);

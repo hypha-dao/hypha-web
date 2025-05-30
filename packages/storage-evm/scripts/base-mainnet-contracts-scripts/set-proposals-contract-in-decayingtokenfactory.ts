@@ -156,9 +156,7 @@ async function main(): Promise<void> {
 
     console.log('Transaction sent, waiting for confirmation...');
     await tx.wait();
-    console.log(
-      'Proposals contract set successfully in DecayingTokenFactory!',
-    );
+    console.log('Proposals contract set successfully in DecayingTokenFactory!');
 
     // Retrieve and display the set proposals contract address
     console.log('\nRetrieving the set proposals contract address...');
@@ -195,4 +193,4 @@ main()
   .catch((error) => {
     console.error(error);
     process.exit(1);
-  }); 
+  });
