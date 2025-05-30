@@ -321,6 +321,24 @@ describe('EnergyDistribution7MembersBatteryExportScenarios', function () {
         'Collective consumption breakdown per member after charging',
       );
 
+      console.log('\n💡 STEP 1 ANALYSIS:');
+      console.log('🌞 Peak solar production creates abundant cheap energy');
+      console.log(
+        '🔋 Battery stores 400 units of excess energy at cost price 100',
+      );
+      console.log(
+        '💰 Members receive tokens proportional to ownership (20%, 18%, 16%, 14%, 12%, 10%, 10%)',
+      );
+      console.log(
+        '📊 Total allocated: 2000 tokens from solar + 400 virtual tokens from battery charging',
+      );
+      console.log(
+        '⚡ Battery acts as energy bank - converting current excess into future availability',
+      );
+      console.log(
+        '🎯 Strategy: Maximize storage during cheap production periods',
+      );
+
       // === STEP 2: Lower solar production, battery discharging ===
       console.log(
         '\n--- STEP 2: Cloudy afternoon - lower production, battery discharges ---',
@@ -352,6 +370,25 @@ describe('EnergyDistribution7MembersBatteryExportScenarios', function () {
         energyDistribution,
         members,
         'Collective consumption breakdown per member after discharging',
+      );
+
+      console.log('\n💡 STEP 2 ANALYSIS:');
+      console.log('☁️ Reduced solar production forces mixed energy sourcing');
+      console.log(
+        '🔋 Battery provides 150 units at price 140 (better than import price 180)',
+      );
+      console.log(
+        '💸 Cost optimization: Battery (140) < Import (180) < Peak rates',
+      );
+      console.log(
+        '📊 Energy mix: 800@100 + 300@180 + 150@140 = 1250 total tokens',
+      );
+      console.log('⚖️ Battery discharge reduces expensive import dependency');
+      console.log(
+        '🎯 Strategy: Use stored energy when production drops and import prices rise',
+      );
+      console.log(
+        '💰 Members benefit from price averaging across different energy sources',
       );
 
       // === STEP 3: Low consumption day - members use little energy ===
@@ -419,11 +456,49 @@ describe('EnergyDistribution7MembersBatteryExportScenarios', function () {
         '\nConsumption processed - 680 tokens exported (large surplus)',
       );
 
+      console.log('\n💡 STEP 3 ANALYSIS:');
+      console.log('🏠 All members under-consume relative to their allocations');
+      console.log(
+        '📤 Massive export (680 tokens) generates significant revenue',
+      );
+      console.log(
+        '💰 Export revenue calculation: 680 tokens × weighted average price',
+      );
+      console.log(
+        '🎯 Community optimization: Members benefit from collective surplus',
+      );
+      console.log(
+        '⚖️ Under-consumption credits + export revenue share = positive balances for all',
+      );
+      console.log(
+        '📊 Allocation efficiency: High production + Low consumption = Maximum export profit',
+      );
+      console.log(
+        '🌟 Perfect scenario: Solar abundance meets minimal internal demand',
+      );
+
       // === STEP 4: Final state analysis ===
       const balances = await logFinalBalances(
         energyDistribution,
         members,
         'FINAL BALANCES - SCENARIO 1 (WITH SIGNIFICANT EXPORT)',
+      );
+
+      console.log('\n💡 STEP 4 FINAL ANALYSIS:');
+      console.log(
+        '✅ Zero-sum verification: All costs and revenues perfectly balanced',
+      );
+      console.log(
+        '💰 Export economics: Large negative export balance = large member revenue',
+      );
+      console.log(
+        '🎉 Universal benefit: All members profit from community solar efficiency',
+      );
+      console.log(
+        '🔋 Battery impact: Enabled optimal energy timing and price averaging',
+      );
+      console.log(
+        '📈 ROI demonstration: Community solar + battery + export = maximum financial benefit',
       );
 
       // Verify zero-sum economics
@@ -508,6 +583,24 @@ describe('EnergyDistribution7MembersBatteryExportScenarios', function () {
         'Collective consumption breakdown per member after charging',
       );
 
+      console.log('\n💡 STEP 1 ANALYSIS:');
+      console.log(
+        '☀️ Moderate solar production (1400 tokens) at slightly higher cost (110)',
+      );
+      console.log('🔋 Battery stores 200 units during morning surplus period');
+      console.log(
+        '💰 Members receive proportional allocations from morning production',
+      );
+      console.log(
+        '📊 Conservative charging: Smaller surplus = smaller battery storage',
+      );
+      console.log(
+        '⚡ Strategic timing: Store energy when production exceeds immediate consumption',
+      );
+      console.log(
+        '🎯 Load balancing setup: Prepare for evening peak demand period',
+      );
+
       // === STEP 2: Evening peak demand, low solar + battery discharge + imports ===
       console.log(
         '\n--- STEP 2: Evening peak demand - low solar, battery discharges, imports needed ---',
@@ -545,6 +638,25 @@ describe('EnergyDistribution7MembersBatteryExportScenarios', function () {
         energyDistribution,
         members,
         'Collective consumption breakdown per member after discharging',
+      );
+
+      console.log('\n💡 STEP 2 ANALYSIS:');
+      console.log('🌅 Evening solar drops dramatically (600 tokens only)');
+      console.log(
+        '⚡ High demand requires expensive imports (800 tokens @ 190)',
+      );
+      console.log(
+        '🔋 Battery fully discharged (200 units @ 140) - cheaper than peak imports',
+      );
+      console.log('💸 Cost mitigation: Battery price 140 < Peak import 190');
+      console.log(
+        '📊 Energy mix: 600@110 + 800@190 + 200@140 = 1600 total tokens',
+      );
+      console.log(
+        '🎯 Peak shaving: Battery reduces expensive import dependency',
+      );
+      console.log(
+        '⚖️ Price averaging: Members benefit from morning solar stored at battery rate',
       );
 
       // === STEP 3: High evening consumption - almost everything consumed internally ===
@@ -604,27 +716,66 @@ describe('EnergyDistribution7MembersBatteryExportScenarios', function () {
         { deviceId: 4001, quantity: 270 }, // Member4: over-consumption
         { deviceId: 5001, quantity: 180 }, // Member5: under-consumption
         { deviceId: 6001, quantity: 170 }, // Member6: over-consumption
-        { deviceId: 7001, quantity: 150 }, // Member7: under-consumption
-        { deviceId: 9999, quantity: 5 }, // Minimal export (just a few remaining tokens)
+        { deviceId: 7002, quantity: 155 }, // Member7: under-consumption (using different device, consuming 5 more tokens)
       ]);
 
       console.log(
-        '\nConsumption processed with minimal export (only 5 tokens - almost everything consumed)',
+        '\nConsumption processed with NO export - all energy consumed internally',
+      );
+
+      console.log('\n💡 STEP 3 ANALYSIS:');
+      console.log(
+        '🏠 Mixed consumption patterns: Some under-consume, others over-consume',
+      );
+      console.log(
+        '📊 Perfect internal balance: Total consumption = total allocation',
+      );
+      console.log(
+        '🎯 No waste: Every token produced is consumed within the community',
+      );
+      console.log(
+        '⚖️ Individual settlement: Under-consumers get credits, over-consumers pay',
+      );
+      console.log(
+        '💰 Zero export revenue: All economics based on internal consumption efficiency',
+      );
+      console.log(
+        '🔄 Pure load balancing: Battery enabled optimal energy timing without surplus',
+      );
+      console.log(
+        '🌟 Efficient community: No energy waste, optimal internal distribution',
       );
 
       // === STEP 4: Final state analysis ===
       const balances = await logFinalBalances(
         energyDistribution,
         members,
-        'FINAL BALANCES - SCENARIO 2 (MINIMAL EXPORT)',
+        'FINAL BALANCES - SCENARIO 2 (NO EXPORT)',
+      );
+
+      console.log('\n💡 STEP 4 FINAL ANALYSIS:');
+      console.log('✅ Perfect internal balancing: Zero export, zero waste');
+      console.log(
+        '⚖️ Individual efficiency matters: Under-consumers profit, over-consumers pay',
+      );
+      console.log(
+        '🔋 Battery optimization: Reduced peak import costs for entire community',
+      );
+      console.log(
+        '💰 Cost distribution: Members pay/receive based on consumption vs allocation',
+      );
+      console.log(
+        '📊 Load balancing success: Morning surplus → evening availability',
+      );
+      console.log(
+        '🎯 Community efficiency: No external revenue, pure internal optimization',
       );
 
       // Verify zero-sum economics
       expect(Math.abs(balances.systemTotal)).to.be.lessThanOrEqual(1);
 
-      // Verify minimal export cost
-      expect(balances.exportBalance).to.be.lte(0); // Can be 0 or negative
-      expect(Math.abs(balances.exportBalance)).to.be.lt(5000); // Should be very small
+      // Verify no export cost
+      expect(balances.exportBalance).to.equal(0); // Should be exactly 0
 
       // Check that we have mixed balances (some positive, some negative)
       const member1Balance = await energyDistribution.getCashCreditBalance(
@@ -661,7 +812,7 @@ describe('EnergyDistribution7MembersBatteryExportScenarios', function () {
       expect(member6Balance).to.be.lte(0); // Over-consumer (can be exactly 0)
 
       console.log(
-        '\n✅ SCENARIO 2 COMPLETE: Battery provided evening load balancing, minimal export, efficient internal usage',
+        '\n✅ SCENARIO 2 COMPLETE: Battery provided evening load balancing, NO export, efficient internal usage',
       );
     });
   });
@@ -681,14 +832,14 @@ describe('EnergyDistribution7MembersBatteryExportScenarios', function () {
         '✅ Demonstrates community solar system with surplus monetization',
       );
 
-      console.log('\nSCENARIO 2 (Minimal Export):');
+      console.log('\nSCENARIO 2 (No Export):');
       console.log('🌤️ Moderate production with high evening demand');
       console.log(
         '🔋 Battery charged from excess morning production (200 units)',
       );
       console.log('⚡ Battery fully depleted during evening peak (200 units)');
       console.log(
-        '📊 Minimal export (5 tokens) - almost everything consumed internally',
+        '📊 No export - all energy consumed internally by community members',
       );
       console.log(
         '⚖️ Mixed member balances based on individual consumption patterns',
@@ -712,7 +863,7 @@ describe('EnergyDistribution7MembersBatteryExportScenarios', function () {
         '  - High export scenarios create significant revenue for all members',
       );
       console.log(
-        '  - Low export scenarios depend more on individual consumption efficiency',
+        '  - No export scenarios depend entirely on individual consumption efficiency',
       );
       console.log(
         '  - Battery enables more predictable pricing regardless of solar variability',
