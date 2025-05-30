@@ -59,7 +59,7 @@ describe('EnergyDistribution7MembersBatteryDailyScenarios', function () {
       other,
     } = await loadFixture(deployFixture);
 
-    console.log('\n=== SETTING UP 7 MEMBERS WITH BATTERY ===');
+    console.log('\n=== SETTING UP 7 MEMBERS WITH COMMUNITY SOLAR SYSTEM ===');
 
     // Add 7 members with different ownership percentages
     await energyDistribution.addMember(member1.address, [1001, 1002], 2000); // 20%
@@ -70,7 +70,7 @@ describe('EnergyDistribution7MembersBatteryDailyScenarios', function () {
     await energyDistribution.addMember(member6.address, [6001], 1000); // 10%
     await energyDistribution.addMember(member7.address, [7001, 7002], 1000); // 10%
 
-    console.log('Members added:');
+    console.log('Community members added:');
     console.log(
       `  Member1: ${member1.address} - 20% ownership, devices [1001, 1002]`,
     );
@@ -93,15 +93,15 @@ describe('EnergyDistribution7MembersBatteryDailyScenarios', function () {
       `  Member7: ${member7.address} - 10% ownership, devices [7001, 7002]`,
     );
 
-    // Configure battery: price 140, max capacity 2000
-    await energyDistribution.configureBattery(140, 2000);
+    // Configure battery: price $0.14/kWh, max capacity 40 kWh
+    await energyDistribution.configureBattery(14, 40);
     console.log(
-      'Battery configured: price=140, max_capacity=2000, initial_state=0',
+      'Community battery configured: price=$0.14/kWh, max_capacity=40kWh, initial_state=0kWh',
     );
 
     // Set export device ID
     await energyDistribution.setExportDeviceId(9999);
-    console.log('Export device ID set to: 9999');
+    console.log('Grid export meter ID set to: 9999');
 
     return {
       energyDistribution,
@@ -120,7 +120,7 @@ describe('EnergyDistribution7MembersBatteryDailyScenarios', function () {
   async function logBatteryState(energyDistribution: any, title: string) {
     const batteryInfo = await energyDistribution.getBatteryInfo();
     console.log(
-      `${title}: Battery state=${batteryInfo.currentState}, price=${batteryInfo.price}, max=${batteryInfo.maxCapacity}`,
+      `${title}: Battery state=${batteryInfo.currentState}kWh, price=$0.${batteryInfo.price}/kWh, max=${batteryInfo.maxCapacity}kWh`,
     );
   }
 
@@ -136,10 +136,10 @@ describe('EnergyDistribution7MembersBatteryDailyScenarios', function () {
         member.address,
       );
       const memberName = `Member${index + 1}`;
-      console.log(`  ${memberName}: ${allocation} tokens`);
+      console.log(`  ${memberName}: ${allocation} kWh`);
       totalAllocated += Number(allocation);
     }
-    console.log(`  TOTAL ALLOCATED: ${totalAllocated} tokens`);
+    console.log(`  TOTAL ALLOCATED: ${totalAllocated} kWh`);
   }
 
   async function logCollectiveConsumption(
@@ -159,7 +159,7 @@ describe('EnergyDistribution7MembersBatteryDailyScenarios', function () {
       const price = Number(item.price);
       const quantity = Number(item.quantity);
       totalTokens += quantity;
-      totalValue += price * quantity;
+      totalValue += (price * quantity) / 100; // Convert cents to dollars
 
       if (!priceGroups[price]) {
         priceGroups[price] = { quantity: 0, owners: [] };
@@ -169,13 +169,20 @@ describe('EnergyDistribution7MembersBatteryDailyScenarios', function () {
     }
 
     for (const [price, data] of Object.entries(priceGroups)) {
+      const priceInDollars = Number(price) / 100;
+      const valueInDollars = (Number(price) * data.quantity) / 100;
       console.log(
-        `  Price ${price}: ${data.quantity} tokens, value=${
-          Number(price) * data.quantity
-        }`,
+        `  Price $${priceInDollars.toFixed(2)}/kWh: ${
+          data.quantity
+        } kWh, value=$${valueInDollars.toFixed(2)}`,
       );
     }
-    console.log(`  TOTAL: ${totalTokens} tokens, total_value=${totalValue}`);
+    const totalValueInDollars = totalValue;
+    console.log(
+      `  TOTAL: ${totalTokens} kWh, total_value=$${totalValueInDollars.toFixed(
+        2,
+      )}`,
+    );
   }
 
   async function logCollectiveConsumptionPerMember(
@@ -197,7 +204,7 @@ describe('EnergyDistribution7MembersBatteryDailyScenarios', function () {
           const price = Number(item.price);
           const quantity = Number(item.quantity);
           memberTokens += quantity;
-          memberValue += price * quantity;
+          memberValue += (price * quantity) / 100; // Convert cents to dollars
 
           if (!priceBreakdown[price]) {
             priceBreakdown[price] = 0;
@@ -207,11 +214,13 @@ describe('EnergyDistribution7MembersBatteryDailyScenarios', function () {
       }
 
       const breakdown = Object.entries(priceBreakdown)
-        .map(([price, qty]) => `${qty}@${price}`)
+        .map(([price, qty]) => `${qty}kWh@$${(Number(price) / 100).toFixed(2)}`)
         .join(', ');
 
       console.log(
-        `  ${memberName}: ${memberTokens} tokens (${breakdown}) = value ${memberValue}`,
+        `  ${memberName}: ${memberTokens} kWh (${breakdown}) = value $${memberValue.toFixed(
+          2,
+        )}`,
       );
     }
   }
@@ -229,16 +238,24 @@ describe('EnergyDistribution7MembersBatteryDailyScenarios', function () {
         member.address,
       );
       const memberName = `Member${index + 1}`;
-      console.log(`${memberName} (${member.address}): ${balance}`);
+      const balanceInDollars = Number(balance) / 100; // Convert cents to dollars
+      console.log(
+        `${memberName} (${member.address}): $${balanceInDollars.toFixed(2)}`,
+      );
       totalMemberBalance += Number(balance);
     }
 
     const exportBalance = await energyDistribution.getExportCashCreditBalance();
-    console.log(`Export: ${exportBalance}`);
-    console.log(`TOTAL MEMBER BALANCE: ${totalMemberBalance}`);
+    const exportBalanceInDollars = Number(exportBalance) / 100;
+    console.log(`Grid Export: $${exportBalanceInDollars.toFixed(2)}`);
+    console.log(
+      `TOTAL MEMBER BALANCE: $${(totalMemberBalance / 100).toFixed(2)}`,
+    );
 
     const systemTotal = totalMemberBalance + Number(exportBalance);
-    console.log(`SYSTEM TOTAL (should be 0): ${systemTotal}`);
+    console.log(
+      `SYSTEM TOTAL (should be $0.00): $${(systemTotal / 100).toFixed(2)}`,
+    );
 
     return {
       totalMemberBalance,
@@ -247,8 +264,8 @@ describe('EnergyDistribution7MembersBatteryDailyScenarios', function () {
     };
   }
 
-  describe('Daily Scenario 1: High Solar Production Day with Export', function () {
-    it('Should demonstrate full day cycle with battery and export in single distribution', async function () {
+  describe('Single Day Energy Cycle with Two Scenarios', function () {
+    it('Should demonstrate morning high solar + export, then afternoon imports + internal consumption', async function () {
       const {
         energyDistribution,
         owner,
@@ -271,404 +288,353 @@ describe('EnergyDistribution7MembersBatteryDailyScenarios', function () {
         member7,
       ];
 
+      console.log('\n🌅 === SINGLE DAY WITH TWO DISTINCT SCENARIOS ===');
       console.log(
-        '\n🌞 === DAILY SCENARIO 1: HIGH SOLAR PRODUCTION WITH EXPORT ===',
+        '📅 Morning: High solar production → Battery charging → Export surplus',
       );
       console.log(
-        '📅 Full Day Summary: High solar only + battery operations + low consumption = significant export',
+        '📅 Afternoon: Moderate production → Grid imports → Battery discharge → Internal consumption',
       );
 
       await logBatteryState(
         energyDistribution,
-        'Day start - battery initial state',
+        '6:00 AM - Daily start, battery initial state',
       );
 
-      // === SINGLE DAILY DISTRIBUTION ===
-      console.log('\n--- DAILY ENERGY DISTRIBUTION ---');
+      // === SCENARIO 1: MORNING HIGH SOLAR WITH EXPORT (6AM - 12PM) ===
+      console.log(
+        '\n🌞 === SCENARIO 1: MORNING HIGH SOLAR PRODUCTION WITH EXPORT (6:00 AM - 12:00 PM) ===',
+      );
 
-      // Daily totals - SOLAR ONLY, NO IMPORTS:
-      // - High solar production throughout the day: 2800 tokens
-      // - Battery charging: 250 units from excess solar
-      // - No imports needed due to abundant solar
-      const dailySources = [
-        { sourceId: 1, price: 100, quantity: 2800 }, // Pure solar production day
+      const morningPhase = [
+        { sourceId: 1, price: 10, quantity: 280 }, // Excellent morning solar at $0.10/kWh
       ];
 
-      console.log('Full day energy summary:');
-      console.log(`  Total solar production: 2800 tokens @ price 100`);
-      console.log(`  Total imports needed: 0 tokens (pure solar day)`);
-      console.log('  Battery operations: +250 net storage from excess solar');
-      console.log('  Final battery state: 250 units stored');
+      console.log('📊 Morning scenario - High solar production day:');
+      console.log('  ☀️ 6:00 AM - 12:00 PM: Excellent solar conditions');
+      console.log('  🌞 Total morning production: 280 kWh @ $0.10/kWh');
+      console.log('  🔋 Battery charging: +25 kWh from excess solar');
+      console.log('  📤 Export opportunity: Significant surplus available');
+      console.log(`  💰 Morning energy value: $${(280 * 0.1).toFixed(2)}`);
 
-      // Distribute energy for entire day with net battery charging (+250)
-      await energyDistribution.distributeEnergyTokens(dailySources, 250);
+      // Morning distribution with battery charging (+25 kWh)
+      await energyDistribution.distributeEnergyTokens(morningPhase, 25);
 
-      await logBatteryState(energyDistribution, 'After daily distribution');
+      await logBatteryState(
+        energyDistribution,
+        '12:00 PM - After morning solar collection',
+      );
       await logMemberAllocations(
         energyDistribution,
         members,
-        'Daily member token allocations',
+        '12:00 PM - Morning energy allocations',
       );
       await logCollectiveConsumption(
         energyDistribution,
-        'Daily collective consumption pool',
+        '12:00 PM - Morning energy pool available',
       );
       await logCollectiveConsumptionPerMember(
         energyDistribution,
         members,
-        'Collective Consumption list',
+        'Morning energy allocation breakdown',
       );
 
-      console.log('\n💡 DAILY DISTRIBUTION ANALYSIS:');
-      console.log('🌞 Pure solar day: No imports needed');
-      console.log('🔋 Battery net storage: 250 units of excess solar');
+      console.log('\n💡 MORNING SCENARIO ANALYSIS:');
+      console.log('🌞 Perfect solar day: Abundant production at optimal cost');
+      console.log('🔋 Battery storage: 25 kWh excess stored for later use');
       console.log(
-        '💰 Low-cost energy: All tokens at optimal solar price (100)',
+        '💰 Cost efficiency: All energy at low solar rate ($0.10/kWh)',
       );
-      console.log(
-        '📊 Energy abundance: Excess production available for export',
-      );
-      console.log('⚡ Battery enabled storage of excess morning production');
+      console.log('📤 Export potential: Major surplus for grid revenue');
 
-      // === DAILY CONSUMPTION ===
-      console.log('\n--- DAILY ENERGY CONSUMPTION ---');
+      // Morning consumption (low usage, major export)
+      console.log('\n--- 12:00 PM: MORNING CONSUMPTION & EXPORT ---');
 
-      const member1Allocation = await energyDistribution.getAllocatedTokens(
-        member1.address,
-      );
-      const member2Allocation = await energyDistribution.getAllocatedTokens(
-        member2.address,
-      );
-      const member3Allocation = await energyDistribution.getAllocatedTokens(
-        member3.address,
-      );
-      const member4Allocation = await energyDistribution.getAllocatedTokens(
-        member4.address,
-      );
-      const member5Allocation = await energyDistribution.getAllocatedTokens(
-        member5.address,
-      );
-      const member6Allocation = await energyDistribution.getAllocatedTokens(
-        member6.address,
-      );
-      const member7Allocation = await energyDistribution.getAllocatedTokens(
-        member7.address,
-      );
+      const member1MorningAllocation =
+        await energyDistribution.getAllocatedTokens(member1.address);
+      const member2MorningAllocation =
+        await energyDistribution.getAllocatedTokens(member2.address);
+      const member3MorningAllocation =
+        await energyDistribution.getAllocatedTokens(member3.address);
+      const member4MorningAllocation =
+        await energyDistribution.getAllocatedTokens(member4.address);
+      const member5MorningAllocation =
+        await energyDistribution.getAllocatedTokens(member5.address);
+      const member6MorningAllocation =
+        await energyDistribution.getAllocatedTokens(member6.address);
+      const member7MorningAllocation =
+        await energyDistribution.getAllocatedTokens(member7.address);
 
-      console.log('Daily consumption patterns (low usage day):');
+      console.log('🏠 Morning consumption patterns (low usage):');
       console.log(
-        `  Member1: 80 tokens (allocated: ${member1Allocation}) - UNDER-CONSUMPTION`,
+        `  Member1: 12 kWh (allocated: ${member1MorningAllocation} kWh) - SIGNIFICANT UNDER-CONSUMPTION`,
       );
       console.log(
-        `  Member2: 75 tokens (allocated: ${member2Allocation}) - UNDER-CONSUMPTION`,
+        `  Member2: 10 kWh (allocated: ${member2MorningAllocation} kWh) - SIGNIFICANT UNDER-CONSUMPTION`,
       );
       console.log(
-        `  Member3: 70 tokens (allocated: ${member3Allocation}) - UNDER-CONSUMPTION`,
+        `  Member3: 8 kWh (allocated: ${member3MorningAllocation} kWh) - SIGNIFICANT UNDER-CONSUMPTION`,
       );
       console.log(
-        `  Member4: 65 tokens (allocated: ${member4Allocation}) - UNDER-CONSUMPTION`,
+        `  Member4: 7 kWh (allocated: ${member4MorningAllocation} kWh) - SIGNIFICANT UNDER-CONSUMPTION`,
       );
       console.log(
-        `  Member5: 60 tokens (allocated: ${member5Allocation}) - UNDER-CONSUMPTION`,
+        `  Member5: 6 kWh (allocated: ${member5MorningAllocation} kWh) - SIGNIFICANT UNDER-CONSUMPTION`,
       );
       console.log(
-        `  Member6: 55 tokens (allocated: ${member6Allocation}) - UNDER-CONSUMPTION`,
+        `  Member6: 5 kWh (allocated: ${member6MorningAllocation} kWh) - SIGNIFICANT UNDER-CONSUMPTION`,
       );
       console.log(
-        `  Member7: 165 tokens (allocated: ${member7Allocation}) - UNDER-CONSUMPTION`,
+        `  Member7: 7 kWh (allocated: ${member7MorningAllocation} kWh) - SIGNIFICANT UNDER-CONSUMPTION`,
       );
 
-      // Low consumption day - all members under-consume, significant export
       await energyDistribution.consumeEnergyTokens([
-        { deviceId: 1001, quantity: 80 }, // Member1: significant under-consumption
-        { deviceId: 2001, quantity: 75 }, // Member2: significant under-consumption
-        { deviceId: 3001, quantity: 70 }, // Member3: significant under-consumption
-        { deviceId: 4001, quantity: 65 }, // Member4: significant under-consumption
-        { deviceId: 5001, quantity: 60 }, // Member5: significant under-consumption
-        { deviceId: 6001, quantity: 55 }, // Member6: significant under-consumption
-        { deviceId: 7002, quantity: 165 }, // Member7: under-consumption (different device)
-        { deviceId: 9999, quantity: 2980 }, // EXPORT: massive surplus (570 tokens consumed out of 3550 available)
+        { deviceId: 1001, quantity: 12 }, // Member1: minimal morning usage
+        { deviceId: 2001, quantity: 10 }, // Member2: minimal morning usage
+        { deviceId: 3001, quantity: 8 }, // Member3: minimal morning usage
+        { deviceId: 4001, quantity: 7 }, // Member4: minimal morning usage
+        { deviceId: 5001, quantity: 6 }, // Member5: minimal morning usage
+        { deviceId: 6001, quantity: 5 }, // Member6: minimal morning usage
+        { deviceId: 7002, quantity: 7 }, // Member7: minimal morning usage
+        { deviceId: 9999, quantity: 200 }, // MAJOR EXPORT: 200 kWh surplus to grid
       ]);
 
-      console.log('Daily consumption completed with SIGNIFICANT EXPORT');
+      console.log(
+        '✅ 12:00 PM - Morning consumption completed with MAJOR EXPORT',
+      );
+      console.log(
+        '📤 Morning grid export: 200 kWh surplus generates significant revenue',
+      );
+      console.log('💰 All members benefit from export revenue sharing');
 
-      console.log('\n💡 DAILY CONSUMPTION ANALYSIS:');
-      console.log('🏠 Low consumption day: All members used minimal energy');
+      console.log('\n💡 MORNING SCENARIO OUTCOME:');
+      console.log('🌞 Excellent production conditions maximized solar value');
+      console.log('🏠 Low consumption leaves massive surplus for export');
+      console.log('💰 Universal member benefits from shared export revenue');
+      console.log('🔋 Battery charged for afternoon/evening optimization');
+
+      // === SCENARIO 2: AFTERNOON IMPORTS + INTERNAL CONSUMPTION (12PM - 10PM) ===
       console.log(
-        '📤 Large export: Majority of daily production exported for revenue',
-      );
-      console.log(
-        '💰 Universal benefit: All members profit from export revenue',
-      );
-      console.log('🔋 Battery value: Enabled optimal daily energy management');
-      console.log(
-        '🎯 Perfect efficiency: Low usage + high production = maximum export profit',
+        '\n🌤️ === SCENARIO 2: AFTERNOON IMPORTS + INTERNAL CONSUMPTION (12:00 PM - 10:00 PM) ===',
       );
 
-      // === FINAL DAILY ANALYSIS ===
+      const afternoonPhase = [
+        { sourceId: 1, price: 11, quantity: 180 }, // Moderate afternoon solar at $0.11/kWh
+        { sourceId: 2, price: 19, quantity: 80 }, // Grid imports needed at $0.19/kWh
+      ];
+
+      console.log(
+        '📊 Afternoon scenario - Moderate production requiring imports:',
+      );
+      console.log('  🌤️ 12:00 PM - 6:00 PM: Moderate solar conditions');
+      console.log('  ☀️ Afternoon solar production: 180 kWh @ $0.11/kWh');
+      console.log(
+        '  🏭 3:00 PM - 8:00 PM: Grid imports needed: 80 kWh @ $0.19/kWh',
+      );
+      console.log(
+        '  🔋 5:00 PM - 9:00 PM: Battery discharging: -25 kWh for peak demand',
+      );
+      console.log(
+        '  🔋 End of day battery state: 0 kWh (full cycle completed)',
+      );
+      console.log(
+        `  💰 Afternoon energy cost: $${(180 * 0.11 + 80 * 0.19).toFixed(2)}`,
+      );
+
+      // Afternoon distribution with battery discharge (back to 0)
+      await energyDistribution.distributeEnergyTokens(afternoonPhase, 0);
+
+      await logBatteryState(
+        energyDistribution,
+        '10:00 PM - After afternoon energy operations',
+      );
+      await logMemberAllocations(
+        energyDistribution,
+        members,
+        '10:00 PM - Complete daily energy allocations',
+      );
+      await logCollectiveConsumption(
+        energyDistribution,
+        '10:00 PM - Afternoon energy pool available',
+      );
+      await logCollectiveConsumptionPerMember(
+        energyDistribution,
+        members,
+        'Afternoon energy allocation breakdown',
+      );
+
+      console.log('\n💡 AFTERNOON SCENARIO ANALYSIS:');
+      console.log(
+        '🌤️ Moderate solar requiring significant grid supplementation',
+      );
+      console.log(
+        '🔋 Battery discharge: 25 kWh morning storage released for afternoon/evening demand',
+      );
+      console.log(
+        '💸 Cost management: Battery ($0.14/kWh) reduces peak import costs ($0.19/kWh)',
+      );
+      console.log(
+        '📊 Energy mix: Solar (180 kWh) + Grid (80 kWh) + Battery discharge (25 kWh)',
+      );
+      console.log(
+        '⚖️ Price optimization: Morning storage reduces expensive afternoon import needs',
+      );
+
+      // Afternoon consumption (high usage, all internal)
+      console.log('\n--- 10:00 PM: AFTERNOON/EVENING HIGH CONSUMPTION ---');
+
+      const member1TotalAllocation =
+        await energyDistribution.getAllocatedTokens(member1.address);
+      const member2TotalAllocation =
+        await energyDistribution.getAllocatedTokens(member2.address);
+      const member3TotalAllocation =
+        await energyDistribution.getAllocatedTokens(member3.address);
+      const member4TotalAllocation =
+        await energyDistribution.getAllocatedTokens(member4.address);
+      const member5TotalAllocation =
+        await energyDistribution.getAllocatedTokens(member5.address);
+      const member6TotalAllocation =
+        await energyDistribution.getAllocatedTokens(member6.address);
+      const member7TotalAllocation =
+        await energyDistribution.getAllocatedTokens(member7.address);
+
+      console.log('🏠 Afternoon/evening consumption patterns (high usage):');
+      console.log(
+        `  Member1: 35 kWh (total allocation: ${member1TotalAllocation} kWh) - SIGNIFICANT UNDER-CONSUMPTION`,
+      );
+      console.log(
+        `  Member2: 70 kWh (total allocation: ${member2TotalAllocation} kWh) - MAJOR OVER-CONSUMPTION`,
+      );
+      console.log(
+        `  Member3: 25 kWh (total allocation: ${member3TotalAllocation} kWh) - SIGNIFICANT UNDER-CONSUMPTION`,
+      );
+      console.log(
+        `  Member4: 60 kWh (total allocation: ${member4TotalAllocation} kWh) - MAJOR OVER-CONSUMPTION`,
+      );
+      console.log(
+        `  Member5: 18 kWh (total allocation: ${member5TotalAllocation} kWh) - SIGNIFICANT UNDER-CONSUMPTION`,
+      );
+      console.log(
+        `  Member6: 50 kWh (total allocation: ${member6TotalAllocation} kWh) - MAJOR OVER-CONSUMPTION`,
+      );
+      console.log(
+        `  Member7: 27 kWh (total allocation: ${member7TotalAllocation} kWh) - MODERATE UNDER-CONSUMPTION`,
+      );
+
+      await energyDistribution.consumeEnergyTokens([
+        { deviceId: 1002, quantity: 35 }, // Member1: significant under-consumption (57 allocation vs 35 consumption = 22 under)
+        { deviceId: 2001, quantity: 70 }, // Member2: major over-consumption (50 allocation vs 70 consumption = 20 over)
+        { deviceId: 3001, quantity: 25 }, // Member3: significant under-consumption (44 allocation vs 25 consumption = 19 under)
+        { deviceId: 4002, quantity: 60 }, // Member4: major over-consumption (39 allocation vs 60 consumption = 21 over)
+        { deviceId: 5001, quantity: 18 }, // Member5: significant under-consumption (33 allocation vs 18 consumption = 15 under)
+        { deviceId: 6001, quantity: 50 }, // Member6: major over-consumption (28 allocation vs 50 consumption = 22 over)
+        { deviceId: 7001, quantity: 27 }, // Member7: moderate under-consumption (34 allocation vs 27 consumption = 7 under)
+        // Total afternoon consumption: 285 kWh (all internal, no export)
+      ]);
+
+      console.log(
+        '✅ 10:00 PM - Afternoon consumption completed with NO EXPORT',
+      );
+      console.log(
+        '🏠 Total afternoon consumption: 285 kWh (100% internal usage)',
+      );
+      console.log(
+        '📊 Perfect internal balance: All available energy consumed by community',
+      );
+
+      console.log('\n💡 AFTERNOON SCENARIO OUTCOME:');
+      console.log(
+        '🏠 High consumption period: AC, heating, EV charging, appliances',
+      );
+      console.log(
+        '⚖️ Mixed efficiency patterns: Some under-consume (earn credits), others over-consume (pay)',
+      );
+      console.log('🔋 Battery value: Reduced community peak import costs');
+      console.log(
+        '💰 Fair distribution: Individual consumption determines personal outcomes',
+      );
+      console.log(
+        '🎯 Resource optimization: All available energy utilized internally',
+      );
+
+      // === COMPLETE DAY ANALYSIS ===
       const balances = await logFinalBalances(
         energyDistribution,
         members,
-        'FINAL DAILY BALANCES - SCENARIO 1 (HIGH EXPORT DAY)',
+        'CASH CREDIT BALANCES - COMPLETE DAILY CYCLE',
       );
 
-      console.log('\n💡 FINAL DAILY ANALYSIS:');
+      console.log('\n💡 === COMPLETE DAILY ENERGY CYCLE ANALYSIS ===');
+
+      console.log('\n📊 FULL DAY ENERGY SUMMARY:');
       console.log(
-        '✅ Export economics: High production + low consumption = significant revenue',
+        '  🌞 Total solar production: 460 kWh (280 morning + 180 afternoon)',
+      );
+      console.log('  🏭 Total grid imports: 80 kWh (afternoon peak demand)');
+      console.log(
+        '  🔋 Battery cycle: +25 kWh (morning) → -25 kWh (afternoon) = 0 net',
+      );
+      console.log('  📤 Total export: 200 kWh morning surplus');
+      console.log(
+        '  🏠 Total consumption: 340 kWh (55 morning + 285 afternoon)',
       );
       console.log(
-        '💰 Member benefits: All members profit from community surplus',
-      );
-      console.log('🔋 Battery efficiency: Maximized daily energy utilization');
-      console.log(
-        '📈 ROI success: Community solar system generates strong returns',
-      );
-      console.log(
-        '🌟 Optimal scenario: Perfect balance of production, storage, and monetization',
+        `  💰 Energy costs: Morning $${(280 * 0.1).toFixed(2)} + Afternoon $${(
+          180 * 0.11 +
+          80 * 0.19
+        ).toFixed(2)}`,
       );
 
-      // Verify zero-sum economics with proper BigInt handling
+      console.log('\n🔋 BATTERY DAILY PERFORMANCE:');
+      console.log(
+        '  ✅ Full daily cycle: Peak charging during excess, discharge during demand',
+      );
+      console.log(
+        '  💰 Cost savings: $0.14/kWh battery vs $0.19/kWh peak imports',
+      );
+      console.log(
+        '  ⚡ Peak shifting: 25 kWh shifted from morning excess to afternoon demand',
+      );
+      console.log('  🎯 Efficiency: Optimal timing maximized economic value');
+
+      console.log('\n💰 DUAL SCENARIO ECONOMIC OUTCOMES:');
+      console.log(
+        '  🌞 Morning scenario: Export revenue benefits all members universally',
+      );
+      console.log(
+        '  🌤️ Afternoon scenario: Individual efficiency determines personal outcomes',
+      );
+      console.log(
+        '  ⚖️ Balanced fairness: Shared export benefits + individual responsibility',
+      );
+      console.log(
+        '  🏘️ Community optimization: Battery improves economics in both scenarios',
+      );
+
+      console.log('\n🌟 DAILY CYCLE SUCCESS FACTORS:');
+      console.log(
+        '  ✅ Scenario 1 (Morning): High production + low consumption = export revenue',
+      );
+      console.log(
+        '  ✅ Scenario 2 (Afternoon): Moderate production + high consumption = internal optimization',
+      );
+      console.log(
+        '  🔋 Battery enablement: Storage bridges scenarios for maximum value',
+      );
+      console.log(
+        '  💡 Flexible operations: System adapts to varying production and consumption',
+      );
+      console.log(
+        '  🏘️ Community resilience: Shared resources benefit all members in both scenarios',
+      );
+
+      // Verify zero-sum economics
       expect(Math.abs(Number(balances.systemTotal))).to.be.lessThanOrEqual(1);
 
-      // Verify significant export revenue
+      // Verify export revenue was generated
       expect(balances.exportBalance).to.be.lessThan(0); // Negative because we paid for exports
 
-      // All members should have positive balances (all under-consumed)
-      const member1Balance = await energyDistribution.getCashCreditBalance(
-        member1.address,
-      );
-      const member2Balance = await energyDistribution.getCashCreditBalance(
-        member2.address,
-      );
-      const member3Balance = await energyDistribution.getCashCreditBalance(
-        member3.address,
-      );
-      const member4Balance = await energyDistribution.getCashCreditBalance(
-        member4.address,
-      );
-      const member5Balance = await energyDistribution.getCashCreditBalance(
-        member5.address,
-      );
-      const member6Balance = await energyDistribution.getCashCreditBalance(
-        member6.address,
-      );
-      const member7Balance = await energyDistribution.getCashCreditBalance(
-        member7.address,
-      );
-
-      // All members should benefit from export revenue
-      expect(Number(member1Balance)).to.be.gte(0);
-      expect(Number(member2Balance)).to.be.gte(0);
-      expect(Number(member3Balance)).to.be.gte(0);
-      expect(Number(member4Balance)).to.be.gte(0);
-      expect(Number(member5Balance)).to.be.gte(0);
-      expect(Number(member6Balance)).to.be.gte(0);
-      expect(Number(member7Balance)).to.be.gte(0);
-
-      console.log(
-        '\n✅ DAILY SCENARIO 1 COMPLETE: Optimal solar day with battery management and export revenue',
-      );
-    });
-  });
-
-  describe('Daily Scenario 2: Moderate Production Day with High Consumption', function () {
-    it('Should demonstrate full day cycle with battery and no export in single distribution', async function () {
-      const {
-        energyDistribution,
-        owner,
-        member1,
-        member2,
-        member3,
-        member4,
-        member5,
-        member6,
-        member7,
-      } = await loadFixture(setup7MembersWithBatteryFixture);
-
-      const members = [
-        member1,
-        member2,
-        member3,
-        member4,
-        member5,
-        member6,
-        member7,
-      ];
-
-      console.log(
-        '\n🌤️ === DAILY SCENARIO 2: MODERATE PRODUCTION WITH HIGH CONSUMPTION ===',
-      );
-      console.log(
-        '📅 Full Day Summary: Moderate solar + battery load balancing + high consumption = zero export',
-      );
-
-      await logBatteryState(
-        energyDistribution,
-        'Day start - battery initial state',
-      );
-
-      // === SINGLE DAILY DISTRIBUTION ===
-      console.log('\n--- DAILY ENERGY DISTRIBUTION ---');
-
-      // Daily totals:
-      // - Morning: 1200 solar (200 to battery charge)
-      // - Evening: 600 solar + 800 imports + 200 battery discharge
-      // - Net battery change: +200 charge - 200 discharge = 0 final state
-      // - Net solar for day: 1200 + 600 = 1800 total
-      // - Total imports: 800
-      const dailySources = [
-        { sourceId: 1, price: 110, quantity: 1800 }, // Combined daily solar production (higher price due to lower output)
-        { sourceId: 2, price: 190, quantity: 800 }, // Significant imports needed for evening peak
-      ];
-
-      console.log('Full day energy summary:');
-      console.log(`  Total solar production: 1800 tokens @ price 110`);
-      console.log(`  Total imports needed: 800 tokens @ price 190`);
-      console.log(
-        '  Battery operations: +200 charge (morning) - 200 discharge (evening) = 0 net',
-      );
-      console.log('  Final battery state: 0 units (fully depleted)');
-
-      // Distribute energy for entire day with net battery state change (back to 0)
-      await energyDistribution.distributeEnergyTokens(dailySources, 0);
-
-      await logBatteryState(energyDistribution, 'After daily distribution');
-      await logMemberAllocations(
-        energyDistribution,
-        members,
-        'Daily member token allocations',
-      );
-      await logCollectiveConsumption(
-        energyDistribution,
-        'Daily collective consumption pool',
-      );
-      await logCollectiveConsumptionPerMember(
-        energyDistribution,
-        members,
-        'Collective Consumption list',
-      );
-
-      console.log('\n💡 DAILY DISTRIBUTION ANALYSIS:');
-      console.log('🌤️ Moderate solar production requires significant imports');
-      console.log(
-        '🔋 Battery full cycle: 200 units charged then fully discharged',
-      );
-      console.log(
-        '💸 Cost management: Battery provides cheaper evening energy vs peak imports',
-      );
-      console.log(
-        '📊 Energy mix: Solar (1800) + Import (800) with battery load balancing',
-      );
-      console.log(
-        '⚖️ Price optimization: Battery (140) vs Peak Import (190) savings',
-      );
-
-      // === DAILY CONSUMPTION ===
-      console.log('\n--- DAILY ENERGY CONSUMPTION ---');
-
-      const member1Allocation = await energyDistribution.getAllocatedTokens(
-        member1.address,
-      );
-      const member2Allocation = await energyDistribution.getAllocatedTokens(
-        member2.address,
-      );
-      const member3Allocation = await energyDistribution.getAllocatedTokens(
-        member3.address,
-      );
-      const member4Allocation = await energyDistribution.getAllocatedTokens(
-        member4.address,
-      );
-      const member5Allocation = await energyDistribution.getAllocatedTokens(
-        member5.address,
-      );
-      const member6Allocation = await energyDistribution.getAllocatedTokens(
-        member6.address,
-      );
-      const member7Allocation = await energyDistribution.getAllocatedTokens(
-        member7.address,
-      );
-
-      console.log('Daily consumption patterns (high usage day):');
-      console.log(
-        `  Member1: 500 tokens (allocated: ${member1Allocation}) - UNDER-CONSUMPTION`,
-      );
-      console.log(
-        `  Member2: 480 tokens (allocated: ${member2Allocation}) - OVER-CONSUMPTION`,
-      );
-      console.log(
-        `  Member3: 410 tokens (allocated: ${member3Allocation}) - UNDER-CONSUMPTION`,
-      );
-      console.log(
-        `  Member4: 380 tokens (allocated: ${member4Allocation}) - OVER-CONSUMPTION`,
-      );
-      console.log(
-        `  Member5: 300 tokens (allocated: ${member5Allocation}) - UNDER-CONSUMPTION`,
-      );
-      console.log(
-        `  Member6: 270 tokens (allocated: ${member6Allocation}) - OVER-CONSUMPTION`,
-      );
-      console.log(
-        `  Member7: 260 tokens (allocated: ${member7Allocation}) - EXACTLY MATCHED`,
-      );
-
-      // High consumption day - mixed patterns, all energy consumed internally
-      await energyDistribution.consumeEnergyTokens([
-        { deviceId: 1001, quantity: 500 }, // Member1: under-consumption
-        { deviceId: 2001, quantity: 480 }, // Member2: over-consumption
-        { deviceId: 3001, quantity: 410 }, // Member3: under-consumption
-        { deviceId: 4001, quantity: 380 }, // Member4: over-consumption
-        { deviceId: 5001, quantity: 300 }, // Member5: under-consumption
-        { deviceId: 6001, quantity: 270 }, // Member6: over-consumption
-        { deviceId: 7002, quantity: 260 }, // Member7: close to allocation
-        // No export - all energy consumed internally
-      ]);
-
-      console.log('Daily consumption completed with NO EXPORT');
-
-      console.log('\n💡 DAILY CONSUMPTION ANALYSIS:');
-      console.log(
-        '🏠 High consumption day: Members used most/all available energy',
-      );
-      console.log('📊 Perfect internal balance: Zero waste, zero export');
-      console.log(
-        '⚖️ Mixed efficiency: Some under-consume (credits), others over-consume (pay)',
-      );
-      console.log('🔋 Battery value: Reduced peak import costs for community');
-      console.log(
-        '🎯 Load balancing: Morning surplus stored for evening demand',
-      );
-
-      // === FINAL DAILY ANALYSIS ===
-      const balances = await logFinalBalances(
-        energyDistribution,
-        members,
-        'FINAL DAILY BALANCES - SCENARIO 2 (NO EXPORT DAY)',
-      );
-
-      console.log('\n💡 FINAL DAILY ANALYSIS:');
-      console.log(
-        '✅ Internal optimization: Zero export, optimal community usage',
-      );
-      console.log(
-        '⚖️ Individual responsibility: Consumption patterns determine member outcomes',
-      );
-      console.log(
-        '🔋 Battery efficiency: Reduced daily energy costs for entire community',
-      );
-      console.log(
-        '💰 Balanced economics: Under-consumers profit, over-consumers pay fairly',
-      );
-      console.log(
-        '🌟 Community success: No waste, optimal internal resource utilization',
-      );
-
-      // Verify zero-sum economics with proper BigInt handling
-      expect(Math.abs(Number(balances.systemTotal))).to.be.lessThanOrEqual(1);
-
-      // Verify no export
-      expect(balances.exportBalance).to.equal(0);
-
-      // Check mixed balances based on consumption patterns
+      // Check individual balance patterns
       const member1Balance = await energyDistribution.getCashCreditBalance(
         member1.address,
       );
@@ -692,125 +658,126 @@ describe('EnergyDistribution7MembersBatteryDailyScenarios', function () {
       );
 
       // Under-consumers should have positive balances
-      expect(Number(member1Balance)).to.be.gte(0); // Under-consumer
-      expect(Number(member3Balance)).to.be.gte(0); // Under-consumer
-      expect(Number(member5Balance)).to.be.gte(0); // Under-consumer
+      expect(Number(member1Balance)).to.be.gte(0); // Significant under-consumer: 57 allocation - 35 consumption = 22 under
+      expect(Number(member3Balance)).to.be.gte(0); // Significant under-consumer: 44 allocation - 25 consumption = 19 under
+      expect(Number(member5Balance)).to.be.gte(0); // Significant under-consumer: 33 allocation - 18 consumption = 15 under
+      expect(Number(member7Balance)).to.be.gte(0); // Moderate under-consumer: 34 allocation - 27 consumption = 7 under
 
-      // Over-consumers should have negative balances
-      expect(Number(member2Balance)).to.be.lte(0); // Over-consumer
-      expect(Number(member4Balance)).to.be.lte(0); // Over-consumer
-      expect(Number(member6Balance)).to.be.lte(0); // Over-consumer
+      // Major over-consumers should have negative balances (over-consumption costs exceed export credits)
+      expect(Number(member2Balance)).to.be.lte(0); // Major over-consumer: 50 allocation - 70 consumption = -20 over
+      expect(Number(member4Balance)).to.be.lte(0); // Major over-consumer: 39 allocation - 60 consumption = -21 over
+      expect(Number(member6Balance)).to.be.lte(0); // Major over-consumer: 28 allocation - 50 consumption = -22 over
 
-      // Member7 should be close to zero (matched consumption)
-      expect(Math.abs(Number(member7Balance))).to.be.lte(1000); // Close to allocation
-
+      console.log('\n✅ COMPLETE DAILY CYCLE WITH DUAL SCENARIOS FINISHED');
       console.log(
-        '\n✅ DAILY SCENARIO 2 COMPLETE: Moderate production with battery load balancing and internal consumption',
+        '🌅 Single day successfully demonstrated both high solar export and moderate production scenarios',
+      );
+      console.log(
+        '🔋 Battery optimally managed energy flow across both scenarios',
+      );
+      console.log(
+        '📊 Community solar system proven effective for diverse daily energy patterns',
       );
     });
   });
 
-  describe('Daily Scenario Comparison', function () {
-    it('Should demonstrate the difference between export vs internal consumption days', async function () {
-      console.log('\n📊 === DAILY SCENARIO COMPARISON SUMMARY ===');
+  describe('Daily Scenario Analysis', function () {
+    it('Should analyze the contrasts and benefits of dual scenario approach', async function () {
+      console.log('\n📊 === DUAL SCENARIO DAILY ANALYSIS ===');
 
-      console.log('\n🌞 SCENARIO 1 (High Solar Export Day):');
       console.log(
-        '☀️ Abundant solar production (2800 tokens) with minimal imports (300 tokens)',
+        '\n🌞 SCENARIO 1 - MORNING HIGH SOLAR EXPORT (6:00 AM - 12:00 PM):',
       );
       console.log(
-        '🔋 Battery net storage: +250 units from excess morning production',
+        '  ☀️ Abundant solar production: 280 kWh at optimal $0.10/kWh rate',
       );
       console.log(
-        '🏠 Low member consumption: All members significantly under-consume',
+        '  🔋 Battery charging: 25 kWh excess storage for afternoon use',
       );
       console.log(
-        '📤 Major export opportunity: ~2540 tokens exported for revenue',
+        '  📤 Major export: 200 kWh surplus sold to grid for revenue',
+      );
+      console.log('  🏠 Minimal consumption: 55 kWh total morning usage');
+      console.log(
+        '  💰 Universal benefits: All members share export revenue gains',
       );
       console.log(
-        '💰 Universal profits: All members benefit from substantial export revenue',
-      );
-      console.log(
-        '✅ Optimal economics: High production + low usage = maximum community returns',
-      );
-
-      console.log('\n🌤️ SCENARIO 2 (Balanced Internal Day):');
-      console.log(
-        '🌅 Moderate solar production (1800 tokens) requiring significant imports (800 tokens)',
-      );
-      console.log(
-        '🔋 Battery full cycle: +200 charge then complete discharge (net 0)',
-      );
-      console.log(
-        '🏠 High member consumption: Mixed patterns, most energy used internally',
-      );
-      console.log(
-        '📊 Zero export: All available energy consumed within community',
-      );
-      console.log(
-        '⚖️ Individual outcomes: Based on personal consumption efficiency vs allocation',
-      );
-      console.log(
-        '✅ Internal optimization: Perfect resource utilization, no waste',
+        '  ✅ Outcome: High production + low consumption = maximum export revenue',
       );
 
-      console.log('\n🔑 KEY INSIGHTS FROM DAILY APPROACH:');
-
-      console.log('\n🔋 Battery Daily Role:');
       console.log(
-        '  • Scenario 1: Net storage device (+250 units) for future use',
+        '\n🌤️ SCENARIO 2 - AFTERNOON IMPORTS + INTERNAL (12:00 PM - 10:00 PM):',
+      );
+      console.log('  ☀️ Moderate solar: 180 kWh at higher $0.11/kWh rate');
+      console.log('  🏭 Grid imports: 80 kWh needed at peak $0.19/kWh rate');
+      console.log('  🔋 Battery discharge: 25 kWh morning storage released');
+      console.log(
+        '  🏠 High consumption: 260 kWh for AC, heating, EV charging',
       );
       console.log(
-        '  • Scenario 2: Daily load balancer (charge morning, discharge evening)',
+        '  ⚖️ Individual outcomes: Personal efficiency determines financial results',
       );
       console.log(
-        '  • Provides price stability between solar (100-110) and imports (180-190)',
-      );
-      console.log(
-        '  • Enables optimal energy timing regardless of production variability',
-      );
-
-      console.log('\n💰 Economic Patterns:');
-      console.log(
-        '  • Export days: Community profits from external revenue sharing',
-      );
-      console.log(
-        '  • Internal days: Individual efficiency determines personal outcomes',
-      );
-      console.log(
-        '  • Battery always improves economics by reducing peak import dependency',
-      );
-      console.log(
-        '  • Zero-sum fairness ensures balanced cost/benefit distribution',
+        '  ✅ Outcome: Moderate production + high consumption = internal optimization',
       );
 
-      console.log('\n🏘️ Community Benefits:');
+      console.log('\n🔑 KEY INSIGHTS FROM DUAL SCENARIO DAY:');
+
+      console.log('\n🔋 Battery Strategic Role:');
       console.log(
-        '  • Shared ownership model distributes both costs and revenues fairly',
+        '  • Morning: Storage device capturing excess solar for later use',
       );
       console.log(
-        '  • Battery investment pays off in both export and internal scenarios',
+        '  • Afternoon: Discharge source reducing expensive grid import needs',
       );
       console.log(
-        '  • Flexible daily operations accommodate varying production and consumption',
+        '  • Economic bridge: Connects high-value morning surplus to high-cost afternoon demand',
       );
       console.log(
-        '  • Members incentivized for both production maximization and consumption efficiency',
+        '  • Community asset: Benefits all members in both scenarios',
       );
 
-      console.log('\n📈 Daily Management Advantages:');
+      console.log('\n💰 Economic Model Validation:');
       console.log(
-        '  • Single distribution per day simplifies operations and accounting',
-      );
-      console.log('  • Battery state represents daily net energy balance');
-      console.log(
-        '  • Clear member outcomes based on daily consumption vs allocation',
+        '  • Export scenario: Shared revenue from external grid sales',
       );
       console.log(
-        '  • Easier integration with daily grid settlements and billing cycles',
+        '  • Internal scenario: Individual efficiency rewarded fairly',
+      );
+      console.log('  • Battery optimization: Reduces costs in both scenarios');
+      console.log(
+        '  • Zero-sum integrity: Perfect balance maintained across both scenarios',
       );
 
-      // This test provides comparative analysis, no specific assertions needed
+      console.log('\n🏘️ Community Solar Advantages:');
+      console.log(
+        '  • Dual scenario flexibility: System adapts to varying daily conditions',
+      );
+      console.log(
+        '  • Shared infrastructure: Battery and solar array benefit all members',
+      );
+      console.log(
+        '  • Revenue generation: Export opportunities monetize excess production',
+      );
+      console.log(
+        '  • Cost reduction: Shared resources reduce individual energy costs',
+      );
+
+      console.log('\n📈 Operational Excellence:');
+      console.log(
+        '  • Single day management: Two distinct scenarios in one operational period',
+      );
+      console.log(
+        '  • Real-time optimization: Battery responds to changing conditions',
+      );
+      console.log(
+        '  • Member satisfaction: Fair outcomes in both high and low production scenarios',
+      );
+      console.log(
+        '  • System resilience: Handles diverse production and consumption patterns',
+      );
+
+      // This test provides analysis, no specific assertions needed
       expect(true).to.be.true;
     });
   });
