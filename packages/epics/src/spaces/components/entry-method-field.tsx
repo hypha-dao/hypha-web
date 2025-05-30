@@ -10,9 +10,11 @@ import { EntryMethod } from './entry-method';
 export function EntryMethodField({
   entryMethods,
   value,
+  onChange,
 }: {
   entryMethods: any[],
   value?: any,
+  onChange?: (selected: any) => void;
 }) {
   const { control } = useFormContext();
   return (
@@ -25,6 +27,7 @@ export function EntryMethodField({
             <EntryMethod
               onChange={(entryMethod) => {
                 field.onChange(entryMethod.value);
+                onChange?.(entryMethod);
               }}
               entryMethods={entryMethods}
               value={value}

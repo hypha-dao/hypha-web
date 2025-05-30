@@ -31,12 +31,14 @@ import {
 import { z } from 'zod';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useConfig } from 'wagmi';
-import { useForm } from 'react-hook-form';
+import { useForm, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import React from 'react';
+import React, { useState } from 'react';
 import clsx from 'clsx';
 import { EntryMethodField } from './entry-method-field';
 import { EntryMethodType } from '@hypha-platform/core/client';
+import { EntryMethodTokenField } from './entry-method-token-field';
+import { useTokens } from '@hypha-platform/epics';
 
 const fullSchemaCreateChangeEntryMethodForm =
   schemaCreateChangeEntryMethodForm.extend({});
@@ -78,10 +80,12 @@ export const ChangeEntryMethodForm = ({
   submitLabel,
   submitLoadingLabel,
 }: ChangeEntryMethodFormProps) => {
+  const [ tokenBased, setTokenBased ] = useState(false);
   const router = useRouter();
   const { person } = useMe();
   const { jwt, isLoadingJwt } = useJwt();
   const config = useConfig();
+  const { tokens } = useTokens();
   const {
     createChangeEntryMethod,
     reset,
@@ -99,6 +103,7 @@ export const ChangeEntryMethodForm = ({
     spaceId: spaceId ?? undefined,
     creatorId: person?.id,
     entryMethod: EntryMethodType.OPEN_ACCESS,
+    token: undefined,
   };
 
   const form = useForm<FormValues>({
@@ -280,7 +285,38 @@ export const ChangeEntryMethodForm = ({
               </FormItem>
             )}
           />
-          <EntryMethodField entryMethods={entryMethods} value={form.getValues().entryMethod} />
+          <EntryMethodField
+            entryMethods={entryMethods}
+            value={form.getValues().entryMethod}
+            onChange={(selected) => {
+              console.log('selected', selected);
+              setTokenBased(selected.value === EntryMethodType.TOKEN_BASED);
+            }}
+          />
+          {tokenBased && (
+            // <div key={field.id} className="flex items-end gap-2"></div>
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <FormField
+                  control={form.control}
+                  // name={`${name}.${index}`}
+                  name="tokenBase"
+                  render={({ field: { value, onChange } }) => (
+                    <FormItem>
+                      <FormControl>
+                        <EntryMethodTokenField
+                          value={value || { amount: 0, token: '' }}
+                          onChange={onChange}
+                          tokens={tokens}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+          )}
           <Separator />
           <div className="flex justify-end w-full">
             <Button
