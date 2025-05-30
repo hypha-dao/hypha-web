@@ -144,3 +144,11 @@ npx nx run storage-evm:script ./scripts/token-voting-power.upgrade.ts --network 
 ```bash
 npx nx run storage-evm:script ./scripts/votedecay-voting-power.upgrade.ts --network base-mainnet
 ```
+
+### Upgrade Decaying Token Factory
+
+```bash
+npx nx run storage-evm:script ./scripts/decaying-token-factory.upgrade.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/ownership-token-voting-power-proxy.deploy.ts --network base-mainnet
+```

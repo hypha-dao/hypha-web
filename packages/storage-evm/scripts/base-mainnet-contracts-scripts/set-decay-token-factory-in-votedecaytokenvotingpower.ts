@@ -20,12 +20,12 @@ interface ContractTransactionWithWait extends ethers.ContractTransaction {
   wait(): Promise<TransactionReceipt>;
 }
 
-interface DecayingTokenFactoryInterface {
-  setDecayVotingPowerContract: (
-    decayVotingPowerContract: string,
+interface VoteDecayTokenVotingPowerInterface {
+  setDecayTokenFactory: (
+    decayTokenFactory: string,
   ) => Promise<ContractTransactionWithWait>;
   owner(): Promise<string>;
-  decayVotingPowerContract(): Promise<string>;
+  decayTokenFactory(): Promise<string>;
 }
 
 // Function to parse addresses from addresses.txt
@@ -56,16 +56,16 @@ function parseAddressesFile(): Record<string, string> {
   return addresses;
 }
 
-const decayingTokenFactoryAbi = [
+const voteDecayTokenVotingPowerAbi = [
   {
     inputs: [
       {
         internalType: 'address',
-        name: '_decayVotingPowerContract',
+        name: '_decayTokenFactory',
         type: 'address',
       },
     ],
-    name: 'setDecayVotingPowerContract',
+    name: 'setDecayTokenFactory',
     outputs: [],
     stateMutability: 'nonpayable',
     type: 'function',
@@ -85,7 +85,7 @@ const decayingTokenFactoryAbi = [
   },
   {
     inputs: [],
-    name: 'decayVotingPowerContract',
+    name: 'decayTokenFactory',
     outputs: [
       {
         internalType: 'address',
@@ -121,65 +121,63 @@ async function main(): Promise<void> {
   // Create a wallet instance
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY || '', provider);
 
-  // Use the DecayingTokenFactory address directly from addresses.txt
-  const decayingTokenFactoryAddress = addresses['DecayingTokenFactory'];
+  // Use the VoteDecayTokenVotingPower address directly from addresses.txt
+  const voteDecayTokenVotingPowerAddress =
+    addresses['VoteDecayTokenVotingPower'];
 
   console.log(
-    'DecayingTokenFactory address from addresses.txt:',
-    decayingTokenFactoryAddress,
+    'VoteDecayTokenVotingPower address from addresses.txt:',
+    voteDecayTokenVotingPowerAddress,
   );
 
-  // Get the DecayingTokenFactory contract instance
-  const decayingTokenFactory = new ethers.Contract(
-    decayingTokenFactoryAddress,
-    decayingTokenFactoryAbi,
+  // Get the VoteDecayTokenVotingPower contract instance
+  const voteDecayTokenVotingPower = new ethers.Contract(
+    voteDecayTokenVotingPowerAddress,
+    voteDecayTokenVotingPowerAbi,
     wallet,
-  ) as ethers.Contract & DecayingTokenFactoryInterface;
+  ) as ethers.Contract & VoteDecayTokenVotingPowerInterface;
 
   // Check if the wallet is the owner
-  const contractOwner = await decayingTokenFactory.owner();
+  const contractOwner = await voteDecayTokenVotingPower.owner();
   if (contractOwner.toLowerCase() !== wallet.address.toLowerCase()) {
     console.error(
-      `Your wallet (${wallet.address}) is not the owner of the DecayingTokenFactory contract.`,
+      `Your wallet (${wallet.address}) is not the owner of the VoteDecayTokenVotingPower contract.`,
     );
     console.error(`The owner is: ${contractOwner}`);
     throw new Error(
-      'Permission denied: only the contract owner can call setDecayVotingPowerContract',
+      'Permission denied: only the contract owner can call setDecayTokenFactory',
     );
   }
 
   console.log(
-    'Setting decay voting power contract in DecayingTokenFactory with the following address:',
+    'Setting decay token factory in VoteDecayTokenVotingPower with the following address:',
   );
-  console.log(
-    'VoteDecayTokenVotingPower:',
-    addresses['VoteDecayTokenVotingPower'],
-  );
+  console.log('DecayingTokenFactory:', addresses['DecayingTokenFactory']);
 
   try {
-    const tx = await decayingTokenFactory.setDecayVotingPowerContract(
-      addresses['VoteDecayTokenVotingPower'],
+    const tx = await voteDecayTokenVotingPower.setDecayTokenFactory(
+      addresses['DecayingTokenFactory'],
     );
 
     console.log('Transaction sent, waiting for confirmation...');
     await tx.wait();
     console.log(
-      'Decay voting power contract set successfully in DecayingTokenFactory!',
+      'Decay token factory set successfully in VoteDecayTokenVotingPower!',
     );
 
-    // Retrieve and display the set decay voting power contract address
-    console.log('\nRetrieving the set decay voting power contract address...');
-    const setDecayVotingPowerAddress =
-      await decayingTokenFactory.decayVotingPowerContract();
+    // Retrieve and display the set decay token factory address
+    console.log('\nRetrieving the set decay token factory address...');
+    const setDecayTokenFactoryAddress =
+      await voteDecayTokenVotingPower.decayTokenFactory();
     console.log(
-      'Current decay voting power contract address:',
-      setDecayVotingPowerAddress,
+      'Current decay token factory address:',
+      setDecayTokenFactoryAddress,
     );
 
     // Verify it matches what we set
     if (
-      setDecayVotingPowerAddress.toLowerCase() ===
-      addresses['VoteDecayTokenVotingPower'].toLowerCase()
+      setDecayTokenFactoryAddress.toLowerCase() ===
+      addresses['DecayingTokenFactory'].toLowerCase()
     ) {
       console.log(
         '✅ Verification successful: The retrieved address matches the one we set',
@@ -188,11 +186,11 @@ async function main(): Promise<void> {
       console.log(
         '❌ Verification failed: The retrieved address does not match the one we set',
       );
-      console.log('Expected:', addresses['VoteDecayTokenVotingPower']);
-      console.log('Retrieved:', setDecayVotingPowerAddress);
+      console.log('Expected:', addresses['DecayingTokenFactory']);
+      console.log('Retrieved:', setDecayTokenFactoryAddress);
     }
   } catch (error: any) {
-    console.error('Error setting decay voting power contract:', error.message);
+    console.error('Error setting decay token factory:', error.message);
     throw error;
   }
 }

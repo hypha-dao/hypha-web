@@ -1069,6 +1069,250 @@ describe('DAOSpaceFactoryImplementation', function () {
         ethers.parseUnits('1', 15),
       );
     });
+
+    it('Should retrieve deployed decaying token address using getSpaceToken', async function () {
+      const { decayingTokenFactory, spaceHelper, owner, voter1 } =
+        await loadFixture(deployFixture);
+
+      console.log('\n=== TESTING DECAYING TOKEN FACTORY getSpaceToken ===');
+
+      // Create space
+      const spaceParams = {
+        name: 'GetSpaceToken Test Space',
+        description: 'Testing getSpaceToken function',
+        imageUrl: 'https://test.com/image.png',
+        unity: 51,
+        quorum: 51,
+        votingPowerSource: 1,
+        exitMethod: 1,
+        joinMethod: 1,
+        createToken: false,
+        tokenName: '',
+        tokenSymbol: '',
+      };
+
+      await spaceHelper.contract.createSpace(spaceParams);
+      const spaceId = (await spaceHelper.contract.spaceCounter()).toString();
+      console.log(`✅ Created space with ID: ${spaceId}`);
+
+      // Get the executor
+      const executorAddress = await spaceHelper.contract.getSpaceExecutor(
+        spaceId,
+      );
+      console.log(`✅ Space executor: ${executorAddress}`);
+
+      // Impersonate the executor
+      await ethers.provider.send('hardhat_impersonateAccount', [
+        executorAddress,
+      ]);
+      const executorSigner = await ethers.getSigner(executorAddress);
+
+      // Fund the executor
+      await owner.sendTransaction({
+        to: executorAddress,
+        value: ethers.parseEther('1.0'),
+      });
+
+      // Test getSpaceToken BEFORE deploying any token (should return zero address)
+      console.log('\n--- Testing getSpaceToken BEFORE token deployment ---');
+      const tokenAddressBeforeDeployment =
+        await decayingTokenFactory.getSpaceToken(spaceId);
+      console.log(
+        `❌ Token address before deployment: ${tokenAddressBeforeDeployment}`,
+      );
+      expect(tokenAddressBeforeDeployment).to.equal(ethers.ZeroAddress);
+
+      // Define decay parameters
+      const decayPercentage = 1000; // 10% decay per interval
+      const decayInterval = 3600; // 1 hour in seconds
+      const tokenName = 'Test Decay Token';
+      const tokenSymbol = 'TDT';
+
+      console.log('\n--- Deploying decaying token ---');
+      console.log(`Token name: ${tokenName}`);
+      console.log(`Token symbol: ${tokenSymbol}`);
+      console.log(`Decay percentage: ${decayPercentage / 100}%`);
+      console.log(`Decay interval: ${decayInterval} seconds`);
+
+      // Deploy decaying token through the executor
+      const deployTx = await decayingTokenFactory
+        .connect(executorSigner)
+        .deployDecayingToken(
+          spaceId,
+          tokenName,
+          tokenSymbol,
+          0, // maxSupply (0 = unlimited)
+          true, // transferable
+          true, // isVotingToken
+          decayPercentage,
+          decayInterval,
+        );
+
+      const receipt = await deployTx.wait();
+      const tokenDeployedEvent = receipt?.logs
+        .filter((log) => {
+          try {
+            return (
+              decayingTokenFactory.interface.parseLog({
+                topics: log.topics as string[],
+                data: log.data,
+              })?.name === 'TokenDeployed'
+            );
+          } catch (_unused) {
+            return false;
+          }
+        })
+        .map((log) =>
+          decayingTokenFactory.interface.parseLog({
+            topics: log.topics as string[],
+            data: log.data,
+          }),
+        )[0];
+
+      if (!tokenDeployedEvent) {
+        throw new Error('Token deployment event not found');
+      }
+
+      const deployedTokenAddress = tokenDeployedEvent.args.tokenAddress;
+      console.log(`✅ Token deployed at address: ${deployedTokenAddress}`);
+
+      // Test getSpaceToken AFTER deploying the token
+      console.log('\n--- Testing getSpaceToken AFTER token deployment ---');
+      const retrievedTokenAddress = await decayingTokenFactory.getSpaceToken(
+        spaceId,
+      );
+      console.log(`✅ Retrieved token address: ${retrievedTokenAddress}`);
+
+      // Verify the addresses match
+      expect(retrievedTokenAddress).to.equal(deployedTokenAddress);
+      expect(retrievedTokenAddress).to.not.equal(ethers.ZeroAddress);
+
+      console.log(`🎉 SUCCESS: Deployed address matches retrieved address!`);
+
+      // Get the token contract and verify its properties
+      const decayToken = await ethers.getContractAt(
+        'DecayingSpaceToken',
+        retrievedTokenAddress,
+      );
+
+      console.log('\n--- Verifying token properties ---');
+      const actualName = await decayToken.name();
+      const actualSymbol = await decayToken.symbol();
+      const actualDecayPercentage = await decayToken.decayPercentage();
+      const actualDecayInterval = await decayToken.decayInterval();
+
+      console.log(`Token name: ${actualName}`);
+      console.log(`Token symbol: ${actualSymbol}`);
+      console.log(
+        `Decay percentage: ${actualDecayPercentage} (${
+          Number(actualDecayPercentage) / 100
+        }%)`,
+      );
+      console.log(`Decay interval: ${actualDecayInterval} seconds`);
+
+      expect(actualName).to.equal(tokenName);
+      expect(actualSymbol).to.equal(tokenSymbol);
+      expect(actualDecayPercentage).to.equal(decayPercentage);
+      expect(actualDecayInterval).to.equal(decayInterval);
+
+      // Test with multiple spaces to ensure each gets its own token
+      console.log('\n--- Testing with multiple spaces ---');
+
+      // Create second space
+      await spaceHelper.contract.createSpace({
+        ...spaceParams,
+        name: 'Second Space',
+      });
+      const spaceId2 = (await spaceHelper.contract.spaceCounter()).toString();
+      console.log(`✅ Created second space with ID: ${spaceId2}`);
+
+      // Get executor for second space
+      const executorAddress2 = await spaceHelper.contract.getSpaceExecutor(
+        spaceId2,
+      );
+      await ethers.provider.send('hardhat_impersonateAccount', [
+        executorAddress2,
+      ]);
+      const executorSigner2 = await ethers.getSigner(executorAddress2);
+      await owner.sendTransaction({
+        to: executorAddress2,
+        value: ethers.parseEther('1.0'),
+      });
+
+      // Deploy token for second space
+      const deployTx2 = await decayingTokenFactory
+        .connect(executorSigner2)
+        .deployDecayingToken(
+          spaceId2,
+          'Second Decay Token',
+          'SDT',
+          0,
+          true,
+          true,
+          2000, // Different decay percentage
+          7200, // Different decay interval
+        );
+
+      const receipt2 = await deployTx2.wait();
+      const tokenDeployedEvent2 = receipt2?.logs
+        .filter((log) => {
+          try {
+            return (
+              decayingTokenFactory.interface.parseLog({
+                topics: log.topics as string[],
+                data: log.data,
+              })?.name === 'TokenDeployed'
+            );
+          } catch (_unused) {
+            return false;
+          }
+        })
+        .map((log) =>
+          decayingTokenFactory.interface.parseLog({
+            topics: log.topics as string[],
+            data: log.data,
+          }),
+        )[0];
+
+      if (!tokenDeployedEvent2) {
+        throw new Error('Second token deployment event not found');
+      }
+
+      const deployedTokenAddress2 = tokenDeployedEvent2.args.tokenAddress;
+      console.log(
+        `✅ Second token deployed at address: ${deployedTokenAddress2}`,
+      );
+
+      // Verify both spaces have different tokens
+      const retrievedTokenAddress1 = await decayingTokenFactory.getSpaceToken(
+        spaceId,
+      );
+      const retrievedTokenAddress2 = await decayingTokenFactory.getSpaceToken(
+        spaceId2,
+      );
+
+      console.log(`Space ${spaceId} token address: ${retrievedTokenAddress1}`);
+      console.log(`Space ${spaceId2} token address: ${retrievedTokenAddress2}`);
+
+      expect(retrievedTokenAddress1).to.equal(deployedTokenAddress);
+      expect(retrievedTokenAddress2).to.equal(deployedTokenAddress2);
+      expect(retrievedTokenAddress1).to.not.equal(retrievedTokenAddress2);
+
+      console.log(`🎉 SUCCESS: Each space has its own unique token!`);
+
+      // Test querying non-existent space
+      console.log('\n--- Testing with non-existent space ---');
+      const nonExistentSpaceId = 999;
+      const nonExistentTokenAddress = await decayingTokenFactory.getSpaceToken(
+        nonExistentSpaceId,
+      );
+      console.log(
+        `Token address for non-existent space ${nonExistentSpaceId}: ${nonExistentTokenAddress}`,
+      );
+      expect(nonExistentTokenAddress).to.equal(ethers.ZeroAddress);
+
+      console.log('🎉 All getSpaceToken tests passed!');
+    });
   });
 
   describe('Enhanced Decay Token Tests', function () {
