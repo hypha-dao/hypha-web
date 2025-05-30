@@ -118,7 +118,7 @@ export const ChangeEntryMethodForm = ({
       console.error('Entry Method must be value of 0, 1 or 2');
     }
 
-    console.log('deploy-funds data', {
+    console.log('change-entry-method data', {
       ...data,
       spaceId: spaceId as number,
       web3SpaceId: typeof web3SpaceId === 'number' ? web3SpaceId : undefined,

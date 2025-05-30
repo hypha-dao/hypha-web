@@ -208,14 +208,14 @@ export const agreementsImplementationAbi = [
     outputs: [],
     stateMutability: 'payable',
   },
-] as const;
+] as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x83B5d4F555A68126bB302685e67767Bb7a2985F0)
  */
 export const agreementsImplementationAddress = {
   8453: '0x83B5d4F555A68126bB302685e67767Bb7a2985F0',
-} as const;
+} as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x83B5d4F555A68126bB302685e67767Bb7a2985F0)
@@ -223,7 +223,7 @@ export const agreementsImplementationAddress = {
 export const agreementsImplementationConfig = {
   address: agreementsImplementationAddress,
   abi: agreementsImplementationAbi,
-} as const;
+} as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // DAOProposalsImplementation
@@ -696,14 +696,14 @@ export const daoProposalsImplementationAbi = [
     outputs: [],
     stateMutability: 'nonpayable',
   },
-] as const;
+] as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x001bA7a00a259Fb12d7936455e292a60FC2bef14)
  */
 export const daoProposalsImplementationAddress = {
   8453: '0x001bA7a00a259Fb12d7936455e292a60FC2bef14',
-} as const;
+} as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x001bA7a00a259Fb12d7936455e292a60FC2bef14)
@@ -711,7 +711,7 @@ export const daoProposalsImplementationAddress = {
 export const daoProposalsImplementationConfig = {
   address: daoProposalsImplementationAddress,
   abi: daoProposalsImplementationAbi,
-} as const;
+} as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // DAOSpaceFactoryImplementation
@@ -928,31 +928,6 @@ export const daoSpaceFactoryImplementationAbi = [
         indexed: true,
       },
       {
-        name: 'oldJoinMethod',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-      {
-        name: 'newJoinMethod',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'EntryMethodChanged',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'spaceId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      {
         name: 'oldVotingPowerSource',
         internalType: 'uint256',
         type: 'uint256',
@@ -960,6 +935,30 @@ export const daoSpaceFactoryImplementationAbi = [
       },
       {
         name: 'newVotingPowerSource',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'oldUnity',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'newUnity',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'oldQuorum',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'newQuorum',
         internalType: 'uint256',
         type: 'uint256',
         indexed: false,
@@ -1298,24 +1297,14 @@ export const daoSpaceFactoryImplementationAbi = [
     outputs: [],
     stateMutability: 'payable',
   },
-  {
-    type: 'function',
-    inputs: [
-      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: '_newJoinMethod', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'changeEntryMethod',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-] as const;
+] as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0xc8B8454D2F9192FeCAbc2C6F5d88F6434A2a9cd9)
  */
 export const daoSpaceFactoryImplementationAddress = {
   8453: '0xc8B8454D2F9192FeCAbc2C6F5d88F6434A2a9cd9',
-} as const;
+} as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0xc8B8454D2F9192FeCAbc2C6F5d88F6434A2a9cd9)
@@ -1323,7 +1312,7 @@ export const daoSpaceFactoryImplementationAddress = {
 export const daoSpaceFactoryImplementationConfig = {
   address: daoSpaceFactoryImplementationAddress,
   abi: daoSpaceFactoryImplementationAbi,
-} as const;
+} as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // DecayingSpaceToken
@@ -2000,14 +1989,14 @@ export const decayingTokenFactoryAbi = [
     outputs: [],
     stateMutability: 'payable',
   },
-] as const;
+] as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x299f4D2327933c1f363301dbd2a28379ccD5539b)
  */
 export const decayingTokenFactoryAddress = {
   8453: '0x299f4D2327933c1f363301dbd2a28379ccD5539b',
-} as const;
+} as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x299f4D2327933c1f363301dbd2a28379ccD5539b)
@@ -2015,7 +2004,7 @@ export const decayingTokenFactoryAddress = {
 export const decayingTokenFactoryConfig = {
   address: decayingTokenFactoryAddress,
   abi: decayingTokenFactoryAbi,
-} as const;
+} as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // OwnershipTokenFactory
@@ -2318,14 +2307,14 @@ export const ownershipTokenFactoryAbi = [
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
     stateMutability: 'view',
   },
-] as const;
+] as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0xA1eDf096B72226ae2f7BDEb12E9c9C82152BccB6)
  */
 export const ownershipTokenFactoryAddress = {
   8453: '0xA1eDf096B72226ae2f7BDEb12E9c9C82152BccB6',
-} as const;
+} as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0xA1eDf096B72226ae2f7BDEb12E9c9C82152BccB6)
@@ -2333,7 +2322,7 @@ export const ownershipTokenFactoryAddress = {
 export const ownershipTokenFactoryConfig = {
   address: ownershipTokenFactoryAddress,
   abi: ownershipTokenFactoryAbi,
-} as const;
+} as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // RegularTokenFactory
@@ -2617,14 +2606,14 @@ export const regularTokenFactoryAbi = [
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
     stateMutability: 'view',
   },
-] as const;
+] as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x95A33EC94de2189893884DaD63eAa19f7390144a)
  */
 export const regularTokenFactoryAddress = {
   8453: '0x95A33EC94de2189893884DaD63eAa19f7390144a',
-} as const;
+} as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x95A33EC94de2189893884DaD63eAa19f7390144a)
@@ -2632,4 +2621,248 @@ export const regularTokenFactoryAddress = {
 export const regularTokenFactoryConfig = {
   address: regularTokenFactoryAddress,
   abi: regularTokenFactoryAbi,
-} as const;
+} as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// TokenBalanceJoinImplementation
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0x41cD69A3a3715B16598415df336a8Cc533CCAF76)
+ */
+export const tokenBalanceJoinImplementationAbi = [
+  { type: 'constructor', inputs: [], stateMutability: 'nonpayable' },
+  {
+    type: 'error',
+    inputs: [{ name: 'target', internalType: 'address', type: 'address' }],
+    name: 'AddressEmptyCode',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'implementation', internalType: 'address', type: 'address' },
+    ],
+    name: 'ERC1967InvalidImplementation',
+  },
+  { type: 'error', inputs: [], name: 'ERC1967NonPayable' },
+  { type: 'error', inputs: [], name: 'FailedCall' },
+  { type: 'error', inputs: [], name: 'InvalidInitialization' },
+  { type: 'error', inputs: [], name: 'NotInitializing' },
+  {
+    type: 'error',
+    inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
+    name: 'OwnableInvalidOwner',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'OwnableUnauthorizedAccount',
+  },
+  { type: 'error', inputs: [], name: 'UUPSUnauthorizedCallContext' },
+  {
+    type: 'error',
+    inputs: [{ name: 'slot', internalType: 'bytes32', type: 'bytes32' }],
+    name: 'UUPSUnsupportedProxiableUUID',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'newAddress',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'DAOSpaceFactoryUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'version',
+        internalType: 'uint64',
+        type: 'uint64',
+        indexed: false,
+      },
+    ],
+    name: 'Initialized',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previousOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'newOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'OwnershipTransferred',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'token',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'requiredBalance',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'TokenRequirementSet',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'implementation',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'Upgraded',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'UPGRADE_INTERFACE_VERSION',
+    outputs: [{ name: '', internalType: 'string', type: 'string' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_userAddress', internalType: 'address', type: 'address' },
+      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'checkJoin',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'daoSpaceFactory',
+    outputs: [
+      { name: '', internalType: 'contract IDAOSpaceFactory', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'initialOwner', internalType: 'address', type: 'address' },
+    ],
+    name: 'initialize',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'owner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'proxiableUUID',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'renounceOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_daoSpaceFactory', internalType: 'address', type: 'address' },
+    ],
+    name: 'setDAOSpaceFactory',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: '_token', internalType: 'address', type: 'address' },
+      { name: '_requiredBalance', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'setTokenRequirement',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    name: 'spaceTokenRequirements',
+    outputs: [
+      { name: 'token', internalType: 'address', type: 'address' },
+      { name: 'requiredBalance', internalType: 'uint256', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address' }],
+    name: 'transferOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'newImplementation', internalType: 'address', type: 'address' },
+      { name: 'data', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'upgradeToAndCall',
+    outputs: [],
+    stateMutability: 'payable',
+  },
+] as const
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0x41cD69A3a3715B16598415df336a8Cc533CCAF76)
+ */
+export const tokenBalanceJoinImplementationAddress = {
+  8453: '0x41cD69A3a3715B16598415df336a8Cc533CCAF76',
+} as const
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0x41cD69A3a3715B16598415df336a8Cc533CCAF76)
+ */
+export const tokenBalanceJoinImplementationConfig = {
+  address: tokenBalanceJoinImplementationAddress,
+  abi: tokenBalanceJoinImplementationAbi,
+} as const
