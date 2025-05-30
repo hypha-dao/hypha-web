@@ -588,25 +588,125 @@ describe('EnergyDistribution7MembersRealisticDailyScenarios', function () {
       // Try to force settlement calculation by calling available contract functions
       console.log('\n🔧 Attempting to trigger financial settlement...');
 
-      // Check if there's a settlement function we can call
       try {
-        // Some contracts have a settle or calculate function
-        if (typeof energyDistribution.settleAccounts === 'function') {
-          await energyDistribution.settleAccounts();
-          console.log('✅ Settlement function called successfully');
-        } else if (typeof energyDistribution.calculateBalances === 'function') {
-          await energyDistribution.calculateBalances();
-          console.log('✅ Balance calculation function called successfully');
-        } else if (typeof energyDistribution.updateCashCredits === 'function') {
-          await energyDistribution.updateCashCredits();
-          console.log('✅ Cash credit update function called successfully');
+        // Try different potential settlement methods
+        if (typeof energyDistribution.processEnergyBilling === 'function') {
+          await energyDistribution.processEnergyBilling();
+          console.log('✅ Energy billing processed');
+        } else if (
+          typeof energyDistribution.finalizeEnergyDistribution === 'function'
+        ) {
+          await energyDistribution.finalizeEnergyDistribution();
+          console.log('✅ Energy distribution finalized');
+        } else if (
+          typeof energyDistribution.calculateMemberBalances === 'function'
+        ) {
+          await energyDistribution.calculateMemberBalances();
+          console.log('✅ Member balances calculated');
+        } else if (typeof energyDistribution.updateAllBalances === 'function') {
+          await energyDistribution.updateAllBalances();
+          console.log('✅ All balances updated');
         } else {
+          console.log('⚠️  No settlement functions available');
+
+          // Try to manually calculate what the balances should be
+          console.log('\n🧮 Manual Balance Calculation:');
+
+          // Calculate weighted average cost per kWh
+          const totalEnergyValue = 6.74 + 8.46; // $15.20 total
+          const totalEnergyAllocated = 58.8 + 42.15; // 100.95 kWh total
+          const avgCostPerKwh = totalEnergyValue / totalEnergyAllocated;
+
+          console.log(`Average energy cost: $${avgCostPerKwh.toFixed(4)}/kWh`);
+
+          // Calculate what each member should owe/be owed
+          const member1ShouldPay = totalAllocationsKwh.member1 * avgCostPerKwh;
+          const member1ActualCost = totalConsumption.member1 * avgCostPerKwh;
+          const member1Balance = member1ShouldPay - member1ActualCost;
+
+          const member2ShouldPay = totalAllocationsKwh.member2 * avgCostPerKwh;
+          const member2ActualCost = totalConsumption.member2 * avgCostPerKwh;
+          const member2Balance = member2ShouldPay - member2ActualCost;
+
           console.log(
-            'ℹ️  No explicit settlement function found - balances calculated automatically',
+            `Member1 theoretical balance: $${member1Balance.toFixed(
+              2,
+            )} (under-consumer)`,
           );
+          console.log(
+            `Member2 theoretical balance: $${member2Balance.toFixed(
+              2,
+            )} (over-consumer)`,
+          );
+
+          // Export revenue calculation
+          const exportRevenuePerKwh = 0.08; // Assume 8¢/kWh for exports
+          const totalExportRevenue = 5.8 * exportRevenuePerKwh;
+          console.log(
+            `Export revenue should be: $${totalExportRevenue.toFixed(2)}`,
+          );
+
+          console.log(
+            '\n⚠️  Contract may be designed for true community sharing where:',
+          );
+          console.log(
+            '   • All costs are shared equally regardless of individual usage',
+          );
+          console.log(
+            '   • Individual consumption tracking is for transparency only',
+          );
+          console.log('   • No individual financial accountability');
+          console.log('   • This is a valid community solar cooperative model');
         }
       } catch (error) {
-        console.log('ℹ️  Settlement functions not available or not needed');
+        console.log(`⚠️  Settlement attempt failed: ${error.message}`);
+      }
+
+      // Check if we can query cumulative allocations differently
+      console.log('\n🔍 Investigating cumulative allocation tracking...');
+
+      // Try to get cumulative allocation data
+      let cumulativeAllocated = 0;
+      for (let i = 0; i < members.length; i++) {
+        const member = members[i];
+        const allocated = await energyDistribution.getAllocatedTokens(
+          member.address,
+        );
+        cumulativeAllocated += Number(allocated);
+
+        // Check if there are other allocation-related functions
+        try {
+          if (
+            typeof energyDistribution.getTotalAllocatedTokens === 'function'
+          ) {
+            const totalAllocated =
+              await energyDistribution.getTotalAllocatedTokens(member.address);
+            console.log(
+              `Member${i + 1} total allocated: ${
+                Number(totalAllocated) / 100
+              } kWh`,
+            );
+          }
+        } catch (e) {
+          // Function doesn't exist
+        }
+      }
+
+      console.log(
+        `Current cumulative allocation tracking: ${
+          cumulativeAllocated / 100
+        } kWh`,
+      );
+      console.log(`Expected cumulative allocation: ${100.95} kWh`);
+
+      if (Math.abs(cumulativeAllocated / 100 - 100.95) > 1) {
+        console.log(
+          '❌ ISSUE: Contract is not properly tracking cumulative allocations!',
+        );
+        console.log('   This explains why cash credit balances are zero.');
+        console.log(
+          '   getAllocatedTokens() only returns latest allocation, not cumulative total.',
+        );
       }
 
       // === FINAL DAILY SUMMARY ===
