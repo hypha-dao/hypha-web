@@ -3,16 +3,8 @@ import { createSpaceService } from '@hypha-platform/core/server';
 import { getSpaceDetails } from '@core/space';
 import { publicClient } from '@core/common';
 import { ERC20 } from './_abis';
+import { TOKENS } from './_constants';
 
-// TODO: move to constants
-const tradableTokens: `0x${string}`[] = [
-  // EURC
-  "0x60a3e35cc302bfa44cb288bc5a4f316fdb1adb42",
-  // USDC
-  "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
-  // WBTC
-  "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c",
-];
 
 export async function GET(
   _: NextRequest,
@@ -69,13 +61,14 @@ export async function GET(
       spaceAddress,
     ] = spaceDetails;
 
-    const params = tradableTokens.concat(tokenAdresses).map(address => {
-      return [
+    const params = TOKENS[publicClient.chain.id]
+      .map(({ address }) => address)
+      .concat(tokenAdresses)
+      .map(address => [
         balanceOfParams(address, spaceAddress),
         symbolParams(address),
         decimalsParams(address),
-      ];
-    });
+      ]);
     const result = await Promise.all(params.map(param => {
       return publicClient.multicall({
         contracts: param,
