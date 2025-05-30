@@ -36,6 +36,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import React from 'react';
 import clsx from 'clsx';
 import { EntryMethodField } from './entry-method-field';
+import { EntryMethodType } from '@hypha-platform/core/client';
 
 const fullSchemaCreateChangeEntryMethodForm =
   schemaCreateChangeEntryMethodForm.extend({});
@@ -58,15 +59,15 @@ type EntryMethod = {
 const entryMethods: EntryMethod[] = [
   {
     name: 'Open Access',
-    value: 0,
+    value: EntryMethodType.OPEN_ACCESS,
   },
   {
     name: 'Invite Only',
-    value: 2,
+    value: EntryMethodType.INVITE_ONLY,
   },
   {
     name: 'Token Based',
-    value: 1,
+    value: EntryMethodType.TOKEN_BASED,
   },
 ];
 
@@ -97,7 +98,7 @@ export const ChangeEntryMethodForm = ({
     attachments: undefined,
     spaceId: spaceId ?? undefined,
     creatorId: person?.id,
-    entryMethod: 0,
+    entryMethod: EntryMethodType.OPEN_ACCESS,
   };
 
   const form = useForm<FormValues>({
@@ -114,7 +115,11 @@ export const ChangeEntryMethodForm = ({
   }, [progress, agreementSlug, router, successfulUrl]);
 
   const handleCreate = async (data: FormValues) => {
-    if (![0, 1, 2].includes(data.entryMethod)) {
+    if (![
+      EntryMethodType.OPEN_ACCESS,
+      EntryMethodType.INVITE_ONLY,
+      EntryMethodType.TOKEN_BASED,
+    ].includes(data.entryMethod)) {
       console.error('Entry Method must be value of 0, 1 or 2');
     }
 
