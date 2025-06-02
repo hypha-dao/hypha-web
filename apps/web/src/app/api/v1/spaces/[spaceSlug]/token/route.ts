@@ -92,6 +92,7 @@ export async function GET(
 
     return NextResponse.json({
       ...paginated,
+      balance: sorted.reduce((sum, asset) => sum + (asset.usdEqual), 0)
     });
   } catch (error) {
     console.error('Failed to fetch assets:', error);
