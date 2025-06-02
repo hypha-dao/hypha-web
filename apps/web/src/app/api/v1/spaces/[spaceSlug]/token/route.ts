@@ -5,9 +5,10 @@ import { publicClient } from '@core/common';
 import { ASSETS_PROVIDERS } from './_constants';
 import { Erc20Provider } from './_asset-providers';
 import { AssetProvider } from './_interface';
+import { paginate } from './_pagination-applier';
 
 export async function GET(
-  _: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ spaceSlug: string }> },
 ) {
   const { spaceSlug } = await params;
@@ -71,11 +72,26 @@ export async function GET(
       ) as AssetProvider)
       .concat(ASSETS_PROVIDERS[publicClient.chain.id])
       .map(provider => provider.formItem(spaceAddress)));
+    const sorted = assets.sort((a, b) => a.usdEqual == b.usdEqual
+      ? b.value - a.value
+      : b.usdEqual - a.usdEqual);
+
+    const url = new URL(request.url)
+    const page = url.searchParams.get('page');
+    const pageSize = url.searchParams.get('pageSize');
+    const status = url.searchParams.get('status');
+
+    const paginated = paginate(
+      sorted,
+      {
+        page: page ? Number(page) : undefined,
+        pageSize: pageSize ? Number(pageSize) : undefined,
+        filter: status ? { status } : {},
+      },
+    )
 
     return NextResponse.json({
-      assets: assets.sort((a, b) => a.usdEqual == b.usdEqual
-        ? b.value - a.value
-        : b.usdEqual - a.usdEqual)
+      ...paginated,
     });
   } catch (error) {
     console.error('Failed to fetch assets:', error);
