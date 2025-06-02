@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSpaceService } from '@hypha-platform/core/server';
 import { getSpaceDetails } from '@core/space';
 import { publicClient } from '@core/common';
-import { TOKENS } from './_constants';
-import { getEthBalance, getERC20Balance } from './_getters';
-import { formatUnits } from 'viem';
+import { ASSETS_PROVIDERS } from './_constants';
+import { Erc20Provider } from './_asset-providers';
+import { AssetProvider } from './_interface';
 
 export async function GET(
   _: NextRequest,
@@ -61,21 +61,21 @@ export async function GET(
       spaceAddress,
     ] = spaceDetails;
 
-    const customAssets = TOKENS[publicClient.chain.id]
-      .map(({ address }) => address)
-      .concat(tokenAdresses)
-      .map(address => getERC20Balance(publicClient, spaceAddress, address));
-    const ethAsset = getEthBalance(publicClient, spaceAddress);
-
-    const assets = await Promise.all([ethAsset].concat(customAssets));
+    const assets = await Promise.all(tokenAdresses
+      .map((token, index) => new Erc20Provider(
+        publicClient,
+        token,
+        {
+          slug: `${spaceSlug}-${index}`,
+        }
+      ) as AssetProvider)
+      .concat(ASSETS_PROVIDERS[publicClient.chain.id])
+      .map(provider => provider.formItem(spaceAddress)));
 
     return NextResponse.json({
-      assets: assets.map(asset => {
-        return {
-          symbol: asset.symbol,
-          value: +formatUnits(asset.amount, asset.decimals),
-        }
-      }),
+      assets: assets.sort((a, b) => a.usdEqual == b.usdEqual
+        ? b.value - a.value
+        : b.usdEqual - a.usdEqual)
     });
   } catch (error) {
     console.error('Failed to fetch assets:', error);
