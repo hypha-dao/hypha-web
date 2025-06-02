@@ -17,8 +17,10 @@ import {
   linkPlugin,
   BlockTypeSelect,
 } from '@mdxeditor/editor';
+import { Separator } from '../separator';
 
 import '@mdxeditor/editor/style.css';
+import './editor.css';
 
 export function RichTextEditor({
   editorRef,
@@ -33,7 +35,9 @@ export function RichTextEditor({
           toolbarContents: () => (
             <div className="flex gap-1 grow text-lg">
               <BlockTypeSelect />
+              <Separator orientation="vertical" />
               <BoldItalicUnderlineToggles />
+              <Separator orientation="vertical" />
               <ListsToggle />
               <div className="grow" />
               <UndoRedo />

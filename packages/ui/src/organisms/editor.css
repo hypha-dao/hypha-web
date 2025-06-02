@@ -1,0 +1,45 @@
+.mdxeditor-root-contenteditable {
+  border: 1px solid hsl(var(--border));
+  border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+
+.mdxeditor-toolbar {
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+._selectTrigger_sects_308 {
+  margin: 0;
+  background: var(--neutral-4);
+
+  &[data-placeholder] > span:first-child {
+    color: var(--neutral-12);
+  }
+}
+
+.mdxeditor-select-content {
+  background-color: var(--neutral-4);
+}
+
+.mdxeditor-root-contenteditable {
+  ul {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25em;
+
+    li {
+      margin: 0;
+      line-height: 1;
+
+      &::before {
+        border-color: var(--neutral-12);
+        top: 50%;
+        transform: translateY(-50%);
+      }
+      &::after {
+        top: 25%;
+        transform: rotate(45deg);
+      }
+    }
+  }
+}
