@@ -15,6 +15,7 @@ import {
   schemaCreateChangeEntryMethodWeb2,
 } from '../../validation';
 import { useChangeEntryMethodFileUploads } from './useChangeEntryMethodFileUploads';
+import { EntryMethodType, TokenBase } from '@core/governance/types';
 
 type UseCreateChangeEntryMethodOrchestratorInput = {
   authToken?: string | null;
@@ -108,6 +109,7 @@ type CreateChangeEntryMethodArg = z.infer<
 > & {
   entryMethod: number;
   web3SpaceId?: number;
+  tokenBase?: TokenBase;
 };
 
 export const useCreateChangeEntryMethodOrchestrator = ({
@@ -169,6 +171,7 @@ export const useCreateChangeEntryMethodOrchestrator = ({
         createdChangeEntryMethod?.slug ?? web2.createdChangeEntryMethod?.slug;
       const web3SpaceId = (arg as any).web3SpaceId;
       const joinMethod = (arg as any).joinMethod;
+      const tokenBase = (arg as any).tokenBase;
       try {
         if (config) {
           if (typeof web3SpaceId !== 'number') {
@@ -181,10 +184,17 @@ export const useCreateChangeEntryMethodOrchestrator = ({
               'joinMethod is required for web3 proposal creation',
             );
           }
+          if (joinMethod === EntryMethodType.TOKEN_BASED
+              && typeof tokenBase === 'undefined') {
+            throw new Error(
+              'tokenBase is required for web3 proposal creation when token based',
+            );
+          }
           startTask('CREATE_WEB3_CHANGE_ENTRY_METHOD');
           web3ProposalResult = await web3.createChangeEntryMethod({
             spaceId: web3SpaceId,
             joinMethod: joinMethod,
+            tokenBase: tokenBase,
           });
           completeTask('CREATE_WEB3_CHANGE_ENTRY_METHOD');
         }
