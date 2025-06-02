@@ -14,10 +14,12 @@ import { encodeFunctionData } from 'viem';
 import {
   daoSpaceFactoryImplementationAbi,
   daoSpaceFactoryImplementationAddress,
+  tokenBalanceJoinImplementationAbi,
+  tokenBalanceJoinImplementationAddress,
 } from '@core/generated';
 import {
-  CreateChangeEntryMethodInput,
   EntryMethodType,
+  TokenBase,
 } from '@core/governance/types';
 
 export const useChangeEntryMethodMutationsWeb3Rpc = (config?: Config) => {
@@ -31,7 +33,13 @@ export const useChangeEntryMethodMutationsWeb3Rpc = (config?: Config) => {
     config ? [config, 'createProposal'] : null,
     async (
       [config],
-      { arg }: { arg: { spaceId: number; joinMethod: number } },
+      { arg }: {
+        arg: {
+          spaceId: number;
+          joinMethod: number;
+          tokenBase?: TokenBase;
+        }
+      },
     ) => {
       const transactions = [];
       switch (arg.joinMethod) {
@@ -58,6 +66,19 @@ export const useChangeEntryMethodMutationsWeb3Rpc = (config?: Config) => {
           });
           break;
         case EntryMethodType.TOKEN_BASED:
+          transactions.push({
+            target: tokenBalanceJoinImplementationAddress[8453],
+            value: 0,
+            data: encodeFunctionData({
+              abi: tokenBalanceJoinImplementationAbi,
+              functionName: 'setTokenRequirement',
+              args: [
+                BigInt(arg.spaceId),
+                arg.tokenBase?.token ?? '0x0',
+                BigInt(arg.tokenBase?.amount ?? 0)
+              ],
+            }),
+          });
           transactions.push({
             target: daoSpaceFactoryImplementationAddress[8453],
             value: 0,

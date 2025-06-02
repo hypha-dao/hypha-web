@@ -78,3 +78,10 @@ export interface UpdateChangeEntryMethodInput {
 export type UpdateChangeEntryMethodBySlugInput = {
   slug: string;
 } & UpdateChangeEntryMethodInput;
+
+export type Address = `0x${string}`;
+
+export type TokenBase = {
+  amount: number;
+  token: Address;
+};

@@ -372,7 +372,13 @@ export const schemaCreateChangeEntryMethodForm = z.object({
     .min(EntryMethodType.OPEN_ACCESS)
     .max(EntryMethodType.INVITE_ONLY),
   tokenBase: z.object({
-    amount: z.number().int(),
-    token: z.string(),
+    amount: z
+      .number()
+      .int('Should be integer')
+      .min(0, 'Cannot be negative value'),
+    token: z
+      .string()
+      .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' })
+      .min(1, { message: 'Token address is required' }),
   }).optional(),
 });
