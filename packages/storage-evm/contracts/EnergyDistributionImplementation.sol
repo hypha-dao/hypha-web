@@ -27,6 +27,7 @@ contract EnergyDistributionImplementation is
     batteryCurrentState = 0;
     batteryConfigured = false;
     exportDeviceId = 0;
+    importCashCreditBalance = 0;
   }
 
   function _authorizeUpgrade(
@@ -195,44 +196,23 @@ contract EnergyDistributionImplementation is
       adjustedSources[adjustedSourcesCount] = EnergySource({
         sourceId: 999, // Special ID for battery discharge
         price: batteryPrice,
-        quantity: uint256(-batteryEnergyChange)
+        quantity: uint256(-batteryEnergyChange),
+        isImport: false
       });
       adjustedSourcesCount++;
       totalQuantity += uint256(-batteryEnergyChange);
     }
 
-    // Distribute energy tokens from all sources (including battery discharge if any)
+    // Distribute energy tokens from all sources
     for (uint256 i = 0; i < adjustedSourcesCount; i++) {
       EnergySource memory source = adjustedSources[i];
-      uint256 totalDistributed = 0;
 
-      // Distribute to each member based on ownership percentage
-      for (uint256 j = 0; j < memberAddresses.length; j++) {
-        address memberAddr = memberAddresses[j];
-        Member memory member = members[memberAddr];
-
-        uint256 memberShare;
-
-        // For the last member, give them exactly what's left to ensure no rounding errors
-        if (j == memberAddresses.length - 1) {
-          memberShare = source.quantity - totalDistributed;
-        } else {
-          memberShare = (source.quantity * member.ownershipPercentage) / 10000;
-          totalDistributed += memberShare;
-        }
-
-        if (memberShare > 0) {
-          allocatedTokens[memberAddr] += memberShare;
-
-          // Add to collective consumption list
-          collectiveConsumption.push(
-            CollectiveConsumption({
-              owner: memberAddr,
-              price: source.price,
-              quantity: memberShare
-            })
-          );
-        }
+      if (source.isImport) {
+        // IMPORTS: Add to community pool, track cost separately
+        _handleImportSource(source);
+      } else {
+        // LOCAL PRODUCTION: Distribute by ownership percentage
+        _handleOwnedSource(source);
       }
     }
 
@@ -243,216 +223,146 @@ contract EnergyDistributionImplementation is
     emit CollectiveConsumptionUpdated(collectiveConsumption.length);
   }
 
-  // Add a new struct to temporarily hold consumption details per member for a batch
-  struct BatchConsumptionDetails {
-    uint256 totalRequested;
-    uint256 selfConsumed;
-    uint256 toBuy; // for over-consumers
-    int256 cashCreditChange; // net change for this batch
-  }
-  mapping(address => BatchConsumptionDetails) private batchDetails;
-
   function consumeEnergyTokens(
-    ConsumptionRequest[] calldata requests
+    ConsumptionRequest[] calldata consumptionRequests
   ) external override onlyOwner {
-    require(requests.length > 0, 'No consumption requests provided');
+    require(consumptionRequests.length > 0, 'No consumption requests provided');
+
+    // Sort collective consumption by price (cheapest first)
     _sortCollectiveConsumptionByPrice();
 
-    // Separate export requests from regular consumption requests
-    ConsumptionRequest[] memory regularRequests = new ConsumptionRequest[](
-      requests.length
-    );
+    // Separate export and consumption requests
     ConsumptionRequest[] memory exportRequests = new ConsumptionRequest[](
-      requests.length
+      consumptionRequests.length
     );
-    uint256 regularCount = 0;
-    uint256 exportCount = 0;
+    ConsumptionRequest[] memory memberRequests = new ConsumptionRequest[](
+      consumptionRequests.length
+    );
 
-    for (uint256 i = 0; i < requests.length; i++) {
-      if (requests[i].deviceId == exportDeviceId) {
-        exportRequests[exportCount] = requests[i];
+    uint256 exportCount = 0;
+    uint256 memberCount = 0;
+
+    for (uint256 i = 0; i < consumptionRequests.length; i++) {
+      if (consumptionRequests[i].deviceId == exportDeviceId) {
+        exportRequests[exportCount] = consumptionRequests[i];
         exportCount++;
       } else {
-        regularRequests[regularCount] = requests[i];
-        regularCount++;
+        memberRequests[memberCount] = consumptionRequests[i];
+        memberCount++;
       }
     }
 
-    // Process regular consumption requests first
-    if (regularCount > 0) {
-      ConsumptionRequest[]
-        memory trimmedRegularRequests = new ConsumptionRequest[](regularCount);
-      for (uint256 i = 0; i < regularCount; i++) {
-        trimmedRegularRequests[i] = regularRequests[i];
-      }
-      _processConsumptionRequests(trimmedRegularRequests);
+    // Process member consumption requests (buy from collective pool)
+    if (memberCount > 0) {
+      _processMemberConsumption(memberRequests, memberCount);
     }
 
-    // Process export requests last
+    // Process export requests (sell leftover tokens)
     if (exportCount > 0) {
-      ConsumptionRequest[]
-        memory trimmedExportRequests = new ConsumptionRequest[](exportCount);
-      for (uint256 i = 0; i < exportCount; i++) {
-        trimmedExportRequests[i] = exportRequests[i];
-      }
-      _processExportRequests(trimmedExportRequests);
+      _processExportRequests(exportRequests);
     }
+
+    emit CollectiveConsumptionUpdated(collectiveConsumption.length);
   }
 
-  function _processConsumptionRequests(
-    ConsumptionRequest[] memory requests
+  function _processMemberConsumption(
+    ConsumptionRequest[] memory memberRequests,
+    uint256 requestCount
   ) internal {
-    // Initialize/clear batch details for all known members
-    for (uint256 i = 0; i < memberAddresses.length; i++) {
-      delete batchDetails[memberAddresses[i]];
-    }
+    for (uint256 i = 0; i < requestCount; i++) {
+      ConsumptionRequest memory request = memberRequests[i];
+      address memberAddress = deviceToMember[request.deviceId];
 
-    // Phase 0: Aggregate total requested consumption per member for this batch
-    for (uint256 i = 0; i < requests.length; i++) {
-      address memberAddr = deviceToMember[requests[i].deviceId];
-      require(memberAddr != address(0), 'Device not registered to any member');
-      require(members[memberAddr].isActive, 'Member is not active');
-      batchDetails[memberAddr].totalRequested += requests[i].quantity;
-    }
+      require(memberAddress != address(0), 'Device owner not found');
+      require(members[memberAddress].isActive, 'Member is not active');
 
-    // Phase 1: Account for all self-consumption (adjust collectiveConsumption quantities)
-    for (uint256 i = 0; i < memberAddresses.length; i++) {
-      address memberAddr = memberAddresses[i];
-      if (batchDetails[memberAddr].totalRequested > 0) {
-        uint256 allocated = allocatedTokens[memberAddr];
-        uint256 canSelfConsume = batchDetails[memberAddr].totalRequested >
-          allocated
-          ? allocated
-          : batchDetails[memberAddr].totalRequested;
+      uint256 remainingToConsume = request.quantity;
+      int256 totalCost = 0;
 
-        batchDetails[memberAddr].selfConsumed = canSelfConsume;
-        if (batchDetails[memberAddr].totalRequested > allocated) {
-          batchDetails[memberAddr].toBuy =
-            batchDetails[memberAddr].totalRequested -
-            allocated;
-        }
+      // Buy tokens from collective pool (cheapest first)
+      for (
+        uint256 j = 0;
+        j < collectiveConsumption.length && remainingToConsume > 0;
+        j++
+      ) {
+        if (collectiveConsumption[j].quantity > 0) {
+          uint256 canConsume = remainingToConsume >
+            collectiveConsumption[j].quantity
+            ? collectiveConsumption[j].quantity
+            : remainingToConsume;
 
-        uint256 remainingToBurnFromOwn = canSelfConsume;
-        for (
-          uint256 j = 0;
-          j < collectiveConsumption.length && remainingToBurnFromOwn > 0;
-          j++
-        ) {
-          if (
-            collectiveConsumption[j].owner == memberAddr &&
-            collectiveConsumption[j].quantity > 0
-          ) {
-            uint256 burnAmount = remainingToBurnFromOwn >
-              collectiveConsumption[j].quantity
-              ? collectiveConsumption[j].quantity
-              : remainingToBurnFromOwn;
-            collectiveConsumption[j].quantity -= burnAmount;
-            remainingToBurnFromOwn -= burnAmount;
+          int256 cost = int256(canConsume * collectiveConsumption[j].price);
+          totalCost += cost;
+
+          // Pay the token owner (even if it's the consumer themselves)
+          if (collectiveConsumption[j].owner != address(0)) {
+            // Member-owned tokens - pay the member
+            cashCreditBalances[collectiveConsumption[j].owner] += cost;
           }
+          // Note: For community-owned tokens (imports), no payment to owner
+
+          collectiveConsumption[j].quantity -= canConsume;
+          remainingToConsume -= canConsume;
         }
       }
-    }
 
-    // Phase 2: Process over-consumption purchases (update cash balances)
-    // Iterate through members who need to buy
-    for (uint256 i = 0; i < memberAddresses.length; i++) {
-      address memberAddr = memberAddresses[i];
-      if (batchDetails[memberAddr].toBuy > 0) {
-        uint256 needsToBuy = batchDetails[memberAddr].toBuy;
-        int256 costForThisOverConsumer = 0;
-        uint256 tokensActuallyBought = 0;
+      require(remainingToConsume == 0, 'Insufficient energy tokens available');
 
-        for (
-          uint256 j = 0;
-          j < collectiveConsumption.length && tokensActuallyBought < needsToBuy;
-          j++
-        ) {
-          if (collectiveConsumption[j].quantity > 0) {
-            uint256 canBuyFromSlot = needsToBuy - tokensActuallyBought;
-            uint256 buyAmount = canBuyFromSlot >
-              collectiveConsumption[j].quantity
-              ? collectiveConsumption[j].quantity
-              : canBuyFromSlot;
+      // Member pays for consumed tokens
+      cashCreditBalances[memberAddress] -= totalCost;
 
-            int256 cost = int256(buyAmount * collectiveConsumption[j].price);
-            costForThisOverConsumer += cost;
-
-            cashCreditBalances[collectiveConsumption[j].owner] += cost; // Pay the owner
-            batchDetails[collectiveConsumption[j].owner]
-              .cashCreditChange += cost;
-
-            collectiveConsumption[j].quantity -= buyAmount;
-            tokensActuallyBought += buyAmount;
-          }
-        }
-        cashCreditBalances[memberAddr] -= costForThisOverConsumer; // Debit the over-consumer
-        batchDetails[memberAddr].cashCreditChange -= costForThisOverConsumer;
-      }
-    }
-
-    // Phase 3: Emit EnergyConsumed events
-    for (uint256 i = 0; i < memberAddresses.length; i++) {
-      address memberAddr = memberAddresses[i];
-      if (batchDetails[memberAddr].totalRequested > 0) {
-        emit EnergyConsumed(
-          memberAddr,
-          batchDetails[memberAddr].totalRequested,
-          batchDetails[memberAddr].cashCreditChange
-        );
-      }
-      // Reset for next potential call within same block (if allowed, though unlikely for this design)
-      delete batchDetails[memberAddr];
+      emit EnergyConsumed(memberAddress, request.quantity, totalCost);
     }
   }
 
   function _processExportRequests(
     ConsumptionRequest[] memory exportRequests
   ) internal {
-    // Calculate total remaining tokens and their value for export
-    int256 totalExportRevenue = 0;
     uint256 totalExportedTokens = 0;
     uint256 totalExportRequested = 0;
+    int256 totalCalculatedExportRevenue = 0;
 
-    // Sum up all export requests
     for (uint256 i = 0; i < exportRequests.length; i++) {
       totalExportRequested += exportRequests[i].quantity;
     }
 
-    // Export remaining tokens up to the requested amount
     for (
-      uint256 i = 0;
-      i < collectiveConsumption.length &&
+      uint256 j = 0;
+      j < collectiveConsumption.length &&
         totalExportedTokens < totalExportRequested;
-      i++
+      j++
     ) {
-      if (collectiveConsumption[i].quantity > 0) {
+      if (collectiveConsumption[j].quantity > 0) {
         uint256 canExport = totalExportRequested - totalExportedTokens;
-        uint256 exportAmount = canExport > collectiveConsumption[i].quantity
-          ? collectiveConsumption[i].quantity
+        uint256 exportAmount = canExport > collectiveConsumption[j].quantity
+          ? collectiveConsumption[j].quantity
           : canExport;
 
         int256 tokenValue = int256(
-          exportAmount * collectiveConsumption[i].price
+          exportAmount * collectiveConsumption[j].price
         );
 
-        // Pay the token owner for their exported tokens
-        cashCreditBalances[collectiveConsumption[i].owner] += tokenValue;
+        totalCalculatedExportRevenue += tokenValue;
 
-        // Track export revenue
-        totalExportRevenue += tokenValue;
+        // Pay the token owner when their tokens are exported
+        if (collectiveConsumption[j].owner != address(0)) {
+          cashCreditBalances[collectiveConsumption[j].owner] += tokenValue;
+        }
+
         totalExportedTokens += exportAmount;
-
-        // Remove the exported tokens
-        collectiveConsumption[i].quantity -= exportAmount;
+        collectiveConsumption[j].quantity -= exportAmount;
       }
     }
 
-    // Record total export cost
-    exportCashCreditBalance = -totalExportRevenue;
+    if (totalCalculatedExportRevenue > 0) {
+      // Grid owes community for exported energy
+      exportCashCreditBalance -= totalCalculatedExportRevenue;
 
-    // Emit detailed export event
+      // NO ADDITIONAL DISTRIBUTION - token owners already got paid above
+    }
+
     if (totalExportedTokens > 0) {
-      emit EnergyExported(totalExportedTokens, totalExportRevenue);
+      emit EnergyExported(totalExportedTokens, totalCalculatedExportRevenue);
     }
   }
 
@@ -541,5 +451,65 @@ contract EnergyDistributionImplementation is
 
   function getExportDeviceId() external view override returns (uint256) {
     return exportDeviceId;
+  }
+
+  function getImportCashCreditBalance()
+    external
+    view
+    override
+    returns (int256)
+  {
+    return importCashCreditBalance;
+  }
+
+  function _handleOwnedSource(EnergySource memory source) internal {
+    uint256 totalDistributed = 0;
+
+    // Distribute to each member based on ownership percentage
+    for (uint256 j = 0; j < memberAddresses.length; j++) {
+      address memberAddr = memberAddresses[j];
+      Member memory member = members[memberAddr];
+
+      uint256 memberShare;
+
+      // For the last member, give them exactly what's left to ensure no rounding errors
+      if (j == memberAddresses.length - 1) {
+        memberShare = source.quantity - totalDistributed;
+      } else {
+        memberShare = (source.quantity * member.ownershipPercentage) / 10000;
+        totalDistributed += memberShare;
+      }
+
+      if (memberShare > 0) {
+        allocatedTokens[memberAddr] += memberShare;
+
+        // Add to collective consumption list owned by member
+        collectiveConsumption.push(
+          CollectiveConsumption({
+            owner: memberAddr,
+            price: source.price,
+            quantity: memberShare
+          })
+        );
+      }
+    }
+  }
+
+  function _handleImportSource(EnergySource memory source) internal {
+    // Track total import cost as debt that needs to be paid by consumers
+    int256 importCost = int256(source.quantity * source.price);
+    importCashCreditBalance += importCost; // This correctly stores import cost as a positive value
+
+    // Add imported energy to community pool (owned by address(0))
+    // Over-consumers will buy from this pool at cost price
+    collectiveConsumption.push(
+      CollectiveConsumption({
+        owner: address(0), // Community-owned import pool
+        price: source.price,
+        quantity: source.quantity
+      })
+    );
+
+    emit EnergyImported(source.quantity, importCost);
   }
 }

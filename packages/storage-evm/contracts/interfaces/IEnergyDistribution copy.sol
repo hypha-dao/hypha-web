@@ -8,7 +8,6 @@ interface IEnergyDistribution {
     uint256 sourceId;
     uint256 price;
     uint256 quantity;
-    bool isImport;
   }
 
   struct Member {
@@ -89,8 +88,6 @@ interface IEnergyDistribution {
 
   function getExportDeviceId() external view returns (uint256);
 
-  function getImportCashCreditBalance() external view returns (int256);
-
   // Events
   event MemberAdded(
     address indexed memberAddress,
@@ -113,5 +110,4 @@ interface IEnergyDistribution {
     int256 energyChange
   );
   event ExportDeviceIdSet(uint256 deviceId);
-  event EnergyImported(uint256 totalQuantity, int256 importCost);
 }

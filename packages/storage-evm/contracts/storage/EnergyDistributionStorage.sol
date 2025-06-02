@@ -24,6 +24,9 @@ contract EnergyDistributionStorage is Initializable {
   // Export cash credit balance (when production > consumption)
   int256 internal exportCashCreditBalance;
 
+  // NEW: Import cash credit balance (when community purchases grid energy)
+  int256 internal importCashCreditBalance;
+
   // Total ownership percentage (should always be 10000)
   uint256 internal totalOwnershipPercentage;
 
@@ -40,5 +43,5 @@ contract EnergyDistributionStorage is Initializable {
    * @dev This empty reserved space is put in place to allow future versions to add new
    * variables without shifting down storage in the inheritance chain.
    */
-  uint256[38] private __gap; // Reduced by 5 due to new variables
+  uint256[37] private __gap; // Reduced by 6 due to new variable
 }
