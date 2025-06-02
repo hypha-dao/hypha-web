@@ -22,8 +22,10 @@ import Link from 'next/link';
 import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
 import {
+  Address,
   ALLOWED_IMAGE_FILE_SIZE,
   schemaCreateChangeEntryMethodForm,
+  TokenBase,
   useCreateChangeEntryMethodOrchestrator,
   useJwt,
   useMe,
@@ -53,12 +55,12 @@ interface ChangeEntryMethodFormProps {
   submitLoadingLabel?: string;
 }
 
-type EntryMethod = {
+type EntryMethodOption = {
   name: string;
   value: number;
 };
 
-const entryMethods: EntryMethod[] = [
+const entryMethods: EntryMethodOption[] = [
   {
     name: 'Open Access',
     value: EntryMethodType.OPEN_ACCESS,
@@ -128,11 +130,17 @@ export const ChangeEntryMethodForm = ({
       console.error('Entry Method must be value of 0, 1 or 2');
     }
 
+    const tokenBase: TokenBase | undefined = data.tokenBase ? {
+      amount: data.tokenBase.amount,
+      token: data.tokenBase.token as Address,
+    } : undefined;
+
     console.log('change-entry-method data', {
       ...data,
       spaceId: spaceId as number,
       web3SpaceId: typeof web3SpaceId === 'number' ? web3SpaceId : undefined,
       entryMethod: data.entryMethod,
+      tokenBase,
     });
 
     await createChangeEntryMethod({
@@ -140,6 +148,7 @@ export const ChangeEntryMethodForm = ({
       spaceId: spaceId as number,
       web3SpaceId: typeof web3SpaceId === 'number' ? web3SpaceId : undefined,
       entryMethod: data.entryMethod,
+      tokenBase,
     });
   };
 
@@ -294,12 +303,10 @@ export const ChangeEntryMethodForm = ({
             }}
           />
           {tokenBased && (
-            // <div key={field.id} className="flex items-end gap-2"></div>
             <div className="flex items-end gap-2">
               <div className="flex-1">
                 <FormField
                   control={form.control}
-                  // name={`${name}.${index}`}
                   name="tokenBase"
                   render={({ field: { value, onChange } }) => (
                     <FormItem>
