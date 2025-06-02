@@ -314,7 +314,7 @@ export const ChangeEntryMethodForm = ({
                         <EntryMethodTokenField
                           value={{
                             amount: value?.amount || 0,
-                            token: (value?.token || '0x0') as Address,
+                            token: (value?.token || tokens[0]?.address || '0x0') as Address,
                           }}
                           onChange={onChange}
                           tokens={tokens}
