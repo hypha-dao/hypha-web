@@ -105,7 +105,7 @@ export const ChangeEntryMethodForm = ({
     spaceId: spaceId ?? undefined,
     creatorId: person?.id,
     entryMethod: EntryMethodType.OPEN_ACCESS,
-    token: undefined,
+    tokenBase: undefined,
   };
 
   const form = useForm<FormValues>({
@@ -312,7 +312,10 @@ export const ChangeEntryMethodForm = ({
                     <FormItem>
                       <FormControl>
                         <EntryMethodTokenField
-                          value={value || { amount: 0, token: '' }}
+                          value={{
+                            amount: value?.amount || 0,
+                            token: (value?.token || '0x0') as Address,
+                          }}
                           onChange={onChange}
                           tokens={tokens}
                         />

@@ -9,19 +9,20 @@ import {
   Input,
   Image,
 } from '@hypha-platform/ui';
+import { Address } from '@core/governance/types';
 
 interface Token {
   icon: string;
   symbol: string;
-  address: `0x${string}`;
+  address: Address;
 }
 
 interface EntryMethodTokenFieldProps {
   value: {
     amount: number;
-    token: string;
+    token: Address;
   };
-  onChange: (val: { amount: number; token: string }) => void;
+  onChange: (val: { amount: number; token: Address }) => void;
   tokens: Token[];
 }
 
