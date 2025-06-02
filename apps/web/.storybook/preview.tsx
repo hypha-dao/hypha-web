@@ -1,6 +1,7 @@
 import { INITIAL_VIEWPORTS } from '@storybook/addon-viewport';
 import { themes } from '@storybook/theming';
 import '@hypha-platform/ui-utils/global.css';
+import '@hypha-platform/ui/styles.css';
 
 // THANK GOD FOR THIS FIX
 // https://github.com/storybookjs/storybook/issues/23684#issuecomment-1682143610

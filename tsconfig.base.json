@@ -41,6 +41,7 @@
         "packages/storage-postgres/src/index.ts"
       ],
       "@hypha-platform/ui": ["packages/ui/src/index.ts"],
+      "@hypha-platform/ui/styles.css": ["packages/ui/src/styles.css"],
       "@hypha-platform/ui-utils": ["packages/ui-utils/src/index.ts"],
       "@hypha-platform/ui-utils/global.css": [
         "packages/ui-utils/src/global.css"

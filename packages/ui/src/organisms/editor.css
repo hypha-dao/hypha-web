@@ -8,6 +8,13 @@
   .mdxeditor-toolbar {
     background-color: hsl(var(--neutral-2));
     border-radius: var(--radius) var(--radius) 0 0;
+
+    .selectContainer {
+      background-color: hsl(var(--neutral-2));
+      border-radius: var(--radius);
+      border: 1px solid hsl(var(--border));
+      box-shadow: 0 0 0 1px hsl(var(--border));
+    }
   }
   .mdxeditor-select-content {
     background-color: hsl(var(--neutral-4));
@@ -20,6 +27,7 @@
       color: hsl(var(--neutral-12));
     }
   }
+
   .mdxeditor-root-contenteditable {
     font-family: var(--font-text);
 
@@ -43,5 +51,28 @@
         }
       }
     }
+  }
+}
+
+/* Fix dropdown list container styling - rendered outside .mdxeditor */
+[role='listbox'] {
+  background-color: hsl(var(--neutral-4)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Fix dropdown option styling - rendered outside .mdxeditor */
+._selectItem_sects_301 {
+  background-color: hsl(var(--neutral-4)) !important;
+  color: hsl(var(--neutral-12)) !important;
+
+  &:hover,
+  &[data-highlighted] {
+    background-color: hsl(var(--neutral-5)) !important;
+  }
+
+  &[data-state='checked'] {
+    background-color: hsl(var(--neutral-6)) !important;
   }
 }
