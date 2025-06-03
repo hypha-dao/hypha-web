@@ -17,10 +17,7 @@ import {
   tokenBalanceJoinImplementationAbi,
   tokenBalanceJoinImplementationAddress,
 } from '@core/generated';
-import {
-  EntryMethodType,
-  TokenBase,
-} from '@core/governance/types';
+import { EntryMethodType, TokenBase } from '@core/governance/types';
 
 export const useChangeEntryMethodMutationsWeb3Rpc = (config?: Config) => {
   const {
@@ -33,12 +30,14 @@ export const useChangeEntryMethodMutationsWeb3Rpc = (config?: Config) => {
     config ? [config, 'createProposal'] : null,
     async (
       [config],
-      { arg }: {
+      {
+        arg,
+      }: {
         arg: {
           spaceId: number;
           joinMethod: number;
           tokenBase?: TokenBase;
-        }
+        };
       },
     ) => {
       const transactions = [];
@@ -75,7 +74,7 @@ export const useChangeEntryMethodMutationsWeb3Rpc = (config?: Config) => {
               args: [
                 BigInt(arg.spaceId),
                 arg.tokenBase?.token ?? '0x0',
-                BigInt(arg.tokenBase?.amount ?? 0)
+                BigInt(arg.tokenBase?.amount ?? 0),
               ],
             }),
           });

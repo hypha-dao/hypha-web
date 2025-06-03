@@ -169,9 +169,9 @@ export const useCreateChangeEntryMethodOrchestrator = ({
       let web3ProposalResult = undefined;
       const web2Slug =
         createdChangeEntryMethod?.slug ?? web2.createdChangeEntryMethod?.slug;
-      const web3SpaceId = (arg as any).web3SpaceId;
-      const joinMethod = (arg as any).joinMethod;
-      const tokenBase = (arg as any).tokenBase;
+      const web3SpaceId = arg.web3SpaceId;
+      const joinMethod = arg.entryMethod;
+      const tokenBase = arg.tokenBase;
       try {
         if (config) {
           if (typeof web3SpaceId !== 'number') {
@@ -184,8 +184,10 @@ export const useCreateChangeEntryMethodOrchestrator = ({
               'joinMethod is required for web3 proposal creation',
             );
           }
-          if (joinMethod === EntryMethodType.TOKEN_BASED
-              && typeof tokenBase === 'undefined') {
+          if (
+            joinMethod === EntryMethodType.TOKEN_BASED &&
+            typeof tokenBase === 'undefined'
+          ) {
             throw new Error(
               'tokenBase is required for web3 proposal creation when token based',
             );
