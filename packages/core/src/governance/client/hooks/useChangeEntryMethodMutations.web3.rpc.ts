@@ -17,7 +17,35 @@ import {
   tokenBalanceJoinImplementationAbi,
   tokenBalanceJoinImplementationAddress,
 } from '@core/generated';
-import { EntryMethodType, TokenBase } from '@core/governance/types';
+import { Address, EntryMethodType, TokenBase } from '@core/governance/types';
+
+function changeEntryMethodTx(spaceId: number, joinMethod: number) {
+  return {
+    target: daoSpaceFactoryImplementationAddress[8453],
+    value: 0,
+    data: encodeFunctionData({
+      abi: daoSpaceFactoryImplementationAbi,
+      functionName: 'changeEntryMethod',
+      args: [BigInt(spaceId), BigInt(joinMethod)],
+    }),
+  };
+}
+
+function setTokenRequirementTx(
+  spaceId: number,
+  token: Address,
+  amount: number,
+) {
+  return {
+    target: tokenBalanceJoinImplementationAddress[8453],
+    value: 0,
+    data: encodeFunctionData({
+      abi: tokenBalanceJoinImplementationAbi,
+      functionName: 'setTokenRequirement',
+      args: [BigInt(spaceId), token, BigInt(amount)],
+    }),
+  };
+}
 
 export const useChangeEntryMethodMutationsWeb3Rpc = (config?: Config) => {
   const {
@@ -43,50 +71,20 @@ export const useChangeEntryMethodMutationsWeb3Rpc = (config?: Config) => {
       const transactions = [];
       switch (arg.joinMethod) {
         case EntryMethodType.OPEN_ACCESS:
-          transactions.push({
-            target: daoSpaceFactoryImplementationAddress[8453],
-            value: 0,
-            data: encodeFunctionData({
-              abi: daoSpaceFactoryImplementationAbi,
-              functionName: 'changeEntryMethod',
-              args: [BigInt(arg.spaceId), BigInt(arg.joinMethod)],
-            }),
-          });
+          transactions.push(changeEntryMethodTx(arg.spaceId, arg.joinMethod));
           break;
         case EntryMethodType.INVITE_ONLY:
-          transactions.push({
-            target: daoSpaceFactoryImplementationAddress[8453],
-            value: 0,
-            data: encodeFunctionData({
-              abi: daoSpaceFactoryImplementationAbi,
-              functionName: 'changeEntryMethod',
-              args: [BigInt(arg.spaceId), BigInt(arg.joinMethod)],
-            }),
-          });
+          transactions.push(changeEntryMethodTx(arg.spaceId, arg.joinMethod));
           break;
         case EntryMethodType.TOKEN_BASED:
-          transactions.push({
-            target: tokenBalanceJoinImplementationAddress[8453],
-            value: 0,
-            data: encodeFunctionData({
-              abi: tokenBalanceJoinImplementationAbi,
-              functionName: 'setTokenRequirement',
-              args: [
-                BigInt(arg.spaceId),
-                arg.tokenBase?.token ?? '0x0',
-                BigInt(arg.tokenBase?.amount ?? 0),
-              ],
-            }),
-          });
-          transactions.push({
-            target: daoSpaceFactoryImplementationAddress[8453],
-            value: 0,
-            data: encodeFunctionData({
-              abi: daoSpaceFactoryImplementationAbi,
-              functionName: 'changeEntryMethod',
-              args: [BigInt(arg.spaceId), BigInt(arg.joinMethod)],
-            }),
-          });
+          transactions.push(
+            setTokenRequirementTx(
+              arg.spaceId,
+              arg.tokenBase?.token ?? '0x0',
+              arg.joinMethod ?? 0,
+            ),
+            changeEntryMethodTx(arg.spaceId, arg.joinMethod),
+          );
           break;
         default:
           break;
