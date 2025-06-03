@@ -41,6 +41,7 @@ import { EntryMethodField } from './entry-method-field';
 import { EntryMethodType } from '@hypha-platform/core/client';
 import { EntryMethodTokenField } from './entry-method-token-field';
 import { useTokens } from '@hypha-platform/epics';
+import { useSpaceDetailsWeb3Rpc } from '@hypha-platform/core/client';
 
 const fullSchemaCreateChangeEntryMethodForm =
   schemaCreateChangeEntryMethodForm.extend({});
@@ -82,7 +83,7 @@ export const ChangeEntryMethodForm = ({
   submitLabel,
   submitLoadingLabel,
 }: ChangeEntryMethodFormProps) => {
-  const [ tokenBased, setTokenBased ] = useState(false);
+  const [tokenBased, setTokenBased] = useState(false);
   const router = useRouter();
   const { person } = useMe();
   const { jwt, isLoadingJwt } = useJwt();
@@ -97,6 +98,10 @@ export const ChangeEntryMethodForm = ({
     progress,
     changeEntryMethod: { slug: agreementSlug },
   } = useCreateChangeEntryMethodOrchestrator({ authToken: jwt, config });
+  const { spaceDetails } = useSpaceDetailsWeb3Rpc({
+    spaceId: spaceId as number,
+  });
+  const entryMethod = spaceDetails?.joinMethod || EntryMethodType.OPEN_ACCESS;
   const defaultValues = {
     title: '',
     description: '',
@@ -104,7 +109,7 @@ export const ChangeEntryMethodForm = ({
     attachments: undefined,
     spaceId: spaceId ?? undefined,
     creatorId: person?.id,
-    entryMethod: EntryMethodType.OPEN_ACCESS,
+    entryMethod: entryMethod as EntryMethodType,
     tokenBase: undefined,
   };
 
@@ -122,18 +127,28 @@ export const ChangeEntryMethodForm = ({
   }, [progress, agreementSlug, router, successfulUrl]);
 
   const handleCreate = async (data: FormValues) => {
-    if (![
-      EntryMethodType.OPEN_ACCESS,
-      EntryMethodType.INVITE_ONLY,
-      EntryMethodType.TOKEN_BASED,
-    ].includes(data.entryMethod)) {
+    if (
+      ![
+        EntryMethodType.OPEN_ACCESS,
+        EntryMethodType.INVITE_ONLY,
+        EntryMethodType.TOKEN_BASED,
+      ].includes(data.entryMethod)
+    ) {
       console.error('Entry Method must be value of 0, 1 or 2');
+      return;
     }
 
-    const tokenBase: TokenBase | undefined = data.tokenBase ? {
-      amount: data.tokenBase.amount,
-      token: data.tokenBase.token as Address,
-    } : undefined;
+    if (data.entryMethod === defaultValues.entryMethod) {
+      console.error('Entry Method is not changed');
+      return;
+    }
+
+    const tokenBase: TokenBase | undefined = data.tokenBase
+      ? {
+          amount: data.tokenBase.amount,
+          token: data.tokenBase.token as Address,
+        }
+      : undefined;
 
     console.log('change-entry-method data', {
       ...data,
@@ -314,7 +329,9 @@ export const ChangeEntryMethodForm = ({
                         <EntryMethodTokenField
                           value={{
                             amount: value?.amount || 0,
-                            token: (value?.token || tokens[0]?.address || '0x0') as Address,
+                            token: (value?.token ||
+                              tokens[0]?.address ||
+                              '0x0') as Address,
                           }}
                           onChange={onChange}
                           tokens={tokens}

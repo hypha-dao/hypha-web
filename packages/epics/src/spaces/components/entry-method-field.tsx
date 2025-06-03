@@ -12,8 +12,8 @@ export function EntryMethodField({
   value,
   onChange,
 }: {
-  entryMethods: any[],
-  value?: any,
+  entryMethods: any[];
+  value?: any;
   onChange?: (selected: any) => void;
 }) {
   const { control } = useFormContext();
