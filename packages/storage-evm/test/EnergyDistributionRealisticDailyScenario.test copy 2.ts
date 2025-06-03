@@ -424,7 +424,7 @@ describe('EnergyDistributionRealisticDailyScenario', function () {
   }
 
   describe('Realistic Daily Energy Cycle', function () {
-    it('Should demonstrate daylight overconsumption → battery charging → export, then sunset underconsumption → battery discharge → imports', async function () {
+    it('Should demonstrate morning abundance → battery charging → export, then evening scarcity → battery discharge → imports', async function () {
       const {
         energyDistribution,
         member1,
@@ -448,24 +448,24 @@ describe('EnergyDistributionRealisticDailyScenario', function () {
 
       console.log('\n🌅 === REALISTIC DAILY ENERGY CYCLE ===');
       console.log(
-        '☀️ Daylight: Abundant solar + Over-consumption → Battery charging → Export surplus',
+        '☀️ Morning: Abundant solar → Battery charging → Export surplus',
       );
       console.log(
-        '🌆 Sunset: Limited solar + Under-consumption → Battery discharge → Grid imports',
+        '🌆 Evening: Limited solar → Battery discharge → Grid imports',
       );
 
-      await logBatteryInfo(energyDistribution, 'Day Start');
+      await logBatteryInfo(energyDistribution, '6:00 AM - Day Start');
 
-      // =================== DAYLIGHT PHASE: ABUNDANCE WITH OVERCONSUMPTION ===================
+      // =================== MORNING PHASE: ABUNDANCE ===================
       console.log(
-        '\n🌞 === DAYLIGHT PHASE (FIRST HALF OF DAY): SOLAR ABUNDANCE + OVERCONSUMPTION ===',
+        '\n🌞 === MORNING PHASE (6:00 AM - 2:00 PM): SOLAR ABUNDANCE ===',
       );
 
-      const daylightEnergySources = [
-        { sourceId: 1, price: 10, quantity: 270, isImport: false }, // Local Solar: 270 kWh @ $0.10/kWh
+      const morningEnergySources = [
+        { sourceId: 1, price: 10, quantity: 270, isImport: false }, // Local Solar: 270 kWh @ $0.10/kWh (increased for full battery charge)
       ];
 
-      console.log('📊 Daylight Energy Production:');
+      console.log('📊 Morning Energy Production:');
       console.log('  ☀️ Local Solar: 270 kWh @ $0.10/kWh = $27.00');
       console.log(
         '  🔋 Battery charging: +50 kWh (FULL CHARGE - from excess solar)',
@@ -474,125 +474,112 @@ describe('EnergyDistributionRealisticDailyScenario', function () {
         '  💰 Cost efficiency: Maximum solar capture with full battery storage',
       );
 
-      await energyDistribution.distributeEnergyTokens(
-        daylightEnergySources,
-        50,
-      ); // Battery charges to full capacity
+      await energyDistribution.distributeEnergyTokens(morningEnergySources, 50); // Battery charges to full capacity
 
-      await logBatteryInfo(energyDistribution, 'After Daylight Solar');
+      await logBatteryInfo(energyDistribution, '2:00 PM - After Morning Solar');
 
-      await logEnergyAllocations(energyDistribution, members, 'Daylight Phase');
+      await logEnergyAllocations(
+        energyDistribution,
+        members,
+        '2:00 PM - Morning',
+      );
       await logCollectiveConsumptionList(
         energyDistribution,
         members,
-        'Daylight Phase',
+        '2:00 PM - Morning',
       );
 
-      console.log('\n--- DAYLIGHT CONSUMPTION PHASE ---');
+      console.log('\n--- MORNING CONSUMPTION PHASE ---');
       console.log(
-        '🏠 Low consumption: 172 kWh (overconsumption period with major underconsumption)',
-      );
-      console.log(
-        '  📈 Light overconsumers: Member1, Member2, Member4, Member6',
-      );
-      console.log('  📉 Major underconsumers: Member3, Member5, Member7');
-      console.log(
-        '  📤 Significant export: 49 kWh surplus despite some overconsumption',
+        '🏠 Morning Usage (Low consumption - people at work/school):',
       );
 
-      const daylightConsumptionRequests = [
-        { deviceId: 1001, quantity: 46 }, // Member1: LIGHT over-consumption (allocated 44kWh, +2kWh)
-        { deviceId: 2001, quantity: 41 }, // Member2: LIGHT over-consumption (allocated 39kWh, +2kWh)
-        { deviceId: 3001, quantity: 15 }, // Member3: MAJOR under-consumption (allocated 35kWh, -20kWh)
-        { deviceId: 4001, quantity: 31 }, // Member4: LIGHT over-consumption (allocated 30kWh, +1kWh)
-        { deviceId: 5001, quantity: 10 }, // Member5: MAJOR under-consumption (allocated 26kWh, -16kWh)
-        { deviceId: 6001, quantity: 23 }, // Member6: LIGHT over-consumption (allocated 22kWh, +1kWh)
-        { deviceId: 7001, quantity: 6 }, // Member7: MASSIVE under-consumption (allocated 24kWh, -18kWh)
-        // Total daylight consumption: 172 kWh vs 220 kWh available
-        // Overconsumers need: +6kWh, Underconsumers free up: +54kWh = 48kWh surplus for export
-        { deviceId: 9999, quantity: 49 }, // Export surplus energy to grid
+      const morningConsumptionRequests = [
+        { deviceId: 1001, quantity: 10 }, // Member1: Basic daytime usage
+        { deviceId: 2001, quantity: 8 }, // Member2: Basic daytime usage
+        { deviceId: 3001, quantity: 7 }, // Member3: Basic daytime usage
+        { deviceId: 4001, quantity: 6 }, // Member4: Basic daytime usage
+        { deviceId: 5001, quantity: 5 }, // Member5: Basic daytime usage
+        { deviceId: 6001, quantity: 4 }, // Member6: Basic daytime usage
+        { deviceId: 7001, quantity: 5 }, // Member7: Basic daytime usage
+        // Total morning consumption: 45 kWh, leaving 175 kWh for export
+        { deviceId: 9999, quantity: 175 }, // Export remaining energy to grid
       ];
 
       await logMemberConsumptionAnalysis(
         energyDistribution,
         members,
-        daylightConsumptionRequests,
-        'DAYLIGHT',
+        morningConsumptionRequests,
+        'MORNING',
       );
 
       // Store balances before consumption
-      const daylightBeforeBalances: { [key: string]: number } = {};
+      const morningBeforeBalances: { [key: string]: number } = {};
       for (const member of members) {
         const balance = await energyDistribution.getCashCreditBalance(
           member.address,
         );
-        daylightBeforeBalances[member.address] = Number(balance);
+        morningBeforeBalances[member.address] = Number(balance);
       }
 
-      await energyDistribution.consumeEnergyTokens(daylightConsumptionRequests);
+      await energyDistribution.consumeEnergyTokens(morningConsumptionRequests);
 
       await logDetailedTokenMovements(
         energyDistribution,
         members,
-        'DAYLIGHT POST-CONSUMPTION',
+        'MORNING POST-CONSUMPTION',
       );
 
       await logCashCreditChanges(
         energyDistribution,
         members,
-        daylightBeforeBalances,
-        'DAYLIGHT',
+        morningBeforeBalances,
+        'MORNING',
       );
 
-      console.log('✅ Daylight consumption complete:');
+      console.log('✅ Morning consumption complete:');
       console.log(
-        '  🏠 Total household usage: 172 kWh (LOW consumption despite overconsumers)',
+        '  🏠 Total household usage: 45 kWh (minimal morning consumption)',
       );
-      console.log(
-        '  📈 Light overconsumers: Member1, Member2, Member4, Member6',
-      );
-      console.log('  📉 Major underconsumers: Member3, Member5, Member7');
-      console.log(
-        '  📤 Grid export: 49 kWh surplus generates significant revenue',
-      );
-      console.log('  💰 Overconsumers pay underconsumers for excess tokens');
+      console.log('  📤 Grid export: 175 kWh surplus generates revenue');
+      console.log('  💰 All members benefit from shared export income');
 
       await logCashCreditBalances(
         energyDistribution,
         members,
-        'DAYLIGHT CASH CREDIT BALANCES',
+        'MORNING CASH CREDIT BALANCES',
       );
 
-      // =================== SUNSET PHASE: SCARCITY WITH UNDERCONSUMPTION ===================
+      // =================== EVENING PHASE: SCARCITY ===================
       console.log(
-        '\n🌆 === SUNSET PHASE (SECOND HALF OF DAY): ENERGY SCARCITY + UNDERCONSUMPTION ===',
+        '\n🌆 === EVENING PHASE (2:00 PM - 10:00 PM): ENERGY SCARCITY ===',
       );
 
-      const sunsetEnergySources = [
-        { sourceId: 2, price: 12, quantity: 100, isImport: false }, // Limited sunset solar: 100 kWh @ $0.12/kWh
+      const eveningEnergySources = [
+        { sourceId: 2, price: 12, quantity: 100, isImport: false }, // Limited evening solar: 100 kWh @ $0.12/kWh
         { sourceId: 3, price: 25, quantity: 180, isImport: true }, // Heavy grid imports: 180 kWh @ $0.25/kWh
       ];
 
-      console.log('📊 Sunset Energy Production:');
+      console.log('📊 Evening Energy Production:');
       console.log('  🌤️ Limited Solar: 100 kWh @ $0.12/kWh = $12.00');
       console.log(
         '  🏭 Grid Imports: 180 kWh @ $0.25/kWh = $45.00 (community purchase)',
       );
       console.log(
-        '  🔋 Battery discharge: -50 kWh (FULL DISCHARGE - all stored daylight solar)',
+        '  🔋 Battery discharge: -50 kWh (FULL DISCHARGE - all stored morning solar)',
       );
       console.log(
-        '  💸 Cost challenge: Expensive sunset imports shared fairly',
+        '  💸 Cost challenge: Expensive evening imports shared fairly',
       );
 
-      await energyDistribution.distributeEnergyTokens(sunsetEnergySources, 0); // Battery fully discharges to 0
+      await energyDistribution.distributeEnergyTokens(eveningEnergySources, 0); // Battery fully discharges to 0
 
-      // Log import balance after sunset distribution
-      const importBalanceAfterSunset =
+      // Log import balance after evening distribution
+      const importBalanceAfterEvening =
         await energyDistribution.getImportCashCreditBalance();
-      const importInDollars = Number(importBalanceAfterSunset) / 100;
+      const importInDollars = Number(importBalanceAfterEvening) / 100;
       console.log(
-        `\n💰 Import Balance After Sunset Distribution: $${importInDollars.toFixed(
+        `\n💰 Import Balance After Evening Distribution: $${importInDollars.toFixed(
           2,
         )}`,
       );
@@ -600,73 +587,76 @@ describe('EnergyDistributionRealisticDailyScenario', function () {
         '  📊 This represents the total cost of grid imports that consumers must pay for',
       );
 
-      await logBatteryInfo(energyDistribution, 'After Sunset Cycle');
+      await logBatteryInfo(
+        energyDistribution,
+        '10:00 PM - After Evening Cycle',
+      );
 
-      await logEnergyAllocations(energyDistribution, members, 'Sunset Phase');
+      await logEnergyAllocations(
+        energyDistribution,
+        members,
+        '10:00 PM - Evening',
+      );
       await logCollectiveConsumptionList(
         energyDistribution,
         members,
-        'Sunset Phase',
+        '10:00 PM',
       );
 
-      console.log('\n--- SUNSET CONSUMPTION PHASE ---');
+      console.log('\n--- EVENING CONSUMPTION PHASE ---');
       console.log(
-        '🏠 Sunset Usage (MODERATE consumption - some members still underconsume):',
+        '🏠 Evening Usage (High consumption - cooking, heating, EV charging):',
       );
 
-      const sunsetConsumptionRequests = [
-        { deviceId: 1002, quantity: 20 }, // Member1: MASSIVE under-consumption (allocated 30kWh, -10kWh)
-        { deviceId: 2001, quantity: 18 }, // Member2: MODERATE under-consumption (allocated 27kWh, -9kWh)
-        { deviceId: 3001, quantity: 35 }, // Member3: MODERATE over-consumption (allocated 24kWh, +11kWh)
-        { deviceId: 4002, quantity: 15 }, // Member4: MASSIVE under-consumption (allocated 21kWh, -6kWh)
-        { deviceId: 5001, quantity: 30 }, // Member5: MODERATE over-consumption (allocated 18kWh, +12kWh)
-        { deviceId: 6001, quantity: 10 }, // Member6: MODERATE under-consumption (allocated 15kWh, -5kWh)
-        { deviceId: 7002, quantity: 25 }, // Member7: MODERATE over-consumption (allocated 15kWh, +10kWh)
-        // Total sunset consumption: 153 kWh vs 150 kWh allocated
-        // Overconsumers need: +33kWh, Underconsumers free up: +30kWh = +3kWh net from community pool
-        // This leaves 177 kWh from community pool for export
-        { deviceId: 9999, quantity: 177 }, // Export remaining energy to grid
+      const eveningConsumptionRequests = [
+        { deviceId: 1002, quantity: 40 }, // Member1: Moderate evening usage
+        { deviceId: 2001, quantity: 85 }, // Member2: MASSIVE over-consumption (will pay heavily)
+        { deviceId: 3001, quantity: 30 }, // Member3: Under-consumption (earns credits)
+        { deviceId: 4002, quantity: 75 }, // Member4: HEAVY over-consumption (will pay)
+        { deviceId: 5001, quantity: 20 }, // Member5: Minimal usage (earns credits)
+        { deviceId: 6001, quantity: 55 }, // Member6: Over-consumption (will pay)
+        { deviceId: 7002, quantity: 25 }, // Member7: Under-consumption (earns credits)
+        // Total evening consumption: 330 kWh (all energy consumed internally)
       ];
 
       await logMemberConsumptionAnalysis(
         energyDistribution,
         members,
-        sunsetConsumptionRequests,
-        'SUNSET',
+        eveningConsumptionRequests,
+        'EVENING',
       );
 
       // Store balances before consumption
-      const sunsetBeforeBalances: { [key: string]: number } = {};
+      const eveningBeforeBalances: { [key: string]: number } = {};
       for (const member of members) {
         const balance = await energyDistribution.getCashCreditBalance(
           member.address,
         );
-        sunsetBeforeBalances[member.address] = Number(balance);
+        eveningBeforeBalances[member.address] = Number(balance);
       }
 
-      await energyDistribution.consumeEnergyTokens(sunsetConsumptionRequests);
+      await energyDistribution.consumeEnergyTokens(eveningConsumptionRequests);
 
       await logDetailedTokenMovements(
         energyDistribution,
         members,
-        'SUNSET POST-CONSUMPTION',
+        'EVENING POST-CONSUMPTION',
       );
 
       await logCashCreditChanges(
         energyDistribution,
         members,
-        sunsetBeforeBalances,
-        'SUNSET',
+        eveningBeforeBalances,
+        'EVENING',
       );
 
-      console.log('✅ Sunset consumption complete:');
-      console.log('  🏠 Total household usage: 153 kWh (moderate consumption)');
+      console.log('✅ Evening consumption complete:');
       console.log(
-        '  📉 Clear underconsumers: Member1, Member2, Member4, Member6',
+        '  🏠 Total household usage: 330 kWh (high evening consumption)',
       );
-      console.log('  📈 Moderate overconsumers: Member3, Member5, Member7');
+      console.log('  📊 Perfect internal consumption - no export');
       console.log(
-        '  📤 Grid export: 177 kWh surplus generates significant revenue',
+        '  ⚖️ Major differences: Over-consumers pay for expensive imports',
       );
 
       await logCashCreditBalances(
@@ -680,117 +670,116 @@ describe('EnergyDistributionRealisticDailyScenario', function () {
 
       console.log('\n📊 ENERGY SUMMARY:');
       console.log(
-        '  🌞 Total Solar Production: 370 kWh (270 daylight + 100 sunset)',
+        '  🌞 Total Solar Production: 370 kWh (270 morning + 100 evening)',
       );
       console.log(
-        '  🏭 Total Grid Imports: 180 kWh (expensive sunset peak, shared fairly)',
+        '  🏭 Total Grid Imports: 180 kWh (expensive evening peak, shared fairly)',
       );
       console.log(
-        '  🔋 Battery Full Cycle: +50 kWh daylight → -50 kWh sunset (COMPLETE CYCLE)',
+        '  🔋 Battery Full Cycle: +50 kWh morning → -50 kWh evening (COMPLETE CYCLE)',
       );
-      console.log('  📤 Grid Export: 226 kWh (49 daylight + 177 sunset)');
-      console.log(
-        '  🏠 Total Consumption: 325 kWh (172 daylight + 153 sunset)',
-      );
+      console.log('  📤 Grid Export: 175 kWh (morning surplus)');
+      console.log('  🏠 Total Consumption: 375 kWh (45 morning + 330 evening)');
 
       console.log('\n💰 ECONOMIC ANALYSIS:');
       console.log(
-        '  🌅 Daylight: Light overconsumption + major underconsumption = significant export revenue',
+        '  🌅 Morning: Moderate export revenue ($17.50) shared by all',
       );
       console.log(
-        '  🌆 Sunset: Large export revenue ($17.70) from major underconsumption',
+        '  🌆 Evening: Expensive imports ($45.00) fairly distributed by consumption',
       );
       console.log(
         '  🔋 Battery saves community: $0.14 vs $0.25 for 50 kWh = $5.50 savings',
       );
       console.log(
-        '  ⚖️ Fair Distribution: Consumption patterns determine individual outcomes',
+        '  ⚖️ Fair Distribution: Export benefits shared, import costs based on usage',
       );
       console.log(
         '  🏭 Import Fairness: Community pool ensures all consumers pay import cost price',
       );
 
-      console.log('\n🔍 CONSUMPTION BEHAVIOR ANALYSIS:');
-      console.log('  🌞 DAYLIGHT PHASE:');
+      console.log('\n🔋 BATTERY PERFORMANCE:');
       console.log(
-        '    📈 Light Overconsumers: Member1 (+2kWh), Member2 (+2kWh), Member4 (+1kWh), Member6 (+1kWh)',
+        '  ✅ Morning: Captures 50 kWh excess solar at $0.10/kWh cost (FULL CAPACITY)',
       );
       console.log(
-        '    📉 Major Underconsumers: Member3 (-20kWh), Member5 (-16kWh), Member7 (-18kWh)',
+        '  ✅ Evening: Provides 50 kWh at $0.14/kWh vs $0.25/kWh imports (FULL DISCHARGE)',
       );
       console.log(
-        '    📤 Significant Export: 49 kWh surplus despite overconsumption',
+        '  💰 Community Savings: $5.50 (50 kWh × $0.11/kWh difference)',
       );
-      console.log('    💸 Overconsumers pay underconsumers at solar rates');
+      console.log(
+        '  🎯 Critical Role: Without battery, all 50 kWh would be expensive imports',
+      );
+      console.log(
+        '  🔋 Optimal Usage: Battery utilized to full capacity both ways',
+      );
 
-      console.log('  🌆 SUNSET PHASE:');
+      console.log('\n🏭 IMPORT ECONOMICS:');
+      console.log('  💸 Total Import Cost: $45.00 (180 kWh @ $0.25/kWh)');
+      console.log('  🏘️ Community Purchase: Shared pool for fair pricing');
       console.log(
-        '    📉 Major Underconsumers: Member1 (-10kWh), Member2 (-9kWh), Member4 (-6kWh)',
+        '  ⚖️ Cost Distribution: Over-consumers pay proportional share',
       );
       console.log(
-        '    📈 Moderate Overconsumers: Member3 (+11kWh), Member5 (+12kWh), Member7 (+10kWh)',
+        "  🎯 No Subsidies: High ownership doesn't reduce import costs",
       );
-      console.log(
-        '    💰 Underconsumers earn credits from expensive import pricing',
-      );
+      console.log('  💰 Fair Pricing: All consumers pay actual import price');
 
       console.log('\n✅ DAILY CYCLE SUCCESS:');
       console.log('  ⚖️ Zero-sum economics maintained');
       console.log('  🔋 Battery completed full charge/discharge cycle');
-      console.log('  💰 Export revenue generated in both phases');
+      console.log('  💰 Export revenue generated and fairly distributed');
       console.log(
-        '  📊 Clear demonstration of overconsumption in daylight phase',
+        '  📊 Over-consumers pay fair price for imports (no ownership subsidy)',
+      );
+      console.log('  🏘️ Community solar system optimized daily energy flow');
+      console.log(
+        '  🎯 Import fairness: High ownership no longer subsidizes expensive imports',
       );
       console.log(
-        '  📊 Clear demonstration of underconsumption in sunset phase',
-      );
-      console.log(
-        '  🏘️ Community solar system handles varying consumption patterns',
-      );
-      console.log(
-        '  🎯 Import fairness: Community import costs properly accounted for',
+        '  🏭 Import tracking: Community import costs properly accounted for',
       );
     });
 
-    it('Should analyze the realistic daily energy patterns with varying consumption behaviors', async function () {
+    it('Should analyze the realistic daily energy patterns', async function () {
       console.log('\n📊 === REALISTIC DAILY ENERGY PATTERN ANALYSIS ===');
 
-      console.log('\n🌞 DAYLIGHT CHARACTERISTICS (FIRST HALF OF DAY):');
+      console.log('\n🌞 MORNING CHARACTERISTICS (6:00 AM - 2:00 PM):');
       console.log('  ☀️ Solar production: 270 kWh at optimal $0.10/kWh');
-      console.log('   High consumption: 172 kWh (overconsumption period)');
+      console.log('  🏠 Low consumption: 45 kWh (people at work/school)');
       console.log(
         '  🔋 Battery charging: 50 kWh excess storage (FULL CAPACITY)',
       );
+      console.log('  📤 Export: 175 kWh surplus to grid');
       console.log(
-        '  📈 Clear overconsumers: Member1, Member2, Member4, Member6',
-      );
-      console.log('  📉 Clear underconsumers: Member3, Member5, Member7');
-      console.log(
-        '  💰 Internal economy: Overconsumers pay underconsumers at solar rates',
+        '  💰 Revenue generation: All members benefit from export income',
       );
 
-      console.log('\n🌆 SUNSET CHARACTERISTICS (SECOND HALF OF DAY):');
+      console.log('\n🌆 EVENING CHARACTERISTICS (2:00 PM - 10:00 PM):');
       console.log('  🌤️ Limited solar: 100 kWh at higher $0.12/kWh');
       console.log('  🏭 Heavy imports: 180 kWh at expensive $0.25/kWh');
       console.log(
         '  🔋 Battery discharge: 50 kWh stored energy released (FULL DISCHARGE)',
       );
       console.log(
-        '  🏠 Moderate consumption: 153 kWh (underconsumption period)',
+        '  🏠 High consumption: 330 kWh (cooking, heating, EV charging)',
       );
-      console.log('  📤 Large export: 177 kWh surplus to grid');
+      console.log(
+        '  📊 Perfect balance: All available energy consumed internally',
+      );
 
       console.log('\n🔑 KEY INSIGHTS:');
 
-      console.log('\n💡 Consumption Pattern Demonstration:');
+      console.log('\n💡 Energy Flow Optimization:');
       console.log(
-        '  • Daylight overconsumption clearly shown with multiple members exceeding allocations',
+        '  • Morning surplus stored in battery for evening demand (FULL CAPACITY)',
       );
       console.log(
-        '  • Sunset underconsumption maintained with several members using less than allocated',
+        '  • Export generates revenue when production exceeds consumption',
       );
       console.log(
-        '  • Role reversal: Some daylight overconsumers become sunset underconsumers',
+        '  • Battery reduces expensive evening import requirements (MAXIMIZED)',
       );
       console.log(
         '  • Individual consumption patterns determine personal financial outcomes',
@@ -798,41 +787,41 @@ describe('EnergyDistributionRealisticDailyScenario', function () {
 
       console.log('\n💰 Economic Fairness Model:');
       console.log(
-        '  • Daylight: Overconsumers pay underconsumers at cheap solar rates',
-      );
-      console.log(
-        '  • Sunset: Underconsumers earn credits from expensive import pricing',
-      );
-      console.log(
         '  • Export benefits: Shared proportionally among all members',
       );
       console.log(
         '  • Import costs: Community pool ensures fair pricing for over-consumers',
       );
+      console.log('  • Under-consumption rewards: Earned by efficient users');
       console.log(
-        '  • Dynamic pricing: Members experience different rates based on consumption timing',
+        '  • Ownership benefits: Apply only to owned assets (solar, battery)',
+      );
+      console.log(
+        '  • Import transparency: Clear tracking of community import costs',
       );
 
       console.log('\n🏘️ Community Solar Benefits:');
       console.log('  • Shared infrastructure reduces individual investment');
       console.log('  • Battery storage optimizes energy timing for community');
+      console.log('  • Export revenue provides income opportunities');
       console.log(
-        '  • Internal trading opportunities between over/under consumers',
-      );
-      console.log(
-        '  • Fair allocation balances ownership with individual consumption responsibility',
+        '  • Fair allocation balances ownership with individual responsibility',
       );
       console.log('  • Import pooling ensures transparent cost sharing');
 
       console.log('\n🌟 System Effectiveness:');
       console.log(
-        '  ✅ Realistic consumption variations handled across both phases',
+        '  ✅ Realistic daily energy variations handled successfully',
       );
-      console.log('  ✅ Clear overconsumption demonstrated in daylight phase');
-      console.log('  ✅ Clear underconsumption maintained in sunset phase');
       console.log('  ✅ Battery charging/discharging cycles optimized');
+      console.log('  ✅ Export revenue opportunities maximized');
       console.log('  ✅ Fair cost/benefit distribution maintained');
-      console.log('  ✅ Economic incentives align with community energy goals');
+      console.log(
+        '  ✅ Over-consumers appropriately charged for excessive usage',
+      );
+      console.log(
+        '  ✅ Import costs transparently tracked and fairly distributed',
+      );
 
       expect(true).to.be.true; // Test passes - this is an analysis test
     });
