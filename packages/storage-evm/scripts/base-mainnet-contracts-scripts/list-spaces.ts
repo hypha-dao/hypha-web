@@ -101,7 +101,52 @@ const daoSpaceFactoryAbi = [
   },
 ];
 
+function parseArguments(): { startId?: number; endId?: number } {
+  const args = process.argv.slice(2);
+  const result: { startId?: number; endId?: number } = {};
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+
+    if ((arg === '--start' || arg === '--from') && i + 1 < args.length) {
+      result.startId = parseInt(args[i + 1], 10);
+      i++; // Skip the next argument as it's the value
+    } else if ((arg === '--end' || arg === '--to') && i + 1 < args.length) {
+      result.endId = parseInt(args[i + 1], 10);
+      i++; // Skip the next argument as it's the value
+    } else if (arg === '--range' && i + 1 < args.length) {
+      const range = args[i + 1].split(',');
+      if (range.length === 2) {
+        result.startId = parseInt(range[0], 10);
+        result.endId = parseInt(range[1], 10);
+      }
+      i++; // Skip the next argument as it's the value
+    } else if (arg === '--help' || arg === '-h') {
+      console.log(`
+Usage: npx tsx list-spaces.ts [options]
+
+Options:
+  --start, --from <number>    Start space ID (default: 1)
+  --end, --to <number>        End space ID (default: spaceCounter)
+  --range <start,end>         Range of space IDs (e.g., --range 1,10)
+  --help, -h                  Show this help message
+
+Examples:
+  npx tsx list-spaces.ts                    # List all spaces
+  npx tsx list-spaces.ts --start 10 --end 20   # List spaces 10-20
+  npx tsx list-spaces.ts --range 100,115       # List spaces 100-115
+  npx tsx list-spaces.ts --from 116            # List spaces from 116 to end
+      `);
+      process.exit(0);
+    }
+  }
+
+  return result;
+}
+
 async function main(): Promise<void> {
+  const { startId, endId } = parseArguments();
+
   // Connect to the network
   const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
 
@@ -115,12 +160,40 @@ async function main(): Promise<void> {
   try {
     // Get total number of spaces
     const spaceCounter = await daoSpaceFactory.spaceCounter();
-    console.log(`Total number of spaces: ${spaceCounter}\n`);
+    console.log(`Total number of spaces (counter): ${spaceCounter}`);
 
-    // Iterate through all spaces
-    for (let spaceId = 1; spaceId <= Number(spaceCounter); spaceId++) {
+    // Determine the actual range to query
+    const actualStartId = startId || 1;
+    const actualEndId = endId || Number(spaceCounter);
+
+    // Validate range
+    if (actualStartId < 1) {
+      throw new Error('Start ID must be at least 1');
+    }
+    if (actualEndId < actualStartId) {
+      throw new Error('End ID must be greater than or equal to start ID');
+    }
+
+    console.log(`Querying spaces ${actualStartId} to ${actualEndId}\n`);
+
+    let validSpaces = 0;
+    let invalidSpaces = 0;
+    const failedSpaceIds: number[] = [];
+
+    // Iterate through the specified range of spaces
+    for (let spaceId = actualStartId; spaceId <= actualEndId; spaceId++) {
       try {
         const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+
+        // Check if this is a valid space (has a creator address)
+        if (spaceDetails.creator === ethers.ZeroAddress) {
+          console.log(`Space ${spaceId}: Invalid (zero creator address)`);
+          invalidSpaces++;
+          failedSpaceIds.push(spaceId);
+          continue;
+        }
+
+        validSpaces++;
 
         // Format timestamp to human readable date
         const createdDate = new Date(
@@ -144,10 +217,49 @@ async function main(): Promise<void> {
         console.log('Number of Members:', spaceDetails.members.length);
         console.log('===============\n');
       } catch (error: any) {
-        console.error(
-          `Error fetching details for space ${spaceId}:`,
-          error.message,
+        invalidSpaces++;
+        failedSpaceIds.push(spaceId);
+
+        // Check if it's a CALL_EXCEPTION (space doesn't exist)
+        if (error.code === 'CALL_EXCEPTION') {
+          console.log(`Space ${spaceId}: Does not exist (CALL_EXCEPTION)`);
+        } else {
+          console.error(
+            `Space ${spaceId}: Unexpected error - ${error.message}`,
+          );
+        }
+      }
+    }
+
+    // Summary
+    console.log('\n=== SUMMARY ===');
+    console.log(`Range queried: ${actualStartId} to ${actualEndId}`);
+    console.log(`Valid spaces: ${validSpaces}`);
+    console.log(`Invalid/missing spaces: ${invalidSpaces}`);
+    console.log(`Total spaces in contract: ${spaceCounter}`);
+
+    if (failedSpaceIds.length > 0) {
+      console.log(`\nFailed space IDs: ${failedSpaceIds.join(', ')}`);
+
+      // Identify patterns in failed spaces
+      if (failedSpaceIds.length > 1) {
+        const firstFailed = failedSpaceIds[0];
+        const lastFailed = failedSpaceIds[failedSpaceIds.length - 1];
+        const isConsecutive = failedSpaceIds.every(
+          (id, index) => index === 0 || id === failedSpaceIds[index - 1] + 1,
         );
+
+        if (isConsecutive && failedSpaceIds.length > 1) {
+          console.log(
+            `Pattern: Consecutive failures from ${firstFailed} to ${lastFailed}`,
+          );
+          if (firstFailed > 1) {
+            console.log(
+              'This suggests space creation stopped working after space',
+              firstFailed - 1,
+            );
+          }
+        }
       }
     }
   } catch (error: any) {

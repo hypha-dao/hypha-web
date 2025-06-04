@@ -17,6 +17,7 @@ interface TransactionReceipt {
 }
 
 interface ContractTransactionWithWait extends ethers.ContractTransaction {
+  hash: string;
   wait(): Promise<TransactionReceipt>;
 }
 
