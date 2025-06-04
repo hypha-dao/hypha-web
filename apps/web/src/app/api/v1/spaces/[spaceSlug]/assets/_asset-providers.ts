@@ -12,14 +12,17 @@ export type TokenType = (
 ) & string;
 
 export type ProviderOpts = {
+  client: PublicClient,
+  slug: string;
+  token: Hex;
   icon?: string;
   name?: string;
   status?: TokenType
   closeUrl?: string;
-  slug: string;
 }
 
 export class EthereumProvider implements AssetProvider {
+  private readonly client: PublicClient;
   private readonly icon: string;
   private readonly status = 'liquid';
   private readonly name = 'Ethereum';
@@ -28,10 +31,8 @@ export class EthereumProvider implements AssetProvider {
   private readonly slug: string;
   private readonly closeUrl: string;
 
-  constructor(
-    private readonly client: PublicClient,
-    opts: Omit<ProviderOpts, "status" | "name">,
-  ) {
+  constructor(opts: Omit<ProviderOpts, "status" | "name" | "token">) {
+    this.client = opts.client;
     this.icon = opts.icon || '/placeholder/eth.png';
     this.slug = opts.slug;
     this.closeUrl = opts.closeUrl || '';
@@ -62,22 +63,22 @@ export class EthereumProvider implements AssetProvider {
 }
 
 export class Erc20Provider implements AssetProvider {
+  private readonly client: PublicClient;
+  private readonly token: Hex;
   private readonly name: string;
   private readonly icon: string;
   private readonly status: TokenType;
   private readonly closeUrl: string;
   private readonly slug: string;
 
-  constructor(
-    private readonly client: PublicClient,
-    private readonly token: Hex,
-    opts: ProviderOpts,
-  ) {
+  constructor(opts: ProviderOpts) {
+    this.slug = opts.slug;
+    this.client = opts.client;
+    this.token = opts.token;
     this.name = opts.name || '';
     this.icon = opts.icon || '';
     this.status = opts.status || 'utility';
     this.closeUrl = opts.closeUrl || '';
-    this.slug = opts.slug;
   }
 
   async formItem(address: Hex): Promise<AssetItem> {

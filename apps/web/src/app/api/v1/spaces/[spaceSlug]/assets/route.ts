@@ -63,13 +63,11 @@ export async function GET(
     ] = spaceDetails;
 
     const assets = await Promise.all(tokenAdresses
-      .map((token, index) => new Erc20Provider(
-        publicClient,
-        token,
-        {
+      .map((token, index) => new Erc20Provider({
+          client: publicClient,
+          token: token,
           slug: `${spaceSlug}-${index}`,
-        }
-      ) as AssetProvider)
+        }) as AssetProvider)
       .concat(ASSETS_PROVIDERS[publicClient.chain.id])
       .map(provider => provider.formItem(spaceAddress)));
     const sorted = assets.sort((a, b) => a.usdEqual == b.usdEqual
