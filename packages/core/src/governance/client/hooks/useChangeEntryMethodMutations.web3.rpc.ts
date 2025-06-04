@@ -9,8 +9,9 @@ import {
 } from '../web3';
 import { schemaCreateProposalWeb3 } from '@core/governance/validation';
 import useSWR from 'swr';
+import { z } from 'zod';
 import { publicClient } from '@core/common/web3/public-client';
-import { encodeFunctionData } from 'viem';
+import { encodeFunctionData, EncodeFunctionDataReturnType } from 'viem';
 import {
   daoSpaceFactoryImplementationAbi,
   daoSpaceFactoryImplementationAddress,
@@ -18,8 +19,11 @@ import {
   tokenBalanceJoinImplementationAddress,
 } from '@core/generated';
 import { Address, EntryMethodType, TokenBase } from '@core/governance/types';
+import { transactionSchema } from '@core/governance/validation';
 
-function changeEntryMethodTx(spaceId: number, joinMethod: number) {
+type TxData = z.infer<typeof transactionSchema>;
+
+function changeEntryMethodTx(spaceId: number, joinMethod: number): TxData {
   return {
     target: daoSpaceFactoryImplementationAddress[8453],
     value: 0,
@@ -35,7 +39,7 @@ function setTokenRequirementTx(
   spaceId: number,
   token: Address,
   amount: number,
-) {
+): TxData {
   return {
     target: tokenBalanceJoinImplementationAddress[8453],
     value: 0,
@@ -55,7 +59,7 @@ export const useChangeEntryMethodMutationsWeb3Rpc = (config?: Config) => {
     data: createChangeEntryMethodHash,
     error: errorCreateChangeEntryMethod,
   } = useSWRMutation(
-    config ? [config, 'createProposal'] : null,
+    config ? [config, 'changeEntryMethod'] : null,
     async (
       [config],
       {
@@ -68,7 +72,7 @@ export const useChangeEntryMethodMutationsWeb3Rpc = (config?: Config) => {
         };
       },
     ) => {
-      const transactions = [];
+      const transactions: TxData[] = [];
       switch (arg.joinMethod) {
         case EntryMethodType.OPEN_ACCESS:
           transactions.push(changeEntryMethodTx(arg.spaceId, arg.joinMethod));
