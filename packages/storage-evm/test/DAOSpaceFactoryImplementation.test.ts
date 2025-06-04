@@ -3712,7 +3712,7 @@ describe('DAOSpaceFactoryImplementation', function () {
       // Try to change voting method as non-executor (should fail)
       await expect(
         daoSpaceFactory.connect(other).changeVotingMethod(spaceId, 2, 51, 51),
-      ).to.be.revertedWith('Not executor');
+      ).to.be.revertedWith('Not authorized: only executor or owner');
     });
 
     it('Should prevent non-executors from changing the entry method', async function () {
@@ -3913,6 +3913,52 @@ describe('DAOSpaceFactoryImplementation', function () {
         spaceId,
       );
       expect(updatedSpaceDetails.votingPowerSource).to.equal(3);
+    });
+
+    it('Should allow contract owner to change the voting method', async function () {
+      const { spaceHelper, daoSpaceFactory, owner } = await loadFixture(
+        deployFixture,
+      );
+
+      // Create a space
+      await spaceHelper.createDefaultSpace();
+      const spaceId = (await daoSpaceFactory.spaceCounter()).toString();
+
+      // Get the initial voting power source
+      const initialSpaceDetails = await daoSpaceFactory.getSpaceDetails(
+        spaceId,
+      );
+      const initialVotingPowerSource = initialSpaceDetails.votingPowerSource;
+      expect(initialVotingPowerSource).to.equal(1);
+
+      // Change the voting method as contract owner
+      const newVotingPowerSource = 2;
+      const newUnity = 51;
+      const newQuorum = 51;
+      const changeTx = await daoSpaceFactory
+        .connect(owner)
+        .changeVotingMethod(spaceId, newVotingPowerSource, newUnity, newQuorum);
+
+      // Verify the event is emitted
+      await expect(changeTx)
+        .to.emit(daoSpaceFactory, 'VotingMethodChanged')
+        .withArgs(
+          spaceId,
+          initialVotingPowerSource,
+          newVotingPowerSource,
+          51, // oldUnity
+          newUnity,
+          51, // oldQuorum
+          newQuorum,
+        );
+
+      // Verify the voting power source has been updated
+      const updatedSpaceDetails = await daoSpaceFactory.getSpaceDetails(
+        spaceId,
+      );
+      expect(updatedSpaceDetails.votingPowerSource).to.equal(
+        newVotingPowerSource,
+      );
     });
   });
 });

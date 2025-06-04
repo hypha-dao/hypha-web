@@ -400,7 +400,11 @@ contract DAOSpaceFactoryImplementation is
     uint256 _newVotingPowerSource,
     uint256 _newUnity,
     uint256 _newQuorum
-  ) external onlySpaceExecutor(_spaceId) {
+  ) external {
+    require(
+      msg.sender == spaces[_spaceId].executor || msg.sender == owner(),
+      'Not authorized: only executor or owner'
+    );
     require(_newVotingPowerSource > 0, 'Invalid voting power source');
     require(_newQuorum > 0 && _newQuorum <= 100, 'Invalid quorum');
     require(_newUnity > 0 && _newUnity <= 100, 'Invalid unity');
