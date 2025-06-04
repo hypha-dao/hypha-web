@@ -19,6 +19,8 @@ export type ProviderOpts = {
   name?: string;
   status?: TokenType
   closeUrl?: string;
+  // Async funtion to convert current amount of tokens to its USD equivalent
+  usdEquivalent?: (amount: number) => Promise<number>;
 }
 
 export class EthereumProvider implements AssetProvider {
@@ -30,12 +32,16 @@ export class EthereumProvider implements AssetProvider {
   private readonly decimals = 18;
   private readonly slug: string;
   private readonly closeUrl: string;
+  private getUsdEquivalent: (amount: number) => Promise<number>;
 
   constructor(opts: Omit<ProviderOpts, "status" | "name" | "token">) {
     this.client = opts.client;
     this.icon = opts.icon || '/placeholder/eth.png';
     this.slug = opts.slug;
     this.closeUrl = opts.closeUrl || '';
+    this.getUsdEquivalent = opts.usdEquivalent || function(_: number) {
+      return new Promise(() => 0);
+    };
   }
 
   async formItem(address: Hex): Promise<AssetItem> {
@@ -43,14 +49,22 @@ export class EthereumProvider implements AssetProvider {
       blockTag: 'safe',
       address,
     });
+    const amount = +formatUnits(balance, this.decimals);
+
+    let usdEqual: number;
+    try {
+      usdEqual = await this.getUsdEquivalent(amount)
+    } catch (error) {
+      console.error(`Failed to get USD equivalent for ${this.symbol}:`, error)
+      usdEqual = 0;
+    }
 
     return {
       icon: this.icon,
       name: this.name,
       symbol: this.symbol,
-      value: +formatUnits(balance, this.decimals),
-      // TODO: get USD equal
-      usdEqual: 0,
+      value: amount,
+      usdEqual: usdEqual,
       status: this.status,
       // TODO: get chart data
       chartData: [],
@@ -70,6 +84,7 @@ export class Erc20Provider implements AssetProvider {
   private readonly status: TokenType;
   private readonly closeUrl: string;
   private readonly slug: string;
+  private getUsdEquivalent: (amount: number) => Promise<number>;
 
   constructor(opts: ProviderOpts) {
     this.slug = opts.slug;
@@ -79,6 +94,9 @@ export class Erc20Provider implements AssetProvider {
     this.icon = opts.icon || '';
     this.status = opts.status || 'utility';
     this.closeUrl = opts.closeUrl || '';
+    this.getUsdEquivalent = opts.usdEquivalent || function(_) {
+      return new Promise(() => 0);
+    }
   }
 
   async formItem(address: Hex): Promise<AssetItem> {
@@ -110,14 +128,22 @@ export class Erc20Provider implements AssetProvider {
       throw failure.error;
     }
 
-    const [amount, symbol, decimals] = balance.map(obj => obj.result);
+    const [value, symbol, decimals] = balance.map(obj => obj.result);
+    const amount = +formatUnits((value as bigint), (decimals as number));
+    let usdEqual: number;
+    try {
+      usdEqual = await this.getUsdEquivalent(amount)
+    } catch (error) {
+      console.error(`Failed to get USD equivalent for ${symbol}:`, error)
+      usdEqual = 0;
+    }
+
     return {
       icon: this.icon,
       name: this.name,
       symbol: String(symbol),
-      value: +formatUnits((amount as bigint), (decimals as number)),
-      // TODO: get USD equal
-      usdEqual: 0,
+      value: amount,
+      usdEqual: usdEqual,
       status: this.status,
       // TODO: get chart data
       chartData: [],
