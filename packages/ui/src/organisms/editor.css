@@ -136,6 +136,183 @@
       }
     }
 
+    /* Override prose styling for checkbox lists */
+    ul[data-task-list] {
+      list-style: none !important;
+      padding-left: 0 !important;
+      margin-left: 0 !important;
+
+      li[data-task-item] {
+        position: relative;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5em;
+        padding-left: 0 !important;
+        margin: 0.25em 0 !important;
+        list-style: none !important;
+
+        &::before,
+        &::after {
+          display: none !important;
+        }
+
+        /* Checkbox styling */
+        input[type='checkbox'] {
+          appearance: none;
+          width: 16px;
+          height: 16px;
+          border: 1.5px solid hsl(var(--neutral-8));
+          border-radius: 3px;
+          background-color: hsl(var(--neutral-1));
+          margin: 0;
+          margin-top: 2px;
+          cursor: pointer;
+          transition: all 0.2s ease-in-out;
+          flex-shrink: 0;
+
+          &:hover {
+            border-color: hsl(var(--accent-8));
+            background-color: hsl(var(--neutral-2));
+          }
+
+          &:checked {
+            background-color: hsl(var(--accent-9));
+            border-color: hsl(var(--accent-9));
+            background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='m13.854 3.646-7.5 7.5a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6 10.293l7.146-7.147a.5.5 0 0 1 .708.708z'/%3e%3c/svg%3e");
+            background-size: 12px 12px;
+            background-position: center;
+            background-repeat: no-repeat;
+          }
+
+          &:focus-visible {
+            outline: 2px solid hsl(var(--accent-7));
+            outline-offset: 2px;
+          }
+        }
+
+        /* Task item content */
+        .task-item-content {
+          flex: 1;
+          min-width: 0;
+        }
+
+        /* Strikethrough completed tasks */
+        &[data-task-item='checked'] .task-item-content {
+          text-decoration: line-through;
+          color: hsl(var(--neutral-11));
+        }
+      }
+    }
+
+    /* Fallback for when checkboxes are rendered differently */
+    li:has(input[type='checkbox']) {
+      list-style: none !important;
+      padding-left: 0 !important;
+      margin-left: 0 !important;
+      display: flex !important;
+      align-items: flex-start !important;
+      gap: 0.5em !important;
+
+      &::before,
+      &::after {
+        display: none !important;
+      }
+    }
+
+    /* MDXEditor checkbox styling - targets the actual generated classes */
+    li[role='checkbox'] {
+      position: relative !important;
+      display: flex !important;
+      align-items: flex-start !important;
+      gap: 0.4em !important;
+      padding-left: 0 !important;
+      margin: 0.25em 0 !important;
+      list-style: none !important;
+      cursor: pointer !important;
+      transition: all 0.2s ease-in-out !important;
+      line-height: 1.5 !important;
+
+      /* Hide default list markers */
+      &::before,
+      &::after {
+        display: none !important;
+      }
+
+      /* Create checkbox indicator */
+      &::before {
+        content: '' !important;
+        display: block !important;
+        width: 16px !important;
+        height: 16px !important;
+        border: 1.5px solid hsl(var(--neutral-8)) !important;
+        border-radius: 3px !important;
+        background-color: hsl(var(--neutral-1)) !important;
+        margin-top: 1rem !important;
+        flex-shrink: 0 !important;
+        transition: all 0.2s ease-in-out !important;
+        position: relative !important;
+      }
+
+      /* Hover state */
+      &:hover::before {
+        border-color: hsl(var(--accent-8)) !important;
+        background-color: hsl(var(--neutral-2)) !important;
+      }
+
+      /* Focus state */
+      &:focus::before {
+        outline: 2px solid hsl(var(--accent-7)) !important;
+        outline-offset: 2px !important;
+      }
+
+      /* Text content styling */
+      span[data-lexical-text] {
+        flex: 1;
+        min-width: 0;
+        line-height: 1.5 !important;
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+      }
+    }
+
+    /* Checked checkbox styling */
+    li._listItemChecked_1tncs_73[role='checkbox']::before {
+      background-color: hsl(var(--accent-9)) !important;
+      border-color: hsl(var(--accent-9)) !important;
+      background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='m13.854 3.646-7.5 7.5a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6 10.293l7.146-7.147a.5.5 0 0 1 .708.708z'/%3e%3c/svg%3e") !important;
+      background-size: 12px 12px !important;
+      background-position: center !important;
+      background-repeat: no-repeat !important;
+    }
+
+    /* Checked text styling with strikethrough */
+    li._listItemChecked_1tncs_73[role='checkbox'] span[data-lexical-text] {
+      text-decoration: line-through !important;
+      color: hsl(var(--neutral-11)) !important;
+    }
+
+    /* Unchecked checkbox styling (explicit for clarity) */
+    li._listItemUnchecked_1tncs_74[role='checkbox']::before {
+      background-color: hsl(var(--neutral-1)) !important;
+      border-color: hsl(var(--neutral-8)) !important;
+    }
+
+    /* Override prose styling that might interfere */
+    li._listitem_1tncs_69 {
+      margin: 0.25em 0 !important;
+
+      /* Special handling for checkbox items */
+      &[role='checkbox'] {
+        padding-left: 0 !important;
+        text-indent: 0 !important;
+
+        /* Ensure proper flex layout overrides prose */
+        display: flex !important;
+        align-items: flex-start !important;
+        gap: 0.5em !important;
+      }
+    }
+
     /* Enhanced heading styles */
     h1,
     h2,
