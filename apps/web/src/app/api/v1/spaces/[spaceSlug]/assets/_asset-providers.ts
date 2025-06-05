@@ -40,7 +40,7 @@ export class EthereumProvider implements AssetProvider {
     this.slug = opts.slug;
     this.closeUrl = opts.closeUrl || '';
     this.getUsdEquivalent = opts.usdEquivalent || function(_: number) {
-      return new Promise(() => 0);
+      return new Promise((resolve, _) => resolve(0));
     };
   }
 
@@ -95,7 +95,7 @@ export class Erc20Provider implements AssetProvider {
     this.status = opts.status || 'utility';
     this.closeUrl = opts.closeUrl || '';
     this.getUsdEquivalent = opts.usdEquivalent || function(_) {
-      return new Promise(() => 0);
+      return new Promise((resolve, _) => resolve(0));
     }
   }
 
