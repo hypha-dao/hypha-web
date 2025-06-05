@@ -1,7 +1,6 @@
 import { AssetProvider } from './_interface';
-import { PublicClient, Hex, formatUnits } from 'viem';
+import { erc20Abi, PublicClient, Hex, formatUnits } from 'viem';
 import { AssetItem } from '@hypha-platform/graphql/rsc';
-import { ERC20 } from './_abis';
 
 // TODO: move to a more appropriate file
 export type TokenType = (
@@ -102,7 +101,7 @@ export class Erc20Provider implements AssetProvider {
   async formItem(address: Hex): Promise<AssetItem> {
     const contract = {
       address: this.token,
-      abi: ERC20,
+      abi: erc20Abi,
     } as const;
 
     const balance = await this.client.multicall({
