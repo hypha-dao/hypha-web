@@ -565,24 +565,26 @@ describe('EnergyDistributionRealisticDailyScenario', function () {
 
       // =================== SUNSET PHASE: SCARCITY WITH UNDERCONSUMPTION ===================
       console.log(
-        '\n🌆 === SUNSET PHASE (SECOND HALF OF DAY): ENERGY SCARCITY + UNDERCONSUMPTION ===',
+        '\n🌆 === SUNSET PHASE (SECOND HALF OF DAY): HIGH DEMAND + IMPORT NECESSITY ===',
       );
 
       const sunsetEnergySources = [
-        { sourceId: 2, price: 12, quantity: 100, isImport: false }, // Limited sunset solar: 100 kWh @ $0.12/kWh
-        { sourceId: 3, price: 25, quantity: 180, isImport: true }, // Heavy grid imports: 180 kWh @ $0.25/kWh
+        { sourceId: 2, price: 12, quantity: 80, isImport: false }, // Limited sunset solar: 80 kWh @ $0.12/kWh
+        { sourceId: 3, price: 25, quantity: 120, isImport: true }, // Grid imports needed: 120 kWh @ $0.25/kWh
       ];
 
       console.log('📊 Sunset Energy Production:');
-      console.log('  🌤️ Limited Solar: 100 kWh @ $0.12/kWh = $12.00');
-      console.log(
-        '  🏭 Grid Imports: 180 kWh @ $0.25/kWh = $45.00 (community purchase)',
-      );
+      console.log('  🌤️ Limited Solar: 80 kWh @ $0.12/kWh = $9.60');
       console.log(
         '  🔋 Battery discharge: -50 kWh (FULL DISCHARGE - all stored daylight solar)',
       );
+      console.log('  📊 Community Resources: 80 + 50 = 130 kWh available');
       console.log(
-        '  💸 Cost challenge: Expensive sunset imports shared fairly',
+        '  🏭 Grid Imports: 120 kWh @ $0.25/kWh = $30.00 (necessary to meet high demand)',
+      );
+      console.log('  📊 Total Available: 250 kWh for consumption');
+      console.log(
+        '  🎯 Objective: High consumption demand requires imports + battery discharge',
       );
 
       await energyDistribution.distributeEnergyTokens(sunsetEnergySources, 0); // Battery fully discharges to 0
@@ -611,21 +613,28 @@ describe('EnergyDistributionRealisticDailyScenario', function () {
 
       console.log('\n--- SUNSET CONSUMPTION PHASE ---');
       console.log(
-        '🏠 Sunset Usage (MODERATE consumption - some members still underconsume):',
+        '🏠 HIGH EVENING DEMAND (Major consumption - heating, cooking, lighting):',
+      );
+      console.log(
+        '  📈 Majority overconsume significantly due to evening peak demand',
+      );
+      console.log('  📉 Few underconsumers help balance but not enough');
+      console.log(
+        '  🏭 Import necessity: Community resources (130 kWh) insufficient for demand (250 kWh)',
       );
 
       const sunsetConsumptionRequests = [
-        { deviceId: 1002, quantity: 20 }, // Member1: MASSIVE under-consumption (allocated 30kWh, -10kWh)
-        { deviceId: 2001, quantity: 18 }, // Member2: MODERATE under-consumption (allocated 27kWh, -9kWh)
-        { deviceId: 3001, quantity: 35 }, // Member3: MODERATE over-consumption (allocated 24kWh, +11kWh)
-        { deviceId: 4002, quantity: 15 }, // Member4: MASSIVE under-consumption (allocated 21kWh, -6kWh)
-        { deviceId: 5001, quantity: 30 }, // Member5: MODERATE over-consumption (allocated 18kWh, +12kWh)
-        { deviceId: 6001, quantity: 10 }, // Member6: MODERATE under-consumption (allocated 15kWh, -5kWh)
-        { deviceId: 7002, quantity: 25 }, // Member7: MODERATE over-consumption (allocated 15kWh, +10kWh)
-        // Total sunset consumption: 153 kWh vs 150 kWh allocated
-        // Overconsumers need: +33kWh, Underconsumers free up: +30kWh = +3kWh net from community pool
-        // This leaves 177 kWh from community pool for export
-        { deviceId: 9999, quantity: 177 }, // Export remaining energy to grid
+        { deviceId: 1002, quantity: 45 }, // Member1: MASSIVE over-consumption (allocated 36kWh, +9kWh)
+        { deviceId: 2001, quantity: 38 }, // Member2: MODERATE over-consumption (allocated 32kWh, +6kWh)
+        { deviceId: 3001, quantity: 20 }, // Member3: MODERATE under-consumption (allocated 29kWh, -9kWh)
+        { deviceId: 4002, quantity: 35 }, // Member4: MODERATE over-consumption (allocated 25kWh, +10kWh)
+        { deviceId: 5001, quantity: 30 }, // Member5: MASSIVE over-consumption (allocated 22kWh, +8kWh)
+        { deviceId: 6001, quantity: 12 }, // Member6: MODERATE under-consumption (allocated 18kWh, -6kWh)
+        { deviceId: 7002, quantity: 70 }, // Member7: EXTREME over-consumption (allocated 18kWh, +52kWh) - Peak evening use
+        // Total sunset consumption: 250 kWh vs 180 kWh allocated
+        // Overconsumers need: +85kWh, Underconsumers free up: +15kWh = +70kWh net deficit
+        // This consumes all 250 kWh available (80 solar + 50 battery + 120 imports)
+        // NO export - all energy consumed due to high evening demand
       ];
 
       await logMemberConsumptionAnalysis(
@@ -660,13 +669,16 @@ describe('EnergyDistributionRealisticDailyScenario', function () {
       );
 
       console.log('✅ Sunset consumption complete:');
-      console.log('  🏠 Total household usage: 153 kWh (moderate consumption)');
+      console.log('  🏠 Total household usage: 250 kWh (HIGH evening demand)');
       console.log(
-        '  📉 Clear underconsumers: Member1, Member2, Member4, Member6',
+        '  📈 Major overconsumers: Member1, Member2, Member4, Member5, Member7',
       );
-      console.log('  📈 Moderate overconsumers: Member3, Member5, Member7');
+      console.log('  📉 Limited underconsumers: Member3, Member6');
       console.log(
-        '  📤 Grid export: 177 kWh surplus generates significant revenue',
+        '  🚫 NO export: All available energy consumed due to peak evening demand',
+      );
+      console.log(
+        '  🏭 Import necessity: 120 kWh grid imports required to meet demand',
       );
 
       await logCashCreditBalances(
@@ -680,34 +692,34 @@ describe('EnergyDistributionRealisticDailyScenario', function () {
 
       console.log('\n📊 ENERGY SUMMARY:');
       console.log(
-        '  🌞 Total Solar Production: 370 kWh (270 daylight + 100 sunset)',
+        '  🌞 Total Solar Production: 350 kWh (270 daylight + 80 sunset)',
       );
       console.log(
-        '  🏭 Total Grid Imports: 180 kWh (expensive sunset peak, shared fairly)',
+        '  🏭 Total Grid Imports: 120 kWh (necessary for evening peak demand)',
       );
       console.log(
         '  🔋 Battery Full Cycle: +50 kWh daylight → -50 kWh sunset (COMPLETE CYCLE)',
       );
-      console.log('  📤 Grid Export: 226 kWh (49 daylight + 177 sunset)');
+      console.log('  📤 Grid Export: 49 kWh (daylight surplus only)');
       console.log(
-        '  🏠 Total Consumption: 325 kWh (172 daylight + 153 sunset)',
+        '  🏠 Total Consumption: 422 kWh (172 daylight + 250 sunset)',
       );
 
       console.log('\n💰 ECONOMIC ANALYSIS:');
       console.log(
-        '  🌅 Daylight: Light overconsumption + major underconsumption = significant export revenue',
+        '  🌅 Daylight: Light overconsumption + major underconsumption = export revenue',
       );
       console.log(
-        '  🌆 Sunset: Large export revenue ($17.70) from major underconsumption',
+        '  🌆 Sunset: High demand requires expensive imports ($30.00) - no export',
       );
       console.log(
-        '  🔋 Battery saves community: $0.14 vs $0.25 for 50 kWh = $5.50 savings',
+        '  🔋 Battery saves community: $0.12-0.25 vs $0.25 for 50 kWh = up to $6.50 savings',
       );
       console.log(
         '  ⚖️ Fair Distribution: Consumption patterns determine individual outcomes',
       );
       console.log(
-        '  🏭 Import Fairness: Community pool ensures all consumers pay import cost price',
+        '  🏭 Import Necessity: Community resources insufficient for evening peak',
       );
 
       console.log('\n🔍 CONSUMPTION BEHAVIOR ANALYSIS:');
@@ -719,36 +731,37 @@ describe('EnergyDistributionRealisticDailyScenario', function () {
         '    📉 Major Underconsumers: Member3 (-20kWh), Member5 (-16kWh), Member7 (-18kWh)',
       );
       console.log(
-        '    📤 Significant Export: 49 kWh surplus despite overconsumption',
+        '    📤 Export Revenue: 49 kWh surplus despite overconsumption',
       );
       console.log('    💸 Overconsumers pay underconsumers at solar rates');
 
       console.log('  🌆 SUNSET PHASE:');
       console.log(
-        '    📉 Major Underconsumers: Member1 (-10kWh), Member2 (-9kWh), Member4 (-6kWh)',
+        '    📈 Major Overconsumers: Member1 (+9kWh), Member2 (+6kWh), Member4 (+10kWh), Member5 (+8kWh), Member7 (+52kWh)',
       );
       console.log(
-        '    📈 Moderate Overconsumers: Member3 (+11kWh), Member5 (+12kWh), Member7 (+10kWh)',
+        '    📉 Limited Underconsumers: Member3 (-9kWh), Member6 (-6kWh)',
       );
       console.log(
-        '    💰 Underconsumers earn credits from expensive import pricing',
+        '    🏭 Import Necessity: High demand (250 kWh) exceeds community resources (130 kWh)',
+      );
+      console.log(
+        '    💸 All consumers share import costs, overconsumers pay premium',
       );
 
       console.log('\n✅ DAILY CYCLE SUCCESS:');
       console.log('  ⚖️ Zero-sum economics maintained');
       console.log('  🔋 Battery completed full charge/discharge cycle');
-      console.log('  💰 Export revenue generated in both phases');
+      console.log('  📤 Daylight export revenue generated');
       console.log(
-        '  📊 Clear demonstration of overconsumption in daylight phase',
+        '  🏭 Sunset import necessity demonstrated with high consumption',
+      );
+      console.log('  📊 Clear demonstration of varying consumption patterns');
+      console.log(
+        '  🌆 Evening peak demand requires grid imports despite battery discharge',
       );
       console.log(
-        '  📊 Clear demonstration of underconsumption in sunset phase',
-      );
-      console.log(
-        '  🏘️ Community solar system handles varying consumption patterns',
-      );
-      console.log(
-        '  🎯 Import fairness: Community import costs properly accounted for',
+        '  🎯 Realistic scenario: Solar abundance (day) vs high demand (evening)',
       );
     });
 
@@ -770,15 +783,18 @@ describe('EnergyDistributionRealisticDailyScenario', function () {
       );
 
       console.log('\n🌆 SUNSET CHARACTERISTICS (SECOND HALF OF DAY):');
-      console.log('  🌤️ Limited solar: 100 kWh at higher $0.12/kWh');
-      console.log('  🏭 Heavy imports: 180 kWh at expensive $0.25/kWh');
+      console.log('  🌤️ Limited solar: 80 kWh at higher $0.12/kWh');
       console.log(
         '  🔋 Battery discharge: 50 kWh stored energy released (FULL DISCHARGE)',
       );
+      console.log('  📊 Community Resources: 130 kWh total (solar + battery)');
       console.log(
-        '  🏠 Moderate consumption: 153 kWh (underconsumption period)',
+        '  🏠 High evening demand: 250 kWh (peak consumption period)',
       );
-      console.log('  📤 Large export: 177 kWh surplus to grid');
+      console.log(
+        '  🏭 Import necessity: 120 kWh grid imports required for deficit',
+      );
+      console.log('  🚫 No export: All energy consumed due to high demand');
 
       console.log('\n🔑 KEY INSIGHTS:');
 
@@ -787,10 +803,10 @@ describe('EnergyDistributionRealisticDailyScenario', function () {
         '  • Daylight overconsumption clearly shown with multiple members exceeding allocations',
       );
       console.log(
-        '  • Sunset underconsumption maintained with several members using less than allocated',
+        '  • Sunset HIGH consumption with majority overconsumption requiring imports',
       );
       console.log(
-        '  • Role reversal: Some daylight overconsumers become sunset underconsumers',
+        '  • Limited underconsumers in sunset phase insufficient to avoid imports',
       );
       console.log(
         '  • Individual consumption patterns determine personal financial outcomes',
@@ -801,16 +817,16 @@ describe('EnergyDistributionRealisticDailyScenario', function () {
         '  • Daylight: Overconsumers pay underconsumers at cheap solar rates',
       );
       console.log(
-        '  • Sunset: Underconsumers earn credits from expensive import pricing',
+        '  • Sunset: High demand requires expensive imports shared fairly',
       );
       console.log(
-        '  • Export benefits: Shared proportionally among all members',
+        '  • Export benefits: Generated only during daylight surplus period',
       );
       console.log(
-        '  • Import costs: Community pool ensures fair pricing for over-consumers',
+        '  • Import costs: Shared proportionally based on consumption patterns',
       );
       console.log(
-        '  • Dynamic pricing: Members experience different rates based on consumption timing',
+        '  • Battery optimization: Stores cheap daylight solar for expensive evening use',
       );
 
       console.log('\n🏘️ Community Solar Benefits:');
@@ -829,10 +845,14 @@ describe('EnergyDistributionRealisticDailyScenario', function () {
         '  ✅ Realistic consumption variations handled across both phases',
       );
       console.log('  ✅ Clear overconsumption demonstrated in daylight phase');
-      console.log('  ✅ Clear underconsumption maintained in sunset phase');
+      console.log(
+        '  ✅ High consumption with import necessity demonstrated in sunset phase',
+      );
       console.log('  ✅ Battery charging/discharging cycles optimized');
       console.log('  ✅ Fair cost/benefit distribution maintained');
-      console.log('  ✅ Economic incentives align with community energy goals');
+      console.log(
+        '  ✅ Economic incentives align with community energy management goals',
+      );
 
       expect(true).to.be.true; // Test passes - this is an analysis test
     });
