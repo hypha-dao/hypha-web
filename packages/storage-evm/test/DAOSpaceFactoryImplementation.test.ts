@@ -3961,4 +3961,671 @@ describe('DAOSpaceFactoryImplementation', function () {
       );
     });
   });
+
+  describe('Proposal Quorum Calculation Tests', function () {
+    let daoProposals: any;
+    let spaceVotingPower: any;
+    let votingPowerDirectory: any;
+    let spaceId: any;
+    let regularTokenFactory: any;
+
+    beforeEach(async function () {
+      const {
+        daoSpaceFactory,
+        owner,
+        voter1,
+        voter2,
+        voter3,
+        other,
+        regularTokenFactory: regTokenFactory,
+      } = await loadFixture(deployFixture);
+
+      regularTokenFactory = regTokenFactory;
+
+      // Deploy a proper DAOProposals contract
+      const DAOProposals = await ethers.getContractFactory(
+        'DAOProposalsImplementation',
+      );
+      daoProposals = await upgrades.deployProxy(DAOProposals, [owner.address], {
+        initializer: 'initialize',
+        kind: 'uups',
+      });
+
+      // Deploy SpaceVotingPower for proposal voting
+      const SpaceVotingPower = await ethers.getContractFactory(
+        'SpaceVotingPowerImplementation',
+      );
+      spaceVotingPower = await upgrades.deployProxy(
+        SpaceVotingPower,
+        [owner.address],
+        { initializer: 'initialize', kind: 'uups' },
+      );
+
+      // Set up voting power directory
+      const VotingPowerDirectory = await ethers.getContractFactory(
+        'VotingPowerDirectoryImplementation',
+      );
+      votingPowerDirectory = await upgrades.deployProxy(
+        VotingPowerDirectory,
+        [owner.address],
+        { initializer: 'initialize', kind: 'uups' },
+      );
+
+      // Configure the contracts
+      await spaceVotingPower.setSpaceFactory(
+        await daoSpaceFactory.getAddress(),
+      );
+      await votingPowerDirectory.addVotingPowerSource(
+        await spaceVotingPower.getAddress(),
+      );
+      await daoProposals.setContracts(
+        await daoSpaceFactory.getAddress(),
+        await votingPowerDirectory.getAddress(),
+      );
+      await daoSpaceFactory.setContracts(
+        await daoSpaceFactory.joinMethodDirectoryAddress(),
+        await daoSpaceFactory.exitMethodDirectoryAddress(),
+        await daoProposals.getAddress(),
+      );
+
+      // Create a space with specific quorum and unity settings
+      const spaceParams = {
+        name: 'Quorum Test Space',
+        description: 'Testing quorum calculations',
+        imageUrl: 'https://test.com/image.png',
+        unity: 20, // 20% unity threshold
+        quorum: 80, // 80% quorum threshold
+        votingPowerSource: 1, // Space membership voting
+        exitMethod: 1,
+        joinMethod: 1,
+        createToken: false,
+        tokenName: '',
+        tokenSymbol: '',
+      };
+
+      await daoSpaceFactory.createSpace(spaceParams);
+      spaceId = await daoSpaceFactory.spaceCounter();
+
+      // Add 4 members to the space (total voting power = 4)
+      await daoSpaceFactory.connect(voter1).joinSpace(spaceId);
+      await daoSpaceFactory.connect(voter2).joinSpace(spaceId);
+      await daoSpaceFactory.connect(voter3).joinSpace(spaceId);
+      await daoSpaceFactory.connect(other).joinSpace(spaceId);
+
+      // Store references for other tests
+      this.daoProposals = daoProposals;
+      this.daoSpaceFactory = daoSpaceFactory;
+      this.regularTokenFactory = regularTokenFactory;
+      this.spaceVotingPower = spaceVotingPower;
+      this.spaceId = spaceId;
+      this.voter1 = voter1;
+      this.voter2 = voter2;
+      this.voter3 = voter3;
+      this.other = other;
+    });
+
+    it('DEBUGGING: Should store and retrieve space configurations correctly', async function () {
+      // Create a space with very specific unity/quorum values for debugging
+      const spaceParams = {
+        name: 'Debug Space',
+        description: 'Debugging space config storage',
+        imageUrl: 'https://test.com/debug.png',
+        unity: 25, // 25% unity
+        quorum: 75, // 75% quorum
+        votingPowerSource: 1,
+        exitMethod: 1,
+        joinMethod: 1,
+        createToken: false,
+        tokenName: '',
+        tokenSymbol: '',
+      };
+
+      console.log('\\n=== CREATING SPACE WITH CONFIG ===');
+      console.log(`Input unity: ${spaceParams.unity}`);
+      console.log(`Input quorum: ${spaceParams.quorum}`);
+
+      await this.daoSpaceFactory.createSpace(spaceParams);
+      const debugSpaceId = await this.daoSpaceFactory.spaceCounter();
+
+      console.log(
+        `\\n=== RETRIEVING SPACE CONFIG FOR SPACE ${debugSpaceId} ===`,
+      );
+      const spaceDetails = await this.daoSpaceFactory.getSpaceDetails(
+        debugSpaceId,
+      );
+
+      console.log(`Retrieved unity: ${spaceDetails.unity}`);
+      console.log(`Retrieved quorum: ${spaceDetails.quorum}`);
+      console.log(
+        `Retrieved votingPowerSource: ${spaceDetails.votingPowerSource}`,
+      );
+      console.log(`Retrieved creator: ${spaceDetails.creator}`);
+
+      // Direct assertions to see where the mismatch occurs
+      expect(spaceDetails.unity).to.equal(25);
+      expect(spaceDetails.quorum).to.equal(75);
+    });
+
+    it('ISOLATED: Should check quorum math without state pollution', async function () {
+      // Create a completely fresh space just for this test
+      const freshSpaceParams = {
+        name: 'Fresh Quorum Test Space',
+        description: 'Isolated test',
+        imageUrl: 'https://test.com/fresh.png',
+        unity: 30, // 30% unity
+        quorum: 70, // 70% quorum
+        votingPowerSource: 1,
+        exitMethod: 1,
+        joinMethod: 1,
+        createToken: false,
+        tokenName: '',
+        tokenSymbol: '',
+      };
+
+      await this.daoSpaceFactory.createSpace(freshSpaceParams);
+      const freshSpaceId = await this.daoSpaceFactory.spaceCounter();
+
+      // Add exactly 3 members to this fresh space (plus owner = 4 total)
+      const [, , , , , newMember1, newMember2, newMember3] =
+        await ethers.getSigners();
+      await this.daoSpaceFactory.connect(newMember1).joinSpace(freshSpaceId);
+      await this.daoSpaceFactory.connect(newMember2).joinSpace(freshSpaceId);
+      await this.daoSpaceFactory.connect(newMember3).joinSpace(freshSpaceId);
+
+      console.log(`\\n=== FRESH SPACE ${freshSpaceId} SETUP ===`);
+      const members = await this.daoSpaceFactory.getSpaceMembers(freshSpaceId);
+      console.log(`Total members: ${members.length}`);
+
+      const spaceDetails = await this.daoSpaceFactory.getSpaceDetails(
+        freshSpaceId,
+      );
+      console.log(
+        `Unity: ${spaceDetails.unity}, Quorum: ${spaceDetails.quorum}`,
+      );
+
+      // Create a proposal with a simple transaction
+      const dummyCalldata = '0x12345678'; // Simple dummy data
+      const proposalParams = {
+        spaceId: freshSpaceId,
+        duration: 86400,
+        transactions: [
+          {
+            target: await this.daoSpaceFactory.getAddress(), // Safe target
+            value: 0,
+            data: dummyCalldata,
+          },
+        ],
+      };
+
+      await this.daoProposals
+        .connect(newMember1)
+        .createProposal(proposalParams);
+      const proposalId = await this.daoProposals.proposalCounter();
+      console.log(`Created proposal ${proposalId}`);
+
+      // Check proposal state before voting
+      const proposalBefore = await this.daoProposals.getProposalCore(
+        proposalId,
+      );
+      console.log(`Proposal executed before voting: ${proposalBefore[3]}`);
+      console.log(`Total voting power at snapshot: ${proposalBefore[7]}`);
+
+      // Do the math manually to verify
+      const totalVotingPower = Number(proposalBefore[7]);
+      const quorumThreshold = Number(spaceDetails.quorum);
+      const requiredVotes = Math.ceil(
+        (quorumThreshold * totalVotingPower) / 100,
+      );
+      console.log(`\\n=== QUORUM MATH ===`);
+      console.log(`Total voting power: ${totalVotingPower}`);
+      console.log(`Quorum threshold: ${quorumThreshold}%`);
+      console.log(`Required votes for quorum: ${requiredVotes}`);
+
+      // Vote with just 1 person (should be insufficient)
+      console.log(`\\nVoting with 1 person (should be insufficient)...`);
+      await this.daoProposals.connect(newMember1).vote(proposalId, true);
+
+      const proposalAfter = await this.daoProposals.getProposalCore(proposalId);
+      console.log(`\\n=== AFTER 1 VOTE ===`);
+      console.log(`YES votes: ${proposalAfter[5]}`);
+      console.log(`NO votes: ${proposalAfter[6]}`);
+      console.log(
+        `Total votes cast: ${
+          Number(proposalAfter[5]) + Number(proposalAfter[6])
+        }`,
+      );
+      console.log(`Executed: ${proposalAfter[3]}`);
+
+      const votesCast = Number(proposalAfter[5]) + Number(proposalAfter[6]);
+      const participationPercent = (votesCast * 100) / totalVotingPower;
+      console.log(`Participation: ${participationPercent}%`);
+      console.log(
+        `Should execute: ${
+          participationPercent >= quorumThreshold ? 'YES' : 'NO'
+        }`,
+      );
+
+      // This should NOT be executed with 70% quorum and only 1 vote out of 4 (25% participation)
+      expect(proposalAfter[3]).to.equal(
+        false,
+        `Proposal should NOT execute with ${participationPercent}% participation when ${quorumThreshold}% quorum required`,
+      );
+    });
+
+    it('Should NOT execute proposal with 100% YES votes but insufficient quorum', async function () {
+      // With 80% quorum and 5 total voting power (owner + 4 members), need at least 4 votes for quorum
+      // But only 1 person votes YES - should not execute despite 100% YES rate
+
+      // Create a proposal to deploy a token (realistic DAO transaction)
+      const deployTokenCalldata =
+        this.regularTokenFactory.interface.encodeFunctionData('deployToken', [
+          this.spaceId,
+          'Test Token',
+          'TEST',
+          ethers.parseUnits('1000', 18), // maxSupply
+          true, // transferable
+          true, // isVotingToken
+        ]);
+
+      const proposalParams = {
+        spaceId: this.spaceId,
+        duration: 86400,
+        transactions: [
+          {
+            target: this.regularTokenFactory.target,
+            value: 0,
+            data: deployTokenCalldata,
+          },
+        ],
+      };
+
+      await this.daoProposals.createProposal(proposalParams);
+      const proposalId = await this.daoProposals.proposalCounter();
+
+      // Only voter1 votes YES
+      await this.daoProposals.connect(this.voter1).vote(proposalId, true);
+
+      // Check proposal status
+      const proposal = await this.daoProposals.getProposalCore(proposalId);
+
+      // With 20% participation and 80% quorum requirement, this should NOT execute
+      expect(proposal[3]).to.equal(false); // executed should be false
+      expect(proposal[5]).to.equal(1); // yesVotes should be 1
+      expect(proposal[6]).to.equal(0); // noVotes should be 0
+    });
+
+    it('Should NOT execute proposal with 2 YES votes (50% participation, below 80% quorum)', async function () {
+      // Create a proposal to deploy a different token
+      const deployTokenCalldata =
+        this.regularTokenFactory.interface.encodeFunctionData('deployToken', [
+          this.spaceId,
+          'Test Token 2',
+          'TEST2',
+          ethers.parseUnits('2000', 18), // maxSupply
+          true, // transferable
+          true, // isVotingToken
+        ]);
+
+      const proposalParams = {
+        spaceId: this.spaceId,
+        duration: 86400,
+        transactions: [
+          {
+            target: this.regularTokenFactory.target,
+            value: 0,
+            data: deployTokenCalldata,
+          },
+        ],
+      };
+
+      await this.daoProposals
+        .connect(this.voter1)
+        .createProposal(proposalParams);
+      const proposalId = await this.daoProposals.proposalCounter();
+
+      // Two voters vote YES (2 out of 5 = 40% participation, below 80% quorum)
+      await this.daoProposals.connect(this.voter1).vote(proposalId, true);
+      await this.daoProposals.connect(this.voter2).vote(proposalId, true);
+
+      // Check proposal status - should NOT be executed
+      const proposal = await this.daoProposals.getProposalCore(proposalId);
+      expect(proposal[3]).to.equal(false); // executed should be false
+      expect(proposal[5]).to.equal(2); // yesVotes should be 2
+      expect(proposal[6]).to.equal(0); // noVotes should be 0
+
+      console.log(
+        `Proposal with 2 YES votes (40% participation): NOT executed ✓`,
+      );
+    });
+
+    it('Should NOT execute proposal with 3 YES votes (60% participation, below 80% quorum)', async function () {
+      // Create a proposal to deploy a third token
+      const deployTokenCalldata =
+        this.regularTokenFactory.interface.encodeFunctionData('deployToken', [
+          this.spaceId,
+          'Test Token 3',
+          'TEST3',
+          ethers.parseUnits('3000', 18), // maxSupply
+          true, // transferable
+          true, // isVotingToken
+        ]);
+
+      const proposalParams = {
+        spaceId: this.spaceId,
+        duration: 86400,
+        transactions: [
+          {
+            target: this.regularTokenFactory.target,
+            value: 0,
+            data: deployTokenCalldata,
+          },
+        ],
+      };
+
+      await this.daoProposals
+        .connect(this.voter1)
+        .createProposal(proposalParams);
+      const proposalId = await this.daoProposals.proposalCounter();
+
+      // Three voters vote YES (3 out of 5 = 60% participation, still below 80% quorum)
+      await this.daoProposals.connect(this.voter1).vote(proposalId, true);
+      await this.daoProposals.connect(this.voter2).vote(proposalId, true);
+      await this.daoProposals.connect(this.voter3).vote(proposalId, true);
+
+      // Check proposal status - should NOT be executed
+      const proposal = await this.daoProposals.getProposalCore(proposalId);
+      expect(proposal[3]).to.equal(false); // executed should be false
+      expect(proposal[5]).to.equal(3); // yesVotes should be 3
+      expect(proposal[6]).to.equal(0); // noVotes should be 0
+
+      console.log(
+        `Proposal with 3 YES votes (60% participation): NOT executed ✓`,
+      );
+    });
+
+    it('Should execute proposal with 4 YES votes (80% participation, meets 80% quorum)', async function () {
+      // Create a proposal to deploy a fourth token
+      const deployTokenCalldata =
+        this.regularTokenFactory.interface.encodeFunctionData('deployToken', [
+          this.spaceId,
+          'Test Token 4',
+          'TEST4',
+          ethers.parseUnits('4000', 18), // maxSupply
+          true, // transferable
+          true, // isVotingToken
+        ]);
+
+      const proposalParams = {
+        spaceId: this.spaceId,
+        duration: 86400,
+        transactions: [
+          {
+            target: this.regularTokenFactory.target,
+            value: 0,
+            data: deployTokenCalldata,
+          },
+        ],
+      };
+
+      await this.daoProposals
+        .connect(this.voter1)
+        .createProposal(proposalParams);
+      const proposalId = await this.daoProposals.proposalCounter();
+
+      // Four voters vote YES (4 out of 5 = 80% participation, meets 80% quorum)
+      await this.daoProposals.connect(this.voter1).vote(proposalId, true);
+      await this.daoProposals.connect(this.voter2).vote(proposalId, true);
+      await this.daoProposals.connect(this.voter3).vote(proposalId, true);
+
+      // The last vote should trigger execution since we now have 80% participation
+      // and 100% YES votes (which exceeds the 20% unity threshold)
+      await this.daoProposals.connect(this.other).vote(proposalId, true);
+
+      // Check proposal status - should be executed
+      const proposal = await this.daoProposals.getProposalCore(proposalId);
+      expect(proposal[3]).to.equal(true); // executed should be true
+      expect(proposal[5]).to.equal(4); // yesVotes should be 4
+      expect(proposal[6]).to.equal(0); // noVotes should be 0
+
+      // Verify the token was actually deployed
+      const tokenEvents = await this.regularTokenFactory.queryFilter(
+        this.regularTokenFactory.filters.TokenDeployed(this.spaceId),
+      );
+      expect(tokenEvents.length).to.be.greaterThan(0);
+
+      console.log(`Proposal with 4 YES votes (80% participation): EXECUTED ✓`);
+    });
+
+    it('Should execute proposal with 3 YES, 1 NO vote (80% participation, 75% YES)', async function () {
+      // Create a proposal to deploy a fifth token
+      const deployTokenCalldata =
+        this.regularTokenFactory.interface.encodeFunctionData('deployToken', [
+          this.spaceId,
+          'Test Token 5',
+          'TEST5',
+          ethers.parseUnits('5000', 18), // maxSupply
+          true, // transferable
+          true, // isVotingToken
+        ]);
+
+      const proposalParams = {
+        spaceId: this.spaceId,
+        duration: 86400,
+        transactions: [
+          {
+            target: this.regularTokenFactory.target,
+            value: 0,
+            data: deployTokenCalldata,
+          },
+        ],
+      };
+
+      await this.daoProposals
+        .connect(this.voter1)
+        .createProposal(proposalParams);
+      const proposalId = await this.daoProposals.proposalCounter();
+
+      // Three YES votes, one NO vote (4 out of 5 = 80% participation, 75% YES)
+      // This meets 80% quorum and 75% > 20% unity threshold
+      await this.daoProposals.connect(this.voter1).vote(proposalId, true);
+      await this.daoProposals.connect(this.voter2).vote(proposalId, true);
+      await this.daoProposals.connect(this.voter3).vote(proposalId, true);
+      await this.daoProposals.connect(this.other).vote(proposalId, false);
+
+      // Check proposal status - should be executed
+      const proposal = await this.daoProposals.getProposalCore(proposalId);
+      expect(proposal[3]).to.equal(true); // executed should be true
+      expect(proposal[5]).to.equal(3); // yesVotes should be 3
+      expect(proposal[6]).to.equal(1); // noVotes should be 1
+
+      console.log(
+        `Proposal with 3 YES, 1 NO (80% participation, 75% YES): EXECUTED ✓`,
+      );
+    });
+
+    it('Should execute proposal with 1 YES, 3 NO votes (80% participation, 25% YES)', async function () {
+      // Create a proposal to deploy a sixth token
+      const deployTokenCalldata =
+        this.regularTokenFactory.interface.encodeFunctionData('deployToken', [
+          this.spaceId,
+          'Test Token 6',
+          'TEST6',
+          ethers.parseUnits('6000', 18), // maxSupply
+          true, // transferable
+          true, // isVotingToken
+        ]);
+
+      const proposalParams = {
+        spaceId: this.spaceId,
+        duration: 86400,
+        transactions: [
+          {
+            target: this.regularTokenFactory.target,
+            value: 0,
+            data: deployTokenCalldata,
+          },
+        ],
+      };
+
+      await this.daoProposals
+        .connect(this.voter1)
+        .createProposal(proposalParams);
+      const proposalId = await this.daoProposals.proposalCounter();
+
+      // One YES vote, three NO votes (4 out of 5 = 80% participation, but only 25% YES)
+      // This meets 80% quorum and 25% > 20% unity threshold - should execute
+      await this.daoProposals.connect(this.voter1).vote(proposalId, true);
+      await this.daoProposals.connect(this.voter2).vote(proposalId, false);
+      await this.daoProposals.connect(this.voter3).vote(proposalId, false);
+      await this.daoProposals.connect(this.other).vote(proposalId, false);
+
+      // Check proposal status - should be executed since 25% > 20% unity
+      const proposal = await this.daoProposals.getProposalCore(proposalId);
+      expect(proposal[3]).to.equal(true); // executed should be true
+      expect(proposal[5]).to.equal(1); // yesVotes should be 1
+      expect(proposal[6]).to.equal(3); // noVotes should be 3
+
+      console.log(
+        `Proposal with 1 YES, 3 NO (80% participation, 25% YES): EXECUTED ✓`,
+      );
+    });
+
+    it('Should test edge case: exactly 80% quorum with different vote distributions', async function () {
+      // For this test, we need exactly 80% participation
+      // Space will have 6 total members (owner + 5 joined)
+      // 80% of 6 = 4.8, so we need at least 5 votes for 80% quorum
+
+      // Create a new space with 6 total members
+      const spaceParams = {
+        name: 'Edge Case Quorum Test',
+        description: 'Testing exact quorum threshold',
+        imageUrl: 'https://test.com/image.png',
+        unity: 50, // 50% unity threshold
+        quorum: 80, // 80% quorum threshold
+        votingPowerSource: 1,
+        exitMethod: 1,
+        joinMethod: 1,
+        createToken: false,
+        tokenName: '',
+        tokenSymbol: '',
+      };
+
+      await this.daoSpaceFactory.createSpace(spaceParams);
+      const newSpaceId = await this.daoSpaceFactory.spaceCounter();
+
+      // Add 5 members (total voting power = 6 including owner)
+      await this.daoSpaceFactory.connect(this.voter1).joinSpace(newSpaceId);
+      await this.daoSpaceFactory.connect(this.voter2).joinSpace(newSpaceId);
+      await this.daoSpaceFactory.connect(this.voter3).joinSpace(newSpaceId);
+
+      // Use different accounts for the 4th and 5th members
+      const [, , , , , voter5, voter6] = await ethers.getSigners();
+      await this.daoSpaceFactory.connect(voter5).joinSpace(newSpaceId);
+      await this.daoSpaceFactory.connect(voter6).joinSpace(newSpaceId);
+
+      // Create a proposal to deploy a token for this new space
+      const deployTokenCalldata =
+        this.regularTokenFactory.interface.encodeFunctionData('deployToken', [
+          newSpaceId,
+          'Edge Case Token',
+          'EDGE',
+          ethers.parseUnits('8000', 18), // maxSupply
+          true, // transferable
+          true, // isVotingToken
+        ]);
+
+      const proposalParams = {
+        spaceId: newSpaceId,
+        duration: 86400,
+        transactions: [
+          {
+            target: this.regularTokenFactory.target,
+            value: 0,
+            data: deployTokenCalldata,
+          },
+        ],
+      };
+
+      await this.daoProposals
+        .connect(this.voter1)
+        .createProposal(proposalParams);
+      const proposalId = await this.daoProposals.proposalCounter();
+
+      // Test with exactly 5 votes out of 6 total (83.3% participation > 80% quorum)
+      // Cast 4 YES, 1 NO = 80% YES approval which meets 50% unity threshold
+      await this.daoProposals.connect(this.voter1).vote(proposalId, true);
+      await this.daoProposals.connect(this.voter2).vote(proposalId, true);
+      await this.daoProposals.connect(this.voter3).vote(proposalId, true);
+      await this.daoProposals.connect(voter5).vote(proposalId, true);
+      await this.daoProposals.connect(voter6).vote(proposalId, false);
+      // 4 YES, 1 NO = 5 total votes = 83.3% participation (meets 80% quorum)
+      // 4/5 = 80% YES approval (meets 50% unity threshold)
+
+      const proposal = await this.daoProposals.getProposalCore(proposalId);
+      expect(proposal[3]).to.equal(true); // should be executed
+      expect(proposal[5]).to.equal(4); // yesVotes
+      expect(proposal[6]).to.equal(1); // noVotes
+
+      console.log(`Edge case - 83.3% quorum (5/6 votes), 80% YES: EXECUTED ✓`);
+    });
+
+    it('Should demonstrate the difference between old and new quorum calculation', async function () {
+      // This test documents what the OLD (incorrect) vs NEW (correct) calculation would do
+
+      // Create a proposal to deploy a documentation token
+      const deployTokenCalldata =
+        this.regularTokenFactory.interface.encodeFunctionData('deployToken', [
+          this.spaceId,
+          'Documentation Token',
+          'DOC',
+          ethers.parseUnits('9000', 18), // maxSupply
+          true, // transferable
+          true, // isVotingToken
+        ]);
+
+      const proposalParams = {
+        spaceId: this.spaceId,
+        duration: 86400,
+        transactions: [
+          {
+            target: this.regularTokenFactory.target,
+            value: 0,
+            data: deployTokenCalldata,
+          },
+        ],
+      };
+
+      await this.daoProposals
+        .connect(this.voter1)
+        .createProposal(proposalParams);
+      const proposalId = await this.daoProposals.proposalCounter();
+
+      // Only 1 person votes YES out of 5 total voting power
+      await this.daoProposals.connect(this.voter1).vote(proposalId, true);
+
+      const proposal = await this.daoProposals.getProposalCore(proposalId);
+
+      console.log('\n=== QUORUM CALCULATION COMPARISON ===');
+      console.log(`Total voting power: 5`);
+      console.log(`YES votes: 1, NO votes: 0`);
+      console.log(`Quorum threshold: 80%`);
+      console.log(`Unity threshold: 20%`);
+
+      console.log('\nOLD (incorrect) calculation:');
+      console.log(`quorumReached = (yesVotes * 100) / totalVotingPower`);
+      console.log(`quorumReached = (1 * 100) / 5 = 20%`);
+      console.log(`20% >= 80%? NO - should not execute`);
+      console.log(`But OLD logic was flawed and might have executed`);
+
+      console.log('\nNEW (correct) calculation:');
+      console.log(`totalVotesCast = yesVotes + noVotes = 1 + 0 = 1`);
+      console.log(`quorumReached = (totalVotesCast * 100) / totalVotingPower`);
+      console.log(`quorumReached = (1 * 100) / 5 = 20%`);
+      console.log(`20% >= 80%? NO - correctly does not execute`);
+
+      // Verify the proposal was NOT executed (correct behavior)
+      expect(proposal[3]).to.equal(false);
+      console.log(`\nResult: Proposal correctly NOT executed ✓`);
+    });
+  });
 });
