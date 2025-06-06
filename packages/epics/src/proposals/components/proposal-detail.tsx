@@ -93,7 +93,7 @@ export const ProposalDetail = ({
           height={150}
           width={554}
           className="w-full object-cover rounded-lg max-h-[150px]"
-          src={leadImage ?? ''}
+          src={leadImage || '/placeholder/space-lead-image.png'}
           alt={title ?? ''}
         />
       </Skeleton>
