@@ -49,9 +49,7 @@ export function FilteredSpaces({
   return (
     <div className="space-y-6">
       <div className="justify-between items-center flex">
-        <Text className="text-4">
-          My Spaces | {spaces.length}
-        </Text>
+        <Text className="text-4">My Spaces | {spaces.length}</Text>
         <div className="flex items-center">
           <Link href={`/${lang}/my-spaces/create`} scroll={false}>
             <Button className="ml-2">
@@ -61,7 +59,11 @@ export function FilteredSpaces({
           </Link>
         </div>
       </div>
-      <SpaceCardList lang={lang} spaces={filteredSpaces} useMembers={useMembers} />
+      <SpaceCardList
+        lang={lang}
+        spaces={filteredSpaces}
+        useMembers={useMembers}
+      />
     </div>
   );
 }
