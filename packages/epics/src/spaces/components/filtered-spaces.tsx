@@ -4,20 +4,22 @@ import { Locale } from '@hypha-platform/i18n';
 import { Space } from '@core/space';
 import {
   UseMembers,
-  SpacesWithFilter,
   useMemberWeb3SpaceIds,
+  SpaceCardList,
 } from '@hypha-platform/epics';
-import { useState } from 'react';
 import { Person, useMe } from '@core/people';
 import React from 'react';
+import { Text } from '@radix-ui/themes';
+import Link from 'next/link';
+import { Button } from '@hypha-platform/ui';
+import { PlusIcon } from '@radix-ui/react-icons';
 
 function filterSpaces(
   spaces: Space[],
   user: Person | undefined,
-  mySpaces: boolean,
   web3SpaceIds: readonly bigint[] | undefined,
 ) {
-  if (!mySpaces || !user?.slug || !web3SpaceIds) {
+  if (!user?.slug || !web3SpaceIds) {
     return spaces;
   }
   const userSpaces: Space[] = spaces.filter((space) => {
@@ -25,10 +27,6 @@ function filterSpaces(
     return spaceId !== null && web3SpaceIds.includes(spaceId);
   });
   return userSpaces;
-}
-
-function isMySpace(value: string): boolean {
-  return value == 'my-spaces';
 }
 
 export function FilteredSpaces({
@@ -42,25 +40,28 @@ export function FilteredSpaces({
 }) {
   const { person: user } = useMe();
   const { web3SpaceIds } = useMemberWeb3SpaceIds();
-  const [showMySpaces, setShowMySpaces] = useState(true);
-
-  const handleChangeFilter = (value: string) => {
-    const mySpacesOnly = isMySpace(value);
-    setShowMySpaces(mySpacesOnly);
-  };
 
   const filteredSpaces = React.useMemo(
-    () => filterSpaces(spaces, user, showMySpaces, web3SpaceIds),
-    [spaces, user, showMySpaces, web3SpaceIds],
+    () => filterSpaces(spaces, user, web3SpaceIds),
+    [spaces, user, web3SpaceIds],
   );
 
   return (
-    <SpacesWithFilter
-      lang={lang}
-      spaces={filteredSpaces}
-      showMySpaces={showMySpaces}
-      useMembers={useMembers}
-      handleChangeFilter={handleChangeFilter}
-    />
+    <div className="space-y-6">
+      <div className="justify-between items-center flex">
+        <Text className="text-4">
+          My Spaces | {spaces.length}
+        </Text>
+        <div className="flex items-center">
+          <Link href={`/${lang}/my-spaces/create`} scroll={false}>
+            <Button className="ml-2">
+              <PlusIcon className="mr-2" />
+              Create Space
+            </Button>
+          </Link>
+        </div>
+      </div>
+      <SpaceCardList lang={lang} spaces={filteredSpaces} useMembers={useMembers} />
+    </div>
   );
 }
