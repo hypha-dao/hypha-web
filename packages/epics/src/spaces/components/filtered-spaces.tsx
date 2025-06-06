@@ -49,7 +49,7 @@ export function FilteredSpaces({
   return (
     <div className="space-y-6">
       <div className="justify-between items-center flex">
-        <Text className="text-4">My Spaces | {spaces.length}</Text>
+        <Text className="text-4">My Spaces | {filteredSpaces.length}</Text>
         <div className="flex items-center">
           <Link href={`/${lang}/my-spaces/create`} scroll={false}>
             <Button className="ml-2">
