@@ -42,7 +42,7 @@ export function FilteredSpaces({
 }) {
   const { person: user } = useMe();
   const { web3SpaceIds } = useMemberWeb3SpaceIds();
-  const [showMySpaces, setShowMySpaces] = useState(false);
+  const [showMySpaces, setShowMySpaces] = useState(true);
 
   const handleChangeFilter = (value: string) => {
     const mySpacesOnly = isMySpace(value);
