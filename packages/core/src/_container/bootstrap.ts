@@ -42,6 +42,4 @@ export function initializeContainer(): void {
   container.bind(PeopleService).toSelf().inTransientScope();
   container.bind(SpaceService).toSelf().inTransientScope();
   container.bind(DocumentService).toSelf().inTransientScope();
-
-  console.log('Container initialized with InversifyJS');
 }

@@ -56,6 +56,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
       </div>
       <div className="w-full flex flex-row">
         <Amount
+          className="text-secondary-foreground"
           isLoading={isLoading}
           value={usdEqual}
           variant="ghost"
@@ -65,7 +66,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
         <Amount
           className="ml-1"
           isLoading={isLoading}
-          value={usdEqual}
+          value={value}
           variant="ghost"
           size="xs"
         >

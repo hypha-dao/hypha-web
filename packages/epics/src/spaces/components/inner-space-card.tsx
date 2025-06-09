@@ -96,7 +96,7 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
           </Skeleton>
         </div>
 
-        <Skeleton width="200px" height="32px" loading={isLoading}>
+        {/* <Skeleton width="200px" height="32px" loading={isLoading}>
           <div>
             {isMember ? (
               <Button className="rounded-lg w-full" variant="outline">
@@ -115,7 +115,7 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
               </Button>
             )}
           </div>
-        </Skeleton>
+        </Skeleton> */}
       </CardContent>
     </Card>
   );
