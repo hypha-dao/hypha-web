@@ -250,20 +250,12 @@ contract DAOProposalsImplementation is
     // Calculate total participation
     uint256 totalVotesCast = proposal.yesVotes + proposal.noVotes;
 
-    // CRITICAL QUORUM CHECK: Avoid integer division by using multiplication
-    uint256 leftSide = totalVotesCast * 100;
-    uint256 rightSide = quorumThreshold * proposal.totalVotingPowerAtSnapshot;
-
     if (
       totalVotesCast * 100 <
       quorumThreshold * proposal.totalVotingPowerAtSnapshot
     ) {
       return; // Early return - insufficient participation
     }
-
-    // Only if quorum is met, check unity (approval rate among those who voted)
-    uint256 unityLeftSide = proposal.yesVotes * 100;
-    uint256 unityRightSide = unityThreshold * totalVotesCast;
 
     if (proposal.yesVotes * 100 >= unityThreshold * totalVotesCast) {
       proposal.executed = true;
