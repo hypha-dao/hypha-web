@@ -8,7 +8,7 @@ import { FilterParams } from '@hypha-platform/graphql/rsc';
 
 import { useSpaceSlug } from './use-space-slug';
 // TODO: #594 declare UI interface separately
-import { Document } from '@hypha-platform/core/client';
+import { Document, useBatchProposalDetailsWeb3Rpc } from '@hypha-platform/core/client';
 import { UseDocuments, UseDocumentsReturn } from '@hypha-platform/epics';
 
 export const useSpaceDocuments: UseDocuments = ({
@@ -39,7 +39,7 @@ export const useSpaceDocuments: UseDocuments = ({
     [spaceSlug, page, queryParams],
   );
 
-  const { data: response, isLoading } = useSWR(
+  const { data: response, isLoading: loadingApi } = useSWR(
     [endpoint],
     ([endpoint]) => fetch(endpoint).then((res) => res.json()),
     {
@@ -50,9 +50,42 @@ export const useSpaceDocuments: UseDocuments = ({
     },
   );
 
-  const getDocumentBadges = (document: Document) => {
-    switch (document.state) {
-      case 'proposal':
+  const documents: Document[] = response?.data || [];
+
+  const proposalIds = React.useMemo(
+    () => documents.map((doc) => Number(doc.web3ProposalId)),
+    [documents],
+  );
+
+  const {
+    proposalsDetails,
+    isLoading: loadingWeb3,
+    error: errorWeb3,
+  } = useBatchProposalDetailsWeb3Rpc({
+    proposalIds,
+  });
+
+  const getDocumentBadges = React.useCallback(
+    (document: Document, proposalDetails: any) => {
+      if (document.state === 'proposal' && proposalDetails) {
+        const now = new Date();
+
+        const expired = proposalDetails.endTime instanceof Date
+          ? now > proposalDetails.endTime
+          : false;
+
+        const executed = proposalDetails.executed;
+
+        let votingStatus = 'Unknown';
+
+        if (!expired && !executed) {
+          votingStatus = 'On Voting';
+        } else if (executed) {
+          votingStatus = 'Accepted';
+        } else if (expired && !executed) {
+          votingStatus = 'Rejected';
+        }
+
         return [
           {
             label: 'Proposal',
@@ -61,26 +94,56 @@ export const useSpaceDocuments: UseDocuments = ({
             colorVariant: 'accent',
           },
           {
-            label: 'On voting',
+            label: votingStatus,
             className: 'capitalize',
             variant: 'outline',
-            colorVariant: 'warn',
+            colorVariant:
+              votingStatus === 'On Voting'
+                ? 'warning'
+                : votingStatus === 'Accepted'
+                ? 'success'
+                : votingStatus === 'Rejected'
+                ? 'error'
+                : 'default',
           },
         ];
-      // TODO: added badges for other states when we have a completion state
-    }
-  };
+      }
 
-  const parsedData = response?.data.map((document: Document) => {
-    return {
-      ...document,
-      badges: getDocumentBadges(document),
-    };
-  });
+      return [];
+    },
+    [],
+  );
+
+  const enrichedDocuments = React.useMemo(() => {
+    if (!proposalsDetails) {
+      return documents.map((doc) => ({
+        ...doc,
+        badges: getDocumentBadges(doc, null),
+      }));
+    }
+
+    return documents.map((doc, index) => {
+      const rawDetails = proposalsDetails[index];
+
+      const proposalDetails = {
+        ...rawDetails,
+        expired:
+          rawDetails?.endTime instanceof Date
+            ? new Date() > rawDetails.endTime
+            : false,
+      };
+
+      return {
+        ...doc,
+        badges: getDocumentBadges(doc, proposalDetails),
+        proposalDetails,
+      };
+    });
+  }, [documents, proposalsDetails, getDocumentBadges]);
 
   return {
-    documents: parsedData || [],
+    documents: enrichedDocuments,
     pagination: response?.pagination,
-    isLoading,
+    isLoading: loadingApi || loadingWeb3,
   };
 };
