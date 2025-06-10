@@ -1,7 +1,7 @@
 'use client';
 
 import { CreateAgreementBaseFields } from '@hypha-platform/epics';
-import { useForm } from 'react-hook-form';
+import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   schemaChangeVotingMethod,
@@ -18,10 +18,10 @@ import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter } from 'next/navigation';
 import { useSpaceDetailsWeb3Rpc } from '@hypha-platform/core/client';
 
-type FormValues = z.infer<typeof schemaChangeVotingMethod>;
-
 const schemaCreateProposalChangeVotingMethod =
   schemaChangeVotingMethod.extend(createAgreementFiles);
+
+type FormValues = z.infer<typeof schemaCreateProposalChangeVotingMethod>;
 
 interface CreateProposalChangeVotingMethodFormProps {
   spaceId: number | undefined | null;
@@ -66,12 +66,24 @@ export const CreateProposalChangeVotingMethodForm = ({
       members: [],
       token: undefined as `0x${string}` | undefined,
       quorumAndUnity: {
-        quorum: Number(spaceDetails?.quorum),
-        unity: Number(spaceDetails?.unity),
+        quorum: Number(spaceDetails?.quorum || 0),
+        unity: Number(spaceDetails?.unity || 0),
       },
       votingMethod: undefined,
     },
   });
+  // For some reasons adding empty member directly in default values
+  // does not work as expected
+  const { fields, append } = useFieldArray({
+    control: form.control,
+    name: 'members',
+  });
+  if (fields.length === 0) {
+    append({
+      member: undefined as unknown as `0x${string}`,
+      number: undefined as unknown as number,
+    });
+  }
 
   const handleCreate = async (data: FormValues) => {
     if (!web3SpaceId || !data.votingMethod) return;
