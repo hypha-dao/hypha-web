@@ -48,32 +48,26 @@ export async function GET(
       );
     }
 
-    const [
-      /*unity*/,
-      /*quorum*/,
-      /*votingPowerSource*/,
-      tokenAdresses,
-      /*members*/,
-      /*exitMethod*/,
-      /*joinMethod*/,
-      /*createdAt*/,
-      /*creator*/,
-      spaceAddress,
-    ] = spaceDetails;
+    const [, , , tokenAdresses, , , , , , spaceAddress] = spaceDetails;
 
-    const assets = await Promise.all(tokenAdresses
-      .map((token, index) => new Erc20Provider({
-        getBalance: formGetBalance(token),
-        token: token,
-        slug: `${token}-${index}`,
-      }) as AssetProvider)
-      .concat(TOKENS)
-      .map(provider => provider.formItem(spaceAddress)));
-    const sorted = assets.sort((a, b) => a.usdEqual === b.usdEqual
-      ? b.value - a.value
-      : b.usdEqual - a.usdEqual);
+    const assets = await Promise.all(
+      tokenAdresses
+        .map(
+          (token, index) =>
+            new Erc20Provider({
+              getBalance: formGetBalance(token),
+              token: token,
+              slug: `${token}-${index}`,
+            }) as AssetProvider,
+        )
+        .concat(TOKENS)
+        .map((provider) => provider.formItem(spaceAddress)),
+    );
+    const sorted = assets.sort((a, b) =>
+      a.usdEqual === b.usdEqual ? b.value - a.value : b.usdEqual - a.usdEqual,
+    );
 
-    const url = new URL(request.url)
+    const url = new URL(request.url);
     const page = url.searchParams.get('page');
     const pageSize = url.searchParams.get('pageSize');
     const status = url.searchParams.get('status');
@@ -86,7 +80,7 @@ export async function GET(
     ) {
       return NextResponse.json(
         { error: 'Invalid page parameter' },
-        { status: 400 }
+        { status: 400 },
       );
     }
     if (
@@ -95,23 +89,20 @@ export async function GET(
     ) {
       return NextResponse.json(
         { error: 'Invalid pageSize parameter' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const paginated = paginate(
-      sorted,
-      {
-        page: parsedPage,
-        pageSize: parsedPageSize,
-        filter: status ? { status } : {},
-      },
-    )
+    const paginated = paginate(sorted, {
+      page: parsedPage,
+      pageSize: parsedPageSize,
+      filter: status ? { status } : {},
+    });
 
     return NextResponse.json({
       assets: paginated.paginatedData,
       pagination: paginated.pagination,
-      balance: sorted.reduce((sum, asset) => sum + (asset.usdEqual), 0)
+      balance: sorted.reduce((sum, asset) => sum + asset.usdEqual, 0),
     });
   } catch (error) {
     console.error('Failed to fetch assets:', error);

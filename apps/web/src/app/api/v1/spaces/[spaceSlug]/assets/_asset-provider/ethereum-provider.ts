@@ -11,21 +11,21 @@ export class EthereumProvider implements AssetProvider {
   private readonly getBalance: (address: Hex) => Promise<Balance>;
   private readonly usdEquivalent: (amount: number) => Promise<number>;
 
-  constructor(
-    opts: ProviderOpts,
-  ) {
+  constructor(opts: ProviderOpts) {
     this.icon = opts.icon || '/placeholder/eth.png';
     this.slug = opts.slug;
     this.closeUrl = opts.closeUrl || '';
     this.getBalance = opts.getBalance;
-    this.usdEquivalent = opts.usdEquivalent || function() {
-      return new Promise((resolve, _) => resolve(0));
-    }
+    this.usdEquivalent =
+      opts.usdEquivalent ||
+      function () {
+        return new Promise((resolve, _) => resolve(0));
+      };
   }
 
   async formItem(address: Hex): Promise<AssetItem> {
     const { amount, symbol, decimals } = await this.getBalance(address);
-    const value = +formatUnits((amount as bigint), (decimals as number));
+    const value = +formatUnits(amount as bigint, decimals as number);
 
     return {
       icon: this.icon,
@@ -40,6 +40,6 @@ export class EthereumProvider implements AssetProvider {
       transactions: [],
       closeUrl: this.closeUrl,
       slug: this.slug,
-    }
+    };
   }
 }
