@@ -130,8 +130,10 @@ export const ProposalDetail = ({
         unity={proposalDetails?.yesVotePercentage || 0}
         quorum={proposalDetails?.quorumPercentage || 0}
         endTime={formatISO(new Date(proposalDetails?.endTime || new Date()))}
+        executed={proposalDetails?.executed}
         onAccept={handleOnAccept}
         onReject={handleOnReject}
+        isLoading={isLoading}
       />
       <Separator />
       <CommentsList
