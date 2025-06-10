@@ -5,7 +5,7 @@ export type Balance = {
   amount: bigint;
   symbol: string;
   decimals: number;
-}
+};
 
 export type ProviderOpts = {
   slug: string;
@@ -17,10 +17,10 @@ export type ProviderOpts = {
 
   // Method to convert amount of provided token to its USD equivalent
   usdEquivalent?: (amount: number) => Promise<number>;
-}
+};
 
 export interface AssetProvider {
   // Should provide all necessary info about the asset with a balance for the
   // "address"
   formItem(address: Hex): Promise<AssetItem>;
-};
+}

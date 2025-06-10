@@ -1,4 +1,8 @@
-import { AssetProvider, Erc20Provider, EthereumProvider } from './_asset-provider';
+import {
+  AssetProvider,
+  Erc20Provider,
+  EthereumProvider,
+} from './_asset-provider';
 import { publicClient } from '@core/common';
 import { Hex, erc20Abi } from 'viem';
 
@@ -24,23 +28,23 @@ export const formGetBalance = (token: Hex) => {
         {
           ...contract,
           functionName: 'decimals',
-        }
-      ]
-    })
+        },
+      ],
+    });
 
-    const failure = balance.find(res => res.status === "failure");
+    const failure = balance.find((res) => res.status === 'failure');
     if (failure) {
       throw failure.error;
     }
 
-    const [amount, symbol, decimals] = balance.map(obj => obj.result);
+    const [amount, symbol, decimals] = balance.map((obj) => obj.result);
     return {
       amount: amount as bigint,
       symbol: symbol as string,
       decimals: decimals as number,
     };
-  }
-}
+  };
+};
 
 export const TOKENS: AssetProvider[] = [
   new EthereumProvider({
@@ -52,10 +56,10 @@ export const TOKENS: AssetProvider[] = [
       const amount = await publicClient.getBalance({
         blockTag: 'safe',
         address,
-      })
+      });
 
       return { amount, decimals, symbol };
-    }
+    },
   }),
   new Erc20Provider({
     token: '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',
@@ -76,6 +80,6 @@ export const TOKENS: AssetProvider[] = [
     getBalance: formGetBalance('0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf'),
     slug: 'cbBTC',
     name: 'Conibase Wrapped BTC',
-    icon: '/placeholder/cbBTC-icon.png'
+    icon: '/placeholder/cbBTC-icon.png',
   }),
-]
+];

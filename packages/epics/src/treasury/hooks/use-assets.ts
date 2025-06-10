@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react'
+import React from 'react';
 import useSWR from 'swr';
 import queryString from 'query-string';
 import {
@@ -37,20 +37,19 @@ export const useAssets = ({
   }, [page, pageSize, filter]);
 
   const endpoint = React.useMemo(() => {
-    return `/api/v1/spaces/${id}/assets${queryParams}`
+    return `/api/v1/spaces/${id}/assets${queryParams}`;
   }, [id, queryParams]);
 
-  const { data, isLoading } = useSWR(
-    [endpoint],
-    async ([endpoint]) => {
-      const res = await fetch(endpoint, {
-        headers: { 'Content-Type': 'application/json' },
-      });
-      return await res.json();
+  const { data, isLoading } = useSWR([endpoint], async ([endpoint]) => {
+    const res = await fetch(endpoint, {
+      headers: { 'Content-Type': 'application/json' },
     });
+    return await res.json();
+  });
 
   const typedData = data as UseAssetsReturn | undefined;
-  const hasValidData = typedData &&
+  const hasValidData =
+    typedData &&
     Array.isArray(typedData.assets) &&
     typeof typedData.balance === 'number';
 
