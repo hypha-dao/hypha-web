@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSpaceService } from '@hypha-platform/core/server';
 import { getSpaceDetails } from '@core/space';
 import { publicClient } from '@core/common';
-import { TOKENS } from './_tokens';
+import { TOKENS, formGetBalance } from './_tokens';
 import { Erc20Provider, AssetProvider } from './_asset-provider';
 import { paginate } from './_paginator';
 
@@ -63,7 +63,7 @@ export async function GET(
 
     const assets = await Promise.all(tokenAdresses
       .map((token, index) => new Erc20Provider({
-        client: publicClient,
+        getBalance: formGetBalance(token),
         token: token,
         slug: `${token}-${index}`,
       }) as AssetProvider)

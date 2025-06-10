@@ -1,11 +1,19 @@
 import { AssetItem } from '@hypha-platform/graphql/rsc';
-import { Hex, PublicClient } from 'viem';
+import { Hex } from 'viem';
+
+export type Balance = {
+  amount: bigint;
+  symbol: string;
+  decimals: number;
+}
 
 export type ProviderOpts = {
-  client: PublicClient;
   slug: string;
   icon?: string;
   closeUrl?: string;
+
+  // Method to get the balance of the address
+  getBalance: (address: Hex) => Promise<Balance>;
 
   // Method to convert amount of provided token to its USD equivalent
   usdEquivalent?: (amount: number) => Promise<number>;
