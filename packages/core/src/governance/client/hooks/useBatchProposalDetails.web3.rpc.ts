@@ -53,7 +53,6 @@ export const useBatchProposalDetailsWeb3Rpc = ({
           ? Math.min(100, (totalVotingPowerNumber / quorumTotal) * 100)
           : 0;
 
-
       return {
         creator,
         spaceId: Number(spaceId),

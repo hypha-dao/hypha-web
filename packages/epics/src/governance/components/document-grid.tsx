@@ -25,16 +25,24 @@ export const DocumentGrid = ({
   documents,
 }: DocumentGridProps) => {
   return (
-    <div className="w-full grid grid-cols-1 sm:grid-cols-3 space-x-2">
-      {documents.map((document) => (
-        <Link
-          href={`${basePath}/${document.slug}`}
-          key={document.slug}
-          scroll={false}
-        >
-          <DocumentCard {...document} isLoading={isLoading} />
-        </Link>
-      ))}
+    <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2">
+      {isLoading ? (
+        <>
+          <DocumentCard isLoading={true} />
+          <DocumentCard isLoading={true} />
+          <DocumentCard isLoading={true} />
+        </>
+      ) : (
+        documents.map((document) => (
+          <Link
+            href={`${basePath}/${document.slug}`}
+            key={document.slug}
+            scroll={false}
+          >
+            <DocumentCard {...document} isLoading={isLoading} />
+          </Link>
+        ))
+      )}
     </div>
   );
 };
