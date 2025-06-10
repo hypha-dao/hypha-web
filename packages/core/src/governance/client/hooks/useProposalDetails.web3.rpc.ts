@@ -15,10 +15,8 @@ import {
 
 export const useProposalDetailsWeb3Rpc = ({
   proposalId,
-  quorumTotal = 100,
 }: {
   proposalId: number;
-  quorumTotal?: number;
 }) => {
   const { data, isLoading, error } = useSWR(
     [proposalId, 'proposalDetails'],
@@ -50,8 +48,8 @@ export const useProposalDetailsWeb3Rpc = ({
 
     const totalVotingPowerNumber = Number(totalVotingPowerAtSnapshot);
     const quorumPercentage =
-      quorumTotal > 0
-        ? Math.min(100, (totalVotingPowerNumber / quorumTotal) * 100)
+      totalVotingPowerNumber > 0
+        ? (Number(yesVotes + noVotes) / totalVotingPowerNumber) * 100
         : 0;
 
     const transfers: {
@@ -283,7 +281,7 @@ export const useProposalDetailsWeb3Rpc = ({
       votingMethods,
       mintings,
     };
-  }, [data, quorumTotal]);
+  }, [data]);
 
   return {
     proposalDetails: parsedProposal,
