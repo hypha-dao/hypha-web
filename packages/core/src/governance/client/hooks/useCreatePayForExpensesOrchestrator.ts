@@ -23,20 +23,20 @@ type CreatePayForExpensesArg = z.infer<typeof schemaCreateAgreement> & {
   web3SpaceId?: number;
 };
 
-export type TaskName =
+type TaskName =
   | 'CREATE_WEB2_AGREEMENT'
   | 'CREATE_WEB3_AGREEMENT'
   | 'UPLOAD_FILES'
   | 'LINK_WEB2_AND_WEB3_AGREEMENT';
 
-export type TaskState = {
+type TaskState = {
   [K in TaskName]: {
     status: TaskStatus;
     message?: string;
   };
 };
 
-export enum TaskStatus {
+enum TaskStatus {
   IDLE = 'idle',
   IS_PENDING = 'isPending',
   IS_DONE = 'isDone',
@@ -50,7 +50,7 @@ const taskActionDescriptions: Record<TaskName, string> = {
   LINK_WEB2_AND_WEB3_AGREEMENT: 'Linking Web2 and Web3 agreements',
 };
 
-export type ProgressAction =
+type ProgressAction =
   | { type: 'START_TASK'; taskName: TaskName; message?: string }
   | { type: 'COMPLETE_TASK'; taskName: TaskName; message?: string }
   | { type: 'SET_ERROR'; taskName: TaskName; message: string }
@@ -63,7 +63,7 @@ const initialTaskState: TaskState = {
   LINK_WEB2_AND_WEB3_AGREEMENT: { status: TaskStatus.IDLE },
 };
 
-export const progressStateReducer = (
+const progressStateReducer = (
   state: TaskState,
   action: ProgressAction,
 ): TaskState => {
