@@ -319,53 +319,9 @@ export const mapToCreateProposalWeb3Input = (
   })),
 });
 
-export const createChangeEntryMethodFiles = {
-  image: z
-    .instanceof(File)
-    .refine(
-      (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-      'File size must be less than 5MB',
-    )
-    .refine(
-      (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
-      'File must be an image (JPEG, PNG, GIF, WEBP)',
-    )
-    .optional(),
-  attachments: z.array(z.instanceof(File)).optional(),
-};
-
-export const schemaCreateChangeEntryMethodFiles = z.object(
-  createChangeEntryMethodFiles,
-);
-
-const createChangeEntryMethodWeb2Props = {
-  title: z.string().min(1).max(50),
-  description: z.string().min(1).max(4000),
-  slug: z
-    .string()
-    .min(1)
-    .max(50)
-    .regex(
-      /^[a-z0-9-]+$/,
-      'Slug must contain only lowercase letters, numbers, and hyphens',
-    )
-    .optional(),
-  creatorId: z.number().min(1),
-  spaceId: z.number().min(1),
-  web3ProposalId: z.number().optional(),
-};
-
-export const schemaCreateChangeEntryMethodWeb2 = z.object(
-  createChangeEntryMethodWeb2Props,
-);
-
-export const schemaCreateChangeEntryMethod = z.object({
-  ...createChangeEntryMethodWeb2Props,
-});
-
-export const schemaCreateChangeEntryMethodForm = z.object({
-  ...createChangeEntryMethodWeb2Props,
-  ...createChangeEntryMethodFiles,
+export const schemaChangeEntryMethod = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
   entryMethod: z
     .number()
     .int()
@@ -384,3 +340,69 @@ export const schemaCreateChangeEntryMethodForm = z.object({
     })
     .optional(),
 });
+
+// export const createChangeEntryMethodFiles = {
+//   image: z
+//     .instanceof(File)
+//     .refine(
+//       (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
+//       'File size must be less than 5MB',
+//     )
+//     .refine(
+//       (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
+//       'File must be an image (JPEG, PNG, GIF, WEBP)',
+//     )
+//     .optional(),
+//   attachments: z.array(z.instanceof(File)).optional(),
+// };
+
+// export const schemaCreateChangeEntryMethodFiles = z.object(
+//   createChangeEntryMethodFiles,
+// );
+
+// const createChangeEntryMethodWeb2Props = {
+//   title: z.string().min(1).max(50),
+//   description: z.string().min(1).max(4000),
+//   slug: z
+//     .string()
+//     .min(1)
+//     .max(50)
+//     .regex(
+//       /^[a-z0-9-]+$/,
+//       'Slug must contain only lowercase letters, numbers, and hyphens',
+//     )
+//     .optional(),
+//   creatorId: z.number().min(1),
+//   spaceId: z.number().min(1),
+//   web3ProposalId: z.number().optional(),
+// };
+
+// export const schemaCreateChangeEntryMethodWeb2 = z.object(
+//   createChangeEntryMethodWeb2Props,
+// );
+
+// export const schemaCreateChangeEntryMethod = z.object({
+//   ...createChangeEntryMethodWeb2Props,
+// });
+
+// export const schemaCreateChangeEntryMethodForm = z.object({
+//   ...createChangeEntryMethodWeb2Props,
+//   ...createChangeEntryMethodFiles,
+//   entryMethod: z
+//     .number()
+//     .int()
+//     .min(EntryMethodType.OPEN_ACCESS)
+//     .max(EntryMethodType.INVITE_ONLY),
+//   tokenBase: z
+//     .object({
+//       amount: z
+//         .number()
+//         .int('Should be integer')
+//         .min(0, 'Cannot be negative value'),
+//       token: z
+//         .string()
+//         .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' })
+//         .min(1, { message: 'Token address is required' }),
+//     })
+//     .optional(),
+// });

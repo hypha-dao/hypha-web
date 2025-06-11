@@ -24,9 +24,10 @@ import { Text } from '@radix-ui/themes';
 import {
   Address,
   ALLOWED_IMAGE_FILE_SIZE,
-  schemaCreateChangeEntryMethodForm,
+  createAgreementFiles,
+  schemaChangeEntryMethod,
   TokenBase,
-  useCreateChangeEntryMethodOrchestrator,
+  useChangeEntryMethodOrchestrator,
   useJwt,
   useMe,
 } from '@hypha-platform/core/client';
@@ -44,7 +45,7 @@ import { useTokens } from '@hypha-platform/epics';
 import { useSpaceDetailsWeb3Rpc } from '@hypha-platform/core/client';
 
 const fullSchemaCreateChangeEntryMethodForm =
-  schemaCreateChangeEntryMethodForm.extend({});
+  schemaChangeEntryMethod.extend(createAgreementFiles);
 
 type FormValues = z.infer<typeof fullSchemaCreateChangeEntryMethodForm>;
 
@@ -97,7 +98,7 @@ export const ChangeEntryMethodForm = ({
     isPending,
     progress,
     changeEntryMethod: { slug: agreementSlug },
-  } = useCreateChangeEntryMethodOrchestrator({ authToken: jwt, config });
+  } = useChangeEntryMethodOrchestrator({ authToken: jwt, config });
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({
     spaceId: spaceId as number,
   });
@@ -261,7 +262,7 @@ export const ChangeEntryMethodForm = ({
           </div>
           <FormField
             control={form.control}
-            name="image"
+            name="leadImage"
             render={({ field }) => (
               <FormItem>
                 <FormControl>

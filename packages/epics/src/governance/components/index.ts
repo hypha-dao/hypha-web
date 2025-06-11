@@ -6,6 +6,7 @@ export * from './create-deploy-funds-form';
 export * from './proposal-transaction-item';
 export * from './create-propose-a-contribution-form';
 export * from './create-proposal-change-voting-method-form';
+export * from './create-proposal-change-entry-method-form';
 export * from './issue-new-token-form';
 export * from './proposal-token-items';
 export * from './proposal-voting-info';

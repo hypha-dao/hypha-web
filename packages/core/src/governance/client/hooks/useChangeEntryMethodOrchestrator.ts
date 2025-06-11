@@ -6,16 +6,14 @@ import { z } from 'zod';
 import { produce } from 'immer';
 import React, { useCallback } from 'react';
 
-import { useChangeEntryMethodMutationsWeb2Rpc } from './useChangeEntryMethodMutations.web2.rpc';
 import { useChangeEntryMethodMutationsWeb3Rpc } from './useChangeEntryMethodMutations.web3.rpc';
 import useSWRMutation from 'swr/mutation';
 import {
-  schemaCreateChangeEntryMethod,
-  schemaCreateChangeEntryMethodFiles,
-  schemaCreateChangeEntryMethodWeb2,
+  schemaCreateAgreementWeb2,
+  schemaCreateAgreementFiles,
 } from '../../validation';
-import { useChangeEntryMethodFileUploads } from './useChangeEntryMethodFileUploads';
 import { EntryMethodType, TokenBase } from '@core/governance/types';
+import { useAgreementFileUploads, useAgreementMutationsWeb2Rsc } from '@hypha-platform/core/client';
 
 type UseCreateChangeEntryMethodOrchestratorInput = {
   authToken?: string | null;
@@ -105,19 +103,19 @@ const computeProgress = (tasks: TaskState): number => {
 };
 
 type CreateChangeEntryMethodArg = z.infer<
-  typeof schemaCreateChangeEntryMethod
+  typeof schemaCreateAgreementWeb2
 > & {
   entryMethod: number;
   web3SpaceId?: number;
   tokenBase?: TokenBase;
 };
 
-export const useCreateChangeEntryMethodOrchestrator = ({
+export const useChangeEntryMethodOrchestrator = ({
   authToken,
   config,
 }: UseCreateChangeEntryMethodOrchestratorInput) => {
-  const changeEntryMethodFiles = useChangeEntryMethodFileUploads(authToken);
-  const web2 = useChangeEntryMethodMutationsWeb2Rpc(authToken);
+  const agreementFiles = useAgreementFileUploads(authToken);
+  const web2 = useAgreementMutationsWeb2Rsc(authToken);
   const web3 = useChangeEntryMethodMutationsWeb3Rpc(config);
 
   const [taskState, dispatch] = React.useReducer(
@@ -159,16 +157,14 @@ export const useCreateChangeEntryMethodOrchestrator = ({
     'createChangeEntryMethodOrchestration',
     async (_, { arg }: { arg: CreateChangeEntryMethodArg }) => {
       startTask('CREATE_WEB2_CHANGE_ENTRY_METHOD');
-      const inputCreateChangeEntryMethodWeb2 =
-        schemaCreateChangeEntryMethodWeb2.parse(arg);
-      const createdChangeEntryMethod = await web2.createChangeEntryMethod(
-        inputCreateChangeEntryMethodWeb2,
+      const inputWeb2 =
+        schemaCreateAgreementWeb2.parse(arg);
+      const createdAgreement = await web2.createAgreement(
+        inputWeb2,
       );
       completeTask('CREATE_WEB2_CHANGE_ENTRY_METHOD');
 
-      let web3ProposalResult = undefined;
-      const web2Slug =
-        createdChangeEntryMethod?.slug ?? web2.createdChangeEntryMethod?.slug;
+      const web2Slug = createdAgreement?.slug;
       const web3SpaceId = arg.web3SpaceId;
       const joinMethod = arg.entryMethod;
       const tokenBase = arg.tokenBase;
@@ -193,7 +189,7 @@ export const useCreateChangeEntryMethodOrchestrator = ({
             );
           }
           startTask('CREATE_WEB3_CHANGE_ENTRY_METHOD');
-          web3ProposalResult = await web3.createChangeEntryMethod({
+          await web3.createChangeEntryMethod({
             spaceId: web3SpaceId,
             joinMethod: joinMethod,
             tokenBase: tokenBase,
@@ -202,31 +198,31 @@ export const useCreateChangeEntryMethodOrchestrator = ({
         }
       } catch (err) {
         if (web2Slug) {
-          await web2.deleteChangeEntryMethodBySlug({ slug: web2Slug });
+          await web2.deleteAgreementBySlug({ slug: web2Slug });
         }
         throw err;
       }
 
       startTask('UPLOAD_FILES');
-      const inputFiles = schemaCreateChangeEntryMethodFiles.parse(arg);
-      await changeEntryMethodFiles.upload(inputFiles);
+      const inputFiles = schemaCreateAgreementFiles.parse(arg);
+      await agreementFiles.upload(inputFiles);
       completeTask('UPLOAD_FILES');
     },
   );
 
-  const { data: updatedWeb2ChangeEntryMethod } = useSWR(
-    web2.createdChangeEntryMethod?.slug && changeEntryMethodFiles.files
+  const { data: updatedWeb2Agreement } = useSWR(
+    web2.createdAgreement?.slug && agreementFiles.files
       ? [
-          web2.createdChangeEntryMethod.slug,
-          changeEntryMethodFiles.files,
-          web3.createdChangeEntryMethod?.proposalId,
-          'updatingCreatedChangeEntryMethod',
+          web2.createdAgreement.slug,
+          agreementFiles.files,
+          web3.changeEntryMethodData?.proposalId,
+          'linkingWeb2AndWeb3Token',
         ]
       : null,
     async ([slug, uploadedFiles, web3ProposalId]) => {
       try {
         startTask('LINK_WEB2_AND_WEB3_CHANGE_ENTRY_METHOD');
-        const result = await web2.updateChangeEntryMethodBySlug({
+        const result = await web2.updateAgreementBySlug({
           slug,
           web3ProposalId: web3ProposalId ? Number(web3ProposalId) : undefined,
           attachments: uploadedFiles.attachments
@@ -234,7 +230,7 @@ export const useCreateChangeEntryMethodOrchestrator = ({
               ? uploadedFiles.attachments
               : [uploadedFiles.attachments]
             : [],
-          image: uploadedFiles.image,
+          leadImage: uploadedFiles.leadImage,
         });
         completeTask('LINK_WEB2_AND_WEB3_CHANGE_ENTRY_METHOD');
         return result;
@@ -249,28 +245,24 @@ export const useCreateChangeEntryMethodOrchestrator = ({
 
   const errors = React.useMemo(() => {
     return [
-      web2.errorCreateChangeEntryMethodMutation,
-      web3.errorCreateChangeEntryMethod,
-      web3.errorWaitChangeEntryMethodFromTransaction,
+      web2.errorCreateAgreementMutation,
+      web3.errorChangeEntryMethod,
+      web3.errorWaitProposalFromTx,
     ].filter(Boolean);
-  }, [
-    web2.errorCreateChangeEntryMethodMutation,
-    web3.errorCreateChangeEntryMethod,
-    web3.errorWaitChangeEntryMethodFromTransaction,
-  ]);
+  }, [web2, web3]);
 
   const reset = useCallback(() => {
     resetTasks();
-    web2.resetCreateChangeEntryMethodMutation();
-    web3.resetCreateChangeEntryMethodMutation();
+    web2.resetCreateAgreementMutation();
+    web3.resetChangeEntryMethod();
   }, [resetTasks, web2, web3]);
 
   return {
     reset,
     createChangeEntryMethod,
     changeEntryMethod: {
-      ...updatedWeb2ChangeEntryMethod,
-      ...web3.createdChangeEntryMethod,
+      ...updatedWeb2Agreement,
+      ...web3.changeEntryMethodData,
     },
     taskState,
     currentAction,
