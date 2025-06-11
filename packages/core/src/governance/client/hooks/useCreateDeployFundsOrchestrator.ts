@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
 import { Config } from '@wagmi/core';
 import { z } from 'zod';
+import { produce } from 'immer';
 
 import {
   schemaCreateAgreement,
@@ -12,13 +13,95 @@ import {
   schemaCreateAgreementFiles,
 } from '../../validation';
 
+import { useAgreementMutationsWeb2Rsc } from './useAgreementMutations.web2.rsc';
 import { useDeployFundsMutationsWeb3Rpc } from './useDeployFundsMutations.web3.rpc';
-import { useOrchestratorTasks } from './useOrchestratorTasks';
+import { useAgreementFileUploads } from './useAgreementFileUploads';
 
 type CreateDeployFundsArg = z.infer<typeof schemaCreateAgreement> & {
   payouts: { amount: string; token: string }[];
   recipient: string;
   web3SpaceId?: number;
+};
+
+export type TaskName =
+  | 'CREATE_WEB2_AGREEMENT'
+  | 'CREATE_WEB3_AGREEMENT'
+  | 'UPLOAD_FILES'
+  | 'LINK_WEB2_AND_WEB3_AGREEMENT';
+
+export type TaskState = {
+  [K in TaskName]: {
+    status: TaskStatus;
+    message?: string;
+  };
+};
+
+export enum TaskStatus {
+  IDLE = 'idle',
+  IS_PENDING = 'isPending',
+  IS_DONE = 'isDone',
+  ERROR = 'error',
+}
+
+const taskActionDescriptions: Record<TaskName, string> = {
+  CREATE_WEB2_AGREEMENT: 'Creating Web2 agreement...',
+  CREATE_WEB3_AGREEMENT: 'Creating Web3 agreement...',
+  UPLOAD_FILES: 'Uploading Agreement Files...',
+  LINK_WEB2_AND_WEB3_AGREEMENT: 'Linking Web2 and Web3 agreements',
+};
+
+export type ProgressAction =
+  | { type: 'START_TASK'; taskName: TaskName; message?: string }
+  | { type: 'COMPLETE_TASK'; taskName: TaskName; message?: string }
+  | { type: 'SET_ERROR'; taskName: TaskName; message: string }
+  | { type: 'RESET' };
+
+const initialTaskState: TaskState = {
+  CREATE_WEB2_AGREEMENT: { status: TaskStatus.IDLE },
+  CREATE_WEB3_AGREEMENT: { status: TaskStatus.IDLE },
+  UPLOAD_FILES: { status: TaskStatus.IDLE },
+  LINK_WEB2_AND_WEB3_AGREEMENT: { status: TaskStatus.IDLE },
+};
+
+export const progressStateReducer = (
+  state: TaskState,
+  action: ProgressAction,
+): TaskState => {
+  return produce(state, (draft) => {
+    switch (action.type) {
+      case 'START_TASK':
+        draft[action.taskName].status = TaskStatus.IS_PENDING;
+        if (action.message) {
+          draft[action.taskName].message = action.message;
+        }
+        break;
+      case 'COMPLETE_TASK':
+        draft[action.taskName].status = TaskStatus.IS_DONE;
+        if (action.message) {
+          draft[action.taskName].message = action.message;
+        }
+        break;
+      case 'SET_ERROR':
+        draft[action.taskName].status = TaskStatus.ERROR;
+        draft[action.taskName].message = action.message;
+        break;
+      case 'RESET':
+        return initialTaskState;
+    }
+  });
+};
+
+const computeProgress = (tasks: TaskState): number => {
+  const taskList = Object.values(tasks);
+  const totalTasks = taskList.length;
+  if (totalTasks === 0) return 0;
+  const completedTasks = taskList.filter(
+    (t) => t.status === TaskStatus.IS_DONE,
+  ).length;
+  const inProgressTasks =
+    taskList.filter((t) => t.status === TaskStatus.IS_PENDING).length * 0.5;
+  const progress = ((completedTasks + inProgressTasks) / totalTasks) * 100;
+  return Math.min(100, Math.max(0, Math.round(progress)));
 };
 
 export const useCreateDeployFundsOrchestrator = ({
@@ -28,18 +111,44 @@ export const useCreateDeployFundsOrchestrator = ({
   authToken?: string | null;
   config?: Config;
 }) => {
+  const agreementFiles = useAgreementFileUploads(authToken);
+  const web2 = useAgreementMutationsWeb2Rsc(authToken);
   const web3 = useDeployFundsMutationsWeb3Rpc(config);
-  const {
-    taskState,
-    currentAction,
-    agreementFiles,
-    web2,
-    progress,
-    startTask,
-    completeTask,
-    errorTask,
-    resetTasks,
-  } = useOrchestratorTasks({ authToken });
+
+  const [taskState, dispatch] = React.useReducer(
+    progressStateReducer,
+    initialTaskState,
+  );
+  const progress = computeProgress(taskState);
+  const [currentAction, setCurrentAction] = React.useState<string>();
+
+  const startTask = useCallback((taskName: TaskName) => {
+    const action = taskActionDescriptions[taskName];
+    setCurrentAction(action);
+    dispatch({ type: 'START_TASK', taskName, message: action });
+  }, []);
+
+  const completeTask = useCallback(
+    (taskName: TaskName) => {
+      if (currentAction === taskActionDescriptions[taskName])
+        setCurrentAction(undefined);
+      dispatch({ type: 'COMPLETE_TASK', taskName });
+    },
+    [currentAction],
+  );
+
+  const errorTask = useCallback(
+    (taskName: TaskName, error: string) => {
+      if (currentAction === taskActionDescriptions[taskName])
+        setCurrentAction(undefined);
+      dispatch({ type: 'SET_ERROR', taskName, message: error });
+    },
+    [currentAction],
+  );
+
+  const resetTasks = useCallback(() => {
+    dispatch({ type: 'RESET' });
+  }, []);
 
   const { trigger: createDeployFunds } = useSWRMutation(
     'createDeployFundsOrchestration',
