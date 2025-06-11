@@ -22,12 +22,17 @@ export const ChangeVotingMethodPlugin = ({
   const handleMethodChange = (method: string | null) => {
     setSelectedMethod(method);
     setValue('votingMethod', method as '1m1v' | '1v1v' | '1t1v');
-    setValue('members', [
-      {
-        member: undefined,
-        number: undefined,
-      },
-    ]);
+    setValue(
+      'members',
+      method === '1v1v'
+        ? [
+            {
+              member: undefined,
+              number: undefined,
+            },
+          ]
+        : [],
+    );
     setValue('token', undefined);
   };
 
