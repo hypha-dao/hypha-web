@@ -18,10 +18,10 @@ import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter } from 'next/navigation';
 import { useSpaceDetailsWeb3Rpc } from '@hypha-platform/core/client';
 
-type FormValues = z.infer<typeof schemaChangeVotingMethod>;
-
 const schemaCreateProposalChangeVotingMethod =
   schemaChangeVotingMethod.extend(createAgreementFiles);
+
+type FormValues = z.infer<typeof schemaCreateProposalChangeVotingMethod>;
 
 interface CreateProposalChangeVotingMethodFormProps {
   spaceId: number | undefined | null;
@@ -66,8 +66,8 @@ export const CreateProposalChangeVotingMethodForm = ({
       members: [],
       token: undefined as `0x${string}` | undefined,
       quorumAndUnity: {
-        quorum: Number(spaceDetails?.quorum),
-        unity: Number(spaceDetails?.unity),
+        quorum: Number(spaceDetails?.quorum || 0),
+        unity: Number(spaceDetails?.unity || 0),
       },
       votingMethod: undefined,
     },

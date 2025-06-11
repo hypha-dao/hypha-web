@@ -1,7 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { VotingMethodSelector } from '../../components/voting-method-selector';
+import {
+  type VotingMethodId,
+  VotingMethodSelector,
+} from '../../components/voting-method-selector';
 import { Person } from '@core/people';
 import { MemberWithNumberFieldFieldArray } from '../components/common/member-with-number-field-array';
 import { TokenSelectorField } from '../components/common/token-selector-field';
@@ -19,10 +22,20 @@ export const ChangeVotingMethodPlugin = ({
   const { tokens } = useTokens();
   const { setValue } = useFormContext();
 
-  const handleMethodChange = (method: string | null) => {
+  const handleMethodChange = (method: VotingMethodId | null) => {
     setSelectedMethod(method);
-    setValue('votingMethod', method as '1m1v' | '1v1v' | '1t1v');
-    setValue('members', []);
+    setValue('votingMethod', method);
+    setValue(
+      'members',
+      method === '1v1v'
+        ? [
+            {
+              member: undefined,
+              number: undefined,
+            },
+          ]
+        : [],
+    );
     setValue('token', undefined);
   };
 
