@@ -1,7 +1,7 @@
 'use client';
 
 import { CreateAgreementBaseFields } from '@hypha-platform/epics';
-import { useFieldArray, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   schemaChangeVotingMethod,
@@ -72,18 +72,6 @@ export const CreateProposalChangeVotingMethodForm = ({
       votingMethod: undefined,
     },
   });
-  // For some reasons adding empty member directly in default values
-  // does not work as expected
-  const { fields, append } = useFieldArray({
-    control: form.control,
-    name: 'members',
-  });
-  if (fields.length === 0) {
-    append({
-      member: undefined as unknown as `0x${string}`,
-      number: undefined as unknown as number,
-    });
-  }
 
   const handleCreate = async (data: FormValues) => {
     if (!web3SpaceId || !data.votingMethod) return;
