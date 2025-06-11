@@ -71,7 +71,7 @@ export const useSpaceDocuments: UseDocuments = ({
     }
   };
 
-  const parsedData = response?.data.map((document: Document) => {
+  const parsedData = response?.data?.map((document: Document) => {
     return {
       ...document,
       badges: getDocumentBadges(document),
