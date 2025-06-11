@@ -11,7 +11,7 @@ import { schemaCreateProposalWeb3 } from '@core/governance/validation';
 import useSWR from 'swr';
 import { z } from 'zod';
 import { publicClient } from '@core/common/web3/public-client';
-import { encodeFunctionData, EncodeFunctionDataReturnType } from 'viem';
+import { encodeFunctionData } from 'viem';
 import {
   daoSpaceFactoryImplementationAbi,
   daoSpaceFactoryImplementationAddress,
@@ -51,27 +51,22 @@ function setTokenRequirementTx(
   };
 }
 
+interface ChangeEntryMethodArgs {
+  spaceId: number;
+  joinMethod: number;
+  tokenBase?: TokenBase;
+}
+
 export const useChangeEntryMethodMutationsWeb3Rpc = (config?: Config) => {
   const {
-    trigger: createChangeEntryMethodMutation,
-    reset: resetCreateChangeEntryMethodMutation,
-    isMutating: isCreatingChangeEntryMethod,
-    data: createChangeEntryMethodHash,
-    error: errorCreateChangeEntryMethod,
+    trigger: createChangeEntryMethod,
+    reset: resetChangeEntryMethod,
+    isMutating: isChangeEntryMethodMutating,
+    data: createProposalHash,
+    error: errorChangeEntryMethod,
   } = useSWRMutation(
     config ? [config, 'changeEntryMethod'] : null,
-    async (
-      [config],
-      {
-        arg,
-      }: {
-        arg: {
-          spaceId: number;
-          joinMethod: number;
-          tokenBase?: TokenBase;
-        };
-      },
-    ) => {
+    async ([config], { arg }: { arg: ChangeEntryMethodArgs }) => {
       const transactions: TxData[] = [];
       switch (arg.joinMethod) {
         case EntryMethodType.OPEN_ACCESS:
@@ -107,13 +102,11 @@ export const useChangeEntryMethodMutationsWeb3Rpc = (config?: Config) => {
   );
 
   const {
-    data: createdChangeEntryMethod,
-    isLoading: isLoadingChangeEntryMethodFromTransaction,
-    error: errorWaitChangeEntryMethodFromTransaction,
+    data: changeEntryMethodData,
+    isLoading: isLoadingProposalFromTx,
+    error: errorWaitProposalFromTx,
   } = useSWR(
-    createChangeEntryMethodHash
-      ? [createChangeEntryMethodHash, 'waitFor']
-      : null,
+    createProposalHash ? [createProposalHash, 'waitFor'] : null,
     async ([hash]) => {
       const { logs } = await publicClient.waitForTransactionReceipt({
         hash,
@@ -123,13 +116,13 @@ export const useChangeEntryMethodMutationsWeb3Rpc = (config?: Config) => {
   );
 
   return {
-    createChangeEntryMethod: createChangeEntryMethodMutation,
-    resetCreateChangeEntryMethodMutation,
-    isCreatingChangeEntryMethod,
-    isLoadingChangeEntryMethodFromTransaction,
-    errorCreateChangeEntryMethod,
-    errorWaitChangeEntryMethodFromTransaction,
-    createChangeEntryMethodHash,
-    createdChangeEntryMethod,
+    createChangeEntryMethod,
+    resetChangeEntryMethod,
+    isChangeEntryMethodMutating,
+    isLoadingProposalFromTx,
+    errorChangeEntryMethod,
+    errorWaitProposalFromTx,
+    createProposalHash,
+    changeEntryMethodData,
   };
 };
