@@ -1,15 +1,31 @@
-import {
-  PaginationMetadata,
-  PaginationParams,
-} from '@hypha-platform/graphql/rsc';
+export type PaginationMetadata = {
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+};
+
+export type PaginatedResponse<T> = {
+  data: T[];
+  pagination: PaginationMetadata;
+};
+
+export type FilterParams<T> = {
+  [key in keyof T]?: string;
+};
+
+export type PaginationParams<T> = {
+  page?: number;
+  pageSize?: number;
+  filter?: FilterParams<T>;
+};
 
 export function paginate<T>(
   data: T[],
   { page = 1, pageSize = 2, filter = {} }: PaginationParams<T>,
-): {
-  paginatedData: T[];
-  pagination: PaginationMetadata;
-} {
+): PaginatedResponse<T> {
   const filtered = data.filter((obj) => {
     return Object.entries(filter).every(([key, value]) => {
       return value === undefined || obj[key as keyof T] === value;
@@ -28,7 +44,7 @@ export function paginate<T>(
 
   const start = (page - 1) * pageSize;
   return {
-    paginatedData: filtered.slice(start, start + pageSize),
+    data: filtered.slice(start, start + pageSize),
     pagination: meta,
   };
 }

@@ -7,7 +7,7 @@ import {
   getTokenSymbol,
   getTokenDecimals,
 } from '@core/common';
-import { paginate } from './_paginator';
+import { paginate } from '@core/common/server';
 import { TOKENS } from '@hypha-platform/epics';
 import { formatUnits } from 'viem';
 
@@ -119,7 +119,7 @@ export async function GET(
     });
 
     return NextResponse.json({
-      assets: paginated.paginatedData,
+      assets: paginated.data,
       pagination: paginated.pagination,
       balance: sorted.reduce((sum, asset) => sum + asset.usdEqual, 0),
     });
