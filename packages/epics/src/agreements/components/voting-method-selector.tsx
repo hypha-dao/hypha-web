@@ -5,8 +5,10 @@ import { useState } from 'react';
 import clsx from 'clsx';
 import { PlusCircledIcon } from '@radix-ui/react-icons';
 
+export type VotingMethodId = '1m1v' | '1v1v' | '1t1v';
+
 type VotingMethod = {
-  id: string;
+  id: VotingMethodId;
   title: string;
   description: string;
   icon?: React.ReactNode;
@@ -36,15 +38,15 @@ const votingMethods: VotingMethod[] = [
 ];
 
 type VotingMethodSelectorProps = {
-  onChange?: (value: string) => void;
+  onChange?: (value: VotingMethodId) => void;
 };
 
 export const VotingMethodSelector = ({
   onChange,
 }: VotingMethodSelectorProps) => {
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<VotingMethodId | null>(null);
 
-  const handleSelect = (id: string, disabled?: boolean) => {
+  const handleSelect = (id: VotingMethodId, disabled?: boolean) => {
     if (disabled) return;
     setSelected(id);
     if (onChange) {
