@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSpaceService } from '@hypha-platform/core/server';
 import { getSpaceDetails } from '@core/space';
-import { publicClient } from '@core/common';
-import { TOKENS, formGetBalance } from './_tokens';
-import { Erc20Provider, AssetProvider } from './_asset-provider';
+import {
+  publicClient,
+  getBalance,
+  getTokenSymbol,
+  getTokenDecimals,
+} from '@core/common';
 import { paginate } from './_paginator';
+import { TOKENS } from '@hypha-platform/epics';
+import { formatUnits } from 'viem';
 
 export async function GET(
   request: NextRequest,
@@ -48,24 +53,38 @@ export async function GET(
       );
     }
 
-    const [, , , tokenAdresses, , , , , , spaceAddress] = spaceDetails;
+    const [, , , tokenAddresses, , , , , , spaceAddress] = spaceDetails;
 
-    const assets = await Promise.all(
-      tokenAdresses
-        .map(
-          (token, index) =>
-            new Erc20Provider({
-              getBalance: formGetBalance(token),
-              token: token,
-              slug: `${token}-${index}`,
-            }) as AssetProvider,
-        )
-        .concat(TOKENS)
-        .map((provider) => provider.formItem(spaceAddress)),
+    const spaceTokens = Promise.all(
+      tokenAddresses.map(async (address) => {
+        return {
+          symbol: await getTokenSymbol(address),
+          icon: '/placeholder/eth.png',
+          address: address,
+        };
+      }),
     );
-    const sorted = assets.sort((a, b) =>
-      a.usdEqual === b.usdEqual ? b.value - a.value : b.usdEqual - a.usdEqual,
-    );
+    const balances = (await spaceTokens).concat(TOKENS).map(async (token) => {
+      const balance = await getBalance(token.address, spaceAddress);
+      const decimals = await getTokenDecimals(token.address);
+      const value = +formatUnits(balance, decimals);
+
+      return {
+        icon: token.icon,
+        name: '',
+        symbol: token.symbol,
+        value: value,
+        usdEqual: 0,
+        status: '',
+        chartData: [],
+        transactions: [],
+        closeUrl: [],
+        slug: '',
+      };
+    });
+
+    const assets = await Promise.all(balances);
+    const sorted = assets.sort((a, b) => b.usdEqual - a.usdEqual);
 
     const url = new URL(request.url);
     const page = url.searchParams.get('page');
