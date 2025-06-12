@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSpaceService } from '@hypha-platform/core/server';
 import { getSpaceDetails } from '@core/space';
-import { publicClient, getBalance, getTokenMeta } from '@core/common';
+import { TOKENS, publicClient, getBalance, getTokenMeta } from '@core/common';
 import { paginate } from '@core/common/server';
-import { TOKENS } from '@hypha-platform/epics';
 
 export async function GET(
   request: NextRequest,

@@ -1,4 +1,4 @@
-import { TOKENS } from '../constants';
+import { TOKENS } from '@core/common';
 
 export function useTokens() {
   return {

@@ -1,6 +1,5 @@
-import { publicClient } from '@core/common/web3/public-client';
+import { publicClient, TOKENS, Token } from '@core/common/web3';
 import { erc20Abi, getContract } from 'viem';
-import { TOKENS, Token } from '@hypha-platform/epics';
 
 export async function getTokenMeta(
   tokenAddress: `0x${string}`,
