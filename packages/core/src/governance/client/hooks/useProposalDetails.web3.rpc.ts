@@ -272,7 +272,7 @@ export const useProposalDetailsWeb3Rpc = ({
       endTime: new Date(Number(endTime) * 1000),
       yesVotes: Number(yesVotes),
       noVotes: Number(noVotes),
-      totalVotingPowerAtSnapshot: totalVotingPowerAtSnapshot,
+      totalVotingPowerAtSnapshot,
       quorumPercentage,
       unityPercentage,
       transfers,
