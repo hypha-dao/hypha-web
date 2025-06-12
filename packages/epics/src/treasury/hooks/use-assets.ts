@@ -3,11 +3,8 @@
 import React from 'react';
 import useSWR from 'swr';
 import queryString from 'query-string';
-import {
-  AssetItem,
-  PaginationMetadata,
-  FilterParams,
-} from '@hypha-platform/graphql/rsc';
+import { AssetItem, PaginationMetadata } from '@hypha-platform/graphql/rsc';
+import { FilterParams } from '@core/common/server';
 import { useParams } from 'next/navigation';
 
 type UseAssetsReturn = {
@@ -44,6 +41,9 @@ export const useAssets = ({
     const res = await fetch(endpoint, {
       headers: { 'Content-Type': 'application/json' },
     });
+    if (!res.ok) {
+      throw new Error(`Failed to fetch assets: ${res.statusText}`);
+    }
     return await res.json();
   });
 
