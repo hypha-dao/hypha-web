@@ -171,22 +171,29 @@ export const useCreateDeployFundsOrchestrator = ({
           });
           completeTask('CREATE_WEB3_AGREEMENT');
         }
+        const files = schemaCreateAgreementFiles.parse(arg);
+        if (files.attachments?.length || files.leadImage) {
+          startTask('UPLOAD_FILES');
+          await agreementFiles.upload(files, () => {
+            completeTask('UPLOAD_FILES');
+          });
+        } else {
+          startTask('UPLOAD_FILES');
+          completeTask('UPLOAD_FILES');
+        }
       } catch (err) {
         if (web2Slug) {
           await web2.deleteAgreementBySlug({ slug: web2Slug });
         }
         throw err;
       }
-
-      startTask('UPLOAD_FILES');
-      const inputFiles = schemaCreateAgreementFiles.parse(arg);
-      await agreementFiles.upload(inputFiles);
-      completeTask('UPLOAD_FILES');
     },
   );
 
   const { data: updatedWeb2Agreement } = useSWR(
-    web2.createdAgreement?.slug && agreementFiles.files
+    web2.createdAgreement?.slug &&
+      taskState.UPLOAD_FILES.status === TaskStatus.IS_DONE &&
+      (!config || taskState.CREATE_WEB3_AGREEMENT.status === TaskStatus.IS_DONE)
       ? [
           web2.createdAgreement.slug,
           agreementFiles.files,
@@ -200,12 +207,8 @@ export const useCreateDeployFundsOrchestrator = ({
         const result = await web2.updateAgreementBySlug({
           slug,
           web3ProposalId: web3ProposalId ? Number(web3ProposalId) : undefined,
-          attachments: uploadedFiles.attachments
-            ? Array.isArray(uploadedFiles.attachments)
-              ? uploadedFiles.attachments
-              : [uploadedFiles.attachments]
-            : [],
-          leadImage: uploadedFiles.leadImage,
+          attachments: uploadedFiles?.attachments ?? [],
+          leadImage: uploadedFiles?.leadImage ?? undefined,
         });
         completeTask('LINK_WEB2_AND_WEB3_AGREEMENT');
         return result;
@@ -215,6 +218,10 @@ export const useCreateDeployFundsOrchestrator = ({
         }
         throw error;
       }
+    },
+    {
+      revalidateOnMount: true,
+      shouldRetryOnError: false,
     },
   );
 
@@ -237,8 +244,9 @@ export const useCreateDeployFundsOrchestrator = ({
     reset,
     createDeployFunds,
     agreement: {
-      ...updatedWeb2Agreement,
+      ...web2.createdAgreement,
       ...web3.createdDeployFunds,
+      ...updatedWeb2Agreement,
     },
     taskState,
     currentAction,
