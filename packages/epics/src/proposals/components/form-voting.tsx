@@ -2,10 +2,10 @@ import { Button, Skeleton } from '@hypha-platform/ui';
 import { ProgressLine } from './progress-line';
 import { intervalToDuration, isPast } from 'date-fns';
 
-function formatTimeRemaining(endTime: string): string {
+function formatTimeRemaining(endTime: string, executed?: boolean): string {
   const end = new Date(endTime);
 
-  if (isPast(end)) {
+  if (isPast(end) || executed) {
     return 'Vote closed';
   }
 
@@ -76,7 +76,7 @@ export const FormVoting = ({
           loading={isLoading}
           className="rounded-lg"
         >
-          <div className="text-1">{formatTimeRemaining(endTime)}</div>
+          <div className="text-1">{formatTimeRemaining(endTime, executed)}</div>
           {isPast(new Date(endTime)) || executed ? null : (
             <div className="flex gap-2">
               <Button variant="outline" onClick={onReject}>
