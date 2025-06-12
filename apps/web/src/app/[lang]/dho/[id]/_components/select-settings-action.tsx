@@ -36,7 +36,7 @@ export const SETTINGS_ACTIONS = [
       'Select and configure the process by which new members join your space.',
     href: 'create/change-entry-method',
     icon: <Pencil2Icon />,
-    baseTab: 'agreement',
+    baseTab: 'governance',
   },
   {
     group: 'Membership',
