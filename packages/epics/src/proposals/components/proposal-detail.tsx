@@ -127,7 +127,7 @@ export const ProposalDetail = ({
         <ProposalMintItem key={idx} member={mint.member} number={mint.number} />
       ))}
       <FormVoting
-        unity={proposalDetails?.yesVotePercentage || 0}
+        unity={proposalDetails?.unityPercentage || 0}
         quorum={proposalDetails?.quorumPercentage || 0}
         endTime={formatISO(new Date(proposalDetails?.endTime || new Date()))}
         executed={proposalDetails?.executed}
