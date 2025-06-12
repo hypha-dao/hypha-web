@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSpaceService } from '@hypha-platform/core/server';
 import { getSpaceDetails } from '@core/space';
-import { publicClient, getBalance } from '@core/common';
+import { publicClient, getBalance, getTokenMeta } from '@core/common';
 import { paginate } from '@core/common/server';
 import { TOKENS } from '@hypha-platform/epics';
 
@@ -49,35 +49,24 @@ export async function GET(
 
     const [, , , tokenAddresses, , , , , , spaceAddress] = spaceDetails;
 
-    const tokens = tokenAddresses
-      .map((address) => {
-        return {
-          icon: '/placeholder/eth.png',
-          address: address,
-        };
-      })
-      .concat(TOKENS)
-      .map(async (token) => {
-        const { amount, symbol } = await getBalance(
-          token.address,
-          spaceAddress,
-        );
+    const assets = await Promise.all(
+      TOKENS.map((token) => token.address)
+        .concat(tokenAddresses)
+        .map(async (token) => {
+          const meta = await getTokenMeta(token);
+          const { amount } = await getBalance(token, spaceAddress);
 
-        return {
-          icon: token.icon,
-          name: '',
-          symbol: symbol,
-          value: amount,
-          usdEqual: 0,
-          status: '',
-          chartData: [],
-          transactions: [],
-          closeUrl: [],
-          slug: '',
-        };
-      });
-
-    const assets = await Promise.all(tokens);
+          return {
+            ...meta,
+            value: amount,
+            usdEqual: 0,
+            chartData: [],
+            transactions: [],
+            closeUrl: [],
+            slug: '',
+          };
+        }),
+    );
     const sorted = assets.sort((a, b) => b.usdEqual - a.usdEqual);
 
     const url = new URL(request.url);
