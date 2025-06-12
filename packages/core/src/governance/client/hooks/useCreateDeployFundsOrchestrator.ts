@@ -186,26 +186,26 @@ export const useCreateDeployFundsOrchestrator = ({
   );
 
   const { data: updatedWeb2Agreement } = useSWR(
-    web2.createdAgreement?.slug && agreementFiles.files
+    web2.createdAgreement?.slug &&
+      (web3.createdDeployFunds?.proposalId || !config)
       ? [
           web2.createdAgreement.slug,
-          agreementFiles.files,
           web3.createdDeployFunds?.proposalId,
           'linkingWeb2AndWeb3',
         ]
       : null,
-    async ([slug, uploadedFiles, web3ProposalId]) => {
+    async ([slug, web3ProposalId]) => {
       try {
         startTask('LINK_WEB2_AND_WEB3_AGREEMENT');
         const result = await web2.updateAgreementBySlug({
           slug,
           web3ProposalId: web3ProposalId ? Number(web3ProposalId) : undefined,
-          attachments: uploadedFiles.attachments
-            ? Array.isArray(uploadedFiles.attachments)
-              ? uploadedFiles.attachments
-              : [uploadedFiles.attachments]
+          attachments: agreementFiles.files?.attachments
+            ? Array.isArray(agreementFiles.files.attachments)
+              ? agreementFiles.files.attachments
+              : [agreementFiles.files.attachments]
             : [],
-          leadImage: uploadedFiles.leadImage,
+          leadImage: agreementFiles.files?.leadImage ?? undefined,
         });
         completeTask('LINK_WEB2_AND_WEB3_AGREEMENT');
         return result;
