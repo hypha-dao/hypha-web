@@ -1,5 +1,3 @@
-'use client';
-
 import { publicClient } from '@core/common/web3/public-client';
 import { erc20Abi, getContract } from 'viem';
 
