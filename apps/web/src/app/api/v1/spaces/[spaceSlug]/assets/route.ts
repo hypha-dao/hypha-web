@@ -66,7 +66,9 @@ export async function GET(
           };
         }),
     );
-    const sorted = assets.sort((a, b) => b.usdEqual - a.usdEqual);
+    const sorted = assets.sort((a, b) =>
+      a.usdEqual === b.usdEqual ? b.usdEqual - a.usdEqual : b.value - a.value,
+    );
 
     const url = new URL(request.url);
     const page = url.searchParams.get('page');
