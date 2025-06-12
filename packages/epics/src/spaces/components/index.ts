@@ -16,5 +16,4 @@ export * from './subspace-section';
 export * from './create-subspace-form';
 export * from './space-card-list';
 export * from './filtered-spaces';
-export * from './change-entry-method-form';
 export * from './entry-method-token-field';
