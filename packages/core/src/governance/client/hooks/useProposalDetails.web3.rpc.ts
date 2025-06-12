@@ -46,10 +46,16 @@ export const useProposalDetailsWeb3Rpc = ({
       transactions,
     ] = data;
 
-    const totalVotingPowerNumber = Number(totalVotingPowerAtSnapshot);
+    const quorumTotalVotingPowerNumber = Number(totalVotingPowerAtSnapshot);
     const quorumPercentage =
-      totalVotingPowerNumber > 0
-        ? (Number(yesVotes + noVotes) / totalVotingPowerNumber) * 100
+      quorumTotalVotingPowerNumber > 0
+        ? (Number(yesVotes + noVotes) / quorumTotalVotingPowerNumber) * 100
+        : 0;
+
+    const unityTotalVotingPowerNumber = Number(yesVotes) + Number(noVotes);
+    const unityPercentage =
+      unityTotalVotingPowerNumber > 0
+        ? (Number(yesVotes) / unityTotalVotingPowerNumber) * 100
         : 0;
 
     const transfers: {
@@ -266,16 +272,9 @@ export const useProposalDetailsWeb3Rpc = ({
       endTime: new Date(Number(endTime) * 1000),
       yesVotes: Number(yesVotes),
       noVotes: Number(noVotes),
-      totalVotingPowerAtSnapshot: totalVotingPowerNumber,
-      yesVotePercentage:
-        totalVotingPowerNumber > 0
-          ? (Number(yesVotes) / totalVotingPowerNumber) * 100
-          : 0,
-      noVotePercentage:
-        totalVotingPowerNumber > 0
-          ? (Number(noVotes) / totalVotingPowerNumber) * 100
-          : 0,
+      totalVotingPowerAtSnapshot,
       quorumPercentage,
+      unityPercentage,
       transfers,
       tokens,
       votingMethods,
