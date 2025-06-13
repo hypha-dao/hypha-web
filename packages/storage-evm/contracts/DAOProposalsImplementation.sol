@@ -250,15 +250,18 @@ contract DAOProposalsImplementation is
     // Calculate total participation
     uint256 totalVotesCast = proposal.yesVotes + proposal.noVotes;
 
-    if (
-      totalVotesCast * 100 <
-      quorumThreshold * proposal.totalVotingPowerAtSnapshot
-    ) {
+    // Check if quorum is reached
+    bool quorumReached = totalVotesCast * 100 >=
+      quorumThreshold * proposal.totalVotingPowerAtSnapshot;
+
+    if (!quorumReached) {
       return; // Early return - insufficient participation
     }
 
+    // Check if proposal should be executed (Yes votes reach unity threshold)
     if (proposal.yesVotes * 100 >= unityThreshold * totalVotesCast) {
       proposal.executed = true;
+      spaceAcceptedProposals[proposal.spaceId].push(_proposalId);
 
       address executor = spaceFactory.getSpaceExecutor(proposal.spaceId);
 
@@ -286,6 +289,12 @@ contract DAOProposalsImplementation is
         proposal.noVotes
       );
     }
+    // Check if proposal should be rejected (No votes reach unity threshold)
+    else if (proposal.noVotes * 100 >= unityThreshold * totalVotesCast) {
+      spaceRejectedProposals[proposal.spaceId].push(_proposalId);
+
+      emit ProposalRejected(_proposalId, proposal.yesVotes, proposal.noVotes);
+    }
   }
 
   function checkProposalExpiration(
@@ -297,11 +306,29 @@ contract DAOProposalsImplementation is
       !proposal.expired && block.timestamp > getProposalEndTime(_proposalId)
     ) {
       proposal.expired = true;
+
+      // Check if expired proposal should be added to rejected list
+      // Only if it wasn't already executed
+      if (!proposal.executed) {
+        spaceRejectedProposals[proposal.spaceId].push(_proposalId);
+      }
+
       emit ProposalExpired(_proposalId);
       return true;
     }
 
     return proposal.expired;
+  }
+
+  function getSpaceProposals(
+    uint256 _spaceId
+  )
+    external
+    view
+    override
+    returns (uint256[] memory accepted, uint256[] memory rejected)
+  {
+    return (spaceAcceptedProposals[_spaceId], spaceRejectedProposals[_spaceId]);
   }
 
   function hasVoted(

@@ -53,6 +53,14 @@ interface IDAOProposals {
     uint256 _proposalId
   ) external view returns (uint256);
 
+  // New functions to get accepted and rejected proposals by space
+  function getSpaceProposals(
+    uint256 _spaceId
+  )
+    external
+    view
+    returns (uint256[] memory accepted, uint256[] memory rejected);
+
   // Events
   event ProposalCreated(
     uint256 indexed proposalId,
@@ -86,9 +94,13 @@ interface IDAOProposals {
     uint256 noVotes
   );
   event ProposalExpired(uint256 indexed proposalId);
+  event ProposalRejected(
+    uint256 indexed proposalId,
+    uint256 yesVotes,
+    uint256 noVotes
+  );
   event ExecutorSet(uint256 indexed spaceId, address executor);
 
   // Add new event for value tracking
   event ProposalValueSet(uint256 indexed proposalId, uint256 value);
-
 }
