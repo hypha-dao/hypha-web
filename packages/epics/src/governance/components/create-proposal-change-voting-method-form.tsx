@@ -130,6 +130,7 @@ export const CreateProposalChangeVotingMethodForm = ({
             }}
             closeUrl={successfulUrl}
             isLoading={false}
+            label="Change Voting Method"
           />
           {plugin}
           <Separator />
