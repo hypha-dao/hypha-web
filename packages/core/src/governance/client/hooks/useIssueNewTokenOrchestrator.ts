@@ -108,13 +108,16 @@ export const useCreateIssueTokenOrchestrator = ({
 }) => {
   const web2 = useAgreementMutationsWeb2Rsc(authToken);
   const web3 = useIssueTokenMutationsWeb3Rpc(config);
-  const agreementFiles = useAgreementFileUploads(authToken, (uploadedFiles) => {
-    web2.updateAgreementBySlug({
-      slug: web2.createdAgreement?.slug ?? '',
-      attachments: uploadedFiles?.attachments,
-      leadImage: uploadedFiles?.leadImage,
-    });
-  });
+  const agreementFiles = useAgreementFileUploads(
+    authToken,
+    (uploadedFiles, slug) => {
+      web2.updateAgreementBySlug({
+        slug: slug ?? '',
+        attachments: uploadedFiles?.attachments,
+        leadImage: uploadedFiles?.leadImage,
+      });
+    },
+  );
 
   const [taskState, dispatch] = useReducer(
     progressStateReducer,
@@ -189,7 +192,7 @@ export const useCreateIssueTokenOrchestrator = ({
         const files = schemaCreateAgreementFiles.parse(arg);
         if (files.attachments?.length || files.leadImage) {
           startTask('UPLOAD_FILES');
-          await agreementFiles.upload(files);
+          await agreementFiles.upload(files, web2Slug);
           completeTask('UPLOAD_FILES');
         } else {
           startTask('UPLOAD_FILES');
