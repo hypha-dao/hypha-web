@@ -4,7 +4,7 @@ import {
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { createSpaceService } from '@core/space/server';
-import { getDhoPathGovernance } from '../../../../@tab/governance/constants';
+import { getDhoPathGovernance, selectCreateActionPath } from '../../../../@tab/governance/constants';
 import { Plugin } from '../plugins';
 import { notFound } from 'next/navigation';
 
@@ -23,11 +23,13 @@ export default async function CreateProposeAContributionPage({
 
   if (!spaceFromDb) notFound();
   const { id: spaceId, web3SpaceId, slug: spaceSlug } = spaceFromDb;
+  const successfulUrl = getDhoPathGovernance(lang as Locale, id);
 
   return (
     <SidePanel>
       <CreateProposeAContributionForm
-        successfulUrl={getDhoPathGovernance(lang as Locale, id)}
+        successfulUrl={successfulUrl}
+        backUrl={`${successfulUrl}${selectCreateActionPath}`}
         spaceId={spaceId}
         web3SpaceId={web3SpaceId}
         plugin={<Plugin name="propose-contribution" spaceSlug={spaceSlug} />}

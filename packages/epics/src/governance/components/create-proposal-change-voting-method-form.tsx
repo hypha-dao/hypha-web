@@ -27,11 +27,13 @@ interface CreateProposalChangeVotingMethodFormProps {
   spaceId: number | undefined | null;
   web3SpaceId: number | undefined | null;
   successfulUrl: string;
+  backUrl?: string;
   plugin: React.ReactNode;
 }
 
 export const CreateProposalChangeVotingMethodForm = ({
   successfulUrl,
+  backUrl,
   spaceId,
   web3SpaceId,
   plugin,
@@ -129,6 +131,7 @@ export const CreateProposalChangeVotingMethodForm = ({
               surname: person?.surname || '',
             }}
             closeUrl={successfulUrl}
+            backUrl={backUrl}
             isLoading={false}
           />
           {plugin}

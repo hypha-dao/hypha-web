@@ -3,26 +3,26 @@
 import { Button } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { RxCross1 } from 'react-icons/rx';
+import { ChevronLeftIcon } from "@radix-ui/react-icons";
 
-type ButtonCloseProps = {
-  closeUrl?: string;
+type ButtonBackProps = {
+  backUrl?: string;
   dropSegment?: string;
   className?: string;
 };
 
-export const ButtonClose = ({
-  closeUrl,
+export const ButtonBack = ({
+  backUrl,
   dropSegment,
   className
-}: ButtonCloseProps) => {
+}: ButtonBackProps) => {
   const pathname = usePathname();
 
-  if (!closeUrl) {
+  if (!backUrl) {
     if (dropSegment) {
-      closeUrl = pathname.replace(dropSegment, '');
+      backUrl = pathname.replace(dropSegment, '');
     } else {
-      console.debug('ButtonClose: closeUrl or dropSegment must be provided');
+      console.debug('ButtonBack: backUrl or dropSegment must be provided');
       return null;
     }
   }
@@ -34,9 +34,9 @@ export const ButtonClose = ({
       colorVariant="neutral"
       className={className}
     >
-      <Link href={closeUrl} scroll={false}>
-        Close
-        <RxCross1 />
+      <Link href={backUrl} scroll={false}>
+        <ChevronLeftIcon className="size-4"/>
+        Back to Create
       </Link>
     </Button>
   );

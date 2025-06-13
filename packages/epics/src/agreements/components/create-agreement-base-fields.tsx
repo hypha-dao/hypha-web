@@ -2,7 +2,6 @@
 
 import { useFormContext } from 'react-hook-form';
 import {
-  Button,
   Input,
   FormControl,
   FormDescription,
@@ -15,7 +14,6 @@ import {
   AddAttachment,
   RichTextEditor,
 } from '@hypha-platform/ui';
-import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
 import { Creator } from '@hypha-platform/graphql/rsc';
 import { PersonAvatar } from '../../people/components/person-avatar';
@@ -23,7 +21,7 @@ import { ALLOWED_IMAGE_FILE_SIZE } from '@core/space';
 import { z } from 'zod';
 import { createAgreementFiles, schemaCreateAgreement } from '@core/governance';
 
-import Link from 'next/link';
+import { ButtonClose, ButtonBack } from '@hypha-platform/epics';
 
 const schemaCreateAgreementForm =
   schemaCreateAgreement.extend(createAgreementFiles);
@@ -34,6 +32,7 @@ export type CreateAgreementFormProps = {
   creator?: Creator;
   isLoading?: boolean;
   closeUrl: string;
+  backUrl?: string;
   label?: string;
 };
 
@@ -41,6 +40,7 @@ export function CreateAgreementBaseFields({
   creator,
   isLoading = false,
   closeUrl,
+  backUrl,
   label = 'Agreement',
 }: CreateAgreementFormProps) {
   const form = useFormContext<CreateAgreementFormData>();
@@ -87,17 +87,12 @@ export function CreateAgreementBaseFields({
             </div>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          colorVariant="neutral"
-          className="flex items-center"
-          asChild
-        >
-          <Link href={closeUrl} scroll={false}>
-            <RxCross1 className="ml-2" />
-            Close
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          { backUrl &&
+            <ButtonBack backUrl={backUrl} />
+          }
+          <ButtonClose closeUrl={closeUrl} />
+        </div>
       </div>
       <Separator />
       <FormField

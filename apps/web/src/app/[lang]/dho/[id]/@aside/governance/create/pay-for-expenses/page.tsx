@@ -1,7 +1,7 @@
 import { CreatePayForExpensesForm, SidePanel } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { createSpaceService } from '@core/space/server';
-import { getDhoPathGovernance } from '../../../../@tab/governance/constants';
+import { getDhoPathGovernance, selectCreateActionPath } from '../../../../@tab/governance/constants';
 import { Plugin } from '../plugins';
 import { notFound } from 'next/navigation';
 
@@ -19,10 +19,13 @@ export default async function CreatePayForExpensesPage({ params }: PageProps) {
   if (!spaceFromDb) notFound();
   const { id: spaceId, web3SpaceId, slug: spaceSlug } = spaceFromDb;
 
+  const successfulUrl = getDhoPathGovernance(lang as Locale, id);
+
   return (
     <SidePanel>
       <CreatePayForExpensesForm
-        successfulUrl={getDhoPathGovernance(lang as Locale, id)}
+        successfulUrl={successfulUrl}
+        backUrl={`${successfulUrl}${selectCreateActionPath}`}
         spaceId={spaceId}
         web3SpaceId={web3SpaceId}
         plugin={<Plugin name="pay-for-expenses" spaceSlug={spaceSlug} />}
