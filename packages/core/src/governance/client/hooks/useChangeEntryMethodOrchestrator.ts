@@ -210,6 +210,14 @@ export const useChangeEntryMethodOrchestrator = ({
     },
   );
 
+  const key = web2.createdAgreement?.slug && agreementFiles.files
+    ? [
+        web2.createdAgreement.slug,
+        agreementFiles.files,
+        web3.changeEntryMethodData?.proposalId,
+        'linkingWeb2AndWeb3Token',
+      ]
+    : null;
   const { data: updatedWeb2Agreement } = useSWR(
     web2.createdAgreement?.slug && agreementFiles.files
       ? [

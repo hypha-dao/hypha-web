@@ -9,14 +9,12 @@ import {
   useChangeEntryMethodOrchestrator,
   useJwt,
   useMe,
-  useSpaceDetailsWeb3Rpc,
 } from "@hypha-platform/core/client";
 import { LoadingBackdrop } from "@hypha-platform/ui/server";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { useConfig } from "wagmi";
 import { z } from "zod";
-import { EntryMethod } from "../../spaces/components/entry-method";
 import { CreateAgreementBaseFields } from "@hypha-platform/epics";
 import { Button, Form, Separator } from "@hypha-platform/ui";
 import React from "react";
@@ -60,9 +58,9 @@ export const CreateProposalChangeEntryMethodForm = ({
     changeEntryMethod: { slug: agreementSlug },
   } = useChangeEntryMethodOrchestrator({ authToken: jwt, config });
 
-  const form = useForm<FormValues>({
-      resolver: zodResolver(schemaCreateProposalChangeEntryMethod),
-      defaultValues: {
+  const defaultValues = React.useMemo(
+    () => {
+      return {
         title: '',
         description: '',
         leadImage: undefined,
@@ -70,12 +68,19 @@ export const CreateProposalChangeEntryMethodForm = ({
         spaceId: spaceId ?? undefined,
         creatorId: person?.id,
         entryMethod: EntryMethodType.OPEN_ACCESS,
-        tokenBase: {
+        tokenBase: undefined,/*{
           amount: 0,
-          token: undefined as `0x${string}` | undefined,
-        },
-      },
-    });
+          token: '0x0' as Address,
+        }*/
+      };
+    },
+    [spaceId, person],
+  );
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(schemaCreateProposalChangeEntryMethod),
+    defaultValues: defaultValues,
+  });
 
   const handleCreate = async (data: FormValues) => {
     if (!web3SpaceId || !ENTRY_METHODS.includes(data.entryMethod)) return;
@@ -132,6 +137,7 @@ export const CreateProposalChangeEntryMethodForm = ({
             }}
             closeUrl={successfulUrl}
             isLoading={false}
+            label="Change Entry Method"
           />
           {plugin}
           <Separator />
