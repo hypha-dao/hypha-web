@@ -14,10 +14,6 @@ export type UseAgreementFileUploadsReturn = {
     attachments?: string[];
   } | null;
   upload: (fileInput: Files) => Promise<void>;
-  onSuccess?: (uploadedFiles: {
-    leadImage?: string;
-    attachments?: string[];
-  }) => Promise<void> | void;
 };
 
 export const useAgreementFileUploads = (
