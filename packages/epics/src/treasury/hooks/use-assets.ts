@@ -1,12 +1,11 @@
 'use client';
 
+import React from 'react';
 import useSWR from 'swr';
-import {
-  AssetItem,
-  PaginationMetadata,
-  FilterParams,
-  fetchAssets,
-} from '@hypha-platform/graphql/rsc';
+import queryString from 'query-string';
+import { AssetItem, PaginationMetadata } from '@hypha-platform/graphql/rsc';
+import { FilterParams } from '@core/common/server';
+import { useParams } from 'next/navigation';
 
 type UseAssetsReturn = {
   assets: AssetItem[];
@@ -17,19 +16,47 @@ type UseAssetsReturn = {
 
 export const useAssets = ({
   page = 1,
+  pageSize = 2,
   filter,
 }: {
   page?: number;
+  pageSize?: number;
   filter?: FilterParams<AssetItem>;
 }): UseAssetsReturn => {
-  const { data, isLoading } = useSWR(['assets', page, filter], () =>
-    fetchAssets({ page, filter }),
-  );
+  const { id } = useParams<{ id: string }>();
+  const queryParams = React.useMemo(() => {
+    const effectiveFilter = {
+      page,
+      pageSize,
+      ...filter,
+    };
+    return `?${queryString.stringify(effectiveFilter)}`;
+  }, [page, pageSize, filter]);
+
+  const endpoint = React.useMemo(() => {
+    return `/api/v1/spaces/${id}/assets${queryParams}`;
+  }, [id, queryParams]);
+
+  const { data, isLoading } = useSWR([endpoint], async ([endpoint]) => {
+    const res = await fetch(endpoint, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to fetch assets: ${res.statusText}`);
+    }
+    return await res.json();
+  });
+
+  const typedData = data as UseAssetsReturn | undefined;
+  const hasValidData =
+    typedData &&
+    Array.isArray(typedData.assets) &&
+    typeof typedData.balance === 'number';
 
   return {
-    assets: data?.assets || [],
-    pagination: data?.pagination,
+    assets: hasValidData ? typedData.assets : [],
+    pagination: hasValidData ? typedData.pagination : undefined,
     isLoading,
-    balance: data?.balance || 0,
+    balance: hasValidData ? typedData.balance : 0,
   };
 };
