@@ -106,9 +106,15 @@ export const useCreateIssueTokenOrchestrator = ({
   authToken?: string | null;
   config?: Config;
 }) => {
-  const web3 = useIssueTokenMutationsWeb3Rpc(config);
-  const agreementFiles = useAgreementFileUploads(authToken);
   const web2 = useAgreementMutationsWeb2Rsc(authToken);
+  const web3 = useIssueTokenMutationsWeb3Rpc(config);
+  const agreementFiles = useAgreementFileUploads(authToken, (uploadedFiles) => {
+    web2.updateAgreementBySlug({
+      slug: web2.createdAgreement?.slug ?? '',
+      attachments: uploadedFiles?.attachments,
+      leadImage: uploadedFiles?.leadImage,
+    });
+  });
 
   const [taskState, dispatch] = useReducer(
     progressStateReducer,
@@ -183,9 +189,8 @@ export const useCreateIssueTokenOrchestrator = ({
         const files = schemaCreateAgreementFiles.parse(arg);
         if (files.attachments?.length || files.leadImage) {
           startTask('UPLOAD_FILES');
-          await agreementFiles.upload(files, () => {
-            completeTask('UPLOAD_FILES');
-          });
+          await agreementFiles.upload(files);
+          completeTask('UPLOAD_FILES');
         } else {
           startTask('UPLOAD_FILES');
           completeTask('UPLOAD_FILES');
@@ -205,19 +210,16 @@ export const useCreateIssueTokenOrchestrator = ({
       (!config || taskState.CREATE_WEB3_AGREEMENT.status === TaskStatus.IS_DONE)
       ? [
           web2.createdAgreement.slug,
-          agreementFiles.files,
           web3.createdToken?.proposalId,
           'linkingWeb2AndWeb3',
         ]
       : null,
-    async ([slug, uploadedFiles, web3ProposalId]) => {
+    async ([slug, web3ProposalId]) => {
       try {
         startTask('LINK_WEB2_AND_WEB3_AGREEMENT');
         const result = await web2.updateAgreementBySlug({
           slug,
           web3ProposalId: web3ProposalId ? Number(web3ProposalId) : undefined,
-          attachments: uploadedFiles?.attachments ?? [],
-          leadImage: uploadedFiles?.leadImage ?? undefined,
         });
         completeTask('LINK_WEB2_AND_WEB3_AGREEMENT');
         return result;

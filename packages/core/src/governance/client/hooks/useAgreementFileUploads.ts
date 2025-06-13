@@ -13,17 +13,19 @@ export type UseAgreementFileUploadsReturn = {
     leadImage?: string;
     attachments?: string[];
   } | null;
-  upload: (
-    fileInput: Files,
-    onSuccess?: (uploadedFiles: {
-      leadImage?: string;
-      attachments?: string[];
-    }) => Promise<void> | void,
-  ) => Promise<void>;
+  upload: (fileInput: Files) => Promise<void>;
+  onSuccess?: (uploadedFiles: {
+    leadImage?: string;
+    attachments?: string[];
+  }) => Promise<void> | void;
 };
 
 export const useAgreementFileUploads = (
   authToken?: string | null,
+  onSuccess?: (uploadedFiles: {
+    leadImage?: string;
+    attachments?: string[];
+  }) => Promise<void> | void,
 ): UseAgreementFileUploadsReturn => {
   const [files, setFiles] = React.useState<{
     leadImage?: string;
@@ -34,13 +36,7 @@ export const useAgreementFileUploads = (
   });
 
   const handleUpload = React.useCallback(
-    async (
-      fileInput: Files,
-      onSuccess?: (uploadedFiles: {
-        leadImage?: string;
-        attachments?: string[];
-      }) => Promise<void> | void,
-    ) => {
+    async (fileInput: Files) => {
       const uploadedFiles: {
         leadImage?: string;
         attachments?: string[];
@@ -71,11 +67,9 @@ export const useAgreementFileUploads = (
 
       await Promise.all(uploadPromises);
       setFiles(uploadedFiles);
-      if (onSuccess) {
-        await onSuccess(uploadedFiles);
-      }
+      onSuccess?.(uploadedFiles);
     },
-    [upload],
+    [upload, onSuccess],
   );
 
   return {
