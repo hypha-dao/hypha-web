@@ -18,10 +18,12 @@ export const useAssets = ({
   page = 1,
   pageSize = 2,
   filter,
+  refreshInterval = 10000,
 }: {
   page?: number;
   pageSize?: number;
   filter?: FilterParams<AssetItem>;
+  refreshInterval?: number;
 }): UseAssetsReturn => {
   const { id } = useParams<{ id: string }>();
   const queryParams = React.useMemo(() => {
@@ -37,15 +39,19 @@ export const useAssets = ({
     return `/api/v1/spaces/${id}/assets${queryParams}`;
   }, [id, queryParams]);
 
-  const { data, isLoading } = useSWR([endpoint], async ([endpoint]) => {
-    const res = await fetch(endpoint, {
-      headers: { 'Content-Type': 'application/json' },
-    });
-    if (!res.ok) {
-      throw new Error(`Failed to fetch assets: ${res.statusText}`);
-    }
-    return await res.json();
-  });
+  const { data, isLoading } = useSWR(
+    [endpoint],
+    async ([endpoint]) => {
+      const res = await fetch(endpoint, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to fetch assets: ${res.statusText}`);
+      }
+      return await res.json();
+    },
+    { refreshInterval },
+  );
 
   const typedData = data as UseAssetsReturn | undefined;
   const hasValidData =
