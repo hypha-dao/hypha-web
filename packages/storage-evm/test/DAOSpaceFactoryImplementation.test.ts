@@ -3961,8 +3961,8 @@ describe('DAOSpaceFactoryImplementation', function () {
         'Proposal 2 should not be executed',
       );
       expect(prop2Final[4]).to.equal(
-        false,
-        'Proposal 2 should not be expired (rejected by votes)',
+        true,
+        'Proposal 2 should be expired (rejected by votes)',
       );
 
       const prop3Final = await this.daoProposals.getProposalCore(proposal3Id);
@@ -4046,7 +4046,7 @@ describe('DAOSpaceFactoryImplementation', function () {
       );
 
       // Check if it's rejected yet (might be after vote 3)
-      let [currentAccepted, currentRejected] =
+      const [currentAccepted, currentRejected] =
         await this.daoProposals.getSpaceProposals(this.spaceId);
       console.log(
         `  After vote 3 - Accepted: [${currentAccepted.join(

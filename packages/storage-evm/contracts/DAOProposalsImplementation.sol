@@ -250,9 +250,9 @@ contract DAOProposalsImplementation is
     // Calculate total participation
     uint256 totalVotesCast = proposal.yesVotes + proposal.noVotes;
 
-    // Check if quorum is reached
-    bool quorumReached = totalVotesCast * 100 >=
-      quorumThreshold * proposal.totalVotingPowerAtSnapshot;
+    // Check if quorum is reached - fix potential overflow by reordering arithmetic
+    bool quorumReached = totalVotesCast >=
+      (quorumThreshold * proposal.totalVotingPowerAtSnapshot) / 100;
 
     if (!quorumReached) {
       return; // Early return - insufficient participation
@@ -291,6 +291,7 @@ contract DAOProposalsImplementation is
     }
     // Check if proposal should be rejected (No votes reach unity threshold)
     else if (proposal.noVotes * 100 >= unityThreshold * totalVotesCast) {
+      proposal.expired = true; // Mark as expired to prevent further voting
       spaceRejectedProposals[proposal.spaceId].push(_proposalId);
 
       emit ProposalRejected(_proposalId, proposal.yesVotes, proposal.noVotes);
