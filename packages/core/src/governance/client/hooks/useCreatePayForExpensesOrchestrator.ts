@@ -111,9 +111,18 @@ export const useCreatePayForExpensesOrchestrator = ({
   authToken?: string | null;
   config?: Config;
 }) => {
-  const agreementFiles = useAgreementFileUploads(authToken);
   const web2 = useAgreementMutationsWeb2Rsc(authToken);
   const web3 = usePayForExpensesMutationsWeb3Rpc(config);
+  const agreementFiles = useAgreementFileUploads(
+    authToken,
+    (uploadedFiles, slug) => {
+      web2.updateAgreementBySlug({
+        slug: slug ?? '',
+        attachments: uploadedFiles?.attachments,
+        leadImage: uploadedFiles?.leadImage,
+      });
+    },
+  );
 
   const [taskState, dispatch] = React.useReducer(
     progressStateReducer,
@@ -171,41 +180,40 @@ export const useCreatePayForExpensesOrchestrator = ({
           });
           completeTask('CREATE_WEB3_AGREEMENT');
         }
+        const files = schemaCreateAgreementFiles.parse(arg);
+        if (files.attachments?.length || files.leadImage) {
+          startTask('UPLOAD_FILES');
+          await agreementFiles.upload(files, web2Slug);
+          completeTask('UPLOAD_FILES');
+        } else {
+          startTask('UPLOAD_FILES');
+          completeTask('UPLOAD_FILES');
+        }
       } catch (err) {
         if (web2Slug) {
           await web2.deleteAgreementBySlug({ slug: web2Slug });
         }
         throw err;
       }
-
-      startTask('UPLOAD_FILES');
-      const inputFiles = schemaCreateAgreementFiles.parse(arg);
-      await agreementFiles.upload(inputFiles);
-      completeTask('UPLOAD_FILES');
     },
   );
 
   const { data: updatedWeb2Agreement } = useSWR(
-    web2.createdAgreement?.slug && agreementFiles.files
+    web2.createdAgreement?.slug &&
+      taskState.UPLOAD_FILES.status === TaskStatus.IS_DONE &&
+      (!config || taskState.CREATE_WEB3_AGREEMENT.status === TaskStatus.IS_DONE)
       ? [
           web2.createdAgreement.slug,
-          agreementFiles.files,
           web3.createdPayForExpenses?.proposalId,
           'linkingWeb2AndWeb3',
         ]
       : null,
-    async ([slug, uploadedFiles, web3ProposalId]) => {
+    async ([slug, web3ProposalId]) => {
       try {
         startTask('LINK_WEB2_AND_WEB3_AGREEMENT');
         const result = await web2.updateAgreementBySlug({
           slug,
           web3ProposalId: web3ProposalId ? Number(web3ProposalId) : undefined,
-          attachments: uploadedFiles.attachments
-            ? Array.isArray(uploadedFiles.attachments)
-              ? uploadedFiles.attachments
-              : [uploadedFiles.attachments]
-            : [],
-          leadImage: uploadedFiles.leadImage,
         });
         completeTask('LINK_WEB2_AND_WEB3_AGREEMENT');
         return result;
@@ -215,6 +223,10 @@ export const useCreatePayForExpensesOrchestrator = ({
         }
         throw error;
       }
+    },
+    {
+      revalidateOnMount: true,
+      shouldRetryOnError: false,
     },
   );
 
@@ -238,8 +250,9 @@ export const useCreatePayForExpensesOrchestrator = ({
     reset,
     createPayForExpenses,
     agreement: {
-      ...updatedWeb2Agreement,
+      ...web2.createdAgreement,
       ...web3.createdPayForExpenses,
+      ...updatedWeb2Agreement,
     },
     taskState,
     currentAction,
