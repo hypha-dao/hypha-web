@@ -41,6 +41,7 @@ export default defineConfig({
         },
         DecayingSpaceToken: {
           [base.id]: '0xc8995514f8c76b9d9a509b4fdba0d06eb732907e',
+        },
         TokenBalanceJoinImplementation: {
           [base.id]: '0x41cD69A3a3715B16598415df336a8Cc533CCAF76',
         },
