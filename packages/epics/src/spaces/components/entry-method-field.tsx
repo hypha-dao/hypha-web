@@ -30,7 +30,7 @@ export function EntryMethodField({
                 onChange?.(entryMethod);
               }}
               entryMethods={entryMethods}
-              value={value}
+              value={field.value ?? value}
             />
           </FormControl>
           <FormMessage />

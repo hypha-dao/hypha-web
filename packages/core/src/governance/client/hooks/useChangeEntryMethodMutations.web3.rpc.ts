@@ -11,7 +11,7 @@ import { schemaCreateProposalWeb3 } from '@core/governance/validation';
 import useSWR from 'swr';
 import { z } from 'zod';
 import { publicClient } from '@core/common/web3/public-client';
-import { encodeFunctionData } from 'viem';
+import { encodeFunctionData, zeroAddress } from 'viem';
 import {
   daoSpaceFactoryImplementationAbi,
   daoSpaceFactoryImplementationAddress,
@@ -81,7 +81,7 @@ export const useChangeEntryMethodMutationsWeb3Rpc = (config?: Config) => {
           transactions.push(
             setTokenRequirementTx(
               arg.spaceId,
-              arg.tokenBase?.token ?? '0x0',
+              arg.tokenBase?.token ?? zeroAddress,
               arg.joinMethod ?? 0,
             ),
             changeEntryMethodTx(arg.spaceId, arg.joinMethod),

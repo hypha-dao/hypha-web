@@ -77,7 +77,12 @@ export const CreateProposalChangeEntryMethodForm = ({
   });
 
   const handleCreate = async (data: FormValues) => {
-    if (!web3SpaceId || !ENTRY_METHODS.includes(data.entryMethod)) return;
+    if (
+      !web3SpaceId ||
+      spaceId === undefined ||
+      !ENTRY_METHODS.includes(data.entryMethod)
+    )
+      return;
 
     try {
       await createChangeEntryMethod({

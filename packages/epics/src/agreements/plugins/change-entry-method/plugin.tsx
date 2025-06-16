@@ -2,16 +2,19 @@
 
 import { Address, EntryMethodType, Person } from '@hypha-platform/core/client';
 import {
+  EntryMethodField,
+  EntryMethodTokenField,
+  useTokens,
+} from '@hypha-platform/epics';
+import {
   FormControl,
   FormField,
   FormItem,
   FormMessage,
 } from '@hypha-platform/ui';
-import { EntryMethodTokenField } from 'packages/epics/src/spaces';
-import { EntryMethodField } from 'packages/epics/src/spaces/components/entry-method-field';
-import { useTokens } from 'packages/epics/src/treasury';
 import { useState } from 'react';
 import { useFormContext } from 'react-hook-form';
+import { zeroAddress } from 'viem';
 
 type EntryMethodOption = {
   name: string;
@@ -65,7 +68,7 @@ export const ChangeEntryMethodPlugin = ({}: {
                         amount: value?.amount || 0,
                         token: (value?.token ||
                           tokens[0]?.address ||
-                          '0x0') as Address,
+                          zeroAddress) as Address,
                       }}
                       onChange={onChange}
                       tokens={tokens}

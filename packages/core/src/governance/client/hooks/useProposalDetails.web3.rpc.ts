@@ -99,7 +99,7 @@ export const useProposalDetailsWeb3Rpc = ({
     const tokenRequirements: Array<{
       spaceId: bigint;
       token: `0x${string}`;
-      amount: number;
+      amount: bigint;
     }> = [];
 
     (transactions as any[]).forEach((tx) => {
@@ -306,7 +306,7 @@ export const useProposalDetailsWeb3Rpc = ({
           const [spaceId, token, amount] = decoded.args as unknown as [
             bigint,
             `0x{string}`,
-            number,
+            bigint,
           ];
 
           tokenRequirements.push({

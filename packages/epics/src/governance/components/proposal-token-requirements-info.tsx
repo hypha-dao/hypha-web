@@ -4,7 +4,7 @@ import { TokenLabel } from './token-label';
 
 interface ProposalTokenRequirementsInfoPops {
   token: `0x${string}`;
-  amount: number;
+  amount: bigint;
 }
 
 export const ProposalTokenRequirementsInfo = ({

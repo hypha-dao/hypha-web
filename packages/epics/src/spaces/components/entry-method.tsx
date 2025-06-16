@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Image, Combobox } from '@hypha-platform/ui';
+import { Combobox } from '@hypha-platform/ui';
 
 type EntryMethod = {
   name: string;
@@ -25,7 +25,7 @@ export const EntryMethod = ({
   const [manualValue, setManualValue] = useState(value || 0);
 
   useEffect(() => {
-    if (value) {
+    if (value !== undefined && value !== null) {
       const found = entryMethods.find((r) => r.value === value);
       setSelected(found || { value });
       setManualValue(value);

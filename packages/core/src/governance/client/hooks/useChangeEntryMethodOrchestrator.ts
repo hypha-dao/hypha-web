@@ -195,6 +195,9 @@ export const useChangeEntryMethodOrchestrator = ({
           completeTask('CREATE_WEB3_CHANGE_ENTRY_METHOD');
         }
       } catch (err) {
+        if (err instanceof Error) {
+          errorTask('CREATE_WEB3_CHANGE_ENTRY_METHOD', err.message);
+        }
         if (web2Slug) {
           await web2.deleteAgreementBySlug({ slug: web2Slug });
         }
