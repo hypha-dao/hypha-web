@@ -13,7 +13,10 @@ import {
   schemaCreateAgreementFiles,
 } from '../../validation';
 import { EntryMethodType, TokenBase } from '@core/governance/types';
-import { useAgreementFileUploads, useAgreementMutationsWeb2Rsc } from '@hypha-platform/core/client';
+import {
+  useAgreementFileUploads,
+  useAgreementMutationsWeb2Rsc,
+} from '@hypha-platform/core/client';
 
 type UseCreateChangeEntryMethodOrchestratorInput = {
   authToken?: string | null;
@@ -102,9 +105,7 @@ const computeProgress = (tasks: TaskState): number => {
   return Math.min(100, Math.max(0, Math.round(progress)));
 };
 
-type CreateChangeEntryMethodArg = z.infer<
-  typeof schemaCreateAgreementWeb2
-> & {
+type CreateChangeEntryMethodArg = z.infer<typeof schemaCreateAgreementWeb2> & {
   entryMethod: number;
   web3SpaceId?: number;
   tokenBase?: TokenBase;
@@ -157,11 +158,8 @@ export const useChangeEntryMethodOrchestrator = ({
     'createChangeEntryMethodOrchestration',
     async (_, { arg }: { arg: CreateChangeEntryMethodArg }) => {
       startTask('CREATE_WEB2_CHANGE_ENTRY_METHOD');
-      const inputWeb2 =
-        schemaCreateAgreementWeb2.parse(arg);
-      const createdAgreement = await web2.createAgreement(
-        inputWeb2,
-      );
+      const inputWeb2 = schemaCreateAgreementWeb2.parse(arg);
+      const createdAgreement = await web2.createAgreement(inputWeb2);
       completeTask('CREATE_WEB2_CHANGE_ENTRY_METHOD');
 
       const web2Slug = createdAgreement?.slug;
@@ -210,14 +208,15 @@ export const useChangeEntryMethodOrchestrator = ({
     },
   );
 
-  const key = web2.createdAgreement?.slug && agreementFiles.files
-    ? [
-        web2.createdAgreement.slug,
-        agreementFiles.files,
-        web3.changeEntryMethodData?.proposalId,
-        'linkingWeb2AndWeb3Token',
-      ]
-    : null;
+  const key =
+    web2.createdAgreement?.slug && agreementFiles.files
+      ? [
+          web2.createdAgreement.slug,
+          agreementFiles.files,
+          web3.changeEntryMethodData?.proposalId,
+          'linkingWeb2AndWeb3Token',
+        ]
+      : null;
   const { data: updatedWeb2Agreement } = useSWR(
     web2.createdAgreement?.slug && agreementFiles.files
       ? [

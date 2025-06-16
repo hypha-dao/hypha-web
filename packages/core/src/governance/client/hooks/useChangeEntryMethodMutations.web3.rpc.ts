@@ -25,10 +25,7 @@ type TxData = z.infer<typeof transactionSchema>;
 
 const chainId = 8453;
 
-function changeEntryMethodTx(
-  spaceId: number,
-  joinMethod: number
-): TxData {
+function changeEntryMethodTx(spaceId: number, joinMethod: number): TxData {
   return {
     target: daoSpaceFactoryImplementationAddress[chainId],
     value: 0,

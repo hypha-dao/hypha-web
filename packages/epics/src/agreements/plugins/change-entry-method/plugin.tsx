@@ -1,17 +1,17 @@
 'use client';
 
-import { Address, EntryMethodType, Person } from "@hypha-platform/core/client";
+import { Address, EntryMethodType, Person } from '@hypha-platform/core/client';
 import {
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from "@hypha-platform/ui";
-import { EntryMethodTokenField } from "packages/epics/src/spaces";
-import { EntryMethodField } from "packages/epics/src/spaces/components/entry-method-field";
-import { useTokens } from "packages/epics/src/treasury";
-import { useState } from "react";
-import { useFormContext } from "react-hook-form";
+} from '@hypha-platform/ui';
+import { EntryMethodTokenField } from 'packages/epics/src/spaces';
+import { EntryMethodField } from 'packages/epics/src/spaces/components/entry-method-field';
+import { useTokens } from 'packages/epics/src/treasury';
+import { useState } from 'react';
+import { useFormContext } from 'react-hook-form';
 
 type EntryMethodOption = {
   name: string;

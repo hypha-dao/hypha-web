@@ -1,5 +1,8 @@
 import { createSpaceService } from '@core/space/server';
-import { CreateProposalChangeEntryMethodForm, SidePanel } from '@hypha-platform/epics';
+import {
+  CreateProposalChangeEntryMethodForm,
+  SidePanel,
+} from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { notFound } from 'next/navigation';
 import { Plugin } from '../plugins';

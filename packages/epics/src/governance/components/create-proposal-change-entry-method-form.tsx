@@ -1,6 +1,6 @@
 'use client';
 
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Address,
   createAgreementFiles,
@@ -9,15 +9,15 @@ import {
   useChangeEntryMethodOrchestrator,
   useJwt,
   useMe,
-} from "@hypha-platform/core/client";
-import { LoadingBackdrop } from "@hypha-platform/ui/server";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { useConfig } from "wagmi";
-import { z } from "zod";
-import { CreateAgreementBaseFields } from "@hypha-platform/epics";
-import { Button, Form, Separator } from "@hypha-platform/ui";
-import React from "react";
+} from '@hypha-platform/core/client';
+import { LoadingBackdrop } from '@hypha-platform/ui/server';
+import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { useConfig } from 'wagmi';
+import { z } from 'zod';
+import { CreateAgreementBaseFields } from '@hypha-platform/epics';
+import { Button, Form, Separator } from '@hypha-platform/ui';
+import React from 'react';
 
 const schemaCreateProposalChangeEntryMethod =
   schemaChangeEntryMethod.extend(createAgreementFiles);
@@ -58,21 +58,18 @@ export const CreateProposalChangeEntryMethodForm = ({
     changeEntryMethod: { slug: agreementSlug },
   } = useChangeEntryMethodOrchestrator({ authToken: jwt, config });
 
-  const defaultValues = React.useMemo(
-    () => {
-      return {
-        title: '',
-        description: '',
-        leadImage: undefined,
-        attachments: undefined,
-        spaceId: spaceId ?? undefined,
-        creatorId: person?.id,
-        entryMethod: EntryMethodType.OPEN_ACCESS,
-        tokenBase: undefined,
-      };
-    },
-    [spaceId, person],
-  );
+  const defaultValues = React.useMemo(() => {
+    return {
+      title: '',
+      description: '',
+      leadImage: undefined,
+      attachments: undefined,
+      spaceId: spaceId ?? undefined,
+      creatorId: person?.id,
+      entryMethod: EntryMethodType.OPEN_ACCESS,
+      tokenBase: undefined,
+    };
+  }, [spaceId, person]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schemaCreateProposalChangeEntryMethod),
@@ -90,9 +87,9 @@ export const CreateProposalChangeEntryMethodForm = ({
         entryMethod: data.entryMethod,
         tokenBase: data.tokenBase
           ? {
-            amount: data.tokenBase.amount,
-            token: data.tokenBase.token as Address,
-          }
+              amount: data.tokenBase.amount,
+              token: data.tokenBase.token as Address,
+            }
           : undefined,
       });
     } catch (error) {
@@ -109,7 +106,7 @@ export const CreateProposalChangeEntryMethodForm = ({
       router.push(successfulUrl);
     }
   }, [progress, agreementSlug, router, successfulUrl]);
-  
+
   return (
     <LoadingBackdrop
       progress={progress}
