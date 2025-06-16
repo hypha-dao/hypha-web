@@ -11,7 +11,9 @@ import {
   decayingTokenFactoryAbi,
   daoSpaceFactoryImplementationAbi,
   decayingSpaceTokenAbi,
+  tokenBalanceJoinImplementationAbi,
 } from '@core/generated';
+import { TokenBase } from '@core/governance/types';
 
 export const useProposalDetailsWeb3Rpc = ({
   proposalId,
@@ -87,6 +89,17 @@ export const useProposalDetailsWeb3Rpc = ({
     const mintings: Array<{
       member: `0x${string}`;
       number: bigint;
+    }> = [];
+
+    const entryMethods: Array<{
+      spaceId: bigint;
+      joinMethod: bigint;
+    }> = [];
+
+    const tokenRequirements: Array<{
+      spaceId: bigint;
+      token: `0x${string}`;
+      amount: number;
     }> = [];
 
     (transactions as any[]).forEach((tx) => {
@@ -261,6 +274,50 @@ export const useProposalDetailsWeb3Rpc = ({
       } catch (error) {
         console.error('Failed to decode function data:', error);
       }
+
+      try {
+        const decoded = decodeFunctionData({
+          abi: daoSpaceFactoryImplementationAbi,
+          data: tx.data,
+        });
+
+        if (decoded.functionName === 'changeEntryMethod') {
+          const [spaceId, joinMethod] = decoded.args as unknown as [
+            bigint,
+            bigint,
+          ];
+
+          entryMethods.push({
+            spaceId,
+            joinMethod,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to decode function data:', error);
+      }
+
+      try {
+        const decoded = decodeFunctionData({
+          abi: tokenBalanceJoinImplementationAbi,
+          data: tx.data,
+        });
+
+        if (decoded.functionName === 'setTokenRequirement') {
+          const [spaceId, token, amount] = decoded.args as unknown as [
+            bigint,
+            `0x{string}`,
+            number,
+          ];
+
+          tokenRequirements.push({
+            spaceId,
+            token,
+            amount,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to decode function data:', error);
+      }
     });
 
     return {
@@ -279,6 +336,8 @@ export const useProposalDetailsWeb3Rpc = ({
       tokens,
       votingMethods,
       mintings,
+      entryMethods,
+      tokenRequirements,
     };
   }, [data]);
 
