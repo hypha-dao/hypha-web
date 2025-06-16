@@ -100,6 +100,10 @@ export const CreateProposalChangeEntryMethodForm = ({
     }
   };
 
+  const onInvalid = async (err: any) => {
+    console.log('Invalid form:', err);
+  };
+
   React.useEffect(() => {
     if (progress === 100 && agreementSlug) {
       router.push(successfulUrl);
@@ -123,7 +127,7 @@ export const CreateProposalChangeEntryMethodForm = ({
     >
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit(handleCreate)}
+          onSubmit={form.handleSubmit(handleCreate, onInvalid)}
           className="flex flex-col gap-5"
         >
           <CreateAgreementBaseFields

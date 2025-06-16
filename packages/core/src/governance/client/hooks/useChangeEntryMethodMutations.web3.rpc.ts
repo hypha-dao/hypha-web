@@ -23,9 +23,14 @@ import { transactionSchema } from '@core/governance/validation';
 
 type TxData = z.infer<typeof transactionSchema>;
 
-function changeEntryMethodTx(spaceId: number, joinMethod: number): TxData {
+const chainId = 8453;
+
+function changeEntryMethodTx(
+  spaceId: number,
+  joinMethod: number
+): TxData {
   return {
-    target: daoSpaceFactoryImplementationAddress[8453],
+    target: daoSpaceFactoryImplementationAddress[chainId],
     value: 0,
     data: encodeFunctionData({
       abi: daoSpaceFactoryImplementationAbi,
@@ -41,7 +46,7 @@ function setTokenRequirementTx(
   amount: number,
 ): TxData {
   return {
-    target: tokenBalanceJoinImplementationAddress[8453],
+    target: tokenBalanceJoinImplementationAddress[chainId],
     value: 0,
     data: encodeFunctionData({
       abi: tokenBalanceJoinImplementationAbi,
@@ -67,7 +72,7 @@ export const useChangeEntryMethodMutationsWeb3Rpc = (config?: Config) => {
   } = useSWRMutation(
     config ? [config, 'changeEntryMethod'] : null,
     async ([config], { arg }: { arg: ChangeEntryMethodArgs }) => {
-      const transactions: TxData[] = [];
+      const transactions: Array<TxData> = [];
       switch (arg.joinMethod) {
         case EntryMethodType.OPEN_ACCESS:
           transactions.push(changeEntryMethodTx(arg.spaceId, arg.joinMethod));
