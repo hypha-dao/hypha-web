@@ -68,10 +68,7 @@ export const CreateProposalChangeEntryMethodForm = ({
         spaceId: spaceId ?? undefined,
         creatorId: person?.id,
         entryMethod: EntryMethodType.OPEN_ACCESS,
-        tokenBase: undefined,/*{
-          amount: 0,
-          token: '0x0' as Address,
-        }*/
+        tokenBase: undefined,
       };
     },
     [spaceId, person],
