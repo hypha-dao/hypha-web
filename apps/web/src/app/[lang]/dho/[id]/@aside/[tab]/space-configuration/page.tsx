@@ -72,7 +72,7 @@ export default function SpaceConfiguration() {
           onSubmit={updateSpace}
           defaultValues={{
             ...space,
-            title: space?.title ? `${space?.title}${space?.title}` : '',
+            title: space?.title || '',
             description: space?.description || '',
             slug: spaceSlug,
             logoUrl: space?.logoUrl || '',

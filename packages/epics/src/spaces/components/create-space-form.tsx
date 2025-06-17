@@ -109,7 +109,7 @@ export const SpaceForm = ({
                 </FormItem>
               )}
             />
-            <div className="flex justify-between w-full">
+            <div className="flex w-full">
               <div className="flex flex-col w-full">
                 <FormField
                   control={form.control}

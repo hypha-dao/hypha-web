@@ -33,6 +33,7 @@ export type CreateAgreementFormProps = {
   isLoading?: boolean;
   closeUrl: string;
   backUrl?: string;
+  backLabel?: string;
   label?: string;
 };
 
@@ -41,6 +42,7 @@ export function CreateAgreementBaseFields({
   isLoading = false,
   closeUrl,
   backUrl,
+  backLabel = 'Back to Create',
   label = 'Agreement',
 }: CreateAgreementFormProps) {
   const form = useFormContext<CreateAgreementFormData>();
@@ -51,16 +53,16 @@ export function CreateAgreementBaseFields({
 
   return (
     <>
-      <div className="flex gap-5 justify-between">
-        <div className="flex items-center gap-3">
+      <div className="flex justify-betweengap-2">
+        <div className="flex flex-grow gap-3">
           <PersonAvatar
             size="lg"
             isLoading={isLoading}
             avatarSrc={creator?.avatar}
             userName={`${creator?.name} ${creator?.surname}`}
           />
-          <div className="flex justify-between items-center w-full">
-            <div className="flex flex-col">
+          <div className="flex w-full">
+            <div className="flex flex-col w-full">
               <Badge className="w-fit" colorVariant="accent">
                 {label}
               </Badge>
@@ -89,7 +91,7 @@ export function CreateAgreementBaseFields({
         </div>
         <div className="flex gap-2">
           { backUrl &&
-            <ButtonBack backUrl={backUrl} />
+            <ButtonBack label={backLabel} backUrl={backUrl} />
           }
           <ButtonClose closeUrl={closeUrl} />
         </div>

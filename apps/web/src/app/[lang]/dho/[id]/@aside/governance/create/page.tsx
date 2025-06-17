@@ -1,7 +1,8 @@
 import { CreateAgreementForm, SidePanel } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { createSpaceService } from '@core/space/server';
-import { getDhoPathGovernance, selectCreateActionPath } from '../../../@tab/governance/constants';
+import { getDhoPathGovernance } from '../../../@tab/governance/constants';
+import { PATH_SELECT_CREATE_ACTION } from "@web/app/constants";
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -22,7 +23,7 @@ export default async function CreateAgreementPage({ params }: PageProps) {
     <SidePanel>
       <CreateAgreementForm
         successfulUrl={successfulUrl}
-        backUrl={`${successfulUrl}${selectCreateActionPath}`}
+        backUrl={`${successfulUrl}${PATH_SELECT_CREATE_ACTION}`}
         spaceId={spaceId}
         web3SpaceId={web3SpaceId}
         label="Collective Agreement"

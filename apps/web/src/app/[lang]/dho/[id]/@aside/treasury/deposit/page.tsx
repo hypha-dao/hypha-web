@@ -2,7 +2,7 @@ import { DepositFunds, SidePanel } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { createSpaceService } from '@hypha-platform/core/server';
 import { getDhoPathTreasury } from '../../../@tab/treasury/constants';
-import { selectCreateActionPath } from '../../../@tab/governance/constants';
+import { PATH_SELECT_CREATE_ACTION } from "@web/app/constants";
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -23,7 +23,7 @@ export default async function Treasury({ params }: PageProps) {
     <SidePanel>
       <DepositFunds
         closeUrl={closeUrl}
-        backUrl={`${closeUrl}${selectCreateActionPath}`}
+        backUrl={`${closeUrl}${PATH_SELECT_CREATE_ACTION}`}
         spaceId={spaceId}
       />
     </SidePanel>
