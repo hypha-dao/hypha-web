@@ -36,7 +36,7 @@ const entryMethods: EntryMethodOption[] = [
   },
 ];
 
-export const ChangeEntryMethodPlugin = ({}: {
+export const ChangeEntryMethodPlugin = (_props: {
   spaceSlug: string;
   members: Person[];
 }) => {
@@ -50,7 +50,6 @@ export const ChangeEntryMethodPlugin = ({}: {
         entryMethods={entryMethods}
         value={getValues().entryMethod}
         onChange={(selected) => {
-          console.log('selected', selected);
           setTokenBased(selected.value === EntryMethodType.TOKEN_BASED);
         }}
       />
