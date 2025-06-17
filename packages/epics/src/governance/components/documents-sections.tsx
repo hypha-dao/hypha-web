@@ -1,7 +1,7 @@
 'use client';
 
 import { DocumentSection } from './document-section';
-import { useSpaceDocumentsWithStatuses } from '@web/hooks/use-space-documents-with-statuses';
+import { useSpaceDocumentsWithStatuses } from '../hooks/use-space-documents-with-statuses';
 
 type DocumentsSectionsProps = {
   lang: string;
