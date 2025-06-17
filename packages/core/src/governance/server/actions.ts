@@ -7,7 +7,12 @@ import {
   updateAgreementBySlug,
   deleteAgreementBySlug,
 } from './mutations';
-import { CreateAgreementInput, UpdateAgreementBySlugInput } from '../types';
+import {
+  CreateAgreementInput,
+  CreateChangeEntryMethodInput,
+  UpdateAgreementBySlugInput,
+  UpdateChangeEntryMethodBySlugInput,
+} from '../types';
 // TODO: #602 Define RLS Policies for Agreement Table
 import { db } from '@hypha-platform/storage-postgres';
 
@@ -38,7 +43,7 @@ export async function deleteAgreementBySlugAction(
 }
 
 export async function createChangeEntryMethodAction(
-  data: CreateAgreementInput,
+  data: CreateChangeEntryMethodInput,
   { authToken }: { authToken?: string },
 ) {
   if (!authToken) throw new Error('authToken is required to create agreement');
@@ -46,7 +51,7 @@ export async function createChangeEntryMethodAction(
 }
 
 export async function updateChangeEntryMethodBySlugAction(
-  data: UpdateAgreementBySlugInput,
+  data: UpdateChangeEntryMethodBySlugInput,
   { authToken }: { authToken?: string },
 ) {
   // TODO: #602 Define RLS Policies for Spaces Table

@@ -158,7 +158,13 @@ export const useChangeEntryMethodOrchestrator = ({
     'createChangeEntryMethodOrchestration',
     async (_, { arg }: { arg: CreateChangeEntryMethodArg }) => {
       startTask('CREATE_WEB2_CHANGE_ENTRY_METHOD');
-      const inputWeb2 = schemaCreateAgreementWeb2.parse(arg);
+      // const inputWeb2 = schemaCreateAgreementWeb2.parse(arg);
+      const inputWeb2 = schemaCreateAgreementWeb2.parse({
+        ...arg,
+        entryMethod: undefined,
+        web3SpaceId: undefined,
+        tokenBase: undefined,
+      });
       const createdAgreement = await web2.createAgreement(inputWeb2);
       completeTask('CREATE_WEB2_CHANGE_ENTRY_METHOD');
 

@@ -332,7 +332,7 @@ export const schemaChangeEntryMethod = z.object({
       amount: z
         .number()
         .int('Should be integer')
-        .min(0, 'Cannot be negative value'),
+        .positive('Amount must be greater than 0'),
       token: z
         .string()
         .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' })
