@@ -19,15 +19,10 @@ export const EntryMethod = ({
   onChange,
   value,
 }: EntryMethodProps) => {
-  const [selected, setSelected] = useState<
-    EntryMethod | { value: number } | null
-  >(null);
   const [manualValue, setManualValue] = useState(value || 0);
 
   useEffect(() => {
     if (value !== undefined && value !== null) {
-      const found = entryMethods.find((r) => r.value === value);
-      setSelected(found || { value });
       setManualValue(value);
     }
   }, [value, entryMethods]);
@@ -47,7 +42,6 @@ export const EntryMethod = ({
     (value: string) => {
       const found = entryMethods.find((r) => String(r.value) === value) || null;
 
-      setSelected(found);
       if (found) {
         setManualValue(found.value);
         onChange?.(found);

@@ -13,7 +13,6 @@ import {
   decayingSpaceTokenAbi,
   tokenBalanceJoinImplementationAbi,
 } from '@core/generated';
-import { TokenBase } from '@core/governance/types';
 
 export const useProposalDetailsWeb3Rpc = ({
   proposalId,
