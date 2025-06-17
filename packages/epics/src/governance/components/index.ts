@@ -10,3 +10,4 @@ export * from './issue-new-token-form';
 export * from './proposal-token-items';
 export * from './proposal-voting-info';
 export * from './proposal-mint-item';
+export * from './documents-sections';

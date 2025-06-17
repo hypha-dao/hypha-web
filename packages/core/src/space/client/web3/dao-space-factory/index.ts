@@ -3,3 +3,4 @@ export * from './get-space-details';
 export * from './is-member';
 export * from './get-space-created-event';
 export * from './get-member-spaces';
+export * from './get-space-proposals';

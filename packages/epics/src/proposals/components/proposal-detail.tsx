@@ -131,6 +131,7 @@ export const ProposalDetail = ({
         quorum={proposalDetails?.quorumPercentage || 0}
         endTime={formatISO(new Date(proposalDetails?.endTime || new Date()))}
         executed={proposalDetails?.executed}
+        expired={proposalDetails?.expired}
         onAccept={handleOnAccept}
         onReject={handleOnReject}
         isLoading={isLoading}
