@@ -41,7 +41,7 @@ export const updateAgreementBySlug = async (
     .returning();
 
   if (!updatedAgreement) {
-    throw new Error('Failed to update space');
+    throw new Error('Failed to update document');
   }
 
   return updatedAgreement;
