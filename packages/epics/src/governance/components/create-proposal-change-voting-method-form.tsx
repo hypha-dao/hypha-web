@@ -132,6 +132,7 @@ export const CreateProposalChangeVotingMethodForm = ({
             }}
             closeUrl={successfulUrl}
             backUrl={backUrl}
+            backLabel="Back to Settings"
             isLoading={false}
           />
           {plugin}

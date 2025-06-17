@@ -30,12 +30,15 @@ import {
   schemaCreateSpace,
 } from '@hypha-platform/core/client';
 import { Links } from '../../common/links';
+import { ButtonClose, ButtonBack } from '@hypha-platform/epics';
 
 const schemaCreateSpaceForm = schemaCreateSpace.extend(createSpaceFiles);
 
 export type CreateSpaceFormProps = {
   isLoading?: boolean;
   closeUrl: string;
+  backUrl?: string;
+  backLabel?: string;
   creator: {
     name?: string;
     surname?: string;
@@ -61,6 +64,8 @@ export const SpaceForm = ({
   creator,
   isLoading,
   closeUrl,
+  backUrl,
+  backLabel,
   onSubmit,
   parentSpaceId,
   defaultValues = {
@@ -82,8 +87,8 @@ export const SpaceForm = ({
         onSubmit={form.handleSubmit(onSubmit)}
         className={clsx('flex flex-col gap-5', isLoading && 'opacity-50')}
       >
-        <div className="flex gap-5 justify-between">
-          <div className="flex items-center gap-3">
+        <div className="flex gap-2">
+          <div className="flex flex-grow gap-3">
             <FormField
               control={form.control}
               name="logoUrl"
@@ -104,8 +109,8 @@ export const SpaceForm = ({
                 </FormItem>
               )}
             />
-            <div className="flex justify-between items-center w-full">
-              <div className="flex flex-col">
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col w-full">
                 <FormField
                   control={form.control}
                   name="title"
@@ -134,16 +139,12 @@ export const SpaceForm = ({
               </div>
             </div>
           </div>
-          <Link href={closeUrl} scroll={false}>
-            <Button
-              variant="ghost"
-              colorVariant="neutral"
-              className="flex items-center"
-            >
-              Close
-              <RxCross1 className="ml-2" />
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            { backUrl &&
+              <ButtonBack label={backLabel} backUrl={backUrl} />
+            }
+            <ButtonClose closeUrl={closeUrl} />
+          </div>
         </div>
         <FormField
           control={form.control}
