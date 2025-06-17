@@ -158,7 +158,6 @@ export const useChangeEntryMethodOrchestrator = ({
     'createChangeEntryMethodOrchestration',
     async (_, { arg }: { arg: CreateChangeEntryMethodArg }) => {
       startTask('CREATE_WEB2_CHANGE_ENTRY_METHOD');
-      // const inputWeb2 = schemaCreateAgreementWeb2.parse(arg);
       const inputWeb2 = schemaCreateAgreementWeb2.parse({
         ...arg,
         entryMethod: undefined,
@@ -212,7 +211,7 @@ export const useChangeEntryMethodOrchestrator = ({
 
       startTask('UPLOAD_FILES');
       const inputFiles = schemaCreateAgreementFiles.parse(arg);
-      await agreementFiles.upload(inputFiles);
+      await agreementFiles.upload(inputFiles, web2Slug);
       completeTask('UPLOAD_FILES');
     },
   );
