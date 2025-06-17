@@ -5,6 +5,7 @@ import {
   PayForExpensesPlugin,
   DeployFundsPlugin,
   ChangeVotingMethodPlugin,
+  ChangeEntryMethodPlugin,
   IssueNewTokenPlugin,
 } from '@hypha-platform/epics';
 import { useMembers } from '@web/hooks/use-members';
@@ -14,6 +15,7 @@ export const PLUGINS = {
   'pay-for-expenses': PayForExpensesPlugin,
   'deploy-funds': DeployFundsPlugin,
   'change-voting-method': ChangeVotingMethodPlugin,
+  'change-entry-method': ChangeEntryMethodPlugin,
   'issue-new-token': IssueNewTokenPlugin,
 };
 

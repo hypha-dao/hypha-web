@@ -15,8 +15,10 @@ import { useProposalDetailsWeb3Rpc } from '@core/governance';
 import {
   ProposalTransactionItem,
   ProposalTokenItem,
+  ProposalTokenRequirementsInfo,
   ProposalVotingInfo,
   ProposalMintItem,
+  ProposalEntryInfo,
 } from '../../governance';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
 
@@ -105,6 +107,16 @@ export const ProposalDetail = ({
           votingPowerSource={method.votingPowerSource}
           unity={method.unity}
           quorum={method.quorum}
+        />
+      ))}
+      {proposalDetails?.entryMethods.map((method, idx) => (
+        <ProposalEntryInfo key={idx} joinMethod={method.joinMethod} />
+      ))}
+      {proposalDetails?.tokenRequirements.map((method, idx) => (
+        <ProposalTokenRequirementsInfo
+          key={idx}
+          token={method.token}
+          amount={method.amount}
         />
       ))}
       {proposalDetails?.tokens.map((token, idx) => (

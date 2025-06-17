@@ -9,3 +9,4 @@ export * from './useCreateProposeAContributionOrchestrator';
 export * from './useProposeAContributionMutations.web3.rsc';
 export * from './useIssueNewTokenOrchestrator';
 export * from './useChangeVotingMethodOrchestrator';
+export * from './useChangeEntryMethodOrchestrator';
