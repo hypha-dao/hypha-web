@@ -1,99 +1,109 @@
 'use client';
 
-import { CreateAgreementBaseFields } from '@hypha-platform/epics';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  schemaChangeVotingMethod,
+  Address,
   createAgreementFiles,
+  EntryMethodType,
+  schemaChangeEntryMethod,
+  useChangeEntryMethodOrchestrator,
+  useJwt,
   useMe,
-  useCreateChangeVotingMethodOrchestrator,
 } from '@hypha-platform/core/client';
-import { z } from 'zod';
-import { Button, Form, Separator } from '@hypha-platform/ui';
-import React from 'react';
-import { useJwt } from '@hypha-platform/core/client';
-import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter } from 'next/navigation';
-import { useSpaceDetailsWeb3Rpc } from '@hypha-platform/core/client';
+import { useForm } from 'react-hook-form';
+import { useConfig } from 'wagmi';
+import { z } from 'zod';
+import { CreateAgreementBaseFields } from '@hypha-platform/epics';
+import { Button, Form, Separator } from '@hypha-platform/ui';
+import React from 'react';
 
-const schemaCreateProposalChangeVotingMethod =
-  schemaChangeVotingMethod.extend(createAgreementFiles);
+const schemaCreateProposalChangeEntryMethod =
+  schemaChangeEntryMethod.extend(createAgreementFiles);
 
-type FormValues = z.infer<typeof schemaCreateProposalChangeVotingMethod>;
+type FormValues = z.infer<typeof schemaCreateProposalChangeEntryMethod>;
 
-interface CreateProposalChangeVotingMethodFormProps {
+interface CreateProposalChangeEntryMethodFormProps {
   spaceId: number | undefined | null;
   web3SpaceId: number | undefined | null;
   successfulUrl: string;
   plugin: React.ReactNode;
 }
 
-export const CreateProposalChangeVotingMethodForm = ({
+const ENTRY_METHODS = [
+  EntryMethodType.OPEN_ACCESS,
+  EntryMethodType.TOKEN_BASED,
+  EntryMethodType.INVITE_ONLY,
+];
+
+export const CreateProposalChangeEntryMethodForm = ({
   successfulUrl,
   spaceId,
   web3SpaceId,
   plugin,
-}: CreateProposalChangeVotingMethodFormProps) => {
+}: CreateProposalChangeEntryMethodFormProps) => {
   const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
 
-  const { spaceDetails } = useSpaceDetailsWeb3Rpc({
-    spaceId: spaceId as number,
-  });
   const {
-    createChangeVotingMethod,
+    createChangeEntryMethod,
     reset,
     currentAction,
     isError,
     isPending,
     progress,
-    agreement: { slug: agreementSlug },
-  } = useCreateChangeVotingMethodOrchestrator({ authToken: jwt, config });
+    changeEntryMethod: { slug: agreementSlug },
+  } = useChangeEntryMethodOrchestrator({ authToken: jwt, config });
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(schemaCreateProposalChangeVotingMethod),
-    defaultValues: {
+  const defaultValues = React.useMemo(() => {
+    return {
       title: '',
       description: '',
       leadImage: undefined,
       attachments: undefined,
       spaceId: spaceId ?? undefined,
       creatorId: person?.id,
-      members: [],
-      token: undefined as `0x${string}` | undefined,
-      quorumAndUnity: {
-        quorum: Number(spaceDetails?.quorum || 0),
-        unity: Number(spaceDetails?.unity || 0),
-      },
-      votingMethod: undefined,
-    },
+      entryMethod: EntryMethodType.OPEN_ACCESS,
+      tokenBase: undefined,
+    };
+  }, [spaceId, person]);
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(schemaCreateProposalChangeEntryMethod),
+    defaultValues: defaultValues,
   });
 
   const handleCreate = async (data: FormValues) => {
-    if (!web3SpaceId || !data.votingMethod) return;
+    if (
+      !web3SpaceId ||
+      spaceId === undefined ||
+      !ENTRY_METHODS.includes(data.entryMethod)
+    )
+      return;
 
     try {
-      await createChangeVotingMethod({
+      await createChangeEntryMethod({
         ...data,
         spaceId: spaceId as number,
         web3SpaceId: web3SpaceId,
-        members: data.members ?? [],
-        token: data.token?.startsWith('0x')
-          ? (data.token as `0x${string}`)
+        entryMethod: data.entryMethod,
+        tokenBase: data.tokenBase
+          ? {
+              amount: data.tokenBase.amount,
+              token: data.tokenBase.token as Address,
+            }
           : undefined,
-        quorumAndUnity: {
-          quorum: BigInt(data.quorumAndUnity?.quorum ?? 0),
-          unity: BigInt(data.quorumAndUnity?.unity ?? 0),
-        },
-        votingMethod: data.votingMethod,
       });
     } catch (error) {
-      console.error('Error creating change voting method proposal:', error);
+      console.error('Error creating change entry method proposal:', error);
     }
+  };
+
+  const onInvalid = async (err: any) => {
+    console.log('Invalid form:', err);
   };
 
   React.useEffect(() => {
@@ -119,7 +129,7 @@ export const CreateProposalChangeVotingMethodForm = ({
     >
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit(handleCreate)}
+          onSubmit={form.handleSubmit(handleCreate, onInvalid)}
           className="flex flex-col gap-5"
         >
           <CreateAgreementBaseFields
@@ -130,7 +140,7 @@ export const CreateProposalChangeVotingMethodForm = ({
             }}
             closeUrl={successfulUrl}
             isLoading={false}
-            label="Change Voting Method"
+            label="Change Entry Method"
           />
           {plugin}
           <Separator />

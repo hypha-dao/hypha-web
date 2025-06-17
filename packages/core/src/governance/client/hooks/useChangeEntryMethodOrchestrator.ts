@@ -6,35 +6,37 @@ import { z } from 'zod';
 import { produce } from 'immer';
 import React, { useCallback } from 'react';
 
-import { useAgreementMutationsWeb2Rsc } from './useAgreementMutations.web2.rsc';
-import { useAgreementMutationsWeb3Rpc } from './useAgreementMutations.web3.rsc';
+import { useChangeEntryMethodMutationsWeb3Rpc } from './useChangeEntryMethodMutations.web3.rpc';
 import useSWRMutation from 'swr/mutation';
 import {
-  schemaCreateAgreement,
-  schemaCreateAgreementFiles,
   schemaCreateAgreementWeb2,
+  schemaCreateAgreementFiles,
 } from '../../validation';
-import { useAgreementFileUploads } from './useAgreementFileUploads';
+import { EntryMethodType, TokenBase } from '@core/governance/types';
+import {
+  useAgreementFileUploads,
+  useAgreementMutationsWeb2Rsc,
+} from '@hypha-platform/core/client';
 
-type UseCreateAgreementOrchestratorInput = {
+type UseCreateChangeEntryMethodOrchestratorInput = {
   authToken?: string | null;
   config?: Config;
 };
 
-export type TaskName =
-  | 'CREATE_WEB2_AGREEMENT'
-  | 'CREATE_WEB3_AGREEMENT'
+type TaskName =
+  | 'CREATE_WEB2_CHANGE_ENTRY_METHOD'
+  | 'CREATE_WEB3_CHANGE_ENTRY_METHOD'
   | 'UPLOAD_FILES'
-  | 'LINK_WEB2_AND_WEB3_AGREEMENT';
+  | 'LINK_WEB2_AND_WEB3_CHANGE_ENTRY_METHOD';
 
-export type TaskState = {
+type TaskState = {
   [K in TaskName]: {
     status: TaskStatus;
     message?: string;
   };
 };
 
-export enum TaskStatus {
+enum TaskStatus {
   IDLE = 'idle',
   IS_PENDING = 'isPending',
   IS_DONE = 'isDone',
@@ -42,26 +44,27 @@ export enum TaskStatus {
 }
 
 const taskActionDescriptions: Record<TaskName, string> = {
-  CREATE_WEB2_AGREEMENT: 'Creating Web2 agreement...',
-  CREATE_WEB3_AGREEMENT: 'Creating Web3 agreement...',
+  CREATE_WEB2_CHANGE_ENTRY_METHOD: 'Creating Web2 change entry method...',
+  CREATE_WEB3_CHANGE_ENTRY_METHOD: 'Creating Web3 change entry method...',
   UPLOAD_FILES: 'Uploading Agreement Files...',
-  LINK_WEB2_AND_WEB3_AGREEMENT: 'Linking Web2 and Web3 agreements',
+  LINK_WEB2_AND_WEB3_CHANGE_ENTRY_METHOD:
+    'Linking Web2 and Web3 change entry method',
 };
 
-export type ProgressAction =
+type ProgressAction =
   | { type: 'START_TASK'; taskName: TaskName; message?: string }
   | { type: 'COMPLETE_TASK'; taskName: TaskName; message?: string }
   | { type: 'SET_ERROR'; taskName: TaskName; message: string }
   | { type: 'RESET' };
 
 const initialTaskState: TaskState = {
-  CREATE_WEB2_AGREEMENT: { status: TaskStatus.IDLE },
-  CREATE_WEB3_AGREEMENT: { status: TaskStatus.IDLE },
+  CREATE_WEB2_CHANGE_ENTRY_METHOD: { status: TaskStatus.IDLE },
+  CREATE_WEB3_CHANGE_ENTRY_METHOD: { status: TaskStatus.IDLE },
   UPLOAD_FILES: { status: TaskStatus.IDLE },
-  LINK_WEB2_AND_WEB3_AGREEMENT: { status: TaskStatus.IDLE },
+  LINK_WEB2_AND_WEB3_CHANGE_ENTRY_METHOD: { status: TaskStatus.IDLE },
 };
 
-export const progressStateReducer = (
+const progressStateReducer = (
   state: TaskState,
   action: ProgressAction,
 ): TaskState => {
@@ -102,22 +105,19 @@ const computeProgress = (tasks: TaskState): number => {
   return Math.min(100, Math.max(0, Math.round(progress)));
 };
 
-export const useCreateAgreementOrchestrator = ({
+type CreateChangeEntryMethodArg = z.infer<typeof schemaCreateAgreementWeb2> & {
+  entryMethod: number;
+  web3SpaceId?: number;
+  tokenBase?: TokenBase;
+};
+
+export const useChangeEntryMethodOrchestrator = ({
   authToken,
   config,
-}: UseCreateAgreementOrchestratorInput) => {
+}: UseCreateChangeEntryMethodOrchestratorInput) => {
+  const agreementFiles = useAgreementFileUploads(authToken);
   const web2 = useAgreementMutationsWeb2Rsc(authToken);
-  const web3 = useAgreementMutationsWeb3Rpc(config);
-  const agreementFiles = useAgreementFileUploads(
-    authToken,
-    (uploadedFiles, slug) => {
-      web2.updateAgreementBySlug({
-        slug: slug ?? '',
-        attachments: uploadedFiles?.attachments,
-        leadImage: uploadedFiles?.leadImage,
-      });
-    },
-  );
+  const web3 = useChangeEntryMethodMutationsWeb3Rpc(config);
 
   const [taskState, dispatch] = React.useReducer(
     progressStateReducer,
@@ -154,19 +154,23 @@ export const useCreateAgreementOrchestrator = ({
     dispatch({ type: 'RESET' });
   }, []);
 
-  const { trigger: createAgreement } = useSWRMutation(
-    'createAgreementOrchestration',
-    async (_, { arg }: { arg: z.infer<typeof schemaCreateAgreement> }) => {
-      startTask('CREATE_WEB2_AGREEMENT');
-      const inputCreateAgreementWeb2 = schemaCreateAgreementWeb2.parse(arg);
-      const createdAgreement = await web2.createAgreement(
-        inputCreateAgreementWeb2,
-      );
-      completeTask('CREATE_WEB2_AGREEMENT');
+  const { trigger: createChangeEntryMethod } = useSWRMutation(
+    'createChangeEntryMethodOrchestration',
+    async (_, { arg }: { arg: CreateChangeEntryMethodArg }) => {
+      startTask('CREATE_WEB2_CHANGE_ENTRY_METHOD');
+      const inputWeb2 = schemaCreateAgreementWeb2.parse({
+        ...arg,
+        entryMethod: undefined,
+        web3SpaceId: undefined,
+        tokenBase: undefined,
+      });
+      const createdAgreement = await web2.createAgreement(inputWeb2);
+      completeTask('CREATE_WEB2_CHANGE_ENTRY_METHOD');
 
-      let web3ProposalResult = undefined;
-      const web2Slug = createdAgreement?.slug ?? web2.createdAgreement?.slug;
-      const web3SpaceId = (arg as any).web3SpaceId;
+      const web2Slug = createdAgreement?.slug;
+      const web3SpaceId = arg.web3SpaceId;
+      const joinMethod = arg.entryMethod;
+      const tokenBase = arg.tokenBase;
       try {
         if (config) {
           if (typeof web3SpaceId !== 'number') {
@@ -174,88 +178,106 @@ export const useCreateAgreementOrchestrator = ({
               'web3SpaceId is required for web3 proposal creation',
             );
           }
-          startTask('CREATE_WEB3_AGREEMENT');
-          web3ProposalResult = await web3.createAgreement({
+          if (typeof joinMethod !== 'number') {
+            throw new Error(
+              'joinMethod is required for web3 proposal creation',
+            );
+          }
+          if (
+            joinMethod === EntryMethodType.TOKEN_BASED &&
+            typeof tokenBase === 'undefined'
+          ) {
+            throw new Error(
+              'tokenBase is required for web3 proposal creation when token based',
+            );
+          }
+          startTask('CREATE_WEB3_CHANGE_ENTRY_METHOD');
+          await web3.createChangeEntryMethod({
             spaceId: web3SpaceId,
+            joinMethod: joinMethod,
+            tokenBase: tokenBase,
           });
-          completeTask('CREATE_WEB3_AGREEMENT');
-        }
-
-        const files = schemaCreateAgreementFiles.parse(arg);
-        if (files.attachments?.length || files.leadImage) {
-          startTask('UPLOAD_FILES');
-          await agreementFiles.upload(files, web2Slug);
-          completeTask('UPLOAD_FILES');
-        } else {
-          startTask('UPLOAD_FILES');
-          completeTask('UPLOAD_FILES');
+          completeTask('CREATE_WEB3_CHANGE_ENTRY_METHOD');
         }
       } catch (err) {
+        if (err instanceof Error) {
+          errorTask('CREATE_WEB3_CHANGE_ENTRY_METHOD', err.message);
+        }
         if (web2Slug) {
           await web2.deleteAgreementBySlug({ slug: web2Slug });
         }
         throw err;
       }
+
+      startTask('UPLOAD_FILES');
+      const inputFiles = schemaCreateAgreementFiles.parse(arg);
+      await agreementFiles.upload(inputFiles, web2Slug);
+      completeTask('UPLOAD_FILES');
     },
   );
 
-  const { data: updatedWeb2Agreement } = useSWR(
-    web2.createdAgreement?.slug &&
-      taskState.UPLOAD_FILES.status === TaskStatus.IS_DONE &&
-      (!config || taskState.CREATE_WEB3_AGREEMENT.status === TaskStatus.IS_DONE)
+  const key =
+    web2.createdAgreement?.slug && agreementFiles.files
       ? [
           web2.createdAgreement.slug,
-          web3.createdAgreement?.proposalId,
-          'linkingWeb2AndWeb3',
+          agreementFiles.files,
+          web3.changeEntryMethodData?.proposalId,
+          'linkingWeb2AndWeb3Token',
+        ]
+      : null;
+  const { data: updatedWeb2Agreement } = useSWR(
+    web2.createdAgreement?.slug && agreementFiles.files
+      ? [
+          web2.createdAgreement.slug,
+          agreementFiles.files,
+          web3.changeEntryMethodData?.proposalId,
+          'linkingWeb2AndWeb3Token',
         ]
       : null,
-    async ([slug, web3ProposalId]) => {
+    async ([slug, uploadedFiles, web3ProposalId]) => {
       try {
-        startTask('LINK_WEB2_AND_WEB3_AGREEMENT');
+        startTask('LINK_WEB2_AND_WEB3_CHANGE_ENTRY_METHOD');
         const result = await web2.updateAgreementBySlug({
           slug,
           web3ProposalId: web3ProposalId ? Number(web3ProposalId) : undefined,
+          attachments: uploadedFiles.attachments
+            ? Array.isArray(uploadedFiles.attachments)
+              ? uploadedFiles.attachments
+              : [uploadedFiles.attachments]
+            : [],
+          leadImage: uploadedFiles.leadImage,
         });
-        completeTask('LINK_WEB2_AND_WEB3_AGREEMENT');
+        completeTask('LINK_WEB2_AND_WEB3_CHANGE_ENTRY_METHOD');
         return result;
       } catch (error) {
         if (error instanceof Error) {
-          errorTask('LINK_WEB2_AND_WEB3_AGREEMENT', error.message);
+          errorTask('LINK_WEB2_AND_WEB3_CHANGE_ENTRY_METHOD', error.message);
         }
         throw error;
       }
-    },
-    {
-      revalidateOnMount: true,
-      shouldRetryOnError: false,
     },
   );
 
   const errors = React.useMemo(() => {
     return [
       web2.errorCreateAgreementMutation,
-      web3.errorCreateAgreement,
-      web3.errorWaitAgreementFromTransaction,
+      web3.errorChangeEntryMethod,
+      web3.errorWaitProposalFromTx,
     ].filter(Boolean);
-  }, [
-    web2.errorCreateAgreementMutation,
-    web3.errorCreateAgreement,
-    web3.errorWaitAgreementFromTransaction,
-  ]);
+  }, [web2, web3]);
 
   const reset = useCallback(() => {
     resetTasks();
     web2.resetCreateAgreementMutation();
-    web3.resetCreateAgreementMutation();
+    web3.resetChangeEntryMethod();
   }, [resetTasks, web2, web3]);
 
   return {
     reset,
-    createAgreement,
-    agreement: {
-      ...web2.createdAgreement,
-      ...web3.createdAgreement,
+    createChangeEntryMethod,
+    changeEntryMethod: {
       ...updatedWeb2Agreement,
+      ...web3.changeEntryMethodData,
     },
     taskState,
     currentAction,
