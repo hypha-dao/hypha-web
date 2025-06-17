@@ -181,3 +181,52 @@ export const findMostRecentDocuments = async ({ db }: DbConfig) => {
     ? mapToDocument(results[0].document, results[0].creator)
     : null;
 };
+
+export type FindAllDocumentsBySpaceSlugWithoutPaginationInput = {
+  spaceSlug: string;
+  filter?: FilterParams<Document>;
+  searchTerm?: string;
+};
+
+export const findAllDocumentsBySpaceSlugWithoutPagination = async (
+  {
+    spaceSlug,
+    filter = {},
+    searchTerm,
+  }: FindAllDocumentsBySpaceSlugWithoutPaginationInput,
+  { db }: DbConfig,
+) => {
+  const conditions = [eq(spaces.slug, spaceSlug)];
+
+  if (filter.state) {
+    conditions.push(
+      eq(
+        documents.state,
+        filter.state as 'discussion' | 'proposal' | 'agreement',
+      ),
+    );
+  }
+
+  if (searchTerm) {
+    conditions.push(
+      sql`(
+        setweight(to_tsvector('english', ${documents.title}), 'A') ||
+        setweight(to_tsvector('english', ${documents.description}), 'B')
+      ) @@ plainto_tsquery('english', ${searchTerm})`,
+    );
+  }
+
+  const results = await db
+    .select({
+      document: documents,
+      creator: people,
+    })
+    .from(documents)
+    .innerJoin(spaces, eq(documents.spaceId, spaces.id))
+    .innerJoin(people, eq(documents.creatorId, people.id))
+    .where(and(...conditions));
+
+  return results.map((result) =>
+    mapToDocument(result.document, result.creator),
+  );
+};
