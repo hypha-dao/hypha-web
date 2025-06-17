@@ -459,6 +459,31 @@ export const daoProposalsImplementationAbi = [
         indexed: true,
       },
       {
+        name: 'yesVotes',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'noVotes',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'ProposalRejected',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'proposalId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
         name: 'value',
         internalType: 'uint256',
         type: 'uint256',
@@ -583,6 +608,16 @@ export const daoProposalsImplementationAbi = [
     inputs: [{ name: '_proposalId', internalType: 'uint256', type: 'uint256' }],
     name: 'getProposalEndTime',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_spaceId', internalType: 'uint256', type: 'uint256' }],
+    name: 'getSpaceProposals',
+    outputs: [
+      { name: 'accepted', internalType: 'uint256[]', type: 'uint256[]' },
+      { name: 'rejected', internalType: 'uint256[]', type: 'uint256[]' },
+    ],
     stateMutability: 'view',
   },
   {
