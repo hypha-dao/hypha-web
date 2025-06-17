@@ -28,7 +28,8 @@ export type Document = {
   creator?: Creator;
   leadImage?: string;
   attachments?: string[];
-  web3ProposalId?: number | null;
+  web3ProposalId: number | null;
+  status?: 'accepted' | 'rejected' | 'onVoting';
 };
 
 export interface CreateAgreementInput {
