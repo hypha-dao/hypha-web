@@ -1,5 +1,5 @@
 import { DbConfig } from '@core/common/server';
-import { eq, sql, and } from 'drizzle-orm';
+import { eq, sql, and, asc, desc, Name, SQL } from 'drizzle-orm';
 
 import {
   documents,
@@ -10,7 +10,7 @@ import {
 } from '@hypha-platform/storage-postgres';
 
 import { DocumentState } from '../types';
-import { FilterParams, PaginationParams } from '@core/common';
+import { DirectionType, FilterParams, PaginationParams } from '@core/common';
 import { Document, Creator } from '../types';
 
 export const mapToDocument = (
@@ -110,7 +110,7 @@ export const findAllDocumentsBySpaceSlug = async (
   { db, searchTerm, ...config }: FindAllDocumentsBySpaceSlugConfig,
 ) => {
   const {
-    pagination: { page = 1, pageSize = 10 },
+    pagination: { page = 1, pageSize = 10, order = [] },
     filter = {},
   } = config;
 
@@ -135,6 +135,21 @@ export const findAllDocumentsBySpaceSlug = async (
     );
   }
 
+  const orderBy: Array<SQL> = [];
+  order.forEach((field) => {
+    const fieldName = new Name(field.name);
+    switch (field.dir) {
+      case DirectionType.Asc:
+        orderBy.push(asc(fieldName));
+        break;
+      case DirectionType.Desc:
+        orderBy.push(desc(fieldName));
+        break;
+      default:
+        break;
+    }
+  });
+
   const results = await db
     .select({
       document: documents,
@@ -145,6 +160,7 @@ export const findAllDocumentsBySpaceSlug = async (
     .innerJoin(spaces, eq(documents.spaceId, spaces.id))
     .innerJoin(people, eq(documents.creatorId, people.id))
     .where(and(...conditions))
+    .orderBy(...orderBy)
     .limit(pageSize)
     .offset(offset);
 

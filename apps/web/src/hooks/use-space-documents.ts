@@ -4,11 +4,15 @@ import React from 'react';
 import useSWR from 'swr';
 import queryString from 'query-string';
 
-import { FilterParams } from '@hypha-platform/graphql/rsc';
+import { FilterParams, Order } from '@hypha-platform/graphql/rsc';
 
 import { useSpaceSlug } from './use-space-slug';
 // TODO: #594 declare UI interface separately
-import { Document } from '@hypha-platform/core/client';
+import {
+  DirectionType,
+  Document,
+  OrderField,
+} from '@hypha-platform/core/client';
 import { UseDocuments, UseDocumentsReturn } from '@hypha-platform/epics';
 
 export const useSpaceDocuments: UseDocuments = ({
@@ -16,13 +20,23 @@ export const useSpaceDocuments: UseDocuments = ({
   pageSize = 4,
   filter,
   searchTerm,
+  order,
 }: {
   page?: number;
   pageSize?: number;
   filter?: FilterParams<Pick<Document, 'state'>>;
   searchTerm?: string;
+  order?: Order<Document>;
 }): UseDocumentsReturn => {
   const spaceSlug = useSpaceSlug();
+
+  const getDirection = (dir: DirectionType) => {
+    return `${dir === DirectionType.Asc ? '+' : '-'}`;
+  };
+
+  const getOrder = (field: OrderField<Document>) => {
+    return `${getDirection(field.dir)}${field.name}`;
+  };
 
   const queryParams = React.useMemo(() => {
     const effectiveFilter = {
@@ -30,9 +44,12 @@ export const useSpaceDocuments: UseDocuments = ({
       pageSize,
       ...(filter ? { ...filter } : {}),
       ...(searchTerm ? { searchTerm } : {}),
+      order: order
+        ? order.map((field) => getOrder(field)).join(',')
+        : undefined,
     };
     return `?${queryString.stringify(effectiveFilter)}`;
-  }, [page, pageSize, filter, searchTerm]);
+  }, [page, pageSize, filter, searchTerm, order]);
 
   const endpoint = React.useMemo(
     () => `/api/v1/spaces/${spaceSlug}/documents${queryParams}`,
