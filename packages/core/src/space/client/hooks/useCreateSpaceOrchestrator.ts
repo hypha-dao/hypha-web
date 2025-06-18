@@ -34,6 +34,7 @@ export type TaskState = {
     message?: string;
   };
 };
+
 export enum TaskStatus {
   IDLE = 'idle',
   IS_PENDING = 'isPending',
@@ -48,30 +49,19 @@ const taskActionDescriptions: Record<TaskName, string> = {
   LINK_WEB2_AND_WEB3_SPACE: 'Linking Web2 and Web3 spaces...',
 };
 
-// Action types for the reducer
 export type ProgressAction =
   | { type: 'START_TASK'; taskName: TaskName; message?: string }
   | { type: 'COMPLETE_TASK'; taskName: TaskName; message?: string }
   | { type: 'SET_ERROR'; taskName: TaskName; message: string }
   | { type: 'RESET' };
 
-// Initial state definition
 const initialTaskState: TaskState = {
-  CREATE_WEB2_SPACE: {
-    status: TaskStatus.IDLE,
-  },
-  CREATE_WEB3_SPACE: {
-    status: TaskStatus.IDLE,
-  },
-  UPLOAD_FILES: {
-    status: TaskStatus.IDLE,
-  },
-  LINK_WEB2_AND_WEB3_SPACE: {
-    status: TaskStatus.IDLE,
-  },
+  CREATE_WEB2_SPACE: { status: TaskStatus.IDLE },
+  CREATE_WEB3_SPACE: { status: TaskStatus.IDLE },
+  UPLOAD_FILES: { status: TaskStatus.IDLE },
+  LINK_WEB2_AND_WEB3_SPACE: { status: TaskStatus.IDLE },
 };
 
-// Progress state reducer using immer
 export const progressStateReducer = (
   state: TaskState,
   action: ProgressAction,
@@ -84,50 +74,33 @@ export const progressStateReducer = (
           draft[action.taskName].message = action.message;
         }
         break;
-
       case 'COMPLETE_TASK':
         draft[action.taskName].status = TaskStatus.IS_DONE;
         if (action.message) {
           draft[action.taskName].message = action.message;
         }
         break;
-
       case 'SET_ERROR':
         draft[action.taskName].status = TaskStatus.ERROR;
         draft[action.taskName].message = action.message;
         break;
-
       case 'RESET':
         return initialTaskState;
     }
   });
 };
 
-/**
- * Computes the overall progress percentage based on the current state of tasks
- * @param tasks The current task state
- * @returns A number between 0 and 100 representing the progress percentage
- */
 const computeProgress = (tasks: TaskState): number => {
   const taskList = Object.values(tasks);
   const totalTasks = taskList.length;
-
   if (totalTasks === 0) return 0;
-
-  // Count completed tasks
   const completedTasks = taskList.filter(
     (task) => task.status === TaskStatus.IS_DONE,
   ).length;
-
-  // Count in-progress tasks (contribute half a task to progress)
   const inProgressTasks =
     taskList.filter((task) => task.status === TaskStatus.IS_PENDING).length *
     0.5;
-
-  // Calculate progress percentage
   const progress = ((completedTasks + inProgressTasks) / totalTasks) * 100;
-
-  // Round to nearest integer and ensure it's between 0 and 100
   return Math.min(100, Math.max(0, Math.round(progress)));
 };
 
@@ -135,58 +108,47 @@ export const useCreateSpaceOrchestrator = ({
   authToken,
   config,
 }: UseCreateSpaceOrchestratorInput) => {
-  const spaceFiles = useSpaceFileUploads(authToken);
   const web2 = useSpaceMutationsWeb2Rsc(authToken);
   const web3 = useSpaceMutationsWeb3Rpc(config);
+  const spaceFiles = useSpaceFileUploads(authToken, (uploadedFiles, slug) => {
+    web2.updateSpaceBySlug({
+      slug: slug ?? '',
+      ...uploadedFiles,
+    });
+  });
 
-  // Use the progressStateReducer to manage task state
   const [taskState, dispatch] = React.useReducer(
     progressStateReducer,
     initialTaskState,
   );
 
   const progress = computeProgress(taskState);
-
   const [currentAction, setCurrentAction] = React.useState<string>();
 
-  const startTask = React.useCallback(
-    (taskName: TaskName) => {
-      const currentAction = taskActionDescriptions[taskName];
-      setCurrentAction(currentAction);
-      dispatch({
-        type: 'START_TASK',
-        taskName,
-        message: currentAction,
-      });
-    },
-    [dispatch, setCurrentAction],
-  );
+  const startTask = useCallback((taskName: TaskName) => {
+    const action = taskActionDescriptions[taskName];
+    setCurrentAction(action);
+    dispatch({ type: 'START_TASK', taskName, message: action });
+  }, []);
 
-  const completeTask = React.useCallback(
+  const completeTask = useCallback(
     (taskName: TaskName) => {
       if (currentAction === taskActionDescriptions[taskName]) {
         setCurrentAction(undefined);
       }
-      dispatch({
-        type: 'COMPLETE_TASK',
-        taskName,
-      });
+      dispatch({ type: 'COMPLETE_TASK', taskName });
     },
-    [dispatch, setCurrentAction, currentAction],
+    [currentAction],
   );
 
-  const errorTask = React.useCallback(
+  const errorTask = useCallback(
     (taskName: TaskName, error: string) => {
       if (currentAction === taskActionDescriptions[taskName]) {
         setCurrentAction(undefined);
       }
-      dispatch({
-        type: 'SET_ERROR',
-        taskName,
-        message: error,
-      });
+      dispatch({ type: 'SET_ERROR', taskName, message: error });
     },
-    [dispatch],
+    [currentAction],
   );
 
   const resetTasks = useCallback(() => {
@@ -198,7 +160,7 @@ export const useCreateSpaceOrchestrator = ({
     async (_, { arg }: { arg: z.infer<typeof schemaCreateSpace> }) => {
       startTask('CREATE_WEB2_SPACE');
       const inputCreateSpaceWeb2 = schemaCreateSpaceWeb2.parse(arg);
-      await web2.createSpace(inputCreateSpaceWeb2);
+      const createdSpace = await web2.createSpace(inputCreateSpaceWeb2);
       completeTask('CREATE_WEB2_SPACE');
 
       startTask('CREATE_WEB3_SPACE');
@@ -212,44 +174,47 @@ export const useCreateSpaceOrchestrator = ({
       await web3.createSpace(inputCreateSpaceWeb3);
       completeTask('CREATE_WEB3_SPACE');
 
-      startTask('UPLOAD_FILES');
-      const inputCreateSpaceFiles = schemaCreateSpaceFiles.parse(arg);
-      await spaceFiles.upload(inputCreateSpaceFiles);
-      completeTask('UPLOAD_FILES');
+      const files = schemaCreateSpaceFiles.parse(arg);
+      if (Object.values(files).some((file) => file)) {
+        startTask('UPLOAD_FILES');
+        await spaceFiles.upload(files, createdSpace?.slug);
+        completeTask('UPLOAD_FILES');
+      } else {
+        startTask('UPLOAD_FILES');
+        completeTask('UPLOAD_FILES');
+      }
     },
   );
 
   const { data: updatedWeb2Space } = useSWR(
-    web2.createdSpace?.slug && web3.createdSpace?.spaceId && spaceFiles.files
+    web2.createdSpace?.slug &&
+      taskState.CREATE_WEB3_SPACE.status === TaskStatus.IS_DONE &&
+      taskState.UPLOAD_FILES.status === TaskStatus.IS_DONE
       ? [
           web2.createdSpace.slug,
-          web3.createdSpace.spaceId,
-          spaceFiles.files,
+          web3.createdSpace?.spaceId,
           'linkingWeb2AndWeb3Space',
         ]
       : null,
-    async ([slug, web3SpaceId, uploadedFiles]) => {
+    async ([slug, web3SpaceId]) => {
       try {
-        // Start linking web2 and web3 spaces
         startTask('LINK_WEB2_AND_WEB3_SPACE');
-
         const result = await web2.updateSpaceBySlug({
           slug,
           web3SpaceId: Number(web3SpaceId),
-          ...uploadedFiles,
         });
-
-        // Complete linking task
         completeTask('LINK_WEB2_AND_WEB3_SPACE');
-
         return result;
       } catch (error) {
-        // Handle errors in linking
         if (error instanceof Error) {
           errorTask('LINK_WEB2_AND_WEB3_SPACE', error.message);
         }
         throw error;
       }
+    },
+    {
+      revalidateOnMount: true,
+      shouldRetryOnError: false,
     },
   );
 
@@ -259,27 +224,31 @@ export const useCreateSpaceOrchestrator = ({
       web2.errorUpdateSpaceBySlugMutation,
       web3.errorCreateSpace,
       web3.errorWaitSpaceFromTransaction,
+      spaceFiles.error,
     ].filter(Boolean);
   }, [
     web2.errorCreateSpaceMutation,
     web2.errorUpdateSpaceBySlugMutation,
     web3.errorCreateSpace,
     web3.errorWaitSpaceFromTransaction,
+    spaceFiles.error,
   ]);
 
-  const reset = React.useCallback(() => {
+  const reset = useCallback(() => {
     resetTasks();
     web2.resetCreateSpaceMutation();
     web2.resetUpdateSpaceBySlugMutation();
     web3.resetCreateSpaceMutation();
-  }, []);
+    spaceFiles.reset();
+  }, [resetTasks, web2, web3, spaceFiles]);
 
   return {
     reset,
     createSpace,
     space: {
-      ...updatedWeb2Space,
+      ...web2.createdSpace,
       ...web3.createdSpace,
+      ...updatedWeb2Space,
     },
     taskState,
     currentAction,

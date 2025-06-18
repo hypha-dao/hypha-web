@@ -16,7 +16,7 @@ const createSpaceWeb2Props = {
     )
     .optional(),
   web3SpaceId: z.number().optional(),
-  parentId: z.number().optional().nullable(),
+  parentId: z.number().nullable(),
   categories: z
     .array(
       z.enum([
