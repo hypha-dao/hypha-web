@@ -2,21 +2,26 @@
 
 import { DocumentSection } from './document-section';
 import { useSpaceDocumentsWithStatuses } from '../hooks/use-space-documents-with-statuses';
+import { Document } from '@core/governance';
+import { Order } from '@core/common';
 
 type DocumentsSectionsProps = {
   lang: string;
   spaceSlug: string;
   web3SpaceId: number;
+  order?: Order<Document>;
 };
 
 export function DocumentsSections({
   lang,
   spaceSlug,
   web3SpaceId,
+  order,
 }: DocumentsSectionsProps) {
   const { documents, isLoading } = useSpaceDocumentsWithStatuses({
     spaceId: web3SpaceId,
     spaceSlug,
+    order,
   });
 
   const basePath = `/${lang}/dho/${spaceSlug}/governance`;

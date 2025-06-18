@@ -5,6 +5,8 @@ import useSWR from 'swr';
 
 import { useSpaceProposalsWeb3Rpc } from '@core/space';
 import { Document } from '@core/governance';
+import { DirectionType, Order, OrderField } from '@core/common';
+import queryString from 'query-string';
 
 const getDocumentBadges = (document: Document) => {
   switch (document.status) {
@@ -61,14 +63,33 @@ const getDocumentBadges = (document: Document) => {
 export const useSpaceDocumentsWithStatuses = ({
   spaceSlug,
   spaceId,
+  order,
 }: {
   spaceSlug: string;
   spaceId: number;
+  order?: Order<Document>;
 }) => {
   const { spaceProposalsIds } = useSpaceProposalsWeb3Rpc({ spaceId: spaceId });
 
+  const getDirection = (dir: DirectionType) => {
+    return `${dir === DirectionType.Asc ? '+' : '-'}`;
+  };
+
+  const getOrder = (field: OrderField<Document>) => {
+    return `${getDirection(field.dir)}${field.name}`;
+  };
+
+  const queryParams = React.useMemo(() => {
+    const effectiveFilter = {
+      order: order
+        ? order.map((field) => getOrder(field)).join(',')
+        : undefined,
+    };
+    return `?${queryString.stringify(effectiveFilter)}`;
+  }, [order]);
+
   const endpoint = React.useMemo(
-    () => `/api/v1/spaces/${spaceSlug}/documents/all`,
+    () => `/api/v1/spaces/${spaceSlug}/documents/all${queryParams}`,
     [spaceSlug],
   );
 

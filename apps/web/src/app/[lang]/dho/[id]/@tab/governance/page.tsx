@@ -1,6 +1,7 @@
 import { Locale } from '@hypha-platform/i18n';
 import { createSpaceService } from '@core/space/server';
 import { DocumentsSections } from '@hypha-platform/epics';
+import { DirectionType } from '@core/common';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -8,6 +9,7 @@ type PageProps = {
 
 export default async function AgreementsPage(props: PageProps) {
   const params = await props.params;
+
   const { lang, id } = params;
 
   const spaceService = createSpaceService();
@@ -20,6 +22,12 @@ export default async function AgreementsPage(props: PageProps) {
       lang={lang}
       spaceSlug={id}
       web3SpaceId={web3SpaceId as number}
+      order={[
+        {
+          name: 'createdAt',
+          dir: DirectionType.Desc,
+        }
+      ]}
     />
   );
 }

@@ -6,7 +6,7 @@ import {
   FindAllBySpaceSlugConfig,
 } from './repository';
 import { DocumentNotFoundError } from '../errors';
-import { PaginatedResponse } from '../../common';
+import { Order, PaginatedResponse } from '../../common';
 
 @injectable()
 export class DocumentService {
@@ -48,9 +48,11 @@ export class DocumentService {
 
   async getAllBySpaceSlugWithoutPagination({
     spaceSlug,
+    order,
   }: {
     spaceSlug: string;
+    order?: Order<Document>;
   }): Promise<Document[]> {
-    return this.repository.findAllBySpaceSlugWithoutPagination({ spaceSlug });
+    return this.repository.findAllBySpaceSlugWithoutPagination({ spaceSlug, order });
   }
 }

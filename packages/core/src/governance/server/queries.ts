@@ -10,7 +10,7 @@ import {
 } from '@hypha-platform/storage-postgres';
 
 import { DocumentState } from '../types';
-import { DirectionType, FilterParams, PaginationParams } from '@core/common';
+import { DirectionType, FilterParams, Order, PaginationParams } from '@core/common';
 import { Document, Creator } from '../types';
 
 export const mapToDocument = (
@@ -214,6 +214,7 @@ export type FindAllDocumentsBySpaceSlugWithoutPaginationInput = {
   spaceSlug: string;
   filter?: FilterParams<Document>;
   searchTerm?: string;
+  order?: Order<Document>;
 };
 
 export const findAllDocumentsBySpaceSlugWithoutPagination = async (
@@ -221,6 +222,7 @@ export const findAllDocumentsBySpaceSlugWithoutPagination = async (
     spaceSlug,
     filter = {},
     searchTerm,
+    order = [],
   }: FindAllDocumentsBySpaceSlugWithoutPaginationInput,
   { db }: DbConfig,
 ) => {
@@ -244,6 +246,24 @@ export const findAllDocumentsBySpaceSlugWithoutPagination = async (
     );
   }
 
+  const orderBy: Array<SQL> = [];
+  order.forEach((field) => {
+    const fieldName = getDocumentColumnByFieldName(field.name);
+    if (!fieldName) {
+      return;
+    }
+    switch (field.dir) {
+      case DirectionType.Asc:
+        orderBy.push(asc(fieldName));
+        break;
+      case DirectionType.Desc:
+        orderBy.push(desc(fieldName));
+        break;
+      default:
+        break;
+    }
+  });
+
   const results = await db
     .select({
       document: documents,
@@ -252,7 +272,8 @@ export const findAllDocumentsBySpaceSlugWithoutPagination = async (
     .from(documents)
     .innerJoin(spaces, eq(documents.spaceId, spaces.id))
     .innerJoin(people, eq(documents.creatorId, people.id))
-    .where(and(...conditions));
+    .where(and(...conditions))
+    .orderBy(...orderBy);
 
   return results.map((result) =>
     mapToDocument(result.document, result.creator),
