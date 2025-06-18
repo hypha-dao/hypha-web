@@ -119,6 +119,27 @@ const getDocumentColumnByFieldName = (fieldName: string) => {
   return null;
 };
 
+const getOrderBy = (order: Order<Document>) => {
+  const orderBy: Array<SQL> = [];
+  order.forEach((field) => {
+    const column = getDocumentColumnByFieldName(field.name);
+    if (!column) {
+      return;
+    }
+    switch (field.dir) {
+      case DirectionType.Asc:
+        orderBy.push(asc(column));
+        break;
+      case DirectionType.Desc:
+        orderBy.push(desc(column));
+        break;
+      default:
+        break;
+    }
+  });
+  return orderBy;
+};
+
 export const findAllDocumentsBySpaceSlug = async (
   { spaceSlug }: FindAllDocumentsBySpaceSlugInput,
   { db, searchTerm, ...config }: FindAllDocumentsBySpaceSlugConfig,
@@ -149,23 +170,7 @@ export const findAllDocumentsBySpaceSlug = async (
     );
   }
 
-  const orderBy: Array<SQL> = [];
-  order.forEach((field) => {
-    const fieldName = getDocumentColumnByFieldName(field.name);
-    if (!fieldName) {
-      return;
-    }
-    switch (field.dir) {
-      case DirectionType.Asc:
-        orderBy.push(asc(fieldName));
-        break;
-      case DirectionType.Desc:
-        orderBy.push(desc(fieldName));
-        break;
-      default:
-        break;
-    }
-  });
+  const orderBy = getOrderBy(order);
 
   const results = await db
     .select({
@@ -251,23 +256,7 @@ export const findAllDocumentsBySpaceSlugWithoutPagination = async (
     );
   }
 
-  const orderBy: Array<SQL> = [];
-  order.forEach((field) => {
-    const fieldName = getDocumentColumnByFieldName(field.name);
-    if (!fieldName) {
-      return;
-    }
-    switch (field.dir) {
-      case DirectionType.Asc:
-        orderBy.push(asc(fieldName));
-        break;
-      case DirectionType.Desc:
-        orderBy.push(desc(fieldName));
-        break;
-      default:
-        break;
-    }
-  });
+  const orderBy = getOrderBy(order);
 
   const results = await db
     .select({
