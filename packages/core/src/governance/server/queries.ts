@@ -105,6 +105,15 @@ export type FindAllDocumentsBySpaceSlugInput = {
   spaceSlug: string;
 };
 
+const getDocumentColumnByFieldName = (fieldName: string) => {
+  for (const [key, value] of Object.entries(documents)) {
+    if (key === fieldName) {
+      return value;
+    }
+  }
+  return null;
+};
+
 export const findAllDocumentsBySpaceSlug = async (
   { spaceSlug }: FindAllDocumentsBySpaceSlugInput,
   { db, searchTerm, ...config }: FindAllDocumentsBySpaceSlugConfig,
@@ -137,7 +146,10 @@ export const findAllDocumentsBySpaceSlug = async (
 
   const orderBy: Array<SQL> = [];
   order.forEach((field) => {
-    const fieldName = new Name(field.name);
+    const fieldName = getDocumentColumnByFieldName(field.name);
+    if (!fieldName) {
+      return;
+    }
     switch (field.dir) {
       case DirectionType.Asc:
         orderBy.push(asc(fieldName));

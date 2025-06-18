@@ -48,7 +48,7 @@ export async function GET(
         .split(',')
         .map((fieldName) => fieldName.trim())
         .forEach((fieldName) => {
-          const match = /^([\+\-]?)(\s+)$/.exec(fieldName);
+          const match = /^([\+\-]?)(\w+)$/.exec(fieldName);
           if (match) {
             const dir = getDirection(match[1]);
             const name = match[2] as keyof Document;
