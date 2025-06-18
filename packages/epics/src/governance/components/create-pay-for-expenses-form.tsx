@@ -26,11 +26,13 @@ interface CreatePayForExpensesFormProps {
   spaceId: number | undefined | null;
   web3SpaceId: number | undefined | null;
   successfulUrl: string;
+  backUrl?: string;
   plugin: React.ReactNode;
 }
 
 export const CreatePayForExpensesForm = ({
   successfulUrl,
+  backUrl,
   spaceId,
   web3SpaceId,
   plugin,
@@ -135,6 +137,7 @@ export const CreatePayForExpensesForm = ({
               surname: person?.surname || '',
             }}
             closeUrl={successfulUrl}
+            backUrl={backUrl}
             isLoading={false}
             label="Expenses"
           />
