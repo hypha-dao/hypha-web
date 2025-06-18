@@ -18,6 +18,7 @@ import {
 } from '@hypha-platform/ui';
 import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
+import React from 'react';
 
 import Link from 'next/link';
 
@@ -40,7 +41,7 @@ export type CreateSpaceFormProps = {
     name?: string;
     surname?: string;
   };
-  parentSpaceId?: number | undefined;
+  parentSpaceId?: number | null;
   defaultValues?: z.infer<typeof schemaCreateSpaceForm>;
   submitLabel?: string;
   submitLoadingLabel?: string;
@@ -65,7 +66,7 @@ export const SpaceForm = ({
   parentSpaceId,
   defaultValues = {
     ...DEFAULT_VALUES,
-    parentId: parentSpaceId,
+    parentId: parentSpaceId || null,
   },
   submitLabel = 'Create',
   submitLoadingLabel = 'Creating Space...',
@@ -75,6 +76,12 @@ export const SpaceForm = ({
     resolver: zodResolver(schemaCreateSpaceForm),
     defaultValues,
   });
+
+  React.useEffect(() => {
+    if (parentSpaceId) {
+      form.setValue('parentId', parentSpaceId);
+    }
+  }, [parentSpaceId, form]);
 
   return (
     <Form {...form}>
