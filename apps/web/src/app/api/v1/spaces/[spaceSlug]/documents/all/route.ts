@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { createDocumentService, DirectionType, Order, OrderField, Document } from '@hypha-platform/core/server';
+import {
+  createDocumentService,
+  DirectionType,
+  Order,
+  OrderField,
+  Document,
+} from '@hypha-platform/core/server';
 
 type Params = { spaceSlug: string };
 
@@ -26,7 +32,7 @@ export async function GET(
     }
     return dir;
   };
-  
+
   try {
     const documentsService = createDocumentService({ authToken });
 

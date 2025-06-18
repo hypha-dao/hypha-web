@@ -26,7 +26,7 @@ export default async function AgreementsPage(props: PageProps) {
         {
           name: 'createdAt',
           dir: DirectionType.Desc,
-        }
+        },
       ]}
     />
   );

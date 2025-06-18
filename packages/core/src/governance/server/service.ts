@@ -53,6 +53,9 @@ export class DocumentService {
     spaceSlug: string;
     order?: Order<Document>;
   }): Promise<Document[]> {
-    return this.repository.findAllBySpaceSlugWithoutPagination({ spaceSlug, order });
+    return this.repository.findAllBySpaceSlugWithoutPagination({
+      spaceSlug,
+      order,
+    });
   }
 }

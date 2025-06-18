@@ -10,7 +10,12 @@ import {
 } from '@hypha-platform/storage-postgres';
 
 import { DocumentState } from '../types';
-import { DirectionType, FilterParams, Order, PaginationParams } from '@core/common';
+import {
+  DirectionType,
+  FilterParams,
+  Order,
+  PaginationParams,
+} from '@core/common';
 import { Document, Creator } from '../types';
 
 export const mapToDocument = (
