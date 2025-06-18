@@ -90,7 +90,7 @@ export const useSpaceDocumentsWithStatuses = ({
 
   const endpoint = React.useMemo(
     () => `/api/v1/spaces/${spaceSlug}/documents/all${queryParams}`,
-    [spaceSlug],
+    [spaceSlug, queryParams],
   );
 
   const {
