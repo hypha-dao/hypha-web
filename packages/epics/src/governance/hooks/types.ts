@@ -1,6 +1,7 @@
 import {
   Document,
   FilterParams,
+  Order,
   PaginationMetadata,
 } from '@hypha-platform/core/client';
 
@@ -16,6 +17,7 @@ export type UseDocumentsProps = {
   searchTerm?: string;
   pageSize?: number;
   activeTab?: string;
+  order?: Order<Document>;
 };
 
 export type UseDocuments = (props: UseDocumentsProps) => UseDocumentsReturn;

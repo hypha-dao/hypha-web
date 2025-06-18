@@ -1,5 +1,5 @@
 import { DbConfig } from '@core/common/server';
-import { eq, sql, and, asc, desc, Name, SQL } from 'drizzle-orm';
+import { eq, sql, and, asc, desc, SQL } from 'drizzle-orm';
 
 import {
   documents,
