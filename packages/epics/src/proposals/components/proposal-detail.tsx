@@ -25,6 +25,7 @@ import { MarkdownSuspense } from '@hypha-platform/ui/server';
 type ProposalDetailProps = ProposalHeadProps & {
   onAccept: () => void;
   onReject: () => void;
+  onCheckProposalExpiration: () => void;
   updateProposalData: () => void;
   content?: string;
   closeUrl: string;
@@ -41,6 +42,7 @@ export const ProposalDetail = ({
   isLoading,
   onAccept,
   onReject,
+  onCheckProposalExpiration,
   content,
   closeUrl,
   leadImage,
@@ -62,6 +64,14 @@ export const ProposalDetail = ({
   const handleOnReject = () => {
     try {
       onReject();
+      updateProposalData();
+    } catch (err) {
+      console.debug(err);
+    }
+  };
+  const handleOnCheckProposalExpiration = () => {
+    try {
+      onCheckProposalExpiration();
       updateProposalData();
     } catch (err) {
       console.debug(err);
@@ -146,6 +156,7 @@ export const ProposalDetail = ({
         expired={proposalDetails?.expired}
         onAccept={handleOnAccept}
         onReject={handleOnReject}
+        onCheckProposalExpiration={handleOnCheckProposalExpiration}
         isLoading={isLoading}
       />
       <Separator />
