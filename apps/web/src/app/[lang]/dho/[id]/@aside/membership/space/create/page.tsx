@@ -13,7 +13,7 @@ export default function CreateSubspacePage() {
     <SidePanel>
       <CreateSubspaceForm
         successfulUrl={getDhoPathGovernance(lang as Locale, spaceSlug)}
-        parentSpaceId={space?.id as number}
+        parentSpaceId={space?.id ?? null}
       />
     </SidePanel>
   );
