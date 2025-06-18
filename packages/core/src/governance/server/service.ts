@@ -45,4 +45,12 @@ export class DocumentService {
     }
     return document;
   }
+
+  async getAllBySpaceSlugWithoutPagination({
+    spaceSlug,
+  }: {
+    spaceSlug: string;
+  }): Promise<Document[]> {
+    return this.repository.findAllBySpaceSlugWithoutPagination({ spaceSlug });
+  }
 }

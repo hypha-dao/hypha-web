@@ -19,4 +19,9 @@ export interface DocumentRepository {
     { spaceSlug }: { spaceSlug: string },
     config: FindAllBySpaceSlugConfig,
   ): Promise<PaginatedResponse<Document>>;
+  findAllBySpaceSlugWithoutPagination(input: {
+    spaceSlug: string;
+    filter?: FilterParams<Document>;
+    searchTerm?: string;
+  }): Promise<Document[]>;
 }

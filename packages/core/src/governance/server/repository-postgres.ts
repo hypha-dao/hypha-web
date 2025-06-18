@@ -10,7 +10,9 @@ import {
   findDocumentById,
   findDocumentBySlug,
   findMostRecentDocuments,
+  findAllDocumentsBySpaceSlugWithoutPagination,
 } from './queries';
+import { FilterParams } from '../../common';
 
 export class DocumentRepositoryPostgres implements DocumentRepository {
   private db: NodePgDatabase<typeof schema>;
@@ -47,5 +49,13 @@ export class DocumentRepositoryPostgres implements DocumentRepository {
 
   async findMostRecent(): Promise<Document | null> {
     return findMostRecentDocuments({ db: this.db });
+  }
+
+  async findAllBySpaceSlugWithoutPagination(input: {
+    spaceSlug: string;
+    filter?: FilterParams<Document>;
+    searchTerm?: string;
+  }): Promise<Document[]> {
+    return findAllDocumentsBySpaceSlugWithoutPagination(input, { db: this.db });
   }
 }
