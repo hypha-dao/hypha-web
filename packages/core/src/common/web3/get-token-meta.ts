@@ -17,11 +17,12 @@ export async function getTokenMeta(
 
   // TODO: implement fetching meta data for space tokens
 
+  const symbol = await contract.read.symbol();
   try {
     return {
-      symbol: await contract.read.symbol(),
+      symbol: symbol,
       icon: '/placeholder/eth.png',
-      name: 'Token',
+      name: symbol,
       status: 'utility',
     };
   } catch (error: any) {

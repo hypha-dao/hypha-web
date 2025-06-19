@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSpaceService } from '@hypha-platform/core/server';
-import { getSpaceDetails } from '@core/space';
+import {
+  getSpaceDetails,
+  getSpaceRegularToken,
+  getSpaceDecayingToken,
+  getSpaceOwnershipToken,
+} from '@core/space';
 import { TOKENS, publicClient, getBalance, getTokenMeta } from '@core/common';
 import { paginate } from '@core/common/server';
+import { zeroAddress } from 'viem';
 
 export async function GET(
   request: NextRequest,
@@ -18,11 +24,22 @@ export async function GET(
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
 
+    const spaceId = BigInt(space.web3SpaceId as number);
+
     let spaceDetails;
+    let spaceTokens;
     try {
       spaceDetails = await publicClient.readContract(
-        getSpaceDetails({ spaceId: BigInt(space.web3SpaceId as number) }),
+        getSpaceDetails({ spaceId }),
       );
+
+      spaceTokens = await publicClient.multicall({
+        contracts: [
+          getSpaceRegularToken({ spaceId }),
+          getSpaceOwnershipToken({ spaceId }),
+          getSpaceDecayingToken({ spaceId }),
+        ],
+      });
     } catch (err: any) {
       const errorMessage =
         err?.message || err?.shortMessage || JSON.stringify(err);
@@ -46,11 +63,18 @@ export async function GET(
       );
     }
 
-    const [, , , tokenAddresses, , , , , , spaceAddress] = spaceDetails;
+    const spaceAddress = spaceDetails.at(-1) as `0x${string}`;
+
+    spaceTokens = spaceTokens
+      .filter(
+        (response) =>
+          response.status === 'success' && response.result !== zeroAddress,
+      )
+      .map(({ result }) => result as `0x${string}`);
 
     const assets = await Promise.all(
       TOKENS.map((token) => token.address)
-        .concat(tokenAddresses)
+        .concat(spaceTokens)
         .map(async (token) => {
           const meta = await getTokenMeta(token);
           const { amount } = await getBalance(token, spaceAddress);
