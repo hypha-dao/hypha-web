@@ -23,10 +23,17 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
   hasSearch = false,
   isLoading,
 }) => {
-  const { pages, loadMore, pagination, activeTab, onUpdateSearch, searchTerm } =
-    useDocumentsSection({
-      documents,
-    });
+  const {
+    pages,
+    loadMore,
+    pagination,
+    activeTab,
+    onUpdateSearch,
+    searchTerm,
+    filteredDocuments,
+  } = useDocumentsSection({
+    documents,
+  });
 
   return (
     <div className="flex flex-col justify-around items-center gap-4">
@@ -52,7 +59,7 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
                 pageSize: 3,
                 searchTerm,
               }}
-              documents={documents}
+              documents={filteredDocuments}
               activeTab={activeTab}
             />
           ))}

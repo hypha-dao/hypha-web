@@ -87,5 +87,6 @@ export const useDocumentsSection = ({ documents }: { documents: any[] }) => {
     setActiveTab,
     onUpdateSearch,
     searchTerm,
+    filteredDocuments,
   };
 };
