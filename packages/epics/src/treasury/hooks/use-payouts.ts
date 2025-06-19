@@ -1,10 +1,7 @@
 'use client';
 
 import useSWR from 'swr';
-import {
-  PayoutItem,
-  fetchPayouts,
-} from '@hypha-platform/graphql/rsc';
+import { PayoutItem, fetchPayouts } from '@hypha-platform/graphql/rsc';
 import { FilterParams, PaginationMetadata } from '@core/common';
 
 type UsePayoutsReturn = {

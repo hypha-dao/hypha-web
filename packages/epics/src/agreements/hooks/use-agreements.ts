@@ -1,10 +1,7 @@
 'use client';
 
 import useSWR from 'swr';
-import {
-  AgreementItem,
-  fetchAgreements,
-} from '@hypha-platform/graphql/rsc';
+import { AgreementItem, fetchAgreements } from '@hypha-platform/graphql/rsc';
 import { FilterParams, PaginationMetadata } from '@core/common';
 
 type UseAgreementsReturn = {

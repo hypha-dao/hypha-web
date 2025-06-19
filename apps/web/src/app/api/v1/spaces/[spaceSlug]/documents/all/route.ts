@@ -21,7 +21,7 @@ export async function GET(
     const url = new URL(request.url);
     const orderString = url.searchParams.get('order') || undefined;
 
-   const order = getOrder(orderString);
+    const order = getOrder(orderString);
 
     const documents = await documentsService.getAllBySpaceSlugWithoutPagination(
       {

@@ -19,9 +19,7 @@ export const getDirection = (value: string) => {
   return dir;
 };
 
-export const getOrder = (
-  orderString: string | undefined
-): Order<Document> => {
+export const getOrder = (orderString: string | undefined): Order<Document> => {
   const order: Order<Document> = [];
   if (orderString) {
     orderString
