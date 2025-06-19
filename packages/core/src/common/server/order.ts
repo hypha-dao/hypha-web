@@ -1,19 +1,15 @@
-import {
-  DirectionType,
-  Document,
-  Order,
-  OrderField,
-} from '@hypha-platform/core/server';
+import { DirectionType, Order, OrderField } from '@hypha-platform/core/server';
+import { Document } from '@core/governance';
 
 export const getDirection = (value: string) => {
-  let dir: DirectionType = DirectionType.Asc;
+  let dir: DirectionType = DirectionType.ASC;
   switch (value) {
     case '-':
-      dir = DirectionType.Desc;
+      dir = DirectionType.DESC;
       break;
     case '+':
     default:
-      dir = DirectionType.Asc;
+      dir = DirectionType.ASC;
       break;
   }
   return dir;
@@ -25,6 +21,7 @@ export const getOrder = (orderString: string | undefined): Order<Document> => {
     orderString
       .split(',')
       .map((fieldName) => fieldName.trim())
+      .filter((fieldName) => fieldName.length > 0)
       .forEach((fieldName) => {
         const match = /^([+-]?)(\w+)$/.exec(fieldName);
         if (match) {

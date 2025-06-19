@@ -61,7 +61,7 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
                 searchTerm,
                 order: [
                   {
-                    dir: DirectionType.Desc,
+                    dir: DirectionType.DESC,
                     name: 'createdAt',
                   },
                 ],

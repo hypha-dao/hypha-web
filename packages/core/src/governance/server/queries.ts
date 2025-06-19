@@ -127,10 +127,10 @@ const getOrderBy = (order: Order<Document>) => {
       return;
     }
     switch (field.dir) {
-      case DirectionType.Asc:
+      case DirectionType.ASC:
         orderBy.push(asc(column));
         break;
-      case DirectionType.Desc:
+      case DirectionType.DESC:
         orderBy.push(desc(column));
         break;
       default:

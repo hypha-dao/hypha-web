@@ -72,7 +72,7 @@ export const useSpaceDocumentsWithStatuses = ({
   const { spaceProposalsIds } = useSpaceProposalsWeb3Rpc({ spaceId: spaceId });
 
   const getDirection = (dir: DirectionType) => {
-    return `${dir === DirectionType.Asc ? '+' : '-'}`;
+    return `${dir === DirectionType.DESC ? '-' : '+'}`;
   };
 
   const getOrder = (field: OrderField<Document>) => {

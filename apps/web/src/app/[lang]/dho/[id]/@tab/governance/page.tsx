@@ -25,7 +25,7 @@ export default async function AgreementsPage(props: PageProps) {
       order={[
         {
           name: 'createdAt',
-          dir: DirectionType.Desc,
+          dir: DirectionType.DESC,
         },
       ]}
     />

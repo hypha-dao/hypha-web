@@ -31,7 +31,7 @@ export const useSpaceDocuments: UseDocuments = ({
   const spaceSlug = useSpaceSlug();
 
   const getDirection = (dir: DirectionType) => {
-    return `${dir === DirectionType.Asc ? '+' : '-'}`;
+    return `${dir === DirectionType.ASC ? '+' : '-'}`;
   };
 
   const getOrder = (field: OrderField<Document>) => {

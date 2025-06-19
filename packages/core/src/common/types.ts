@@ -17,8 +17,8 @@ export type FilterParams<T> = {
 };
 
 export enum DirectionType {
-  Asc = 'asc',
-  Desc = 'desc',
+  ASC = 'asc',
+  DESC = 'desc',
 }
 
 export type OrderField<T> = {
