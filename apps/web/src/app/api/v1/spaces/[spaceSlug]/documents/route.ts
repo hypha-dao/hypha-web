@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import {
-  createDocumentService,
-  DirectionType,
-  Document,
-  Order,
-  OrderField,
-} from '@hypha-platform/core/server';
+import { createDocumentService } from '@hypha-platform/core/server';
+import { getOrder } from '@core/common/server';
 
 export async function GET(
   request: NextRequest,
@@ -16,20 +11,6 @@ export async function GET(
 
   // Get token from Authorization header
   const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';
-
-  const getDirection = (value: string) => {
-    let dir: DirectionType = DirectionType.Asc;
-    switch (value) {
-      case '-':
-        dir = DirectionType.Desc;
-        break;
-      case '+':
-      default:
-        dir = DirectionType.Asc;
-        break;
-    }
-    return dir;
-  };
 
   try {
     const documentsService = createDocumentService({ authToken });
@@ -42,21 +23,7 @@ export async function GET(
     const searchTerm = url.searchParams.get('searchTerm') || undefined;
     const orderString = url.searchParams.get('order') || undefined;
 
-    const order: Order<Document> = [];
-    if (orderString) {
-      orderString
-        .split(',')
-        .map((fieldName) => fieldName.trim())
-        .forEach((fieldName) => {
-          const match = /^([\+\-]?)(\w+)$/.exec(fieldName);
-          if (match) {
-            const dir = getDirection(match[1]);
-            const name = match[2] as keyof Document;
-            const orderField: OrderField<Document> = { dir, name };
-            order.push(orderField);
-          }
-        });
-    }
+    const order = getOrder(orderString);
 
     const filter = {
       ...(state ? { state } : {}),
