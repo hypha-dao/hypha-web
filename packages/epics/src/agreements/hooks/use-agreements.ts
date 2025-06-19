@@ -3,10 +3,9 @@
 import useSWR from 'swr';
 import {
   AgreementItem,
-  FilterParams,
-  PaginationMetadata,
   fetchAgreements,
 } from '@hypha-platform/graphql/rsc';
+import { FilterParams, PaginationMetadata } from '@core/common';
 
 type UseAgreementsReturn = {
   agreements: AgreementItem[];

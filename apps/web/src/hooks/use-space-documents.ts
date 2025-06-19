@@ -4,13 +4,13 @@ import React from 'react';
 import useSWR from 'swr';
 import queryString from 'query-string';
 
-import { FilterParams, Order } from '@hypha-platform/graphql/rsc';
-
 import { useSpaceSlug } from './use-space-slug';
 // TODO: #594 declare UI interface separately
 import {
   DirectionType,
   Document,
+  FilterParams,
+  Order,
   OrderField,
 } from '@hypha-platform/core/client';
 import { UseDocuments, UseDocumentsReturn } from '@hypha-platform/epics';

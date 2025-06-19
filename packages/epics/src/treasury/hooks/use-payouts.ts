@@ -3,10 +3,9 @@
 import useSWR from 'swr';
 import {
   PayoutItem,
-  PaginationMetadata,
-  FilterParams,
   fetchPayouts,
 } from '@hypha-platform/graphql/rsc';
+import { FilterParams, PaginationMetadata } from '@core/common';
 
 type UsePayoutsReturn = {
   payouts: PayoutItem[];

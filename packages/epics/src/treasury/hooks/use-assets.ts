@@ -3,9 +3,10 @@
 import React from 'react';
 import useSWR from 'swr';
 import queryString from 'query-string';
-import { AssetItem, PaginationMetadata } from '@hypha-platform/graphql/rsc';
+import { AssetItem } from '@hypha-platform/graphql/rsc';
 import { FilterParams } from '@core/common/server';
 import { useParams } from 'next/navigation';
+import { PaginationMetadata } from '@core/common';
 
 type UseAssetsReturn = {
   assets: AssetItem[];
