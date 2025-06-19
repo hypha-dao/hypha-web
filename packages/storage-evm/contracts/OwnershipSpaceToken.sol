@@ -7,9 +7,14 @@ import './interfaces/IDAOSpaceFactory.sol';
 /**
  * @title OwnershipSpaceToken
  * @dev A space token that can only be transferred between space members and only by the executor
+ * Special exceptions are made for escrow contract interactions
  */
 contract OwnershipSpaceToken is SpaceToken {
   address public immutable spacesContract;
+
+  // Hardcoded escrow contract address
+  address public constant escrowContract =
+    0x1234567890123456789012345678901234567890; // TODO: Replace with actual escrow contract address
 
   /**
    * @dev Emitted when a transfer is rejected due to membership requirements
@@ -33,10 +38,16 @@ contract OwnershipSpaceToken is SpaceToken {
 
   /**
    * @dev Override transfer function to enforce space membership restrictions
-   * Only the executor can initiate transfers and only between space members
+   * Allows space members to transfer to escrow contract
+   * Only the executor can initiate other transfers between space members
    */
   function transfer(address to, uint256 amount) public override returns (bool) {
-    // Only executor can initiate transfers
+    // Allow space members to transfer to escrow contract
+    if (to == escrowContract && _isSpaceMember(msg.sender)) {
+      return super.transfer(to, amount);
+    }
+
+    // Only executor can initiate other transfers
     require(msg.sender == executor, 'Only executor can transfer tokens');
 
     // Check that recipient is a member of the space
@@ -48,14 +59,21 @@ contract OwnershipSpaceToken is SpaceToken {
 
   /**
    * @dev Override transferFrom function to enforce space membership restrictions
-   * Only the executor can initiate transfers and only between space members
+   * Allows escrow contract to transfer to space members
+   * Only the executor can initiate other transfers between space members
    */
   function transferFrom(
     address from,
     address to,
     uint256 amount
   ) public override returns (bool) {
-    // Only executor can initiate transfers
+    // Allow escrow contract to transfer to space members
+    if (msg.sender == escrowContract && _isSpaceMember(to)) {
+      _transfer(from, to, amount);
+      return true;
+    }
+
+    // Only executor can initiate other transfers
     require(msg.sender == executor, 'Only executor can transfer tokens');
 
     // Check that recipient is a member of the space
