@@ -7,6 +7,8 @@ import { useDocumentSlug } from '@web/hooks/use-document-slug';
 import { useDocumentBySlug } from '@web/hooks/use-document-by-slug';
 import { getDhoPathGovernance } from '../../../../@tab/governance/constants';
 import { useVote } from '@core/governance';
+import { useSpaceDocumentsWithStatuses } from '@hypha-platform/epics';
+import { useSpaceBySlug } from '@core/space';
 
 export default function Agreements() {
   const { id, lang } = useParams();
@@ -17,6 +19,11 @@ export default function Agreements() {
       proposalId: document?.web3ProposalId,
     },
   );
+  const { space } = useSpaceBySlug(id as string);
+  const { update } = useSpaceDocumentsWithStatuses({
+    spaceSlug: space?.slug as string,
+    spaceId: space?.web3SpaceId as number,
+  });
 
   return (
     <SidePanel>
@@ -26,6 +33,7 @@ export default function Agreements() {
         onReject={handleReject}
         onCheckProposalExpiration={handleCheckProposalExpiration}
         updateProposalData={mutate}
+        updateProposalsList={update}
         content={document?.description}
         creator={{
           avatar: document?.creator?.avatarUrl || '',

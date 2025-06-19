@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 
 import { useSpaceProposalsWeb3Rpc } from '@core/space';
 import { Document } from '@core/governance';
@@ -150,8 +150,13 @@ export const useSpaceDocumentsWithStatuses = ({
     };
   }, [documentsFromDb, spaceProposalsIds]);
 
+  const manualUpdate = React.useCallback(() => {
+    mutate([endpoint]);
+  }, [endpoint]);
+
   return {
     documents: response,
     isLoading,
+    update: manualUpdate,
   };
 };
