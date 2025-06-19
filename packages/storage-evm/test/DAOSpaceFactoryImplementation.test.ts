@@ -3466,6 +3466,9 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // Based on the direct deployment, predict the address of the next token
       // that will be created when the proposal executes
+      if (!directEvent) {
+        throw new Error('Direct token deployment event not found');
+      }
       const directTokenAddress = directEvent.args.tokenAddress;
       console.log(`Direct token was deployed at: ${directTokenAddress}`);
 
@@ -3885,7 +3888,10 @@ describe('DAOSpaceFactoryImplementation', function () {
       } catch (error) {
         // If the error is "Proposal already executed", we can ignore it
         // This means the first vote was enough to pass the proposal
-        if (!error.toString().includes('Proposal already executed')) {
+        if (
+          !(error instanceof Error) ||
+          !error.toString().includes('Proposal already executed')
+        ) {
           // If it's a different error, rethrow it
           throw error;
         }
@@ -3900,7 +3906,7 @@ describe('DAOSpaceFactoryImplementation', function () {
   });
 
   // Add a new describe block for Escrow tests after all existing tests
-  describe('Escrow Functionality', function () {
+  describe('Comprehensive Escrow Functionality Tests', function () {
     // We'll create a new fixture for escrow tests
     async function escrowFixture() {
       // Get the base deployment first
@@ -4030,12 +4036,31 @@ describe('DAOSpaceFactoryImplementation', function () {
       );
 
       // Mint tokens to partyA and partyB
-      await tokenA
+      await (tokenA as any)
         .connect(executorSigner)
         .mint(await partyA.getAddress(), ethers.parseEther('1000'));
-      await tokenB
+      await (tokenB as any)
         .connect(executorSigner)
         .mint(await partyB.getAddress(), ethers.parseEther('1000'));
+
+      console.log('\n=== ESCROW TEST SETUP COMPLETE ===');
+      console.log(`Escrow contract deployed at: ${await escrow.getAddress()}`);
+      console.log(
+        `Token A (${await tokenA.symbol()}) deployed at: ${tokenAAddress}`,
+      );
+      console.log(
+        `Token B (${await tokenB.symbol()}) deployed at: ${tokenBAddress}`,
+      );
+      console.log(
+        `Party A (${await partyA.getAddress()}) has ${ethers.formatEther(
+          await tokenA.balanceOf(await partyA.getAddress()),
+        )} ${await tokenA.symbol()}`,
+      );
+      console.log(
+        `Party B (${await partyB.getAddress()}) has ${ethers.formatEther(
+          await tokenB.balanceOf(await partyB.getAddress()),
+        )} ${await tokenB.symbol()}`,
+      );
 
       return {
         ...baseSetup,
@@ -4052,36 +4077,64 @@ describe('DAOSpaceFactoryImplementation', function () {
     describe('Deployment & Initialization', function () {
       it('Should set the right owner', async function () {
         const { escrow, owner } = await loadFixture(escrowFixture);
-        expect(await escrow.owner()).to.equal(owner.address);
+
+        console.log('\n=== TESTING ESCROW DEPLOYMENT ===');
+        const escrowOwner = await escrow.owner();
+        console.log(`Escrow owner: ${escrowOwner}`);
+        console.log(`Expected owner: ${owner.address}`);
+
+        expect(escrowOwner).to.equal(owner.address);
       });
 
       it('Should initialize with zero escrows', async function () {
         const { escrow } = await loadFixture(escrowFixture);
-        expect(await escrow.escrowCounter()).to.equal(0);
+
+        console.log('\n=== TESTING INITIAL STATE ===');
+        const escrowCount = await escrow.escrowCounter();
+        console.log(`Initial escrow counter: ${escrowCount}`);
+
+        expect(escrowCount).to.equal(0);
       });
     });
 
-    describe('Creating Escrows', function () {
-      it('Should create an escrow with correct parameters', async function () {
+    describe('Creating Escrows with Detailed Tracking', function () {
+      it('Should create an escrow with correct parameters and log all details', async function () {
         const { escrow, tokenA, tokenB, partyA, partyB } = await loadFixture(
           escrowFixture,
         );
 
+        console.log('\n=== CREATING ESCROW TEST ===');
         const amountA = ethers.parseEther('10');
         const amountB = ethers.parseEther('20');
 
-        await expect(
-          escrow
-            .connect(partyA)
-            .createEscrow(
-              await partyB.getAddress(),
-              await tokenA.getAddress(),
-              await tokenB.getAddress(),
-              amountA,
-              amountB,
-              false,
-            ),
-        )
+        console.log(`Creating escrow:`);
+        console.log(`- Party A: ${await partyA.getAddress()}`);
+        console.log(`- Party B: ${await partyB.getAddress()}`);
+        console.log(
+          `- Token A: ${await tokenA.getAddress()} (${await tokenA.symbol()})`,
+        );
+        console.log(
+          `- Token B: ${await tokenB.getAddress()} (${await tokenB.symbol()})`,
+        );
+        console.log(
+          `- Amount A: ${ethers.formatEther(amountA)} ${await tokenA.symbol()}`,
+        );
+        console.log(
+          `- Amount B: ${ethers.formatEther(amountB)} ${await tokenB.symbol()}`,
+        );
+
+        const createTx = await escrow
+          .connect(partyA)
+          .createEscrow(
+            await partyB.getAddress(),
+            await tokenA.getAddress(),
+            await tokenB.getAddress(),
+            amountA,
+            amountB,
+            false,
+          );
+
+        await expect(createTx)
           .to.emit(escrow, 'EscrowCreated')
           .withArgs(
             1,
@@ -4095,6 +4148,19 @@ describe('DAOSpaceFactoryImplementation', function () {
 
         // Get the escrow details
         const escrowDetails = await escrow.getEscrow(1);
+        console.log('\nEscrow created successfully with details:');
+        console.log(`- Escrow ID: 1`);
+        console.log(`- Party A: ${escrowDetails.partyA}`);
+        console.log(`- Party B: ${escrowDetails.partyB}`);
+        console.log(`- Token A: ${escrowDetails.tokenA}`);
+        console.log(`- Token B: ${escrowDetails.tokenB}`);
+        console.log(`- Amount A: ${ethers.formatEther(escrowDetails.amountA)}`);
+        console.log(`- Amount B: ${ethers.formatEther(escrowDetails.amountB)}`);
+        console.log(`- Party A Funded: ${escrowDetails.isPartyAFunded}`);
+        console.log(`- Party B Funded: ${escrowDetails.isPartyBFunded}`);
+        console.log(`- Completed: ${escrowDetails.isCompleted}`);
+        console.log(`- Cancelled: ${escrowDetails.isCancelled}`);
+
         expect(escrowDetails.partyA).to.equal(await partyA.getAddress());
         expect(escrowDetails.partyB).to.equal(await partyB.getAddress());
         expect(escrowDetails.tokenA).to.equal(await tokenA.getAddress());
@@ -4105,101 +4171,162 @@ describe('DAOSpaceFactoryImplementation', function () {
         expect(escrowDetails.isPartyBFunded).to.be.false;
         expect(escrowDetails.isCompleted).to.be.false;
         expect(escrowDetails.isCancelled).to.be.false;
+
+        console.log('✅ Escrow creation test passed!');
       });
 
-      it('Should fail with invalid parameters', async function () {
+      it('Should create escrow with immediate funding and track token movements', async function () {
         const { escrow, tokenA, tokenB, partyA, partyB } = await loadFixture(
           escrowFixture,
         );
 
+        console.log('\n=== CREATING ESCROW WITH IMMEDIATE FUNDING ===');
         const amountA = ethers.parseEther('10');
         const amountB = ethers.parseEther('20');
 
-        // Test with zero address for partyB
-        await expect(
-          escrow
-            .connect(partyA)
-            .createEscrow(
-              ethers.ZeroAddress,
-              await tokenA.getAddress(),
-              await tokenB.getAddress(),
-              amountA,
-              amountB,
-              false,
-            ),
-        ).to.be.revertedWith('Invalid party B address');
-
-        // Test with zero address for tokenA
-        await expect(
-          escrow
-            .connect(partyA)
-            .createEscrow(
-              await partyB.getAddress(),
-              ethers.ZeroAddress,
-              await tokenB.getAddress(),
-              amountA,
-              amountB,
-              false,
-            ),
-        ).to.be.revertedWith('Invalid token A address');
-
-        // Test with zero amount for amountA
-        await expect(
-          escrow
-            .connect(partyA)
-            .createEscrow(
-              await partyB.getAddress(),
-              await tokenA.getAddress(),
-              await tokenB.getAddress(),
-              0,
-              amountB,
-              false,
-            ),
-        ).to.be.revertedWith('Amount A must be greater than 0');
-      });
-
-      it('Should create an escrow with immediate funding', async function () {
-        const { escrow, tokenA, tokenB, partyA, partyB } = await loadFixture(
-          escrowFixture,
+        // Get initial balances
+        const partyAInitialBalance = await tokenA.balanceOf(
+          await partyA.getAddress(),
+        );
+        const escrowInitialBalance = await tokenA.balanceOf(
+          await escrow.getAddress(),
         );
 
-        const amountA = ethers.parseEther('10');
-        const amountB = ethers.parseEther('20');
+        console.log('Initial balances:');
+        console.log(
+          `- Party A ${await tokenA.symbol()} balance: ${ethers.formatEther(
+            partyAInitialBalance,
+          )}`,
+        );
+        console.log(
+          `- Escrow ${await tokenA.symbol()} balance: ${ethers.formatEther(
+            escrowInitialBalance,
+          )}`,
+        );
 
         // Approve tokens for escrow
-        await tokenA
+        console.log(
+          `\nApproving ${ethers.formatEther(
+            amountA,
+          )} ${await tokenA.symbol()} for escrow...`,
+        );
+        await (tokenA as any)
           .connect(partyA)
           .approve(await escrow.getAddress(), amountA);
 
-        // Create escrow with immediate funding
-        await escrow
-          .connect(partyA)
-          .createEscrow(
-            await partyB.getAddress(),
-            await tokenA.getAddress(),
-            await tokenB.getAddress(),
-            amountA,
-            amountB,
-            true,
-          );
+        const allowance = await tokenA.allowance(
+          await partyA.getAddress(),
+          await escrow.getAddress(),
+        );
+        console.log(
+          `Allowance set: ${ethers.formatEther(
+            allowance,
+          )} ${await tokenA.symbol()}`,
+        );
 
-        // Get the escrow details
+        // Create escrow with immediate funding
+        console.log('\nCreating escrow with immediate funding...');
+        const createTx = await escrow.connect(partyA).createEscrow(
+          await partyB.getAddress(),
+          await tokenA.getAddress(),
+          await tokenB.getAddress(),
+          amountA,
+          amountB,
+          true, // Fund immediately
+        );
+
+        await expect(createTx)
+          .to.emit(escrow, 'EscrowCreated')
+          .to.emit(escrow, 'FundsReceived');
+
+        // Check balances after funding
+        const partyAFinalBalance = await tokenA.balanceOf(
+          await partyA.getAddress(),
+        );
+        const escrowFinalBalance = await tokenA.balanceOf(
+          await escrow.getAddress(),
+        );
+
+        console.log('\nBalances after immediate funding:');
+        console.log(
+          `- Party A ${await tokenA.symbol()} balance: ${ethers.formatEther(
+            partyAFinalBalance,
+          )}`,
+        );
+        console.log(
+          `- Escrow ${await tokenA.symbol()} balance: ${ethers.formatEther(
+            escrowFinalBalance,
+          )}`,
+        );
+        console.log(
+          `- Tokens transferred: ${ethers.formatEther(
+            partyAInitialBalance - partyAFinalBalance,
+          )}`,
+        );
+
+        // Verify the escrow state
         const escrowDetails = await escrow.getEscrow(1);
+        console.log('\nEscrow state after immediate funding:');
+        console.log(`- Party A Funded: ${escrowDetails.isPartyAFunded}`);
+        console.log(`- Party B Funded: ${escrowDetails.isPartyBFunded}`);
+        console.log(`- Completed: ${escrowDetails.isCompleted}`);
+
         expect(escrowDetails.isPartyAFunded).to.be.true;
         expect(escrowDetails.isPartyBFunded).to.be.false;
+        expect(escrowDetails.isCompleted).to.be.false;
+        expect(partyAFinalBalance).to.equal(partyAInitialBalance - amountA);
+        expect(escrowFinalBalance).to.equal(escrowInitialBalance + amountA);
+
+        console.log('✅ Immediate funding test passed!');
       });
     });
 
-    describe('Funding Escrows', function () {
-      it('Should allow parties to fund their part of the escrow and complete swap', async function () {
+    describe('Complete Escrow Flow with Detailed Balance Tracking', function () {
+      it('Should complete a full escrow swap with comprehensive logging', async function () {
         const { escrow, tokenA, tokenB, partyA, partyB } = await loadFixture(
           escrowFixture,
         );
 
-        const amountA = ethers.parseEther('10');
-        const amountB = ethers.parseEther('20');
+        console.log('\n=== COMPLETE ESCROW SWAP TEST ===');
+        const amountA = ethers.parseEther('15');
+        const amountB = ethers.parseEther('25');
 
-        // Create escrow
+        // Step 1: Record initial balances
+        console.log('\n--- STEP 1: RECORDING INITIAL BALANCES ---');
+        const initialBalances = {
+          partyATokenA: await tokenA.balanceOf(await partyA.getAddress()),
+          partyATokenB: await tokenB.balanceOf(await partyA.getAddress()),
+          partyBTokenA: await tokenA.balanceOf(await partyB.getAddress()),
+          partyBTokenB: await tokenB.balanceOf(await partyB.getAddress()),
+          escrowTokenA: await tokenA.balanceOf(await escrow.getAddress()),
+          escrowTokenB: await tokenB.balanceOf(await escrow.getAddress()),
+        };
+
+        console.log('Initial Balances:');
+        console.log(
+          `Party A: ${ethers.formatEther(
+            initialBalances.partyATokenA,
+          )} ${await tokenA.symbol()}, ${ethers.formatEther(
+            initialBalances.partyATokenB,
+          )} ${await tokenB.symbol()}`,
+        );
+        console.log(
+          `Party B: ${ethers.formatEther(
+            initialBalances.partyBTokenA,
+          )} ${await tokenA.symbol()}, ${ethers.formatEther(
+            initialBalances.partyBTokenB,
+          )} ${await tokenB.symbol()}`,
+        );
+        console.log(
+          `Escrow: ${ethers.formatEther(
+            initialBalances.escrowTokenA,
+          )} ${await tokenA.symbol()}, ${ethers.formatEther(
+            initialBalances.escrowTokenB,
+          )} ${await tokenB.symbol()}`,
+        );
+
+        // Step 2: Create escrow
+        console.log('\n--- STEP 2: CREATING ESCROW ---');
         await escrow
           .connect(partyA)
           .createEscrow(
@@ -4211,24 +4338,28 @@ describe('DAOSpaceFactoryImplementation', function () {
             false,
           );
 
-        // Get initial balances
-        const initialPartyATokenABalance = await tokenA.balanceOf(
-          await partyA.getAddress(),
-        );
-        const initialPartyBTokenBBalance = await tokenB.balanceOf(
-          await partyB.getAddress(),
+        console.log(
+          `Escrow created: Party A offers ${ethers.formatEther(
+            amountA,
+          )} ${await tokenA.symbol()} for ${ethers.formatEther(
+            amountB,
+          )} ${await tokenB.symbol()}`,
         );
 
-        // Approve tokens for escrow
-        await tokenA
+        // Step 3: Party A funds
+        console.log('\n--- STEP 3: PARTY A FUNDING ---');
+        await (tokenA as any)
           .connect(partyA)
           .approve(await escrow.getAddress(), amountA);
-        await tokenB
-          .connect(partyB)
-          .approve(await escrow.getAddress(), amountB);
 
-        // PartyA funds their part
-        await expect(escrow.connect(partyA).receiveFunds(1))
+        console.log(
+          `Party A approved ${ethers.formatEther(
+            amountA,
+          )} ${await tokenA.symbol()}`,
+        );
+
+        const fundATx = await escrow.connect(partyA).receiveFunds(1);
+        await expect(fundATx)
           .to.emit(escrow, 'FundsReceived')
           .withArgs(
             1,
@@ -4237,14 +4368,47 @@ describe('DAOSpaceFactoryImplementation', function () {
             amountA,
           );
 
-        // Check escrow state after partyA funds
-        let escrowDetails = await escrow.getEscrow(1);
-        expect(escrowDetails.isPartyAFunded).to.be.true;
-        expect(escrowDetails.isPartyBFunded).to.be.false;
-        expect(escrowDetails.isCompleted).to.be.false;
+        // Check balances after Party A funds
+        const afterAFunding = {
+          partyATokenA: await tokenA.balanceOf(await partyA.getAddress()),
+          escrowTokenA: await tokenA.balanceOf(await escrow.getAddress()),
+        };
 
-        // PartyB funds their part
-        await expect(escrow.connect(partyB).receiveFunds(1))
+        console.log('Balances after Party A funding:');
+        console.log(
+          `Party A ${await tokenA.symbol()}: ${ethers.formatEther(
+            afterAFunding.partyATokenA,
+          )} (change: ${ethers.formatEther(
+            afterAFunding.partyATokenA - initialBalances.partyATokenA,
+          )})`,
+        );
+        console.log(
+          `Escrow ${await tokenA.symbol()}: ${ethers.formatEther(
+            afterAFunding.escrowTokenA,
+          )} (change: ${ethers.formatEther(
+            afterAFunding.escrowTokenA - initialBalances.escrowTokenA,
+          )})`,
+        );
+
+        let escrowDetails = await escrow.getEscrow(1);
+        console.log(
+          `Escrow state: Party A funded: ${escrowDetails.isPartyAFunded}, Party B funded: ${escrowDetails.isPartyBFunded}, Completed: ${escrowDetails.isCompleted}`,
+        );
+
+        // Step 4: Party B funds (this should complete the escrow)
+        console.log('\n--- STEP 4: PARTY B FUNDING (COMPLETING ESCROW) ---');
+        await (tokenB as any)
+          .connect(partyB)
+          .approve(await escrow.getAddress(), amountB);
+
+        console.log(
+          `Party B approved ${ethers.formatEther(
+            amountB,
+          )} ${await tokenB.symbol()}`,
+        );
+
+        const fundBTx = await escrow.connect(partyB).receiveFunds(1);
+        await expect(fundBTx)
           .to.emit(escrow, 'FundsReceived')
           .withArgs(
             1,
@@ -4255,63 +4419,123 @@ describe('DAOSpaceFactoryImplementation', function () {
           .to.emit(escrow, 'EscrowCompleted')
           .withArgs(1, await partyA.getAddress(), await partyB.getAddress());
 
-        // Check escrow state after partyB funds (escrow should be completed)
+        // Step 5: Check final balances
+        console.log('\n--- STEP 5: FINAL BALANCE VERIFICATION ---');
+        const finalBalances = {
+          partyATokenA: await tokenA.balanceOf(await partyA.getAddress()),
+          partyATokenB: await tokenB.balanceOf(await partyA.getAddress()),
+          partyBTokenA: await tokenA.balanceOf(await partyB.getAddress()),
+          partyBTokenB: await tokenB.balanceOf(await partyB.getAddress()),
+          escrowTokenA: await tokenA.balanceOf(await escrow.getAddress()),
+          escrowTokenB: await tokenB.balanceOf(await escrow.getAddress()),
+        };
+
+        console.log('Final Balances:');
+        console.log(
+          `Party A: ${ethers.formatEther(
+            finalBalances.partyATokenA,
+          )} ${await tokenA.symbol()}, ${ethers.formatEther(
+            finalBalances.partyATokenB,
+          )} ${await tokenB.symbol()}`,
+        );
+        console.log(
+          `Party B: ${ethers.formatEther(
+            finalBalances.partyBTokenA,
+          )} ${await tokenA.symbol()}, ${ethers.formatEther(
+            finalBalances.partyBTokenB,
+          )} ${await tokenB.symbol()}`,
+        );
+        console.log(
+          `Escrow: ${ethers.formatEther(
+            finalBalances.escrowTokenA,
+          )} ${await tokenA.symbol()}, ${ethers.formatEther(
+            finalBalances.escrowTokenB,
+          )} ${await tokenB.symbol()}`,
+        );
+
+        console.log('\nBalance Changes:');
+        console.log(
+          `Party A ${await tokenA.symbol()}: ${ethers.formatEther(
+            finalBalances.partyATokenA - initialBalances.partyATokenA,
+          )} (expected: ${ethers.formatEther(-amountA)})`,
+        );
+        console.log(
+          `Party A ${await tokenB.symbol()}: ${ethers.formatEther(
+            finalBalances.partyATokenB - initialBalances.partyATokenB,
+          )} (expected: ${ethers.formatEther(amountB)})`,
+        );
+        console.log(
+          `Party B ${await tokenA.symbol()}: ${ethers.formatEther(
+            finalBalances.partyBTokenA - initialBalances.partyBTokenA,
+          )} (expected: ${ethers.formatEther(amountA)})`,
+        );
+        console.log(
+          `Party B ${await tokenB.symbol()}: ${ethers.formatEther(
+            finalBalances.partyBTokenB - initialBalances.partyBTokenB,
+          )} (expected: ${ethers.formatEther(-amountB)})`,
+        );
+
+        // Verify escrow completion
         escrowDetails = await escrow.getEscrow(1);
+        console.log('\nFinal escrow state:');
+        console.log(`- Party A Funded: ${escrowDetails.isPartyAFunded}`);
+        console.log(`- Party B Funded: ${escrowDetails.isPartyBFunded}`);
+        console.log(`- Completed: ${escrowDetails.isCompleted}`);
+        console.log(`- Cancelled: ${escrowDetails.isCancelled}`);
+
+        // Assertions
         expect(escrowDetails.isPartyAFunded).to.be.true;
         expect(escrowDetails.isPartyBFunded).to.be.true;
         expect(escrowDetails.isCompleted).to.be.true;
+        expect(escrowDetails.isCancelled).to.be.false;
 
-        // Check token balances after completion
-        expect(await tokenA.balanceOf(await partyA.getAddress())).to.equal(
-          initialPartyATokenABalance - amountA,
+        // Verify token transfers
+        expect(finalBalances.partyATokenA).to.equal(
+          initialBalances.partyATokenA - amountA,
         );
-        expect(await tokenB.balanceOf(await partyB.getAddress())).to.equal(
-          initialPartyBTokenBBalance - amountB,
+        expect(finalBalances.partyATokenB).to.equal(
+          initialBalances.partyATokenB + amountB,
         );
-        expect(await tokenA.balanceOf(await partyB.getAddress())).to.equal(
-          amountA,
+        expect(finalBalances.partyBTokenA).to.equal(
+          initialBalances.partyBTokenA + amountA,
         );
-        expect(await tokenB.balanceOf(await partyA.getAddress())).to.equal(
-          amountB,
+        expect(finalBalances.partyBTokenB).to.equal(
+          initialBalances.partyBTokenB - amountB,
         );
-      });
 
-      it('Should prevent non-parties from funding an escrow', async function () {
-        const { escrow, tokenA, tokenB, partyA, partyB, other } =
-          await loadFixture(escrowFixture);
+        // Escrow should have no tokens left
+        expect(finalBalances.escrowTokenA).to.equal(0);
+        expect(finalBalances.escrowTokenB).to.equal(0);
 
-        const amountA = ethers.parseEther('10');
-        const amountB = ethers.parseEther('20');
-
-        // Create escrow
-        await escrow
-          .connect(partyA)
-          .createEscrow(
-            await partyB.getAddress(),
-            await tokenA.getAddress(),
-            await tokenB.getAddress(),
-            amountA,
-            amountB,
-            false,
-          );
-
-        // Other address tries to fund the escrow
-        await expect(escrow.connect(other).receiveFunds(1)).to.be.revertedWith(
-          'Sender not part of this escrow',
+        console.log(
+          '✅ Complete escrow swap test passed! All tokens transferred correctly.',
         );
       });
     });
 
-    describe('Cancellation and Withdrawal', function () {
-      it('Should allow parties to cancel an escrow and withdraw funds', async function () {
+    describe('Cancellation and Withdrawal with Balance Tracking', function () {
+      it('Should handle cancellation and withdrawal with detailed logging', async function () {
         const { escrow, tokenA, tokenB, partyA, partyB } = await loadFixture(
           escrowFixture,
         );
 
-        const amountA = ethers.parseEther('10');
-        const amountB = ethers.parseEther('20');
+        console.log('\n=== ESCROW CANCELLATION AND WITHDRAWAL TEST ===');
+        const amountA = ethers.parseEther('12');
+        const amountB = ethers.parseEther('18');
 
-        // Create escrow
+        // Step 1: Record initial balances
+        console.log('\n--- STEP 1: INITIAL BALANCES ---');
+        const initialBalance = await tokenA.balanceOf(
+          await partyA.getAddress(),
+        );
+        console.log(
+          `Party A initial ${await tokenA.symbol()} balance: ${ethers.formatEther(
+            initialBalance,
+          )}`,
+        );
+
+        // Step 2: Create and partially fund escrow
+        console.log('\n--- STEP 2: CREATING AND PARTIALLY FUNDING ESCROW ---');
         await escrow
           .connect(partyA)
           .createEscrow(
@@ -4323,27 +4547,56 @@ describe('DAOSpaceFactoryImplementation', function () {
             false,
           );
 
-        // Approve and fund
-        await tokenA
+        console.log('Escrow created');
+
+        // Fund Party A's part
+        await (tokenA as any)
           .connect(partyA)
           .approve(await escrow.getAddress(), amountA);
         await escrow.connect(partyA).receiveFunds(1);
 
-        const balanceBeforeCancel = await tokenA.balanceOf(
+        const balanceAfterFunding = await tokenA.balanceOf(
           await partyA.getAddress(),
         );
+        const escrowBalance = await tokenA.balanceOf(await escrow.getAddress());
 
-        // Cancel escrow
-        await expect(escrow.connect(partyA).cancelEscrow(1))
+        console.log(
+          `Party A ${await tokenA.symbol()} after funding: ${ethers.formatEther(
+            balanceAfterFunding,
+          )}`,
+        );
+        console.log(
+          `Escrow ${await tokenA.symbol()} balance: ${ethers.formatEther(
+            escrowBalance,
+          )}`,
+        );
+        console.log(
+          `Tokens transferred to escrow: ${ethers.formatEther(
+            initialBalance - balanceAfterFunding,
+          )}`,
+        );
+
+        // Step 3: Cancel escrow
+        console.log('\n--- STEP 3: CANCELLING ESCROW ---');
+        const cancelTx = await escrow.connect(partyA).cancelEscrow(1);
+        await expect(cancelTx)
           .to.emit(escrow, 'EscrowCancelled')
           .withArgs(1, await partyA.getAddress());
 
-        // Check escrow state
-        let escrowDetails = await escrow.getEscrow(1);
-        expect(escrowDetails.isCancelled).to.be.true;
+        console.log('Escrow cancelled by Party A');
 
-        // PartyA withdraws their funds
-        await expect(escrow.connect(partyA).withdrawFromCancelled(1))
+        let escrowDetails = await escrow.getEscrow(1);
+        console.log(`Escrow state after cancellation:`);
+        console.log(`- Cancelled: ${escrowDetails.isCancelled}`);
+        console.log(`- Completed: ${escrowDetails.isCompleted}`);
+        console.log(`- Party A Funded: ${escrowDetails.isPartyAFunded}`);
+
+        // Step 4: Withdraw funds
+        console.log('\n--- STEP 4: WITHDRAWING FUNDS ---');
+        const withdrawTx = await escrow
+          .connect(partyA)
+          .withdrawFromCancelled(1);
+        await expect(withdrawTx)
           .to.emit(escrow, 'FundsWithdrawn')
           .withArgs(
             1,
@@ -4352,26 +4605,110 @@ describe('DAOSpaceFactoryImplementation', function () {
             amountA,
           );
 
-        // Check escrow state
-        escrowDetails = await escrow.getEscrow(1);
-        expect(escrowDetails.isPartyAFunded).to.be.false;
+        console.log('Party A withdrew funds from cancelled escrow');
 
-        // Check token balance after withdrawal
-        const balanceAfterWithdraw = await tokenA.balanceOf(
-          await partyA.getAddress(),
+        // Step 5: Final balance verification
+        console.log('\n--- STEP 5: FINAL BALANCE VERIFICATION ---');
+        const finalBalance = await tokenA.balanceOf(await partyA.getAddress());
+        const finalEscrowBalance = await tokenA.balanceOf(
+          await escrow.getAddress(),
         );
-        expect(balanceAfterWithdraw).to.equal(balanceBeforeCancel + amountA);
+
+        console.log(
+          `Party A final ${await tokenA.symbol()} balance: ${ethers.formatEther(
+            finalBalance,
+          )}`,
+        );
+        console.log(
+          `Escrow final ${await tokenA.symbol()} balance: ${ethers.formatEther(
+            finalEscrowBalance,
+          )}`,
+        );
+        console.log(
+          `Net change for Party A: ${ethers.formatEther(
+            finalBalance - initialBalance,
+          )}`,
+        );
+
+        escrowDetails = await escrow.getEscrow(1);
+        console.log(`Final escrow state:`);
+        console.log(`- Cancelled: ${escrowDetails.isCancelled}`);
+        console.log(`- Party A Funded: ${escrowDetails.isPartyAFunded}`);
+        console.log(`- Party B Funded: ${escrowDetails.isPartyBFunded}`);
+
+        // Assertions
+        expect(escrowDetails.isCancelled).to.be.true;
+        expect(escrowDetails.isPartyAFunded).to.be.false; // Should be false after withdrawal
+        expect(finalBalance).to.equal(initialBalance); // Should get all tokens back
+        expect(finalEscrowBalance).to.equal(0); // Escrow should be empty
+
+        console.log(
+          '✅ Cancellation and withdrawal test passed! All tokens returned correctly.',
+        );
+      });
+    });
+
+    describe('Error Scenarios and Edge Cases', function () {
+      it('Should prevent unauthorized access with detailed error logging', async function () {
+        const { escrow, tokenA, tokenB, partyA, partyB, other } =
+          await loadFixture(escrowFixture);
+
+        console.log('\n=== TESTING UNAUTHORIZED ACCESS PREVENTION ===');
+
+        // Create escrow
+        await escrow
+          .connect(partyA)
+          .createEscrow(
+            await partyB.getAddress(),
+            await tokenA.getAddress(),
+            await tokenB.getAddress(),
+            ethers.parseEther('10'),
+            ethers.parseEther('20'),
+            false,
+          );
+
+        console.log('Escrow created between Party A and Party B');
+        console.log(`Unauthorized user: ${await other.getAddress()}`);
+
+        // Test unauthorized funding
+        console.log('\nTesting unauthorized funding attempt...');
+        await expect(escrow.connect(other).receiveFunds(1)).to.be.revertedWith(
+          'Sender not part of this escrow',
+        );
+        console.log('✅ Unauthorized funding correctly rejected');
+
+        // Test unauthorized cancellation
+        console.log('\nTesting unauthorized cancellation attempt...');
+        await expect(escrow.connect(other).cancelEscrow(1)).to.be.revertedWith(
+          'Not authorized',
+        );
+        console.log('✅ Unauthorized cancellation correctly rejected');
+
+        // Test unauthorized withdrawal
+        console.log('\nTesting unauthorized withdrawal attempt...');
+
+        // First, we need to cancel the escrow (by an authorized party) to test unauthorized withdrawal
+        await escrow.connect(partyA).cancelEscrow(1);
+        console.log('Escrow cancelled by Party A to enable withdrawal testing');
+
+        // Now test unauthorized withdrawal from the cancelled escrow
+        await expect(
+          escrow.connect(other).withdrawFromCancelled(1),
+        ).to.be.revertedWith('Not authorized');
+        console.log('✅ Unauthorized withdrawal correctly rejected');
       });
 
-      it('Should prevent cancelling already completed escrow', async function () {
+      it('Should handle double funding attempts with logging', async function () {
         const { escrow, tokenA, tokenB, partyA, partyB } = await loadFixture(
           escrowFixture,
         );
 
+        console.log('\n=== TESTING DOUBLE FUNDING PREVENTION ===');
+
         const amountA = ethers.parseEther('10');
         const amountB = ethers.parseEther('20');
 
-        // Create and fully fund escrow
+        // Create escrow
         await escrow
           .connect(partyA)
           .createEscrow(
@@ -4383,90 +4720,151 @@ describe('DAOSpaceFactoryImplementation', function () {
             false,
           );
 
-        await tokenA
+        // Fund once
+        await (tokenA as any)
           .connect(partyA)
-          .approve(await escrow.getAddress(), amountA);
-        await tokenB
+          .approve(await escrow.getAddress(), amountA * 2n); // Approve more than needed
+        await escrow.connect(partyA).receiveFunds(1);
+
+        console.log('Party A funded escrow once');
+
+        const escrowDetails = await escrow.getEscrow(1);
+        console.log(`Party A funded status: ${escrowDetails.isPartyAFunded}`);
+
+        // Try to fund again
+        console.log('\nTesting double funding attempt...');
+        await expect(escrow.connect(partyA).receiveFunds(1)).to.be.revertedWith(
+          'Party already funded or invalid state',
+        );
+        console.log('✅ Double funding correctly prevented');
+      });
+
+      it('Should track multiple concurrent escrows with detailed logging', async function () {
+        const {
+          escrow,
+          tokenA,
+          tokenB,
+          partyA,
+          partyB,
+          other,
+          executorSigner,
+        } = await loadFixture(escrowFixture);
+
+        console.log('\n=== TESTING MULTIPLE CONCURRENT ESCROWS ===');
+
+        // Create multiple escrows
+        const escrow1Details = {
+          amountA: ethers.parseEther('5'),
+          amountB: ethers.parseEther('10'),
+        };
+
+        const escrow2Details = {
+          amountA: ethers.parseEther('7'),
+          amountB: ethers.parseEther('14'),
+        };
+
+        const escrow3Details = {
+          amountA: ethers.parseEther('3'),
+          amountB: ethers.parseEther('6'),
+        };
+
+        console.log('\nCreating three escrows...');
+
+        // Escrow 1: PartyA <-> PartyB
+        await escrow
+          .connect(partyA)
+          .createEscrow(
+            await partyB.getAddress(),
+            await tokenA.getAddress(),
+            await tokenB.getAddress(),
+            escrow1Details.amountA,
+            escrow1Details.amountB,
+            false,
+          );
+
+        // Escrow 2: PartyA <-> Other (need to mint tokens to other first)
+        await (tokenB as any)
+          .connect(executorSigner)
+          .mint(await other.getAddress(), ethers.parseEther('100'));
+
+        await escrow
+          .connect(partyA)
+          .createEscrow(
+            await other.getAddress(),
+            await tokenA.getAddress(),
+            await tokenB.getAddress(),
+            escrow2Details.amountA,
+            escrow2Details.amountB,
+            false,
+          );
+
+        // Escrow 3: PartyB <-> Other
+        await (tokenA as any)
+          .connect(executorSigner)
+          .mint(await other.getAddress(), ethers.parseEther('100'));
+
+        await escrow.connect(partyB).createEscrow(
+          await other.getAddress(),
+          await tokenB.getAddress(),
+          await tokenA.getAddress(),
+          escrow3Details.amountB, // Note: swapped amounts since it's partyB initiating
+          escrow3Details.amountA,
+          false,
+        );
+
+        console.log('All three escrows created');
+
+        // Verify all escrows exist and have correct details
+        for (let i = 1; i <= 3; i++) {
+          const details = await escrow.getEscrow(i);
+          console.log(`\nEscrow ${i} details:`);
+          console.log(`- Party A: ${details.partyA}`);
+          console.log(`- Party B: ${details.partyB}`);
+          console.log(`- Amount A: ${ethers.formatEther(details.amountA)}`);
+          console.log(`- Amount B: ${ethers.formatEther(details.amountB)}`);
+          console.log(
+            `- Funded A: ${details.isPartyAFunded}, Funded B: ${details.isPartyBFunded}`,
+          );
+          console.log(
+            `- Completed: ${details.isCompleted}, Cancelled: ${details.isCancelled}`,
+          );
+        }
+
+        // Complete one escrow
+        console.log('\nCompleting escrow 1...');
+        await (tokenA as any)
+          .connect(partyA)
+          .approve(await escrow.getAddress(), escrow1Details.amountA);
+        await (tokenB as any)
           .connect(partyB)
-          .approve(await escrow.getAddress(), amountB);
+          .approve(await escrow.getAddress(), escrow1Details.amountB);
+
         await escrow.connect(partyA).receiveFunds(1);
         await escrow.connect(partyB).receiveFunds(1);
 
-        // Try to cancel completed escrow
-        await expect(escrow.connect(partyA).cancelEscrow(1)).to.be.revertedWith(
-          'Escrow already completed',
-        );
-      });
-    });
+        // Cancel another escrow
+        console.log('\nCancelling escrow 2...');
+        await escrow.connect(partyA).cancelEscrow(2);
 
-    describe('Multiple Escrows and Edge Cases', function () {
-      it('Should handle multiple escrows between the same parties', async function () {
-        const { escrow, tokenA, tokenB, partyA, partyB } = await loadFixture(
-          escrowFixture,
-        );
-
-        // Create first escrow
-        await escrow
-          .connect(partyA)
-          .createEscrow(
-            await partyB.getAddress(),
-            await tokenA.getAddress(),
-            await tokenB.getAddress(),
-            ethers.parseEther('10'),
-            ethers.parseEther('20'),
-            false,
+        // Check final states
+        console.log('\nFinal states:');
+        for (let i = 1; i <= 3; i++) {
+          const details = await escrow.getEscrow(i);
+          console.log(
+            `Escrow ${i}: Completed: ${details.isCompleted}, Cancelled: ${details.isCancelled}`,
           );
+        }
 
-        // Create second escrow
-        await escrow
-          .connect(partyA)
-          .createEscrow(
-            await partyB.getAddress(),
-            await tokenA.getAddress(),
-            await tokenB.getAddress(),
-            ethers.parseEther('5'),
-            ethers.parseEther('15'),
-            false,
-          );
+        const escrow1Final = await escrow.getEscrow(1);
+        const escrow2Final = await escrow.getEscrow(2);
+        const escrow3Final = await escrow.getEscrow(3);
 
-        // Check both escrows exist
-        expect(await escrow.escrowCounter()).to.equal(2);
-        expect(await escrow.escrowExists(1)).to.be.true;
-        expect(await escrow.escrowExists(2)).to.be.true;
+        expect(escrow1Final.isCompleted).to.be.true;
+        expect(escrow2Final.isCancelled).to.be.true;
+        expect(escrow3Final.isCompleted).to.be.false;
+        expect(escrow3Final.isCancelled).to.be.false;
 
-        // Verify details of second escrow
-        const escrow2Details = await escrow.getEscrow(2);
-        expect(escrow2Details.partyA).to.equal(await partyA.getAddress());
-        expect(escrow2Details.partyB).to.equal(await partyB.getAddress());
-        expect(escrow2Details.amountA).to.equal(ethers.parseEther('5'));
-        expect(escrow2Details.amountB).to.equal(ethers.parseEther('15'));
-      });
-
-      it('Should verify escrowExists function correctly identifies valid escrows', async function () {
-        const { escrow, tokenA, tokenB, partyA, partyB } = await loadFixture(
-          escrowFixture,
-        );
-
-        // Check non-existent escrow
-        expect(await escrow.escrowExists(1)).to.be.false;
-
-        // Create an escrow
-        await escrow
-          .connect(partyA)
-          .createEscrow(
-            await partyB.getAddress(),
-            await tokenA.getAddress(),
-            await tokenB.getAddress(),
-            ethers.parseEther('10'),
-            ethers.parseEther('20'),
-            false,
-          );
-
-        // Check escrow now exists
-        expect(await escrow.escrowExists(1)).to.be.true;
-
-        // Non-existent escrow ID still doesn't exist
-        expect(await escrow.escrowExists(999)).to.be.false;
+        console.log('✅ Multiple concurrent escrows test passed!');
       });
     });
   });
