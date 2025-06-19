@@ -10,6 +10,9 @@ export default function Loading() {
         updateProposalData={() => console.log('update proposal data')}
         onAccept={() => console.log('accept')}
         onReject={() => console.log('reject')}
+        onCheckProposalExpiration={() =>
+          console.log('handleCheckProposalExpiration')
+        }
         content={''}
         creator={{
           avatar: '',

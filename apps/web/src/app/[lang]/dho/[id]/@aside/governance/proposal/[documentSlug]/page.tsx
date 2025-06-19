@@ -12,9 +12,11 @@ export default function Agreements() {
   const { id, lang } = useParams();
   const documentSlug = useDocumentSlug();
   const { document, isLoading, mutate } = useDocumentBySlug(documentSlug);
-  const { handleAccept, handleReject } = useVote({
-    proposalId: document?.web3ProposalId,
-  });
+  const { handleAccept, handleReject, handleCheckProposalExpiration } = useVote(
+    {
+      proposalId: document?.web3ProposalId,
+    },
+  );
 
   return (
     <SidePanel>
@@ -22,6 +24,7 @@ export default function Agreements() {
         closeUrl={getDhoPathGovernance(lang as Locale, id as string)}
         onAccept={handleAccept}
         onReject={handleReject}
+        onCheckProposalExpiration={handleCheckProposalExpiration}
         updateProposalData={mutate}
         content={document?.description}
         creator={{
