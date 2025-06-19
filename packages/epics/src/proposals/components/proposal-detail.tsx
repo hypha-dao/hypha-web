@@ -27,6 +27,7 @@ type ProposalDetailProps = ProposalHeadProps & {
   onReject: () => void;
   onCheckProposalExpiration: () => void;
   updateProposalData: () => void;
+  updateProposalsList: () => void;
   content?: string;
   closeUrl: string;
   leadImage?: string;
@@ -49,6 +50,7 @@ export const ProposalDetail = ({
   attachments,
   proposalId,
   updateProposalData,
+  updateProposalsList,
 }: ProposalDetailProps) => {
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: proposalId as number,
@@ -57,6 +59,7 @@ export const ProposalDetail = ({
     try {
       onAccept();
       updateProposalData();
+      updateProposalsList();
     } catch (err) {
       console.debug(err);
     }
@@ -65,6 +68,7 @@ export const ProposalDetail = ({
     try {
       onReject();
       updateProposalData();
+      updateProposalsList();
     } catch (err) {
       console.debug(err);
     }
@@ -73,6 +77,7 @@ export const ProposalDetail = ({
     try {
       onCheckProposalExpiration();
       updateProposalData();
+      updateProposalsList();
     } catch (err) {
       console.debug(err);
     }

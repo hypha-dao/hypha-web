@@ -72,7 +72,11 @@ export const useSpaceDocumentsWithStatuses = ({
     [spaceSlug],
   );
 
-  const { data: documentsFromDb, isLoading } = useSWR(
+  const {
+    data: documentsFromDb,
+    isLoading,
+    mutate,
+  } = useSWR(
     [endpoint],
     ([endpoint]) => fetch(endpoint).then((res) => res.json()),
     {
@@ -153,5 +157,6 @@ export const useSpaceDocumentsWithStatuses = ({
   return {
     documents: response,
     isLoading,
+    update: mutate,
   };
 };
