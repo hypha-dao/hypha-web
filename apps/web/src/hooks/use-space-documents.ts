@@ -7,11 +7,10 @@ import queryString from 'query-string';
 import { useSpaceSlug } from './use-space-slug';
 // TODO: #594 declare UI interface separately
 import {
-  DirectionType,
   Document,
   FilterParams,
+  getOrder,
   Order,
-  OrderField,
 } from '@hypha-platform/core/client';
 import { UseDocuments, UseDocumentsReturn } from '@hypha-platform/epics';
 
@@ -30,23 +29,13 @@ export const useSpaceDocuments: UseDocuments = ({
 }): UseDocumentsReturn => {
   const spaceSlug = useSpaceSlug();
 
-  const getDirection = (dir: DirectionType) => {
-    return `${dir === DirectionType.ASC ? '+' : '-'}`;
-  };
-
-  const getOrder = (field: OrderField<Document>) => {
-    return `${getDirection(field.dir)}${field.name}`;
-  };
-
   const queryParams = React.useMemo(() => {
     const effectiveFilter = {
       page,
       pageSize,
       ...(filter ? { ...filter } : {}),
       ...(searchTerm ? { searchTerm } : {}),
-      order: order
-        ? order.map((field) => getOrder(field)).join(',')
-        : undefined,
+      order: getOrder(order),
     };
     return `?${queryString.stringify(effectiveFilter)}`;
   }, [page, pageSize, filter, searchTerm, order]);
