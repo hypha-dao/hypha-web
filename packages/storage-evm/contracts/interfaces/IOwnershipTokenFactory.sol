@@ -16,7 +16,9 @@ interface IOwnershipTokenFactory {
     bool isVotingToken
   ) external returns (address);
 
-  function getSpaceToken(uint256 spaceId) external view returns (address);
+  function getSpaceToken(
+    uint256 spaceId
+  ) external view returns (address[] memory);
 
   event TokenDeployed(
     uint256 indexed spaceId,
