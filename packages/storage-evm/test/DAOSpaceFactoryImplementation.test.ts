@@ -1048,7 +1048,7 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // Create space
       const spaceParams = {
-        name: 'Transfer Decay Space',
+        name: 'Transfer Decay',
         description: 'Testing transfer with decay',
         imageUrl: 'https://test.com/image.png',
         unity: 51,
