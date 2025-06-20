@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSpaceService } from '@hypha-platform/core/server';
 import {
-  getSpaceRegularToken,
-  getSpaceDecayingToken,
-  getSpaceOwnershipToken,
+  getSpaceRegularTokens,
+  getSpaceDecayingTokens,
+  getSpaceOwnershipTokens,
 } from '@core/space';
 import { getTokenMeta, publicClient } from '@core/common';
-import { zeroAddress } from 'viem';
 
 export async function GET(
   request: NextRequest,
@@ -28,9 +27,9 @@ export async function GET(
     try {
       spaceTokens = await publicClient.multicall({
         contracts: [
-          getSpaceRegularToken({ spaceId }),
-          getSpaceOwnershipToken({ spaceId }),
-          getSpaceDecayingToken({ spaceId }),
+          getSpaceRegularTokens({ spaceId }),
+          getSpaceOwnershipTokens({ spaceId }),
+          getSpaceDecayingTokens({ spaceId }),
         ],
       });
     } catch (err: any) {
@@ -59,9 +58,10 @@ export async function GET(
     spaceTokens = spaceTokens
       .filter(
         (response) =>
-          response.status === 'success' && response.result !== zeroAddress,
+          response.status === 'success' && response.result.length !== 0,
       )
-      .map(({ result }) => result as `0x${string}`);
+      .map(({ result }) => result)
+      .flat() as `0x${string}`[];
 
     const assets = await Promise.all(
       spaceTokens.map(async (token) => {
