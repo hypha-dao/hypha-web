@@ -5,6 +5,7 @@ import { useDocumentsSection } from '../hooks/use-documents-section';
 import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 import { Document } from '@core/governance';
 import { DocumentGridContainer } from './document-grid.container';
+import { DirectionType } from '@core/common';
 
 type DocumentSectionProps = {
   basePath: string;
@@ -58,6 +59,12 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
                 page: index + 1,
                 pageSize: 3,
                 searchTerm,
+                order: [
+                  {
+                    dir: DirectionType.DESC,
+                    name: 'createdAt',
+                  },
+                ],
               }}
               documents={filteredDocuments}
               activeTab={activeTab}

@@ -6,3 +6,4 @@ export * from './get-balance-raw';
 export * from './get-token-meta';
 export * from './tokens';
 export * from './moralis-client';
+export * from './order';

@@ -1,3 +1,5 @@
+import { Order } from '@core/common';
+import { Document } from '@core/governance';
 import { DocumentGrid } from './document-grid';
 
 type DocumentGridContainerProps = {
@@ -6,6 +8,7 @@ type DocumentGridContainerProps = {
     page: number;
     pageSize: number;
     searchTerm?: string;
+    order?: Order<Document>;
   };
   documents: any[];
   activeTab: string;

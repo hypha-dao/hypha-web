@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { createDocumentService } from '@hypha-platform/core/server';
+import { getOrder } from '@core/common/server';
 
 type Params = { spaceSlug: string };
 
@@ -16,9 +17,16 @@ export async function GET(
   try {
     const documentsService = createDocumentService({ authToken });
 
+    // Get URL parameters for order
+    const url = new URL(request.url);
+    const orderString = url.searchParams.get('order') || undefined;
+
+    const order = getOrder(orderString);
+
     const documents = await documentsService.getAllBySpaceSlugWithoutPagination(
       {
         spaceSlug: spaceSlug,
+        order: order,
       },
     );
 

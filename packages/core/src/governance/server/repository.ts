@@ -1,5 +1,6 @@
 import {
   FilterParams,
+  Order,
   PaginatedResponse,
   PaginationParams,
 } from '../../common';
@@ -23,5 +24,6 @@ export interface DocumentRepository {
     spaceSlug: string;
     filter?: FilterParams<Document>;
     searchTerm?: string;
+    order?: Order<Document>;
   }): Promise<Document[]>;
 }

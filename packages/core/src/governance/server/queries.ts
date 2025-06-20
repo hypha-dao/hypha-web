@@ -1,5 +1,5 @@
 import { DbConfig } from '@core/common/server';
-import { eq, sql, and } from 'drizzle-orm';
+import { eq, sql, and, asc, desc, SQL } from 'drizzle-orm';
 
 import {
   documents,
@@ -10,7 +10,12 @@ import {
 } from '@hypha-platform/storage-postgres';
 
 import { DocumentState } from '../types';
-import { FilterParams, PaginationParams } from '@core/common';
+import {
+  DirectionType,
+  FilterParams,
+  Order,
+  PaginationParams,
+} from '@core/common';
 import { Document, Creator } from '../types';
 
 export const mapToDocument = (
@@ -105,12 +110,42 @@ export type FindAllDocumentsBySpaceSlugInput = {
   spaceSlug: string;
 };
 
+const getDocumentColumnByFieldName = (fieldName: string) => {
+  for (const [key, value] of Object.entries(documents)) {
+    if (key === fieldName) {
+      return value;
+    }
+  }
+  return null;
+};
+
+const getOrderBy = (order: Order<Document>) => {
+  const orderBy: Array<SQL> = [];
+  order.forEach((field) => {
+    const column = getDocumentColumnByFieldName(field.name);
+    if (!column) {
+      return;
+    }
+    switch (field.dir) {
+      case DirectionType.ASC:
+        orderBy.push(asc(column));
+        break;
+      case DirectionType.DESC:
+        orderBy.push(desc(column));
+        break;
+      default:
+        break;
+    }
+  });
+  return orderBy;
+};
+
 export const findAllDocumentsBySpaceSlug = async (
   { spaceSlug }: FindAllDocumentsBySpaceSlugInput,
   { db, searchTerm, ...config }: FindAllDocumentsBySpaceSlugConfig,
 ) => {
   const {
-    pagination: { page = 1, pageSize = 10 },
+    pagination: { page = 1, pageSize = 10, order = [] },
     filter = {},
   } = config;
 
@@ -135,6 +170,8 @@ export const findAllDocumentsBySpaceSlug = async (
     );
   }
 
+  const orderBy = getOrderBy(order);
+
   const results = await db
     .select({
       document: documents,
@@ -145,6 +182,7 @@ export const findAllDocumentsBySpaceSlug = async (
     .innerJoin(spaces, eq(documents.spaceId, spaces.id))
     .innerJoin(people, eq(documents.creatorId, people.id))
     .where(and(...conditions))
+    .orderBy(...orderBy)
     .limit(pageSize)
     .offset(offset);
 
@@ -186,6 +224,7 @@ export type FindAllDocumentsBySpaceSlugWithoutPaginationInput = {
   spaceSlug: string;
   filter?: FilterParams<Document>;
   searchTerm?: string;
+  order?: Order<Document>;
 };
 
 export const findAllDocumentsBySpaceSlugWithoutPagination = async (
@@ -193,6 +232,7 @@ export const findAllDocumentsBySpaceSlugWithoutPagination = async (
     spaceSlug,
     filter = {},
     searchTerm,
+    order = [],
   }: FindAllDocumentsBySpaceSlugWithoutPaginationInput,
   { db }: DbConfig,
 ) => {
@@ -216,6 +256,8 @@ export const findAllDocumentsBySpaceSlugWithoutPagination = async (
     );
   }
 
+  const orderBy = getOrderBy(order);
+
   const results = await db
     .select({
       document: documents,
@@ -224,7 +266,8 @@ export const findAllDocumentsBySpaceSlugWithoutPagination = async (
     .from(documents)
     .innerJoin(spaces, eq(documents.spaceId, spaces.id))
     .innerJoin(people, eq(documents.creatorId, people.id))
-    .where(and(...conditions));
+    .where(and(...conditions))
+    .orderBy(...orderBy);
 
   return results.map((result) =>
     mapToDocument(result.document, result.creator),
