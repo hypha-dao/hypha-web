@@ -18,6 +18,12 @@ npx nx run storage-evm:script ./scripts/dao-proposals-proxy.deploy.ts --network 
 npx nx run storage-evm:script ./scripts/decaying-token-factory-proxy.deploy.ts --network base-mainnet
 ```
 
+### escrow-proxy.deploy
+
+```bash
+npx nx run storage-evm:script ./scripts/escrow-proxy.deploy.ts --network base-mainnet
+```
+
 ### exit-method-directory-proxy.deploy
 
 ```bash
@@ -144,7 +150,6 @@ npx nx run storage-evm:script ./scripts/token-voting-power.upgrade.ts --network 
 ```bash
 npx nx run storage-evm:script ./scripts/votedecay-voting-power.upgrade.ts --network base-mainnet
 ```
-
 
 ```bash
 npx nx run storage-evm:script ./scripts/ownership-token-factory-proxy.deploy.ts --network base-mainnet

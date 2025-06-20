@@ -54,6 +54,7 @@ contract EscrowImplementation is
     uint256 escrowId = escrowCounter;
 
     escrows[escrowId] = EscrowData({
+      creator: msg.sender,
       partyA: msg.sender,
       partyB: _partyB,
       tokenA: _tokenA,
@@ -68,6 +69,7 @@ contract EscrowImplementation is
 
     emit EscrowCreated(
       escrowId,
+      msg.sender,
       msg.sender,
       _partyB,
       _tokenA,
@@ -227,6 +229,7 @@ contract EscrowImplementation is
     view
     override
     returns (
+      address creator,
       address partyA,
       address partyB,
       address tokenA,
@@ -244,6 +247,7 @@ contract EscrowImplementation is
     EscrowData storage escrow = escrows[_escrowId];
 
     return (
+      escrow.creator,
       escrow.partyA,
       escrow.partyB,
       escrow.tokenA,
@@ -255,6 +259,13 @@ contract EscrowImplementation is
       escrow.isCompleted,
       escrow.isCancelled
     );
+  }
+
+  function getEscrowCreator(
+    uint256 _escrowId
+  ) external view override returns (address) {
+    require(escrowExists(_escrowId), 'Escrow does not exist');
+    return escrows[_escrowId].creator;
   }
 
   function escrowExists(uint256 _escrowId) public view override returns (bool) {

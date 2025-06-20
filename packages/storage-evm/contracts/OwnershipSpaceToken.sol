@@ -5,6 +5,15 @@ import './RegularSpaceToken.sol';
 import './interfaces/IDAOSpaceFactory.sol';
 
 /**
+ * @dev Interface for querying escrow creator
+ */
+interface IEscrowCreatorQuery {
+  function getEscrowCreator(uint256 _escrowId) external view returns (address);
+
+  function escrowExists(uint256 _escrowId) external view returns (bool);
+}
+
+/**
  * @title OwnershipSpaceToken
  * @dev A space token that can only be transferred between space members and only by the executor
  * Special exceptions are made for escrow contract interactions
@@ -14,7 +23,7 @@ contract OwnershipSpaceToken is SpaceToken {
 
   // Hardcoded escrow contract address
   address public constant escrowContract =
-    0x1234567890123456789012345678901234567890; // TODO: Replace with actual escrow contract address
+    0x447A317cA5516933264Cdd6aeee0633Fa954B576; // TODO: Replace with actual escrow contract address
 
   /**
    * @dev Emitted when a transfer is rejected due to membership requirements
@@ -38,13 +47,15 @@ contract OwnershipSpaceToken is SpaceToken {
 
   /**
    * @dev Override transfer function to enforce space membership restrictions
-   * Allows space members to transfer to escrow contract
+   * Allows space members to transfer to escrow contract only if the escrow was created by the space executor
    * Only the executor can initiate other transfers between space members
    */
   function transfer(address to, uint256 amount) public override returns (bool) {
-    // Allow space members to transfer to escrow contract
+    // Allow space members to transfer to escrow contract if it was created by the executor
     if (to == escrowContract && _isSpaceMember(msg.sender)) {
-      return super.transfer(to, amount);
+      // Get the escrow ID from the transfer context (this would need to be passed as a parameter in a real implementation)
+      // For now, we'll add a transferToEscrow function that takes the escrow ID as parameter
+      revert('Use transferToEscrow function for escrow transfers');
     }
 
     // Only executor can initiate other transfers
@@ -55,6 +66,35 @@ contract OwnershipSpaceToken is SpaceToken {
 
     // Execute the transfer using the parent implementation
     return super.transfer(to, amount);
+  }
+
+  /**
+   * @dev Transfer tokens to a specific escrow
+   * Only allows transfer if the escrow was created by the space executor
+   */
+  function transferToEscrow(
+    uint256 escrowId,
+    uint256 amount
+  ) external returns (bool) {
+    require(
+      _isSpaceMember(msg.sender),
+      'Only space members can transfer to escrow'
+    );
+
+    IEscrowCreatorQuery escrowQuery = IEscrowCreatorQuery(escrowContract);
+
+    // Check if escrow exists
+    require(escrowQuery.escrowExists(escrowId), 'Escrow does not exist');
+
+    // Check if escrow was created by the space executor
+    address escrowCreator = escrowQuery.getEscrowCreator(escrowId);
+    require(
+      escrowCreator == executor,
+      'Escrow must be created by space executor'
+    );
+
+    // Execute the transfer using the parent implementation
+    return super.transfer(escrowContract, amount);
   }
 
   /**

@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 interface IEscrow {
   // Struct to define an escrow between two parties
   struct EscrowData {
+    address creator;
     address partyA;
     address partyB;
     address tokenA;
@@ -34,23 +35,32 @@ interface IEscrow {
 
   // Cancel an escrow (only possible if not completed)
   function cancelEscrow(uint256 _escrowId) external returns (bool);
-  
+
   // Withdraw funds from a cancelled escrow
   function withdrawFromCancelled(uint256 _escrowId) external returns (bool);
 
   // Get escrow details
-  function getEscrow(uint256 _escrowId) external view returns (
-    address partyA,
-    address partyB,
-    address tokenA,
-    address tokenB,
-    uint256 amountA,
-    uint256 amountB,
-    bool isPartyAFunded,
-    bool isPartyBFunded,
-    bool isCompleted,
-    bool isCancelled
-  );
+  function getEscrow(
+    uint256 _escrowId
+  )
+    external
+    view
+    returns (
+      address creator,
+      address partyA,
+      address partyB,
+      address tokenA,
+      address tokenB,
+      uint256 amountA,
+      uint256 amountB,
+      bool isPartyAFunded,
+      bool isPartyBFunded,
+      bool isCompleted,
+      bool isCancelled
+    );
+
+  // Get escrow creator
+  function getEscrowCreator(uint256 _escrowId) external view returns (address);
 
   // Check if an escrow exists
   function escrowExists(uint256 _escrowId) external view returns (bool);
@@ -58,8 +68,9 @@ interface IEscrow {
   // Events
   event EscrowCreated(
     uint256 indexed escrowId,
+    address indexed creator,
     address indexed partyA,
-    address indexed partyB,
+    address partyB,
     address tokenA,
     address tokenB,
     uint256 amountA,
@@ -79,10 +90,7 @@ interface IEscrow {
     address indexed partyB
   );
 
-  event EscrowCancelled(
-    uint256 indexed escrowId,
-    address cancelledBy
-  );
+  event EscrowCancelled(uint256 indexed escrowId, address cancelledBy);
 
   event FundsWithdrawn(
     uint256 indexed escrowId,
@@ -90,4 +98,4 @@ interface IEscrow {
     address token,
     uint256 amount
   );
-} 
+}

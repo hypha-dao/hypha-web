@@ -56,3 +56,7 @@ Voting power source added successfully with ID: 3
 Deploying OwnershipTokenFactory with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying OwnershipTokenFactory...
 OwnershipTokenFactory proxy deployed to: 0xA1eDf096B72226ae2f7BDEb12E9c9C82152BccB6
+
+Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying Escrow...
+Escrow deployed to: 0x447A317cA5516933264Cdd6aeee0633Fa954B576
