@@ -15,13 +15,6 @@ export const getDirection = (value: string) => {
   return dir;
 };
 
-function isKeyOfType<T extends object>(
-  key: string | number | symbol,
-  _typeRef?: Pick<T, keyof T>,
-): key is keyof T {
-  return typeof key === 'string' && Object.keys(_typeRef || {}).includes(key);
-}
-
 export const getOrder = (orderString: string | undefined): Order<Document> => {
   const order: Order<Document> = [];
   if (orderString) {
@@ -32,12 +25,10 @@ export const getOrder = (orderString: string | undefined): Order<Document> => {
       .forEach((fieldName) => {
         const match = /^([+-]?)(\w+)$/.exec(fieldName);
         if (match) {
-          if (isKeyOfType<Document>(match[2], {} as Document)) {
-            const dir = getDirection(match[1]);
-            const name = match[2] as keyof Document;
-            const orderField: OrderField<Document> = { dir, name };
-            order.push(orderField);
-          }
+          const dir = getDirection(match[1]);
+          const name = match[2] as keyof Document;
+          const orderField: OrderField<Document> = { dir, name };
+          order.push(orderField);
         }
       });
   }
