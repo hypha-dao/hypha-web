@@ -46,6 +46,7 @@ export default function Agreements() {
         leadImage={document?.leadImage}
         attachments={document?.attachments}
         proposalId={document?.web3ProposalId}
+        spaceSlug={space?.slug || ''}
       />
     </SidePanel>
   );
