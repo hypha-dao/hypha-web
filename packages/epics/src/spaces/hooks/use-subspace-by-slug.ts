@@ -3,7 +3,7 @@
 import useSWR from 'swr';
 import { data } from './use-subspace-by-slug.mock';
 
-export type Creator = { avatar: string; name: string; surname: string };
+type Creator = { avatar: string; name: string; surname: string };
 
 type CommentProps = {
   comment: string;

@@ -1,7 +1,10 @@
 import { FC } from 'react';
 import { RequestCard } from './request-card';
 import { useRequests } from '../../hooks/use-requests';
-import { SortParams } from '@hypha-platform/graphql/rsc';
+
+type SortParams = {
+  sort?: string;
+};
 
 type TransactionsListProps = {
   page: number;
