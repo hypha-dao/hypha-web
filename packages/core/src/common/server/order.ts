@@ -7,7 +7,6 @@ export const getDirection = (value: string) => {
     case '-':
       dir = DirectionType.DESC;
       break;
-    case '+':
     default:
       dir = DirectionType.ASC;
       break;
