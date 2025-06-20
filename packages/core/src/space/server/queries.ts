@@ -42,9 +42,16 @@ export const findAllSpaces = async (
     .where(
       props.search
         ? sql`(
-            setweight(to_tsvector('english', ${spaces.title}), 'A') ||
-            setweight(to_tsvector('english', ${spaces.description}), 'B')
-          ) @@ plainto_tsquery('english', ${props.search})`
+            -- Full-text search for exact word matches (highest priority)
+            (setweight(to_tsvector('english', ${spaces.title}), 'A') ||
+             setweight(to_tsvector('english', ${spaces.description}), 'B')
+            ) @@ plainto_tsquery('english', ${props.search})
+            OR
+            -- Partial word matching with ILIKE (case-insensitive)
+            ${spaces.title} ILIKE ${'%' + props.search + '%'}
+            OR
+            ${spaces.description} ILIKE ${'%' + props.search + '%'}
+          )`
         : undefined,
     )
     .groupBy(

@@ -10,14 +10,16 @@ interface ProposalTransactionItemProps {
   recipient?: string;
   amount?: bigint;
   tokenAddress?: string;
+  spaceSlug: string;
 }
 
 export const ProposalTransactionItem = ({
   recipient,
   amount,
   tokenAddress,
+  spaceSlug,
 }: ProposalTransactionItemProps) => {
-  const { tokens } = useTokens();
+  const { tokens } = useTokens({ spaceSlug });
   const token = tokens.find(
     (t) => t.address.toLowerCase() === tokenAddress?.toLowerCase(),
   );
