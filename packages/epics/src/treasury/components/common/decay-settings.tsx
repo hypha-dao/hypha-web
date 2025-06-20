@@ -72,44 +72,57 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
   };
 
   return (
-    <div className="flex gap-4 items-center">
-      <div className="flex flex-col flex-1">
-        <Input
-          id="decay-period"
-          type="number"
-          value={decayPeriod === '' ? '' : decayPeriod}
-          onChange={handleDecayPeriodChange}
-          placeholder="Decay period"
-        />
-      </div>
+    <>
+      <div className="flex justify-between items-center gap-3">
+        <div className="text-2 text-neutral-11 font-medium">
+          Voice Decay Period
+        </div>
 
-      <div className="flex flex-col flex-1">
-        <Select value={timeFormat} onValueChange={handleTimeFormatChange}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select time format" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Minutes">Minutes</SelectItem>
-            <SelectItem value="Hours">Hours</SelectItem>
-            <SelectItem value="Days">Days</SelectItem>
-            <SelectItem value="Weeks">Weeks</SelectItem>
-            <SelectItem value="Months">Months</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+        <div className="flex justify-between flex-row flex-1 gap-3 max-w-[50%]">
+          <div className="flex flex-col flex-1 min-w-10">
+            <Input
+              id="decay-period"
+              type="number"
+              value={decayPeriod === '' ? '' : decayPeriod}
+              onChange={handleDecayPeriodChange}
+              placeholder="Decay period"
+            />
+          </div>
 
-      <div className="flex flex-col flex-1">
-        <Input
-          id="decay-percent"
-          type="number"
-          min={1}
-          max={100}
-          value={decayPercent === '' ? '' : decayPercent}
-          onChange={handleDecayPercentChange}
-          placeholder="Decay"
-          rightIcon={<PercentIcon size={'14px'} />}
-        />
+          <div className="flex flex-col flex-1">
+            <Select value={timeFormat} onValueChange={handleTimeFormatChange}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select time format" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Minutes">Minutes</SelectItem>
+                <SelectItem value="Hours">Hours</SelectItem>
+                <SelectItem value="Days">Days</SelectItem>
+                <SelectItem value="Weeks">Weeks</SelectItem>
+                <SelectItem value="Months">Months</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </div>
-    </div>
+      <div className="flex justify-between items-center gap-3">
+        <div className="text-2 text-neutral-11 font-medium">
+          Voice Decay Percentage
+        </div>
+
+        <div className="flex flex-col flex-1 max-w-[25%]">
+          <Input
+            id="decay-percent"
+            type="number"
+            min={1}
+            max={100}
+            value={decayPercent === '' ? '' : decayPercent}
+            onChange={handleDecayPercentChange}
+            placeholder="Decay"
+            rightIcon={<PercentIcon size={'14px'} />}
+          />
+        </div>
+      </div>
+    </>
   );
 };
