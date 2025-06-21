@@ -1,5 +1,6 @@
 'use client';
 
+import { Separator } from '@hypha-platform/ui';
 import {
   TokenNameField,
   TokenSymbolField,
@@ -21,6 +22,7 @@ export const IssueNewTokenPlugin = () => {
       {/* <TokenDigitsField /> */}
       <TokenTypeField />
       <TokenMaxSupplyField />
+      <Separator />
       <DecaySettingsField name="decaySettings" />
     </div>
   );
