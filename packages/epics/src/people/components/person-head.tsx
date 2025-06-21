@@ -1,6 +1,5 @@
 'use client';
 
-import { MemberType } from '@hypha-platform/graphql/rsc';
 import { Text } from '@radix-ui/themes';
 import {
   Image,
@@ -15,6 +14,12 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXTwitter } from '@fortawesome/free-brands-svg-icons';
 import { RxDownload, RxPencil2 } from 'react-icons/rx';
 import Link from 'next/link';
+
+export type MemberType = {
+  avatar: string;
+  name: string;
+  surname: string;
+};
 
 export interface Socials {
   LinkedIn: string;

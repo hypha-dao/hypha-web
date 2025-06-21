@@ -3,10 +3,47 @@
 import React from 'react';
 import useSWR from 'swr';
 import queryString from 'query-string';
-import { AssetItem } from '@hypha-platform/graphql/rsc';
 import { FilterParams } from '@core/common/server';
 import { useParams } from 'next/navigation';
 import { PaginationMetadata } from '@core/common';
+
+type OneChartPoint = {
+  month: string;
+  value: number;
+  date: string;
+};
+
+type TransactionCardProps = {
+  id: string;
+  title: string;
+  description: string;
+  amount: number;
+  withUsdSymbol?: boolean;
+  badges: {
+    label: string;
+    variant: 'solid' | 'soft' | 'outline' | 'surface';
+  }[];
+  author: {
+    name: string;
+    surname: string;
+  };
+  isLoading?: boolean;
+  viewCount?: number;
+  commentCount?: number;
+};
+
+type AssetItem = {
+  icon: string;
+  name: string;
+  symbol: string;
+  value: number;
+  usdEqual: number;
+  status: string;
+  chartData: OneChartPoint[];
+  transactions: TransactionCardProps[];
+  closeUrl: string;
+  slug: string;
+};
 
 type UseAssetsReturn = {
   assets: AssetItem[];
