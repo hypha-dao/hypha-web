@@ -138,8 +138,4 @@ contract OwnershipSpaceToken is SpaceToken {
     require(_isSpaceMember(to), 'Can only mint to space members');
     super.mint(to, amount);
   }
-
-  function escrowContract() external view returns (address) {
-    return escrowContract;
-  }
 }

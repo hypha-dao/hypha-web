@@ -4917,7 +4917,7 @@ describe('DAOSpaceFactoryImplementation', function () {
         ...base,
         ownershipTokenFactory,
         actualEscrow,
-        hardcodedEscrowAddress: '0x1234567890123456789012345678901234567890',
+        hardcodedEscrowAddress: '0x447A317cA5516933264Cdd6aeee0633Fa954B576',
       };
     }
 
