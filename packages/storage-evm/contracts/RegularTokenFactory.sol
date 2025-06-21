@@ -101,6 +101,9 @@ contract RegularTokenFactory is
     address tokenAddress = address(newToken);
     isTokenDeployedByFactory[tokenAddress] = true;
 
+    // Store the mapping of spaceId to token address
+    spaceTokens[spaceId] = tokenAddress;
+
     emit TokenDeployed(spaceId, tokenAddress, name, symbol);
 
     // Register as voting token if requested
@@ -113,5 +116,16 @@ contract RegularTokenFactory is
     }
 
     return tokenAddress;
+  }
+
+  /**
+   * @dev Get the token address for a given space ID
+   * @param spaceId The space ID to query
+   * @return The address of the token deployed for the space (most recently deployed if multiple)
+   */
+  function getSpaceToken(
+    uint256 spaceId
+  ) public view override returns (address) {
+    return spaceTokens[spaceId];
   }
 }

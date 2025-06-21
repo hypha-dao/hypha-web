@@ -32,7 +32,7 @@ export const updateSpaceBySlug = async (
 ) => {
   const [updatedSpace] = await db
     .update(spaces)
-    .set({ ...rest })
+    .set(rest)
     .where(eq(spaces.slug, slug))
     .returning();
 

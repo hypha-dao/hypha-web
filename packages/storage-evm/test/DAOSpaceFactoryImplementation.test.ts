@@ -3589,6 +3589,684 @@ describe('DAOSpaceFactoryImplementation', function () {
     });
   });
 
+  describe('Proposal Rejection and Storage Tracking Tests', function () {
+    let daoProposals: any;
+    let spaceVotingPower: any;
+    let votingPowerDirectory: any;
+    let spaceId: any;
+    let regularTokenFactory: any;
+    let daoSpaceFactory: any;
+
+    beforeEach(async function () {
+      const fixture = await loadFixture(deployFixture);
+      daoSpaceFactory = fixture.daoSpaceFactory;
+      regularTokenFactory = fixture.regularTokenFactory;
+      const { owner, voter1, voter2, voter3, other } = fixture;
+
+      // Deploy a proper DAOProposals contract
+      const DAOProposals = await ethers.getContractFactory(
+        'DAOProposalsImplementation',
+      );
+      daoProposals = await upgrades.deployProxy(DAOProposals, [owner.address], {
+        initializer: 'initialize',
+        kind: 'uups',
+      });
+
+      // Deploy SpaceVotingPower for proposal voting
+      const SpaceVotingPower = await ethers.getContractFactory(
+        'SpaceVotingPowerImplementation',
+      );
+      spaceVotingPower = await upgrades.deployProxy(
+        SpaceVotingPower,
+        [owner.address],
+        { initializer: 'initialize', kind: 'uups' },
+      );
+
+      // Set up voting power directory
+      const VotingPowerDirectory = await ethers.getContractFactory(
+        'VotingPowerDirectoryImplementation',
+      );
+      votingPowerDirectory = await upgrades.deployProxy(
+        VotingPowerDirectory,
+        [owner.address],
+        { initializer: 'initialize', kind: 'uups' },
+      );
+
+      // Configure the contracts
+      await spaceVotingPower.setSpaceFactory(
+        await daoSpaceFactory.getAddress(),
+      );
+      await votingPowerDirectory.addVotingPowerSource(
+        await spaceVotingPower.getAddress(),
+      );
+      await daoProposals.setContracts(
+        await daoSpaceFactory.getAddress(),
+        await votingPowerDirectory.getAddress(),
+      );
+      await daoSpaceFactory.setContracts(
+        await daoSpaceFactory.joinMethodDirectoryAddress(),
+        await daoSpaceFactory.exitMethodDirectoryAddress(),
+        await daoProposals.getAddress(),
+      );
+
+      // Create a space with specific settings for testing rejection logic
+      const spaceParams = {
+        name: 'Rejection Test Space',
+        description: 'Testing proposal rejection and storage tracking',
+        imageUrl: 'https://test.com/image.png',
+        unity: 60, // 60% unity threshold
+        quorum: 40, // 40% quorum threshold (low for easier testing)
+        votingPowerSource: 1, // Space membership voting
+        exitMethod: 1,
+        joinMethod: 1,
+        createToken: false,
+        tokenName: '',
+        tokenSymbol: '',
+      };
+
+      await daoSpaceFactory.createSpace(spaceParams);
+      spaceId = await daoSpaceFactory.spaceCounter();
+
+      // Add members to the space (total voting power = 5 including owner)
+      await daoSpaceFactory.connect(voter1).joinSpace(spaceId);
+      await daoSpaceFactory.connect(voter2).joinSpace(spaceId);
+      await daoSpaceFactory.connect(voter3).joinSpace(spaceId);
+      await daoSpaceFactory.connect(other).joinSpace(spaceId);
+
+      // Store references for tests
+      this.daoProposals = daoProposals;
+      this.daoSpaceFactory = daoSpaceFactory;
+      this.regularTokenFactory = regularTokenFactory;
+      this.spaceId = spaceId;
+      this.voter1 = voter1;
+      this.voter2 = voter2;
+      this.voter3 = voter3;
+      this.other = other;
+      this.owner = owner;
+
+      console.log('\n=== REJECTION TEST SETUP ===');
+      console.log(`Space ID: ${spaceId}`);
+      console.log(`Unity threshold: 60%`);
+      console.log(`Quorum threshold: 40%`);
+      console.log(`Total voting power: 5 members`);
+      console.log(`Quorum requires: ${Math.ceil(5 * 0.4)} votes minimum`);
+    });
+
+    it('Should track multiple proposals with different outcomes: accepted, rejected by No votes, and expired', async function () {
+      console.log('\n=== TESTING MULTIPLE PROPOSAL OUTCOMES ===');
+
+      // PROPOSAL 1: Create a proposal that will be ACCEPTED
+      console.log('\n--- PROPOSAL 1: WILL BE ACCEPTED ---');
+      const proposal1Calldata =
+        this.regularTokenFactory.interface.encodeFunctionData('deployToken', [
+          this.spaceId,
+          'Accepted Token',
+          'ACC',
+          ethers.parseUnits('1000', 18),
+          true,
+          true,
+        ]);
+
+      await this.daoProposals.connect(this.voter1).createProposal({
+        spaceId: this.spaceId,
+        duration: 86400,
+        transactions: [
+          {
+            target: await this.regularTokenFactory.getAddress(),
+            value: 0,
+            data: proposal1Calldata,
+          },
+        ],
+      });
+
+      const proposal1Id = await this.daoProposals.proposalCounter();
+      console.log(`Created proposal ${proposal1Id} for acceptance`);
+
+      // Vote to accept - exactly 2 votes to meet 40% quorum with 100% YES
+      await this.daoProposals.connect(this.voter1).vote(proposal1Id, true);
+      console.log('Cast vote 1: YES');
+
+      let proposal1Status = await this.daoProposals.getProposalCore(
+        proposal1Id,
+      );
+      console.log(
+        `After vote 1 - Executed: ${proposal1Status[3]}, YES: ${proposal1Status[5]}, NO: ${proposal1Status[6]}`,
+      );
+
+      // If not executed after first vote, cast second vote
+      if (!proposal1Status[3]) {
+        await this.daoProposals.connect(this.voter2).vote(proposal1Id, true);
+        console.log('Cast vote 2: YES');
+        proposal1Status = await this.daoProposals.getProposalCore(proposal1Id);
+        console.log(
+          `After vote 2 - Executed: ${proposal1Status[3]}, YES: ${proposal1Status[5]}, NO: ${proposal1Status[6]}`,
+        );
+      }
+
+      console.log(`Proposal 1 final status - Executed: ${proposal1Status[3]}`);
+      console.log(
+        `Proposal 1 YES votes: ${proposal1Status[5]}, NO votes: ${proposal1Status[6]}`,
+      );
+
+      // PROPOSAL 2: Create a proposal that will be REJECTED by No votes
+      console.log('\n--- PROPOSAL 2: WILL BE REJECTED BY NO VOTES ---');
+      // Use a different space for this token to avoid conflicts
+      const proposal2Calldata =
+        this.regularTokenFactory.interface.encodeFunctionData('deployToken', [
+          this.spaceId,
+          'Rejected Token',
+          'REJ',
+          ethers.parseUnits('2000', 18),
+          false, // Different parameters to avoid conflicts
+          false,
+        ]);
+
+      await this.daoProposals.connect(this.voter2).createProposal({
+        spaceId: this.spaceId,
+        duration: 86400,
+        transactions: [
+          {
+            target: await this.regularTokenFactory.getAddress(),
+            value: 0,
+            data: proposal2Calldata,
+          },
+        ],
+      });
+
+      const proposal2Id = await this.daoProposals.proposalCounter();
+      console.log(`Created proposal ${proposal2Id} for rejection by No votes`);
+
+      // Vote to reject: 1 YES, 2 NO (reaching 60% quorum, 67% NO)
+      await this.daoProposals.connect(this.voter1).vote(proposal2Id, true);
+      console.log('Cast vote 1: YES');
+
+      await this.daoProposals.connect(this.voter2).vote(proposal2Id, false);
+      console.log('Cast vote 2: NO');
+
+      const [acceptedAfter2, rejectedAfter2] =
+        await this.daoProposals.getSpaceProposals(this.spaceId);
+      console.log(
+        `After 2 votes - Rejected list: [${rejectedAfter2.join(', ')}]`,
+      );
+
+      await this.daoProposals.connect(this.voter3).vote(proposal2Id, false);
+      console.log('Cast vote 3: NO');
+
+      const proposal2Status = await this.daoProposals.getProposalCore(
+        proposal2Id,
+      );
+      console.log(`Proposal 2 executed: ${proposal2Status[3]}`);
+      console.log(
+        `Proposal 2 YES votes: ${proposal2Status[5]}, NO votes: ${proposal2Status[6]}`,
+      );
+
+      // PROPOSAL 3: Create a proposal that will EXPIRE
+      console.log('\n--- PROPOSAL 3: WILL EXPIRE ---');
+      // Use a simple transaction that won't conflict - just calling a view function
+      const spaceFactoryAddress = await this.daoSpaceFactory.getAddress();
+      const proposal3Calldata =
+        this.daoSpaceFactory.interface.encodeFunctionData('getSpaceDetails', [
+          this.spaceId,
+        ]);
+
+      await this.daoProposals.connect(this.voter3).createProposal({
+        spaceId: this.spaceId,
+        duration: 3600, // 1 hour
+        transactions: [
+          {
+            target: spaceFactoryAddress,
+            value: 0,
+            data: proposal3Calldata,
+          },
+        ],
+      });
+
+      const proposal3Id = await this.daoProposals.proposalCounter();
+      console.log(`Created proposal ${proposal3Id} for expiration`);
+
+      // Cast just 1 vote (not enough for quorum)
+      await this.daoProposals.connect(this.voter1).vote(proposal3Id, true);
+
+      const proposal3StatusBefore = await this.daoProposals.getProposalCore(
+        proposal3Id,
+      );
+      console.log(
+        `Proposal 3 executed before expiration: ${proposal3StatusBefore[3]}`,
+      );
+      console.log(
+        `Proposal 3 YES votes: ${proposal3StatusBefore[5]}, NO votes: ${proposal3StatusBefore[6]}`,
+      );
+
+      // Fast forward time to expire the proposal
+      console.log('Fast forwarding time to expire proposal 3...');
+      await ethers.provider.send('evm_increaseTime', [3601]); // 1 hour + 1 second
+      await ethers.provider.send('evm_mine', []);
+
+      // Check expiration
+      await this.daoProposals.checkProposalExpiration(proposal3Id);
+
+      const proposal3StatusAfter = await this.daoProposals.getProposalCore(
+        proposal3Id,
+      );
+      console.log(`Proposal 3 expired: ${proposal3StatusAfter[4]}`);
+
+      // PROPOSAL 4: Create another accepted proposal with a simple transaction
+      console.log('\n--- PROPOSAL 4: ANOTHER ACCEPTED PROPOSAL ---');
+      // Use another simple view function call to avoid token deployment conflicts
+      const proposal4Calldata =
+        this.daoSpaceFactory.interface.encodeFunctionData('isMember', [
+          this.spaceId,
+          await this.voter1.getAddress(),
+        ]);
+
+      await this.daoProposals.connect(this.voter1).createProposal({
+        spaceId: this.spaceId,
+        duration: 86400,
+        transactions: [
+          {
+            target: spaceFactoryAddress,
+            value: 0,
+            data: proposal4Calldata,
+          },
+        ],
+      });
+
+      const proposal4Id = await this.daoProposals.proposalCounter();
+      console.log(`Created proposal ${proposal4Id} for second acceptance`);
+
+      // Vote to accept - start with just 2 votes to meet exactly 40% quorum
+      await this.daoProposals.connect(this.voter1).vote(proposal4Id, true);
+      console.log('Cast vote 1: YES');
+
+      let proposal4Status = await this.daoProposals.getProposalCore(
+        proposal4Id,
+      );
+      console.log(`After vote 1 - Executed: ${proposal4Status[3]}`);
+
+      if (!proposal4Status[3]) {
+        await this.daoProposals.connect(this.voter2).vote(proposal4Id, true);
+        console.log('Cast vote 2: YES');
+        proposal4Status = await this.daoProposals.getProposalCore(proposal4Id);
+        console.log(`After vote 2 - Executed: ${proposal4Status[3]}`);
+      }
+
+      console.log(`Proposal 4 executed: ${proposal4Status[3]}`);
+      console.log(
+        `Proposal 4 YES votes: ${proposal4Status[5]}, NO votes: ${proposal4Status[6]}`,
+      );
+
+      // NOW CHECK THE STORAGE TRACKING
+      console.log('\n=== CHECKING PROPOSAL STORAGE TRACKING ===');
+      const [acceptedProposals, rejectedProposals] =
+        await this.daoProposals.getSpaceProposals(this.spaceId);
+
+      console.log(`\nAccepted proposals: [${acceptedProposals.join(', ')}]`);
+      console.log(`Rejected proposals: [${rejectedProposals.join(', ')}]`);
+
+      // Verify the arrays contain the correct proposal IDs
+      expect(acceptedProposals.length).to.equal(
+        2,
+        'Should have 2 accepted proposals',
+      );
+      expect(acceptedProposals).to.include(
+        proposal1Id,
+        'Proposal 1 should be in accepted list',
+      );
+      expect(acceptedProposals).to.include(
+        proposal4Id,
+        'Proposal 4 should be in accepted list',
+      );
+
+      expect(rejectedProposals.length).to.equal(
+        2,
+        'Should have 2 rejected proposals',
+      );
+      expect(rejectedProposals).to.include(
+        proposal2Id,
+        'Proposal 2 should be in rejected list (No votes)',
+      );
+      expect(rejectedProposals).to.include(
+        proposal3Id,
+        'Proposal 3 should be in rejected list (expired)',
+      );
+
+      console.log('\n✅ All proposal storage tracking verified correctly!');
+      console.log(
+        `✅ Accepted proposals: ${
+          acceptedProposals.length
+        } (IDs: ${acceptedProposals.join(', ')})`,
+      );
+      console.log(
+        `✅ Rejected proposals: ${
+          rejectedProposals.length
+        } (IDs: ${rejectedProposals.join(', ')})`,
+      );
+
+      // Additional verification: Check individual proposal statuses
+      console.log('\n=== INDIVIDUAL PROPOSAL STATUS VERIFICATION ===');
+
+      const prop1Final = await this.daoProposals.getProposalCore(proposal1Id);
+      console.log(
+        `Proposal 1 - Executed: ${prop1Final[3]}, Expired: ${prop1Final[4]}`,
+      );
+      expect(prop1Final[3]).to.equal(true, 'Proposal 1 should be executed');
+      expect(prop1Final[4]).to.equal(false, 'Proposal 1 should not be expired');
+
+      const prop2Final = await this.daoProposals.getProposalCore(proposal2Id);
+      console.log(
+        `Proposal 2 - Executed: ${prop2Final[3]}, Expired: ${prop2Final[4]}`,
+      );
+      expect(prop2Final[3]).to.equal(
+        false,
+        'Proposal 2 should not be executed',
+      );
+      expect(prop2Final[4]).to.equal(
+        true,
+        'Proposal 2 should be expired (rejected by votes)',
+      );
+
+      const prop3Final = await this.daoProposals.getProposalCore(proposal3Id);
+      console.log(
+        `Proposal 3 - Executed: ${prop3Final[3]}, Expired: ${prop3Final[4]}`,
+      );
+      expect(prop3Final[3]).to.equal(
+        false,
+        'Proposal 3 should not be executed',
+      );
+      expect(prop3Final[4]).to.equal(true, 'Proposal 3 should be expired');
+
+      const prop4Final = await this.daoProposals.getProposalCore(proposal4Id);
+      console.log(
+        `Proposal 4 - Executed: ${prop4Final[3]}, Expired: ${prop4Final[4]}`,
+      );
+      expect(prop4Final[3]).to.equal(true, 'Proposal 4 should be executed');
+      expect(prop4Final[4]).to.equal(false, 'Proposal 4 should not be expired');
+    });
+
+    it('Should demonstrate No vote rejection mechanism with detailed logging', async function () {
+      console.log('\n=== DETAILED NO VOTE REJECTION TEST ===');
+
+      // Create a proposal specifically to test No vote rejection
+      const rejectionTestCalldata =
+        this.regularTokenFactory.interface.encodeFunctionData('deployToken', [
+          this.spaceId,
+          'No Vote Rejection Test',
+          'NOREJ',
+          ethers.parseUnits('5000', 18),
+          true,
+          true,
+        ]);
+
+      await this.daoProposals.connect(this.voter1).createProposal({
+        spaceId: this.spaceId,
+        duration: 86400,
+        transactions: [
+          {
+            target: await this.regularTokenFactory.getAddress(),
+            value: 0,
+            data: rejectionTestCalldata,
+          },
+        ],
+      });
+
+      const proposalId = await this.daoProposals.proposalCounter();
+      console.log(
+        `\nCreated proposal ${proposalId} for No vote rejection test`,
+      );
+
+      // Initial state check
+      const [initialAccepted, initialRejected] =
+        await this.daoProposals.getSpaceProposals(this.spaceId);
+      console.log(`Initial accepted: [${initialAccepted.join(', ')}]`);
+      console.log(`Initial rejected: [${initialRejected.join(', ')}]`);
+
+      // Cast votes: 1 YES, 3 NO (4 total = 80% participation > 40% quorum)
+      // 3/4 = 75% NO votes > 60% unity threshold = should trigger rejection
+      console.log('\nCasting votes for rejection...');
+
+      await this.daoProposals.connect(this.voter1).vote(proposalId, true);
+      console.log('Vote 1: YES');
+      let proposal = await this.daoProposals.getProposalCore(proposalId);
+      console.log(
+        `  After vote 1 - YES: ${proposal[5]}, NO: ${proposal[6]}, Executed: ${proposal[3]}`,
+      );
+
+      await this.daoProposals.connect(this.voter2).vote(proposalId, false);
+      console.log('Vote 2: NO');
+      proposal = await this.daoProposals.getProposalCore(proposalId);
+      console.log(
+        `  After vote 2 - YES: ${proposal[5]}, NO: ${proposal[6]}, Executed: ${proposal[3]}`,
+      );
+
+      await this.daoProposals.connect(this.voter3).vote(proposalId, false);
+      console.log('Vote 3: NO');
+      proposal = await this.daoProposals.getProposalCore(proposalId);
+      console.log(
+        `  After vote 3 - YES: ${proposal[5]}, NO: ${proposal[6]}, Executed: ${proposal[3]}`,
+      );
+
+      // Check if it's rejected yet (might be after vote 3)
+      const [currentAccepted, currentRejected] =
+        await this.daoProposals.getSpaceProposals(this.spaceId);
+      console.log(
+        `  After vote 3 - Accepted: [${currentAccepted.join(
+          ', ',
+        )}], Rejected: [${currentRejected.join(', ')}]`,
+      );
+
+      if (!currentRejected.includes(proposalId)) {
+        await this.daoProposals.connect(this.other).vote(proposalId, false);
+        console.log('Vote 4: NO');
+        proposal = await this.daoProposals.getProposalCore(proposalId);
+        console.log(
+          `  After vote 4 - YES: ${proposal[5]}, NO: ${proposal[6]}, Executed: ${proposal[3]}`,
+        );
+      }
+
+      // Final state check
+      const [finalAccepted, finalRejected] =
+        await this.daoProposals.getSpaceProposals(this.spaceId);
+      console.log(`\nFinal accepted: [${finalAccepted.join(', ')}]`);
+      console.log(`Final rejected: [${finalRejected.join(', ')}]`);
+
+      // Verify the proposal is in the rejected list
+      expect(finalRejected).to.include(
+        proposalId,
+        'Proposal should be in rejected list due to No votes',
+      );
+      expect(finalAccepted).to.not.include(
+        proposalId,
+        'Proposal should not be in accepted list',
+      );
+
+      const finalProposal = await this.daoProposals.getProposalCore(proposalId);
+      expect(finalProposal[3]).to.equal(
+        false,
+        'Proposal should not be executed',
+      );
+
+      console.log(`\n✅ No vote rejection mechanism working correctly!`);
+      console.log(
+        `✅ Proposal ${proposalId} was rejected and added to rejected storage`,
+      );
+    });
+
+    it('Should test edge case where proposal gets exactly enough votes to be accepted', async function () {
+      console.log('\n=== EDGE CASE: EXACTLY ENOUGH VOTES FOR ACCEPTANCE ===');
+
+      // Create a proposal to test exact acceptance threshold
+      const edgeCaseCalldata =
+        this.regularTokenFactory.interface.encodeFunctionData('deployToken', [
+          this.spaceId,
+          'Edge Case Accepted',
+          'EDGE',
+          ethers.parseUnits('6000', 18),
+          true,
+          true,
+        ]);
+
+      await this.daoProposals.connect(this.voter1).createProposal({
+        spaceId: this.spaceId,
+        duration: 86400,
+        transactions: [
+          {
+            target: await this.regularTokenFactory.getAddress(),
+            value: 0,
+            data: edgeCaseCalldata,
+          },
+        ],
+      });
+
+      const proposalId = await this.daoProposals.proposalCounter();
+      console.log(
+        `\nCreated proposal ${proposalId} for edge case acceptance test`,
+      );
+
+      // We need: 40% quorum (2 votes out of 5) and 60% YES votes
+      // Cast exactly 2 votes: both YES = 100% YES (>60%) and 40% participation (=40% quorum)
+      console.log('\nCasting exactly enough votes for acceptance...');
+
+      await this.daoProposals.connect(this.voter1).vote(proposalId, true);
+      console.log('Vote 1: YES');
+      let proposal = await this.daoProposals.getProposalCore(proposalId);
+      console.log(
+        `  After vote 1 - YES: ${proposal[5]}, NO: ${proposal[6]}, Executed: ${proposal[3]}`,
+      );
+
+      await this.daoProposals.connect(this.voter2).vote(proposalId, true);
+      console.log('Vote 2: YES');
+      proposal = await this.daoProposals.getProposalCore(proposalId);
+      console.log(
+        `  After vote 2 - YES: ${proposal[5]}, NO: ${proposal[6]}, Executed: ${proposal[3]}`,
+      );
+
+      // Check the storage
+      const [accepted, rejected] = await this.daoProposals.getSpaceProposals(
+        this.spaceId,
+      );
+      console.log(`\nFinal storage state:`);
+      console.log(`Accepted: [${accepted.join(', ')}]`);
+      console.log(`Rejected: [${rejected.join(', ')}]`);
+
+      // Verify the proposal is accepted
+      expect(accepted).to.include(
+        proposalId,
+        'Proposal should be accepted with exactly enough votes',
+      );
+      expect(rejected).to.not.include(
+        proposalId,
+        'Proposal should not be in rejected list',
+      );
+      expect(proposal[3]).to.equal(true, 'Proposal should be executed');
+
+      console.log(`\n✅ Edge case acceptance working correctly!`);
+      console.log(
+        `✅ Proposal ${proposalId} accepted with exactly 40% quorum and 100% YES votes`,
+      );
+    });
+
+    it('Should verify proposal storage persistence across multiple operations', async function () {
+      console.log('\n=== TESTING STORAGE PERSISTENCE ===');
+
+      // Create and process 3 proposals quickly
+      const proposalIds = [];
+
+      for (let i = 1; i <= 3; i++) {
+        const calldata = this.regularTokenFactory.interface.encodeFunctionData(
+          'deployToken',
+          [
+            this.spaceId,
+            `Persistence Test ${i}`,
+            `PERS${i}`,
+            ethers.parseUnits(`${i}000`, 18),
+            true,
+            true,
+          ],
+        );
+
+        await this.daoProposals.connect(this.voter1).createProposal({
+          spaceId: this.spaceId,
+          duration: 86400,
+          transactions: [
+            {
+              target: await this.regularTokenFactory.getAddress(),
+              value: 0,
+              data: calldata,
+            },
+          ],
+        });
+
+        const proposalId = await this.daoProposals.proposalCounter();
+        proposalIds.push(proposalId);
+        console.log(`Created proposal ${proposalId} (Persistence Test ${i})`);
+      }
+
+      // Accept first proposal
+      await this.daoProposals.connect(this.voter1).vote(proposalIds[0], true);
+      await this.daoProposals.connect(this.voter2).vote(proposalIds[0], true);
+      console.log(`Accepted proposal ${proposalIds[0]}`);
+
+      // Reject second proposal with No votes
+      await this.daoProposals.connect(this.voter1).vote(proposalIds[1], false);
+      await this.daoProposals.connect(this.voter2).vote(proposalIds[1], false);
+      console.log(`Rejected proposal ${proposalIds[1]} with No votes`);
+
+      // Let third proposal expire
+      console.log(`Leaving proposal ${proposalIds[2]} to expire...`);
+      // Only cast 1 vote (insufficient for quorum)
+      await this.daoProposals.connect(this.voter1).vote(proposalIds[2], true);
+
+      // Fast forward time
+      await ethers.provider.send('evm_increaseTime', [86401]);
+      await ethers.provider.send('evm_mine', []);
+      await this.daoProposals.checkProposalExpiration(proposalIds[2]);
+      console.log(`Expired proposal ${proposalIds[2]}`);
+
+      // Check storage after each operation
+      const [finalAccepted, finalRejected] =
+        await this.daoProposals.getSpaceProposals(this.spaceId);
+
+      console.log(`\n=== FINAL STORAGE STATE ===`);
+      console.log(`All accepted proposals: [${finalAccepted.join(', ')}]`);
+      console.log(`All rejected proposals: [${finalRejected.join(', ')}]`);
+
+      // Verify all proposals are tracked correctly
+      expect(finalAccepted).to.include(
+        proposalIds[0],
+        'First proposal should be accepted',
+      );
+      expect(finalRejected).to.include(
+        proposalIds[1],
+        'Second proposal should be rejected (No votes)',
+      );
+      expect(finalRejected).to.include(
+        proposalIds[2],
+        'Third proposal should be rejected (expired)',
+      );
+
+      // Verify no cross-contamination
+      expect(finalRejected).to.not.include(
+        proposalIds[0],
+        'Accepted proposal should not be in rejected list',
+      );
+      expect(finalAccepted).to.not.include(
+        proposalIds[1],
+        'Rejected proposal should not be in accepted list',
+      );
+      expect(finalAccepted).to.not.include(
+        proposalIds[2],
+        'Expired proposal should not be in accepted list',
+      );
+
+      console.log(
+        `\n✅ Storage persistence verified across multiple operations!`,
+      );
+      console.log(
+        `✅ Total accepted: ${finalAccepted.length}, Total rejected: ${finalRejected.length}`,
+      );
+    });
+  });
+
   describe('Space Governance Method Changes', function () {
     it('Should allow space executor to change the voting method', async function () {
       const { spaceHelper, daoSpaceFactory, owner } = await loadFixture(
@@ -3623,14 +4301,24 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // Change the voting method to 2
       const newVotingPowerSource = 2;
+      const newUnity = 51; // Keep same unity
+      const newQuorum = 51; // Keep same quorum
       const changeTx = await daoSpaceFactory
         .connect(executorSigner)
-        .changeVotingMethod(spaceId, newVotingPowerSource);
+        .changeVotingMethod(spaceId, newVotingPowerSource, newUnity, newQuorum);
 
       // Verify the event is emitted
       await expect(changeTx)
         .to.emit(daoSpaceFactory, 'VotingMethodChanged')
-        .withArgs(spaceId, initialVotingPowerSource, newVotingPowerSource);
+        .withArgs(
+          spaceId,
+          initialVotingPowerSource, // oldVotingPowerSource = 1
+          newVotingPowerSource, // newVotingPowerSource = 2
+          51, // oldUnity (51 from createDefaultSpace)
+          newUnity, // newUnity = 51
+          51, // oldQuorum (51 from createDefaultSpace)
+          newQuorum, // newQuorum = 51
+        );
 
       // Verify the voting power source has been updated
       const updatedSpaceDetails = await daoSpaceFactory.getSpaceDetails(
@@ -3701,8 +4389,8 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // Try to change voting method as non-executor (should fail)
       await expect(
-        daoSpaceFactory.connect(other).changeVotingMethod(spaceId, 2),
-      ).to.be.revertedWith('Not executor');
+        daoSpaceFactory.connect(other).changeVotingMethod(spaceId, 2, 51, 51),
+      ).to.be.revertedWith('Not authorized: only executor or owner');
     });
 
     it('Should prevent non-executors from changing the entry method', async function () {
@@ -3744,7 +4432,9 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // Try to set invalid voting method (0)
       await expect(
-        daoSpaceFactory.connect(executorSigner).changeVotingMethod(spaceId, 0),
+        daoSpaceFactory
+          .connect(executorSigner)
+          .changeVotingMethod(spaceId, 0, 51, 51),
       ).to.be.revertedWith('Invalid voting power source');
     });
 
@@ -3854,7 +4544,7 @@ describe('DAOSpaceFactoryImplementation', function () {
       const changeVotingMethodCalldata =
         daoSpaceFactory.interface.encodeFunctionData(
           'changeVotingMethod',
-          [spaceId, 3], // Change to voting method 3
+          [spaceId, 3, 51, 51], // Change to voting method 3, keep unity and quorum at 51
         );
 
       // Create a proposal to change the voting method
@@ -3889,6 +4579,7 @@ describe('DAOSpaceFactoryImplementation', function () {
         // If the error is "Proposal already executed", we can ignore it
         // This means the first vote was enough to pass the proposal
         if (
+
           !(error instanceof Error) ||
           !error.toString().includes('Proposal already executed')
         ) {
@@ -3902,6 +4593,52 @@ describe('DAOSpaceFactoryImplementation', function () {
         spaceId,
       );
       expect(updatedSpaceDetails.votingPowerSource).to.equal(3);
+    });
+
+    it('Should allow contract owner to change the voting method', async function () {
+      const { spaceHelper, daoSpaceFactory, owner } = await loadFixture(
+        deployFixture,
+      );
+
+      // Create a space
+      await spaceHelper.createDefaultSpace();
+      const spaceId = (await daoSpaceFactory.spaceCounter()).toString();
+
+      // Get the initial voting power source
+      const initialSpaceDetails = await daoSpaceFactory.getSpaceDetails(
+        spaceId,
+      );
+      const initialVotingPowerSource = initialSpaceDetails.votingPowerSource;
+      expect(initialVotingPowerSource).to.equal(1);
+
+      // Change the voting method as contract owner
+      const newVotingPowerSource = 2;
+      const newUnity = 51;
+      const newQuorum = 51;
+      const changeTx = await daoSpaceFactory
+        .connect(owner)
+        .changeVotingMethod(spaceId, newVotingPowerSource, newUnity, newQuorum);
+
+      // Verify the event is emitted
+      await expect(changeTx)
+        .to.emit(daoSpaceFactory, 'VotingMethodChanged')
+        .withArgs(
+          spaceId,
+          initialVotingPowerSource,
+          newVotingPowerSource,
+          51, // oldUnity
+          newUnity,
+          51, // oldQuorum
+          newQuorum,
+        );
+
+      // Verify the voting power source has been updated
+      const updatedSpaceDetails = await daoSpaceFactory.getSpaceDetails(
+        spaceId,
+      );
+      expect(updatedSpaceDetails.votingPowerSource).to.equal(
+        newVotingPowerSource,
+      );
     });
   });
 

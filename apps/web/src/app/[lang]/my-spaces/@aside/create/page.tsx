@@ -1,7 +1,7 @@
 'use client';
 
-import { CreateSpaceForm, SidePanel } from '@hypha-platform/epics';
-import { useParams, usePathname, useRouter } from 'next/navigation';
+import { SpaceForm, SidePanel } from '@hypha-platform/epics';
+import { useParams, useRouter } from 'next/navigation';
 import React from 'react';
 import { Locale } from '@hypha-platform/i18n';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
@@ -13,7 +13,6 @@ import { useMe } from '@hypha-platform/core/client';
 import { getDhoPathGovernance } from '@web/app/[lang]/dho/[id]/@tab/governance/constants';
 
 export default function AsideCreateSpacePage() {
-  const pathname = usePathname();
   const { lang } = useParams();
   const router = useRouter();
   const config = useConfig();
@@ -52,13 +51,13 @@ export default function AsideCreateSpacePage() {
         }
         className="-m-9"
       >
-        <CreateSpaceForm
+        <SpaceForm
           creator={{
             name: person?.name,
             surname: person?.surname,
           }}
-          closeUrl={pathname.replace('create', '')}
-          onCreate={createSpace}
+          closeUrl={`/${lang}/my-spaces/`}
+          onSubmit={createSpace}
           isLoading={isLoadingJwt}
         />
       </LoadingBackdrop>

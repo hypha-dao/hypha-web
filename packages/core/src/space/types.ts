@@ -11,8 +11,8 @@ export interface Space {
   slug: string;
   parentId?: number | null;
   web3SpaceId?: number | null;
-  links?: string[] | null;
-  categories?: Category[] | null;
+  links: string[];
+  categories: Category[];
   subspaces?: Space[];
   members?: Person[];
   memberCount?: number;
@@ -26,7 +26,7 @@ export interface CreateSpaceInput {
   logoUrl?: string;
   leadImage?: string;
   slug?: string;
-  parentId?: number;
+  parentId?: number | null;
   links?: string[];
   categories?: Category[];
 }
@@ -37,7 +37,7 @@ export interface UpdateSpaceInput {
   logoUrl?: string;
   leadImage?: string;
   slug?: string;
-  parentId?: number;
+  parentId?: number | null;
   web3SpaceId?: number;
 }
 

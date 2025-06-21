@@ -3,6 +3,7 @@ import { AuthHook } from '../shared/types';
 import React from 'react';
 import { useSetActiveWallet } from '@privy-io/wagmi';
 import { useAccount } from 'wagmi';
+import { useRouter } from 'next/navigation';
 
 export function usePrivyAuthenticationAdapter(): AuthHook {
   const {
@@ -17,6 +18,7 @@ export function usePrivyAuthenticationAdapter(): AuthHook {
 
   const account = useAccount();
   const { wallets } = useWallets();
+  const router = useRouter();
 
   const { setActiveWallet } = useSetActiveWallet();
 
@@ -36,6 +38,7 @@ export function usePrivyAuthenticationAdapter(): AuthHook {
 
   const logout = React.useCallback(async (): Promise<void> => {
     privyLogout();
+    router.push('/network');
   }, [privyLogout]);
 
   const user = React.useMemo(() => {

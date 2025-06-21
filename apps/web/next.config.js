@@ -1,6 +1,5 @@
 //@ts-check
 
- 
 const { composePlugins, withNx } = require('@nx/next');
 const { withVercelToolbar } = require('@vercel/toolbar/plugins/next');
 
@@ -77,29 +76,17 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'utfs.io'
+        hostname: 'utfs.io',
       },
       {
         protocol: 'https',
-        hostname: 'github.githubassets.com'
+        hostname: 'github.githubassets.com',
       },
       {
         protocol: 'https',
-        hostname: 'raw.githubusercontent.com'
-      }
+        hostname: 'raw.githubusercontent.com',
+      },
     ],
-  },
-  webpack: (config) => {
-    return {
-      ...config,
-      resolve: {
-        ...config.resolve,
-        alias: {
-          ...config.resolve.alias,
-          crypto: 'empty-module',
-        },
-      },
-    };
   },
 };
 

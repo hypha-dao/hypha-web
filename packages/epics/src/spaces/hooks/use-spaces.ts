@@ -3,10 +3,10 @@
 import useSWR from 'swr';
 import {
   SpaceType,
-  PaginationMetadata,
   SortParams,
   fetchSpaces,
 } from '@hypha-platform/graphql/rsc';
+import { PaginationMetadata } from '@core/common';
 
 type UseSpacesReturn = {
   spaces: SpaceType[];

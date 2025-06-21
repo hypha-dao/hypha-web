@@ -102,6 +102,9 @@ contract OwnershipTokenFactory is
     address tokenAddress = address(newToken);
     isTokenDeployedByFactory[tokenAddress] = true;
 
+    // Store the mapping of spaceId to token address
+    spaceTokens[spaceId] = tokenAddress;
+
     // Make sure the event is using the right event signature
     emit TokenDeployed(spaceId, tokenAddress, name, symbol);
 
@@ -118,4 +121,15 @@ contract OwnershipTokenFactory is
   }
 
   event DeployingToken(uint256 indexed spaceId, string name, string symbol);
+
+  /**
+   * @dev Get the token address for a given space ID
+   * @param spaceId The space ID to query
+   * @return The address of the token deployed for the space (most recently deployed if multiple)
+   */
+  function getSpaceToken(
+    uint256 spaceId
+  ) public view override returns (address) {
+    return spaceTokens[spaceId];
+  }
 }

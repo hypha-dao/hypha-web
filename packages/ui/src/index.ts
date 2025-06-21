@@ -30,6 +30,7 @@ export * from './upload/lead-image';
 export * from './upload/image';
 export * from './upload/add-attachment';
 export * from './upload/attachments-list';
+export * from './upload/token-icon';
 export * from './combobox';
 export * from './date-picker';
 

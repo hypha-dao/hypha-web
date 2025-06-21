@@ -1,14 +1,22 @@
 'use client';
 
-import { ProposeContributionPlugin } from '@hypha-platform/epics';
-import { PayForExpensesPlugin } from '@hypha-platform/epics';
-import { DeployFundsPlugin } from '@hypha-platform/epics';
+import {
+  ProposeContributionPlugin,
+  PayForExpensesPlugin,
+  DeployFundsPlugin,
+  ChangeVotingMethodPlugin,
+  ChangeEntryMethodPlugin,
+  IssueNewTokenPlugin,
+} from '@hypha-platform/epics';
 import { useMembers } from '@web/hooks/use-members';
 
 export const PLUGINS = {
   'propose-contribution': ProposeContributionPlugin,
   'pay-for-expenses': PayForExpensesPlugin,
   'deploy-funds': DeployFundsPlugin,
+  'change-voting-method': ChangeVotingMethodPlugin,
+  'change-entry-method': ChangeEntryMethodPlugin,
+  'issue-new-token': IssueNewTokenPlugin,
 };
 
 type PluginProps = {

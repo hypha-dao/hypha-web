@@ -21,11 +21,11 @@ export type CreateSpaceWeb3Config = {
 export const mapToCreateSpaceWeb3Input = (
   d: z.infer<typeof schemaCreateSpaceWeb3>,
 ): CreateSpaceWeb3Input => ({
-  unity: BigInt(d.unity),
-  quorum: BigInt(d.quorum),
-  votingPowerSource: BigInt(d.votingPowerSource),
-  exitMethod: BigInt(d.exitMethod),
-  joinMethod: BigInt(d.joinMethod),
+  unity: BigInt(d.unity ?? 80),
+  quorum: BigInt(d.quorum ?? 20),
+  votingPowerSource: BigInt(d.votingPowerSource ?? 0),
+  exitMethod: BigInt(d.exitMethod ?? 0),
+  joinMethod: BigInt(d.joinMethod ?? 0),
 });
 
 export const createSpaceWeb3 = (

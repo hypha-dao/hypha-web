@@ -23,12 +23,13 @@ export const spaces = pgTable(
     logoUrl: text('logo_url'),
     leadImage: text('lead_image'),
     title: text('title').notNull(),
-    description: text('description'),
+    description: text('description').notNull().default('SHOULD NOT BE EMPTY'),
     slug: text('slug').notNull().unique(),
     web3SpaceId: integer('web3_space_id'),
-    links: jsonb('links').$type<string[]>().default([]),
+    links: jsonb('links').$type<string[]>().notNull().default([]),
     categories: jsonb('categories')
       .$type<Array<(typeof categories.enumValues)[number]>>()
+      .notNull()
       .default([]),
     parentId: integer('parent_id').references((): AnyPgColumn => spaces.id),
     ...commonDateFields,

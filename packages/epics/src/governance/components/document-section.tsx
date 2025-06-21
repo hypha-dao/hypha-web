@@ -3,37 +3,37 @@ import { FC } from 'react';
 import { Text } from '@radix-ui/themes';
 import { useDocumentsSection } from '../hooks/use-documents-section';
 import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
-import { DocumentState, UseDocuments } from '..';
+import { Document } from '@core/governance';
 import { DocumentGridContainer } from './document-grid.container';
+import { DirectionType } from '@core/common';
 
 type DocumentSectionProps = {
   basePath: string;
-  useDocuments: UseDocuments;
-  documentState: DocumentState;
+  documents: Document[];
   label?: string;
   headSectionButton?: React.ReactNode;
   hasSearch?: boolean;
+  isLoading: boolean;
 };
 
 export const DocumentSection: FC<DocumentSectionProps> = ({
   basePath,
-  useDocuments,
-  documentState,
+  documents,
   label,
   headSectionButton,
   hasSearch = false,
+  isLoading,
 }) => {
   const {
     pages,
-    isLoading,
     loadMore,
     pagination,
     activeTab,
     onUpdateSearch,
     searchTerm,
+    filteredDocuments,
   } = useDocumentsSection({
-    useDocuments,
-    documentState: documentState,
+    documents,
   });
 
   return (
@@ -58,12 +58,15 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
               pagination={{
                 page: index + 1,
                 pageSize: 3,
-                filter: {
-                  state: documentState,
-                },
                 searchTerm,
+                order: [
+                  {
+                    dir: DirectionType.DESC,
+                    name: 'createdAt',
+                  },
+                ],
               }}
-              useDocuments={useDocuments}
+              documents={filteredDocuments}
               activeTab={activeTab}
             />
           ))}
