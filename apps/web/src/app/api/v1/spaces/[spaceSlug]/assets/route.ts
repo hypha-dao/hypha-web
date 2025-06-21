@@ -27,9 +27,7 @@ export async function GET(
     let spaceDetails;
     let spaceTokens;
     try {
-      spaceDetails = await publicClient.readContract(
-        getSpaceDetails({ spaceId }),
-      );
+      spaceDetails = await getSpaceDetails({ spaceId });
 
       spaceTokens = await publicClient.multicall({
         contracts: [
@@ -61,7 +59,7 @@ export async function GET(
       );
     }
 
-    const spaceAddress = spaceDetails.at(-1) as `0x${string}`;
+    const { executor: spaceAddress } = spaceDetails;
 
     spaceTokens = spaceTokens
       .filter(
