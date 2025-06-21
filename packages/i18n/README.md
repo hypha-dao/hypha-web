@@ -4,7 +4,7 @@ This package provides internationalization (i18n) support for the Hypha DHO Web 
 
 ## Features
 
-- Easy-to-use API for translating text and formatting locale-specific data
+- to-use API for translating text and formatting locale-specific data
 - Support for multiple languages and locales
 - Dynamic language switching
 - Integration with Next.js for server-side and client-side rendering
