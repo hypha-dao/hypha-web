@@ -1,9 +1,10 @@
+import { publicClient } from '@core/common/web3';
 import {
   daoProposalsImplementationAbi,
   daoProposalsImplementationAddress,
 } from '@core/generated';
 
-export const getSpaceProposals = ({
+export const getSpaceProposals = async ({
   spaceId,
   chain = 8453,
 }: {
@@ -12,10 +13,12 @@ export const getSpaceProposals = ({
 }) => {
   const address = daoProposalsImplementationAddress[chain];
 
-  return {
+  const [accepted, rejected] = await publicClient.readContract({
     address,
     abi: daoProposalsImplementationAbi,
     functionName: 'getSpaceProposals',
     args: [spaceId],
-  } as const;
+  });
+
+  return { accepted, rejected };
 };
