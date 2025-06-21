@@ -5,7 +5,7 @@ interface IDecayingTokenFactory {
   function initialize(address initialOwner) external;
 
   function setSpacesContract(address _spacesContract) external;
-  
+
   function setDecayVotingPowerContract(
     address _decayVotingPowerContract
   ) external;
@@ -20,6 +20,10 @@ interface IDecayingTokenFactory {
     uint256 decayPercentage,
     uint256 decayInterval
   ) external returns (address);
+
+  function getSpaceToken(
+    uint256 spaceId
+  ) external view returns (address[] memory);
 
   event TokenDeployed(
     uint256 indexed spaceId,
@@ -39,6 +43,6 @@ interface IDecayingTokenFactory {
   event DecayVotingPowerContractUpdated(
     address indexed newDecayVotingPowerContract
   );
-  
+
   event SpacesContractUpdated(address indexed newSpacesContract);
-} 
+}
