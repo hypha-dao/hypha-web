@@ -3,7 +3,7 @@ import {
   regularTokenFactoryAddress,
 } from '@core/generated';
 
-export const getSpaceRegularToken = ({
+export const getSpaceRegularTokens = ({
   spaceId,
   chain = 8453,
 }: {
