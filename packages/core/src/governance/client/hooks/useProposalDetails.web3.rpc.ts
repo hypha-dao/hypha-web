@@ -1,6 +1,5 @@
 'use client';
 
-import { publicClient } from '@core/common';
 import useSWR from 'swr';
 import { getProposalDetails } from '../web3';
 import React from 'react';
@@ -22,9 +21,7 @@ export const useProposalDetailsWeb3Rpc = ({
   const { data, isLoading, error } = useSWR(
     [proposalId, 'proposalDetails'],
     async ([proposalId]) =>
-      publicClient.readContract(
-        getProposalDetails({ proposalId: BigInt(proposalId) }),
-      ),
+      getProposalDetails({ proposalId: BigInt(proposalId) }),
     {
       revalidateOnFocus: true,
       refreshInterval: 10000,
@@ -34,7 +31,7 @@ export const useProposalDetailsWeb3Rpc = ({
   const parsedProposal = React.useMemo(() => {
     if (!data) return null;
 
-    const [
+    const {
       spaceId,
       startTime,
       endTime,
@@ -45,7 +42,7 @@ export const useProposalDetailsWeb3Rpc = ({
       totalVotingPowerAtSnapshot,
       creator,
       transactions,
-    ] = data;
+    } = data;
 
     const quorumTotalVotingPowerNumber = Number(totalVotingPowerAtSnapshot);
     const quorumPercentage =
