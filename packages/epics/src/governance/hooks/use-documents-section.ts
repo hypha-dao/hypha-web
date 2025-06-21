@@ -1,5 +1,4 @@
 import React from 'react';
-import { DocumentState, UseDocuments } from '../../governance';
 import { useDebouncedCallback } from 'use-debounce';
 
 export const tabs = [
@@ -21,13 +20,7 @@ export const tabs = [
   },
 ];
 
-export const useDocumentsSection = ({
-  useDocuments,
-  documentState,
-}: {
-  useDocuments: UseDocuments;
-  documentState: DocumentState;
-}) => {
+export const useDocumentsSection = ({ documents }: { documents: any[] }) => {
   const [activeFilter, setActiveFilter] = React.useState('most-recent');
   const [pages, setPages] = React.useState(1);
   const [activeTab, setActiveTab] = React.useState('all');
@@ -39,24 +32,50 @@ export const useDocumentsSection = ({
     setSearchTerm(term);
   }, 300);
 
-  const { isLoading, pagination } = useDocuments({
-    page: pages,
-    pageSize: 3,
-    filter: { state: documentState },
-    searchTerm,
-  });
+  const filteredDocuments = React.useMemo(() => {
+    let result = documents;
+
+    if (searchTerm) {
+      result = result.filter(
+        (doc) =>
+          doc.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          doc.description?.toLowerCase().includes(searchTerm.toLowerCase()),
+      );
+    }
+
+    if (activeTab !== 'all') {
+      result = result.filter((doc) => doc.space === activeTab);
+    }
+
+    return result;
+  }, [documents, searchTerm, activeTab]);
+
+  const pagination = React.useMemo(() => {
+    const pageSize = 3;
+    const total = filteredDocuments.length;
+    const totalPages = Math.ceil(total / pageSize);
+    const hasNextPage = pages < totalPages;
+
+    return {
+      page: pages,
+      pageSize,
+      total,
+      totalPages,
+      hasNextPage,
+    };
+  }, [filteredDocuments, pages]);
 
   React.useEffect(() => {
     setPages(1);
-  }, [activeFilter, activeTab]);
+  }, [activeFilter, activeTab, searchTerm]);
 
   const loadMore = React.useCallback(() => {
     if (!pagination?.hasNextPage) return;
-    setPages(pages + 1);
-  }, [pages, pagination?.hasNextPage, setPages]);
+    setPages((prev) => prev + 1);
+  }, [pagination?.hasNextPage]);
 
   return {
-    isLoading,
+    isLoading: false,
     loadMore,
     pagination,
     pages,
@@ -68,5 +87,6 @@ export const useDocumentsSection = ({
     setActiveTab,
     onUpdateSearch,
     searchTerm,
+    filteredDocuments,
   };
 };

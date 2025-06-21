@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { DEFAULT_IMAGE_ACCEPT } from '@core/assets';
 import { isBefore } from 'date-fns';
+import { EntryMethodType } from './types';
 
 const ALLOWED_IMAGE_FILE_SIZE = 5 * 1024 * 1024;
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
@@ -183,6 +184,112 @@ export const transactionSchema = z.object({
   data: z.string().optional(),
 });
 
+export const schemaMemberWithNumber = z.object({
+  member: z
+    .string()
+    .min(1, { message: 'Recipient is required' })
+    .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' }),
+  number: z.number().min(0, 'Number must be non-negative'),
+});
+
+export const schemaDecaySettings = z.object({
+  decayPeriod: z.number().min(1, 'Decay period must be at least 1').max(200),
+  timeFormat: z.enum(['Minutes', 'Hours', 'Days', 'Weeks', 'Months']),
+  decayPercent: z
+    .number()
+    .min(1)
+    .max(100, 'Decay percent must be between 1-100'),
+});
+
+export const schemaQuorumAndUnity = z.object({
+  quorum: z.number().min(0).max(100, 'Quorum must be between 0-100'),
+  unity: z.number().min(0).max(100, 'Unity must be between 0-100'),
+});
+
+const decaySettingsSchema = z.object({
+  decayInterval: z
+    .number({
+      required_error: 'Decay interval is required',
+      invalid_type_error: 'Decay interval must be a number',
+    })
+    .positive('Decay interval must be greater than 0'),
+
+  decayPercentage: z
+    .number({
+      required_error: 'Decay percentage is required',
+      invalid_type_error: 'Decay percentage must be a number',
+    })
+    .min(1, 'Decay percentage must be at least 1%')
+    .max(100, 'Decay percentage must not exceed 100%'),
+});
+
+export const schemaIssueNewToken = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  name: z
+    .string()
+    .min(2, { message: 'Token name must be at least 2 characters long' })
+    .max(100, { message: 'Token name must be at most 100 characters long' }),
+
+  symbol: z
+    .string()
+    .min(2, { message: 'Token symbol must be at least 2 characters long' })
+    .max(10, { message: 'Token symbol must be at most 10 characters long' })
+    .regex(/^[A-Z]+$/, {
+      message: 'Token symbol must contain only uppercase letters',
+    }),
+
+  icon: z
+    .instanceof(File)
+    .refine(
+      (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
+      'File size must be less than 5MB',
+    )
+    .refine(
+      (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
+      'File must be an image (JPEG, PNG, GIF, WEBP)',
+    )
+    .optional(),
+
+  // tokenDescription: z
+  //   .string()
+  //   .min(10, { message: 'Description must be at least 10 characters long' })
+  //   .max(500, { message: 'Description must be at most 500 characters long' }),
+
+  // TODO: after MVP
+  // digits: z.preprocess(
+  //   (val) => Number(val),
+  //   z
+  //     .number()
+  //     .min(0, { message: 'Digits must be 0 or greater' })
+  //     .max(18, { message: 'Digits must not exceed 18' }),
+  // ),
+
+  type: z.enum(['utility', 'credits', 'ownership', 'voice'], {
+    required_error: 'Token type is required',
+  }),
+
+  maxSupply: z.preprocess(
+    (val) => Number(val),
+    z
+      .number()
+      .min(0, { message: 'Max supply must be 0 or greater' })
+      .refine((value) => value >= 0, {
+        message: 'Max supply must be a non-negative number',
+      }),
+  ),
+  decaySettings: decaySettingsSchema,
+});
+
+export const schemaChangeVotingMethod = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  members: z.array(schemaMemberWithNumber).optional(),
+  token: z.string().optional(),
+  quorumAndUnity: schemaQuorumAndUnity.optional(),
+  votingMethod: z.enum(['1m1v', '1v1v', '1t1v']).nullable().optional(),
+});
+
 export const schemaCreateAgreementForm = z.object({
   ...createAgreementWeb2Props,
   ...createAgreementFiles,
@@ -210,4 +317,26 @@ export const mapToCreateProposalWeb3Input = (
     value: tx.value,
     data: tx.data || '0x',
   })),
+});
+
+export const schemaChangeEntryMethod = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  entryMethod: z
+    .number()
+    .int()
+    .min(EntryMethodType.OPEN_ACCESS)
+    .max(EntryMethodType.INVITE_ONLY),
+  tokenBase: z
+    .object({
+      amount: z
+        .number()
+        .int('Should be integer')
+        .positive('Amount must be greater than 0'),
+      token: z
+        .string()
+        .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' })
+        .min(1, { message: 'Token address is required' }),
+    })
+    .optional(),
 });

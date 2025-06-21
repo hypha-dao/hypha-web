@@ -14,6 +14,11 @@ export default defineConfig({
         'DAOSpaceFactoryImplementation.sol/**',
         'AgreementsImplementation.sol/**',
         'DAOProposalsImplementation.sol/**',
+        'RegularTokenFactory.sol/**',
+        'DecayingTokenFactory.sol/**',
+        'OwnershipTokenFactory.sol/**',
+        'DecayingSpaceToken.sol/**',
+        'TokenBalanceJoinImplementation.sol/**',
       ],
       deployments: {
         DAOSpaceFactoryImplementation: {
@@ -24,6 +29,21 @@ export default defineConfig({
         },
         DAOProposalsImplementation: {
           [base.id]: '0x001bA7a00a259Fb12d7936455e292a60FC2bef14',
+        },
+        RegularTokenFactory: {
+          [base.id]: '0x95A33EC94de2189893884DaD63eAa19f7390144a',
+        },
+        DecayingTokenFactory: {
+          [base.id]: '0x299f4D2327933c1f363301dbd2a28379ccD5539b',
+        },
+        OwnershipTokenFactory: {
+          [base.id]: '0xA1eDf096B72226ae2f7BDEb12E9c9C82152BccB6',
+        },
+        DecayingSpaceToken: {
+          [base.id]: '0xc8995514f8c76b9d9a509b4fdba0d06eb732907e',
+        },
+        TokenBalanceJoinImplementation: {
+          [base.id]: '0x41cD69A3a3715B16598415df336a8Cc533CCAF76',
         },
       },
     }),

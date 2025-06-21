@@ -119,7 +119,7 @@ contract DAOProposalsImplementation is
 
     require(
       spaceFactory.getSpaceExecutor(_spaceId) != address(0),
-      'Executor not set for space'
+      'Executor not set for spc'
     );
   }
 
@@ -235,10 +235,9 @@ contract DAOProposalsImplementation is
     if (proposal.executed || proposal.expired) return;
 
     (
+      uint256 unityThreshold, // 1st parameter = unity ✓
+      uint256 quorumThreshold, // 2nd parameter = quorum ✓ // votingPowerSource (skip) // tokenAddresses (skip) // members (skip) // exitMethod (skip) // joinMethod (skip) // createdAt (skip) // creator (skip) // executor (skip)
       ,
-      // name
-      uint256 unityThreshold,
-      uint256 quorumThreshold, // votingPowerSource // tokenAddresses // members // exitMethod // joinMethod // createdAt // executor
       ,
       ,
       ,
@@ -248,44 +247,54 @@ contract DAOProposalsImplementation is
 
     ) = spaceFactory.getSpaceDetails(proposal.spaceId);
 
-    uint256 quorumReached = (proposal.yesVotes * 100) /
-      proposal.totalVotingPowerAtSnapshot;
-    if (quorumReached < quorumThreshold) return;
-
+    // Calculate total participation
     uint256 totalVotesCast = proposal.yesVotes + proposal.noVotes;
-    if (totalVotesCast > 0) {
-      uint256 yesPercentage = (proposal.yesVotes * 100) / totalVotesCast;
-      if (yesPercentage >= unityThreshold) {
-        proposal.executed = true;
 
-        address executor = spaceFactory.getSpaceExecutor(proposal.spaceId);
+    // Check if quorum is reached - fix potential overflow by reordering arithmetic
+    bool quorumReached = totalVotesCast >=
+      (quorumThreshold * proposal.totalVotingPowerAtSnapshot) / 100;
 
-        // Convert proposal transactions to Executor.Transaction format
-        IExecutor.Transaction[]
-          memory execTransactions = new IExecutor.Transaction[](
-            proposal.transactions.length
-          );
-        for (uint i = 0; i < proposal.transactions.length; i++) {
-          execTransactions[i] = IExecutor.Transaction({
-            target: proposal.transactions[i].target,
-            value: proposal.transactions[i].value,
-            data: proposal.transactions[i].data
-          });
-        }
+    if (!quorumReached) {
+      return; // Early return - insufficient participation
+    }
 
-        // Execute all transactions
-        bool success = IExecutor(executor).executeTransactions(
-          execTransactions
+    // Check if proposal should be executed (Yes votes reach unity threshold)
+    if (proposal.yesVotes * 100 >= unityThreshold * totalVotesCast) {
+      proposal.executed = true;
+      spaceAcceptedProposals[proposal.spaceId].push(_proposalId);
+
+      address executor = spaceFactory.getSpaceExecutor(proposal.spaceId);
+
+      // Convert proposal transactions to Executor.Transaction format
+      IExecutor.Transaction[]
+        memory execTransactions = new IExecutor.Transaction[](
+          proposal.transactions.length
         );
-        require(success, 'Proposal execution failed');
-
-        emit ProposalExecuted(
-          _proposalId,
-          true,
-          proposal.yesVotes,
-          proposal.noVotes
-        );
+      for (uint i = 0; i < proposal.transactions.length; i++) {
+        execTransactions[i] = IExecutor.Transaction({
+          target: proposal.transactions[i].target,
+          value: proposal.transactions[i].value,
+          data: proposal.transactions[i].data
+        });
       }
+
+      // Execute all transactions
+      bool success = IExecutor(executor).executeTransactions(execTransactions);
+      require(success, 'Proposal execution failed');
+
+      emit ProposalExecuted(
+        _proposalId,
+        true,
+        proposal.yesVotes,
+        proposal.noVotes
+      );
+    }
+    // Check if proposal should be rejected (No votes reach unity threshold)
+    else if (proposal.noVotes * 100 >= unityThreshold * totalVotesCast) {
+      proposal.expired = true; // Mark as expired to prevent further voting
+      spaceRejectedProposals[proposal.spaceId].push(_proposalId);
+
+      emit ProposalRejected(_proposalId, proposal.yesVotes, proposal.noVotes);
     }
   }
 
@@ -298,11 +307,29 @@ contract DAOProposalsImplementation is
       !proposal.expired && block.timestamp > getProposalEndTime(_proposalId)
     ) {
       proposal.expired = true;
+
+      // Check if expired proposal should be added to rejected list
+      // Only if it wasn't already executed
+      if (!proposal.executed) {
+        spaceRejectedProposals[proposal.spaceId].push(_proposalId);
+      }
+
       emit ProposalExpired(_proposalId);
       return true;
     }
 
     return proposal.expired;
+  }
+
+  function getSpaceProposals(
+    uint256 _spaceId
+  )
+    external
+    view
+    override
+    returns (uint256[] memory accepted, uint256[] memory rejected)
+  {
+    return (spaceAcceptedProposals[_spaceId], spaceRejectedProposals[_spaceId]);
   }
 
   function hasVoted(

@@ -112,6 +112,9 @@ contract DecayingTokenFactory is
     address tokenAddress = address(newToken);
     isTokenDeployedByFactory[tokenAddress] = true;
 
+    // Store the mapping of spaceId to token address
+    spaceTokens[spaceId] = tokenAddress;
+
     emit TokenDeployed(spaceId, tokenAddress, name, symbol);
     emit DecayingTokenParameters(tokenAddress, decayPercentage, decayInterval);
 
@@ -128,5 +131,14 @@ contract DecayingTokenFactory is
     }
 
     return tokenAddress;
+  }
+
+  /**
+   * @dev Get the token address for a given space ID
+   * @param spaceId The space ID to query
+   * @return The address of the token deployed for the space (most recently deployed if multiple)
+   */
+  function getSpaceToken(uint256 spaceId) public view returns (address) {
+    return spaceTokens[spaceId];
   }
 }

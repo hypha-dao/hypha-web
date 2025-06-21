@@ -1,3 +1,5 @@
+'use client';
+
 import { publicClient } from '@core/common';
 import useSWR from 'swr';
 import { getSpaceDetails } from '../web3';

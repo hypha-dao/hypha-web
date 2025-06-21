@@ -1,11 +1,15 @@
-import { Button } from '@hypha-platform/ui';
+import { Button, Skeleton } from '@hypha-platform/ui';
 import { ProgressLine } from './progress-line';
 import { intervalToDuration, isPast } from 'date-fns';
 
-function formatTimeRemaining(endTime: string): string {
+function formatTimeRemaining(
+  endTime: string,
+  executed?: boolean,
+  expired?: boolean,
+): string {
   const end = new Date(endTime);
 
-  if (isPast(end)) {
+  if (isPast(end) || executed || expired) {
     return 'Vote closed';
   }
 
@@ -28,39 +32,75 @@ export const FormVoting = ({
   unity,
   quorum,
   endTime,
+  executed,
+  expired,
+  isLoading,
   onAccept,
   onReject,
+  onCheckProposalExpiration,
 }: {
   unity: number;
   quorum: number;
   endTime: string;
+  expired?: boolean;
+  executed?: boolean;
+  isLoading?: boolean;
   onAccept: () => void;
   onReject: () => void;
+  onCheckProposalExpiration: () => void;
 }) => {
   return (
     <div className="flex flex-col gap-5 text-neutral-11">
       <div className="flex flex-col gap-4">
-        <ProgressLine
-          label="Unity"
-          value={unity}
-          indicatorColor="bg-accent-9"
-        />
-        <ProgressLine
-          label="Quorum"
-          value={quorum}
-          indicatorColor="bg-accent-12"
-        />
+        <Skeleton
+          width="100%"
+          height="28px"
+          loading={isLoading}
+          className="rounded-lg"
+        >
+          <ProgressLine
+            label="Unity"
+            value={unity}
+            indicatorColor="bg-accent-9"
+          />
+        </Skeleton>
+        <Skeleton
+          width="100%"
+          height="28px"
+          loading={isLoading}
+          className="rounded-lg"
+        >
+          <ProgressLine
+            label="Quorum"
+            value={quorum}
+            indicatorColor="bg-accent-12"
+          />
+        </Skeleton>
       </div>
       <div className="flex items-center justify-between">
-        <div className="text-1">{formatTimeRemaining(endTime)}</div>
-        {isPast(new Date(endTime)) ? null : (
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onReject}>
-              Vote no
-            </Button>
-            <Button onClick={onAccept}>Vote yes</Button>
+        <Skeleton
+          width="100%"
+          height="28px"
+          loading={isLoading}
+          className="rounded-lg"
+        >
+          <div className="text-1">
+            {formatTimeRemaining(endTime, executed, expired)}
           </div>
-        )}
+          {isPast(new Date(endTime)) && !executed && !expired ? (
+            <div className="flex gap-2">
+              <Button onClick={onCheckProposalExpiration}>Expire</Button>
+            </div>
+          ) : null}
+          {executed || expired || isPast(new Date(endTime)) ? null : (
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={onReject}>
+                Vote no
+              </Button>
+              <Button onClick={onAccept}>Vote yes</Button>
+            </div>
+          )}
+        </Skeleton>
       </div>
     </div>
   );

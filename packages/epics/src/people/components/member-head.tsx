@@ -30,10 +30,7 @@ export const MemberHead = ({
       >
         <Image
           className="rounded-lg mr-3"
-          src={
-            avatarUrl ??
-            'https://images.unsplash.com/photo-1544005313-94ddf0286df2?&w=64&h=64&dpr=2&q=70&crop=faces&fit=crop'
-          }
+          src={avatarUrl || '/placeholder/default-profile.svg'}
           height={64}
           width={64}
           alt={nickname ?? ''}

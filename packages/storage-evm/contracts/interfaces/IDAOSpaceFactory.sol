@@ -75,6 +75,13 @@ interface IDAOSpaceFactory {
     address _memberAddress
   ) external view returns (uint256[] memory);
 
+  function changeVotingMethod(
+    uint256 _spaceId,
+    uint256 _newVotingPowerSource,
+    uint256 _newUnity,
+    uint256 _newQuorum
+  ) external;
+
   event SpaceCreated(
     uint256 indexed spaceId,
     uint256 unity,
@@ -98,7 +105,11 @@ interface IDAOSpaceFactory {
   event VotingMethodChanged(
     uint256 indexed spaceId,
     uint256 oldVotingPowerSource,
-    uint256 newVotingPowerSource
+    uint256 newVotingPowerSource,
+    uint256 oldUnity,
+    uint256 newUnity,
+    uint256 oldQuorum,
+    uint256 newQuorum
   );
   event EntryMethodChanged(
     uint256 indexed spaceId,

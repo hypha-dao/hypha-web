@@ -7,4 +7,7 @@ contract DecayingTokenFactoryStorage is Initializable {
   address public spacesContract;
   address public decayVotingPowerContract;
   mapping(address => bool) public isTokenDeployedByFactory;
-} 
+
+  // Mapping from spaceId to the most recently deployed token address
+  mapping(uint256 => address) public spaceTokens;
+}

@@ -10,6 +10,12 @@ export enum DocumentState {
   AGREEMENT = 'agreement',
 }
 
+export enum EntryMethodType {
+  OPEN_ACCESS = 0,
+  TOKEN_BASED = 1,
+  INVITE_ONLY = 2,
+}
+
 interface Transaction {
   target: string;
   value: number;
@@ -28,7 +34,8 @@ export type Document = {
   creator?: Creator;
   leadImage?: string;
   attachments?: string[];
-  web3ProposalId?: number | null;
+  web3ProposalId: number | null;
+  status?: 'accepted' | 'rejected' | 'onVoting';
 };
 
 export interface CreateAgreementInput {
@@ -51,3 +58,31 @@ export interface UpdateAgreementInput {
 export type UpdateAgreementBySlugInput = {
   slug: string;
 } & UpdateAgreementInput;
+
+export interface CreateChangeEntryMethodInput {
+  title: string;
+  description: string;
+  image?: string;
+  attachments?: string[];
+  slug?: string;
+  spaceId: number;
+  creatorId: number;
+}
+
+export interface UpdateChangeEntryMethodInput {
+  image?: string;
+  slug?: string;
+  attachments?: string[];
+  web3ProposalId?: number | null;
+}
+
+export type UpdateChangeEntryMethodBySlugInput = {
+  slug: string;
+} & UpdateChangeEntryMethodInput;
+
+export type Address = `0x${string}`;
+
+export type TokenBase = {
+  amount: number;
+  token: Address;
+};

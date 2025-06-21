@@ -3,10 +3,10 @@
 import useSWR from 'swr';
 import {
   RequestItem,
-  PaginationMetadata,
   SortParams,
   fetchRequests,
 } from '@hypha-platform/graphql/rsc';
+import { PaginationMetadata } from '@core/common';
 
 type UseRequestsReturn = {
   requests: RequestItem[];
