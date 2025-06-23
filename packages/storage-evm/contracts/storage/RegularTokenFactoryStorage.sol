@@ -10,4 +10,7 @@ contract RegularTokenFactoryStorage is Initializable {
 
   // Mapping from spaceId to the most recently deployed token address
   mapping(uint256 => address) public spaceTokens;
+
+  // New storage variable: Mapping from spaceId to array of all deployed token addresses
+  mapping(uint256 => address[]) public allSpaceTokens;
 }

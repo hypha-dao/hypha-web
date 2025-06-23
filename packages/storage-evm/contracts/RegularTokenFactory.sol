@@ -101,8 +101,8 @@ contract RegularTokenFactory is
     address tokenAddress = address(newToken);
     isTokenDeployedByFactory[tokenAddress] = true;
 
-    // Store the mapping of spaceId to token address
-    spaceTokens[spaceId] = tokenAddress;
+    // Store the token in the array of all tokens for this space
+    allSpaceTokens[spaceId].push(tokenAddress);
 
     emit TokenDeployed(spaceId, tokenAddress, name, symbol);
 
@@ -121,11 +121,11 @@ contract RegularTokenFactory is
   /**
    * @dev Get the token address for a given space ID
    * @param spaceId The space ID to query
-   * @return The address of the token deployed for the space (most recently deployed if multiple)
+   * @return The addresses of all tokens deployed for the space
    */
   function getSpaceToken(
     uint256 spaceId
-  ) public view override returns (address) {
-    return spaceTokens[spaceId];
+  ) public view override returns (address[] memory) {
+    return allSpaceTokens[spaceId];
   }
 }
