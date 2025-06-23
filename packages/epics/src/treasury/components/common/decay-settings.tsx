@@ -36,9 +36,9 @@ type DecaySettingsProps = {
 };
 
 export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
-  const [decayPeriod, setDecayPeriod] = React.useState<number | ''>(1);
+  const [decayPeriod, setDecayPeriod] = React.useState<number | ''>(0);
   const [timeFormat, setTimeFormat] = React.useState<TimeFormat>('Weeks');
-  const [decayPercent, setDecayPercent] = React.useState<number | ''>(5);
+  const [decayPercent, setDecayPercent] = React.useState<number | ''>(0);
 
   React.useEffect(() => {
     notifyChange();
