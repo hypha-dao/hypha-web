@@ -8,7 +8,9 @@ export const config = createConfig({
   },
   chains: [hardhat, base],
   transports: {
-    [base.id]: http(process.env.NEXT_PUBLIC_RPC_URL),
+    [base.id]: process.env.NEXT_PUBLIC_RPC_URL
+      ? http(process.env.NEXT_PUBLIC_RPC_URL)
+      : http(),
     [hardhat.id]: http(),
   },
 });
