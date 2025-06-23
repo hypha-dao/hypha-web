@@ -4579,7 +4579,6 @@ describe('DAOSpaceFactoryImplementation', function () {
         // If the error is "Proposal already executed", we can ignore it
         // This means the first vote was enough to pass the proposal
         if (
-
           !(error instanceof Error) ||
           !error.toString().includes('Proposal already executed')
         ) {
