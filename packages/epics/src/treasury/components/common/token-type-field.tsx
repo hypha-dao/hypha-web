@@ -42,9 +42,7 @@ type TokenTypeFieldProps = {
   onValueChange?: (value: string) => void;
 };
 
-export function TokenTypeField({
-  onValueChange,
-}: TokenTypeFieldProps) {
+export function TokenTypeField({ onValueChange }: TokenTypeFieldProps) {
   const { control } = useFormContext();
 
   return (
