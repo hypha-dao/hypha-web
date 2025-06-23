@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSpaceService } from '@hypha-platform/core/server';
 import {
-  getSpaceDetails,
   getSpaceRegularTokens,
   getSpaceDecayingTokens,
   getSpaceOwnershipTokens,
 } from '@core/space';
-import { TOKENS, publicClient, getBalance, getTokenMeta } from '@core/common';
+import { getTokenMeta, publicClient } from '@core/common';
 
 export async function GET(
   request: NextRequest,
@@ -24,13 +23,8 @@ export async function GET(
 
     const spaceId = BigInt(space.web3SpaceId as number);
 
-    let spaceDetails;
     let spaceTokens;
     try {
-      spaceDetails = await publicClient.readContract(
-        getSpaceDetails({ spaceId }),
-      );
-
       spaceTokens = await publicClient.multicall({
         contracts: [
           getSpaceRegularTokens({ spaceId }),
@@ -61,8 +55,6 @@ export async function GET(
       );
     }
 
-    const spaceAddress = spaceDetails.at(-1) as `0x${string}`;
-
     spaceTokens = spaceTokens
       .filter(
         (response) =>
@@ -72,32 +64,16 @@ export async function GET(
       .flat() as `0x${string}`[];
 
     const assets = await Promise.all(
-      TOKENS.map((token) => token.address)
-        .concat(spaceTokens)
-        .map(async (token) => {
-          const meta = await getTokenMeta(token);
-          const { amount } = await getBalance(token, spaceAddress);
-
-          return {
-            ...meta,
-            value: amount,
-            usdEqual: 0,
-            chartData: [],
-            transactions: [],
-            closeUrl: [],
-            slug: '',
-          };
-        }),
+      spaceTokens.map(async (token) => {
+        const meta = await getTokenMeta(token);
+        return {
+          address: token,
+          name: meta.name,
+        };
+      }),
     );
 
-    const sorted = assets.sort((a, b) =>
-      a.usdEqual === b.usdEqual ? b.usdEqual - a.usdEqual : b.value - a.value,
-    );
-
-    return NextResponse.json({
-      assets: sorted,
-      balance: sorted.reduce((sum, asset) => sum + asset.usdEqual, 0),
-    });
+    return NextResponse.json({ assets });
   } catch (error) {
     console.error('Failed to fetch assets:', error);
     return NextResponse.json(
