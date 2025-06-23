@@ -13,6 +13,4 @@ interface IOwnershipSpaceToken {
   ) external returns (bool);
 
   function mint(address to, uint256 amount) external;
-
-  function escrowContract() external view returns (address);
 }

@@ -5,11 +5,10 @@ import { Image } from '@hypha-platform/ui';
 
 interface TokenLabelProps {
   tokenAddress: `0x${string}`;
-  spaceSlug: string;
 }
 
-export const TokenLabel = ({ tokenAddress, spaceSlug }: TokenLabelProps) => {
-  const { tokens } = useTokens({ spaceSlug });
+export const TokenLabel = ({ tokenAddress }: TokenLabelProps) => {
+  const { tokens } = useTokens();
   const token = tokens.find(
     (t) => t.address.toLowerCase() === tokenAddress?.toLowerCase(),
   );

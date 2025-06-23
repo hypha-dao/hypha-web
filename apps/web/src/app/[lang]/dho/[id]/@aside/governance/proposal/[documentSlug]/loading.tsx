@@ -23,7 +23,6 @@ export default function Loading() {
         title={''}
         status={''}
         isLoading={true}
-        spaceSlug={''}
       />
     </SidePanel>
   );

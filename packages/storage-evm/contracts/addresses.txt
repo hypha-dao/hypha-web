@@ -10,7 +10,6 @@ JoinMethodDirectory deployed to: 0xaa86924F59852f48dD5185469D146BdcF8448D56
 
 Deploying OpenJoin...
 OpenJoin deployed to: 0x957e7671Db34773d7d28FedA03Ca762BA3611dc0
-ID 0
 
 Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying DAOProposals...
@@ -38,7 +37,6 @@ Voting power source added successfully with ID: 2
 Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying TokenBalanceJoin...
 TokenBalanceJoin deployed to: 0x41cD69A3a3715B16598415df336a8Cc533CCAF76
-ID 1
 
 Deploying DecayingTokenFactory with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying DecayingTokenFactory...
@@ -53,16 +51,8 @@ Deploying VoteDecayTokenVotingPower...
 VoteDecayTokenVotingPower proxy deployed to: 0x6dB5E05B21c68550B63a7404a3B68F81c159DAee
 Voting power source added successfully with ID: 3
 
-Deploying OwnershipTokenFactory with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
-Deploying OwnershipTokenFactory...
-OwnershipTokenFactory proxy deployed to: 0xA1eDf096B72226ae2f7BDEb12E9c9C82152BccB6
-
-Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
-Deploying Escrow...
-Escrow deployed to: 0x447A317cA5516933264Cdd6aeee0633Fa954B576
-
 Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying Agreements...
 Agreements deployed to: 0x83B5d4F555A68126bB302685e67767Bb7a2985F0
 
-
+OwnershipTokenFactory proxy deployed to: 0xA1eDf096B72226ae2f7BDEb12E9c9C82152BccB6

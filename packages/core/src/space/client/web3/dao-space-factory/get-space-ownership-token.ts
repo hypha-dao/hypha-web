@@ -3,7 +3,7 @@ import {
   ownershipTokenFactoryAddress,
 } from '@core/generated';
 
-export const getSpaceOwnershipTokens = ({
+export const getSpaceOwnershipToken = ({
   spaceId,
   chain = 8453,
 }: {

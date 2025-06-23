@@ -11,7 +11,6 @@ import {
   FormField,
   FormItem,
   FormMessage,
-  Skeleton,
 } from '@hypha-platform/ui';
 import { useState } from 'react';
 import { useFormContext } from 'react-hook-form';
@@ -42,7 +41,7 @@ export const ChangeEntryMethodPlugin = (_props: {
   members: Person[];
 }) => {
   const [tokenBased, setTokenBased] = useState(false);
-  const { tokens, isLoading } = useTokens({ spaceSlug: _props.spaceSlug });
+  const { tokens } = useTokens();
   const { getValues, control } = useFormContext();
 
   return (
@@ -63,18 +62,16 @@ export const ChangeEntryMethodPlugin = (_props: {
               render={({ field: { value, onChange } }) => (
                 <FormItem>
                   <FormControl>
-                    <Skeleton loading={isLoading} width={'100%'} height={24}>
-                      <EntryMethodTokenField
-                        value={{
-                          amount: value?.amount || 0,
-                          token: (value?.token ||
-                            tokens[0]?.address ||
-                            zeroAddress) as Address,
-                        }}
-                        onChange={onChange}
-                        tokens={tokens}
-                      />
-                    </Skeleton>
+                    <EntryMethodTokenField
+                      value={{
+                        amount: value?.amount || 0,
+                        token: (value?.token ||
+                          tokens[0]?.address ||
+                          zeroAddress) as Address,
+                      }}
+                      onChange={onChange}
+                      tokens={tokens}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

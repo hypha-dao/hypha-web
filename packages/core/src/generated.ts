@@ -1882,16 +1882,6 @@ export const decayingTokenFactoryAbi = [
   },
   {
     type: 'function',
-    inputs: [
-      { name: '', internalType: 'uint256', type: 'uint256' },
-      { name: '', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'allSpaceTokens',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     inputs: [],
     name: 'decayVotingPowerContract',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
@@ -1917,7 +1907,7 @@ export const decayingTokenFactoryAbi = [
     type: 'function',
     inputs: [{ name: 'spaceId', internalType: 'uint256', type: 'uint256' }],
     name: 'getSpaceToken',
-    outputs: [{ name: '', internalType: 'address[]', type: 'address[]' }],
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
     stateMutability: 'view',
   },
   {
@@ -2214,16 +2204,6 @@ export const ownershipTokenFactoryAbi = [
   {
     type: 'function',
     inputs: [
-      { name: '', internalType: 'uint256', type: 'uint256' },
-      { name: '', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'allSpaceTokens',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
       { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
       { name: 'name', internalType: 'string', type: 'string' },
       { name: 'symbol', internalType: 'string', type: 'string' },
@@ -2238,7 +2218,7 @@ export const ownershipTokenFactoryAbi = [
     type: 'function',
     inputs: [{ name: 'spaceId', internalType: 'uint256', type: 'uint256' }],
     name: 'getSpaceToken',
-    outputs: [{ name: '', internalType: 'address[]', type: 'address[]' }],
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
     stateMutability: 'view',
   },
   {
@@ -2522,16 +2502,6 @@ export const regularTokenFactoryAbi = [
   {
     type: 'function',
     inputs: [
-      { name: '', internalType: 'uint256', type: 'uint256' },
-      { name: '', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'allSpaceTokens',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
       { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
       { name: 'name', internalType: 'string', type: 'string' },
       { name: 'symbol', internalType: 'string', type: 'string' },
@@ -2547,7 +2517,7 @@ export const regularTokenFactoryAbi = [
     type: 'function',
     inputs: [{ name: 'spaceId', internalType: 'uint256', type: 'uint256' }],
     name: 'getSpaceToken',
-    outputs: [{ name: '', internalType: 'address[]', type: 'address[]' }],
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
     stateMutability: 'view',
   },
   {

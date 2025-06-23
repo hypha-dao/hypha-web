@@ -11,17 +11,15 @@ import { TokenSelectorField } from '../components/common/token-selector-field';
 import { useTokens } from '@hypha-platform/epics';
 import { QuorumAndUnityChangerField } from '../components/common/quorum-and-unity-change-field';
 import { useFormContext } from 'react-hook-form';
-import { Skeleton } from '@hypha-platform/ui';
 
 export const ChangeVotingMethodPlugin = ({
-  spaceSlug,
   members,
 }: {
   spaceSlug: string;
   members: Person[];
 }) => {
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
-  const { tokens, isLoading } = useTokens({ spaceSlug });
+  const { tokens } = useTokens();
   const { setValue } = useFormContext();
 
   const handleMethodChange = (method: VotingMethodId | null) => {
@@ -50,9 +48,7 @@ export const ChangeVotingMethodPlugin = ({
         </>
       )}
       {selectedMethod === '1t1v' && (
-        <Skeleton loading={isLoading} width={'100%'} height={24}>
-          <TokenSelectorField name="token" tokens={tokens} />
-        </Skeleton>
+        <TokenSelectorField name="token" tokens={tokens} />
       )}
       <QuorumAndUnityChangerField name="quorumAndUnity" />
     </div>
