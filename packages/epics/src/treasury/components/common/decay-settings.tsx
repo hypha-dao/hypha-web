@@ -36,16 +36,16 @@ type DecaySettingsProps = {
 };
 
 export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
-  const [decayPeriod, setDecayPeriod] = React.useState<number | ''>(0);
+  const [decayPeriod, setDecayPeriod] = React.useState<number>(0);
   const [timeFormat, setTimeFormat] = React.useState<TimeFormat>('Weeks');
-  const [decayPercent, setDecayPercent] = React.useState<number | ''>(0);
+  const [decayPercent, setDecayPercent] = React.useState<number>(0);
 
   React.useEffect(() => {
     notifyChange();
   }, [decayPeriod, timeFormat, decayPercent]);
 
   const notifyChange = () => {
-    if (onChange && decayPeriod !== '' && decayPercent !== '') {
+    if (onChange && !Number.isNaN(decayPeriod) && !Number.isNaN(decayPercent)) {
       const decayInterval = decayPeriod * TIME_FORMAT_TO_SECONDS[timeFormat];
       onChange({
         decayInterval,
@@ -56,7 +56,7 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
 
   const handleDecayPeriodChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    const num = val === '' ? '' : Number(val);
+    const num = val === '' ? 0 : Number(val);
     setDecayPeriod(num);
   };
 
@@ -67,7 +67,7 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
 
   const handleDecayPercentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    const num = val === '' ? '' : Number(val);
+    const num = val === '' ? 0 : Number(val);
     setDecayPercent(num);
   };
 
@@ -83,7 +83,7 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
             <Input
               id="decay-period"
               type="number"
-              value={decayPeriod === '' ? '' : decayPeriod}
+              value={Number.isNaN(decayPeriod) ? 0 : decayPeriod}
               onChange={handleDecayPeriodChange}
               placeholder="Decay period"
             />
@@ -116,7 +116,7 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
             type="number"
             min={1}
             max={100}
-            value={decayPercent === '' ? '' : decayPercent}
+            value={Number.isNaN(decayPercent) ? 0 : decayPercent}
             onChange={handleDecayPercentChange}
             placeholder="Decay"
             rightIcon={<PercentIcon size={'14px'} />}
