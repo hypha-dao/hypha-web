@@ -78,7 +78,7 @@ export const useChangeVotingMethodMutationsWeb3Rpc = (config?: Config) => {
 
         arg.members.forEach(({ member, number }) => {
           txData.push({
-            target: tokenAddress as `0x${string}`,
+            target: tokenAddress[0] as `0x${string}`,
             value: 0,
             data: encodeFunctionData({
               abi: decayingSpaceTokenAbi,
