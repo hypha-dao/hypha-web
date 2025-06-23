@@ -21,7 +21,7 @@ export async function getTokenMeta(
   try {
     return {
       symbol: symbol,
-      icon: '/placeholder/space-avatar-image.png',
+      icon: '/placeholder/token-icon.png',
       name: symbol,
       status: 'utility',
     };

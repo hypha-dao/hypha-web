@@ -32,8 +32,8 @@ export const AssetsList: FC<AssetsListProps> = ({
 
       {isLoading && (
         <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-          <AssetCard isLoading={true} />
-          <AssetCard isLoading={true} />
+          <AssetCard isLoading />
+          <AssetCard isLoading />
         </div>
       )}
     </div>
