@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSpaceService } from '@hypha-platform/core/server';
 import {
   getSpaceDetails,
-  getSpaceRegularTokens,
-  getSpaceDecayingTokens,
-  getSpaceOwnershipTokens,
+  getSpaceRegularToken,
+  getSpaceDecayingToken,
+  getSpaceOwnershipToken,
 } from '@core/space';
 import { TOKENS, publicClient, getBalance, getTokenMeta } from '@core/common';
+import { paginate } from '@core/common/server';
+import { zeroAddress } from 'viem';
 
 export async function GET(
   request: NextRequest,
@@ -33,9 +35,9 @@ export async function GET(
 
       spaceTokens = await publicClient.multicall({
         contracts: [
-          getSpaceRegularTokens({ spaceId }),
-          getSpaceOwnershipTokens({ spaceId }),
-          getSpaceDecayingTokens({ spaceId }),
+          getSpaceRegularToken({ spaceId }),
+          getSpaceOwnershipToken({ spaceId }),
+          getSpaceDecayingToken({ spaceId }),
         ],
       });
     } catch (err: any) {
@@ -66,10 +68,9 @@ export async function GET(
     spaceTokens = spaceTokens
       .filter(
         (response) =>
-          response.status === 'success' && response.result.length !== 0,
+          response.status === 'success' && response.result !== zeroAddress,
       )
-      .map(({ result }) => result)
-      .flat() as `0x${string}`[];
+      .map(({ result }) => result as `0x${string}`);
 
     const assets = await Promise.all(
       TOKENS.map((token) => token.address)
@@ -89,13 +90,45 @@ export async function GET(
           };
         }),
     );
-
     const sorted = assets.sort((a, b) =>
       a.usdEqual === b.usdEqual ? b.usdEqual - a.usdEqual : b.value - a.value,
     );
 
+    const url = new URL(request.url);
+    const page = url.searchParams.get('page');
+    const pageSize = url.searchParams.get('pageSize');
+    const status = url.searchParams.get('status');
+
+    const parsedPage = page ? Number(page) : undefined;
+    const parsedPageSize = pageSize ? Number(pageSize) : undefined;
+    if (
+      parsedPage !== undefined &&
+      (!Number.isInteger(parsedPage) || parsedPage < 1)
+    ) {
+      return NextResponse.json(
+        { error: 'Invalid page parameter' },
+        { status: 400 },
+      );
+    }
+    if (
+      parsedPageSize !== undefined &&
+      (!Number.isInteger(parsedPageSize) || parsedPageSize < 1)
+    ) {
+      return NextResponse.json(
+        { error: 'Invalid pageSize parameter' },
+        { status: 400 },
+      );
+    }
+
+    const paginated = paginate(sorted, {
+      page: parsedPage,
+      pageSize: parsedPageSize,
+      filter: status ? { status } : {},
+    });
+
     return NextResponse.json({
-      assets: sorted,
+      assets: paginated.data,
+      pagination: paginated.pagination,
       balance: sorted.reduce((sum, asset) => sum + asset.usdEqual, 0),
     });
   } catch (error) {

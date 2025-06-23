@@ -33,7 +33,6 @@ type ProposalDetailProps = ProposalHeadProps & {
   leadImage?: string;
   attachments?: string[];
   proposalId?: number | null | undefined;
-  spaceSlug: string;
 };
 
 export const ProposalDetail = ({
@@ -52,7 +51,6 @@ export const ProposalDetail = ({
   proposalId,
   updateProposalData,
   updateProposalsList,
-  spaceSlug,
 }: ProposalDetailProps) => {
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: proposalId as number,
@@ -134,7 +132,6 @@ export const ProposalDetail = ({
           key={idx}
           token={method.token}
           amount={method.amount}
-          spaceSlug={spaceSlug}
         />
       ))}
       {proposalDetails?.tokens.map((token, idx) => (
@@ -151,7 +148,6 @@ export const ProposalDetail = ({
           recipient={tx?.recipient}
           amount={tx?.rawAmount}
           tokenAddress={tx?.token}
-          spaceSlug={spaceSlug}
         />
       ))}
       {proposalDetails?.mintings.map((mint, idx) => (

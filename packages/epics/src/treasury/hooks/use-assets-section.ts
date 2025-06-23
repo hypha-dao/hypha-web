@@ -4,33 +4,32 @@ import { FILTER_OPTIONS_ASSETS } from '../../common/constants';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 
 const filterOptions = FILTER_OPTIONS_ASSETS;
-const PAGE_SIZE = 2;
 
 export const useAssetsSection = () => {
   const [activeFilter, setActiveFilter] = React.useState('all');
-  const [visibleCount, setVisibleCount] = React.useState(PAGE_SIZE);
+  const [pages, setPages] = React.useState(1);
 
-  const { isLoading, balance, assets } = useAssets({
+  const { isLoading, pagination, balance } = useAssets({
     ...(activeFilter !== 'all' && { filter: { status: activeFilter } }),
   });
 
   React.useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
-  }, [activeFilter, assets]);
+    setPages(1);
+  }, [activeFilter]);
 
   const loadMore = React.useCallback(() => {
-    setVisibleCount((prev) => prev + PAGE_SIZE);
-  }, []);
+    if (!pagination?.hasNextPage) return;
+    setPages(pages + 1);
+  }, [pages, pagination?.hasNextPage, setPages]);
 
   const totalBalance = `$ ${formatCurrencyValue(balance)}`;
-  const visibleAssets = assets.slice(0, visibleCount);
-  const hasMore = visibleCount < assets.length;
 
   return {
     isLoading,
     loadMore,
-    visibleAssets,
-    hasMore,
+    pagination,
+    pages,
+    setPages,
     activeFilter,
     setActiveFilter,
     filterOptions,

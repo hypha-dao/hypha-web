@@ -115,18 +115,9 @@ export const useChangeEntryMethodOrchestrator = ({
   authToken,
   config,
 }: UseCreateChangeEntryMethodOrchestratorInput) => {
+  const agreementFiles = useAgreementFileUploads(authToken);
   const web2 = useAgreementMutationsWeb2Rsc(authToken);
   const web3 = useChangeEntryMethodMutationsWeb3Rpc(config);
-  const agreementFiles = useAgreementFileUploads(
-    authToken,
-    (uploadedFiles, slug) => {
-      web2.updateAgreementBySlug({
-        slug: slug ?? '',
-        attachments: uploadedFiles?.attachments,
-        leadImage: uploadedFiles?.leadImage,
-      });
-    },
-  );
 
   const [taskState, dispatch] = React.useReducer(
     progressStateReducer,
@@ -225,23 +216,36 @@ export const useChangeEntryMethodOrchestrator = ({
     },
   );
 
-  const { data: updatedWeb2Agreement } = useSWR(
-    web2.createdAgreement?.slug &&
-      taskState.UPLOAD_FILES.status === TaskStatus.IS_DONE &&
-      (!config ||
-        taskState.CREATE_WEB3_CHANGE_ENTRY_METHOD.status === TaskStatus.IS_DONE)
+  const key =
+    web2.createdAgreement?.slug && agreementFiles.files
       ? [
           web2.createdAgreement.slug,
+          agreementFiles.files,
           web3.changeEntryMethodData?.proposalId,
-          'linkingWeb2AndWeb3',
+          'linkingWeb2AndWeb3Token',
+        ]
+      : null;
+  const { data: updatedWeb2Agreement } = useSWR(
+    web2.createdAgreement?.slug && agreementFiles.files
+      ? [
+          web2.createdAgreement.slug,
+          agreementFiles.files,
+          web3.changeEntryMethodData?.proposalId,
+          'linkingWeb2AndWeb3Token',
         ]
       : null,
-    async ([slug, web3ProposalId]) => {
+    async ([slug, uploadedFiles, web3ProposalId]) => {
       try {
         startTask('LINK_WEB2_AND_WEB3_CHANGE_ENTRY_METHOD');
         const result = await web2.updateAgreementBySlug({
           slug,
           web3ProposalId: web3ProposalId ? Number(web3ProposalId) : undefined,
+          attachments: uploadedFiles.attachments
+            ? Array.isArray(uploadedFiles.attachments)
+              ? uploadedFiles.attachments
+              : [uploadedFiles.attachments]
+            : [],
+          leadImage: uploadedFiles.leadImage,
         });
         completeTask('LINK_WEB2_AND_WEB3_CHANGE_ENTRY_METHOD');
         return result;
@@ -251,10 +255,6 @@ export const useChangeEntryMethodOrchestrator = ({
         }
         throw error;
       }
-    },
-    {
-      revalidateOnMount: true,
-      shouldRetryOnError: false,
     },
   );
 
@@ -276,9 +276,8 @@ export const useChangeEntryMethodOrchestrator = ({
     reset,
     createChangeEntryMethod,
     changeEntryMethod: {
-      ...web2.createdAgreement,
-      ...web3.changeEntryMethodData,
       ...updatedWeb2Agreement,
+      ...web3.changeEntryMethodData,
     },
     taskState,
     currentAction,
