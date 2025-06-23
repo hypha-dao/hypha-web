@@ -11,8 +11,14 @@ import {
   TokenMaxSupplyField,
 } from '../../components';
 import { DecaySettingsField } from '../../components/common/decay-settings-field';
+import { useFormContext } from 'react-hook-form';
+import { useState } from 'react';
 
 export const IssueNewTokenPlugin = () => {
+  const { getValues } = useFormContext();
+  const values = getValues();
+  const [tokenType, setTokenType] = useState<string>(values['type']);
+
   return (
     <div className="flex flex-col gap-4">
       <TokenNameField />
@@ -20,10 +26,18 @@ export const IssueNewTokenPlugin = () => {
       <TokenIconField />
       {/* <TokenDescriptionField /> */}
       {/* <TokenDigitsField /> */}
-      <TokenTypeField />
+      <TokenTypeField
+        onValueChange={(value: string) => {
+          setTokenType(value);
+        }}
+      />
       <TokenMaxSupplyField />
-      <Separator />
-      <DecaySettingsField name="decaySettings" />
+      {tokenType === 'voice' && (
+        <>
+          <Separator />
+          <DecaySettingsField name="decaySettings" />
+        </>
+      )}
     </div>
   );
 };

@@ -38,7 +38,13 @@ const TOKEN_TYPE_OPTIONS = [
   },
 ];
 
-export function TokenTypeField() {
+type TokenTypeFieldProps = {
+  onValueChange?: (value: string) => void;
+};
+
+export function TokenTypeField({
+  onValueChange,
+}: TokenTypeFieldProps) {
   const { control } = useFormContext();
 
   return (
@@ -52,7 +58,13 @@ export function TokenTypeField() {
               Token Type
             </FormLabel>
             <FormControl>
-              <Select value={field.value} onValueChange={field.onChange}>
+              <Select
+                value={field.value}
+                onValueChange={(value: string) => {
+                  field.onChange(value);
+                  onValueChange?.(value);
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a token type" />
                 </SelectTrigger>
