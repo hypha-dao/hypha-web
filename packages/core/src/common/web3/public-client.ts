@@ -6,5 +6,7 @@ export const publicClient = createPublicClient({
     multicall: { wait: 100 },
   },
   chain: base,
-  transport: http(process.env.NEXT_PUBLIC_RPC_URL),
+  transport: process.env.NEXT_PUBLIC_RPC_URL
+    ? http(process.env.NEXT_PUBLIC_RPC_URL)
+    : http(),
 });
