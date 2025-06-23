@@ -8,7 +8,6 @@ import {
 } from '@core/space';
 import { TOKENS, publicClient, getBalance, getTokenMeta } from '@core/common';
 import { paginate } from '@core/common/server';
-import { zeroAddress } from 'viem';
 
 export async function GET(
   request: NextRequest,
