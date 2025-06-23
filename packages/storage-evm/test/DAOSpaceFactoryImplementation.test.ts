@@ -4898,16 +4898,16 @@ describe('DAOSpaceFactoryImplementation', function () {
         console.log(`- Completed: ${escrowDetails.isCompleted}`);
         console.log(`- Cancelled: ${escrowDetails.isCancelled}`);
 
-        expect(escrowDetails.partyA).to.equal(await partyA.getAddress());
-        expect(escrowDetails.partyB).to.equal(await partyB.getAddress());
-        expect(escrowDetails.tokenA).to.equal(await tokenA.getAddress());
-        expect(escrowDetails.tokenB).to.equal(await tokenB.getAddress());
-        expect(escrowDetails.amountA).to.equal(amountA);
-        expect(escrowDetails.amountB).to.equal(amountB);
-        expect(escrowDetails.isPartyAFunded).to.be.false;
-        expect(escrowDetails.isPartyBFunded).to.be.false;
-        expect(escrowDetails.isCompleted).to.be.false;
-        expect(escrowDetails.isCancelled).to.be.false;
+        await expect(escrowDetails.partyA).to.equal(await partyA.getAddress());
+        await expect(escrowDetails.partyB).to.equal(await partyB.getAddress());
+        await expect(escrowDetails.tokenA).to.equal(await tokenA.getAddress());
+        await expect(escrowDetails.tokenB).to.equal(await tokenB.getAddress());
+        await expect(escrowDetails.amountA).to.equal(amountA);
+        await expect(escrowDetails.amountB).to.equal(amountB);
+        await expect(escrowDetails.isPartyAFunded).to.be.false;
+        await expect(escrowDetails.isPartyBFunded).to.be.false;
+        await expect(escrowDetails.isCompleted).to.be.false;
+        await expect(escrowDetails.isCancelled).to.be.false;
 
         console.log('✅ Escrow creation test passed!');
       });
@@ -5008,11 +5008,15 @@ describe('DAOSpaceFactoryImplementation', function () {
         console.log(`- Party B Funded: ${escrowDetails.isPartyBFunded}`);
         console.log(`- Completed: ${escrowDetails.isCompleted}`);
 
-        expect(escrowDetails.isPartyAFunded).to.be.true;
-        expect(escrowDetails.isPartyBFunded).to.be.false;
-        expect(escrowDetails.isCompleted).to.be.false;
-        expect(partyAFinalBalance).to.equal(partyAInitialBalance - amountA);
-        expect(escrowFinalBalance).to.equal(escrowInitialBalance + amountA);
+        await expect(escrowDetails.isPartyAFunded).to.be.true;
+        await expect(escrowDetails.isPartyBFunded).to.be.false;
+        await expect(escrowDetails.isCompleted).to.be.false;
+        await expect(partyAFinalBalance).to.equal(
+          partyAInitialBalance - amountA,
+        );
+        await expect(escrowFinalBalance).to.equal(
+          escrowInitialBalance + amountA,
+        );
 
         console.log('✅ Immediate funding test passed!');
       });
@@ -5221,10 +5225,10 @@ describe('DAOSpaceFactoryImplementation', function () {
         console.log(`- Cancelled: ${escrowDetails.isCancelled}`);
 
         // Assertions
-        expect(escrowDetails.isPartyAFunded).to.be.true;
-        expect(escrowDetails.isPartyBFunded).to.be.true;
-        expect(escrowDetails.isCompleted).to.be.true;
-        expect(escrowDetails.isCancelled).to.be.false;
+        await expect(escrowDetails.isPartyAFunded).to.be.true;
+        await expect(escrowDetails.isPartyBFunded).to.be.true;
+        await expect(escrowDetails.isCompleted).to.be.true;
+        await expect(escrowDetails.isCancelled).to.be.false;
 
         // Verify token transfers
         expect(finalBalances.partyATokenA).to.equal(
@@ -5374,10 +5378,10 @@ describe('DAOSpaceFactoryImplementation', function () {
         console.log(`- Party B Funded: ${escrowDetails.isPartyBFunded}`);
 
         // Assertions
-        expect(escrowDetails.isCancelled).to.be.true;
-        expect(escrowDetails.isPartyAFunded).to.be.false; // Should be false after withdrawal
-        expect(finalBalance).to.equal(initialBalance); // Should get all tokens back
-        expect(finalEscrowBalance).to.equal(0); // Escrow should be empty
+        await expect(escrowDetails.isCancelled).to.be.true;
+        await expect(escrowDetails.isPartyAFunded).to.be.false; // Should be false after withdrawal
+        await expect(finalBalance).to.equal(initialBalance); // Should get all tokens back
+        await expect(finalEscrowBalance).to.equal(0); // Escrow should be empty
 
         console.log(
           '✅ Cancellation and withdrawal test passed! All tokens returned correctly.',
@@ -5596,10 +5600,10 @@ describe('DAOSpaceFactoryImplementation', function () {
         const escrow2Final = await escrow.getEscrow(2);
         const escrow3Final = await escrow.getEscrow(3);
 
-        expect(escrow1Final.isCompleted).to.be.true;
-        expect(escrow2Final.isCancelled).to.be.true;
-        expect(escrow3Final.isCompleted).to.be.false;
-        expect(escrow3Final.isCancelled).to.be.false;
+        await expect(escrow1Final.isCompleted).to.be.true;
+        await expect(escrow2Final.isCancelled).to.be.true;
+        await expect(escrow3Final.isCompleted).to.be.false;
+        await expect(escrow3Final.isCancelled).to.be.false;
 
         console.log('✅ Multiple concurrent escrows test passed!');
       });
@@ -5880,7 +5884,7 @@ describe('DAOSpaceFactoryImplementation', function () {
       console.log('\n--- Testing escrow creator query functionality ---');
       const escrowExists = await actualEscrow.escrowExists(escrowId);
       console.log(`Escrow ${escrowId} exists: ${escrowExists}`);
-      expect(escrowExists).to.be.true;
+      await expect(escrowExists).to.be.true;
 
       // Create another escrow with a different creator (voter1)
       const createEscrowTx2 = await actualEscrow.connect(voter1).createEscrow(
@@ -6058,8 +6062,8 @@ describe('DAOSpaceFactoryImplementation', function () {
         await other.getAddress(),
       );
 
-      expect(isVoter1Member).to.be.true;
-      expect(isOtherMember).to.be.false;
+      await expect(isVoter1Member).to.be.true;
+      await expect(isOtherMember).to.be.false;
 
       console.log(`Voter1 is space member: ${isVoter1Member}`);
       console.log(`Other is space member: ${isOtherMember}`);
@@ -6117,7 +6121,7 @@ describe('DAOSpaceFactoryImplementation', function () {
       );
 
       // This test doesn't need assertions since it's just documentation
-      expect(true).to.be.true; // Placeholder assertion
+      await expect(true).to.be.true; // Placeholder assertion
     });
   });
 });
