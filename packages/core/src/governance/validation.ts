@@ -219,7 +219,7 @@ const decaySettingsSchema = z.object({
       required_error: 'Decay percentage is required',
       invalid_type_error: 'Decay percentage must be a number',
     })
-    .min(1, 'Decay percentage must be at least 1%')
+    .min(0, 'Decay percentage must be at least 0%')
     .max(100, 'Decay percentage must not exceed 100%'),
 });
 
