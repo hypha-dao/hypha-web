@@ -1,7 +1,6 @@
 'use client';
 
 import { Card } from '@hypha-platform/ui';
-import { useState } from 'react';
 import clsx from 'clsx';
 import { PlusCircledIcon } from '@radix-ui/react-icons';
 
@@ -38,17 +37,16 @@ const votingMethods: VotingMethod[] = [
 ];
 
 type VotingMethodSelectorProps = {
-  onChange?: (value: VotingMethodId) => void;
+  value?: VotingMethodId | null;
+  onChange?: (value: VotingMethodId | null) => void;
 };
 
 export const VotingMethodSelector = ({
+  value,
   onChange,
 }: VotingMethodSelectorProps) => {
-  const [selected, setSelected] = useState<VotingMethodId | null>(null);
-
   const handleSelect = (id: VotingMethodId, disabled?: boolean) => {
     if (disabled) return;
-    setSelected(id);
     if (onChange) {
       onChange(id);
     }
@@ -62,7 +60,7 @@ export const VotingMethodSelector = ({
           className={clsx(
             'flex p-5 cursor-pointer space-x-4 items-center border-2',
             {
-              'border-accent-9': selected === method.id,
+              'border-accent-9': value === method.id,
               'opacity-50 cursor-not-allowed': method.disabled,
               'hover:border-accent-5': !method.disabled,
             },

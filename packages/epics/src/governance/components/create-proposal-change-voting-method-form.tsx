@@ -41,8 +41,8 @@ export const CreateProposalChangeVotingMethodForm = ({
   const { jwt } = useJwt();
   const config = useConfig();
 
-  const { spaceDetails } = useSpaceDetailsWeb3Rpc({
-    spaceId: spaceId as number,
+  const { spaceDetails, isLoading } = useSpaceDetailsWeb3Rpc({
+    spaceId: web3SpaceId as number,
   });
   const {
     createChangeVotingMethod,
@@ -66,12 +66,42 @@ export const CreateProposalChangeVotingMethodForm = ({
       members: [],
       token: undefined as `0x${string}` | undefined,
       quorumAndUnity: {
-        quorum: Number(spaceDetails?.quorum || 0),
-        unity: Number(spaceDetails?.unity || 0),
+        quorum: 0,
+        unity: 0,
       },
       votingMethod: undefined,
     },
   });
+
+  const getVotingMethod = (
+    votingPowerSource: number | undefined,
+  ): FormValues['votingMethod'] => {
+    const votingMethodMap: Record<number, FormValues['votingMethod']> = {
+      1: '1t1v',
+      2: '1m1v',
+    };
+    return votingPowerSource ? votingMethodMap[votingPowerSource] : undefined;
+  };
+
+  React.useEffect(() => {
+    if (spaceDetails && !isLoading) {
+      const quorum = Number(spaceDetails.quorum ?? 0);
+      const unity = Number(spaceDetails.unity ?? 0);
+      const votingMethod = getVotingMethod(
+        Number(spaceDetails.votingPowerSource ?? 0),
+      );
+      console.log(form);
+      console.log(votingMethod);
+      form.reset(
+        {
+          ...form.getValues(),
+          quorumAndUnity: { quorum, unity },
+          votingMethod,
+        },
+        { keepDefaultValues: false },
+      );
+    }
+  }, [spaceDetails, isLoading]);
 
   const handleCreate = async (data: FormValues) => {
     if (!web3SpaceId || !data.votingMethod) return;
@@ -105,7 +135,7 @@ export const CreateProposalChangeVotingMethodForm = ({
   return (
     <LoadingBackdrop
       progress={progress}
-      isLoading={isPending}
+      isLoading={isPending || isLoading}
       message={
         isError ? (
           <div className="flex flex-col">
