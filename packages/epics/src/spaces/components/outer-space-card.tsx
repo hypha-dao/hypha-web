@@ -8,7 +8,12 @@ import {
   Skeleton,
   Image,
 } from '@hypha-platform/ui';
-import { MemberType } from '@hypha-platform/graphql/rsc';
+
+type MemberType = {
+  avatar: string;
+  name: string;
+  surname: string;
+};
 
 type OuterSpaceCardProps = {
   logo?: string;
