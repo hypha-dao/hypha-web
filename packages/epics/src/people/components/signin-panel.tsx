@@ -10,12 +10,12 @@ interface SigninPanelProps {
   isLoading: boolean;
 }
 
-export default function SigninPanel({
+export const SigninPanel = ({
   closeUrl,
   isLoading,
   signinUrl,
   signupUrl,
-}: SigninPanelProps) {
+}: SigninPanelProps) => {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex gap-6 justify-between">
