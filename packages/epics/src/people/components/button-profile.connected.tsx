@@ -36,7 +36,11 @@ export const ConnectedButtonProfile = ({
       userName={person?.name ?? ''}
       address={user?.wallet?.address}
       isConnected={isAuthenticated}
-      onLogin={login}
+      onLogin={
+        () => {
+          router.push(`/${lang}/profile/signin`)
+        }
+      }
       onLogout={logout}
       onProfile={() => {
         router.push(`/${lang}/profile/`);
