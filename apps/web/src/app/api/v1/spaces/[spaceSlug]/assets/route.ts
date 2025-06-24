@@ -91,7 +91,7 @@ export async function GET(
     );
 
     const sorted = assets.sort((a, b) =>
-      a.usdEqual === b.usdEqual ? b.usdEqual - a.usdEqual : b.value - a.value,
+      a.usdEqual === b.usdEqual ? b.value - a.value : b.usdEqual - a.usdEqual,
     );
 
     return NextResponse.json({
