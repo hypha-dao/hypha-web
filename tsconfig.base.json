@@ -24,6 +24,8 @@
       "@hypha-platform/evm": ["packages/evm/src/index.ts"],
       "@hypha-platform/epics": ["packages/epics/src/index.ts"],
       "@hypha-platform/feature-flags": ["packages/feature-flags/src/index.ts"],
+      "@hypha-platform/graphql": ["packages/api/graphql/src/index.ts"],
+      "@hypha-platform/graphql/rsc": ["packages/api/graphql/src/rsc.ts"],
       "@hypha-platform/i18n": ["packages/i18n/src/index.ts"],
       "@hypha-platform/i18n/client": ["packages/i18n/src/client.ts"],
       "@hypha-platform/lib/utils": ["packages/ui-utils/src/index.ts"],

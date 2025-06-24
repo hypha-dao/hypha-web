@@ -3,7 +3,7 @@ import {
   decayingTokenFactoryAddress,
 } from '@core/generated';
 
-export const getSpaceDecayingToken = ({
+export const getSpaceDecayingTokens = ({
   spaceId,
   chain = 8453,
 }: {
