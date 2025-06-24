@@ -1,7 +1,6 @@
 import { Text } from '@radix-ui/themes';
 import { Badge, Skeleton, Image, Input } from '@hypha-platform/ui';
-
-type Creator = { avatar: string; name: string; surname: string };
+import { Creator } from '@hypha-platform/graphql/rsc';
 
 export type CreateProposalFormHeadProps = {
   creator?: Creator;

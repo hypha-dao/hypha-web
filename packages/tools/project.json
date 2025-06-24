@@ -1,0 +1,31 @@
+{
+  "name": "tools",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/tools/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project tools --web",
+  "targets": {
+    "cli": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx src/cli.ts",
+        "cwd": "packages/tools"
+      }
+    },
+    "dao-to-json": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx src/cli.ts dao-to-json -o ./generated/daos.json",
+        "cwd": "packages/tools"
+      }
+    },
+    "dao-to-sql": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx src/cli.ts json-to-sql -i ./generated/daos.json -o ./generated/daos.sql -t daos",
+        "cwd": "packages/tools"
+      }
+    }
+  }
+}

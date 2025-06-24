@@ -29,6 +29,7 @@
 
 ### Packages
 
+- [api](./packages/api/README.md): Packages to integrate relevant systems via API
 - [authentication](./packages/authentication/README.md): Package that handles authentication functionality
 - [cookie](./packages/cookie/README.md): Package that hosts the cookie integration
 - [core](./packages/core/README.md): Core functionality and business logic
@@ -38,6 +39,7 @@
 - [model](./packages/model/README.md): Data models and type definitions
 - [storage-evm](./packages/storage-evm/README.md): EVM storage implementation
 - [storage-postgres](./packages/storage-postgres/README.md): PostgreSQL storage implementation
+- [tools](./packages/tools/README.md): Utility tools and helpers
 - [ui](./packages/ui/README.md): Package that hosts the UI component library
 - [ui-utils](./packages/ui-utils/README.md): Package that hosts UI utility functions and helpers
 

@@ -14,12 +14,12 @@ type AssetSectionProps = {
 
 export const AssetsSection: FC<AssetSectionProps> = ({ basePath }) => {
   const {
-    pages,
+    visibleAssets,
     activeFilter,
     setActiveFilter,
     isLoading,
     loadMore,
-    pagination,
+    hasMore,
     filterOptions,
     totalBalance,
   } = useAssetsSection();
@@ -34,29 +34,23 @@ export const AssetsSection: FC<AssetSectionProps> = ({ basePath }) => {
           </Link>
         </Button>
       </SectionFilter>
-      {pagination?.totalPages === 0 ? (
+      {visibleAssets.length === 0 && !isLoading ? (
         <Text className="text-neutra-11 mt-2 mb-6">List is empty</Text>
       ) : (
-        Array.from({ length: pages }).map((_, index) => (
-          <AssetsList
-            basePath={`${basePath}/token`}
-            page={index + 1}
-            key={`${basePath}-${index + 1}`}
-            activeFilter={activeFilter}
-          />
-        ))
+        <AssetsList
+          basePath={`${basePath}/token`}
+          assets={visibleAssets}
+          activeFilter={activeFilter}
+          isLoading={isLoading}
+        />
       )}
-      {pagination?.totalPages === 0 ? null : (
+      {hasMore && (
         <SectionLoadMore
           onClick={loadMore}
-          disabled={pagination?.totalPages === pages}
+          disabled={!hasMore}
           isLoading={isLoading}
         >
-          <Text>
-            {pagination?.totalPages === pages
-              ? 'No more assets'
-              : 'Load more assets'}
-          </Text>
+          <Text>Load more assets</Text>
         </SectionLoadMore>
       )}
     </div>
