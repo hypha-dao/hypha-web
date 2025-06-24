@@ -82,7 +82,7 @@ export const useChangeEntryMethodMutationsWeb3Rpc = (config?: Config) => {
             setTokenRequirementTx(
               arg.spaceId,
               arg.tokenBase?.token ?? zeroAddress,
-              arg.joinMethod ?? 0,
+              arg.tokenBase?.amount ?? 0,
             ),
             changeEntryMethodTx(arg.spaceId, arg.joinMethod),
           );
