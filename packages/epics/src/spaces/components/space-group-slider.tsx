@@ -38,9 +38,9 @@ export const SpaceGroupSlider = ({
           {spaces?.map((space) => (
             <CarouselItem
               key={space.title}
-              className="mb-5 w-full sm:w-[454px] max-w-[454px] flex-shrink-0"
+              className="w-full sm:w-[454px] max-w-[454px] flex-shrink-0"
             >
-              <Link className="w-96" href={getHref(space.slug as string)}>
+              <Link className="flex flex-col flex-1" href={getHref(space.slug as string)}>
                 <SpaceCard
                   description={space.description as string}
                   icon={space.logoUrl ?? '/placeholder/space-avatar-image.png'}

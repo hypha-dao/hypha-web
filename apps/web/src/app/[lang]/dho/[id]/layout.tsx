@@ -1,4 +1,4 @@
-import { JoinSpace, SpaceCard, WebLinks } from '@hypha-platform/epics';
+import { JoinSpace, SpaceCardWrapper, WebLinks } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import {
   Container,
@@ -17,6 +17,7 @@ import { getDhoPathGovernance } from './@tab/governance/constants';
 import { ActionButtons } from './_components/action-buttons';
 import { publicClient } from '@core/common';
 import { getSpaceDetails } from '@core/space';
+import { useMembers } from '@web/hooks/use-members';
 
 export default async function DhoLayout({
   aside,
@@ -108,26 +109,23 @@ export default async function DhoLayout({
                 {spaces.map((space) => (
                   <CarouselItem
                     key={space.id}
-                    className="mb-5 w-full sm:w-[454px] max-w-[454px] flex-shrink-0"
+                    className="w-full sm:w-[454px] max-w-[454px] flex-shrink-0"
                   >
-                    <Link
-                      className="w-96"
-                      href={getDhoPathGovernance(lang, space.slug as string)}
-                    >
-                      <SpaceCard
-                        description={space.description as string}
-                        icon={
-                          space.logoUrl || '/placeholder/space-avatar-image.png'
-                        }
-                        leadImage={
-                          space.leadImage || '/placeholder/space-lead-image.png'
-                        }
-                        members={0}
-                        agreements={0}
-                        title={space.title as string}
-                      />
-                    </Link>
-                  </CarouselItem>
+                  <Link
+                    className="flex flex-col flex-1"
+                    href={getDhoPathGovernance(lang, space.slug as string)}
+                  >
+                    <SpaceCardWrapper
+                      description={space.description as string}
+                      icon={space.logoUrl || ''}
+                      leadImage={space.leadImage || ''}
+                      agreements={space.documentCount}
+                      title={space.title as string}
+                      spaceSlug={space.slug as string}
+                      useMembers={useMembers}
+                    />
+                  </Link>
+                </CarouselItem>
                 ))}
               </CarouselContent>
             </Carousel>
