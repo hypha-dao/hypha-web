@@ -25,7 +25,7 @@ type FormValues = z.infer<typeof schemaCreateProposalChangeVotingMethod>;
 
 interface CreateProposalChangeVotingMethodFormProps {
   spaceId: number | undefined | null;
-  web3SpaceId: number | undefined | null;
+  web3SpaceId?: number | null;
   successfulUrl: string;
   plugin: React.ReactNode;
 }
@@ -90,16 +90,10 @@ export const CreateProposalChangeVotingMethodForm = ({
       const votingMethod = getVotingMethod(
         Number(spaceDetails.votingPowerSource ?? 0),
       );
-      console.log(form);
-      console.log(votingMethod);
-      form.reset(
-        {
-          ...form.getValues(),
-          quorumAndUnity: { quorum, unity },
-          votingMethod,
-        },
-        { keepDefaultValues: false },
-      );
+
+      form.setValue('quorumAndUnity.quorum', quorum);
+      form.setValue('quorumAndUnity.unity', unity);
+      form.setValue('votingMethod', votingMethod);
     }
   }, [spaceDetails, isLoading]);
 

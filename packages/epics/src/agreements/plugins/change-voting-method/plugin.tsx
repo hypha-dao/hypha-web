@@ -15,7 +15,9 @@ import {
 export const ChangeVotingMethodPlugin = ({
   spaceSlug,
   members,
+  web3SpaceId,
 }: {
+  web3SpaceId?: number | null;
   spaceSlug: string;
   members: Person[];
 }) => {
@@ -48,6 +50,7 @@ export const ChangeVotingMethodPlugin = ({
       <VotingMethodSelector
         value={votingMethod}
         onChange={handleMethodChange}
+        web3SpaceId={web3SpaceId}
       />
       {votingMethod === '1v1v' && (
         <>

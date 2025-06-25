@@ -3,6 +3,10 @@
 import { Card } from '@hypha-platform/ui';
 import clsx from 'clsx';
 import { PlusCircledIcon } from '@radix-ui/react-icons';
+import { useSpaceHasVoiceToken } from '@core/space';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@hypha-platform/ui';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 
 export type VotingMethodId = '1m1v' | '1v1v' | '1t1v';
 
@@ -12,6 +16,7 @@ type VotingMethod = {
   description: string;
   icon?: React.ReactNode;
   disabled?: boolean;
+  disabledTooltip?: string;
 };
 
 const votingMethods: VotingMethod[] = [
@@ -39,12 +44,46 @@ const votingMethods: VotingMethod[] = [
 type VotingMethodSelectorProps = {
   value?: VotingMethodId | null;
   onChange?: (value: VotingMethodId | null) => void;
+  web3SpaceId?: number | null;
 };
 
 export const VotingMethodSelector = ({
   value,
   onChange,
+  web3SpaceId,
 }: VotingMethodSelectorProps) => {
+  const { lang, id } = useParams();
+
+  if (!web3SpaceId) return null;
+
+  const { hasVoiceToken } = useSpaceHasVoiceToken({
+    spaceId: BigInt(web3SpaceId),
+  });
+
+  const updatedVotingMethods = votingMethods.map((method) => {
+    if (method.id === '1v1v') {
+      return {
+        ...method,
+        disabled: !hasVoiceToken,
+        disabledTooltip: !hasVoiceToken ? (
+          <div className="p-2">
+            To select this voting method you first need to issue your Voice
+            Token.{' '}
+            <Link
+              href={`/${lang}/dho/${id}/treasury/create/issue-new-token`}
+              className="text-accent-9 underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Click here
+            </Link>{' '}
+            to create your Voice Token
+          </div>
+        ) : undefined,
+      };
+    }
+    return method;
+  });
+
   const handleSelect = (id: VotingMethodId, disabled?: boolean) => {
     if (disabled) return;
     if (onChange) {
@@ -54,25 +93,33 @@ export const VotingMethodSelector = ({
 
   return (
     <div className="flex flex-col gap-4">
-      {votingMethods.map((method) => (
-        <Card
-          key={method.id}
-          className={clsx(
-            'flex p-5 cursor-pointer space-x-4 items-center border-2',
-            {
-              'border-accent-9': value === method.id,
-              'opacity-50 cursor-not-allowed': method.disabled,
-              'hover:border-accent-5': !method.disabled,
-            },
+      {updatedVotingMethods.map((method) => (
+        <Tooltip key={method.id}>
+          <TooltipTrigger asChild>
+            <Card
+              className={clsx(
+                'flex p-5 cursor-pointer space-x-4 items-center border-2',
+                {
+                  'border-accent-9': value === method.id,
+                  'opacity-50 cursor-not-allowed': method.disabled,
+                  'hover:border-accent-5': !method.disabled,
+                },
+              )}
+              onClick={() => handleSelect(method.id, method.disabled)}
+            >
+              <div>{method.icon}</div>
+              <div className="flex flex-col">
+                <span className="text-3 font-medium">{method.title}</span>
+                <span className="text-1 text-neutral-11">
+                  {method.description}
+                </span>
+              </div>
+            </Card>
+          </TooltipTrigger>
+          {method.disabled && method.disabledTooltip && (
+            <TooltipContent>{method.disabledTooltip}</TooltipContent>
           )}
-          onClick={() => handleSelect(method.id, method.disabled)}
-        >
-          <div>{method.icon}</div>
-          <div className="flex flex-col">
-            <span className="text-3 font-medium">{method.title}</span>
-            <span className="text-1 text-neutral-11">{method.description}</span>
-          </div>
-        </Card>
+        </Tooltip>
       ))}
     </div>
   );
