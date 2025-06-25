@@ -1,6 +1,8 @@
 'use client';
 
-import { PrivyProvider, PrivyProviderProps } from '@privy-io/react-auth';
+import { PrivyProvider } from '@privy-io/react-auth';
+import { SmartWalletsProvider } from '@privy-io/react-auth/smart-wallets';
+
 import React from 'react';
 import { PrivyAuthProvider } from './privy/provider';
 import { Web3AuthAuthProvider } from './web3auth/provider';
@@ -39,9 +41,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
           config={{ defaultChain: base }}
           appId={providerProps.config.appId}
         >
-          <EvmProvider>
-            <PrivyAuthProvider>{children}</PrivyAuthProvider>
-          </EvmProvider>
+          <SmartWalletsProvider>
+            <EvmProvider>
+              <PrivyAuthProvider>{children}</PrivyAuthProvider>
+            </EvmProvider>
+          </SmartWalletsProvider>
         </PrivyProvider>
       );
     case 'web3auth':
