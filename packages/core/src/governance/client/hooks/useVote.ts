@@ -3,13 +3,19 @@
 import { useCallback } from 'react';
 import { useAccount, useWriteContract } from 'wagmi';
 import { daoProposalsImplementationConfig } from '@core/generated';
+import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 
 export const useVote = ({ proposalId }: { proposalId?: number | null }) => {
   const { address } = useAccount();
+  const { client } = useSmartWallets();
+
   const { writeContractAsync } = useWriteContract();
 
   const vote = useCallback(
     async (proposalId: number, support: boolean) => {
+      if (!client) {
+        throw new Error('Smart wallet not connected');
+      }
       if (!address) {
         throw new Error('Wallet not connected');
       }
@@ -18,7 +24,7 @@ export const useVote = ({ proposalId }: { proposalId?: number | null }) => {
       }
 
       try {
-        const txHash = await writeContractAsync({
+        const txHash = await client.writeContract({
           address: daoProposalsImplementationConfig.address[8453],
           abi: daoProposalsImplementationConfig.abi,
           functionName: 'vote',
