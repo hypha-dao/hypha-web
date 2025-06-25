@@ -1,12 +1,11 @@
 'use client';
 
+import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 import { joinSpace } from '../web3/dao-space-factory/join-space';
-import { writeContract } from '@wagmi/core';
 import useSWRMutation from 'swr/mutation';
-import { useConfig } from 'wagmi';
 
 export const useJoinSpaceWeb3Rpc = ({ spaceId }: { spaceId: number }) => {
-  const config = useConfig();
+  const { client } = useSmartWallets();
 
   const {
     trigger: joinSpaceMutation,
@@ -15,9 +14,9 @@ export const useJoinSpaceWeb3Rpc = ({ spaceId }: { spaceId: number }) => {
     data: joinSpaceHash,
     error: errorJoinSpace,
   } = useSWRMutation(
-    config ? [config, spaceId, 'joinSpaceWeb3'] : null,
-    async ([config, spaceId]) => {
-      return writeContract(config, joinSpace({ spaceId: BigInt(spaceId) }));
+    client ? [spaceId, 'joinSpaceWeb3'] : null,
+    async ([spaceId]) => {
+      return client?.writeContract(joinSpace({ spaceId: BigInt(spaceId) }));
     },
   );
 
