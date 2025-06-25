@@ -16,11 +16,9 @@ export const AssetsSection: FC<AssetSectionProps> = ({ basePath }) => {
   const {
     visibleAssets,
     activeFilter,
-    setActiveFilter,
     isLoading,
     loadMore,
     hasMore,
-    filterOptions,
     totalBalance,
   } = useAssetsSection();
 

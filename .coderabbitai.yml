@@ -75,14 +75,6 @@ path_filters:
         performance: high
       description: 'Database migrations - focus on backward compatibility and data integrity'
 
-    # API (GraphQL & JSON-RPC)
-    'packages/api/**':
-      review_criteria:
-        security: high
-        performance: high
-        error_handling: high
-      description: 'API endpoints - focus on security, performance, and error handling'
-
     # Authentication
     'packages/authentication/**':
       review_criteria:
