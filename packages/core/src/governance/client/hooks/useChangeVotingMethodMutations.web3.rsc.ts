@@ -83,7 +83,7 @@ export const useChangeVotingMethodMutationsWeb3Rpc = (config?: Config) => {
             data: encodeFunctionData({
               abi: decayingSpaceTokenAbi,
               functionName: 'mint',
-              args: [member as `0x${string}`, BigInt(number) * 10n ** 18n],
+              args: [member as `0x${string}`, BigInt(number)],
             }),
           });
         });

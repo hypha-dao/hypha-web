@@ -11,7 +11,6 @@ export const useSpaceHasVoiceToken = ({ spaceId }: { spaceId: bigint }) => {
       publicClient.readContract(getSpaceDecayingTokens({ spaceId })),
     { revalidateOnFocus: true },
   );
-  console.log('data', data);
   const hasVoiceToken = data?.length !== 0;
 
   return {
