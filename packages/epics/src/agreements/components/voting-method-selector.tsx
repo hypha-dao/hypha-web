@@ -53,12 +53,11 @@ export const VotingMethodSelector = ({
   web3SpaceId,
 }: VotingMethodSelectorProps) => {
   const { lang, id } = useParams();
+  const { hasVoiceToken } = useSpaceHasVoiceToken({
+    spaceId: web3SpaceId ? BigInt(web3SpaceId) : BigInt(0),
+  });
 
   if (!web3SpaceId) return null;
-
-  const { hasVoiceToken } = useSpaceHasVoiceToken({
-    spaceId: BigInt(web3SpaceId),
-  });
 
   const updatedVotingMethods = votingMethods.map((method) => {
     if (method.id === '1v1v') {
