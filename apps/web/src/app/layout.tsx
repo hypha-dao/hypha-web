@@ -5,7 +5,6 @@ import { cookies } from 'next/headers';
 import { Lato, Source_Sans_3 } from 'next/font/google';
 import clsx from 'clsx';
 
-import { enableWeb3Auth } from '@hypha-platform/feature-flags';
 import {
   Footer,
   Html,
@@ -40,7 +39,6 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const isWeb3AuthEnabled = await enableWeb3Auth();
   const shouldInjectToolbar = process.env.NODE_ENV === 'development';
   const cookieStore = await cookies();
   const lang = cookieStore.get(HYPHA_LOCALE)?.value || i18nConfig.defaultLocale;
@@ -48,17 +46,9 @@ export default async function RootLayout({
   return (
     <Html className={clsx(lato.variable, sourceSans.variable)}>
       <AuthProvider
-        config={
-          isWeb3AuthEnabled
-            ? {
-                type: 'web3auth' as const,
-                clientId: process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID!,
-              }
-            : {
-                type: 'privy' as const,
-                appId: process.env.NEXT_PUBLIC_PRIVY_APP_ID!,
-              }
-        }
+        config={{
+          appId: process.env.NEXT_PUBLIC_PRIVY_APP_ID!,
+        }}
       >
         <ThemeProvider
           attribute="class"
