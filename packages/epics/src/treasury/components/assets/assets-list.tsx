@@ -1,7 +1,44 @@
 import { FC } from 'react';
 import { AssetCard } from './asset-card';
 import Link from 'next/link';
-import { AssetItem } from '@hypha-platform/graphql/rsc';
+
+type OneChartPoint = {
+  month: string;
+  value: number;
+  date: string;
+};
+
+type TransactionCardProps = {
+  id: string;
+  title: string;
+  description: string;
+  amount: number;
+  withUsdSymbol?: boolean;
+  badges: {
+    label: string;
+    variant: 'solid' | 'soft' | 'outline' | 'surface';
+  }[];
+  author: {
+    name: string;
+    surname: string;
+  };
+  isLoading?: boolean;
+  viewCount?: number;
+  commentCount?: number;
+};
+
+type AssetItem = {
+  icon: string;
+  name: string;
+  symbol: string;
+  value: number;
+  usdEqual: number;
+  status: string;
+  chartData: OneChartPoint[];
+  transactions: TransactionCardProps[];
+  closeUrl: string;
+  slug: string;
+};
 
 type AssetsListProps = {
   assets: AssetItem[];

@@ -33,6 +33,7 @@ export * from './upload/attachments-list';
 export * from './upload/token-icon';
 export * from './combobox';
 export * from './date-picker';
+export * from './tooltip';
 
 export * from './organisms/editor';
 export * from './molecules/badges-list';
