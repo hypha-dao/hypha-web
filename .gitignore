@@ -55,3 +55,6 @@ vite.config.*.timestamp*
 vitest.config.*.timestamp*
 .vercel
 .env*.local
+
+# Turbo
+.turbo
