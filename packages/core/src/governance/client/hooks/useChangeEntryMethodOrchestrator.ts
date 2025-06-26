@@ -116,7 +116,7 @@ export const useChangeEntryMethodOrchestrator = ({
   config,
 }: UseCreateChangeEntryMethodOrchestratorInput) => {
   const web2 = useAgreementMutationsWeb2Rsc(authToken);
-  const web3 = useChangeEntryMethodMutationsWeb3Rpc(config);
+  const web3 = useChangeEntryMethodMutationsWeb3Rpc();
   const agreementFiles = useAgreementFileUploads(
     authToken,
     (uploadedFiles, slug) => {

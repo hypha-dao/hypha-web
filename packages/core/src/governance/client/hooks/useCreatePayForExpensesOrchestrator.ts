@@ -112,7 +112,7 @@ export const useCreatePayForExpensesOrchestrator = ({
   config?: Config;
 }) => {
   const web2 = useAgreementMutationsWeb2Rsc(authToken);
-  const web3 = usePayForExpensesMutationsWeb3Rpc(config);
+  const web3 = usePayForExpensesMutationsWeb3Rpc();
   const agreementFiles = useAgreementFileUploads(
     authToken,
     (uploadedFiles, slug) => {

@@ -1,9 +1,10 @@
 'use client';
 
-import { Config, writeContract } from '@wagmi/core';
 import useSWRMutation from 'swr/mutation';
 import useSWR from 'swr';
 import { encodeFunctionData } from 'viem';
+import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
+
 import { publicClient } from '@core/common/web3/public-client';
 import { schemaCreateProposalWeb3 } from '@core/governance/validation';
 import {
@@ -32,7 +33,11 @@ interface CreateTokenArgs {
   decayInterval?: number;
 }
 
-export const useIssueTokenMutationsWeb3Rpc = (config?: Config) => {
+const chainId = 8453;
+
+export const useIssueTokenMutationsWeb3Rpc = () => {
+  const { client } = useSmartWallets();
+
   const {
     trigger: createIssueToken,
     reset: resetCreateIssueToken,
@@ -40,9 +45,9 @@ export const useIssueTokenMutationsWeb3Rpc = (config?: Config) => {
     data: createTokenHash,
     error: errorCreateToken,
   } = useSWRMutation(
-    config ? [config, 'createIssueToken'] : null,
-    async ([cfg], { arg }: { arg: CreateTokenArgs }) => {
-      const chainId = 8453;
+    client ? ['smart-wallet', 'createIssueToken'] : null,
+    async (_, { arg }: { arg: CreateTokenArgs }) => {
+      if (!client) throw new Error('Smart wallet client not available');
 
       let txData: Array<{
         target: `0x${string}`;
@@ -111,8 +116,8 @@ export const useIssueTokenMutationsWeb3Rpc = (config?: Config) => {
                 BigInt(arg.maxSupply),
                 arg.transferable,
                 arg.isVotingToken,
-                BigInt(arg.decayPercentage), // TODO: temp for MVP
-                BigInt(arg.decayInterval), // TODO: temp for MVP
+                BigInt(arg.decayPercentage),
+                BigInt(arg.decayInterval),
               ],
             }),
           },
@@ -126,7 +131,9 @@ export const useIssueTokenMutationsWeb3Rpc = (config?: Config) => {
       });
 
       const proposalArgs = mapToCreateProposalWeb3Input(parsedProposal);
-      return writeContract(cfg, createProposal(proposalArgs));
+
+      const txHash = await client.writeContract(createProposal(proposalArgs));
+      return txHash;
     },
   );
 

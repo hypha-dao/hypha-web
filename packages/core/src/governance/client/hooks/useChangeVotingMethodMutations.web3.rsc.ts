@@ -1,35 +1,43 @@
 'use client';
 
-import { Config, writeContract } from '@wagmi/core';
 import useSWRMutation from 'swr/mutation';
 import useSWR from 'swr';
 import { encodeFunctionData } from 'viem';
-import { publicClient } from '@core/common/web3/public-client';
-import { schemaCreateProposalWeb3 } from '@core/governance/validation';
+import { z } from 'zod';
+import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
+
 import {
+  createProposal,
   getProposalFromLogs,
   mapToCreateProposalWeb3Input,
-  createProposal,
 } from '../web3';
+import { schemaCreateProposalWeb3 } from '@core/governance/validation';
+import { publicClient } from '@core/common/web3/public-client';
+
 import {
   daoSpaceFactoryImplementationAbi,
   daoSpaceFactoryImplementationAddress,
-} from '@core/generated';
-import {
   decayingSpaceTokenAbi,
   decayingTokenFactoryAbi,
   decayingTokenFactoryAddress,
 } from '@core/generated';
 
+import { transactionSchema } from '@core/governance/validation';
+
+const chainId = 8453;
+type TxData = z.infer<typeof transactionSchema>;
+
 interface ChangeVotingMethodArgs {
   spaceId: number;
   members: { member: string; number: number }[];
-  token: `0x${string}` | undefined;
+  token: string | undefined;
   quorumAndUnity: { quorum: bigint; unity: bigint };
   votingMethod: '1m1v' | '1v1v' | '1t1v';
 }
 
-export const useChangeVotingMethodMutationsWeb3Rpc = (config?: Config) => {
+export const useChangeVotingMethodMutationsWeb3Rpc = () => {
+  const { client } = useSmartWallets();
+
   const {
     trigger: createChangeVotingMethod,
     reset: resetChangeVotingMethod,
@@ -37,17 +45,20 @@ export const useChangeVotingMethodMutationsWeb3Rpc = (config?: Config) => {
     data: createProposalHash,
     error: errorChangeVotingMethod,
   } = useSWRMutation(
-    config ? [config, 'changeVotingMethod'] : null,
-    async ([cfg], { arg }: { arg: ChangeVotingMethodArgs }) => {
-      const chainId = 8453;
+    client ? ['smart-wallet', 'changeVotingMethod'] : null,
+    async (_, { arg }: { arg: ChangeVotingMethodArgs }) => {
+      if (!client) throw new Error('Smart wallet client not available');
 
-      const txData: Array<{
-        target: `0x${string}`;
-        value: number;
-        data: `0x${string}`;
-      }> = [];
+      const transactions: TxData[] = [];
 
-      txData.push({
+      const votingMethodCode =
+        arg.votingMethod === '1m1v'
+          ? 2n
+          : arg.votingMethod === '1v1v'
+          ? 1n
+          : 2n;
+
+      transactions.push({
         target: daoSpaceFactoryImplementationAddress[chainId],
         value: 0,
         data: encodeFunctionData({
@@ -55,30 +66,24 @@ export const useChangeVotingMethodMutationsWeb3Rpc = (config?: Config) => {
           functionName: 'changeVotingMethod',
           args: [
             BigInt(arg.spaceId),
-            BigInt(
-              arg.votingMethod === '1m1v'
-                ? 2
-                : arg.votingMethod === '1v1v'
-                ? 1
-                : 2,
-            ),
-            BigInt(arg.quorumAndUnity.unity),
-            BigInt(arg.quorumAndUnity.quorum),
+            votingMethodCode,
+            arg.quorumAndUnity.unity,
+            arg.quorumAndUnity.quorum,
           ],
         }),
       });
 
       if (arg.votingMethod === '1v1v') {
-        const tokenAddress = await publicClient.readContract({
+        const [tokenAddress] = await publicClient.readContract({
           abi: decayingTokenFactoryAbi,
           address: decayingTokenFactoryAddress[chainId],
           functionName: 'getSpaceToken',
           args: [BigInt(arg.spaceId)],
         });
 
-        arg.members.forEach(({ member, number }) => {
-          txData.push({
-            target: tokenAddress[0] as `0x${string}`,
+        for (const { member, number } of arg.members) {
+          transactions.push({
+            target: tokenAddress as string,
             value: 0,
             data: encodeFunctionData({
               abi: decayingSpaceTokenAbi,
@@ -86,17 +91,20 @@ export const useChangeVotingMethodMutationsWeb3Rpc = (config?: Config) => {
               args: [member as `0x${string}`, BigInt(number) * 10n ** 18n],
             }),
           });
-        });
+        }
       }
 
-      const parsedProposal = schemaCreateProposalWeb3.parse({
+      const input = {
         spaceId: arg.spaceId,
         duration: 604800,
-        transactions: txData,
-      });
+        transactions,
+      };
 
-      const proposalArgs = mapToCreateProposalWeb3Input(parsedProposal);
-      return writeContract(cfg, createProposal(proposalArgs));
+      const parsedInput = schemaCreateProposalWeb3.parse(input);
+      const proposalArgs = mapToCreateProposalWeb3Input(parsedInput);
+
+      const txHash = await client.writeContract(createProposal(proposalArgs));
+      return txHash;
     },
   );
 
