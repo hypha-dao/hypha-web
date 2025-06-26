@@ -5,10 +5,17 @@ export const arrayOfAddresses = z
   .string()
   .transform((val) => val.split(',').filter((addr) => isAddress(addr)));
 
-export const stringifiedDate = z.string().transform((val) => {
+export const stringifiedDate = z.string().transform((val, ctx) => {
   const timestamp = Number(val);
+  const date = new Date(isNaN(timestamp) ? val : timestamp);
 
-  return new Date(isNaN(timestamp) ? val : timestamp);
+  if (isNaN(date.getTime())) {
+    ctx.addIssue({ code: z.ZodIssueCode.invalid_date });
+
+    return z.NEVER;
+  }
+
+  return date;
 });
 
 export const blockNumber = z.coerce.number().int().positive();
