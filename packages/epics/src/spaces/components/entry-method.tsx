@@ -1,7 +1,14 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Combobox } from '@hypha-platform/ui';
+import {
+  Card,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@hypha-platform/ui';
+import clsx from 'clsx';
+import { EntryMethodType } from '@core/governance/types';
+import { PlusCircledIcon } from '@radix-ui/react-icons';
 
 type EntryMethod = {
   name: string;
@@ -9,87 +16,84 @@ type EntryMethod = {
 };
 
 type EntryMethodProps = {
-  entryMethods?: EntryMethod[];
   value?: number;
-  onChange?: (selected: EntryMethod | { value: number }) => void;
+  onChange?: (selected: EntryMethodType) => void;
 };
 
-export const EntryMethod = ({
-  entryMethods = [],
-  onChange,
-  value,
-}: EntryMethodProps) => {
-  const [manualValue, setManualValue] = useState(value || 0);
+type EntryMethodOption = {
+  id: EntryMethodType;
+  title: string;
+  description: string;
+  icon?: React.ReactNode;
+  disabled?: boolean;
+  disabledTooltip?: string;
+};
 
-  useEffect(() => {
-    if (value !== undefined && value !== null) {
-      setManualValue(value);
+const entryMethods: EntryMethodOption[] = [
+  {
+    id: EntryMethodType.OPEN_ACCESS,
+    title: 'Open Access',
+    disabled: false,
+    icon: <PlusCircledIcon />,
+    description: 'Join to space immediately',
+  },
+  {
+    id: EntryMethodType.INVITE_ONLY,
+    title: 'Invite Only',
+    disabled: false,
+    icon: <PlusCircledIcon />,
+    description: 'Join to space by invite only',
+  },
+  {
+    id: EntryMethodType.TOKEN_BASED,
+    title: 'Token Based',
+    disabled: false,
+    icon: <PlusCircledIcon />,
+    description: 'Join to space only when match token requirements',
+  },
+];
+
+export const EntryMethod = ({ onChange, value }: EntryMethodProps) => {
+  const handleSelect = (value: EntryMethodType, disabled?: boolean) => {
+    if (disabled) return;
+    if (onChange) {
+      onChange(value);
     }
-  }, [value, entryMethods]);
-
-  const placeholder = 'Select Entry Method...';
-
-  const options = useMemo(
-    () =>
-      entryMethods.map((entryMethod) => ({
-        label: String(entryMethod.name),
-        value: String(entryMethod.value),
-      })),
-    [entryMethods],
-  );
-
-  const handleChange = useCallback(
-    (value: string) => {
-      const found = entryMethods.find((r) => String(r.value) === value) || null;
-
-      if (found) {
-        setManualValue(found.value);
-        onChange?.(found);
-      }
-    },
-    [entryMethods, onChange],
-  );
+  };
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex w-full justify-between items-center gap-2">
-        <label className="text-sm text-neutral-11">Entry Method</label>
-
-        <div className="flex items-center gap-2 min-w-[220px]">
-          <Combobox
-            options={options}
-            placeholder={placeholder}
-            onChange={handleChange}
-            initialValue={String(manualValue)}
-            renderOption={(option) => (
-              <>
-                {/* <Image
-                  src={option.avatarUrl}
-                  alt={option.label}
-                  width={24}
-                  height={24}
-                  className="rounded-full"
-                /> */}
-                <span>{option.label}</span>
-              </>
-            )}
-            renderValue={(option) =>
-              option ? (
-                <div className="flex items-center gap-2 truncate">
-                  {/* <Image
-                    src={option.avatarUrl}
-                    alt={option.label}
-                    width={24}
-                    height={24}
-                    className="rounded-full"
-                  /> */}
-                  <span className="truncate">{option.label}</span>
-                </div>
-              ) : (
-                placeholder
-              )
-            }
-          />
+        <div className="flex flex-col gap-4 w-full">
+          <label className="text-sm text-neutral-11">Entry Method</label>
+          {entryMethods.map((option) => (
+            <Tooltip key={option.id}>
+              <TooltipTrigger asChild>
+                <Card
+                  className={clsx(
+                    'flex p-5 cursor-pointer space-x-4 items-center border-2 w-full',
+                    {
+                      'border-accent-9': value === option.id,
+                      'opacity-50 cursor-not-allowed': option.disabled,
+                      'hover:border-accent-5': !option.disabled,
+                    },
+                  )}
+                  onClick={() => handleSelect(option.id, option.disabled)}
+                >
+                  <div>{option.icon}</div>
+                  <div className="flex flex-col">
+                    <span className="text-3 font-medium">{option.title}</span>
+                    <span className="text-1 text-neutral-11">
+                      {option.description}
+                    </span>
+                  </div>
+                </Card>
+              </TooltipTrigger>
+              {option.disabled && option.disabledTooltip && (
+                <TooltipContent>{option.disabledTooltip}</TooltipContent>
+              )}
+            </Tooltip>
+          ))}
         </div>
       </div>
     </div>

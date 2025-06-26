@@ -8,15 +8,14 @@ import {
   FormMessage,
 } from '@hypha-platform/ui';
 import { EntryMethod } from './entry-method';
+import { EntryMethodType } from '@core/governance';
 
 export function EntryMethodField({
-  entryMethods,
   value,
   onChange,
 }: {
-  entryMethods: any[];
   value?: any;
-  onChange?: (selected: any) => void;
+  onChange?: (selected: EntryMethodType) => void;
 }) {
   const { control } = useFormContext();
   return (
@@ -26,14 +25,7 @@ export function EntryMethodField({
       render={({ field }) => (
         <FormItem>
           <FormControl>
-            <EntryMethod
-              onChange={(entryMethod) => {
-                field.onChange(entryMethod.value);
-                onChange?.(entryMethod);
-              }}
-              entryMethods={entryMethods}
-              value={field.value ?? value}
-            />
+            <EntryMethod onChange={onChange} value={field.value ?? value} />
           </FormControl>
           <FormMessage />
         </FormItem>
