@@ -4,7 +4,6 @@ import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { AuthHook } from './shared/types';
 import React from 'react';
 import { useSetActiveWallet } from '@privy-io/wagmi';
-import { useAccount } from 'wagmi';
 import { useRouter } from 'next/navigation';
 
 export function useAuthentication(): AuthHook {
@@ -18,21 +17,27 @@ export function useAuthentication(): AuthHook {
     exportWallet,
   } = usePrivy();
 
-  const account = useAccount();
   const { wallets } = useWallets();
   const router = useRouter();
-
   const { setActiveWallet } = useSetActiveWallet();
+
+  const smartWallet = React.useMemo(() => {
+    return privyUser?.linkedAccounts?.find(
+      (account) => account.type === 'smart_wallet',
+    );
+  }, [privyUser]);
+
+  console.log('smartWallet', smartWallet);
 
   React.useEffect(() => {
     const activeWallet = wallets.find(
-      (wallet) => wallet.address === account.address,
+      (wallet) => wallet.address === smartWallet?.address,
     );
 
     if (activeWallet) {
       setActiveWallet(activeWallet);
     }
-  }, [account, wallets, setActiveWallet]);
+  }, [smartWallet?.address, wallets, setActiveWallet]);
 
   const login = React.useCallback(async (): Promise<void> => {
     privyLogin();
@@ -41,7 +46,7 @@ export function useAuthentication(): AuthHook {
   const logout = React.useCallback(async (): Promise<void> => {
     privyLogout();
     router.push('/network');
-  }, [privyLogout]);
+  }, [privyLogout, router]);
 
   const user = React.useMemo(() => {
     if (!authenticated || !privyUser?.id) return null;
@@ -49,19 +54,15 @@ export function useAuthentication(): AuthHook {
     return {
       id: privyUser.id,
       email: privyUser.email?.address,
-      ...(privyUser.wallet?.address && {
-        wallet: { address: privyUser.wallet.address as `0x${string}` },
+      ...(smartWallet?.address && {
+        wallet: { address: smartWallet.address as `0x${string}` },
       }),
     };
-  }, [privyUser, authenticated]);
+  }, [privyUser, authenticated, smartWallet]);
 
   const isEmbeddedWallet = React.useMemo(() => {
-    const connectedWallet = privyUser?.wallet;
-    return !!(
-      connectedWallet?.walletClientType === 'privy' &&
-      connectedWallet.chainType === 'ethereum'
-    );
-  }, [privyUser]);
+    return !!(smartWallet?.smartWalletType === 'coinbase_smart_wallet');
+  }, [smartWallet]);
 
   const handleExportWallet = React.useCallback(async () => {
     if (!isEmbeddedWallet) throw new Error('Not an embedded wallet');
