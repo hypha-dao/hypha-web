@@ -1,12 +1,11 @@
 'use client';
 
 import { usePrivy, useWallets } from '@privy-io/react-auth';
-import { AuthHook } from './shared/types';
 import React from 'react';
 import { useSetActiveWallet } from '@privy-io/wagmi';
 import { useRouter } from 'next/navigation';
 
-export function useAuthentication(): AuthHook {
+export function useAuthentication() {
   const {
     user: privyUser,
     authenticated,
