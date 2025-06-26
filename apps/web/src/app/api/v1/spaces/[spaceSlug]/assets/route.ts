@@ -7,9 +7,10 @@ import {
   getSpaceOwnershipTokens,
 } from '@core/space';
 import { TOKENS, publicClient, getBalance, getTokenMeta } from '@core/common';
+import { getMoralis } from '@core/common/web3';
 
 export async function GET(
-  request: NextRequest,
+  _: NextRequest,
   { params }: { params: Promise<{ spaceSlug: string }> },
 ) {
   const { spaceSlug } = await params;
@@ -61,6 +62,28 @@ export async function GET(
       );
     }
 
+    const moralisClient = await getMoralis();
+    const prices = new Map<string, number>();
+
+    try {
+      const response = await moralisClient.EvmApi.token.getMultipleTokenPrices(
+        { chain: '0x2105' },
+        {
+          tokens: TOKENS.map(({ address }) => {
+            return { tokenAddress: address };
+          }),
+        },
+      );
+
+      response.result
+        .filter((res) => res.tokenAddress !== undefined)
+        .forEach(({ usdPrice, tokenAddress }) => {
+          prices.set(tokenAddress as string, usdPrice);
+        });
+    } catch (error: unknown) {
+      console.error('Failed to fetch prices from Moralis for tokens:', error);
+    }
+
     const spaceAddress = spaceDetails.at(-1) as `0x${string}`;
 
     spaceTokens = spaceTokens
@@ -77,11 +100,12 @@ export async function GET(
         .map(async (token) => {
           const meta = await getTokenMeta(token);
           const { amount } = await getBalance(token, spaceAddress);
+          const rate = prices.get(token.toLowerCase()) || 0;
 
           return {
             ...meta,
             value: amount,
-            usdEqual: 0,
+            usdEqual: rate * amount,
             chartData: [],
             transactions: [],
             closeUrl: [],
