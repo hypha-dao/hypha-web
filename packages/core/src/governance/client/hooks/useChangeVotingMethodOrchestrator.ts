@@ -101,7 +101,7 @@ export const useCreateChangeVotingMethodOrchestrator = ({
   config?: Config;
 }) => {
   const web2 = useAgreementMutationsWeb2Rsc(authToken);
-  const web3 = useChangeVotingMethodMutationsWeb3Rpc(config);
+  const web3 = useChangeVotingMethodMutationsWeb3Rpc();
   const agreementFiles = useAgreementFileUploads(
     authToken,
     (uploadedFiles, slug) => {

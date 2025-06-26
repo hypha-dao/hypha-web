@@ -1,11 +1,12 @@
 'use client';
 
-import useSWRMutation from 'swr/mutation';
-import { Config, writeContract } from '@wagmi/core';
-import { getProposalFromLogs } from '../web3';
 import useSWR from 'swr';
-import { publicClient } from '@core/common/web3/public-client';
+import useSWRMutation from 'swr/mutation';
+import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 import { encodeFunctionData, erc20Abi, parseUnits } from 'viem';
+
+import { getProposalFromLogs } from '../web3';
+import { publicClient } from '@core/common/web3/public-client';
 import {
   daoProposalsImplementationAbi,
   daoProposalsImplementationAddress,
@@ -21,16 +22,24 @@ interface CreatePayForExpensesInput {
   recipient: string;
 }
 
-export const usePayForExpensesMutationsWeb3Rpc = (config?: Config) => {
+const chainId = 8453;
+
+export const usePayForExpensesMutationsWeb3Rpc = () => {
+  const { client } = useSmartWallets();
+
   const {
-    trigger: createPayForExpensesMutation,
+    trigger: createPayForExpenses,
     reset: resetCreatePayForExpensesMutation,
     isMutating: isCreatingPayForExpenses,
     data: createPayForExpensesHash,
     error: errorCreatePayForExpenses,
   } = useSWRMutation(
-    config ? [config, 'createPayForExpenses'] : null,
-    async ([config], { arg }: { arg: CreatePayForExpensesInput }) => {
+    client ? ['smart-wallet', 'createPayForExpenses'] : null,
+    async (_, { arg }: { arg: CreatePayForExpensesInput }) => {
+      if (!client) {
+        throw new Error('Smart wallet client not available');
+      }
+
       const transactions = await Promise.all(
         arg.payouts.map(async (payout) => {
           const decimals = await getTokenDecimals(payout.token);
@@ -51,19 +60,17 @@ export const usePayForExpensesMutationsWeb3Rpc = (config?: Config) => {
       const proposalParams = {
         spaceId: BigInt(arg.spaceId),
         duration: BigInt(86400),
-        transactions: transactions as readonly {
-          target: `0x${string}`;
-          value: bigint;
-          data: `0x${string}`;
-        }[],
+        transactions,
       };
 
-      return writeContract(config, {
-        address: daoProposalsImplementationAddress[8453],
+      const txHash = await client.writeContract({
+        address: daoProposalsImplementationAddress[chainId],
         abi: daoProposalsImplementationAbi,
         functionName: 'createProposal',
         args: [proposalParams],
       });
+
+      return txHash;
     },
   );
 
@@ -82,13 +89,13 @@ export const usePayForExpensesMutationsWeb3Rpc = (config?: Config) => {
   );
 
   return {
-    createPayForExpenses: createPayForExpensesMutation,
+    createPayForExpenses,
     resetCreatePayForExpensesMutation,
     isCreatingPayForExpenses,
-    isLoadingPayForExpensesFromTransaction,
-    errorCreatePayForExpenses,
-    errorWaitPayForExpensesFromTransaction,
     createPayForExpensesHash,
+    errorCreatePayForExpenses,
+    isLoadingPayForExpensesFromTransaction,
+    errorWaitPayForExpensesFromTransaction,
     createdPayForExpenses,
   };
 };
