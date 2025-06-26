@@ -1,1 +1,0 @@
-ALTER TABLE "people" ADD COLUMN "lead_image_url" text;

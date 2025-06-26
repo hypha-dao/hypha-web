@@ -1,1 +1,0 @@
-ALTER POLICY "crud-authenticated-policy-select" ON "people" TO authenticated USING (true);

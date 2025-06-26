@@ -1,1 +1,0 @@
-ALTER TABLE "documents" ALTER COLUMN "state" SET DEFAULT 'proposal';
