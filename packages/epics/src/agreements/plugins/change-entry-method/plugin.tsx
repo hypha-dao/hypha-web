@@ -1,6 +1,6 @@
 'use client';
 
-import { Address, EntryMethodType, Person } from '@hypha-platform/core/client';
+import { Address, EntryMethodType, Person, useSpaceDetailsWeb3Rpc } from '@hypha-platform/core/client';
 import {
   EntryMethodField,
   EntryMethodTokenField,
@@ -13,22 +13,35 @@ import {
   FormMessage,
   Skeleton,
 } from '@hypha-platform/ui';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { zeroAddress } from 'viem';
 
-export const ChangeEntryMethodPlugin = (_props: {
+export const ChangeEntryMethodPlugin = ({
+  spaceSlug,
+  web3SpaceId: spaceId,
+}: {
   spaceSlug: string;
   members: Person[];
+  web3SpaceId?: number | null;
 }) => {
+  // if (!_props.web3SpaceId) return null;
   const [tokenBased, setTokenBased] = useState(false);
-  const { tokens, isLoading } = useTokens({ spaceSlug: _props.spaceSlug });
+  const { tokens, isLoading } = useTokens({ spaceSlug });
   const { setValue, control } = useFormContext();
+  const { spaceDetails, isLoading: isSpaceDetailsLoading } = useSpaceDetailsWeb3Rpc({ spaceId: spaceId ?? 0 });
 
   const entryMethod = useWatch({
     control,
     name: 'entryMethod',
   });
+
+  useEffect(() => {
+    if (spaceDetails && !isLoading) {
+      const entryMethod = spaceDetails?.joinMethod ?? EntryMethodType.OPEN_ACCESS;
+      setValue('entryMethod', entryMethod);
+    }
+  }, [spaceDetails, isSpaceDetailsLoading]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -38,6 +51,7 @@ export const ChangeEntryMethodPlugin = (_props: {
           setTokenBased(selected === EntryMethodType.TOKEN_BASED);
           setValue('entryMethod', selected);
         }}
+        isLoading={isSpaceDetailsLoading}
       />
       {tokenBased && (
         <div className="flex items-end gap-2">
