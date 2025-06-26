@@ -12,6 +12,7 @@ export const useJoinSpace = ({ spaceId }: { spaceId: number }) => {
     data: isMember,
     isLoading,
     error,
+    mutate,
   } = useSWR(
     user?.wallet?.address ? [user.wallet.address, spaceId, 'isMember'] : null,
     async ([address, spaceId]) =>
@@ -26,5 +27,6 @@ export const useJoinSpace = ({ spaceId }: { spaceId: number }) => {
     isLoading,
     error,
     joinSpace: joinSpaceWeb3,
+    revalidateIsMember: mutate,
   };
 };
