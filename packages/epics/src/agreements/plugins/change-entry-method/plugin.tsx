@@ -1,6 +1,11 @@
 'use client';
 
-import { Address, EntryMethodType, Person, useSpaceDetailsWeb3Rpc } from '@hypha-platform/core/client';
+import {
+  Address,
+  EntryMethodType,
+  Person,
+  useSpaceDetailsWeb3Rpc,
+} from '@hypha-platform/core/client';
 import {
   EntryMethodField,
   EntryMethodTokenField,
@@ -28,7 +33,8 @@ export const ChangeEntryMethodPlugin = ({
   const [tokenBased, setTokenBased] = React.useState(false);
   const { tokens, isLoading } = useTokens({ spaceSlug });
   const { setValue, control } = useFormContext();
-  const { spaceDetails, isLoading: isSpaceDetailsLoading } = useSpaceDetailsWeb3Rpc({ spaceId: web3SpaceId as number });
+  const { spaceDetails, isLoading: isSpaceDetailsLoading } =
+    useSpaceDetailsWeb3Rpc({ spaceId: web3SpaceId as number });
 
   const entryMethod = useWatch({
     control,
@@ -38,7 +44,8 @@ export const ChangeEntryMethodPlugin = ({
 
   React.useEffect(() => {
     if (spaceDetails && !isLoading) {
-      const entryMethod = spaceDetails?.joinMethod ?? EntryMethodType.OPEN_ACCESS;
+      const entryMethod =
+        spaceDetails?.joinMethod ?? EntryMethodType.OPEN_ACCESS;
       setValue('entryMethod', entryMethod);
     }
   }, [spaceDetails, isSpaceDetailsLoading]);

@@ -50,7 +50,11 @@ const entryMethods: EntryMethodOption[] = [
   },
 ];
 
-export const EntryMethod = ({ onChange, value, isLoading }: EntryMethodProps) => {
+export const EntryMethod = ({
+  onChange,
+  value,
+  isLoading,
+}: EntryMethodProps) => {
   const handleSelect = (selection: EntryMethodType, disabled?: boolean) => {
     if (disabled) return;
     if (onChange) {
@@ -60,7 +64,7 @@ export const EntryMethod = ({ onChange, value, isLoading }: EntryMethodProps) =>
 
   const equalNumbers = (value1: any, value2: any, _default: any): boolean => {
     return Number(value1 ?? _default) === Number(value2 ?? _default);
-  }
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -75,7 +79,11 @@ export const EntryMethod = ({ onChange, value, isLoading }: EntryMethodProps) =>
                     className={clsx(
                       'flex p-5 cursor-pointer space-x-4 items-center border-2 w-full',
                       {
-                        'border-accent-9': equalNumbers(value, option.id, EntryMethodType.OPEN_ACCESS),
+                        'border-accent-9': equalNumbers(
+                          value,
+                          option.id,
+                          EntryMethodType.OPEN_ACCESS,
+                        ),
                         'opacity-50 cursor-not-allowed': option.disabled,
                         'hover:border-accent-5': !option.disabled,
                       },
@@ -91,7 +99,6 @@ export const EntryMethod = ({ onChange, value, isLoading }: EntryMethodProps) =>
                     </div>
                   </Card>
                 </Skeleton>
-                
               </TooltipTrigger>
               {option.disabled && option.disabledTooltip && (
                 <TooltipContent>{option.disabledTooltip}</TooltipContent>

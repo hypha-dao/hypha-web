@@ -27,7 +27,11 @@ export function EntryMethodField({
       render={({ field }) => (
         <FormItem>
           <FormControl>
-            <EntryMethod onChange={onChange} value={field.value as EntryMethodType ?? value} isLoading={isLoading} />
+            <EntryMethod
+              onChange={onChange}
+              value={(field.value as EntryMethodType) ?? value}
+              isLoading={isLoading}
+            />
           </FormControl>
           <FormMessage />
         </FormItem>
