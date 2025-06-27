@@ -48,10 +48,7 @@ const entryMethods: EntryMethodOption[] = [
   },
 ];
 
-export const EntryMethod = ({
-  onChange,
-  value,
-}: EntryMethodProps) => {
+export const EntryMethod = ({ onChange, value }: EntryMethodProps) => {
   const handleSelect = (selection: EntryMethodType, disabled?: boolean) => {
     if (disabled) return;
     if (onChange) {

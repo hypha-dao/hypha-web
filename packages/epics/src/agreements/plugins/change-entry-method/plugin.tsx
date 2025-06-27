@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  Address,
-  EntryMethodType,
-  Person,
-} from '@hypha-platform/core/client';
+import { Address, EntryMethodType, Person } from '@hypha-platform/core/client';
 import {
   EntryMethodField,
   EntryMethodTokenField,
