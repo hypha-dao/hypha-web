@@ -14,11 +14,14 @@ export default function Agreements() {
   const { id, lang } = useParams();
   const documentSlug = useDocumentSlug();
   const { document, isLoading, mutate } = useDocumentBySlug(documentSlug);
-  const { handleAccept, handleReject, handleCheckProposalExpiration } = useVote(
-    {
-      proposalId: document?.web3ProposalId,
-    },
-  );
+  const {
+    handleAccept,
+    handleReject,
+    handleCheckProposalExpiration,
+    isVoting,
+  } = useVote({
+    proposalId: document?.web3ProposalId,
+  });
   const { space } = useSpaceBySlug(id as string);
   const { update } = useSpaceDocumentsWithStatuses({
     spaceSlug: space?.slug as string,
@@ -34,6 +37,7 @@ export default function Agreements() {
         onCheckProposalExpiration={handleCheckProposalExpiration}
         updateProposalData={mutate}
         updateProposalsList={update}
+        isVoting={isVoting}
         content={document?.description}
         creator={{
           avatar: document?.creator?.avatarUrl || '',
