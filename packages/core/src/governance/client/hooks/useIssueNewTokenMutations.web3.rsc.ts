@@ -35,7 +35,11 @@ interface CreateTokenArgs {
 
 const chainId = 8453;
 
-export const useIssueTokenMutationsWeb3Rpc = ({ proposalSlug }: { proposalSlug?: string | null }) => {
+export const useIssueTokenMutationsWeb3Rpc = ({
+  proposalSlug,
+}: {
+  proposalSlug?: string | null;
+}) => {
   const { client } = useSmartWallets();
 
   const {

@@ -62,7 +62,11 @@ interface ChangeEntryMethodArgs {
   tokenBase?: TokenBase;
 }
 
-export const useChangeEntryMethodMutationsWeb3Rpc = ({ proposalSlug }: { proposalSlug?: string | null }) => {
+export const useChangeEntryMethodMutationsWeb3Rpc = ({
+  proposalSlug,
+}: {
+  proposalSlug?: string | null;
+}) => {
   const { client } = useSmartWallets();
 
   const {

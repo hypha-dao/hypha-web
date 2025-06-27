@@ -24,7 +24,11 @@ interface CreateDeployFundsInput {
 
 const chainId = 8453;
 
-export const useDeployFundsMutationsWeb3Rpc = ({ proposalSlug }: { proposalSlug?: string | null }) => {
+export const useDeployFundsMutationsWeb3Rpc = ({
+  proposalSlug,
+}: {
+  proposalSlug?: string | null;
+}) => {
   const { client } = useSmartWallets();
 
   const {

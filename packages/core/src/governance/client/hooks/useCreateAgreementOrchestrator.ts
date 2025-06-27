@@ -107,7 +107,9 @@ export const useCreateAgreementOrchestrator = ({
   config,
 }: UseCreateAgreementOrchestratorInput) => {
   const web2 = useAgreementMutationsWeb2Rsc(authToken);
-  const web3 = useAgreementMutationsWeb3Rpc({proposalSlug: web2.createdAgreement?.slug});
+  const web3 = useAgreementMutationsWeb3Rpc({
+    proposalSlug: web2.createdAgreement?.slug,
+  });
   const agreementFiles = useAgreementFileUploads(
     authToken,
     (uploadedFiles, slug) => {

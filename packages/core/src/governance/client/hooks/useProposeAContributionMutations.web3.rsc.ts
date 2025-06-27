@@ -24,7 +24,11 @@ interface CreateProposeAContributionInput {
 
 const chainId = 8453;
 
-export const useProposeAContributionMutationsWeb3Rpc = ({ proposalSlug }: { proposalSlug?: string | null }) => {
+export const useProposeAContributionMutationsWeb3Rpc = ({
+  proposalSlug,
+}: {
+  proposalSlug?: string | null;
+}) => {
   const { client } = useSmartWallets();
 
   const {
@@ -34,7 +38,9 @@ export const useProposeAContributionMutationsWeb3Rpc = ({ proposalSlug }: { prop
     data: createProposeAContributionHash,
     error: errorCreateProposeAContribution,
   } = useSWRMutation(
-    client ? ['smart-wallet', 'createProposeAContribution', proposalSlug] : null,
+    client
+      ? ['smart-wallet', 'createProposeAContribution', proposalSlug]
+      : null,
     async (_, { arg }: { arg: CreateProposeAContributionInput }) => {
       if (!client) {
         throw new Error('Smart wallet client not available');

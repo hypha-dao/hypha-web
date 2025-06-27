@@ -24,7 +24,11 @@ interface CreatePayForExpensesInput {
 
 const chainId = 8453;
 
-export const usePayForExpensesMutationsWeb3Rpc = ({ proposalSlug }: { proposalSlug?: string | null }) => {
+export const usePayForExpensesMutationsWeb3Rpc = ({
+  proposalSlug,
+}: {
+  proposalSlug?: string | null;
+}) => {
   const { client } = useSmartWallets();
 
   const {

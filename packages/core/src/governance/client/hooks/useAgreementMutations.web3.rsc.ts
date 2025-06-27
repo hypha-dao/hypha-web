@@ -21,7 +21,11 @@ import {
   daoProposalsImplementationAddress,
 } from '@core/generated';
 
-export const useAgreementMutationsWeb3Rpc = ({ proposalSlug }: { proposalSlug?: string | null }) => {
+export const useAgreementMutationsWeb3Rpc = ({
+  proposalSlug,
+}: {
+  proposalSlug?: string | null;
+}) => {
   const { client } = useSmartWallets();
 
   const {

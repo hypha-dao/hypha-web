@@ -35,7 +35,11 @@ interface ChangeVotingMethodArgs {
   votingMethod: '1m1v' | '1v1v' | '1t1v';
 }
 
-export const useChangeVotingMethodMutationsWeb3Rpc = ({ proposalSlug }: { proposalSlug?: string | null }) => {
+export const useChangeVotingMethodMutationsWeb3Rpc = ({
+  proposalSlug,
+}: {
+  proposalSlug?: string | null;
+}) => {
   const { client } = useSmartWallets();
 
   const {
@@ -81,7 +85,10 @@ export const useChangeVotingMethodMutationsWeb3Rpc = ({ proposalSlug }: { propos
           args: [BigInt(arg.spaceId)],
         });
 
-        if (!tokenAddress || tokenAddress === '0x0000000000000000000000000000000000000000') {
+        if (
+          !tokenAddress ||
+          tokenAddress === '0x0000000000000000000000000000000000000000'
+        ) {
           throw new Error('Invalid token address returned from getSpaceToken');
         }
 

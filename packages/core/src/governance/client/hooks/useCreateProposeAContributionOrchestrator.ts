@@ -112,7 +112,9 @@ export const useCreateProposeAContributionOrchestrator = ({
   config?: Config;
 }) => {
   const web2 = useAgreementMutationsWeb2Rsc(authToken);
-  const web3 = useProposeAContributionMutationsWeb3Rpc({proposalSlug: web2.createdAgreement?.slug});
+  const web3 = useProposeAContributionMutationsWeb3Rpc({
+    proposalSlug: web2.createdAgreement?.slug,
+  });
   const agreementFiles = useAgreementFileUploads(
     authToken,
     (uploadedFiles, slug) => {
