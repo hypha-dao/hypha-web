@@ -13,45 +13,36 @@ import {
   FormMessage,
   Skeleton,
 } from '@hypha-platform/ui';
-import { useState } from 'react';
-import { useFormContext } from 'react-hook-form';
+import React from 'react';
+import { useFormContext, useWatch } from 'react-hook-form';
 import { zeroAddress } from 'viem';
 
-type EntryMethodOption = {
-  name: string;
-  value: number;
-};
-
-const entryMethods: EntryMethodOption[] = [
-  {
-    name: 'Open Access',
-    value: EntryMethodType.OPEN_ACCESS,
-  },
-  {
-    name: 'Invite Only',
-    value: EntryMethodType.INVITE_ONLY,
-  },
-  {
-    name: 'Token Based',
-    value: EntryMethodType.TOKEN_BASED,
-  },
-];
-
-export const ChangeEntryMethodPlugin = (_props: {
+export const ChangeEntryMethodPlugin = ({
+  spaceSlug,
+}: {
   spaceSlug: string;
   members: Person[];
 }) => {
-  const [tokenBased, setTokenBased] = useState(false);
-  const { tokens, isLoading } = useTokens({ spaceSlug: _props.spaceSlug });
-  const { getValues, control } = useFormContext();
+  const [tokenBased, setTokenBased] = React.useState(false);
+  const { tokens, isLoading } = useTokens({ spaceSlug });
+  const { setValue, control } = useFormContext();
+
+  const entryMethod = useWatch({
+    control,
+    name: 'entryMethod',
+    defaultValue: EntryMethodType.OPEN_ACCESS,
+  });
+
+  React.useEffect(() => {
+    setTokenBased(entryMethod === EntryMethodType.TOKEN_BASED);
+  }, [entryMethod]);
 
   return (
     <div className="flex flex-col gap-4">
       <EntryMethodField
-        entryMethods={entryMethods}
-        value={getValues().entryMethod}
+        value={entryMethod as EntryMethodType}
         onChange={(selected) => {
-          setTokenBased(selected.value === EntryMethodType.TOKEN_BASED);
+          setValue('entryMethod', selected);
         }}
       />
       {tokenBased && (
