@@ -37,12 +37,15 @@ export const ChangeEntryMethodPlugin = ({
     defaultValue: EntryMethodType.OPEN_ACCESS,
   });
 
+  React.useEffect(() => {
+    setTokenBased(entryMethod === EntryMethodType.TOKEN_BASED);
+  }, [entryMethod]);
+
   return (
     <div className="flex flex-col gap-4">
       <EntryMethodField
         value={entryMethod as EntryMethodType}
         onChange={(selected) => {
-          setTokenBased(selected === EntryMethodType.TOKEN_BASED);
           setValue('entryMethod', selected);
         }}
       />
