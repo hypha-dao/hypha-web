@@ -13,30 +13,30 @@ import {
   FormMessage,
   Skeleton,
 } from '@hypha-platform/ui';
-import { useEffect, useState } from 'react';
+import React from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { zeroAddress } from 'viem';
 
 export const ChangeEntryMethodPlugin = ({
   spaceSlug,
-  web3SpaceId: spaceId,
+  web3SpaceId,
 }: {
   spaceSlug: string;
   members: Person[];
   web3SpaceId?: number | null;
 }) => {
-  // if (!_props.web3SpaceId) return null;
-  const [tokenBased, setTokenBased] = useState(false);
+  const [tokenBased, setTokenBased] = React.useState(false);
   const { tokens, isLoading } = useTokens({ spaceSlug });
   const { setValue, control } = useFormContext();
-  const { spaceDetails, isLoading: isSpaceDetailsLoading } = useSpaceDetailsWeb3Rpc({ spaceId: spaceId ?? 0 });
+  const { spaceDetails, isLoading: isSpaceDetailsLoading } = useSpaceDetailsWeb3Rpc({ spaceId: web3SpaceId as number });
 
   const entryMethod = useWatch({
     control,
     name: 'entryMethod',
+    defaultValue: EntryMethodType.OPEN_ACCESS,
   });
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (spaceDetails && !isLoading) {
       const entryMethod = spaceDetails?.joinMethod ?? EntryMethodType.OPEN_ACCESS;
       setValue('entryMethod', entryMethod);
@@ -46,7 +46,7 @@ export const ChangeEntryMethodPlugin = ({
   return (
     <div className="flex flex-col gap-4">
       <EntryMethodField
-        value={entryMethod}
+        value={entryMethod as EntryMethodType}
         onChange={(selected) => {
           setTokenBased(selected === EntryMethodType.TOKEN_BASED);
           setValue('entryMethod', selected);

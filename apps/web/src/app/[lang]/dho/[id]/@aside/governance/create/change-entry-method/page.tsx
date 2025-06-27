@@ -30,7 +30,7 @@ export default async function CreateChangeEntryMethodPage({
         spaceId={spaceId}
         web3SpaceId={web3SpaceId}
         successfulUrl={getDhoPathGovernance(lang as Locale, id)}
-        plugin={<Plugin spaceSlug={spaceSlug} name="change-entry-method" />}
+        plugin={<Plugin spaceSlug={spaceSlug} web3SpaceId={web3SpaceId} name="change-entry-method" />}
       />
     </SidePanel>
   );

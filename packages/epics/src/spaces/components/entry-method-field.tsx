@@ -6,7 +6,6 @@ import {
   FormField,
   FormItem,
   FormMessage,
-  Skeleton,
 } from '@hypha-platform/ui';
 import { EntryMethod } from './entry-method';
 import { EntryMethodType } from '@core/governance';
@@ -16,7 +15,7 @@ export function EntryMethodField({
   onChange,
   isLoading,
 }: {
-  value?: any;
+  value?: EntryMethodType;
   onChange?: (selected: EntryMethodType) => void;
   isLoading?: boolean;
 }) {
@@ -28,7 +27,7 @@ export function EntryMethodField({
       render={({ field }) => (
         <FormItem>
           <FormControl>
-            <EntryMethod onChange={onChange} value={field.value ?? value} />
+            <EntryMethod onChange={onChange} value={field.value as EntryMethodType ?? value} isLoading={isLoading} />
           </FormControl>
           <FormMessage />
         </FormItem>
