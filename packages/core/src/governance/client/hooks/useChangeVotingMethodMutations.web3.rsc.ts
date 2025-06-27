@@ -81,9 +81,13 @@ export const useChangeVotingMethodMutationsWeb3Rpc = () => {
           args: [BigInt(arg.spaceId)],
         });
 
+        if (!tokenAddress || tokenAddress === '0x0000000000000000000000000000000000000000') {
+          throw new Error('Invalid token address returned from getSpaceToken');
+        }
+
         for (const { member, number } of arg.members) {
           transactions.push({
-            target: tokenAddress as string,
+            target: tokenAddress,
             value: 0,
             data: encodeFunctionData({
               abi: decayingSpaceTokenAbi,
