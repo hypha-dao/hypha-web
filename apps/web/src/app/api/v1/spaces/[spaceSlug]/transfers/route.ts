@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSpaceService } from '@hypha-platform/core/server';
 import { getSpaceDetails } from '@core/space';
-import { publicClient } from '@core/common';
-import { getMoralis } from '@core/common/web3';
+import { publicClient, getTransfersByAddress } from '@core/common';
 import { schemaGetTransfersQuery } from '@core/transaction';
 
 /**
@@ -26,7 +25,7 @@ export async function GET(
 ) {
   const { spaceSlug } = await params;
 
-  const { fromDate, toDate, limit, fromBlock, toBlock, token } =
+  const { fromDate, toDate, fromBlock, toBlock, limit, token } =
     schemaGetTransfersQuery.parse(
       Object.fromEntries(nextUrl.searchParams.entries()),
     );
@@ -45,33 +44,17 @@ export async function GET(
 
     const spaceAddress = spaceDetails.at(9) as `0x${string}`;
 
-    const moralisClient = await getMoralis();
-    const transactions =
-      await moralisClient.EvmApi.token.getWalletTokenTransfers({
-        contractAddresses: token,
-        address: spaceAddress,
-        fromDate: fromDate,
-        toDate: toDate,
-        fromBlock,
-        toBlock,
-        limit,
-      });
-
-    const result = transactions.toJSON().result.map((trx) => {
-      return {
-        from: trx.from_address,
-        to: trx.to_address,
-        value: trx.value,
-        symbol: trx.token_symbol,
-        decimals: +trx.token_decimals,
-        token: trx.address,
-        timestamp: Date.parse(trx.block_timestamp),
-        block_number: +trx.block_number,
-        transaction_index: trx.transaction_index,
-        transaction_hash: trx.transaction_hash,
-      };
+    const transfers = await getTransfersByAddress({
+      address: spaceAddress,
+      contractAddresses: token,
+      fromDate,
+      toDate,
+      fromBlock,
+      toBlock,
+      limit,
     });
-    return NextResponse.json(result);
+
+    return NextResponse.json(transfers);
   } catch (error: any) {
     const errorMessage =
       error?.message || error?.shortMessage || JSON.stringify(error);
