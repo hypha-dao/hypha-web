@@ -26,8 +26,6 @@ export function useAuthentication() {
     );
   }, [privyUser]);
 
-  console.log('smartWallet', smartWallet);
-
   React.useEffect(() => {
     const activeWallet = wallets.find(
       (wallet) => wallet.address === smartWallet?.address,
