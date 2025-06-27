@@ -1,0 +1,19 @@
+{
+  "name": "@hypha-platform/authentication",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "lint": "eslint . --max-warnings 0"
+  },
+  "devDependencies": {
+    "@hypha-platform/config-eslint": "workspace:*",
+    "@hypha-platform/config-typescript": "workspace:*"
+  },
+  "dependencies": {
+    "@hypha-platform/evm": "workspace:*"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}
