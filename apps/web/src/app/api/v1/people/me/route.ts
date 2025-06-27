@@ -1,6 +1,6 @@
+import { findSelf, getDb } from '@hypha-platform/core/server';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { createPeopleService } from '@hypha-platform/core/server';
 
 export async function GET() {
   const headersList = await headers();
@@ -15,8 +15,7 @@ export async function GET() {
       );
     }
 
-    const peopleService = createPeopleService({ authToken });
-    const user = await peopleService.findMe();
+    const user = await findSelf({ db: getDb({ authToken }) });
 
     if (!user) {
       return NextResponse.json(
