@@ -6,10 +6,16 @@ import {
   getSpaceDecayingTokens,
   getSpaceOwnershipTokens,
 } from '@core/space';
-import { TOKENS, publicClient, getBalance, getTokenMeta } from '@core/common';
+import {
+  TOKENS,
+  publicClient,
+  getBalance,
+  getTokenMeta,
+  getTokenPrice,
+} from '@core/common';
 
 export async function GET(
-  request: NextRequest,
+  _: NextRequest,
   { params }: { params: Promise<{ spaceSlug: string }> },
 ) {
   const { spaceSlug } = await params;
@@ -61,6 +67,13 @@ export async function GET(
       );
     }
 
+    let prices: Record<string, number | undefined> = {};
+    try {
+      prices = await getTokenPrice(TOKENS.map(({ address }) => address));
+    } catch (error: unknown) {
+      console.error('Failed to fetch prices of tokens with Moralis:', error);
+    }
+
     const spaceAddress = spaceDetails.at(-1) as `0x${string}`;
 
     spaceTokens = spaceTokens
@@ -77,11 +90,12 @@ export async function GET(
         .map(async (token) => {
           const meta = await getTokenMeta(token);
           const { amount } = await getBalance(token, spaceAddress);
+          const rate = prices[token] || 0;
 
           return {
             ...meta,
             value: amount,
-            usdEqual: 0,
+            usdEqual: rate * amount,
             chartData: [],
             transactions: [],
             closeUrl: [],

@@ -1,5 +1,5 @@
 import { publicClient, TOKENS, Token } from '@core/common/web3';
-import { erc20Abi, getContract } from 'viem';
+import { erc20Abi } from 'viem';
 
 export async function getTokenMeta(
   tokenAddress: `0x${string}`,
@@ -9,24 +9,42 @@ export async function getTokenMeta(
     return stable;
   }
 
-  const contract = getContract({
-    address: tokenAddress,
-    abi: erc20Abi,
-    client: publicClient,
-  });
-
   // TODO: implement fetching meta data for space tokens
 
-  const symbol = await contract.read.symbol();
+  const contract = {
+    address: tokenAddress,
+    abi: erc20Abi,
+  } as const;
+
   try {
+    const results = await publicClient.multicall({
+      contracts: [
+        {
+          ...contract,
+          functionName: 'symbol',
+          args: [],
+        },
+        {
+          ...contract,
+          functionName: 'name',
+          args: [],
+        },
+      ],
+    });
+    const failure = results.find((result) => result.status === 'failure');
+    if (failure?.error) throw failure.error;
+
+    // Check above will eliminate undefined results
+    const [symbol, name] = results.map(({ result }) => result as string);
+
     return {
       symbol: symbol,
       icon: '/placeholder/token-icon.png',
-      name: symbol,
+      name: name,
       status: 'utility',
     };
   } catch (error: any) {
-    console.error(`Failed to fetch symbol for token ${tokenAddress}:`, error);
-    throw new Error(`Could not retrieve token symbol: ${error.message}`);
+    console.error(`Failed to fetch token info for ${tokenAddress}:`, error);
+    throw new Error(`Could not retrieve token info: ${error.message}`);
   }
 }
