@@ -10,7 +10,7 @@ const CONTRACTS = {
 };
 
 interface RegularTokenFactoryInterface {
-  getSpaceToken: (spaceId: number) => Promise<string>;
+  getSpaceToken: (spaceId: number) => Promise<string[]>;
 }
 
 interface DAOSpaceFactoryInterface {
@@ -29,9 +29,9 @@ const regularTokenFactoryAbi = [
     name: 'getSpaceToken',
     outputs: [
       {
-        internalType: 'address',
+        internalType: 'address[]',
         name: '',
-        type: 'address',
+        type: 'address[]',
       },
     ],
     stateMutability: 'view',
@@ -55,20 +55,27 @@ const daoSpaceFactoryAbi = [
   },
 ];
 
-async function getTokenForSpace(
+async function getTokensForSpace(
   tokenFactory: ethers.Contract & RegularTokenFactoryInterface,
   spaceId: number,
 ): Promise<void> {
   try {
-    const tokenAddress = await tokenFactory.getSpaceToken(spaceId);
+    const tokenAddresses = await tokenFactory.getSpaceToken(spaceId);
 
-    if (tokenAddress === ethers.ZeroAddress) {
-      console.log(`Space ${spaceId}: No token deployed`);
+    if (tokenAddresses.length === 0) {
+      console.log(`Space ${spaceId}: No tokens deployed`);
+    } else if (tokenAddresses.length === 1) {
+      console.log(`Space ${spaceId}: 1 token deployed at ${tokenAddresses[0]}`);
     } else {
-      console.log(`Space ${spaceId}: Token deployed at ${tokenAddress}`);
+      console.log(
+        `Space ${spaceId}: ${tokenAddresses.length} tokens deployed:`,
+      );
+      tokenAddresses.forEach((address, index) => {
+        console.log(`  ${index + 1}. ${address}`);
+      });
     }
   } catch (error: any) {
-    console.error(`Error fetching token for space ${spaceId}:`, error.message);
+    console.error(`Error fetching tokens for space ${spaceId}:`, error.message);
   }
 }
 
@@ -108,7 +115,7 @@ async function main(): Promise<void> {
           continue;
         }
         console.log(`\n=== Querying Space ${spaceId} ===`);
-        await getTokenForSpace(regularTokenFactory, spaceId);
+        await getTokensForSpace(regularTokenFactory, spaceId);
       }
     } else {
       // Query all spaces
@@ -116,35 +123,62 @@ async function main(): Promise<void> {
       console.log(`Total number of spaces: ${spaceCounter}`);
       console.log('\n=== Token Addresses for All Spaces ===\n');
 
-      const spacesWithTokens: Array<{ spaceId: number; tokenAddress: string }> =
-        [];
+      const spacesWithTokens: Array<{
+        spaceId: number;
+        tokenAddresses: string[];
+      }> = [];
       const spacesWithoutTokens: number[] = [];
 
       // Iterate through all spaces
       for (let spaceId = 1; spaceId <= Number(spaceCounter); spaceId++) {
         try {
-          const tokenAddress = await regularTokenFactory.getSpaceToken(spaceId);
+          const tokenAddresses = await regularTokenFactory.getSpaceToken(
+            spaceId,
+          );
 
-          if (tokenAddress === ethers.ZeroAddress) {
+          if (tokenAddresses.length === 0) {
             spacesWithoutTokens.push(spaceId);
           } else {
-            spacesWithTokens.push({ spaceId, tokenAddress });
-            console.log(`Space ${spaceId}: ${tokenAddress}`);
+            spacesWithTokens.push({ spaceId, tokenAddresses });
+            if (tokenAddresses.length === 1) {
+              console.log(`Space ${spaceId}: 1 token at ${tokenAddresses[0]}`);
+            } else {
+              console.log(`Space ${spaceId}: ${tokenAddresses.length} tokens:`);
+              tokenAddresses.forEach((address, index) => {
+                console.log(`  ${index + 1}. ${address}`);
+              });
+            }
           }
         } catch (error: any) {
           console.error(
-            `Error fetching token for space ${spaceId}:`,
+            `Error fetching tokens for space ${spaceId}:`,
             error.message,
           );
           spacesWithoutTokens.push(spaceId);
         }
       }
 
+      // Calculate total tokens
+      const totalTokens = spacesWithTokens.reduce(
+        (sum, space) => sum + space.tokenAddresses.length,
+        0,
+      );
+
       // Summary
       console.log('\n=== Summary ===');
       console.log(`Total spaces: ${spaceCounter}`);
       console.log(`Spaces with tokens: ${spacesWithTokens.length}`);
       console.log(`Spaces without tokens: ${spacesWithoutTokens.length}`);
+      console.log(`Total tokens deployed: ${totalTokens}`);
+
+      if (spacesWithTokens.length > 0) {
+        const avgTokensPerSpace = (
+          totalTokens / spacesWithTokens.length
+        ).toFixed(2);
+        console.log(
+          `Average tokens per space (with tokens): ${avgTokensPerSpace}`,
+        );
+      }
 
       if (spacesWithoutTokens.length > 0) {
         console.log(

@@ -51,7 +51,7 @@ contract Executor is IExecutor {
       Transaction memory txn = transactions[i];
       require(address(this).balance >= txn.value, 'ins bal');
       (bool success, ) = txn.target.call{value: txn.value}(txn.data);
-      require(success, 'f');
+      require(success, 'There was an error executing the transaction. Please check that you have sufficient funds in the treasury for this proposal and try again.');
     }
 
     //emit BatchTransactionsExecuted(transactions);

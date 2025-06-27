@@ -815,6 +815,270 @@ describe('DAOSpaceFactoryImplementation', function () {
         mintAmount,
       );
     });
+
+    it('Should mint tokens when executor performs transfers instead of transferring existing tokens', async function () {
+      const {
+        spaceHelper,
+        regularTokenFactory,
+        daoSpaceFactory,
+        owner,
+        voter1,
+        voter2,
+      } = await loadFixture(deployFixture);
+
+      // Create space first
+      await spaceHelper.createDefaultSpace();
+      const spaceId = (await daoSpaceFactory.spaceCounter()).toString();
+
+      // Get the executor
+      const executorAddress = await daoSpaceFactory.getSpaceExecutor(spaceId);
+      await ethers.provider.send('hardhat_impersonateAccount', [
+        executorAddress,
+      ]);
+      const executorSigner = await ethers.getSigner(executorAddress);
+
+      // Fund the executor
+      await owner.sendTransaction({
+        to: executorAddress,
+        value: ethers.parseEther('1.0'),
+      });
+
+      // Deploy token through the executor
+      const tx = await regularTokenFactory.connect(executorSigner).deployToken(
+        spaceId,
+        'Test Token',
+        'TEST',
+        0, // maxSupply (0 = unlimited)
+        true, // transferable
+        false, // not a voting token to avoid conflicts
+      );
+
+      const receipt = await tx.wait();
+      const tokenDeployedEvent = receipt?.logs
+        .filter((log) => {
+          try {
+            return (
+              regularTokenFactory.interface.parseLog({
+                topics: log.topics as string[],
+                data: log.data,
+              })?.name === 'TokenDeployed'
+            );
+          } catch (_unused) {
+            return false;
+          }
+        })
+        .map((log) =>
+          regularTokenFactory.interface.parseLog({
+            topics: log.topics as string[],
+            data: log.data,
+          }),
+        )[0];
+
+      if (!tokenDeployedEvent) {
+        throw new Error('Token deployment event not found');
+      }
+
+      const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+      const token = await ethers.getContractAt(
+        'contracts/RegularSpaceToken.sol:SpaceToken',
+        tokenAddress,
+      );
+
+      console.log('\n=== TESTING EXECUTOR TRANSFER-AS-MINT FUNCTIONALITY ===');
+
+      // Test 1: Executor transfer() should mint instead of transfer
+      console.log('\n--- TEST 1: Executor calls transfer() ---');
+
+      const initialTotalSupply = await token.totalSupply();
+      const initialVoter1Balance = await token.balanceOf(
+        await voter1.getAddress(),
+      );
+      const initialExecutorBalance = await token.balanceOf(executorAddress);
+
+      console.log(
+        `Initial total supply: ${ethers.formatUnits(initialTotalSupply, 18)}`,
+      );
+      console.log(
+        `Initial voter1 balance: ${ethers.formatUnits(
+          initialVoter1Balance,
+          18,
+        )}`,
+      );
+      console.log(
+        `Initial executor balance: ${ethers.formatUnits(
+          initialExecutorBalance,
+          18,
+        )}`,
+      );
+
+      const transferAmount = ethers.parseUnits('100', 18);
+
+      // Executor calls transfer - this should mint instead of transfer
+      await token
+        .connect(executorSigner)
+        .transfer(await voter1.getAddress(), transferAmount);
+
+      const afterTransferTotalSupply = await token.totalSupply();
+      const afterTransferVoter1Balance = await token.balanceOf(
+        await voter1.getAddress(),
+      );
+      const afterTransferExecutorBalance = await token.balanceOf(
+        executorAddress,
+      );
+
+      console.log(
+        `After transfer total supply: ${ethers.formatUnits(
+          afterTransferTotalSupply,
+          18,
+        )}`,
+      );
+      console.log(
+        `After transfer voter1 balance: ${ethers.formatUnits(
+          afterTransferVoter1Balance,
+          18,
+        )}`,
+      );
+      console.log(
+        `After transfer executor balance: ${ethers.formatUnits(
+          afterTransferExecutorBalance,
+          18,
+        )}`,
+      );
+
+      // Verify that tokens were minted (total supply increased)
+      expect(afterTransferTotalSupply).to.equal(
+        initialTotalSupply + transferAmount,
+      );
+      // Verify voter1 received the tokens
+      expect(afterTransferVoter1Balance).to.equal(
+        initialVoter1Balance + transferAmount,
+      );
+      // Verify executor balance unchanged (no transfer from executor)
+      expect(afterTransferExecutorBalance).to.equal(initialExecutorBalance);
+
+      console.log(
+        '✅ Executor transfer() correctly minted tokens instead of transferring',
+      );
+
+      // Test 2: Executor transferFrom() should mint when from=executor
+      console.log(
+        '\n--- TEST 2: Executor calls transferFrom() with executor as from ---',
+      );
+
+      const beforeTransferFromTotalSupply = await token.totalSupply();
+      const beforeTransferFromVoter2Balance = await token.balanceOf(
+        await voter2.getAddress(),
+      );
+      const beforeTransferFromExecutorBalance = await token.balanceOf(
+        executorAddress,
+      );
+
+      const transferFromAmount = ethers.parseUnits('50', 18);
+
+      // Executor calls transferFrom with executor as from - this should mint instead of transfer
+      await token
+        .connect(executorSigner)
+        .transferFrom(
+          executorAddress,
+          await voter2.getAddress(),
+          transferFromAmount,
+        );
+
+      const afterTransferFromTotalSupply = await token.totalSupply();
+      const afterTransferFromVoter2Balance = await token.balanceOf(
+        await voter2.getAddress(),
+      );
+      const afterTransferFromExecutorBalance = await token.balanceOf(
+        executorAddress,
+      );
+
+      console.log(
+        `After transferFrom total supply: ${ethers.formatUnits(
+          afterTransferFromTotalSupply,
+          18,
+        )}`,
+      );
+      console.log(
+        `After transferFrom voter2 balance: ${ethers.formatUnits(
+          afterTransferFromVoter2Balance,
+          18,
+        )}`,
+      );
+      console.log(
+        `After transferFrom executor balance: ${ethers.formatUnits(
+          afterTransferFromExecutorBalance,
+          18,
+        )}`,
+      );
+
+      // Verify that tokens were minted (total supply increased)
+      expect(afterTransferFromTotalSupply).to.equal(
+        beforeTransferFromTotalSupply + transferFromAmount,
+      );
+      // Verify voter2 received the tokens
+      expect(afterTransferFromVoter2Balance).to.equal(
+        beforeTransferFromVoter2Balance + transferFromAmount,
+      );
+      // Verify executor balance unchanged (no transfer from executor)
+      expect(afterTransferFromExecutorBalance).to.equal(
+        beforeTransferFromExecutorBalance,
+      );
+
+      console.log(
+        '✅ Executor transferFrom() correctly minted tokens when from=executor',
+      );
+
+      // Test 3: Non-executor transfers should work normally (not mint)
+      console.log(
+        '\n--- TEST 3: Non-executor transfer should work normally ---',
+      );
+
+      // First, give voter1 some tokens to transfer (via executor mint)
+      await token
+        .connect(executorSigner)
+        .mint(await voter1.getAddress(), ethers.parseUnits('200', 18));
+
+      const beforeNormalTransferTotalSupply = await token.totalSupply();
+      const beforeNormalTransferVoter1Balance = await token.balanceOf(
+        await voter1.getAddress(),
+      );
+      const beforeNormalTransferVoter2Balance = await token.balanceOf(
+        await voter2.getAddress(),
+      );
+
+      const normalTransferAmount = ethers.parseUnits('30', 18);
+
+      // Regular user transfer - this should NOT mint, just transfer
+      await token
+        .connect(voter1)
+        .transfer(await voter2.getAddress(), normalTransferAmount);
+
+      const afterNormalTransferTotalSupply = await token.totalSupply();
+      const afterNormalTransferVoter1Balance = await token.balanceOf(
+        await voter1.getAddress(),
+      );
+      const afterNormalTransferVoter2Balance = await token.balanceOf(
+        await voter2.getAddress(),
+      );
+
+      // Verify that total supply didn't change (no minting)
+      expect(afterNormalTransferTotalSupply).to.equal(
+        beforeNormalTransferTotalSupply,
+      );
+      // Verify tokens were transferred normally
+      expect(afterNormalTransferVoter1Balance).to.equal(
+        beforeNormalTransferVoter1Balance - normalTransferAmount,
+      );
+      expect(afterNormalTransferVoter2Balance).to.equal(
+        beforeNormalTransferVoter2Balance + normalTransferAmount,
+      );
+
+      console.log('✅ Non-executor transfer works normally without minting');
+
+      console.log(
+        '\n=== EXECUTOR TRANSFER-AS-MINT TESTS COMPLETED SUCCESSFULLY ===',
+      );
+    });
   });
 
   describe('Decaying Token Tests', function () {
@@ -2793,6 +3057,246 @@ describe('DAOSpaceFactoryImplementation', function () {
     });
 
     // Test removed: "Should only allow executor to transfer tokens between members" - was causing failures
+
+    it('Should mint tokens when executor performs transfers instead of transferring existing tokens (Ownership Token)', async function () {
+      const {
+        spaceHelper,
+        daoSpaceFactory,
+        owner,
+        voter1,
+        voter2,
+        testTokenFactory,
+      } = await loadFixture(ownershipFixture);
+
+      // Create space
+      await spaceHelper.createDefaultSpace();
+      const spaceId = (await daoSpaceFactory.spaceCounter()).toString();
+
+      // Get the executor
+      const executorAddress = await daoSpaceFactory.getSpaceExecutor(spaceId);
+      await ethers.provider.send('hardhat_impersonateAccount', [
+        executorAddress,
+      ]);
+      const executorSigner = await ethers.getSigner(executorAddress);
+
+      // Fund the executor
+      await owner.sendTransaction({
+        to: executorAddress,
+        value: ethers.parseEther('1.0'),
+      });
+
+      // Add members to the space (required for ownership tokens)
+      await spaceHelper.joinSpace(Number(spaceId), voter1);
+      await spaceHelper.joinSpace(Number(spaceId), voter2);
+
+      // Deploy ownership token through the factory
+      const deployTx = await testTokenFactory
+        .connect(executorSigner)
+        .deployOwnershipToken(
+          spaceId,
+          'Test Ownership Token',
+          'OWNTEST',
+          0, // maxSupply
+          false, // not a voting token to avoid conflicts
+        );
+
+      const receipt = await deployTx.wait();
+      const tokenDeployedEvent = receipt?.logs
+        .filter((log) => {
+          try {
+            return (
+              testTokenFactory.interface.parseLog({
+                topics: log.topics as string[],
+                data: log.data,
+              })?.name === 'TokenDeployed'
+            );
+          } catch (_unused) {
+            return false;
+          }
+        })
+        .map((log) =>
+          testTokenFactory.interface.parseLog({
+            topics: log.topics as string[],
+            data: log.data,
+          }),
+        )[0];
+
+      if (!tokenDeployedEvent) {
+        throw new Error('Token deployment event not found');
+      }
+
+      const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+      const token = await ethers.getContractAt(
+        'OwnershipSpaceToken',
+        tokenAddress,
+      );
+
+      console.log(
+        '\n=== TESTING EXECUTOR TRANSFER-AS-MINT FUNCTIONALITY (OWNERSHIP TOKEN) ===',
+      );
+
+      // Test 1: Executor transfer() should mint instead of transfer
+      console.log('\n--- TEST 1: Executor calls transfer() ---');
+
+      const initialTotalSupply = await token.totalSupply();
+      const initialVoter1Balance = await token.balanceOf(
+        await voter1.getAddress(),
+      );
+      const initialExecutorBalance = await token.balanceOf(executorAddress);
+
+      console.log(
+        `Initial total supply: ${ethers.formatUnits(initialTotalSupply, 18)}`,
+      );
+      console.log(
+        `Initial voter1 balance: ${ethers.formatUnits(
+          initialVoter1Balance,
+          18,
+        )}`,
+      );
+      console.log(
+        `Initial executor balance: ${ethers.formatUnits(
+          initialExecutorBalance,
+          18,
+        )}`,
+      );
+
+      const transferAmount = ethers.parseUnits('100', 18);
+
+      // Executor calls transfer - this should mint instead of transfer
+      await token
+        .connect(executorSigner)
+        .transfer(await voter1.getAddress(), transferAmount);
+
+      const afterTransferTotalSupply = await token.totalSupply();
+      const afterTransferVoter1Balance = await token.balanceOf(
+        await voter1.getAddress(),
+      );
+      const afterTransferExecutorBalance = await token.balanceOf(
+        executorAddress,
+      );
+
+      console.log(
+        `After transfer total supply: ${ethers.formatUnits(
+          afterTransferTotalSupply,
+          18,
+        )}`,
+      );
+      console.log(
+        `After transfer voter1 balance: ${ethers.formatUnits(
+          afterTransferVoter1Balance,
+          18,
+        )}`,
+      );
+      console.log(
+        `After transfer executor balance: ${ethers.formatUnits(
+          afterTransferExecutorBalance,
+          18,
+        )}`,
+      );
+
+      // Verify that tokens were minted (total supply increased)
+      expect(afterTransferTotalSupply).to.equal(
+        initialTotalSupply + transferAmount,
+      );
+      // Verify voter1 received the tokens
+      expect(afterTransferVoter1Balance).to.equal(
+        initialVoter1Balance + transferAmount,
+      );
+      // Verify executor balance unchanged (no transfer from executor)
+      expect(afterTransferExecutorBalance).to.equal(initialExecutorBalance);
+
+      console.log(
+        '✅ Executor transfer() correctly minted tokens instead of transferring',
+      );
+
+      // Test 2: Executor transferFrom() should mint when from=executor
+      console.log(
+        '\n--- TEST 2: Executor calls transferFrom() with executor as from ---',
+      );
+
+      const beforeTransferFromTotalSupply = await token.totalSupply();
+      const beforeTransferFromVoter2Balance = await token.balanceOf(
+        await voter2.getAddress(),
+      );
+      const beforeTransferFromExecutorBalance = await token.balanceOf(
+        executorAddress,
+      );
+
+      const transferFromAmount = ethers.parseUnits('50', 18);
+
+      // Executor calls transferFrom with executor as from - this should mint instead of transfer
+      await token
+        .connect(executorSigner)
+        .transferFrom(
+          executorAddress,
+          await voter2.getAddress(),
+          transferFromAmount,
+        );
+
+      const afterTransferFromTotalSupply = await token.totalSupply();
+      const afterTransferFromVoter2Balance = await token.balanceOf(
+        await voter2.getAddress(),
+      );
+      const afterTransferFromExecutorBalance = await token.balanceOf(
+        executorAddress,
+      );
+
+      console.log(
+        `After transferFrom total supply: ${ethers.formatUnits(
+          afterTransferFromTotalSupply,
+          18,
+        )}`,
+      );
+      console.log(
+        `After transferFrom voter2 balance: ${ethers.formatUnits(
+          afterTransferFromVoter2Balance,
+          18,
+        )}`,
+      );
+      console.log(
+        `After transferFrom executor balance: ${ethers.formatUnits(
+          afterTransferFromExecutorBalance,
+          18,
+        )}`,
+      );
+
+      // Verify that tokens were minted (total supply increased)
+      expect(afterTransferFromTotalSupply).to.equal(
+        beforeTransferFromTotalSupply + transferFromAmount,
+      );
+      // Verify voter2 received the tokens
+      expect(afterTransferFromVoter2Balance).to.equal(
+        beforeTransferFromVoter2Balance + transferFromAmount,
+      );
+      // Verify executor balance unchanged (no transfer from executor)
+      expect(afterTransferFromExecutorBalance).to.equal(
+        beforeTransferFromExecutorBalance,
+      );
+
+      console.log(
+        '✅ Executor transferFrom() correctly minted tokens when from=executor',
+      );
+
+      // Test 3: Non-executor transfers should be restricted (ownership tokens have strict transfer rules)
+      console.log(
+        '\n--- TEST 3: Non-executor transfer should fail (ownership token restrictions) ---',
+      );
+
+      // Try a non-executor transfer - should fail because only executor can initiate transfers in ownership tokens
+      await expect(
+        token
+          .connect(voter1)
+          .transfer(await voter2.getAddress(), ethers.parseUnits('10', 18)),
+      ).to.be.revertedWith('Only executor can transfer tokens');
+
+      console.log(
+        '✅ Non-executor transfer correctly rejected by ownership token restrictions',
+      );
+
+      console.log(
+        '\n=== EXECUTOR TRANSFER-AS-MINT TESTS COMPLETED SUCCESSFULLY (OWNERSHIP TOKEN) ===',
+      );
+    });
   });
 
   describe('Multi-Transaction Proposal Tests', function () {
