@@ -1,10 +1,6 @@
 {
   "extends": "@hypha-platform/config-typescript/nextjs.json",
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    },
     "plugins": [
       {
         "name": "next"

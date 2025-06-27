@@ -1,5 +1,5 @@
 {
-  "name": "@hypha-platform/ui",
+  "name": "@hypha-platform/i18n",
   "version": "0.0.0",
   "type": "module",
   "private": true,
@@ -7,14 +7,12 @@
     "lint": "eslint . --max-warnings 0"
   },
   "devDependencies": {
-    "@hypha-platform/config-eslint": "workspace:*",
     "@hypha-platform/config-typescript": "workspace:*"
   },
   "dependencies": {
-    "@hypha-platform/ui-utils": "workspace:*"
+    "@hypha-platform/cookie": "workspace:*"
   },
   "exports": {
-    ".": "./src/index.ts",
-    "./server": "./src/server.ts"
+    ".": "./src/index.ts"
   }
 }

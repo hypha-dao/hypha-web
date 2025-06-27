@@ -14,7 +14,14 @@
     "next": "^15.3.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "@hypha-platform/feature-flags": "workspace:*"
+    "@hypha-platform/authentication": "workspace:*",
+    "@hypha-platform/cookie": "workspace:*",
+    "@hypha-platform/core": "workspace:*",
+    "@hypha-platform/epics": "workspace:*",
+    "@hypha-platform/evm": "workspace:*",
+    "@hypha-platform/feature-flags": "workspace:*",
+    "@hypha-platform/i18n": "workspace:*",
+    "@hypha-platform/ui": "workspace:*"
   },
   "devDependencies": {
     "@hypha-platform/config-eslint": "workspace:*",
