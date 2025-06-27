@@ -11,7 +11,7 @@ export const ProposalTokenItem = ({
   symbol,
   initialSupply,
 }: ProposalTokenItemProps) => {
-  const originalSupply = Number(initialSupply) / Number(10n ** 18n);
+  const originalSupply = initialSupply ? Number(initialSupply / 10n ** 18n) : 0;
   return (
     <div className="flex flex-col gap-5">
       <div className="flex justify-between items-center">

@@ -23,7 +23,7 @@ export const useSpaceMutationsWeb3Rpc = () => {
     data: createSpaceHash,
     error: errorCreateSpace,
   } = useSWRMutation(
-    client ? 'createSpaceWeb3' : null,
+    'createSpaceWeb3',
     async (_, { arg }: { arg: z.infer<typeof schemaCreateSpaceWeb3> }) => {
       if (!client) {
         throw new Error('Smart wallet client not available');
