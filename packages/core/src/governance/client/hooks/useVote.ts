@@ -1,14 +1,13 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { useAccount, useWriteContract } from 'wagmi';
+import { useAccount } from 'wagmi';
 import { daoProposalsImplementationConfig } from '@core/generated';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 
 export const useVote = ({ proposalId }: { proposalId?: number | null }) => {
   const { address } = useAccount();
   const { client } = useSmartWallets();
-  const { writeContractAsync } = useWriteContract();
 
   const [isVoting, setIsVoting] = useState(false);
   const [isCheckingExpiration, setIsCheckingExpiration] = useState(false);
@@ -41,13 +40,14 @@ export const useVote = ({ proposalId }: { proposalId?: number | null }) => {
 
   const checkProposalExpiration = useCallback(
     async (proposalId: number) => {
+      if (!client) throw new Error('Smart wallet not connected');
       if (!address) throw new Error('Wallet not connected');
       if (proposalId === undefined || proposalId === null)
         throw new Error('Proposal ID is required');
 
       setIsCheckingExpiration(true);
       try {
-        const txHash = await writeContractAsync({
+        const txHash = await client.writeContract({
           address: daoProposalsImplementationConfig.address[8453],
           abi: daoProposalsImplementationConfig.abi,
           functionName: 'checkProposalExpiration',
@@ -61,7 +61,7 @@ export const useVote = ({ proposalId }: { proposalId?: number | null }) => {
         setIsCheckingExpiration(false);
       }
     },
-    [address, writeContractAsync],
+    [address, client],
   );
 
   const handleAccept = async () => {
