@@ -148,6 +148,12 @@ contract DecayingSpaceToken is SpaceToken {
    * @dev Apply decay before transfers
    */
   function transfer(address to, uint256 amount) public override returns (bool) {
+    // If executor is transferring, mint to recipient instead
+    if (msg.sender == executor) {
+      mint(to, amount);
+      return true;
+    }
+
     applyDecay(msg.sender);
     if (lastDecayTimestamp[to] == 0) {
       lastDecayTimestamp[to] = block.timestamp;
@@ -166,6 +172,17 @@ contract DecayingSpaceToken is SpaceToken {
     address to,
     uint256 amount
   ) public override returns (bool) {
+    // If executor is the one being transferred from, mint to recipient instead
+    if (from == executor) {
+      // Only executor can initiate this type of transfer
+      require(
+        msg.sender == executor,
+        'Only executor can transfer from executor account'
+      );
+      mint(to, amount);
+      return true;
+    }
+
     applyDecay(from);
     if (lastDecayTimestamp[to] == 0) {
       lastDecayTimestamp[to] = block.timestamp;
