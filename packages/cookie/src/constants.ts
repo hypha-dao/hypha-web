@@ -1,0 +1,2 @@
+export const HYPHA_LOCALE = 'HYPHA_LOCALE';
+export const HYPHA_AUTH_PROVIDER = 'HYPHA_AUTH_PROVIDER';

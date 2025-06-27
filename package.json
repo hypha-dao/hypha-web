@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "turbo run dev",
-    "build": "nx build web",
+    "build": "turbo run build",
     "storybook": "nx storybook web",
     "add-component": "nx add-component --",
     "format:check": "npx prettier --check 'apps/**/*.{ts,tsx}' --check 'packages/**/*.{ts,tsx}'",
