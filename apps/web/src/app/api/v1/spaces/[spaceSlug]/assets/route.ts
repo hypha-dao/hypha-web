@@ -6,8 +6,13 @@ import {
   getSpaceDecayingTokens,
   getSpaceOwnershipTokens,
 } from '@core/space';
-import { TOKENS, publicClient, getBalance, getTokenMeta } from '@core/common';
-import { getMoralis } from '@core/common/web3';
+import {
+  TOKENS,
+  publicClient,
+  getBalance,
+  getTokenMeta,
+  getTokenPrice,
+} from '@core/common';
 
 export async function GET(
   _: NextRequest,
@@ -62,26 +67,11 @@ export async function GET(
       );
     }
 
-    const moralisClient = await getMoralis();
-    const prices = new Map<string, number>();
-
+    let prices: Record<string, number | undefined> = {};
     try {
-      const response = await moralisClient.EvmApi.token.getMultipleTokenPrices(
-        { chain: '0x2105' },
-        {
-          tokens: TOKENS.map(({ address }) => {
-            return { tokenAddress: address };
-          }),
-        },
-      );
-
-      response.result
-        .filter((res) => res.tokenAddress !== undefined)
-        .forEach(({ usdPrice, tokenAddress }) => {
-          prices.set(tokenAddress as string, usdPrice);
-        });
+      prices = await getTokenPrice(TOKENS.map(({ address }) => address));
     } catch (error: unknown) {
-      console.error('Failed to fetch prices from Moralis for tokens:', error);
+      console.error('Failed to fetch prices of tokens with Moralis:', error);
     }
 
     const spaceAddress = spaceDetails.at(-1) as `0x${string}`;
@@ -100,7 +90,7 @@ export async function GET(
         .map(async (token) => {
           const meta = await getTokenMeta(token);
           const { amount } = await getBalance(token, spaceAddress);
-          const rate = prices.get(token.toLowerCase()) || 0;
+          const rate = prices[token] || 0;
 
           return {
             ...meta,
