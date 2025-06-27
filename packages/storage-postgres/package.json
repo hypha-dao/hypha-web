@@ -1,0 +1,17 @@
+{
+  "name": "@hypha-platform/storage-postgres",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "migrate": "drizzle-kit push:pg",
+    "generate": "drizzle-kit generate:pg"
+  },
+  "devDependencies": {
+    "@hypha-platform/config-typescript": "workspace:*"
+  },
+  "dependencies": {},
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

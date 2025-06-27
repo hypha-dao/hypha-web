@@ -1,0 +1,1 @@
+ALTER TABLE "documents" ADD COLUMN "web3_proposal_id" integer;

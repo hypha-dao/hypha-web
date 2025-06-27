@@ -1,0 +1,6 @@
+{
+  "extends": "@hypha-platform/config-typescript/library.json",
+  "compilerOptions": {},
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
+}

@@ -1,0 +1,1 @@
+ALTER TABLE "spaces" ADD COLUMN "links" jsonb DEFAULT '[]'::jsonb;
