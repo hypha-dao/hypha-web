@@ -35,7 +35,7 @@ interface CreateTokenArgs {
 
 const chainId = 8453;
 
-export const useIssueTokenMutationsWeb3Rpc = () => {
+export const useIssueTokenMutationsWeb3Rpc = ({ proposalSlug }: { proposalSlug?: string | null }) => {
   const { client } = useSmartWallets();
 
   const {
@@ -45,7 +45,7 @@ export const useIssueTokenMutationsWeb3Rpc = () => {
     data: createTokenHash,
     error: errorCreateToken,
   } = useSWRMutation(
-    client ? ['smart-wallet', 'createIssueToken'] : null,
+    client ? ['smart-wallet', 'createIssueToken', proposalSlug] : null,
     async (_, { arg }: { arg: CreateTokenArgs }) => {
       if (!client) throw new Error('Smart wallet client not available');
 

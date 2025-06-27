@@ -21,7 +21,7 @@ import {
   daoProposalsImplementationAddress,
 } from '@core/generated';
 
-export const useAgreementMutationsWeb3Rpc = () => {
+export const useAgreementMutationsWeb3Rpc = ({ proposalSlug }: { proposalSlug?: string | null }) => {
   const { client } = useSmartWallets();
 
   const {
@@ -31,7 +31,7 @@ export const useAgreementMutationsWeb3Rpc = () => {
     data: createAgreementHash,
     error: errorCreateAgreement,
   } = useSWRMutation(
-    client ? ['smart-wallet', 'createProposal'] : null,
+    client ? ['smart-wallet', 'createProposal', proposalSlug] : null,
     async ([, _key], { arg }: { arg: { spaceId: number } }) => {
       if (!client) {
         throw new Error('Smart wallet not connected');

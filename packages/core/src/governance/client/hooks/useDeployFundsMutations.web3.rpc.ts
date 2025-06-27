@@ -24,7 +24,7 @@ interface CreateDeployFundsInput {
 
 const chainId = 8453;
 
-export const useDeployFundsMutationsWeb3Rpc = () => {
+export const useDeployFundsMutationsWeb3Rpc = ({ proposalSlug }: { proposalSlug?: string | null }) => {
   const { client } = useSmartWallets();
 
   const {
@@ -34,7 +34,7 @@ export const useDeployFundsMutationsWeb3Rpc = () => {
     data: createDeployFundsHash,
     error: errorCreateDeployFunds,
   } = useSWRMutation(
-    client ? ['smart-wallet', 'createDeployFunds'] : null,
+    client ? ['smart-wallet', 'createDeployFunds', proposalSlug] : null,
     async (_, { arg }: { arg: CreateDeployFundsInput }) => {
       if (!client) {
         throw new Error('Smart wallet client not available');

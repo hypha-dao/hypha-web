@@ -112,7 +112,7 @@ export const useCreateDeployFundsOrchestrator = ({
   config?: Config;
 }) => {
   const web2 = useAgreementMutationsWeb2Rsc(authToken);
-  const web3 = useDeployFundsMutationsWeb3Rpc();
+  const web3 = useDeployFundsMutationsWeb3Rpc({proposalSlug: web2.createdAgreement?.slug});
   const agreementFiles = useAgreementFileUploads(
     authToken,
     (uploadedFiles, slug) => {

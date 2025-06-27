@@ -24,7 +24,7 @@ interface CreatePayForExpensesInput {
 
 const chainId = 8453;
 
-export const usePayForExpensesMutationsWeb3Rpc = () => {
+export const usePayForExpensesMutationsWeb3Rpc = ({ proposalSlug }: { proposalSlug?: string | null }) => {
   const { client } = useSmartWallets();
 
   const {
@@ -34,7 +34,7 @@ export const usePayForExpensesMutationsWeb3Rpc = () => {
     data: createPayForExpensesHash,
     error: errorCreatePayForExpenses,
   } = useSWRMutation(
-    client ? ['smart-wallet', 'createPayForExpenses'] : null,
+    client ? ['smart-wallet', 'createPayForExpenses', proposalSlug] : null,
     async (_, { arg }: { arg: CreatePayForExpensesInput }) => {
       if (!client) {
         throw new Error('Smart wallet client not available');

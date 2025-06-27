@@ -35,7 +35,7 @@ interface ChangeVotingMethodArgs {
   votingMethod: '1m1v' | '1v1v' | '1t1v';
 }
 
-export const useChangeVotingMethodMutationsWeb3Rpc = () => {
+export const useChangeVotingMethodMutationsWeb3Rpc = ({ proposalSlug }: { proposalSlug?: string | null }) => {
   const { client } = useSmartWallets();
 
   const {
@@ -45,7 +45,7 @@ export const useChangeVotingMethodMutationsWeb3Rpc = () => {
     data: createProposalHash,
     error: errorChangeVotingMethod,
   } = useSWRMutation(
-    client ? ['smart-wallet', 'changeVotingMethod'] : null,
+    client ? ['smart-wallet', 'changeVotingMethod', proposalSlug] : null,
     async (_, { arg }: { arg: ChangeVotingMethodArgs }) => {
       if (!client) throw new Error('Smart wallet client not available');
 

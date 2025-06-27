@@ -62,7 +62,7 @@ interface ChangeEntryMethodArgs {
   tokenBase?: TokenBase;
 }
 
-export const useChangeEntryMethodMutationsWeb3Rpc = () => {
+export const useChangeEntryMethodMutationsWeb3Rpc = ({ proposalSlug }: { proposalSlug?: string | null }) => {
   const { client } = useSmartWallets();
 
   const {
@@ -72,7 +72,7 @@ export const useChangeEntryMethodMutationsWeb3Rpc = () => {
     data: createProposalHash,
     error: errorChangeEntryMethod,
   } = useSWRMutation(
-    client ? ['smart-wallet', 'changeEntryMethod'] : null,
+    client ? ['smart-wallet', 'changeEntryMethod', proposalSlug] : null,
     async (_, { arg }: { arg: ChangeEntryMethodArgs }) => {
       if (!client) {
         throw new Error('Smart wallet client not available');
