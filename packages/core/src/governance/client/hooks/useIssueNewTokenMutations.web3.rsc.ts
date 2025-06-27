@@ -49,7 +49,7 @@ export const useIssueTokenMutationsWeb3Rpc = ({
     data: createTokenHash,
     error: errorCreateToken,
   } = useSWRMutation(
-    client ? ['smart-wallet', 'createIssueToken', proposalSlug] : null,
+    `createIssueToken-${proposalSlug}`,
     async (_, { arg }: { arg: CreateTokenArgs }) => {
       if (!client) throw new Error('Smart wallet client not available');
 

@@ -49,7 +49,7 @@ export const useChangeVotingMethodMutationsWeb3Rpc = ({
     data: createProposalHash,
     error: errorChangeVotingMethod,
   } = useSWRMutation(
-    client ? ['smart-wallet', 'changeVotingMethod', proposalSlug] : null,
+    `changeVotingMethod-${proposalSlug}`,
     async (_, { arg }: { arg: ChangeVotingMethodArgs }) => {
       if (!client) throw new Error('Smart wallet client not available');
 

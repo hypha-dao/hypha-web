@@ -38,7 +38,7 @@ export const usePayForExpensesMutationsWeb3Rpc = ({
     data: createPayForExpensesHash,
     error: errorCreatePayForExpenses,
   } = useSWRMutation(
-    client ? ['smart-wallet', 'createPayForExpenses', proposalSlug] : null,
+    `createPayForExpenses-${proposalSlug}`,
     async (_, { arg }: { arg: CreatePayForExpensesInput }) => {
       if (!client) {
         throw new Error('Smart wallet client not available');

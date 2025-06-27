@@ -35,8 +35,8 @@ export const useAgreementMutationsWeb3Rpc = ({
     data: createAgreementHash,
     error: errorCreateAgreement,
   } = useSWRMutation(
-    client ? ['smart-wallet', 'createProposal', proposalSlug] : null,
-    async ([, _key], { arg }: { arg: { spaceId: number } }) => {
+    `createProposal-${proposalSlug}`,
+    async (_, { arg }: { arg: { spaceId: number } }) => {
       if (!client) {
         throw new Error('Smart wallet not connected');
       }

@@ -38,7 +38,7 @@ export const useDeployFundsMutationsWeb3Rpc = ({
     data: createDeployFundsHash,
     error: errorCreateDeployFunds,
   } = useSWRMutation(
-    client ? ['smart-wallet', 'createDeployFunds', proposalSlug] : null,
+    `createDeployFunds-${proposalSlug}`,
     async (_, { arg }: { arg: CreateDeployFundsInput }) => {
       if (!client) {
         throw new Error('Smart wallet client not available');

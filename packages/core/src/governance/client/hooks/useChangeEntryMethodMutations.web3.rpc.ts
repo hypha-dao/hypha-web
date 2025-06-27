@@ -76,7 +76,7 @@ export const useChangeEntryMethodMutationsWeb3Rpc = ({
     data: createProposalHash,
     error: errorChangeEntryMethod,
   } = useSWRMutation(
-    client ? ['smart-wallet', 'changeEntryMethod', proposalSlug] : null,
+    `changeEntryMethod-${proposalSlug}`,
     async (_, { arg }: { arg: ChangeEntryMethodArgs }) => {
       if (!client) {
         throw new Error('Smart wallet client not available');

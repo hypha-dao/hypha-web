@@ -38,9 +38,7 @@ export const useProposeAContributionMutationsWeb3Rpc = ({
     data: createProposeAContributionHash,
     error: errorCreateProposeAContribution,
   } = useSWRMutation(
-    client
-      ? ['smart-wallet', 'createProposeAContribution', proposalSlug]
-      : null,
+    `createProposeAContribution-${proposalSlug}`,
     async (_, { arg }: { arg: CreateProposeAContributionInput }) => {
       if (!client) {
         throw new Error('Smart wallet client not available');
