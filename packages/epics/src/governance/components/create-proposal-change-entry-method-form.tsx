@@ -9,6 +9,7 @@ import {
   useChangeEntryMethodOrchestrator,
   useJwt,
   useMe,
+  useSpaceDetailsWeb3Rpc,
 } from '@hypha-platform/core/client';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter } from 'next/navigation';
@@ -47,6 +48,8 @@ export const CreateProposalChangeEntryMethodForm = ({
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
+  const { spaceDetails, isLoading } =
+    useSpaceDetailsWeb3Rpc({ spaceId: web3SpaceId as number });
 
   const {
     createChangeEntryMethod,
@@ -66,15 +69,25 @@ export const CreateProposalChangeEntryMethodForm = ({
       attachments: undefined,
       spaceId: spaceId ?? undefined,
       creatorId: person?.id,
-      entryMethod: EntryMethodType.OPEN_ACCESS,
+      entryMethod: spaceDetails
+        ? Number(spaceDetails.joinMethod) as EntryMethodType
+        : EntryMethodType.OPEN_ACCESS,
       tokenBase: undefined,
     };
-  }, [spaceId, person]);
+  }, [spaceId, person, spaceDetails]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schemaCreateProposalChangeEntryMethod),
     defaultValues: defaultValues,
   });
+
+  React.useEffect(() => {
+    if (spaceDetails && !isLoading) {
+      const entryMethod =
+        spaceDetails?.joinMethod ?? EntryMethodType.OPEN_ACCESS;
+      form.setValue('entryMethod', Number(entryMethod));
+    }
+  }, [spaceDetails, isLoading]);
 
   const handleCreate = async (data: FormValues) => {
     if (

@@ -4,7 +4,6 @@ import {
   Address,
   EntryMethodType,
   Person,
-  useSpaceDetailsWeb3Rpc,
 } from '@hypha-platform/core/client';
 import {
   EntryMethodField,
@@ -24,31 +23,19 @@ import { zeroAddress } from 'viem';
 
 export const ChangeEntryMethodPlugin = ({
   spaceSlug,
-  web3SpaceId,
 }: {
   spaceSlug: string;
   members: Person[];
-  web3SpaceId?: number | null;
 }) => {
   const [tokenBased, setTokenBased] = React.useState(false);
   const { tokens, isLoading } = useTokens({ spaceSlug });
   const { setValue, control } = useFormContext();
-  const { spaceDetails, isLoading: isSpaceDetailsLoading } =
-    useSpaceDetailsWeb3Rpc({ spaceId: web3SpaceId as number });
 
   const entryMethod = useWatch({
     control,
     name: 'entryMethod',
     defaultValue: EntryMethodType.OPEN_ACCESS,
   });
-
-  React.useEffect(() => {
-    if (spaceDetails && !isLoading) {
-      const entryMethod =
-        spaceDetails?.joinMethod ?? EntryMethodType.OPEN_ACCESS;
-      setValue('entryMethod', entryMethod);
-    }
-  }, [spaceDetails, isSpaceDetailsLoading]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -58,7 +45,6 @@ export const ChangeEntryMethodPlugin = ({
           setTokenBased(selected === EntryMethodType.TOKEN_BASED);
           setValue('entryMethod', selected);
         }}
-        isLoading={isSpaceDetailsLoading}
       />
       {tokenBased && (
         <div className="flex items-end gap-2">

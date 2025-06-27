@@ -2,7 +2,6 @@
 
 import {
   Card,
-  Skeleton,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -14,7 +13,6 @@ import { PlusCircledIcon } from '@radix-ui/react-icons';
 type EntryMethodProps = {
   value?: EntryMethodType;
   onChange?: (selected: EntryMethodType) => void;
-  isLoading?: boolean;
 };
 
 type EntryMethodOption = {
@@ -53,7 +51,6 @@ const entryMethods: EntryMethodOption[] = [
 export const EntryMethod = ({
   onChange,
   value,
-  isLoading,
 }: EntryMethodProps) => {
   const handleSelect = (selection: EntryMethodType, disabled?: boolean) => {
     if (disabled) return;
@@ -74,31 +71,29 @@ export const EntryMethod = ({
           {entryMethods.map((option) => (
             <Tooltip key={option.id}>
               <TooltipTrigger asChild>
-                <Skeleton loading={isLoading ?? false}>
-                  <Card
-                    className={clsx(
-                      'flex p-5 cursor-pointer space-x-4 items-center border-2 w-full',
-                      {
-                        'border-accent-9': equalNumbers(
-                          value,
-                          option.id,
-                          EntryMethodType.OPEN_ACCESS,
-                        ),
-                        'opacity-50 cursor-not-allowed': option.disabled,
-                        'hover:border-accent-5': !option.disabled,
-                      },
-                    )}
-                    onClick={() => handleSelect(option.id, option.disabled)}
-                  >
-                    <div>{option.icon}</div>
-                    <div className="flex flex-col">
-                      <span className="text-3 font-medium">{option.title}</span>
-                      <span className="text-1 text-neutral-11">
-                        {option.description}
-                      </span>
-                    </div>
-                  </Card>
-                </Skeleton>
+                <Card
+                  className={clsx(
+                    'flex p-5 cursor-pointer space-x-4 items-center border-2 w-full',
+                    {
+                      'border-accent-9': equalNumbers(
+                        value,
+                        option.id,
+                        EntryMethodType.OPEN_ACCESS,
+                      ),
+                      'opacity-50 cursor-not-allowed': option.disabled,
+                      'hover:border-accent-5': !option.disabled,
+                    },
+                  )}
+                  onClick={() => handleSelect(option.id, option.disabled)}
+                >
+                  <div>{option.icon}</div>
+                  <div className="flex flex-col">
+                    <span className="text-3 font-medium">{option.title}</span>
+                    <span className="text-1 text-neutral-11">
+                      {option.description}
+                    </span>
+                  </div>
+                </Card>
               </TooltipTrigger>
               {option.disabled && option.disabledTooltip && (
                 <TooltipContent>{option.disabledTooltip}</TooltipContent>

@@ -13,11 +13,9 @@ import { EntryMethodType } from '@core/governance';
 export function EntryMethodField({
   value,
   onChange,
-  isLoading,
 }: {
   value?: EntryMethodType;
   onChange?: (selected: EntryMethodType) => void;
-  isLoading?: boolean;
 }) {
   const { control } = useFormContext();
   return (
@@ -30,7 +28,6 @@ export function EntryMethodField({
             <EntryMethod
               onChange={onChange}
               value={(field.value as EntryMethodType) ?? value}
-              isLoading={isLoading}
             />
           </FormControl>
           <FormMessage />
