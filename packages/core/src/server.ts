@@ -14,4 +14,5 @@ export * from './governance/server';
 export * from './governance/types';
 export * from './people/server';
 export * from './people/types';
+export * from './common/server';
 export * from './common/types';
