@@ -30,6 +30,13 @@ export const ButtonBack = ({
     }
   }
 
+  let resolvedBackUrl = backUrl;
+  if (!resolvedBackUrl) {
+    if (dropSegment) {
+      resolvedBackUrl = pathname.endsWith(dropSegment)
+        ? pathname.slice(0, -dropSegment.length)
+        : pathname.replace(dropSegment, '');
+
   return (
     <Button
       asChild
@@ -37,7 +44,7 @@ export const ButtonBack = ({
       colorVariant="neutral"
       className={cn("text-neutral-10", className)}
     >
-      <Link href={backUrl} scroll={false}>
+      <Link href={resolvedBackUrl} scroll={false}>
         <ChevronLeftIcon className="size-4"/>
         {label}
       </Link>
