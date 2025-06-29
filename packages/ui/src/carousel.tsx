@@ -161,7 +161,7 @@ const CarouselContent = React.forwardRef<
       <div
         ref={ref}
         className={cn(
-          'flex gap-2',
+          'flex gap-2 pb-2',
           orientation === 'horizontal' && 'items-stretch',
           className,
         )}
@@ -183,10 +183,7 @@ const CarouselItem = React.forwardRef<
       ref={ref}
       role="group"
       aria-roledescription="slide"
-      className={cn(
-        'min-w-0 flex flex-col',
-        className,
-      )}
+      className={cn('min-w-0 flex flex-col', className)}
       {...props}
     />
   );
