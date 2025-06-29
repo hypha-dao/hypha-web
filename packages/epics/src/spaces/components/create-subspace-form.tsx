@@ -11,7 +11,7 @@ import { Button } from '@hypha-platform/ui';
 import { useMe } from '@hypha-platform/core/client';
 
 interface CreateSpaceFormProps {
-  parentSpaceId: number | null | undefined;
+  parentSpaceId: number | null;
   successfulUrl: string;
   backUrl?: string;
 }

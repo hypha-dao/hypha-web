@@ -1,24 +1,32 @@
-import { UseDocuments, UseDocumentsProps } from '../hooks';
+import { Order } from '@core/common';
+import { Document } from '@core/governance';
 import { DocumentGrid } from './document-grid';
 
 type DocumentGridContainerProps = {
   basePath: string;
-  pagination: UseDocumentsProps;
-  useDocuments: UseDocuments;
+  pagination: {
+    page: number;
+    pageSize: number;
+    searchTerm?: string;
+    order?: Order<Document>;
+  };
+  documents: any[];
   activeTab: string;
 };
 
 export const DocumentGridContainer = ({
   basePath,
   pagination,
-  useDocuments,
-  activeTab,
+  documents,
 }: DocumentGridContainerProps) => {
-  const { documents, isLoading } = useDocuments({ ...pagination, activeTab });
+  const startIndex = (pagination.page - 1) * pagination.pageSize;
+  const endIndex = startIndex + pagination.pageSize;
+  const paginatedDocuments = documents.slice(startIndex, endIndex);
+
   return (
     <DocumentGrid
-      documents={documents}
-      isLoading={isLoading}
+      documents={paginatedDocuments}
+      isLoading={false}
       basePath={basePath}
     />
   );

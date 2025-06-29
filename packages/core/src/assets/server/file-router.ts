@@ -1,14 +1,15 @@
 import { createUploadthing, type FileRouter } from 'uploadthing/next';
 import { UploadThingError } from 'uploadthing/server';
 import { NextRequest } from 'next/server';
-import { createPeopleService } from '@core/people/server';
+
+import { getDb } from '@core/common/server/get-db';
+import { verifyAuth } from '@core/people/server/queries';
 
 const f = createUploadthing();
 
 const getAuthenticatedUser = async (req: NextRequest) => {
-  const authToken = req.headers.get('Authorization')?.split(' ')[1] || '';
-  const peopleService = createPeopleService({ authToken });
-  const isValidAuthToken = await peopleService.verifyAuth();
+  const authToken = req.headers.get('Authorization')?.split(' ')[1];
+  const isValidAuthToken = await verifyAuth({ db: getDb({ authToken }) });
   return isValidAuthToken;
 };
 

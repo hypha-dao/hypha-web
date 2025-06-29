@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { createDocumentService } from '@hypha-platform/core/server';
+import { getOrder } from '@core/common/server';
 
 export async function GET(
   request: NextRequest,
@@ -20,6 +21,9 @@ export async function GET(
     const pageSize = parseInt(url.searchParams.get('pageSize') || '10', 10);
     const state = url.searchParams.get('state');
     const searchTerm = url.searchParams.get('searchTerm') || undefined;
+    const orderString = url.searchParams.get('order') || undefined;
+
+    const order = getOrder(orderString);
 
     const filter = {
       ...(state ? { state } : {}),
@@ -27,7 +31,7 @@ export async function GET(
 
     const paginatedDocuments = await documentsService.getAllBySpaceSlug(
       { spaceSlug },
-      { pagination: { page, pageSize }, filter, searchTerm },
+      { pagination: { page, pageSize, order }, filter, searchTerm },
     );
 
     return NextResponse.json(paginatedDocuments);

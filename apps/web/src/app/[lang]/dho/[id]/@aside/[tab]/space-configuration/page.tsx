@@ -80,6 +80,7 @@ export default function SpaceConfiguration() {
             categories: space?.categories || [],
             links: space?.links || [],
             web3SpaceId: space?.web3SpaceId || undefined,
+            parentId: space?.parentId || null,
           }}
         />
       </LoadingBackdrop>

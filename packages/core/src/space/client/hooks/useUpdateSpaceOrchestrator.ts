@@ -90,7 +90,12 @@ export const useUpdateSpaceOrchestrator = ({
   authToken,
 }: UseUpdateSpaceInput) => {
   const web2 = useSpaceMutationsWeb2Rsc(authToken);
-  const files = useSpaceFileUploads(authToken);
+  const files = useSpaceFileUploads(authToken, (uploadedFiles, slug) => {
+    web2.updateSpaceBySlug({
+      slug: slug ?? '',
+      ...uploadedFiles,
+    });
+  });
 
   const [taskState, dispatch] = useReducer(
     progressStateReducer,
@@ -134,16 +139,20 @@ export const useUpdateSpaceOrchestrator = ({
         const { slug } = arg;
         invariant(slug, 'slug is required');
 
-        startTask('UPLOAD_FILES');
         const filesInput = schemaCreateSpaceFiles.parse(arg);
-        const urls = await files.upload(filesInput);
-        completeTask('UPLOAD_FILES');
+        if (Object.values(filesInput).some((file) => file)) {
+          startTask('UPLOAD_FILES');
+          await files.upload(filesInput, slug);
+          completeTask('UPLOAD_FILES');
+        } else {
+          startTask('UPLOAD_FILES');
+          completeTask('UPLOAD_FILES');
+        }
 
         startTask('UPDATE_WEB2_SPACE');
         const updateInput = schemaUpdateSpace.parse(arg);
         const result = await web2.updateSpaceBySlug({
           ...updateInput,
-          ...urls,
           slug,
         });
 

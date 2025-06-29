@@ -12,8 +12,10 @@ import { useProposalDetailsWeb3Rpc } from '@core/governance';
 import {
   ProposalTransactionItem,
   ProposalTokenItem,
+  ProposalTokenRequirementsInfo,
   ProposalVotingInfo,
   ProposalMintItem,
+  ProposalEntryInfo,
 } from '../../governance';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
 import { ButtonClose } from "@hypha-platform/epics";
@@ -21,12 +23,16 @@ import { ButtonClose } from "@hypha-platform/epics";
 type ProposalDetailProps = ProposalHeadProps & {
   onAccept: () => void;
   onReject: () => void;
+  onCheckProposalExpiration: () => void;
   updateProposalData: () => void;
+  updateProposalsList: () => void;
+  isVoting?: boolean;
   content?: string;
   closeUrl: string;
   leadImage?: string;
   attachments?: string[];
   proposalId?: number | null | undefined;
+  spaceSlug: string;
 };
 
 export const ProposalDetail = ({
@@ -37,12 +43,16 @@ export const ProposalDetail = ({
   isLoading,
   onAccept,
   onReject,
+  onCheckProposalExpiration,
   content,
   closeUrl,
   leadImage,
   attachments,
   proposalId,
   updateProposalData,
+  updateProposalsList,
+  spaceSlug,
+  isVoting,
 }: ProposalDetailProps) => {
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: proposalId as number,
@@ -51,6 +61,7 @@ export const ProposalDetail = ({
     try {
       onAccept();
       updateProposalData();
+      updateProposalsList();
     } catch (err) {
       console.debug(err);
     }
@@ -59,6 +70,16 @@ export const ProposalDetail = ({
     try {
       onReject();
       updateProposalData();
+      updateProposalsList();
+    } catch (err) {
+      console.debug(err);
+    }
+  };
+  const handleOnCheckProposalExpiration = () => {
+    try {
+      onCheckProposalExpiration();
+      updateProposalData();
+      updateProposalsList();
     } catch (err) {
       console.debug(err);
     }
@@ -100,6 +121,17 @@ export const ProposalDetail = ({
           quorum={method.quorum}
         />
       ))}
+      {proposalDetails?.entryMethods.map((method, idx) => (
+        <ProposalEntryInfo key={idx} joinMethod={method.joinMethod} />
+      ))}
+      {proposalDetails?.tokenRequirements.map((method, idx) => (
+        <ProposalTokenRequirementsInfo
+          key={idx}
+          token={method.token}
+          amount={method.amount}
+          spaceSlug={spaceSlug}
+        />
+      ))}
       {proposalDetails?.tokens.map((token, idx) => (
         <ProposalTokenItem
           key={idx}
@@ -114,17 +146,23 @@ export const ProposalDetail = ({
           recipient={tx?.recipient}
           amount={tx?.rawAmount}
           tokenAddress={tx?.token}
+          spaceSlug={spaceSlug}
         />
       ))}
       {proposalDetails?.mintings.map((mint, idx) => (
         <ProposalMintItem key={idx} member={mint.member} number={mint.number} />
       ))}
       <FormVoting
-        unity={proposalDetails?.yesVotePercentage || 0}
+        unity={proposalDetails?.unityPercentage || 0}
         quorum={proposalDetails?.quorumPercentage || 0}
         endTime={formatISO(new Date(proposalDetails?.endTime || new Date()))}
+        executed={proposalDetails?.executed}
+        expired={proposalDetails?.expired}
         onAccept={handleOnAccept}
         onReject={handleOnReject}
+        onCheckProposalExpiration={handleOnCheckProposalExpiration}
+        isLoading={isLoading}
+        isVoting={isVoting}
       />
       <Separator />
       <CommentsList

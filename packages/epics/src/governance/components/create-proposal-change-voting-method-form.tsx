@@ -18,14 +18,14 @@ import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter } from 'next/navigation';
 import { useSpaceDetailsWeb3Rpc } from '@hypha-platform/core/client';
 
-type FormValues = z.infer<typeof schemaChangeVotingMethod>;
-
 const schemaCreateProposalChangeVotingMethod =
   schemaChangeVotingMethod.extend(createAgreementFiles);
 
+type FormValues = z.infer<typeof schemaCreateProposalChangeVotingMethod>;
+
 interface CreateProposalChangeVotingMethodFormProps {
   spaceId: number | undefined | null;
-  web3SpaceId: number | undefined | null;
+  web3SpaceId?: number | null;
   successfulUrl: string;
   backUrl?: string;
   plugin: React.ReactNode;
@@ -43,8 +43,8 @@ export const CreateProposalChangeVotingMethodForm = ({
   const { jwt } = useJwt();
   const config = useConfig();
 
-  const { spaceDetails } = useSpaceDetailsWeb3Rpc({
-    spaceId: spaceId as number,
+  const { spaceDetails, isLoading } = useSpaceDetailsWeb3Rpc({
+    spaceId: web3SpaceId as number,
   });
   const {
     createChangeVotingMethod,
@@ -68,12 +68,36 @@ export const CreateProposalChangeVotingMethodForm = ({
       members: [],
       token: undefined as `0x${string}` | undefined,
       quorumAndUnity: {
-        quorum: Number(spaceDetails?.quorum),
-        unity: Number(spaceDetails?.unity),
+        quorum: 0,
+        unity: 0,
       },
       votingMethod: undefined,
     },
   });
+
+  const getVotingMethod = (
+    votingPowerSource: number | undefined,
+  ): FormValues['votingMethod'] => {
+    const votingMethodMap: Record<number, FormValues['votingMethod']> = {
+      1: '1t1v',
+      2: '1m1v',
+    };
+    return votingPowerSource ? votingMethodMap[votingPowerSource] : undefined;
+  };
+
+  React.useEffect(() => {
+    if (spaceDetails && !isLoading) {
+      const quorum = Number(spaceDetails.quorum ?? 0);
+      const unity = Number(spaceDetails.unity ?? 0);
+      const votingMethod = getVotingMethod(
+        Number(spaceDetails.votingPowerSource ?? 0),
+      );
+
+      form.setValue('quorumAndUnity.quorum', quorum);
+      form.setValue('quorumAndUnity.unity', unity);
+      form.setValue('votingMethod', votingMethod);
+    }
+  }, [spaceDetails, isLoading]);
 
   const handleCreate = async (data: FormValues) => {
     if (!web3SpaceId || !data.votingMethod) return;
@@ -107,7 +131,7 @@ export const CreateProposalChangeVotingMethodForm = ({
   return (
     <LoadingBackdrop
       progress={progress}
-      isLoading={isPending}
+      isLoading={isPending || isLoading}
       message={
         isError ? (
           <div className="flex flex-col">
@@ -134,6 +158,7 @@ export const CreateProposalChangeVotingMethodForm = ({
             backUrl={backUrl}
             backLabel="Back to Settings"
             isLoading={false}
+            label="Change Voting Method"
           />
           {plugin}
           <Separator />

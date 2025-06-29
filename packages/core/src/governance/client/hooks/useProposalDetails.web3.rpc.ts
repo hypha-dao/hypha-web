@@ -11,14 +11,13 @@ import {
   decayingTokenFactoryAbi,
   daoSpaceFactoryImplementationAbi,
   decayingSpaceTokenAbi,
+  tokenBalanceJoinImplementationAbi,
 } from '@core/generated';
 
 export const useProposalDetailsWeb3Rpc = ({
   proposalId,
-  quorumTotal = 100,
 }: {
   proposalId: number;
-  quorumTotal?: number;
 }) => {
   const { data, isLoading, error } = useSWR(
     [proposalId, 'proposalDetails'],
@@ -48,10 +47,16 @@ export const useProposalDetailsWeb3Rpc = ({
       transactions,
     ] = data;
 
-    const totalVotingPowerNumber = Number(totalVotingPowerAtSnapshot);
+    const quorumTotalVotingPowerNumber = Number(totalVotingPowerAtSnapshot);
     const quorumPercentage =
-      quorumTotal > 0
-        ? Math.min(100, (totalVotingPowerNumber / quorumTotal) * 100)
+      quorumTotalVotingPowerNumber > 0
+        ? (Number(yesVotes + noVotes) / quorumTotalVotingPowerNumber) * 100
+        : 0;
+
+    const unityTotalVotingPowerNumber = Number(yesVotes) + Number(noVotes);
+    const unityPercentage =
+      unityTotalVotingPowerNumber > 0
+        ? (Number(yesVotes) / unityTotalVotingPowerNumber) * 100
         : 0;
 
     const transfers: {
@@ -83,6 +88,17 @@ export const useProposalDetailsWeb3Rpc = ({
     const mintings: Array<{
       member: `0x${string}`;
       number: bigint;
+    }> = [];
+
+    const entryMethods: Array<{
+      spaceId: bigint;
+      joinMethod: bigint;
+    }> = [];
+
+    const tokenRequirements: Array<{
+      spaceId: bigint;
+      token: `0x${string}`;
+      amount: bigint;
     }> = [];
 
     (transactions as any[]).forEach((tx) => {
@@ -257,6 +273,50 @@ export const useProposalDetailsWeb3Rpc = ({
       } catch (error) {
         console.error('Failed to decode function data:', error);
       }
+
+      try {
+        const decoded = decodeFunctionData({
+          abi: daoSpaceFactoryImplementationAbi,
+          data: tx.data,
+        });
+
+        if (decoded.functionName === 'changeEntryMethod') {
+          const [spaceId, joinMethod] = decoded.args as unknown as [
+            bigint,
+            bigint,
+          ];
+
+          entryMethods.push({
+            spaceId,
+            joinMethod,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to decode function data:', error);
+      }
+
+      try {
+        const decoded = decodeFunctionData({
+          abi: tokenBalanceJoinImplementationAbi,
+          data: tx.data,
+        });
+
+        if (decoded.functionName === 'setTokenRequirement') {
+          const [spaceId, token, amount] = decoded.args as unknown as [
+            bigint,
+            `0x{string}`,
+            bigint,
+          ];
+
+          tokenRequirements.push({
+            spaceId,
+            token,
+            amount,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to decode function data:', error);
+      }
     });
 
     return {
@@ -268,22 +328,17 @@ export const useProposalDetailsWeb3Rpc = ({
       endTime: new Date(Number(endTime) * 1000),
       yesVotes: Number(yesVotes),
       noVotes: Number(noVotes),
-      totalVotingPowerAtSnapshot: totalVotingPowerNumber,
-      yesVotePercentage:
-        totalVotingPowerNumber > 0
-          ? (Number(yesVotes) / totalVotingPowerNumber) * 100
-          : 0,
-      noVotePercentage:
-        totalVotingPowerNumber > 0
-          ? (Number(noVotes) / totalVotingPowerNumber) * 100
-          : 0,
+      totalVotingPowerAtSnapshot,
       quorumPercentage,
+      unityPercentage,
       transfers,
       tokens,
       votingMethods,
       mintings,
+      entryMethods,
+      tokenRequirements,
     };
-  }, [data, quorumTotal]);
+  }, [data]);
 
   return {
     proposalDetails: parsedProposal,

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { DEFAULT_IMAGE_ACCEPT } from '@core/assets';
 import { isBefore } from 'date-fns';
+import { EntryMethodType } from './types';
 
 const ALLOWED_IMAGE_FILE_SIZE = 5 * 1024 * 1024;
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
@@ -218,7 +219,7 @@ const decaySettingsSchema = z.object({
       required_error: 'Decay percentage is required',
       invalid_type_error: 'Decay percentage must be a number',
     })
-    .min(1, 'Decay percentage must be at least 1%')
+    .min(0, 'Decay percentage must be at least 0%')
     .max(100, 'Decay percentage must not exceed 100%'),
 });
 
@@ -316,4 +317,26 @@ export const mapToCreateProposalWeb3Input = (
     value: tx.value,
     data: tx.data || '0x',
   })),
+});
+
+export const schemaChangeEntryMethod = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  entryMethod: z
+    .number()
+    .int()
+    .min(EntryMethodType.OPEN_ACCESS)
+    .max(EntryMethodType.INVITE_ONLY),
+  tokenBase: z
+    .object({
+      amount: z
+        .number()
+        .int('Should be integer')
+        .positive('Amount must be greater than 0'),
+      token: z
+        .string()
+        .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' })
+        .min(1, { message: 'Token address is required' }),
+    })
+    .optional(),
 });

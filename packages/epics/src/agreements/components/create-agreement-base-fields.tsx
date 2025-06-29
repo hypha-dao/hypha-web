@@ -15,13 +15,14 @@ import {
   RichTextEditor,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
-import { Creator } from '@hypha-platform/graphql/rsc';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { ALLOWED_IMAGE_FILE_SIZE } from '@core/space';
 import { z } from 'zod';
 import { createAgreementFiles, schemaCreateAgreement } from '@core/governance';
 
 import { ButtonClose, ButtonBack } from '@hypha-platform/epics';
+
+type Creator = { avatar: string; name: string; surname: string };
 
 const schemaCreateAgreementForm =
   schemaCreateAgreement.extend(createAgreementFiles);

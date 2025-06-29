@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
 import { Config } from '@wagmi/core';
 import { z } from 'zod';
+import { produce } from 'immer';
 
 import {
   schemaCreateAgreement,
@@ -15,12 +16,92 @@ import {
 import { useAgreementFileUploads } from './useAgreementFileUploads';
 import { useAgreementMutationsWeb2Rsc } from './useAgreementMutations.web2.rsc';
 import { useProposeAContributionMutationsWeb3Rpc } from './useProposeAContributionMutations.web3.rsc';
-import { useOrchestratorTasks } from './useOrchestratorTasks';
 
 type CreateProposeAContributionArg = z.infer<typeof schemaCreateAgreement> & {
   payouts: { amount: string; token: string }[];
   recipient: string;
   web3SpaceId?: number;
+};
+
+type TaskName =
+  | 'CREATE_WEB2_AGREEMENT'
+  | 'CREATE_WEB3_AGREEMENT'
+  | 'UPLOAD_FILES'
+  | 'LINK_WEB2_AND_WEB3_AGREEMENT';
+
+type TaskState = {
+  [K in TaskName]: {
+    status: TaskStatus;
+    message?: string;
+  };
+};
+
+enum TaskStatus {
+  IDLE = 'idle',
+  IS_PENDING = 'isPending',
+  IS_DONE = 'isDone',
+  ERROR = 'error',
+}
+
+const taskActionDescriptions: Record<TaskName, string> = {
+  CREATE_WEB2_AGREEMENT: 'Creating Web2 agreement...',
+  CREATE_WEB3_AGREEMENT: 'Creating Web3 agreement...',
+  UPLOAD_FILES: 'Uploading Agreement Files...',
+  LINK_WEB2_AND_WEB3_AGREEMENT: 'Linking Web2 and Web3 agreements',
+};
+
+type ProgressAction =
+  | { type: 'START_TASK'; taskName: TaskName; message?: string }
+  | { type: 'COMPLETE_TASK'; taskName: TaskName; message?: string }
+  | { type: 'SET_ERROR'; taskName: TaskName; message: string }
+  | { type: 'RESET' };
+
+const initialTaskState: TaskState = {
+  CREATE_WEB2_AGREEMENT: { status: TaskStatus.IDLE },
+  CREATE_WEB3_AGREEMENT: { status: TaskStatus.IDLE },
+  UPLOAD_FILES: { status: TaskStatus.IDLE },
+  LINK_WEB2_AND_WEB3_AGREEMENT: { status: TaskStatus.IDLE },
+};
+
+const progressStateReducer = (
+  state: TaskState,
+  action: ProgressAction,
+): TaskState => {
+  return produce(state, (draft) => {
+    switch (action.type) {
+      case 'START_TASK':
+        draft[action.taskName].status = TaskStatus.IS_PENDING;
+        if (action.message) {
+          draft[action.taskName].message = action.message;
+        }
+        break;
+      case 'COMPLETE_TASK':
+        draft[action.taskName].status = TaskStatus.IS_DONE;
+        if (action.message) {
+          draft[action.taskName].message = action.message;
+        }
+        break;
+      case 'SET_ERROR':
+        draft[action.taskName].status = TaskStatus.ERROR;
+        draft[action.taskName].message = action.message;
+        break;
+      case 'RESET':
+        return initialTaskState;
+    }
+  });
+};
+
+const computeProgress = (tasks: TaskState): number => {
+  const taskList = Object.values(tasks);
+  const totalTasks = taskList.length;
+  if (totalTasks === 0) return 0;
+  const completedTasks = taskList.filter(
+    (t) => t.status === TaskStatus.IS_DONE,
+  ).length;
+  const inProgressTasks =
+    taskList.filter((t) => t.status === TaskStatus.IS_PENDING).length * 0.5;
+  const progress = ((completedTasks + inProgressTasks) / totalTasks) * 100;
+  return Math.min(100, Math.max(0, Math.round(progress)));
 };
 
 export const useCreateProposeAContributionOrchestrator = ({
@@ -30,19 +111,55 @@ export const useCreateProposeAContributionOrchestrator = ({
   authToken?: string | null;
   config?: Config;
 }) => {
-  const agreementFiles = useAgreementFileUploads(authToken);
   const web2 = useAgreementMutationsWeb2Rsc(authToken);
-  const web3 = useProposeAContributionMutationsWeb3Rpc(config);
+  const web3 = useProposeAContributionMutationsWeb3Rpc({
+    proposalSlug: web2.createdAgreement?.slug,
+  });
+  const agreementFiles = useAgreementFileUploads(
+    authToken,
+    (uploadedFiles, slug) => {
+      web2.updateAgreementBySlug({
+        slug: slug ?? '',
+        attachments: uploadedFiles?.attachments,
+        leadImage: uploadedFiles?.leadImage,
+      });
+    },
+  );
 
-  const {
-    taskState,
-    currentAction,
-    progress,
-    startTask,
-    completeTask,
-    errorTask,
-    resetTasks,
-  } = useOrchestratorTasks({ authToken });
+  const [taskState, dispatch] = React.useReducer(
+    progressStateReducer,
+    initialTaskState,
+  );
+  const progress = computeProgress(taskState);
+  const [currentAction, setCurrentAction] = React.useState<string>();
+
+  const startTask = useCallback((taskName: TaskName) => {
+    const action = taskActionDescriptions[taskName];
+    setCurrentAction(action);
+    dispatch({ type: 'START_TASK', taskName, message: action });
+  }, []);
+
+  const completeTask = useCallback(
+    (taskName: TaskName) => {
+      if (currentAction === taskActionDescriptions[taskName])
+        setCurrentAction(undefined);
+      dispatch({ type: 'COMPLETE_TASK', taskName });
+    },
+    [currentAction],
+  );
+
+  const errorTask = useCallback(
+    (taskName: TaskName, error: string) => {
+      if (currentAction === taskActionDescriptions[taskName])
+        setCurrentAction(undefined);
+      dispatch({ type: 'SET_ERROR', taskName, message: error });
+    },
+    [currentAction],
+  );
+
+  const resetTasks = useCallback(() => {
+    dispatch({ type: 'RESET' });
+  }, []);
 
   const { trigger: createProposeAContribution } = useSWRMutation(
     'createProposeAContributionOrchestration',
@@ -65,41 +182,40 @@ export const useCreateProposeAContributionOrchestrator = ({
           });
           completeTask('CREATE_WEB3_AGREEMENT');
         }
+        const files = schemaCreateAgreementFiles.parse(arg);
+        if (files.attachments?.length || files.leadImage) {
+          startTask('UPLOAD_FILES');
+          await agreementFiles.upload(files, web2Slug);
+          completeTask('UPLOAD_FILES');
+        } else {
+          startTask('UPLOAD_FILES');
+          completeTask('UPLOAD_FILES');
+        }
       } catch (err) {
         if (web2Slug) {
           await web2.deleteAgreementBySlug({ slug: web2Slug });
         }
         throw err;
       }
-
-      startTask('UPLOAD_FILES');
-      const inputFiles = schemaCreateAgreementFiles.parse(arg);
-      await agreementFiles.upload(inputFiles);
-      completeTask('UPLOAD_FILES');
     },
   );
 
   const { data: updatedWeb2Agreement } = useSWR(
-    web2.createdAgreement?.slug && agreementFiles.files
+    web2.createdAgreement?.slug &&
+      taskState.UPLOAD_FILES.status === TaskStatus.IS_DONE &&
+      (!config || taskState.CREATE_WEB3_AGREEMENT.status === TaskStatus.IS_DONE)
       ? [
           web2.createdAgreement.slug,
-          agreementFiles.files,
           web3.createdProposeAContribution?.proposalId,
           'linkingWeb2AndWeb3',
         ]
       : null,
-    async ([slug, uploadedFiles, web3ProposalId]) => {
+    async ([slug, web3ProposalId]) => {
       try {
         startTask('LINK_WEB2_AND_WEB3_AGREEMENT');
         const result = await web2.updateAgreementBySlug({
           slug,
           web3ProposalId: web3ProposalId ? Number(web3ProposalId) : undefined,
-          attachments: uploadedFiles.attachments
-            ? Array.isArray(uploadedFiles.attachments)
-              ? uploadedFiles.attachments
-              : [uploadedFiles.attachments]
-            : [],
-          leadImage: uploadedFiles.leadImage,
         });
         completeTask('LINK_WEB2_AND_WEB3_AGREEMENT');
         return result;
@@ -109,6 +225,10 @@ export const useCreateProposeAContributionOrchestrator = ({
         }
         throw error;
       }
+    },
+    {
+      revalidateOnMount: true,
+      shouldRetryOnError: false,
     },
   );
 
@@ -132,8 +252,9 @@ export const useCreateProposeAContributionOrchestrator = ({
     reset,
     createProposeAContribution,
     agreement: {
-      ...updatedWeb2Agreement,
+      ...web2.createdAgreement,
       ...web3.createdProposeAContribution,
+      ...updatedWeb2Agreement,
     },
     taskState,
     currentAction,

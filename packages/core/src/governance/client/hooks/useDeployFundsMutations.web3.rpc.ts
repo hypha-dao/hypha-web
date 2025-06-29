@@ -1,11 +1,12 @@
 'use client';
 
 import useSWRMutation from 'swr/mutation';
-import { Config, writeContract } from '@wagmi/core';
-import { getProposalFromLogs } from '../web3';
 import useSWR from 'swr';
-import { publicClient } from '@core/common/web3/public-client';
+import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 import { encodeFunctionData, erc20Abi, parseUnits } from 'viem';
+
+import { getProposalFromLogs } from '../web3';
+import { publicClient } from '@core/common/web3/public-client';
 import {
   daoProposalsImplementationAbi,
   daoProposalsImplementationAddress,
@@ -21,16 +22,28 @@ interface CreateDeployFundsInput {
   recipient: string;
 }
 
-export const useDeployFundsMutationsWeb3Rpc = (config?: Config) => {
+const chainId = 8453;
+
+export const useDeployFundsMutationsWeb3Rpc = ({
+  proposalSlug,
+}: {
+  proposalSlug?: string | null;
+}) => {
+  const { client } = useSmartWallets();
+
   const {
-    trigger: createDeployFundsMutation,
+    trigger: createDeployFunds,
     reset: resetCreateDeployFundsMutation,
     isMutating: isCreatingDeployFunds,
     data: createDeployFundsHash,
     error: errorCreateDeployFunds,
   } = useSWRMutation(
-    config ? [config, 'createDeployFunds'] : null,
-    async ([config], { arg }: { arg: CreateDeployFundsInput }) => {
+    `createDeployFunds-${proposalSlug}`,
+    async (_, { arg }: { arg: CreateDeployFundsInput }) => {
+      if (!client) {
+        throw new Error('Smart wallet client not available');
+      }
+
       const transactions = await Promise.all(
         arg.payouts.map(async (payout) => {
           const decimals = await getTokenDecimals(payout.token);
@@ -51,19 +64,17 @@ export const useDeployFundsMutationsWeb3Rpc = (config?: Config) => {
       const proposalParams = {
         spaceId: BigInt(arg.spaceId),
         duration: BigInt(86400),
-        transactions: transactions as readonly {
-          target: `0x${string}`;
-          value: bigint;
-          data: `0x${string}`;
-        }[],
+        transactions,
       };
 
-      return writeContract(config, {
-        address: daoProposalsImplementationAddress[8453],
+      const txHash = await client.writeContract({
+        address: daoProposalsImplementationAddress[chainId],
         abi: daoProposalsImplementationAbi,
         functionName: 'createProposal',
         args: [proposalParams],
       });
+
+      return txHash;
     },
   );
 
@@ -82,7 +93,7 @@ export const useDeployFundsMutationsWeb3Rpc = (config?: Config) => {
   );
 
   return {
-    createDeployFunds: createDeployFundsMutation,
+    createDeployFunds,
     resetCreateDeployFundsMutation,
     isCreatingDeployFunds,
     isLoadingDeployFundsFromTransaction,

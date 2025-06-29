@@ -7,9 +7,13 @@ export default function Loading() {
     <SidePanel>
       <ProposalDetail
         closeUrl={''}
+        updateProposalsList={() => console.log('update proposals list')}
         updateProposalData={() => console.log('update proposal data')}
         onAccept={() => console.log('accept')}
         onReject={() => console.log('reject')}
+        onCheckProposalExpiration={() =>
+          console.log('handleCheckProposalExpiration')
+        }
         content={''}
         creator={{
           avatar: '',
@@ -19,6 +23,7 @@ export default function Loading() {
         title={''}
         status={''}
         isLoading={true}
+        spaceSlug={''}
       />
     </SidePanel>
   );

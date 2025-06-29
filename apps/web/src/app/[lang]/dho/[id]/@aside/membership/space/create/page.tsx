@@ -17,7 +17,7 @@ export default function CreateSubspacePage() {
       <CreateSubspaceForm
         successfulUrl={successfulUrl}
         backUrl={`${successfulUrl}${PATH_SELECT_SETTINGS_ACTION}`}
-        parentSpaceId={space?.id}
+        parentSpaceId={space?.id ?? null}
       />
     </SidePanel>
   );

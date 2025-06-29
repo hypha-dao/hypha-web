@@ -7,13 +7,25 @@ import { useDocumentSlug } from '@web/hooks/use-document-slug';
 import { useDocumentBySlug } from '@web/hooks/use-document-by-slug';
 import { getDhoPathGovernance } from '../../../../@tab/governance/constants';
 import { useVote } from '@core/governance';
+import { useSpaceDocumentsWithStatuses } from '@hypha-platform/epics';
+import { useSpaceBySlug } from '@core/space';
 
 export default function Agreements() {
   const { id, lang } = useParams();
   const documentSlug = useDocumentSlug();
   const { document, isLoading, mutate } = useDocumentBySlug(documentSlug);
-  const { handleAccept, handleReject } = useVote({
+  const {
+    handleAccept,
+    handleReject,
+    handleCheckProposalExpiration,
+    isVoting,
+  } = useVote({
     proposalId: document?.web3ProposalId,
+  });
+  const { space } = useSpaceBySlug(id as string);
+  const { update } = useSpaceDocumentsWithStatuses({
+    spaceSlug: space?.slug as string,
+    spaceId: space?.web3SpaceId as number,
   });
 
   return (
@@ -22,7 +34,10 @@ export default function Agreements() {
         closeUrl={getDhoPathGovernance(lang as Locale, id as string)}
         onAccept={handleAccept}
         onReject={handleReject}
+        onCheckProposalExpiration={handleCheckProposalExpiration}
         updateProposalData={mutate}
+        updateProposalsList={update}
+        isVoting={isVoting}
         content={document?.description}
         creator={{
           avatar: document?.creator?.avatarUrl || '',
@@ -35,6 +50,7 @@ export default function Agreements() {
         leadImage={document?.leadImage}
         attachments={document?.attachments}
         proposalId={document?.web3ProposalId}
+        spaceSlug={space?.slug || ''}
       />
     </SidePanel>
   );

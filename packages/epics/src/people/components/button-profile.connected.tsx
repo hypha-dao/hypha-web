@@ -3,7 +3,7 @@
 import { ButtonProfile } from './button-profile';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
-import { UseAuthentication } from 'packages/authentication/src/shared/types';
+import { UseAuthentication } from '@hypha-platform/authentication';
 import { UseMe } from '../hooks/types';
 import { useEffect } from 'react';
 

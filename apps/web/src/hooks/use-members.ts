@@ -4,10 +4,22 @@ import React from 'react';
 import useSWR from 'swr';
 import queryString from 'query-string';
 
-import { MemberItem, FilterParams } from '@hypha-platform/graphql/rsc';
 import { type UseMembers, type UseMembersReturn } from '@hypha-platform/epics';
 
-import { useJwt } from '@hypha-platform/core/client';
+type MemberItem = {
+  name: string;
+  surname: string;
+  nickname: string;
+  location: string;
+  avatar: string;
+  commitment: number;
+  status: string;
+  about: string;
+  slug: string;
+  isLoading?: boolean;
+};
+
+import { FilterParams, useJwt } from '@hypha-platform/core/client';
 
 export const useMembers: UseMembers = ({
   page = 1,
