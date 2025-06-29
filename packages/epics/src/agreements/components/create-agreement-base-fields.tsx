@@ -53,7 +53,7 @@ export function CreateAgreementBaseFields({
 
   return (
     <>
-      <div className="flex justify-betweengap-2">
+      <div className="flex justify-between gap-2">
         <div className="flex flex-grow gap-3">
           <PersonAvatar
             size="lg"
