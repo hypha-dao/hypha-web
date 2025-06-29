@@ -39,7 +39,7 @@ export default function SpaceConfiguration() {
   }, [progress, spaceSlug]);
 
   const pathname = usePathname();
-  const closeUrl = pathname.replace('/space-configuration', '');
+  const closeUrl = pathname.replace(/\/space-configuration$/, '');
 
   return (
     <SidePanel>
