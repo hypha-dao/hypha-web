@@ -21,21 +21,17 @@ export const ButtonBack = ({
 }: ButtonBackProps) => {
   const pathname = usePathname();
 
-  if (!backUrl) {
-    if (dropSegment) {
-      backUrl = pathname.replace(dropSegment, '');
-    } else {
-      console.debug('ButtonBack: backUrl or dropSegment must be provided');
-      return null;
-    }
-  }
-
   let resolvedBackUrl = backUrl;
   if (!resolvedBackUrl) {
     if (dropSegment) {
       resolvedBackUrl = pathname.endsWith(dropSegment)
         ? pathname.slice(0, -dropSegment.length)
         : pathname.replace(dropSegment, '');
+    } else {
+      console.debug('ButtonBack: backUrl or dropSegment must be provided');
+      return null;
+    }
+  }
 
   return (
     <Button
