@@ -107,6 +107,23 @@ export const findPersonById = async (
   return mapToDomainPerson(dbPerson);
 };
 
+export type FindPersonByWeb3AddressInput = {
+  address: string;
+};
+export const findPersonByWeb3Address = async (
+  { address }: FindPersonByWeb3AddressInput,
+  { db }: DbConfig,
+) => {
+  const [person] = await db
+    .select()
+    .from(people)
+    .where(eq(sql`upper(${people.address})`, address.toUpperCase()))
+    .limit(1);
+  if (!person) return null;
+
+  return mapToDomainPerson(person);
+};
+
 export type FindPersonBySpaceIdInput = { spaceId: number };
 export type FindPersonBySpaceIdConfig = {
   db: DatabaseInstance;

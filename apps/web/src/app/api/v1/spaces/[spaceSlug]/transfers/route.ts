@@ -3,6 +3,8 @@ import { createSpaceService } from '@hypha-platform/core/server';
 import { getSpaceDetails } from '@core/space';
 import { publicClient, getTransfersByAddress } from '@core/common';
 import { schemaGetTransfersQuery } from '@core/transaction';
+import { findPersonByWeb3Address } from '@core/people/server/queries';
+import { db } from '@hypha-platform/storage-postgres';
 
 /**
  * A route to get ERC20 transfers.
@@ -11,7 +13,7 @@ import { schemaGetTransfersQuery } from '@core/transaction';
  * - token: addresses of token contracts divided by commas. Optional
  * - fromDate: timestamp of the start date from which to get the transfers.
  *   Optional
- * - toDate: timestamp of the start date from which to get the transfers. Optional
+ * - toDate: timestamp of the end date from which to get the transfers. Optional
  * - fromBlock: the minimum block number from which to get the transfers.
  *   Optional
  * - toBlock: the maximum block number from which to get the transfers.
@@ -54,7 +56,24 @@ export async function GET(
       limit,
     });
 
-    return NextResponse.json(transfers);
+    const transfersWithPersonsInfo = await Promise.all(
+      transfers.map(async (transfer) => {
+        const personAddress =
+          transfer.to.toUpperCase() === spaceAddress.toUpperCase()
+            ? transfer.from
+            : transfer.to;
+        const person = await findPersonByWeb3Address(
+          {
+            address: personAddress,
+          },
+          { db },
+        );
+
+        return { ...transfer, person: person };
+      }),
+    );
+
+    return NextResponse.json(transfersWithPersonsInfo);
   } catch (error: any) {
     const errorMessage =
       error?.message || error?.shortMessage || JSON.stringify(error);
