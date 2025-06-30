@@ -1,15 +1,17 @@
 'use client';
 
-import useSWRMutation from 'swr/mutation';
-import { Config, writeContract } from '@wagmi/core';
-import { getProposalFromLogs } from '../web3';
 import useSWR from 'swr';
+import useSWRMutation from 'swr/mutation';
+import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
+import { encodeFunctionData, erc20Abi, parseUnits } from 'viem';
+
+import { getProposalFromLogs } from '../web3';
 import { publicClient } from '@core/common/web3/public-client';
-import { encodeFunctionData, erc20Abi, getContract, parseUnits } from 'viem';
 import {
   daoProposalsImplementationAbi,
   daoProposalsImplementationAddress,
 } from '@core/generated';
+import { getTokenDecimals } from '@core/common/web3/get-token-decimals';
 
 interface CreateProposeAContributionInput {
   spaceId: number;
@@ -20,17 +22,15 @@ interface CreateProposeAContributionInput {
   recipient: string;
 }
 
-async function getTokenDecimals(tokenAddress: string): Promise<number> {
-  const contract = getContract({
-    address: tokenAddress as `0x${string}`,
-    abi: erc20Abi,
-    client: publicClient,
-  });
+const chainId = 8453;
 
-  return await contract.read.decimals();
-}
+export const useProposeAContributionMutationsWeb3Rpc = ({
+  proposalSlug,
+}: {
+  proposalSlug?: string | null;
+}) => {
+  const { client } = useSmartWallets();
 
-export const useProposeAContributionMutationsWeb3Rpc = (config?: Config) => {
   const {
     trigger: createProposeAContributionMutation,
     reset: resetCreateProposeAContributionMutation,
@@ -38,8 +38,12 @@ export const useProposeAContributionMutationsWeb3Rpc = (config?: Config) => {
     data: createProposeAContributionHash,
     error: errorCreateProposeAContribution,
   } = useSWRMutation(
-    config ? [config, 'createProposeAContribution'] : null,
-    async ([config], { arg }: { arg: CreateProposeAContributionInput }) => {
+    `createProposeAContribution-${proposalSlug}`,
+    async (_, { arg }: { arg: CreateProposeAContributionInput }) => {
+      if (!client) {
+        throw new Error('Smart wallet client not available');
+      }
+
       const transactions = await Promise.all(
         arg.payouts.map(async (payout) => {
           const decimals = await getTokenDecimals(payout.token);
@@ -60,19 +64,17 @@ export const useProposeAContributionMutationsWeb3Rpc = (config?: Config) => {
       const proposalParams = {
         spaceId: BigInt(arg.spaceId),
         duration: BigInt(86400),
-        transactions: transactions as readonly {
-          target: `0x${string}`;
-          value: bigint;
-          data: `0x${string}`;
-        }[],
+        transactions,
       };
 
-      return writeContract(config, {
-        address: daoProposalsImplementationAddress[8453],
+      const txHash = await client.writeContract({
+        address: daoProposalsImplementationAddress[chainId],
         abi: daoProposalsImplementationAbi,
         functionName: 'createProposal',
         args: [proposalParams],
       });
+
+      return txHash;
     },
   );
 

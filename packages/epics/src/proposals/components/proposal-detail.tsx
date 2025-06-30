@@ -28,6 +28,7 @@ type ProposalDetailProps = ProposalHeadProps & {
   onCheckProposalExpiration: () => void;
   updateProposalData: () => void;
   updateProposalsList: () => void;
+  isVoting?: boolean;
   content?: string;
   closeUrl: string;
   leadImage?: string;
@@ -53,6 +54,7 @@ export const ProposalDetail = ({
   updateProposalData,
   updateProposalsList,
   spaceSlug,
+  isVoting,
 }: ProposalDetailProps) => {
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: proposalId as number,
@@ -167,6 +169,7 @@ export const ProposalDetail = ({
         onReject={handleOnReject}
         onCheckProposalExpiration={handleOnCheckProposalExpiration}
         isLoading={isLoading}
+        isVoting={isVoting}
       />
       <Separator />
       <CommentsList

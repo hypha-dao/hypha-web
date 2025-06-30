@@ -6,12 +6,15 @@ import { useJoinSpaceWeb3Rpc } from '@core/space/client/hooks/useJoinSpace.web3.
 
 export const useJoinSpace = ({ spaceId }: { spaceId: number }) => {
   const { user } = useAuthentication();
-  const { joinSpace: joinSpaceWeb3 } = useJoinSpaceWeb3Rpc({ spaceId });
+  const { joinSpace: joinSpaceWeb3, isJoiningSpace } = useJoinSpaceWeb3Rpc({
+    spaceId,
+  });
 
   const {
     data: isMember,
     isLoading,
     error,
+    mutate,
   } = useSWR(
     user?.wallet?.address ? [user.wallet.address, spaceId, 'isMember'] : null,
     async ([address, spaceId]) =>
@@ -24,7 +27,9 @@ export const useJoinSpace = ({ spaceId }: { spaceId: number }) => {
   return {
     isMember,
     isLoading,
+    isJoiningSpace,
     error,
     joinSpace: joinSpaceWeb3,
+    revalidateIsMember: mutate,
   };
 };

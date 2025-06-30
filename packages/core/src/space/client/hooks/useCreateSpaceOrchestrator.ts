@@ -109,7 +109,7 @@ export const useCreateSpaceOrchestrator = ({
   config,
 }: UseCreateSpaceOrchestratorInput) => {
   const web2 = useSpaceMutationsWeb2Rsc(authToken);
-  const web3 = useSpaceMutationsWeb3Rpc(config);
+  const web3 = useSpaceMutationsWeb3Rpc();
   const spaceFiles = useSpaceFileUploads(authToken, (uploadedFiles, slug) => {
     web2.updateSpaceBySlug({
       slug: slug ?? '',

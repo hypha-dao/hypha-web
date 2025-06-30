@@ -1,6 +1,7 @@
 import { Button, Skeleton } from '@hypha-platform/ui';
 import { ProgressLine } from './progress-line';
 import { intervalToDuration, isPast } from 'date-fns';
+import { Loader2 } from 'lucide-react';
 
 function formatTimeRemaining(
   endTime: string,
@@ -38,6 +39,7 @@ export const FormVoting = ({
   onAccept,
   onReject,
   onCheckProposalExpiration,
+  isVoting,
 }: {
   unity: number;
   quorum: number;
@@ -48,6 +50,7 @@ export const FormVoting = ({
   onAccept: () => void;
   onReject: () => void;
   onCheckProposalExpiration: () => void;
+  isVoting?: boolean;
 }) => {
   return (
     <div className="flex flex-col gap-5 text-neutral-11">
@@ -94,10 +97,19 @@ export const FormVoting = ({
           ) : null}
           {executed || expired || isPast(new Date(endTime)) ? null : (
             <div className="flex gap-2">
-              <Button variant="outline" onClick={onReject}>
-                Vote no
-              </Button>
-              <Button onClick={onAccept}>Vote yes</Button>
+              {isVoting ? (
+                <div className="flex items-center gap-2 text-sm text-neutral-10">
+                  <Loader2 className="animate-spin w-4 h-4" />
+                  Processing vote...
+                </div>
+              ) : (
+                <>
+                  <Button variant="outline" onClick={onReject}>
+                    Vote no
+                  </Button>
+                  <Button onClick={onAccept}>Vote yes</Button>
+                </>
+              )}
             </div>
           )}
         </Skeleton>
