@@ -13,6 +13,7 @@ export type PeopleFindBySpaceConfig = {
 export interface PeopleRepository {
   findAll(config: PeopleFindAllConfig): Promise<PaginatedResponse<Person>>;
   findById(id: number): Promise<Person | null>;
+  findByWeb3Address(address: string): Promise<Person | null>;
   findBySpaceId(
     { spaceId }: { spaceId: number },
     config: PeopleFindBySpaceConfig,
