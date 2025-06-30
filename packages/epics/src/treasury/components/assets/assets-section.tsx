@@ -7,7 +7,7 @@ import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 import { Button } from '@hypha-platform/ui';
 import { CopyIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
-import { Empty } from '@hypha-platform/epics';
+import { Empty } from '../../../common';
 
 type AssetSectionProps = {
   basePath: string;

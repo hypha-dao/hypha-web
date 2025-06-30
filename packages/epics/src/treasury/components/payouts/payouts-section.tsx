@@ -4,7 +4,7 @@ import { PayoutsList } from './payouts-list';
 import { Text } from '@radix-ui/themes';
 import { usePayoutsSection } from '../../hooks/use-payouts-section';
 import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
-import { Empty } from 'packages/epics/src/common';
+import { Empty } from '../../../common';
 
 type PayoutSectionProps = Record<string, never>;
 

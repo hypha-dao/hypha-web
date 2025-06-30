@@ -4,7 +4,7 @@ import { TransactionsList } from './transactions-list';
 import { Text } from '@radix-ui/themes';
 import { useRequestsSection } from '../../hooks/use-requests-section';
 import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
-import { Empty } from '@hypha-platform/epics';
+import { Empty } from '../../../common';
 
 type RequestsSectionProps = Record<string, never>;
 
