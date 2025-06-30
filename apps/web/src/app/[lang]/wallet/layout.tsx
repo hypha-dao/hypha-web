@@ -17,7 +17,7 @@ export default async function DhoLayout(props: {
   return (
     <div className="flex flex-grow w-full h-full">
       <MenuTop
-        withLogo={true}
+        logoHref={`/${lang}/network`}
         navItems={[
           {
             label: 'Network',
