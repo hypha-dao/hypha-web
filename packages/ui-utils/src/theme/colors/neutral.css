@@ -1,0 +1,20 @@
+@import '../../colors/slate.css';
+
+:root, .light, .light-theme, .dark, .dark-theme {
+  --neutral-1: var(--slate-1);
+  --neutral-2: var(--slate-2);
+  --neutral-3: var(--slate-3);
+  --neutral-4: var(--slate-4);
+  --neutral-5: var(--slate-5);
+  --neutral-6: var(--slate-6);
+  --neutral-7: var(--slate-7);
+  --neutral-8: var(--slate-8);
+  --neutral-9: var(--slate-9);
+  --neutral-10: var(--slate-10);
+  --neutral-11: var(--slate-11);
+  --neutral-12: var(--slate-12);
+
+  --neutral: var(--neutral-1);
+
+  --neutral-alpha-8: var(--slate-alpha-8);
+}

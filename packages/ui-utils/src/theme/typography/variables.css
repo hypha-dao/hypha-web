@@ -1,0 +1,55 @@
+:root {
+  --font-text: 'SF Pro';
+  --font-code: 'Menlo';
+  --font-emphasis: 'Times New Roman';
+  --font-quote: 'Times New Roman';
+
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+
+  --line-height-1: 16px;
+  --line-height-2: 20px;
+  --line-height-3: 24px;
+  --line-height-4: 26px;
+  --line-height-5: 28px;
+  --line-height-6: 30px;
+  --line-height-7: 36px;
+  --line-height-8: 40px;
+  --line-height-9: 60px;
+
+  --font-size-1: 12px;
+  --font-size-2: 14px;
+  --font-size-3: 16px;
+  --font-size-4: 18px;
+  --font-size-5: 20px;
+  --font-size-6: 24px;
+  --font-size-7: 28px;
+  --font-size-8: 35px;
+  --font-size-9: 60px;
+
+  --font-size-xs: var(--font-size-1);
+  --font-size-sm: var(--font-size-2);
+  --font-size-base: var(--font-size-3);
+  --font-size-lg: var(--font-size-4);
+  --font-size-xl: var(--font-size-5);
+  --font-size-2xl: var(--font-size-6);
+  --font-size-3xl: 30px;
+  --font-size-4xl: 36px;
+  --font-size-5xl: 48px;
+  --font-size-6xl: 60px;
+  --font-size-7xl: 72px;
+  --font-size-8xl: 96px;
+  --font-size-9xl: 128px;
+
+  --letter-spacing-1: 0.025px;
+  --letter-spacing-2: 0em;
+  --letter-spacing-3: 0em;
+  --letter-spacing-4: -0.025px;
+  --letter-spacing-5: -0.05px;
+  --letter-spacing-6: -0.0625px;
+  --letter-spacing-7: -0.075px;
+  --letter-spacing-8: -0.1px;
+  --letter-spacing-9: -0.25px;
+}

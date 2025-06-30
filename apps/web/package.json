@@ -21,7 +21,8 @@
     "@hypha-platform/evm": "workspace:*",
     "@hypha-platform/feature-flags": "workspace:*",
     "@hypha-platform/i18n": "workspace:*",
-    "@hypha-platform/ui": "workspace:*"
+    "@hypha-platform/ui": "workspace:*",
+    "@hypha-platform/ui-utils": "workspace:*"
   },
   "devDependencies": {
     "@hypha-platform/config-eslint": "workspace:*",

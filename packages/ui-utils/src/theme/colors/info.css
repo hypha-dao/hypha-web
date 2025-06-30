@@ -1,0 +1,18 @@
+@import '../../colors/sky.css';
+
+:root, .light, .light-theme, .dark, .dark-theme {
+  --info-1: var(--sky-1);
+  --info-2: var(--sky-2);
+  --info-3: var(--sky-3);
+  --info-4: var(--sky-4);
+  --info-5: var(--sky-5);
+  --info-6: var(--sky-6);
+  --info-7: var(--sky-7);
+  --info-8: var(--sky-8);
+  --info-9: var(--sky-9);
+  --info-10: var(--sky-10);
+  --info-11: var(--sky-11);
+  --info-12: var(--sky-12);
+
+  --info: var(--info-1);
+}
