@@ -113,6 +113,7 @@ npx nx run storage-evm:compile
 ```bash
 npx nx run storage-evm:test ./test/DAOSpaceFactoryImplementation.test.ts
 npx nx run storage-evm:test ./test/DAOProposalsImplementation.test.ts
+npx nx run storage-evm:test ./test/HyphaToken.test.ts
 ```
 
 ### Upgrade Space Factory
