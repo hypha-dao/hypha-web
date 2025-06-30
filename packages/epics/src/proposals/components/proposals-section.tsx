@@ -7,7 +7,7 @@ import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 import { Button } from '@hypha-platform/ui';
 import { PlusIcon } from '@radix-ui/react-icons';
 import { UseDocuments } from '../../governance';
-import { Empty } from "../../common";
+import { Empty } from '../../common';
 
 type ProposalSectionProps = {
   basePath: string;

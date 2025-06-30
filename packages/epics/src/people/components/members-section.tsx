@@ -7,7 +7,7 @@ import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 import { MembersList } from './members-list';
 import { useMembersSection } from '../hooks/use-members-section';
 import { UseMembers } from '../hooks/types';
-import { Empty } from "../../common";
+import { Empty } from '../../common';
 
 type MemberSectionProps = {
   basePath: string;

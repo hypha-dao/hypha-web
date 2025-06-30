@@ -7,7 +7,7 @@ import { useSubspaceDetails } from '../hooks';
 import { SectionLoadMore } from '@hypha-platform/ui/server';
 import Link from 'next/link';
 import { type UseMembers } from '../hooks/types';
-import { Empty } from "../../common";
+import { Empty } from '../../common';
 
 type SubspaceDetailProps = {
   title?: string;

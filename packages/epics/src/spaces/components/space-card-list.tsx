@@ -19,7 +19,7 @@ export function SpaceCardList({
 }) {
   return (
     <>
-      { spaces.length > 0 && (
+      {spaces.length > 0 && (
         <div
           data-testid="member-spaces-container"
           className="grid grid-cols-1 sm:grid-cols-2 gap-2"
@@ -45,7 +45,10 @@ export function SpaceCardList({
       {spaces.length === 0 && (
         <Empty>
           <div className="flex flex-col gap-7">
-            <p>No spaces created or joined yet. Explore our network and join some Space, or create your own</p>
+            <p>
+              No spaces created or joined yet. Explore our network and join some
+              Space, or create your own
+            </p>
             <div className="flex gap-4 items-center justify-center">
               <Link href={`/${lang}/network`}>
                 <Button variant="outline" className="gap-2">

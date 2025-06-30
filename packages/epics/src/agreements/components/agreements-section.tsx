@@ -5,7 +5,7 @@ import { Text } from '@radix-ui/themes';
 import { useAgreementsSection } from '../hooks/use-agreements-section';
 import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 import { UseDocuments } from '../../governance';
-import { Empty } from "../../common";
+import { Empty } from '../../common';
 
 type AgreementsSectionProps = {
   basePath: string;
