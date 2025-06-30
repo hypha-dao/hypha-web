@@ -1371,7 +1371,7 @@ describe('HyphaToken Comprehensive Tests', function () {
         const totalSupply = await hyphaToken.totalSupply();
         const pendingDistribution = await ethers.provider.getStorage(
           await hyphaToken.getAddress(),
-          5, // pendingDistribution is at storage slot 5
+          11, // pendingDistribution is at storage slot 11 (not 5!)
         );
 
         const user1Balance = await hyphaToken.balanceOf(
