@@ -5,16 +5,14 @@ import { PlusCircledIcon, PersonIcon } from '@radix-ui/react-icons';
 
 interface SigninPanelProps {
   closeUrl: string;
-  signinUrl: string;
-  signupUrl: string;
+  onLogin: () => void;
   isLoading: boolean;
 }
 
 export const SigninPanel = ({
   closeUrl,
   isLoading,
-  signinUrl,
-  signupUrl,
+  onLogin,
 }: SigninPanelProps) => {
   return (
     <div className="flex flex-col gap-5">
@@ -44,39 +42,41 @@ export const SigninPanel = ({
       </Skeleton>
       <Separator />
       <div className="flex flex-col gap-2">
-        <Link href={signupUrl}>
-          <Card className="flex p-6 cursor-pointer space-x-4 items-center">
-            <div>
-              <PlusCircledIcon />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-2 font-medium">
-                Create a new Hypha Network Account
-              </span>
-              <span className="text-1 text-neutral-11">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-                eiusmod tempor incididunt ut labore et dolore magna aliqua.
-              </span>
-            </div>
-          </Card>
-        </Link>
-        <Link href={signinUrl}>
-          <Card className="flex p-6 cursor-pointer space-x-4 items-center">
-            <div>
-              <PersonIcon />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-2 font-medium">
-                Log in to your Hypha Network Account
-              </span>
-              <span className="text-1 text-neutral-11">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-                eiusmod tempor incididunt ut labore et dolore magna aliqua.
-              </span>
-            </div>
-          </Card>
-        </Link>
+        <Card
+          onClick={onLogin}
+          className="flex p-6 cursor-pointer space-x-4 items-center"
+        >
+          <div>
+            <PlusCircledIcon />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-2 font-medium">
+              Create a new Hypha Network Account
+            </span>
+            <span className="text-1 text-neutral-11">
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+              eiusmod tempor incididunt ut labore et dolore magna aliqua.
+            </span>
+          </div>
+        </Card>
+        <Card
+          onClick={onLogin}
+          className="flex p-6 cursor-pointer space-x-4 items-center"
+        >
+          <div>
+            <PersonIcon />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-2 font-medium">
+              Log in to your Hypha Network Account
+            </span>
+            <span className="text-1 text-neutral-11">
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+              eiusmod tempor incididunt ut labore et dolore magna aliqua.
+            </span>
+          </div>
+        </Card>
       </div>
     </div>
   );
-}
+};

@@ -33,7 +33,6 @@ export default async function DhoLayout(props: {
           <ConnectedButtonProfile
             useAuthentication={useAuthentication}
             useMe={useMe}
-            newUserRedirectPath="/profile/signup"
           />
         </MenuTop.RightSlot>
       </MenuTop>

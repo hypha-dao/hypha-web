@@ -74,7 +74,6 @@ export default async function RootLayout({
                 <ConnectedButtonProfile
                   useAuthentication={useAuthentication}
                   useMe={useMe}
-                  newUserRedirectPath={`/${lang}/profile/signup`}
                 />
               </MenuTop.RightSlot>
             </MenuTop>

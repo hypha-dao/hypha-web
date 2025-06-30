@@ -3,10 +3,7 @@
 import useSWRMutation from 'swr/mutation';
 import useSWR from 'swr';
 import { z } from 'zod';
-import {
-  schemaEditPersonWeb2,
-  schemaEditPersonFiles,
-} from '@core/people/validation';
+import { schemaEditPersonWeb2, editPersonFiles } from '@core/people/validation';
 import { usePersonFileUploads } from './usePersonFileUploads';
 import { usePersonMutationsWeb2Rsc } from './usePersonMutationsWeb2Rsc';
 import { produce } from 'immer';
@@ -176,7 +173,7 @@ export const useEditPersonOrchestrator = ({
       startTask('UPDATE_WEB2_PERSON');
       const inputEditPersonWeb2 = schemaEditPersonWeb2.parse(arg);
       await web2.editPerson(inputEditPersonWeb2);
-      const inputEditPersonFiles = schemaEditPersonFiles.parse(arg);
+      const inputEditPersonFiles = editPersonFiles.parse(arg);
       await personFiles.upload(inputEditPersonFiles);
       completeTask('UPDATE_WEB2_PERSON');
     },

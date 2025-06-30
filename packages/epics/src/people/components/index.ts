@@ -10,3 +10,4 @@ export * from './person-head';
 export * from './edit-person-section';
 export * from './eth-address';
 export * from './signin-panel';
+export * from './signup-panel';

@@ -5,30 +5,21 @@ import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import { UseAuthentication } from '@hypha-platform/authentication';
 import { UseMe } from '../hooks/types';
-import { useEffect } from 'react';
 
 type ConnectedButtonProfileProps = {
   useAuthentication: UseAuthentication;
   useMe: UseMe;
-  newUserRedirectPath: string;
 };
 
 export const ConnectedButtonProfile = ({
   useAuthentication,
   useMe,
-  newUserRedirectPath,
 }: ConnectedButtonProfileProps) => {
-  const { isAuthenticated, login, logout, user } = useAuthentication();
-  const { person, isLoading } = useMe({ newUserRedirectPath });
+  const { isAuthenticated, logout, user } = useAuthentication();
+  const { person } = useMe();
 
   const router = useRouter();
   const { lang } = useParams();
-
-  useEffect(() => {
-    if (!isLoading && isAuthenticated && !person?.id) {
-      router.push(newUserRedirectPath);
-    }
-  }, [isAuthenticated, isLoading, person]);
 
   return (
     <ButtonProfile
@@ -36,11 +27,9 @@ export const ConnectedButtonProfile = ({
       userName={person?.name ?? ''}
       address={user?.wallet?.address}
       isConnected={isAuthenticated}
-      onLogin={
-        () => {
-          router.push(`/${lang}/profile/signin`)
-        }
-      }
+      onLogin={() => {
+        router.push(`/${lang}/profile/signin`);
+      }}
       onLogout={logout}
       onProfile={() => {
         router.push(`/${lang}/profile/`);

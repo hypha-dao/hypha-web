@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 
-import SigninPanel from './signin-panel';
+import { SigninPanel } from './signin-panel';
 import { within } from '@storybook/testing-library';
 import { expect } from '@storybook/jest';
 
@@ -16,8 +16,7 @@ type Story = StoryObj<typeof SigninPanel>;
 export const Default: Story = {
   args: {
     closeUrl: '',
-    signinUrl: '',
-    signupUrl: '',
+    isLoading: false,
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

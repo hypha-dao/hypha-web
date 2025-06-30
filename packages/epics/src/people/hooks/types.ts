@@ -4,15 +4,11 @@ import {
   PaginationMetadata,
 } from '@hypha-platform/core/client';
 
-interface UseMeProps {
-  newUserRedirectPath?: string;
-}
-
 export type UseMeReturn = {
   person: Person | undefined;
   isLoading: boolean;
 };
-export type UseMe = (props: UseMeProps) => UseMeReturn;
+export type UseMe = () => UseMeReturn;
 
 export type UseMembersReturn = {
   members: Person[];
