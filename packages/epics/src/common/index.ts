@@ -1,6 +1,7 @@
 export * from './button-close';
 export * from './constants';
 export * from './create-form';
+export * from './empty';
 export * from './link-icon';
 export * from './link-item';
 export * from './link-label';
