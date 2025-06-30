@@ -111,21 +111,21 @@ export default async function DhoLayout({
                     key={space.id}
                     className="w-full sm:w-[454px] max-w-[454px] flex-shrink-0"
                   >
-                  <Link
-                    className="flex flex-col flex-1"
-                    href={getDhoPathGovernance(lang, space.slug as string)}
-                  >
-                    <SpaceCardWrapper
-                      description={space.description as string}
-                      icon={space.logoUrl || ''}
-                      leadImage={space.leadImage || ''}
-                      agreements={space.documentCount}
-                      title={space.title as string}
-                      spaceSlug={space.slug as string}
-                      useMembers={useMembers}
-                    />
-                  </Link>
-                </CarouselItem>
+                    <Link
+                      className="flex flex-col flex-1"
+                      href={getDhoPathGovernance(lang, space.slug as string)}
+                    >
+                      <SpaceCardWrapper
+                        description={space.description as string}
+                        icon={space.logoUrl || ''}
+                        leadImage={space.leadImage || ''}
+                        agreements={space.documentCount}
+                        title={space.title as string}
+                        spaceSlug={space.slug as string}
+                        useMembers={useMembers}
+                      />
+                    </Link>
+                  </CarouselItem>
                 ))}
               </CarouselContent>
             </Carousel>
