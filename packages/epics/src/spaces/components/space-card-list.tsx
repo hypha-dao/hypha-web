@@ -47,7 +47,7 @@ export function SpaceCardList({
           <div className="flex flex-col gap-7">
             <p>No spaces created or joined yet. Explore our network and join some Space, or create your own</p>
             <div className="flex gap-4 items-center justify-center">
-              <Link href="/network">
+              <Link href={`/${lang}/network`}>
                 <Button variant="outline" className="gap-2">
                   <GlobeIcon />
                   Explore Spaces
