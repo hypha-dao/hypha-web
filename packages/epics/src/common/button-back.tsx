@@ -3,7 +3,7 @@
 import { Button } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChevronLeftIcon } from "@radix-ui/react-icons";
+import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { cn } from '@hypha-platform/lib/utils';
 
 type ButtonBackProps = {
@@ -14,10 +14,10 @@ type ButtonBackProps = {
 };
 
 export const ButtonBack = ({
-  label = "Back",
+  label = 'Back',
   backUrl,
   dropSegment,
-  className
+  className,
 }: ButtonBackProps) => {
   const pathname = usePathname();
 
@@ -38,10 +38,10 @@ export const ButtonBack = ({
       asChild
       variant="ghost"
       colorVariant="neutral"
-      className={cn("text-neutral-10", className)}
+      className={cn('text-neutral-10', className)}
     >
       <Link href={resolvedBackUrl} scroll={false}>
-        <ChevronLeftIcon className="size-4"/>
+        <ChevronLeftIcon className="size-4" />
         {label}
       </Link>
     </Button>

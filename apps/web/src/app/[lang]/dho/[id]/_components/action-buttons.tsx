@@ -7,7 +7,10 @@ import { PlusIcon } from '@radix-ui/react-icons';
 import { Button } from '@hypha-platform/ui';
 import { usePathname } from 'next/navigation';
 import { cleanPath } from './clean-path';
-import { PATH_SELECT_CREATE_ACTION, PATH_SELECT_SETTINGS_ACTION } from "@web/app/constants";
+import {
+  PATH_SELECT_CREATE_ACTION,
+  PATH_SELECT_SETTINGS_ACTION,
+} from '@web/app/constants';
 
 export const ActionButtons = () => {
   const pathname = usePathname();

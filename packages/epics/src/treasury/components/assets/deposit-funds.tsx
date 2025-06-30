@@ -37,14 +37,12 @@ export const DepositFunds = ({
         <Skeleton loading={isLoading} width={150} height={30}>
           <Text className="text-4 capitalize text-nowrap">Deposit Funds</Text>
         </Skeleton>
-        { !isLoading &&
+        {!isLoading && (
           <div className="flex gap-2">
-            { backUrl &&
-              <ButtonBack backUrl={backUrl} />
-            }
+            {backUrl && <ButtonBack backUrl={backUrl} />}
             <ButtonClose closeUrl={closeUrl} />
           </div>
-        }
+        )}
       </div>
 
       <Skeleton loading={isLoading} width="100%" height={80}>

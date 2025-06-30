@@ -14,7 +14,7 @@ import { Button } from '@hypha-platform/ui';
 import { useRouter } from 'next/navigation';
 import { getDhoPathGovernance } from '../../../@tab/governance/constants';
 import { Locale } from '@hypha-platform/i18n';
-import { PATH_SELECT_SETTINGS_ACTION } from "@web/app/constants";
+import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 
 export default function SpaceConfiguration() {
   const { person } = useMe();

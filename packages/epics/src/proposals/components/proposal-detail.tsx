@@ -1,11 +1,7 @@
 import { formatISO } from 'date-fns';
 import { FormVoting } from './form-voting';
 import { ProposalHead, ProposalHeadProps } from './proposal-head';
-import {
-  Separator,
-  AttachmentList,
-  Skeleton,
-} from '@hypha-platform/ui';
+import { Separator, AttachmentList, Skeleton } from '@hypha-platform/ui';
 import { CommentsList } from '../../interactions/components/comments-list';
 import Image from 'next/image';
 import { useProposalDetailsWeb3Rpc } from '@core/governance';
@@ -18,7 +14,7 @@ import {
   ProposalEntryInfo,
 } from '../../governance';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
-import { ButtonClose } from "@hypha-platform/epics";
+import { ButtonClose } from '@hypha-platform/epics';
 
 type ProposalDetailProps = ProposalHeadProps & {
   onAccept: () => void;

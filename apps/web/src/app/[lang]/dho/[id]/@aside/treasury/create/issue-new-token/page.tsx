@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { getDhoPathTreasury } from '../../../../@tab/treasury/constants';
 import { IssueNewTokenForm } from '@hypha-platform/epics';
 import { Plugin } from '../../../governance/create/plugins';
-import { PATH_SELECT_SETTINGS_ACTION } from "@web/app/constants";
+import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;

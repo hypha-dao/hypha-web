@@ -7,7 +7,7 @@ import { createSpaceService } from '@core/space/server';
 import { notFound } from 'next/navigation';
 import { getDhoPathGovernance } from '../../../../@tab/governance/constants';
 import { Plugin } from '../plugins';
-import { PATH_SELECT_SETTINGS_ACTION } from "@web/app/constants";
+import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -34,12 +34,7 @@ export default async function CreateChangeVotingMethodPage({
         web3SpaceId={web3SpaceId}
         successfulUrl={successfulUrl}
         backUrl={`${successfulUrl}${PATH_SELECT_SETTINGS_ACTION}`}
-        plugin={
-          <Plugin
-            spaceSlug={spaceSlug}
-            name="change-voting-method"
-          />
-        }
+        plugin={<Plugin spaceSlug={spaceSlug} name="change-voting-method" />}
       />
     </SidePanel>
   );

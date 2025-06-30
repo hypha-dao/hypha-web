@@ -7,7 +7,7 @@ import { createSpaceService } from '@core/space/server';
 import { getDhoPathGovernance } from '../../../../@tab/governance/constants';
 import { Plugin } from '../plugins';
 import { notFound } from 'next/navigation';
-import { PATH_SELECT_CREATE_ACTION } from "@web/app/constants";
+import { PATH_SELECT_CREATE_ACTION } from '@web/app/constants';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;

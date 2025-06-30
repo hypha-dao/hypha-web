@@ -14,7 +14,7 @@ type ButtonCloseProps = {
 export const ButtonClose = ({
   closeUrl,
   dropSegment,
-  className
+  className,
 }: ButtonCloseProps) => {
   const pathname = usePathname();
 

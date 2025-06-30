@@ -2,7 +2,7 @@ import { CreateAgreementForm, SidePanel } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { createSpaceService } from '@core/space/server';
 import { getDhoPathGovernance } from '../../../@tab/governance/constants';
-import { PATH_SELECT_CREATE_ACTION } from "@web/app/constants";
+import { PATH_SELECT_CREATE_ACTION } from '@web/app/constants';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;

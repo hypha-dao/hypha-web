@@ -1,13 +1,9 @@
 import { AgreementHead, AgreementHeadProps } from './agreement-head';
-import {
-  Separator,
-  Skeleton,
-  AttachmentList,
-} from '@hypha-platform/ui';
+import { Separator, Skeleton, AttachmentList } from '@hypha-platform/ui';
 import { CommentsList } from '../../interactions/components/comments-list';
 import { CardCommentProps } from '../../interactions/components/card-comment';
 import Image from 'next/image';
-import { ButtonClose } from "@hypha-platform/epics";
+import { ButtonClose } from '@hypha-platform/epics';
 
 type AgreementDetailProps = AgreementHeadProps & {
   onSetActiveFilter: (value: string) => void;

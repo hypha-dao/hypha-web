@@ -147,9 +147,7 @@ export const SpaceForm = ({
             </div>
           </div>
           <div className="flex gap-2">
-            { backUrl &&
-              <ButtonBack label={backLabel} backUrl={backUrl} />
-            }
+            {backUrl && <ButtonBack label={backLabel} backUrl={backUrl} />}
             <ButtonClose closeUrl={closeUrl} />
           </div>
         </div>
