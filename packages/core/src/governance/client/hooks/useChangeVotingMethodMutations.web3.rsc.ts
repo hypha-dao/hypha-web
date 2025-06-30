@@ -27,13 +27,21 @@ import { transactionSchema } from '@core/governance/validation';
 const chainId = 8453;
 type TxData = z.infer<typeof transactionSchema>;
 
+type VotingMethodType = '1m1v' | '1v1v' | '1t1v';
+
 interface ChangeVotingMethodArgs {
   spaceId: number;
   members: { member: string; number: number }[];
   token: string | undefined;
   quorumAndUnity: { quorum: bigint; unity: bigint };
-  votingMethod: '1m1v' | '1v1v' | '1t1v';
+  votingMethod: VotingMethodType;
 }
+
+const VOTING_METHOD_MAP: Record<VotingMethodType, bigint> = {
+  '1t1v': 1n,
+  '1m1v': 2n,
+  '1v1v': 3n,
+};
 
 export const useChangeVotingMethodMutationsWeb3Rpc = ({
   proposalSlug,
@@ -55,12 +63,7 @@ export const useChangeVotingMethodMutationsWeb3Rpc = ({
 
       const transactions: TxData[] = [];
 
-      const votingMethodCode =
-        arg.votingMethod === '1m1v'
-          ? 2n
-          : arg.votingMethod === '1v1v'
-          ? 1n
-          : 2n;
+      const votingMethodCode = VOTING_METHOD_MAP[arg.votingMethod];
 
       transactions.push({
         target: daoSpaceFactoryImplementationAddress[chainId],
