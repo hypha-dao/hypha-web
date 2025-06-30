@@ -29,14 +29,14 @@ export const ProposalList: FC<ProposalListProps> = ({
           <ProposalCard {...proposal} isLoading={isLoading} />
         </Link>
       ))}
-      {isLoading ? (
+      {isLoading && (
         <div>
           <ProposalCard isLoading={isLoading} />
           <ProposalCard isLoading={isLoading} />
           <ProposalCard isLoading={isLoading} />
           <ProposalCard isLoading={isLoading} />
         </div>
-      ) : null}
+      )}
     </div>
   );
 };

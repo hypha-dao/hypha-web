@@ -58,7 +58,7 @@ export default async function RootLayout({
         >
           <EvmProvider>
             <MenuTop
-              withLogo={true}
+              logoHref={`/${lang}/network`}
               navItems={[
                 {
                   label: 'Network',
