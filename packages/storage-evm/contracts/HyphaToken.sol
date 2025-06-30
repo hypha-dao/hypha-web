@@ -38,9 +38,12 @@ contract HyphaToken is
     distributionMultiplier = 10; // Initial value
 
     // Set initial values for the modifiable parameters
-    HYPHA_PRICE_USD = 25 * 10 ** 16; // 0.25 USD with 18 decimals
-    USDC_PER_DAY = 367_000; // 0.367 USDC with 6 decimals
-    HYPHA_PER_DAY = 1_466_666_666_666_666_666; // ~1.47 HYPHA with 18 decimals
+    // Monthly cost: $11 USD = $0.367 USD per day
+    // HYPHA price: exactly $0.25 USD per HYPHA
+    // Daily HYPHA cost: $0.367 ÷ $0.25 = 1.468 HYPHA per day
+    HYPHA_PRICE_USD = 1; // Used with new scaling factor to achieve $0.25 per HYPHA
+    USDC_PER_DAY = 367_000; // 0.367 USDC per day (6 decimals)
+    HYPHA_PER_DAY = 1_468_000_000_000_000_000; // 1.468 HYPHA per day (18 decimals)
   }
 
   function _authorizeUpgrade(
@@ -123,7 +126,9 @@ contract HyphaToken is
     );
 
     // Calculate equivalent HYPHA tokens based on price (not minted to user)
-    uint256 hyphaEquivalent = (totalUsdcAmount * 10 ** 12) / HYPHA_PRICE_USD;
+    // Using same scaling factor as investment: 4 × 10^12 for $0.25 per HYPHA
+    uint256 hyphaEquivalent = (totalUsdcAmount * 4 * 10 ** 12) /
+      HYPHA_PRICE_USD;
 
     // Calculate total HYPHA to be distributed
     uint256 distributionAmount = hyphaEquivalent * (distributionMultiplier + 1);
@@ -173,7 +178,9 @@ contract HyphaToken is
     );
 
     // Calculate HYPHA tokens to purchase based on price
-    uint256 hyphaPurchased = (usdcAmount * 10 ** 12) / HYPHA_PRICE_USD;
+    // Correct scaling factor: 4 × 10^12 to achieve exactly $0.25 per HYPHA
+    // Formula: 0.25 USDC (250,000 wei) × 4 × 10^12 ÷ 1 = 1 HYPHA (10^18 wei)
+    uint256 hyphaPurchased = (usdcAmount * 4 * 10 ** 12) / HYPHA_PRICE_USD;
 
     // Ensure we don't exceed max supply
     require(
