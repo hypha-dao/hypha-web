@@ -43,13 +43,15 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
   const decayPeriod = useWatch({
     control,
     name: 'decayPeriod',
-    defaultValue: 0,
+    defaultValue: value
+      ? value.decayInterval / TIME_FORMAT_TO_SECONDS[timeFormat]
+      : 0,
   });
 
   const decayPercent = useWatch({
     control,
     name: 'decayPercent',
-    defaultValue: 0,
+    defaultValue: value ? value.decayPercentage : 0,
   });
 
   React.useEffect(() => {
@@ -126,7 +128,7 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
           <Input
             id="decay-percent"
             type="number"
-            min={1}
+            min={0}
             max={100}
             value={decayPercent}
             onChange={handleDecayPercentChange}
