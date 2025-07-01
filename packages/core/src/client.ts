@@ -1,2 +1,5 @@
-export * from './people';
+export * from './categories';
 export * from './common';
+export * from './governance';
+export * from './space';
+export * from './people';
