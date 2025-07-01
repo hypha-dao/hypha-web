@@ -26,6 +26,7 @@ import { cn } from '@hypha-platform/lib/utils';
 import Link from 'next/link';
 import React from 'react';
 import { Loader2 } from 'lucide-react';
+import { Links } from '../../common';
 
 const schemaSignupPersonForm = schemaSignupPerson.extend(editPersonFiles.shape);
 
@@ -58,6 +59,7 @@ export const SignupPanel = ({
       location: undefined,
       email: '',
       address: walletAddress || '',
+      links: [],
     },
   });
 
@@ -231,6 +233,24 @@ export const SignupPanel = ({
                   )}
                 />
               </span>
+            </div>
+            <div>
+              <FormField
+                control={form.control}
+                name="links"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Links
+                        links={field.value}
+                        onChange={field.onChange}
+                        errors={form.formState.errors.links}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           </div>
           <div className="flex justify-end w-full">

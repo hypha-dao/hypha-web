@@ -10,7 +10,6 @@ import {
   Button,
   Textarea,
   Input,
-  Switch,
   Separator,
   Form,
   FormControl,
@@ -23,8 +22,8 @@ import {
 import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/lib/utils';
-import { useState } from 'react';
 import Link from 'next/link';
+import { Links } from '../../common';
 
 interface Person {
   avatarUrl?: string;
@@ -34,6 +33,9 @@ interface Person {
   nickname?: string;
   description?: string;
   leadImageUrl?: string;
+  location?: string;
+  email?: string;
+  links?: string[];
 }
 
 const schemaEditPersonForm = schemaEditPersonWeb2.extend(editPersonFiles.shape);
@@ -63,20 +65,12 @@ export const EditPersonSection = ({
       description: person?.description || '',
       leadImageUrl: person?.leadImageUrl || '',
       id: person?.id,
+      links: person?.links || [],
+      email: person?.email || '',
+      location: person?.location || '',
     },
     mode: 'onChange',
   });
-
-  const [activeLinks, setActiveLinks] = useState({
-    website: false,
-    linkedin: false,
-    x: false,
-  });
-
-  const handleLinkToggle =
-    (field: keyof typeof activeLinks) => (isActive: boolean) => {
-      setActiveLinks((prev) => ({ ...prev, [field]: isActive }));
-    };
 
   return (
     <Form {...form}>
@@ -209,81 +203,68 @@ export const EditPersonSection = ({
               </FormItem>
             )}
           />
-          <div className="flex gap-6 flex-col">
+          <div className="flex gap-3 flex-col">
             <div className="flex justify-between">
-              <Text
-                className={cn(
-                  'text-2',
-                  activeLinks.website ? 'text-neutral-11' : 'text-neutral-8',
-                )}
-              >
-                Website
-              </Text>
+              <Text className={cn('text-2', 'text-neutral-11')}>Email</Text>
               <span className="flex items-center">
-                <Input
-                  placeholder="Add your URL"
-                  disabled={!activeLinks.website}
-                  className={cn(
-                    'text-2 mr-3',
-                    !activeLinks.website ? 'bg-neutral-6' : '',
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input
+                          disabled={isLoading}
+                          placeholder="Email"
+                          className="text-1 text-neutral-11"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                />
-                <Switch
-                  disabled={isLoading}
-                  checked={activeLinks.website}
-                  onCheckedChange={handleLinkToggle('website')}
                 />
               </span>
             </div>
             <div className="flex justify-between">
-              <Text
-                className={cn(
-                  'text-2',
-                  activeLinks.linkedin ? 'text-neutral-11' : 'text-neutral-8',
-                )}
-              >
-                LinkedIn
-              </Text>
+              <Text className={cn('text-2', 'text-neutral-11')}>Location</Text>
               <span className="flex items-center">
-                <Input
-                  placeholder="Add your URL"
-                  disabled={!activeLinks.linkedin}
-                  className={cn(
-                    'text-2 mr-3',
-                    !activeLinks.linkedin ? 'bg-neutral-6' : '',
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input
+                          disabled={isLoading}
+                          placeholder="Location"
+                          className="text-1 text-neutral-11"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                />
-                <Switch
-                  disabled={isLoading}
-                  checked={activeLinks.linkedin}
-                  onCheckedChange={handleLinkToggle('linkedin')}
                 />
               </span>
             </div>
-            <div className="flex justify-between">
-              <Text
-                className={cn(
-                  'text-2',
-                  activeLinks.x ? 'text-neutral-11' : 'text-neutral-8',
+            <div>
+              <FormField
+                control={form.control}
+                name="links"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Links
+                        links={field.value}
+                        onChange={field.onChange}
+                        errors={form.formState.errors.links}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              >
-                X
-              </Text>
-              <span className="flex items-center">
-                <Input
-                  placeholder="Add your URL"
-                  disabled={!activeLinks.x}
-                  className={cn(
-                    'text-2 mr-3',
-                    !activeLinks.x ? 'bg-neutral-6' : '',
-                  )}
-                />
-                <Switch
-                  disabled={isLoading}
-                  checked={activeLinks.x}
-                  onCheckedChange={handleLinkToggle('x')}
-                />
-              </span>
+              />
             </div>
           </div>
           <div className="flex justify-end w-full">
