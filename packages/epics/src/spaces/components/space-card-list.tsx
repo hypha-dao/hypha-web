@@ -6,7 +6,6 @@ import { Locale } from '@hypha-platform/i18n';
 import { Space } from '@core/space';
 import { Button } from '@hypha-platform/ui';
 import { GlobeIcon, PlusIcon } from '@radix-ui/react-icons';
-import { getDhoPathGovernance } from '@web/app/[lang]/dho/[id]/@tab/governance/constants';
 
 export function SpaceCardList({
   lang,
@@ -26,7 +25,7 @@ export function SpaceCardList({
         >
           {spaces.map((space) => (
             <div key={space.id}>
-              <Link href={getDhoPathGovernance(lang, space.slug as string)}>
+              <Link href={`/${lang}/dho/${space.id}/governance`}>
                 <SpaceCardWrapper
                   description={space.description as string}
                   icon={space.logoUrl || ''}
