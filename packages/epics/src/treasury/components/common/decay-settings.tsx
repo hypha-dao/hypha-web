@@ -37,14 +37,19 @@ type DecaySettingsProps = {
 };
 
 export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
-  const [timeFormat, setTimeFormat] = React.useState<TimeFormat>('Weeks');
+  const initialTimeFormat = value ? 
+    Object.entries(TIME_FORMAT_TO_SECONDS).find(([_, seconds]) => 
+      value.decayInterval % seconds === 0
+    )?.[0] as TimeFormat || 'Weeks' : 'Weeks';
+
+  const [timeFormat, setTimeFormat] = React.useState<TimeFormat>(initialTimeFormat);
   const { setValue, control } = useFormContext();
 
   const decayPeriod = useWatch({
     control,
     name: 'decayPeriod',
     defaultValue: value
-      ? value.decayInterval / TIME_FORMAT_TO_SECONDS[timeFormat]
+      ? value.decayInterval / TIME_FORMAT_TO_SECONDS[initialTimeFormat]
       : 0,
   });
 
