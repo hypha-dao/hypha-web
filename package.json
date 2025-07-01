@@ -10,7 +10,8 @@
     "add-component": "nx add-component --",
     "format:check": "npx prettier --check 'apps/**/*.{ts,tsx}' --check 'packages/**/*.{ts,tsx}'",
     "format:fix": "npx prettier --write 'apps/**/*.{ts,tsx}' --write 'packages/**/*.{ts,tsx}'",
-    "postinstall": "if [ ! -f .env ]; then cp .env.template .env; fi"
+    "postinstall": "if [ ! -f .env ]; then cp .env.template .env; fi",
+    "prepare": "husky"
   },
   "private": true,
   "nx": {},
@@ -211,6 +212,7 @@
     "hardhat": "^2.22.17",
     "hardhat-deploy": "^0.14.0",
     "hardhat-gas-reporter": "^1.0.8",
+    "husky": "^9.1.7",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "jest-environment-node": "^29.7.0",
