@@ -37,11 +37,13 @@ export function TokenMaxSupplyField() {
             </FormLabel>
             <FormControl>
               <Input
-                {...field}
                 type="number"
                 placeholder="Type an amount or 0 for unlimited supply"
                 value={maxSupply}
                 onChange={handleMaxSupplyChange}
+                name={field.name}
+                onBlur={field.onBlur}
+                ref={field.ref}
               />
             </FormControl>
           </div>
