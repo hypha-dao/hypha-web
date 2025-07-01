@@ -7,11 +7,10 @@ import { useSpaceHasVoiceToken } from '@core/space';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-
-export type VotingMethodId = '1m1v' | '1v1v' | '1t1v';
+import { VotingMethodType } from '@core/governance/client';
 
 type VotingMethod = {
-  id: VotingMethodId;
+  id: VotingMethodType;
   title: string;
   description: string;
   icon?: React.ReactNode;
@@ -42,8 +41,8 @@ const votingMethods: VotingMethod[] = [
 ];
 
 type VotingMethodSelectorProps = {
-  value?: VotingMethodId | null;
-  onChange?: (value: VotingMethodId | null) => void;
+  value?: VotingMethodType | null;
+  onChange?: (value: VotingMethodType | null) => void;
   web3SpaceId?: number | null;
 };
 
@@ -83,7 +82,7 @@ export const VotingMethodSelector = ({
     return method;
   });
 
-  const handleSelect = (id: VotingMethodId, disabled?: boolean) => {
+  const handleSelect = (id: VotingMethodType, disabled?: boolean) => {
     if (disabled) return;
     if (onChange) {
       onChange(id);
