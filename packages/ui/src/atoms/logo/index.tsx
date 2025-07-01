@@ -17,7 +17,7 @@ export const Logo = ({ width, height, href }: logoProps) => {
       height={height ? height : 100}
     />
   );
-  if (!!href) {
+  if (href) {
     return <Link href={href}>{img}</Link>;
   }
   return img;
