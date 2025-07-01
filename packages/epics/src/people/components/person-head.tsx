@@ -13,6 +13,7 @@ import { CopyIcon, LinkedInLogoIcon, Link2Icon } from '@radix-ui/react-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXTwitter } from '@fortawesome/free-brands-svg-icons';
 import { RxDownload, RxPencil2 } from 'react-icons/rx';
+import { MailIcon, MapPinIcon } from 'lucide-react';
 import Link from 'next/link';
 
 export type MemberType = {
@@ -32,6 +33,8 @@ interface PersonHeadProps {
   about: string;
   background: string;
   socials: Socials;
+  location: string;
+  email: string;
   onExportEmbeededWallet?: () => void;
 }
 
@@ -43,6 +46,8 @@ export const PersonHead = ({
   about,
   background,
   socials,
+  location,
+  email,
   onExportEmbeededWallet,
 }: PersonHeadProps & MemberType) => {
   const customLogoStyles: React.CSSProperties = {
@@ -54,7 +59,7 @@ export const PersonHead = ({
   };
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col gap-1">
       <Card className="relative">
         <Skeleton height={270} width={768} loading={isLoading}>
           <Image
@@ -146,6 +151,16 @@ export const PersonHead = ({
             </div>
           </Button>
         </Skeleton>
+      </div>
+      <div className="flex gap-5 text-1">
+        <span className="flex gap-3">
+          <MailIcon width={16} height={16} />
+          {email}
+        </span>
+        <span className="flex gap-3">
+          <MapPinIcon width={16} height={16} />
+          {location}
+        </span>
       </div>
       <div className="mt-6">
         <Skeleton loading={isLoading} height={72} width={768}>

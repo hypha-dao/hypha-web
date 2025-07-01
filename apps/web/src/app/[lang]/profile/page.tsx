@@ -58,6 +58,8 @@ export default function Profile() {
           Website: person?.nickname ?? '',
         }}
         about={person?.description ?? ''}
+        location={person?.location ?? ''}
+        email={person?.email ?? ''}
         onExportEmbeededWallet={isEmbeddedWallet ? exportWallet : undefined}
       />
     </Container>
