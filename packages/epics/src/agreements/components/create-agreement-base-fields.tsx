@@ -2,7 +2,6 @@
 
 import { useFormContext } from 'react-hook-form';
 import {
-  Button,
   Input,
   FormControl,
   FormDescription,
@@ -15,14 +14,13 @@ import {
   AddAttachment,
   RichTextEditor,
 } from '@hypha-platform/ui';
-import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { ALLOWED_IMAGE_FILE_SIZE } from '@core/space';
 import { z } from 'zod';
 import { createAgreementFiles, schemaCreateAgreement } from '@core/governance';
 
-import Link from 'next/link';
+import { ButtonClose, ButtonBack } from '@hypha-platform/epics';
 
 type Creator = { avatar: string; name: string; surname: string };
 
@@ -35,6 +33,8 @@ export type CreateAgreementFormProps = {
   creator?: Creator;
   isLoading?: boolean;
   closeUrl: string;
+  backUrl?: string;
+  backLabel?: string;
   label?: string;
 };
 
@@ -42,6 +42,8 @@ export function CreateAgreementBaseFields({
   creator,
   isLoading = false,
   closeUrl,
+  backUrl,
+  backLabel = 'Back to Create',
   label = 'Agreement',
 }: CreateAgreementFormProps) {
   const form = useFormContext<CreateAgreementFormData>();
@@ -52,16 +54,16 @@ export function CreateAgreementBaseFields({
 
   return (
     <>
-      <div className="flex gap-5 justify-between">
-        <div className="flex items-center gap-3">
+      <div className="flex justify-between gap-2">
+        <div className="flex flex-grow gap-3">
           <PersonAvatar
             size="lg"
             isLoading={isLoading}
             avatarSrc={creator?.avatar}
             userName={`${creator?.name} ${creator?.surname}`}
           />
-          <div className="flex justify-between items-center w-full">
-            <div className="flex flex-col">
+          <div className="flex w-full">
+            <div className="flex flex-col w-full">
               <Badge className="w-fit" colorVariant="accent">
                 {label}
               </Badge>
@@ -88,17 +90,10 @@ export function CreateAgreementBaseFields({
             </div>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          colorVariant="neutral"
-          className="flex items-center"
-          asChild
-        >
-          <Link href={closeUrl} scroll={false}>
-            <RxCross1 className="ml-2" />
-            Close
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          {backUrl && <ButtonBack label={backLabel} backUrl={backUrl} />}
+          <ButtonClose closeUrl={closeUrl} />
+        </div>
       </div>
       <Separator />
       <FormField

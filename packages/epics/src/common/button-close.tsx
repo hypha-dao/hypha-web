@@ -5,18 +5,36 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { RxCross1 } from 'react-icons/rx';
 
-export const ButtonClose = ({ dropSegment }: { dropSegment: string }) => {
+type ButtonCloseProps = {
+  closeUrl?: string;
+  dropSegment?: string;
+  className?: string;
+};
+
+export const ButtonClose = ({
+  closeUrl,
+  dropSegment,
+  className,
+}: ButtonCloseProps) => {
   const pathname = usePathname();
-  console.debug('ButtonClose', { pathname });
+
+  if (!closeUrl) {
+    if (dropSegment) {
+      closeUrl = pathname.replace(dropSegment, '');
+    } else {
+      console.debug('ButtonClose: closeUrl or dropSegment must be provided');
+      return null;
+    }
+  }
 
   return (
     <Button
       asChild
       variant="ghost"
       colorVariant="neutral"
-      className="absolute top-8 right-9"
+      className={className}
     >
-      <Link href={pathname.replace(dropSegment, '')}>
+      <Link href={closeUrl} scroll={false}>
         Close
         <RxCross1 />
       </Link>

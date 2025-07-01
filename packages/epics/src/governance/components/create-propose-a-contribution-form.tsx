@@ -26,11 +26,13 @@ interface CreateProposeAContributionFormProps {
   spaceId: number | undefined | null;
   web3SpaceId: number | undefined | null;
   successfulUrl: string;
+  backUrl?: string;
   plugin: React.ReactNode;
 }
 
 export const CreateProposeAContributionForm = ({
   successfulUrl,
+  backUrl,
   spaceId,
   web3SpaceId,
   plugin,
@@ -120,6 +122,7 @@ export const CreateProposeAContributionForm = ({
               surname: person?.surname || '',
             }}
             closeUrl={successfulUrl}
+            backUrl={backUrl}
             isLoading={false}
           />
           {plugin}

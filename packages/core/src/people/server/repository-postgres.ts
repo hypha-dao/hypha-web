@@ -19,6 +19,7 @@ import {
   findAllPeople,
   findPeopleBySpaceSlug,
   findPersonById,
+  findPersonByWeb3Address,
   findPersonBySlug,
   findPersonBySpaceId,
   findSelf,
@@ -57,6 +58,10 @@ export class PeopleRepositoryPostgres implements PeopleRepository {
 
   async findById(id: number): Promise<Person | null> {
     return findPersonById({ id }, { db: this.db });
+  }
+
+  async findByWeb3Address(address: string): Promise<Person | null> {
+    return findPersonByWeb3Address({ address }, { db: this.db });
   }
 
   async findBySpaceId(

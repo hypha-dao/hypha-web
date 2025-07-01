@@ -1,15 +1,15 @@
 'use client';
-import Link from 'next/link';
 import { Button, Separator, Skeleton } from '@hypha-platform/ui';
-import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
 import QRCode from 'react-qr-code';
 import { CopyIcon, CheckIcon } from '@radix-ui/react-icons';
 import { copyToClipboard } from '@hypha-platform/ui-utils';
 import { useSpaceDetailsWeb3Rpc } from '@core/space';
+import { ButtonClose, ButtonBack } from '@hypha-platform/epics';
 
 interface DepositFundsProps {
   closeUrl: string;
+  backUrl?: string;
   spaceId: number | undefined | null;
   isLoading?: boolean;
 }
@@ -21,6 +21,7 @@ All deposited tokens are held in the Space's treasury. Any future withdrawals mu
 
 export const DepositFunds = ({
   closeUrl,
+  backUrl,
   spaceId,
   isLoading,
 }: DepositFundsProps) => {
@@ -36,12 +37,12 @@ export const DepositFunds = ({
         <Skeleton loading={isLoading} width={150} height={30}>
           <Text className="text-4 capitalize text-nowrap">Deposit Funds</Text>
         </Skeleton>
-        <Link href={closeUrl} scroll={false}>
-          <Button variant="ghost" colorVariant="neutral" disabled={isLoading}>
-            Close
-            <RxCross1 />
-          </Button>
-        </Link>
+        {!isLoading && (
+          <div className="flex gap-2">
+            {backUrl && <ButtonBack backUrl={backUrl} />}
+            <ButtonClose closeUrl={closeUrl} />
+          </div>
+        )}
       </div>
 
       <Skeleton loading={isLoading} width="100%" height={80}>
