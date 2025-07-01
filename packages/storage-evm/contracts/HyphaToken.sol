@@ -201,7 +201,8 @@ contract HyphaToken is
    * @dev Updates the global distribution state
    */
   function updateDistributionState() public {
-    if (block.timestamp <= lastUpdateTime || totalSupply() == 0) {
+    uint256 eligibleSupply = getEligibleSupply();
+    if (block.timestamp <= lastUpdateTime || eligibleSupply == 0) {
       return;
     }
 
@@ -225,7 +226,7 @@ contract HyphaToken is
       accumulatedRewardPerToken =
         accumulatedRewardPerToken +
         (toDistribute * PRECISION) /
-        totalSupply();
+        eligibleSupply;
 
       // Reduce pending distribution
       pendingDistribution = pendingDistribution - toDistribute;
@@ -237,11 +238,32 @@ contract HyphaToken is
   }
 
   /**
+   * @dev Calculate eligible supply for reward distribution (excludes IEX address)
+   */
+  function getEligibleSupply() public view returns (uint256) {
+    if (iexAddress == address(0)) {
+      return totalSupply();
+    }
+    uint256 iexBalance = balanceOf(iexAddress);
+    uint256 currentTotalSupply = totalSupply();
+    if (iexBalance >= currentTotalSupply) {
+      return 0;
+    }
+    return currentTotalSupply - iexBalance;
+  }
+
+  /**
    * @dev Calculate pending rewards for a user
    * @param user Address of the user
    */
   function pendingRewards(address user) public view returns (uint256) {
-    if (totalSupply() == 0) {
+    // IEX address is not eligible for rewards
+    if (user == iexAddress) {
+      return 0;
+    }
+
+    uint256 eligibleSupply = getEligibleSupply();
+    if (eligibleSupply == 0) {
       return 0;
     }
 
@@ -252,7 +274,7 @@ contract HyphaToken is
     uint256 currentAccumulator = accumulatedRewardPerToken;
     if (
       block.timestamp > lastUpdateTime &&
-      totalSupply() > 0 &&
+      eligibleSupply > 0 &&
       pendingDistribution > 0
     ) {
       uint256 timeElapsed = block.timestamp - lastUpdateTime;
@@ -267,7 +289,7 @@ contract HyphaToken is
       currentAccumulator =
         currentAccumulator +
         (toDistribute * PRECISION) /
-        totalSupply();
+        eligibleSupply;
     }
 
     // New rewards since last claim, accounting for precision
@@ -429,8 +451,8 @@ contract HyphaToken is
       // Update global distribution state first
       updateDistributionState();
 
-      // Handle sender rewards (except for minting)
-      if (from != address(0)) {
+      // Handle sender rewards (except for minting and IEX address)
+      if (from != address(0) && from != iexAddress) {
         uint256 reward = pendingRewards(from);
         if (reward > 0) {
           unclaimedRewards[from] = reward;
@@ -438,8 +460,8 @@ contract HyphaToken is
         userRewardDebt[from] = accumulatedRewardPerToken;
       }
 
-      // Handle receiver rewards (except for burning)
-      if (to != address(0)) {
+      // Handle receiver rewards (except for burning and IEX address)
+      if (to != address(0) && to != iexAddress) {
         uint256 reward = pendingRewards(to);
         if (reward > 0) {
           unclaimedRewards[to] = reward;
