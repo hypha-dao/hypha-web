@@ -103,7 +103,7 @@ export const PersonHead = ({
           </Text>
         </Skeleton>
         <div className="flex flex-col gap-7">
-          <div className='flex flex-col gap-4'>
+          <div className="flex flex-col gap-4">
             <WebLinks links={links} />
             <div className="flex gap-5 text-1">
               <span className="flex gap-3">

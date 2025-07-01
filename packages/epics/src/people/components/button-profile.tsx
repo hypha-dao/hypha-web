@@ -79,7 +79,12 @@ export const ButtonProfile = ({
           </DropdownMenuContent>
         </DropdownMenu>
       ) : (
-        <Button onClick={onLogin}>Sign in</Button>
+        <div className="flex gap-2">
+          <Button onClick={onLogin}>Sign in</Button>
+          <Button variant="outline" onClick={onLogin}>
+            Get started
+          </Button>
+        </div>
       )}
     </div>
   );
