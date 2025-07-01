@@ -63,15 +63,6 @@ export const SignupPanel = ({
     },
   });
 
-  React.useEffect(() => {
-    const subscription = form.watch((value, { name, type }) => {
-      console.log('Form values:', value);
-      console.log('Form errors:', form.formState.errors);
-      console.log('Is form valid:', form.formState.isValid);
-    });
-    return () => subscription.unsubscribe();
-  }, [form]);
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSave)} className="space-y-8">
