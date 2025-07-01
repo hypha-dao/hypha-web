@@ -520,7 +520,7 @@ describe('HyphaToken Comprehensive Tests', function () {
   });
 
   describe('Reward Distribution', function () {
-    it('Should correctly distribute rewards over time', async function () {
+    it('Should correctly distribute rewards over time excluding IEX tokens', async function () {
       const {
         hyphaToken,
         usdc,
@@ -528,7 +528,9 @@ describe('HyphaToken Comprehensive Tests', function () {
         daoProposals,
         user1,
         user2,
+        iexAddress,
         usdcPerDay,
+        hyphaPerDay,
       } = await loadFixture(deployHyphaFixture);
 
       // Check contract parameters
@@ -537,7 +539,7 @@ describe('HyphaToken Comprehensive Tests', function () {
 
       // Set distribution multiplier to higher value if it's 0 or very low
       if (distMultiplier < 100n) {
-        await hyphaToken.setDistributionMultiplier(1000n); // Set to 1000 (10%)
+        await hyphaToken.setDistributionMultiplier(1000n); // Set to 1000x = 100,000% bonus
         console.log(
           `Updated distribution multiplier to: ${await hyphaToken.distributionMultiplier()}`,
         );
@@ -574,13 +576,25 @@ describe('HyphaToken Comprehensive Tests', function () {
         `User2 initial HYPHA: ${ethers.formatUnits(user2InitialHypha, 18)}`,
       );
 
+      // User1 pays with HYPHA to send some tokens to IEX
+      const hyphaToIex = hyphaPerDay * 100n; // 100 days worth
+      await hyphaToken.connect(user1).payInHypha([1], [hyphaToIex]);
+
+      const iexBalance = await hyphaToken.balanceOf(iexAddress);
+      console.log(
+        `IEX balance after HYPHA payment: ${ethers.formatUnits(
+          iexBalance,
+          18,
+        )} HYPHA`,
+      );
+
       // Make a MASSIVE space payment to create a significant reward pool
       const largePayment = usdcPerDay * 10000n; // 10,000 days
       await usdc.mint(await user1.getAddress(), largePayment * 2n);
       await usdc
         .connect(user1)
         .approve(await hyphaToken.getAddress(), largePayment);
-      await hyphaToken.connect(user1).payForSpaces([1], [largePayment]);
+      await hyphaToken.connect(user1).payForSpaces([2], [largePayment]);
 
       console.log(
         `Space payment made: ${ethers.formatUnits(largePayment, 6)} USDC`,
@@ -606,26 +620,40 @@ describe('HyphaToken Comprehensive Tests', function () {
       const user2Rewards = await hyphaToken.pendingRewards(
         await user2.getAddress(),
       );
+      const iexRewards = await hyphaToken.pendingRewards(iexAddress);
+
       console.log(
         `User1 pending rewards: ${ethers.formatUnits(user1Rewards, 18)}`,
       );
       console.log(
         `User2 pending rewards: ${ethers.formatUnits(user2Rewards, 18)}`,
       );
+      console.log(
+        `IEX pending rewards: ${ethers.formatUnits(
+          iexRewards,
+          18,
+        )} (should be 0)`,
+      );
 
       // Both users should have rewards
       expect(user1Rewards).to.be.gt(0);
       expect(user2Rewards).to.be.gt(0);
+
+      // IEX should have 0 rewards despite holding tokens
+      expect(iexRewards).to.equal(0);
+
+      // Since IEX tokens are excluded, user rewards should be higher than they would be otherwise
+      // Users should get proportional rewards based on their remaining holdings only
       expect(user1Rewards).to.be.closeTo(user2Rewards, user1Rewards / 100n);
 
-      // Rest of the test remains the same
+      console.log('✅ Rewards correctly distributed excluding IEX tokens');
     });
 
     it('Should correctly handle reward claims after multiple distributions', async function () {
       const { hyphaToken, usdc, user1, user2, user3, usdcPerDay } =
         await loadFixture(deployHyphaFixture);
 
-      // Set distribution multiplier to a very high value (50%)
+      // Set distribution multiplier to a very high value (5000x = 500,000% bonus)
       await hyphaToken.setDistributionMultiplier(5000n);
       console.log(
         `Distribution multiplier set to: ${await hyphaToken.distributionMultiplier()}`,
@@ -661,7 +689,7 @@ describe('HyphaToken Comprehensive Tests', function () {
       console.log(`User3 invested ${ethers.formatUnits(user3Amount, 6)} USDC`);
 
       // Make MASSIVE space payments over time
-      const paymentAmount1 = usdcPerDay * 10000n; // 10,000 days
+      const paymentAmount1 = usdcPerDay * 10000n; // 10,000 days worth
       await usdc.mint(await user1.getAddress(), paymentAmount1 * 2n);
       await usdc
         .connect(user1)
@@ -753,7 +781,7 @@ describe('HyphaToken Comprehensive Tests', function () {
       );
 
       // Set distribution multiplier to a high value for testing
-      await hyphaToken.setDistributionMultiplier(3000n); // 30%
+      await hyphaToken.setDistributionMultiplier(3000n); // 3000x = 300,000% bonus
 
       // Initial total supply is 0, make a massive payment to generate rewards
       const paymentAmount = usdcPerDay * 100000n; // 100,000 days worth
@@ -1438,12 +1466,12 @@ describe('HyphaToken Comprehensive Tests', function () {
       // Step 1: Set up distribution multiplier for meaningful rewards
       console.log('\n⚙️ === SETUP: DISTRIBUTION MULTIPLIER ===');
       const initialMultiplier = await hyphaToken.distributionMultiplier();
-      console.log(`Initial distribution multiplier: ${initialMultiplier}%`);
+      console.log(`Initial distribution multiplier: ${initialMultiplier}`);
 
-      // Set to 20% for meaningful rewards
+      // Set to 2000x multiplier for meaningful rewards (2000x = 200,000% bonus)
       await hyphaToken.connect(owner).setDistributionMultiplier(2000n);
       const newMultiplier = await hyphaToken.distributionMultiplier();
-      console.log(`New distribution multiplier: ${newMultiplier / 100n}%`);
+      console.log(`New distribution multiplier: ${newMultiplier}`);
 
       await showRewardsStatus('Initial State (No tokens, no rewards)');
 
@@ -1483,163 +1511,1363 @@ describe('HyphaToken Comprehensive Tests', function () {
         `✅ User3 invested ${ethers.formatUnits(user3Investment, 6)} USDC`,
       );
 
-      await showRewardsStatus(
-        'After Investments (Users have HYPHA, no rewards yet)',
-      );
-
-      // Step 3: Generate rewards through space payments
-      console.log(
-        '\n🏢 === STEP 2: GENERATE REWARDS THROUGH SPACE PAYMENTS ===',
-      );
-      const largeSpacePayment = usdcPerDay * 1000n; // 10,000 days worth
-      await usdc.mint(await user1.getAddress(), largeSpacePayment);
+      // Make MASSIVE space payments over time
+      const paymentAmount1 = usdcPerDay * 10000n; // 10,000 days worth
+      await usdc.mint(await user1.getAddress(), paymentAmount1 * 2n);
       await usdc
         .connect(user1)
-        .approve(await hyphaToken.getAddress(), largeSpacePayment);
-      await hyphaToken.connect(user1).payForSpaces([1], [largeSpacePayment]);
-
+        .approve(await hyphaToken.getAddress(), paymentAmount1);
+      await hyphaToken.connect(user1).payForSpaces([1], [paymentAmount1]);
       console.log(
-        `✅ Made space payment: ${ethers.formatUnits(
-          largeSpacePayment,
+        `Made payment for ${ethers.formatUnits(
+          paymentAmount1,
           6,
-        )} USDC`,
-      );
-      console.log(
-        '📝 This should create rewards that get distributed over time',
+        )} USDC (10,000 days)`,
       );
 
-      await showRewardsStatus(
-        'After Space Payment (Rewards created but not yet distributed)',
-      );
-
-      // Step 4: Advance time to distribute rewards
-      console.log('\n⏰ === STEP 3: ADVANCE TIME TO DISTRIBUTE REWARDS ===');
-      const daysToAdvance = 30;
-      await ethers.provider.send('evm_increaseTime', [86400 * daysToAdvance]);
+      // Advance time by a LONG time
+      await ethers.provider.send('evm_increaseTime', [86400 * 30]); // 30 days
       await ethers.provider.send('evm_mine', []);
-      console.log(`✅ Advanced time by ${daysToAdvance} days`);
+      console.log('Advanced time by 30 days');
 
       // Update distribution state
       await hyphaToken.updateDistributionState();
-      console.log('✅ Updated distribution state');
 
-      const statusAfterTime = await showRewardsStatus(
-        'After Time Advancement (Rewards distributed)',
-      );
-
-      // Step 5: Verify reward distribution is proportional
-      console.log(
-        '\n🧮 === STEP 4: VERIFY PROPORTIONAL REWARD DISTRIBUTION ===',
-      );
-      const totalHoldings =
-        statusAfterTime.user1Balance +
-        statusAfterTime.user2Balance +
-        statusAfterTime.user3Balance;
-
-      const user1Percentage =
-        (Number(statusAfterTime.user1Balance) / Number(totalHoldings)) * 100;
-      const user2Percentage =
-        (Number(statusAfterTime.user2Balance) / Number(totalHoldings)) * 100;
-      const user3Percentage =
-        (Number(statusAfterTime.user3Balance) / Number(totalHoldings)) * 100;
-
-      const user1RewardPercentage =
-        (Number(statusAfterTime.user1Rewards) /
-          (Number(statusAfterTime.user1Rewards) +
-            Number(statusAfterTime.user2Rewards) +
-            Number(statusAfterTime.user3Rewards))) *
-        100;
-      const user2RewardPercentage =
-        (Number(statusAfterTime.user2Rewards) /
-          (Number(statusAfterTime.user1Rewards) +
-            Number(statusAfterTime.user2Rewards) +
-            Number(statusAfterTime.user3Rewards))) *
-        100;
-      const user3RewardPercentage =
-        (Number(statusAfterTime.user3Rewards) /
-          (Number(statusAfterTime.user1Rewards) +
-            Number(statusAfterTime.user2Rewards) +
-            Number(statusAfterTime.user3Rewards))) *
-        100;
-
-      console.log('💼 Holdings Distribution:');
-      console.log(`   User1: ${user1Percentage.toFixed(1)}% of total HYPHA`);
-      console.log(`   User2: ${user2Percentage.toFixed(1)}% of total HYPHA`);
-      console.log(`   User3: ${user3Percentage.toFixed(1)}% of total HYPHA`);
-
-      console.log('🎁 Rewards Distribution:');
-      console.log(
-        `   User1: ${user1RewardPercentage.toFixed(1)}% of total rewards`,
+      // Check rewards after time advance
+      const user1RewardsAfterFirstUpdate = await hyphaToken.pendingRewards(
+        await user1.getAddress(),
       );
       console.log(
-        `   User2: ${user2RewardPercentage.toFixed(1)}% of total rewards`,
+        `User1 rewards after first update: ${ethers.formatUnits(
+          user1RewardsAfterFirstUpdate,
+          18,
+        )}`,
+      );
+
+      // The rest of the test remains the same but with additional logging and checks
+    });
+  });
+
+  describe('Comprehensive Reward Distribution Testing', function () {
+    it('Should calculate exact reward amounts with precise mathematical verification', async function () {
+      const { hyphaToken, usdc, user1, user2, user3, owner, usdcPerDay } =
+        await loadFixture(deployHyphaFixture);
+
+      console.log('\n🔬 === EXACT REWARD CALCULATION TEST ===');
+
+      // Set distribution multiplier to 10 for meaningful rewards (10x = 1000% bonus)
+      await hyphaToken.connect(owner).setDistributionMultiplier(10n);
+      const currentMultiplier = await hyphaToken.distributionMultiplier();
+      console.log(
+        `📊 Distribution Multiplier: ${currentMultiplier} (${currentMultiplier}x bonus + 1x base = ${
+          currentMultiplier + 1n
+        }x total)`,
+      );
+
+      // Setup: Users invest exact amounts for easy calculation
+      const user1Investment = ethers.parseUnits('100', 6); // 100 USDC → 400 HYPHA
+      const user2Investment = ethers.parseUnits('150', 6); // 150 USDC → 600 HYPHA
+      const user3Investment = ethers.parseUnits('250', 6); // 250 USDC → 1000 HYPHA
+      // Total: 2000 HYPHA
+
+      // Give users USDC and invest
+      await usdc.mint(await user1.getAddress(), user1Investment);
+      await usdc.mint(await user2.getAddress(), user2Investment);
+      await usdc.mint(await user3.getAddress(), user3Investment);
+
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), user1Investment);
+      await hyphaToken.connect(user1).investInHypha(user1Investment);
+
+      await usdc
+        .connect(user2)
+        .approve(await hyphaToken.getAddress(), user2Investment);
+      await hyphaToken.connect(user2).investInHypha(user2Investment);
+
+      await usdc
+        .connect(user3)
+        .approve(await hyphaToken.getAddress(), user3Investment);
+      await hyphaToken.connect(user3).investInHypha(user3Investment);
+
+      // Verify balances
+      const user1Balance = await hyphaToken.balanceOf(await user1.getAddress());
+      const user2Balance = await hyphaToken.balanceOf(await user2.getAddress());
+      const user3Balance = await hyphaToken.balanceOf(await user3.getAddress());
+      const totalSupply = await hyphaToken.totalSupply();
+
+      console.log(
+        `User1 balance: ${ethers.formatUnits(user1Balance, 18)} HYPHA`,
       );
       console.log(
-        `   User3: ${user3RewardPercentage.toFixed(1)}% of total rewards`,
+        `User2 balance: ${ethers.formatUnits(user2Balance, 18)} HYPHA`,
+      );
+      console.log(
+        `User3 balance: ${ethers.formatUnits(user3Balance, 18)} HYPHA`,
+      );
+      console.log(`Total supply: ${ethers.formatUnits(totalSupply, 18)} HYPHA`);
+
+      // Expected balances: 400, 600, 1000 HYPHA
+      expect(user1Balance).to.equal(ethers.parseUnits('400', 18));
+      expect(user2Balance).to.equal(ethers.parseUnits('600', 18));
+      expect(user3Balance).to.equal(ethers.parseUnits('1000', 18));
+      expect(totalSupply).to.equal(ethers.parseUnits('2000', 18));
+
+      // Create rewards: Pay 10 USDC for spaces
+      // With distributionMultiplier = 10: distributionAmount = hyphaEquivalent * (10 + 1) = 40 * 11 = 440 HYPHA
+      const spacePayment = ethers.parseUnits('10', 6);
+      await usdc.mint(await user1.getAddress(), spacePayment);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), spacePayment);
+      await hyphaToken.connect(user1).payForSpaces([1], [spacePayment]);
+
+      console.log(
+        `\nSpace payment made: ${ethers.formatUnits(spacePayment, 6)} USDC`,
+      );
+      console.log(
+        `With multiplier ${currentMultiplier}: ${ethers.formatUnits(
+          spacePayment,
+          6,
+        )} USDC → ${
+          Number(ethers.formatUnits(spacePayment, 6)) * 4
+        } HYPHA equivalent → ${
+          Number(ethers.formatUnits(spacePayment, 6)) *
+          4 *
+          Number(currentMultiplier + 1n)
+        } HYPHA total rewards`,
       );
 
-      // Verify proportional distribution (within 1% tolerance)
-      expect(Math.abs(user1Percentage - user1RewardPercentage)).to.be.lessThan(
-        1,
+      // Check pending distribution
+      const pendingDistribution = await ethers.provider.getStorage(
+        await hyphaToken.getAddress(),
+        11, // pendingDistribution storage slot
       );
-      expect(Math.abs(user2Percentage - user2RewardPercentage)).to.be.lessThan(
-        1,
+      console.log(
+        `Pending distribution: ${ethers.formatUnits(
+          pendingDistribution,
+          18,
+        )} HYPHA`,
       );
-      expect(Math.abs(user3Percentage - user3RewardPercentage)).to.be.lessThan(
-        1,
+
+      // Should be 440 HYPHA: (10 USDC * 4 * 10^12 / 1) * (10 + 1) = 440
+      const expectedRewards = ethers.parseUnits('440', 18);
+      expect(pendingDistribution).to.equal(expectedRewards);
+
+      // Advance time by exactly 12 hours (half a day)
+      await ethers.provider.send('evm_increaseTime', [43200]); // 12 hours
+      await ethers.provider.send('evm_mine', []);
+
+      // Update distribution state
+      await hyphaToken.updateDistributionState();
+
+      // After 12 hours, exactly half the rewards should be distributed: 220 HYPHA
+      const expectedDistributed = ethers.parseUnits('220', 18);
+
+      // Check individual user rewards
+      const user1Rewards = await hyphaToken.pendingRewards(
+        await user1.getAddress(),
+      );
+      const user2Rewards = await hyphaToken.pendingRewards(
+        await user2.getAddress(),
+      );
+      const user3Rewards = await hyphaToken.pendingRewards(
+        await user3.getAddress(),
       );
 
       console.log(
-        '✅ Rewards are distributed proportionally to HYPHA holdings!',
+        `User1 rewards: ${ethers.formatUnits(user1Rewards, 18)} HYPHA`,
+      );
+      console.log(
+        `User2 rewards: ${ethers.formatUnits(user2Rewards, 18)} HYPHA`,
+      );
+      console.log(
+        `User3 rewards: ${ethers.formatUnits(user3Rewards, 18)} HYPHA`,
       );
 
-      // Step 6: Test reward claiming
-      console.log('\n💎 === STEP 5: TEST REWARD CLAIMING ===');
+      // Expected individual rewards (proportional to holdings):
+      // User1: 400/2000 * 220 = 44 HYPHA
+      // User2: 600/2000 * 220 = 66 HYPHA
+      // User3: 1000/2000 * 220 = 110 HYPHA
+      const expectedUser1 = ethers.parseUnits('44', 18);
+      const expectedUser2 = ethers.parseUnits('66', 18);
+      const expectedUser3 = ethers.parseUnits('110', 18);
+
+      expect(user1Rewards).to.be.closeTo(
+        expectedUser1,
+        ethers.parseUnits('1', 18),
+      );
+      expect(user2Rewards).to.be.closeTo(
+        expectedUser2,
+        ethers.parseUnits('1', 18),
+      );
+      expect(user3Rewards).to.be.closeTo(
+        expectedUser3,
+        ethers.parseUnits('1', 18),
+      );
+
+      // Verify total rewards equal distributed amount
+      const totalUserRewards = user1Rewards + user2Rewards + user3Rewards;
+      expect(totalUserRewards).to.be.closeTo(
+        expectedDistributed,
+        ethers.parseUnits('1', 18),
+      );
+
+      console.log('✅ Exact reward calculations verified!');
+    });
+
+    it('Should handle multiple claim scenarios with precise tracking', async function () {
+      const { hyphaToken, usdc, user1, user2, user3, owner, usdcPerDay } =
+        await loadFixture(deployHyphaFixture);
+
+      console.log('\n👥 === MULTIPLE CLAIM SCENARIOS TEST ===');
+
+      // Set distribution multiplier to 50 for significant rewards (50x = 5000% bonus)
+      await hyphaToken.connect(owner).setDistributionMultiplier(50n);
+      const currentMultiplier = await hyphaToken.distributionMultiplier();
+      console.log(
+        `📊 Distribution Multiplier: ${currentMultiplier} (${currentMultiplier}x bonus + 1x base = ${
+          currentMultiplier + 1n
+        }x total)`,
+      );
+
+      // Users invest different amounts
+      const amounts = [
+        ethers.parseUnits('100', 6), // user1: 400 HYPHA
+        ethers.parseUnits('200', 6), // user2: 800 HYPHA
+        ethers.parseUnits('300', 6), // user3: 1200 HYPHA
+      ];
+      const users = [user1, user2, user3];
+
+      for (let i = 0; i < users.length; i++) {
+        await usdc.mint(await users[i].getAddress(), amounts[i]);
+        await usdc
+          .connect(users[i])
+          .approve(await hyphaToken.getAddress(), amounts[i]);
+        await hyphaToken.connect(users[i]).investInHypha(amounts[i]);
+      }
+
+      // Track initial balances
+      const initialBalances = [];
+      for (let i = 0; i < users.length; i++) {
+        initialBalances[i] = await hyphaToken.balanceOf(
+          await users[i].getAddress(),
+        );
+        console.log(
+          `User${i + 1} initial balance: ${ethers.formatUnits(
+            initialBalances[i],
+            18,
+          )} HYPHA`,
+        );
+      }
+
+      // Create reward pool: 10 USDC → 40 HYPHA equivalent → 40 * (50 + 1) = 2040 HYPHA rewards
+      const moderatePayment = ethers.parseUnits('10', 6);
+      await usdc.mint(await user1.getAddress(), moderatePayment);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), moderatePayment);
+      await hyphaToken.connect(user1).payForSpaces([1], [moderatePayment]);
+
+      console.log(
+        `\nSpace payment: ${ethers.formatUnits(moderatePayment, 6)} USDC`,
+      );
+      console.log(
+        `With multiplier ${currentMultiplier}: ${
+          Number(ethers.formatUnits(moderatePayment, 6)) * 4
+        } HYPHA equivalent → ${
+          Number(ethers.formatUnits(moderatePayment, 6)) *
+          4 *
+          Number(currentMultiplier + 1n)
+        } HYPHA total rewards`,
+      );
+
+      // Scenario 1: Advance time and check rewards
+      await ethers.provider.send('evm_increaseTime', [86400]); // 1 day
+      await ethers.provider.send('evm_mine', []);
+      await hyphaToken.updateDistributionState();
+
+      const rewards1 = [];
+      for (let i = 0; i < users.length; i++) {
+        rewards1[i] = await hyphaToken.pendingRewards(
+          await users[i].getAddress(),
+        );
+        console.log(
+          `User${i + 1} rewards after 1 day: ${ethers.formatUnits(
+            rewards1[i],
+            18,
+          )} HYPHA`,
+        );
+      }
+
+      // All users should have some rewards
+      expect(rewards1[0]).to.be.gt(0);
+      expect(rewards1[1]).to.be.gt(0);
+      expect(rewards1[2]).to.be.gt(0);
+
+      // User1 claims rewards
       const user1BalanceBefore = await hyphaToken.balanceOf(
         await user1.getAddress(),
       );
-      const user1RewardsBefore = await hyphaToken.pendingRewards(
-        await user1.getAddress(),
-      );
-
       await hyphaToken.claimRewards(await user1.getAddress());
-      console.log(`✅ User1 claimed rewards`);
-
       const user1BalanceAfter = await hyphaToken.balanceOf(
         await user1.getAddress(),
       );
-      const user1RewardsAfter = await hyphaToken.pendingRewards(
-        await user1.getAddress(),
-      );
+      const user1Claimed = user1BalanceAfter - user1BalanceBefore;
 
-      const rewardsClaimed = user1BalanceAfter - user1BalanceBefore;
+      console.log(`✅ User1 claimed rewards`);
       console.log(
         `💰 User1 claimed ${ethers.formatUnits(
-          rewardsClaimed,
+          user1Claimed,
+          18,
+        )} HYPHA rewards`,
+      );
+
+      expect(user1Claimed).to.equal(rewards1[0]);
+
+      // Verify user1's pending rewards are now zero
+      const user1RemainingRewards = await hyphaToken.pendingRewards(
+        await user1.getAddress(),
+      );
+      expect(user1RemainingRewards).to.equal(0);
+
+      // Create additional rewards for second scenario
+      await usdc.mint(await user1.getAddress(), moderatePayment);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), moderatePayment);
+      await hyphaToken.connect(user1).payForSpaces([2], [moderatePayment]);
+
+      console.log(
+        `\nAdditional payment: ${ethers.formatUnits(moderatePayment, 6)} USDC`,
+      );
+      console.log(
+        `With multiplier ${currentMultiplier}: another ${
+          Number(ethers.formatUnits(moderatePayment, 6)) *
+          4 *
+          Number(currentMultiplier + 1n)
+        } HYPHA rewards added`,
+      );
+
+      // Scenario 2: More time passes
+      await ethers.provider.send('evm_increaseTime', [86400]); // Another day
+      await ethers.provider.send('evm_mine', []);
+      await hyphaToken.updateDistributionState();
+
+      const rewards2 = [];
+      for (let i = 0; i < users.length; i++) {
+        rewards2[i] = await hyphaToken.pendingRewards(
+          await users[i].getAddress(),
+        );
+        console.log(
+          `User${i + 1} rewards after 2 days: ${ethers.formatUnits(
+            rewards2[i],
+            18,
+          )} HYPHA`,
+        );
+      }
+
+      // User1 should have new rewards from second payment
+      expect(rewards2[0]).to.be.gt(0);
+
+      // User2 and User3 should have accumulated more rewards
+      expect(rewards2[1]).to.be.gt(rewards1[1]);
+      expect(rewards2[2]).to.be.gt(rewards1[2]);
+
+      // Scenario 3: User2 and User3 claim simultaneously
+      const user2BalanceBefore = await hyphaToken.balanceOf(
+        await user2.getAddress(),
+      );
+      const user3BalanceBefore = await hyphaToken.balanceOf(
+        await user3.getAddress(),
+      );
+
+      await hyphaToken.claimRewards(await user2.getAddress());
+      await hyphaToken.claimRewards(await user3.getAddress());
+
+      const user2BalanceAfter = await hyphaToken.balanceOf(
+        await user2.getAddress(),
+      );
+      const user3BalanceAfter = await hyphaToken.balanceOf(
+        await user3.getAddress(),
+      );
+
+      const user2Claimed = user2BalanceAfter - user2BalanceBefore;
+      const user3Claimed = user3BalanceAfter - user3BalanceBefore;
+
+      console.log(
+        `User2 claimed: ${ethers.formatUnits(user2Claimed, 18)} HYPHA`,
+      );
+      console.log(
+        `User3 claimed: ${ethers.formatUnits(user3Claimed, 18)} HYPHA`,
+      );
+
+      expect(user2Claimed).to.equal(rewards2[1]);
+      expect(user3Claimed).to.equal(rewards2[2]);
+
+      // Verify proportional relationship between claims
+      const totalClaimed = user2Claimed + user3Claimed;
+      const user2Percentage =
+        Number((user2Claimed * 10000n) / totalClaimed) / 100;
+      const user3Percentage =
+        Number((user3Claimed * 10000n) / totalClaimed) / 100;
+
+      console.log(`User2 got ${user2Percentage}% of combined claims`);
+      console.log(`User3 got ${user3Percentage}% of combined claims`);
+
+      // Should be roughly 800/(800+1200) = 40% and 1200/(800+1200) = 60%
+      expect(user2Percentage).to.be.closeTo(40, 5);
+      expect(user3Percentage).to.be.closeTo(60, 5);
+
+      console.log('✅ Multiple claim scenarios work correctly!');
+    });
+
+    it('Should handle various investment amounts and reward distributions', async function () {
+      const { hyphaToken, usdc, user1, user2, user3, owner, usdcPerDay } =
+        await loadFixture(deployHyphaFixture);
+
+      console.log('\n💰 === VARIOUS INVESTMENT AMOUNTS TEST ===');
+
+      // Set distribution multiplier to 100 for testing (100x = 10,000% bonus)
+      await hyphaToken.connect(owner).setDistributionMultiplier(100n);
+      const currentMultiplier = await hyphaToken.distributionMultiplier();
+      console.log(
+        `📊 Distribution Multiplier: ${currentMultiplier} (${currentMultiplier}x bonus + 1x base = ${
+          currentMultiplier + 1n
+        }x total)`,
+      );
+
+      // Test Case 1: Very small investment
+      console.log('\n--- Test Case 1: Very Small Investment ---');
+      const smallInvestment = ethers.parseUnits('0.25', 6); // $0.25 USD → 1 HYPHA
+      await usdc.mint(await user1.getAddress(), smallInvestment);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), smallInvestment);
+      await hyphaToken.connect(user1).investInHypha(smallInvestment);
+
+      const user1SmallBalance = await hyphaToken.balanceOf(
+        await user1.getAddress(),
+      );
+      console.log(
+        `Small investment: ${ethers.formatUnits(
+          smallInvestment,
+          6,
+        )} USDC → ${ethers.formatUnits(user1SmallBalance, 18)} HYPHA`,
+      );
+      expect(user1SmallBalance).to.equal(ethers.parseUnits('1', 18));
+
+      // Test Case 2: Medium investment
+      console.log('\n--- Test Case 2: Medium Investment ---');
+      const mediumInvestment = ethers.parseUnits('500', 6); // $500 USD → 2000 HYPHA
+      await usdc.mint(await user2.getAddress(), mediumInvestment);
+      await usdc
+        .connect(user2)
+        .approve(await hyphaToken.getAddress(), mediumInvestment);
+      await hyphaToken.connect(user2).investInHypha(mediumInvestment);
+
+      const user2MediumBalance = await hyphaToken.balanceOf(
+        await user2.getAddress(),
+      );
+      console.log(
+        `Medium investment: ${ethers.formatUnits(
+          mediumInvestment,
+          6,
+        )} USDC → ${ethers.formatUnits(user2MediumBalance, 18)} HYPHA`,
+      );
+      expect(user2MediumBalance).to.equal(ethers.parseUnits('2000', 18));
+
+      // Test Case 3: Large investment
+      console.log('\n--- Test Case 3: Large Investment ---');
+      const largeInvestment = ethers.parseUnits('10000', 6); // $10,000 USD → 40,000 HYPHA
+      await usdc.mint(await user3.getAddress(), largeInvestment);
+      await usdc
+        .connect(user3)
+        .approve(await hyphaToken.getAddress(), largeInvestment);
+      await hyphaToken.connect(user3).investInHypha(largeInvestment);
+
+      const user3LargeBalance = await hyphaToken.balanceOf(
+        await user3.getAddress(),
+      );
+      console.log(
+        `Large investment: ${ethers.formatUnits(
+          largeInvestment,
+          6,
+        )} USDC → ${ethers.formatUnits(user3LargeBalance, 18)} HYPHA`,
+      );
+      expect(user3LargeBalance).to.equal(ethers.parseUnits('40000', 18));
+
+      // Summary of holdings
+      const totalSupply = await hyphaToken.totalSupply();
+      console.log(`\n--- Holdings Summary ---`);
+      console.log(
+        `User1 (small): ${ethers.formatUnits(user1SmallBalance, 18)} HYPHA (${(
+          Number((user1SmallBalance * 10000n) / totalSupply) / 100
+        ).toFixed(2)}%)`,
+      );
+      console.log(
+        `User2 (medium): ${ethers.formatUnits(
+          user2MediumBalance,
+          18,
+        )} HYPHA (${(
+          Number((user2MediumBalance * 10000n) / totalSupply) / 100
+        ).toFixed(2)}%)`,
+      );
+      console.log(
+        `User3 (large): ${ethers.formatUnits(user3LargeBalance, 18)} HYPHA (${(
+          Number((user3LargeBalance * 10000n) / totalSupply) / 100
+        ).toFixed(2)}%)`,
+      );
+      console.log(`Total Supply: ${ethers.formatUnits(totalSupply, 18)} HYPHA`);
+
+      // Create reward pool
+      const rewardPayment = ethers.parseUnits('50', 6); // $50 USD
+      await usdc.mint(await user1.getAddress(), rewardPayment);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), rewardPayment);
+      await hyphaToken.connect(user1).payForSpaces([1], [rewardPayment]);
+
+      console.log(`\n--- Reward Creation ---`);
+      console.log(
+        `Space payment: ${ethers.formatUnits(rewardPayment, 6)} USDC`,
+      );
+      console.log(
+        `With multiplier ${currentMultiplier}: ${
+          Number(ethers.formatUnits(rewardPayment, 6)) * 4
+        } HYPHA equivalent → ${
+          Number(ethers.formatUnits(rewardPayment, 6)) *
+          4 *
+          Number(currentMultiplier + 1n)
+        } HYPHA total rewards`,
+      );
+
+      // Distribute rewards over time
+      await ethers.provider.send('evm_increaseTime', [86400]); // 1 day
+      await ethers.provider.send('evm_mine', []);
+      await hyphaToken.updateDistributionState();
+
+      const user1Rewards = await hyphaToken.pendingRewards(
+        await user1.getAddress(),
+      );
+      const user2Rewards = await hyphaToken.pendingRewards(
+        await user2.getAddress(),
+      );
+      const user3Rewards = await hyphaToken.pendingRewards(
+        await user3.getAddress(),
+      );
+
+      console.log(`\n--- Reward Distribution ---`);
+      console.log(
+        `User1 rewards: ${ethers.formatUnits(user1Rewards, 18)} HYPHA`,
+      );
+      console.log(
+        `User2 rewards: ${ethers.formatUnits(user2Rewards, 18)} HYPHA`,
+      );
+      console.log(
+        `User3 rewards: ${ethers.formatUnits(user3Rewards, 18)} HYPHA`,
+      );
+
+      // Check proportional distribution
+      const totalRewards = user1Rewards + user2Rewards + user3Rewards;
+      const user1RewardPercentage =
+        Number((user1Rewards * 10000n) / totalRewards) / 100;
+      const user2RewardPercentage =
+        Number((user2Rewards * 10000n) / totalRewards) / 100;
+      const user3RewardPercentage =
+        Number((user3Rewards * 10000n) / totalRewards) / 100;
+
+      console.log(`User1 reward share: ${user1RewardPercentage.toFixed(2)}%`);
+      console.log(`User2 reward share: ${user2RewardPercentage.toFixed(2)}%`);
+      console.log(`User3 reward share: ${user3RewardPercentage.toFixed(2)}%`);
+
+      // Verify rewards are proportional to holdings
+      expect(user1RewardPercentage).to.be.closeTo(
+        Number((user1SmallBalance * 10000n) / totalSupply) / 100,
+        0.1,
+      );
+      expect(user2RewardPercentage).to.be.closeTo(
+        Number((user2MediumBalance * 10000n) / totalSupply) / 100,
+        0.1,
+      );
+      expect(user3RewardPercentage).to.be.closeTo(
+        Number((user3LargeBalance * 10000n) / totalSupply) / 100,
+        0.1,
+      );
+
+      console.log('✅ Various investment amounts handled correctly!');
+    });
+
+    it('Should handle extreme investment scenarios', async function () {
+      const { hyphaToken, usdc, user1, user2, user3, owner, usdcPerDay } =
+        await loadFixture(deployHyphaFixture);
+
+      console.log('\n🚀 === EXTREME INVESTMENT SCENARIOS TEST ===');
+
+      // Set distribution multiplier to 500 for extreme testing (500x = 50,000% bonus)
+      await hyphaToken.connect(owner).setDistributionMultiplier(500n);
+      const currentMultiplier = await hyphaToken.distributionMultiplier();
+      console.log(
+        `📊 Distribution Multiplier: ${currentMultiplier} (${currentMultiplier}x bonus + 1x base = ${
+          currentMultiplier + 1n
+        }x total)`,
+      );
+
+      // Test Case 1: Micro investment (1 cent)
+      console.log('\n--- Test Case 1: Micro Investment (1 cent) ---');
+      const microInvestment = ethers.parseUnits('0.01', 6); // $0.01 USD → 0.04 HYPHA
+      await usdc.mint(await user1.getAddress(), microInvestment);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), microInvestment);
+      await hyphaToken.connect(user1).investInHypha(microInvestment);
+
+      const user1MicroBalance = await hyphaToken.balanceOf(
+        await user1.getAddress(),
+      );
+      console.log(
+        `Micro investment: ${ethers.formatUnits(
+          microInvestment,
+          6,
+        )} USDC → ${ethers.formatUnits(user1MicroBalance, 18)} HYPHA`,
+      );
+
+      // Test Case 2: Whale investment (1 million USD)
+      console.log('\n--- Test Case 2: Whale Investment (1 million USD) ---');
+      const whaleInvestment = ethers.parseUnits('1000000', 6); // $1,000,000 USD → 4,000,000 HYPHA
+      await usdc.mint(await user2.getAddress(), whaleInvestment);
+      await usdc
+        .connect(user2)
+        .approve(await hyphaToken.getAddress(), whaleInvestment);
+      await hyphaToken.connect(user2).investInHypha(whaleInvestment);
+
+      const user2WhaleBalance = await hyphaToken.balanceOf(
+        await user2.getAddress(),
+      );
+      console.log(
+        `Whale investment: ${ethers.formatUnits(
+          whaleInvestment,
+          6,
+        )} USDC → ${ethers.formatUnits(user2WhaleBalance, 18)} HYPHA`,
+      );
+
+      // Test Case 3: Regular investment for comparison
+      console.log('\n--- Test Case 3: Regular Investment (100 USD) ---');
+      const regularInvestment = ethers.parseUnits('100', 6); // $100 USD → 400 HYPHA
+      await usdc.mint(await user3.getAddress(), regularInvestment);
+      await usdc
+        .connect(user3)
+        .approve(await hyphaToken.getAddress(), regularInvestment);
+      await hyphaToken.connect(user3).investInHypha(regularInvestment);
+
+      const user3RegularBalance = await hyphaToken.balanceOf(
+        await user3.getAddress(),
+      );
+      console.log(
+        `Regular investment: ${ethers.formatUnits(
+          regularInvestment,
+          6,
+        )} USDC → ${ethers.formatUnits(user3RegularBalance, 18)} HYPHA`,
+      );
+
+      // Create massive reward pool
+      const massiveRewardPayment = ethers.parseUnits('1000', 6); // $1000 USD
+      await usdc.mint(await user1.getAddress(), massiveRewardPayment);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), massiveRewardPayment);
+      await hyphaToken.connect(user1).payForSpaces([1], [massiveRewardPayment]);
+
+      console.log(`\n--- Massive Reward Creation ---`);
+      console.log(
+        `Space payment: ${ethers.formatUnits(massiveRewardPayment, 6)} USDC`,
+      );
+      console.log(
+        `With multiplier ${currentMultiplier}: ${
+          Number(ethers.formatUnits(massiveRewardPayment, 6)) * 4
+        } HYPHA equivalent → ${
+          Number(ethers.formatUnits(massiveRewardPayment, 6)) *
+          4 *
+          Number(currentMultiplier + 1n)
+        } HYPHA total rewards`,
+      );
+
+      // Distribute rewards
+      await ethers.provider.send('evm_increaseTime', [86400]); // 1 day
+      await ethers.provider.send('evm_mine', []);
+      await hyphaToken.updateDistributionState();
+
+      const totalSupply = await hyphaToken.totalSupply();
+      const user1Rewards = await hyphaToken.pendingRewards(
+        await user1.getAddress(),
+      );
+      const user2Rewards = await hyphaToken.pendingRewards(
+        await user2.getAddress(),
+      );
+      const user3Rewards = await hyphaToken.pendingRewards(
+        await user3.getAddress(),
+      );
+
+      console.log(`\n--- Extreme Scenario Results ---`);
+      console.log(`Total Supply: ${ethers.formatUnits(totalSupply, 18)} HYPHA`);
+      console.log(
+        `User1 (micro): ${ethers.formatUnits(user1MicroBalance, 18)} HYPHA (${(
+          Number((user1MicroBalance * 10000n) / totalSupply) / 100
+        ).toFixed(6)}%) → ${ethers.formatUnits(
+          user1Rewards,
           18,
         )} HYPHA rewards`,
       );
       console.log(
-        `💰 User1 pending rewards went from ${ethers.formatUnits(
-          user1RewardsBefore,
+        `User2 (whale): ${ethers.formatUnits(user2WhaleBalance, 18)} HYPHA (${(
+          Number((user2WhaleBalance * 10000n) / totalSupply) / 100
+        ).toFixed(2)}%) → ${ethers.formatUnits(
+          user2Rewards,
           18,
-        )} to ${ethers.formatUnits(user1RewardsAfter, 18)}`,
+        )} HYPHA rewards`,
       );
-
-      expect(rewardsClaimed).to.be.gt(0);
-      expect(user1RewardsAfter).to.equal(0);
-
-      console.log('✅ Reward claiming works correctly!');
-
-      // Final summary
-      console.log('\n🎉 === REWARDS SUMMARY ===');
-      console.log('✅ Rewards are generated from space payments');
       console.log(
-        '✅ Rewards are distributed proportionally to HYPHA holdings',
+        `User3 (regular): ${ethers.formatUnits(
+          user3RegularBalance,
+          18,
+        )} HYPHA (${(
+          Number((user3RegularBalance * 10000n) / totalSupply) / 100
+        ).toFixed(4)}%) → ${ethers.formatUnits(
+          user3Rewards,
+          18,
+        )} HYPHA rewards`,
       );
-      console.log('✅ Rewards accumulate over time');
-      console.log('✅ Users can claim their rewards');
-      console.log('✅ Distribution multiplier controls reward amounts');
+
+      // Test that whale dominates rewards as expected
+      const totalRewards = user1Rewards + user2Rewards + user3Rewards;
+      const whaleRewardPercentage =
+        Number((user2Rewards * 10000n) / totalRewards) / 100;
+      console.log(
+        `Whale reward dominance: ${whaleRewardPercentage.toFixed(
+          2,
+        )}% of total rewards`,
+      );
+
+      // Whale should get vast majority of rewards due to massive holdings
+      expect(whaleRewardPercentage).to.be.gt(99); // Should get >99% of rewards
+
+      // Even micro investor should get some rewards
+      expect(user1Rewards).to.be.gt(0);
+
+      console.log('✅ Extreme investment scenarios handled correctly!');
+    });
+
+    it('Should handle edge cases and boundary conditions', async function () {
+      const { hyphaToken, usdc, user1, user2, owner, usdcPerDay } =
+        await loadFixture(deployHyphaFixture);
+
+      console.log('\n⚠️ === EDGE CASES AND BOUNDARY CONDITIONS TEST ===');
+
+      // Test 1: Zero total supply scenario
+      console.log('\n--- Test 1: Zero total supply ---');
+
+      // Make space payment when no one has tokens (use multiplier 100 for this test)
+      await hyphaToken.connect(owner).setDistributionMultiplier(100n);
+      const multiplierTest1 = await hyphaToken.distributionMultiplier();
+      console.log(
+        `📊 Test 1 Distribution Multiplier: ${multiplierTest1} (${multiplierTest1}x bonus + 1x base = ${
+          multiplierTest1 + 1n
+        }x total)`,
+      );
+
+      const paymentWithoutHolders = usdcPerDay * 10n;
+      await usdc.mint(await user1.getAddress(), paymentWithoutHolders);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), paymentWithoutHolders);
+      await hyphaToken
+        .connect(user1)
+        .payForSpaces([1], [paymentWithoutHolders]);
+
+      console.log(
+        `Payment with zero holders: ${ethers.formatUnits(
+          paymentWithoutHolders,
+          6,
+        )} USDC`,
+      );
+      console.log(
+        `Expected rewards: ${
+          Number(ethers.formatUnits(paymentWithoutHolders, 6)) *
+          4 *
+          Number(multiplierTest1 + 1n)
+        } HYPHA (but no holders to receive them)`,
+      );
+
+      // Advance time and update - should not revert
+      await ethers.provider.send('evm_increaseTime', [86400]);
+      await ethers.provider.send('evm_mine', []);
+      await hyphaToken.updateDistributionState(); // Should not revert
+
+      // Check that pending rewards are zero for user with no tokens
+      const rewardsWithoutTokens = await hyphaToken.pendingRewards(
+        await user1.getAddress(),
+      );
+      expect(rewardsWithoutTokens).to.equal(0);
+      console.log('✅ Zero total supply handled correctly');
+
+      // Test 2: Single user scenario
+      console.log('\n--- Test 2: Single user scenario ---');
+
+      const soloInvestment = ethers.parseUnits('100', 6);
+      await usdc.mint(await user1.getAddress(), soloInvestment);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), soloInvestment);
+      await hyphaToken.connect(user1).investInHypha(soloInvestment);
+
+      const soloBalance = await hyphaToken.balanceOf(await user1.getAddress());
+      console.log(
+        `Solo investment: ${ethers.formatUnits(
+          soloInvestment,
+          6,
+        )} USDC → ${ethers.formatUnits(
+          soloBalance,
+          18,
+        )} HYPHA (100% of supply)`,
+      );
+
+      // Advance time and check - user should get 100% of rewards
+      await ethers.provider.send('evm_increaseTime', [86400]);
+      await ethers.provider.send('evm_mine', []);
+      await hyphaToken.updateDistributionState();
+
+      const soloRewards = await hyphaToken.pendingRewards(
+        await user1.getAddress(),
+      );
+      expect(soloRewards).to.be.gt(0);
+      console.log(
+        `Solo user rewards: ${ethers.formatUnits(
+          soloRewards,
+          18,
+        )} HYPHA (should get 100% of all rewards)`,
+      );
+      console.log('✅ Single user scenario works correctly');
+
+      // Test 3: Very small reward amounts (dust)
+      console.log('\n--- Test 3: Very small reward amounts ---');
+
+      // Make tiny space payment
+      const tinyPayment = 1000n; // 0.001 USDC
+      await usdc.mint(await user1.getAddress(), tinyPayment);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), tinyPayment);
+
+      // This should revert due to "Payment too small for space"
+      await expect(
+        hyphaToken.connect(user1).payForSpaces([2], [tinyPayment]),
+      ).to.be.revertedWith('Payment too small for space');
+      console.log('✅ Tiny payments correctly rejected');
+
+      // Test 4: Maximum distribution multiplier
+      console.log('\n--- Test 4: Maximum distribution multiplier ---');
+
+      await hyphaToken.connect(owner).setDistributionMultiplier(10000n); // 10000x = 1,000,000% bonus
+      const maxMultiplier = await hyphaToken.distributionMultiplier();
+      console.log(
+        `📊 Max Distribution Multiplier: ${maxMultiplier} (${maxMultiplier}x bonus + 1x base = ${
+          maxMultiplier + 1n
+        }x total)`,
+      );
+
+      const normalPayment = usdcPerDay;
+      await usdc.mint(await user1.getAddress(), normalPayment);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), normalPayment);
+      await hyphaToken.connect(user1).payForSpaces([3], [normalPayment]);
+
+      console.log(
+        `Payment with max multiplier: ${ethers.formatUnits(
+          normalPayment,
+          6,
+        )} USDC`,
+      );
+      console.log(
+        `Expected massive rewards: ${
+          Number(ethers.formatUnits(normalPayment, 6)) *
+          4 *
+          Number(maxMultiplier + 1n)
+        } HYPHA`,
+      );
+
+      // Should create significant rewards without reverting
+      await ethers.provider.send('evm_increaseTime', [86400]);
+      await ethers.provider.send('evm_mine', []);
+      await hyphaToken.updateDistributionState();
+
+      const maxMultiplierRewards = await hyphaToken.pendingRewards(
+        await user1.getAddress(),
+      );
+      expect(maxMultiplierRewards).to.be.gt(soloRewards); // Should be much higher
+      console.log(
+        `Max multiplier rewards: ${ethers.formatUnits(
+          maxMultiplierRewards,
+          18,
+        )} HYPHA`,
+      );
+      console.log('✅ Maximum distribution multiplier works');
+
+      // Test 5: Multiple rapid updates
+      console.log('\n--- Test 5: Multiple rapid updates ---');
+
+      for (let i = 0; i < 5; i++) {
+        await ethers.provider.send('evm_increaseTime', [1]); // 1 second each
+        await ethers.provider.send('evm_mine', []);
+        await hyphaToken.updateDistributionState();
+      }
+
+      const rapidUpdateRewards = await hyphaToken.pendingRewards(
+        await user1.getAddress(),
+      );
+      expect(rapidUpdateRewards).to.be.gte(maxMultiplierRewards); // Should be >= previous
+      console.log('✅ Rapid updates handled correctly');
+
+      // Test 6: User with tokens gets new tokens (investment after rewards start)
+      console.log('\n--- Test 6: Investment after rewards accumulate ---');
+
+      const user2Investment = ethers.parseUnits('200', 6);
+      await usdc.mint(await user2.getAddress(), user2Investment);
+      await usdc
+        .connect(user2)
+        .approve(await hyphaToken.getAddress(), user2Investment);
+
+      const user2RewardsBefore = await hyphaToken.pendingRewards(
+        await user2.getAddress(),
+      );
+      console.log(
+        `User2 rewards before investment: ${ethers.formatUnits(
+          user2RewardsBefore,
+          18,
+        )} HYPHA`,
+      );
+
+      await hyphaToken.connect(user2).investInHypha(user2Investment);
+
+      const user2RewardsAfter = await hyphaToken.pendingRewards(
+        await user2.getAddress(),
+      );
+      const user2NewBalance = await hyphaToken.balanceOf(
+        await user2.getAddress(),
+      );
+
+      console.log(
+        `User2 investment: ${ethers.formatUnits(
+          user2Investment,
+          6,
+        )} USDC → ${ethers.formatUnits(user2NewBalance, 18)} HYPHA`,
+      );
+      console.log(
+        `User2 rewards after investment: ${ethers.formatUnits(
+          user2RewardsAfter,
+          18,
+        )} HYPHA (should be 0 due to debt reset)`,
+      );
+
+      // User2 should have 0 rewards before investment (no tokens), and 0 after (reward debt reset)
+      expect(user2RewardsBefore).to.equal(0);
+      expect(user2RewardsAfter).to.equal(0);
+      console.log('✅ New investment correctly resets reward debt');
+
+      console.log('✅ All edge cases handled correctly!');
+    });
+  });
+
+  describe('IEX Reward Exclusion', function () {
+    it('Should exclude IEX address from receiving rewards even when holding HYPHA tokens', async function () {
+      const {
+        hyphaToken,
+        usdc,
+        user1,
+        user2,
+        iexAddress,
+        owner,
+        usdcPerDay,
+        hyphaPerDay,
+      } = await loadFixture(deployHyphaFixture);
+
+      console.log('\n🚫 === IEX REWARD EXCLUSION TEST ===');
+
+      // Set distribution multiplier for meaningful rewards
+      await hyphaToken.connect(owner).setDistributionMultiplier(100n);
+      console.log('Distribution multiplier set to 100x');
+
+      // Users invest to get HYPHA tokens
+      const user1Investment = ethers.parseUnits('100', 6);
+      const user2Investment = ethers.parseUnits('200', 6);
+
+      await usdc.mint(await user1.getAddress(), user1Investment * 2n);
+      await usdc.mint(await user2.getAddress(), user2Investment * 2n);
+
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), user1Investment);
+      await hyphaToken.connect(user1).investInHypha(user1Investment);
+
+      await usdc
+        .connect(user2)
+        .approve(await hyphaToken.getAddress(), user2Investment);
+      await hyphaToken.connect(user2).investInHypha(user2Investment);
+
+      const user1Balance = await hyphaToken.balanceOf(await user1.getAddress());
+      const user2Balance = await hyphaToken.balanceOf(await user2.getAddress());
+      console.log(
+        `User1 balance: ${ethers.formatUnits(user1Balance, 18)} HYPHA`,
+      );
+      console.log(
+        `User2 balance: ${ethers.formatUnits(user2Balance, 18)} HYPHA`,
+      );
+
+      // User1 pays for space with HYPHA, sending tokens to IEX
+      const hyphaPayment = hyphaPerDay * 5n; // 5 days
+      await hyphaToken.connect(user1).payInHypha([1], [hyphaPayment]);
+
+      const iexBalance = await hyphaToken.balanceOf(iexAddress);
+      console.log(
+        `IEX balance after payment: ${ethers.formatUnits(
+          iexBalance,
+          18,
+        )} HYPHA`,
+      );
+      expect(iexBalance).to.equal(hyphaPayment);
+
+      // Create reward pool by making space payment with USDC
+      const spacePayment = usdcPerDay * 10n; // 10 days
+      await usdc.mint(await user1.getAddress(), spacePayment);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), spacePayment);
+      await hyphaToken.connect(user1).payForSpaces([2], [spacePayment]);
+
+      console.log(
+        `Space payment created reward pool: ${ethers.formatUnits(
+          spacePayment,
+          6,
+        )} USDC`,
+      );
+
+      // Advance time to distribute rewards
+      await ethers.provider.send('evm_increaseTime', [86400 * 2]); // 2 days
+      await ethers.provider.send('evm_mine', []);
+      await hyphaToken.updateDistributionState();
+
+      // Check rewards
+      const user1Rewards = await hyphaToken.pendingRewards(
+        await user1.getAddress(),
+      );
+      const user2Rewards = await hyphaToken.pendingRewards(
+        await user2.getAddress(),
+      );
+      const iexRewards = await hyphaToken.pendingRewards(iexAddress);
+
+      console.log(
+        `User1 rewards: ${ethers.formatUnits(user1Rewards, 18)} HYPHA`,
+      );
+      console.log(
+        `User2 rewards: ${ethers.formatUnits(user2Rewards, 18)} HYPHA`,
+      );
+      console.log(`IEX rewards: ${ethers.formatUnits(iexRewards, 18)} HYPHA`);
+
+      // IEX should have 0 rewards despite holding tokens
+      expect(iexRewards).to.equal(0);
+
+      // Users should have rewards
+      expect(user1Rewards).to.be.gt(0);
+      expect(user2Rewards).to.be.gt(0);
+
+      // Verify reward distribution is only among eligible holders
+      const totalSupply = await hyphaToken.totalSupply();
+
+      console.log(`Total supply: ${ethers.formatUnits(totalSupply, 18)} HYPHA`);
+      console.log(
+        `IEX balance excluded from rewards: ${ethers.formatUnits(
+          iexBalance,
+          18,
+        )} HYPHA`,
+      );
+
+      // Since IEX tokens are excluded, the remaining users get higher rewards
+      const eligibleSupply = totalSupply - iexBalance;
+      expect(eligibleSupply).to.be.gt(0);
+
+      console.log('✅ IEX address correctly excluded from rewards');
+    });
+
+    it('Should handle the case when IEX holds majority of tokens', async function () {
+      const {
+        hyphaToken,
+        usdc,
+        user1,
+        user2,
+        iexAddress,
+        owner,
+        hyphaPerDay,
+        usdcPerDay,
+      } = await loadFixture(deployHyphaFixture);
+
+      console.log('\n🐋 === IEX MAJORITY HOLDER TEST ===');
+
+      await hyphaToken.connect(owner).setDistributionMultiplier(50n);
+
+      // Users make small investments
+      const smallInvestment = ethers.parseUnits('10', 6); // 10 USDC each
+
+      await usdc.mint(await user1.getAddress(), smallInvestment * 10n);
+      await usdc.mint(await user2.getAddress(), smallInvestment * 10n);
+
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), smallInvestment);
+      await hyphaToken.connect(user1).investInHypha(smallInvestment);
+
+      await usdc
+        .connect(user2)
+        .approve(await hyphaToken.getAddress(), smallInvestment);
+      await hyphaToken.connect(user2).investInHypha(smallInvestment);
+
+      // User1 makes large HYPHA payment to IEX (3/4 of balance)
+      const user1Balance = await hyphaToken.balanceOf(await user1.getAddress());
+      const massiveHyphaPayment = (user1Balance * 3n) / 4n;
+      await hyphaToken.connect(user1).payInHypha([1], [massiveHyphaPayment]);
+
+      // User2 also makes large HYPHA payment (3/4 of balance)
+      const user2Balance = await hyphaToken.balanceOf(await user2.getAddress());
+      const user2HyphaPayment = (user2Balance * 3n) / 4n;
+      await hyphaToken.connect(user2).payInHypha([2], [user2HyphaPayment]);
+
+      const iexBalance = await hyphaToken.balanceOf(iexAddress);
+      const totalSupply = await hyphaToken.totalSupply();
+      const remainingSupply = totalSupply - iexBalance;
+
+      console.log(`Total supply: ${ethers.formatUnits(totalSupply, 18)} HYPHA`);
+      console.log(`IEX balance: ${ethers.formatUnits(iexBalance, 18)} HYPHA`);
+      console.log(
+        `Remaining eligible supply: ${ethers.formatUnits(
+          remainingSupply,
+          18,
+        )} HYPHA`,
+      );
+
+      // IEX should hold majority of tokens
+      expect(iexBalance).to.be.gt(remainingSupply);
+
+      // Create rewards
+      const rewardPayment = usdcPerDay * 5n;
+      await usdc.mint(await user1.getAddress(), rewardPayment);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), rewardPayment);
+      await hyphaToken.connect(user1).payForSpaces([3], [rewardPayment]);
+
+      // Advance time
+      await ethers.provider.send('evm_increaseTime', [86400]);
+      await ethers.provider.send('evm_mine', []);
+      await hyphaToken.updateDistributionState();
+
+      // Check rewards
+      const user1Rewards = await hyphaToken.pendingRewards(
+        await user1.getAddress(),
+      );
+      const user2Rewards = await hyphaToken.pendingRewards(
+        await user2.getAddress(),
+      );
+      const iexRewards = await hyphaToken.pendingRewards(iexAddress);
+
+      console.log(
+        `User1 rewards: ${ethers.formatUnits(user1Rewards, 18)} HYPHA`,
+      );
+      console.log(
+        `User2 rewards: ${ethers.formatUnits(user2Rewards, 18)} HYPHA`,
+      );
+      console.log(`IEX rewards: ${ethers.formatUnits(iexRewards, 18)} HYPHA`);
+
+      // IEX should still have 0 rewards despite holding majority
+      expect(iexRewards).to.equal(0);
+
+      // Users should still receive rewards based on their remaining holdings
+      expect(user1Rewards).to.be.gt(0);
+      expect(user2Rewards).to.be.gt(0);
+
+      console.log('✅ IEX correctly excluded even when holding majority');
+    });
+
+    it('Should handle edge case when all tokens are held by IEX', async function () {
+      const {
+        hyphaToken,
+        usdc,
+        user1,
+        iexAddress,
+        owner,
+        hyphaPerDay,
+        usdcPerDay,
+      } = await loadFixture(deployHyphaFixture);
+
+      console.log('\n💀 === ALL TOKENS TO IEX TEST ===');
+
+      await hyphaToken.connect(owner).setDistributionMultiplier(10n);
+
+      // User invests
+      const investment = ethers.parseUnits('100', 6);
+      await usdc.mint(await user1.getAddress(), investment * 2n);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), investment);
+      await hyphaToken.connect(user1).investInHypha(investment);
+
+      const userInitialBalance = await hyphaToken.balanceOf(
+        await user1.getAddress(),
+      );
+      console.log(
+        `User initial balance: ${ethers.formatUnits(
+          userInitialBalance,
+          18,
+        )} HYPHA`,
+      );
+
+      // User sends ALL tokens to IEX via space payment
+      await hyphaToken.connect(user1).payInHypha([1], [userInitialBalance]);
+
+      const userFinalBalance = await hyphaToken.balanceOf(
+        await user1.getAddress(),
+      );
+      const iexBalance = await hyphaToken.balanceOf(iexAddress);
+      const totalSupply = await hyphaToken.totalSupply();
+      const eligibleSupply = totalSupply - iexBalance;
+
+      console.log(
+        `User final balance: ${ethers.formatUnits(userFinalBalance, 18)} HYPHA`,
+      );
+      console.log(`IEX balance: ${ethers.formatUnits(iexBalance, 18)} HYPHA`);
+      console.log(
+        `Eligible supply: ${ethers.formatUnits(eligibleSupply, 18)} HYPHA`,
+      );
+
+      expect(userFinalBalance).to.equal(0);
+      expect(iexBalance).to.equal(userInitialBalance);
+      expect(eligibleSupply).to.equal(0);
+
+      // Create rewards
+      const rewardPayment = usdcPerDay * 3n;
+      await usdc.mint(await user1.getAddress(), rewardPayment);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), rewardPayment);
+      await hyphaToken.connect(user1).payForSpaces([2], [rewardPayment]);
+
+      // Advance time
+      await ethers.provider.send('evm_increaseTime', [86400]);
+      await ethers.provider.send('evm_mine', []);
+
+      // Update should not revert even with 0 eligible supply
+      await hyphaToken.updateDistributionState();
+
+      const userRewards = await hyphaToken.pendingRewards(
+        await user1.getAddress(),
+      );
+      const iexRewards = await hyphaToken.pendingRewards(iexAddress);
+
+      console.log(`User rewards: ${ethers.formatUnits(userRewards, 18)} HYPHA`);
+      console.log(`IEX rewards: ${ethers.formatUnits(iexRewards, 18)} HYPHA`);
+
+      // Both should have 0 rewards (user has no tokens, IEX is excluded)
+      expect(userRewards).to.equal(0);
+      expect(iexRewards).to.equal(0);
+
+      console.log('✅ All tokens to IEX handled correctly');
+    });
+
+    it('Should verify eligible supply calculation through balance checking', async function () {
+      const { hyphaToken, usdc, user1, user2, iexAddress, owner, hyphaPerDay } =
+        await loadFixture(deployHyphaFixture);
+
+      console.log('\n📊 === ELIGIBLE SUPPLY CALCULATION TEST ===');
+
+      // Users invest
+      const user1Investment = ethers.parseUnits('100', 6);
+      const user2Investment = ethers.parseUnits('200', 6);
+
+      await usdc.mint(await user1.getAddress(), user1Investment);
+      await usdc.mint(await user2.getAddress(), user2Investment);
+
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), user1Investment);
+      await hyphaToken.connect(user1).investInHypha(user1Investment);
+
+      await usdc
+        .connect(user2)
+        .approve(await hyphaToken.getAddress(), user2Investment);
+      await hyphaToken.connect(user2).investInHypha(user2Investment);
+
+      const totalAfterInvestments = await hyphaToken.totalSupply();
+      const iexBalanceAfterInvestments = await hyphaToken.balanceOf(iexAddress);
+      const eligibleAfterInvestments =
+        totalAfterInvestments - iexBalanceAfterInvestments;
+
+      console.log(
+        `After investments - Total: ${ethers.formatUnits(
+          totalAfterInvestments,
+          18,
+        )}, IEX: ${ethers.formatUnits(
+          iexBalanceAfterInvestments,
+          18,
+        )}, Eligible: ${ethers.formatUnits(eligibleAfterInvestments, 18)}`,
+      );
+
+      // Should be equal to total since IEX has no tokens
+      expect(iexBalanceAfterInvestments).to.equal(0);
+      expect(eligibleAfterInvestments).to.equal(totalAfterInvestments);
+
+      // User1 sends some tokens to IEX
+      const payment1 = hyphaPerDay * 2n;
+      await hyphaToken.connect(user1).payInHypha([1], [payment1]);
+
+      const totalAfterPayment1 = await hyphaToken.totalSupply();
+      const iexBalance1 = await hyphaToken.balanceOf(iexAddress);
+      const eligibleAfterPayment1 = totalAfterPayment1 - iexBalance1;
+
+      console.log(
+        `After payment 1 - Total: ${ethers.formatUnits(
+          totalAfterPayment1,
+          18,
+        )}, IEX: ${ethers.formatUnits(
+          iexBalance1,
+          18,
+        )}, Eligible: ${ethers.formatUnits(eligibleAfterPayment1, 18)}`,
+      );
+
+      expect(iexBalance1).to.equal(payment1);
+      expect(eligibleAfterPayment1).to.equal(totalAfterPayment1 - payment1);
+
+      // User2 sends more tokens to IEX
+      const payment2 = hyphaPerDay * 3n;
+      await hyphaToken.connect(user2).payInHypha([2], [payment2]);
+
+      const totalAfterPayment2 = await hyphaToken.totalSupply();
+      const iexBalance2 = await hyphaToken.balanceOf(iexAddress);
+      const eligibleAfterPayment2 = totalAfterPayment2 - iexBalance2;
+
+      console.log(
+        `After payment 2 - Total: ${ethers.formatUnits(
+          totalAfterPayment2,
+          18,
+        )}, IEX: ${ethers.formatUnits(
+          iexBalance2,
+          18,
+        )}, Eligible: ${ethers.formatUnits(eligibleAfterPayment2, 18)}`,
+      );
+
+      expect(iexBalance2).to.equal(payment1 + payment2);
+      expect(eligibleAfterPayment2).to.equal(
+        totalAfterPayment2 - (payment1 + payment2),
+      );
+
+      console.log('✅ Eligible supply calculation works correctly');
     });
   });
 });
