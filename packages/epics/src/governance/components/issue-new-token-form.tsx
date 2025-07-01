@@ -26,11 +26,13 @@ interface IssueNewTokenFormProps {
   spaceId: number | undefined | null;
   web3SpaceId: number | undefined | null;
   successfulUrl: string;
+  backUrl?: string;
   plugin: React.ReactNode;
 }
 
 export const IssueNewTokenForm = ({
   successfulUrl,
+  backUrl,
   spaceId,
   web3SpaceId,
   plugin,
@@ -115,6 +117,8 @@ export const IssueNewTokenForm = ({
               surname: person?.surname || '',
             }}
             closeUrl={successfulUrl}
+            backUrl={backUrl}
+            backLabel="Back to Settings"
             isLoading={false}
           />
           {plugin}

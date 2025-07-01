@@ -1,15 +1,8 @@
 import { formatISO } from 'date-fns';
 import { FormVoting } from './form-voting';
 import { ProposalHead, ProposalHeadProps } from './proposal-head';
-import {
-  Button,
-  Separator,
-  AttachmentList,
-  Skeleton,
-} from '@hypha-platform/ui';
-import { RxCross1 } from 'react-icons/rx';
+import { Separator, AttachmentList, Skeleton } from '@hypha-platform/ui';
 import { CommentsList } from '../../interactions/components/comments-list';
-import Link from 'next/link';
 import Image from 'next/image';
 import { useProposalDetailsWeb3Rpc } from '@core/governance';
 import {
@@ -21,6 +14,7 @@ import {
   ProposalEntryInfo,
 } from '../../governance';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
+import { ButtonClose } from '@hypha-platform/epics';
 
 type ProposalDetailProps = ProposalHeadProps & {
   onAccept: () => void;
@@ -96,12 +90,7 @@ export const ProposalDetail = ({
           status={status}
           isLoading={isLoading}
         />
-        <Link href={closeUrl} scroll={false}>
-          <Button variant="ghost" colorVariant="neutral">
-            Close
-            <RxCross1 />
-          </Button>
-        </Link>
+        <ButtonClose closeUrl={closeUrl} />
       </div>
       <Separator />
       <Skeleton

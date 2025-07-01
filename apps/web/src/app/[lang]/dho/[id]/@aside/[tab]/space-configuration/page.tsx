@@ -7,13 +7,14 @@ import {
   useUpdateSpaceOrchestrator,
 } from '@hypha-platform/core/client';
 import { SidePanel, SpaceForm } from '@hypha-platform/epics';
-import { useParams } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import React from 'react';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { Button } from '@hypha-platform/ui';
 import { useRouter } from 'next/navigation';
 import { getDhoPathGovernance } from '../../../@tab/governance/constants';
 import { Locale } from '@hypha-platform/i18n';
+import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 
 export default function SpaceConfiguration() {
   const { person } = useMe();
@@ -37,6 +38,9 @@ export default function SpaceConfiguration() {
     }
   }, [progress, spaceSlug]);
 
+  const pathname = usePathname();
+  const closeUrl = pathname.replace(/\/space-configuration$/, '');
+
   return (
     <SidePanel>
       <LoadingBackdrop
@@ -58,7 +62,9 @@ export default function SpaceConfiguration() {
           submitLabel="Update"
           submitLoadingLabel="Updating..."
           isLoading={isLoadingJwt || isLoading || isMutating}
-          closeUrl={getDhoPathGovernance(lang as Locale, spaceSlug)}
+          closeUrl={closeUrl}
+          backUrl={`${closeUrl}${PATH_SELECT_SETTINGS_ACTION}`}
+          backLabel="Back to Settings"
           creator={{
             name: person?.name,
             surname: person?.surname,

@@ -13,13 +13,14 @@ import { useMe } from '@hypha-platform/core/client';
 interface CreateSpaceFormProps {
   parentSpaceId: number | null;
   successfulUrl: string;
+  backUrl?: string;
 }
 
 export const CreateSubspaceForm = ({
   successfulUrl,
+  backUrl,
   parentSpaceId,
 }: CreateSpaceFormProps) => {
-  const { lang, id } = useParams();
   const router = useRouter();
   const config = useConfig();
   const { person } = useMe();
@@ -59,7 +60,9 @@ export const CreateSubspaceForm = ({
       <SpaceForm
         isLoading={false}
         creator={{ name: person?.name, surname: person?.surname }}
-        closeUrl={`/${lang}/dho/${id}/membership`}
+        closeUrl={successfulUrl}
+        backUrl={backUrl}
+        backLabel="Back to Settings"
         onSubmit={createSpace}
         parentSpaceId={parentSpaceId as number}
       />

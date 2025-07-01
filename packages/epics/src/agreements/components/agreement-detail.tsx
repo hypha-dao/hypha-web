@@ -1,15 +1,9 @@
 import { AgreementHead, AgreementHeadProps } from './agreement-head';
-import {
-  Button,
-  Separator,
-  Skeleton,
-  AttachmentList,
-} from '@hypha-platform/ui';
-import { RxCross1 } from 'react-icons/rx';
+import { Separator, Skeleton, AttachmentList } from '@hypha-platform/ui';
 import { CommentsList } from '../../interactions/components/comments-list';
-import Link from 'next/link';
 import { CardCommentProps } from '../../interactions/components/card-comment';
 import Image from 'next/image';
+import { ButtonClose } from '@hypha-platform/epics';
 
 type AgreementDetailProps = AgreementHeadProps & {
   onSetActiveFilter: (value: string) => void;
@@ -43,12 +37,7 @@ export const AgreementDetail = ({
           status={status}
           isLoading={isLoading}
         />
-        <Link href={closeUrl} scroll={false}>
-          <Button variant="ghost" colorVariant="neutral">
-            Close
-            <RxCross1 />
-          </Button>
-        </Link>
+        <ButtonClose closeUrl={closeUrl} />
       </div>
       <Separator />
       <Skeleton
