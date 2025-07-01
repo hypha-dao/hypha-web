@@ -18,6 +18,7 @@
   },
   "exports": {
     "./client": "./src/client.ts",
-    "./server": "./src/server.ts"
+    "./server": "./src/server.ts",
+    "./generated": "./src/generated.ts"
   }
 }

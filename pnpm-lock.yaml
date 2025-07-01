@@ -821,6 +821,9 @@ importers:
       '@hypha-platform/core':
         specifier: workspace:*
         version: link:../core
+      '@hypha-platform/i18n':
+        specifier: workspace:*
+        version: link:../i18n
       '@hypha-platform/ui':
         specifier: workspace:*
         version: link:../ui

@@ -1,3 +1,4 @@
+export * from './atoms';
 export * from './avatar';
 export * from './button';
 export * from './carousel';
