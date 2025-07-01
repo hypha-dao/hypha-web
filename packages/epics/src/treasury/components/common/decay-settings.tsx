@@ -8,6 +8,7 @@ import {
   Input,
 } from '@hypha-platform/ui';
 import { PercentIcon } from 'lucide-react';
+import { useFormContext, useWatch } from 'react-hook-form';
 
 type TimeFormat = 'Minutes' | 'Hours' | 'Days' | 'Weeks' | 'Months';
 
@@ -36,9 +37,20 @@ type DecaySettingsProps = {
 };
 
 export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
-  const [decayPeriod, setDecayPeriod] = React.useState<number>(0);
   const [timeFormat, setTimeFormat] = React.useState<TimeFormat>('Weeks');
-  const [decayPercent, setDecayPercent] = React.useState<number>(0);
+  const { setValue, control } = useFormContext();
+
+  const decayPeriod = useWatch({
+    control,
+    name: 'decayPeriod',
+    defaultValue: 0,
+  });
+
+  const decayPercent = useWatch({
+    control,
+    name: 'decayPercent',
+    defaultValue: 0,
+  });
 
   React.useEffect(() => {
     notifyChange();
@@ -55,9 +67,9 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
   };
 
   const handleDecayPeriodChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    const num = val === '' ? 0 : Number(val);
-    setDecayPeriod(num);
+    const val = Number(e.target.value);
+    const num = Number.isNaN(val) ? 0 : val;
+    setValue('decayPeriod', num);
   };
 
   const handleTimeFormatChange = (val: string) => {
@@ -66,9 +78,9 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
   };
 
   const handleDecayPercentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    const num = val === '' ? 0 : Number(val);
-    setDecayPercent(num);
+    const val = Number(e.target.value);
+    const num = Number.isNaN(val) ? 0 : val;
+    setValue('decayPercent', num);
   };
 
   return (
@@ -83,7 +95,7 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
             <Input
               id="decay-period"
               type="number"
-              value={Number.isNaN(decayPeriod) ? 0 : decayPeriod}
+              value={decayPeriod}
               onChange={handleDecayPeriodChange}
               placeholder="Decay period"
             />
@@ -116,7 +128,7 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
             type="number"
             min={1}
             max={100}
-            value={Number.isNaN(decayPercent) ? 0 : decayPercent}
+            value={decayPercent}
             onChange={handleDecayPercentChange}
             placeholder="Decay"
             rightIcon={<PercentIcon size={'14px'} />}
