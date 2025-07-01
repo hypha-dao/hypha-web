@@ -1,1 +1,12 @@
-npm run format:check
+#!/bin/sh
+
+# Filter: Added, Copied, Modified and Renamed
+FILES=$(git diff --cached --name-only --diff-filter=ACMR | sed 's| |\\ |g')
+[ -z "$FILES" ] && exit 0
+
+echo "$FILES" | xargs npx prettier --check --ignore-unknown && exit 0
+
+printf "Want to run prettier? [Y/n] " && read -r answer < /dev/tty
+[ "$answer" != "n" ] && \
+  echo "$FILES" | xargs npx prettier --write --ignore-unknown
+exit 1
