@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ profile: updatedProfile }, { status: 201 });
   } catch (error) {
     console.error('Error editing profile:', error);
-    let errorMessage = 'Failed to create profile';
+    let errorMessage = 'Failed to update profile';
     if (error instanceof Error) {
       if (error.message.includes('people_slug_unique')) {
         errorMessage =
