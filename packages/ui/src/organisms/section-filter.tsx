@@ -13,6 +13,7 @@ type SectionFilterProps = {
   label: string;
   children?: React.ReactNode;
   hasSearch?: boolean;
+  searchPlaceholder?: string;
   onChangeSearch?: (term: string) => void;
 };
 
@@ -21,6 +22,7 @@ export const SectionFilter: FC<SectionFilterProps> = ({
   label,
   children,
   hasSearch,
+  searchPlaceholder = 'Search',
   onChangeSearch,
 }) => {
   return (
@@ -31,7 +33,7 @@ export const SectionFilter: FC<SectionFilterProps> = ({
       {hasSearch ? (
         <Input
           className="w-full"
-          placeholder="Search documents"
+          placeholder={searchPlaceholder}
           leftIcon={<SearchIcon size="16px" />}
           onChange={(e) => onChangeSearch?.(e.target.value)}
         />
