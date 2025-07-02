@@ -54,9 +54,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ profile: newProfile }, { status: 201 });
   } catch (error) {
     console.error('Error creating profile:', error);
+
+    let errorMessage = 'Failed to create profile';
+    if (error instanceof Error) {
+      if (error.message.includes('people_slug_unique')) {
+        errorMessage =
+          'Profile with this nickname already exists. Please choose a different one.';
+      } else if (error.message.includes('people_email_unique')) {
+        errorMessage = 'Profile with this email already exists.';
+      }
+    }
+
     return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 },
+      {
+        error: errorMessage,
+        details: error instanceof Error ? error.message : undefined,
+      },
+      { status: 400 },
     );
   }
 }

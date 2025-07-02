@@ -36,6 +36,7 @@ interface SignupPanelProps {
   onSave: (values: z.infer<typeof schemaSignupPersonForm>) => Promise<void>;
   walletAddress?: string;
   isCreating?: boolean;
+  error?: string | null;
 }
 
 type FormData = z.infer<typeof schemaSignupPersonForm>;
@@ -46,6 +47,7 @@ export const SignupPanel = ({
   onSave,
   walletAddress,
   isCreating,
+  error,
 }: SignupPanelProps) => {
   const form = useForm<FormData>({
     resolver: zodResolver(schemaSignupPersonForm),
@@ -245,24 +247,25 @@ export const SignupPanel = ({
             </div>
           </div>
           <div className="flex justify-end w-full">
-            <div className="flex gap-2">
-              {isCreating ? (
-                <div className="flex items-center gap-2 text-sm text-neutral-10">
-                  <Loader2 className="animate-spin w-4 h-4" />
-                  Creating profile...
-                </div>
-              ) : (
-                <>
+            <div className="flex flex-col items-end gap-2">
+              {error && <Text className="text-error-11 text-sm">{error}</Text>}
+              <div className="flex gap-2">
+                {isCreating ? (
+                  <div className="flex items-center gap-2 text-sm text-neutral-10">
+                    <Loader2 className="animate-spin w-4 h-4" />
+                    Creating profile...
+                  </div>
+                ) : (
                   <Button
                     type="submit"
                     variant="default"
                     className="rounded-lg justify-start text-white w-fit"
                     disabled={isLoading}
                   >
-                    Save
+                    {error ? 'Retry' : 'Save'}
                   </Button>
-                </>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </div>
