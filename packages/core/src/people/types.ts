@@ -11,6 +11,7 @@ export interface Person {
   location?: string;
   nickname?: string;
   address?: string;
+  links?: string[];
 }
 
 export interface EditPersonInput {
