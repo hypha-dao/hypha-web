@@ -29,18 +29,20 @@ export const CREATE_ACTIONS = [
     icon: <PlusCircledIcon />,
   },
   {
-    title: 'Accept Investment',
+    title: 'Accept Investment (Coming Soon)',
     description:
       'Receive capital from investors, members, or aligned spaces in exchange for native space tokens.',
     href: '#',
     icon: <PlusCircledIcon />,
+    disabled: true,
   },
   {
-    title: 'Exchange Ownership',
+    title: 'Exchange Ownership (Coming Soon)',
     description:
       'Swap ownership between members or spaces, whether selling a stake or exchanging assets.',
     href: '#',
     icon: <PlusCircledIcon />,
+    disabled: true,
   },
   {
     title: 'Deploy Funds',
