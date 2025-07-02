@@ -29,7 +29,7 @@ export const ConnectedButtonProfile = ({
   useEffect(() => {
     if (isLoading || !isAuthenticated) return;
     router.push(person?.id ? baseRedirectPath : newUserRedirectPath);
-  }, [isAuthenticated]);
+  }, [isLoading, isAuthenticated, user]);
 
   return (
     <ButtonProfile
