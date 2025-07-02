@@ -52,16 +52,15 @@ const editPersonWeb2Props = {
     .max(12, { message: 'Nickname length should not exceed 12 characters' }),
   description: z
     .string()
-    .min(1, { message: 'Description must not be empty' })
     .max(300, {
       message: 'Description length should not exceed 300 characters',
     })
     .optional(),
   email: z
     .string()
-    .min(1, { message: 'Email is required' })
     .email({ message: 'Please enter a valid email address' })
     .max(100, { message: 'Email must be at most 100 characters long' })
+    .or(z.literal(''))
     .optional(),
   location: z
     .string()
@@ -80,6 +79,7 @@ export const editPersonFiles = z.object({
   avatarUrl: z
     .union([
       z.string().url('Avatar URL must be a valid URL'),
+      z.literal(''),
       z
         .instanceof(File)
         .refine(
@@ -91,10 +91,12 @@ export const editPersonFiles = z.object({
           'File must be an image (JPEG, PNG, GIF, WEBP)',
         ),
     ])
-    .optional(),
+    .optional()
+    .transform((val) => (val === '' ? null : val)),
   leadImageUrl: z
     .union([
       z.string().url('Lead Image URL must be a valid URL'),
+      z.literal(''),
       z
         .instanceof(File)
         .refine(
@@ -106,7 +108,8 @@ export const editPersonFiles = z.object({
           'File must be an image (JPEG, PNG, GIF, WEBP)',
         ),
     ])
-    .optional(),
+    .optional()
+    .transform((val) => (val === '' ? null : val)),
 });
 
 export type PersonFiles = z.infer<typeof editPersonFiles>;
