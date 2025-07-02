@@ -65,7 +65,14 @@ export const SelectAction = ({
               <h3 className="text-3 font-medium text-neutral-11">{group}</h3>
             )}
             {groupActions.map((action) => (
-              <Link href={action.href} key={action.title}>
+              <Link
+                href={action.href}
+                key={action.title}
+                {...(action.disabled && {
+                  onClick: (e) => e.preventDefault(),
+                  'aria-disabled': 'true',
+                })}
+              >
                 <Card
                   className={clsx(
                     'flex p-6 cursor-pointer space-x-4 items-center',
@@ -74,6 +81,7 @@ export const SelectAction = ({
                       'hover:border-accent-5': !action.disabled,
                     },
                   )}
+                  aria-disabled={action.disabled}
                 >
                   <div>{action.icon}</div>
                   <div className="flex flex-col">
