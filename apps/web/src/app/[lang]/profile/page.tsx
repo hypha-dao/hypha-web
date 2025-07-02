@@ -1,28 +1,14 @@
 'use client';
 
-import {
-  PersonHead,
-  AgreementsSection,
-  ProposalsSection,
-  MemberSpaces,
-  SpaceGroupSlider,
-  DocumentSection,
-} from '@hypha-platform/epics';
+import { PersonHead } from '@hypha-platform/epics';
 import Link from 'next/link';
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Text } from '@radix-ui/themes';
 import { Container } from '@hypha-platform/ui';
 import { getDhoPathGovernance } from '../dho/[id]/@tab/governance/constants';
-import {
-  Tabs,
-  TabsTrigger,
-  TabsList,
-  TabsContent,
-} from '@hypha-platform/ui/server';
 import { useMe } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
-import { useSpaceDocuments } from '@web/hooks/use-space-documents';
 import { useAuthentication } from '@hypha-platform/authentication';
 
 export default function Profile() {
