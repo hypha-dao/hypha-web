@@ -12,16 +12,15 @@ const signupPersonWeb2Props = {
     .max(12, { message: 'Nickname length should not exceed 12 characters' }),
   description: z
     .string()
-    .min(1, { message: 'Description must not be empty' })
     .max(300, {
       message: 'Description length should not exceed 300 characters',
     })
     .optional(),
   email: z
     .string()
-    .min(1, { message: 'Email is required' })
     .email({ message: 'Please enter a valid email address' })
     .max(100, { message: 'Email must be at most 100 characters long' })
+    .or(z.literal(''))
     .optional(),
   location: z
     .string()

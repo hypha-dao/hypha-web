@@ -256,7 +256,7 @@ export const EditPersonSection = ({
                   <FormItem>
                     <FormControl>
                       <Links
-                        links={field.value}
+                        links={field.value || []}
                         onChange={field.onChange}
                         errors={form.formState.errors.links}
                       />
@@ -272,7 +272,7 @@ export const EditPersonSection = ({
               type="submit"
               variant="default"
               className="rounded-lg justify-start text-white w-fit"
-              disabled={isLoading || !form.formState.isValid}
+              disabled={isLoading}
             >
               Save
             </Button>

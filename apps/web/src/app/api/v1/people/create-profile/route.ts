@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       links,
     } = body;
 
-    if (!name || !surname || !nickname || !email) {
+    if (!name || !surname || !nickname) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 },
