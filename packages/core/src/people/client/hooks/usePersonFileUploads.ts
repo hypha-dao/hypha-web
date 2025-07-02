@@ -1,11 +1,11 @@
 'use client';
 
 import { useFileUpload } from '@core/assets';
-import { schemaEditPersonFiles } from '@core/people/validation';
+import { editPersonFiles } from '@core/people/validation';
 import React from 'react';
 import { z } from 'zod';
 
-type Files = z.infer<typeof schemaEditPersonFiles>;
+type Files = z.infer<typeof editPersonFiles>;
 
 export type UsePersonFileUploadsReturn = {
   isLoading: boolean;

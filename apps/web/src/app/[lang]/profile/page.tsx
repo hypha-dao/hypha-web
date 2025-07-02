@@ -52,12 +52,10 @@ export default function Profile() {
         name={person?.name ?? ''}
         surname={person?.surname ?? ''}
         background={person?.leadImageUrl ?? ''}
-        socials={{
-          LinkedIn: person?.nickname ?? '',
-          X: person?.nickname ?? '',
-          Website: person?.nickname ?? '',
-        }}
+        links={person?.links ?? []}
         about={person?.description ?? ''}
+        location={person?.location ?? ''}
+        email={person?.email ?? ''}
         onExportEmbeededWallet={isEmbeddedWallet ? exportWallet : undefined}
       />
     </Container>

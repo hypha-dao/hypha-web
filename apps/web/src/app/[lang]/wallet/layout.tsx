@@ -34,6 +34,7 @@ export default async function DhoLayout(props: {
             useAuthentication={useAuthentication}
             useMe={useMe}
             newUserRedirectPath="/profile/signup"
+            baseRedirectPath="/my-spaces"
           />
         </MenuTop.RightSlot>
       </MenuTop>

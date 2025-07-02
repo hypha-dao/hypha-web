@@ -197,6 +197,13 @@
       "when": 1747842607785,
       "tag": "0027_demonic_spyke",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1751352712471,
+      "tag": "0028_curious_toad_men",
+      "breakpoints": true
     }
   ]
 }

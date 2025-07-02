@@ -1,6 +1,6 @@
 import { crudPolicy, authenticatedRole, authUid } from 'drizzle-orm/neon';
 import { InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
-import { pgTable, serial, text } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, jsonb } from 'drizzle-orm/pg-core';
 import { commonDateFields } from './shared';
 
 export const people = pgTable(
@@ -20,6 +20,7 @@ export const people = pgTable(
     surname: text('surname'),
     nickname: text('nickname'),
     address: text('web3_address'),
+    links: jsonb('links').$type<string[]>().notNull().default([]),
     ...commonDateFields,
   },
   (table) => [

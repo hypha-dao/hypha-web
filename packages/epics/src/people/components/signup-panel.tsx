@@ -1,9 +1,10 @@
 'use client';
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import {
-  schemaEditPersonWeb2,
+  schemaSignupPerson,
   editPersonFiles,
 } from '@hypha-platform/core/client';
 import {
@@ -23,58 +24,48 @@ import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/lib/utils';
 import Link from 'next/link';
+import React from 'react';
+import { Loader2 } from 'lucide-react';
 import { Links } from '../../common';
 
-interface Person {
-  avatarUrl?: string;
-  name?: string;
-  surname?: string;
-  id?: number;
-  nickname?: string;
-  description?: string;
-  leadImageUrl?: string;
-  location?: string;
-  email?: string;
-  links?: string[];
-}
+const schemaSignupPersonForm = schemaSignupPerson.extend(editPersonFiles.shape);
 
-const schemaEditPersonForm = schemaEditPersonWeb2.extend(editPersonFiles.shape);
-
-export type EditPersonSectionProps = {
-  person?: Person;
+interface SignupPanelProps {
   closeUrl: string;
   isLoading?: boolean;
-  onEdit: (values: z.infer<typeof schemaEditPersonForm>) => Promise<void>;
-};
+  onSave: (values: z.infer<typeof schemaSignupPersonForm>) => Promise<void>;
+  walletAddress?: string;
+  isCreating?: boolean;
+}
 
-type FormData = z.infer<typeof schemaEditPersonForm>;
+type FormData = z.infer<typeof schemaSignupPersonForm>;
 
-export const EditPersonSection = ({
-  isLoading,
+export const SignupPanel = ({
   closeUrl,
-  person,
-  onEdit,
-}: EditPersonSectionProps & Person) => {
+  isLoading,
+  onSave,
+  walletAddress,
+  isCreating,
+}: SignupPanelProps) => {
   const form = useForm<FormData>({
-    resolver: zodResolver(schemaEditPersonForm),
+    resolver: zodResolver(schemaSignupPersonForm),
     defaultValues: {
-      avatarUrl: person?.avatarUrl || '',
-      name: person?.name || '',
-      surname: person?.surname || '',
-      nickname: person?.nickname || '',
-      description: person?.description || '',
-      leadImageUrl: person?.leadImageUrl || '',
-      id: person?.id,
-      links: person?.links || [],
-      email: person?.email || '',
-      location: person?.location || '',
+      name: '',
+      surname: '',
+      nickname: '',
+      avatarUrl: undefined,
+      leadImageUrl: undefined,
+      description: '',
+      location: undefined,
+      email: '',
+      address: walletAddress || '',
+      links: [],
     },
-    mode: 'onChange',
   });
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onEdit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSave)} className="space-y-8">
         <div className="flex flex-col gap-5">
           <div className="flex gap-5 justify-between">
             <div className="flex items-center space-x-2">
@@ -84,14 +75,7 @@ export const EditPersonSection = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <UploadAvatar
-                        defaultImage={
-                          typeof person?.avatarUrl === 'string'
-                            ? person?.avatarUrl
-                            : undefined
-                        }
-                        onChange={field.onChange}
-                      />
+                      <UploadAvatar onChange={field.onChange} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -101,7 +85,7 @@ export const EditPersonSection = ({
                 <div className="flex flex-col">
                   <div className="flex gap-1 mb-1">
                     <FormField
-                      control={form?.control}
+                      control={form.control}
                       name="name"
                       render={({ field }) => (
                         <FormItem>
@@ -118,7 +102,7 @@ export const EditPersonSection = ({
                       )}
                     />
                     <FormField
-                      control={form?.control}
+                      control={form.control}
                       name="surname"
                       render={({ field }) => (
                         <FormItem>
@@ -135,9 +119,8 @@ export const EditPersonSection = ({
                       )}
                     />
                   </div>
-
                   <FormField
-                    control={form?.control}
+                    control={form.control}
                     name="nickname"
                     render={({ field }) => (
                       <FormItem>
@@ -174,14 +157,7 @@ export const EditPersonSection = ({
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <UploadLeadImage
-                    defaultImage={
-                      typeof person?.leadImageUrl === 'string'
-                        ? person?.leadImageUrl
-                        : undefined
-                    }
-                    onChange={field.onChange}
-                  />
+                  <UploadLeadImage onChange={field.onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -203,6 +179,7 @@ export const EditPersonSection = ({
               </FormItem>
             )}
           />
+          <Separator />
           <div className="flex gap-3 flex-col">
             <div className="flex justify-between">
               <Text className={cn('text-2', 'text-neutral-11')}>Email</Text>
@@ -268,14 +245,25 @@ export const EditPersonSection = ({
             </div>
           </div>
           <div className="flex justify-end w-full">
-            <Button
-              type="submit"
-              variant="default"
-              className="rounded-lg justify-start text-white w-fit"
-              disabled={isLoading || !form.formState.isValid}
-            >
-              Save
-            </Button>
+            <div className="flex gap-2">
+              {isCreating ? (
+                <div className="flex items-center gap-2 text-sm text-neutral-10">
+                  <Loader2 className="animate-spin w-4 h-4" />
+                  Creating profile...
+                </div>
+              ) : (
+                <>
+                  <Button
+                    type="submit"
+                    variant="default"
+                    className="rounded-lg justify-start text-white w-fit"
+                    disabled={isLoading}
+                  >
+                    Save
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </form>

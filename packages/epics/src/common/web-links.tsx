@@ -9,9 +9,9 @@ export const WebLinks = ({ links }: WebLinksProps) => {
 
   return (
     <div className="flex gap-5">
-      {links.map((link) => (
+      {links.map((link, index) => (
         <a
-          key={link}
+          key={`${link}_${index}`}
           href={link}
           target="_blank"
           rel="noopener noreferrer"
