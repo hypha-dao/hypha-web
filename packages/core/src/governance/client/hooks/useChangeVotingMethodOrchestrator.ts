@@ -15,6 +15,8 @@ import {
 } from '../../validation';
 import { Config } from '@wagmi/core';
 
+export type VotingMethodType = '1m1v' | '1v1v' | '1t1v';
+
 type TaskName =
   | 'CREATE_WEB2_AGREEMENT'
   | 'CREATE_WEB3_AGREEMENT'
@@ -90,7 +92,7 @@ type CreateChangeVotingMethodArg = z.infer<typeof schemaCreateAgreementWeb2> & {
   members: { member: string; number: number }[];
   token: `0x${string}` | undefined;
   quorumAndUnity: { quorum: bigint; unity: bigint };
-  votingMethod: '1m1v' | '1v1v' | '1t1v';
+  votingMethod: VotingMethodType;
 };
 
 export const useCreateChangeVotingMethodOrchestrator = ({

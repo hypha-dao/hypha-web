@@ -7,10 +7,8 @@ import { useTokens } from '@hypha-platform/epics';
 import { QuorumAndUnityChangerField } from '../components/common/quorum-and-unity-change-field';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { Skeleton } from '@hypha-platform/ui';
-import {
-  VotingMethodSelector,
-  VotingMethodId,
-} from '../../components/voting-method-selector';
+import { VotingMethodSelector } from '../../components/voting-method-selector';
+import { VotingMethodType } from '@core/governance/client';
 
 export const ChangeVotingMethodPlugin = ({
   spaceSlug,
@@ -29,7 +27,7 @@ export const ChangeVotingMethodPlugin = ({
     name: 'votingMethod',
   });
 
-  const handleMethodChange = (method: VotingMethodId | null) => {
+  const handleMethodChange = (method: VotingMethodType | null) => {
     setValue('votingMethod', method);
     setValue(
       'members',

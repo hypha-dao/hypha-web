@@ -81,6 +81,7 @@ export const CreateProposalChangeVotingMethodForm = ({
     const votingMethodMap: Record<number, FormValues['votingMethod']> = {
       1: '1t1v',
       2: '1m1v',
+      3: '1v1v',
     };
     return votingPowerSource ? votingMethodMap[votingPowerSource] : undefined;
   };
