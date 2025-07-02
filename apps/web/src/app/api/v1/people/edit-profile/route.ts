@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPeopleService, Person } from '@hypha-platform/core/server';
-import { schemaEditPersonWeb2 } from '@core/people';
+import { schemaEditPerson } from '@core/people';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Validate request body
-    const validationResult = schemaEditPersonWeb2.safeParse(body);
+    const validationResult = schemaEditPerson.safeParse(body);
 
     if (!validationResult.success) {
       const errors = validationResult.error.format();

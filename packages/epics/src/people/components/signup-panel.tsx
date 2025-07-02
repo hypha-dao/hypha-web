@@ -93,7 +93,7 @@ export const SignupPanel = ({
                           <FormControl>
                             <Input
                               disabled={isLoading}
-                              placeholder="Name"
+                              placeholder="Name *"
                               className="text-2 text-neutral-11"
                               {...field}
                             />
@@ -110,7 +110,7 @@ export const SignupPanel = ({
                           <FormControl>
                             <Input
                               disabled={isLoading}
-                              placeholder="Surname"
+                              placeholder="Surname *"
                               className="text-2 text-neutral-11"
                               {...field}
                             />
@@ -128,7 +128,7 @@ export const SignupPanel = ({
                         <FormControl>
                           <Input
                             disabled={isLoading}
-                            placeholder="Nickname"
+                            placeholder="Nickname *"
                             className="text-1 text-neutral-11"
                             {...field}
                           />

@@ -23,6 +23,7 @@ import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/lib/utils';
 import Link from 'next/link';
+import { Loader2 } from 'lucide-react';
 import { Links } from '../../common';
 
 interface Person {
@@ -45,6 +46,7 @@ export type EditPersonSectionProps = {
   closeUrl: string;
   isLoading?: boolean;
   onEdit: (values: z.infer<typeof schemaEditPersonForm>) => Promise<void>;
+  error?: string | null;
 };
 
 type FormData = z.infer<typeof schemaEditPersonForm>;
@@ -54,7 +56,8 @@ export const EditPersonSection = ({
   closeUrl,
   person,
   onEdit,
-}: EditPersonSectionProps & Person) => {
+  error,
+}: EditPersonSectionProps) => {
   const form = useForm<FormData>({
     resolver: zodResolver(schemaEditPersonForm),
     defaultValues: {
@@ -101,7 +104,7 @@ export const EditPersonSection = ({
                 <div className="flex flex-col">
                   <div className="flex gap-1 mb-1">
                     <FormField
-                      control={form?.control}
+                      control={form.control}
                       name="name"
                       render={({ field }) => (
                         <FormItem>
@@ -118,7 +121,7 @@ export const EditPersonSection = ({
                       )}
                     />
                     <FormField
-                      control={form?.control}
+                      control={form.control}
                       name="surname"
                       render={({ field }) => (
                         <FormItem>
@@ -135,9 +138,8 @@ export const EditPersonSection = ({
                       )}
                     />
                   </div>
-
                   <FormField
-                    control={form?.control}
+                    control={form.control}
                     name="nickname"
                     render={({ field }) => (
                       <FormItem>
@@ -268,14 +270,26 @@ export const EditPersonSection = ({
             </div>
           </div>
           <div className="flex justify-end w-full">
-            <Button
-              type="submit"
-              variant="default"
-              className="rounded-lg justify-start text-white w-fit"
-              disabled={isLoading}
-            >
-              Save
-            </Button>
+            <div className="flex flex-col items-end gap-2">
+              {error && <Text className="text-error-11 text-sm">{error}</Text>}
+              <div className="flex gap-2">
+                {isLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-neutral-10">
+                    <Loader2 className="animate-spin w-4 h-4" />
+                    Updating profile...
+                  </div>
+                ) : (
+                  <Button
+                    type="submit"
+                    variant="default"
+                    className="rounded-lg justify-start text-white w-fit"
+                    disabled={isLoading}
+                  >
+                    {error ? 'Retry' : 'Save'}
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </form>
