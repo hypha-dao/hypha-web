@@ -143,7 +143,7 @@ export const EditPersonSection = ({
                       <FormItem>
                         <FormControl>
                           <Input
-                            disabled={isLoading}
+                            disabled
                             placeholder="Nickname"
                             className="text-1 text-neutral-11"
                             {...field}
