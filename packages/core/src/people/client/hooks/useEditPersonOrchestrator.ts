@@ -174,25 +174,51 @@ export const useEditPersonOrchestrator = ({
       const inputEditPersonWeb2 = schemaEditPersonWeb2.parse(arg);
       await web2.editPerson(inputEditPersonWeb2);
       const inputEditPersonFiles = editPersonFiles.parse(arg);
-      await personFiles.upload(inputEditPersonFiles);
+
+      const hasFilesToUpload =
+        inputEditPersonFiles.avatarUrl instanceof File ||
+        inputEditPersonFiles.leadImageUrl instanceof File ||
+        (typeof inputEditPersonFiles.avatarUrl === 'string' &&
+          inputEditPersonFiles.avatarUrl !== '') ||
+        (typeof inputEditPersonFiles.leadImageUrl === 'string' &&
+          inputEditPersonFiles.leadImageUrl !== '');
+
+      if (hasFilesToUpload) {
+        startTask('UPLOAD_FILES');
+        await personFiles.upload(inputEditPersonFiles);
+        completeTask('UPLOAD_FILES');
+      }
+
       completeTask('UPDATE_WEB2_PERSON');
     },
   );
 
   const { data: updatedWeb2Person } = useSWR(
-    web2.editedPerson?.id && personFiles.files
-      ? [web2.editedPerson.id, personFiles.files, 'searchingWeb2Person']
+    web2.editedPerson?.id
+      ? [web2.editedPerson.id, 'searchingWeb2Person']
       : null,
-    async ([id, uploadedFiles]) => {
+    async ([id]) => {
       try {
-        startTask('UPLOAD_FILES');
-        const result = await web2.editPerson({
-          id,
-          ...uploadedFiles,
-        });
-        completeTask('UPLOAD_FILES');
+        const currentFiles = personFiles.files;
 
-        return result;
+        const hasFilesToUpdate =
+          currentFiles &&
+          ((currentFiles.avatarUrl !== undefined &&
+            currentFiles.avatarUrl !== '') ||
+            (currentFiles.leadImageUrl !== undefined &&
+              currentFiles.leadImageUrl !== ''));
+
+        if (hasFilesToUpdate) {
+          startTask('UPLOAD_FILES');
+          const result = await web2.editPerson({
+            id,
+            ...currentFiles,
+          });
+          completeTask('UPLOAD_FILES');
+          return result;
+        }
+
+        return web2.editedPerson;
       } catch (error) {
         if (error instanceof Error) {
           errorTask('UPLOAD_FILES', error.message);
