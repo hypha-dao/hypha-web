@@ -66,13 +66,15 @@ export const SelectAction = ({
             )}
             {groupActions.map((action) => (
               <Link href={action.href} key={action.title}>
-                <Card className={clsx(
-                  "flex p-6 cursor-pointer space-x-4 items-center",
-                  {
-                    'opacity-50 cursor-not-allowed': action.disabled,
-                    'hover:border-accent-5': !action.disabled,
-                  },
-                )}>
+                <Card
+                  className={clsx(
+                    'flex p-6 cursor-pointer space-x-4 items-center',
+                    {
+                      'opacity-50 cursor-not-allowed': action.disabled,
+                      'hover:border-accent-5': !action.disabled,
+                    },
+                  )}
+                >
                   <div>{action.icon}</div>
                   <div className="flex flex-col">
                     <span className="text-2 font-medium">{action.title}</span>
