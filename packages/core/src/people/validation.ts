@@ -24,7 +24,6 @@ const signupPersonWeb2Props = {
     .optional(),
   location: z
     .string()
-    .min(2, { message: 'Location must be at least 2 characters long' })
     .max(100, { message: 'Location must be at most 100 characters long' })
     .trim()
     .optional(),
@@ -64,7 +63,6 @@ const editPersonWeb2Props = {
     .optional(),
   location: z
     .string()
-    .min(2, { message: 'Location must be at least 2 characters long' })
     .max(100, { message: 'Location must be at most 100 characters long' })
     .trim()
     .optional(),
