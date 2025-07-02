@@ -115,7 +115,10 @@ contract SpacePaymentTracker is
 
     // Set expiry to current time + free trial period
     uint256 currentTime = block.timestamp;
-    payment.expiryTime = currentTime + (FREE_TRIAL_DAYS * 1 days);
+    uint256 newExpiry = currentTime + (FREE_TRIAL_DAYS * 1 days);
+    if (newExpiry > payment.expiryTime) {
+      payment.expiryTime = newExpiry;
+    }
 
     emit FreeTrialActivated(spaceId);
   }
