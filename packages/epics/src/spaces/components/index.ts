@@ -1,3 +1,4 @@
+export * from './create-space-form';
 export * from './filtered-spaces';
 export * from './space-card-list';
 export * from './space-card';
