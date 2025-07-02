@@ -78,6 +78,8 @@ export const editPersonFiles = z.object({
     .union([
       z.string().url('Avatar URL must be a valid URL'),
       z.literal(''),
+      z.null(),
+      z.undefined(),
       z
         .instanceof(File)
         .refine(
@@ -90,11 +92,13 @@ export const editPersonFiles = z.object({
         ),
     ])
     .optional()
-    .transform((val) => (val === '' ? null : val)),
+    .transform((val) => (val === '' || val === null ? undefined : val)),
   leadImageUrl: z
     .union([
       z.string().url('Lead Image URL must be a valid URL'),
       z.literal(''),
+      z.null(),
+      z.undefined(),
       z
         .instanceof(File)
         .refine(
@@ -107,7 +111,7 @@ export const editPersonFiles = z.object({
         ),
     ])
     .optional()
-    .transform((val) => (val === '' ? null : val)),
+    .transform((val) => (val === '' || val === null ? undefined : val)),
 });
 
 export type PersonFiles = z.infer<typeof editPersonFiles>;
