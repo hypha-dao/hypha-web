@@ -1,9 +1,10 @@
+import { publicClient } from '@core/common/web3';
 import {
   daoProposalsImplementationAbi,
   daoProposalsImplementationAddress,
 } from '@core/generated';
 
-export const getProposalDetails = ({
+export const getProposalDetails = async ({
   proposalId,
   chain = 8453,
 }: {
@@ -12,10 +13,34 @@ export const getProposalDetails = ({
 }) => {
   const address = daoProposalsImplementationAddress[chain];
 
-  return {
+  const [
+    spaceId,
+    startTime,
+    endTime,
+    executed,
+    expired,
+    yesVotes,
+    noVotes,
+    totalVotingPowerAtSnapshot,
+    creator,
+    transactions,
+  ] = await publicClient.readContract({
     address,
     abi: daoProposalsImplementationAbi,
     functionName: 'getProposalCore',
     args: [proposalId],
-  } as const;
+  });
+
+  return {
+    spaceId,
+    startTime,
+    endTime,
+    executed,
+    expired,
+    yesVotes,
+    noVotes,
+    totalVotingPowerAtSnapshot,
+    creator,
+    transactions,
+  };
 };

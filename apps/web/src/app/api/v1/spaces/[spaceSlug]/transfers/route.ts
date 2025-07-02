@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSpaceService } from '@hypha-platform/core/server';
 import { getSpaceDetails } from '@core/space';
-import { publicClient, getTransfersByAddress } from '@core/common';
+import { getTransfersByAddress } from '@core/common';
 import { schemaGetTransfersQuery } from '@core/transaction';
 import { findPersonByWeb3Address } from '@core/people/server/queries';
 import { db } from '@hypha-platform/storage-postgres';
@@ -40,11 +40,9 @@ export async function GET(
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
 
-    const spaceDetails = await publicClient.readContract(
-      getSpaceDetails({ spaceId: BigInt(space.web3SpaceId as number) }),
-    );
-
-    const spaceAddress = spaceDetails.at(9) as `0x${string}`;
+    const { executor: spaceAddress } = await getSpaceDetails({
+      spaceId: BigInt(space.web3SpaceId as number),
+    });
 
     const transfers = await getTransfersByAddress({
       address: spaceAddress,
