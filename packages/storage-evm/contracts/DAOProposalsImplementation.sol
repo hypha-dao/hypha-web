@@ -135,10 +135,14 @@ contract DAOProposalsImplementation is
 
     // Check if space payment is active
     if (address(paymentTracker) != address(0)) {
-      require(
-        paymentTracker.isSpaceActive(params.spaceId),
-        'Space subscription inactive'
-      );
+      if (!paymentTracker.isSpaceActive(params.spaceId)) {
+        // Try auto-activating free trial once
+        if (!paymentTracker.hasUsedFreeTrial(params.spaceId)) {
+          paymentTracker.activateFreeTrial(params.spaceId);
+        } else {
+          revert('Space subscription inactive');
+        }
+      }
     }
 
     uint256 proposalId = _initializeProposal(
