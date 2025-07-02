@@ -15,12 +15,12 @@ const signupPersonWeb2Props = {
     .min(1, { message: 'Description must not be empty' })
     .max(300, {
       message: 'Description length should not exceed 300 characters',
-    }),
+    }).optional(),
   email: z
     .string()
     .min(1, { message: 'Email is required' })
     .email({ message: 'Please enter a valid email address' })
-    .max(100, { message: 'Email must be at most 100 characters long' }),
+    .max(100, { message: 'Email must be at most 100 characters long' }).optional(),
   location: z
     .string()
     .min(2, { message: 'Location must be at least 2 characters long' })
@@ -32,11 +32,11 @@ const signupPersonWeb2Props = {
     .trim()
     .refine((value) => /^(0x)?[0-9a-fA-F]{40}$/.test(value), {
       message: 'Invalid Ethereum address',
-    }),
+    }).optional(),
   links: z
     .array(z.string().url('Links must be a valid URL'))
     .max(3)
-    .default([]),
+    .default([]).optional(),
 };
 
 const editPersonWeb2Props = {
@@ -52,12 +52,12 @@ const editPersonWeb2Props = {
     .min(1, { message: 'Description must not be empty' })
     .max(300, {
       message: 'Description length should not exceed 300 characters',
-    }),
+    }).optional(),
   email: z
     .string()
     .min(1, { message: 'Email is required' })
     .email({ message: 'Please enter a valid email address' })
-    .max(100, { message: 'Email must be at most 100 characters long' }),
+    .max(100, { message: 'Email must be at most 100 characters long' }).optional(),
   location: z
     .string()
     .min(2, { message: 'Location must be at least 2 characters long' })
@@ -67,7 +67,7 @@ const editPersonWeb2Props = {
   links: z
     .array(z.string().url('Links must be a valid URL'))
     .max(3)
-    .default([]),
+    .default([]).optional(),
 };
 
 export const editPersonFiles = z.object({

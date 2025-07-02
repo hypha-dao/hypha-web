@@ -24,7 +24,6 @@ import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/lib/utils';
 import Link from 'next/link';
-import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { Links } from '../../common';
 
@@ -235,7 +234,7 @@ export const SignupPanel = ({
                   <FormItem>
                     <FormControl>
                       <Links
-                        links={field.value}
+                        links={field.value || []}
                         onChange={field.onChange}
                         errors={form.formState.errors.links}
                       />
