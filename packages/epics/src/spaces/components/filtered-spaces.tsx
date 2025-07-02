@@ -20,7 +20,7 @@ function filterSpaces(
   web3SpaceIds: readonly bigint[] | undefined,
 ) {
   if (!user?.slug || !web3SpaceIds) {
-    return spaces;
+    return [];
   }
   const userSpaces: Space[] = spaces.filter((space) => {
     const spaceId = space.web3SpaceId ? BigInt(space.web3SpaceId) : null;
