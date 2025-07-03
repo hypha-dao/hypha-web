@@ -186,6 +186,7 @@ export const findAllDocumentsBySpaceSlug = async (
     .limit(pageSize)
     .offset(offset);
 
+  // @ts-ignore TODO: fix types
   const total = results.length > 0 ? results[0].total : 0;
   const totalPages = Math.ceil(total / pageSize);
 
@@ -216,7 +217,8 @@ export const findMostRecentDocuments = async ({ db }: DbConfig) => {
     .limit(1);
 
   return results.length > 0
-    ? mapToDocument(results[0].document, results[0].creator)
+    ? // @ts-ignore TODO: fix types
+      mapToDocument(results[0].document, results[0].creator)
     : null;
 };
 

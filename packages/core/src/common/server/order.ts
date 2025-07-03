@@ -24,7 +24,7 @@ export const getOrder = (orderString: string | undefined): Order<Document> => {
       .forEach((fieldName) => {
         const match = /^([+-]?)(\w+)$/.exec(fieldName);
         if (match) {
-          const dir = getDirection(match[1]);
+          const dir = getDirection(match[1] || '');
           const name = match[2] as keyof Document;
           const orderField: OrderField<Document> = { dir, name };
           order.push(orderField);
