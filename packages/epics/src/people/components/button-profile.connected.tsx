@@ -19,6 +19,10 @@ type ErrorUser = {
   error: string;
 };
 
+const isErrorUser = (obj: any): obj is ErrorUser => {
+  return obj && typeof obj === 'object' && 'error' in obj;
+};
+
 export const ConnectedButtonProfile = ({
   useAuthentication,
   useMe,
@@ -44,7 +48,7 @@ export const ConnectedButtonProfile = ({
     }
     if (user) {
       if (person) {
-        if ((person as unknown as ErrorUser)?.error) {
+        if (isErrorUser(person)) {
           router.push(newUserRedirectPath);
         } else if (person?.id) {
           router.push(baseRedirectPath);
