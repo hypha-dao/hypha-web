@@ -50,19 +50,21 @@ export const SETTINGS_ACTIONS = [
   },
   {
     group: 'Membership',
-    title: 'Exit Method',
+    title: 'Exit Method (Coming Soon)',
     description:
       'Select and configure how members can exit or leave your space.',
     href: '#',
     icon: <ExitIcon />,
+    disabled: true,
   },
   {
     group: 'Membership',
-    title: 'Membership Removal',
+    title: 'Membership Removal (Coming Soon)',
     description:
       'Remove a member from your space if they infringe upon agreed rules and policies.',
     href: '#',
     icon: <CrossCircledIcon />,
+    disabled: true,
   },
   {
     group: 'Tokens',
@@ -75,19 +77,21 @@ export const SETTINGS_ACTIONS = [
   },
   {
     group: 'Hypha Network Tokenomics',
-    title: 'Buy Hypha Tokens (Rewards)',
+    title: 'Buy Hypha Tokens (Rewards) (Coming Soon)',
     description:
       'Purchase Hypha tokens to participate in the network and earn rewards.',
     href: '#',
     icon: <ArrowLeftIcon />,
+    disabled: true,
   },
   {
     group: 'Hypha Network Tokenomics',
-    title: 'Pay in Hypha Tokens (Hypha Network Contribution)',
+    title: 'Pay in Hypha Tokens (Hypha Network Contribution) (Coming Soon)',
     description:
       'All spaces within the Network are required to make a monthly payment in Hypha tokens to use the platform.',
     href: '#',
     icon: <ArrowRightIcon />,
+    disabled: true,
   },
 ];
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useFormContext } from 'react-hook-form';
+import { useFormContext, useWatch } from 'react-hook-form';
 import {
   FormControl,
   FormField,
@@ -11,7 +11,19 @@ import {
 } from '@hypha-platform/ui';
 
 export function TokenMaxSupplyField() {
-  const { control } = useFormContext();
+  const { setValue, control } = useFormContext();
+
+  const maxSupply = useWatch({
+    control,
+    name: 'maxSupply',
+    defaultValue: 0,
+  });
+
+  const handleMaxSupplyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = Number(e.target.value);
+    const num = Number.isNaN(val) ? 0 : val;
+    setValue('maxSupply', num);
+  };
 
   return (
     <FormField
@@ -27,7 +39,11 @@ export function TokenMaxSupplyField() {
               <Input
                 type="number"
                 placeholder="Type an amount or 0 for unlimited supply"
-                {...field}
+                value={maxSupply}
+                onChange={handleMaxSupplyChange}
+                name={field.name}
+                onBlur={field.onBlur}
+                ref={field.ref}
               />
             </FormControl>
           </div>

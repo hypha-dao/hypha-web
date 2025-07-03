@@ -43,6 +43,7 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
         count={pagination?.total || 0}
         label={label || ''}
         hasSearch={hasSearch}
+        searchPlaceholder="Search documents"
         onChangeSearch={onUpdateSearch}
       >
         {headSectionButton}

@@ -3,6 +3,7 @@ import { CreateAgreementInput, UpdateAgreementInput } from '../types';
 import { DatabaseInstance } from '@core/_container';
 import { documents } from '@hypha-platform/storage-postgres';
 import { eq } from 'drizzle-orm';
+import { v4 as uuidv4 } from 'uuid';
 
 export const createAgreement = async (
   { title, slug: maybeSlug, creatorId, ...rest }: CreateAgreementInput,
@@ -11,7 +12,8 @@ export const createAgreement = async (
   if (creatorId === undefined) {
     throw new Error('creatorId is required to create agreement');
   }
-  const slug = maybeSlug || slugify(title, { lower: true });
+  const slug =
+    maybeSlug || `${slugify(title, { lower: true })}-${uuidv4().slice(0, 8)}`;
 
   const [newAgreement] = await db
     .insert(documents)

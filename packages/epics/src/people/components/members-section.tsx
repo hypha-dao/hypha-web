@@ -33,6 +33,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
         count={pagination?.total || 0}
         label="Members"
         hasSearch
+        searchPlaceholder="Search members"
         onChangeSearch={onUpdateSearch}
       />
 

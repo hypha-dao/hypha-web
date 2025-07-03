@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSpaceService } from '@hypha-platform/core/server';
 import { getSpaceDetails } from '@core/space';
-import { publicClient, getTransfersByAddress } from '@core/common';
+import { publicClient } from '@core/common';
+import { getTransfersByAddress } from '@core/server';
 import { schemaGetTransfersQuery } from '@core/transaction';
 import { findPersonByWeb3Address } from '@core/people/server/queries';
 import { db } from '@hypha-platform/storage-postgres';

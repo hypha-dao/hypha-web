@@ -9,10 +9,10 @@ import {
   Button,
   Skeleton,
 } from '@hypha-platform/ui';
-import { CopyIcon, LinkedInLogoIcon, Link2Icon } from '@radix-ui/react-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faXTwitter } from '@fortawesome/free-brands-svg-icons';
+import { CopyIcon } from '@radix-ui/react-icons';
+import { WebLinks } from '../../common';
 import { RxDownload, RxPencil2 } from 'react-icons/rx';
+import { MailIcon, MapPinIcon } from 'lucide-react';
 import Link from 'next/link';
 
 export type MemberType = {
@@ -21,17 +21,13 @@ export type MemberType = {
   surname: string;
 };
 
-export interface Socials {
-  LinkedIn: string;
-  X: string;
-  Website: string;
-}
-
 interface PersonHeadProps {
   isLoading?: boolean;
   about: string;
   background: string;
-  socials: Socials;
+  links: string[];
+  location: string;
+  email: string;
   onExportEmbeededWallet?: () => void;
 }
 
@@ -42,7 +38,9 @@ export const PersonHead = ({
   surname,
   about,
   background,
-  socials,
+  links,
+  location,
+  email,
   onExportEmbeededWallet,
 }: PersonHeadProps & MemberType) => {
   const customLogoStyles: React.CSSProperties = {
@@ -54,7 +52,7 @@ export const PersonHead = ({
   };
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col gap-4">
       <Card className="relative">
         <Skeleton height={270} width={768} loading={isLoading}>
           <Image
@@ -74,83 +72,54 @@ export const PersonHead = ({
           </Skeleton>
         </Avatar>
       </Card>
-      <div className="flex justify-end mt-2 gap-2">
-        {onExportEmbeededWallet ? (
+      <div className="flex flex-col gap-4">
+        <div className="flex justify-end gap-2">
+          {onExportEmbeededWallet ? (
+            <Skeleton loading={isLoading} width={120} height={35}>
+              <Button variant="ghost" onClick={onExportEmbeededWallet}>
+                <RxDownload />
+                Export Keys
+              </Button>
+            </Skeleton>
+          ) : null}
           <Skeleton loading={isLoading} width={120} height={35}>
-            <Button variant="ghost" onClick={onExportEmbeededWallet}>
-              <RxDownload />
-              Export Keys
+            <Button variant="outline" colorVariant="accent">
+              <CopyIcon />
+              Copy user ID
             </Button>
           </Skeleton>
-        ) : null}
-        <Skeleton loading={isLoading} width={120} height={35}>
-          <Button variant="outline" colorVariant="accent">
-            <CopyIcon />
-            Copy user ID
-          </Button>
-        </Skeleton>
-        <Skeleton loading={isLoading} width={120} height={35}>
-          <Button asChild colorVariant="accent">
-            <Link href={`/profile/edit`} scroll={false}>
-              <RxPencil2 />
-              Edit profile
-            </Link>
-          </Button>
-        </Skeleton>
-      </div>
-      <div className="mt-4">
+          <Skeleton loading={isLoading} width={120} height={35}>
+            <Button asChild colorVariant="accent">
+              <Link href={`/profile/edit`} scroll={false}>
+                <RxPencil2 />
+                Edit profile
+              </Link>
+            </Button>
+          </Skeleton>
+        </div>
         <Skeleton loading={isLoading} width={180} height={32}>
           <Text className="text-7">
             {name} {surname}
           </Text>
         </Skeleton>
-      </div>
-      <div className="flex gap-6 mt-2">
-        <Skeleton loading={isLoading} width={120} height={35}>
-          <Button
-            asChild
-            variant="ghost"
-            className="rounded-lg justify-start text-neutral-11 px-0 cursor-pointer"
-          >
-            <div>
-              <LinkedInLogoIcon width={16} height={16} />
-              <Text className="ml-1 text-1">{socials.LinkedIn}</Text>
+        <div className="flex flex-col gap-7">
+          <div className="flex flex-col gap-4">
+            <WebLinks links={links} />
+            <div className="flex gap-5 text-1">
+              <span className="flex gap-3">
+                <MailIcon width={16} height={16} />
+                {email}
+              </span>
+              <span className="flex gap-3">
+                <MapPinIcon width={16} height={16} />
+                {location}
+              </span>
             </div>
-          </Button>
-        </Skeleton>
-        <Skeleton className="ml-2" loading={isLoading} width={120} height={35}>
-          <Button
-            asChild
-            variant="ghost"
-            className="rounded-lg justify-start text-neutral-11 px-0 cursor-pointer"
-          >
-            <div>
-              <FontAwesomeIcon
-                className="w-4"
-                color="bg-primary-foreground"
-                icon={faXTwitter}
-              />
-              <Text className="ml-1 text-1">{socials.X}</Text>
-            </div>
-          </Button>
-        </Skeleton>
-        <Skeleton className="ml-2" loading={isLoading} width={120} height={35}>
-          <Button
-            asChild
-            variant="ghost"
-            className="rounded-lg justify-start text-neutral-11 px-0 cursor-pointer"
-          >
-            <div>
-              <Link2Icon width={16} height={16} />
-              <Text className="ml-1 text-1">{socials.Website}</Text>
-            </div>
-          </Button>
-        </Skeleton>
-      </div>
-      <div className="mt-6">
-        <Skeleton loading={isLoading} height={72} width={768}>
-          <Text className="text-2">{about}</Text>
-        </Skeleton>
+          </div>
+          <Skeleton loading={isLoading} height={72} width={768}>
+            <Text className="text-2">{about}</Text>
+          </Skeleton>
+        </div>
       </div>
     </div>
   );

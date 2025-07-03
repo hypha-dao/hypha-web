@@ -212,7 +212,7 @@ const decaySettingsSchema = z.object({
       required_error: 'Decay interval is required',
       invalid_type_error: 'Decay interval must be a number',
     })
-    .positive('Decay interval must be greater than 0'),
+    .min(0, 'Decay interval must be greater or equal to 0'),
 
   decayPercentage: z
     .number({

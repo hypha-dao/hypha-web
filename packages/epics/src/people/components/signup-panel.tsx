@@ -1,9 +1,10 @@
 'use client';
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import {
-  schemaEditPersonWeb2,
+  schemaSignupPerson,
   editPersonFiles,
 } from '@hypha-platform/core/client';
 import {
@@ -26,58 +27,46 @@ import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { Links } from '../../common';
 
-interface Person {
-  avatarUrl?: string;
-  name?: string;
-  surname?: string;
-  id?: number;
-  nickname?: string;
-  description?: string;
-  leadImageUrl?: string;
-  location?: string;
-  email?: string;
-  links?: string[];
-}
+const schemaSignupPersonForm = schemaSignupPerson.extend(editPersonFiles.shape);
 
-const schemaEditPersonForm = schemaEditPersonWeb2.extend(editPersonFiles.shape);
-
-export type EditPersonSectionProps = {
-  person?: Person;
+interface SignupPanelProps {
   closeUrl: string;
   isLoading?: boolean;
-  onEdit: (values: z.infer<typeof schemaEditPersonForm>) => Promise<void>;
+  onSave: (values: z.infer<typeof schemaSignupPersonForm>) => Promise<void>;
+  walletAddress?: string;
+  isCreating?: boolean;
   error?: string | null;
-};
+}
 
-type FormData = z.infer<typeof schemaEditPersonForm>;
+type FormData = z.infer<typeof schemaSignupPersonForm>;
 
-export const EditPersonSection = ({
-  isLoading,
+export const SignupPanel = ({
   closeUrl,
-  person,
-  onEdit,
+  isLoading,
+  onSave,
+  walletAddress,
+  isCreating,
   error,
-}: EditPersonSectionProps) => {
+}: SignupPanelProps) => {
   const form = useForm<FormData>({
-    resolver: zodResolver(schemaEditPersonForm),
+    resolver: zodResolver(schemaSignupPersonForm),
     defaultValues: {
-      avatarUrl: person?.avatarUrl || '',
-      name: person?.name || '',
-      surname: person?.surname || '',
-      nickname: person?.nickname || '',
-      description: person?.description || '',
-      leadImageUrl: person?.leadImageUrl || '',
-      id: person?.id,
-      links: person?.links || [],
-      email: person?.email || '',
-      location: person?.location || '',
+      name: '',
+      surname: '',
+      nickname: '',
+      avatarUrl: undefined,
+      leadImageUrl: undefined,
+      description: '',
+      location: undefined,
+      email: '',
+      address: walletAddress || '',
+      links: [],
     },
-    mode: 'onChange',
   });
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onEdit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSave)} className="space-y-8">
         <div className="flex flex-col gap-5">
           <div className="flex gap-5 justify-between">
             <div className="flex items-center space-x-2">
@@ -87,14 +76,7 @@ export const EditPersonSection = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <UploadAvatar
-                        defaultImage={
-                          typeof person?.avatarUrl === 'string'
-                            ? person?.avatarUrl
-                            : undefined
-                        }
-                        onChange={field.onChange}
-                      />
+                      <UploadAvatar onChange={field.onChange} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -111,7 +93,7 @@ export const EditPersonSection = ({
                           <FormControl>
                             <Input
                               disabled={isLoading}
-                              placeholder="Name"
+                              placeholder="Name *"
                               className="text-2 text-neutral-11"
                               {...field}
                             />
@@ -128,7 +110,7 @@ export const EditPersonSection = ({
                           <FormControl>
                             <Input
                               disabled={isLoading}
-                              placeholder="Surname"
+                              placeholder="Surname *"
                               className="text-2 text-neutral-11"
                               {...field}
                             />
@@ -145,8 +127,8 @@ export const EditPersonSection = ({
                       <FormItem>
                         <FormControl>
                           <Input
-                            disabled
-                            placeholder="Nickname"
+                            disabled={isLoading}
+                            placeholder="Nickname *"
                             className="text-1 text-neutral-11"
                             {...field}
                           />
@@ -176,14 +158,7 @@ export const EditPersonSection = ({
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <UploadLeadImage
-                    defaultImage={
-                      typeof person?.leadImageUrl === 'string'
-                        ? person?.leadImageUrl
-                        : undefined
-                    }
-                    onChange={field.onChange}
-                  />
+                  <UploadLeadImage onChange={field.onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -205,6 +180,7 @@ export const EditPersonSection = ({
               </FormItem>
             )}
           />
+          <Separator />
           <div className="flex gap-3 flex-col">
             <div className="flex justify-between">
               <Text className={cn('text-2', 'text-neutral-11')}>Email</Text>
@@ -273,10 +249,10 @@ export const EditPersonSection = ({
             <div className="flex flex-col items-end gap-2">
               {error && <Text className="text-error-11 text-sm">{error}</Text>}
               <div className="flex gap-2">
-                {isLoading ? (
+                {isCreating ? (
                   <div className="flex items-center gap-2 text-sm text-neutral-10">
                     <Loader2 className="animate-spin w-4 h-4" />
-                    Updating profile...
+                    Creating profile...
                   </div>
                 ) : (
                   <Button

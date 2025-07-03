@@ -10,7 +10,16 @@ export const createPerson = async (
   person: Person,
   { db }: CreatePersonConfig,
 ) => {
-  const [dbPerson] = await db.insert(people).values(person).returning();
+  const slug = person.nickname?.toLowerCase().replace(/\s+/g, '-') || '';
+
+  const [dbPerson] = await db
+    .insert(people)
+    .values({
+      ...person,
+      slug,
+    })
+    .returning();
+
   return mapToDomainPerson(dbPerson);
 };
 

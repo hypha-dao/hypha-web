@@ -7,11 +7,10 @@ import { useSpaceHasVoiceToken } from '@core/space';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-
-export type VotingMethodId = '1m1v' | '1v1v' | '1t1v';
+import { VotingMethodType } from '@core/governance/client';
 
 type VotingMethod = {
-  id: VotingMethodId;
+  id: VotingMethodType;
   title: string;
   description: string;
   icon?: React.ReactNode;
@@ -42,8 +41,8 @@ const votingMethods: VotingMethod[] = [
 ];
 
 type VotingMethodSelectorProps = {
-  value?: VotingMethodId | null;
-  onChange?: (value: VotingMethodId | null) => void;
+  value?: VotingMethodType | null;
+  onChange?: (value: VotingMethodType | null) => void;
   web3SpaceId?: number | null;
 };
 
@@ -59,31 +58,38 @@ export const VotingMethodSelector = ({
 
   if (!web3SpaceId) return null;
 
-  const updatedVotingMethods = votingMethods.map((method) => {
-    if (method.id === '1v1v') {
+  const updatedVotingMethods = votingMethods
+    .map((method) => {
       return {
         ...method,
-        disabled: !hasVoiceToken,
-        disabledTooltip: !hasVoiceToken ? (
-          <div className="p-2">
-            To select this voting method you first need to issue your Voice
-            Token.{' '}
-            <Link
-              href={`/${lang}/dho/${id}/treasury/create/issue-new-token`}
-              className="text-accent-9 underline"
-              onClick={(e) => e.stopPropagation()}
-            >
-              Click here
-            </Link>{' '}
-            to create your Voice Token
-          </div>
-        ) : undefined,
+        disabled: method.disabled || method.id === value,
       };
-    }
-    return method;
-  });
+    })
+    .map((method) => {
+      if (method.id === '1v1v') {
+        return {
+          ...method,
+          disabled: method.disabled || !hasVoiceToken,
+          disabledTooltip: !hasVoiceToken ? (
+            <div className="p-2">
+              To select this voting method you first need to issue your Voice
+              Token.{' '}
+              <Link
+                href={`/${lang}/dho/${id}/treasury/create/issue-new-token`}
+                className="text-accent-9 underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Click here
+              </Link>{' '}
+              to create your Voice Token
+            </div>
+          ) : undefined,
+        };
+      }
+      return method;
+    });
 
-  const handleSelect = (id: VotingMethodId, disabled?: boolean) => {
+  const handleSelect = (id: VotingMethodType, disabled?: boolean) => {
     if (disabled) return;
     if (onChange) {
       onChange(id);

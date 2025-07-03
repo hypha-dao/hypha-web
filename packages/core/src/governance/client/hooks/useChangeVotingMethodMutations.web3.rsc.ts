@@ -2,7 +2,7 @@
 
 import useSWRMutation from 'swr/mutation';
 import useSWR from 'swr';
-import { encodeFunctionData } from 'viem';
+import { encodeFunctionData, zeroAddress } from 'viem';
 import { z } from 'zod';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 
@@ -23,11 +23,10 @@ import {
 } from '@core/generated';
 
 import { transactionSchema } from '@core/governance/validation';
+import { VotingMethodType } from '@hypha-platform/core/client';
 
 const chainId = 8453;
 type TxData = z.infer<typeof transactionSchema>;
-
-type VotingMethodType = '1m1v' | '1v1v' | '1t1v';
 
 interface ChangeVotingMethodArgs {
   spaceId: number;
@@ -88,10 +87,7 @@ export const useChangeVotingMethodMutationsWeb3Rpc = ({
           args: [BigInt(arg.spaceId)],
         });
 
-        if (
-          !tokenAddress ||
-          tokenAddress === '0x0000000000000000000000000000000000000000'
-        ) {
+        if (!tokenAddress || tokenAddress === zeroAddress) {
           throw new Error('Invalid token address returned from getSpaceToken');
         }
 
