@@ -143,6 +143,134 @@ describe('HyphaToken Comprehensive Tests', function () {
       }
     });
 
+    it('Should handle fractional day payments correctly (problematic edge case)', async function () {
+      const {
+        hyphaToken,
+        usdc,
+        spacePaymentTracker,
+        user1,
+        iexAddress,
+        usdcPerDay,
+      } = await loadFixture(deployHyphaFixture);
+
+      console.log('\n⚠️ === FRACTIONAL DAY PAYMENTS TEST ===');
+      console.log(`USDC_PER_DAY: ${ethers.formatUnits(usdcPerDay, 6)} USDC`);
+
+      // Test Case 1: 0.5 days payment should FAIL
+      console.log('\n--- Test Case 1: 0.5 days payment ---');
+      const halfDayPayment = usdcPerDay / 2n; // 0.5 days worth
+      await usdc.mint(await user1.getAddress(), halfDayPayment);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), halfDayPayment);
+
+      await expect(
+        hyphaToken.connect(user1).payForSpaces([1], [halfDayPayment]),
+      ).to.be.revertedWith('Payment too small for space');
+      console.log('✅ 0.5 days payment correctly rejected');
+
+      // Test Case 2: 1.5 days payment should SUCCEED but user loses 0.5 days
+      console.log(
+        '\n--- Test Case 2: 1.5 days payment (user loses money!) ---',
+      );
+      const oneAndHalfDayPayment = (usdcPerDay * 3n) / 2n; // 1.5 days worth
+      await usdc.mint(await user1.getAddress(), oneAndHalfDayPayment * 2n);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), oneAndHalfDayPayment);
+
+      const initialIexBalance = await usdc.balanceOf(
+        await iexAddress.getAddress(),
+      );
+
+      // This should succeed but only give 1 day despite paying for 1.5 days
+      await expect(
+        hyphaToken.connect(user1).payForSpaces([2], [oneAndHalfDayPayment]),
+      )
+        .to.emit(hyphaToken, 'SpacesPaymentProcessed')
+        .withArgs(
+          await user1.getAddress(),
+          [2],
+          [1], // Only 1 day despite paying for 1.5 days!
+          [oneAndHalfDayPayment],
+          0,
+        );
+
+      const finalIexBalance = await usdc.balanceOf(
+        await iexAddress.getAddress(),
+      );
+      expect(finalIexBalance - initialIexBalance).to.equal(
+        oneAndHalfDayPayment,
+      );
+
+      // Verify space is active for exactly 1 day, not 1.5 days
+      expect(await spacePaymentTracker.isSpaceActive(2)).to.be.true;
+      const expiryTime = await spacePaymentTracker.getSpaceExpiryTime(2);
+      const expectedExpiry =
+        (await ethers.provider.getBlock('latest'))!.timestamp + 86400; // 1 day
+      expect(Number(expiryTime)).to.be.closeTo(expectedExpiry, 10);
+
+      console.log('❌ USER PAID FOR 1.5 DAYS BUT ONLY GOT 1 DAY - MONEY LOST!');
+
+      // Test Case 3: 2.9 days payment should give exactly 2 days
+      console.log('\n--- Test Case 3: 2.9 days payment ---');
+      const twoPointNineDayPayment = (usdcPerDay * 29n) / 10n; // 2.9 days worth
+      await usdc.mint(await user1.getAddress(), twoPointNineDayPayment);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), twoPointNineDayPayment);
+
+      await expect(
+        hyphaToken.connect(user1).payForSpaces([3], [twoPointNineDayPayment]),
+      )
+        .to.emit(hyphaToken, 'SpacesPaymentProcessed')
+        .withArgs(
+          await user1.getAddress(),
+          [3],
+          [2], // Only 2 days despite paying for 2.9 days!
+          [twoPointNineDayPayment],
+          0,
+        );
+
+      console.log(
+        '❌ USER PAID FOR 2.9 DAYS BUT ONLY GOT 2 DAYS - MONEY LOST!',
+      );
+
+      // Test Case 4: Test with HYPHA payments too
+      console.log('\n--- Test Case 4: Fractional HYPHA payments ---');
+      const hyphaPerDay = await hyphaToken.HYPHA_PER_DAY();
+
+      // First invest to get HYPHA
+      const investAmount = ethers.parseUnits('100', 6);
+      await usdc.mint(await user1.getAddress(), investAmount);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), investAmount);
+      await hyphaToken.connect(user1).investInHypha(investAmount);
+
+      // Try to pay 1.7 days worth of HYPHA
+      const onePointSevenDayHypha = (hyphaPerDay * 17n) / 10n; // 1.7 days worth
+
+      await expect(
+        hyphaToken.connect(user1).payInHypha([4], [onePointSevenDayHypha]),
+      )
+        .to.emit(hyphaToken, 'SpacesPaymentProcessedWithHypha')
+        .withArgs(
+          await user1.getAddress(),
+          [4],
+          [1], // Only 1 day despite paying for 1.7 days!
+          onePointSevenDayHypha,
+          0,
+        );
+
+      console.log('❌ USER PAID 1.7 DAYS WORTH OF HYPHA BUT ONLY GOT 1 DAY!');
+      console.log(
+        '\n🚨 CONCLUSION: Fractional day payments are a serious issue!',
+      );
+      console.log('   Users lose money when paying fractional amounts > 1 day');
+      console.log('   This could lead to user complaints and loss of trust');
+    });
+
     it('Should fail payment with zero USDC amount', async function () {
       const { hyphaToken, usdc, user1 } = await loadFixture(deployHyphaFixture);
 
@@ -1140,7 +1268,7 @@ describe('HyphaToken Comprehensive Tests', function () {
         const totalSupply = await hyphaToken.totalSupply();
         const pendingDistribution = await ethers.provider.getStorage(
           await hyphaToken.getAddress(),
-          11, // pendingDistribution is at storage slot 11 (not 5!)
+          12, // pendingDistribution is at storage slot 12 (was 11, now 12 due to new mintAddress variable)
         );
 
         const user1Balance = await hyphaToken.balanceOf(
@@ -1304,7 +1432,7 @@ describe('HyphaToken Comprehensive Tests', function () {
       // Check pending distribution
       const pendingDistribution = await ethers.provider.getStorage(
         await hyphaToken.getAddress(),
-        11, // pendingDistribution storage slot
+        12, // pendingDistribution storage slot (was 11, now 12 due to new mintAddress variable)
       );
 
       // Should be 440 HYPHA: (10 USDC * 4 * 10^12 / 1) * (10 + 1) = 440
@@ -1855,6 +1983,423 @@ describe('HyphaToken Comprehensive Tests', function () {
       console.log('✅ New investment correctly resets reward debt');
 
       console.log('✅ All edge cases handled correctly!');
+    });
+  });
+
+  describe('Mint Address and Minting Functions', function () {
+    it('Should allow owner to set mint address and emit event', async function () {
+      const { hyphaToken, owner, user1, user2 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Initially, mint address should be zero address
+      expect(await hyphaToken.mintAddress()).to.equal(
+        '0x0000000000000000000000000000000000000000',
+      );
+
+      // Owner sets mint address
+      await expect(
+        hyphaToken.connect(owner).setMintAddress(await user1.getAddress()),
+      )
+        .to.emit(hyphaToken, 'MintAddressUpdated')
+        .withArgs(
+          '0x0000000000000000000000000000000000000000',
+          await user1.getAddress(),
+        );
+
+      // Verify mint address was set
+      expect(await hyphaToken.mintAddress()).to.equal(await user1.getAddress());
+
+      // Change mint address again
+      await expect(
+        hyphaToken.connect(owner).setMintAddress(await user2.getAddress()),
+      )
+        .to.emit(hyphaToken, 'MintAddressUpdated')
+        .withArgs(await user1.getAddress(), await user2.getAddress());
+
+      // Verify mint address was updated
+      expect(await hyphaToken.mintAddress()).to.equal(await user2.getAddress());
+    });
+
+    it('Should not allow non-owner to set mint address', async function () {
+      const { hyphaToken, user1, user2 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Non-owner tries to set mint address
+      await expect(
+        hyphaToken.connect(user1).setMintAddress(await user2.getAddress()),
+      ).to.be.reverted;
+    });
+
+    it('Should allow setting mint address to zero address', async function () {
+      const { hyphaToken, owner, user1 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Set mint address to user1 first
+      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+
+      // Then set it to zero address
+      await expect(
+        hyphaToken
+          .connect(owner)
+          .setMintAddress('0x0000000000000000000000000000000000000000'),
+      )
+        .to.emit(hyphaToken, 'MintAddressUpdated')
+        .withArgs(
+          await user1.getAddress(),
+          '0x0000000000000000000000000000000000000000',
+        );
+
+      expect(await hyphaToken.mintAddress()).to.equal(
+        '0x0000000000000000000000000000000000000000',
+      );
+    });
+
+    it('Should allow authorized mint address to mint tokens', async function () {
+      const { hyphaToken, owner, user1, user2 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Set user1 as authorized mint address
+      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+
+      // Check initial balances
+      const user2InitialBalance = await hyphaToken.balanceOf(
+        await user2.getAddress(),
+      );
+      const initialTotalMinted = await hyphaToken.totalMinted();
+
+      const mintAmount = ethers.parseUnits('1000', 18);
+
+      // Authorized address mints tokens
+      await expect(
+        hyphaToken.connect(user1).mint(await user2.getAddress(), mintAmount),
+      )
+        .to.emit(hyphaToken, 'TokensMinted')
+        .withArgs(await user2.getAddress(), mintAmount);
+
+      // Check final balances
+      const user2FinalBalance = await hyphaToken.balanceOf(
+        await user2.getAddress(),
+      );
+      const finalTotalMinted = await hyphaToken.totalMinted();
+
+      expect(user2FinalBalance - user2InitialBalance).to.equal(mintAmount);
+      expect(finalTotalMinted - initialTotalMinted).to.equal(mintAmount);
+    });
+
+    it('Should not allow unauthorized addresses to mint tokens', async function () {
+      const { hyphaToken, owner, user1, user2, user3 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Set user1 as authorized mint address
+      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+
+      const mintAmount = ethers.parseUnits('1000', 18);
+
+      // Unauthorized address tries to mint
+      await expect(
+        hyphaToken.connect(user2).mint(await user3.getAddress(), mintAmount),
+      ).to.be.revertedWith('Only authorized mint address can mint');
+
+      // Owner tries to mint (should also fail since owner is not the mint address)
+      await expect(
+        hyphaToken.connect(owner).mint(await user3.getAddress(), mintAmount),
+      ).to.be.revertedWith('Only authorized mint address can mint');
+    });
+
+    it('Should not allow minting to zero address', async function () {
+      const { hyphaToken, owner, user1 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Set user1 as authorized mint address
+      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+
+      const mintAmount = ethers.parseUnits('1000', 18);
+
+      // Try to mint to zero address
+      await expect(
+        hyphaToken
+          .connect(user1)
+          .mint('0x0000000000000000000000000000000000000000', mintAmount),
+      ).to.be.revertedWith('Cannot mint to zero address');
+    });
+
+    it('Should not allow minting zero amount', async function () {
+      const { hyphaToken, owner, user1, user2 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Set user1 as authorized mint address
+      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+
+      // Try to mint zero amount
+      await expect(
+        hyphaToken.connect(user1).mint(await user2.getAddress(), 0),
+      ).to.be.revertedWith('Amount must be greater than zero');
+    });
+
+    it('Should not allow minting beyond max supply', async function () {
+      const { hyphaToken, owner, user1, user2 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Set user1 as authorized mint address
+      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+
+      const maxSupply = await hyphaToken.MAX_SUPPLY();
+      const currentTotalMinted = await hyphaToken.totalMinted();
+      const remainingSupply = maxSupply - currentTotalMinted;
+
+      // Try to mint more than remaining supply
+      const excessAmount = remainingSupply + 1n;
+
+      await expect(
+        hyphaToken.connect(user1).mint(await user2.getAddress(), excessAmount),
+      ).to.be.revertedWith('Exceeds max token supply');
+    });
+
+    it('Should allow minting up to max supply', async function () {
+      const { hyphaToken, owner, user1, user2 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Set user1 as authorized mint address
+      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+
+      const maxSupply = await hyphaToken.MAX_SUPPLY();
+      const currentTotalMinted = await hyphaToken.totalMinted();
+      const remainingSupply = maxSupply - currentTotalMinted;
+
+      // Mint exactly the remaining supply
+      await hyphaToken
+        .connect(user1)
+        .mint(await user2.getAddress(), remainingSupply);
+
+      // Check that total minted equals max supply
+      const finalTotalMinted = await hyphaToken.totalMinted();
+      expect(finalTotalMinted).to.equal(maxSupply);
+
+      // Try to mint even 1 more token - should fail
+      await expect(
+        hyphaToken.connect(user1).mint(await user2.getAddress(), 1),
+      ).to.be.revertedWith('Exceeds max token supply');
+    });
+
+    it('Should correctly update reward debt when minting to eligible addresses', async function () {
+      const { hyphaToken, owner, user1, user2, usdc, usdcPerDay } =
+        await loadFixture(deployHyphaFixture);
+
+      // Set user1 as authorized mint address
+      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+
+      // Create some rewards first by making a space payment
+      const spacePayment = usdcPerDay * 5n;
+      await usdc.mint(await user1.getAddress(), spacePayment);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), spacePayment);
+      await hyphaToken.connect(user1).payForSpaces([1], [spacePayment]);
+
+      // Advance time to accumulate rewards
+      await ethers.provider.send('evm_increaseTime', [86400]); // 1 day
+      await ethers.provider.send('evm_mine', []);
+
+      // Update distribution state
+      await hyphaToken.updateDistributionState();
+
+      // Get current accumulator value
+      const accumulatedRewardPerToken = await ethers.provider.getStorage(
+        await hyphaToken.getAddress(),
+        ethers.solidityPackedKeccak256(
+          ['string'],
+          ['accumulatedRewardPerToken'],
+        ),
+      );
+
+      // Mint tokens to user2
+      const mintAmount = ethers.parseUnits('1000', 18);
+      await hyphaToken
+        .connect(user1)
+        .mint(await user2.getAddress(), mintAmount);
+
+      // Check that user2's reward debt was set correctly
+      const user2RewardDebtSlot = ethers.keccak256(
+        ethers.solidityPacked(
+          ['address', 'uint256'],
+          [await user2.getAddress(), 3], // userRewardDebt mapping slot
+        ),
+      );
+      const user2RewardDebt = await ethers.provider.getStorage(
+        await hyphaToken.getAddress(),
+        user2RewardDebtSlot,
+      );
+
+      expect(user2RewardDebt).to.equal(accumulatedRewardPerToken);
+
+      // User2 should have 0 pending rewards after minting
+      const user2PendingRewards = await hyphaToken.pendingRewards(
+        await user2.getAddress(),
+      );
+      expect(user2PendingRewards).to.equal(0);
+    });
+
+    it('Should not update reward debt when minting to IEX address', async function () {
+      const { hyphaToken, owner, user1, iexAddress, usdc, usdcPerDay } =
+        await loadFixture(deployHyphaFixture);
+
+      // Set user1 as authorized mint address
+      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+
+      // Create some rewards first
+      const spacePayment = usdcPerDay * 5n;
+      await usdc.mint(await user1.getAddress(), spacePayment);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), spacePayment);
+      await hyphaToken.connect(user1).payForSpaces([1], [spacePayment]);
+
+      // Advance time
+      await ethers.provider.send('evm_increaseTime', [86400]);
+      await ethers.provider.send('evm_mine', []);
+
+      const iexInitialBalance = await hyphaToken.balanceOf(iexAddress);
+
+      // Mint tokens to IEX address
+      const mintAmount = ethers.parseUnits('1000', 18);
+      await hyphaToken.connect(user1).mint(iexAddress, mintAmount);
+
+      const iexFinalBalance = await hyphaToken.balanceOf(iexAddress);
+      expect(iexFinalBalance - iexInitialBalance).to.equal(mintAmount);
+
+      // IEX should still have 0 pending rewards
+      const iexPendingRewards = await hyphaToken.pendingRewards(iexAddress);
+      expect(iexPendingRewards).to.equal(0);
+    });
+
+    it('Should handle multiple mints correctly', async function () {
+      const { hyphaToken, owner, user1, user2, user3 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Set user1 as authorized mint address
+      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+
+      const mintAmount1 = ethers.parseUnits('1000', 18);
+      const mintAmount2 = ethers.parseUnits('2000', 18);
+      const mintAmount3 = ethers.parseUnits('3000', 18);
+
+      const initialTotalMinted = await hyphaToken.totalMinted();
+
+      // Multiple mints
+      await hyphaToken
+        .connect(user1)
+        .mint(await user2.getAddress(), mintAmount1);
+      await hyphaToken
+        .connect(user1)
+        .mint(await user3.getAddress(), mintAmount2);
+      await hyphaToken
+        .connect(user1)
+        .mint(await user2.getAddress(), mintAmount3);
+
+      // Check final balances
+      const user2Balance = await hyphaToken.balanceOf(await user2.getAddress());
+      const user3Balance = await hyphaToken.balanceOf(await user3.getAddress());
+      const finalTotalMinted = await hyphaToken.totalMinted();
+
+      expect(user2Balance).to.equal(mintAmount1 + mintAmount3);
+      expect(user3Balance).to.equal(mintAmount2);
+      expect(finalTotalMinted - initialTotalMinted).to.equal(
+        mintAmount1 + mintAmount2 + mintAmount3,
+      );
+    });
+
+    it('Should handle mint address changes correctly', async function () {
+      const { hyphaToken, owner, user1, user2, user3 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Set user1 as initial mint address
+      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+
+      const mintAmount = ethers.parseUnits('1000', 18);
+
+      // User1 can mint
+      await hyphaToken
+        .connect(user1)
+        .mint(await user3.getAddress(), mintAmount);
+
+      // Change mint address to user2
+      await hyphaToken.connect(owner).setMintAddress(await user2.getAddress());
+
+      // User1 can no longer mint
+      await expect(
+        hyphaToken.connect(user1).mint(await user3.getAddress(), mintAmount),
+      ).to.be.revertedWith('Only authorized mint address can mint');
+
+      // User2 can now mint
+      await hyphaToken
+        .connect(user2)
+        .mint(await user3.getAddress(), mintAmount);
+
+      // Check final balance
+      const user3Balance = await hyphaToken.balanceOf(await user3.getAddress());
+      expect(user3Balance).to.equal(mintAmount * 2n);
+    });
+
+    it('Should handle large mint amounts correctly', async function () {
+      const { hyphaToken, owner, user1, user2 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Set user1 as authorized mint address
+      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+
+      // Try to mint a very large amount (but within supply limits)
+      const largeMintAmount = ethers.parseUnits('1000000', 18); // 1 million HYPHA
+
+      const initialBalance = await hyphaToken.balanceOf(
+        await user2.getAddress(),
+      );
+      const initialTotalMinted = await hyphaToken.totalMinted();
+
+      await hyphaToken
+        .connect(user1)
+        .mint(await user2.getAddress(), largeMintAmount);
+
+      const finalBalance = await hyphaToken.balanceOf(await user2.getAddress());
+      const finalTotalMinted = await hyphaToken.totalMinted();
+
+      expect(finalBalance - initialBalance).to.equal(largeMintAmount);
+      expect(finalTotalMinted - initialTotalMinted).to.equal(largeMintAmount);
+    });
+
+    it('Should emit events correctly for all operations', async function () {
+      const { hyphaToken, owner, user1, user2 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Test setMintAddress event
+      await expect(
+        hyphaToken.connect(owner).setMintAddress(await user1.getAddress()),
+      )
+        .to.emit(hyphaToken, 'MintAddressUpdated')
+        .withArgs(
+          '0x0000000000000000000000000000000000000000',
+          await user1.getAddress(),
+        );
+
+      // Test mint event
+      const mintAmount = ethers.parseUnits('1000', 18);
+      await expect(
+        hyphaToken.connect(user1).mint(await user2.getAddress(), mintAmount),
+      )
+        .to.emit(hyphaToken, 'TokensMinted')
+        .withArgs(await user2.getAddress(), mintAmount);
     });
   });
 

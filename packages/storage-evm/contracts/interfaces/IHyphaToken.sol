@@ -57,6 +57,13 @@ interface IHyphaToken {
     address indexed mainHyphaAddress
   );
 
+  event MintAddressUpdated(
+    address indexed oldMintAddress,
+    address indexed newMintAddress
+  );
+
+  event TokensMinted(address indexed to, uint256 amount);
+
   // Function signatures
   function initialize(address _usdc, address _paymentTracker) external;
 
@@ -100,4 +107,8 @@ interface IHyphaToken {
     address _iexAddress,
     address _mainHyphaAddress
   ) external;
+
+  function setMintAddress(address _mintAddress) external;
+
+  function mint(address to, uint256 amount) external;
 }

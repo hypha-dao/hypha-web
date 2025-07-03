@@ -437,6 +437,45 @@ contract HyphaToken is
   }
 
   /**
+   * @dev Set the authorized mint address (governance function)
+   * @param _mintAddress Address authorized to call the mint function
+   */
+  function setMintAddress(address _mintAddress) external onlyOwner {
+    address oldMintAddress = mintAddress;
+    mintAddress = _mintAddress;
+    emit MintAddressUpdated(oldMintAddress, _mintAddress);
+  }
+
+  /**
+   * @dev Mint HYPHA tokens to a specified address
+   * @param to Address to receive the minted tokens
+   * @param amount Amount of HYPHA tokens to mint
+   */
+  function mint(address to, uint256 amount) external {
+    require(msg.sender == mintAddress, 'Only authorized mint address can mint');
+    require(to != address(0), 'Cannot mint to zero address');
+    require(amount > 0, 'Amount must be greater than zero');
+    require(totalMinted + amount <= MAX_SUPPLY, 'Exceeds max token supply');
+
+    // Update total minted
+    totalMinted = totalMinted + amount;
+
+    // Mint tokens to the specified address
+    _mint(to, amount);
+
+    // Update reward debt if the recipient is not the IEX address
+    if (to != iexAddress) {
+      // Update distribution state first
+      updateDistributionState();
+
+      // Set user's reward debt to current accumulator to prevent claiming rewards from before they had tokens
+      userRewardDebt[to] = accumulatedRewardPerToken;
+    }
+
+    emit TokensMinted(to, amount);
+  }
+
+  /**
    * @dev Handle reward accounting before any token transfer
    * @param from Address sending tokens
    * @param to Address receiving tokens
