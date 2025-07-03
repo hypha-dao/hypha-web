@@ -15,14 +15,13 @@ type LogoProps = {
 export const Logo = ({ width = 100, height = 100, href }: LogoProps) => {
   const { resolvedTheme } = useTheme();
 
-  if(!resolvedTheme) {
-    return null;
-  }
+  if (!resolvedTheme) return null;
 
   const logoSrc = resolvedTheme === 'dark' ? LogoDark : LogoLight;
 
   const img = (
     <Image
+      key={resolvedTheme}
       src={logoSrc}
       alt="Logo"
       width={width}
