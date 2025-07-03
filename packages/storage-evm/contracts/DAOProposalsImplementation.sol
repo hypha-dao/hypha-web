@@ -185,7 +185,6 @@ contract DAOProposalsImplementation is
       spaceFactory.isMember(proposal.spaceId, msg.sender),
       'Not a space member'
     );
-    /*
     // Check if space payment is required and valid
     if (address(paymentTracker) != address(0)) {
       // Check if the space has an active subscription
@@ -202,25 +201,7 @@ contract DAOProposalsImplementation is
         }
       }
     }
-*/
 
-    // Check if space payment is required and valid
-    if (address(paymentTracker) != address(0)) {
-      // Check if the space has an active subscription
-      if (paymentTracker.isSpaceActive(proposal.spaceId)) {
-        // Space is active, proceed with voting
-      } else {
-        // Space is not active, check if eligible for free trial
-        if (!paymentTracker.hasUsedFreeTrial(proposal.spaceId)) {
-          // Activate free trial for this space
-          paymentTracker.activateFreeTrial(proposal.spaceId);
-        } else {
-          // Not eligible for free trial and not active - reject
-          revert('Space subscription inactive');
-        }
-      }
-    }
-*/
     (
       ,
       ,
@@ -309,6 +290,13 @@ contract DAOProposalsImplementation is
     // Check if proposal should be executed (Yes votes reach unity threshold)
     if (proposal.yesVotes * 100 >= unityThreshold * totalVotesCast) {
       proposal.executed = true;
+
+      // Add this proposal to the space's executed proposals list
+      spaceExecutedProposals[proposal.spaceId].push(_proposalId);
+
+      // Also add it to the global list of executed proposals
+      allExecutedProposals.push(_proposalId);
+
       spaceAcceptedProposals[proposal.spaceId].push(_proposalId);
 
       address executor = spaceFactory.getSpaceExecutor(proposal.spaceId);
@@ -428,10 +416,6 @@ contract DAOProposalsImplementation is
       proposal.creator,
       txns
     );
-  }
-
-  function getLatestProposalId() external view override returns (uint256) {
-    return proposalCounter;
   }
 
   // Add a function to set the payment tracker (setting the storage variable)
