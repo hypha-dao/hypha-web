@@ -1,24 +1,38 @@
-import Image from 'next/image';
-import LogoSrc from './logo-white.svg';
-import Link from 'next/link';
+'use client';
 
-type logoProps = {
+import Image from 'next/image';
+import { useTheme } from 'next-themes';
+import LogoDark from './logo-white.svg'; // for dark theme
+import LogoLight from './logo-black.svg'; // for light theme
+import Link from "next/link";
+
+type LogoProps = {
   width?: number;
   height?: number;
   href?: string;
 };
 
-export const Logo = ({ width, height, href }: logoProps) => {
+export const Logo = ({ width = 100, height = 100, href }: LogoProps) => {
+  const { resolvedTheme } = useTheme();
+
+  if(!resolvedTheme) {
+    return null;
+  }
+
+  const logoSrc = resolvedTheme === 'dark' ? LogoDark : LogoLight;
+
   const img = (
     <Image
-      src={LogoSrc}
+      src={logoSrc}
       alt="Logo"
-      width={width ? width : 100}
-      height={height ? height : 100}
+      width={width}
+      height={height}
     />
   );
+
   if (href) {
     return <Link href={href}>{img}</Link>;
   }
+
   return img;
 };
