@@ -7,6 +7,7 @@ import { useSubspaceDetails } from '../hooks';
 import { SectionLoadMore } from '@hypha-platform/ui/server';
 import Link from 'next/link';
 import { type UseMembers } from '../hooks/types';
+import { Empty } from '../../common';
 
 type SubspaceDetailProps = {
   title?: string;
@@ -61,7 +62,9 @@ export const SubspaceDetail = ({
         <FilterMenu value={'all'} options={filterSettings.options} />
       </div>
       {pagination?.totalPages === 0 ? (
-        <div className="text-neutral-11 mt-2 mb-6">List is empty</div>
+        <Empty>
+          <p>List is empty</p>
+        </Empty>
       ) : (
         Array.from({ length: pages }).map((_, index) => (
           <MembersList

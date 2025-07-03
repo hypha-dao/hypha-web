@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { getMoralis } from './moralis-client';
 
 export type GetTransfersByAddressParams = {

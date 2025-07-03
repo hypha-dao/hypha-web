@@ -3,28 +3,26 @@
 import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { z } from 'zod';
-import { schemaSignupPerson, PersonFiles, useJwt } from '@core/people';
+import { schemaEditPerson, PersonFiles, useJwt } from '@core/people';
 import { usePeopleFileUploads } from './use-people-file-uploads';
 import { useAuthHeader } from './use-auth-header';
 
-export const useCreateProfile = (
-  endpoint = '/api/v1/people/create-profile',
-) => {
+export const useEditProfile = (endpoint = '/api/v1/people/edit-profile') => {
   const { jwt } = useJwt();
   const { headers } = useAuthHeader();
   const router = useRouter();
-  const [isCreating, setIsCreating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { upload, isUploading } = usePeopleFileUploads({ authToken: jwt });
 
-  const createProfile = useCallback(
-    async (data: z.infer<typeof schemaSignupPerson>) => {
+  const editProfile = useCallback(
+    async (data: z.infer<typeof schemaEditPerson>) => {
       if (!headers) {
         throw new Error('No auth headers available');
       }
 
-      setIsCreating(true);
+      setIsEditing(true);
       setError(null);
 
       try {
@@ -44,10 +42,9 @@ export const useCreateProfile = (
 
         const payload = {
           ...data,
-          avatarUrl: uploadedFiles.avatarUrl || data.avatarUrl || '',
-          leadImageUrl: uploadedFiles.leadImageUrl || data.leadImageUrl || '',
+          avatarUrl: uploadedFiles.avatarUrl,
+          leadImageUrl: uploadedFiles.leadImageUrl,
         };
-
         const response = await fetch(endpoint, {
           method: 'POST',
           headers,
@@ -56,26 +53,26 @@ export const useCreateProfile = (
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to create profile');
+          throw new Error(errorData.error || 'Failed to update profile');
         }
 
-        const createdProfile = await response.json();
-        router.push('/my-spaces');
-        return createdProfile;
+        const updatedProfile = await response.json();
+        router.refresh();
+        return updatedProfile;
       } catch (err) {
-        console.error('Profile creation error:', err);
+        console.error('Profile update error:', err);
         setError(err instanceof Error ? err.message : 'Unknown error');
         throw err;
       } finally {
-        setIsCreating(false);
+        setIsEditing(false);
       }
     },
     [endpoint, headers, router, upload],
   );
 
   return {
-    createProfile,
-    isCreating: isCreating || isUploading,
+    editProfile,
+    isEditing: isEditing || isUploading,
     error,
   };
 };

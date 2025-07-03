@@ -12,6 +12,15 @@ type ConnectedButtonProfileProps = {
   useMe: UseMe;
   newUserRedirectPath: string;
   baseRedirectPath: string;
+  notAuthenticatedRedirectPath: string;
+};
+
+type ErrorUser = {
+  error: string;
+};
+
+const isErrorUser = (obj: any): obj is ErrorUser => {
+  return obj && typeof obj === 'object' && 'error' in obj;
 };
 
 export const ConnectedButtonProfile = ({
@@ -19,17 +28,46 @@ export const ConnectedButtonProfile = ({
   useMe,
   newUserRedirectPath,
   baseRedirectPath,
+  notAuthenticatedRedirectPath,
 }: ConnectedButtonProfileProps) => {
-  const { isAuthenticated, logout, login, user } = useAuthentication();
-  const { person, isLoading } = useMe();
+  const {
+    isAuthenticated,
+    logout,
+    login,
+    user,
+    isLoading: isAuthLoading,
+  } = useAuthentication();
+  const { person, isLoading: isPersonLoading } = useMe();
 
   const router = useRouter();
   const { lang } = useParams();
 
   useEffect(() => {
-    if (isLoading || !isAuthenticated) return;
-    router.push(person?.id ? baseRedirectPath : newUserRedirectPath);
-  }, [isLoading, isAuthenticated, user]);
+    if (isAuthLoading || isPersonLoading || !isAuthenticated) {
+      return;
+    }
+    if (user) {
+      if (person) {
+        if (isErrorUser(person)) {
+          router.push(newUserRedirectPath);
+        } else if (person?.id) {
+          router.push(baseRedirectPath);
+        }
+      } else {
+        router.push(notAuthenticatedRedirectPath);
+      }
+    }
+  }, [
+    isPersonLoading,
+    isAuthLoading,
+    isAuthenticated,
+    person,
+    user,
+    router,
+    baseRedirectPath,
+    newUserRedirectPath,
+    notAuthenticatedRedirectPath,
+  ]);
 
   return (
     <ButtonProfile
