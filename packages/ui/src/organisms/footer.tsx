@@ -24,7 +24,9 @@ export const Footer = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-0 py-8">
           <div className="flex flex-col items-start space-y-4 md:space-y-0">
-            <Text style={customLabelStyles}>THE NETWORK</Text>
+            <Text style={customLabelStyles}>
+              THE NETWORK
+            </Text>
             <Button
               asChild
               variant="ghost"
@@ -64,7 +66,9 @@ export const Footer = () => {
           </div>
 
           <div className="flex flex-col items-start space-y-4 md:space-y-0">
-            <Text style={customLabelStyles}>GET STARTED</Text>
+            <Text style={customLabelStyles}>
+              GET STARTED
+            </Text>
             <Button
               asChild
               variant="ghost"
@@ -104,7 +108,9 @@ export const Footer = () => {
           </div>
 
           <div className="flex flex-col items-start space-y-4 md:space-y-0">
-            <Text style={customLabelStyles}>DAO SERVICES</Text>
+            <Text style={customLabelStyles}>
+              DAO SERVICES
+            </Text>
             <Button
               asChild
               variant="ghost"
