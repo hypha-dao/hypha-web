@@ -52,9 +52,8 @@ const daoProposalsAbi = [
 async function getSpaceAgreements(): Promise<void> {
   // Get command line arguments
   const args = process.argv.slice(2);
-  let spaceId: number;
   let checkSpecificProposal = false;
-  let proposalId: number = 0;
+  let proposalId = 0;
   let checkProposalStatus = false;
 
   // Parse arguments
@@ -73,11 +72,12 @@ async function getSpaceAgreements(): Promise<void> {
     return;
   }
 
-  spaceId = parseInt(args[0]);
-  if (isNaN(spaceId)) {
+  const spaceIdParsed = parseInt(args[0]);
+  if (isNaN(spaceIdParsed)) {
     console.error('Invalid space ID. Please provide a valid number.');
     return;
   }
+  const spaceId = spaceIdParsed;
 
   // Check if a specific proposal ID was provided
   if (args.length > 1 && args[1] !== '--status') {
@@ -146,7 +146,9 @@ async function getSpaceAgreements(): Promise<void> {
 
     try {
       // Try a simple call to see if the contract is valid
-      await contract.getSpaceProposals(1).catch(() => {});
+      await contract.getSpaceProposals(1).catch(() => {
+        // Intentionally empty - this is just a validation attempt
+      });
       agreements = contract;
       workingAddress = address;
       console.log(
@@ -182,7 +184,9 @@ async function getSpaceAgreements(): Promise<void> {
 
       try {
         // Try a simple call
-        await contract.getProposalCore(1).catch(() => {});
+        await contract.getProposalCore(1).catch(() => {
+          // Intentionally empty - this is just a validation attempt
+        });
         daoProposals = contract;
         console.log(
           `Successfully connected to DAO Proposals contract at: ${address}`,

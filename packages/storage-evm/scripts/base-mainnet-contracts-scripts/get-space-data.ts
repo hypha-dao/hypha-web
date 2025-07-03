@@ -339,7 +339,9 @@ async function getSpaceData(): Promise<void> {
 
     try {
       // Try a simple call to see if the contract is valid
-      await contract.getSpaceDetails(1).catch(() => {});
+      await contract.getSpaceDetails(1).catch(() => {
+        // Intentionally empty - this is just a validation attempt
+      });
       daoSpaceFactory = contract;
       workingAddress = address;
       console.log(`Successfully connected to DAO Space Factory at: ${address}`);

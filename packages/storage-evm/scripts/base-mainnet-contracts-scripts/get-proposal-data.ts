@@ -367,7 +367,9 @@ async function getProposalData(): Promise<void> {
 
     try {
       // Try a simple call to see if the contract is valid
-      await contract.getProposalCore(1).catch(() => {});
+      await contract.getProposalCore(1).catch(() => {
+        // Intentionally empty - this is just a validation attempt
+      });
       daoProposals = contract;
       workingAddress = address;
       console.log(`Successfully connected to DAO Proposals at: ${address}`);
@@ -493,7 +495,9 @@ async function fetchProposalRange(
     const contract = new ethers.Contract(address, daoProposalsAbi, wallet);
 
     try {
-      await contract.getProposalCore(startId).catch(() => {});
+      await contract.getProposalCore(startId).catch(() => {
+        // Intentionally empty - this is just a validation attempt
+      });
       daoProposals = contract;
       console.log(`Successfully connected to DAO Proposals at: ${address}`);
       break;

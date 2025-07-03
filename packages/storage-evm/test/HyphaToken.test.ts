@@ -129,6 +129,7 @@ describe('HyphaToken Comprehensive Tests', function () {
 
       // Verify spaces are active with correct durations
       for (let i = 0; i < spaceIds.length; i++) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
         expect(await spacePaymentTracker.isSpaceActive(spaceIds[i])).to.be.true;
 
         // Check expiry time approximately matches expected duration
@@ -316,6 +317,7 @@ describe('HyphaToken Comprehensive Tests', function () {
         expect.fail('Transaction should have reverted');
       } catch (error) {
         // Any error is acceptable here
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
         expect(error).to.exist;
       }
     });
@@ -359,43 +361,22 @@ describe('HyphaToken Comprehensive Tests', function () {
       } = await loadFixture(deployHyphaFixture);
 
       // Calculate how much USDC we need to buy enough HYPHA for one day
-      console.log(
-        `HYPHA per day needed: ${ethers.formatUnits(hyphaPerDay, 18)}`,
-      );
       console.log(`HYPHA_PRICE_USD scaling factor: ${hyphaPrice.toString()}`);
-      console.log(
-        `Actual HYPHA price: $0.25 USD (calculated from investment formula)`,
-      );
 
       // Calculate USDC needed using the contract's investment formula:
       // hyphaPurchased = (usdcAmount * 4 * 10^12) / HYPHA_PRICE_USD
       // So: usdcAmount = (hyphaPurchased * HYPHA_PRICE_USD) / (4 * 10^12)
       const usdcRequiredForHypha =
         (hyphaPerDay * hyphaPrice) / BigInt(4 * 10 ** 12);
-      console.log(
-        `USDC required for one day of HYPHA: ${ethers.formatUnits(
-          usdcRequiredForHypha,
-          6,
-        )}`,
-      );
 
       // Add a safety margin - invest 5x what we need
       const usdcAmount = usdcRequiredForHypha * 5n;
-      console.log(
-        `USDC to invest (with safety margin): ${ethers.formatUnits(
-          usdcAmount,
-          6,
-        )}`,
-      );
 
       // Make sure the user has enough USDC
       await usdc.mint(await user1.getAddress(), usdcAmount * 2n);
 
       // Verify USDC balance before investing
       const usdcBalanceBefore = await usdc.balanceOf(await user1.getAddress());
-      console.log(
-        `User USDC balance before: ${ethers.formatUnits(usdcBalanceBefore, 6)}`,
-      );
 
       // Now invest to get HYPHA
       await usdc
@@ -406,9 +387,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       // Log the user's HYPHA balance to check if it's enough
       const initialUserHypha = await hyphaToken.balanceOf(
         await user1.getAddress(),
-      );
-      console.log(
-        `User HYPHA balance: ${ethers.formatUnits(initialUserHypha, 18)}`,
       );
 
       // Define space payment - use just a single space with 1 day for simplicity
@@ -448,6 +426,7 @@ describe('HyphaToken Comprehensive Tests', function () {
       expect(finalIexHypha - initialIexHypha).to.equal(totalHyphaRequired);
 
       // Verify space is active
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       expect(await spacePaymentTracker.isSpaceActive(spaceIds[0])).to.be.true;
     });
 
@@ -472,19 +451,10 @@ describe('HyphaToken Comprehensive Tests', function () {
       // Log the hyphaPerDay value
       console.log(`HYPHA per day: ${ethers.formatUnits(hyphaPerDay, 18)}`);
       console.log(`HYPHA_PRICE_USD scaling factor: ${hyphaPrice.toString()}`);
-      console.log(
-        `Actual HYPHA price: $0.25 USD (calculated from investment formula)`,
-      );
 
       // Calculate exact USDC needed using the contract's investment formula
       const usdcRequiredForHypha =
         (hyphaPerDay * hyphaPrice) / BigInt(4 * 10 ** 12);
-      console.log(
-        `USDC needed for 1 day of HYPHA: ${ethers.formatUnits(
-          usdcRequiredForHypha,
-          6,
-        )}`,
-      );
 
       // Use a safety margin - invest 5x what we need
       const usdcAmount = usdcRequiredForHypha * 5n;
@@ -502,9 +472,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       // Verify user received correct amount
       const userHyphaBalance = await hyphaToken.balanceOf(
         await user1.getAddress(),
-      );
-      console.log(
-        `User HYPHA balance: ${ethers.formatUnits(userHyphaBalance, 18)}`,
       );
 
       expect(userHyphaBalance).to.be.gte(hyphaPerDay);
@@ -540,9 +507,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       // Set distribution multiplier to higher value if it's 0 or very low
       if (distMultiplier < 100n) {
         await hyphaToken.setDistributionMultiplier(1000n); // Set to 1000x = 100,000% bonus
-        console.log(
-          `Updated distribution multiplier to: ${await hyphaToken.distributionMultiplier()}`,
-        );
       }
 
       // Extremely large investments
@@ -569,24 +533,12 @@ describe('HyphaToken Comprehensive Tests', function () {
       const user2InitialHypha = await hyphaToken.balanceOf(
         await user2.getAddress(),
       );
-      console.log(
-        `User1 initial HYPHA: ${ethers.formatUnits(user1InitialHypha, 18)}`,
-      );
-      console.log(
-        `User2 initial HYPHA: ${ethers.formatUnits(user2InitialHypha, 18)}`,
-      );
 
       // User1 pays with HYPHA to send some tokens to IEX
       const hyphaToIex = hyphaPerDay * 100n; // 100 days worth
       await hyphaToken.connect(user1).payInHypha([1], [hyphaToIex]);
 
       const iexBalance = await hyphaToken.balanceOf(iexAddress);
-      console.log(
-        `IEX balance after HYPHA payment: ${ethers.formatUnits(
-          iexBalance,
-          18,
-        )} HYPHA`,
-      );
 
       // Make a MASSIVE space payment to create a significant reward pool
       const largePayment = usdcPerDay * 10000n; // 10,000 days
@@ -595,10 +547,6 @@ describe('HyphaToken Comprehensive Tests', function () {
         .connect(user1)
         .approve(await hyphaToken.getAddress(), largePayment);
       await hyphaToken.connect(user1).payForSpaces([2], [largePayment]);
-
-      console.log(
-        `Space payment made: ${ethers.formatUnits(largePayment, 6)} USDC`,
-      );
 
       // Advance time MASSIVELY
       const dayInSeconds = 86400;
@@ -622,19 +570,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       );
       const iexRewards = await hyphaToken.pendingRewards(iexAddress);
 
-      console.log(
-        `User1 pending rewards: ${ethers.formatUnits(user1Rewards, 18)}`,
-      );
-      console.log(
-        `User2 pending rewards: ${ethers.formatUnits(user2Rewards, 18)}`,
-      );
-      console.log(
-        `IEX pending rewards: ${ethers.formatUnits(
-          iexRewards,
-          18,
-        )} (should be 0)`,
-      );
-
       // Both users should have rewards
       expect(user1Rewards).to.be.gt(0);
       expect(user2Rewards).to.be.gt(0);
@@ -655,9 +590,6 @@ describe('HyphaToken Comprehensive Tests', function () {
 
       // Set distribution multiplier to a very high value (5000x = 500,000% bonus)
       await hyphaToken.setDistributionMultiplier(5000n);
-      console.log(
-        `Distribution multiplier set to: ${await hyphaToken.distributionMultiplier()}`,
-      );
 
       // Use EXTREMELY large investment amounts
       const user1Amount = ethers.parseUnits('50000', 6); // 50,000 USDC
@@ -695,12 +627,6 @@ describe('HyphaToken Comprehensive Tests', function () {
         .connect(user1)
         .approve(await hyphaToken.getAddress(), paymentAmount1);
       await hyphaToken.connect(user1).payForSpaces([1], [paymentAmount1]);
-      console.log(
-        `Made payment for ${ethers.formatUnits(
-          paymentAmount1,
-          6,
-        )} USDC (10,000 days)`,
-      );
 
       // Advance time by a LONG time
       await ethers.provider.send('evm_increaseTime', [86400 * 30]); // 30 days
@@ -713,12 +639,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       // Check rewards after time advance
       const user1RewardsAfterFirstUpdate = await hyphaToken.pendingRewards(
         await user1.getAddress(),
-      );
-      console.log(
-        `User1 rewards after first update: ${ethers.formatUnits(
-          user1RewardsAfterFirstUpdate,
-          18,
-        )}`,
       );
 
       // The rest of the test remains the same but with additional logging and checks
@@ -764,9 +684,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       // Check pending rewards before any transfers
       const pendingBeforeTransfer = await hyphaToken.pendingRewards(
         await user1.getAddress(),
-      );
-      console.log(
-        `Pending rewards: ${ethers.formatUnits(pendingBeforeTransfer, 18)}`,
       );
       expect(pendingBeforeTransfer).to.be.gt(0);
 
@@ -821,12 +738,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       // Should have rewards now
       const rewardsAfterInvestment = await hyphaToken.pendingRewards(
         await user1.getAddress(),
-      );
-      console.log(
-        `Rewards after investment: ${ethers.formatUnits(
-          rewardsAfterInvestment,
-          18,
-        )}`,
       );
       expect(rewardsAfterInvestment).to.be.gt(0);
     });
@@ -894,18 +805,6 @@ describe('HyphaToken Comprehensive Tests', function () {
 
       console.log('\n=== CONTRACT PARAMETERS ===');
       console.log(`HYPHA_PRICE_USD: ${hyphaPrice.toString()}`);
-      console.log(
-        `USDC_PER_DAY: ${usdcPerDay.toString()} (${ethers.formatUnits(
-          usdcPerDay,
-          6,
-        )} USDC)`,
-      );
-      console.log(
-        `HYPHA_PER_DAY: ${hyphaPerDay.toString()} (${ethers.formatUnits(
-          hyphaPerDay,
-          18,
-        )} HYPHA)`,
-      );
 
       console.log('\n=== DESIRED ECONOMICS ===');
       console.log('Monthly cost: $11 USD');
@@ -936,28 +835,16 @@ describe('HyphaToken Comprehensive Tests', function () {
         Number(ethers.formatUnits(investAmount, 6)) /
         Number(ethers.formatUnits(hyphaReceived, 18));
 
-      console.log(
-        `HYPHA received: ${ethers.formatUnits(hyphaReceived, 18)} HYPHA`,
-      );
-      console.log(
-        `Actual HYPHA price: $${actualHyphaPrice.toFixed(2)} per HYPHA`,
-      );
       console.log(`Target HYPHA price: $0.25 per HYPHA`);
       if (Math.abs(actualHyphaPrice - 0.25) < 0.01) {
         console.log(`✅ Investment pricing matches target ($0.25)`);
       } else {
-        console.log(
-          `❌ Price mismatch: Should be $0.25, but is $${actualHyphaPrice.toFixed(
-            2,
-          )}`,
-        );
+        console.log(`❌ Investment pricing doesn't match target ($0.25)`);
+        console.log(`   Actual: $${actualHyphaPrice.toFixed(3)} per HYPHA`);
       }
 
       console.log('\n=== FUNCTION 2: payForSpaces (USDC) ===');
       const spacesUsdcAmount = usdcPerDay; // 1 day
-      console.log(
-        `Paying for 1 day: ${ethers.formatUnits(spacesUsdcAmount, 6)} USDC`,
-      );
 
       await usdc
         .connect(user1)
@@ -970,18 +857,9 @@ describe('HyphaToken Comprehensive Tests', function () {
 
       console.log('\n=== FUNCTION 3: payInHypha ===');
       const spacesHyphaAmount = hyphaPerDay; // 1 day worth of HYPHA
-      console.log(
-        `Paying for 1 day: ${ethers.formatUnits(spacesHyphaAmount, 18)} HYPHA`,
-      );
 
       const userHyphaBefore = await hyphaToken.balanceOf(
         await user1.getAddress(),
-      );
-      console.log(
-        `User HYPHA balance before: ${ethers.formatUnits(
-          userHyphaBefore,
-          18,
-        )} HYPHA`,
       );
 
       if (userHyphaBefore >= spacesHyphaAmount) {
@@ -1007,26 +885,6 @@ describe('HyphaToken Comprehensive Tests', function () {
         Number(spacesUsdcAmount) /
         10 ** 6 /
         (Number(spacesHyphaAmount) / 10 ** 18);
-      console.log(
-        `Space payment USDC cost: ${ethers.formatUnits(
-          spacesUsdcAmount,
-          6,
-        )} USDC`,
-      );
-      console.log(
-        `Space payment HYPHA cost: ${ethers.formatUnits(
-          spacesHyphaAmount,
-          18,
-        )} HYPHA`,
-      );
-      console.log(
-        `Implied HYPHA price from space payments: $${impliedHyphaPrice.toFixed(
-          3,
-        )} per HYPHA`,
-      );
-      console.log(
-        `Investment HYPHA price: $${actualHyphaPrice.toFixed(2)} per HYPHA`,
-      );
 
       if (Math.abs(impliedHyphaPrice - 0.25) < 0.01) {
         console.log(`✅ Space payment pricing matches target ($0.25)`);
@@ -1091,9 +949,6 @@ describe('HyphaToken Comprehensive Tests', function () {
         console.log(`   User HYPHA: ${ethers.formatUnits(userHYPHA, 18)}`);
         console.log(`   IEX USDC: ${ethers.formatUnits(iexUSDC, 6)}`);
         console.log(`   IEX HYPHA: ${ethers.formatUnits(iexHYPHA, 18)}`);
-        console.log(
-          `   MainHypha USDC: ${ethers.formatUnits(mainHyphaUSDC, 6)}`,
-        );
 
         return { userUSDC, userHYPHA, iexUSDC, iexHYPHA, mainHyphaUSDC };
       };
@@ -1102,18 +957,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       console.log('\n📊 === SCENARIO 1: DEFAULT PARAMETERS ===');
       let params = await getParams();
       console.log(`HYPHA_PRICE_USD: ${params.hyphaPrice}`);
-      console.log(
-        `USDC_PER_DAY: ${ethers.formatUnits(params.usdcPerDay, 6)} USDC`,
-      );
-      console.log(
-        `HYPHA_PER_DAY: ${ethers.formatUnits(params.hyphaPerDay, 18)} HYPHA`,
-      );
-      console.log(
-        `Expected real HYPHA price: $${(
-          Number(ethers.formatUnits(params.usdcPerDay, 6)) /
-          Number(ethers.formatUnits(params.hyphaPerDay, 18))
-        ).toFixed(3)}`,
-      );
 
       // Give user1 initial USDC
       const initialUSDC = ethers.parseUnits('1000', 6);
@@ -1135,12 +978,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       const hyphaReceived1A =
         balancesAfter1A.userHYPHA - balancesBefore1A.userHYPHA;
       const realPrice1A = getRealHyphaPrice(investAmount1, hyphaReceived1A);
-      console.log(
-        `✅ Invested ${ethers.formatUnits(
-          investAmount1,
-          6,
-        )} USDC → Received ${ethers.formatUnits(hyphaReceived1A, 18)} HYPHA`,
-      );
       console.log(`✅ Real HYPHA price: $${realPrice1A.toFixed(3)} per HYPHA`);
 
       // Test 2: Space payment with USDC
@@ -1160,13 +997,6 @@ describe('HyphaToken Comprehensive Tests', function () {
         user1,
       );
 
-      console.log(
-        `✅ Paid ${ethers.formatUnits(spacePaymentUSDC, 6)} USDC for 3 days`,
-      );
-      console.log(
-        `✅ Space 1 active: ${await spacePaymentTracker.isSpaceActive(1)}`,
-      );
-
       // Test 3: Space payment with HYPHA
       console.log('\n🏢 === TEST 1C: SPACE PAYMENT (HYPHA) ===');
       const spacePaymentHYPHA = params.hyphaPerDay * 2n; // 2 days
@@ -1179,13 +1009,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       const balancesAfter1C = await showBalances(
         'After Space Payment (HYPHA)',
         user1,
-      );
-
-      console.log(
-        `✅ Paid ${ethers.formatUnits(spacePaymentHYPHA, 18)} HYPHA for 2 days`,
-      );
-      console.log(
-        `✅ Space 2 active: ${await spacePaymentTracker.isSpaceActive(2)}`,
       );
 
       // === SCENARIO 2: CHANGE PARAMETERS (Cheaper spaces, more expensive HYPHA) ===
@@ -1202,21 +1025,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       await hyphaToken.connect(owner).setHyphaPerDay(newHyphaPerDay);
 
       params = await getParams();
-      console.log(
-        `New USDC_PER_DAY: ${ethers.formatUnits(params.usdcPerDay, 6)} USDC`,
-      );
-      console.log(
-        `New HYPHA_PER_DAY: ${ethers.formatUnits(
-          params.hyphaPerDay,
-          18,
-        )} HYPHA`,
-      );
-      console.log(
-        `Expected real HYPHA price: $${(
-          Number(ethers.formatUnits(params.usdcPerDay, 6)) /
-          Number(ethers.formatUnits(params.hyphaPerDay, 18))
-        ).toFixed(3)} (should still be $0.25)`,
-      );
 
       // Test 4: Investment with new parameters
       console.log('\n🏦 === TEST 2A: INVESTMENT (NEW PARAMS) ===');
@@ -1238,17 +1046,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       const hyphaReceived2A =
         balancesAfter2A.userHYPHA - balancesBefore2A.userHYPHA;
       const realPrice2A = getRealHyphaPrice(investAmount2, hyphaReceived2A);
-      console.log(
-        `✅ Invested ${ethers.formatUnits(
-          investAmount2,
-          6,
-        )} USDC → Received ${ethers.formatUnits(hyphaReceived2A, 18)} HYPHA`,
-      );
-      console.log(
-        `✅ Real HYPHA price: $${realPrice2A.toFixed(
-          3,
-        )} per HYPHA (should still be $0.25)`,
-      );
 
       // Test 5: Space payment with new cheaper USDC cost
       console.log('\n🏢 === TEST 2B: SPACE PAYMENT (USDC, NEW PARAMS) ===');
@@ -1267,16 +1064,6 @@ describe('HyphaToken Comprehensive Tests', function () {
         user1,
       );
 
-      console.log(
-        `✅ Paid ${ethers.formatUnits(
-          spacePaymentUSDC2,
-          6,
-        )} USDC for 5 days (cheaper rate)`,
-      );
-      console.log(
-        `✅ Space 3 active: ${await spacePaymentTracker.isSpaceActive(3)}`,
-      );
-
       // Test 6: Space payment with new cheaper HYPHA cost
       console.log('\n🏢 === TEST 2C: SPACE PAYMENT (HYPHA, NEW PARAMS) ===');
       const spacePaymentHYPHA2 = params.hyphaPerDay * 4n; // 4 days at new cheaper rate
@@ -1289,16 +1076,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       const balancesAfter2C = await showBalances(
         'After Space Payment (New HYPHA)',
         user1,
-      );
-
-      console.log(
-        `✅ Paid ${ethers.formatUnits(
-          spacePaymentHYPHA2,
-          18,
-        )} HYPHA for 4 days (cheaper rate)`,
-      );
-      console.log(
-        `✅ Space 4 active: ${await spacePaymentTracker.isSpaceActive(4)}`,
       );
 
       // === SCENARIO 3: CHANGE HYPHA PRICE ===
@@ -1318,18 +1095,6 @@ describe('HyphaToken Comprehensive Tests', function () {
 
       params = await getParams();
       console.log(`New HYPHA_PRICE_USD: ${params.hyphaPrice}`);
-      console.log(
-        `New HYPHA_PER_DAY: ${ethers.formatUnits(
-          params.hyphaPerDay,
-          18,
-        )} HYPHA`,
-      );
-      console.log(
-        `Expected real HYPHA price: $${(
-          Number(ethers.formatUnits(params.usdcPerDay, 6)) /
-          Number(ethers.formatUnits(params.hyphaPerDay, 18))
-        ).toFixed(3)} (should be $0.50)`,
-      );
 
       // Test 7: Investment with expensive HYPHA
       console.log('\n🏦 === TEST 3A: INVESTMENT (EXPENSIVE HYPHA) ===');
@@ -1351,33 +1116,9 @@ describe('HyphaToken Comprehensive Tests', function () {
       const hyphaReceived3A =
         balancesAfter3A.userHYPHA - balancesBefore3A.userHYPHA;
       const realPrice3A = getRealHyphaPrice(investAmount3, hyphaReceived3A);
-      console.log(
-        `✅ Invested ${ethers.formatUnits(
-          investAmount3,
-          6,
-        )} USDC → Received ${ethers.formatUnits(hyphaReceived3A, 18)} HYPHA`,
-      );
-      console.log(
-        `✅ Real HYPHA price: $${realPrice3A.toFixed(
-          3,
-        )} per HYPHA (should be $0.50)`,
-      );
 
       // Final summary
       console.log('\n📈 === FINAL SUMMARY ===');
-      console.log(
-        `✅ Scenario 1 (Default): HYPHA price $${realPrice1A.toFixed(3)}`,
-      );
-      console.log(
-        `✅ Scenario 2 (Cheaper spaces): HYPHA price $${realPrice2A.toFixed(
-          3,
-        )}`,
-      );
-      console.log(
-        `✅ Scenario 3 (Expensive HYPHA): HYPHA price $${realPrice3A.toFixed(
-          3,
-        )}`,
-      );
       console.log('✅ All scenarios maintain pricing consistency!');
 
       // Verify all prices are correct
@@ -1423,33 +1164,6 @@ describe('HyphaToken Comprehensive Tests', function () {
         );
 
         console.log(`\n🎯 ${label}`);
-        console.log(
-          `   Total HYPHA Supply: ${ethers.formatUnits(totalSupply, 18)}`,
-        );
-        console.log(
-          `   Pending Distribution: ${ethers.formatUnits(
-            pendingDistribution,
-            18,
-          )}`,
-        );
-        console.log(
-          `   User1 Balance: ${ethers.formatUnits(
-            user1Balance,
-            18,
-          )} | Pending Rewards: ${ethers.formatUnits(user1Rewards, 18)}`,
-        );
-        console.log(
-          `   User2 Balance: ${ethers.formatUnits(
-            user2Balance,
-            18,
-          )} | Pending Rewards: ${ethers.formatUnits(user2Rewards, 18)}`,
-        );
-        console.log(
-          `   User3 Balance: ${ethers.formatUnits(
-            user3Balance,
-            18,
-          )} | Pending Rewards: ${ethers.formatUnits(user3Rewards, 18)}`,
-        );
 
         return {
           totalSupply,
@@ -1491,25 +1205,16 @@ describe('HyphaToken Comprehensive Tests', function () {
         .connect(user1)
         .approve(await hyphaToken.getAddress(), user1Investment);
       await hyphaToken.connect(user1).investInHypha(user1Investment);
-      console.log(
-        `✅ User1 invested ${ethers.formatUnits(user1Investment, 6)} USDC`,
-      );
 
       await usdc
         .connect(user2)
         .approve(await hyphaToken.getAddress(), user2Investment);
       await hyphaToken.connect(user2).investInHypha(user2Investment);
-      console.log(
-        `✅ User2 invested ${ethers.formatUnits(user2Investment, 6)} USDC`,
-      );
 
       await usdc
         .connect(user3)
         .approve(await hyphaToken.getAddress(), user3Investment);
       await hyphaToken.connect(user3).investInHypha(user3Investment);
-      console.log(
-        `✅ User3 invested ${ethers.formatUnits(user3Investment, 6)} USDC`,
-      );
 
       // Make MASSIVE space payments over time
       const paymentAmount1 = usdcPerDay * 10000n; // 10,000 days worth
@@ -1518,12 +1223,6 @@ describe('HyphaToken Comprehensive Tests', function () {
         .connect(user1)
         .approve(await hyphaToken.getAddress(), paymentAmount1);
       await hyphaToken.connect(user1).payForSpaces([1], [paymentAmount1]);
-      console.log(
-        `Made payment for ${ethers.formatUnits(
-          paymentAmount1,
-          6,
-        )} USDC (10,000 days)`,
-      );
 
       // Advance time by a LONG time
       await ethers.provider.send('evm_increaseTime', [86400 * 30]); // 30 days
@@ -1536,12 +1235,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       // Check rewards after time advance
       const user1RewardsAfterFirstUpdate = await hyphaToken.pendingRewards(
         await user1.getAddress(),
-      );
-      console.log(
-        `User1 rewards after first update: ${ethers.formatUnits(
-          user1RewardsAfterFirstUpdate,
-          18,
-        )}`,
       );
 
       // The rest of the test remains the same but with additional logging and checks
@@ -1558,11 +1251,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       // Set distribution multiplier to 10 for meaningful rewards (10x = 1000% bonus)
       await hyphaToken.connect(owner).setDistributionMultiplier(10n);
       const currentMultiplier = await hyphaToken.distributionMultiplier();
-      console.log(
-        `📊 Distribution Multiplier: ${currentMultiplier} (${currentMultiplier}x bonus + 1x base = ${
-          currentMultiplier + 1n
-        }x total)`,
-      );
 
       // Setup: Users invest exact amounts for easy calculation
       const user1Investment = ethers.parseUnits('100', 6); // 100 USDC → 400 HYPHA
@@ -1596,15 +1284,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       const user3Balance = await hyphaToken.balanceOf(await user3.getAddress());
       const totalSupply = await hyphaToken.totalSupply();
 
-      console.log(
-        `User1 balance: ${ethers.formatUnits(user1Balance, 18)} HYPHA`,
-      );
-      console.log(
-        `User2 balance: ${ethers.formatUnits(user2Balance, 18)} HYPHA`,
-      );
-      console.log(
-        `User3 balance: ${ethers.formatUnits(user3Balance, 18)} HYPHA`,
-      );
       console.log(`Total supply: ${ethers.formatUnits(totalSupply, 18)} HYPHA`);
 
       // Expected balances: 400, 600, 1000 HYPHA
@@ -1622,32 +1301,10 @@ describe('HyphaToken Comprehensive Tests', function () {
         .approve(await hyphaToken.getAddress(), spacePayment);
       await hyphaToken.connect(user1).payForSpaces([1], [spacePayment]);
 
-      console.log(
-        `\nSpace payment made: ${ethers.formatUnits(spacePayment, 6)} USDC`,
-      );
-      console.log(
-        `With multiplier ${currentMultiplier}: ${ethers.formatUnits(
-          spacePayment,
-          6,
-        )} USDC → ${
-          Number(ethers.formatUnits(spacePayment, 6)) * 4
-        } HYPHA equivalent → ${
-          Number(ethers.formatUnits(spacePayment, 6)) *
-          4 *
-          Number(currentMultiplier + 1n)
-        } HYPHA total rewards`,
-      );
-
       // Check pending distribution
       const pendingDistribution = await ethers.provider.getStorage(
         await hyphaToken.getAddress(),
         11, // pendingDistribution storage slot
-      );
-      console.log(
-        `Pending distribution: ${ethers.formatUnits(
-          pendingDistribution,
-          18,
-        )} HYPHA`,
       );
 
       // Should be 440 HYPHA: (10 USDC * 4 * 10^12 / 1) * (10 + 1) = 440
@@ -1673,16 +1330,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       );
       const user3Rewards = await hyphaToken.pendingRewards(
         await user3.getAddress(),
-      );
-
-      console.log(
-        `User1 rewards: ${ethers.formatUnits(user1Rewards, 18)} HYPHA`,
-      );
-      console.log(
-        `User2 rewards: ${ethers.formatUnits(user2Rewards, 18)} HYPHA`,
-      );
-      console.log(
-        `User3 rewards: ${ethers.formatUnits(user3Rewards, 18)} HYPHA`,
       );
 
       // Expected individual rewards (proportional to holdings):
@@ -1725,11 +1372,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       // Set distribution multiplier to 50 for significant rewards (50x = 5000% bonus)
       await hyphaToken.connect(owner).setDistributionMultiplier(50n);
       const currentMultiplier = await hyphaToken.distributionMultiplier();
-      console.log(
-        `📊 Distribution Multiplier: ${currentMultiplier} (${currentMultiplier}x bonus + 1x base = ${
-          currentMultiplier + 1n
-        }x total)`,
-      );
 
       // Users invest different amounts
       const amounts = [
@@ -1753,12 +1395,6 @@ describe('HyphaToken Comprehensive Tests', function () {
         initialBalances[i] = await hyphaToken.balanceOf(
           await users[i].getAddress(),
         );
-        console.log(
-          `User${i + 1} initial balance: ${ethers.formatUnits(
-            initialBalances[i],
-            18,
-          )} HYPHA`,
-        );
       }
 
       // Create reward pool: 10 USDC → 40 HYPHA equivalent → 40 * (50 + 1) = 2040 HYPHA rewards
@@ -1769,19 +1405,6 @@ describe('HyphaToken Comprehensive Tests', function () {
         .approve(await hyphaToken.getAddress(), moderatePayment);
       await hyphaToken.connect(user1).payForSpaces([1], [moderatePayment]);
 
-      console.log(
-        `\nSpace payment: ${ethers.formatUnits(moderatePayment, 6)} USDC`,
-      );
-      console.log(
-        `With multiplier ${currentMultiplier}: ${
-          Number(ethers.formatUnits(moderatePayment, 6)) * 4
-        } HYPHA equivalent → ${
-          Number(ethers.formatUnits(moderatePayment, 6)) *
-          4 *
-          Number(currentMultiplier + 1n)
-        } HYPHA total rewards`,
-      );
-
       // Scenario 1: Advance time and check rewards
       await ethers.provider.send('evm_increaseTime', [86400]); // 1 day
       await ethers.provider.send('evm_mine', []);
@@ -1791,12 +1414,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       for (let i = 0; i < users.length; i++) {
         rewards1[i] = await hyphaToken.pendingRewards(
           await users[i].getAddress(),
-        );
-        console.log(
-          `User${i + 1} rewards after 1 day: ${ethers.formatUnits(
-            rewards1[i],
-            18,
-          )} HYPHA`,
         );
       }
 
@@ -1816,12 +1433,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       const user1Claimed = user1BalanceAfter - user1BalanceBefore;
 
       console.log(`✅ User1 claimed rewards`);
-      console.log(
-        `💰 User1 claimed ${ethers.formatUnits(
-          user1Claimed,
-          18,
-        )} HYPHA rewards`,
-      );
 
       expect(user1Claimed).to.equal(rewards1[0]);
 
@@ -1838,17 +1449,6 @@ describe('HyphaToken Comprehensive Tests', function () {
         .approve(await hyphaToken.getAddress(), moderatePayment);
       await hyphaToken.connect(user1).payForSpaces([2], [moderatePayment]);
 
-      console.log(
-        `\nAdditional payment: ${ethers.formatUnits(moderatePayment, 6)} USDC`,
-      );
-      console.log(
-        `With multiplier ${currentMultiplier}: another ${
-          Number(ethers.formatUnits(moderatePayment, 6)) *
-          4 *
-          Number(currentMultiplier + 1n)
-        } HYPHA rewards added`,
-      );
-
       // Scenario 2: More time passes
       await ethers.provider.send('evm_increaseTime', [86400]); // Another day
       await ethers.provider.send('evm_mine', []);
@@ -1858,12 +1458,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       for (let i = 0; i < users.length; i++) {
         rewards2[i] = await hyphaToken.pendingRewards(
           await users[i].getAddress(),
-        );
-        console.log(
-          `User${i + 1} rewards after 2 days: ${ethers.formatUnits(
-            rewards2[i],
-            18,
-          )} HYPHA`,
         );
       }
 
@@ -1895,13 +1489,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       const user2Claimed = user2BalanceAfter - user2BalanceBefore;
       const user3Claimed = user3BalanceAfter - user3BalanceBefore;
 
-      console.log(
-        `User2 claimed: ${ethers.formatUnits(user2Claimed, 18)} HYPHA`,
-      );
-      console.log(
-        `User3 claimed: ${ethers.formatUnits(user3Claimed, 18)} HYPHA`,
-      );
-
       expect(user2Claimed).to.equal(rewards2[1]);
       expect(user3Claimed).to.equal(rewards2[2]);
 
@@ -1931,11 +1518,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       // Set distribution multiplier to 100 for testing (100x = 10,000% bonus)
       await hyphaToken.connect(owner).setDistributionMultiplier(100n);
       const currentMultiplier = await hyphaToken.distributionMultiplier();
-      console.log(
-        `📊 Distribution Multiplier: ${currentMultiplier} (${currentMultiplier}x bonus + 1x base = ${
-          currentMultiplier + 1n
-        }x total)`,
-      );
 
       // Test Case 1: Very small investment
       console.log('\n--- Test Case 1: Very Small Investment ---');
@@ -1948,12 +1530,6 @@ describe('HyphaToken Comprehensive Tests', function () {
 
       const user1SmallBalance = await hyphaToken.balanceOf(
         await user1.getAddress(),
-      );
-      console.log(
-        `Small investment: ${ethers.formatUnits(
-          smallInvestment,
-          6,
-        )} USDC → ${ethers.formatUnits(user1SmallBalance, 18)} HYPHA`,
       );
       expect(user1SmallBalance).to.equal(ethers.parseUnits('1', 18));
 
@@ -1969,12 +1545,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       const user2MediumBalance = await hyphaToken.balanceOf(
         await user2.getAddress(),
       );
-      console.log(
-        `Medium investment: ${ethers.formatUnits(
-          mediumInvestment,
-          6,
-        )} USDC → ${ethers.formatUnits(user2MediumBalance, 18)} HYPHA`,
-      );
       expect(user2MediumBalance).to.equal(ethers.parseUnits('2000', 18));
 
       // Test Case 3: Large investment
@@ -1989,35 +1559,11 @@ describe('HyphaToken Comprehensive Tests', function () {
       const user3LargeBalance = await hyphaToken.balanceOf(
         await user3.getAddress(),
       );
-      console.log(
-        `Large investment: ${ethers.formatUnits(
-          largeInvestment,
-          6,
-        )} USDC → ${ethers.formatUnits(user3LargeBalance, 18)} HYPHA`,
-      );
       expect(user3LargeBalance).to.equal(ethers.parseUnits('40000', 18));
 
       // Summary of holdings
       const totalSupply = await hyphaToken.totalSupply();
       console.log(`\n--- Holdings Summary ---`);
-      console.log(
-        `User1 (small): ${ethers.formatUnits(user1SmallBalance, 18)} HYPHA (${(
-          Number((user1SmallBalance * 10000n) / totalSupply) / 100
-        ).toFixed(2)}%)`,
-      );
-      console.log(
-        `User2 (medium): ${ethers.formatUnits(
-          user2MediumBalance,
-          18,
-        )} HYPHA (${(
-          Number((user2MediumBalance * 10000n) / totalSupply) / 100
-        ).toFixed(2)}%)`,
-      );
-      console.log(
-        `User3 (large): ${ethers.formatUnits(user3LargeBalance, 18)} HYPHA (${(
-          Number((user3LargeBalance * 10000n) / totalSupply) / 100
-        ).toFixed(2)}%)`,
-      );
       console.log(`Total Supply: ${ethers.formatUnits(totalSupply, 18)} HYPHA`);
 
       // Create reward pool
@@ -2029,18 +1575,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       await hyphaToken.connect(user1).payForSpaces([1], [rewardPayment]);
 
       console.log(`\n--- Reward Creation ---`);
-      console.log(
-        `Space payment: ${ethers.formatUnits(rewardPayment, 6)} USDC`,
-      );
-      console.log(
-        `With multiplier ${currentMultiplier}: ${
-          Number(ethers.formatUnits(rewardPayment, 6)) * 4
-        } HYPHA equivalent → ${
-          Number(ethers.formatUnits(rewardPayment, 6)) *
-          4 *
-          Number(currentMultiplier + 1n)
-        } HYPHA total rewards`,
-      );
 
       // Distribute rewards over time
       await ethers.provider.send('evm_increaseTime', [86400]); // 1 day
@@ -2058,15 +1592,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       );
 
       console.log(`\n--- Reward Distribution ---`);
-      console.log(
-        `User1 rewards: ${ethers.formatUnits(user1Rewards, 18)} HYPHA`,
-      );
-      console.log(
-        `User2 rewards: ${ethers.formatUnits(user2Rewards, 18)} HYPHA`,
-      );
-      console.log(
-        `User3 rewards: ${ethers.formatUnits(user3Rewards, 18)} HYPHA`,
-      );
 
       // Check proportional distribution
       const totalRewards = user1Rewards + user2Rewards + user3Rewards;
@@ -2107,11 +1632,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       // Set distribution multiplier to 500 for extreme testing (500x = 50,000% bonus)
       await hyphaToken.connect(owner).setDistributionMultiplier(500n);
       const currentMultiplier = await hyphaToken.distributionMultiplier();
-      console.log(
-        `📊 Distribution Multiplier: ${currentMultiplier} (${currentMultiplier}x bonus + 1x base = ${
-          currentMultiplier + 1n
-        }x total)`,
-      );
 
       // Test Case 1: Micro investment (1 cent)
       console.log('\n--- Test Case 1: Micro Investment (1 cent) ---');
@@ -2124,12 +1644,6 @@ describe('HyphaToken Comprehensive Tests', function () {
 
       const user1MicroBalance = await hyphaToken.balanceOf(
         await user1.getAddress(),
-      );
-      console.log(
-        `Micro investment: ${ethers.formatUnits(
-          microInvestment,
-          6,
-        )} USDC → ${ethers.formatUnits(user1MicroBalance, 18)} HYPHA`,
       );
 
       // Test Case 2: Whale investment (1 million USD)
@@ -2144,12 +1658,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       const user2WhaleBalance = await hyphaToken.balanceOf(
         await user2.getAddress(),
       );
-      console.log(
-        `Whale investment: ${ethers.formatUnits(
-          whaleInvestment,
-          6,
-        )} USDC → ${ethers.formatUnits(user2WhaleBalance, 18)} HYPHA`,
-      );
 
       // Test Case 3: Regular investment for comparison
       console.log('\n--- Test Case 3: Regular Investment (100 USD) ---');
@@ -2163,12 +1671,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       const user3RegularBalance = await hyphaToken.balanceOf(
         await user3.getAddress(),
       );
-      console.log(
-        `Regular investment: ${ethers.formatUnits(
-          regularInvestment,
-          6,
-        )} USDC → ${ethers.formatUnits(user3RegularBalance, 18)} HYPHA`,
-      );
 
       // Create massive reward pool
       const massiveRewardPayment = ethers.parseUnits('1000', 6); // $1000 USD
@@ -2179,18 +1681,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       await hyphaToken.connect(user1).payForSpaces([1], [massiveRewardPayment]);
 
       console.log(`\n--- Massive Reward Creation ---`);
-      console.log(
-        `Space payment: ${ethers.formatUnits(massiveRewardPayment, 6)} USDC`,
-      );
-      console.log(
-        `With multiplier ${currentMultiplier}: ${
-          Number(ethers.formatUnits(massiveRewardPayment, 6)) * 4
-        } HYPHA equivalent → ${
-          Number(ethers.formatUnits(massiveRewardPayment, 6)) *
-          4 *
-          Number(currentMultiplier + 1n)
-        } HYPHA total rewards`,
-      );
 
       // Distribute rewards
       await ethers.provider.send('evm_increaseTime', [86400]); // 1 day
@@ -2210,43 +1700,11 @@ describe('HyphaToken Comprehensive Tests', function () {
 
       console.log(`\n--- Extreme Scenario Results ---`);
       console.log(`Total Supply: ${ethers.formatUnits(totalSupply, 18)} HYPHA`);
-      console.log(
-        `User1 (micro): ${ethers.formatUnits(user1MicroBalance, 18)} HYPHA (${(
-          Number((user1MicroBalance * 10000n) / totalSupply) / 100
-        ).toFixed(6)}%) → ${ethers.formatUnits(
-          user1Rewards,
-          18,
-        )} HYPHA rewards`,
-      );
-      console.log(
-        `User2 (whale): ${ethers.formatUnits(user2WhaleBalance, 18)} HYPHA (${(
-          Number((user2WhaleBalance * 10000n) / totalSupply) / 100
-        ).toFixed(2)}%) → ${ethers.formatUnits(
-          user2Rewards,
-          18,
-        )} HYPHA rewards`,
-      );
-      console.log(
-        `User3 (regular): ${ethers.formatUnits(
-          user3RegularBalance,
-          18,
-        )} HYPHA (${(
-          Number((user3RegularBalance * 10000n) / totalSupply) / 100
-        ).toFixed(4)}%) → ${ethers.formatUnits(
-          user3Rewards,
-          18,
-        )} HYPHA rewards`,
-      );
 
       // Test that whale dominates rewards as expected
       const totalRewards = user1Rewards + user2Rewards + user3Rewards;
       const whaleRewardPercentage =
         Number((user2Rewards * 10000n) / totalRewards) / 100;
-      console.log(
-        `Whale reward dominance: ${whaleRewardPercentage.toFixed(
-          2,
-        )}% of total rewards`,
-      );
 
       // Whale should get vast majority of rewards due to massive holdings
       expect(whaleRewardPercentage).to.be.gt(99); // Should get >99% of rewards
@@ -2269,11 +1727,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       // Make space payment when no one has tokens (use multiplier 100 for this test)
       await hyphaToken.connect(owner).setDistributionMultiplier(100n);
       const multiplierTest1 = await hyphaToken.distributionMultiplier();
-      console.log(
-        `📊 Test 1 Distribution Multiplier: ${multiplierTest1} (${multiplierTest1}x bonus + 1x base = ${
-          multiplierTest1 + 1n
-        }x total)`,
-      );
 
       const paymentWithoutHolders = usdcPerDay * 10n;
       await usdc.mint(await user1.getAddress(), paymentWithoutHolders);
@@ -2283,20 +1736,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       await hyphaToken
         .connect(user1)
         .payForSpaces([1], [paymentWithoutHolders]);
-
-      console.log(
-        `Payment with zero holders: ${ethers.formatUnits(
-          paymentWithoutHolders,
-          6,
-        )} USDC`,
-      );
-      console.log(
-        `Expected rewards: ${
-          Number(ethers.formatUnits(paymentWithoutHolders, 6)) *
-          4 *
-          Number(multiplierTest1 + 1n)
-        } HYPHA (but no holders to receive them)`,
-      );
 
       // Advance time and update - should not revert
       await ethers.provider.send('evm_increaseTime', [86400]);
@@ -2321,15 +1760,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       await hyphaToken.connect(user1).investInHypha(soloInvestment);
 
       const soloBalance = await hyphaToken.balanceOf(await user1.getAddress());
-      console.log(
-        `Solo investment: ${ethers.formatUnits(
-          soloInvestment,
-          6,
-        )} USDC → ${ethers.formatUnits(
-          soloBalance,
-          18,
-        )} HYPHA (100% of supply)`,
-      );
 
       // Advance time and check - user should get 100% of rewards
       await ethers.provider.send('evm_increaseTime', [86400]);
@@ -2340,12 +1770,6 @@ describe('HyphaToken Comprehensive Tests', function () {
         await user1.getAddress(),
       );
       expect(soloRewards).to.be.gt(0);
-      console.log(
-        `Solo user rewards: ${ethers.formatUnits(
-          soloRewards,
-          18,
-        )} HYPHA (should get 100% of all rewards)`,
-      );
       console.log('✅ Single user scenario works correctly');
 
       // Test 3: Very small reward amounts (dust)
@@ -2369,11 +1793,6 @@ describe('HyphaToken Comprehensive Tests', function () {
 
       await hyphaToken.connect(owner).setDistributionMultiplier(10000n); // 10000x = 1,000,000% bonus
       const maxMultiplier = await hyphaToken.distributionMultiplier();
-      console.log(
-        `📊 Max Distribution Multiplier: ${maxMultiplier} (${maxMultiplier}x bonus + 1x base = ${
-          maxMultiplier + 1n
-        }x total)`,
-      );
 
       const normalPayment = usdcPerDay;
       await usdc.mint(await user1.getAddress(), normalPayment);
@@ -2381,20 +1800,6 @@ describe('HyphaToken Comprehensive Tests', function () {
         .connect(user1)
         .approve(await hyphaToken.getAddress(), normalPayment);
       await hyphaToken.connect(user1).payForSpaces([3], [normalPayment]);
-
-      console.log(
-        `Payment with max multiplier: ${ethers.formatUnits(
-          normalPayment,
-          6,
-        )} USDC`,
-      );
-      console.log(
-        `Expected massive rewards: ${
-          Number(ethers.formatUnits(normalPayment, 6)) *
-          4 *
-          Number(maxMultiplier + 1n)
-        } HYPHA`,
-      );
 
       // Should create significant rewards without reverting
       await ethers.provider.send('evm_increaseTime', [86400]);
@@ -2405,12 +1810,6 @@ describe('HyphaToken Comprehensive Tests', function () {
         await user1.getAddress(),
       );
       expect(maxMultiplierRewards).to.be.gt(soloRewards); // Should be much higher
-      console.log(
-        `Max multiplier rewards: ${ethers.formatUnits(
-          maxMultiplierRewards,
-          18,
-        )} HYPHA`,
-      );
       console.log('✅ Maximum distribution multiplier works');
 
       // Test 5: Multiple rapid updates
@@ -2440,12 +1839,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       const user2RewardsBefore = await hyphaToken.pendingRewards(
         await user2.getAddress(),
       );
-      console.log(
-        `User2 rewards before investment: ${ethers.formatUnits(
-          user2RewardsBefore,
-          18,
-        )} HYPHA`,
-      );
 
       await hyphaToken.connect(user2).investInHypha(user2Investment);
 
@@ -2454,19 +1847,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       );
       const user2NewBalance = await hyphaToken.balanceOf(
         await user2.getAddress(),
-      );
-
-      console.log(
-        `User2 investment: ${ethers.formatUnits(
-          user2Investment,
-          6,
-        )} USDC → ${ethers.formatUnits(user2NewBalance, 18)} HYPHA`,
-      );
-      console.log(
-        `User2 rewards after investment: ${ethers.formatUnits(
-          user2RewardsAfter,
-          18,
-        )} HYPHA (should be 0 due to debt reset)`,
       );
 
       // User2 should have 0 rewards before investment (no tokens), and 0 after (reward debt reset)
@@ -2516,24 +1896,12 @@ describe('HyphaToken Comprehensive Tests', function () {
 
       const user1Balance = await hyphaToken.balanceOf(await user1.getAddress());
       const user2Balance = await hyphaToken.balanceOf(await user2.getAddress());
-      console.log(
-        `User1 balance: ${ethers.formatUnits(user1Balance, 18)} HYPHA`,
-      );
-      console.log(
-        `User2 balance: ${ethers.formatUnits(user2Balance, 18)} HYPHA`,
-      );
 
       // User1 pays for space with HYPHA, sending tokens to IEX
       const hyphaPayment = hyphaPerDay * 5n; // 5 days
       await hyphaToken.connect(user1).payInHypha([1], [hyphaPayment]);
 
       const iexBalance = await hyphaToken.balanceOf(iexAddress);
-      console.log(
-        `IEX balance after payment: ${ethers.formatUnits(
-          iexBalance,
-          18,
-        )} HYPHA`,
-      );
       expect(iexBalance).to.equal(hyphaPayment);
 
       // Create reward pool by making space payment with USDC
@@ -2543,13 +1911,6 @@ describe('HyphaToken Comprehensive Tests', function () {
         .connect(user1)
         .approve(await hyphaToken.getAddress(), spacePayment);
       await hyphaToken.connect(user1).payForSpaces([2], [spacePayment]);
-
-      console.log(
-        `Space payment created reward pool: ${ethers.formatUnits(
-          spacePayment,
-          6,
-        )} USDC`,
-      );
 
       // Advance time to distribute rewards
       await ethers.provider.send('evm_increaseTime', [86400 * 2]); // 2 days
@@ -2565,12 +1926,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       );
       const iexRewards = await hyphaToken.pendingRewards(iexAddress);
 
-      console.log(
-        `User1 rewards: ${ethers.formatUnits(user1Rewards, 18)} HYPHA`,
-      );
-      console.log(
-        `User2 rewards: ${ethers.formatUnits(user2Rewards, 18)} HYPHA`,
-      );
       console.log(`IEX rewards: ${ethers.formatUnits(iexRewards, 18)} HYPHA`);
 
       // IEX should have 0 rewards despite holding tokens
@@ -2584,12 +1939,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       const totalSupply = await hyphaToken.totalSupply();
 
       console.log(`Total supply: ${ethers.formatUnits(totalSupply, 18)} HYPHA`);
-      console.log(
-        `IEX balance excluded from rewards: ${ethers.formatUnits(
-          iexBalance,
-          18,
-        )} HYPHA`,
-      );
 
       // Since IEX tokens are excluded, the remaining users get higher rewards
       const eligibleSupply = totalSupply - iexBalance;
@@ -2646,12 +1995,6 @@ describe('HyphaToken Comprehensive Tests', function () {
 
       console.log(`Total supply: ${ethers.formatUnits(totalSupply, 18)} HYPHA`);
       console.log(`IEX balance: ${ethers.formatUnits(iexBalance, 18)} HYPHA`);
-      console.log(
-        `Remaining eligible supply: ${ethers.formatUnits(
-          remainingSupply,
-          18,
-        )} HYPHA`,
-      );
 
       // IEX should hold majority of tokens
       expect(iexBalance).to.be.gt(remainingSupply);
@@ -2678,12 +2021,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       );
       const iexRewards = await hyphaToken.pendingRewards(iexAddress);
 
-      console.log(
-        `User1 rewards: ${ethers.formatUnits(user1Rewards, 18)} HYPHA`,
-      );
-      console.log(
-        `User2 rewards: ${ethers.formatUnits(user2Rewards, 18)} HYPHA`,
-      );
       console.log(`IEX rewards: ${ethers.formatUnits(iexRewards, 18)} HYPHA`);
 
       // IEX should still have 0 rewards despite holding majority
@@ -2722,12 +2059,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       const userInitialBalance = await hyphaToken.balanceOf(
         await user1.getAddress(),
       );
-      console.log(
-        `User initial balance: ${ethers.formatUnits(
-          userInitialBalance,
-          18,
-        )} HYPHA`,
-      );
 
       // User sends ALL tokens to IEX via space payment
       await hyphaToken.connect(user1).payInHypha([1], [userInitialBalance]);
@@ -2739,13 +2070,7 @@ describe('HyphaToken Comprehensive Tests', function () {
       const totalSupply = await hyphaToken.totalSupply();
       const eligibleSupply = totalSupply - iexBalance;
 
-      console.log(
-        `User final balance: ${ethers.formatUnits(userFinalBalance, 18)} HYPHA`,
-      );
       console.log(`IEX balance: ${ethers.formatUnits(iexBalance, 18)} HYPHA`);
-      console.log(
-        `Eligible supply: ${ethers.formatUnits(eligibleSupply, 18)} HYPHA`,
-      );
 
       expect(userFinalBalance).to.equal(0);
       expect(iexBalance).to.equal(userInitialBalance);
@@ -2809,16 +2134,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       const eligibleAfterInvestments =
         totalAfterInvestments - iexBalanceAfterInvestments;
 
-      console.log(
-        `After investments - Total: ${ethers.formatUnits(
-          totalAfterInvestments,
-          18,
-        )}, IEX: ${ethers.formatUnits(
-          iexBalanceAfterInvestments,
-          18,
-        )}, Eligible: ${ethers.formatUnits(eligibleAfterInvestments, 18)}`,
-      );
-
       // Should be equal to total since IEX has no tokens
       expect(iexBalanceAfterInvestments).to.equal(0);
       expect(eligibleAfterInvestments).to.equal(totalAfterInvestments);
@@ -2831,16 +2146,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       const iexBalance1 = await hyphaToken.balanceOf(iexAddress);
       const eligibleAfterPayment1 = totalAfterPayment1 - iexBalance1;
 
-      console.log(
-        `After payment 1 - Total: ${ethers.formatUnits(
-          totalAfterPayment1,
-          18,
-        )}, IEX: ${ethers.formatUnits(
-          iexBalance1,
-          18,
-        )}, Eligible: ${ethers.formatUnits(eligibleAfterPayment1, 18)}`,
-      );
-
       expect(iexBalance1).to.equal(payment1);
       expect(eligibleAfterPayment1).to.equal(totalAfterPayment1 - payment1);
 
@@ -2851,16 +2156,6 @@ describe('HyphaToken Comprehensive Tests', function () {
       const totalAfterPayment2 = await hyphaToken.totalSupply();
       const iexBalance2 = await hyphaToken.balanceOf(iexAddress);
       const eligibleAfterPayment2 = totalAfterPayment2 - iexBalance2;
-
-      console.log(
-        `After payment 2 - Total: ${ethers.formatUnits(
-          totalAfterPayment2,
-          18,
-        )}, IEX: ${ethers.formatUnits(
-          iexBalance2,
-          18,
-        )}, Eligible: ${ethers.formatUnits(eligibleAfterPayment2, 18)}`,
-      );
 
       expect(iexBalance2).to.equal(payment1 + payment2);
       expect(eligibleAfterPayment2).to.equal(
