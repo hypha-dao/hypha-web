@@ -9,7 +9,7 @@ export type FilterOption = {
 };
 
 type SectionFilterProps = {
-  count: number | string;
+  count?: number | string;
   label: string;
   children?: React.ReactNode;
   hasSearch?: boolean;
@@ -28,7 +28,7 @@ export const SectionFilter: FC<SectionFilterProps> = ({
   return (
     <div className="flex justify-between items-center w-full gap-4">
       <Text className="text-4 capitalize text-nowrap">
-        {label} | {count}
+        {label} {count ? <>| {count}</> : null}
       </Text>
       {hasSearch ? (
         <Input
