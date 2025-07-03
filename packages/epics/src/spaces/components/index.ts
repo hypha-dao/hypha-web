@@ -5,6 +5,7 @@ export * from './join-space';
 export * from './outer-space-card';
 export * from './space-card';
 export * from './space-card.wrapper';
+export * from './space-card.container';
 export * from './space-group-slider';
 export * from './space-search';
 export * from './subspace-detail';
