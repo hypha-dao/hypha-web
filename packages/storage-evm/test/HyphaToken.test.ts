@@ -1,7 +1,9 @@
 import { ethers, upgrades } from 'hardhat';
 import { expect } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { HyphaToken, MockERC20, SpacePaymentTracker } from '../typechain-types';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 
 describe('HyphaToken Comprehensive Tests', function () {
@@ -137,6 +139,7 @@ describe('HyphaToken Comprehensive Tests', function () {
           spaceIds[i],
         );
         const expectedExpiry =
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           (await ethers.provider.getBlock('latest'))!.timestamp +
           durations[i] * 86400;
         expect(Number(expiryTime)).to.be.closeTo(expectedExpiry, 10); // Allow 10 seconds tolerance
@@ -204,12 +207,15 @@ describe('HyphaToken Comprehensive Tests', function () {
       );
 
       // Verify space is active for exactly 1 day, not 1.5 days
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       expect(await spacePaymentTracker.isSpaceActive(2)).to.be.true;
       const expiryTime = await spacePaymentTracker.getSpaceExpiryTime(2);
       const expectedExpiry =
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         (await ethers.provider.getBlock('latest'))!.timestamp + 86400; // 1 day
       expect(Number(expiryTime)).to.be.closeTo(expectedExpiry, 10);
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       console.log('❌ USER PAID FOR 1.5 DAYS BUT ONLY GOT 1 DAY - MONEY LOST!');
 
       // Test Case 3: 2.9 days payment should give exactly 2 days
