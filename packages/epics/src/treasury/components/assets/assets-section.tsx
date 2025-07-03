@@ -7,6 +7,7 @@ import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 import { Button } from '@hypha-platform/ui';
 import { CopyIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
+import { Empty } from '../../../common';
 
 type AssetSectionProps = {
   basePath: string;
@@ -33,7 +34,9 @@ export const AssetsSection: FC<AssetSectionProps> = ({ basePath }) => {
         </Button>
       </SectionFilter>
       {visibleAssets.length === 0 && !isLoading ? (
-        <Text className="text-neutra-11 mt-2 mb-6">List is empty</Text>
+        <Empty>
+          <p>List is empty</p>
+        </Empty>
       ) : (
         <AssetsList
           basePath={`${basePath}/token`}

@@ -6,6 +6,7 @@ import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 import { Document } from '@core/governance';
 import { DocumentGridContainer } from './document-grid.container';
 import { DirectionType } from '@core/common';
+import { Empty } from '../../common';
 
 type DocumentSectionProps = {
   basePath: string;
@@ -49,7 +50,9 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
       </SectionFilter>
 
       {pagination?.totalPages === 0 ? (
-        <Text className="text-neutral-11 mt-2 mb-6">List is empty</Text>
+        <Empty>
+          <p>List is empty</p>
+        </Empty>
       ) : (
         <div className="space-y-2">
           {Array.from({ length: pages }).map((_, index) => (

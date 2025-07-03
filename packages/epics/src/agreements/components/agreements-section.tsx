@@ -5,6 +5,7 @@ import { Text } from '@radix-ui/themes';
 import { useAgreementsSection } from '../hooks/use-agreements-section';
 import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 import { UseDocuments } from '../../governance';
+import { Empty } from '../../common';
 
 type AgreementsSectionProps = {
   basePath: string;
@@ -25,7 +26,9 @@ export const AgreementsSection: FC<AgreementsSectionProps> = ({
       <SectionFilter count={pagination?.total || 0} label="Agreements" />
 
       {pagination?.totalPages === 0 ? (
-        <Text className="text-neutral-11 mt-2 mb-6">List is empty</Text>
+        <Empty>
+          <p>List is empty</p>
+        </Empty>
       ) : (
         Array.from({ length: pages }).map((_, index) => (
           <AgreementsList

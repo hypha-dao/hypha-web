@@ -7,6 +7,7 @@ import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 import { Button } from '@hypha-platform/ui';
 import { PlusIcon } from '@radix-ui/react-icons';
 import { UseDocuments } from '../../governance';
+import { Empty } from '../../common';
 
 type ProposalSectionProps = {
   basePath: string;
@@ -37,7 +38,9 @@ export const ProposalsSection: FC<ProposalSectionProps> = ({
       </SectionFilter>
 
       {pagination?.totalPages === 0 ? (
-        <Text className="text-neutral-11 mt-2 mb-6">List is empty</Text>
+        <Empty>
+          <p>List is empty</p>
+        </Empty>
       ) : (
         Array.from({ length: pages }).map((_, index) => (
           <ProposalList
