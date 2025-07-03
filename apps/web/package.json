@@ -22,7 +22,8 @@
     "@hypha-platform/feature-flags": "workspace:*",
     "@hypha-platform/i18n": "workspace:*",
     "@hypha-platform/ui": "workspace:*",
-    "@hypha-platform/ui-utils": "workspace:*"
+    "@hypha-platform/ui-utils": "workspace:*",
+    "@hypha-platform/storage-postgres": "workspace:*"
   },
   "devDependencies": {
     "@hypha-platform/config-eslint": "workspace:*",

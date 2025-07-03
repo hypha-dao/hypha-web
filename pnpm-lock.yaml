@@ -693,6 +693,9 @@ importers:
       '@hypha-platform/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      '@hypha-platform/storage-postgres':
+        specifier: workspace:*
+        version: link:../../packages/storage-postgres
       '@hypha-platform/ui':
         specifier: workspace:*
         version: link:../../packages/ui

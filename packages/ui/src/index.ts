@@ -16,6 +16,7 @@ export * from './popover';
 export * from './progress';
 export * from './separator';
 export * from './skeleton';
+export * from './status-badge';
 export * from './textarea';
 export * from './upload/avatar';
 export * from './upload/lead-image';
