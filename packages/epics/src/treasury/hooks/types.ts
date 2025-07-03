@@ -10,4 +10,6 @@ export interface TransferWithPerson {
     surname?: string;
     avatarUrl?: string;
   };
+  direction: 'incoming' | 'outgoing';
+  counterparty: 'from' | 'to';
 }

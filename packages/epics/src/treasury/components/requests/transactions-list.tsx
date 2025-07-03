@@ -25,6 +25,8 @@ export const TransactionsList: FC<TransactionsListProps> = ({
           symbol={transfer.symbol}
           date={transfer.timestamp}
           isLoading={isLoading}
+          direction={transfer.direction}
+          counterparty={transfer.counterparty}
         />
       ))}
       {isLoading && (
