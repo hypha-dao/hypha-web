@@ -24,8 +24,8 @@ export function SpaceCardList({
           className="grid grid-cols-1 sm:grid-cols-2 gap-2"
         >
           {spaces.map((space) => (
-            <div key={space.id}>
-              <Link href={`/${lang}/dho/${space.id}/governance`}>
+            <div key={space.slug}>
+              <Link href={`/${lang}/dho/${space.slug}/governance`}>
                 <SpaceCardWrapper
                   description={space.description as string}
                   icon={space.logoUrl || ''}
