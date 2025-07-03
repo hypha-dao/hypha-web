@@ -45,13 +45,6 @@ export const MemberHead = ({
               colorVariant="accent"
               isLoading={isLoading}
             >
-              Recurring
-            </Badge>
-            <Badge
-              variant="surface"
-              colorVariant="accent"
-              isLoading={isLoading}
-            >
               {commitment}%
             </Badge>
             <StatusBadge isLoading={isLoading} status={status} />

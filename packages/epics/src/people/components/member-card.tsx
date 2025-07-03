@@ -51,13 +51,6 @@ export const MemberCard: React.FC<MemberCardProps> = ({
                 colorVariant="accent"
                 isLoading={isLoading}
               >
-                Recurring
-              </Badge>
-              <Badge
-                variant="surface"
-                colorVariant="accent"
-                isLoading={isLoading}
-              >
                 {commitment}%
               </Badge>
               <StatusBadge isLoading={isLoading} status={status} />
