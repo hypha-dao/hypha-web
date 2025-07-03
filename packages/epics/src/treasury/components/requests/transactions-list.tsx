@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { RequestCard } from './request-card';
+import { TransferCard } from './transfer-card';
 import { TransferWithPerson } from '../../hooks';
 
 type TransactionsListProps = {
@@ -16,7 +16,7 @@ export const TransactionsList: FC<TransactionsListProps> = ({
   return (
     <div className="w-full mt-2">
       {transfers.map((transfer, index) => (
-        <RequestCard
+        <TransferCard
           key={`${transfer.transactionHash}-${index}`}
           name={transfer.person?.name}
           surname={transfer.person?.surname}
@@ -29,10 +29,10 @@ export const TransactionsList: FC<TransactionsListProps> = ({
       ))}
       {isLoading && (
         <div className="w-full grid grid-cols-1 gap-2 mt-2">
-          <RequestCard isLoading={isLoading} />
-          <RequestCard isLoading={isLoading} />
-          <RequestCard isLoading={isLoading} />
-          <RequestCard isLoading={isLoading} />
+          <TransferCard isLoading={isLoading} />
+          <TransferCard isLoading={isLoading} />
+          <TransferCard isLoading={isLoading} />
+          <TransferCard isLoading={isLoading} />
         </div>
       )}
     </div>

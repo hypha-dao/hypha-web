@@ -5,7 +5,7 @@ import { formatDate } from '@hypha-platform/ui-utils';
 import { Amount } from '@hypha-platform/ui/server';
 import { PersonAvatar } from '../../../people/components/person-avatar';
 
-type RequestCardProps = {
+type TransferCardProps = {
   name?: string;
   surname?: string;
   avatar?: string;
@@ -17,7 +17,7 @@ type RequestCardProps = {
   counterparty?: 'from' | 'to';
 };
 
-export const RequestCard: React.FC<RequestCardProps> = ({
+export const TransferCard: React.FC<TransferCardProps> = ({
   name,
   surname,
   avatar,
