@@ -36,15 +36,15 @@ export default async function Index(props: PageProps) {
           className="w-full space-y-6"
         >
           <Text className="text-4 font-medium">Spaces you might like</Text>
-          <Carousel className="">
+          <Carousel>
             <CarouselContent>
               {spaces.map((space) => (
                 <CarouselItem
                   key={space.id}
-                  className="mb-5 w-full sm:w-[454px] max-w-[454px] flex-shrink-0"
+                  className="w-full sm:w-[454px] max-w-[454px] flex-shrink-0"
                 >
                   <Link
-                    className="w-96"
+                    className="flex flex-col flex-1"
                     href={getDhoPathGovernance(lang, space.slug as string)}
                   >
                     <SpaceCardWrapper
