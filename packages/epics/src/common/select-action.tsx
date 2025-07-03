@@ -1,4 +1,6 @@
-import { Card, Separator, Button, Skeleton } from '@hypha-platform/ui';
+'use client';
+
+import { Card, Separator, Skeleton } from '@hypha-platform/ui';
 import clsx from 'clsx';
 import Link from 'next/link';
 import React from 'react';

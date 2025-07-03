@@ -75,7 +75,8 @@ export default async function RootLayout({
                   useAuthentication={useAuthentication}
                   useMe={useMe}
                   newUserRedirectPath="/profile/signup"
-                  baseRedirectPath="/network"
+                  baseRedirectPath="/my-spaces"
+                  notAuthenticatedRedirectPath="/network"
                 />
               </MenuTop.RightSlot>
             </MenuTop>
