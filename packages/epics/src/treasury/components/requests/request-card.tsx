@@ -13,6 +13,8 @@ type RequestCardProps = {
   symbol?: string;
   date?: string;
   isLoading?: boolean;
+  direction?: 'incoming' | 'outgoing';
+  counterparty?: 'from' | 'to';
 };
 
 export const RequestCard: React.FC<RequestCardProps> = ({
@@ -23,6 +25,8 @@ export const RequestCard: React.FC<RequestCardProps> = ({
   symbol,
   date,
   isLoading,
+  direction,
+  counterparty,
 }) => {
   return (
     <Card className="w-full h-full p-5 mb-2 flex space-x-3">
@@ -42,11 +46,15 @@ export const RequestCard: React.FC<RequestCardProps> = ({
             >
               {symbol}
             </Badge>
-            <Badge isLoading={isLoading} variant="surface" colorVariant="warn">
-              Pending
+            <Badge
+              isLoading={isLoading}
+              variant="surface"
+              colorVariant={direction === 'incoming' ? 'success' : 'error'}
+            >
+              {counterparty === 'from' ? 'From' : 'To'}
             </Badge>
           </div>
-          <Amount isLoading={isLoading} value={value} withUsdSymbol />
+          <Amount isLoading={isLoading} value={value} />
           <Skeleton loading={isLoading} width="80px" height="16px">
             <Text className="text-1 text-gray-500">
               {name} {surname}
