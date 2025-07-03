@@ -14,11 +14,12 @@ export const useTransfers = ({
   spaceSlug?: string;
 }) => {
   const endpoint = React.useMemo(() => {
+    if (!spaceSlug) return '';
     return `/api/v1/spaces/${spaceSlug}/transfers`;
   }, [spaceSlug]);
 
   const { data, isLoading, error } = useSWR(
-    [endpoint, sort],
+    spaceSlug ? [endpoint, sort] : null,
     async ([endpoint, sort]) => {
       const url = new URL(endpoint, window.location.origin);
       if (sort?.sort) {
