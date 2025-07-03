@@ -16,6 +16,10 @@ export const formatDate = (dateInput: string | number | Date): string => {
 
   const date = new Date(dateInput);
 
+  if (isNaN(date.getTime())) {
+    throw new Error('Invalid date input');
+  }
+
   const year = date.getFullYear();
   const monthIndex = date.getMonth();
   const day = date.getDate();
