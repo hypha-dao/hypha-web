@@ -1,9 +1,12 @@
 import { SelectAction } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import {
-  CheckCircledIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  FileIcon,
   PlusCircledIcon,
   RocketIcon,
+  Share1Icon,
 } from '@radix-ui/react-icons';
 
 export const CREATE_ACTIONS = [
@@ -19,42 +22,44 @@ export const CREATE_ACTIONS = [
     description:
       'Define and formalize a mutual understanding, policy, or decision among members of the space.',
     href: 'governance/create',
-    icon: <CheckCircledIcon />,
+    icon: <FileIcon />,
   },
   {
     title: 'Pay for Expenses',
     description:
       'Cover expenses by sending funds from the treasury to another space, entity, or wallet.',
     href: 'governance/create/pay-for-expenses',
-    icon: <PlusCircledIcon />,
+    icon: <ArrowUpIcon />,
   },
   {
-    title: 'Accept Investment',
+    title: 'Accept Investment (Coming Soon)',
     description:
       'Receive capital from investors, members, or aligned spaces in exchange for native space tokens.',
     href: '#',
     icon: <PlusCircledIcon />,
+    disabled: true,
   },
   {
-    title: 'Exchange Ownership',
+    title: 'Exchange Ownership (Coming Soon)',
     description:
       'Swap ownership between members or spaces, whether selling a stake or exchanging assets.',
     href: '#',
     icon: <PlusCircledIcon />,
+    disabled: true,
   },
   {
     title: 'Deploy Funds',
     description:
       'Allocate treasury funds for investments or distributing resources among sub-spaces.',
     href: 'governance/create/deploy-funds',
-    icon: <PlusCircledIcon />,
+    icon: <Share1Icon />,
   },
   {
     title: 'Deposit Funds',
     description:
       'Deposit funds into your treasury by copying the treasury address or scanning the QR code.',
     href: 'treasury/deposit',
-    icon: <PlusCircledIcon />,
+    icon: <ArrowDownIcon />,
   },
 ];
 

@@ -14,10 +14,10 @@ interface DepositFundsProps {
   isLoading?: boolean;
 }
 
-const description = `
-Only Base mainnet tokens can be deposited to this address. If you send funds from another network, your tokens may be permanently lost and cannot be recovered.
-
-All deposited tokens are held in the Space's treasury. Any future withdrawals must be approved by passing a proposal in your Space. This ensures transparency and collective decision-making over treasury funds.`;
+const important =
+  'Only Base mainnet tokens can be deposited to this address. If you send funds from another network, your tokens may be permanently lost and cannot be recovered.';
+const description =
+  "All deposited tokens are held in the Space's treasury. Any future withdrawals must be approved by passing a proposal in your Space. This ensures transparency and collective decision-making over treasury funds.";
 
 export const DepositFunds = ({
   closeUrl,
@@ -47,6 +47,7 @@ export const DepositFunds = ({
 
       <Skeleton loading={isLoading} width="100%" height={80}>
         <span className="text-2 text-neutral-11">{description}</span>
+        <span className="text-2 font-bold uppercase">{important}</span>
       </Skeleton>
 
       <Separator />

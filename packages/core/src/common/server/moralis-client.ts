@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { base } from 'viem/chains';
 import Moralis from 'moralis';
 

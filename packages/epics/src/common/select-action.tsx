@@ -1,4 +1,7 @@
-import { Card, Separator, Button, Skeleton } from '@hypha-platform/ui';
+'use client';
+
+import { Card, Separator, Skeleton } from '@hypha-platform/ui';
+import clsx from 'clsx';
 import Link from 'next/link';
 import React from 'react';
 
@@ -8,6 +11,7 @@ type ActionProps = {
   group?: string;
   href: string;
   icon: React.ReactNode;
+  disabled?: boolean;
 };
 
 type SelectActionProps = {
@@ -63,8 +67,24 @@ export const SelectAction = ({
               <h3 className="text-3 font-medium text-neutral-11">{group}</h3>
             )}
             {groupActions.map((action) => (
-              <Link href={action.href} key={action.title}>
-                <Card className="flex p-6 cursor-pointer space-x-4 items-center">
+              <Link
+                href={action.href}
+                key={action.title}
+                {...(action.disabled && {
+                  onClick: (e) => e.preventDefault(),
+                  'aria-disabled': 'true',
+                })}
+              >
+                <Card
+                  className={clsx(
+                    'flex p-6 cursor-pointer space-x-4 items-center',
+                    {
+                      'opacity-50 cursor-not-allowed': action.disabled,
+                      'hover:border-accent-5': !action.disabled,
+                    },
+                  )}
+                  aria-disabled={action.disabled}
+                >
                   <div>{action.icon}</div>
                   <div className="flex flex-col">
                     <span className="text-2 font-medium">{action.title}</span>

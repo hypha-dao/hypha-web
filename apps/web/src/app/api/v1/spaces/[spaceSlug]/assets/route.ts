@@ -6,13 +6,8 @@ import {
   getSpaceDecayingTokens,
   getSpaceOwnershipTokens,
 } from '@core/space';
-import {
-  TOKENS,
-  publicClient,
-  getBalance,
-  getTokenMeta,
-  getTokenPrice,
-} from '@core/common';
+import { TOKENS, publicClient, getBalance, getTokenMeta } from '@core/common';
+import { getTokenPrice } from '@core/server';
 
 export async function GET(
   _: NextRequest,

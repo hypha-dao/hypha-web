@@ -7,7 +7,7 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import { useParams } from 'next/navigation';
 
 export default function SignupPage() {
-  const { createProfile, isCreating } = useCreateProfile();
+  const { createProfile, isCreating, error } = useCreateProfile();
   const { user } = useAuthentication();
   const { lang } = useParams();
   const [walletAddress, setWalletAddress] = useState<string | undefined>(
@@ -45,6 +45,7 @@ export default function SignupPage() {
         onSave={handleSave}
         walletAddress={walletAddress}
         isCreating={isCreating}
+        error={error}
       />
     </SidePanel>
   );

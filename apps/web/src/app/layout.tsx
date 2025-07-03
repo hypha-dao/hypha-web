@@ -58,7 +58,7 @@ export default async function RootLayout({
         >
           <EvmProvider>
             <MenuTop
-              withLogo={true}
+              logoHref={`/${lang}/network`}
               navItems={[
                 {
                   label: 'Network',
@@ -76,6 +76,7 @@ export default async function RootLayout({
                   useMe={useMe}
                   newUserRedirectPath="/profile/signup"
                   baseRedirectPath="/my-spaces"
+                  notAuthenticatedRedirectPath="/network"
                 />
               </MenuTop.RightSlot>
             </MenuTop>
