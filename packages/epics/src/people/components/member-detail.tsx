@@ -12,7 +12,6 @@ type MemberType = {
   name?: string;
   surname?: string;
   nickname?: string;
-  commitment?: number;
   status?: string;
   about?: string;
 };

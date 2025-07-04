@@ -1,4 +1,4 @@
-import { Skeleton, Image, Badge, StatusBadge } from '@hypha-platform/ui';
+import { Skeleton, Image, StatusBadge } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 
 export type MemberHeadProps = {
@@ -6,7 +6,6 @@ export type MemberHeadProps = {
   name?: string;
   surname?: string;
   nickname?: string;
-  commitment?: number;
   status?: string;
   isLoading: boolean;
 };
@@ -16,7 +15,6 @@ export const MemberHead = ({
   name,
   surname,
   nickname,
-  commitment,
   status,
   isLoading,
 }: MemberHeadProps) => {
@@ -40,13 +38,6 @@ export const MemberHead = ({
       <div className="flex justify-between items-center w-full">
         <div className="flex flex-col">
           <div className="flex gap-x-1">
-            <Badge
-              variant="surface"
-              colorVariant="accent"
-              isLoading={isLoading}
-            >
-              {commitment}%
-            </Badge>
             <StatusBadge isLoading={isLoading} status={status} />
           </div>
 

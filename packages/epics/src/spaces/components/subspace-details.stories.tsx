@@ -26,7 +26,6 @@ export const Primary: Story = {
           surname: 'Surname',
           nickname: 'username',
           status: 'applicant',
-          commitment: 50,
           location: 'Paris, France',
         },
         {
@@ -38,7 +37,6 @@ export const Primary: Story = {
           surname: 'Surname',
           nickname: 'username',
           status: 'active',
-          commitment: 50,
           location: 'Paris, France',
         },
         {
@@ -50,7 +48,6 @@ export const Primary: Story = {
           surname: 'Surname',
           nickname: 'username',
           status: 'inactive',
-          commitment: 50,
           location: 'Paris, France',
         },
         {
@@ -62,7 +59,6 @@ export const Primary: Story = {
           surname: 'Surname',
           nickname: 'username',
           status: 'rejected',
-          commitment: 50,
           location: 'Paris, France',
         },
         {
@@ -74,7 +70,6 @@ export const Primary: Story = {
           surname: 'Surname',
           nickname: 'username',
           status: 'applicant',
-          commitment: 50,
           location: 'Paris, France',
         },
         {
@@ -86,7 +81,6 @@ export const Primary: Story = {
           surname: 'Surname',
           nickname: 'username',
           status: 'applicant',
-          commitment: 50,
           location: 'Paris, France',
         },
         {
@@ -98,7 +92,6 @@ export const Primary: Story = {
           surname: 'Surname',
           nickname: 'username',
           status: 'applicant',
-          commitment: 50,
           location: 'Paris, France',
         },
         {
@@ -110,7 +103,6 @@ export const Primary: Story = {
           surname: 'Surname',
           nickname: 'username',
           status: 'applicant',
-          commitment: 50,
           location: 'Paris, France',
         },
         {
@@ -122,7 +114,6 @@ export const Primary: Story = {
           surname: 'Surname',
           nickname: 'username',
           status: 'applicant',
-          commitment: 50,
           location: 'Paris, France',
         },
       ],

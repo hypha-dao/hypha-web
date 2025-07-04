@@ -27,7 +27,6 @@ export default function Member() {
           name: person?.name,
           surname: person?.surname,
           nickname: person?.nickname,
-          commitment: 50, // TODO: get commitment
           status: 'active', // TODO: get status
           about: person?.description,
         }}
