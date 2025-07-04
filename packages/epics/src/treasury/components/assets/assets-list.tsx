@@ -62,7 +62,11 @@ export const AssetsList: FC<AssetsListProps> = ({
           //   href={`${basePath}/${asset.slug}`}
           //   scroll={false}
           // > // TODO: planned to be returned after adding correct data in asset details page
-          <AssetCard {...asset} isLoading={isLoading} />
+          <AssetCard
+            key={`${asset.slug}_${index}`}
+            {...asset}
+            isLoading={isLoading}
+          />
           // </Link>
         ))}
       </div>
