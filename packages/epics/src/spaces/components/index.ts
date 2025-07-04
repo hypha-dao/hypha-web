@@ -1,4 +1,5 @@
 export * from './create-space-form';
+export * from './create-subspace-form';
 export * from './filtered-spaces';
 export * from './inner-space-card';
 export * from './inner-space-card.wrapper';
