@@ -1,12 +1,21 @@
 export * from './atoms';
 export * from './molecules';
+export * from './organisms';
+
+export * from './upload/add-attachment';
+export * from './upload/attachments-list';
+export * from './upload/avatar';
+export * from './upload/lead-image';
+
 export * from './avatar';
 export * from './badge';
 export * from './button';
+export * from './card';
 export * from './carousel';
 export * from './chips';
+export * from './combobox';
 export * from './container';
-export * from './card';
+export * from './date-picker';
 export * from './dropdown-menu';
 export * from './form';
 export * from './image';
@@ -14,10 +23,10 @@ export * from './input';
 export * from './label';
 export * from './popover';
 export * from './progress';
+export * from './select';
 export * from './separator';
 export * from './skeleton';
+export * from './slider';
 export * from './status-badge';
 export * from './textarea';
-export * from './upload/avatar';
-export * from './upload/lead-image';
-export * from './upload/attachments-list';
+export * from './tooltip';
