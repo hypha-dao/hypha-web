@@ -1,3 +1,4 @@
+export * from './create-proposal-change-entry-method-form';
 export * from './create-proposal-change-voting-method-form';
 export * from './documents-sections';
 export * from './proposal-entry-info';
