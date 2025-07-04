@@ -1,8 +1,7 @@
 'use client';
 
 import { ButtonProfile } from './button-profile';
-import { useRouter } from 'next/navigation';
-import { useParams } from 'next/navigation';
+import { useRouter, useParams, usePathname } from 'next/navigation';
 import { UseAuthentication } from '@hypha-platform/authentication';
 import { UseMe } from '../hooks/types';
 import { useEffect } from 'react';
@@ -40,6 +39,7 @@ export const ConnectedButtonProfile = ({
   const { person, isLoading: isPersonLoading } = useMe();
 
   const router = useRouter();
+  const pathname = usePathname();
   const { lang } = useParams();
 
   useEffect(() => {
@@ -50,7 +50,7 @@ export const ConnectedButtonProfile = ({
       if (person) {
         if (isErrorUser(person)) {
           router.push(newUserRedirectPath);
-        } else if (person?.id) {
+        } else if (person?.id && pathname === newUserRedirectPath) {
           router.push(baseRedirectPath);
         }
       } else {
@@ -64,6 +64,7 @@ export const ConnectedButtonProfile = ({
     person,
     user,
     router,
+    pathname,
     baseRedirectPath,
     newUserRedirectPath,
     notAuthenticatedRedirectPath,
