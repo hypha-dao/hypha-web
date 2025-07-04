@@ -50,7 +50,10 @@ export const ConnectedButtonProfile = ({
       if (person) {
         if (isErrorUser(person)) {
           router.push(newUserRedirectPath);
-        } else if (person?.id && pathname === newUserRedirectPath || isLoggingIn) {
+        } else if (
+          (person?.id && pathname === newUserRedirectPath) ||
+          isLoggingIn
+        ) {
           router.push(baseRedirectPath);
           setLoggingIn(false);
         }
