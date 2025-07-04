@@ -14,6 +14,8 @@ export interface AuthHook {
   user: AuthUser | null;
   login: () => void;
   logout: () => void;
+  isLoggingIn: boolean;
+  setLoggingIn: (value: boolean) => void;
   getAccessToken: () => Promise<string | null>;
   exportWallet: () => Promise<void>;
 }

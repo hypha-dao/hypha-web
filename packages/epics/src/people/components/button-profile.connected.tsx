@@ -1,8 +1,7 @@
 'use client';
 
 import { ButtonProfile } from './button-profile';
-import { useRouter } from 'next/navigation';
-import { useParams } from 'next/navigation';
+import { useRouter, useParams, usePathname } from 'next/navigation';
 import { UseAuthentication } from '@hypha-platform/authentication';
 import { UseMe } from '../hooks/types';
 import { useEffect } from 'react';
@@ -12,7 +11,6 @@ type ConnectedButtonProfileProps = {
   useMe: UseMe;
   newUserRedirectPath: string;
   baseRedirectPath: string;
-  notAuthenticatedRedirectPath: string;
 };
 
 type ErrorUser = {
@@ -28,18 +26,20 @@ export const ConnectedButtonProfile = ({
   useMe,
   newUserRedirectPath,
   baseRedirectPath,
-  notAuthenticatedRedirectPath,
 }: ConnectedButtonProfileProps) => {
   const {
     isAuthenticated,
     logout,
     login,
+    isLoggingIn,
+    setLoggingIn,
     user,
     isLoading: isAuthLoading,
   } = useAuthentication();
   const { person, isLoading: isPersonLoading } = useMe();
 
   const router = useRouter();
+  const pathname = usePathname();
   const { lang } = useParams();
 
   useEffect(() => {
@@ -50,11 +50,15 @@ export const ConnectedButtonProfile = ({
       if (person) {
         if (isErrorUser(person)) {
           router.push(newUserRedirectPath);
-        } else if (person?.id) {
+        } else if (
+          (person?.id && pathname === newUserRedirectPath) ||
+          isLoggingIn
+        ) {
           router.push(baseRedirectPath);
+          setLoggingIn(false);
         }
       } else {
-        router.push(notAuthenticatedRedirectPath);
+        logout();
       }
     }
   }, [
@@ -64,9 +68,11 @@ export const ConnectedButtonProfile = ({
     person,
     user,
     router,
+    pathname,
     baseRedirectPath,
     newUserRedirectPath,
-    notAuthenticatedRedirectPath,
+    isLoggingIn,
+    setLoggingIn,
   ]);
 
   return (
