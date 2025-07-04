@@ -11,7 +11,6 @@ type ConnectedButtonProfileProps = {
   useMe: UseMe;
   newUserRedirectPath: string;
   baseRedirectPath: string;
-  notAuthenticatedRedirectPath: string;
 };
 
 type ErrorUser = {
@@ -27,7 +26,6 @@ export const ConnectedButtonProfile = ({
   useMe,
   newUserRedirectPath,
   baseRedirectPath,
-  notAuthenticatedRedirectPath,
 }: ConnectedButtonProfileProps) => {
   const {
     isAuthenticated,
@@ -54,7 +52,7 @@ export const ConnectedButtonProfile = ({
           router.push(baseRedirectPath);
         }
       } else {
-        router.push(notAuthenticatedRedirectPath);
+        logout();
       }
     }
   }, [
@@ -67,7 +65,6 @@ export const ConnectedButtonProfile = ({
     pathname,
     baseRedirectPath,
     newUserRedirectPath,
-    notAuthenticatedRedirectPath,
   ]);
 
   return (
