@@ -1,15 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/react';
 
-import { RequestCard } from './request-card';
+import { TransferCard } from './transfer-card';
 
 const meta = {
-  component: RequestCard,
-  title: 'Epics/Treasury/RequestCard',
-} satisfies Meta<typeof RequestCard>;
+  component: TransferCard,
+  title: 'Epics/Treasury/TransferCard',
+} satisfies Meta<typeof TransferCard>;
 
 export default meta;
 
-type Story = StoryObj<typeof RequestCard>;
+type Story = StoryObj<typeof TransferCard>;
 
 export const Default: Story = {
   args: {
