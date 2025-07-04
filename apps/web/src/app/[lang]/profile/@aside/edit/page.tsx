@@ -8,7 +8,7 @@ import { useEditProfile } from '@web/hooks/use-edit-profile';
 
 export default function EditProfilePage() {
   const { lang } = useParams();
-  const { person, isLoading } = useMe();
+  const { person, isLoading, revalidate } = useMe();
   const { editProfile, isEditing, error } = useEditProfile();
 
   return (
@@ -18,6 +18,7 @@ export default function EditProfilePage() {
         closeUrl={`/${lang}/profile/`}
         isLoading={isLoading || isEditing}
         onEdit={editProfile}
+        onUpdate={revalidate}
         error={error}
       />
     </SidePanel>

@@ -3,7 +3,7 @@ import { DEFAULT_IMAGE_ACCEPT } from '@core/assets';
 import { isBefore } from 'date-fns';
 import { EntryMethodType } from './types';
 
-const ALLOWED_IMAGE_FILE_SIZE = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_FILE_SIZE = 4 * 1024 * 1024;
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
 export const paymentScheduleOptions = [
@@ -134,7 +134,7 @@ export const createAgreementFiles = {
     .instanceof(File)
     .refine(
       (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-      'File size must be less than 5MB',
+      'File size must be less than 4MB',
     )
     .refine(
       (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
@@ -243,7 +243,7 @@ export const schemaIssueNewToken = z.object({
     .instanceof(File)
     .refine(
       (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-      'File size must be less than 5MB',
+      'File size must be less than 4MB',
     )
     .refine(
       (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
