@@ -16,7 +16,6 @@ export const Primary: Story = {
     surname: 'Surname',
     nickname: 'username',
     status: 'applicant',
-    commitment: 50,
     location: 'Paris, France',
     isLoading: false,
   },

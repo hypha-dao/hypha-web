@@ -12,7 +12,6 @@ type MemberType = {
   name?: string;
   surname?: string;
   nickname?: string;
-  commitment?: number;
   status?: string;
   about?: string;
 };
@@ -61,7 +60,7 @@ export const MemberDetail = ({
       <Separator />
       <MemberSpaces spaces={spaces} />
       <Separator />
-      <AgreementsSection basePath={basePath} useDocuments={useDocuments} />
+      {/*<AgreementsSection basePath={basePath} useDocuments={useDocuments} />*/}
     </div>
   );
 };
