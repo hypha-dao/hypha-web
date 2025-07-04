@@ -4,12 +4,8 @@ import React from 'react';
 import useSWR from 'swr';
 
 import { useSpaceProposalsWeb3Rpc } from '@hypha-platform/core/client';
-import {
-  Document,
-  DirectionType,
-  Order,
-  OrderField,
-} from '@hypha-platform/core/client';
+import { Document } from '@hypha-platform/core/client';
+import { DirectionType, Order, OrderField } from '@hypha-platform/core/client';
 import queryString from 'query-string';
 
 const getDocumentBadges = (document: Document) => {
@@ -102,7 +98,7 @@ export const useSpaceDocumentsWithStatuses = ({
     isLoading,
     mutate,
   } = useSWR(
-    [endpoint],
+    spaceSlug ? [endpoint] : null,
     ([endpoint]) => fetch(endpoint).then((res) => res.json()),
     {
       revalidateOnFocus: true,

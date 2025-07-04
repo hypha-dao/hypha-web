@@ -20,3 +20,4 @@ export * from './status-badge';
 export * from './textarea';
 export * from './upload/avatar';
 export * from './upload/lead-image';
+export * from './upload/attachments-list';
