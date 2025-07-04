@@ -1,4 +1,4 @@
-export const formatDate = (dateString: string): string => {
+export const formatDate = (dateInput: string | number | Date): string => {
   const months = [
     'January',
     'February',
@@ -13,9 +13,16 @@ export const formatDate = (dateString: string): string => {
     'November',
     'December',
   ];
-  const dateParts = dateString.split('/');
-  const year = dateParts[0];
-  const monthIndex = parseInt(dateParts[1]) - 1;
-  const day = dateParts[2];
+
+  const date = new Date(dateInput);
+
+  if (isNaN(date.getTime())) {
+    throw new Error('Invalid date input');
+  }
+
+  const year = date.getFullYear();
+  const monthIndex = date.getMonth();
+  const day = date.getDate();
+
   return `${months[monthIndex]} ${day}, ${year}`;
 };

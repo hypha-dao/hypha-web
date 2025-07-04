@@ -46,7 +46,6 @@ export async function GET(
     );
 
     const spaceAddress = spaceDetails.at(9) as `0x${string}`;
-
     const transfers = await getTransfersByAddress({
       address: spaceAddress,
       contractAddresses: token,
@@ -59,18 +58,22 @@ export async function GET(
 
     const transfersWithPersonsInfo = await Promise.all(
       transfers.map(async (transfer) => {
-        const personAddress =
-          transfer.to.toUpperCase() === spaceAddress.toUpperCase()
-            ? transfer.from
-            : transfer.to;
+        const isIncoming =
+          transfer.to.toUpperCase() === spaceAddress.toUpperCase();
+        const personAddress = isIncoming ? transfer.from : transfer.to;
+
         const person = await findPersonByWeb3Address(
-          {
-            address: personAddress,
-          },
+          { address: personAddress },
           { db },
         );
 
-        return { ...transfer, person: person };
+        return {
+          ...transfer,
+          person,
+          value: Number(transfer.value) / Math.pow(10, transfer.decimals),
+          direction: isIncoming ? 'incoming' : 'outgoing',
+          counterparty: isIncoming ? 'from' : 'to',
+        };
       }),
     );
 
