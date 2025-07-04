@@ -34,7 +34,13 @@ export default async function CreateChangeVotingMethodPage({
         web3SpaceId={web3SpaceId}
         successfulUrl={successfulUrl}
         backUrl={`${successfulUrl}${PATH_SELECT_SETTINGS_ACTION}`}
-        plugin={<Plugin spaceSlug={spaceSlug} name="change-voting-method" />}
+        plugin={
+          <Plugin
+            spaceSlug={spaceSlug}
+            name="change-voting-method"
+            web3SpaceId={web3SpaceId}
+          />
+        }
       />
     </SidePanel>
   );
