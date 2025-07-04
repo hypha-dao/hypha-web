@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import useSWR, { mutate } from 'swr';
+import useSWR from 'swr';
 import { Person, useJwt } from '@hypha-platform/core/client';
 
 export const useMe = (): {
@@ -13,15 +13,17 @@ export const useMe = (): {
 
   const endpoint = React.useMemo(() => '/api/v1/people/me', []);
 
-  const { data: person, isLoading: isLoadingPerson } = useSWR(
-    jwt ? [endpoint, jwt] : null,
-    ([endpoint, jwt]) =>
-      fetch(endpoint, {
-        headers: {
-          Authorization: `Bearer ${jwt}`,
-          'Content-Type': 'application/json',
-        },
-      }).then((res) => res.json()),
+  const {
+    data: person,
+    isLoading: isLoadingPerson,
+    mutate,
+  } = useSWR(jwt ? [endpoint, jwt] : null, ([endpoint, jwt]) =>
+    fetch(endpoint, {
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+        'Content-Type': 'application/json',
+      },
+    }).then((res) => res.json()),
   );
 
   const revalidate = React.useCallback(async () => {
