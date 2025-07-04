@@ -57,13 +57,17 @@ export const AssetsList: FC<AssetsListProps> = ({
     <div className="w-full">
       <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
         {assets.map((asset, index) => (
-          <Link
+          // <Link
+          //   key={`${asset.slug}_${index}`}
+          //   href={`${basePath}/${asset.slug}`}
+          //   scroll={false}
+          // > // TODO: planned to be returned after adding correct data in asset details page
+          <AssetCard
             key={`${asset.slug}_${index}`}
-            href={`${basePath}/${asset.slug}`}
-            scroll={false}
-          >
-            <AssetCard {...asset} isLoading={isLoading} />
-          </Link>
+            {...asset}
+            isLoading={isLoading}
+          />
+          // </Link>
         ))}
       </div>
 
