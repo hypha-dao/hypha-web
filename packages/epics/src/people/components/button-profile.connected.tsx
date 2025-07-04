@@ -65,7 +65,7 @@ export const ConnectedButtonProfile = ({
     isPersonLoading,
     isAuthLoading,
     isAuthenticated,
-    person,
+    // person, // TODO: will be fixed within the framework #868
     user,
     router,
     pathname,
