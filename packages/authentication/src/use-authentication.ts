@@ -19,6 +19,7 @@ export function useAuthentication() {
   const { wallets } = useWallets();
   const router = useRouter();
   const { setActiveWallet } = useSetActiveWallet();
+  const [isLoggingIn, setLoggingIn] = React.useState(false);
 
   const smartWallet = React.useMemo(() => {
     return privyUser?.linkedAccounts?.find(
@@ -38,11 +39,13 @@ export function useAuthentication() {
 
   const login = React.useCallback(async (): Promise<void> => {
     privyLogin();
+    setLoggingIn(true);
   }, [privyLogin]);
 
   const logout = React.useCallback(async (): Promise<void> => {
     privyLogout();
     router.push('/network');
+    setLoggingIn(false);
   }, [privyLogout, router]);
 
   const user = React.useMemo(() => {
@@ -73,6 +76,8 @@ export function useAuthentication() {
     user,
     login,
     logout,
+    isLoggingIn,
+    setLoggingIn,
     getAccessToken,
     exportWallet: handleExportWallet,
   };

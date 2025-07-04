@@ -31,6 +31,8 @@ export const ConnectedButtonProfile = ({
     isAuthenticated,
     logout,
     login,
+    isLoggingIn,
+    setLoggingIn,
     user,
     isLoading: isAuthLoading,
   } = useAuthentication();
@@ -48,8 +50,9 @@ export const ConnectedButtonProfile = ({
       if (person) {
         if (isErrorUser(person)) {
           router.push(newUserRedirectPath);
-        } else if (person?.id && pathname === newUserRedirectPath) {
+        } else if (person?.id && pathname === newUserRedirectPath || isLoggingIn) {
           router.push(baseRedirectPath);
+          setLoggingIn(false);
         }
       } else {
         logout();
@@ -65,6 +68,8 @@ export const ConnectedButtonProfile = ({
     pathname,
     baseRedirectPath,
     newUserRedirectPath,
+    isLoggingIn,
+    setLoggingIn,
   ]);
 
   return (
