@@ -35,8 +35,6 @@ interface IDAOSpaceFactory {
   function getSpaceMemberAddresses(
     uint256 _spaceId
   ) external view returns (address[] memory);
-
-  function getSpaceId(address _spaceAddress) external view returns (uint256);
 }
 
 interface IDirectory {

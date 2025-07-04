@@ -38,6 +38,11 @@ The scripts are written in TypeScript and require `ts-node` to run them directly
 2. Run any script using ts-node:
    ```
    ts-node addjoinmethod.ts
+
+   ts-node vote-on-proposal.ts <proposalId> <support>
+
+   ts-node get-proposal-data.ts latest 5
+
    ```
 
 ## Available Scripts

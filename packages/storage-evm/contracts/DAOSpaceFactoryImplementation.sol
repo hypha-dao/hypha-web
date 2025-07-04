@@ -388,12 +388,6 @@ contract DAOSpaceFactoryImplementation is
     return spaceMembers[_spaceId].isSpaceMember[_member];
   }
 
-  function getSpaceId(address _spaceAddress) external view returns (uint256) {
-    uint256 spaceId = executorToSpaceId[_spaceAddress];
-    //require(spaceId != 0, 'notspcad');
-    return spaceId;
-  }
-
   // New function to change voting power source method
   function changeVotingMethod(
     uint256 _spaceId,
