@@ -1,12 +1,13 @@
 'use client';
 
 import React from 'react';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import { Person, useJwt } from '@hypha-platform/core/client';
 
 export const useMe = (): {
   person: Person | undefined;
   isLoading: boolean;
+  revalidate: () => Promise<void>;
 } => {
   const { jwt, isLoadingJwt } = useJwt();
 
@@ -23,5 +24,15 @@ export const useMe = (): {
       }).then((res) => res.json()),
   );
 
-  return { person, isLoading: isLoadingJwt || isLoadingPerson };
+  const revalidate = React.useCallback(async () => {
+    if (jwt) {
+      await mutate([endpoint, jwt]);
+    }
+  }, [endpoint, jwt]);
+
+  return {
+    person,
+    isLoading: isLoadingJwt || isLoadingPerson,
+    revalidate,
+  };
 };
