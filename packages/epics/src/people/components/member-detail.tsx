@@ -60,7 +60,7 @@ export const MemberDetail = ({
       <Separator />
       <MemberSpaces spaces={spaces} />
       <Separator />
-      <AgreementsSection basePath={basePath} useDocuments={useDocuments} />
+      {/*<AgreementsSection basePath={basePath} useDocuments={useDocuments} />*/}
     </div>
   );
 };
