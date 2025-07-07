@@ -4,22 +4,14 @@ import {
 } from '@core/generated';
 import { base } from 'viem/chains';
 
-export type JoinSpaceWeb3Input = {
-  spaceId: bigint;
-  memberAddress: `0x${string}`;
-};
-
-export type CreateSpaceWeb3Config = {
-  chain?: keyof typeof daoSpaceFactoryImplementationAddress;
-};
-
 export const joinSpace = (
   {
     spaceId,
+    chain = base.id,
   }: {
     spaceId: bigint;
-  },
-  { chain = base.id }: CreateSpaceWeb3Config = {},
+    chain?: keyof typeof daoSpaceFactoryImplementationAddress;
+  }
 ) => {
   const address = daoSpaceFactoryImplementationAddress[chain];
 
