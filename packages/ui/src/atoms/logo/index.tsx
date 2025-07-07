@@ -1,10 +1,10 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import LogoDark from './logo-white.svg'; // for dark theme
 import LogoLight from './logo-black.svg'; // for light theme
-import Link from "next/link";
 
 type LogoProps = {
   width?: number;
