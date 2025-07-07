@@ -1,41 +1,42 @@
 import { FC } from 'react';
-import { RequestCard } from './request-card';
-import { useRequests } from '../../hooks/use-requests';
-
-type SortParams = {
-  sort?: string;
-};
+import { TransferCard } from './transfer-card';
+import { TransferWithPerson } from '../../hooks';
 
 type TransactionsListProps = {
-  page: number;
-  activeSort: SortParams['sort'];
+  transfers: TransferWithPerson[];
+  activeSort: string;
+  isLoading?: boolean;
 };
 
 export const TransactionsList: FC<TransactionsListProps> = ({
-  page,
+  transfers,
   activeSort,
+  isLoading,
 }) => {
-  const { requests, isLoading } = useRequests({
-    page,
-    sort: { sort: activeSort },
-  });
   return (
     <div className="w-full mt-2">
-      {requests.map((request, index) => (
-        <RequestCard
-          key={`${request.name} ${request.surname} - ${index}`}
-          {...request}
+      {transfers.map((transfer, index) => (
+        <TransferCard
+          key={`${transfer.transactionHash}-${index}`}
+          name={transfer.person?.name}
+          surname={transfer.person?.surname}
+          avatar={transfer.person?.avatarUrl}
+          value={transfer.value}
+          symbol={transfer.symbol}
+          date={transfer.timestamp}
           isLoading={isLoading}
+          direction={transfer.direction}
+          counterparty={transfer.counterparty}
         />
       ))}
-      {isLoading ? (
+      {isLoading && (
         <div className="w-full grid grid-cols-1 gap-2 mt-2">
-          <RequestCard isLoading={isLoading} />
-          <RequestCard isLoading={isLoading} />
-          <RequestCard isLoading={isLoading} />
-          <RequestCard isLoading={isLoading} />
+          <TransferCard isLoading={isLoading} />
+          <TransferCard isLoading={isLoading} />
+          <TransferCard isLoading={isLoading} />
+          <TransferCard isLoading={isLoading} />
         </div>
-      ) : null}
+      )}
     </div>
   );
 };
