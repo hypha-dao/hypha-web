@@ -21,13 +21,15 @@ export function SpaceCardList({
   spaces,
   useMembers,
 }: SpaceCardListProps) {
+  const pageSize = 2;
   const { pages, loadMore, pagination } = useSpaceCardList({
     spaces,
+    pageSize,
   });
 
   return (
     <>
-      {pagination?.totalPages > 0 && (
+      {pagination?.totalPages > 0 ? (
         <div className="flex flex-col justify-around items-center gap-4">
           <div className="w-full space-y-2">
             {Array.from({ length: pages }).map((_, index) => (
@@ -35,7 +37,7 @@ export function SpaceCardList({
                 key={index}
                 pagination={{
                   page: index + 1,
-                  pageSize: 4,
+                  pageSize,
                 }}
                 spaces={spaces}
                 lang={lang}
@@ -45,16 +47,14 @@ export function SpaceCardList({
           </div>
           <SectionLoadMore
             onClick={loadMore}
-            disabled={pagination?.totalPages === pages}
+            disabled={!pagination?.hasNextPage}
           >
             <Text>
-              {pagination?.totalPages === pages ? 'No more' : 'Load more'}
+              {pagination?.hasNextPage ? 'Load more' : 'No more'}
             </Text>
           </SectionLoadMore>
         </div>
-      )}
-
-      {pagination?.totalPages === 0 && (
+      ) : (
         <Empty>
           <div className="flex flex-col gap-7">
             <p>

@@ -1,11 +1,16 @@
 import { Space } from '@core/space';
 import React from 'react';
 
-export const useSpaceCardList = ({ spaces }: { spaces: Space[] }) => {
+export const useSpaceCardList = ({
+  spaces,
+  pageSize = 3,
+}: {
+  spaces: Space[];
+  pageSize?: number;
+}) => {
   const [pages, setPages] = React.useState(1);
 
   const pagination = React.useMemo(() => {
-    const pageSize = 3;
     const total = spaces.length;
     const totalPages = Math.ceil(total / pageSize);
     const hasNextPage = pages < totalPages;
