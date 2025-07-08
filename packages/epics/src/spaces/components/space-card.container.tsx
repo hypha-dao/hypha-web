@@ -24,20 +24,22 @@ export const SpaceCardContainer = ({
     data-testid="member-spaces-container"
     className="grid grid-cols-1 sm:grid-cols-2 gap-2"
   >
-    {spaces.map((space) => (
-      <div key={space.id}>
-        <Link href={getDhoPathGovernance(lang, space.slug)}>
-          <SpaceCardWrapper
-            description={space.description || ''}
-            icon={space.logoUrl || ''}
-            leadImage={space.leadImage || ''}
-            agreements={space.documentCount}
-            title={space.title}
-            spaceSlug={space.slug}
-            useMembers={useMembers}
-          />
-        </Link>
-      </div>
-    ))}
+    {spaces.map((space) =>
+      space.slug ? (
+        <div key={space.id}>
+          <Link href={getDhoPathGovernance(lang, space.slug)}>
+            <SpaceCardWrapper
+              description={space.description || ''}
+              icon={space.logoUrl || ''}
+              leadImage={space.leadImage || ''}
+              agreements={space.documentCount}
+              title={space.title || ''}
+              spaceSlug={space.slug}
+              useMembers={useMembers}
+            />
+          </Link>
+        </div>
+      ) : null,
+    )}
   </div>
 );
