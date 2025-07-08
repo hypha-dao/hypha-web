@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": false,
+    "outDir": "dist", 
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "incremental": true,
+    "types": ["jest", "node"],
+    "removeComments": true,
+    "sourceMap": false,
+    "declaration": false
+  },
+  "include": [
+    "**/*.ts",
+  ],
+}
