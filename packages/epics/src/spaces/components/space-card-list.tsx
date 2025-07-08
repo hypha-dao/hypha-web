@@ -49,9 +49,7 @@ export function SpaceCardList({
             onClick={loadMore}
             disabled={!pagination?.hasNextPage}
           >
-            <Text>
-              {pagination?.hasNextPage ? 'Load more' : 'No more'}
-            </Text>
+            <Text>{pagination?.hasNextPage ? 'Load more' : 'No more'}</Text>
           </SectionLoadMore>
         </div>
       ) : (

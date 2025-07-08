@@ -4,15 +4,13 @@ import {
 } from '@core/generated';
 import { base } from 'viem/chains';
 
-export const joinSpace = (
-  {
-    spaceId,
-    chain = base.id,
-  }: {
-    spaceId: bigint;
-    chain?: keyof typeof daoSpaceFactoryImplementationAddress;
-  }
-) => {
+export const joinSpace = ({
+  spaceId,
+  chain = base.id,
+}: {
+  spaceId: bigint;
+  chain?: keyof typeof daoSpaceFactoryImplementationAddress;
+}) => {
   const address = daoSpaceFactoryImplementationAddress[chain];
 
   const callConfig = {
