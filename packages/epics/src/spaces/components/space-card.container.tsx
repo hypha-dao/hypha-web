@@ -26,7 +26,10 @@ export const SpaceCardContainer = ({
 }: SpaceCardContainerProps) => {
   const startIndex = (pagination.page - 1) * pagination.pageSize;
   const endIndex = startIndex + pagination.pageSize;
-  const paginatedDocuments = spaces.slice(startIndex, endIndex);
+  const paginatedDocuments = spaces.slice(
+    Math.max(0, startIndex),
+    Math.min(spaces.length, endIndex),
+  );
 
   return (
     <div
