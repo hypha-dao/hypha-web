@@ -10,9 +10,6 @@ import {
 import { Person, useMe } from '@core/people';
 import React from 'react';
 import { Text } from '@radix-ui/themes';
-import Link from 'next/link';
-import { Button } from '@hypha-platform/ui';
-import { PlusIcon } from '@radix-ui/react-icons';
 
 function filterSpaces(
   spaces: Space[],
