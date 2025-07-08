@@ -3,6 +3,7 @@
 import { SpaceCardWrapper, UseMembers } from '@hypha-platform/epics';
 import Link from 'next/link';
 import { Locale } from '@hypha-platform/i18n';
+import { Space } from '@core/space';
 
 export const getDhoPathGovernance = (lang: Locale, id: string) => {
   return `/${lang}/dho/${id}/governance`;
@@ -14,7 +15,7 @@ type SpaceCardContainerProps = {
     page: number;
     pageSize: number;
   };
-  spaces: any[];
+  spaces: Space[];
   useMembers: UseMembers;
 };
 
@@ -38,14 +39,14 @@ export const SpaceCardContainer = ({
     >
       {paginatedDocuments.map((space) => (
         <div key={space.id}>
-          <Link href={getDhoPathGovernance(lang, space.slug as string)}>
+          <Link href={getDhoPathGovernance(lang, space.slug)}>
             <SpaceCardWrapper
-              description={space.description as string}
+              description={space.description || ''}
               icon={space.logoUrl || ''}
               leadImage={space.leadImage || ''}
               agreements={space.documentCount}
-              title={space.title as string}
-              spaceSlug={space.slug as string}
+              title={space.title}
+              spaceSlug={space.slug}
               useMembers={useMembers}
             />
           </Link>
