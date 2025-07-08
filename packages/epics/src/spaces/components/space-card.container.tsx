@@ -11,47 +11,33 @@ export const getDhoPathGovernance = (lang: Locale, id: string) => {
 
 type SpaceCardContainerProps = {
   lang: Locale;
-  pagination: {
-    page: number;
-    pageSize: number;
-  };
   spaces: Space[];
   useMembers: UseMembers;
 };
 
 export const SpaceCardContainer = ({
   lang,
-  pagination,
   spaces,
   useMembers,
-}: SpaceCardContainerProps) => {
-  const startIndex = (pagination.page - 1) * pagination.pageSize;
-  const endIndex = startIndex + pagination.pageSize;
-  const paginatedDocuments = spaces.slice(
-    Math.max(0, startIndex),
-    Math.min(spaces.length, endIndex),
-  );
-
-  return (
-    <div
-      data-testid="member-spaces-container"
-      className="grid grid-cols-1 sm:grid-cols-2 gap-2"
-    >
-      {paginatedDocuments.map((space) => (
-        <div key={space.id}>
-          <Link href={getDhoPathGovernance(lang, space.slug)}>
-            <SpaceCardWrapper
-              description={space.description || ''}
-              icon={space.logoUrl || ''}
-              leadImage={space.leadImage || ''}
-              agreements={space.documentCount}
-              title={space.title}
-              spaceSlug={space.slug}
-              useMembers={useMembers}
-            />
-          </Link>
-        </div>
-      ))}
-    </div>
-  );
-};
+}: SpaceCardContainerProps) => (
+  <div
+    data-testid="member-spaces-container"
+    className="grid grid-cols-1 sm:grid-cols-2 gap-2"
+  >
+    {spaces.map((space) => (
+      <div key={space.id}>
+        <Link href={getDhoPathGovernance(lang, space.slug)}>
+          <SpaceCardWrapper
+            description={space.description || ''}
+            icon={space.logoUrl || ''}
+            leadImage={space.leadImage || ''}
+            agreements={space.documentCount}
+            title={space.title}
+            spaceSlug={space.slug}
+            useMembers={useMembers}
+          />
+        </Link>
+      </div>
+    ))}
+  </div>
+);
