@@ -22,7 +22,7 @@ export const useSpaceCardList = ({
       totalPages,
       hasNextPage,
     };
-  }, [spaces, pages]);
+  }, [spaces, pages, pageSize]);
 
   const loadMore = React.useCallback(() => {
     if (!pagination?.hasNextPage) return;
