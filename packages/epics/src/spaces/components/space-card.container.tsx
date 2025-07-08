@@ -27,7 +27,10 @@ export const SpaceCardContainer = ({
     {spaces.map((space) =>
       space.slug ? (
         <div key={space.id}>
-          <Link href={getDhoPathGovernance(lang, space.slug)}>
+          <Link
+            href={getDhoPathGovernance(lang, space.slug)}
+            aria-label={`View governance for ${space.title}`}
+          >
             <SpaceCardWrapper
               description={space.description || ''}
               icon={space.logoUrl || ''}
