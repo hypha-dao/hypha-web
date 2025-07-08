@@ -1,0 +1,118 @@
+'use client';
+
+import useSWR from 'swr';
+import { z } from 'zod';
+import React, { useState } from 'react';
+import useSWRMutation from 'swr/mutation';
+import { Config } from 'wagmi';
+
+import { useAgreementMutationsWeb2Rsc } from './useAgreementMutations.web2.rsc';
+import { schemaCreateAgreementWeb2 } from '../../validation';
+import { useAddMemberMutationsWeb3Rpc } from './useAddMemberMutations.web3.rpc';
+
+type UseAddMemberOrchestratorInput = {
+  authToken?: string | null;
+  config?: Config;
+  spaceId?: number;
+  memberAddress?: `0x${string}`;
+};
+
+export const useAddMemberOrchestrator = ({
+  authToken,
+  config,
+  spaceId,
+  memberAddress,
+}: UseAddMemberOrchestratorInput) => {
+  const web2 = useAgreementMutationsWeb2Rsc(authToken);
+
+  const [isCreating, setIsCreating] = useState(false);
+
+  const web3 = useAddMemberMutationsWeb3Rpc({
+    spaceId: spaceId ?? undefined,
+    memberAddress: memberAddress ?? undefined,
+  });
+
+  const { trigger: requestInvite } = useSWRMutation(
+    'requestInviteOrchestration',
+    async (_, { arg }: { arg: z.infer<typeof schemaCreateAgreementWeb2> }) => {
+      setIsCreating(true);
+      try {
+        const inputCreateAgreementWeb2 = schemaCreateAgreementWeb2.parse({
+          arg,
+        });
+        const createdAgreement = await web2.createAgreement(
+          inputCreateAgreementWeb2,
+        );
+
+        const web3SpaceId = (arg as any).web3SpaceId;
+        const web3MemberAddress = (arg as any).memberAddress;
+
+        if (config) {
+          if (
+            typeof web3SpaceId !== 'number' ||
+            typeof web3MemberAddress !== 'string'
+          ) {
+            throw new Error('web3SpaceId and memberAddress are required');
+          }
+
+          await web3.addMember();
+        }
+
+        return createdAgreement;
+      } catch (err) {
+        const web2Slug = web2.createdAgreement?.slug;
+        if (web2Slug) {
+          await web2.deleteAgreementBySlug({ slug: web2Slug });
+        }
+        throw err;
+      } finally {
+        setIsCreating(false);
+      }
+    },
+  );
+
+  const { data: updatedWeb2Agreement } = useSWR(
+    web2.createdAgreement?.slug &&
+      (!config || web3.createdProposal?.proposalId !== undefined)
+      ? [
+          web2.createdAgreement.slug,
+          web3.createdProposal?.proposalId,
+          'linkWeb2AndWeb3',
+        ]
+      : null,
+    async ([slug, proposalId]) => {
+      return web2.updateAgreementBySlug({
+        slug,
+        web3ProposalId: proposalId ? Number(proposalId) : undefined,
+      });
+    },
+    {
+      revalidateOnMount: true,
+      shouldRetryOnError: false,
+    },
+  );
+
+  const errors = React.useMemo(() => {
+    return [
+      web2.errorCreateAgreementMutation,
+      web3.errorAddMember,
+      web3.errorWaitForReceipt,
+    ].filter(Boolean);
+  }, [
+    web2.errorCreateAgreementMutation,
+    web3.errorAddMember,
+    web3.errorWaitForReceipt,
+  ]);
+
+  return {
+    requestInvite,
+    agreement: {
+      ...web2.createdAgreement,
+      ...web3.createdProposal,
+      ...updatedWeb2Agreement,
+    },
+    isCreating,
+    isError: errors.length > 0,
+    errors,
+  };
+};
