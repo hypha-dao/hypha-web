@@ -13,15 +13,16 @@ import { Text } from '@radix-ui/themes';
 type SpaceCardListProps = {
   lang: Locale;
   spaces: Space[];
+  pageSize?: number;
   useMembers: UseMembers;
 };
 
 export function SpaceCardList({
   lang,
   spaces,
+  pageSize = 2,
   useMembers,
 }: SpaceCardListProps) {
-  const pageSize = 2;
   const { pages, loadMore, pagination } = useSpaceCardList({
     spaces,
     pageSize,
