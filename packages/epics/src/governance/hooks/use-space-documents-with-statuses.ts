@@ -69,7 +69,8 @@ export const useSpaceDocumentsWithStatuses = ({
   spaceId: number;
   order?: Order<Document>;
 }) => {
-  const { spaceProposalsIds, mutateSpaceProposalsWeb3 } = useSpaceProposalsWeb3Rpc({ spaceId: spaceId });
+  const { spaceProposalsIds, mutateSpaceProposalsWeb3 } =
+    useSpaceProposalsWeb3Rpc({ spaceId: spaceId });
 
   const getDirection = (dir: DirectionType) => {
     return `${dir === DirectionType.DESC ? '-' : '+'}`;
@@ -103,7 +104,6 @@ export const useSpaceDocumentsWithStatuses = ({
     {
       revalidateOnFocus: true,
       refreshInterval: 10000,
-      refreshWhenHidden: false,
     },
   );
 
@@ -177,7 +177,6 @@ export const useSpaceDocumentsWithStatuses = ({
   const revalidate = React.useCallback(() => {
     mutateSpaceProposalsWeb3();
     mutate();
-    console.log('123');
   }, [endpoint]);
 
   return {

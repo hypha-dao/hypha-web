@@ -12,7 +12,7 @@ export const useSpaceProposalsWeb3Rpc = ({ spaceId }: { spaceId: number }) => {
       publicClient.readContract(
         getSpaceProposals({ spaceId: BigInt(spaceId) }),
       ),
-    { revalidateOnFocus: true },
+    { revalidateOnFocus: true, refreshInterval: 10000 },
   );
 
   const spaceProposalsIds = React.useMemo(() => {
@@ -26,6 +26,6 @@ export const useSpaceProposalsWeb3Rpc = ({ spaceId }: { spaceId: number }) => {
     spaceProposalsIds,
     isLoading,
     error,
-    mutateSpaceProposalsWeb3: mutate
+    mutateSpaceProposalsWeb3: mutate,
   };
 };
