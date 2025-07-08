@@ -5,12 +5,16 @@ import { useJoinSpace } from '../hooks/use-join-space';
 import { PersonIcon } from '@radix-ui/react-icons';
 import React from 'react';
 import { Loader2 } from 'lucide-react';
+import { useSpaceDetailsWeb3Rpc } from '@core/space';
 
 type JoinSpaceProps = {
   spaceId: number;
 };
 
 export const JoinSpace = ({ spaceId }: JoinSpaceProps) => {
+  const { spaceDetails } = useSpaceDetailsWeb3Rpc({ spaceId: spaceId });
+  const isInviteOnly = spaceDetails?.joinMethod === 2n;
+
   const { isMember, isLoading, joinSpace, revalidateIsMember, isJoiningSpace } =
     useJoinSpace({
       spaceId,
@@ -34,7 +38,11 @@ export const JoinSpace = ({ spaceId }: JoinSpaceProps) => {
       ) : (
         <PersonIcon className="mr-2" width={16} height={16} />
       )}
-      {isMember ? 'Already member' : 'Become member'}
+      {isMember
+        ? 'Already member'
+        : isInviteOnly
+        ? 'Request Invite'
+        : 'Become member'}
     </Button>
   );
 };
