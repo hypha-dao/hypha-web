@@ -3,7 +3,7 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { registerSwagger } from './plugins/swagger';
 import v1Routes from './routes/v1';
-import { API_PREFIX } from "./constants";
+import { API_PREFIX } from './constants';
 
 const app = Fastify();
 app.register(cors);
