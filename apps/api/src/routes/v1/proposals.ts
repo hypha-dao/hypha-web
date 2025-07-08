@@ -7,7 +7,7 @@ import {
   ProposalSummary,
   ProposalVotesResponse,
   VoteRequest,
-  VoteResponse
+  VoteResponse,
 } from '../../types/v1/generated';
 
 const mockProposal: ProposalSummary = {
@@ -85,9 +85,9 @@ export default async function proposalsRoutes(app: FastifyInstance) {
     const mockResponse: ProposalVotesResponse = {
       proposal_id: params.id,
       votes: [
-        { username: 'john', vote: "yes" },
-        { username: 'jane', vote: "no" },
-        { username: 'doe', vote: "viewed" },
+        { username: 'john', vote: 'yes' },
+        { username: 'jane', vote: 'no' },
+        { username: 'doe', vote: 'viewed' },
       ],
     };
 
@@ -104,10 +104,9 @@ export default async function proposalsRoutes(app: FastifyInstance) {
     const mockResponse: VoteResponse = {
       message: 'Vote recorded successfully',
       proposal_id: params.id,
-      user_vote: body.vote as unknown as VoteResponse.user_vote
+      user_vote: body.vote as unknown as VoteResponse.user_vote,
     };
 
     return reply.send(mockResponse);
   });
-
 }
