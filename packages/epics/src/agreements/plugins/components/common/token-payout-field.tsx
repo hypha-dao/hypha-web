@@ -88,7 +88,7 @@ export const TokenPayoutField = ({
                   width={24}
                   height={24}
                   alt={token.symbol}
-                  className="mr-2"
+                  className="mr-2 object-cover"
                 />
                 <span className="text-2 text-neutral-11">{token.symbol}</span>
               </DropdownMenuItem>

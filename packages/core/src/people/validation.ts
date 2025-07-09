@@ -1,7 +1,7 @@
 import { DEFAULT_IMAGE_ACCEPT } from '@core/assets';
 import { z } from 'zod';
 
-const ALLOWED_IMAGE_FILE_SIZE = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_FILE_SIZE = 4 * 1024 * 1024;
 
 const signupPersonWeb2Props = {
   name: z.string().min(1, { message: 'Name must not be empty' }),
@@ -84,7 +84,7 @@ export const editPersonFiles = z.object({
         .instanceof(File)
         .refine(
           (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-          'File size must be less than 5MB',
+          'File size must be less than 4MB',
         )
         .refine(
           (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
@@ -103,7 +103,7 @@ export const editPersonFiles = z.object({
         .instanceof(File)
         .refine(
           (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-          'File size must be less than 5MB',
+          'File size must be less than 4MB',
         )
         .refine(
           (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),

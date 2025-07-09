@@ -1,7 +1,7 @@
 import { DEFAULT_IMAGE_ACCEPT } from '@core/assets';
 import { z } from 'zod';
 
-export const ALLOWED_IMAGE_FILE_SIZE = 5 * 1024 * 1024;
+export const ALLOWED_IMAGE_FILE_SIZE = 4 * 1024 * 1024;
 
 const createSpaceWeb2Props = {
   title: z.string().min(1).max(50),
@@ -68,7 +68,7 @@ export const createSpaceFiles = {
       .instanceof(File)
       .refine(
         (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-        'File size must be less than 5MB',
+        'File size must be less than 4MB',
       )
       .refine(
         (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
@@ -81,7 +81,7 @@ export const createSpaceFiles = {
       .instanceof(File)
       .refine(
         (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-        'File size must be less than 5MB',
+        'File size must be less than 4MB',
       )
       .refine(
         (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
