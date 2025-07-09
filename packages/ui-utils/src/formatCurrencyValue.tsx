@@ -1,11 +1,10 @@
-export const formatCurrencyValue = (num: number): string => {
-  const numStr = num.toString();
-  const [integerPart, decimalPart] = numStr.split('.');
-  const formattedIntegerPart = integerPart.replace(
-    /\B(?=(\d{3})+(?!\d))/g,
-    '.',
-  );
-  return decimalPart
-    ? `${formattedIntegerPart},${decimalPart}`
-    : formattedIntegerPart;
+export const formatCurrencyValue = (
+  num: number,
+  locale: 'en-US' | 'de-DE' = 'en-US',
+  options: Intl.NumberFormatOptions = {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  },
+): string => {
+  return new Intl.NumberFormat(locale, options).format(num);
 };

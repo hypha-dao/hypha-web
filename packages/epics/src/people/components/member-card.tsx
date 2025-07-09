@@ -1,5 +1,5 @@
 import { Text } from '@radix-ui/themes';
-import { Card, Badge, StatusBadge, Skeleton, Image } from '@hypha-platform/ui';
+import { Card, StatusBadge, Skeleton, Image } from '@hypha-platform/ui';
 import { SewingPinFilledIcon } from '@radix-ui/react-icons';
 
 export type MemberCardProps = {
@@ -8,7 +8,6 @@ export type MemberCardProps = {
   nickname?: string;
   location?: string;
   avatarUrl?: string;
-  commitment?: number;
   status?: string;
   isLoading?: boolean;
   minimize?: boolean;
@@ -20,7 +19,6 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   nickname,
   location,
   avatarUrl,
-  commitment,
   status,
   isLoading,
   minimize,
@@ -46,20 +44,6 @@ export const MemberCard: React.FC<MemberCardProps> = ({
         <div className="flex flex-col">
           {!minimize ? (
             <div className="flex gap-x-1">
-              <Badge
-                variant="surface"
-                colorVariant="accent"
-                isLoading={isLoading}
-              >
-                Recurring
-              </Badge>
-              <Badge
-                variant="surface"
-                colorVariant="accent"
-                isLoading={isLoading}
-              >
-                {commitment}%
-              </Badge>
               <StatusBadge isLoading={isLoading} status={status} />
             </div>
           ) : null}

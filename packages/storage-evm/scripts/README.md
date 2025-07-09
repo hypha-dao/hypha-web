@@ -18,12 +18,6 @@ npx nx run storage-evm:script ./scripts/dao-proposals-proxy.deploy.ts --network 
 npx nx run storage-evm:script ./scripts/decaying-token-factory-proxy.deploy.ts --network base-mainnet
 ```
 
-### escrow-proxy.deploy
-
-```bash
-npx nx run storage-evm:script ./scripts/escrow-proxy.deploy.ts --network base-mainnet
-```
-
 ### exit-method-directory-proxy.deploy
 
 ```bash
@@ -119,6 +113,7 @@ npx nx run storage-evm:compile
 ```bash
 npx nx run storage-evm:test ./test/DAOSpaceFactoryImplementation.test.ts
 npx nx run storage-evm:test ./test/DAOProposalsImplementation.test.ts
+npx nx run storage-evm:test ./test/HyphaToken.test.ts
 ```
 
 ### Upgrade Space Factory
@@ -151,6 +146,9 @@ npx nx run storage-evm:script ./scripts/token-voting-power.upgrade.ts --network 
 npx nx run storage-evm:script ./scripts/votedecay-voting-power.upgrade.ts --network base-mainnet
 ```
 
+### Deploy Agreements Proxy
+
 ```bash
-npx nx run storage-evm:script ./scripts/ownership-token-factory-proxy.deploy.ts --network base-mainnet
+npx nx run storage-evm:script ./scripts/agreements-proxy.deploy.ts --network base-mainnet
 ```
+

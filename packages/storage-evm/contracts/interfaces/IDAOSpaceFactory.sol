@@ -116,4 +116,5 @@ interface IDAOSpaceFactory {
     uint256 oldJoinMethod,
     uint256 newJoinMethod
   );
+
 }

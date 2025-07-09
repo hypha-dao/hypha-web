@@ -61,6 +61,14 @@ interface IDAOProposals {
     view
     returns (uint256[] memory accepted, uint256[] memory rejected);
 
+  // New function to get executed proposals for a space
+  function getExecutedProposalsBySpace(
+    uint256 _spaceId
+  ) external view returns (uint256[] memory);
+
+  // New function to get all executed proposals
+  function getAllExecutedProposals() external view returns (uint256[] memory);
+
   // Events
   event ProposalCreated(
     uint256 indexed proposalId,

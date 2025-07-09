@@ -17,16 +17,14 @@ const customLabelStyles: React.CSSProperties = {
 
 export const Footer = () => {
   return (
-    <div className="bg-zinc-900">
+    <div className="bg-background-2">
       <Container>
         <div className="pt-6">
           <Logo width={140} />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-0 py-8">
           <div className="flex flex-col items-start space-y-4 md:space-y-0">
-            <Text className="text-white" style={customLabelStyles}>
-              THE NETWORK
-            </Text>
+            <Text style={customLabelStyles}>THE NETWORK</Text>
             <Button
               asChild
               variant="ghost"
@@ -66,9 +64,7 @@ export const Footer = () => {
           </div>
 
           <div className="flex flex-col items-start space-y-4 md:space-y-0">
-            <Text className="text-white" style={customLabelStyles}>
-              GET STARTED
-            </Text>
+            <Text style={customLabelStyles}>GET STARTED</Text>
             <Button
               asChild
               variant="ghost"
@@ -108,9 +104,7 @@ export const Footer = () => {
           </div>
 
           <div className="flex flex-col items-start space-y-4 md:space-y-0">
-            <Text className="text-white" style={customLabelStyles}>
-              DAO SERVICES
-            </Text>
+            <Text style={customLabelStyles}>DAO SERVICES</Text>
             <Button
               asChild
               variant="ghost"
