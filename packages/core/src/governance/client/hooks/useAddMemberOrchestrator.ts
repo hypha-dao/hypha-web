@@ -1,13 +1,14 @@
 'use client';
-
 import useSWR from 'swr';
 import { z } from 'zod';
 import React, { useState } from 'react';
 import useSWRMutation from 'swr/mutation';
 import { Config } from 'wagmi';
-
 import { useAgreementMutationsWeb2Rsc } from './useAgreementMutations.web2.rsc';
-import { schemaCreateAgreementWeb2 } from '../../validation';
+import {
+  schemaRequestInvite,
+  schemaCreateAgreementWeb2,
+} from '../../validation';
 import { useAddMemberMutationsWeb3Rpc } from './useAddMemberMutations.web3.rpc';
 
 type UseAddMemberOrchestratorInput = {
@@ -24,7 +25,6 @@ export const useAddMemberOrchestrator = ({
   memberAddress,
 }: UseAddMemberOrchestratorInput) => {
   const web2 = useAgreementMutationsWeb2Rsc(authToken);
-
   const [isCreating, setIsCreating] = useState(false);
 
   const web3 = useAddMemberMutationsWeb3Rpc({
@@ -34,27 +34,27 @@ export const useAddMemberOrchestrator = ({
 
   const { trigger: requestInvite } = useSWRMutation(
     'requestInviteOrchestration',
-    async (_, { arg }: { arg: z.infer<typeof schemaCreateAgreementWeb2> }) => {
+    async (_, { arg }: { arg: z.infer<typeof schemaRequestInvite> }) => {
       setIsCreating(true);
       try {
         const inputCreateAgreementWeb2 = schemaCreateAgreementWeb2.parse({
-          arg,
+          title: arg.title,
+          description: arg.description,
+          slug: arg.slug || `invite-request-${arg.spaceId}-${Date.now()}`,
+          creatorId: arg.creatorId,
+          spaceId: arg.spaceId,
+          web3ProposalId: arg.web3ProposalId,
         });
         const createdAgreement = await web2.createAgreement(
           inputCreateAgreementWeb2,
         );
 
-        const web3SpaceId = (arg as any).web3SpaceId;
-        const web3MemberAddress = (arg as any).memberAddress;
+        const { memberAddress } = arg;
 
         if (config) {
-          if (
-            typeof web3SpaceId !== 'number' ||
-            typeof web3MemberAddress !== 'string'
-          ) {
-            throw new Error('web3SpaceId and memberAddress are required');
+          if (!memberAddress) {
+            throw new Error('memberAddress are required');
           }
-
           await web3.addMember();
         }
 
@@ -92,17 +92,19 @@ export const useAddMemberOrchestrator = ({
     },
   );
 
-  const errors = React.useMemo(() => {
-    return [
+  const errors = React.useMemo(
+    () =>
+      [
+        web2.errorCreateAgreementMutation,
+        web3.errorAddMember,
+        web3.errorWaitForReceipt,
+      ].filter(Boolean),
+    [
       web2.errorCreateAgreementMutation,
       web3.errorAddMember,
       web3.errorWaitForReceipt,
-    ].filter(Boolean);
-  }, [
-    web2.errorCreateAgreementMutation,
-    web3.errorAddMember,
-    web3.errorWaitForReceipt,
-  ]);
+    ],
+  );
 
   return {
     requestInvite,
