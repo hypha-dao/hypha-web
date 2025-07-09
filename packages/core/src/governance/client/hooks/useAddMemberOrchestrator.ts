@@ -51,11 +51,13 @@ export const useAddMemberOrchestrator = ({
 
         const { memberAddress } = arg;
 
-        if (config) {
+        if (config && spaceId) {
           if (!memberAddress) {
             throw new Error('memberAddress is required');
           }
           await web3.addMember();
+        } else if (config && !spaceId) {
+          throw new Error('spaceId is required for Web3 operations');
         }
 
         return createdAgreement;
