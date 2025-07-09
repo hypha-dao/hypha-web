@@ -25,12 +25,14 @@ export const useMembers: UseMembers = ({
   pageSize = 4,
   spaceSlug,
   searchTerm,
+  refreshInterval,
 }: {
   page?: number;
   pageSize?: number;
   filter?: FilterParams<MemberItem>;
   spaceSlug?: string;
   searchTerm?: string;
+  refreshInterval?: number;
 }): UseMembersReturn => {
   const { jwt } = useJwt();
 
@@ -59,6 +61,7 @@ export const useMembers: UseMembers = ({
           'Content-Type': 'application/json',
         },
       }).then((res) => res.json()),
+    { refreshInterval: refreshInterval ? refreshInterval : 0 },
   );
 
   return {

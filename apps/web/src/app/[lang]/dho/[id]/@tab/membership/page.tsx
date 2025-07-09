@@ -24,6 +24,8 @@ export default async function MembershipPage(props: PageProps) {
 
   const subspaces = spaceFromDb.subspaces;
 
+  const refreshInterval = 10000;
+
   return (
     <div className="flex flex-col gap-6 py-4">
       <SubspaceSection
@@ -36,6 +38,7 @@ export default async function MembershipPage(props: PageProps) {
         basePath={`${basePath}/person`}
         useMembers={useMembers}
         spaceSlug={spaceFromDb.slug}
+        refreshInterval={refreshInterval}
       />
     </div>
   );
