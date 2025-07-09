@@ -53,7 +53,7 @@ export const useAddMemberOrchestrator = ({
 
         if (config) {
           if (!memberAddress) {
-            throw new Error('memberAddress are required');
+            throw new Error('memberAddress is required');
           }
           await web3.addMember();
         }
