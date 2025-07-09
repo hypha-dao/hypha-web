@@ -22,7 +22,12 @@ export const MembersList: FC<MembersListProps> = ({
   searchTerm,
   refreshInterval,
 }) => {
-  const { members, isLoading } = useMembers({ page, spaceSlug, searchTerm, refreshInterval });
+  const { members, isLoading } = useMembers({
+    page,
+    spaceSlug,
+    searchTerm,
+    refreshInterval,
+  });
   return (
     <div className="member-list w-full">
       {members.map((member) => (
