@@ -67,8 +67,52 @@ async function main(): Promise<void> {
       console.log('✅ Implementation address changed successfully!');
     }
   } catch (error) {
-    console.error('Upgrade failed with error:', error);
-    throw error;
+    // Check if the error is about unregistered deployment
+    if (error instanceof Error && error.message.includes('is not registered')) {
+      console.log(
+        '⚠️  Proxy not registered with upgrades plugin. Attempting to import...',
+      );
+
+      try {
+        // Force import the existing proxy
+        await upgrades.forceImport(PROXY_ADDRESS, DAOSpaceFactory, {
+          kind: 'uups',
+        });
+        console.log('✅ Proxy successfully imported. Retrying upgrade...');
+
+        // Now try the upgrade again
+        upgradedContract = await upgrades.upgradeProxy(
+          PROXY_ADDRESS,
+          DAOSpaceFactory,
+          {
+            unsafeSkipStorageCheck: true,
+          },
+        );
+
+        await upgradedContract.waitForDeployment();
+
+        // Get the new implementation address after upgrade
+        const newImpl = await upgrades.erc1967.getImplementationAddress(
+          PROXY_ADDRESS,
+        );
+        console.log('New implementation address:', newImpl);
+
+        // Verify the upgrade actually happened
+        if (currentImpl.toLowerCase() === newImpl.toLowerCase()) {
+          console.log(
+            '⚠️  WARNING: Implementation address did not change! Upgrade may have failed.',
+          );
+        } else {
+          console.log('✅ Implementation address changed successfully!');
+        }
+      } catch (importError) {
+        console.error('Failed to import proxy:', importError);
+        throw importError;
+      }
+    } else {
+      console.error('Upgrade failed with error:', error);
+      throw error;
+    }
   }
 
   console.log(

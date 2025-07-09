@@ -108,7 +108,7 @@ contract DAOSpaceFactoryImplementation is
     //add this as a separate contract
     if (space.joinMethod == 2) {
       // If join method is 2, create a proposal to add the member
-      require(proposalManagerAddress != address(0), 'Proposal manager not set');
+      require(proposalManagerAddress != address(0), 'Proposal manager not st');
 
       // Encode the function call data for addMember
       bytes memory executionData = abi.encodeWithSelector(
