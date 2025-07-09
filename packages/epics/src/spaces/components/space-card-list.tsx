@@ -1,47 +1,60 @@
 'use client';
 
-import { Empty, SpaceCardWrapper, UseMembers } from '@hypha-platform/epics';
+import { Empty, UseMembers, SpaceCardContainer } from '@hypha-platform/epics';
 import Link from 'next/link';
 import { Locale } from '@hypha-platform/i18n';
 import { Space } from '@core/space';
 import { Button } from '@hypha-platform/ui';
 import { GlobeIcon, PlusIcon } from '@radix-ui/react-icons';
+import { useSpaceCardList } from '../hooks/use-space-card-list';
+import { SectionLoadMore } from '@hypha-platform/ui/server';
+import { Text } from '@radix-ui/themes';
+
+type SpaceCardListProps = {
+  lang: Locale;
+  spaces: Space[];
+  pageSize?: number;
+  useMembers: UseMembers;
+};
 
 export function SpaceCardList({
   lang,
   spaces,
+  pageSize = 2,
   useMembers,
-}: {
-  lang: Locale;
-  spaces: Space[];
-  useMembers: UseMembers;
-}) {
+}: SpaceCardListProps) {
+  const { pages, loadMore, pagination } = useSpaceCardList({
+    spaces,
+    pageSize,
+  });
+
   return (
     <>
-      {spaces.length > 0 && (
-        <div
-          data-testid="member-spaces-container"
-          className="grid grid-cols-1 sm:grid-cols-2 gap-2"
-        >
-          {spaces.map((space) => (
-            <div key={space.slug}>
-              <Link href={`/${lang}/dho/${space.slug}/governance`}>
-                <SpaceCardWrapper
-                  description={space.description as string}
-                  icon={space.logoUrl || ''}
-                  leadImage={space.leadImage || ''}
-                  agreements={space.documentCount}
-                  title={space.title as string}
-                  spaceSlug={space.slug as string}
+      {pagination?.totalPages > 0 ? (
+        <div className="flex flex-col justify-around items-center gap-4">
+          <div className="w-full space-y-2">
+            {Array.from({ length: pages }).map((_, index) => {
+              const startIndex = index * pageSize;
+              const endIndex = startIndex + pageSize;
+              const pageSpaces = spaces.slice(startIndex, endIndex);
+              return (
+                <SpaceCardContainer
+                  key={index}
+                  spaces={pageSpaces}
+                  lang={lang}
                   useMembers={useMembers}
                 />
-              </Link>
-            </div>
-          ))}
+              );
+            })}
+          </div>
+          <SectionLoadMore
+            onClick={loadMore}
+            disabled={!pagination?.hasNextPage}
+          >
+            <Text>{pagination?.hasNextPage ? 'Load more' : 'No more'}</Text>
+          </SectionLoadMore>
         </div>
-      )}
-
-      {spaces.length === 0 && (
+      ) : (
         <Empty>
           <div className="flex flex-col gap-7">
             <p>

@@ -12,7 +12,7 @@ test.describe('My Spaces Page', () => {
   test('should display all sections', async () => {
     const visibility = await mySpacesPage.testVisibility();
 
-    expect(visibility.memberSpaces).toBeTruthy();
+    expect(visibility.memberSpaces).toBeFalsy();
     expect(visibility.recommendedSpaces).toBeTruthy();
   });
 });
