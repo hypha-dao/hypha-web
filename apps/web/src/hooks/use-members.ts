@@ -52,7 +52,7 @@ export const useMembers: UseMembers = ({
     [spaceSlug, page, pageSize, queryParams],
   );
 
-  const interval = refreshInterval ? refreshInterval : 0;
+  const interval = refreshInterval ?? 0;
   const keepPreviousData = !!interval;
 
   const { data: response, isLoading } = useSWR(
