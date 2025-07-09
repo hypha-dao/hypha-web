@@ -79,6 +79,9 @@ contract DAOSpaceFactoryImplementation is
     initialMembers[0] = msg.sender;
     newSpace.members = initialMembers;
 
+    // Add this space to the creator's list of spaces
+    memberSpaces[msg.sender].push(spaceCounter);
+
     emit SpaceCreated(
       spaceCounter,
       params.unity,
