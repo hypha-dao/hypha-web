@@ -52,6 +52,9 @@ export const useMembers: UseMembers = ({
     [spaceSlug, page, pageSize, queryParams],
   );
 
+  const interval = refreshInterval ? refreshInterval : 0;
+  const keepPreviousData = !!interval;
+
   const { data: response, isLoading } = useSWR(
     jwt ? [endpoint] : null,
     ([endpoint]) =>
@@ -61,7 +64,10 @@ export const useMembers: UseMembers = ({
           'Content-Type': 'application/json',
         },
       }).then((res) => res.json()),
-    { refreshInterval: refreshInterval ? refreshInterval : 0 },
+    {
+      refreshInterval: interval,
+      keepPreviousData,
+    },
   );
 
   return {
