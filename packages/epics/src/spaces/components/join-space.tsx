@@ -37,12 +37,16 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
 
   const handleJoinSpace = React.useCallback(async () => {
     if (isInviteOnly) {
+      if (!person?.id || !person?.address) {
+        console.error('User data not available for invite request');
+        return;
+      }
       await requestInvite({
         spaceId: spaceId,
         title: 'Invite Member',
-        description: `To onboard this member, we need as a space to approve this proposal. Member ${person?.name} ${person?.surname} [${person?.address}]`,
-        creatorId: person?.id as number,
-        memberAddress: person?.address as `0x${string}`,
+        description: `To onboard this member, we need as a space to approve this proposal. Member ${person.name} ${person.surname} [${person.address}]`,
+        creatorId: person.id,
+        memberAddress: person.address as `0x${string}`,
         slug: `invite-request-${spaceId}-${Date.now()}`,
       });
     } else {
