@@ -26,15 +26,9 @@ export const useMe = (): {
     }).then((res) => res.json()),
   );
 
-  const revalidate = React.useCallback(async () => {
-    if (jwt) {
-      await mutate([endpoint, jwt]);
-    }
-  }, [endpoint, jwt]);
-
   return {
     person,
     isLoading: isLoadingJwt || isLoadingPerson,
-    revalidate,
+    revalidate: mutate,
   };
 };
