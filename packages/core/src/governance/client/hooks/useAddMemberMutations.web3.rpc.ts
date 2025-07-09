@@ -24,7 +24,8 @@ export const useAddMemberMutationsWeb3Rpc = ({
     error: errorAddMember,
   } = useSWRMutation(`addMember-${spaceId}-${memberAddress}`, async () => {
     if (!client) throw new Error('Smart wallet not connected');
-    if (!spaceId) throw new Error('spaceId are required');
+    if (!spaceId) throw new Error('spaceId is required');
+    if (!memberAddress) throw new Error('memberAddress is required');
     return client?.writeContract(joinSpace({ spaceId: BigInt(spaceId) }));
   });
 
