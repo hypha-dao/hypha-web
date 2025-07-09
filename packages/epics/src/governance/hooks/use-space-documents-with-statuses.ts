@@ -177,7 +177,7 @@ export const useSpaceDocumentsWithStatuses = ({
   const revalidate = React.useCallback(() => {
     mutateSpaceProposalsWeb3();
     mutate();
-  }, [endpoint]);
+  }, [mutateSpaceProposalsWeb3, mutate]);
 
   return {
     documents: response,
