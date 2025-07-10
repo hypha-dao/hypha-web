@@ -204,6 +204,13 @@
       "when": 1751352712471,
       "tag": "0028_curious_toad_men",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1752135163283,
+      "tag": "0029_noisy_mongu",
+      "breakpoints": true
     }
   ]
 }
