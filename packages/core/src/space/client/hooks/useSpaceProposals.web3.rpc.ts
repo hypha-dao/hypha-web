@@ -6,13 +6,13 @@ import { getSpaceProposals } from '../web3';
 import React from 'react';
 
 export const useSpaceProposalsWeb3Rpc = ({ spaceId }: { spaceId: number }) => {
-  const { data, isLoading, error } = useSWR(
+  const { data, isLoading, error, mutate } = useSWR(
     [spaceId, 'spaceProposals'],
     async ([spaceId]) =>
       publicClient.readContract(
         getSpaceProposals({ spaceId: BigInt(spaceId) }),
       ),
-    { revalidateOnFocus: true },
+    { revalidateOnFocus: true, refreshInterval: 10000 },
   );
 
   const spaceProposalsIds = React.useMemo(() => {
@@ -26,5 +26,6 @@ export const useSpaceProposalsWeb3Rpc = ({ spaceId }: { spaceId: number }) => {
     spaceProposalsIds,
     isLoading,
     error,
+    mutateSpaceProposalsWeb3: mutate,
   };
 };
