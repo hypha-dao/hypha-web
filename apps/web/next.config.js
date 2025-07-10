@@ -1,5 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  headers: async () => {
+    return [
+      {
+        source: '/:path((?!api).*)*',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+        ],
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {
