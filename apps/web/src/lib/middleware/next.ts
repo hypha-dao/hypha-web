@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { NextMiddlewareFunction, NextMiddlewareContext } from './types';
+import { IMAGE_HOSTS } from '../../config/image-hosts';
 
 /**
  * A utility type for Next.js middleware chain
@@ -136,12 +137,17 @@ export function corsMiddleware(
 export function cspMiddleware(): NextMiddlewareFunction {
   return async (request: NextRequest) => {
     const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+    const imageSrc = [
+      'data:',
+      'blob:',
+      IMAGE_HOSTS.map((host) => `https://${host}`).join(' '),
+    ];
     const cspHeaderValue =
       [
         "default-src 'self'",
         `script-src 'self' 'nonce-${nonce}' https://challenges.cloudflare.com 'strict-dynamic'`,
         `style-src 'self' 'nonce-${nonce}'`,
-        //"img-src 'self' data: blob:",
+        `img-src 'self' ${imageSrc.join(' ')}`,
         "font-src 'self'",
         "object-src 'none'",
         "base-uri 'self'",
