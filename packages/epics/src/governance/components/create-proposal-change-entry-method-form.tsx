@@ -154,7 +154,7 @@ export const CreateProposalChangeEntryMethodForm = ({
             }}
             closeUrl={successfulUrl}
             isLoading={false}
-            label="Change Entry Method"
+            label="Entry Method"
           />
           {plugin}
           <Separator />

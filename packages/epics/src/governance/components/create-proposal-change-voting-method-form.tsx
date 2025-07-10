@@ -159,7 +159,7 @@ export const CreateProposalChangeVotingMethodForm = ({
             backUrl={backUrl}
             backLabel="Back to Settings"
             isLoading={false}
-            label="Change Voting Method"
+            label="Voting Method"
           />
           {plugin}
           <Separator />

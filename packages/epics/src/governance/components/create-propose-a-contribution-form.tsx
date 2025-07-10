@@ -124,6 +124,7 @@ export const CreateProposeAContributionForm = ({
             closeUrl={successfulUrl}
             backUrl={backUrl}
             isLoading={false}
+            label="Contribution"
           />
           {plugin}
           <Separator />

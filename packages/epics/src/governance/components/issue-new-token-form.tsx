@@ -120,6 +120,7 @@ export const IssueNewTokenForm = ({
             backUrl={backUrl}
             backLabel="Back to Settings"
             isLoading={false}
+            label="Issue New Token"
           />
           {plugin}
           <Separator />
