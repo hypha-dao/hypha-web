@@ -104,6 +104,7 @@ export const CreatePayForExpensesForm = ({
         amount: amount ?? '0',
         token: token ?? '',
       })),
+      label: 'Expenses',
     });
   };
 

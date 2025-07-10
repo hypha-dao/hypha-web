@@ -35,6 +35,7 @@ export type Document = {
   leadImage?: string;
   attachments?: string[];
   web3ProposalId: number | null;
+  label?: string;
   status?: 'accepted' | 'rejected' | 'onVoting';
 };
 
@@ -46,6 +47,7 @@ export interface CreateAgreementInput {
   slug?: string;
   spaceId: number;
   creatorId: number;
+  label?: string;
 }
 
 export interface UpdateAgreementInput {

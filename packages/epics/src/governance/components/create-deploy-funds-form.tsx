@@ -104,6 +104,7 @@ export const CreateDeployFundsForm = ({
         amount: amount ?? '0',
         token: token ?? '',
       })),
+      label: 'Funding',
     });
   };
 
