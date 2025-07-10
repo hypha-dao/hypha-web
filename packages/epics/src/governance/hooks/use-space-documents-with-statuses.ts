@@ -9,55 +9,94 @@ import { DirectionType, Order, OrderField } from '@core/common';
 import queryString from 'query-string';
 
 const getDocumentBadges = (document: Document) => {
+  const badges = [];
+  switch (document.label) {
+    case 'Contribution':
+      badges.push({
+        label: 'Contribution',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
+    case 'Collective Agreement':
+      badges.push({
+        label: 'Collective Agreement',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
+    case 'Expenses':
+      badges.push({
+        label: 'Expenses',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
+    case 'Funding':
+      badges.push({
+        label: 'Funding',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
+    case 'Voting Method':
+      badges.push({
+        label: 'Voting Method',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
+    case 'Entry Method':
+      badges.push({
+        label: 'Entry Method',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
+    case 'Issue New Token':
+      badges.push({
+        label: 'Issue New Token',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
+    default:
+      break;
+  }
   switch (document.status) {
     case 'onVoting':
-      return [
-        {
-          label: 'Proposal',
-          className: 'capitalize',
-          variant: 'solid',
-          colorVariant: 'accent',
-        },
-        {
-          label: 'On voting',
-          className: 'capitalize',
-          variant: 'outline',
-          colorVariant: 'warn',
-        },
-      ];
+      badges.push({
+        label: 'On voting',
+        className: 'capitalize',
+        variant: 'outline',
+        colorVariant: 'warn',
+      });
+      break;
     case 'accepted':
-      return [
-        {
-          label: 'Proposal',
-          className: 'capitalize',
-          variant: 'solid',
-          colorVariant: 'accent',
-        },
-        {
-          label: 'Accepted',
-          className: 'capitalize',
-          variant: 'outline',
-          colorVariant: 'success',
-        },
-      ];
+      badges.push({
+        label: 'Accepted',
+        className: 'capitalize',
+        variant: 'outline',
+        colorVariant: 'success',
+      });
+      break;
     case 'rejected':
-      return [
-        {
-          label: 'Proposal',
-          className: 'capitalize',
-          variant: 'solid',
-          colorVariant: 'accent',
-        },
-        {
-          label: 'Rejected',
-          className: 'capitalize',
-          variant: 'outline',
-          colorVariant: 'error',
-        },
-      ];
-    default:
-      return [];
+      badges.push({
+        label: 'Rejected',
+        className: 'capitalize',
+        variant: 'outline',
+        colorVariant: 'error',
+      });
+      break;
   }
+  return badges;
 };
 
 export const useSpaceDocumentsWithStatuses = ({
@@ -69,8 +108,7 @@ export const useSpaceDocumentsWithStatuses = ({
   spaceId: number;
   order?: Order<Document>;
 }) => {
-  const { spaceProposalsIds, mutateSpaceProposalsWeb3 } =
-    useSpaceProposalsWeb3Rpc({ spaceId: spaceId });
+  const { spaceProposalsIds } = useSpaceProposalsWeb3Rpc({ spaceId: spaceId });
 
   const getDirection = (dir: DirectionType) => {
     return `${dir === DirectionType.DESC ? '-' : '+'}`;
@@ -104,6 +142,8 @@ export const useSpaceDocumentsWithStatuses = ({
     {
       revalidateOnFocus: true,
       refreshInterval: 10000,
+      refreshWhenHidden: false,
+      refreshWhenOffline: false,
     },
   );
 
@@ -174,14 +214,9 @@ export const useSpaceDocumentsWithStatuses = ({
     };
   }, [documentsFromDb, spaceProposalsIds]);
 
-  const revalidate = React.useCallback(() => {
-    mutateSpaceProposalsWeb3();
-    mutate();
-  }, [mutateSpaceProposalsWeb3, mutate]);
-
   return {
     documents: response,
     isLoading,
-    update: revalidate,
+    update: mutate,
   };
 };

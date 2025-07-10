@@ -67,6 +67,7 @@ export const CreateProposeAContributionForm = ({
           token: undefined,
         },
       ],
+      label: 'Contribution',
     },
   });
 

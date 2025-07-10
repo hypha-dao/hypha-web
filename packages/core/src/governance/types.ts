@@ -35,6 +35,7 @@ export type Document = {
   leadImage?: string;
   attachments?: string[];
   web3ProposalId: number | null;
+  label?: string;
   status?: 'accepted' | 'rejected' | 'onVoting';
 };
 

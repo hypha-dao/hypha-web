@@ -71,6 +71,7 @@ export const IssueNewTokenForm = ({
         decayInterval: 604800,
         decayPercentage: 1,
       },
+      label: 'Issue New Token',
     },
   });
 

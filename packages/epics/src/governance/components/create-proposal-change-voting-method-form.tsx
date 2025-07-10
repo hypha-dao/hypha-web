@@ -72,6 +72,7 @@ export const CreateProposalChangeVotingMethodForm = ({
         unity: 0,
       },
       votingMethod: undefined,
+      label: 'Voting Method',
     },
   });
 

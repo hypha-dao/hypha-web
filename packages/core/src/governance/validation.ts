@@ -117,6 +117,7 @@ const createAgreementWeb2Props = {
   creatorId: z.number().min(1),
   spaceId: z.number().min(1),
   web3ProposalId: z.number().optional(),
+  label: z.string().optional(),
 };
 
 export const schemaCreateAgreementWeb2 = z.object(createAgreementWeb2Props);
