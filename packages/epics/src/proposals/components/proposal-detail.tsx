@@ -163,13 +163,14 @@ export const ProposalDetail = ({
         isLoading={isLoading}
         isVoting={isVoting}
       />
-      <Separator />
+      {/* TODO: uncomment when comments support will be implemented */}
+      {/* <Separator />
       <CommentsList
         pagination={{
           total: 0,
         }}
         comments={[]}
-      />
+      /> */}
     </div>
   );
 };

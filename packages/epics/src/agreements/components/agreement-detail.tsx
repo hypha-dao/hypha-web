@@ -56,12 +56,13 @@ export const AgreementDetail = ({
       </Skeleton>
       <div>{content}</div>
       <AttachmentList attachments={attachments || []} />
-      <CommentsList
+      {/* TODO: uncomment when comments support will be implemented */}
+      {/* <CommentsList
         pagination={{
           total: comments?.length ?? 0,
         }}
         comments={comments}
-      />
+      /> */}
     </div>
   );
 };
