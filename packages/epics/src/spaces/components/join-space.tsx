@@ -2,7 +2,7 @@
 import { Button } from '@hypha-platform/ui';
 import { useJoinSpace } from '../hooks/use-join-space';
 import { PersonIcon } from '@radix-ui/react-icons';
-import React from 'react';
+import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useSpaceDetailsWeb3Rpc } from '@core/space';
 import { useMe, useJwt } from '@core/people';
@@ -18,6 +18,7 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
   const config = useConfig();
   const { jwt } = useJwt();
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({ spaceId: web3SpaceId });
+  const [joinError, setJoinError] = useState<any | undefined>(undefined);
   const isInviteOnly = spaceDetails?.joinMethod === 2n;
 
   const { person } = useMe();
@@ -36,6 +37,7 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
     });
 
   const handleJoinSpace = React.useCallback(async () => {
+    setJoinError(undefined);
     if (isInviteOnly) {
       if (!person?.id || !person?.address) {
         console.error('User data not available for invite request');
@@ -50,7 +52,11 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
         slug: `invite-request-${spaceId}-${Date.now()}`,
       });
     } else {
-      await joinSpace();
+      try {
+        await joinSpace();
+      } catch (err) {
+        setJoinError(err);
+      }
       revalidateIsMember();
     }
   }, [
@@ -87,6 +93,11 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
           {errors.map((err, idx) => (
             <p key={idx}>{err.message}</p>
           ))}
+        </div>
+      )}
+      {joinError && (
+        <div className="text-red-500 mt-2">
+          <p>{joinError.details}</p>
         </div>
       )}
     </div>
