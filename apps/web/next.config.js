@@ -7,6 +7,19 @@ const { withVercelToolbar } = require('@vercel/toolbar/plugins/next');
  * @type {import('@nx/next/plugins/with-nx').WithNxOptions}
  **/
 const nextConfig = {
+  headers: async () => {
+    return [
+      {
+        source: '/:path((?!api).*)*',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+        ],
+      },
+    ];
+  },
   nx: {
     // Set this to true if you would like to use SVGR
     // See: https://github.com/gregberge/svgr
