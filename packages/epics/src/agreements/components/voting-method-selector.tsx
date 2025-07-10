@@ -36,7 +36,6 @@ const votingMethods: VotingMethod[] = [
     title: '1 Token 1 Vote',
     description: 'Voting power is proportional to the number of tokens held.',
     icon: <PlusCircledIcon />,
-    disabled: true, // TODO: hide for MVP
   },
 ];
 
