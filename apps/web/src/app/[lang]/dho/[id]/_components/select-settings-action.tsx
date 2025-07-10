@@ -73,7 +73,7 @@ export const SETTINGS_ACTIONS = [
       'Create a new token for utility, cash credit, or ownership within your space.',
     href: 'create/issue-new-token',
     icon: <RadiobuttonIcon />,
-    baseTab: 'treasury',
+    baseTab: 'governance',
   },
   {
     group: 'Hypha Network Tokenomics',
