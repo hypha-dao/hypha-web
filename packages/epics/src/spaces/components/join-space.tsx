@@ -7,18 +7,22 @@ import { Loader2 } from 'lucide-react';
 import { useSpaceDetailsWeb3Rpc } from '@core/space';
 import { useMe, useJwt } from '@core/people';
 import { useAddMemberOrchestrator } from '@core/governance';
-import { useConfig } from 'wagmi';
+import { BaseError, useConfig } from 'wagmi';
 
 type JoinSpaceProps = {
   spaceId: number;
   web3SpaceId: number;
 };
 
+function isBaseError(error: any): error is BaseError {
+  return (error as BaseError).details !== undefined;
+}
+
 export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
   const config = useConfig();
   const { jwt } = useJwt();
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({ spaceId: web3SpaceId });
-  const [joinError, setJoinError] = useState<any | undefined>(undefined);
+  const [joinError, setJoinError] = useState<BaseError | null>(null);
   const isInviteOnly = spaceDetails?.joinMethod === 2n;
 
   const { person } = useMe();
@@ -37,7 +41,7 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
     });
 
   const handleJoinSpace = React.useCallback(async () => {
-    setJoinError(undefined);
+    setJoinError(null);
     if (isInviteOnly) {
       if (!person?.id || !person?.address) {
         console.error('User data not available for invite request');
@@ -55,7 +59,10 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
       try {
         await joinSpace();
       } catch (err) {
-        setJoinError(err);
+        console.error(err);
+        if (isBaseError(err)) {
+          setJoinError(err as BaseError);
+        }
       }
       revalidateIsMember();
     }
