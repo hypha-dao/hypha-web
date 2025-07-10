@@ -3,6 +3,7 @@ import {
   corsMiddleware,
   loggingMiddleware,
   authMiddleware,
+  cspMiddleware,
 } from './lib/middleware/next';
 import { NextMiddlewareFunction } from './lib/middleware/types';
 
@@ -25,6 +26,8 @@ const middlewareChain = composeMiddleware([
   i18nMiddlewareAdapter,
   // Add auth middleware with routes that don't require auth can be added here
   authMiddleware(false), // TODO: Setup protected routes
+  // Configure CSP
+  cspMiddleware(),
 ]);
 
 // Export the middleware chain as the main middleware

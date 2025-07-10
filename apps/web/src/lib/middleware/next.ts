@@ -130,6 +130,46 @@ export function corsMiddleware(
 }
 
 /**
+ * Content security policy (CSP) middleware
+ * @returns Middleware function
+ */
+export function cspMiddleware(): NextMiddlewareFunction {
+  return async (request: NextRequest) => {
+    const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+    const cspHeaderValue =
+      [
+        "default-src 'self'",
+        `script-src 'self' 'nonce-${nonce}' https://challenges.cloudflare.com 'strict-dynamic'`,
+        `style-src 'self' 'nonce-${nonce}'`,
+        //"img-src 'self' data: blob:",
+        "font-src 'self'",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "frame-ancestors 'none'",
+        'child-src https://auth.privy.io https://verify.walletconnect.com https verify.walletconnect.org',
+        'frame-src https://auth.privy.io https://verify.walletconnect.com https verify.walletconnect.org https://challenges.cloudflare.com',
+        "connect-src 'self' https://auth.privy.io wss://relay.walletconnect.com wss://relay.walletconnect.org wss://www.walletlink.org https://*.rpc.privy.systems https://explorer-api.walletconnect.com",
+        "worker-src 'self'",
+        "manifest-src 'self'",
+      ].join(';') + ';';
+
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('Content-Security-Policy', cspHeaderValue);
+    requestHeaders.set('X-Nonce', nonce);
+
+    const response = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+    response.headers.set('Content-Security-Policy', cspHeaderValue);
+
+    return response;
+  };
+}
+
+/**
  * Helper function to get the allowed origin
  */
 function getAllowedOrigin(
