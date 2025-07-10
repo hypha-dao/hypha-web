@@ -33,6 +33,7 @@ export const documents = pgTable(
     leadImage: text('lead_image'),
     attachments: jsonb('attachments').$type<string[]>().default([]),
     web3ProposalId: integer('web3_proposal_id'),
+    label: text('label'),
     ...commonDateFields,
   },
   (table) => [

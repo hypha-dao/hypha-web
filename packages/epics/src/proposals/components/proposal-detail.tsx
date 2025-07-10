@@ -29,6 +29,7 @@ type ProposalDetailProps = ProposalHeadProps & {
   attachments?: string[];
   proposalId?: number | null | undefined;
   spaceSlug: string;
+  label?: string;
 };
 
 export const ProposalDetail = ({
@@ -49,6 +50,7 @@ export const ProposalDetail = ({
   updateProposalsList,
   spaceSlug,
   isVoting,
+  label,
 }: ProposalDetailProps) => {
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: proposalId as number,
@@ -89,6 +91,7 @@ export const ProposalDetail = ({
           commitment={commitment}
           status={status}
           isLoading={isLoading}
+          label={label}
         />
         <ButtonClose closeUrl={closeUrl} />
       </div>

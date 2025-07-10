@@ -74,6 +74,7 @@ export const CreateProposalChangeEntryMethodForm = ({
         ? (Number(spaceDetails.joinMethod) as EntryMethodType)
         : EntryMethodType.OPEN_ACCESS,
       tokenBase: undefined,
+      label: 'Entry Method',
     };
   }, [spaceId, person, spaceDetails]);
 
@@ -154,7 +155,7 @@ export const CreateProposalChangeEntryMethodForm = ({
             }}
             closeUrl={successfulUrl}
             isLoading={false}
-            label="Change Entry Method"
+            label="Entry Method"
           />
           {plugin}
           <Separator />

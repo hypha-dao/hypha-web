@@ -72,6 +72,7 @@ export const CreateProposalChangeVotingMethodForm = ({
         unity: 0,
       },
       votingMethod: undefined,
+      label: 'Voting Method',
     },
   });
 
@@ -159,7 +160,7 @@ export const CreateProposalChangeVotingMethodForm = ({
             backUrl={backUrl}
             backLabel="Back to Settings"
             isLoading={false}
-            label="Change Voting Method"
+            label="Voting Method"
           />
           {plugin}
           <Separator />
