@@ -1,6 +1,7 @@
 import { AgreementHead, AgreementHeadProps } from './agreement-head';
 import { Separator, Skeleton, AttachmentList } from '@hypha-platform/ui';
-import { CommentsList } from '../../interactions/components/comments-list';
+// TODO(#891): restore when comments support is implemented
+// import { CommentsList } from '../../interactions/components/comments-list';
 import { CardCommentProps } from '../../interactions/components/card-comment';
 import Image from 'next/image';
 import { ButtonClose } from '@hypha-platform/epics';
@@ -56,12 +57,13 @@ export const AgreementDetail = ({
       </Skeleton>
       <div>{content}</div>
       <AttachmentList attachments={attachments || []} />
-      <CommentsList
+      {/* TODO: uncomment when comments support will be implemented */}
+      {/* <CommentsList
         pagination={{
           total: comments?.length ?? 0,
         }}
         comments={comments}
-      />
+      /> */}
     </div>
   );
 };
