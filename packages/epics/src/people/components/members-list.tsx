@@ -10,6 +10,7 @@ type MembersListProps = {
   useMembers: UseMembers;
   spaceSlug?: string;
   searchTerm?: string;
+  refreshInterval?: number;
 };
 
 export const MembersList: FC<MembersListProps> = ({
@@ -19,8 +20,14 @@ export const MembersList: FC<MembersListProps> = ({
   useMembers,
   spaceSlug,
   searchTerm,
+  refreshInterval,
 }) => {
-  const { members, isLoading } = useMembers({ page, spaceSlug, searchTerm });
+  const { members, isLoading } = useMembers({
+    page,
+    spaceSlug,
+    searchTerm,
+    refreshInterval,
+  });
   return (
     <div className="member-list w-full">
       {members.map((member) => (
