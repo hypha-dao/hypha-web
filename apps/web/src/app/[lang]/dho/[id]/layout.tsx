@@ -72,7 +72,10 @@ export default async function DhoLayout({
         </Card>
         <div className="flex justify-end mt-2 gap-2">
           {typeof spaceFromDb.web3SpaceId === 'number' && (
-            <JoinSpace spaceId={spaceFromDb.web3SpaceId} />
+            <JoinSpace
+              web3SpaceId={spaceFromDb.web3SpaceId}
+              spaceId={spaceFromDb.id}
+            />
           )}
           <ActionButtons />
         </div>

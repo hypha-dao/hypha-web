@@ -9,11 +9,13 @@ const filterOptions = FILTER_OPTIONS_MEMBERS;
 type UseMembersSectionProps = {
   useMembers: UseMembers;
   spaceSlug?: string;
+  refreshInterval?: number;
 };
 
 export const useMembersSection = ({
   useMembers,
   spaceSlug,
+  refreshInterval,
 }: UseMembersSectionProps) => {
   const [activeFilter, setActiveFilter] = useState<FilterParams<Person>>();
   const [pages, setPages] = React.useState(1);
@@ -29,6 +31,7 @@ export const useMembersSection = ({
     ...(activeFilter !== undefined && { filter: activeFilter }),
     spaceSlug: spaceSlug,
     searchTerm,
+    refreshInterval,
   });
 
   React.useEffect(() => {
