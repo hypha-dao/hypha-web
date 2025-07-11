@@ -32,6 +32,7 @@ export const SpaceSearch = ({ suggestions }: SpaceSearchProps) => {
   return (
     <div className="flex flex-col flex-grow gap-2">
       <Input
+        type="search"
         placeholder="Find a Space"
         leftIcon={<SearchIcon size="16px" />}
         onChange={(e) => handleSearch(e.target.value)}
