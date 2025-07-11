@@ -32,7 +32,7 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
       spaceId: web3SpaceId,
     });
 
-  const { requestInvite, isCreating, isError, errors } =
+  const { requestInvite, isCreating, isError: isInviteError, errors: inviteErrors } =
     useAddMemberOrchestrator({
       authToken: jwt,
       config,
@@ -95,9 +95,9 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
           ? 'Request Invite'
           : 'Become member'}
       </Button>
-      {isError && (
+      {isInviteError && (
         <div className="text-red-500 mt-2">
-          {errors.map((err, idx) => (
+          {inviteErrors.map((err, idx) => (
             <p key={idx}>{err.message}</p>
           ))}
         </div>
