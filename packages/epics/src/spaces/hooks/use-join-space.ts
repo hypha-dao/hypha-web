@@ -18,7 +18,7 @@ export const useJoinSpace = ({ spaceId }: { spaceId: number }) => {
   } = useSWR(
     user?.wallet?.address ? [user.wallet.address, spaceId, 'isMember'] : null,
     async ([address, spaceId]) =>
-      publicClient.readContract(
+      await publicClient.readContract(
         isMemberConfig({ spaceId: BigInt(spaceId), memberAddress: address }),
       ),
     { revalidateOnFocus: true },
