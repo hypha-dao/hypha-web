@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { NextMiddlewareFunction, NextMiddlewareContext } from './types';
+import { IMAGE_HOSTS } from '../../config/image-hosts';
+import { CONNECT_SOURCES } from '../../config/connect-sources';
 
 /**
  * A utility type for Next.js middleware chain
@@ -124,6 +126,57 @@ export function corsMiddleware(
       'Access-Control-Allow-Origin',
       getAllowedOrigin(request, allowedOrigins),
     );
+
+    return response;
+  };
+}
+
+/**
+ * Content security policy (CSP) middleware
+ * @returns Middleware function
+ */
+export function cspMiddleware(): NextMiddlewareFunction {
+  return async (request: NextRequest) => {
+    const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+    const imageSrc = [
+      'data:',
+      'blob:',
+      IMAGE_HOSTS.map((host) => `https://${host}`).join(' '),
+    ];
+    const unsafeForDevelopment =
+      process.env.NODE_ENV === 'development'
+        ? "'unsafe-inline' 'unsafe-eval'"
+        : `'nonce-${nonce}'`;
+    const cspHeaderValue =
+      [
+        "default-src 'self'",
+        `script-src 'self' ${unsafeForDevelopment} https://challenges.cloudflare.com`,
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        `img-src 'self' ${imageSrc.join(' ')}`,
+        "font-src 'self'",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "frame-ancestors 'none'",
+        'child-src https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org',
+        'frame-src https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com',
+        `connect-src 'self' ${CONNECT_SOURCES.join(' ')}`,
+        "worker-src 'self'",
+        "manifest-src 'self'",
+      ].join(';') + ';';
+
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('Content-Security-Policy', cspHeaderValue);
+    if (process.env.NODE_ENV !== 'development') {
+      requestHeaders.set('X-Nonce', nonce);
+    }
+
+    const response = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+    response.headers.set('Content-Security-Policy', cspHeaderValue);
 
     return response;
   };
