@@ -19,6 +19,8 @@ export default defineConfig({
         'OwnershipTokenFactory.sol/**',
         'DecayingSpaceToken.sol/**',
         'TokenBalanceJoinImplementation.sol/**',
+        'TokenVotingPowerImplementation.sol/**',
+        'OwnershipTokenVotingPowerImplementation.sol/**',
       ],
       deployments: {
         DAOSpaceFactoryImplementation: {
@@ -44,6 +46,12 @@ export default defineConfig({
         },
         TokenBalanceJoinImplementation: {
           [base.id]: '0x41cD69A3a3715B16598415df336a8Cc533CCAF76',
+        },
+        TokenVotingPowerImplementation: {
+          [base.id]: '0x3214DE1Eb858799Db626Bd9699e78c2E6E33D2BE',
+        },
+        OwnershipTokenVotingPowerImplementation: {
+          [base.id]: '0x255c7b5DaC3696199fEF7A8CC6Cc87190bc36eFd',
         },
       },
     }),

@@ -287,6 +287,7 @@ export const schemaIssueNewToken = z.object({
       }),
   ),
   decaySettings: decaySettingsSchema,
+  isVotingToken: z.boolean(),
 });
 
 export const schemaChangeVotingMethod = z.object({
