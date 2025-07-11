@@ -34,6 +34,7 @@ export const mapToDocument = (
     createdAt: dbDocument.createdAt,
     updatedAt: dbDocument.updatedAt,
     web3ProposalId: dbDocument.web3ProposalId,
+    label: dbDocument.label ?? '',
     creator: {
       avatarUrl: creator?.avatarUrl || '',
       name: creator?.name || '',

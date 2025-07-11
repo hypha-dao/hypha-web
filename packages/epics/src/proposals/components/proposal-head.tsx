@@ -14,6 +14,7 @@ export type ProposalHeadProps = {
   commitment?: number;
   status?: string;
   isLoading?: boolean;
+  label?: string;
 };
 
 export const ProposalHead = ({
@@ -22,6 +23,7 @@ export const ProposalHead = ({
   commitment,
   status,
   isLoading,
+  label,
 }: ProposalHeadProps) => {
   return (
     <div className="flex items-center space-x-3">
@@ -35,7 +37,7 @@ export const ProposalHead = ({
         <div className="grid">
           <div className="flex gap-x-1">
             <Badge variant="solid" colorVariant="accent" isLoading={isLoading}>
-              Proposal
+              {label}
             </Badge>
             <StatusBadge isLoading={isLoading} status={status} />
           </div>

@@ -117,9 +117,17 @@ const createAgreementWeb2Props = {
   creatorId: z.number().min(1),
   spaceId: z.number().min(1),
   web3ProposalId: z.number().optional(),
+  label: z.string().optional(),
 };
 
 export const schemaCreateAgreementWeb2 = z.object(createAgreementWeb2Props);
+
+export const schemaRequestInvite = schemaCreateAgreementWeb2.extend({
+  memberAddress: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{40}$/, { message: 'Invalid Ethereum address' })
+    .min(1, { message: 'Member address is required' }),
+});
 
 export const createAgreementWeb2FileUrls = {
   leadImage: z.string().url('Lead Image URL must be a valid URL').optional(),

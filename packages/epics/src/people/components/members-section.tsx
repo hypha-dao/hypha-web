@@ -13,17 +13,20 @@ type MemberSectionProps = {
   basePath: string;
   useMembers: UseMembers;
   spaceSlug?: string;
+  refreshInterval?: number;
 };
 
 export const MembersSection: FC<MemberSectionProps> = ({
   basePath,
   useMembers,
   spaceSlug,
+  refreshInterval,
 }) => {
   const { pages, isLoading, loadMore, pagination, onUpdateSearch, searchTerm } =
     useMembersSection({
       useMembers,
       spaceSlug,
+      refreshInterval,
     });
   console.debug('MembersSection', { searchTerm });
 
@@ -50,6 +53,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
             useMembers={useMembers}
             spaceSlug={spaceSlug}
             searchTerm={searchTerm}
+            refreshInterval={refreshInterval}
           />
         ))
       )}

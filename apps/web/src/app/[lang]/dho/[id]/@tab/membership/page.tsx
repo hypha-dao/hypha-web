@@ -11,6 +11,8 @@ type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
 };
 
+const MEMBER_REFRESH_INTERVAL = 10000; // 10 seconds
+
 export default async function MembershipPage(props: PageProps) {
   const params = await props.params;
 
@@ -24,6 +26,8 @@ export default async function MembershipPage(props: PageProps) {
 
   const subspaces = spaceFromDb.subspaces;
 
+  const refreshInterval = MEMBER_REFRESH_INTERVAL;
+
   return (
     <div className="flex flex-col gap-6 py-4">
       <SubspaceSection
@@ -36,6 +40,7 @@ export default async function MembershipPage(props: PageProps) {
         basePath={`${basePath}/person`}
         useMembers={useMembers}
         spaceSlug={spaceFromDb.slug}
+        refreshInterval={refreshInterval}
       />
     </div>
   );

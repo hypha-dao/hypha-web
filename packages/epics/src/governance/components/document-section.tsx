@@ -54,7 +54,7 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
           <p>List is empty</p>
         </Empty>
       ) : (
-        <div className="space-y-2">
+        <div className="w-full space-y-2">
           {Array.from({ length: pages }).map((_, index) => (
             <DocumentGridContainer
               key={index}

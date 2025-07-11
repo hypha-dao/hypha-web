@@ -1,40 +1,94 @@
 'use client';
-
 import { Button } from '@hypha-platform/ui';
 import { useJoinSpace } from '../hooks/use-join-space';
 import { PersonIcon } from '@radix-ui/react-icons';
 import React from 'react';
 import { Loader2 } from 'lucide-react';
+import { useSpaceDetailsWeb3Rpc } from '@core/space';
+import { useMe, useJwt } from '@core/people';
+import { useAddMemberOrchestrator } from '@core/governance';
+import { useConfig } from 'wagmi';
 
 type JoinSpaceProps = {
   spaceId: number;
+  web3SpaceId: number;
 };
 
-export const JoinSpace = ({ spaceId }: JoinSpaceProps) => {
+export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
+  const config = useConfig();
+  const { jwt } = useJwt();
+  const { spaceDetails } = useSpaceDetailsWeb3Rpc({ spaceId: web3SpaceId });
+  const isInviteOnly = spaceDetails?.joinMethod === 2n;
+
+  const { person } = useMe();
+
   const { isMember, isLoading, joinSpace, revalidateIsMember, isJoiningSpace } =
     useJoinSpace({
-      spaceId,
+      spaceId: web3SpaceId,
+    });
+
+  const { requestInvite, isCreating, isError, errors } =
+    useAddMemberOrchestrator({
+      authToken: jwt,
+      config,
+      spaceId: web3SpaceId,
+      memberAddress: person?.address as `0x${string}`,
     });
 
   const handleJoinSpace = React.useCallback(async () => {
-    await joinSpace();
-    revalidateIsMember();
-  }, [joinSpace, revalidateIsMember]);
+    if (isInviteOnly) {
+      if (!person?.id || !person?.address) {
+        console.error('User data not available for invite request');
+        return;
+      }
+      await requestInvite({
+        spaceId: spaceId,
+        title: 'Invite Member',
+        description: `To onboard this member, we need as a space to approve this proposal. Member ${person.name} ${person.surname} [${person.address}]`,
+        creatorId: person.id,
+        memberAddress: person.address as `0x${string}`,
+        slug: `invite-request-${spaceId}-${Date.now()}`,
+      });
+    } else {
+      await joinSpace();
+      revalidateIsMember();
+    }
+  }, [
+    isInviteOnly,
+    requestInvite,
+    joinSpace,
+    revalidateIsMember,
+    spaceId,
+    person,
+  ]);
 
   return (
-    <Button
-      disabled={isMember || isLoading || isJoiningSpace}
-      onClick={handleJoinSpace}
-      className="ml-2 rounded-lg"
-      colorVariant={isMember ? 'neutral' : 'accent'}
-      variant={isMember ? 'outline' : 'default'}
-    >
-      {isJoiningSpace ? (
-        <Loader2 className="mr-2 animate-spin" width={16} height={16} />
-      ) : (
-        <PersonIcon className="mr-2" width={16} height={16} />
+    <div>
+      <Button
+        disabled={isMember || isLoading || isJoiningSpace || isCreating}
+        onClick={handleJoinSpace}
+        className="ml-2 rounded-lg"
+        colorVariant={isMember ? 'neutral' : 'accent'}
+        variant={isMember ? 'outline' : 'default'}
+      >
+        {isJoiningSpace || isCreating ? (
+          <Loader2 className="mr-2 animate-spin" width={16} height={16} />
+        ) : (
+          <PersonIcon className="mr-2" width={16} height={16} />
+        )}
+        {isMember
+          ? 'Already member'
+          : isInviteOnly
+          ? 'Request Invite'
+          : 'Become member'}
+      </Button>
+      {isError && (
+        <div className="text-red-500 mt-2">
+          {errors.map((err, idx) => (
+            <p key={idx}>{err.message}</p>
+          ))}
+        </div>
       )}
-      {isMember ? 'Already member' : 'Become member'}
-    </Button>
+    </div>
   );
 };

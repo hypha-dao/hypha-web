@@ -40,8 +40,8 @@ export default async function DhoLayout({
     getSpaceDetails({ spaceId: BigInt(spaceFromDb.web3SpaceId as number) }),
   );
   return (
-    <div className="flex">
-      <Container>
+    <div className="flex max-w-[--spacing-container-2xl] mx-auto">
+      <Container className="flex-grow min-w-0">
         <div className="mb-6 flex items-center">
           <Link
             href={`/${lang}/my-spaces`}
@@ -72,7 +72,10 @@ export default async function DhoLayout({
         </Card>
         <div className="flex justify-end mt-2 gap-2">
           {typeof spaceFromDb.web3SpaceId === 'number' && (
-            <JoinSpace spaceId={spaceFromDb.web3SpaceId} />
+            <JoinSpace
+              web3SpaceId={spaceFromDb.web3SpaceId}
+              spaceId={spaceFromDb.id}
+            />
           )}
           <ActionButtons />
         </div>

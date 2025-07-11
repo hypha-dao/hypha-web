@@ -19,8 +19,9 @@ import { useRouter } from 'next/navigation';
 
 type FormValues = z.infer<typeof schemaIssueNewToken>;
 
-const fullSchemaIssueNewToken =
-  schemaIssueNewToken.extend(createAgreementFiles);
+const fullSchemaIssueNewToken = schemaIssueNewToken
+  .extend({ label: z.string().optional() })
+  .extend(createAgreementFiles);
 
 interface IssueNewTokenFormProps {
   spaceId: number | undefined | null;
@@ -71,6 +72,7 @@ export const IssueNewTokenForm = ({
         decayInterval: 604800,
         decayPercentage: 1,
       },
+      label: 'Issue New Token',
     },
   });
 
@@ -120,6 +122,7 @@ export const IssueNewTokenForm = ({
             backUrl={backUrl}
             backLabel="Back to Settings"
             isLoading={false}
+            label="Issue New Token"
           />
           {plugin}
           <Separator />

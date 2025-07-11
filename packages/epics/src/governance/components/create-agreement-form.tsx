@@ -75,6 +75,7 @@ export const CreateAgreementForm = ({
   const handleCreate = async (data: FormValues) => {
     await createAgreement({
       ...data,
+      label: label,
       spaceId: spaceId as number,
       ...(typeof web3SpaceId === 'number' ? { web3SpaceId } : {}),
     });

@@ -2,7 +2,8 @@ import { formatISO } from 'date-fns';
 import { FormVoting } from './form-voting';
 import { ProposalHead, ProposalHeadProps } from './proposal-head';
 import { Separator, AttachmentList, Skeleton } from '@hypha-platform/ui';
-import { CommentsList } from '../../interactions/components/comments-list';
+// TODO(#891): restore when comments support is implemented
+// import { CommentsList } from '../../interactions/components/comments-list';
 import Image from 'next/image';
 import { useProposalDetailsWeb3Rpc } from '@core/governance';
 import {
@@ -29,6 +30,7 @@ type ProposalDetailProps = ProposalHeadProps & {
   attachments?: string[];
   proposalId?: number | null | undefined;
   spaceSlug: string;
+  label?: string;
 };
 
 export const ProposalDetail = ({
@@ -49,6 +51,7 @@ export const ProposalDetail = ({
   updateProposalsList,
   spaceSlug,
   isVoting,
+  label,
 }: ProposalDetailProps) => {
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: proposalId as number,
@@ -89,6 +92,7 @@ export const ProposalDetail = ({
           commitment={commitment}
           status={status}
           isLoading={isLoading}
+          label={label}
         />
         <ButtonClose closeUrl={closeUrl} />
       </div>
@@ -160,13 +164,14 @@ export const ProposalDetail = ({
         isLoading={isLoading}
         isVoting={isVoting}
       />
-      <Separator />
+      {/* TODO: uncomment when comments support will be implemented */}
+      {/* <Separator />
       <CommentsList
         pagination={{
           total: 0,
         }}
         comments={[]}
-      />
+      /> */}
     </div>
   );
 };
