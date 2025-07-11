@@ -167,7 +167,7 @@ export function cspMiddleware(): NextMiddlewareFunction {
 
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('Content-Security-Policy', cspHeaderValue);
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV !== 'development') {
       requestHeaders.set('X-Nonce', nonce);
     }
 
