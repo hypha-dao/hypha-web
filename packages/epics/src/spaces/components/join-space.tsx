@@ -24,6 +24,7 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({ spaceId: web3SpaceId });
   const [joinError, setJoinError] = useState<BaseError | null>(null);
   const isInviteOnly = spaceDetails?.joinMethod === 2n;
+  const isTokenBased = spaceDetails?.joinMethod === 1n;
 
   const { person } = useMe();
 
@@ -95,10 +96,10 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
           ? 'Request Invite'
           : 'Become member'}
       </Button>
-      {isInviteError ? (
+      {isInviteOnly && isInviteError ? (
         <ErrorAlert lines={inviteErrors.map((err) => err.message)} />
-      ) : joinError && (
-        <ErrorAlert lines={[joinError.details]} />
+      ) : isTokenBased && joinError && (
+        <ErrorAlert lines={[`Token Based Entry fail: ${joinError.details}`]} />
       )}
     </div>
   );

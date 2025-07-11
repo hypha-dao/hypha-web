@@ -18,7 +18,7 @@ const ErrorAlertLabel = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      'text-white bg-red-500 rounded-full',
+      'opacity-100 text-white bg-red-500 rounded-full',
       className,
     )}
     {...props}
@@ -55,7 +55,7 @@ const ErrorAlert = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        'fixed right-5 bottom-5 bg-transparent',
+        'fixed right-5 bottom-5 bg-transparent z-50',
         className,
       )}
       {...props}
