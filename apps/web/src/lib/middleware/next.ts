@@ -151,7 +151,7 @@ export function cspMiddleware(): NextMiddlewareFunction {
       [
         "default-src 'self'",
         `script-src 'self' ${unsafeForDevelopment} https://challenges.cloudflare.com`,
-        `style-src 'self' 'unsafe-inline'`,
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         `img-src 'self' ${imageSrc.join(' ')}`,
         "font-src 'self'",
         "object-src 'none'",
