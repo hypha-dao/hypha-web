@@ -1,10 +1,37 @@
 {
   "name": "web",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": { },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack --port 3000",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint --max-warnings 0",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "^15.3.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "@hypha-platform/authentication": "workspace:*",
+    "@hypha-platform/cookie": "workspace:*",
+    "@hypha-platform/core": "workspace:*",
+    "@hypha-platform/epics": "workspace:*",
+    "@hypha-platform/evm": "workspace:*",
+    "@hypha-platform/feature-flags": "workspace:*",
+    "@hypha-platform/i18n": "workspace:*",
+    "@hypha-platform/ui": "workspace:*",
+    "@hypha-platform/ui-utils": "workspace:*",
+    "@hypha-platform/storage-postgres": "workspace:*"
+  },
+  "devDependencies": {
+    "@hypha-platform/config-eslint": "workspace:*",
+    "@hypha-platform/config-typescript": "workspace:*",
+    "@types/node": "^22.14.0",
+    "@types/react": "19.1.0",
+    "@types/react-dom": "19.1.1",
+    "eslint": "^9.24.0",
+    "typescript": "5.8.2"
+  }
 }

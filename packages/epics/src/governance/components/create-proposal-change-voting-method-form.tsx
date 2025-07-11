@@ -1,6 +1,6 @@
 'use client';
 
-import { CreateAgreementBaseFields } from '@hypha-platform/epics';
+import { CreateAgreementBaseFields } from '../../agreements/components';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {

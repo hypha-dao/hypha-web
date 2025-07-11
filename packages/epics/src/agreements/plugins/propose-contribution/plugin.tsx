@@ -5,7 +5,7 @@ import { TokenPayoutFieldArray } from '../components/common/token-payout-field-a
 import { PaymentSchedule } from './components/payment-schedule';
 import { Separator, Skeleton } from '@hypha-platform/ui';
 import { useTokens } from '@hypha-platform/epics';
-import { Person } from '@core/people';
+import { Person } from '@hypha-platform/core/client';
 
 export const ProposeContributionPlugin = ({
   spaceSlug,

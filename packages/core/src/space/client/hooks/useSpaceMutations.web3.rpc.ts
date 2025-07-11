@@ -10,8 +10,10 @@ import {
   getSpaceFromLogs,
   mapToCreateSpaceWeb3Input,
 } from '../web3';
-import { schemaCreateSpaceWeb3 } from '@core/space/validation';
-import { publicClient } from '@core/common/web3/public-client';
+import {
+  schemaCreateSpaceWeb3,
+  publicClient,
+} from '@hypha-platform/core/client';
 
 export const useSpaceMutationsWeb3Rpc = () => {
   const { client } = useSmartWallets();

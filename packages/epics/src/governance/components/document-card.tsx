@@ -9,7 +9,7 @@ import { Image } from '@hypha-platform/ui';
 import { PersonLabel } from '../../people/components/person-label';
 import { type Creator } from '../../people/components/person-label';
 import { type BadgeItem, BadgesList } from '@hypha-platform/ui';
-import { stripMarkdown } from '@hypha-platform/lib/utils';
+import { stripMarkdown } from '@hypha-platform/ui-utils';
 
 interface Document {
   title?: string;

@@ -8,7 +8,7 @@ import {
   FormMessage,
 } from '@hypha-platform/ui';
 import { EntryMethod } from './entry-method';
-import { EntryMethodType } from '@core/governance';
+import { EntryMethodType } from '@hypha-platform/core/client';
 
 export function EntryMethodField({
   value,

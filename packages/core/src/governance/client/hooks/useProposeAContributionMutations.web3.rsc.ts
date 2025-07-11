@@ -6,12 +6,12 @@ import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 import { encodeFunctionData, erc20Abi, parseUnits } from 'viem';
 
 import { getProposalFromLogs } from '../web3';
-import { publicClient } from '@core/common/web3/public-client';
+import { publicClient } from '@hypha-platform/core/client';
 import {
   daoProposalsImplementationAbi,
   daoProposalsImplementationAddress,
-} from '@core/generated';
-import { getTokenDecimals } from '@core/common/web3/get-token-decimals';
+} from '@hypha-platform/core/generated';
+import { getTokenDecimals } from '@hypha-platform/core/client';
 
 interface CreateProposeAContributionInput {
   spaceId: number;

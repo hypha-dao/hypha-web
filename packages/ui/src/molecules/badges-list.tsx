@@ -1,5 +1,5 @@
 import { Badge, type BadgeProps } from '@hypha-platform/ui';
-import { cn } from '@hypha-platform/lib/utils';
+import { cn } from '@hypha-platform/ui-utils';
 
 export interface BadgeItem extends BadgeProps {
   label: string | number;

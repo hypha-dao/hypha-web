@@ -1,7 +1,7 @@
 'use client';
 
 import useSWR from 'swr';
-import { getMemberSpaces } from '@core/space';
+import { getMemberSpaces } from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { publicClient } from '@hypha-platform/core/client';
 

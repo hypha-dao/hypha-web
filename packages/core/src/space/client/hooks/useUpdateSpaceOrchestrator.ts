@@ -11,7 +11,7 @@ import { useSpaceMutationsWeb2Rsc } from './useSpaceMutations.web2.rsc';
 import {
   schemaCreateSpaceFiles,
   schemaUpdateSpace,
-} from '@core/space/validation';
+} from '@hypha-platform/core/client';
 
 type UseUpdateSpaceInput = {
   authToken?: string | null;

@@ -2,8 +2,7 @@
 
 import { DocumentSection } from './document-section';
 import { useSpaceDocumentsWithStatuses } from '../hooks/use-space-documents-with-statuses';
-import { Document } from '@core/governance';
-import { Order } from '@core/common';
+import { Document, Order } from '@hypha-platform/core/client';
 
 type DocumentsSectionsProps = {
   lang: string;

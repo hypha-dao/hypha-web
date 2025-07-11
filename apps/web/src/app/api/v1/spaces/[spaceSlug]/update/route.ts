@@ -1,7 +1,6 @@
-import {
-  createSpaceService,
-  schemaUpdateSpace,
-} from '@hypha-platform/core/server';
+import { schemaUpdateSpace } from '@hypha-platform/core/client';
+import { updateSpaceBySlug } from '@hypha-platform/core/server';
+import { db } from '@hypha-platform/storage-postgres';
 import { NextResponse } from 'next/server';
 
 export async function POST(
@@ -30,12 +29,14 @@ export async function POST(
     }
 
     const validatedData = validationResult.data;
-    const spaceService = createSpaceService({ authToken });
 
-    const space = await spaceService.updateBySlug({
-      ...validatedData,
-      slug: spaceSlug,
-    });
+    const space = await updateSpaceBySlug(
+      {
+        ...validatedData,
+        slug: spaceSlug,
+      },
+      { db },
+    );
 
     return NextResponse.json(space);
   } catch (error) {

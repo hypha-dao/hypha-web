@@ -1,4 +1,4 @@
-import { publicClient } from '@core/common/web3/public-client';
+import { publicClient } from '@hypha-platform/core/client';
 import { erc20Abi, getContract } from 'viem';
 
 export async function getTokenDecimals(tokenAddress: string): Promise<number> {

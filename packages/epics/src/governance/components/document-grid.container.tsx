@@ -1,5 +1,4 @@
-import { Order } from '@core/common';
-import { Document } from '@core/governance';
+import { Order, Document } from '@hypha-platform/core/client';
 import { DocumentGrid } from './document-grid';
 
 type DocumentGridContainerProps = {

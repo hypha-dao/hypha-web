@@ -1,6 +1,6 @@
-import { Category } from '@core/categories/types';
-import { Document } from '@core/governance';
-import { Person } from '@core/people';
+import { Category } from '@hypha-platform/core/client';
+import { Document } from '@hypha-platform/core/client';
+import { Person } from '@hypha-platform/core/client';
 
 export interface Space {
   id: number;

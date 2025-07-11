@@ -3,7 +3,7 @@
 import useSWRMutation from 'swr/mutation';
 
 import { EditPersonInput } from '../../types';
-import { editPersonAction } from '@core/people/server/actions';
+import { editPersonAction } from '@hypha-platform/core/people/server/actions';
 
 export const usePersonMutationsWeb2Rsc = (authToken?: string | null) => {
   const {

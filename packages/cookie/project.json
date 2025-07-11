@@ -1,9 +1,0 @@
-{
-  "name": "cookie",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "packages/cookie/src",
-  "projectType": "library",
-  "tags": [],
-  "// targets": "to see all targets run: nx show project cookie --web",
-  "targets": {}
-}

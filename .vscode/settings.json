@@ -3,5 +3,8 @@
   "explorer.fileNesting.patterns": {
     "*.ts": "${capture}.ts, ${capture}.*.ts",
     "*.tsx": "${capture}.tsx, ${capture}.*.tsx, ${capture}.*.ts"
+  },
+  "files.associations": {
+    "*.css": "tailwindcss"
   }
 }

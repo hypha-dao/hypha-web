@@ -1,6 +1,6 @@
 'use client';
 
-import { Space } from '@core/client';
+import { Space } from '@hypha-platform/core/client';
 import React from 'react';
 import useSWR from 'swr';
 

@@ -1,8 +1,8 @@
 import {
   daoProposalsImplementationAbi,
   daoProposalsImplementationAddress,
-} from '@core/generated';
-import { schemaCreateProposalWeb3 } from '@core/governance/validation';
+} from '@hypha-platform/core/generated';
+import { schemaCreateProposalWeb3 } from '@hypha-platform/core/client';
 import { base } from 'viem/chains';
 import { z } from 'zod';
 

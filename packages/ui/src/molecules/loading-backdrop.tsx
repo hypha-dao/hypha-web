@@ -1,4 +1,4 @@
-import { cn } from '@hypha-platform/lib/utils';
+import { cn } from '@hypha-platform/ui-utils';
 import { Progress } from '../progress';
 
 type LoadingBackdrop = {

@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { useAccount } from 'wagmi';
-import { daoProposalsImplementationConfig } from '@core/generated';
+import { daoProposalsImplementationConfig } from '@hypha-platform/core/generated';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 
 export const useVote = ({ proposalId }: { proposalId?: number | null }) => {

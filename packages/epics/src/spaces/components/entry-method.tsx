@@ -7,7 +7,7 @@ import {
   TooltipTrigger,
 } from '@hypha-platform/ui';
 import clsx from 'clsx';
-import { EntryMethodType } from '@core/governance/types';
+import { EntryMethodType } from '@hypha-platform/core/client';
 import { PlusCircledIcon } from '@radix-ui/react-icons';
 
 type EntryMethodProps = {

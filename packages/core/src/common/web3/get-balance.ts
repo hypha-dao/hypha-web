@@ -1,4 +1,4 @@
-import { publicClient } from '@core/common/web3/public-client';
+import { publicClient } from '@hypha-platform/core/client';
 import { erc20Abi, formatUnits } from 'viem';
 
 export async function getBalance(
