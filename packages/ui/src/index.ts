@@ -10,6 +10,7 @@ export * from './chart';
 export * from './chips';
 export * from './container';
 export * from './dropdown-menu';
+export * from './error-alert';
 export * from './filter-menu';
 export * from './form';
 export * from './image';
