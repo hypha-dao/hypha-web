@@ -26,12 +26,9 @@ const ErrorAlertLabel = React.forwardRef<
     <p className="inline-flex mb-2 mt-2 ml-4">{text}</p>
     <Button
       className="ml-2 rounded-lg"
-      onClick={() => {
-        console.log('button clicked');
-        onClose();
-      }}
-      colorVariant={'neutral'}
-      variant={'ghost'}
+      onClick={onClose}
+      colorVariant="neutral"
+      variant="ghost"
       aria-label="Close"
     >
       <Cross2Icon />
