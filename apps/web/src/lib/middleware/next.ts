@@ -142,11 +142,15 @@ export function cspMiddleware(): NextMiddlewareFunction {
       'blob:',
       IMAGE_HOSTS.map((host) => `https://${host}`).join(' '),
     ];
+    const unsafeForDevelopment =
+      process.env.NODE_ENV === 'development'
+        ? "'unsafe-inline' 'unsafe-eval'"
+        : `'nonce-${nonce}'`;
     const cspHeaderValue =
       [
         "default-src 'self'",
-        `script-src 'self' 'nonce-${nonce}' https://challenges.cloudflare.com 'strict-dynamic'`,
-        `style-src 'self' 'nonce-${nonce}'`,
+        `script-src 'self' ${unsafeForDevelopment} https://challenges.cloudflare.com`,
+        `style-src 'self' 'unsafe-inline'`,
         `img-src 'self' ${imageSrc.join(' ')}`,
         "font-src 'self'",
         "object-src 'none'",
@@ -162,7 +166,9 @@ export function cspMiddleware(): NextMiddlewareFunction {
 
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('Content-Security-Policy', cspHeaderValue);
-    requestHeaders.set('X-Nonce', nonce);
+    if (process.env.NODE_ENV === 'production') {
+      requestHeaders.set('X-Nonce', nonce);
+    }
 
     const response = NextResponse.next({
       request: {
