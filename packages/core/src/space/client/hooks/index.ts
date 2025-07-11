@@ -5,3 +5,4 @@ export { useSpaceBySlug } from './useSpaceBySlug';
 export { useUpdateSpaceOrchestrator } from './useUpdateSpaceOrchestrator';
 export { useSpaceProposalsWeb3Rpc } from './useSpaceProposals.web3.rpc';
 export { useSpaceHasVoiceToken } from './useSpaceHasVoiceToken';
+export { useTokensVotingPower } from './useTokensVotingPower';
