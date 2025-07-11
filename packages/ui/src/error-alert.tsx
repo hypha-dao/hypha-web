@@ -1,9 +1,10 @@
 'use client';
 
 import { cn } from '@hypha-platform/ui-utils';
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from './button';
 import { Cross2Icon } from '@radix-ui/react-icons';
+import { v4 as uuidv4 } from 'uuid';
 
 type ErrorAlertLabelElement = HTMLDivElement;
 interface ErrorAlertLabelProps
@@ -46,7 +47,12 @@ function removeLine(lines: string[], index: number) {
 
 const ErrorAlert = React.forwardRef<ErrorAlertElement, ErrorAlertProps>(
   ({ className, lines, ...props }, ref) => {
-    const [errorLines, setErrorLines] = useState<string[]>(lines);
+    const [errorLines, setErrorLines] = React.useState<string[]>(lines);
+
+    React.useEffect(() => {
+      setErrorLines(lines);
+    }, [lines]);
+
     return (
       <div
         ref={ref}
@@ -55,10 +61,10 @@ const ErrorAlert = React.forwardRef<ErrorAlertElement, ErrorAlertProps>(
       >
         {errorLines.map((line, index) => (
           <ErrorAlertLabel
-            key={index}
+            key={`error-${uuidv4()}`}
             text={line}
             onClose={() => {
-              setErrorLines(removeLine(lines, index));
+              setErrorLines(removeLine(errorLines, index));
             }}
           />
         ))}

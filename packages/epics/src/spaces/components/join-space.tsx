@@ -67,6 +67,11 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
         console.error(err);
         if (isBaseError(err)) {
           setJoinError(err as BaseError);
+        } else {
+          // Handle other error types or set a generic error message
+          setJoinError({
+            details: 'An unexpected error occurred while joining the space',
+          } as BaseError);
         }
       }
       revalidateIsMember();
