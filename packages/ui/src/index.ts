@@ -18,7 +18,6 @@ export * from './container';
 export * from './date-picker';
 export * from './dropdown-menu';
 export * from './error-alert';
-export * from './filter-menu';
 export * from './form';
 export * from './image';
 export * from './input';
