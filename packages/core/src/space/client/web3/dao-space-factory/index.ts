@@ -7,3 +7,5 @@ export * from './get-space-proposals';
 export * from './get-space-regular-tokens';
 export * from './get-space-ownership-tokens';
 export * from './get-space-decaying-tokens';
+export * from './get-tokens-voting-power';
+export * from './get-ownership-tokens-voting-power';
