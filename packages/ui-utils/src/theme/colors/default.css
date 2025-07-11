@@ -1,4 +1,4 @@
 :root {
-  --white: 0 0% 100%;
-  --black: 0 0% 0%;
+  --white: oklch(100% 0.00011 271.152);
+  --black: oklch(0% 0 0);
 }
