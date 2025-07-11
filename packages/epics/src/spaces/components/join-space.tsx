@@ -1,5 +1,5 @@
 'use client';
-import { Button } from '@hypha-platform/ui';
+import { Button, ErrorAlert } from '@hypha-platform/ui';
 import { useJoinSpace } from '../hooks/use-join-space';
 import { PersonIcon } from '@radix-ui/react-icons';
 import React, { useState } from 'react';
@@ -95,17 +95,10 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
           ? 'Request Invite'
           : 'Become member'}
       </Button>
-      {isInviteError && (
-        <div className="text-red-500 mt-2">
-          {inviteErrors.map((err, idx) => (
-            <p key={idx}>{err.message}</p>
-          ))}
-        </div>
-      )}
-      {joinError && (
-        <div className="text-red-500 mt-2">
-          <p>{joinError.details}</p>
-        </div>
+      {isInviteError ? (
+        <ErrorAlert lines={inviteErrors.map((err) => err.message)} />
+      ) : joinError && (
+        <ErrorAlert lines={[joinError.details]} />
       )}
     </div>
   );
