@@ -17,7 +17,9 @@ export const useJoinSpaceWeb3Rpc = ({ spaceId }: { spaceId: number }) => {
     client ? [spaceId, 'joinSpaceWeb3'] : null,
     async ([spaceId]) => {
       if (!client) throw new Error('Smart wallet client not available');
-      return await client?.writeContract(joinSpace({ spaceId: BigInt(spaceId) }));
+      return await client?.writeContract(
+        joinSpace({ spaceId: BigInt(spaceId) }),
+      );
     },
   );
 

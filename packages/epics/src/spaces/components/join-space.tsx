@@ -33,13 +33,17 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
       spaceId: web3SpaceId,
     });
 
-  const { requestInvite, isCreating, isError: isInviteError, errors: inviteErrors } =
-    useAddMemberOrchestrator({
-      authToken: jwt,
-      config,
-      spaceId: web3SpaceId,
-      memberAddress: person?.address as `0x${string}`,
-    });
+  const {
+    requestInvite,
+    isCreating,
+    isError: isInviteError,
+    errors: inviteErrors,
+  } = useAddMemberOrchestrator({
+    authToken: jwt,
+    config,
+    spaceId: web3SpaceId,
+    memberAddress: person?.address as `0x${string}`,
+  });
 
   const handleJoinSpace = React.useCallback(async () => {
     setJoinError(null);
@@ -98,8 +102,13 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
       </Button>
       {isInviteOnly && isInviteError ? (
         <ErrorAlert lines={inviteErrors.map((err) => err.message)} />
-      ) : isTokenBased && joinError && (
-        <ErrorAlert lines={[`Token Based Entry fail: ${joinError.details}`]} />
+      ) : (
+        isTokenBased &&
+        joinError && (
+          <ErrorAlert
+            lines={[`Token Based Entry fail: ${joinError.details}`]}
+          />
+        )
       )}
     </div>
   );

@@ -1,12 +1,13 @@
 'use client';
 
-import { cn } from "@hypha-platform/ui-utils";
-import React, { useState } from "react";
-import { Button } from "./button";
-import { Cross2Icon } from "@radix-ui/react-icons";
+import { cn } from '@hypha-platform/ui-utils';
+import React, { useState } from 'react';
+import { Button } from './button';
+import { Cross2Icon } from '@radix-ui/react-icons';
 
 type ErrorAlertLabelElement = HTMLDivElement;
-interface ErrorAlertLabelProps extends React.HTMLAttributes<ErrorAlertLabelElement> {
+interface ErrorAlertLabelProps
+  extends React.HTMLAttributes<ErrorAlertLabelElement> {
   text: string;
   onClose: () => void;
 }
@@ -17,10 +18,7 @@ const ErrorAlertLabel = React.forwardRef<
 >(({ className, text, onClose, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn(
-      'opacity-100 text-white bg-red-500 rounded-full',
-      className,
-    )}
+    className={cn('opacity-100 text-white bg-red-500 rounded-full', className)}
     {...props}
   >
     <p className="inline-flex mb-2 mt-2 ml-4">{text}</p>
@@ -42,39 +40,32 @@ interface ErrorAlertProps extends React.HTMLAttributes<ErrorAlertElement> {
   lines: string[];
 }
 
-function removeLine(lines: string[], index:number) {
+function removeLine(lines: string[], index: number) {
   return lines.filter((_, i) => index !== i);
 }
 
-const ErrorAlert = React.forwardRef<
-  ErrorAlertElement,
-  ErrorAlertProps
->(({ className, lines, ...props }, ref) => {
-  const [errorLines, setErrorLines] = useState<string[]>(lines);
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        'fixed right-5 bottom-5 bg-transparent z-50',
-        className,
-      )}
-      {...props}
-    >
-      {errorLines.map((line, index) => (
-        <ErrorAlertLabel
-          key={index}
-          text={line}
-          onClose={() => {
-            setErrorLines(removeLine(lines, index));
-          }}
-        />
-      ))}
-    </div>
-  )
-});
+const ErrorAlert = React.forwardRef<ErrorAlertElement, ErrorAlertProps>(
+  ({ className, lines, ...props }, ref) => {
+    const [errorLines, setErrorLines] = useState<string[]>(lines);
+    return (
+      <div
+        ref={ref}
+        className={cn('fixed right-5 bottom-5 bg-transparent z-50', className)}
+        {...props}
+      >
+        {errorLines.map((line, index) => (
+          <ErrorAlertLabel
+            key={index}
+            text={line}
+            onClose={() => {
+              setErrorLines(removeLine(lines, index));
+            }}
+          />
+        ))}
+      </div>
+    );
+  },
+);
 ErrorAlert.displayName = 'ErrorAlert';
 
-export {
-  ErrorAlert,
-  ErrorAlertLabel,
-};
+export { ErrorAlert, ErrorAlertLabel };
