@@ -1,7 +1,7 @@
 import {
   ownershipTokenFactoryAbi,
   ownershipTokenFactoryAddress,
-} from '@core/generated';
+} from '@hypha-platform/core/generated';
 
 export const getSpaceOwnershipTokens = ({
   spaceId,

@@ -1,4 +1,3 @@
 export * from './types';
-export * from './use-subspace-by-slug';
-export * from './use-subspace-details';
+export * from './use-join-space';
 export * from './use-member-web3-space-ids';

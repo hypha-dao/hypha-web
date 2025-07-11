@@ -1,3 +1,3 @@
-export * from './select-menu';
-export * from './loading-backdrop';
 export * from './markdown';
+export * from './badges-list';
+export * from './loading-backdrop';

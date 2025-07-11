@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createPeopleService, Person } from '@hypha-platform/core/server';
-import { schemaSignupPerson } from '@core/people';
+import { Person, schemaSignupPerson } from '@hypha-platform/core/client';
+import { createPerson, getDb } from '@hypha-platform/core/server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,9 +8,6 @@ export async function POST(request: NextRequest) {
     if (!authToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    // Get the PeopleService using the factory method and pass the auth token
-    const peopleService = createPeopleService({ authToken });
 
     // Get request body
     const body = await request.json();
@@ -27,7 +24,9 @@ export async function POST(request: NextRequest) {
     const validatedData = validationResult.data;
 
     // Use the PeopleService to create the profile
-    const newProfile = await peopleService.create(validatedData as Person);
+    const newProfile = await createPerson(validatedData as Person, {
+      db: getDb({ authToken }),
+    });
 
     return NextResponse.json({ profile: newProfile }, { status: 201 });
   } catch (error) {

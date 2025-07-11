@@ -5,7 +5,7 @@ import {
   spaces,
   documents,
 } from '@hypha-platform/storage-postgres';
-import { DbConfig } from '@core/common/server';
+import { DbConfig } from '@hypha-platform/core/server';
 
 type FindAllSpacesProps = {
   search?: string;

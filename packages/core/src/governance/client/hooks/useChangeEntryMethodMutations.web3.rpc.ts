@@ -11,18 +11,17 @@ import {
   getProposalFromLogs,
   mapToCreateProposalWeb3Input,
 } from '../web3';
-import { schemaCreateProposalWeb3 } from '@core/governance/validation';
-import { publicClient } from '@core/common/web3/public-client';
+import { publicClient } from '@hypha-platform/core/client';
 
 import {
   daoSpaceFactoryImplementationAbi,
   daoSpaceFactoryImplementationAddress,
   tokenBalanceJoinImplementationAbi,
   tokenBalanceJoinImplementationAddress,
-} from '@core/generated';
+} from '@hypha-platform/core/generated';
 
-import { Address, EntryMethodType, TokenBase } from '@core/governance/types';
-import { transactionSchema } from '@core/governance/validation';
+import { Address, EntryMethodType, TokenBase } from '../../types';
+import { schemaCreateProposalWeb3, transactionSchema } from '../../validation';
 
 type TxData = z.infer<typeof transactionSchema>;
 

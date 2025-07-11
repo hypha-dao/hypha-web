@@ -1,4 +1,5 @@
-import { LinkIcon, LinkLabel } from '@hypha-platform/epics';
+import { LinkIcon } from './link-icon';
+import { LinkLabel } from './link-label';
 
 interface WebLinksProps {
   links?: string[] | null;

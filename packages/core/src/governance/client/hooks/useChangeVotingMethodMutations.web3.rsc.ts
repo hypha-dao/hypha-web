@@ -11,8 +11,8 @@ import {
   getProposalFromLogs,
   mapToCreateProposalWeb3Input,
 } from '../web3';
-import { schemaCreateProposalWeb3 } from '@core/governance/validation';
-import { publicClient } from '@core/common/web3/public-client';
+import { schemaCreateProposalWeb3 } from '@hypha-platform/core/client';
+import { publicClient } from '@hypha-platform/core/client';
 
 import {
   daoSpaceFactoryImplementationAbi,
@@ -20,9 +20,9 @@ import {
   decayingSpaceTokenAbi,
   decayingTokenFactoryAbi,
   decayingTokenFactoryAddress,
-} from '@core/generated';
+} from '@hypha-platform/core/generated';
 
-import { transactionSchema } from '@core/governance/validation';
+import { transactionSchema } from '@hypha-platform/core/client';
 import { VotingMethodType } from '@hypha-platform/core/client';
 
 const chainId = 8453;

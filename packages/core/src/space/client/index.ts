@@ -1,2 +1,2 @@
-export * from './web3';
 export * from './hooks';
+export * from './web3';

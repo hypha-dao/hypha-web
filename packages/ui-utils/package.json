@@ -1,0 +1,25 @@
+{
+  "name": "@hypha-platform/ui-utils",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "dev": "tailwindcss -i ./src/global.css -o ./dist/global.css --watch"
+  },
+  "devDependencies": {
+    "@hypha-platform/config-eslint": "workspace:*",
+    "@hypha-platform/config-typescript": "workspace:*",
+    "@tailwindcss/postcss": "^4.1.11",
+    "tailwindcss": "^4.0.8"
+  },
+  "dependencies": {
+    "@tailwindcss/cli": "^4.1.11",
+    "tailwind-merge": "^3.0.1",
+    "tw-animate-css": "^1.2.4"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./global.css": "./dist/global.css"
+  }
+}

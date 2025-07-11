@@ -3,7 +3,7 @@
 import { SpaceCardWrapper, UseMembers } from '@hypha-platform/epics';
 import Link from 'next/link';
 import { Locale } from '@hypha-platform/i18n';
-import { Space } from '@core/space';
+import { Space } from '@hypha-platform/core/client';
 
 export const getDhoPathGovernance = (lang: Locale, id: string) => {
   return `/${lang}/dho/${id}/governance`;

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { createDocumentService } from '@hypha-platform/core/server';
+import { findDocumentBySlug } from '@hypha-platform/core/server';
+import { db } from '@hypha-platform/storage-postgres';
 
 type Params = { documentSlug: string };
 
@@ -10,15 +11,12 @@ export async function GET(
 ) {
   const { documentSlug } = await params;
 
-  // Get token from Authorization header
-  const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';
+  // TODO: implement authorization
+  // const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';
 
   try {
-    const documentsService = createDocumentService({ authToken });
-
-    const document = await documentsService.getBySlug({
-      slug: documentSlug,
-    });
+    // TODO: implement authorization
+    const document = await findDocumentBySlug({ slug: documentSlug }, { db });
 
     return NextResponse.json(document);
   } catch (error) {

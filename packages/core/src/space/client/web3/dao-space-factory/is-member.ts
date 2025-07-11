@@ -1,7 +1,7 @@
 import {
   daoSpaceFactoryImplementationAbi,
   daoSpaceFactoryImplementationAddress,
-} from '@core/generated';
+} from '@hypha-platform/core/generated';
 
 export const isMember = ({
   spaceId,

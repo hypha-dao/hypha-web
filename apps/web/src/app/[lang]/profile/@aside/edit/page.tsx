@@ -3,7 +3,7 @@
 import { SidePanel, EditPersonSection } from '@hypha-platform/epics';
 import { useMe } from '@hypha-platform/core/client';
 import React from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useEditProfile } from '@web/hooks/use-edit-profile';
 
 export default function EditProfilePage() {

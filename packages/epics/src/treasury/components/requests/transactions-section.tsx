@@ -4,7 +4,6 @@ import { TransactionsList } from './transactions-list';
 import { Text } from '@radix-ui/themes';
 import { useTransfersSection } from '../../hooks/use-transfers-section';
 import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
-import { Empty } from '../../../common';
 
 type TransactionsSectionProps = {
   spaceSlug?: string;

@@ -1,4 +1,4 @@
-import { createPeopleService } from '@hypha-platform/core/server';
+import { findPersonBySlug, getDb } from '@hypha-platform/core/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
@@ -15,8 +15,10 @@ export async function GET(
   }
 
   try {
-    const peopleService = createPeopleService({ authToken });
-    const response = await peopleService.findBySlug({ slug: personSlug });
+    const response = await findPersonBySlug(
+      { slug: personSlug },
+      { db: getDb({ authToken }) },
+    );
 
     return NextResponse.json(response);
   } catch (error) {

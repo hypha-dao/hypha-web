@@ -35,6 +35,7 @@ export const useSpaceDocuments: UseDocuments = ({
       pageSize,
       ...(filter ? { ...filter } : {}),
       ...(searchTerm ? { searchTerm } : {}),
+      // @ts-ignore: TODO: fix order type
       order: getOrder(order),
     };
     return `?${queryString.stringify(effectiveFilter)}`;

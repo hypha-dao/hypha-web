@@ -1,5 +1,5 @@
 import { parseEventLogs } from 'viem';
-import { daoProposalsImplementationAbi } from '@core/generated';
+import { daoProposalsImplementationAbi } from '@hypha-platform/core/generated';
 
 /**
  * Extract the ProposalCreated event from transaction logs

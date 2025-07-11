@@ -3,7 +3,7 @@
 import { Empty, UseMembers, SpaceCardContainer } from '@hypha-platform/epics';
 import Link from 'next/link';
 import { Locale } from '@hypha-platform/i18n';
-import { Space } from '@core/space';
+import { Space } from '@hypha-platform/core/server';
 import { Button } from '@hypha-platform/ui';
 import { GlobeIcon, PlusIcon } from '@radix-ui/react-icons';
 import { useSpaceCardList } from '../hooks/use-space-card-list';

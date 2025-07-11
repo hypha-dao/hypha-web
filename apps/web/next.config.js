@@ -1,17 +1,5 @@
-//@ts-check
-
-const { composePlugins, withNx } = require('@nx/next');
-const { withVercelToolbar } = require('@vercel/toolbar/plugins/next');
-
-/**
- * @type {import('@nx/next/plugins/with-nx').WithNxOptions}
- **/
+/** @type {import('next').NextConfig} */
 const nextConfig = {
-  nx: {
-    // Set this to true if you would like to use SVGR
-    // See: https://github.com/gregberge/svgr
-    svgr: true,
-  },
   images: {
     remotePatterns: [
       {
@@ -86,18 +74,8 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'raw.githubusercontent.com',
       },
-      {
-        protocol: 'https',
-        hostname: 'lh3.googleusercontent.com',
-      },
     ],
   },
 };
 
-const plugins = [
-  // Add more Next.js plugins to this list if needed.
-  withNx,
-  withVercelToolbar(),
-];
-
-module.exports = composePlugins(...plugins)(nextConfig);
+export default nextConfig;

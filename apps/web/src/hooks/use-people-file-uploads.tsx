@@ -1,7 +1,6 @@
 'use client';
 
-import { useFileUpload } from '@core/assets';
-import { editPersonFiles } from '@hypha-platform/core/client';
+import { useFileUpload, editPersonFiles } from '@hypha-platform/core/client';
 import { useCallback, useState } from 'react';
 import { z } from 'zod';
 

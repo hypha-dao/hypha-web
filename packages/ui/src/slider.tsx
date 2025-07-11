@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import * as SliderPrimitive from '@radix-ui/react-slider';
-import { cn } from '@hypha-platform/lib/utils';
+import { cn } from '@hypha-platform/ui-utils';
 
 const Slider = React.forwardRef<
   React.ElementRef<typeof SliderPrimitive.Root>,
@@ -13,6 +13,7 @@ const Slider = React.forwardRef<
   const [value, setValue] = React.useState(props.defaultValue?.[0] || 0);
 
   const handleSliderChange = (newValue: number[]) => {
+    // @ts-ignore TODO: fix types
     setValue(newValue[0]);
   };
 

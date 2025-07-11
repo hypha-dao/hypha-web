@@ -1,4 +1,4 @@
-import { cn } from '@hypha-platform/lib/utils';
+import { cn } from '@hypha-platform/ui-utils';
 import { Input } from '@hypha-platform/ui';
 import React from 'react';
 import { LinkIcon } from './link-icon';

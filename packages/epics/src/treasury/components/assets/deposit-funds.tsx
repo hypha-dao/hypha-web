@@ -4,7 +4,7 @@ import { Text } from '@radix-ui/themes';
 import QRCode from 'react-qr-code';
 import { CopyIcon, CheckIcon } from '@radix-ui/react-icons';
 import { copyToClipboard } from '@hypha-platform/ui-utils';
-import { useSpaceDetailsWeb3Rpc } from '@core/space';
+import { useSpaceDetailsWeb3Rpc } from '@hypha-platform/core/client';
 import { ButtonClose, ButtonBack } from '@hypha-platform/epics';
 
 interface DepositFundsProps {

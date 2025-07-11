@@ -1,7 +1,7 @@
 import {
   regularTokenFactoryAbi,
   regularTokenFactoryAddress,
-} from '@core/generated';
+} from '@hypha-platform/core/generated';
 
 export const getSpaceRegularTokens = ({
   spaceId,

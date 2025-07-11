@@ -1,7 +1,6 @@
 'use client';
 
-import { useFileUpload } from '@core/assets';
-import { editPersonFiles } from '@core/people/validation';
+import { useFileUpload, editPersonFiles } from '@hypha-platform/core/client';
 import React from 'react';
 import { z } from 'zod';
 
@@ -38,7 +37,7 @@ export const usePersonFileUploads = (
             if (result?.[0]?.ufsUrl) {
               setFiles((prev) => ({
                 ...prev,
-                [key]: result[0].ufsUrl,
+                [key]: result[0]?.ufsUrl ?? '',
               }));
             }
           } catch (error) {

@@ -1,5 +1,5 @@
 import { parseEventLogs } from 'viem';
-import { daoSpaceFactoryImplementationAbi } from '@core/generated';
+import { daoSpaceFactoryImplementationAbi } from '@hypha-platform/core/generated';
 
 /**
  * Extract the SpaceCreated event from transaction logs

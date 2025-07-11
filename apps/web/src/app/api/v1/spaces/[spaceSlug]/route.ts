@@ -1,4 +1,5 @@
-import { createSpaceService } from '@hypha-platform/core/server';
+import { findSpaceBySlug } from '@hypha-platform/core/server';
+import { db } from '@hypha-platform/storage-postgres';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
@@ -7,11 +8,9 @@ export async function GET(
 ) {
   const { spaceSlug } = await params;
 
-  const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';
-
   try {
-    const spaceService = createSpaceService({ authToken });
-    const space = await spaceService.getBySlug({ slug: spaceSlug });
+    // TODO: implement authorization
+    const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
     return NextResponse.json(space);
   } catch (error) {
     console.error('Failed to fetch spaces:', error);

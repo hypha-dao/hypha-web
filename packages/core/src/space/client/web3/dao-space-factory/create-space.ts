@@ -1,8 +1,8 @@
 import {
   daoSpaceFactoryImplementationAbi,
   daoSpaceFactoryImplementationAddress,
-} from '@core/generated';
-import { schemaCreateSpaceWeb3 } from '@core/space/validation';
+} from '@hypha-platform/core/generated';
+import { schemaCreateSpaceWeb3 } from '@hypha-platform/core/client';
 import { base } from 'viem/chains';
 import { z } from 'zod';
 

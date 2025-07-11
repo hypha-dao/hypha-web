@@ -1,7 +1,9 @@
 import { Locale } from '@hypha-platform/i18n';
-import { createSpaceService } from '@core/space/server';
 import { DocumentsSections } from '@hypha-platform/epics';
-import { DirectionType } from '@core/common';
+import { DirectionType } from '@hypha-platform/core/client';
+import { findSpaceBySlug } from '@hypha-platform/core/server';
+import { notFound } from 'next/navigation';
+import { db } from '@hypha-platform/storage-postgres';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -12,8 +14,12 @@ export default async function AgreementsPage(props: PageProps) {
 
   const { lang, id } = params;
 
-  const spaceService = createSpaceService();
-  const spaceFromDb = await spaceService.getBySlug({ slug: id });
+  // TODO: implement authorization
+  const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
+
+  if (!spaceFromDb) {
+    return notFound();
+  }
 
   const web3SpaceId = spaceFromDb.web3SpaceId;
 

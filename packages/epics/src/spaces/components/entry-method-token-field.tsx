@@ -9,7 +9,7 @@ import {
   Input,
   Image,
 } from '@hypha-platform/ui';
-import { Address } from '@core/governance/types';
+import { Address } from '@hypha-platform/core/client';
 
 interface Token {
   icon: string;
