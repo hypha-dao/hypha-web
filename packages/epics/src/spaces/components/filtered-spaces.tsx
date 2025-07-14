@@ -4,8 +4,8 @@ import { Locale } from '@hypha-platform/i18n';
 import { Space } from '@core/space';
 import {
   UseMembers,
-  useMemberWeb3SpaceIds,
   SpaceCardList,
+  useMemberWeb3SpaceIds,
 } from '@hypha-platform/epics';
 import { Person, useMe } from '@core/people';
 import React from 'react';
@@ -13,10 +13,10 @@ import { Text } from '@radix-ui/themes';
 
 function filterSpaces(
   spaces: Space[],
-  user: Person | undefined,
+  person: Person | undefined,
   web3SpaceIds: readonly bigint[] | undefined,
 ) {
-  if (!user?.slug || !web3SpaceIds) {
+  if (!person?.slug || !web3SpaceIds) {
     return [];
   }
   const userSpaces: Space[] = spaces.filter((space) => {
@@ -35,12 +35,12 @@ export function FilteredSpaces({
   spaces: Space[];
   useMembers: UseMembers;
 }) {
-  const { person: user } = useMe();
-  const { web3SpaceIds } = useMemberWeb3SpaceIds();
+  const { person } = useMe();
+  const { web3SpaceIds } = useMemberWeb3SpaceIds({ person });
 
   const filteredSpaces = React.useMemo(
-    () => filterSpaces(spaces, user, web3SpaceIds),
-    [spaces, user, web3SpaceIds],
+    () => filterSpaces(spaces, person, web3SpaceIds),
+    [spaces, person, web3SpaceIds],
   );
 
   return (
