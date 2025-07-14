@@ -18,7 +18,7 @@ export interface Space {
   memberCount?: number;
   documentCount?: number;
   documents?: Document[];
-  address?: string;
+  address?: string | null;
 }
 
 export interface CreateSpaceInput {
