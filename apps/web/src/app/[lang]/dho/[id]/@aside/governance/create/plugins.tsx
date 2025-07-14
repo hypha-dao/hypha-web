@@ -1,5 +1,6 @@
 'use client';
 
+import { Space } from '@core/space';
 import {
   ProposeContributionPlugin,
   PayForExpensesPlugin,
@@ -23,9 +24,15 @@ type PluginProps = {
   name: keyof typeof PLUGINS;
   spaceSlug?: string;
   web3SpaceId?: number | null;
+  subspaces?: Space[];
 };
 
-export const Plugin = ({ name, spaceSlug, web3SpaceId }: PluginProps) => {
+export const Plugin = ({
+  name,
+  spaceSlug,
+  web3SpaceId,
+  subspaces,
+}: PluginProps) => {
   const { members } = useMembers({ spaceSlug });
 
   const PluginCmp = PLUGINS[name];
@@ -35,6 +42,7 @@ export const Plugin = ({ name, spaceSlug, web3SpaceId }: PluginProps) => {
       spaceSlug={spaceSlug || ''}
       web3SpaceId={web3SpaceId}
       members={members}
+      subspaces={subspaces}
     />
   );
 };

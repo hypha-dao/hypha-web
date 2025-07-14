@@ -22,6 +22,8 @@ export default async function CreateDeployFundsPage({ params }: PageProps) {
 
   const successfulUrl = getDhoPathGovernance(lang as Locale, id);
 
+  const subspaces = spaceFromDb.subspaces;
+
   return (
     <SidePanel>
       <CreateDeployFundsForm
@@ -29,7 +31,13 @@ export default async function CreateDeployFundsPage({ params }: PageProps) {
         backUrl={`${successfulUrl}${PATH_SELECT_CREATE_ACTION}`}
         spaceId={spaceId}
         web3SpaceId={web3SpaceId}
-        plugin={<Plugin name="deploy-funds" spaceSlug={spaceSlug} />}
+        plugin={
+          <Plugin
+            name="deploy-funds"
+            spaceSlug={spaceSlug}
+            subspaces={subspaces}
+          />
+        }
       />
     </SidePanel>
   );
