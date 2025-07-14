@@ -1,22 +1,17 @@
 'use client';
 
-import useSWR from 'swr';
-import { getMemberSpaces } from '@core/space';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { publicClient } from '@hypha-platform/core/client';
+import { useMemberWeb3SpaceIdsByWallet } from './use-member-web3-space-ids-by-wallet';
 
 export function useMemberWeb3SpaceIds() {
   const { user } = useAuthentication();
   const {
-    data: web3SpaceIds,
+    web3SpaceIds,
     isLoading,
     error,
-  } = useSWR(
-    user?.wallet?.address ? [user.wallet.address, 'getMemberSpaces'] : null,
-    async ([address]) =>
-      publicClient.readContract(getMemberSpaces({ memberAddress: address })),
-    { revalidateOnFocus: true },
-  );
+  } = useMemberWeb3SpaceIdsByWallet({
+    walletAddress: user?.wallet?.address
+  });
 
   return {
     web3SpaceIds,
