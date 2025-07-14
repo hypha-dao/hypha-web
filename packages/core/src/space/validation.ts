@@ -41,6 +41,7 @@ const createSpaceWeb2Props = {
     .array(z.string().url('Links must be a valid URL'))
     .max(3)
     .default([]),
+  address: z.string().optional(),
 };
 
 export const schemaCreateSpaceWeb2 = z.object(createSpaceWeb2Props);

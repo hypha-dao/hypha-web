@@ -193,15 +193,17 @@ export const useCreateSpaceOrchestrator = ({
       ? [
           web2.createdSpace.slug,
           web3.createdSpace?.spaceId,
+          web3.createdSpace?.executor,
           'linkingWeb2AndWeb3Space',
         ]
       : null,
-    async ([slug, web3SpaceId]) => {
+    async ([slug, web3SpaceId, address]) => {
       try {
         startTask('LINK_WEB2_AND_WEB3_SPACE');
         const result = await web2.updateSpaceBySlug({
           slug,
           web3SpaceId: Number(web3SpaceId),
+          address: address,
         });
         completeTask('LINK_WEB2_AND_WEB3_SPACE');
         return result;
