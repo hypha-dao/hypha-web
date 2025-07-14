@@ -2,12 +2,12 @@ import { createRequestScope } from '../../_container';
 import { PeopleService } from './service';
 
 type CreatePeopleServiceProps = {
-  authToken: string;
+  authToken?: string;
 };
 
 export const createPeopleService = ({
   authToken,
-}: CreatePeopleServiceProps) => {
+}: CreatePeopleServiceProps = {}) => {
   const requestContainer = createRequestScope({ authToken });
   return requestContainer.get(PeopleService);
 };
