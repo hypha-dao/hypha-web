@@ -313,7 +313,7 @@
     --destructive: 0.31 0.14 26;
     --destructive-foreground: 0.98 0 0;
     --border: var(--neutral-6);
-    --input: 0.16 0.005 264;
+    --input: var(--neutral-6);
     --ring: 0.84 0.01 264;
     --action-light: 0.81 0.15 248;
     --radius: 2.5px;
