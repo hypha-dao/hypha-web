@@ -13,10 +13,10 @@ import { Text } from '@radix-ui/themes';
 
 export function filterSpaces(
   spaces: Space[],
-  person: Person | undefined,
+  personSlug: string | undefined,
   web3SpaceIds: readonly bigint[] | undefined,
 ) {
-  if (!person?.slug || !web3SpaceIds) {
+  if (!personSlug || !web3SpaceIds) {
     return [];
   }
   const userSpaces: Space[] = spaces.filter((space) => {
@@ -36,10 +36,10 @@ export function FilteredSpaces({
   useMembers: UseMembers;
 }) {
   const { person } = useMe();
-  const { web3SpaceIds } = useMemberWeb3SpaceIds({ person });
+  const { web3SpaceIds } = useMemberWeb3SpaceIds({ personAddress: person?.address });
 
   const filteredSpaces = React.useMemo(
-    () => filterSpaces(spaces, person, web3SpaceIds),
+    () => filterSpaces(spaces, person?.slug, web3SpaceIds),
     [spaces, person, web3SpaceIds],
   );
 

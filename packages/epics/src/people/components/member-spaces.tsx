@@ -2,7 +2,6 @@
 
 import { Skeleton, Image } from '@hypha-platform/ui';
 import { Space } from '@hypha-platform/core/client';
-import { Person } from '@core/people';
 import { filterSpaces, getDhoPathGovernance, useMemberWeb3SpaceIds } from '@hypha-platform/epics';
 import React from 'react';
 import { cn } from '@hypha-platform/lib/utils';
@@ -14,21 +13,23 @@ export type MemberSpacesProps = {
   spaces?: Space[];
   isLoading?: boolean;
   profileView?: boolean;
-  person?: Person;
+  personAddress?: string;
+  personSlug?: string;
 };
 
 export const MemberSpaces = ({
   spaces,
   isLoading,
   profileView = false,
-  person,
+  personAddress,
+  personSlug,
 }: MemberSpacesProps) => {
   const { lang } = useParams();
-  const { web3SpaceIds, isLoading: isLoadingSpaces } = useMemberWeb3SpaceIds({ person });
+  const { web3SpaceIds, isLoading: isLoadingSpaces } = useMemberWeb3SpaceIds({ personAddress });
 
   const filteredSpaces = React.useMemo(
-    () => filterSpaces(spaces ?? [], person, web3SpaceIds),
-    [spaces, person, web3SpaceIds],
+    () => filterSpaces(spaces ?? [], personSlug, web3SpaceIds),
+    [spaces, personSlug, web3SpaceIds],
   );
 
   const iconSize = React.useMemo(

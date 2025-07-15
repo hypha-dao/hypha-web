@@ -5,16 +5,16 @@ import { getMemberSpaces } from '@core/space';
 import { Address, Person, publicClient } from '@hypha-platform/core/client';
 
 export function useMemberWeb3SpaceIds({
-  person,
+  personAddress,
 }: {
-  person: Person | undefined;
+  personAddress: string | undefined;
 }) {
   const {
     data: web3SpaceIds,
     isLoading,
     error,
   } = useSWR(
-    person?.address ? [person?.address, 'getMemberSpaces'] : null,
+    personAddress ? [personAddress, 'getMemberSpaces'] : null,
     async ([address]) =>
       publicClient.readContract(getMemberSpaces({ memberAddress: address as Address })),
     { revalidateOnFocus: true },

@@ -29,8 +29,11 @@ export default function Member() {
           nickname: person?.nickname,
           status: 'active', // TODO: get status
           about: person?.description,
+          slug: person?.slug,
+          address: person?.address,
         }}
         isLoading={isLoading}
+        lang={lang as Locale}
         basePath={`${getDhoPathGovernance(
           lang as Locale,
           id as string,

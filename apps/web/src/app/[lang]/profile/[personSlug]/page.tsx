@@ -55,7 +55,8 @@ export default async function Profile(props: PageProps) {
       <Separator />
       <MemberSpaces
         spaces={spaces}
-        person={person ?? undefined}
+        personAddress={person?.address}
+        personSlug={person?.slug}
         profileView={true}
       />
     </Container>
