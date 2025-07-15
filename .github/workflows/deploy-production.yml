@@ -30,7 +30,7 @@ jobs:
 
       - name: Run DB Migration
         run: |
-          npx nx run storage-postgres:migrate:production
+          pnpm run migrate
         env:
           DEFAULT_DB_URL: ${{ secrets.POSTGRES_URL }}
 
