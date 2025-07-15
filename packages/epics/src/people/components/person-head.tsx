@@ -14,6 +14,7 @@ import { WebLinks } from '../../common';
 import { RxDownload, RxPencil2 } from 'react-icons/rx';
 import { MailIcon, MapPinIcon } from 'lucide-react';
 import Link from 'next/link';
+import { useAuthentication } from '@hypha-platform/authentication';
 
 export type MemberType = {
   avatar: string;
@@ -29,6 +30,7 @@ interface PersonHeadProps {
   location: string;
   email: string;
   onExportEmbeededWallet?: () => void;
+  exportEmbeddedWallet?: boolean;
 }
 
 export const PersonHead = ({
@@ -42,7 +44,10 @@ export const PersonHead = ({
   location,
   email,
   onExportEmbeededWallet,
+  exportEmbeddedWallet,
 }: PersonHeadProps & MemberType) => {
+  const { exportWallet, isEmbeddedWallet } = useAuthentication();
+
   const customLogoStyles: React.CSSProperties = {
     width: '128px',
     height: '128px',
@@ -50,6 +55,23 @@ export const PersonHead = ({
     bottom: '-35px',
     left: '15px',
   };
+
+  const getExportWalletButton = (exportWallet: () => void) => {
+    return (
+      <Skeleton loading={isLoading} width={120} height={35}>
+        <Button variant="ghost" onClick={exportWallet}>
+          <RxDownload />
+          Export Keys
+        </Button>
+      </Skeleton>
+    );
+  };
+
+  const exportWalletComponent = exportEmbeddedWallet && isEmbeddedWallet
+    ? getExportWalletButton(exportWallet)
+    : onExportEmbeededWallet
+      ? getExportWalletButton(onExportEmbeededWallet)
+      : null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -74,14 +96,7 @@ export const PersonHead = ({
       </Card>
       <div className="flex flex-col gap-4">
         <div className="flex justify-end gap-2">
-          {onExportEmbeededWallet ? (
-            <Skeleton loading={isLoading} width={120} height={35}>
-              <Button variant="ghost" onClick={onExportEmbeededWallet}>
-                <RxDownload />
-                Export Keys
-              </Button>
-            </Skeleton>
-          ) : null}
+          {exportWalletComponent}
           <Skeleton loading={isLoading} width={120} height={35}>
             <Button variant="outline" colorVariant="accent">
               <CopyIcon />

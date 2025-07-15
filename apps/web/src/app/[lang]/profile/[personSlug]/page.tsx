@@ -12,6 +12,13 @@ type PageProps = {
   params: Promise<{ lang: Locale; personSlug: string }>;
 };
 
+export async function generateMetadata(props: PageProps) {
+  return {
+    title: 'User Profile | Hypha',
+    description: 'Show Hypha account info.',
+  };
+}
+
 export default async function Profile(props: PageProps) {
   const params = await props.params;
 
@@ -34,7 +41,6 @@ export default async function Profile(props: PageProps) {
         <Text className="text-sm text-neutral-11 ml-1">/ Profile Page</Text>
       </div>
       <PersonHead
-        // isLoading={isLoading}
         avatar={person?.avatarUrl ?? ''}
         name={person?.name ?? ''}
         surname={person?.surname ?? ''}
@@ -43,7 +49,7 @@ export default async function Profile(props: PageProps) {
         about={person?.description ?? ''}
         location={person?.location ?? ''}
         email={person?.email ?? ''}
-        // onExportEmbeededWallet={isEmbeddedWallet ? exportWallet : undefined}
+        exportEmbeddedWallet={true}
       />
       <Separator />
       <MemberSpaces

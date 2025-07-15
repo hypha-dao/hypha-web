@@ -72,8 +72,8 @@ export const MemberSpaces = ({
       ) : (
         <div className="flex flex-row gap-3 overflow-x-auto">
           {filteredSpaces?.map((space, index) => (
-            <Link href={getDhoPathGovernance(lang as Locale, space.slug ?? '')}>
-              <div key={index} title={space.title}>
+            <Link key={index} href={getDhoPathGovernance(lang as Locale, space.slug ?? '')}>
+              <div title={space.title}>
                 <div className={cn(
                   'relative flex',
                   `h-[${iconSize}px]`,
