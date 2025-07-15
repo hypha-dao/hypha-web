@@ -5,9 +5,8 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        ".env*",
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "env": [
         "NEON_DATABASE_USERNAME",
         "NEON_DATABASE_NAME",
         "NEON_API_KEY",
