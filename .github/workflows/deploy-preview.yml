@@ -73,7 +73,7 @@ jobs:
       - name: Run Migrations
         if: needs.detect-changes.outputs.has_migrations == 'true'
         run: |
-          echo "BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}" >> .env
+          echo "BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}" >> apps/web/.env
           pnpm run migrate
 
       - name: Post Schema Diff Comment to PR
@@ -131,7 +131,7 @@ jobs:
       - name: Run Migrations
         if: needs.detect-changes.outputs.has_migrations == 'true'
         run: |
-          echo "BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}" >> .env.production
+          echo "BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}" >> apps/web/.env.production
           pnpm run migrate
 
       - name: Delete Neon Branch
