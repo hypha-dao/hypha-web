@@ -11,13 +11,13 @@ import {
 } from '@hypha-platform/ui';
 import { CopyIcon } from '@radix-ui/react-icons';
 import { WebLinks } from '../../common';
-import { RxDownload, RxPencil2 } from 'react-icons/rx';
+import { RxPencil2 } from 'react-icons/rx';
 import { MailIcon, MapPinIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { Person, useMe } from '@core/people';
-import { useCallback } from 'react';
+import { useMe } from '@core/people';
 import React from 'react';
+import { ExportEmbeddedWalletButton } from '@hypha-platform/epics';
 
 export type MemberType = {
   avatar: string;
@@ -62,31 +62,9 @@ export const PersonHead = ({
     left: '15px',
   };
 
-  const getExportWalletButton = (exportWallet: () => void) => {
-    return (
-      <Skeleton loading={isLoading} width={120} height={35}>
-        <Button variant="ghost" onClick={exportWallet}>
-          <RxDownload />
-          Export Keys
-        </Button>
-      </Skeleton>
-    );
-  };
-
-  const isMe = useCallback(() => {
+  const isMe = React.useMemo(() => {
     return !isMeLoading && me?.slug && slug && me.slug === slug;
   }, [slug, me, isMeLoading]);
-
-  const exportWalletComponent = React.useMemo(
-    () => {
-      return isMe() && exportEmbeddedWallet && isEmbeddedWallet
-    ? getExportWalletButton(exportWallet)
-    : onExportEmbeededWallet
-      ? getExportWalletButton(onExportEmbeededWallet)
-      : null;
-    },
-    [isMe, exportEmbeddedWallet, isEmbeddedWallet, getExportWalletButton, exportWallet, onExportEmbeededWallet],
-  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -111,7 +89,13 @@ export const PersonHead = ({
       </Card>
       <div className="flex flex-col gap-4">
         <div className="flex justify-end gap-2">
-          {exportWalletComponent}
+          {isMe && (<ExportEmbeddedWalletButton
+            isLoading={isLoading}
+            isEmbeddedWallet={isEmbeddedWallet || !!onExportEmbeededWallet}
+            onExportEmbeededWallet={exportEmbeddedWallet && isEmbeddedWallet
+              ? exportWallet
+              : onExportEmbeededWallet}
+          />)}
           <Skeleton loading={isLoading} width={120} height={35}>
             <Button variant="outline" colorVariant="accent">
               <CopyIcon />

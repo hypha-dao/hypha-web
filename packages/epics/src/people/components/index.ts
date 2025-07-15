@@ -9,4 +9,5 @@ export * from './members-section';
 export * from './person-head';
 export * from './edit-person-section';
 export * from './eth-address';
+export * from './export-embedded-wallet-button';
 export * from './signup-panel';
