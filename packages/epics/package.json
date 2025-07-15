@@ -1,0 +1,23 @@
+{
+  "name": "@hypha-platform/epics",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "lint": "eslint . --max-warnings 0"
+  },
+  "devDependencies": {
+    "@hypha-platform/config-eslint": "workspace:*",
+    "@hypha-platform/config-typescript": "workspace:*"
+  },
+  "dependencies": {
+    "@hypha-platform/authentication": "workspace:*",
+    "@hypha-platform/ui": "workspace:*",
+    "@hypha-platform/ui-utils": "workspace:*",
+    "@hypha-platform/core": "workspace:*",
+    "@hypha-platform/i18n": "workspace:*"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

@@ -1,12 +1,16 @@
 'use client';
+
 import { Button, ErrorAlert } from '@hypha-platform/ui';
 import { useJoinSpace } from '../hooks/use-join-space';
 import { PersonIcon } from '@radix-ui/react-icons';
 import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { useSpaceDetailsWeb3Rpc } from '@core/space';
-import { useMe, useJwt } from '@core/people';
-import { useAddMemberOrchestrator } from '@core/governance';
+import {
+  useSpaceDetailsWeb3Rpc,
+  useMe,
+  useJwt,
+  useAddMemberOrchestrator,
+} from '@hypha-platform/core/client';
 import { BaseError, useConfig } from 'wagmi';
 
 type JoinSpaceProps = {

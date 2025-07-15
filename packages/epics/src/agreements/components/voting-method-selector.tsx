@@ -3,11 +3,14 @@
 import { Card } from '@hypha-platform/ui';
 import clsx from 'clsx';
 import { PlusCircledIcon } from '@radix-ui/react-icons';
-import { useSpaceHasVoiceToken, useTokensVotingPower } from '@core/space';
+import {
+  useSpaceHasVoiceToken,
+  useTokensVotingPower,
+} from '@hypha-platform/core/client';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { VotingMethodType } from '@core/governance/client';
+import { VotingMethodType } from '@hypha-platform/core/client';
 
 type VotingMethod = {
   id: VotingMethodType;

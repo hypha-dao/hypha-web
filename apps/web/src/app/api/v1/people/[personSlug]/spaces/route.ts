@@ -1,7 +1,9 @@
 import {
-  createPeopleService,
-  createSpaceService,
+  findAllSpacesByMemberId,
+  findPersonBySlug,
+  getDb,
 } from '@hypha-platform/core/server';
+import { db } from '@hypha-platform/storage-postgres';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
@@ -19,16 +21,21 @@ export async function GET(
 
   try {
     // First, get the person by slug
-    const peopleService = createPeopleService({ authToken });
-    const person = await peopleService.findBySlug({ slug: personSlug });
+    const person = await findPersonBySlug(
+      { slug: personSlug },
+      { db: getDb({ authToken }) },
+    );
 
     if (!person) {
       return NextResponse.json({ error: 'Person not found' }, { status: 404 });
     }
 
     // Then, get all spaces for this person using their ID
-    const spaceService = createSpaceService();
-    const spaces = await spaceService.getAllByMemberId(person.id);
+    const spaces = await findAllSpacesByMemberId(
+      { memberId: person.id },
+      // TODO: implement authorization
+      { db },
+    );
 
     return NextResponse.json(spaces);
   } catch (error) {

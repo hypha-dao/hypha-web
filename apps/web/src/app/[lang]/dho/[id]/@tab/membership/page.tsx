@@ -4,14 +4,13 @@ import { MembersSection, SubspaceSection } from '@hypha-platform/epics';
 import { useMembers } from '@web/hooks/use-members';
 
 import { getDhoPathMembership } from './constants';
-import { createSpaceService } from '@core/space/server';
 import { getDhoPathGovernance } from '../governance/constants';
+import { findSpaceBySlug, getDb } from '@hypha-platform/core/server';
+import { notFound } from 'next/navigation';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
 };
-
-const MEMBER_REFRESH_INTERVAL = 10000; // 10 seconds
 
 export default async function MembershipPage(props: PageProps) {
   const params = await props.params;
@@ -20,13 +19,16 @@ export default async function MembershipPage(props: PageProps) {
 
   const basePath = getDhoPathMembership(lang as Locale, id as string);
 
-  const spaceService = createSpaceService();
+  const spaceFromDb = await findSpaceBySlug(
+    { slug: id },
+    { db: getDb({ authToken: undefined }) },
+  );
 
-  const spaceFromDb = await spaceService.getBySlug({ slug: id });
+  if (!spaceFromDb) {
+    return notFound();
+  }
 
   const subspaces = spaceFromDb.subspaces;
-
-  const refreshInterval = MEMBER_REFRESH_INTERVAL;
 
   return (
     <div className="flex flex-col gap-6 py-4">
@@ -40,7 +42,6 @@ export default async function MembershipPage(props: PageProps) {
         basePath={`${basePath}/person`}
         useMembers={useMembers}
         spaceSlug={spaceFromDb.slug}
-        refreshInterval={refreshInterval}
       />
     </div>
   );

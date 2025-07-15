@@ -1,8 +1,10 @@
 import { CreateAgreementForm, SidePanel } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
-import { createSpaceService } from '@core/space/server';
 import { getDhoPathGovernance } from '../../../@tab/governance/constants';
 import { PATH_SELECT_CREATE_ACTION } from '@web/app/constants';
+import { findSpaceBySlug } from '@hypha-platform/core/server';
+import { db } from '@hypha-platform/storage-postgres';
+import { notFound } from 'next/navigation';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -11,9 +13,10 @@ type PageProps = {
 export default async function CreateAgreementPage({ params }: PageProps) {
   const { lang, id } = await params;
 
-  const spaceService = createSpaceService();
+  // TODO: implement authorization
+  const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
 
-  const spaceFromDb = await spaceService.getBySlug({ slug: id });
+  if (!spaceFromDb) notFound();
 
   const spaceId = spaceFromDb.id;
   const web3SpaceId = spaceFromDb.web3SpaceId;

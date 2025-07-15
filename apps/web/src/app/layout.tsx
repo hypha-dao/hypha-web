@@ -16,6 +16,8 @@ import { HYPHA_LOCALE } from '@hypha-platform/cookie';
 import { i18nConfig } from '@hypha-platform/i18n';
 import { MenuTop } from '@hypha-platform/ui';
 
+import '@hypha-platform/ui-utils/global.css';
+
 const lato = Lato({
   subsets: ['latin'],
   display: 'swap',

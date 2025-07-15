@@ -1,6 +1,6 @@
 'use client';
 
-import { publicClient } from '@core/common';
+import { publicClient } from '@hypha-platform/core/client';
 import useSWR from 'swr';
 import { getSpaceDetails } from '../web3';
 import React from 'react';

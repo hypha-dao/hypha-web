@@ -12,9 +12,9 @@ import {
   CarouselContent,
   Button,
 } from '@hypha-platform/ui';
-import { Heading } from 'packages/ui/src/atoms/heading';
+import { Heading } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
-import { createSpaceService } from '@hypha-platform/core/server';
+import { findAllSpaces, getDb } from '@hypha-platform/core/server';
 import { getDhoPathGovernance } from '../dho/[id]/@tab/governance/constants';
 import { useMembers } from '@web/hooks/use-members';
 import { PlusIcon } from '@radix-ui/react-icons';

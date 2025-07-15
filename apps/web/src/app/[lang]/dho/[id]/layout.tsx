@@ -12,12 +12,17 @@ import { Text } from '@radix-ui/themes';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Carousel, CarouselContent, CarouselItem } from '@hypha-platform/ui';
-import { createSpaceService } from '@hypha-platform/core/server';
+import {
+  findAllSpaces,
+  findSpaceBySlug,
+  getDb,
+} from '@hypha-platform/core/server';
 import { getDhoPathGovernance } from './@tab/governance/constants';
 import { ActionButtons } from './_components/action-buttons';
-import { publicClient } from '@core/common';
-import { getSpaceDetails } from '@core/space';
+import { publicClient } from '@hypha-platform/core/client';
+import { getSpaceDetails } from '@hypha-platform/core/client';
 import { useMembers } from '@web/hooks/use-members';
+import { notFound } from 'next/navigation';
 
 export default async function DhoLayout({
   aside,
@@ -32,10 +37,19 @@ export default async function DhoLayout({
 }) {
   const { id: daoSlug, lang } = await params;
 
-  const spaceService = createSpaceService();
+  const spaceFromDb = await findSpaceBySlug(
+    { slug: daoSlug },
+    { db: getDb({ authToken: undefined }) },
+  );
 
-  const spaceFromDb = await spaceService.getBySlug({ slug: daoSlug });
-  const spaces = await spaceService.getAll();
+  const spaces = await findAllSpaces({
+    db: getDb({ authToken: undefined }),
+  });
+
+  if (!spaceFromDb) {
+    return notFound();
+  }
+
   const spaceDetails = await publicClient.readContract(
     getSpaceDetails({ spaceId: BigInt(spaceFromDb.web3SpaceId as number) }),
   );
@@ -96,6 +110,7 @@ export default async function DhoLayout({
           </div>
           <div className="flex ml-3">
             <div className="font-bold text-1">
+              {/* @ts-ignore: TODO: infer types from relations */}
               {spaceFromDb.documents?.length || 0}
             </div>
             <div className="text-gray-500 ml-1 text-1">Agreements</div>

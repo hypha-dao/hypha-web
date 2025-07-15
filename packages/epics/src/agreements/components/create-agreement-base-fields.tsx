@@ -16,9 +16,12 @@ import {
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { PersonAvatar } from '../../people/components/person-avatar';
-import { ALLOWED_IMAGE_FILE_SIZE } from '@core/space';
+import { ALLOWED_IMAGE_FILE_SIZE } from '@hypha-platform/core/client';
 import { z } from 'zod';
-import { createAgreementFiles, schemaCreateAgreement } from '@core/governance';
+import {
+  createAgreementFiles,
+  schemaCreateAgreement,
+} from '@hypha-platform/core/client';
 
 import { ButtonClose, ButtonBack } from '@hypha-platform/epics';
 

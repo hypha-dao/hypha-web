@@ -1,6 +1,10 @@
 @import '../../colors/gray.css';
 
-:root, .light, .light-theme, .dark, .dark-theme {
+:root,
+.light,
+.light-theme,
+.dark,
+.dark-theme {
   --background-1: var(--gray-1);
   --background-2: var(--gray-2);
   --background-3: var(--gray-3);
