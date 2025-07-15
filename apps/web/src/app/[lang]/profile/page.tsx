@@ -1,7 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { PersonHead, UserAssetsSection } from '@hypha-platform/epics';
+import {
+  PersonHead,
+  UserAssetsSection,
+  UserTransactionsSection,
+} from '@hypha-platform/epics';
 import Link from 'next/link';
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Text } from '@radix-ui/themes';
@@ -58,8 +62,9 @@ export default function Profile() {
             Treasury
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="treasury">
+        <TabsContent value="treasury" className="flex flex-col gap-4">
           <UserAssetsSection personSlug={person?.slug || ''} />
+          <UserTransactionsSection personSlug={person?.slug || ''} />
         </TabsContent>
       </Tabs>
     </Container>
