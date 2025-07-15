@@ -1,7 +1,7 @@
 import {
   tokenVotingPowerImplementationAbi,
   tokenVotingPowerImplementationAddress,
-} from '@core/generated';
+} from '@hypha-platform/core/generated';
 
 export const getTokensVotingPower = ({
   spaceId,
