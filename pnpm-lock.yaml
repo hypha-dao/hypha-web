@@ -877,14 +877,13 @@ importers:
         version: link:../../config/typescript
 
   packages/storage-postgres:
-    dependencies:
-      dotenv:
-        specifier: ^16.4.7
-        version: 16.5.0
     devDependencies:
       '@hypha-platform/config-typescript':
         specifier: workspace:*
         version: link:../../config/typescript
+      dotenv:
+        specifier: ^16.4.7
+        version: 16.5.0
 
   packages/ui:
     dependencies:
