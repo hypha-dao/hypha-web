@@ -11,7 +11,7 @@ import { Person, useMe } from '@core/people';
 import React from 'react';
 import { Text } from '@radix-ui/themes';
 
-function filterSpaces(
+export function filterSpaces(
   spaces: Space[],
   person: Person | undefined,
   web3SpaceIds: readonly bigint[] | undefined,
