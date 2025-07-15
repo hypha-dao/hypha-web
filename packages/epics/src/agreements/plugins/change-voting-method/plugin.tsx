@@ -1,6 +1,6 @@
 'use client';
 
-import { Person } from '@core/people';
+import { Person } from '@hypha-platform/core/client';
 import { MemberWithNumberFieldFieldArray } from '../components/common/member-with-number-field-array';
 import { TokenSelectorField } from '../components/common/token-selector-field';
 import { useTokens } from '@hypha-platform/epics';
@@ -8,7 +8,7 @@ import { QuorumAndUnityChangerField } from '../components/common/quorum-and-unit
 import { useFormContext, useWatch } from 'react-hook-form';
 import { Skeleton } from '@hypha-platform/ui';
 import { VotingMethodSelector } from '../../components/voting-method-selector';
-import { VotingMethodType } from '@core/governance/client';
+import { VotingMethodType } from '@hypha-platform/core/client';
 
 export const ChangeVotingMethodPlugin = ({
   spaceSlug,

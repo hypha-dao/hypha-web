@@ -1,5 +1,5 @@
 import { generateReactHelpers } from '@uploadthing/react';
-import { CoreFileRouter } from '../server';
+import type { CoreFileRouter } from '../server';
 
 export type UseFileUploadProps = {
   headers: {

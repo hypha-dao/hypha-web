@@ -5,7 +5,7 @@ import { Separator, AttachmentList, Skeleton } from '@hypha-platform/ui';
 // TODO(#891): restore when comments support is implemented
 // import { CommentsList } from '../../interactions/components/comments-list';
 import Image from 'next/image';
-import { useProposalDetailsWeb3Rpc } from '@core/governance';
+import { useProposalDetailsWeb3Rpc } from '@hypha-platform/core/client';
 import {
   ProposalTransactionItem,
   ProposalTokenItem,

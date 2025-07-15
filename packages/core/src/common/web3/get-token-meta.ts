@@ -1,4 +1,4 @@
-import { publicClient, TOKENS, Token } from '@core/common/web3';
+import { publicClient, TOKENS, Token } from '@hypha-platform/core/client';
 import { erc20Abi } from 'viem';
 
 export async function getTokenMeta(
@@ -38,9 +38,9 @@ export async function getTokenMeta(
     const [symbol, name] = results.map(({ result }) => result as string);
 
     return {
-      symbol: symbol,
+      symbol: symbol ?? 'MISSING SYMBOL',
       icon: '/placeholder/token-icon.png',
-      name: name,
+      name: name ?? 'MISSING NAME',
       status: 'utility',
     };
   } catch (error: any) {

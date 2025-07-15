@@ -21,7 +21,7 @@ import {
 } from '@hypha-platform/ui';
 import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
-import { cn } from '@hypha-platform/lib/utils';
+import { cn } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { Links } from '../../common';

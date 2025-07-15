@@ -1,5 +1,4 @@
-import { Document } from '@core/governance';
-import { DirectionType, Order, OrderField } from '../types';
+import { DirectionType, Order, OrderField } from '@hypha-platform/core/client';
 
 export const getDirection = (dir: DirectionType) => {
   return dir === DirectionType.DESC ? '-' : '+';

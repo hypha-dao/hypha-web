@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSpaceService } from '@hypha-platform/core/server';
+import { findSpaceBySlug } from '@hypha-platform/core/server';
 import {
   getSpaceDetails,
   getSpaceRegularTokens,
   getSpaceDecayingTokens,
   getSpaceOwnershipTokens,
-} from '@core/space';
-import { TOKENS, publicClient, getBalance, getTokenMeta } from '@core/common';
-import { getTokenPrice } from '@core/server';
+} from '@hypha-platform/core/client';
+import {
+  TOKENS,
+  publicClient,
+  getBalance,
+  getTokenMeta,
+} from '@hypha-platform/core/client';
+import { getTokenPrice } from '@hypha-platform/core/server';
+import { db } from '@hypha-platform/storage-postgres';
 
 export async function GET(
   _: NextRequest,
@@ -16,9 +22,8 @@ export async function GET(
   const { spaceSlug } = await params;
 
   try {
-    const spaceService = createSpaceService();
-
-    const space = await spaceService.getBySlug({ slug: spaceSlug });
+    // TODO: implement authorization
+    const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
     if (!space) {
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }

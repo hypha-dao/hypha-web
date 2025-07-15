@@ -2,8 +2,8 @@ import { createUploadthing, type FileRouter } from 'uploadthing/next';
 import { UploadThingError } from 'uploadthing/server';
 import { NextRequest } from 'next/server';
 
-import { getDb } from '@core/common/server/get-db';
-import { verifyAuth } from '@core/people/server/queries';
+import { getDb } from '@hypha-platform/core/server';
+import { verifyAuth } from '@hypha-platform/core/server';
 
 const f = createUploadthing();
 

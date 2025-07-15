@@ -3,9 +3,9 @@ import { FC } from 'react';
 import { Text } from '@radix-ui/themes';
 import { useDocumentsSection } from '../hooks/use-documents-section';
 import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
-import { Document } from '@core/governance';
+import { Document } from '@hypha-platform/core/client';
 import { DocumentGridContainer } from './document-grid.container';
-import { DirectionType } from '@core/common';
+import { DirectionType } from '@hypha-platform/core/client';
 import { Empty } from '../../common';
 
 type DocumentSectionProps = {

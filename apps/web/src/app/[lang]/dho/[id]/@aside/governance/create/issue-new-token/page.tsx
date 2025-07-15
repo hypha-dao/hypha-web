@@ -1,11 +1,12 @@
 import { SidePanel } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
-import { createSpaceService } from '@core/space/server';
 import { notFound } from 'next/navigation';
 import { IssueNewTokenForm } from '@hypha-platform/epics';
 import { Plugin } from '../plugins';
 import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 import { getDhoPathGovernance } from '../../../../@tab/governance/constants';
+import { findSpaceBySlug } from '@hypha-platform/core/server';
+import { db } from '@hypha-platform/storage-postgres';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -14,9 +15,8 @@ type PageProps = {
 export default async function IssueNewTokenPage({ params }: PageProps) {
   const { lang, id } = await params;
 
-  const spaceService = createSpaceService();
-
-  const spaceFromDb = await spaceService.getBySlug({ slug: id });
+  // TODO: implement authorization
+  const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
 
   if (!spaceFromDb) notFound();
 

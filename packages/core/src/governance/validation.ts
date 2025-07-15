@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { DEFAULT_IMAGE_ACCEPT } from '@core/assets';
+import { DEFAULT_IMAGE_ACCEPT } from '@hypha-platform/core/client';
 import { isBefore } from 'date-fns';
 import { EntryMethodType } from './types';
 
@@ -58,6 +58,7 @@ export const paymentScheduleSchema = z
 
       for (let i = 0; i < data.milestones.length; i++) {
         const milestone = data.milestones[i];
+        // @ts-ignore TODO: fix types
         const { dateRange } = milestone;
 
         if (!dateRange?.from) {

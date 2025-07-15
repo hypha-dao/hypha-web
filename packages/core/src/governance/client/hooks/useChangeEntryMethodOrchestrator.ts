@@ -12,11 +12,8 @@ import {
   schemaCreateAgreementWeb2,
   schemaCreateAgreementFiles,
 } from '../../validation';
-import { EntryMethodType, TokenBase } from '@core/governance/types';
-import {
-  useAgreementFileUploads,
-  useAgreementMutationsWeb2Rsc,
-} from '@hypha-platform/core/client';
+import { EntryMethodType, TokenBase } from '../../types';
+import { useAgreementFileUploads, useAgreementMutationsWeb2Rsc } from '.';
 
 type UseCreateChangeEntryMethodOrchestratorInput = {
   authToken?: string | null;

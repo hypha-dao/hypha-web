@@ -7,9 +7,9 @@ import {
   CarouselItem,
   CarouselContent,
 } from '@hypha-platform/ui';
-import { Heading } from 'packages/ui/src/atoms/heading';
+import { Heading } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
-import { createSpaceService } from '@hypha-platform/core/server';
+import { findAllSpaces, getDb } from '@hypha-platform/core/server';
 import { getDhoPathGovernance } from '../dho/[id]/@tab/governance/constants';
 import { useMembers } from '@web/hooks/use-members';
 
@@ -22,7 +22,9 @@ export default async function Index(props: PageProps) {
 
   const { lang } = params;
 
-  const spaces = await createSpaceService().getAll();
+  const spaces = await findAllSpaces({
+    db: getDb({ authToken: undefined }),
+  });
 
   return (
     <div className="w-full overflow-auto">
