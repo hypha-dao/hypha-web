@@ -40,15 +40,13 @@ export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
           isLoading={isLoading}
         />
       )}
-      {hasMore && (
-        <SectionLoadMore
-          onClick={loadMore}
-          disabled={!hasMore}
-          isLoading={isLoading}
-        >
-          <Text>Load more assets</Text>
-        </SectionLoadMore>
-      )}
+      <SectionLoadMore
+        onClick={loadMore}
+        disabled={!hasMore}
+        isLoading={isLoading}
+      >
+        {hasMore ? 'Load more assets' : 'No more assets'}
+      </SectionLoadMore>
     </div>
   );
 };

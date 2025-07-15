@@ -29,7 +29,7 @@ export const TransferCard: React.FC<TransferCardProps> = ({
   counterparty,
 }) => {
   return (
-    <Card className="w-full h-full p-5 mb-2 flex space-x-3">
+    <Card className="w-full p-5 mb-2 flex space-x-3">
       <PersonAvatar
         size="lg"
         isLoading={isLoading}
