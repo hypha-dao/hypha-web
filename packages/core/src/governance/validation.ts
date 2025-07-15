@@ -317,18 +317,6 @@ export const schemaCreateProposalWeb3 = z.object({
     .max(10, { message: 'A proposal cannot have more than 10 transactions' }),
 });
 
-export const mapToCreateProposalWeb3Input = (
-  d: z.infer<typeof schemaCreateProposalWeb3>,
-) => ({
-  spaceId: d.spaceId,
-  duration: d.duration,
-  transactions: d.transactions.map((tx) => ({
-    target: tx.target,
-    value: tx.value,
-    data: tx.data || '0x',
-  })),
-});
-
 export const schemaChangeEntryMethod = z.object({
   ...createAgreementWeb2Props,
   ...createAgreementFiles,

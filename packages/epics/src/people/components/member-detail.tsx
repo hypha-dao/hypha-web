@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { MemberSpaces } from './member-spaces';
 import { Space } from '@hypha-platform/core/client';
 import { UseDocuments } from '../../governance';
-import { AgreementsSection } from '../../agreements';
 
 type MemberType = {
   avatarUrl?: string;
