@@ -9,8 +9,7 @@
     "migrate": "turbo run migrate",
     "add-component": "nx add-component --",
     "format:check": "npx prettier --check 'apps/**/*.{ts,tsx}' --check 'packages/**/*.{ts,tsx}'",
-    "format:fix": "npx prettier --write 'apps/**/*.{ts,tsx}' --write 'packages/**/*.{ts,tsx}'",
-    "postinstall": "if [ ! -f .env ]; then cp .env.template .env; fi"
+    "format:fix": "npx prettier --write 'apps/**/*.{ts,tsx}' --write 'packages/**/*.{ts,tsx}'"
   },
   "private": true,
   "nx": {},
