@@ -9,7 +9,6 @@ import invariant from 'tiny-invariant';
 type Database = NeonHttpDatabase<typeof schema>;
 
 dotenv.config({ path: '../../../apps/web/.env' });
-console.debug('db.ts process.env', process.env);
 
 const connectionString =
   process.env.BRANCH_DB_URL || process.env.DEFAULT_DB_URL;
