@@ -30,7 +30,12 @@ export const MemberSpaces = ({
     () => filterSpaces(spaces ?? [], person, web3SpaceIds),
     [spaces, person, web3SpaceIds],
   );
-  
+
+  const iconSize = React.useMemo(
+    () => profileView ? 64 : 40,
+    [profileView],
+  );
+
   return (
     <div className="flex justify-between items-center mt-4 mb-4">
       {isLoading || isLoadingSpaces ? (
@@ -46,20 +51,20 @@ export const MemberSpaces = ({
       {isLoading || isLoadingSpaces ? (
         <div className="flex flex-row gap-3 overflow-x-auto">
           <Skeleton
-            width="40px"
-            height="40px"
+            width={`${iconSize}px`}
+            height={`${iconSize}px`}
             loading={isLoading || isLoadingSpaces}
             className="rounded-full"
           />
           <Skeleton
-            width="40px"
-            height="40px"
+            width={`${iconSize}px`}
+            height={`${iconSize}px`}
             loading={isLoading || isLoadingSpaces}
             className="rounded-full"
           />
           <Skeleton
-            width="40px"
-            height="40px"
+            width={`${iconSize}px`}
+            height={`${iconSize}px`}
             loading={isLoading || isLoadingSpaces}
             className="rounded-full"
           />
@@ -71,15 +76,15 @@ export const MemberSpaces = ({
               <div key={index} title={space.title}>
                 <div className={cn(
                   'relative flex',
-                  `h-[${profileView ? 64 : 40}px]`,
-                  `w-[${profileView ? 64 : 40}px]`,
+                  `h-[${iconSize}px]`,
+                  `w-[${iconSize}px]`,
                   'shrink-0 overflow-hidden rounded-full'
                 )}>
                   <Image
                     className="aspect-square h-full w-full object-cover"
-                    width={profileView ? 64 : 40}
-                    height={profileView ? 64 : 40}
-                    src={space.logoUrl ?? ''}
+                    width={iconSize}
+                    height={iconSize}
+                    src={space.logoUrl ?? '/placeholder/space-avatar-image.png'}
                     alt={space.title ?? ''}
                   />
                 </div>
