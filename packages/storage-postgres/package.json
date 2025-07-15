@@ -4,13 +4,18 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "migrate": "drizzle-kit push:pg",
-    "generate": "drizzle-kit generate:pg"
+    "generate": "drizzle-kit generate",
+    "push": "drizzle-kit push",
+    "migrate": "drizzle-kit migrate",
+    "seed": "tsx src/seed.ts",
+    "studio": "drizzle-kit studio"
   },
   "devDependencies": {
-    "@hypha-platform/config-typescript": "workspace:*"
+    "@hypha-platform/config-typescript": "workspace:*",
+    "dotenv": "^16.4.7"
   },
-  "dependencies": {},
+  "dependencies": {
+  },
   "exports": {
     ".": "./src/index.ts"
   }

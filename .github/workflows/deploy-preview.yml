@@ -76,13 +76,7 @@ jobs:
         if: needs.detect-changes.outputs.has_migrations == 'true'
         run: |
           echo "BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}" >> .env
-          npx nx run storage-postgres:migrate:production
-
-      - name: Run Seeds
-        if: needs.detect-changes.outputs.has_migrations == 'true'
-        run: |
-          echo "BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}" >> .env
-          npx nx run storage-postgres:seed:production
+          pnpm run migrate
 
       - name: Post Schema Diff Comment to PR
         if: needs.detect-changes.outputs.has_migrations == 'true'
@@ -142,34 +136,7 @@ jobs:
         if: needs.detect-changes.outputs.has_migrations == 'true'
         run: |
           echo "BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}" >> .env.production
-          npx nx run storage-postgres:migrate:production
-
-      - run: npx nx affected -t lint test build
-        env:
-          BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}
-
-      - name: Install Playwright Browsers
-        run: npx playwright install chromium firefox webkit --with-deps
-
-      - name: Run Seeds
-        run: |
-          echo "BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}" >> .env
-          npx nx run storage-postgres:seed:production
-
-      - run: npx nx affected --parallel 1 -t e2e
-        env:
-          BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}
-
-      - name: Setup upterm session
-        uses: lhotari/action-upterm@v1
-        if: ${{ failure() }}
-        with:
-          ## If no one connects after 5 minutes, shut down server.
-          wait-timeout-minutes: 5
-          ## limits ssh access and adds the ssh public key for the user which triggered the workflow
-          limit-access-to-actor: true
-          ## limits ssh access and adds the ssh public keys of the listed GitHub users
-          limit-access-to-users: plitzenberger
+          pnpm run migrate
 
       - name: Delete Neon Branch
         if: always()

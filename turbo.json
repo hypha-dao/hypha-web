@@ -17,6 +17,12 @@
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    "migrate": {
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "cache": false,
+      "persistent": true,
+      "env": ["*"]
     }
   }
 }
