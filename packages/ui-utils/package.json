@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "lint": "eslint . --max-warnings 0",
-    "dev": "tailwindcss -i ./src/global.css -o ./dist/global.css --watch"
+    "dev": "tailwindcss -i ./src/global.css -o ./dist/global.css --watch",
+    "build": "tailwindcss -i ./src/global.css -o ./dist/global.css"
   },
   "devDependencies": {
     "@hypha-platform/config-eslint": "workspace:*",
