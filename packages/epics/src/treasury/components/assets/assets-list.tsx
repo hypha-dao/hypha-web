@@ -43,14 +43,13 @@ type AssetItem = {
 type AssetsListProps = {
   assets: AssetItem[];
   activeFilter: string;
-  basePath: string;
+  basePath?: string;
   isLoading?: boolean;
 };
 
 export const AssetsList: FC<AssetsListProps> = ({
   assets,
   activeFilter,
-  basePath,
   isLoading,
 }) => {
   return (
