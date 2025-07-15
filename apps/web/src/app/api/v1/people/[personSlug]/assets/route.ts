@@ -20,7 +20,10 @@ export async function GET(
 
     const address = person.address as `0x${string}`;
     if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) {
-      return NextResponse.json({ error: 'Invalid or missing address' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid or missing address' },
+        { status: 400 },
+      );
     }
     let prices: Record<string, number | undefined> = {};
     try {

@@ -12,7 +12,9 @@ type UserAssetsSectionProps = {
   personSlug: string;
 };
 
-export const UserAssetsSection: FC<UserAssetsSectionProps> = ({ personSlug }) => {
+export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
+  personSlug,
+}) => {
   const {
     visibleAssets,
     activeFilter,
@@ -21,7 +23,7 @@ export const UserAssetsSection: FC<UserAssetsSectionProps> = ({ personSlug }) =>
     hasMore,
     totalBalance,
   } = useUserAssetsSection({
-    personSlug
+    personSlug,
   });
 
   return (

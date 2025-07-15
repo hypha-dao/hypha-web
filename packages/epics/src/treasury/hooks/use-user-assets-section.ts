@@ -5,17 +5,21 @@ import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { FILTER_OPTIONS_ASSETS } from '../../common/constants';
 import { useUserAssets } from './use-user-assets';
 
-export const useUserAssetsSection = ({ personSlug }: { personSlug?: string }) => {
+export const useUserAssetsSection = ({
+  personSlug,
+}: {
+  personSlug?: string;
+}) => {
   const [activeFilter, setActiveFilter] = React.useState('all');
   const [visibleCount, setVisibleCount] = React.useState(6);
 
   const { isLoading, balance, assets } = useUserAssets({
     ...(activeFilter !== 'all' && { filter: { status: activeFilter } }),
-    personSlug
+    personSlug,
   });
 
   React.useEffect(() => {
-    setVisibleCount(6); 
+    setVisibleCount(6);
   }, [activeFilter, assets]);
 
   const loadMore = React.useCallback(() => {
