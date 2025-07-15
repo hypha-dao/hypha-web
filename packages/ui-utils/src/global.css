@@ -184,58 +184,69 @@
   --radius-sm: calc(var(--radius) - 4px);
 
   /* Font Families */
-  --font-family-text: var(--font-text);
-  --font-family-code: var(--font-code);
-  --font-family-emphasis: var(--font-emphasis);
-  --font-family-quote: var(--font-quote);
+  --font-family-text: 'SF Pro';
+  --font-family-code: 'Menlo';
+  --font-family-emphasis: 'Times New Roman';
+  --font-family-quote: 'Times New Roman';
 
   /* Font Weights */
-  --font-weight-light: var(--font-weight-light);
-  --font-weight-regular: var(--font-weight-regular);
-  --font-weight-medium: var(--font-weight-medium);
-  --font-weight-bold: var(--font-weight-bold);
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
 
   /* Font Sizes with Line Heights */
-  --font-size-xs: var(--font-size-xs);
-  --font-size-sm: var(--font-size-sm);
-  --font-size-base: var(--font-size-base);
-  --font-size-lg: var(--font-size-lg);
-  --font-size-xl: var(--font-size-xl);
-  --font-size-2xl: var(--font-size-2xl);
-  --font-size-3xl: var(--font-size-3xl);
-  --font-size-4xl: var(--font-size-4xl);
-  --font-size-5xl: var(--font-size-5xl);
-  --font-size-6xl: var(--font-size-6xl);
-  --font-size-7xl: var(--font-size-7xl);
-  --font-size-8xl: var(--font-size-8xl);
-  --font-size-9xl: var(--font-size-9xl);
-  --font-size-1: var(--font-size-1);
-  --font-size-2: var(--font-size-2);
-  --font-size-3: var(--font-size-3);
-  --font-size-4: var(--font-size-4);
-  --font-size-5: var(--font-size-5);
-  --font-size-6: var(--font-size-6);
-  --font-size-7: var(--font-size-7);
-  --font-size-8: var(--font-size-8);
-  --font-size-9: var(--font-size-9);
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 30px;
+  --font-size-4xl: 36px;
+  --font-size-5xl: 48px;
+  --font-size-6xl: 60px;
+  --font-size-7xl: 72px;
+  --font-size-8xl: 96px;
+  --font-size-9xl: 128px;
+
+  /* Custom numbered font sizes */
+  --text-1: 12px;
+  --text-1--line-height: calc(16 / 12);
+  --text-2: 14px;
+  --text-2--line-height: calc(20 / 14);
+  --text-3: 16px;
+  --text-3--line-height: calc(24 / 16);
+  --text-4: 18px;
+  --text-4--line-height: calc(26 / 18);
+  --text-5: 20px;
+  --text-5--line-height: calc(28 / 20);
+  --text-6: 24px;
+  --text-6--line-height: calc(30 / 24);
+  --text-7: 28px;
+  --text-7--line-height: calc(36 / 28);
+  --text-8: 35px;
+  --text-8--line-height: calc(40 / 35);
+  --text-9: 60px;
+  --text-9--line-height: calc(60 / 60);
 
   /* Letter Spacing */
-  --letter-spacing-1: var(--letter-spacing-1);
-  --letter-spacing-2: var(--letter-spacing-2);
-  --letter-spacing-3: var(--letter-spacing-3);
-  --letter-spacing-4: var(--letter-spacing-4);
-  --letter-spacing-5: var(--letter-spacing-5);
+  --letter-spacing-1: 0.025px;
+  --letter-spacing-2: 0em;
+  --letter-spacing-3: 0em;
+  --letter-spacing-4: -0.025px;
+  --letter-spacing-5: -0.05px;
 
   /* Spacing */
-  --spacing-1: var(--spacing-1);
-  --spacing-2: var(--spacing-2);
-  --spacing-3: var(--spacing-3);
-  --spacing-4: var(--spacing-4);
-  --spacing-5: var(--spacing-5);
-  --spacing-6: var(--spacing-6);
-  --spacing-7: var(--spacing-7);
-  --spacing-8: var(--spacing-8);
-  --spacing-9: var(--spacing-9);
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 24px;
+  --spacing-6: 32px;
+  --spacing-7: 40px;
+  --spacing-8: 48px;
+  --spacing-9: 64px;
 
   /* Animations */
   --animate-accordion-down: accordion-down 0.2s ease-out;
