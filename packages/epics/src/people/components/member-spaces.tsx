@@ -3,9 +3,12 @@
 import { Skeleton, Image } from '@hypha-platform/ui';
 import { Space } from '@hypha-platform/core/client';
 import { Person } from '@core/people';
-import { filterSpaces, useMemberWeb3SpaceIds } from '@hypha-platform/epics';
+import { filterSpaces, getDhoPathGovernance, useMemberWeb3SpaceIds } from '@hypha-platform/epics';
 import React from 'react';
 import { cn } from '@hypha-platform/lib/utils';
+import Link from 'next/link';
+import { Locale } from '@hypha-platform/i18n';
+import { useParams } from 'next/navigation';
 
 export type MemberSpacesProps = {
   spaces?: Space[];
@@ -20,6 +23,7 @@ export const MemberSpaces = ({
   profileView = false,
   person,
 }: MemberSpacesProps) => {
+  const { lang } = useParams();
   const { web3SpaceIds, isLoading: isLoadingSpaces } = useMemberWeb3SpaceIds({ person });
 
   const filteredSpaces = React.useMemo(
@@ -63,27 +67,29 @@ export const MemberSpaces = ({
       ) : (
         <div className="flex flex-row gap-3 overflow-x-auto">
           {filteredSpaces?.map((space, index) => (
-            <div key={index}>
-              <div className={cn(
-                'relative flex',
-                `h-[${profileView ? 64 : 40}px]`,
-                `w-[${profileView ? 64 : 40}px]`,
-                'shrink-0 overflow-hidden rounded-full'
-              )}>
-                <Image
-                  className="aspect-square h-full w-full object-cover"
-                  width={profileView ? 64 : 40}
-                  height={profileView ? 64 : 40}
-                  src={space.logoUrl ?? ''}
-                  alt={space.title ?? ''}
-                />
-              </div>
-              {profileView ? (
-                <div className="text-1 text-ellipsis overflow-hidden text-nowrap max-w-[64px] mt-2">
-                  {space.title}
+            <Link href={getDhoPathGovernance(lang as Locale, space.slug ?? '')}>
+              <div key={index} title={space.title}>
+                <div className={cn(
+                  'relative flex',
+                  `h-[${profileView ? 64 : 40}px]`,
+                  `w-[${profileView ? 64 : 40}px]`,
+                  'shrink-0 overflow-hidden rounded-full'
+                )}>
+                  <Image
+                    className="aspect-square h-full w-full object-cover"
+                    width={profileView ? 64 : 40}
+                    height={profileView ? 64 : 40}
+                    src={space.logoUrl ?? ''}
+                    alt={space.title ?? ''}
+                  />
                 </div>
-              ) : null}
-            </div>
+                {profileView ? (
+                  <div className="text-1 text-ellipsis overflow-hidden text-nowrap max-w-[64px] mt-2">
+                    {space.title}
+                  </div>
+                ) : null}
+              </div>
+            </Link>
           ))}
         </div>
       )}
