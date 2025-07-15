@@ -9,17 +9,22 @@ import { Container } from '@hypha-platform/ui';
 import { useMe } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@hypha-platform/ui/server';
 
 export default function Profile() {
   const { exportWallet, isEmbeddedWallet } = useAuthentication();
   const { lang } = useParams();
   const { person, isLoading } = useMe();
-  
+
   const [activeTab, setActiveTab] = useState('treasury');
 
   return (
-    <Container className='flex flex-col space-y-6 py-4'>
+    <Container className="flex flex-col space-y-6 py-4">
       <div className="flex items-center">
         <Link
           href={`/${lang}/my-spaces`}
@@ -47,14 +52,14 @@ export default function Profile() {
           <TabsTrigger
             value="treasury"
             className="w-full"
-            variant='ghost'
+            variant="ghost"
             onClick={() => setActiveTab('treasury')}
           >
             Treasury
           </TabsTrigger>
         </TabsList>
-        <TabsContent value='treasury'>
-          <UserAssetsSection personSlug={person?.slug || ''}/>
+        <TabsContent value="treasury">
+          <UserAssetsSection personSlug={person?.slug || ''} />
         </TabsContent>
       </Tabs>
     </Container>
