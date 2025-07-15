@@ -49,6 +49,7 @@ export default async function Profile(props: PageProps) {
         about={person?.description ?? ''}
         location={person?.location ?? ''}
         email={person?.email ?? ''}
+        slug={person?.slug ?? ''}
         exportEmbeddedWallet={true}
       />
       <Separator />

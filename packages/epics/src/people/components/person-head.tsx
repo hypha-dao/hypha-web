@@ -15,11 +15,15 @@ import { RxDownload, RxPencil2 } from 'react-icons/rx';
 import { MailIcon, MapPinIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { Person, useMe } from '@core/people';
+import { useCallback } from 'react';
+import React from 'react';
 
 export type MemberType = {
   avatar: string;
   name: string;
   surname: string;
+  slug: string;
 };
 
 interface PersonHeadProps {
@@ -38,6 +42,7 @@ export const PersonHead = ({
   avatar = '/placeholder/space-avatar-image.png',
   name,
   surname,
+  slug,
   about,
   background,
   links,
@@ -47,6 +52,7 @@ export const PersonHead = ({
   exportEmbeddedWallet,
 }: PersonHeadProps & MemberType) => {
   const { exportWallet, isEmbeddedWallet } = useAuthentication();
+  const { person: me, isLoading: isMeLoading } = useMe();
 
   const customLogoStyles: React.CSSProperties = {
     width: '128px',
@@ -67,11 +73,20 @@ export const PersonHead = ({
     );
   };
 
-  const exportWalletComponent = exportEmbeddedWallet && isEmbeddedWallet
+  const isMe = useCallback(() => {
+    return !isMeLoading && me?.slug && slug && me.slug === slug;
+  }, [slug, me, isMeLoading]);
+
+  const exportWalletComponent = React.useMemo(
+    () => {
+      return isMe() && exportEmbeddedWallet && isEmbeddedWallet
     ? getExportWalletButton(exportWallet)
     : onExportEmbeededWallet
       ? getExportWalletButton(onExportEmbeededWallet)
       : null;
+    },
+    [isMe, exportEmbeddedWallet, isEmbeddedWallet, getExportWalletButton, exportWallet, onExportEmbeededWallet],
+  );
 
   return (
     <div className="flex flex-col gap-4">
