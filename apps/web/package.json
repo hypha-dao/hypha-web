@@ -12,9 +12,6 @@
     "postinstall": "if [ ! -f .env ]; then cp .env.template .env; fi"
   },
   "dependencies": {
-    "next": "^15.3.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
     "@hypha-platform/authentication": "workspace:*",
     "@hypha-platform/cookie": "workspace:*",
     "@hypha-platform/core": "workspace:*",
@@ -22,9 +19,12 @@
     "@hypha-platform/evm": "workspace:*",
     "@hypha-platform/feature-flags": "workspace:*",
     "@hypha-platform/i18n": "workspace:*",
+    "@hypha-platform/storage-postgres": "workspace:*",
     "@hypha-platform/ui": "workspace:*",
     "@hypha-platform/ui-utils": "workspace:*",
-    "@hypha-platform/storage-postgres": "workspace:*"
+    "next": "^15.4.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
     "@hypha-platform/config-eslint": "workspace:*",
