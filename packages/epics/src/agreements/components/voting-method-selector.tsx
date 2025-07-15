@@ -77,7 +77,7 @@ export const VotingMethodSelector = ({
               To select this voting method you first need to issue your Voice
               Token.{' '}
               <Link
-                href={`/${lang}/dho/${id}/treasury/create/issue-new-token`}
+                href={`/${lang}/dho/${id}/governance/create/issue-new-token`}
                 className="text-accent-9 underline"
                 onClick={(e) => e.stopPropagation()}
               >
@@ -98,7 +98,7 @@ export const VotingMethodSelector = ({
               To select this voting method you first need to issue your Reqular
               Token (with enabled <strong>Is Voting Token</strong> option).{' '}
               <Link
-                href={`/${lang}/dho/${id}/treasury/create/issue-new-token`}
+                href={`/${lang}/dho/${id}/governance/create/issue-new-token`}
                 className="text-accent-9 underline"
                 onClick={(e) => e.stopPropagation()}
               >
