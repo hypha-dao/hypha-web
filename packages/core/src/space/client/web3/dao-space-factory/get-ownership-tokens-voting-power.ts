@@ -1,7 +1,7 @@
 import {
   ownershipTokenVotingPowerImplementationAbi,
   ownershipTokenVotingPowerImplementationAddress,
-} from '@core/generated';
+} from '@hypha-platform/core/generated';
 
 export const getOwnershipTokensVotingPower = ({
   spaceId,
