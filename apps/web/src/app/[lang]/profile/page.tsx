@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { PersonHead } from '@hypha-platform/epics';
+import { PersonHead, UserAssetsSection } from '@hypha-platform/epics';
 import Link from 'next/link';
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Text } from '@radix-ui/themes';
@@ -19,7 +19,7 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState('treasury');
 
   return (
-    <Container className='flex flex-col gap-6'>
+    <Container className='flex flex-col space-y-6 py-4'>
       <div className="flex items-center">
         <Link
           href={`/${lang}/my-spaces`}
@@ -42,7 +42,7 @@ export default function Profile() {
         email={person?.email ?? ''}
         onExportEmbeededWallet={isEmbeddedWallet ? exportWallet : undefined}
       />
-      <Tabs value={activeTab} className="w-full">
+      <Tabs value={activeTab} className="w-full flex flex-col gap-4">
         <TabsList className="w-full">
           <TabsTrigger
             value="treasury"
@@ -54,7 +54,7 @@ export default function Profile() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value='treasury'>
-          Treasury
+          <UserAssetsSection personSlug={person?.slug || ''}/>
         </TabsContent>
       </Tabs>
     </Container>
