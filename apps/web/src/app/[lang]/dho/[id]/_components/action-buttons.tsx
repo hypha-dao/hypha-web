@@ -17,7 +17,12 @@ export const ActionButtons = () => {
 
   return (
     <>
-      <Button asChild colorVariant="accent" variant={'outline'} title="Space Settings">
+      <Button
+        asChild
+        colorVariant="accent"
+        variant={'outline'}
+        title="Space Settings"
+      >
         <Link href={`${cleanPath(pathname)}${PATH_SELECT_SETTINGS_ACTION}`}>
           <GearIcon className="sm:hidden" width={16} height={16} />
           <span className="hidden sm:flex">Space Settings</span>

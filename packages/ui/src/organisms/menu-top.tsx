@@ -3,17 +3,14 @@
 import { Logo } from '../atoms';
 import { useState } from 'react';
 import { Menu } from 'lucide-react';
-import { RxCross1 } from "react-icons/rx";
+import { RxCross1 } from 'react-icons/rx';
 
 type MenuTopProps = {
   children?: React.ReactNode;
   logoHref?: string;
 };
 
-export const MenuTop = ({
-  children,
-  logoHref,
-}: MenuTopProps) => {
+export const MenuTop = ({ children, logoHref }: MenuTopProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
@@ -29,10 +26,10 @@ export const MenuTop = ({
         {/* Mobile Burger */}
         <button
           className="md:hidden flex items-center"
-          onClick={() => setIsMobileMenuOpen(isOpen => !isOpen)}
+          onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
         >
-          { !isMobileMenuOpen && <Menu className="size-5" /> }
-          { isMobileMenuOpen && <RxCross1 className="size-5" /> }
+          {!isMobileMenuOpen && <Menu className="size-5" />}
+          {isMobileMenuOpen && <RxCross1 className="size-5" />}
         </button>
 
         {/* Mobile Full Screen Menu */}
