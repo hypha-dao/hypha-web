@@ -32,3 +32,7 @@ export * from './status-badge';
 export * from './switch';
 export * from './textarea';
 export * from './tooltip';
+
+export * from './organisms/editor';
+export * from './organisms/menu-top';
+export * from './molecules/badges-list';
