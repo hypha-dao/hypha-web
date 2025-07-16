@@ -8,6 +8,7 @@ import { Plugin } from '../plugins';
 import { getDhoPathGovernance } from '../../../../@tab/governance/constants';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
+import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -23,13 +24,15 @@ export default async function CreateChangeEntryMethodPage({
 
   if (!spaceFromDb) notFound();
   const { id: spaceId, web3SpaceId, slug: spaceSlug } = spaceFromDb;
+  const successfulUrl = getDhoPathGovernance(lang as Locale, id);
 
   return (
     <SidePanel>
       <CreateProposalChangeEntryMethodForm
         spaceId={spaceId}
         web3SpaceId={web3SpaceId}
-        successfulUrl={getDhoPathGovernance(lang as Locale, id)}
+        successfulUrl={successfulUrl}
+        backUrl={`${successfulUrl}${PATH_SELECT_SETTINGS_ACTION}`}
         plugin={
           <Plugin
             spaceSlug={spaceSlug}

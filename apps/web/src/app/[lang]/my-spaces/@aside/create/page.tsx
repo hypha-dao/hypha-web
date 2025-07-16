@@ -36,6 +36,8 @@ export default function AsideCreateSpacePage() {
     }
   }, [progress, spaceSlug]);
 
+  const mySpacesUrl = `/${lang}/my-spaces/`;
+
   return progress !== 100 ? (
     <SidePanel>
       <LoadingBackdrop
@@ -58,7 +60,9 @@ export default function AsideCreateSpacePage() {
             name: person?.name,
             surname: person?.surname,
           }}
-          closeUrl={`/${lang}/my-spaces/`}
+          closeUrl={mySpacesUrl}
+          backUrl={mySpacesUrl}
+          backLabel="Back"
           onSubmit={createSpace}
           isLoading={isLoadingJwt}
         />
