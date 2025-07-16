@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Button } from './button';
 import { usePathname } from 'next/navigation';
 
-type ButtonNavItemProps = {
+export type ButtonNavItemProps = {
   href: string;
   label: string;
 };

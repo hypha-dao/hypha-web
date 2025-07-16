@@ -8,7 +8,6 @@ import clsx from 'clsx';
 import {
   Footer,
   Html,
-  MenuTop,
   ThemeProvider,
 } from '@hypha-platform/ui/server';
 import { AuthProvider } from '@hypha-platform/authentication';
@@ -19,6 +18,7 @@ import { useMe } from '@hypha-platform/core/client';
 import { fileRouter } from '@hypha-platform/core/server';
 import { HYPHA_LOCALE } from '@hypha-platform/cookie';
 import { i18nConfig } from '@hypha-platform/i18n';
+import { MenuTop } from "@hypha-platform/ui";
 
 const lato = Lato({
   subsets: ['latin'],
@@ -59,25 +59,24 @@ export default async function RootLayout({
           <EvmProvider>
             <MenuTop
               logoHref={`/${lang}/network`}
-              navItems={[
-                {
-                  label: 'Network',
-                  href: `/${lang}/network`,
-                },
-                {
-                  label: 'My Spaces',
-                  href: `/${lang}/my-spaces`,
-                },
-              ]}
+              
             >
-              <MenuTop.RightSlot>
-                <ConnectedButtonProfile
-                  useAuthentication={useAuthentication}
-                  useMe={useMe}
-                  newUserRedirectPath="/profile/signup"
-                  baseRedirectPath="/my-spaces"
-                />
-              </MenuTop.RightSlot>
+              <ConnectedButtonProfile
+                useAuthentication={useAuthentication}
+                useMe={useMe}
+                newUserRedirectPath="/profile/signup"
+                baseRedirectPath="/my-spaces"
+                navItems={[
+                  {
+                    label: 'Network',
+                    href: `/${lang}/network`,
+                  },
+                  {
+                    label: 'My Spaces',
+                    href: `/${lang}/my-spaces`,
+                  },
+                ]}
+              />
             </MenuTop>
             <NextSSRPlugin routerConfig={extractRouterConfig(fileRouter)} />
             <div className="mb-auto">{children}</div>
