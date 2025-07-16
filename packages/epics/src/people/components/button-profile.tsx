@@ -96,7 +96,7 @@ export const ButtonProfile = ({
           </div>
 
           {/* Desktop */}
-          <div className="hidden md:flex">
+          <div className="hidden md:flex gap-2">
             <div className="flex gap-2">
               {navItems.map((item) => (
                 <ButtonNavItem
