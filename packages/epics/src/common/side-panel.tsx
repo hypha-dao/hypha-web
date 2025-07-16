@@ -4,7 +4,6 @@ type SidePanelProps = {
   children: ReactNode;
 };
 
-
 export const SidePanel = ({ children }: SidePanelProps) => {
   return (
     <div
