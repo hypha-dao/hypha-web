@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { NextMiddlewareChain, NextMiddlewareFunction } from './types';
+import { CONNECT_SOURCES } from '../../config/connect-sources';
+
 
 /**
  * Composes multiple Next.js middleware functions into a single middleware function
@@ -57,7 +59,7 @@ export function cspMiddleware(): NextMiddlewareFunction {
         "frame-ancestors 'none'",
         'child-src https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org',
         'frame-src https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com',
-        "connect-src 'self' https://auth.privy.io wss://relay.walletconnect.com wss://relay.walletconnect.org wss://www.walletlink.org https://*.rpc.privy.systems https://explorer-api.walletconnect.com",
+        `connect-src 'self' ${CONNECT_SOURCES.join(' ')}`,
         "worker-src 'self'",
         "manifest-src 'self'",
       ].join(';') + ';';
