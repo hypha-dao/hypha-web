@@ -14,7 +14,8 @@ type logoProps = {
 export const Logo = ({ width = 100, height = 100, href }: logoProps) => {
   const { resolvedTheme } = useTheme();
 
-  if (!resolvedTheme) return null;
+  // return empty div to keep top justify-between and not show the wrong logo color
+  if (!resolvedTheme) return <div></div>;
 
   const logoSrc = resolvedTheme === 'dark' ? LogoDark : LogoLight;
   const img = (
