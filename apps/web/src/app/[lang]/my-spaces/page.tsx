@@ -12,6 +12,7 @@ import { Text } from '@radix-ui/themes';
 import { findAllSpaces, getDb } from '@hypha-platform/core/server';
 import { getDhoPathGovernance } from '../dho/[id]/@tab/governance/constants';
 import { useMembers } from '@web/hooks/use-members';
+import { db } from '@hypha-platform/storage-postgres';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -23,7 +24,7 @@ export default async function Index(props: PageProps) {
   const { lang } = params;
 
   const spaces = await findAllSpaces({
-    db: getDb({ authToken: undefined }),
+    db,
   });
 
   return (
