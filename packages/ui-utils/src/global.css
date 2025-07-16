@@ -24,10 +24,10 @@
 @theme {
   /* Breakpoints */
   --breakpoint-sm: 640px;
-  --breakpoint-md: 812px;
-  --breakpoint-lg: 812px;
-  --breakpoint-xl: 812px;
-  --breakpoint-2xl: 812px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
 
   /* Container */
   --container-center: true;

@@ -13,12 +13,10 @@ export const Container = ({ children, size = 'md', className }: Props) => {
   return (
     <div
       className={clsx(
-        'container mx-auto px-5',
-        'max-w-spacing-container-sm md:max-w-spacing-container-md',
-        size == 'md' &&
-          'lg:max-w-spacing-container-lg xl:max-w-spacing-container-xl',
-        size == 'lg' &&
-          'lg:max-w-spacing-container-xl xl:max-w-spacing-container-2xl',
+        'mx-auto px-5',
+        'max-w-container-sm md:max-w-container-md',
+        size == 'md' && 'lg:max-w-container-lg xl:max-w-container-xl',
+        size == 'lg' && 'lg:max-w-container-xl xl:max-w-container-2xl',
         className,
       )}
     >
