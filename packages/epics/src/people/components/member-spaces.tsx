@@ -40,9 +40,14 @@ export const MemberSpaces = ({
 
   const iconSize = React.useMemo(() => (profileView ? 64 : 40), [profileView]);
 
+  const isLoadingState = React.useMemo(
+    () => isLoading || isLoadingSpaces,
+    [isLoading, isLoadingSpaces],
+  );
+
   return (
     <div className="flex justify-between items-center mt-4 mb-4">
-      {isLoading || isLoadingSpaces ? (
+      {isLoadingState ? (
         <Skeleton
           width="60px"
           height="26px"
@@ -52,24 +57,24 @@ export const MemberSpaces = ({
       ) : !profileView ? (
         <div className="text-4 mr-4">Spaces</div>
       ) : null}
-      {isLoading || isLoadingSpaces ? (
+      {isLoadingState ? (
         <div className="flex flex-row gap-3 overflow-x-auto">
           <Skeleton
             width={`${iconSize}px`}
             height={`${iconSize}px`}
-            loading={isLoading || isLoadingSpaces}
+            loading={isLoadingState}
             className="rounded-full"
           />
           <Skeleton
             width={`${iconSize}px`}
             height={`${iconSize}px`}
-            loading={isLoading || isLoadingSpaces}
+            loading={isLoadingState}
             className="rounded-full"
           />
           <Skeleton
             width={`${iconSize}px`}
             height={`${iconSize}px`}
-            loading={isLoading || isLoadingSpaces}
+            loading={isLoadingState}
             className="rounded-full"
           />
         </div>
@@ -98,7 +103,7 @@ export const MemberSpaces = ({
                   />
                 </div>
                 {profileView ? (
-                  <div className="text-1 text-ellipsis overflow-hidden text-nowrap max-w-[64px] mt-2">
+                  <div className={`text-1 text-ellipsis overflow-hidden text-nowrap max-w-[${iconSize}px] mt-2`}>
                     {space.title}
                   </div>
                 ) : null}

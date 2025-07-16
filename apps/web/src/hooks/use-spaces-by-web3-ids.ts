@@ -16,12 +16,14 @@ export const useSpacesByWeb3Ids = (
   const { jwt } = useJwt();
 
   const endpoint = React.useMemo(
-    () => `/api/v1/spaces?web3SpaceIds=${web3SpaceIds.join(',')}`,
+    () => web3SpaceIds.length > 0
+      ?`/api/v1/spaces?web3SpaceIds=${web3SpaceIds.join(',')}`
+      : null,
     [web3SpaceIds],
   );
 
   const { data: spaces, isLoading } = useSWR(
-    jwt ? [endpoint, jwt] : null,
+    jwt && endpoint ? [endpoint, jwt] : null,
     ([endpoint]) =>
       fetch(endpoint, {
         headers: {
