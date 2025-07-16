@@ -18,6 +18,7 @@ import { findAllSpaces, getDb } from '@hypha-platform/core/server';
 import { getDhoPathGovernance } from '../dho/[id]/@tab/governance/constants';
 import { useMembers } from '@web/hooks/use-members';
 import { PlusIcon } from '@radix-ui/react-icons';
+import { db } from '@hypha-platform/storage-postgres';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -33,7 +34,9 @@ export default async function Index(props: PageProps) {
 
   const { lang } = params;
 
-  const spaces = await createSpaceService().getAll({ search: query });
+  const spaces = await findAllSpaces({
+    db,
+  });
 
   return (
     <div className="w-full overflow-auto">
