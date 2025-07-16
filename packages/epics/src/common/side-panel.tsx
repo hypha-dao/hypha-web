@@ -6,7 +6,7 @@ type SidePanelProps = {
 
 export const SidePanel = ({ children }: SidePanelProps) => {
   return (
-    <div className="shrink-0 p-7 bg-background-2 overflow-y-auto w-spacing-container-sm">
+    <div className="shrink-0 p-7 bg-background-2 overflow-y-auto w-container-sm">
       {children}
     </div>
   );
