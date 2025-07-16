@@ -1,4 +1,4 @@
-import { asc, eq, sql } from 'drizzle-orm';
+import { asc, eq, inArray, sql } from 'drizzle-orm';
 import {
   memberships,
   Space,
@@ -118,3 +118,19 @@ export const findAllSpacesByMemberId = async (
 
   return results.map((row) => row.spaces);
 };
+
+type FindAllSpacesByWeb3SpaceIdsInput = {
+  web3SpaceIds: number[];
+};
+export const findAllSpacesByWeb3SpaceIds = async (
+  { web3SpaceIds }: FindAllSpacesByWeb3SpaceIdsInput,
+  { db }: DbConfig,
+) => {
+  const results = await db
+    .select()
+    .from(spaces)
+    .where(inArray(spaces.web3SpaceId, web3SpaceIds))
+    .orderBy(asc(spaces.title));
+
+  return results;
+}

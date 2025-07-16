@@ -1,11 +1,28 @@
-import { createSpaceService } from '@hypha-platform/core/server';
-import { NextResponse } from 'next/server';
+import { createSpaceService, Space } from '@hypha-platform/core/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET() {
+type Web3SpaceIds = number[] | undefined;
+
+export async function GET(
+  request: NextRequest,
+) {
   try {
-    const spaceService = createSpaceService();
-    const spaces = await spaceService.getAll();
-    return NextResponse.json(spaces);
+    const queryParams = request.nextUrl.searchParams;
+    const web3SpaceIds: Web3SpaceIds = queryParams.has('web3SpaceIds')
+      ? (queryParams.has('web3SpaceIds')
+        ? queryParams.get('web3SpaceIds')?.split(',') ?? []
+        : [])
+        .map(Number)
+      : undefined;
+    if (web3SpaceIds) {
+      const spaceService = createSpaceService();
+      const spaces = await spaceService.getAllByWeb3SpaceIds(web3SpaceIds);
+      return NextResponse.json(spaces);
+    } else {
+      const spaceService = createSpaceService();
+      const spaces = await spaceService.getAll();
+      return NextResponse.json(spaces);
+    }
   } catch (error) {
     console.error('Failed to fetch spaces:', error);
     return NextResponse.json(

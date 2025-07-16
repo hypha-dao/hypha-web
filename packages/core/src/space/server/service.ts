@@ -48,4 +48,8 @@ export class SpaceService {
     }
     return space;
   }
+
+  async getAllByWeb3SpaceIds(web3SpaceIds: number[]): Promise<Space[]> {
+    return this.repository.findAllByWeb3SpaceIds(web3SpaceIds);
+  }
 }

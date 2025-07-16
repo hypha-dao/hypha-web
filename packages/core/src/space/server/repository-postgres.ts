@@ -9,6 +9,7 @@ import { createSpace, updateSpaceBySlug } from './mutations';
 import {
   findAllSpaces,
   findAllSpacesByMemberId,
+  findAllSpacesByWeb3SpaceIds,
   findSpaceById,
   findSpaceBySlug,
 } from './queries';
@@ -65,5 +66,9 @@ export class SpacePostgresRepository implements SpaceRepository {
 
   async findAllByMemberId(memberId: number): Promise<Space[]> {
     return findAllSpacesByMemberId({ memberId }, { db: this.db });
+  }
+
+  async findAllByWeb3SpaceIds(web3SpaceIds: number[]): Promise<Space[]> {
+    return findAllSpacesByWeb3SpaceIds({ web3SpaceIds }, { db: this.db });
   }
 }
