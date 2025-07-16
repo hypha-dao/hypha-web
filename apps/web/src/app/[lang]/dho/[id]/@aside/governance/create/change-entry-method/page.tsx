@@ -9,6 +9,7 @@ import { getDhoPathGovernance } from '../../../../@tab/governance/constants';
 import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
+import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
