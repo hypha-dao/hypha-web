@@ -53,7 +53,7 @@ export default function AsideCreateSpacePage() {
             <div>{currentAction}</div>
           )
         }
-        className="-m-9"
+        className="-m-4 lg:-m-7"
       >
         <SpaceForm
           creator={{

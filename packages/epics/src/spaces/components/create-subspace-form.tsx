@@ -55,7 +55,7 @@ export const CreateSubspaceForm = ({
           <div>{currentAction}</div>
         )
       }
-      className="-m-9"
+      className="-m-4 lg:-m-7"
     >
       <SpaceForm
         isLoading={false}
