@@ -62,8 +62,9 @@ export default async function Profile(props: PageProps) {
             profileView={true}
           />
         </>
-      ) : (<p>Person not found</p>)}
-      
+      ) : (
+        <p>Person not found</p>
+      )}
     </Container>
   );
 }

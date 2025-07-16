@@ -7,7 +7,9 @@ export async function GET(request: NextRequest) {
   try {
     const queryParams = request.nextUrl.searchParams;
     const web3SpaceIds: Web3SpaceIds = queryParams.has('web3SpaceIds')
-      ? (queryParams.get('web3SpaceIds')?.split(',') ?? []).map(Number).filter(id => !Number.isNaN(id))
+      ? (queryParams.get('web3SpaceIds')?.split(',') ?? [])
+          .map(Number)
+          .filter((id) => !Number.isNaN(id))
       : undefined;
     const spaceService = createSpaceService();
     const spaces = web3SpaceIds

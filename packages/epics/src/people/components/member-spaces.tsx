@@ -103,7 +103,9 @@ export const MemberSpaces = ({
                   />
                 </div>
                 {profileView ? (
-                  <div className={`text-1 text-ellipsis overflow-hidden text-nowrap max-w-[${iconSize}px] mt-2`}>
+                  <div
+                    className={`text-1 text-ellipsis overflow-hidden text-nowrap max-w-[${iconSize}px] mt-2`}
+                  >
                     {space.title}
                   </div>
                 ) : null}
