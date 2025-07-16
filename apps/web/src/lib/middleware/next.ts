@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { NextMiddlewareChain, NextMiddlewareFunction } from './types';
 import { CONNECT_SOURCES } from '../../config/connect-sources';
-
+import { IMAGE_HOSTS } from '../../config/image-hosts';
 
 /**
  * Composes multiple Next.js middleware functions into a single middleware function
@@ -40,6 +40,12 @@ export function composeMiddleware(
  * @returns Middleware function
  */
 export function cspMiddleware(): NextMiddlewareFunction {
+  const imageSrc = [
+    'data:',
+    'blob:',
+    IMAGE_HOSTS.map((host) => `https://${host}`).join(' '),
+  ];
+
   return (request: NextRequest) => {
     const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
     const unsafeForDevelopment =
@@ -51,7 +57,7 @@ export function cspMiddleware(): NextMiddlewareFunction {
         "default-src 'self'",
         `script-src 'self' ${unsafeForDevelopment} https://challenges.cloudflare.com`,
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-        //"img-src 'self' data: blob:",
+        `img-src 'self' ${imageSrc.join(' ')}`,
         "font-src 'self' https://fonts.gstatic.com",
         "object-src 'none'",
         "base-uri 'self'",
