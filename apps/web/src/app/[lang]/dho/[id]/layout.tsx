@@ -40,7 +40,7 @@ export default async function DhoLayout({
     getSpaceDetails({ spaceId: BigInt(spaceFromDb.web3SpaceId as number) }),
   );
   return (
-    <div className="flex max-w-[--spacing-container-2xl] mx-auto">
+    <div className="max-w-[--spacing-container-2xl] mx-auto">
       <Container className="flex-grow min-w-0">
         <div className="mb-6 flex items-center">
           <Link
