@@ -2,21 +2,22 @@
 
 import { useParams } from 'next/navigation';
 
-import { MemberDetail, SidePanel } from '@hypha-platform/epics';
+import { MemberDetail, SidePanel, useMemberWeb3SpaceIds } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 
 import { useMemberBySlug } from '@web/hooks/use-member-by-slug';
 import { useSpaceDocuments } from '@web/hooks/use-space-documents';
 import { usePersonSlug } from '@web/hooks/use-person-slug';
-import { useSpacesByMemberSlug } from '@web/hooks/use-spaces-by-member-slug';
 import { getDhoPathMembership } from '../../../../@tab/membership/constants';
 import { getDhoPathGovernance } from '../../../../@tab/governance/constants';
+import { useSpacesByWeb3Ids } from '@web/hooks/use-spaces-by-web3-ids';
 
 export default function Member() {
   const { id, lang } = useParams();
   const personSlug = usePersonSlug();
-  const { person, isLoading } = useMemberBySlug(personSlug);
-  const { spaces } = useSpacesByMemberSlug(personSlug);
+  const { person, isLoading: isLoadingPersons } = useMemberBySlug(personSlug);
+  const { web3SpaceIds, isLoading: isLoadingSpaces } = useMemberWeb3SpaceIds({ personAddress: person?.address });
+  const { spaces } = useSpacesByWeb3Ids(web3SpaceIds ?? []);
 
   return (
     <SidePanel>
@@ -32,7 +33,7 @@ export default function Member() {
           slug: person?.slug,
           address: person?.address,
         }}
-        isLoading={isLoading}
+        isLoading={isLoadingPersons || isLoadingSpaces}
         lang={lang as Locale}
         basePath={`${getDhoPathGovernance(
           lang as Locale,
