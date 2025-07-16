@@ -23,6 +23,7 @@ import { publicClient } from '@hypha-platform/core/client';
 import { getSpaceDetails } from '@hypha-platform/core/client';
 import { useMembers } from '@web/hooks/use-members';
 import { notFound } from 'next/navigation';
+import { db } from '@hypha-platform/storage-postgres';
 
 export default async function DhoLayout({
   aside,
@@ -37,13 +38,10 @@ export default async function DhoLayout({
 }) {
   const { id: daoSlug, lang } = await params;
 
-  const spaceFromDb = await findSpaceBySlug(
-    { slug: daoSlug },
-    { db: getDb({ authToken: undefined }) },
-  );
+  const spaceFromDb = await findSpaceBySlug({ slug: daoSlug }, { db });
 
   const spaces = await findAllSpaces({
-    db: getDb({ authToken: undefined }),
+    db,
   });
 
   if (!spaceFromDb) {
