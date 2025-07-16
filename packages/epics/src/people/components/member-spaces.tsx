@@ -2,7 +2,11 @@
 
 import { Skeleton, Image } from '@hypha-platform/ui';
 import { Space } from '@hypha-platform/core/client';
-import { filterSpaces, getDhoPathGovernance, useMemberWeb3SpaceIds } from '@hypha-platform/epics';
+import {
+  filterSpaces,
+  getDhoPathGovernance,
+  useMemberWeb3SpaceIds,
+} from '@hypha-platform/epics';
 import React from 'react';
 import { cn } from '@hypha-platform/lib/utils';
 import Link from 'next/link';
@@ -25,17 +29,16 @@ export const MemberSpaces = ({
   personSlug,
 }: MemberSpacesProps) => {
   const { lang } = useParams();
-  const { web3SpaceIds, isLoading: isLoadingSpaces } = useMemberWeb3SpaceIds({ personAddress });
+  const { web3SpaceIds, isLoading: isLoadingSpaces } = useMemberWeb3SpaceIds({
+    personAddress,
+  });
 
   const filteredSpaces = React.useMemo(
     () => filterSpaces(spaces ?? [], personSlug, web3SpaceIds),
     [spaces, personSlug, web3SpaceIds],
   );
 
-  const iconSize = React.useMemo(
-    () => profileView ? 64 : 40,
-    [profileView],
-  );
+  const iconSize = React.useMemo(() => (profileView ? 64 : 40), [profileView]);
 
   return (
     <div className="flex justify-between items-center mt-4 mb-4">
@@ -73,14 +76,19 @@ export const MemberSpaces = ({
       ) : (
         <div className="flex flex-row gap-3 overflow-x-auto">
           {filteredSpaces?.map((space, index) => (
-            <Link key={index} href={getDhoPathGovernance(lang as Locale, space.slug ?? '')}>
+            <Link
+              key={index}
+              href={getDhoPathGovernance(lang as Locale, space.slug ?? '')}
+            >
               <div title={space.title}>
-                <div className={cn(
-                  'relative flex',
-                  `h-[${iconSize}px]`,
-                  `w-[${iconSize}px]`,
-                  'shrink-0 overflow-hidden rounded-full'
-                )}>
+                <div
+                  className={cn(
+                    'relative flex',
+                    `h-[${iconSize}px]`,
+                    `w-[${iconSize}px]`,
+                    'shrink-0 overflow-hidden rounded-full',
+                  )}
+                >
                   <Image
                     className="aspect-square h-full w-full object-cover"
                     width={iconSize}

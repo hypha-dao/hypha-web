@@ -89,13 +89,17 @@ export const PersonHead = ({
       </Card>
       <div className="flex flex-col gap-4">
         <div className="flex justify-end gap-2">
-          {isMe && (<ExportEmbeddedWalletButton
-            isLoading={isLoading}
-            isEmbeddedWallet={isEmbeddedWallet || !!onExportEmbeededWallet}
-            onExportEmbeededWallet={exportEmbeddedWallet && isEmbeddedWallet
-              ? exportWallet
-              : onExportEmbeededWallet}
-          />)}
+          {isMe && (
+            <ExportEmbeddedWalletButton
+              isLoading={isLoading}
+              isEmbeddedWallet={isEmbeddedWallet || !!onExportEmbeededWallet}
+              onExportEmbeededWallet={
+                exportEmbeddedWallet && isEmbeddedWallet
+                  ? exportWallet
+                  : onExportEmbeededWallet
+              }
+            />
+          )}
           <Skeleton loading={isLoading} width={120} height={35}>
             <Button variant="outline" colorVariant="accent">
               <CopyIcon />

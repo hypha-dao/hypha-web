@@ -36,7 +36,9 @@ export function FilteredSpaces({
   useMembers: UseMembers;
 }) {
   const { person } = useMe();
-  const { web3SpaceIds } = useMemberWeb3SpaceIds({ personAddress: person?.address });
+  const { web3SpaceIds } = useMemberWeb3SpaceIds({
+    personAddress: person?.address,
+  });
 
   const filteredSpaces = React.useMemo(
     () => filterSpaces(spaces, person?.slug, web3SpaceIds),

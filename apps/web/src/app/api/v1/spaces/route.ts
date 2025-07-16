@@ -3,16 +3,14 @@ import { NextRequest, NextResponse } from 'next/server';
 
 type Web3SpaceIds = number[] | undefined;
 
-export async function GET(
-  request: NextRequest,
-) {
+export async function GET(request: NextRequest) {
   try {
     const queryParams = request.nextUrl.searchParams;
     const web3SpaceIds: Web3SpaceIds = queryParams.has('web3SpaceIds')
       ? (queryParams.has('web3SpaceIds')
-        ? queryParams.get('web3SpaceIds')?.split(',') ?? []
-        : [])
-        .map(Number)
+          ? queryParams.get('web3SpaceIds')?.split(',') ?? []
+          : []
+        ).map(Number)
       : undefined;
     if (web3SpaceIds) {
       const spaceService = createSpaceService();

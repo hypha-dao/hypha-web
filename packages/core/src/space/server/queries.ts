@@ -133,4 +133,4 @@ export const findAllSpacesByWeb3SpaceIds = async (
     .orderBy(asc(spaces.title));
 
   return results;
-}
+};

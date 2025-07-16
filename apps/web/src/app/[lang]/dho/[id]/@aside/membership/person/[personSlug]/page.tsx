@@ -2,7 +2,11 @@
 
 import { useParams } from 'next/navigation';
 
-import { MemberDetail, SidePanel, useMemberWeb3SpaceIds } from '@hypha-platform/epics';
+import {
+  MemberDetail,
+  SidePanel,
+  useMemberWeb3SpaceIds,
+} from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 
 import { useMemberBySlug } from '@web/hooks/use-member-by-slug';
@@ -16,7 +20,9 @@ export default function Member() {
   const { id, lang } = useParams();
   const personSlug = usePersonSlug();
   const { person, isLoading: isLoadingPersons } = useMemberBySlug(personSlug);
-  const { web3SpaceIds, isLoading: isLoadingSpaces } = useMemberWeb3SpaceIds({ personAddress: person?.address });
+  const { web3SpaceIds, isLoading: isLoadingSpaces } = useMemberWeb3SpaceIds({
+    personAddress: person?.address,
+  });
   const { spaces } = useSpacesByWeb3Ids(web3SpaceIds ?? []);
 
   return (
