@@ -37,4 +37,5 @@ export * from './date-picker';
 export * from './tooltip';
 
 export * from './organisms/editor';
+export * from './organisms/menu-top';
 export * from './molecules/badges-list';
