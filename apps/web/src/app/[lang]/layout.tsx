@@ -9,7 +9,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="pt-9 w-screen h-full flex justify-normal">
+    <div className="pt-9 h-full flex justify-normal">
       <div className="w-full h-full">{children}</div>
     </div>
   );
