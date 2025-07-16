@@ -5,12 +5,14 @@ import { useRouter, useParams, usePathname } from 'next/navigation';
 import { UseAuthentication } from '@hypha-platform/authentication';
 import { UseMe } from '../hooks/types';
 import { useEffect } from 'react';
+import { ButtonNavItemProps } from "@hypha-platform/ui";
 
 type ConnectedButtonProfileProps = {
   useAuthentication: UseAuthentication;
   useMe: UseMe;
   newUserRedirectPath: string;
   baseRedirectPath: string;
+  navItems: ButtonNavItemProps[]
 };
 
 type ErrorUser = {
@@ -26,6 +28,7 @@ export const ConnectedButtonProfile = ({
   useMe,
   newUserRedirectPath,
   baseRedirectPath,
+  navItems,
 }: ConnectedButtonProfileProps) => {
   const {
     isAuthenticated,
@@ -86,6 +89,7 @@ export const ConnectedButtonProfile = ({
       onProfile={() => {
         router.push(`/${lang}/profile/`);
       }}
+      navItems={navItems}
     />
   );
 };
