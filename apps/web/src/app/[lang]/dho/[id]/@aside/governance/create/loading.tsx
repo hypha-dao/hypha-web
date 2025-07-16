@@ -11,7 +11,7 @@ export default function AsideCreateAgreementPage() {
         progress={0}
         isLoading={true}
         message={<></>}
-        className="-m-9"
+        className="-m-4 lg:-m-7"
       >
         <CreateAgreementForm
           spaceId={undefined}

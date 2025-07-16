@@ -56,7 +56,7 @@ export default function SpaceConfiguration() {
             <div>{currentAction}</div>
           )
         }
-        className="-m-9"
+        className="-m-4 lg:-m-7"
       >
         <SpaceForm
           submitLabel="Update"
