@@ -33,7 +33,7 @@ interface PersonHeadProps {
   links: string[];
   location: string;
   email: string;
-  onExportEmbeededWallet?: () => void;
+  onExportEmbeddedWallet?: () => void;
   exportEmbeddedWallet?: boolean;
 }
 
@@ -48,7 +48,7 @@ export const PersonHead = ({
   links,
   location,
   email,
-  onExportEmbeededWallet,
+  onExportEmbeddedWallet,
   exportEmbeddedWallet,
 }: PersonHeadProps & MemberType) => {
   const { exportWallet, isEmbeddedWallet } = useAuthentication();
@@ -92,11 +92,11 @@ export const PersonHead = ({
           {isMe && (
             <ExportEmbeddedWalletButton
               isLoading={isLoading}
-              isEmbeddedWallet={isEmbeddedWallet || !!onExportEmbeededWallet}
-              onExportEmbeededWallet={
+              isEmbeddedWallet={isEmbeddedWallet || !!onExportEmbeddedWallet}
+              onExportEmbeddedWallet={
                 exportEmbeddedWallet && isEmbeddedWallet
                   ? exportWallet
-                  : onExportEmbeededWallet
+                  : onExportEmbeddedWallet
               }
             />
           )}

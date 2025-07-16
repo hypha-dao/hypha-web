@@ -59,9 +59,13 @@ export const MemberHead = ({
           </Skeleton>
 
           <Skeleton height="16px" width="80px" loading={isLoading}>
-            <Link href={`/${lang}/profile/${slug}`}>
+            {slug ? (
+              <Link href={`/${lang}/profile/${slug}`}>
+                <Text className="text-1 text-neutral-11">@{nickname}</Text>
+              </Link>
+            ) : (
               <Text className="text-1 text-neutral-11">@{nickname}</Text>
-            </Link>
+            )}
           </Skeleton>
         </div>
       </div>

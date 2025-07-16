@@ -6,13 +6,13 @@ import { RxDownload } from 'react-icons/rx';
 interface ExportEmbeddedWalletButtonProps {
   isLoading: boolean;
   isEmbeddedWallet: boolean;
-  onExportEmbeededWallet?: () => void;
+  onExportEmbeddedWallet?: () => void;
 }
 
 export const ExportEmbeddedWalletButton = ({
   isLoading,
   isEmbeddedWallet,
-  onExportEmbeededWallet,
+  onExportEmbeddedWallet: onExportEmbeededWallet,
 }: ExportEmbeddedWalletButtonProps) =>
   isEmbeddedWallet ? (
     <Skeleton loading={isLoading} width={120} height={35}>

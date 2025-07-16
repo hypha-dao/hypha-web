@@ -43,7 +43,7 @@ export default function Profile() {
         location={person?.location ?? ''}
         email={person?.email ?? ''}
         slug={person?.slug ?? ''}
-        onExportEmbeededWallet={isEmbeddedWallet ? exportWallet : undefined}
+        onExportEmbeddedWallet={isEmbeddedWallet ? exportWallet : undefined}
       />
     </Container>
   );

@@ -5,14 +5,14 @@ import useSWR from 'swr';
 // TODO: #594 declare UI interface separately
 import { Space, useJwt } from '@hypha-platform/core/client';
 
-type UseSpacesByMemberSlugReturn = {
+type UseSpacesByWeb3IdsReturn = {
   spaces: Space[];
   isLoading: boolean;
 };
 
 export const useSpacesByWeb3Ids = (
   web3SpaceIds: readonly bigint[],
-): UseSpacesByMemberSlugReturn => {
+): UseSpacesByWeb3IdsReturn => {
   const { jwt } = useJwt();
 
   const endpoint = React.useMemo(

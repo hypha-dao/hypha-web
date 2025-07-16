@@ -40,25 +40,30 @@ export default async function Profile(props: PageProps) {
         </Link>
         <Text className="text-sm text-neutral-11 ml-1">/ Profile Page</Text>
       </div>
-      <PersonHead
-        avatar={person?.avatarUrl ?? ''}
-        name={person?.name ?? ''}
-        surname={person?.surname ?? ''}
-        background={person?.leadImageUrl ?? ''}
-        links={person?.links ?? []}
-        about={person?.description ?? ''}
-        location={person?.location ?? ''}
-        email={person?.email ?? ''}
-        slug={person?.slug ?? ''}
-        exportEmbeddedWallet={true}
-      />
-      <Separator />
-      <MemberSpaces
-        spaces={spaces}
-        personAddress={person?.address}
-        personSlug={person?.slug}
-        profileView={true}
-      />
+      {person ? (
+        <>
+          <PersonHead
+            avatar={person?.avatarUrl ?? ''}
+            name={person?.name ?? ''}
+            surname={person?.surname ?? ''}
+            background={person?.leadImageUrl ?? ''}
+            links={person?.links ?? []}
+            about={person?.description ?? ''}
+            location={person?.location ?? ''}
+            email={person?.email ?? ''}
+            slug={person?.slug ?? ''}
+            exportEmbeddedWallet={true}
+          />
+          <Separator />
+          <MemberSpaces
+            spaces={spaces}
+            personAddress={person?.address}
+            personSlug={person?.slug}
+            profileView={true}
+          />
+        </>
+      ) : (<p>Person not found</p>)}
+      
     </Container>
   );
 }
