@@ -8,7 +8,7 @@ import {
   FormItem,
   FormMessage,
 } from '@hypha-platform/ui';
-import { Space } from '@core/space';
+import { Space } from '@hypha-platform/core/client';
 
 export function RecipientField({
   members,
