@@ -8,7 +8,7 @@ const PAGE_SIZE = 4;
 export const useUserTransfersSection = ({
   personSlug,
 }: {
-  personSlug: string;
+  personSlug?: string;
 }) => {
   const [activeSort, setSort] = React.useState('all');
   const [visibleCount, setVisibleCount] = React.useState(PAGE_SIZE);
