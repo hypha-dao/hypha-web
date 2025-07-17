@@ -140,7 +140,7 @@ export const Recipient = ({
                       alt={option.label}
                       width={24}
                       height={24}
-                      className="rounded-full min-h-[24px]"
+                      className="rounded-full min-h-5"
                     />
                   )}
                   <span className="text-ellipsis overflow-hidden text-nowrap">
@@ -157,7 +157,7 @@ export const Recipient = ({
                         alt={option.label}
                         width={24}
                         height={24}
-                        className="rounded-full min-h-[24px]"
+                        className="rounded-full min-h-5"
                       />
                     )}
                     <span className="truncate text-ellipsis overflow-hidden text-nowrap">
