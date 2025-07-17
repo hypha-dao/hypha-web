@@ -4,20 +4,13 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Image, Combobox } from '@hypha-platform/ui';
 import { WalletAddress } from './wallet-address';
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
-import { Space } from '@hypha-platform/core/client';
-
-type Recipient = {
-  name: string;
-  surname: string;
-  avatarUrl: string;
-  address: string;
-};
+import { Space, Person } from '@hypha-platform/core/client';
 
 type RecipientProps = {
   subspaces?: Space[];
-  members?: Recipient[];
+  members?: Person[];
   value?: string;
-  onChange?: (selected: Recipient | Space | { address: string }) => void;
+  onChange?: (selected: Person | Space | { address: string }) => void;
 };
 
 export const Recipient = ({
@@ -30,7 +23,7 @@ export const Recipient = ({
     'member',
   );
   const [selected, setSelected] = useState<
-    Recipient | Space | { address: string } | null
+    Person | Space | { address: string } | null
   >(null);
   const [manualAddress, setManualAddress] = useState(value || '');
 
@@ -79,8 +72,9 @@ export const Recipient = ({
         source.find(
           (item) =>
             String(item.address).toLowerCase() === lowerValue ||
-            ('name' in item && item.name.toLowerCase() === lowerValue) ||
-            ('surname' in item && item.surname.toLowerCase() === lowerValue) ||
+            ('name' in item && item?.name?.toLowerCase() === lowerValue) ||
+            ('surname' in item &&
+              item?.surname?.toLowerCase() === lowerValue) ||
             ('title' in item && item.title.toLowerCase() === lowerValue),
         ) || null;
 

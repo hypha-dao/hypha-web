@@ -8,20 +8,13 @@ import {
   FormItem,
   FormMessage,
 } from '@hypha-platform/ui';
-import { Space } from '@hypha-platform/core/client';
-
-type Recipient = {
-  name: string;
-  surname: string;
-  avatarUrl: string;
-  address: string;
-};
+import { Space, Person } from '@hypha-platform/core/client';
 
 export function RecipientField({
   members,
   subspaces,
 }: {
-  members: Recipient[];
+  members: Person[];
   subspaces?: Space[];
 }) {
   const { control } = useFormContext();
