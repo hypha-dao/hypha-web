@@ -27,9 +27,18 @@ export const useMe = (): {
     }).then((res) => res.json()),
   );
 
-  const isMe = React.useCallback((personSlug: string) => {
-    return !isLoadingJwt && !isLoadingPerson && person?.slug && personSlug && person.slug === personSlug;
-  }, [person, isLoadingJwt, isLoadingPerson]);
+  const isMe = React.useCallback(
+    (personSlug: string) => {
+      return (
+        !isLoadingJwt &&
+        !isLoadingPerson &&
+        person?.slug &&
+        personSlug &&
+        person.slug === personSlug
+      );
+    },
+    [person, isLoadingJwt, isLoadingPerson],
+  );
 
   return {
     person,

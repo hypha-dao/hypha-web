@@ -87,7 +87,7 @@ export const MemberSpaces = ({
             >
               <div title={space.title}>
                 <div
-                  className='relative flex shrink-0 overflow-hidden rounded-full'
+                  className="relative flex shrink-0 overflow-hidden rounded-full"
                   style={{
                     height: `${iconSize}px`,
                     width: `${iconSize}px`,
