@@ -86,9 +86,7 @@ export const ConnectedButtonProfile = ({
       isConnected={isAuthenticated}
       onLogin={login}
       onLogout={logout}
-      onProfile={() => {
-        router.push(`/${lang}/profile/`);
-      }}
+      profileUrl={`/${lang}/profile`}
       navItems={navItems}
     />
   );

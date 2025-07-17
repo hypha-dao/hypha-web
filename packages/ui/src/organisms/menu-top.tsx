@@ -1,9 +1,10 @@
 'use client';
 
 import { Logo } from '../atoms';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Menu } from 'lucide-react';
-import { RxCross1 } from "react-icons/rx";
+import { RxCross1 } from 'react-icons/rx';
+import { usePathname } from 'next/navigation';
 
 type MenuTopProps = {
   children?: React.ReactNode;
@@ -15,6 +16,11 @@ export const MenuTop = ({
   logoHref,
 }: MenuTopProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
 
   return (
     <header className="fixed top-0 right-0 left-0 flex items-center h-9 bg-page-background z-20">

@@ -12,6 +12,7 @@ import { PersonAvatar } from './person-avatar';
 import { EthAddress } from './eth-address';
 import { TrashIcon, LogOutIcon } from 'lucide-react';
 import { ButtonNavItem, ButtonNavItemProps } from "@hypha-platform/ui";
+import Link from "next/link";
 
 export type ButtonProfileProps = {
   avatarSrc?: string;
@@ -22,7 +23,7 @@ export type ButtonProfileProps = {
   onLogout: () => void;
   onDelete?: () => void;
   onEdit?: () => void;
-  onProfile?: () => void;
+  profileUrl?: string;
   navItems: ButtonNavItemProps[];
 };
 
@@ -35,7 +36,7 @@ export const ButtonProfile = ({
   onLogout,
   onDelete,
   onEdit,
-  onProfile,
+  profileUrl,
   navItems
 }: ButtonProfileProps) => {
   return (
@@ -66,33 +67,33 @@ export const ButtonProfile = ({
               />
             ))}
 
-            {onProfile && (
-              <Button className="bg-transparent text-gray-400"  onClick={onProfile}>
-                My Profile
-              </Button>
+            {profileUrl && (
+              <ButtonNavItem
+                href={profileUrl}
+                label="My Profile"
+              />
             )}
 
             {onEdit && (
-              <Button className="bg-transparent text-gray-400" onClick={onEdit}>
-                Edit My Profile
-              </Button>
+              <ButtonNavItem
+                onClick={onEdit}
+                label="Edit My Profile"
+              />
             )}
 
             {onDelete && (
-              <Button
+              <ButtonNavItem
                 onClick={onDelete}
-                className="bg-transparent text-error-11"
-              >
-                Delete Profile
-              </Button>
+                classNames="text-error-11"
+                label="Delete Profile"
+              />
             )}
 
-             <Button
+            <ButtonNavItem
               onClick={onLogout}
-              className="bg-transparent text-error-11"
-            >
-              Logout
-            </Button>
+              classNames="text-error-11"
+              label="Logout"
+            />
           </div>
 
           {/* Desktop */}
@@ -111,9 +112,9 @@ export const ButtonProfile = ({
                 <PersonAvatar size="md" avatarSrc={avatarSrc} userName={userName} />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                {onProfile && (
-                  <DropdownMenuItem onClick={onProfile} className="text-1">
-                    My Profile
+                {profileUrl && (
+                  <DropdownMenuItem className="text-1">
+                    <Link href={profileUrl}>My Profile</Link>
                   </DropdownMenuItem>
                 )}
                 {onEdit && (
