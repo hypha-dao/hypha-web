@@ -8,6 +8,7 @@ export const useMe = (): {
   person: Person | undefined;
   isLoading: boolean;
   revalidate: () => Promise<void>;
+  isMe: (personSlug: string) => boolean;
 } => {
   const { jwt, isLoadingJwt } = useJwt();
 
@@ -26,9 +27,14 @@ export const useMe = (): {
     }).then((res) => res.json()),
   );
 
+  const isMe = React.useCallback((personSlug: string) => {
+    return (!isLoadingJwt || isLoadingPerson) && person?.slug && personSlug && person.slug === personSlug;
+  }, [person, isLoadingJwt, isLoadingPerson]);
+
   return {
     person,
     isLoading: isLoadingJwt || isLoadingPerson,
     revalidate: mutate,
+    isMe,
   };
 };

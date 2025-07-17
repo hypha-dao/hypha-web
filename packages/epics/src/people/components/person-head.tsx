@@ -52,7 +52,7 @@ export const PersonHead = ({
   exportEmbeddedWallet,
 }: PersonHeadProps & MemberType) => {
   const { exportWallet, isEmbeddedWallet } = useAuthentication();
-  const { person: me, isLoading: isMeLoading } = useMe();
+  const { isMe } = useMe();
 
   const customLogoStyles: React.CSSProperties = {
     width: '128px',
@@ -61,10 +61,6 @@ export const PersonHead = ({
     bottom: '-35px',
     left: '15px',
   };
-
-  const isMe = React.useMemo(() => {
-    return !isMeLoading && me?.slug && slug && me.slug === slug;
-  }, [slug, me, isMeLoading]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -89,7 +85,7 @@ export const PersonHead = ({
       </Card>
       <div className="flex flex-col gap-4">
         <div className="flex justify-end gap-2">
-          {isMe && (
+          {isMe(slug) && (
             <ExportEmbeddedWalletButton
               isLoading={isLoading}
               isEmbeddedWallet={isEmbeddedWallet || !!onExportEmbeddedWallet}
