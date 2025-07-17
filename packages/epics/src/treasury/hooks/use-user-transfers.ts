@@ -32,7 +32,7 @@ export const useUserTransfers = ({
           'Content-Type': 'application/json',
           Authorization: `Bearer ${jwt}`,
         },
-      }).then(async (res) => {
+      }).then(async (res): Promise<TransferWithPerson[]> => {
         if (!res.ok) {
           throw new Error(`Failed to fetch transactions: ${res.statusText}`);
         }
