@@ -1,6 +1,7 @@
 import { SelectAction } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import {
+  ArrowDownIcon,
   ArrowLeftIcon,
   ArrowRightIcon,
   CrossCircledIcon,
@@ -85,6 +86,15 @@ export const SETTINGS_ACTIONS = [
     baseTab: 'governance',
   },
   {
+    group: 'Treasury',
+    title: 'Deposit Funds',
+    description:
+      'Deposit funds into your treasury by copying the treasury address or scanning the QR code.',
+    href: 'deposit?back=THIS_PAGE',
+    icon: <ArrowDownIcon />,
+    baseTab: 'treasury',
+  },
+  {
     group: 'Hypha Network Tokenomics',
     title: 'Buy Hypha Tokens (Rewards) (Coming Soon)',
     description:
@@ -117,12 +127,15 @@ export const SelectSettingsAction = ({
     <SelectAction
       title="Space Settings"
       content="Access and manage the settings for your space, including its appearance, structure, methods, membership, and treasury."
-      actions={SETTINGS_ACTIONS.map((action) => ({
-        ...action,
-        href: `/${lang}/dho/${daoSlug}/${action.baseTab || activeTab}/${
+      actions={SETTINGS_ACTIONS.map((action) => {
+        const href = `/${lang}/dho/${daoSlug}/${action.baseTab || activeTab}/${
           action.href
-        }`,
-      }))}
+        }`.replaceAll('THIS_PAGE', `/${lang}/dho/${daoSlug}/governance/select-settings-action`);
+        return ({
+          ...action,
+          href,
+        });
+      })}
     />
   );
 };
