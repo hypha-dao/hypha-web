@@ -67,7 +67,7 @@ export const SETTINGS_ACTIONS = [
     disabled: true,
   },
   {
-    group: 'Tokens',
+    group: 'Treasury',
     title: 'Issue New Token',
     description:
       'Create a new token for utility, cash credit, or ownership within your space.',
