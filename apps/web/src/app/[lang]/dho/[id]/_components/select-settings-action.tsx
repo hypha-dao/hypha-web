@@ -76,6 +76,15 @@ export const SETTINGS_ACTIONS = [
     baseTab: 'governance',
   },
   {
+    group: 'Treasury',
+    title: 'Integrate Smart Contract in Space (Advanced)',
+    description:
+      'Enable your space to take multisig ownership of your smart contracts, allowing your community to govern value flows (tokenomics) directly from your space. To explore this advanced option, please contact the Hypha team on Discord: [Discord Link].',
+    href: '#',
+    icon: <RadiobuttonIcon />,
+    baseTab: 'governance',
+  },
+  {
     group: 'Hypha Network Tokenomics',
     title: 'Buy Hypha Tokens (Rewards) (Coming Soon)',
     description:
