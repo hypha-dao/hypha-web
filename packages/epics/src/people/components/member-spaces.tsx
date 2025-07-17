@@ -87,12 +87,11 @@ export const MemberSpaces = ({
             >
               <div title={space.title}>
                 <div
-                  className={cn(
-                    'relative flex',
-                    `h-[${iconSize}px]`,
-                    `w-[${iconSize}px]`,
-                    'shrink-0 overflow-hidden rounded-full',
-                  )}
+                  className='relative flex shrink-0 overflow-hidden rounded-full'
+                  style={{
+                    height: `${iconSize}px`,
+                    width: `${iconSize}px`,
+                  }}
                 >
                   <Image
                     className="aspect-square h-full w-full object-cover"
