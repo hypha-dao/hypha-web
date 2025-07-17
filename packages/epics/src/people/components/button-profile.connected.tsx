@@ -86,7 +86,7 @@ export const ConnectedButtonProfile = ({
       isConnected={isAuthenticated}
       onLogin={login}
       onLogout={logout}
-      profileUrl={`/${lang}/profile`}
+      profileUrl={`/${lang}/profile/${person?.slug ?? ''}`}
       navItems={navItems}
     />
   );

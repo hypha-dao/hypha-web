@@ -49,7 +49,8 @@ export default function Profile() {
         about={person?.description ?? ''}
         location={person?.location ?? ''}
         email={person?.email ?? ''}
-        onExportEmbeededWallet={isEmbeddedWallet ? exportWallet : undefined}
+        slug={person?.slug ?? ''}
+        onExportEmbeddedWallet={isEmbeddedWallet ? exportWallet : undefined}
       />
       <Tabs value={activeTab} className="w-full flex flex-col gap-4">
         <TabsList className="w-full">
