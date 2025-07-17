@@ -18,6 +18,7 @@ export interface Space {
   memberCount?: number;
   documentCount?: number;
   documents?: Document[];
+  address?: string | null;
 }
 
 export interface CreateSpaceInput {
@@ -39,6 +40,7 @@ export interface UpdateSpaceInput {
   slug?: string;
   parentId?: number | null;
   web3SpaceId?: number;
+  address?: string;
 }
 
 export type UpdateSpaceBySlugInput = { slug: string } & UpdateSpaceInput;

@@ -1,28 +1,35 @@
 'use client';
 
-import { PersonHead } from '@hypha-platform/epics';
+import { useState } from 'react';
+import {
+  PersonHead,
+  UserAssetsSection,
+  UserTransactionsSection,
+} from '@hypha-platform/epics';
 import Link from 'next/link';
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Text } from '@radix-ui/themes';
 import { Container } from '@hypha-platform/ui';
-import { getDhoPathGovernance } from '../dho/[id]/@tab/governance/constants';
 import { useMe } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
-import { Locale } from '@hypha-platform/i18n';
 import { useAuthentication } from '@hypha-platform/authentication';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@hypha-platform/ui/server';
 
 export default function Profile() {
   const { exportWallet, isEmbeddedWallet } = useAuthentication();
   const { lang } = useParams();
   const { person, isLoading } = useMe();
 
-  const getHref = (id: string) => {
-    return getDhoPathGovernance(lang as Locale, id);
-  };
+  const [activeTab, setActiveTab] = useState('treasury');
 
   return (
-    <Container>
-      <div className="mb-6 flex items-center">
+    <Container className="flex flex-col space-y-6 py-4">
+      <div className="flex items-center">
         <Link
           href={`/${lang}/my-spaces`}
           className="cursor-pointer flex items-center"
@@ -45,6 +52,22 @@ export default function Profile() {
         slug={person?.slug ?? ''}
         onExportEmbeddedWallet={isEmbeddedWallet ? exportWallet : undefined}
       />
+      <Tabs value={activeTab} className="w-full flex flex-col gap-4">
+        <TabsList className="w-full">
+          <TabsTrigger
+            value="treasury"
+            className="w-full"
+            variant="ghost"
+            onClick={() => setActiveTab('treasury')}
+          >
+            Treasury
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="treasury" className="flex flex-col gap-4">
+          <UserAssetsSection personSlug={person?.slug || ''} />
+          <UserTransactionsSection personSlug={person?.slug || ''} />
+        </TabsContent>
+      </Tabs>
     </Container>
   );
 }

@@ -81,6 +81,7 @@ export default function SpaceConfiguration() {
             links: space?.links || [],
             web3SpaceId: space?.web3SpaceId || undefined,
             parentId: space?.parentId || null,
+            address: space?.address || '',
           }}
         />
       </LoadingBackdrop>
