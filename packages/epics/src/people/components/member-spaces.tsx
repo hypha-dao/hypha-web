@@ -1,7 +1,7 @@
 'use client';
 
 import { Skeleton, Image } from '@hypha-platform/ui';
-import { Space } from '@hypha-platform/core/client';
+import { Address, Space } from '@hypha-platform/core/client';
 import {
   filterSpaces,
   getDhoPathGovernance,
@@ -17,7 +17,7 @@ export type MemberSpacesProps = {
   spaces?: Space[];
   isLoading?: boolean;
   profileView?: boolean;
-  personAddress?: string;
+  personAddress?: Address;
   personSlug?: string;
 };
 

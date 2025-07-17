@@ -1,13 +1,13 @@
 'use client';
 
 import { Locale } from '@hypha-platform/i18n';
-import { Space } from '@hypha-platform/core/client';
+import { Address, Space } from '@hypha-platform/core/client';
 import {
   UseMembers,
   SpaceCardList,
   useMemberWeb3SpaceIds,
 } from '@hypha-platform/epics';
-import { Person, useMe } from '@hypha-platform/core/client';
+import { useMe } from '@hypha-platform/core/client';
 import React from 'react';
 import { Text } from '@radix-ui/themes';
 
@@ -37,7 +37,7 @@ export function FilteredSpaces({
 }) {
   const { person } = useMe();
   const { web3SpaceIds } = useMemberWeb3SpaceIds({
-    personAddress: person?.address,
+    personAddress: person?.address as (Address | undefined),
   });
 
   const filteredSpaces = React.useMemo(
