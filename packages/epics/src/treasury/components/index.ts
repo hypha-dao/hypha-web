@@ -9,3 +9,6 @@ export * from './common/token-max-supply-field';
 export * from './common/token-name-field';
 export * from './common/token-symbol-field';
 export * from './common/token-type-field';
+export * from './common/token-max-supply-field';
+export * from './assets/user-assets-section';
+export * from './requests/user-transactions-section';
