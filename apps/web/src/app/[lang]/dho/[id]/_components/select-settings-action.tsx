@@ -1,6 +1,7 @@
 import { SelectAction } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import {
+  ArrowDownIcon,
   ArrowLeftIcon,
   ArrowRightIcon,
   CrossCircledIcon,
@@ -31,7 +32,7 @@ export const SETTINGS_ACTIONS = [
     baseTab: 'membership',
   },
   {
-    group: 'Agreements',
+    group: 'Governance',
     title: 'Voting Method',
     description:
       'Select and configure the voting method for decision-making within your space.',
@@ -67,13 +68,51 @@ export const SETTINGS_ACTIONS = [
     disabled: true,
   },
   {
-    group: 'Tokens',
+    group: 'Treasury',
     title: 'Issue New Token',
     description:
       'Create a new token for utility, cash credit, or ownership within your space.',
     href: 'create/issue-new-token',
     icon: <RadiobuttonIcon />,
     baseTab: 'governance',
+  },
+  {
+    group: 'Treasury',
+    title: 'Integrate Smart Contract in Space (Advanced)',
+    description:
+      'Enable your space to take multisig ownership of your smart contracts, allowing your community to govern value flows (tokenomics) directly from your space. To explore this advanced option, please contact the Hypha team on Discord: [Discord Link].',
+    href: '#',
+    icon: <RadiobuttonIcon />,
+    baseTab: 'governance',
+  },
+  {
+    group: 'Treasury',
+    title: 'Deposit Funds',
+    description:
+      'Deposit funds into your treasury by copying the treasury address or scanning the QR code.',
+    href: 'deposit?back=THIS_PAGE',
+    icon: <ArrowDownIcon />,
+    baseTab: 'treasury',
+  },
+  {
+    group: 'Extensions & Plug-ins (Advanced)',
+    title: 'Explore Extensions & Plug-in Marketplace (Coming Soon)',
+    description:
+      'Discover a growing ecosystem of tools and integrations to extend your space’s capabilities. From governance modules to token utilities, the upcoming marketplace will offer customizable plug-ins designed to evolve with your needs.',
+    href: '#',
+    icon: <RadiobuttonIcon />,
+    baseTab: 'governance',
+    disabled: true,
+  },
+  {
+    group: 'Ecosystem Verticals',
+    title: 'Hypha Energy (Coming Soon)',
+    description:
+      'A dedicated Ecosystem Vertical for your Renewable Energy Community or Energy Hub enabling energy sharing, local co-ownership, membership, governance, purpose-driven energy flow optimization, and fair value distribution amongst members and participants. Learn more at hypha.energy.',
+    href: '#',
+    icon: <RadiobuttonIcon />,
+    baseTab: 'governance',
+    disabled: true,
   },
   {
     group: 'Hypha Network Tokenomics',
@@ -108,12 +147,18 @@ export const SelectSettingsAction = ({
     <SelectAction
       title="Space Settings"
       content="Access and manage the settings for your space, including its appearance, structure, methods, membership, and treasury."
-      actions={SETTINGS_ACTIONS.map((action) => ({
-        ...action,
-        href: `/${lang}/dho/${daoSlug}/${action.baseTab || activeTab}/${
+      actions={SETTINGS_ACTIONS.map((action) => {
+        const href = `/${lang}/dho/${daoSlug}/${action.baseTab || activeTab}/${
           action.href
-        }`,
-      }))}
+        }`.replaceAll(
+          'THIS_PAGE',
+          `/${lang}/dho/${daoSlug}/governance/select-settings-action`,
+        );
+        return {
+          ...action,
+          href,
+        };
+      })}
     />
   );
 };
