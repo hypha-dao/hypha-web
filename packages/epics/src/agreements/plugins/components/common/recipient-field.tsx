@@ -10,11 +10,18 @@ import {
 } from '@hypha-platform/ui';
 import { Space } from '@hypha-platform/core/client';
 
+type Recipient = {
+  name: string;
+  surname: string;
+  avatarUrl: string;
+  address: string;
+};
+
 export function RecipientField({
   members,
   subspaces,
 }: {
-  members: any[];
+  members: Recipient[];
   subspaces?: Space[];
 }) {
   const { control } = useFormContext();
