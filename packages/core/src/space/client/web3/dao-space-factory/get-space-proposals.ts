@@ -1,7 +1,7 @@
 import {
   daoProposalsImplementationAbi,
   daoProposalsImplementationAddress,
-} from '@core/generated';
+} from '@hypha-platform/core/generated';
 
 export const getSpaceProposals = ({
   spaceId,

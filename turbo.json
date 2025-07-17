@@ -1,0 +1,39 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "globalDependencies": [".env"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "env": [
+        "NEON_DATABASE_USERNAME",
+        "NEON_DATABASE_NAME",
+        "NEON_API_KEY",
+        "NEON_PROJECT_ID",
+        "VERCEL_TOKEN",
+        "DEFAULT_DB_URL",
+        "PRIVATE_KEY",
+        "DEFAULT_DB_AUTHENTICATED_URL",
+        "DEFAULT_DB_ANONYMOUS_URL"
+      ],
+      "outputs": [".next/**", "!.next/cache/**"]
+    },
+    "lint": {
+      "dependsOn": ["^lint"]
+    },
+    "check-types": {
+      "dependsOn": ["^check-types"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "migrate": {
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "cache": false,
+      "persistent": true,
+      "env": ["*"]
+    }
+  }
+}

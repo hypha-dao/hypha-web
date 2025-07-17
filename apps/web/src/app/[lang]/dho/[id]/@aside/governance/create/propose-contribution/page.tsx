@@ -3,11 +3,12 @@ import {
   SidePanel,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
-import { createSpaceService } from '@core/space/server';
 import { getDhoPathGovernance } from '../../../../@tab/governance/constants';
 import { Plugin } from '../plugins';
 import { notFound } from 'next/navigation';
 import { PATH_SELECT_CREATE_ACTION } from '@web/app/constants';
+import { findSpaceBySlug } from '@hypha-platform/core/server';
+import { db } from '@hypha-platform/storage-postgres';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -18,9 +19,8 @@ export default async function CreateProposeAContributionPage({
 }: PageProps) {
   const { lang, id } = await params;
 
-  const spaceService = createSpaceService();
-
-  const spaceFromDb = await spaceService.getBySlug({ slug: id });
+  // TODO: implement authorization
+  const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
 
   if (!spaceFromDb) notFound();
   const { id: spaceId, web3SpaceId, slug: spaceSlug } = spaceFromDb;

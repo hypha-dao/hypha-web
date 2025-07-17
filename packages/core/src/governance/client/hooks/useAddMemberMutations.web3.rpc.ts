@@ -3,9 +3,9 @@
 import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
-import { publicClient } from '@core/common/web3/public-client';
+import { publicClient } from '@hypha-platform/core/client';
 import { getProposalFromLogs } from '../web3';
-import { joinSpace } from '@core/space/client/web3/dao-space-factory/join-space';
+import { joinSpace } from '@hypha-platform/core/client';
 
 export const useAddMemberMutationsWeb3Rpc = ({
   spaceId,

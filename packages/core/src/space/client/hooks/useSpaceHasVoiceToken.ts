@@ -1,6 +1,6 @@
 'use client';
 
-import { publicClient } from '@core/common';
+import { publicClient } from '@hypha-platform/core/client';
 import { getSpaceDecayingTokens } from '../web3';
 import useSWR from 'swr';
 

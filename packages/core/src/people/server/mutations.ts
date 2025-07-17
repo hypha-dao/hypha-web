@@ -1,4 +1,4 @@
-import { DbConfig } from '@core/common/server';
+import { DbConfig } from '../../server';
 import { people } from '@hypha-platform/storage-postgres';
 import { mapToDomainPerson } from './queries';
 import { Person } from '../types';
@@ -19,6 +19,9 @@ export const createPerson = async (
       slug,
     })
     .returning();
+  if (!dbPerson) {
+    throw new Error('Failed to create person');
+  }
 
   return mapToDomainPerson(dbPerson);
 };
@@ -32,6 +35,9 @@ export const updatePerson = async (
     .set(person)
     .where(eq(people.id, person.id))
     .returning();
+  if (!dbPerson) {
+    throw new Error('Failed to update person');
+  }
   return mapToDomainPerson(dbPerson);
 };
 

@@ -5,8 +5,8 @@ import useSWR from 'swr';
 import { encodeFunctionData } from 'viem';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 
-import { publicClient } from '@core/common/web3/public-client';
-import { schemaCreateProposalWeb3 } from '@core/governance/validation';
+import { publicClient } from '@hypha-platform/core/client';
+import { schemaCreateProposalWeb3 } from '@hypha-platform/core/client';
 import {
   getProposalFromLogs,
   mapToCreateProposalWeb3Input,
@@ -19,7 +19,7 @@ import {
   ownershipTokenFactoryAddress,
   decayingTokenFactoryAbi,
   decayingTokenFactoryAddress,
-} from '@core/generated';
+} from '@hypha-platform/core/generated';
 
 interface CreateTokenArgs {
   spaceId: number;

@@ -7,7 +7,7 @@ import {
   createAgreementAction,
   updateAgreementBySlugAction,
   deleteAgreementBySlugAction,
-} from '@core/governance/server/actions';
+} from '@hypha-platform/core/governance/server/actions';
 
 export const useAgreementMutationsWeb2Rsc = (authToken?: string | null) => {
   const {

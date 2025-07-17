@@ -7,11 +7,12 @@ import {
   CarouselItem,
   CarouselContent,
 } from '@hypha-platform/ui';
-import { Heading } from 'packages/ui/src/atoms/heading';
+import { Heading } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
-import { createSpaceService } from '@hypha-platform/core/server';
+import { findAllSpaces, getDb } from '@hypha-platform/core/server';
 import { getDhoPathGovernance } from '../dho/[id]/@tab/governance/constants';
 import { useMembers } from '@web/hooks/use-members';
+import { db } from '@hypha-platform/storage-postgres';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -22,11 +23,13 @@ export default async function Index(props: PageProps) {
 
   const { lang } = params;
 
-  const spaces = await createSpaceService().getAll();
+  const spaces = await findAllSpaces({
+    db,
+  });
 
   return (
     <div className="w-full overflow-auto">
-      <Container className="space-y-9 py-9">
+      <Container className="flex flex-col gap-9 py-9">
         <Heading size="9" color="secondary" weight="medium" align="center">
           All your spaces, in one place
         </Heading>

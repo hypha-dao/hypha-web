@@ -1,9 +1,10 @@
 import slugify from 'slugify';
-import { CreateAgreementInput, UpdateAgreementInput } from '../types';
-import { DatabaseInstance } from '@core/_container';
 import { documents } from '@hypha-platform/storage-postgres';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+
+import { CreateAgreementInput, UpdateAgreementInput } from '../types';
+import { DatabaseInstance } from '../../server';
 
 export const createAgreement = async (
   { title, slug: maybeSlug, creatorId, ...rest }: CreateAgreementInput,

@@ -80,7 +80,7 @@ export const SelectAction = ({
                     'flex p-6 cursor-pointer space-x-4 items-center',
                     {
                       'opacity-50 cursor-not-allowed': action.disabled,
-                      'hover:border-accent-5': !action.disabled,
+                      // 'hover:border-accent-5': !action.disabled,
                     },
                   )}
                   aria-disabled={action.disabled}

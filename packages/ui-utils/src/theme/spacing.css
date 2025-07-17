@@ -1,17 +1,11 @@
 :root {
-  --spacing-1: 0.4rem;
-  --spacing-2: 0.8rem;
-  --spacing-3: 1.2rem;
-  --spacing-4: 1.6rem;
-  --spacing-5: 2.4rem;
-  --spacing-6: 3.2rem;
-  --spacing-7: 4rem;
-  --spacing-8: 4.8rem;
-  --spacing-9: 6.4rem;
-
-  --spacing-container-sm: 64rem;
-  --spacing-container-md: 76rem;
-  --spacing-container-lg: 82rem;
-  --spacing-container-xl: 120rem;
-  --spacing-container-2xl: 144rem;
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 24px;
+  --spacing-6: 32px;
+  --spacing-7: 40px;
+  --spacing-8: 48px;
+  --spacing-9: 64px;
 }
