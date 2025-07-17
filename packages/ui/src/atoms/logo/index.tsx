@@ -22,7 +22,7 @@ export const Logo = ({ width = 100, height = 100, href }: logoProps) => {
 
   // prevents hydration nextjs issue
   // return empty div to keep top justify-between and not show the wrong logo color
-  if (!mounted || !resolvedTheme) return <div></div>; 
+  if (!mounted || !resolvedTheme) return <div></div>;
 
   const logoSrc = resolvedTheme === 'dark' ? LogoDark : LogoLight;
   const img = (

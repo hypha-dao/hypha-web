@@ -11,8 +11,8 @@ import {
 import { PersonAvatar } from './person-avatar';
 import { EthAddress } from './eth-address';
 import { TrashIcon, LogOutIcon } from 'lucide-react';
-import { ButtonNavItem, ButtonNavItemProps } from "@hypha-platform/ui";
-import Link from "next/link";
+import { ButtonNavItem, ButtonNavItemProps } from '@hypha-platform/ui';
+import Link from 'next/link';
 
 export type ButtonProfileProps = {
   avatarSrc?: string;
@@ -37,7 +37,7 @@ export const ButtonProfile = ({
   onDelete,
   onEdit,
   profileUrl,
-  navItems
+  navItems,
 }: ButtonProfileProps) => {
   return (
     <div>
@@ -68,17 +68,11 @@ export const ButtonProfile = ({
             ))}
 
             {profileUrl && (
-              <ButtonNavItem
-                href={profileUrl}
-                label="My Profile"
-              />
+              <ButtonNavItem href={profileUrl} label="My Profile" />
             )}
 
             {onEdit && (
-              <ButtonNavItem
-                onClick={onEdit}
-                label="Edit My Profile"
-              />
+              <ButtonNavItem onClick={onEdit} label="Edit My Profile" />
             )}
 
             {onDelete && (
@@ -109,7 +103,11 @@ export const ButtonProfile = ({
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger>
-                <PersonAvatar size="md" avatarSrc={avatarSrc} userName={userName} />
+                <PersonAvatar
+                  size="md"
+                  avatarSrc={avatarSrc}
+                  userName={userName}
+                />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 {profileUrl && (
@@ -159,7 +157,11 @@ export const ButtonProfile = ({
             />
           ))}
           <Button onClick={onLogin}>Sign in</Button>
-          <Button className="hidden md:flex" variant="outline" onClick={onLogin}>
+          <Button
+            className="hidden md:flex"
+            variant="outline"
+            onClick={onLogin}
+          >
             Get started
           </Button>
         </div>

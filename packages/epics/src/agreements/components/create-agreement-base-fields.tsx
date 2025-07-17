@@ -94,8 +94,14 @@ export function CreateAgreementBaseFields({
           </div>
         </div>
         <div className="flex justify-between gap-4">
-          {backUrl && <ButtonBack label={backLabel} backUrl={backUrl} className="px-0 md:px-3"/>}
-          <ButtonClose closeUrl={closeUrl} className="px-0 md:px-3"/>
+          {backUrl && (
+            <ButtonBack
+              label={backLabel}
+              backUrl={backUrl}
+              className="px-0 md:px-3"
+            />
+          )}
+          <ButtonClose closeUrl={closeUrl} className="px-0 md:px-3" />
         </div>
       </div>
       <Separator />

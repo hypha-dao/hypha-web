@@ -11,10 +11,7 @@ type MenuTopProps = {
   logoHref?: string;
 };
 
-export const MenuTop = ({
-  children,
-  logoHref,
-}: MenuTopProps) => {
+export const MenuTop = ({ children, logoHref }: MenuTopProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
@@ -35,13 +32,13 @@ export const MenuTop = ({
         {/* Mobile Burger */}
         <button
           className="md:hidden flex items-center"
-          aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+          aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={isMobileMenuOpen}
           aria-controls="mobile-menu"
-          onClick={() => setIsMobileMenuOpen(isOpen => !isOpen)}
+          onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
         >
-          { !isMobileMenuOpen && <Menu className="size-5" /> }
-          { isMobileMenuOpen && <RxCross1 className="size-5" /> }
+          {!isMobileMenuOpen && <Menu className="size-5" />}
+          {isMobileMenuOpen && <RxCross1 className="size-5" />}
         </button>
 
         {/* Mobile Full Screen Menu */}

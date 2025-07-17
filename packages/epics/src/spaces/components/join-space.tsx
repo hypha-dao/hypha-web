@@ -92,8 +92,8 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
   const buttonTitle = isMember
     ? 'Already member'
     : isInviteOnly
-      ? 'Request Invite'
-      : 'Become member';
+    ? 'Request Invite'
+    : 'Become member';
 
   return (
     <div>
