@@ -84,7 +84,7 @@ export const ConnectedButtonProfile = ({
       onLogin={login}
       onLogout={logout}
       onProfile={() => {
-        router.push(`/${lang}/profile/`);
+        router.push(`/${lang}/profile/${person?.slug ?? ''}`);
       }}
     />
   );
