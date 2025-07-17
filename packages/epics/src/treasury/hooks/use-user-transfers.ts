@@ -2,6 +2,7 @@
 import React from 'react';
 import useSWR from 'swr';
 import { TransferWithPerson } from './types';
+import { useJwt } from '@hypha-platform/core/client';
 
 export const useUserTransfers = ({
   sort,
@@ -12,26 +13,31 @@ export const useUserTransfers = ({
   refreshInterval?: number;
   personSlug?: string;
 }) => {
+  const { jwt } = useJwt();
   const endpoint = React.useMemo(() => {
     if (!personSlug) return '';
     return `/api/v1/people/${personSlug}/transactions`;
   }, [personSlug]);
 
   const { data, isLoading, error } = useSWR(
-    personSlug ? [endpoint, sort] : null,
-    async ([endpoint, sort]) => {
+    personSlug && jwt ? [endpoint, sort, jwt] : null,
+    async ([endpoint, sort, jwt]) => {
       const url = new URL(endpoint, window.location.origin);
       if (sort?.sort) {
         url.searchParams.set('sort', sort.sort);
       }
 
-      const res = await fetch(url.toString(), {
-        headers: { 'Content-Type': 'application/json' },
+      return fetch(url.toString(), {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${jwt}`,
+        },
+      }).then(async (res) => {
+        if (!res.ok) {
+          throw new Error(`Failed to fetch transactions: ${res.statusText}`);
+        }
+        return await res.json();
       });
-      if (!res.ok) {
-        throw new Error(`Failed to fetch transactions: ${res.statusText}`);
-      }
-      return await res.json();
     },
     { refreshInterval },
   );

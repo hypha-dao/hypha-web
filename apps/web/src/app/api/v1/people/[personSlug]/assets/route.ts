@@ -1,19 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createPeopleService } from '@hypha-platform/core/server';
-import { TOKENS, getBalance, getTokenMeta } from '@core/common';
-import { getTokenPrice } from '@core/server';
+import {
+  getTokenPrice,
+  findPersonBySlug,
+  getDb,
+} from '@hypha-platform/core/server';
+import { TOKENS, getBalance, getTokenMeta } from '@hypha-platform/core/client';
+import { headers } from 'next/headers';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ personSlug: string }> },
 ) {
   const { personSlug } = await params;
-  const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';
+  const headersList = await headers();
+  const authToken = headersList.get('Authorization')?.split(' ')[1] || '';
+  if (!authToken) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
   try {
-    const peopleService = createPeopleService({ authToken });
-    const person = await peopleService.findBySlug({ slug: personSlug });
-
+    const person = await findPersonBySlug(
+      { slug: personSlug },
+      { db: getDb({ authToken }) },
+    );
     if (!person) {
       return NextResponse.json({ error: 'Person not found' }, { status: 404 });
     }

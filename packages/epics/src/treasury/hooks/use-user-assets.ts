@@ -2,6 +2,7 @@
 
 import React from 'react';
 import useSWR from 'swr';
+import { useJwt } from '@hypha-platform/core/client';
 
 type OneChartPoint = {
   month: string;
@@ -56,21 +57,25 @@ export const useUserAssets = ({
   refreshInterval?: number;
   personSlug?: string;
 }): UseAssetsReturn => {
+  const { jwt } = useJwt();
   const endpoint = React.useMemo(() => {
     return `/api/v1/people/${personSlug}/assets`;
   }, [personSlug]);
 
   const { data, isLoading } = useSWR(
-    [endpoint],
-    async ([endpoint]) => {
-      const res = await fetch(endpoint, {
-        headers: { 'Content-Type': 'application/json' },
-      });
-      if (!res.ok) {
-        throw new Error(`Failed to fetch user assets: ${res.statusText}`);
-      }
-      return await res.json();
-    },
+    jwt ? [endpoint, jwt] : null,
+    ([endpoint, jwt]) =>
+      fetch(endpoint, {
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+          'Content-Type': 'application/json',
+        },
+      }).then(async (res) => {
+        if (!res.ok) {
+          throw new Error(`Failed to fetch user assets: ${res.statusText}`);
+        }
+        return await res.json();
+      }),
     { refreshInterval },
   );
 
