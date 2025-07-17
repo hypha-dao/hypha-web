@@ -3,7 +3,7 @@ import { Skeleton, Button, Separator } from '@hypha-platform/ui';
 import { RxCross1 } from 'react-icons/rx';
 import Link from 'next/link';
 import { MemberSpaces } from './member-spaces';
-import { Space } from '@hypha-platform/core/client';
+import { Address, Space } from '@hypha-platform/core/client';
 import { UseDocuments } from '../../governance';
 import { Locale } from '@hypha-platform/i18n';
 
@@ -64,7 +64,7 @@ export const MemberDetail = ({
       <Separator />
       <MemberSpaces
         spaces={spaces}
-        personAddress={member.address}
+        personAddress={member.address as Address | undefined}
         personSlug={member.slug}
       />
       <Separator />

@@ -7,6 +7,7 @@ import { Locale } from '@hypha-platform/i18n';
 import React from 'react';
 import { findAllSpaces, findPersonBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
+import { Address } from '@hypha-platform/core/client';
 
 type PageProps = {
   params: Promise<{ lang: Locale; personSlug: string }>;
@@ -56,7 +57,7 @@ export default async function Profile(props: PageProps) {
           <Separator />
           <MemberSpaces
             spaces={spaces}
-            personAddress={person?.address}
+            personAddress={person?.address as Address | undefined}
             personSlug={person?.slug}
             profileView={true}
           />
