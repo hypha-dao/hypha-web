@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { findAllSpaces, findAllSpacesByWeb3SpaceIds } from '@hypha-platform/core/server';
+import {
+  findAllSpaces,
+  findAllSpacesByWeb3SpaceIds,
+} from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 
 type Web3SpaceIds = number[] | undefined;
