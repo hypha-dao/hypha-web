@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { MemberSpaces } from './member-spaces';
 import { Space } from '@hypha-platform/core/client';
 import { UseDocuments } from '../../governance';
-import { AgreementsSection } from '../../agreements';
 import { Locale } from '@hypha-platform/i18n';
 
 type MemberType = {
@@ -69,7 +68,6 @@ export const MemberDetail = ({
         personSlug={member.slug}
       />
       <Separator />
-      {/*<AgreementsSection basePath={basePath} useDocuments={useDocuments} />*/}
     </div>
   );
 };

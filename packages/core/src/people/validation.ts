@@ -1,4 +1,5 @@
-import { DEFAULT_IMAGE_ACCEPT } from '@core/assets';
+import { DEFAULT_IMAGE_ACCEPT } from '../assets';
+
 import { z } from 'zod';
 
 const ALLOWED_IMAGE_FILE_SIZE = 4 * 1024 * 1024;

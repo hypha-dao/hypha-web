@@ -1,6 +1,6 @@
 'use client';
 
-import { publicClient } from '@core/common';
+import { publicClient } from '@hypha-platform/core/client';
 import useSWR from 'swr';
 import { getProposalDetails } from '../web3';
 import React from 'react';
@@ -12,7 +12,7 @@ import {
   daoSpaceFactoryImplementationAbi,
   decayingSpaceTokenAbi,
   tokenBalanceJoinImplementationAbi,
-} from '@core/generated';
+} from '@hypha-platform/core/generated';
 
 export const useProposalDetailsWeb3Rpc = ({
   proposalId,

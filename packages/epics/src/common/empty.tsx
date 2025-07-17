@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '@hypha-platform/lib/utils';
+import { cn } from '@hypha-platform/ui-utils';
 import { RxCircleBackslash } from 'react-icons/rx';
 import { IconType } from 'react-icons';
 

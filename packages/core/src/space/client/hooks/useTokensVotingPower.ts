@@ -1,6 +1,6 @@
 'use client';
 
-import { publicClient } from '@core/common';
+import { publicClient } from '@hypha-platform/core/client';
 import { getTokensVotingPower, getOwnershipTokensVotingPower } from '../web3';
 import useSWR from 'swr';
 import { ethers } from 'ethers';

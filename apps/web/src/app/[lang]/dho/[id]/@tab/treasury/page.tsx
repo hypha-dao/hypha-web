@@ -1,9 +1,5 @@
 import { Locale } from '@hypha-platform/i18n';
-import {
-  AssetsSection,
-  PayoutsSection,
-  TransactionsSection,
-} from '@hypha-platform/epics';
+import { AssetsSection, TransactionsSection } from '@hypha-platform/epics';
 import { getDhoPathTreasury } from './constants';
 
 type PageProps = {

@@ -1,28 +1,31 @@
-:root, .light, .light-theme {
-  --indigo-1: 240deg 33.3% 99.4%;
-  --indigo-2: 225deg 100% 98.4%;
-  --indigo-3: 222deg 89.5% 96.3%;
-  --indigo-4: 224deg 100% 94.1%;
-  --indigo-5: 224deg 100% 91.2%;
-  --indigo-6: 225deg 100% 87.8%;
-  --indigo-7: 226deg 86.7% 82.4%;
-  --indigo-8: 226deg 75.4% 74.5%;
-  --indigo-9: 226deg 70% 55.5%;
-  --indigo-10: 226deg 65.2% 51.6%;
-  --indigo-11: 226deg 55.7% 50.4%;
-  --indigo-12: 226deg 49.6% 24.1%;
+:root,
+.light,
+.light-theme {
+  --indigo-1: oklch(99.433% 0.00143 285.189);
+  --indigo-2: oklch(98.231% 0.00837 271.335);
+  --indigo-3: oklch(96.086% 0.01707 267.82);
+  --indigo-4: oklch(93.461% 0.03115 269.83);
+  --indigo-5: oklch(90.195% 0.04726 269.626);
+  --indigo-6: oklch(86.196% 0.06763 271.095);
+  --indigo-7: oklch(80.616% 0.08764 271.421);
+  --indigo-8: oklch(73.086% 0.11243 270.438);
+  --indigo-9: oklch(54.376% 0.1911 267.019);
+  --indigo-10: oklch(51.257% 0.19426 266.374);
+  --indigo-11: oklch(50.922% 0.17258 267.179);
+  --indigo-12: oklch(31.264% 0.08587 268.608);
 }
-.dark, .dark-theme {
-  --indigo-1: 231deg 29.2% 9.4%;
-  --indigo-2: 230deg 31% 11.4%;
-  --indigo-3: 225deg 50.5% 19%;
-  --indigo-4: 225deg 54.3% 24.9%;
-  --indigo-5: 225deg 51.6% 30%;
-  --indigo-6: 226deg 46.7% 35.3%;
-  --indigo-7: 226deg 44.5% 41%;
-  --indigo-8: 226deg 45.1% 47.8%;
-  --indigo-9: 226deg 70% 55.5%;
-  --indigo-10: 228deg 72.7% 61.2%;
-  --indigo-11: 228deg 100% 81%;
-  --indigo-12: 224deg 100% 92%;
+.dark,
+.dark-theme {
+  --indigo-1: oklch(19.087% 0.02459 276.53);
+  --indigo-2: oklch(20.937% 0.03018 274.843);
+  --indigo-3: oklch(27.157% 0.07055 267.991);
+  --indigo-4: oklch(31.846% 0.09468 267.26);
+  --indigo-5: oklch(36.247% 0.10443 267.038);
+  --indigo-6: oklch(40.552% 0.10993 268.185);
+  --indigo-7: oklch(45.124% 0.11884 268.412);
+  --indigo-8: oklch(50.209% 0.13668 268.264);
+  --indigo-9: oklch(54.376% 0.1911 267.019);
+  --indigo-10: oklch(58.72% 0.17709 269.615);
+  --indigo-11: oklch(77.588% 0.1139 273.026);
+  --indigo-12: oklch(91.079% 0.04286 269.563);
 }

@@ -1,4 +1,6 @@
-import { Space } from '@core/space';
+'use client';
+
+import { Space } from '@hypha-platform/core/client';
 import React from 'react';
 
 export const useSpaceCardList = ({

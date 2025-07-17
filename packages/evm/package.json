@@ -1,4 +1,17 @@
 {
   "name": "@hypha-platform/evm",
-  "version": "0.0.1"
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "lint": "eslint . --max-warnings 0"
+  },
+  "devDependencies": {
+    "@hypha-platform/config-eslint": "workspace:*",
+    "@hypha-platform/config-typescript": "workspace:*"
+  },
+  "dependencies": {},
+  "exports": {
+    ".": "./src/index.ts"
+  }
 }

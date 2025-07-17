@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { createDocumentService } from '@hypha-platform/core/server';
-import { getOrder } from '@core/common/server';
+import { findAllDocumentsBySpaceSlugWithoutPagination } from '@hypha-platform/core/server';
+import { getOrder } from '@hypha-platform/core/server';
+import { db } from '@hypha-platform/storage-postgres';
 
 type Params = { spaceSlug: string };
 
@@ -11,23 +12,20 @@ export async function GET(
 ) {
   const { spaceSlug } = await params;
 
-  // Get token from Authorization header
-  const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';
-
   try {
-    const documentsService = createDocumentService({ authToken });
-
     // Get URL parameters for order
     const url = new URL(request.url);
     const orderString = url.searchParams.get('order') || undefined;
 
     const order = getOrder(orderString);
 
-    const documents = await documentsService.getAllBySpaceSlugWithoutPagination(
+    // TODO: implement authorization
+    const documents = await findAllDocumentsBySpaceSlugWithoutPagination(
       {
-        spaceSlug: spaceSlug,
-        order: order,
+        spaceSlug,
+        order,
       },
+      { db },
     );
 
     return NextResponse.json(documents);

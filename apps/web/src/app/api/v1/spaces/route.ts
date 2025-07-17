@@ -1,5 +1,6 @@
-import { createSpaceService, Space } from '@hypha-platform/core/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { findAllSpaces, findAllSpacesByWeb3SpaceIds } from '@hypha-platform/core/server';
+import { db } from '@hypha-platform/storage-postgres';
 
 type Web3SpaceIds = number[] | undefined;
 
@@ -11,10 +12,9 @@ export async function GET(request: NextRequest) {
           .map(Number)
           .filter((id) => !Number.isNaN(id))
       : undefined;
-    const spaceService = createSpaceService();
     const spaces = web3SpaceIds
-      ? await spaceService.getAllByWeb3SpaceIds(web3SpaceIds)
-      : await spaceService.getAll();
+      ? await findAllSpacesByWeb3SpaceIds({ web3SpaceIds }, { db })
+      : await findAllSpaces({ db });
     return NextResponse.json(spaces);
   } catch (error) {
     console.error('Failed to fetch spaces:', error);

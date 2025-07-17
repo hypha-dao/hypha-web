@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Image, Combobox, Input } from '@hypha-platform/ui';
-import { Person } from '@core/people';
+import { Person } from '@hypha-platform/core/client';
 
 type MemberWithNumberValue = {
   member: string;

@@ -1,7 +1,6 @@
-import {
-  createSpaceService,
-  schemaCreateSpaceWeb2,
-} from '@hypha-platform/core/server';
+import { schemaCreateSpaceWeb2 } from '@hypha-platform/core/client';
+import { createSpace } from '@hypha-platform/core/server';
+import { db } from '@hypha-platform/storage-postgres';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
@@ -24,9 +23,9 @@ export async function POST(request: Request) {
     }
 
     const validatedData = validationResult.data;
-    const spaceService = createSpaceService({ authToken });
 
-    const space = await spaceService.create(validatedData);
+    // TODO: implement authorization
+    const space = await createSpace(validatedData, { db });
 
     return NextResponse.json(space);
   } catch (error) {

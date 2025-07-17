@@ -12,7 +12,7 @@ import {
 } from '@hypha-platform/ui';
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
 import { Text } from '@radix-ui/themes';
-import { Person } from '@core/people';
+import { Person } from '@hypha-platform/core/client';
 
 interface MemberWithNumberFieldFieldArrayProps {
   members: Person[];

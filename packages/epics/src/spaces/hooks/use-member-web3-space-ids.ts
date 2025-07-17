@@ -1,8 +1,9 @@
 'use client';
 
 import useSWR from 'swr';
-import { getMemberSpaces } from '@core/space';
-import { Address, Person, publicClient } from '@hypha-platform/core/client';
+import { Address } from '@hypha-platform/core/client';
+import { getMemberSpaces } from '@hypha-platform/core/client';
+import { publicClient } from '@hypha-platform/core/client';
 
 export function useMemberWeb3SpaceIds({
   personAddress,

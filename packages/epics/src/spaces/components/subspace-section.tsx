@@ -2,12 +2,8 @@ import { Text } from '@radix-ui/themes';
 import { Button } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { PlusIcon } from '@radix-ui/react-icons';
-import {
-  InnerSpaceCard,
-  UseMembers,
-  InnerSpaceCardWrapper,
-} from '@hypha-platform/epics';
-import { Space } from '@core/space';
+import { UseMembers, InnerSpaceCardWrapper } from '@hypha-platform/epics';
+import { Space } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 
 interface SubspaceSectionProps {

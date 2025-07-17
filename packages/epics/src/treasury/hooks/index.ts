@@ -1,3 +1,4 @@
-export * from './use-asset-by-slug';
-export * from './use-tokens';
 export * from './types';
+export * from './use-assets-section';
+export * from './use-assets';
+export * from './use-tokens';
