@@ -42,7 +42,7 @@ export default async function Profile(props: PageProps) {
       {person ? (
         <>
           <PersonHead
-            avatar={person?.avatarUrl ?? ''}
+            avatar={person?.avatarUrl ?? '/placeholder/default-profile.svg'}
             name={person?.name ?? ''}
             surname={person?.surname ?? ''}
             background={person?.leadImageUrl ?? ''}
