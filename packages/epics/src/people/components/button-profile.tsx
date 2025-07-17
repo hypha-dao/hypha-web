@@ -73,7 +73,7 @@ export const ButtonProfile = ({
             )}
 
             {onEdit && (
-              <Button className="bg-transparent text-gray-400" onClick={onProfile}>
+              <Button className="bg-transparent text-gray-400" onClick={onEdit}>
                 Edit My Profile
               </Button>
             )}
@@ -117,7 +117,7 @@ export const ButtonProfile = ({
                   </DropdownMenuItem>
                 )}
                 {onEdit && (
-                  <DropdownMenuItem onClick={onProfile} className="text-1">
+                  <DropdownMenuItem onClick={onEdit} className="text-1">
                     Edit My Profile
                   </DropdownMenuItem>
                 )}
