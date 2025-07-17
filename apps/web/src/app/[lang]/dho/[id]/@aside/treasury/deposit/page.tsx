@@ -8,10 +8,12 @@ import { notFound } from 'next/navigation';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
+  searchParams: Promise<{ back: string }>;
 };
 
-export default async function Treasury({ params }: PageProps) {
+export default async function Treasury({ params, searchParams }: PageProps) {
   const { lang, id } = await params;
+  const { back: backHref } = await searchParams;
 
   // TODO: implement authorization
   const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
@@ -26,7 +28,9 @@ export default async function Treasury({ params }: PageProps) {
     <SidePanel>
       <DepositFunds
         closeUrl={closeUrl}
-        backUrl={`${closeUrl}${PATH_SELECT_CREATE_ACTION}`}
+        backUrl={
+          backHref ? backHref : `${closeUrl}${PATH_SELECT_CREATE_ACTION}`
+        }
         spaceId={spaceId}
       />
     </SidePanel>
