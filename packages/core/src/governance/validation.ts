@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { DEFAULT_IMAGE_ACCEPT } from '@core/assets';
+import { DEFAULT_IMAGE_ACCEPT } from '@hypha-platform/core/client';
 import { isBefore } from 'date-fns';
 import { EntryMethodType } from './types';
 
@@ -58,6 +58,7 @@ export const paymentScheduleSchema = z
 
       for (let i = 0; i < data.milestones.length; i++) {
         const milestone = data.milestones[i];
+        // @ts-ignore TODO: fix types
         const { dateRange } = milestone;
 
         if (!dateRange?.from) {
@@ -287,6 +288,7 @@ export const schemaIssueNewToken = z.object({
       }),
   ),
   decaySettings: decaySettingsSchema,
+  isVotingToken: z.boolean(),
 });
 
 export const schemaChangeVotingMethod = z.object({
@@ -313,18 +315,6 @@ export const schemaCreateProposalWeb3 = z.object({
     .array(transactionSchema)
     .min(1, { message: 'At least one transaction is required' })
     .max(10, { message: 'A proposal cannot have more than 10 transactions' }),
-});
-
-export const mapToCreateProposalWeb3Input = (
-  d: z.infer<typeof schemaCreateProposalWeb3>,
-) => ({
-  spaceId: d.spaceId,
-  duration: d.duration,
-  transactions: d.transactions.map((tx) => ({
-    target: tx.target,
-    value: tx.value,
-    data: tx.data || '0x',
-  })),
 });
 
 export const schemaChangeEntryMethod = z.object({

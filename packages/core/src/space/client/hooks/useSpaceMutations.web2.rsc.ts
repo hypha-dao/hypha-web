@@ -11,7 +11,7 @@ import {
   createSpaceAction,
   deleteSpaceBySlugAction,
   updateSpaceBySlugAction,
-} from '@core/space/server/actions';
+} from '@hypha-platform/core/space/server/actions';
 
 export const useSpaceMutationsWeb2Rsc = (authToken?: string | null) => {
   const {

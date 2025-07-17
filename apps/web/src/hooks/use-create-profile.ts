@@ -3,7 +3,11 @@
 import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { z } from 'zod';
-import { schemaSignupPerson, PersonFiles, useJwt } from '@core/people';
+import {
+  schemaSignupPerson,
+  PersonFiles,
+  useJwt,
+} from '@hypha-platform/core/client';
 import { usePeopleFileUploads } from './use-people-file-uploads';
 import { useAuthHeader } from './use-auth-header';
 

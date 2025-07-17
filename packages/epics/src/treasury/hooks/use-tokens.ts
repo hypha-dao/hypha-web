@@ -1,6 +1,6 @@
 'use client';
 
-import { TOKENS } from '@core/common';
+import { TOKENS } from '@hypha-platform/core/client';
 import useSWR from 'swr';
 import React from 'react';
 

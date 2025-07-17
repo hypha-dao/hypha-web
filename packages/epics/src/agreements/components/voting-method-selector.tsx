@@ -3,11 +3,14 @@
 import { Card } from '@hypha-platform/ui';
 import clsx from 'clsx';
 import { PlusCircledIcon } from '@radix-ui/react-icons';
-import { useSpaceHasVoiceToken } from '@core/space';
+import {
+  useSpaceHasVoiceToken,
+  useTokensVotingPower,
+} from '@hypha-platform/core/client';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { VotingMethodType } from '@core/governance/client';
+import { VotingMethodType } from '@hypha-platform/core/client';
 
 type VotingMethod = {
   id: VotingMethodType;
@@ -15,7 +18,7 @@ type VotingMethod = {
   description: string;
   icon?: React.ReactNode;
   disabled?: boolean;
-  disabledTooltip?: string;
+  disabledTooltip?: React.ReactNode;
 };
 
 const votingMethods: VotingMethod[] = [
@@ -36,7 +39,6 @@ const votingMethods: VotingMethod[] = [
     title: '1 Token 1 Vote',
     description: 'Voting power is proportional to the number of tokens held.',
     icon: <PlusCircledIcon />,
-    disabled: true, // TODO: hide for MVP
   },
 ];
 
@@ -53,6 +55,9 @@ export const VotingMethodSelector = ({
 }: VotingMethodSelectorProps) => {
   const { lang, id } = useParams();
   const { hasVoiceToken } = useSpaceHasVoiceToken({
+    spaceId: web3SpaceId ? BigInt(web3SpaceId) : BigInt(0),
+  });
+  const { hasVotingTokens } = useTokensVotingPower({
     spaceId: web3SpaceId ? BigInt(web3SpaceId) : BigInt(0),
   });
 
@@ -75,7 +80,7 @@ export const VotingMethodSelector = ({
               To select this voting method you first need to issue your Voice
               Token.{' '}
               <Link
-                href={`/${lang}/dho/${id}/treasury/create/issue-new-token`}
+                href={`/${lang}/dho/${id}/governance/create/issue-new-token`}
                 className="text-accent-9 underline"
                 onClick={(e) => e.stopPropagation()}
               >
@@ -86,6 +91,28 @@ export const VotingMethodSelector = ({
           ) : undefined,
         };
       }
+
+      if (method.id === '1t1v') {
+        return {
+          ...method,
+          disabled: method.disabled || !hasVotingTokens,
+          disabledTooltip: !hasVotingTokens ? (
+            <div className="p-2">
+              To select this voting method you first need to issue your Reqular
+              Token (with enabled <strong>Is Voting Token</strong> option).{' '}
+              <Link
+                href={`/${lang}/dho/${id}/governance/create/issue-new-token`}
+                className="text-accent-9 underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Click here
+              </Link>{' '}
+              to create your Regular Token
+            </div>
+          ) : undefined,
+        };
+      }
+
       return method;
     });
 

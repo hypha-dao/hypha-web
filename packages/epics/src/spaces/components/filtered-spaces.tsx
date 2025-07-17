@@ -1,13 +1,13 @@
 'use client';
 
 import { Locale } from '@hypha-platform/i18n';
-import { Space } from '@core/space';
+import { Space } from '@hypha-platform/core/client';
 import {
   UseMembers,
   useMemberWeb3SpaceIds,
   SpaceCardList,
 } from '@hypha-platform/epics';
-import { Person, useMe } from '@core/people';
+import { Person, useMe } from '@hypha-platform/core/client';
 import React from 'react';
 import { Text } from '@radix-ui/themes';
 

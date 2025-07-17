@@ -6,9 +6,9 @@ import { Locale } from '@hypha-platform/i18n';
 import { useDocumentSlug } from '@web/hooks/use-document-slug';
 import { useDocumentBySlug } from '@web/hooks/use-document-by-slug';
 import { getDhoPathGovernance } from '../../../../@tab/governance/constants';
-import { useVote } from '@core/governance';
+import { useVote } from '@hypha-platform/core/client';
 import { useSpaceDocumentsWithStatuses } from '@hypha-platform/epics';
-import { useSpaceBySlug } from '@core/space';
+import { useSpaceBySlug } from '@hypha-platform/core/client';
 
 export default function Agreements() {
   const { id, lang } = useParams();
@@ -51,7 +51,6 @@ export default function Agreements() {
         attachments={document?.attachments}
         proposalId={document?.web3ProposalId}
         spaceSlug={space?.slug || ''}
-        label={document?.label}
       />
     </SidePanel>
   );

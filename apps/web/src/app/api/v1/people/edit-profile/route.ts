@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createPeopleService, Person } from '@hypha-platform/core/server';
-import { schemaEditPerson } from '@core/people';
+import { Person, schemaEditPerson } from '@hypha-platform/core/client';
+import { getDb, updatePerson } from '@hypha-platform/core/server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,9 +24,9 @@ export async function POST(request: NextRequest) {
     }
 
     const validatedData = validationResult.data;
-    // Get the PeopleService using the factory method and pass the auth token
-    const peopleService = createPeopleService({ authToken });
-    const updatedProfile = await peopleService.update(validatedData as Person);
+    const updatedProfile = await updatePerson(validatedData as Person, {
+      db: getDb({ authToken }),
+    });
 
     return NextResponse.json({ profile: updatedProfile }, { status: 201 });
   } catch (error) {

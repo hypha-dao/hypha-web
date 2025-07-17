@@ -1,7 +1,9 @@
 'use client';
 
-import { useFileUpload } from '@core/assets';
-import { schemaCreateAgreementFiles } from '@core/governance/validation';
+import {
+  useFileUpload,
+  schemaCreateAgreementFiles,
+} from '@hypha-platform/core/client';
 import React from 'react';
 import { z } from 'zod';
 

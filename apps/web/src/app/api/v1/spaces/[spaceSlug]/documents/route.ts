@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { createDocumentService } from '@hypha-platform/core/server';
-import { getOrder } from '@core/common/server';
+import { getOrder } from '@hypha-platform/core/client';
+import { findAllDocumentsBySpaceSlug } from '@hypha-platform/core/server';
+import { db } from '@hypha-platform/storage-postgres';
 
 export async function GET(
   request: NextRequest,
@@ -13,8 +14,6 @@ export async function GET(
   const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';
 
   try {
-    const documentsService = createDocumentService({ authToken });
-
     // Get URL parameters for pagination
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1', 10);
@@ -23,15 +22,17 @@ export async function GET(
     const searchTerm = url.searchParams.get('searchTerm') || undefined;
     const orderString = url.searchParams.get('order') || undefined;
 
+    // @ts-ignore: TODO: fix this
     const order = getOrder(orderString);
 
     const filter = {
       ...(state ? { state } : {}),
     };
 
-    const paginatedDocuments = await documentsService.getAllBySpaceSlug(
+    const paginatedDocuments = await findAllDocumentsBySpaceSlug(
       { spaceSlug },
-      { pagination: { page, pageSize, order }, filter, searchTerm },
+      // @ts-ignore: TODO: order type
+      { pagination: { page, pageSize, order }, filter, searchTerm, db },
     );
 
     return NextResponse.json(paginatedDocuments);

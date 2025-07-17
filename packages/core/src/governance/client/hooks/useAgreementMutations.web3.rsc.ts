@@ -11,15 +11,15 @@ import {
   mapToCreateProposalWeb3Input,
 } from '../web3';
 
-import { schemaCreateProposalWeb3 } from '@core/governance/validation';
-import { publicClient } from '@core/common/web3/public-client';
+import { schemaCreateProposalWeb3 } from '@hypha-platform/core/client';
+import { publicClient } from '@hypha-platform/core/client';
 
 import {
   agreementsImplementationAbi,
   agreementsImplementationAddress,
   daoProposalsImplementationAbi,
   daoProposalsImplementationAddress,
-} from '@core/generated';
+} from '@hypha-platform/core/generated';
 
 export const useAgreementMutationsWeb3Rpc = ({
   proposalSlug,
