@@ -76,16 +76,16 @@ export const PersonHead = ({
         <div className="flex justify-end gap-2">
           {onExportEmbeededWallet ? (
             <Skeleton loading={isLoading} width={120} height={35}>
-              <Button variant="ghost" onClick={onExportEmbeededWallet}>
+              <Button variant="ghost" onClick={onExportEmbeededWallet} title="Export Keys">
                 <RxDownload />
-                Export Keys
+                <span className="hidden md:flex">Export Keys</span>
               </Button>
             </Skeleton>
           ) : null}
           <Skeleton loading={isLoading} width={120} height={35}>
-            <Button variant="outline" colorVariant="accent">
+            <Button variant="outline" colorVariant="accent" title="Copy user ID">
               <CopyIcon />
-              Copy user ID
+              <span className="hidden md:flex">Copy user ID</span>
             </Button>
           </Skeleton>
           <Skeleton loading={isLoading} width={120} height={35}>
