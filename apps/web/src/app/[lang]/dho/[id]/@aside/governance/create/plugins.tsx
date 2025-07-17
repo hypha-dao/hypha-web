@@ -1,6 +1,5 @@
 'use client';
 
-import { Space } from '@core/space';
 import {
   ProposeContributionPlugin,
   PayForExpensesPlugin,
@@ -10,6 +9,7 @@ import {
   IssueNewTokenPlugin,
 } from '@hypha-platform/epics';
 import { useMembers } from '@web/hooks/use-members';
+import { Space } from '@hypha-platform/core/client';
 
 export const PLUGINS = {
   'propose-contribution': ProposeContributionPlugin,

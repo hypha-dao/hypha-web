@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Image, Combobox } from '@hypha-platform/ui';
 import { WalletAddress } from './wallet-address';
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
-import { Space } from '@core/space';
+import { Space } from '@hypha-platform/core/client';
 
 type Recipient = {
   name: string;
