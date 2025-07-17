@@ -32,7 +32,7 @@ export const SETTINGS_ACTIONS = [
     baseTab: 'membership',
   },
   {
-    group: 'Agreements',
+    group: 'Governance',
     title: 'Voting Method',
     description:
       'Select and configure the voting method for decision-making within your space.',
