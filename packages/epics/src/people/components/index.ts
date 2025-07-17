@@ -9,3 +9,4 @@ export * from './member-spaces';
 export * from './members-section';
 export * from './person-head';
 export * from './signup-panel';
+export * from './person-deposit-funds';

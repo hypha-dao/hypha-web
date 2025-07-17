@@ -81,7 +81,10 @@ export default function Profile() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="treasury" className="flex flex-col gap-4">
-          <UserAssetsSection personSlug={person?.slug || ''} />
+          <UserAssetsSection
+            personSlug={person?.slug || ''}
+            basePath={`/${lang}/profile`}
+          />
           <UserTransactionsSection personSlug={person?.slug || ''} />
         </TabsContent>
       </Tabs>

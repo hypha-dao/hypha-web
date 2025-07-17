@@ -1,19 +1,21 @@
 'use client';
 
 import { FC } from 'react';
-import { Text } from '@radix-ui/themes';
 import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 import { Empty } from '../../../common';
 import { useUserAssetsSection } from '../../hooks/use-user-assets-section';
-
+import { Button } from '../../../../../ui/src/button';
+import Link from 'next/link';
 import { AssetsList } from './assets-list';
 
 type UserAssetsSectionProps = {
   personSlug: string;
+  basePath?: string;
 };
 
 export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
   personSlug,
+  basePath,
 }) => {
   const {
     visibleAssets,
@@ -28,7 +30,13 @@ export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-4">
-      <SectionFilter count={totalBalance || 0} label="Balance" />
+      <SectionFilter count={totalBalance || 0} label="Balance">
+        <Button asChild className="ml-2">
+          <Link href={`${basePath}/wallet`} scroll={false}>
+            Open Wallet
+          </Link>
+        </Button>
+      </SectionFilter>
       {visibleAssets.length === 0 && !isLoading ? (
         <Empty>
           <p>No assets found for this user</p>
