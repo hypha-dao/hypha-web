@@ -29,6 +29,9 @@ export const MenuTop = ({
         {/* Mobile Burger */}
         <button
           className="md:hidden flex items-center"
+          aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+          aria-expanded={isMobileMenuOpen}
+          aria-controls="mobile-menu"
           onClick={() => setIsMobileMenuOpen(isOpen => !isOpen)}
         >
           { !isMobileMenuOpen && <Menu className="size-5" /> }
