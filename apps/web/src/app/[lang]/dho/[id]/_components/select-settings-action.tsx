@@ -150,11 +150,14 @@ export const SelectSettingsAction = ({
       actions={SETTINGS_ACTIONS.map((action) => {
         const href = `/${lang}/dho/${daoSlug}/${action.baseTab || activeTab}/${
           action.href
-        }`.replaceAll('THIS_PAGE', `/${lang}/dho/${daoSlug}/governance/select-settings-action`);
-        return ({
+        }`.replaceAll(
+          'THIS_PAGE',
+          `/${lang}/dho/${daoSlug}/governance/select-settings-action`,
+        );
+        return {
           ...action,
           href,
-        });
+        };
       })}
     />
   );

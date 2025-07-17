@@ -28,7 +28,9 @@ export default async function Treasury({ params, searchParams }: PageProps) {
     <SidePanel>
       <DepositFunds
         closeUrl={closeUrl}
-        backUrl={backHref ? backHref : `${closeUrl}${PATH_SELECT_CREATE_ACTION}`}
+        backUrl={
+          backHref ? backHref : `${closeUrl}${PATH_SELECT_CREATE_ACTION}`
+        }
         spaceId={spaceId}
       />
     </SidePanel>
