@@ -9,6 +9,7 @@ import {
   IssueNewTokenPlugin,
 } from '@hypha-platform/epics';
 import { useMembers } from '@web/hooks/use-members';
+import { Space } from '@hypha-platform/core/client';
 
 export const PLUGINS = {
   'propose-contribution': ProposeContributionPlugin,
@@ -23,9 +24,15 @@ type PluginProps = {
   name: keyof typeof PLUGINS;
   spaceSlug?: string;
   web3SpaceId?: number | null;
+  subspaces?: Space[];
 };
 
-export const Plugin = ({ name, spaceSlug, web3SpaceId }: PluginProps) => {
+export const Plugin = ({
+  name,
+  spaceSlug,
+  web3SpaceId,
+  subspaces,
+}: PluginProps) => {
   const { members } = useMembers({ spaceSlug });
 
   const PluginCmp = PLUGINS[name];
@@ -35,6 +42,7 @@ export const Plugin = ({ name, spaceSlug, web3SpaceId }: PluginProps) => {
       spaceSlug={spaceSlug || ''}
       web3SpaceId={web3SpaceId}
       members={members}
+      subspaces={subspaces}
     />
   );
 };

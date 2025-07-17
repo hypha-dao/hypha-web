@@ -23,6 +23,8 @@ export default async function CreatePayForExpensesPage({ params }: PageProps) {
 
   const successfulUrl = getDhoPathGovernance(lang as Locale, id);
 
+  const subspaces = spaceFromDb.subspaces;
+
   return (
     <SidePanel>
       <CreatePayForExpensesForm
@@ -30,7 +32,13 @@ export default async function CreatePayForExpensesPage({ params }: PageProps) {
         backUrl={`${successfulUrl}${PATH_SELECT_CREATE_ACTION}`}
         spaceId={spaceId}
         web3SpaceId={web3SpaceId}
-        plugin={<Plugin name="pay-for-expenses" spaceSlug={spaceSlug} />}
+        plugin={
+          <Plugin
+            name="pay-for-expenses"
+            spaceSlug={spaceSlug}
+            subspaces={subspaces}
+          />
+        }
       />
     </SidePanel>
   );

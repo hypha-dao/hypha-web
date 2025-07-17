@@ -32,6 +32,7 @@ export const spaces = pgTable(
       .notNull()
       .default([]),
     parentId: integer('parent_id').references((): AnyPgColumn => spaces.id),
+    address: text('web3_address'),
     ...commonDateFields,
   },
   (table) => [

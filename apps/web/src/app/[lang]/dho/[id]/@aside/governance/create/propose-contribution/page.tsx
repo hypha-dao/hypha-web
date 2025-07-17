@@ -26,6 +26,8 @@ export default async function CreateProposeAContributionPage({
   const { id: spaceId, web3SpaceId, slug: spaceSlug } = spaceFromDb;
   const successfulUrl = getDhoPathGovernance(lang as Locale, id);
 
+  const subspaces = spaceFromDb.subspaces;
+
   return (
     <SidePanel>
       <CreateProposeAContributionForm
@@ -33,7 +35,13 @@ export default async function CreateProposeAContributionPage({
         backUrl={`${successfulUrl}${PATH_SELECT_CREATE_ACTION}`}
         spaceId={spaceId}
         web3SpaceId={web3SpaceId}
-        plugin={<Plugin name="propose-contribution" spaceSlug={spaceSlug} />}
+        plugin={
+          <Plugin
+            name="propose-contribution"
+            spaceSlug={spaceSlug}
+            subspaces={subspaces}
+          />
+        }
       />
     </SidePanel>
   );

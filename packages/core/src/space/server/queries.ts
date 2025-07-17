@@ -35,6 +35,7 @@ export const findAllSpaces = async (
       documentCount: sql<number>`count(distinct ${documents.id})`.mapWith(
         Number,
       ),
+      address: spaces.address,
     })
     .from(spaces)
     .leftJoin(memberships, eq(memberships.spaceId, spaces.id))
@@ -67,6 +68,7 @@ export const findAllSpaces = async (
       spaces.parentId,
       spaces.createdAt,
       spaces.updatedAt,
+      spaces.address,
     )
     .orderBy(asc(spaces.title));
   return results;
