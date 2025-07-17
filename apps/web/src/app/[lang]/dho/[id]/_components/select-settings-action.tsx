@@ -95,6 +95,16 @@ export const SETTINGS_ACTIONS = [
     baseTab: 'treasury',
   },
   {
+    group: 'Extensions & Plug-ins (Advanced)',
+    title: 'Explore Extensions & Plug-in Marketplace (Coming Soon)',
+    description:
+      'Discover a growing ecosystem of tools and integrations to extend your space’s capabilities. From governance modules to token utilities, the upcoming marketplace will offer customizable plug-ins designed to evolve with your needs.',
+    href: '#',
+    icon: <RadiobuttonIcon />,
+    baseTab: 'governance',
+    disabled: true,
+  },
+  {
     group: 'Hypha Network Tokenomics',
     title: 'Buy Hypha Tokens (Rewards) (Coming Soon)',
     description:
