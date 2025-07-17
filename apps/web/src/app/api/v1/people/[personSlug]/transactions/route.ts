@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createPeopleService } from '@hypha-platform/core/server';
-import { getTransfersByAddress } from '@core/server';
-import { schemaGetTransfersQuery } from '@core/transaction';
-import { findPersonByWeb3Address } from '@core/people/server/queries';
+import { getTransfersByAddress } from '@hypha-platform/core/server';
+import { schemaGetTransfersQuery } from '@hypha-platform/core/client';
+import { findPersonByWeb3Address } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
+import { findPersonBySlug, getDb } from '@hypha-platform/core/server';
+import { headers } from 'next/headers';
 
 /**
  * A route to get ERC20 transfers for a user.
@@ -21,7 +22,11 @@ export async function GET(
   { params }: { params: Promise<{ personSlug: string }> },
 ) {
   const { personSlug } = await params;
-  const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';
+  const headersList = await headers();
+  const authToken = headersList.get('Authorization')?.split(' ')[1] || '';
+  if (!authToken) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
   const { fromDate, toDate, fromBlock, toBlock, limit, token } =
     schemaGetTransfersQuery.parse(
@@ -29,8 +34,10 @@ export async function GET(
     );
 
   try {
-    const peopleService = createPeopleService({ authToken });
-    const person = await peopleService.findBySlug({ slug: personSlug });
+    const person = await findPersonBySlug(
+      { slug: personSlug },
+      { db: getDb({ authToken }) },
+    );
 
     if (!person) {
       return NextResponse.json({ error: 'Person not found' }, { status: 404 });
