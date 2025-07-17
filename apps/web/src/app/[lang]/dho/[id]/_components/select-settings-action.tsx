@@ -105,6 +105,16 @@ export const SETTINGS_ACTIONS = [
     disabled: true,
   },
   {
+    group: 'Ecosystem Verticals',
+    title: 'Hypha Energy (Coming Soon)',
+    description:
+      'A dedicated Ecosystem Vertical for your Renewable Energy Community or Energy Hub enabling energy sharing, local co-ownership, membership, governance, purpose-driven energy flow optimization, and fair value distribution amongst members and participants. Learn more at hypha.energy.',
+    href: '#',
+    icon: <RadiobuttonIcon />,
+    baseTab: 'governance',
+    disabled: true,
+  },
+  {
     group: 'Hypha Network Tokenomics',
     title: 'Buy Hypha Tokens (Rewards) (Coming Soon)',
     description:
