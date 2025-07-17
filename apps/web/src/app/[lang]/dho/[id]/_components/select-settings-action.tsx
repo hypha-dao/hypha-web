@@ -1,6 +1,7 @@
 import { SelectAction } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import {
+  ArchiveIcon,
   ArrowDownIcon,
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -30,6 +31,16 @@ export const SETTINGS_ACTIONS = [
     href: 'space/create',
     icon: <PlusCircledIcon />,
     baseTab: 'membership',
+  },
+  {
+    group: 'Organisation',
+    title: 'Archive Space (Coming Soon)',
+    description:
+      'Archive this space to disable activity while preserving its data and history. Archiving is reversible by contacting the Hypha team. For assistance, reach out via Discord: [Discord Link].',
+    href: '#',
+    icon: <ArchiveIcon />,
+    baseTab: 'membership',
+    disabled: true,
   },
   {
     group: 'Governance',
