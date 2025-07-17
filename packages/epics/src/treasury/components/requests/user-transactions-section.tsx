@@ -19,7 +19,7 @@ export const UserTransactionsSection: FC<TransactionsSectionProps> = ({
     loadMore,
     hasMore,
     totalRequestsValue,
-  } = useUserTransfersSection({ personSlug: personSlug as string });
+  } = useUserTransfersSection({ personSlug });
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-4">
