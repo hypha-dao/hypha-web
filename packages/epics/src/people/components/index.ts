@@ -4,6 +4,7 @@ export * from './edit-person-section';
 export * from './eth-address';
 export * from './export-embedded-wallet-button';
 export * from './member-detail';
+export * from './member-spaces';
 export * from './members-section';
 export * from './person-head';
 export * from './signup-panel';

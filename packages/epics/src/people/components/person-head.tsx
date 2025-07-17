@@ -15,9 +15,9 @@ import { RxPencil2 } from 'react-icons/rx';
 import { MailIcon, MapPinIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useMe } from '@core/people';
 import React from 'react';
 import { ExportEmbeddedWalletButton } from '@hypha-platform/epics';
+import { useMe } from '@hypha-platform/core/client';
 
 export type MemberType = {
   avatar: string;

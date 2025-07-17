@@ -5,8 +5,8 @@ import { Text } from '@radix-ui/themes';
 import { Container, Separator } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
 import React from 'react';
-import { createSpaceService } from '@core/space/server';
-import { createPeopleService } from '@core/people/server';
+import { findAllSpaces, findPersonBySlug } from '@hypha-platform/core/server';
+import { db } from '@hypha-platform/storage-postgres';
 
 type PageProps = {
   params: Promise<{ lang: Locale; personSlug: string }>;
@@ -24,9 +24,8 @@ export default async function Profile(props: PageProps) {
 
   const { lang, personSlug } = params;
 
-  const peopleService = createPeopleService();
-  const person = await peopleService.findBySlug({ slug: personSlug });
-  const spaces = await createSpaceService().getAll();
+  const person = await findPersonBySlug({ slug: personSlug}, { db });
+  const spaces = await findAllSpaces({ db });
 
   return (
     <Container>

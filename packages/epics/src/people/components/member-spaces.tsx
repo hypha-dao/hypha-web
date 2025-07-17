@@ -8,10 +8,10 @@ import {
   useMemberWeb3SpaceIds,
 } from '@hypha-platform/epics';
 import React from 'react';
-import { cn } from '@hypha-platform/lib/utils';
 import Link from 'next/link';
 import { Locale } from '@hypha-platform/i18n';
 import { useParams } from 'next/navigation';
+import { cn } from '@hypha-platform/ui-utils';
 
 export type MemberSpacesProps = {
   spaces?: Space[];
