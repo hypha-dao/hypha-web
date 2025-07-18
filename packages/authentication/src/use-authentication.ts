@@ -42,9 +42,11 @@ export function useAuthentication() {
     setLoggingIn(true);
   }, [privyLogin]);
 
-  const logout = React.useCallback(async (): Promise<void> => {
+  const logout = React.useCallback(async (redirect: boolean = true): Promise<void> => {
     privyLogout();
-    router.push('/network');
+    if (redirect) {
+      router.push('/network');
+    }
     setLoggingIn(false);
   }, [privyLogout, router]);
 

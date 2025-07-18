@@ -1,5 +1,6 @@
 export * from './button-profile.connected';
 export * from './button-profile';
+export * from './button-signin-mobile';
 export * from './edit-person-section';
 export * from './eth-address';
 export * from './export-embedded-wallet-button';
