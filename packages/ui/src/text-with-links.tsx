@@ -1,6 +1,11 @@
 import Link from 'next/link';
 
 const TextWithLinks = ({ text }: { text: string }) => {
+  if (text.length > 1000) {
+    console.warn('Input too long. Omit parsing.')
+    return <>{text}</>
+  }
+
   const urlRegex = /((?:[a-z\-]+)?:?(?:\/\/.*\.[^\/\.\,]+))/g;
   const parts = text.split(urlRegex);
 
