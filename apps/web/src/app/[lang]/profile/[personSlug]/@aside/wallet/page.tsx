@@ -55,19 +55,19 @@ export const WALLET_ACTIONS = [
 ];
 
 export default function ProfileWallet() {
-  const { lang } = useParams();
+  const { lang, personSlug } = useParams();
   return (
     <SidePanel>
       <div className="flex flex-col gap-5">
         <div className="flex gap-5 justify-end items-center">
-          <ButtonClose closeUrl={`/${lang}/profile`} />
+          <ButtonClose closeUrl={`/${lang}/profile/${personSlug}`} />
         </div>
         <SelectAction
           title="Wallet"
           content="Manage your personal funds, interact with the Hypha network, and contribute directly using your wallet."
           actions={WALLET_ACTIONS.map((action) => ({
             ...action,
-            href: `/${lang}/profile/wallet/${action.href}`,
+            href: `/${lang}/profile/${personSlug}/wallet/${action.href}`,
           }))}
         />
       </div>

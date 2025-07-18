@@ -21,7 +21,7 @@ export async function generateMetadata(props: PageProps) {
   };
 }
 
-export default async function Profile(props: PageProps) {
+export default async function ProfilePage(props: PageProps) {
   const params = await props.params;
 
   const { lang, personSlug } = params;
@@ -62,7 +62,7 @@ export default async function Profile(props: PageProps) {
             personSlug={person?.slug}
             profileView={true}
           />
-          <ProfileTabs person={person} />
+          <ProfileTabs person={person} lang={lang} />
         </div>
       ) : (
         <p>Person not found</p>

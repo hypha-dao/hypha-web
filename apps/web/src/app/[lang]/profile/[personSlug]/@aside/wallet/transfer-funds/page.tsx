@@ -6,11 +6,11 @@ import {
 import { ProfileTransferFunds } from '@hypha-platform/epics';
 
 type PageProps = {
-  params: Promise<{ lang: string }>;
+  params: Promise<{ lang: string; personSlug: string }>;
 };
 
 export default async function ProfileTransferFundsWrapper(props: PageProps) {
-  const { lang } = await props.params;
+  const { lang, personSlug } = await props.params;
 
   const spaces = await findAllSpaces({ db });
   const peoples = await findAllPeopleWithoutPagination({ db });
@@ -28,7 +28,7 @@ export default async function ProfileTransferFundsWrapper(props: PageProps) {
       lang={lang}
       spaces={filteredSpaces}
       peoples={filteredPeoples}
-      personSlug="evgeniy"
+      personSlug={personSlug}
     />
   );
 }
