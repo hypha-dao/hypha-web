@@ -6,7 +6,7 @@ const TextWithLinks = ({ text }: { text: string }) => {
     return <>{text}</>
   }
 
-  const urlRegex = /((?:[a-z\-]+)?:?(?:\/\/.*\.[^\/\.\,]+))/g;
+  const urlRegex = /((?:[a-z\-]+)?:?(?:\/\/[^\s]+\.[^\/\.\,]+))/g;
   const parts = text.split(urlRegex);
 
   return (
@@ -14,21 +14,24 @@ const TextWithLinks = ({ text }: { text: string }) => {
       {parts.map((part, index) => {
         if (part.match(urlRegex)) {
           return (
-            <Link
+            <a
               href={part}
-              key={index}
-              passHref
+              key={`url-${index}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline"
               onClick={(e) => {
+                // this allows to activate link in disabled component
                 e.preventDefault();
                 const tag = e.target as HTMLAnchorElement;
                 window.open(tag.href, '_blank');
               }}
             >
               {part}
-            </Link>
+            </a>
           );
         } else {
-          return <span key={index}>{part}</span>;
+          return <span key={`text-${index}`}>{part}</span>;
         }
       })}
     </>
