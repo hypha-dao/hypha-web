@@ -13,7 +13,7 @@ import {
   LoopIcon,
 } from '@radix-ui/react-icons';
 
-export const WALLET_ACTIONS = [
+const WALLET_ACTIONS = [
   {
     title: 'Deposit Funds',
     description:
