@@ -110,7 +110,7 @@ export const SETTINGS_ACTIONS = [
     group: 'Extensions & Plug-ins',
     title: 'Explore Extensions & Plug-in Marketplace (Coming Soon)',
     description:
-      'Discover a growing ecosystem of tools and integrations to extend your space’s capabilities. From governance modules to token utilities, the upcoming marketplace will offer customizable plug-ins designed to evolve with your needs.',
+      'Discover a growing ecosystem of tools and integrations to extend your space’s capabilities.',
     href: '#',
     icon: <RadiobuttonIcon />,
     baseTab: 'governance',
@@ -120,7 +120,7 @@ export const SETTINGS_ACTIONS = [
     group: 'Ecosystem Verticals',
     title: 'Hypha Energy (Coming Soon)',
     description:
-      'A dedicated Ecosystem Vertical for your Renewable Energy Community or Energy Hub enabling energy sharing, local co-ownership, membership, governance, purpose-driven energy flow optimization, and fair value distribution amongst members and participants. Learn more at https://hypha.energy.',
+      'A dedicated platform for your renewable energy community or hub. Enabling energy sharing, co-ownership, governance, and fair value distribution. Learn more at https://hypha.energy',
     href: '#',
     icon: <RadiobuttonIcon />,
     baseTab: 'governance',
