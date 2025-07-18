@@ -29,10 +29,20 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState('treasury');
 
   useEffect(() => {
-    if (!isLoading && person?.slug) {
+    if (!isLoading && person?.slug && person.slug.trim() !== '') {
       router.replace(`/${lang}/profile/${person?.slug}`);
     }
   }, [router, person, isLoading]);
+
+  if (!isLoading && person?.slug && person.slug.trim() !== '') {
+    return (
+      <Container className="flex flex-col space-y-6 py-4">
+        <div className="flex items-center justify-center">
+          <Text>Redirecting to profile...</Text>
+        </div>
+      </Container>
+    );
+  }
 
   return (
     <Container className="flex flex-col space-y-6 py-4">
