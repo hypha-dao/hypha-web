@@ -1,4 +1,3 @@
-
 export { middleware } from '@hypha-platform/i18n';
 
 export const config = {

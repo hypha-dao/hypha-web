@@ -21,7 +21,9 @@ export default async function Index() {
       <ButtonSigninMobile
         useAuthentication={useAuthentication}
         useMe={useMe}
-        mobileRedirectUrl={process.env.NEXT_PUBLIC_MOBILE_REDIRECT_URL || 'myapp://callback'}
+        mobileRedirectUrl={
+          process.env.NEXT_PUBLIC_MOBILE_REDIRECT_URL || 'myapp://callback'
+        }
       />
     </div>
   );

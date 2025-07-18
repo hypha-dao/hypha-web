@@ -34,7 +34,8 @@ const sourceSans = Source_Sans_3({
 
 export const metadata = {
   title: 'Hypha',
-  description: "Hypha's complete DAO toolkit helps individuals, projects, and organizations achieve more together",
+  description:
+    "Hypha's complete DAO toolkit helps individuals, projects, and organizations achieve more together",
 };
 
 export default async function RootLayout({
