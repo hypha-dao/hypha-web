@@ -47,6 +47,7 @@ type UseAssetsReturn = {
   assets: AssetItem[];
   isLoading: boolean;
   balance: number;
+  manualUpdate: () => void;
 };
 
 export const useUserAssets = ({
@@ -63,7 +64,7 @@ export const useUserAssets = ({
     return `/api/v1/people/${personSlug}/assets`;
   }, [personSlug]);
 
-  const { data, isLoading } = useSWR(
+  const { data, isLoading, mutate } = useSWR(
     jwt ? [endpoint, jwt] : null,
     ([endpoint, jwt]) =>
       fetch(endpoint, {
@@ -96,5 +97,6 @@ export const useUserAssets = ({
     assets: filteredAssets,
     isLoading,
     balance: hasValidData ? typedData.balance : 0,
+    manualUpdate: mutate,
   };
 };

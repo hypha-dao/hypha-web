@@ -13,6 +13,7 @@ import { Form } from '@hypha-platform/ui';
 import { Separator, Button } from '@hypha-platform/ui';
 import { Space } from '../../../../core/src/space';
 import { Loader2 } from 'lucide-react';
+import { useState } from 'react';
 
 interface Token {
   icon: string;
@@ -24,6 +25,7 @@ interface PeopleTransferFormType {
   peoples: Person[];
   spaces: Space[];
   tokens: Token[];
+  updateAssets: () => void;
 }
 
 type FormValues = z.infer<typeof personTransfer>;
@@ -32,9 +34,11 @@ export const PeopleTransferForm = ({
   peoples,
   spaces,
   tokens,
+  updateAssets,
 }: PeopleTransferFormType) => {
-  const { transferTokens, isTransferring, transferHashes, transferError } =
-    useTransferTokensMutation();
+  const { transferTokens, isTransferring } = useTransferTokensMutation();
+
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(personTransfer),
@@ -65,6 +69,12 @@ export const PeopleTransferForm = ({
       };
       const result = await transferTokens(transferInput);
       console.log('Transfer hashes:', result);
+      setShowSuccessMessage(true);
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 3000);
+      form.reset();
+      updateAssets();
     } catch (error) {
       console.error('Transfer failed:', error);
     }
@@ -87,27 +97,16 @@ export const PeopleTransferForm = ({
                 <Loader2 className="animate-spin w-4 h-4" />
                 Transferring
               </div>
+            ) : showSuccessMessage ? (
+              <div className="text-green-600 text-sm font-medium">
+                Transfers completed!
+              </div>
             ) : (
               <Button type="submit" disabled={isTransferring}>
                 Transfer
               </Button>
             )}
           </div>
-          {transferError && (
-            <div className="text-red-500">Error: {transferError.message}</div>
-          )}
-          {transferHashes && (
-            <div>
-              Transfers completed:
-              <ul>
-                {transferHashes.map(({ token, txHash }) => (
-                  <li key={txHash}>
-                    Token {token}: {txHash}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </form>
       </Form>
     </>

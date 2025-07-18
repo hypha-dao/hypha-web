@@ -30,7 +30,7 @@ export const ProfileTransferFunds = ({
   peoples,
   personSlug,
 }: ProfileTransferFundsProps) => {
-  const { assets } = useUserAssets({
+  const { assets, manualUpdate } = useUserAssets({
     personSlug,
     refreshInterval: 10000,
   });
@@ -51,7 +51,12 @@ export const ProfileTransferFunds = ({
           />
           <ButtonClose closeUrl={`/${lang}/profile`} />
         </div>
-        <PeopleTransferForm peoples={peoples} spaces={spaces} tokens={tokens} />
+        <PeopleTransferForm
+          peoples={peoples}
+          spaces={spaces}
+          tokens={tokens}
+          updateAssets={manualUpdate}
+        />
       </div>
     </SidePanel>
   );
