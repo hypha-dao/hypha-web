@@ -5,17 +5,12 @@ import { cookies } from 'next/headers';
 import { Lato, Source_Sans_3 } from 'next/font/google';
 import clsx from 'clsx';
 
-import {
-  Html,
-  ThemeProvider,
-} from '@hypha-platform/ui/server';
+import { Html, ThemeProvider } from '@hypha-platform/ui/server';
 import { AuthProvider } from '@hypha-platform/authentication';
 import { EvmProvider } from '@hypha-platform/evm';
 import { fileRouter } from '@hypha-platform/core/server';
 
-import {
-  MenuTop,
-} from '@hypha-platform/ui';
+import { MenuTop } from '@hypha-platform/ui';
 
 import '@hypha-platform/ui-utils/global.css';
 
@@ -56,13 +51,9 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <EvmProvider>
-            <MenuTop
-              logoHref={`/signin`}
-            />
+            <MenuTop logoHref={`/signin`} />
             <NextSSRPlugin routerConfig={extractRouterConfig(fileRouter)} />
-            <div className="h-screen">
-              {children}
-            </div>
+            <div className="h-screen">{children}</div>
           </EvmProvider>
         </ThemeProvider>
       </AuthProvider>

@@ -3,9 +3,7 @@
 import { UseAuthentication } from '@hypha-platform/authentication';
 import { UseMe } from '../hooks/types';
 import { useEffect, useState } from 'react';
-import {
-  Button,
-} from '@hypha-platform/ui';
+import { Button } from '@hypha-platform/ui';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -53,18 +51,18 @@ export const ButtonSigninMobile = ({
     // It should redirect if user exists and model was opened
     if (isModalOpen) {
       setShouldRedirect(true);
-    } 
+    }
     if (isAuthLoading || isPersonLoading || isModalOpen) {
       setError(null);
       setLoading(true);
       return;
     }
 
-    if(!isAuthenticated) {
-      return
+    if (!isAuthenticated) {
+      return;
     }
 
-    if(!mobileRedirectUrl) {
+    if (!mobileRedirectUrl) {
       setError('Mobile redirect URL is not configured.');
       return;
     }
@@ -97,9 +95,9 @@ export const ButtonSigninMobile = ({
         setError('An error occurred while processing your request.');
         setLoading(false);
       }
-    }
+    };
 
-    handleUserRedirect()
+    handleUserRedirect();
   }, [
     isPersonLoading,
     isAuthLoading,
@@ -117,23 +115,21 @@ export const ButtonSigninMobile = ({
     setToken(null);
     setError(null);
     logout(false);
-  }
+  };
 
   return (
     <div className="w-full flex flex-col items-center justify-center gap-4">
-      {(!isAuthenticated || loading || error) &&
+      {(!isAuthenticated || loading || error) && (
         <Button
           onClick={() => login()}
           className="flex gap-2"
           disabled={loading}
         >
-          {
-            loading && <Loader2 className="animate-spin w-4 h-4" />
-          }
+          {loading && <Loader2 className="animate-spin w-4 h-4" />}
           <span>Sign in</span>
         </Button>
-      }
-      {isAuthenticated && !loading && !error &&
+      )}
+      {isAuthenticated && !loading && !error && (
         <Button
           variant="outline"
           colorVariant="error"
@@ -142,19 +138,20 @@ export const ButtonSigninMobile = ({
         >
           <span>Sign out</span>
         </Button>
-      }
-      {isAuthenticated && loading && shouldRedirect && <p className="text-muted-foreground">Redirecting...</p>}
-      {isAuthenticated && !loading && !error && person && (   
+      )}
+      {isAuthenticated && loading && shouldRedirect && (
+        <p className="text-muted-foreground">Redirecting...</p>
+      )}
+      {isAuthenticated && !loading && !error && person && (
         <p className="text-muted-foreground">
           You are signed in as {person.name}
         </p>
       )}
       {error && <p className="text-error-11">{error}</p>}
-      <Button
-        variant="link"
-        asChild
-      >
-        <Link href={`${mobileRedirectUrl}${token ? `?token=${token}` : ''}`}>Return to the app</Link>
+      <Button variant="link" asChild>
+        <Link href={`${mobileRedirectUrl}${token ? `?token=${token}` : ''}`}>
+          Return to the app
+        </Link>
       </Button>
     </div>
   );
