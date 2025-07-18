@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hypha Migration API</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #0a0a0a;
+            color: #ffffff;
+            line-height: 1.6;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .api-endpoints {
+            background: #1e1e1e;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        .endpoint {
+            margin: 1rem 0;
+            padding: 0.5rem;
+            background: #2a2a2a;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .method {
+            color: #4A90E2;
+            font-weight: bold;
+        }
+        a {
+            color: #4A90E2;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .status-ok {
+            color: #16a34a;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 Hypha Migration API</h1>
+        <p>Backend service for HYPHA token migration verification and HYPHA token minting on Base</p>
+        <p class="status-ok">✅ API is running</p>
+    </div>
+
+    <div class="api-endpoints">
+        <h2>Available Endpoints</h2>
+        
+        <div class="endpoint">
+            <span class="method">GET</span> 
+            <a href="/api/health">/api/health</a> - Health check and configuration status
+        </div>
+        
+        <div class="endpoint">
+            <span class="method">GET/POST</span> 
+            /api/status - Check migration status (requires telosAccount & ethAddress)
+        </div>
+        
+        <div class="endpoint">
+            <span class="method">POST</span> 
+            /api/transfer-hybrid - Execute HYPHA mint (migration table verification)
+        </div>
+    </div>
+
+    <div class="api-endpoints">
+        <h2>Documentation</h2>
+        <p>📖 <a href="https://github.com/n0umen0n/hypha-migration-suite/tree/main/hypha-migration-api" target="_blank">API Documentation</a></p>
+        <p>🌐 <a href="https://github.com/n0umen0n/hypha-migration-suite" target="_blank">Complete Migration Suite</a></p>
+        <p>⚙️ <a href="https://github.com/n0umen0n/hypha-migration-suite/blob/main/hypha-migration-api/ENVIRONMENT.md" target="_blank">Environment Setup</a></p>
+    </div>
+
+    <div class="api-endpoints">
+        <h2>Quick Test</h2>
+        <p>Test the API health endpoint:</p>
+        <div class="endpoint">
+            <a href="/api/health">Click here to test /api/health</a>
+        </div>
+    </div>
+
+    <footer style="text-align: center; margin-top: 3rem; color: #666;">
+        <p>Hypha Migration API - Secure HYPHA minting on Base mainnet</p>
+    </footer>
+</body>
+</html> 

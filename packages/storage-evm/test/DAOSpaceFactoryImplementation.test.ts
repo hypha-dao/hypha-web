@@ -4513,6 +4513,218 @@ describe('DAOSpaceFactoryImplementation', function () {
         `✅ Total accepted: ${finalAccepted.length}, Total rejected: ${finalRejected.length}`,
       );
     });
+
+    it('Should prevent quorum rounding error with 2 members, 51% quorum, and only 1 vote', async function () {
+      console.log('\n=== TESTING QUORUM ROUNDING ERROR FIX ===');
+      console.log('Scenario: 2 members, 51% quorum, 80% unity, 1 vote');
+      console.log(
+        'Expected: Proposal should NOT pass due to insufficient quorum',
+      );
+
+      // Create a separate space for this specific test (not using the beforeEach space)
+      const spaceParams = {
+        name: 'Quorum Rounding Test Space',
+        description: 'Testing quorum rounding error fix with 2 members',
+        imageUrl: 'https://test.com/image.png',
+        unity: 80, // 80% unity threshold
+        quorum: 51, // 51% quorum threshold - this is where rounding error could occur
+        votingPowerSource: 1, // Space membership voting (1 member = 1 vote)
+        exitMethod: 1,
+        joinMethod: 1,
+        createToken: false,
+        tokenName: '',
+        tokenSymbol: '',
+      };
+
+      await this.daoSpaceFactory.createSpace(spaceParams);
+      const testSpaceId = await this.daoSpaceFactory.spaceCounter();
+
+      console.log(`\nCreated test space ${testSpaceId} with:`);
+      console.log(`- Unity: ${spaceParams.unity}%`);
+      console.log(`- Quorum: ${spaceParams.quorum}%`);
+      console.log(
+        `- Voting Power Source: ${spaceParams.votingPowerSource} (Space voting)`,
+      );
+
+      // Add exactly 1 additional member (owner is already a member, so total = 2)
+      await this.daoSpaceFactory.connect(this.voter1).joinSpace(testSpaceId);
+
+      const members = await this.daoSpaceFactory.getSpaceMembers(testSpaceId);
+      console.log(
+        `\nSpace members (${members.length}): [${members.join(', ')}]`,
+      );
+      console.log(`Total voting power: ${members.length}`);
+
+      // Verify we have exactly 2 members
+      expect(members.length).to.equal(
+        2,
+        'Should have exactly 2 members for this test',
+      );
+
+      // Calculate expected quorum requirement
+      const totalVotingPower = members.length;
+      const requiredQuorum = Math.ceil(
+        (spaceParams.quorum * totalVotingPower) / 100,
+      );
+      console.log(`\nQuorum calculation:`);
+      console.log(
+        `- Required: ${spaceParams.quorum}% of ${totalVotingPower} = ceil(${
+          (spaceParams.quorum * totalVotingPower) / 100
+        }) = ${requiredQuorum} votes`,
+      );
+      console.log(
+        `- With old floor division: ${Math.floor(
+          (spaceParams.quorum * totalVotingPower) / 100,
+        )} votes`,
+      );
+      console.log(`- With new ceiling division: ${requiredQuorum} votes`);
+
+      // Create a simple test proposal
+      const proposalCalldata =
+        this.daoSpaceFactory.interface.encodeFunctionData('getSpaceDetails', [
+          testSpaceId,
+        ]);
+
+      await this.daoProposals.connect(this.voter1).createProposal({
+        spaceId: testSpaceId,
+        duration: 86400, // 1 day
+        transactions: [
+          {
+            target: await this.daoSpaceFactory.getAddress(),
+            value: 0,
+            data: proposalCalldata,
+          },
+        ],
+      });
+
+      const proposalId = await this.daoProposals.proposalCounter();
+      console.log(`\nCreated proposal ${proposalId} for quorum rounding test`);
+
+      // Check initial proposal state
+      let proposalData = await this.daoProposals.getProposalCore(proposalId);
+      const totalVotingPowerAtSnapshot = Number(
+        proposalData.totalVotingPowerAtSnapshot,
+      );
+
+      console.log(`\nInitial proposal state:`);
+      console.log(
+        `- Total voting power at snapshot: ${totalVotingPowerAtSnapshot}`,
+      );
+      console.log(`- Yes votes: ${proposalData.yesVotes}`);
+      console.log(`- No votes: ${proposalData.noVotes}`);
+      console.log(`- Executed: ${proposalData.executed}`);
+
+      // Verify the snapshot captured the correct voting power
+      expect(totalVotingPowerAtSnapshot).to.equal(
+        2,
+        'Snapshot should capture 2 total voting power',
+      );
+
+      // Cast exactly 1 vote (the critical test case)
+      console.log(`\nCasting single vote (voter1 votes YES)...`);
+      await this.daoProposals.connect(this.voter1).vote(proposalId, true);
+
+      // Check final proposal state
+      proposalData = await this.daoProposals.getProposalCore(proposalId);
+      const totalVotesCast =
+        Number(proposalData.yesVotes) + Number(proposalData.noVotes);
+      const yesVotes = Number(proposalData.yesVotes);
+      const executed = proposalData.executed;
+
+      console.log(`\nFinal proposal state after 1 vote:`);
+      console.log(`- Yes votes: ${yesVotes}`);
+      console.log(`- No votes: ${proposalData.noVotes}`);
+      console.log(`- Total votes cast: ${totalVotesCast}`);
+      console.log(`- Executed: ${executed}`);
+
+      // Calculate actual quorum requirement using ceiling division (the fix)
+      const actualRequiredQuorum = Math.ceil(
+        (51 * totalVotingPowerAtSnapshot) / 100,
+      );
+
+      console.log(`\nQuorum analysis:`);
+      console.log(`- Total voting power: ${totalVotingPowerAtSnapshot}`);
+      console.log(`- Votes cast: ${totalVotesCast}`);
+      console.log(
+        `- Required quorum (51% with ceiling): ${actualRequiredQuorum} votes`,
+      );
+      console.log(
+        `- Quorum reached: ${
+          totalVotesCast >= actualRequiredQuorum ? 'YES ✅' : 'NO ❌'
+        }`,
+      );
+
+      if (totalVotesCast >= actualRequiredQuorum) {
+        const yesPercentage = (yesVotes * 100) / totalVotesCast;
+        console.log(`- Yes vote percentage: ${yesPercentage}%`);
+        console.log(
+          `- Unity threshold (80%): ${
+            yesPercentage >= 80 ? 'REACHED ✅' : 'NOT REACHED ❌'
+          }`,
+        );
+      }
+
+      // Final verdict
+      console.log(`\n🏁 FINAL RESULT:`);
+      if (executed) {
+        console.log(
+          '❌ TEST FAILED: Proposal was executed when it should NOT have been!',
+        );
+        console.log('💡 This indicates the rounding error still exists.');
+        console.log(
+          '📊 Analysis: With only 1 vote out of 2 total voting power (50% participation),',
+        );
+        console.log('📊           this is below the 51% quorum requirement.');
+        console.log(
+          '📊           Ceiling division: ceil(51% × 2) = ceil(1.02) = 2 votes required',
+        );
+        console.log(
+          '📊           Floor division: floor(51% × 2) = floor(1.02) = 1 vote (WRONG!)',
+        );
+      } else {
+        console.log('✅ TEST PASSED: Proposal was correctly NOT executed!');
+        console.log('💡 The quorum rounding error has been fixed.');
+        console.log(
+          '📊 Analysis: 1 vote out of 2 total voting power = 50% participation',
+        );
+        console.log(
+          '📊           This is correctly below the 51% quorum requirement.',
+        );
+        console.log(
+          '📊           Ceiling division correctly requires 2 votes minimum.',
+        );
+      }
+
+      // Assertions to verify the fix
+      expect(executed).to.equal(
+        false,
+        'Proposal should not be executed with insufficient quorum',
+      );
+      expect(totalVotesCast).to.equal(1, 'Should have exactly 1 vote cast');
+      expect(totalVotingPowerAtSnapshot).to.equal(
+        2,
+        'Should have 2 total voting power',
+      );
+      expect(actualRequiredQuorum).to.equal(
+        2,
+        'Should require 2 votes for 51% quorum with ceiling division',
+      );
+      expect(totalVotesCast).to.be.lessThan(
+        actualRequiredQuorum,
+        'Votes cast should be less than required quorum',
+      );
+
+      console.log(`\n📋 Test Summary:`);
+      console.log(`   Space ID: ${testSpaceId}`);
+      console.log(`   Proposal ID: ${proposalId}`);
+      console.log(`   Total Voting Power: ${totalVotingPowerAtSnapshot}`);
+      console.log(`   Required Quorum: ${actualRequiredQuorum} votes`);
+      console.log(`   Actual Votes Cast: ${totalVotesCast}`);
+      console.log(
+        `   Proposal Status: ${executed ? 'Executed' : 'Not Executed'}`,
+      );
+      console.log(`   ✅ Quorum rounding error fix verified!`);
+    });
   });
 
   describe('Space Governance Method Changes', function () {

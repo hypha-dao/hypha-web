@@ -17,8 +17,9 @@ contract HyphaTokenStorage {
   address public iexAddress; // Address to receive USDC from payForSpaces and HYPHA from payInHypha
   address public mainHyphaAddress; // Address to receive USDC from investInHypha
 
-  // Authorized mint address
-  address public mintAddress; // Address authorized to call the mint function
+  // Authorized mint addresses
+  mapping(address => bool) public authorizedMintAddresses; // Mapping of addresses authorized to call the mint function
+  uint256 public authorizedMintAddressCount; // Number of authorized mint addresses
 
   // Modifiable pricing parameters (no longer constants)
   uint256 public HYPHA_PRICE_USD; // 0.25 USD with 18 decimals (default)
