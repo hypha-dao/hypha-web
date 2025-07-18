@@ -30,8 +30,8 @@ export default async function ProfilePage(props: PageProps) {
   const spaces = await findAllSpaces({ db });
 
   return (
-    <Container>
-      <div className="mb-6 flex items-center">
+    <Container className="w-full">
+      <div className="mb-6 flex items-center w-full">
         <Link
           href={`/${lang}/my-spaces`}
           className="cursor-pointer flex items-center"
