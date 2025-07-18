@@ -8,6 +8,7 @@ import React from 'react';
 import { findAllSpaces, findPersonBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { Address } from '@hypha-platform/core/client';
+import { ProfileTabs } from './_components/profile-tabs';
 
 type PageProps = {
   params: Promise<{ lang: Locale; personSlug: string }>;
@@ -61,6 +62,7 @@ export default async function Profile(props: PageProps) {
             personSlug={person?.slug}
             profileView={true}
           />
+          <ProfileTabs person={person} />
         </>
       ) : (
         <p>Person not found</p>

@@ -11,7 +11,6 @@ import React from 'react';
 import Link from 'next/link';
 import { Locale } from '@hypha-platform/i18n';
 import { useParams } from 'next/navigation';
-import { cn } from '@hypha-platform/ui-utils';
 
 export type MemberSpacesProps = {
   spaces?: Space[];
@@ -103,11 +102,10 @@ export const MemberSpaces = ({
                 </div>
                 {profileView ? (
                   <div
-                    className={cn(
-                      'text-1 text-ellipsis overflow-hidden text-nowrap',
-                      `max-w-[${iconSize}px]`,
-                      'mt-2',
-                    )}
+                    className="text-1 text-ellipsis overflow-hidden text-nowrap mt-2"
+                    style={{
+                      maxWidth: `${iconSize}px`,
+                    }}
                   >
                     {space.title}
                   </div>
