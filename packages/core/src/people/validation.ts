@@ -3,6 +3,7 @@ import { DEFAULT_IMAGE_ACCEPT } from '../assets';
 import { z } from 'zod';
 
 const ALLOWED_IMAGE_FILE_SIZE = 4 * 1024 * 1024;
+const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
 const signupPersonWeb2Props = {
   name: z.string().min(1, { message: 'Name must not be empty' }),
@@ -113,6 +114,26 @@ export const editPersonFiles = z.object({
     ])
     .optional()
     .transform((val) => (val === '' || val === null ? undefined : val)),
+});
+
+export const personTransfer = z.object({
+  recipient: z
+    .string()
+    .min(1, { message: 'Recipient is required' })
+    .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' })
+    .optional(),
+
+  payouts: z
+    .array(
+      z.object({
+        amount: z.string().refine((value) => parseFloat(value) > 0, {
+          message: 'Amount must be greater than 0',
+        }),
+        token: z.string(),
+      }),
+    )
+    .min(1, { message: 'At least one payout is required' })
+    .optional(),
 });
 
 export type PersonFiles = z.infer<typeof editPersonFiles>;
