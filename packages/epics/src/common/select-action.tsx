@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, Separator, Skeleton } from '@hypha-platform/ui';
+import { Card, Separator, Skeleton, TextWithLinks } from '@hypha-platform/ui';
 import { isAbsoluteUrl } from '@hypha-platform/ui-utils';
 import clsx from 'clsx';
 import Link from 'next/link';
@@ -93,7 +93,7 @@ export const SelectAction = ({
                   <div className="flex flex-col">
                     <span className="text-2 font-medium">{action.title}</span>
                     <span className="text-1 text-neutral-11">
-                      {action.description}
+                      <TextWithLinks text={action.description} />
                     </span>
                   </div>
                 </Card>

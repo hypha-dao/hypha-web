@@ -120,7 +120,7 @@ export const SETTINGS_ACTIONS = [
     group: 'Ecosystem Verticals',
     title: 'Hypha Energy (Coming Soon)',
     description:
-      'A dedicated Ecosystem Vertical for your Renewable Energy Community or Energy Hub enabling energy sharing, local co-ownership, membership, governance, purpose-driven energy flow optimization, and fair value distribution amongst members and participants. Learn more at hypha.energy.',
+      'A dedicated Ecosystem Vertical for your Renewable Energy Community or Energy Hub enabling energy sharing, local co-ownership, membership, governance, purpose-driven energy flow optimization, and fair value distribution amongst members and participants. Learn more at https://hypha.energy.',
     href: '#',
     icon: <RadiobuttonIcon />,
     baseTab: 'governance',
