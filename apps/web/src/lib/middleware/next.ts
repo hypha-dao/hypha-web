@@ -51,6 +51,10 @@ export function cspMiddleware(): NextMiddlewareFunction {
     'data:',
     ...IMAGE_HOSTS.map((host) => `https://${host}`),
   ].join(' ');
+  const connectSrc = [
+    ...CONNECT_SOURCES,
+    process.env.NEXT_PUBLIC_RPC_URL ?? '',
+  ].join(' ');
 
   return (request: NextRequest) => {
     const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
@@ -71,7 +75,7 @@ export function cspMiddleware(): NextMiddlewareFunction {
         "frame-ancestors 'none'",
         'child-src https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org',
         'frame-src https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com',
-        `connect-src 'self' ${CONNECT_SOURCES.join(' ')}`,
+        `connect-src 'self' ${connectSrc}`,
         "worker-src 'self'",
         "manifest-src 'self'",
       ].join(';') + ';';
