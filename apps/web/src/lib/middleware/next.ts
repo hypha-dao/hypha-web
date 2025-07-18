@@ -40,13 +40,6 @@ export function composeMiddleware(
  * @returns Middleware function
  */
 export function cspMiddleware(): NextMiddlewareFunction {
-  // FIXME: workaround to meet CSP. These two scripts ignore nonce
-  const SCRIPT_HASHES = [
-    // Uploadthing
-    "'sha256-9rh1hg0t8gzBb+71sg04fUOw1ZnwOMplqN4Jqi1j5o4='",
-    // Next theme
-    "'sha256-n46vPwSWuMC0W703pBofImv82Z26xo4LXymv0E9caPk='",
-  ].join(' ');
   const imageSrc = [
     'data:',
     ...IMAGE_HOSTS.map((host) => `https://${host}`),
@@ -57,15 +50,16 @@ export function cspMiddleware(): NextMiddlewareFunction {
   ].join(' ');
 
   return (request: NextRequest) => {
-    const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
-    const unsafeForDevelopment =
-      process.env.NODE_ENV === 'development'
-        ? "'unsafe-inline' 'unsafe-eval'"
-        : `'nonce-${nonce}' 'strict-dynamic'`;
+    if (process.env.NODE_ENV === 'development') {
+      return NextResponse.next();
+    }
+
+    // FIXME: enable nonce
+    const enableUnsafeScripts = "'unsafe-inline' 'unsafe-eval'";
     const cspHeaderValue =
       [
         "default-src 'self'",
-        `script-src 'self' ${unsafeForDevelopment} ${SCRIPT_HASHES} https://challenges.cloudflare.com`,
+        `script-src 'self' ${enableUnsafeScripts} https://challenges.cloudflare.com`,
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         `img-src 'self' ${imageSrc}`,
         "font-src 'self' https://fonts.gstatic.com",
@@ -82,9 +76,6 @@ export function cspMiddleware(): NextMiddlewareFunction {
 
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('Content-Security-Policy', cspHeaderValue);
-    if (process.env.NODE_ENV !== 'development') {
-      requestHeaders.set('X-Nonce', nonce);
-    }
 
     const response = NextResponse.next({
       request: {
