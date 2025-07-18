@@ -47,9 +47,10 @@ export function cspMiddleware(): NextMiddlewareFunction {
     // Next theme
     "'sha256-n46vPwSWuMC0W703pBofImv82Z26xo4LXymv0E9caPk='",
   ].join(' ');
-  const imageSrc = ['data:', IMAGE_HOSTS.map((host) => `https://${host}`)].join(
-    ' ',
-  );
+  const imageSrc = [
+    'data:',
+    ...IMAGE_HOSTS.map((host) => `https://${host}`),
+  ].join(' ');
 
   return (request: NextRequest) => {
     const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
