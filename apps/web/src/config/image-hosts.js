@@ -18,4 +18,5 @@ export const IMAGE_HOSTS = [
   'raw.githubusercontent.com',
   'lh3.googleusercontent.com',
   'hypha.earth',
+  'explorer-api.walletconnect.com',
 ];
