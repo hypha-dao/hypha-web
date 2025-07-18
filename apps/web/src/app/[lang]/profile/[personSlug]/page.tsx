@@ -42,7 +42,7 @@ export default async function Profile(props: PageProps) {
         <Text className="text-sm text-neutral-11 ml-1">/ Profile Page</Text>
       </div>
       {person ? (
-        <>
+        <div className="flex flex-col gap-5">
           <PersonHead
             avatar={person?.avatarUrl ?? '/placeholder/default-profile.svg'}
             name={person?.name ?? ''}
@@ -63,7 +63,7 @@ export default async function Profile(props: PageProps) {
             profileView={true}
           />
           <ProfileTabs person={person} />
-        </>
+        </div>
       ) : (
         <p>Person not found</p>
       )}
