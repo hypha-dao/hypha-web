@@ -7,5 +7,5 @@ export const CONNECT_SOURCES = [
   'https://explorer-api.walletconnect.com',
   'https://pulse.walletconnect.org',
   'https://api.web3modal.org',
-  process.env.NEXT_PUBLIC_RPC_URL || 'https://mainnet.base.org',
+  'https://mainnet.base.org',
 ];
