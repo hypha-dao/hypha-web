@@ -47,11 +47,9 @@ export function cspMiddleware(): NextMiddlewareFunction {
     // Next theme
     "'sha256-n46vPwSWuMC0W703pBofImv82Z26xo4LXymv0E9caPk='",
   ].join(' ');
-  const imageSrc = [
-    'data:',
-    'blob:',
-    IMAGE_HOSTS.map((host) => `https://${host}`).join(' '),
-  ];
+  const imageSrc = ['data:', IMAGE_HOSTS.map((host) => `https://${host}`)].join(
+    ' ',
+  );
 
   return (request: NextRequest) => {
     const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
@@ -64,7 +62,7 @@ export function cspMiddleware(): NextMiddlewareFunction {
         "default-src 'self'",
         `script-src 'self' ${unsafeForDevelopment} ${SCRIPT_HASHES} https://challenges.cloudflare.com`,
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-        `img-src 'self' ${imageSrc.join(' ')}`,
+        `img-src 'self' ${imageSrc}`,
         "font-src 'self' https://fonts.gstatic.com",
         "object-src 'none'",
         "base-uri 'self'",
