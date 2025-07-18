@@ -120,8 +120,7 @@ export const personTransfer = z.object({
   recipient: z
     .string()
     .min(1, { message: 'Recipient is required' })
-    .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' })
-    .optional(),
+    .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' }),
 
   payouts: z
     .array(
@@ -132,8 +131,7 @@ export const personTransfer = z.object({
         token: z.string(),
       }),
     )
-    .min(1, { message: 'At least one payout is required' })
-    .optional(),
+    .min(1, { message: 'At least one payout is required' }),
 });
 
 export type PersonFiles = z.infer<typeof editPersonFiles>;
