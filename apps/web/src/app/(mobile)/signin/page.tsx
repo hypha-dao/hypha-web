@@ -7,7 +7,7 @@ import { headers } from 'next/headers';
 export default async function Index() {
   const headersList = await headers();
   const ua = headersList.get('user-agent') || '';
-  const hyphaUserAgent = process.env.NEXT_PUBLIC_USER_AGENT || '';
+  const hyphaUserAgent = process.env.NEXT_PUBLIC_MOBILE_USER_AGENT || '';
 
   // If mobile user agent is set, it checks if the user is using Hypha app
   const isHyphaApp = !hyphaUserAgent || ua.includes(hyphaUserAgent);
