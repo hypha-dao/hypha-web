@@ -40,6 +40,13 @@ export function composeMiddleware(
  * @returns Middleware function
  */
 export function cspMiddleware(): NextMiddlewareFunction {
+  // FIXME: workaround to meet CSP. These two scripts ignore nonce
+  const SCRIPT_HASHES = [
+    // Uploadthing
+    "'sha256-9rh1hg0t8gzBb+71sg04fUOw1ZnwOMplqN4Jqi1j5o4='",
+    // Next theme
+    "'sha256-n46vPwSWuMC0W703pBofImv82Z26xo4LXymv0E9caPk='",
+  ].join(' ');
   const imageSrc = [
     'data:',
     'blob:',
@@ -55,7 +62,7 @@ export function cspMiddleware(): NextMiddlewareFunction {
     const cspHeaderValue =
       [
         "default-src 'self'",
-        `script-src 'self' ${unsafeForDevelopment} https://challenges.cloudflare.com`,
+        `script-src 'self' ${unsafeForDevelopment} ${SCRIPT_HASHES} https://challenges.cloudflare.com`,
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         `img-src 'self' ${imageSrc.join(' ')}`,
         "font-src 'self' https://fonts.gstatic.com",
