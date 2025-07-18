@@ -12,10 +12,9 @@ const TextWithLinks = ({ text }: { text: string }) => {
             <Link
               href={part} key={index} passHref
               onClick={(e) => {
-                if (e.target instanceof HTMLAnchorElement) {
-                  e.preventDefault();
-                  window.open(e.target.href, '_blank');
-                }
+                e.preventDefault();
+                const tag = e.target as HTMLAnchorElement;
+                window.open(tag.href, '_blank');
               }}
             >
               {part}
