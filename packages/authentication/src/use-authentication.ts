@@ -14,6 +14,7 @@ export function useAuthentication() {
     logout: privyLogout,
     getAccessToken,
     exportWallet,
+    isModalOpen,
   } = usePrivy();
 
   const { wallets } = useWallets();
@@ -82,5 +83,6 @@ export function useAuthentication() {
     setLoggingIn,
     getAccessToken,
     exportWallet: handleExportWallet,
+    isModalOpen,
   };
 }

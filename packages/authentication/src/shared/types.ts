@@ -18,6 +18,7 @@ export interface AuthHook {
   setLoggingIn: (value: boolean) => void;
   getAccessToken: () => Promise<string | null>;
   exportWallet: () => Promise<void>;
+  isModalOpen: boolean;
 }
 
 export type UseAuthentication = () => AuthHook;
