@@ -50,7 +50,6 @@ export async function GET(
         { status: 400 },
       );
     }
-    console.log('address', address);
     const transfers = await getTransfersByAddress({
       address,
       contractAddresses: token,
