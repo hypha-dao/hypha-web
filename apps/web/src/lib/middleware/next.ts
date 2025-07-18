@@ -58,10 +58,12 @@ export function cspMiddleware(): NextMiddlewareFunction {
 
   return async (request: NextRequest) => {
     const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
-    const unsafeForDevelopment =
-      process.env.NODE_ENV === 'development'
-        ? "'unsafe-inline' 'unsafe-eval'"
-        : `'nonce-${nonce}' 'strict-dynamic'`;
+    // FIXME: enable nonce
+    const unsafeForDevelopment = "'unsafe-inline' 'unsafe-eval'";
+    //process.env.NODE_ENV === 'development'
+    //  ? "'unsafe-inline' 'unsafe-eval'"
+    //  : `'nonce-${nonce}' 'strict-dynamic'`;
+
     const cspHeaderValue =
       [
         "default-src 'self'",
