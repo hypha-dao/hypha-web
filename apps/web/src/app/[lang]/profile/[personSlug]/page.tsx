@@ -62,9 +62,7 @@ export default async function Profile(props: PageProps) {
             personSlug={person?.slug}
             profileView={true}
           />
-          <ProfileTabs
-            person={person}
-          />
+          <ProfileTabs person={person} />
         </>
       ) : (
         <p>Person not found</p>

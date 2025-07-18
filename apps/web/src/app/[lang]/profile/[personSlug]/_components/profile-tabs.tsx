@@ -1,15 +1,14 @@
 'use client';
 
-import { Person } from "@hypha-platform/core/client";
-import { UserAssetsSection, UserTransactionsSection } from "@hypha-platform/epics";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@hypha-platform/ui";
-import React from "react";
+import { Person } from '@hypha-platform/core/client';
+import {
+  UserAssetsSection,
+  UserTransactionsSection,
+} from '@hypha-platform/epics';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hypha-platform/ui';
+import React from 'react';
 
-export const ProfileTabs = ({
-  person,
-}: {
-  person?: Person;
-}) => {
+export const ProfileTabs = ({ person }: { person?: Person }) => {
   const [activeTab, setActiveTab] = React.useState('treasury');
 
   return (
