@@ -1,6 +1,7 @@
 'use client';
 
 import { Card, Separator, Skeleton } from '@hypha-platform/ui';
+import { isAbsoluteUrl } from '@hypha-platform/ui-utils';
 import clsx from 'clsx';
 import Link from 'next/link';
 import React from 'react';
@@ -70,6 +71,7 @@ export const SelectAction = ({
             {groupActions.map((action) => (
               <Link
                 href={action.href}
+                target={isAbsoluteUrl(action.href) ? '_blank' : undefined}
                 key={action.title}
                 target={action.target}
                 {...(action.disabled && {

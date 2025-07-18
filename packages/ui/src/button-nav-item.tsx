@@ -20,7 +20,7 @@ export const ButtonNavItem = ({
 }: ButtonNavItemProps) => {
   const pathname = usePathname();
   const isActive = href && pathname.includes(href);
-  console.log(isActive, href, pathname, label);
+  // console.log(isActive, href, pathname, label);
   return (
     <Button
       key={label}

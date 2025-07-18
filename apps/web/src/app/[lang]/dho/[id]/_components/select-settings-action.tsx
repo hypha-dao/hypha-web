@@ -1,5 +1,6 @@
 import { SelectAction } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
+import { isAbsoluteUrl } from '@hypha-platform/ui-utils';
 import {
   ArchiveIcon,
   ArrowDownIcon,
@@ -155,12 +156,17 @@ export const SelectSettingsAction = ({
   lang: Locale;
 }) => {
   const computeHref = (action: any) => {
-    const href = `/${lang}/dho/${daoSlug}/${action.baseTab || activeTab}/${
-      action.href
-    }`.replaceAll(
-      'THIS_PAGE',
-      `/${lang}/dho/${daoSlug}/governance/select-settings-action`,
-    );
+    if (!action?.href) {
+      return '';
+    }
+    const href = isAbsoluteUrl(action.href)
+      ? action.href
+      : `/${lang}/dho/${daoSlug}/${action.baseTab || activeTab}/${
+          action.href
+        }`.replaceAll(
+          'THIS_PAGE',
+          `/${lang}/dho/${daoSlug}/governance/select-settings-action`,
+        );
     return href;
   };
 
