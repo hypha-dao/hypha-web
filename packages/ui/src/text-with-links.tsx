@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from 'next/link';
 
 const TextWithLinks = ({ text }: { text: string }) => {
   const urlRegex = /((?:[a-z\-]+)?:?(?:\/\/.*\.[^\/\.\,]+))/g;
@@ -10,7 +10,9 @@ const TextWithLinks = ({ text }: { text: string }) => {
         if (part.match(urlRegex)) {
           return (
             <Link
-              href={part} key={index} passHref
+              href={part}
+              key={index}
+              passHref
               onClick={(e) => {
                 e.preventDefault();
                 const tag = e.target as HTMLAnchorElement;
