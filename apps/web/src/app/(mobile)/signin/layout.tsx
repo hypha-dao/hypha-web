@@ -1,7 +1,5 @@
-import { VercelToolbar } from '@vercel/toolbar/next';
 import { NextSSRPlugin } from '@uploadthing/react/next-ssr-plugin';
 import { extractRouterConfig } from 'uploadthing/server';
-import { cookies } from 'next/headers';
 import { Lato, Source_Sans_3 } from 'next/font/google';
 import clsx from 'clsx';
 

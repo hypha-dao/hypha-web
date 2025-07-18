@@ -149,7 +149,11 @@ export const ButtonSigninMobile = ({
       )}
       {error && <p className="text-error-11">{error}</p>}
       <Button variant="link" asChild>
-        <Link href={token ? `${mobileRedirectUrl}?token=${token}` : mobileRedirectUrl}>
+        <Link
+          href={
+            token ? `${mobileRedirectUrl}?token=${token}` : mobileRedirectUrl
+          }
+        >
           Return to the app
         </Link>
       </Button>
