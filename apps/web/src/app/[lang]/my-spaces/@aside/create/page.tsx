@@ -36,6 +36,8 @@ export default function AsideCreateSpacePage() {
     }
   }, [progress, spaceSlug]);
 
+  const mySpacesUrl = `/${lang}/my-spaces/`;
+
   return progress !== 100 ? (
     <SidePanel>
       <LoadingBackdrop
@@ -51,14 +53,16 @@ export default function AsideCreateSpacePage() {
             <div>{currentAction}</div>
           )
         }
-        className="-m-9"
+        className="-m-4 lg:-m-7"
       >
         <SpaceForm
           creator={{
             name: person?.name,
             surname: person?.surname,
           }}
-          closeUrl={`/${lang}/my-spaces/`}
+          closeUrl={mySpacesUrl}
+          backUrl={mySpacesUrl}
+          backLabel="Back"
           onSubmit={createSpace}
           isLoading={isLoadingJwt}
         />

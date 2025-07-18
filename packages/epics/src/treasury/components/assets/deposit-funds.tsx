@@ -33,7 +33,7 @@ export const DepositFunds = ({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex gap-5 justify-between">
+      <div className="flex flex-col-reverse md:flex-row justify-between gap-4">
         <Skeleton loading={isLoading} width={150} height={30}>
           <Text className="text-4 capitalize text-nowrap">Deposit Funds</Text>
         </Skeleton>
@@ -63,7 +63,9 @@ export const DepositFunds = ({
 
       <Skeleton loading={isLoading} width="100%" height={40}>
         <span className="flex justify-between items-center px-2 py-1 bg-secondary border borged-neutral-5 rounded-lg">
-          <span className="text-neutral-9">{spaceAddress}</span>
+          <span className="text-neutral-9 overflow-hidden whitespace-nowrap text-ellipsis pr-6">
+            {spaceAddress}
+          </span>
           <CopyIcon
             className="cursor-pointer"
             onClick={() => {

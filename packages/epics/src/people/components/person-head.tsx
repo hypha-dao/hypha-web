@@ -97,9 +97,13 @@ export const PersonHead = ({
             />
           )}
           <Skeleton loading={isLoading} width={120} height={35}>
-            <Button variant="outline" colorVariant="accent">
+            <Button
+              variant="outline"
+              colorVariant="accent"
+              title="Copy user ID"
+            >
               <CopyIcon />
-              Copy user ID
+              <span className="hidden md:flex">Copy user ID</span>
             </Button>
           </Skeleton>
           <Skeleton loading={isLoading} width={120} height={35}>

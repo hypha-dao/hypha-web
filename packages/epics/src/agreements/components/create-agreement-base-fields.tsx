@@ -57,7 +57,7 @@ export function CreateAgreementBaseFields({
 
   return (
     <>
-      <div className="flex justify-between gap-2">
+      <div className="flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-2">
         <div className="flex flex-grow gap-3">
           <PersonAvatar
             size="lg"
@@ -93,9 +93,15 @@ export function CreateAgreementBaseFields({
             </div>
           </div>
         </div>
-        <div className="flex gap-2">
-          {backUrl && <ButtonBack label={backLabel} backUrl={backUrl} />}
-          <ButtonClose closeUrl={closeUrl} />
+        <div className="flex justify-between gap-4">
+          {backUrl && (
+            <ButtonBack
+              label={backLabel}
+              backUrl={backUrl}
+              className="px-0 md:px-3"
+            />
+          )}
+          <ButtonClose closeUrl={closeUrl} className="px-0 md:px-3" />
         </div>
       </div>
       <Separator />

@@ -89,25 +89,28 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
     person,
   ]);
 
+  const buttonTitle = isMember
+    ? 'Already member'
+    : isInviteOnly
+    ? 'Request Invite'
+    : 'Become member';
+
   return (
     <div>
       <Button
         disabled={isMember || isLoading || isJoiningSpace || isCreating}
         onClick={handleJoinSpace}
-        className="ml-2 rounded-lg"
+        className="rounded-lg"
         colorVariant={isMember ? 'neutral' : 'accent'}
         variant={isMember ? 'outline' : 'default'}
+        title={buttonTitle}
       >
         {isJoiningSpace || isCreating ? (
-          <Loader2 className="mr-2 animate-spin" width={16} height={16} />
+          <Loader2 className="animate-spin" width={16} height={16} />
         ) : (
-          <PersonIcon className="mr-2" width={16} height={16} />
+          <PersonIcon width={16} height={16} />
         )}
-        {isMember
-          ? 'Already member'
-          : isInviteOnly
-          ? 'Request Invite'
-          : 'Become member'}
+        <span className="hidden sm:block">{buttonTitle}</span>
       </Button>
       {isInviteOnly && isInviteError ? (
         <ErrorAlert lines={inviteErrors.map((err) => err.message)} />

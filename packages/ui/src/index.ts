@@ -10,6 +10,7 @@ export * from './upload/lead-image';
 export * from './avatar';
 export * from './badge';
 export * from './button';
+export * from './button-nav-item';
 export * from './card';
 export * from './carousel';
 export * from './chips';
@@ -32,3 +33,7 @@ export * from './status-badge';
 export * from './switch';
 export * from './textarea';
 export * from './tooltip';
+
+export * from './organisms/editor';
+export * from './organisms/menu-top';
+export * from './molecules/badges-list';

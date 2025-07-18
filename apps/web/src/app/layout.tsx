@@ -5,12 +5,7 @@ import { cookies } from 'next/headers';
 import { Lato, Source_Sans_3 } from 'next/font/google';
 import clsx from 'clsx';
 
-import {
-  Footer,
-  Html,
-  MenuTop,
-  ThemeProvider,
-} from '@hypha-platform/ui/server';
+import { Footer, Html, ThemeProvider } from '@hypha-platform/ui/server';
 import { AuthProvider } from '@hypha-platform/authentication';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { ConnectedButtonProfile } from '@hypha-platform/epics';
@@ -19,6 +14,7 @@ import { useMe } from '@hypha-platform/core/client';
 import { fileRouter } from '@hypha-platform/core/server';
 import { HYPHA_LOCALE } from '@hypha-platform/cookie';
 import { i18nConfig } from '@hypha-platform/i18n';
+import { MenuTop } from '@hypha-platform/ui';
 
 import '@hypha-platform/ui-utils/global.css';
 
@@ -59,27 +55,23 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <EvmProvider>
-            <MenuTop
-              logoHref={`/${lang}/network`}
-              navItems={[
-                {
-                  label: 'Network',
-                  href: `/${lang}/network`,
-                },
-                {
-                  label: 'My Spaces',
-                  href: `/${lang}/my-spaces`,
-                },
-              ]}
-            >
-              <MenuTop.RightSlot>
-                <ConnectedButtonProfile
-                  useAuthentication={useAuthentication}
-                  useMe={useMe}
-                  newUserRedirectPath="/profile/signup"
-                  baseRedirectPath="/my-spaces"
-                />
-              </MenuTop.RightSlot>
+            <MenuTop logoHref={`/${lang}/network`}>
+              <ConnectedButtonProfile
+                useAuthentication={useAuthentication}
+                useMe={useMe}
+                newUserRedirectPath="/profile/signup"
+                baseRedirectPath="/my-spaces"
+                navItems={[
+                  {
+                    label: 'Network',
+                    href: `/${lang}/network`,
+                  },
+                  {
+                    label: 'My Spaces',
+                    href: `/${lang}/my-spaces`,
+                  },
+                ]}
+              />
             </MenuTop>
             <NextSSRPlugin routerConfig={extractRouterConfig(fileRouter)} />
             <div className="mb-auto">{children}</div>
