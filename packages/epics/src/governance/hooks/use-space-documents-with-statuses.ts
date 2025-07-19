@@ -67,6 +67,14 @@ const getDocumentBadges = (document: Document) => {
         colorVariant: 'accent',
       });
       break;
+    case 'Invite':
+      badges.push({
+        label: 'Invite',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
     default:
       break;
   }
@@ -146,7 +154,6 @@ export const useSpaceDocumentsWithStatuses = ({
       refreshWhenOffline: false,
     },
   );
-
   const response = React.useMemo(() => {
     if (!documentsFromDb || !spaceProposalsIds) {
       return {
@@ -206,14 +213,12 @@ export const useSpaceDocumentsWithStatuses = ({
           badges: getDocumentBadges(documentWithStatus),
         };
       });
-
     return {
       accepted: acceptedDocuments,
       rejected: rejectedDocuments,
       onVoting: onVotingDocuments,
     };
   }, [documentsFromDb, spaceProposalsIds]);
-
   return {
     documents: response,
     isLoading,

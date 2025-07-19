@@ -12,6 +12,7 @@ import {
   useAddMemberOrchestrator,
 } from '@hypha-platform/core/client';
 import { BaseError, useConfig } from 'wagmi';
+import { useParams } from 'next/navigation';
 
 type JoinSpaceProps = {
   spaceId: number;
@@ -23,6 +24,7 @@ function isBaseError(error: any): error is BaseError {
 }
 
 export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
+  const { lang } = useParams();
   const config = useConfig();
   const { jwt } = useJwt();
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({ spaceId: web3SpaceId });
@@ -49,6 +51,8 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
     memberAddress: person?.address as `0x${string}`,
   });
 
+  const profilePageUrl = `/${lang}/profile/${person?.slug}`;
+
   const handleJoinSpace = React.useCallback(async () => {
     setJoinError(null);
     if (isInviteOnly) {
@@ -59,10 +63,15 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
       await requestInvite({
         spaceId: spaceId,
         title: 'Invite Member',
-        description: `To onboard this member, we need as a space to approve this proposal. Member ${person.name} ${person.surname} [${person.address}]`,
+        description: `**${person.name} ${person.surname} has just requested to join as a member!**
+      
+      To move forward with onboarding, we’ll need our space’s approval on this proposal.
+      
+      You can review ${person.name}’s profile <span className="text-accent-9">[here](${profilePageUrl}).</span>`,
         creatorId: person.id,
         memberAddress: person.address as `0x${string}`,
         slug: `invite-request-${spaceId}-${Date.now()}`,
+        label: 'Invite',
       });
     } else {
       try {
