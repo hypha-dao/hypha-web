@@ -91,6 +91,35 @@ export const findAllPeople = async (config: FindAllPeopleConfig) => {
   };
 };
 
+export type FindAllPeopleWithoutPaginationConfig = {
+  db: DatabaseInstance;
+};
+
+export const findAllPeopleWithoutPagination = async ({
+  db,
+}: FindAllPeopleWithoutPaginationConfig): Promise<Person[]> => {
+  type ResultRow = Partial<DbPerson>;
+  const dbPeople = (await db
+    .select({
+      id: people.id,
+      slug: people.slug,
+      avatarUrl: people.avatarUrl,
+      description: people.description,
+      email: people.email,
+      location: people.location,
+      name: people.name,
+      surname: people.surname,
+      nickname: people.nickname,
+      createdAt: people.createdAt,
+      updatedAt: people.updatedAt,
+      address: people.address,
+      leadImageUrl: people.leadImageUrl,
+    })
+    .from(people)) as ResultRow[];
+
+  return dbPeople.map(mapToDomainPerson);
+};
+
 export type FindPersonByIdInput = {
   id: number;
 };

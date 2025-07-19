@@ -57,16 +57,15 @@ export default function Profile() {
         <Text className="text-sm text-neutral-11 ml-1">/ Profile Page</Text>
       </div>
       <PersonHead
-        isLoading={isLoading}
-        avatar={person?.avatarUrl ?? ''}
-        name={person?.name ?? ''}
-        surname={person?.surname ?? ''}
-        background={person?.leadImageUrl ?? ''}
-        links={person?.links ?? []}
-        about={person?.description ?? ''}
-        location={person?.location ?? ''}
-        email={person?.email ?? ''}
-        slug={person?.slug ?? ''}
+        avatar={''}
+        name={''}
+        surname={''}
+        background={''}
+        links={[]}
+        about={''}
+        location={''}
+        email={''}
+        slug={''}
         onExportEmbeddedWallet={isEmbeddedWallet ? exportWallet : undefined}
       />
       <Tabs value={activeTab} className="w-full flex flex-col gap-4">
@@ -81,7 +80,10 @@ export default function Profile() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="treasury" className="flex flex-col gap-4">
-          <UserAssetsSection personSlug={person?.slug || ''} />
+          <UserAssetsSection
+            personSlug={person?.slug || ''}
+            basePath={`/${lang}/profile`}
+          />
           <UserTransactionsSection personSlug={person?.slug || ''} />
         </TabsContent>
       </Tabs>

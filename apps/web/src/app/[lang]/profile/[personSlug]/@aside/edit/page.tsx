@@ -7,7 +7,7 @@ import { useParams } from 'next/navigation';
 import { useEditProfile } from '@web/hooks/use-edit-profile';
 
 export default function EditProfilePage() {
-  const { lang } = useParams();
+  const { lang, personSlug } = useParams();
   const { person, isLoading, revalidate } = useMe();
   const { editProfile, isEditing, error } = useEditProfile();
 
@@ -15,7 +15,7 @@ export default function EditProfilePage() {
     <SidePanel>
       <EditPersonSection
         person={person}
-        closeUrl={`/${lang}/profile/`}
+        closeUrl={`/${lang}/profile/${personSlug}`}
         isLoading={isLoading || isEditing}
         onEdit={editProfile}
         onUpdate={revalidate}

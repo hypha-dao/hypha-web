@@ -18,6 +18,7 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import React from 'react';
 import { ExportEmbeddedWalletButton } from '@hypha-platform/epics';
 import { useMe } from '@hypha-platform/core/client';
+import { useParams } from 'next/navigation';
 
 export type MemberType = {
   avatar: string;
@@ -53,6 +54,7 @@ export const PersonHead = ({
 }: PersonHeadProps & MemberType) => {
   const { exportWallet, isEmbeddedWallet } = useAuthentication();
   const { isMe } = useMe();
+  const { lang, personSlug } = useParams();
 
   const customLogoStyles: React.CSSProperties = {
     width: '128px',
@@ -108,7 +110,7 @@ export const PersonHead = ({
           </Skeleton>
           <Skeleton loading={isLoading} width={120} height={35}>
             <Button asChild colorVariant="accent">
-              <Link href={`/profile/edit`} scroll={false}>
+              <Link href={`/${lang}/profile/${personSlug}/edit`} scroll={false}>
                 <RxPencil2 />
                 Edit profile
               </Link>

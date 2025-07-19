@@ -8,7 +8,13 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import React from 'react';
 
-export const ProfileTabs = ({ person }: { person?: Person }) => {
+export const ProfileTabs = ({
+  person,
+  lang,
+}: {
+  person?: Person;
+  lang: string;
+}) => {
   const [activeTab, setActiveTab] = React.useState('treasury');
 
   return (
@@ -24,7 +30,10 @@ export const ProfileTabs = ({ person }: { person?: Person }) => {
         </TabsTrigger>
       </TabsList>
       <TabsContent value="treasury" className="flex flex-col gap-4">
-        <UserAssetsSection personSlug={person?.slug || ''} />
+        <UserAssetsSection
+          personSlug={person?.slug || ''}
+          basePath={`/${lang}/profile/${person?.slug}`}
+        />
         <UserTransactionsSection personSlug={person?.slug || ''} />
       </TabsContent>
     </Tabs>
