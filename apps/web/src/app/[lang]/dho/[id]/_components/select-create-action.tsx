@@ -11,18 +11,18 @@ import {
 
 export const CREATE_ACTIONS = [
   {
-    title: 'Propose a Contribution',
-    description:
-      'Propose a new contribution, such as work, knowledge, capital, or resources, for the space to consider.',
-    href: 'governance/create/propose-contribution',
-    icon: <RocketIcon />,
-  },
-  {
     title: 'Make a Collective Agreement',
     description:
       'Define and formalize a mutual understanding, policy, or decision among members of the space.',
     href: 'governance/create',
     icon: <FileIcon />,
+  },
+  {
+    title: 'Propose a Contribution',
+    description:
+      'Propose a new contribution, such as work, knowledge, capital, or resources, for the space to consider.',
+    href: 'governance/create/propose-contribution',
+    icon: <RocketIcon />,
   },
   {
     title: 'Pay for Expenses',
