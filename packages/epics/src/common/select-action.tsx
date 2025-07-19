@@ -12,6 +12,7 @@ type ActionProps = {
   href: string;
   icon: React.ReactNode;
   disabled?: boolean;
+  target?: string;
 };
 
 type SelectActionProps = {
@@ -70,6 +71,7 @@ export const SelectAction = ({
               <Link
                 href={action.href}
                 key={action.title}
+                target={action.target}
                 {...(action.disabled && {
                   onClick: (e) => e.preventDefault(),
                   'aria-disabled': 'true',
