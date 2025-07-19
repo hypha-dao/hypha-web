@@ -7,7 +7,7 @@ import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
 import { Space, Person } from '@hypha-platform/core/client';
 
 type RecipientProps = {
-  subspaces?: Space[];
+  spaces?: Space[];
   members?: Person[];
   value?: string;
   onChange?: (selected: Person | Space | { address: string }) => void;
@@ -15,7 +15,7 @@ type RecipientProps = {
 
 export const Recipient = ({
   members = [],
-  subspaces = [],
+  spaces = [],
   onChange,
   value,
 }: RecipientProps) => {
@@ -30,11 +30,11 @@ export const Recipient = ({
   useEffect(() => {
     if (value) {
       const foundMember = members.find((r) => r.address === value);
-      const foundSpace = subspaces.find((s) => s.address === value);
+      const foundSpace = spaces.find((s) => s.address === value);
       setSelected(foundMember || foundSpace || { address: value });
       setManualAddress(value);
     }
-  }, [value, members, subspaces]);
+  }, [value, members, spaces]);
 
   const placeholder = 'Select recipient...';
 
@@ -51,13 +51,13 @@ export const Recipient = ({
 
   const spaceOptions = useMemo(
     () =>
-      subspaces.map((space) => ({
+      spaces.map((space) => ({
         value: String(space.address),
         label: space.title,
         avatarUrl: space.logoUrl,
         address: space.address,
       })),
-    [subspaces],
+    [spaces],
   );
 
   const currentOptions =
@@ -66,7 +66,7 @@ export const Recipient = ({
   const handleChange = useCallback(
     (value: string) => {
       const lowerValue = value.toLowerCase();
-      const source = recipientType === 'member' ? members : subspaces;
+      const source = recipientType === 'member' ? members : spaces;
 
       const found =
         source.find(
@@ -84,14 +84,14 @@ export const Recipient = ({
         onChange?.(found);
       }
     },
-    [members, subspaces, recipientType, onChange],
+    [members, spaces, recipientType, onChange],
   );
 
   const handleAddressChange = useCallback(
     (address: string) => {
       setManualAddress(address);
       const foundMember = members.find((r) => r.address === address);
-      const foundSpace = subspaces.find((s) => s.address === address);
+      const foundSpace = spaces.find((s) => s.address === address);
 
       if (foundMember || foundSpace) {
         setSelected(foundMember || foundSpace || null);
@@ -101,7 +101,7 @@ export const Recipient = ({
         onChange?.({ address });
       }
     },
-    [members, subspaces, onChange],
+    [members, spaces, onChange],
   );
 
   return (
