@@ -24,14 +24,14 @@ type PluginProps = {
   name: keyof typeof PLUGINS;
   spaceSlug?: string;
   web3SpaceId?: number | null;
-  subspaces?: Space[];
+  spaces?: Space[];
 };
 
 export const Plugin = ({
   name,
   spaceSlug,
   web3SpaceId,
-  subspaces,
+  spaces,
 }: PluginProps) => {
   const { members } = useMembers({ spaceSlug });
 
@@ -42,7 +42,7 @@ export const Plugin = ({
       spaceSlug={spaceSlug || ''}
       web3SpaceId={web3SpaceId}
       members={members}
-      subspaces={subspaces}
+      spaces={spaces}
     />
   );
 };
