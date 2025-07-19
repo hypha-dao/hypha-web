@@ -1,6 +1,7 @@
 'use client';
 
-import { Card, Separator, Skeleton } from '@hypha-platform/ui';
+import { Card, Separator, Skeleton, TextWithLinks } from '@hypha-platform/ui';
+import { isAbsoluteUrl } from '@hypha-platform/ui-utils';
 import clsx from 'clsx';
 import Link from 'next/link';
 import React from 'react';
@@ -69,6 +70,7 @@ export const SelectAction = ({
             {groupActions.map((action) => (
               <Link
                 href={action.href}
+                target={isAbsoluteUrl(action.href) ? '_blank' : undefined}
                 key={action.title}
                 {...(action.disabled && {
                   onClick: (e) => e.preventDefault(),
@@ -89,7 +91,7 @@ export const SelectAction = ({
                   <div className="flex flex-col">
                     <span className="text-2 font-medium">{action.title}</span>
                     <span className="text-1 text-neutral-11">
-                      {action.description}
+                      <TextWithLinks text={action.description} />
                     </span>
                   </div>
                 </Card>

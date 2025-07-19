@@ -31,6 +31,7 @@ export * from './skeleton';
 export * from './slider';
 export * from './status-badge';
 export * from './switch';
+export * from './text-with-links';
 export * from './textarea';
 export * from './tooltip';
 
