@@ -39,7 +39,7 @@ export const ProposalHead = ({
             <Badge variant="solid" colorVariant="accent" isLoading={isLoading}>
               {label}
             </Badge>
-            <StatusBadge isLoading={isLoading} status={status} />
+            {/* <StatusBadge isLoading={isLoading} status={status} /> */}
           </div>
 
           <Skeleton

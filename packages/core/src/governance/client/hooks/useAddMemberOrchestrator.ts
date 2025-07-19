@@ -44,6 +44,7 @@ export const useAddMemberOrchestrator = ({
           creatorId: arg.creatorId,
           spaceId: arg.spaceId,
           web3ProposalId: arg.web3ProposalId,
+          label: arg.label,
         });
         const createdAgreement = await web2.createAgreement(
           inputCreateAgreementWeb2,

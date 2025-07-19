@@ -39,6 +39,7 @@ export const mapToDocument = (
       name: creator?.name || '',
       surname: creator?.surname || '',
     },
+    label: dbDocument.label || '',
   };
 };
 
