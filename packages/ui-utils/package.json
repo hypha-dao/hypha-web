@@ -12,7 +12,7 @@
     "@hypha-platform/config-eslint": "workspace:*",
     "@hypha-platform/config-typescript": "workspace:*",
     "@tailwindcss/postcss": "^4.1.11",
-    "tailwindcss": "^4.0.8"
+    "tailwindcss": "^4.1.11"
   },
   "dependencies": {
     "@tailwindcss/cli": "^4.1.11",
