@@ -87,7 +87,7 @@ export const PeopleTransferForm = ({
           onSubmit={form.handleSubmit(handleTransfer)}
           className="flex flex-col gap-5"
         >
-          <RecipientField members={peoples} subspaces={spaces} />
+          <RecipientField members={peoples} spaces={spaces} />
           <Separator />
           <TokenPayoutFieldArray tokens={tokens} name="payouts" />
           <Separator />
