@@ -423,7 +423,7 @@ describe('HyphaToken Comprehensive Tests', function () {
       const userRewardDebtSlot = ethers.keccak256(
         ethers.solidityPacked(
           ['address', 'uint256'],
-          [await user1.getAddress(), 3], // userRewardDebt mapping is at slot 3
+          [await user1.getAddress(), 4], // userRewardDebt mapping slot (was 3, now 4 due to new mintAddress variables)
         ),
       );
       const userRewardDebt = await ethers.provider.getStorage(
@@ -1274,7 +1274,7 @@ describe('HyphaToken Comprehensive Tests', function () {
         const totalSupply = await hyphaToken.totalSupply();
         const pendingDistribution = await ethers.provider.getStorage(
           await hyphaToken.getAddress(),
-          12, // pendingDistribution is at storage slot 12 (was 11, now 12 due to new mintAddress variable)
+          13, // pendingDistribution is at storage slot 13 (was 11, then 12, now 13 due to new mintAddress variables)
         );
 
         const user1Balance = await hyphaToken.balanceOf(
@@ -1438,7 +1438,7 @@ describe('HyphaToken Comprehensive Tests', function () {
       // Check pending distribution
       const pendingDistribution = await ethers.provider.getStorage(
         await hyphaToken.getAddress(),
-        12, // pendingDistribution storage slot (was 11, now 12 due to new mintAddress variable)
+        13, // pendingDistribution storage slot (was 11, then 12, now 13 due to new mintAddress variables)
       );
 
       // Should be 440 HYPHA: (10 USDC * 4 * 10^12 / 1) * (10 + 1) = 440
@@ -1993,107 +1993,122 @@ describe('HyphaToken Comprehensive Tests', function () {
   });
 
   describe('Mint Address and Minting Functions', function () {
-    it('Should allow owner to set mint address and emit event', async function () {
+    it('Should allow owner to add mint address and emit event', async function () {
       const { hyphaToken, owner, user1, user2 } = await loadFixture(
         deployHyphaFixture,
       );
 
-      // Initially, mint address should be zero address
-      expect(await hyphaToken.mintAddress()).to.equal(
-        '0x0000000000000000000000000000000000000000',
-      );
+      // Initially, no addresses should be authorized
+      expect(await hyphaToken.isAuthorizedMinter(await user1.getAddress())).to
+        .be.false;
+      expect(await hyphaToken.authorizedMintAddressCount()).to.equal(0);
 
-      // Owner sets mint address
+      // Owner adds mint address
       await expect(
-        hyphaToken.connect(owner).setMintAddress(await user1.getAddress()),
+        hyphaToken.connect(owner).addMintAddress(await user1.getAddress()),
       )
-        .to.emit(hyphaToken, 'MintAddressUpdated')
-        .withArgs(
-          '0x0000000000000000000000000000000000000000',
-          await user1.getAddress(),
-        );
+        .to.emit(hyphaToken, 'MintAddressAdded')
+        .withArgs(await user1.getAddress());
 
-      // Verify mint address was set
-      expect(await hyphaToken.mintAddress()).to.equal(await user1.getAddress());
+      // Verify mint address was added
+      expect(await hyphaToken.isAuthorizedMinter(await user1.getAddress())).to
+        .be.true;
+      expect(await hyphaToken.authorizedMintAddressCount()).to.equal(1);
 
-      // Change mint address again
+      // Add another mint address
       await expect(
-        hyphaToken.connect(owner).setMintAddress(await user2.getAddress()),
+        hyphaToken.connect(owner).addMintAddress(await user2.getAddress()),
       )
-        .to.emit(hyphaToken, 'MintAddressUpdated')
-        .withArgs(await user1.getAddress(), await user2.getAddress());
+        .to.emit(hyphaToken, 'MintAddressAdded')
+        .withArgs(await user2.getAddress());
 
-      // Verify mint address was updated
-      expect(await hyphaToken.mintAddress()).to.equal(await user2.getAddress());
+      // Verify both addresses are authorized
+      expect(await hyphaToken.isAuthorizedMinter(await user1.getAddress())).to
+        .be.true;
+      expect(await hyphaToken.isAuthorizedMinter(await user2.getAddress())).to
+        .be.true;
+      expect(await hyphaToken.authorizedMintAddressCount()).to.equal(2);
     });
 
-    it('Should not allow non-owner to set mint address', async function () {
+    it('Should not allow non-owner to add mint address', async function () {
       const { hyphaToken, user1, user2 } = await loadFixture(
         deployHyphaFixture,
       );
 
-      // Non-owner tries to set mint address
+      // Non-owner tries to add mint address
       await expect(
-        hyphaToken.connect(user1).setMintAddress(await user2.getAddress()),
+        hyphaToken.connect(user1).addMintAddress(await user2.getAddress()),
       ).to.be.reverted;
     });
 
-    it('Should allow setting mint address to zero address', async function () {
+    it('Should not allow adding zero address as mint address', async function () {
+      const { hyphaToken, owner } = await loadFixture(deployHyphaFixture);
+
+      // Try to add zero address
+      await expect(
+        hyphaToken
+          .connect(owner)
+          .addMintAddress('0x0000000000000000000000000000000000000000'),
+      ).to.be.revertedWith('Cannot authorize zero address');
+    });
+
+    it('Should not allow adding the same address twice', async function () {
       const { hyphaToken, owner, user1 } = await loadFixture(
         deployHyphaFixture,
       );
 
-      // Set mint address to user1 first
-      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+      // Add mint address first time
+      await hyphaToken.connect(owner).addMintAddress(await user1.getAddress());
 
-      // Then set it to zero address
+      // Try to add the same address again
       await expect(
-        hyphaToken
-          .connect(owner)
-          .setMintAddress('0x0000000000000000000000000000000000000000'),
-      )
-        .to.emit(hyphaToken, 'MintAddressUpdated')
-        .withArgs(
-          await user1.getAddress(),
-          '0x0000000000000000000000000000000000000000',
-        );
-
-      expect(await hyphaToken.mintAddress()).to.equal(
-        '0x0000000000000000000000000000000000000000',
-      );
+        hyphaToken.connect(owner).addMintAddress(await user1.getAddress()),
+      ).to.be.revertedWith('Address already authorized');
     });
 
-    it('Should allow authorized mint address to mint tokens', async function () {
-      const { hyphaToken, owner, user1, user2 } = await loadFixture(
+    it('Should allow any authorized mint address to mint tokens', async function () {
+      const { hyphaToken, owner, user1, user2, user3 } = await loadFixture(
         deployHyphaFixture,
       );
 
-      // Set user1 as authorized mint address
-      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+      // Add both user1 and user2 as authorized mint addresses
+      await hyphaToken.connect(owner).addMintAddress(await user1.getAddress());
+      await hyphaToken.connect(owner).addMintAddress(await user2.getAddress());
 
       // Check initial balances
-      const user2InitialBalance = await hyphaToken.balanceOf(
-        await user2.getAddress(),
+      const user3InitialBalance = await hyphaToken.balanceOf(
+        await user3.getAddress(),
       );
       const initialTotalMinted = await hyphaToken.totalMinted();
 
-      const mintAmount = ethers.parseUnits('1000', 18);
+      const mintAmount1 = ethers.parseUnits('1000', 18);
+      const mintAmount2 = ethers.parseUnits('500', 18);
 
-      // Authorized address mints tokens
+      // Both authorized addresses can mint tokens
       await expect(
-        hyphaToken.connect(user1).mint(await user2.getAddress(), mintAmount),
+        hyphaToken.connect(user1).mint(await user3.getAddress(), mintAmount1),
       )
         .to.emit(hyphaToken, 'TokensMinted')
-        .withArgs(await user2.getAddress(), mintAmount);
+        .withArgs(await user3.getAddress(), mintAmount1);
+
+      await expect(
+        hyphaToken.connect(user2).mint(await user3.getAddress(), mintAmount2),
+      )
+        .to.emit(hyphaToken, 'TokensMinted')
+        .withArgs(await user3.getAddress(), mintAmount2);
 
       // Check final balances
-      const user2FinalBalance = await hyphaToken.balanceOf(
-        await user2.getAddress(),
+      const user3FinalBalance = await hyphaToken.balanceOf(
+        await user3.getAddress(),
       );
       const finalTotalMinted = await hyphaToken.totalMinted();
 
-      expect(user2FinalBalance - user2InitialBalance).to.equal(mintAmount);
-      expect(finalTotalMinted - initialTotalMinted).to.equal(mintAmount);
+      expect(user3FinalBalance - user3InitialBalance).to.equal(
+        mintAmount1 + mintAmount2,
+      );
+      expect(finalTotalMinted - initialTotalMinted).to.equal(
+        mintAmount1 + mintAmount2,
+      );
     });
 
     it('Should not allow unauthorized addresses to mint tokens', async function () {
@@ -2101,8 +2116,8 @@ describe('HyphaToken Comprehensive Tests', function () {
         deployHyphaFixture,
       );
 
-      // Set user1 as authorized mint address
-      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+      // Add user1 as authorized mint address
+      await hyphaToken.connect(owner).addMintAddress(await user1.getAddress());
 
       const mintAmount = ethers.parseUnits('1000', 18);
 
@@ -2111,7 +2126,7 @@ describe('HyphaToken Comprehensive Tests', function () {
         hyphaToken.connect(user2).mint(await user3.getAddress(), mintAmount),
       ).to.be.revertedWith('Only authorized mint address can mint');
 
-      // Owner tries to mint (should also fail since owner is not the mint address)
+      // Owner tries to mint (should also fail since owner is not an authorized minter)
       await expect(
         hyphaToken.connect(owner).mint(await user3.getAddress(), mintAmount),
       ).to.be.revertedWith('Only authorized mint address can mint');
@@ -2122,8 +2137,8 @@ describe('HyphaToken Comprehensive Tests', function () {
         deployHyphaFixture,
       );
 
-      // Set user1 as authorized mint address
-      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+      // Add user1 as authorized mint address
+      await hyphaToken.connect(owner).addMintAddress(await user1.getAddress());
 
       const mintAmount = ethers.parseUnits('1000', 18);
 
@@ -2140,8 +2155,8 @@ describe('HyphaToken Comprehensive Tests', function () {
         deployHyphaFixture,
       );
 
-      // Set user1 as authorized mint address
-      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+      // Add user1 as authorized mint address
+      await hyphaToken.connect(owner).addMintAddress(await user1.getAddress());
 
       // Try to mint zero amount
       await expect(
@@ -2154,8 +2169,8 @@ describe('HyphaToken Comprehensive Tests', function () {
         deployHyphaFixture,
       );
 
-      // Set user1 as authorized mint address
-      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+      // Add user1 as authorized mint address
+      await hyphaToken.connect(owner).addMintAddress(await user1.getAddress());
 
       const maxSupply = await hyphaToken.MAX_SUPPLY();
       const currentTotalMinted = await hyphaToken.totalMinted();
@@ -2174,8 +2189,8 @@ describe('HyphaToken Comprehensive Tests', function () {
         deployHyphaFixture,
       );
 
-      // Set user1 as authorized mint address
-      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+      // Add user1 as authorized mint address
+      await hyphaToken.connect(owner).addMintAddress(await user1.getAddress());
 
       const maxSupply = await hyphaToken.MAX_SUPPLY();
       const currentTotalMinted = await hyphaToken.totalMinted();
@@ -2200,8 +2215,8 @@ describe('HyphaToken Comprehensive Tests', function () {
       const { hyphaToken, owner, user1, user2, usdc, usdcPerDay } =
         await loadFixture(deployHyphaFixture);
 
-      // Set user1 as authorized mint address
-      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+      // Add user1 as authorized mint address
+      await hyphaToken.connect(owner).addMintAddress(await user1.getAddress());
 
       // Create some rewards first by making a space payment
       const spacePayment = usdcPerDay * 5n;
@@ -2237,7 +2252,7 @@ describe('HyphaToken Comprehensive Tests', function () {
       const user2RewardDebtSlot = ethers.keccak256(
         ethers.solidityPacked(
           ['address', 'uint256'],
-          [await user2.getAddress(), 3], // userRewardDebt mapping slot
+          [await user2.getAddress(), 4], // userRewardDebt mapping slot (was 3, now 4 due to new mintAddress variables)
         ),
       );
       const user2RewardDebt = await ethers.provider.getStorage(
@@ -2258,8 +2273,8 @@ describe('HyphaToken Comprehensive Tests', function () {
       const { hyphaToken, owner, user1, iexAddress, usdc, usdcPerDay } =
         await loadFixture(deployHyphaFixture);
 
-      // Set user1 as authorized mint address
-      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+      // Add user1 as authorized mint address
+      await hyphaToken.connect(owner).addMintAddress(await user1.getAddress());
 
       // Create some rewards first
       const spacePayment = usdcPerDay * 5n;
@@ -2292,8 +2307,8 @@ describe('HyphaToken Comprehensive Tests', function () {
         deployHyphaFixture,
       );
 
-      // Set user1 as authorized mint address
-      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+      // Add user1 as authorized mint address
+      await hyphaToken.connect(owner).addMintAddress(await user1.getAddress());
 
       const mintAmount1 = ethers.parseUnits('1000', 18);
       const mintAmount2 = ethers.parseUnits('2000', 18);
@@ -2324,13 +2339,13 @@ describe('HyphaToken Comprehensive Tests', function () {
       );
     });
 
-    it('Should handle mint address changes correctly', async function () {
+    it('Should handle adding multiple mint addresses correctly', async function () {
       const { hyphaToken, owner, user1, user2, user3 } = await loadFixture(
         deployHyphaFixture,
       );
 
-      // Set user1 as initial mint address
-      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+      // Add user1 as initial mint address
+      await hyphaToken.connect(owner).addMintAddress(await user1.getAddress());
 
       const mintAmount = ethers.parseUnits('1000', 18);
 
@@ -2339,22 +2354,27 @@ describe('HyphaToken Comprehensive Tests', function () {
         .connect(user1)
         .mint(await user3.getAddress(), mintAmount);
 
-      // Change mint address to user2
-      await hyphaToken.connect(owner).setMintAddress(await user2.getAddress());
+      // Add user2 as additional mint address
+      await hyphaToken.connect(owner).addMintAddress(await user2.getAddress());
 
-      // User1 can no longer mint
-      await expect(
-        hyphaToken.connect(user1).mint(await user3.getAddress(), mintAmount),
-      ).to.be.revertedWith('Only authorized mint address can mint');
-
-      // User2 can now mint
+      // Both user1 and user2 can mint
+      await hyphaToken
+        .connect(user1)
+        .mint(await user3.getAddress(), mintAmount);
       await hyphaToken
         .connect(user2)
         .mint(await user3.getAddress(), mintAmount);
 
       // Check final balance
       const user3Balance = await hyphaToken.balanceOf(await user3.getAddress());
-      expect(user3Balance).to.equal(mintAmount * 2n);
+      expect(user3Balance).to.equal(mintAmount * 3n);
+
+      // Verify both addresses are still authorized
+      expect(await hyphaToken.isAuthorizedMinter(await user1.getAddress())).to
+        .be.true;
+      expect(await hyphaToken.isAuthorizedMinter(await user2.getAddress())).to
+        .be.true;
+      expect(await hyphaToken.authorizedMintAddressCount()).to.equal(2);
     });
 
     it('Should handle large mint amounts correctly', async function () {
@@ -2362,8 +2382,8 @@ describe('HyphaToken Comprehensive Tests', function () {
         deployHyphaFixture,
       );
 
-      // Set user1 as authorized mint address
-      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+      // Add user1 as authorized mint address
+      await hyphaToken.connect(owner).addMintAddress(await user1.getAddress());
 
       // Try to mint a very large amount (but within supply limits)
       const largeMintAmount = ethers.parseUnits('1000000', 18); // 1 million HYPHA
@@ -2389,15 +2409,12 @@ describe('HyphaToken Comprehensive Tests', function () {
         deployHyphaFixture,
       );
 
-      // Test setMintAddress event
+      // Test addMintAddress event
       await expect(
-        hyphaToken.connect(owner).setMintAddress(await user1.getAddress()),
+        hyphaToken.connect(owner).addMintAddress(await user1.getAddress()),
       )
-        .to.emit(hyphaToken, 'MintAddressUpdated')
-        .withArgs(
-          '0x0000000000000000000000000000000000000000',
-          await user1.getAddress(),
-        );
+        .to.emit(hyphaToken, 'MintAddressAdded')
+        .withArgs(await user1.getAddress());
 
       // Test mint event
       const mintAmount = ethers.parseUnits('1000', 18);
@@ -2406,6 +2423,35 @@ describe('HyphaToken Comprehensive Tests', function () {
       )
         .to.emit(hyphaToken, 'TokensMinted')
         .withArgs(await user2.getAddress(), mintAmount);
+    });
+
+    it('Should correctly track authorized mint address count', async function () {
+      const { hyphaToken, owner, user1, user2, user3 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Initially should be 0
+      expect(await hyphaToken.authorizedMintAddressCount()).to.equal(0);
+
+      // Add first address
+      await hyphaToken.connect(owner).addMintAddress(await user1.getAddress());
+      expect(await hyphaToken.authorizedMintAddressCount()).to.equal(1);
+
+      // Add second address
+      await hyphaToken.connect(owner).addMintAddress(await user2.getAddress());
+      expect(await hyphaToken.authorizedMintAddressCount()).to.equal(2);
+
+      // Add third address
+      await hyphaToken.connect(owner).addMintAddress(await user3.getAddress());
+      expect(await hyphaToken.authorizedMintAddressCount()).to.equal(3);
+
+      // Verify all addresses are authorized
+      expect(await hyphaToken.isAuthorizedMinter(await user1.getAddress())).to
+        .be.true;
+      expect(await hyphaToken.isAuthorizedMinter(await user2.getAddress())).to
+        .be.true;
+      expect(await hyphaToken.isAuthorizedMinter(await user3.getAddress())).to
+        .be.true;
     });
   });
 

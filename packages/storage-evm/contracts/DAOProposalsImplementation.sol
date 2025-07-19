@@ -279,9 +279,12 @@ contract DAOProposalsImplementation is
     // Calculate total participation
     uint256 totalVotesCast = proposal.yesVotes + proposal.noVotes;
 
-    // Check if quorum is reached - fix potential overflow by reordering arithmetic
-    bool quorumReached = totalVotesCast >=
-      (quorumThreshold * proposal.totalVotingPowerAtSnapshot) / 100;
+    // Check if quorum is reached - use ceiling division to prevent rounding errors
+    // Formula: ceil(a/b) = (a + b - 1) / b
+    uint256 requiredQuorum = (quorumThreshold *
+      proposal.totalVotingPowerAtSnapshot +
+      99) / 100;
+    bool quorumReached = totalVotesCast >= requiredQuorum;
 
     if (!quorumReached) {
       return; // Early return - insufficient participation
@@ -316,7 +319,7 @@ contract DAOProposalsImplementation is
 
       // Execute all transactions
       bool success = IExecutor(executor).executeTransactions(execTransactions);
-      require(success, 'Proposal execution failed');
+      require(success, 'Proposal execution failedd');
 
       emit ProposalExecuted(
         _proposalId,
