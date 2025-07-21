@@ -11,13 +11,13 @@ export const WalletAddress = ({ address, onChange }: WalletAddressProps) => {
   };
 
   return (
-    <div className="flex w-full items-center justify-between">
+    <div className="flex flex-col md:flex-row w-full md:items-center md:justify-between gap-4">
       <label className="text-2 text-neutral-11">Wallet Address</label>
       <div>
         <Input
           value={address}
           onChange={handleChange}
-          className="max-w-[240px] text-2"
+          className="md:w-72"
           placeholder="Enter wallet address"
         />
       </div>

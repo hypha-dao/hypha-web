@@ -63,7 +63,7 @@ export function TokenTypeField({ onValueChange }: TokenTypeFieldProps) {
                   onValueChange?.(value);
                 }}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-auto">
                   <SelectValue placeholder="Select a token type" />
                 </SelectTrigger>
                 <SelectContent className="p-2">
