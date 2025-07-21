@@ -14,7 +14,10 @@ type AssetSectionProps = {
   governancePath: string;
 };
 
-export const AssetsSection: FC<AssetSectionProps> = ({ basePath, governancePath }) => {
+export const AssetsSection: FC<AssetSectionProps> = ({
+  basePath,
+  governancePath,
+}) => {
   const {
     visibleAssets,
     activeFilter,
@@ -28,7 +31,10 @@ export const AssetsSection: FC<AssetSectionProps> = ({ basePath, governancePath 
     <div className="flex flex-col w-full justify-center items-center gap-4">
       <SectionFilter count={totalBalance || 0} label="Balance">
         <Button asChild className="ml-2">
-          <Link href={`${governancePath}/create/issue-new-token?back=${basePath}`} scroll={false}>
+          <Link
+            href={`${governancePath}/create/issue-new-token?back=${basePath}`}
+            scroll={false}
+          >
             <RadiobuttonIcon />
             New Token
           </Link>

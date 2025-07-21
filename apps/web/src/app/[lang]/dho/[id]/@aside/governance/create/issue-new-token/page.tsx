@@ -10,10 +10,13 @@ import { db } from '@hypha-platform/storage-postgres';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
-  searchParams: Promise<{ back: string, backMenu: string }>;
+  searchParams: Promise<{ back: string; backMenu: string }>;
 };
 
-export default async function IssueNewTokenPage({ params, searchParams }: PageProps) {
+export default async function IssueNewTokenPage({
+  params,
+  searchParams,
+}: PageProps) {
   const { lang, id } = await params;
   const { back, backMenu = '' } = await searchParams;
 
@@ -25,7 +28,9 @@ export default async function IssueNewTokenPage({ params, searchParams }: PagePr
   const { id: spaceId, web3SpaceId } = spaceFromDb;
 
   const successfulUrl = back ? back : getDhoPathGovernance(lang as Locale, id);
-  const backUrl = back ? backMenu : `${successfulUrl}${PATH_SELECT_SETTINGS_ACTION}`;
+  const backUrl = back
+    ? backMenu
+    : `${successfulUrl}${PATH_SELECT_SETTINGS_ACTION}`;
 
   return (
     <SidePanel>
