@@ -44,7 +44,7 @@ export const EntryMethodTokenField = ({
   };
 
   return (
-    <div className="flex justify-between w-full">
+    <div className="flex flex-col md:flex-row gap-4 md:justify-between w-full">
       <label className="text-2 text-neutral-11 flex items-center">
         Required Min. Token Number (Optional)
       </label>
