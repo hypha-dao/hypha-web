@@ -18,7 +18,7 @@ export default async function IssueNewTokenPage({
   searchParams,
 }: PageProps) {
   const { lang, id } = await params;
-  const { back, backMenu = '' } = await searchParams;
+  const { back = '', backMenu = '' } = await searchParams;
 
   // TODO: implement authorization
   const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });

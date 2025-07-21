@@ -18,8 +18,8 @@ export default async function TreasuryPage(props: PageProps) {
   return (
     <div className="flex flex-col gap-6 py-4">
       <AssetsSection
-        basePath={`${basePath}`}
-        governancePath={`${governancePath}`}
+        basePath={basePath}
+        governancePath={governancePath}
       />
       <TransactionsSection spaceSlug={id} />
     </div>
