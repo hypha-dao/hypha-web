@@ -3,9 +3,9 @@ import { Skeleton, Button, Separator } from '@hypha-platform/ui';
 import { RxCross1 } from 'react-icons/rx';
 import Link from 'next/link';
 import { MemberSpaces } from './member-spaces';
-import { Space } from '@hypha-platform/core/client';
+import { Address, Space } from '@hypha-platform/core/client';
 import { UseDocuments } from '../../governance';
-import { AgreementsSection } from '../../agreements';
+import { Locale } from '@hypha-platform/i18n';
 
 type MemberType = {
   avatarUrl?: string;
@@ -14,9 +14,12 @@ type MemberType = {
   nickname?: string;
   status?: string;
   about?: string;
+  slug?: string;
+  address?: string;
 };
 
 export type MemberDetailProps = {
+  lang: Locale;
   closeUrl: string;
   member: MemberType;
   isLoading: boolean;
@@ -27,6 +30,7 @@ export type MemberDetailProps = {
 
 export const MemberDetail = ({
   isLoading,
+  lang,
   closeUrl,
   member,
   basePath,
@@ -36,7 +40,7 @@ export const MemberDetail = ({
   return (
     <div className="flex flex-col gap-5">
       <div className="flex gap-5 justify-between">
-        <MemberHead {...member} isLoading={isLoading} />
+        <MemberHead {...member} lang={lang} isLoading={isLoading} />
         <Link href={closeUrl} scroll={false}>
           <Button
             variant="ghost"
@@ -58,9 +62,12 @@ export const MemberDetail = ({
         <div className="text-2 text-neutral-11">{member.about}</div>
       </Skeleton>
       <Separator />
-      <MemberSpaces spaces={spaces} />
+      <MemberSpaces
+        spaces={spaces}
+        personAddress={member.address as Address | undefined}
+        personSlug={member.slug}
+      />
       <Separator />
-      {/*<AgreementsSection basePath={basePath} useDocuments={useDocuments} />*/}
     </div>
   );
 };

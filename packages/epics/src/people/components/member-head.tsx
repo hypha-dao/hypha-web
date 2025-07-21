@@ -1,5 +1,7 @@
+import { Locale } from '@hypha-platform/i18n';
 import { Skeleton, Image, StatusBadge } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
+import Link from 'next/link';
 
 export type MemberHeadProps = {
   avatarUrl?: string;
@@ -7,6 +9,8 @@ export type MemberHeadProps = {
   surname?: string;
   nickname?: string;
   status?: string;
+  slug?: string;
+  lang: Locale;
   isLoading: boolean;
 };
 
@@ -16,6 +20,8 @@ export const MemberHead = ({
   surname,
   nickname,
   status,
+  slug,
+  lang,
   isLoading,
 }: MemberHeadProps) => {
   return (
@@ -53,7 +59,13 @@ export const MemberHead = ({
           </Skeleton>
 
           <Skeleton height="16px" width="80px" loading={isLoading}>
-            <Text className="text-1 text-neutral-11">@{nickname}</Text>
+            {slug ? (
+              <Link href={`/${lang}/profile/${slug}`}>
+                <Text className="text-1 text-neutral-11">@{nickname}</Text>
+              </Link>
+            ) : (
+              <Text className="text-1 text-neutral-11">@{nickname}</Text>
+            )}
           </Skeleton>
         </div>
       </div>

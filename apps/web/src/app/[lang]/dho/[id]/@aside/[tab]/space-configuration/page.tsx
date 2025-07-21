@@ -56,7 +56,7 @@ export default function SpaceConfiguration() {
             <div>{currentAction}</div>
           )
         }
-        className="-m-9"
+        className="-m-4 lg:-m-7"
       >
         <SpaceForm
           submitLabel="Update"
@@ -81,6 +81,7 @@ export default function SpaceConfiguration() {
             links: space?.links || [],
             web3SpaceId: space?.web3SpaceId || undefined,
             parentId: space?.parentId || null,
+            address: space?.address || '',
           }}
         />
       </LoadingBackdrop>

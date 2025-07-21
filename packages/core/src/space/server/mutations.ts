@@ -1,7 +1,9 @@
+'use server';
+
 import slugify from 'slugify';
 import { CreateSpaceInput, UpdateSpaceInput } from '../types';
 import { eq } from 'drizzle-orm';
-import { DatabaseInstance } from '@core/_container';
+import { DatabaseInstance } from '@hypha-platform/core/server';
 import { spaces } from '@hypha-platform/storage-postgres';
 
 export const createSpace = async (

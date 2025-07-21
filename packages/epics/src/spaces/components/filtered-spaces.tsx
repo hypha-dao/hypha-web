@@ -1,22 +1,22 @@
 'use client';
 
 import { Locale } from '@hypha-platform/i18n';
-import { Space } from '@core/space';
+import { Address, Space } from '@hypha-platform/core/client';
 import {
   UseMembers,
-  useMemberWeb3SpaceIds,
   SpaceCardList,
+  useMemberWeb3SpaceIds,
 } from '@hypha-platform/epics';
-import { Person, useMe } from '@core/people';
+import { useMe } from '@hypha-platform/core/client';
 import React from 'react';
 import { Text } from '@radix-ui/themes';
 
-function filterSpaces(
+export function filterSpaces(
   spaces: Space[],
-  user: Person | undefined,
+  personSlug: string | undefined,
   web3SpaceIds: readonly bigint[] | undefined,
 ) {
-  if (!user?.slug || !web3SpaceIds) {
+  if (!personSlug || !web3SpaceIds) {
     return [];
   }
   const userSpaces: Space[] = spaces.filter((space) => {
@@ -35,12 +35,14 @@ export function FilteredSpaces({
   spaces: Space[];
   useMembers: UseMembers;
 }) {
-  const { person: user } = useMe();
-  const { web3SpaceIds } = useMemberWeb3SpaceIds();
+  const { person } = useMe();
+  const { web3SpaceIds } = useMemberWeb3SpaceIds({
+    personAddress: person?.address as Address | undefined,
+  });
 
   const filteredSpaces = React.useMemo(
-    () => filterSpaces(spaces, user, web3SpaceIds),
-    [spaces, user, web3SpaceIds],
+    () => filterSpaces(spaces, person?.slug, web3SpaceIds),
+    [spaces, person, web3SpaceIds],
   );
 
   return (

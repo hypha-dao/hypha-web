@@ -1,13 +1,18 @@
 'use client';
+
 import { Button, ErrorAlert } from '@hypha-platform/ui';
 import { useJoinSpace } from '../hooks/use-join-space';
 import { PersonIcon } from '@radix-ui/react-icons';
 import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { useSpaceDetailsWeb3Rpc } from '@core/space';
-import { useMe, useJwt } from '@core/people';
-import { useAddMemberOrchestrator } from '@core/governance';
+import {
+  useSpaceDetailsWeb3Rpc,
+  useMe,
+  useJwt,
+  useAddMemberOrchestrator,
+} from '@hypha-platform/core/client';
 import { BaseError, useConfig } from 'wagmi';
+import { useParams } from 'next/navigation';
 
 type JoinSpaceProps = {
   spaceId: number;
@@ -19,6 +24,7 @@ function isBaseError(error: any): error is BaseError {
 }
 
 export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
+  const { lang } = useParams();
   const config = useConfig();
   const { jwt } = useJwt();
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({ spaceId: web3SpaceId });
@@ -45,6 +51,8 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
     memberAddress: person?.address as `0x${string}`,
   });
 
+  const profilePageUrl = `/${lang}/profile/${person?.slug}`;
+
   const handleJoinSpace = React.useCallback(async () => {
     setJoinError(null);
     if (isInviteOnly) {
@@ -55,10 +63,15 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
       await requestInvite({
         spaceId: spaceId,
         title: 'Invite Member',
-        description: `To onboard this member, we need as a space to approve this proposal. Member ${person.name} ${person.surname} [${person.address}]`,
+        description: `**${person.name} ${person.surname} has just requested to join as a member!**
+      
+      To move forward with onboarding, we’ll need our space’s approval on this proposal.
+      
+      You can review ${person.name}’s profile <span className="text-accent-9">[here](${profilePageUrl}).</span>`,
         creatorId: person.id,
         memberAddress: person.address as `0x${string}`,
         slug: `invite-request-${spaceId}-${Date.now()}`,
+        label: 'Invite',
       });
     } else {
       try {
@@ -85,25 +98,28 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
     person,
   ]);
 
+  const buttonTitle = isMember
+    ? 'Already member'
+    : isInviteOnly
+    ? 'Request Invite'
+    : 'Become member';
+
   return (
     <div>
       <Button
         disabled={isMember || isLoading || isJoiningSpace || isCreating}
         onClick={handleJoinSpace}
-        className="ml-2 rounded-lg"
+        className="rounded-lg"
         colorVariant={isMember ? 'neutral' : 'accent'}
         variant={isMember ? 'outline' : 'default'}
+        title={buttonTitle}
       >
         {isJoiningSpace || isCreating ? (
-          <Loader2 className="mr-2 animate-spin" width={16} height={16} />
+          <Loader2 className="animate-spin" width={16} height={16} />
         ) : (
-          <PersonIcon className="mr-2" width={16} height={16} />
+          <PersonIcon width={16} height={16} />
         )}
-        {isMember
-          ? 'Already member'
-          : isInviteOnly
-          ? 'Request Invite'
-          : 'Become member'}
+        <span className="hidden sm:block">{buttonTitle}</span>
       </Button>
       {isInviteOnly && isInviteError ? (
         <ErrorAlert lines={inviteErrors.map((err) => err.message)} />

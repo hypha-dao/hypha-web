@@ -14,6 +14,7 @@ export function useAuthentication() {
     logout: privyLogout,
     getAccessToken,
     exportWallet,
+    isModalOpen,
   } = usePrivy();
 
   const { wallets } = useWallets();
@@ -42,11 +43,16 @@ export function useAuthentication() {
     setLoggingIn(true);
   }, [privyLogin]);
 
-  const logout = React.useCallback(async (): Promise<void> => {
-    privyLogout();
-    router.push('/network');
-    setLoggingIn(false);
-  }, [privyLogout, router]);
+  const logout = React.useCallback(
+    async (redirect: boolean = true): Promise<void> => {
+      privyLogout();
+      if (redirect) {
+        router.push('/network');
+      }
+      setLoggingIn(false);
+    },
+    [privyLogout, router],
+  );
 
   const user = React.useMemo(() => {
     if (!authenticated || !privyUser?.id) return null;
@@ -80,5 +86,6 @@ export function useAuthentication() {
     setLoggingIn,
     getAccessToken,
     exportWallet: handleExportWallet,
+    isModalOpen,
   };
 }

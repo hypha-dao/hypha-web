@@ -11,7 +11,7 @@ import {
   Label,
   DatePicker,
 } from '@hypha-platform/ui';
-import { cn } from '@hypha-platform/lib/utils';
+import { cn } from '@hypha-platform/ui-utils';
 import { ChevronDownIcon, PlusIcon } from '@radix-ui/react-icons';
 import { validateMilestones, validateFutureDate } from '../validation';
 import { MilestoneField } from './milestone-field';

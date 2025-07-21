@@ -13,11 +13,12 @@ export interface AuthHook {
   isEmbeddedWallet: boolean;
   user: AuthUser | null;
   login: () => void;
-  logout: () => void;
+  logout: (redirect?: boolean) => void;
   isLoggingIn: boolean;
   setLoggingIn: (value: boolean) => void;
   getAccessToken: () => Promise<string | null>;
   exportWallet: () => Promise<void>;
+  isModalOpen: boolean;
 }
 
 export type UseAuthentication = () => AuthHook;

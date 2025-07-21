@@ -8,8 +8,15 @@ import {
   FormItem,
   FormMessage,
 } from '@hypha-platform/ui';
+import { Space, Person } from '@hypha-platform/core/client';
 
-export function RecipientField({ recipients }: { recipients: any[] }) {
+export function RecipientField({
+  members,
+  spaces,
+}: {
+  members: Person[];
+  spaces?: Space[];
+}) {
   const { control } = useFormContext();
   return (
     <FormField
@@ -22,7 +29,8 @@ export function RecipientField({ recipients }: { recipients: any[] }) {
               onChange={(recipient) => {
                 field.onChange(recipient.address);
               }}
-              recipients={recipients}
+              members={members}
+              spaces={spaces}
             />
           </FormControl>
           <FormMessage />

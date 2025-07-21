@@ -3,10 +3,11 @@ import { Locale } from '@hypha-platform/i18n';
 import { Button, Container } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { SpaceGroupSlider, SpaceSearch } from '@hypha-platform/epics';
-import { createSpaceService, Space } from '@hypha-platform/core/server';
+import { findAllSpaces, Space } from '@hypha-platform/core/server';
 import { Category } from '@hypha-platform/core/client';
 import { PlusIcon } from '@radix-ui/react-icons';
 import { getDhoPathGovernance } from '../dho/[id]/@tab/governance/constants';
+import { db } from '@hypha-platform/storage-postgres';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -38,7 +39,8 @@ export default async function Index(props: PageProps) {
     return getDhoPathGovernance(lang, id);
   };
 
-  const spaces = await createSpaceService().getAll({ search: query });
+  const spaces = await findAllSpaces({ db }, { search: query });
+
   const uniqueCategories = extractUniqueCategories(spaces);
 
   return (

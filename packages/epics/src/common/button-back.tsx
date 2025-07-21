@@ -4,7 +4,7 @@ import { Button } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
-import { cn } from '@hypha-platform/lib/utils';
+import { cn } from '@hypha-platform/ui-utils';
 
 type ButtonBackProps = {
   label?: string;

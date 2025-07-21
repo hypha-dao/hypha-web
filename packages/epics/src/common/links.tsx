@@ -31,7 +31,7 @@ export const Links = ({ links, errors, onChange }: LinksProps) => {
         .map((_, index) => (
           <LinkItem
             key={index}
-            link={links[index]}
+            link={links[index] ?? ''}
             error={getError(index)}
             onChange={handleChange(index)}
           />

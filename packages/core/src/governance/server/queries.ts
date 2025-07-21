@@ -1,4 +1,4 @@
-import { DbConfig } from '@core/common/server';
+import { DbConfig } from '@hypha-platform/core/server';
 import { eq, sql, and, asc, desc, SQL } from 'drizzle-orm';
 
 import {
@@ -15,7 +15,7 @@ import {
   FilterParams,
   Order,
   PaginationParams,
-} from '@core/common';
+} from '@hypha-platform/core/client';
 import { Document, Creator } from '../types';
 
 export const mapToDocument = (
@@ -34,12 +34,12 @@ export const mapToDocument = (
     createdAt: dbDocument.createdAt,
     updatedAt: dbDocument.updatedAt,
     web3ProposalId: dbDocument.web3ProposalId,
-    label: dbDocument.label ?? '',
     creator: {
       avatarUrl: creator?.avatarUrl || '',
       name: creator?.name || '',
       surname: creator?.surname || '',
     },
+    label: dbDocument.label || '',
   };
 };
 
@@ -187,6 +187,7 @@ export const findAllDocumentsBySpaceSlug = async (
     .limit(pageSize)
     .offset(offset);
 
+  // @ts-ignore TODO: fix types
   const total = results.length > 0 ? results[0].total : 0;
   const totalPages = Math.ceil(total / pageSize);
 
@@ -217,7 +218,8 @@ export const findMostRecentDocuments = async ({ db }: DbConfig) => {
     .limit(1);
 
   return results.length > 0
-    ? mapToDocument(results[0].document, results[0].creator)
+    ? // @ts-ignore TODO: fix types
+      mapToDocument(results[0].document, results[0].creator)
     : null;
 };
 

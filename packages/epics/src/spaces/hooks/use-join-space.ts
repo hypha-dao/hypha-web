@@ -1,8 +1,12 @@
-import { isMember as isMemberConfig } from '@core/space/client/web3/dao-space-factory/is-member';
-import { publicClient } from '@hypha-platform/core/client';
+'use client';
+
+import {
+  isMember as isMemberConfig,
+  publicClient,
+  useJoinSpaceWeb3Rpc,
+} from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
 import useSWR from 'swr';
-import { useJoinSpaceWeb3Rpc } from '@core/space/client/hooks/useJoinSpace.web3.rpc';
 
 export const useJoinSpace = ({ spaceId }: { spaceId: number }) => {
   const { user } = useAuthentication();

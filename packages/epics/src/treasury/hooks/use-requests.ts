@@ -1,7 +1,7 @@
 'use client';
 
 import useSWR from 'swr';
-import { PaginationMetadata } from '@core/common';
+import { PaginationMetadata } from '@hypha-platform/core/client';
 import { data } from './use-requests.mock';
 
 export type RequestItem = {

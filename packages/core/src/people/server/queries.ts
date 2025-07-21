@@ -1,6 +1,8 @@
-import { PaginationParams, PaginatedResponse } from '@core/common';
+import {
+  PaginationParams,
+  PaginatedResponse,
+} from '@hypha-platform/core/client';
 import { Person } from '../types';
-import { DatabaseInstance } from '@core/_container';
 import {
   people,
   Person as DbPerson,
@@ -9,7 +11,7 @@ import {
 } from '@hypha-platform/storage-postgres';
 import { sql, eq, inArray, and } from 'drizzle-orm';
 import invariant from 'tiny-invariant';
-import { DbConfig } from '@core/common/server';
+import { DatabaseInstance, DbConfig } from '../../server';
 
 const nullToUndefined = <T>(value: T | null): T | undefined =>
   value === null ? undefined : value;
@@ -87,6 +89,35 @@ export const findAllPeople = async (config: FindAllPeopleConfig) => {
       hasPreviousPage: page > 1,
     },
   };
+};
+
+export type FindAllPeopleWithoutPaginationConfig = {
+  db: DatabaseInstance;
+};
+
+export const findAllPeopleWithoutPagination = async ({
+  db,
+}: FindAllPeopleWithoutPaginationConfig): Promise<Person[]> => {
+  type ResultRow = Partial<DbPerson>;
+  const dbPeople = (await db
+    .select({
+      id: people.id,
+      slug: people.slug,
+      avatarUrl: people.avatarUrl,
+      description: people.description,
+      email: people.email,
+      location: people.location,
+      name: people.name,
+      surname: people.surname,
+      nickname: people.nickname,
+      createdAt: people.createdAt,
+      updatedAt: people.updatedAt,
+      address: people.address,
+      leadImageUrl: people.leadImageUrl,
+    })
+    .from(people)) as ResultRow[];
+
+  return dbPeople.map(mapToDomainPerson);
 };
 
 export type FindPersonByIdInput = {
@@ -259,9 +290,10 @@ export const findSelf = async ({ db }: DbConfig) => {
 
 export const verifyAuth = async ({ db }: DbConfig) => {
   try {
-    const {
-      rows: [{ user_id }],
-    } = await db.execute(sql`SELECT user_id from auth.user_id()`);
+    const { rows } = await db.execute(
+      sql<{ user_id: string }>`SELECT user_id from auth.user_id()`,
+    );
+    const user_id = rows[0]?.user_id;
     return !!user_id;
   } catch {
     return false;
@@ -299,7 +331,7 @@ export const findPersonByAddresses = async (
     .from(people)
     .where(and(...whereConditions));
 
-  const total = Number(totalResult.count);
+  const total = Number(totalResult?.count ?? 0);
   const totalPages = hasPagination ? Math.ceil(total / pageSize) : 1;
   const hasNextPage = hasPagination ? page < totalPages : false;
   const hasPreviousPage = hasPagination ? page > 1 : false;

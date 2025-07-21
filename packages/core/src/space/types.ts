@@ -1,6 +1,6 @@
-import { Category } from '@core/categories/types';
-import { Document } from '@core/governance';
-import { Person } from '@core/people';
+import { Category } from '@hypha-platform/core/client';
+import { Document } from '@hypha-platform/core/client';
+import { Person } from '@hypha-platform/core/client';
 
 export interface Space {
   id: number;
@@ -18,6 +18,7 @@ export interface Space {
   memberCount?: number;
   documentCount?: number;
   documents?: Document[];
+  address?: string | null;
 }
 
 export interface CreateSpaceInput {
@@ -39,6 +40,7 @@ export interface UpdateSpaceInput {
   slug?: string;
   parentId?: number | null;
   web3SpaceId?: number;
+  address?: string;
 }
 
 export type UpdateSpaceBySlugInput = { slug: string } & UpdateSpaceInput;

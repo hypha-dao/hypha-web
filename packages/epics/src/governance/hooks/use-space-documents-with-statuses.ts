@@ -3,9 +3,9 @@
 import React from 'react';
 import useSWR from 'swr';
 
-import { useSpaceProposalsWeb3Rpc } from '@core/space';
-import { Document } from '@core/governance';
-import { DirectionType, Order, OrderField } from '@core/common';
+import { useSpaceProposalsWeb3Rpc } from '@hypha-platform/core/client';
+import { Document } from '@hypha-platform/core/client';
+import { DirectionType, Order, OrderField } from '@hypha-platform/core/client';
 import queryString from 'query-string';
 
 const getDocumentBadges = (document: Document) => {
@@ -62,6 +62,14 @@ const getDocumentBadges = (document: Document) => {
     case 'Issue New Token':
       badges.push({
         label: 'Issue New Token',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
+    case 'Invite':
+      badges.push({
+        label: 'Invite',
         className: 'capitalize',
         variant: 'solid',
         colorVariant: 'accent',
@@ -146,7 +154,6 @@ export const useSpaceDocumentsWithStatuses = ({
       refreshWhenOffline: false,
     },
   );
-
   const response = React.useMemo(() => {
     if (!documentsFromDb || !spaceProposalsIds) {
       return {
@@ -206,14 +213,12 @@ export const useSpaceDocumentsWithStatuses = ({
           badges: getDocumentBadges(documentWithStatus),
         };
       });
-
     return {
       accepted: acceptedDocuments,
       rejected: rejectedDocuments,
       onVoting: onVotingDocuments,
     };
   }, [documentsFromDb, spaceProposalsIds]);
-
   return {
     documents: response,
     isLoading,

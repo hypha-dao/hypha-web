@@ -49,7 +49,7 @@ export const useMembers: UseMembers = ({
 
   const endpoint = React.useMemo(
     () => `/api/v1/spaces/${spaceSlug}/members${queryParams}`,
-    [spaceSlug, page, pageSize, queryParams],
+    [spaceSlug, queryParams],
   );
 
   const interval = refreshInterval ?? 0;

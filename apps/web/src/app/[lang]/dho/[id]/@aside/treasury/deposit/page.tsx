@@ -1,19 +1,24 @@
 import { DepositFunds, SidePanel } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
-import { createSpaceService } from '@hypha-platform/core/server';
+import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { getDhoPathTreasury } from '../../../@tab/treasury/constants';
 import { PATH_SELECT_CREATE_ACTION } from '@web/app/constants';
+import { db } from '@hypha-platform/storage-postgres';
+import { notFound } from 'next/navigation';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
+  searchParams: Promise<{ back: string }>;
 };
 
-export default async function Treasury({ params }: PageProps) {
+export default async function Treasury({ params, searchParams }: PageProps) {
   const { lang, id } = await params;
+  const { back: backHref } = await searchParams;
 
-  const spaceService = createSpaceService();
+  // TODO: implement authorization
+  const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
 
-  const spaceFromDb = await spaceService.getBySlug({ slug: id });
+  if (!spaceFromDb) notFound();
 
   const spaceId = spaceFromDb.web3SpaceId;
 
@@ -23,7 +28,9 @@ export default async function Treasury({ params }: PageProps) {
     <SidePanel>
       <DepositFunds
         closeUrl={closeUrl}
-        backUrl={`${closeUrl}${PATH_SELECT_CREATE_ACTION}`}
+        backUrl={
+          backHref ? backHref : `${closeUrl}${PATH_SELECT_CREATE_ACTION}`
+        }
         spaceId={spaceId}
       />
     </SidePanel>

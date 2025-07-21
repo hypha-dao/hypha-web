@@ -35,6 +35,7 @@ export const useSpaceDocuments: UseDocuments = ({
       pageSize,
       ...(filter ? { ...filter } : {}),
       ...(searchTerm ? { searchTerm } : {}),
+      // @ts-ignore: TODO: fix order type
       order: getOrder(order),
     };
     return `?${queryString.stringify(effectiveFilter)}`;
@@ -42,7 +43,7 @@ export const useSpaceDocuments: UseDocuments = ({
 
   const endpoint = React.useMemo(
     () => `/api/v1/spaces/${spaceSlug}/documents${queryParams}`,
-    [spaceSlug, page, queryParams],
+    [spaceSlug, queryParams],
   );
 
   const { data: response, isLoading } = useSWR(

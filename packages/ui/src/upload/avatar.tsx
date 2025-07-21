@@ -35,9 +35,9 @@ export const UploadAvatar = ({
       try {
         reader.onload = () => {
           setPreview(reader.result as string);
-          onChange(acceptedFiles[0]);
+          onChange(acceptedFiles[0] ?? null);
         };
-        reader.readAsDataURL(acceptedFiles[0]);
+        reader.readAsDataURL(acceptedFiles[0] ?? new Blob());
       } catch (error) {
         console.error('Error reading file:', error);
         setPreview(defaultImage || null);

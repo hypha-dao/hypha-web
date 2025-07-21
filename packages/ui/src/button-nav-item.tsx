@@ -3,26 +3,37 @@
 import Link from 'next/link';
 import { Button } from './button';
 import { usePathname } from 'next/navigation';
+import clsx from 'clsx';
 
-type ButtonNavItemProps = {
-  href: string;
+export type ButtonNavItemProps = {
+  href?: string;
   label: string;
+  classNames?: string;
+  onClick?: React.MouseEventHandler;
 };
 
-export const ButtonNavItem = ({ href, label }: ButtonNavItemProps) => {
+export const ButtonNavItem = ({
+  href,
+  label,
+  onClick,
+  classNames,
+}: ButtonNavItemProps) => {
   const pathname = usePathname();
-  const isActive = pathname.includes(href);
+  const isActive = href && pathname.includes(href);
   return (
     <Button
-      key={href}
-      className={
-        isActive
-          ? 'bg-primary-foreground rounded-lg hover:bg-primary-foreground text-gray-400'
-          : 'rounded-md bg-transparent hover:bg-primary-foreground text-gray-400'
-      }
-      asChild
+      key={label}
+      variant="ghost"
+      colorVariant="neutral"
+      className={clsx(
+        isActive && 'bg-primary-foreground',
+        'hover:bg-primary-foreground',
+        classNames,
+      )}
+      asChild={!!href}
+      onClick={onClick}
     >
-      <Link href={href}>{label}</Link>
+      {!!href ? <Link href={href}>{label}</Link> : <span>{label}</span>}
     </Button>
   );
 };

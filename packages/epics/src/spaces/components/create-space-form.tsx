@@ -59,6 +59,7 @@ const DEFAULT_VALUES = {
   categories: [],
   links: [],
   parentId: null,
+  address: '',
 };
 
 export const SpaceForm = ({
@@ -94,7 +95,7 @@ export const SpaceForm = ({
         onSubmit={form.handleSubmit(onSubmit)}
         className={clsx('flex flex-col gap-5', isLoading && 'opacity-50')}
       >
-        <div className="flex gap-2">
+        <div className="flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-2">
           <div className="flex flex-grow gap-3">
             <FormField
               control={form.control}
@@ -146,7 +147,7 @@ export const SpaceForm = ({
               </div>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex justify-between gap-4">
             {backUrl && <ButtonBack label={backLabel} backUrl={backUrl} />}
             <ButtonClose closeUrl={closeUrl} />
           </div>

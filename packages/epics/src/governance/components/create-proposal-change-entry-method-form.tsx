@@ -29,6 +29,7 @@ interface CreateProposalChangeEntryMethodFormProps {
   spaceId: number | undefined | null;
   web3SpaceId: number | undefined | null;
   successfulUrl: string;
+  backUrl?: string;
   plugin: React.ReactNode;
 }
 
@@ -40,6 +41,7 @@ const ENTRY_METHODS = [
 
 export const CreateProposalChangeEntryMethodForm = ({
   successfulUrl,
+  backUrl,
   spaceId,
   web3SpaceId,
   plugin,
@@ -153,6 +155,8 @@ export const CreateProposalChangeEntryMethodForm = ({
               name: person?.name || '',
               surname: person?.surname || '',
             }}
+            backUrl={backUrl}
+            backLabel="Back to Settings"
             closeUrl={successfulUrl}
             isLoading={false}
             label="Entry Method"

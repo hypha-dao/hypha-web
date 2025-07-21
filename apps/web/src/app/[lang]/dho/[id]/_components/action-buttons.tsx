@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 
-import { PlusIcon } from '@radix-ui/react-icons';
+import { GearIcon, PlusIcon } from '@radix-ui/react-icons';
 
 import { Button } from '@hypha-platform/ui';
 import { usePathname } from 'next/navigation';
@@ -17,9 +17,15 @@ export const ActionButtons = () => {
 
   return (
     <>
-      <Button asChild colorVariant="accent" variant={'outline'}>
+      <Button
+        asChild
+        colorVariant="accent"
+        variant={'outline'}
+        title="Space Settings"
+      >
         <Link href={`${cleanPath(pathname)}${PATH_SELECT_SETTINGS_ACTION}`}>
-          Space Settings
+          <GearIcon className="sm:hidden" width={16} height={16} />
+          <span className="hidden sm:flex">Space Settings</span>
         </Link>
       </Button>
       <Button asChild colorVariant="accent">

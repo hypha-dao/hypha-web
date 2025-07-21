@@ -124,7 +124,7 @@ export const CreatePayForExpensesForm = ({
           <div>{currentAction}</div>
         )
       }
-      className="-m-9"
+      className="-m-4 md:-m-7"
     >
       <Form {...form}>
         <form

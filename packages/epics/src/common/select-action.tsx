@@ -1,6 +1,7 @@
 'use client';
 
-import { Card, Separator, Skeleton } from '@hypha-platform/ui';
+import { Card, Separator, Skeleton, TextWithLinks } from '@hypha-platform/ui';
+import { isAbsoluteUrl } from '@hypha-platform/ui-utils';
 import clsx from 'clsx';
 import Link from 'next/link';
 import React from 'react';
@@ -12,6 +13,7 @@ type ActionProps = {
   href: string;
   icon: React.ReactNode;
   disabled?: boolean;
+  target?: string;
 };
 
 type SelectActionProps = {
@@ -70,6 +72,7 @@ export const SelectAction = ({
               <Link
                 href={action.href}
                 key={action.title}
+                target={action.target}
                 {...(action.disabled && {
                   onClick: (e) => e.preventDefault(),
                   'aria-disabled': 'true',
@@ -80,7 +83,7 @@ export const SelectAction = ({
                     'flex p-6 cursor-pointer space-x-4 items-center',
                     {
                       'opacity-50 cursor-not-allowed': action.disabled,
-                      'hover:border-accent-5': !action.disabled,
+                      // 'hover:border-accent-5': !action.disabled,
                     },
                   )}
                   aria-disabled={action.disabled}
@@ -89,7 +92,7 @@ export const SelectAction = ({
                   <div className="flex flex-col">
                     <span className="text-2 font-medium">{action.title}</span>
                     <span className="text-1 text-neutral-11">
-                      {action.description}
+                      <TextWithLinks text={action.description} />
                     </span>
                   </div>
                 </Card>

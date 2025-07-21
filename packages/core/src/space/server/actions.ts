@@ -1,7 +1,7 @@
 'use server';
 
 // TODO: #602 Define RLS Policies for Spaces Table
-// import { getDb } from '@core/common/server/get-db';
+// import { getDb } from '@hypha-platform/core/server';
 import { createSpace, deleteSpaceBySlug, updateSpaceBySlug } from './mutations';
 import {
   CreateSpaceInput,

@@ -1,7 +1,7 @@
 'use client';
 
-import { useFileUpload } from '@core/assets';
-import { schemaCreateSpaceFiles } from '@core/space/validation';
+import { useFileUpload } from '@hypha-platform/core/client';
+import { schemaCreateSpaceFiles } from '@hypha-platform/core/client';
 import React from 'react';
 import { z } from 'zod';
 
