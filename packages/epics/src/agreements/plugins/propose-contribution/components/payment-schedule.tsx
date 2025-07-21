@@ -75,7 +75,7 @@ export function PaymentSchedule({
               <ChevronDownIcon className="size-2" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent>
+          <DropdownMenuContent align="end">
             {options.map((option) => (
               <DropdownMenuItem
                 key={option}
