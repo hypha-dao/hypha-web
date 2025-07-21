@@ -10,10 +10,12 @@ import { db } from '@hypha-platform/storage-postgres';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
+  searchParams: Promise<{ back: string, backMenu: string }>;
 };
 
-export default async function IssueNewTokenPage({ params }: PageProps) {
+export default async function IssueNewTokenPage({ params, searchParams }: PageProps) {
   const { lang, id } = await params;
+  const { back, backMenu = '' } = await searchParams;
 
   // TODO: implement authorization
   const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
@@ -22,7 +24,8 @@ export default async function IssueNewTokenPage({ params }: PageProps) {
 
   const { id: spaceId, web3SpaceId } = spaceFromDb;
 
-  const successfulUrl = getDhoPathGovernance(lang as Locale, id);
+  const successfulUrl = back ? back : getDhoPathGovernance(lang as Locale, id);
+  const backUrl = back ? backMenu : `${successfulUrl}${PATH_SELECT_SETTINGS_ACTION}`;
 
   return (
     <SidePanel>
@@ -30,7 +33,7 @@ export default async function IssueNewTokenPage({ params }: PageProps) {
         spaceId={spaceId}
         web3SpaceId={web3SpaceId}
         successfulUrl={successfulUrl}
-        backUrl={`${successfulUrl}${PATH_SELECT_SETTINGS_ACTION}`}
+        backUrl={backUrl}
         plugin={<Plugin name="issue-new-token" />}
       />
     </SidePanel>
