@@ -10,7 +10,7 @@ import { db } from '@hypha-platform/storage-postgres';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
-  searchParams: Promise<{ back: string; backMenu: string }>;
+  searchParams: Promise<{ back?: string; backMenu?: string }>;
 };
 
 export default async function IssueNewTokenPage({
