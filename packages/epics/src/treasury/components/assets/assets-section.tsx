@@ -5,15 +5,16 @@ import { Text } from '@radix-ui/themes';
 import { useAssetsSection } from '../../hooks/use-assets-section';
 import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 import { Button } from '@hypha-platform/ui';
-import { CopyIcon } from '@radix-ui/react-icons';
+import { CopyIcon, RadiobuttonIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
 import { Empty } from '../../../common';
 
 type AssetSectionProps = {
   basePath: string;
+  governancePath: string;
 };
 
-export const AssetsSection: FC<AssetSectionProps> = ({ basePath }) => {
+export const AssetsSection: FC<AssetSectionProps> = ({ basePath, governancePath }) => {
   const {
     visibleAssets,
     activeFilter,
@@ -26,6 +27,12 @@ export const AssetsSection: FC<AssetSectionProps> = ({ basePath }) => {
   return (
     <div className="flex flex-col w-full justify-center items-center gap-4">
       <SectionFilter count={totalBalance || 0} label="Balance">
+        <Button asChild className="ml-2">
+          <Link href={`${governancePath}/create/issue-new-token?back=${basePath}`} scroll={false}>
+            <RadiobuttonIcon />
+            New Token
+          </Link>
+        </Button>
         <Button asChild className="ml-2">
           <Link href={`${basePath}/deposit`} scroll={false}>
             <CopyIcon />
