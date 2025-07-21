@@ -13,7 +13,7 @@ export function InactivityGuard({ maxInactivity = THIRTY_MINUTES_IN_MS }) {
   const { logout } = usePrivy();
 
   const router = useRouter();
-  const timer = useRef<NodeJS.Timeout>(setTimeout(() => {}, 0));
+  const timer = useRef<ReturnType<typeof setTimeout>>(setTimeout(() => {}, 0));
 
   const onLogout = useCallback(async () => {
     try {
@@ -22,7 +22,7 @@ export function InactivityGuard({ maxInactivity = THIRTY_MINUTES_IN_MS }) {
     } catch (e) {
       console.error('Inactivity logout failed:', e);
     }
-  }, [router]);
+  }, [router, logout]);
 
   const onReset = useCallback(() => {
     if (timer.current) clearTimeout(timer.current);
