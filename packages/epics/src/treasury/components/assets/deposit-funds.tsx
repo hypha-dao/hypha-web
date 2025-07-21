@@ -38,7 +38,7 @@ export const DepositFunds = ({
           <Text className="text-4 capitalize text-nowrap">Deposit Funds</Text>
         </Skeleton>
         {!isLoading && (
-          <div className="flex gap-2">
+          <div className="flex justify-between gap-2">
             {backUrl && <ButtonBack backUrl={backUrl} />}
             <ButtonClose closeUrl={closeUrl} />
           </div>

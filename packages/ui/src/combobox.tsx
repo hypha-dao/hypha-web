@@ -1,8 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { Check, ChevronsUpDown } from 'lucide-react';
-
+import { Check } from 'lucide-react';
+import { ChevronDownIcon } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/ui-utils';
 import { Button } from './button';
 import {
@@ -67,17 +67,17 @@ export function Combobox({
           colorVariant="neutral"
           role="combobox"
           aria-expanded={open}
-          className="w-[220px] justify-between text-secondary-foreground"
+          className="w-full text-2 md:w-72 justify-between py-2 font-normal"
         >
           <div className="flex items-center gap-2 truncate">
             {renderValue
               ? renderValue(selectedOption)
               : selectedOption?.label || placeholder}
           </div>
-          <ChevronsUpDown className="opacity-50" />
+          <ChevronDownIcon className="size-2" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[220px] p-0">
+      <PopoverContent className="w-full md:w-72 p-0" align="end">
         <Command shouldFilter={false}>
           <CommandInput
             placeholder="Search..."
