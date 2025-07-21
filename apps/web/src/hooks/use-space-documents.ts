@@ -43,7 +43,7 @@ export const useSpaceDocuments: UseDocuments = ({
 
   const endpoint = React.useMemo(
     () => `/api/v1/spaces/${spaceSlug}/documents${queryParams}`,
-    [spaceSlug, page, queryParams],
+    [spaceSlug, queryParams],
   );
 
   const { data: response, isLoading } = useSWR(
