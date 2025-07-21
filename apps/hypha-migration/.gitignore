@@ -4,7 +4,7 @@
 .env.prod
 .quasar
 .DS_Store
-.thumbs.db
+.Thumbs.db
 node_modules
 /dist
 /build
