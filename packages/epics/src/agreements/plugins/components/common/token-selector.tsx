@@ -1,7 +1,9 @@
 'use client';
 
 import { ChevronDownIcon } from '@radix-ui/themes';
+
 import {
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -33,7 +35,12 @@ export const TokenSelector = ({
       <div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <div className="flex justify-between items-center gap-2 min-w-[140px] px-4 py-2 border border-neutral-7 rounded-md hover:bg-neutral-3 cursor-pointer">
+            <Button
+              variant="outline"
+              colorVariant="neutral"
+              role="combobox"
+              className="w-full text-2 md:w-72 justify-between py-2 font-normal"
+            >
               <div className="flex items-center gap-2">
                 {selectedToken ? (
                   <>
@@ -53,8 +60,8 @@ export const TokenSelector = ({
                   </span>
                 )}
               </div>
-              <ChevronDownIcon />
-            </div>
+              <ChevronDownIcon className="size-2" />
+            </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             {tokens.map((token) => (
