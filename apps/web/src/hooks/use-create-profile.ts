@@ -64,7 +64,7 @@ export const useCreateProfile = (
         }
 
         const createdProfile = await response.json();
-        router.push('/my-spaces');
+        router.push('/profile');
         return createdProfile;
       } catch (err) {
         console.error('Profile creation error:', err);
