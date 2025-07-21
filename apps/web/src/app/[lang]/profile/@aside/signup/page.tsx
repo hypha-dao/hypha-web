@@ -5,10 +5,11 @@ import React, { useEffect, useState } from 'react';
 import { useCreateProfile } from '@web/hooks/use-create-profile';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useParams } from 'next/navigation';
+import { LoadingBackdrop } from '@hypha-platform/ui';
 
 export default function SignupPage() {
   const { createProfile, isCreating, error } = useCreateProfile();
-  const { user } = useAuthentication();
+  const { user, isLoading } = useAuthentication();
   const { lang } = useParams();
   const [walletAddress, setWalletAddress] = useState<string | undefined>(
     user?.wallet?.address,
@@ -27,7 +28,6 @@ export default function SignupPage() {
           'Wallet address is required. Please connect your wallet first.',
         );
       }
-
       await createProfile({
         ...values,
         address: walletAddress,
@@ -39,14 +39,18 @@ export default function SignupPage() {
   };
 
   return (
-    <SidePanel>
-      <SignupPanel
-        closeUrl={`/${lang}/profile/`}
-        onSave={handleSave}
-        walletAddress={walletAddress}
-        isCreating={isCreating}
-        error={error}
-      />
-    </SidePanel>
+    <LoadingBackdrop
+      isLoading={isLoading || !user?.wallet?.address}
+      message={<span>Loading...</span>}
+    >
+      <SidePanel>
+        <SignupPanel
+          closeUrl={`/${lang}/profile`}
+          onSave={handleSave}
+          isCreating={isCreating}
+          error={error}
+        />
+      </SidePanel>
+    </LoadingBackdrop>
   );
 }

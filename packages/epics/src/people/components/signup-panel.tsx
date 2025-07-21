@@ -26,6 +26,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { Links } from '../../common';
+import { useAuthentication } from '@hypha-platform/authentication';
 
 const schemaSignupPersonForm = schemaSignupPerson.extend(editPersonFiles.shape);
 
@@ -33,7 +34,6 @@ interface SignupPanelProps {
   closeUrl: string;
   isLoading?: boolean;
   onSave: (values: z.infer<typeof schemaSignupPersonForm>) => Promise<void>;
-  walletAddress?: string;
   isCreating?: boolean;
   error?: string | null;
 }
@@ -44,10 +44,10 @@ export const SignupPanel = ({
   closeUrl,
   isLoading,
   onSave,
-  walletAddress,
   isCreating,
   error,
 }: SignupPanelProps) => {
+  const { user } = useAuthentication();
   const form = useForm<FormData>({
     resolver: zodResolver(schemaSignupPersonForm),
     defaultValues: {
@@ -58,8 +58,8 @@ export const SignupPanel = ({
       leadImageUrl: undefined,
       description: '',
       location: undefined,
-      email: '',
-      address: walletAddress || '',
+      email: user?.email?.trim() || '',
+      address: user?.wallet?.address || '',
       links: [],
     },
   });
