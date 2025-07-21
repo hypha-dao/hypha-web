@@ -12,6 +12,9 @@ import {
   ArrowRightIcon,
   LoopIcon,
 } from '@radix-ui/react-icons';
+import { useMemberBySlug } from '@web/hooks/use-member-by-slug';
+
+const MIGRATE_HYPHA_TOKENS_URL = 'https://hypha-react-demo.vercel.app';
 
 const WALLET_ACTIONS = [
   {
@@ -48,14 +51,16 @@ const WALLET_ACTIONS = [
     title: 'Migrate Hypha Tokens (Telos → Base)',
     description:
       'Move your Hypha tokens from the Telos blockchain to the Base network. Initiates the migration experience.',
-    href: '#',
+    href: 'migrate-hypha-tokens',
     icon: <LoopIcon />,
-    disabled: true,
+    disabled: false,
+    target: '_blank',
   },
 ];
 
 export default function ProfileWallet() {
   const { lang, personSlug } = useParams();
+  const { person } = useMemberBySlug(personSlug as string);
   return (
     <SidePanel>
       <div className="flex flex-col gap-5">
@@ -67,7 +72,11 @@ export default function ProfileWallet() {
           content="Manage your personal funds, interact with the Hypha network, and contribute directly using your wallet."
           actions={WALLET_ACTIONS.map((action) => ({
             ...action,
-            href: `/${lang}/profile/${personSlug}/wallet/${action.href}`,
+            href:
+              action.title === 'Migrate Hypha Tokens (Telos → Base)'
+                ? `${MIGRATE_HYPHA_TOKENS_URL}/${person?.address}`
+                : `/${lang}/profile/${personSlug}/wallet/${action.href}`,
+            target: action.target || undefined,
           }))}
         />
       </div>
