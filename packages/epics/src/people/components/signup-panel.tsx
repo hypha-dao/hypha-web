@@ -58,7 +58,7 @@ export const SignupPanel = ({
       leadImageUrl: undefined,
       description: '',
       location: undefined,
-      email: user?.email?.trim() || '',
+      email: user?.email?.trim() || undefined,
       address: user?.wallet?.address || '',
       links: [],
     },
