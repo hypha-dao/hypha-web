@@ -10,16 +10,16 @@ import { useTokens } from '../../../treasury';
 export const ProposeContributionPlugin = ({
   spaceSlug,
   members,
-  subspaces,
+  spaces,
 }: {
   spaceSlug: string;
   members: Person[];
-  subspaces?: Space[];
+  spaces?: Space[];
 }) => {
   const { tokens, isLoading } = useTokens({ spaceSlug });
   return (
     <div className="flex flex-col gap-4">
-      <RecipientField members={members} subspaces={subspaces} />
+      <RecipientField members={members} spaces={spaces} />
       <Separator />
       <PaymentSchedule />
       <Skeleton loading={isLoading} width={'100%'} height={90}>

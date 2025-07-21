@@ -12,10 +12,10 @@ import { Space, Person } from '@hypha-platform/core/client';
 
 export function RecipientField({
   members,
-  subspaces,
+  spaces,
 }: {
   members: Person[];
-  subspaces?: Space[];
+  spaces?: Space[];
 }) {
   const { control } = useFormContext();
   return (
@@ -30,7 +30,7 @@ export function RecipientField({
                 field.onChange(recipient.address);
               }}
               members={members}
-              subspaces={subspaces}
+              spaces={spaces}
             />
           </FormControl>
           <FormMessage />
