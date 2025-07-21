@@ -11,10 +11,10 @@
   },
   "iconLibrary": "lucide",
   "aliases": {
-    "components": "src",
+    "components": "@hypha-platform/ui",
     "utils": "@hypha-platform/ui-utils",
     "lib": "@hypha-platform/ui-utils",
-    "hooks": "src/hooks",
-    "ui": "src"
+    "ui": "src",
+    "hooks": "src/hooks"
   }
 }
