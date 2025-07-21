@@ -96,6 +96,7 @@ export const SETTINGS_ACTIONS = [
     href: 'https://discord.gg/W7Cz7XD3BS',
     icon: <RadiobuttonIcon />,
     baseTab: 'governance',
+    target: '_blank',
   },
   {
     group: 'Treasury',

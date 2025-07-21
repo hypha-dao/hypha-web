@@ -71,7 +71,6 @@ export const SelectAction = ({
             {groupActions.map((action) => (
               <Link
                 href={action.href}
-                target={isAbsoluteUrl(action.href) ? '_blank' : undefined}
                 key={action.title}
                 target={action.target}
                 {...(action.disabled && {

@@ -3,7 +3,7 @@ import { Locale } from '@hypha-platform/i18n';
 import { Button, Container } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { SpaceGroupSlider, SpaceSearch } from '@hypha-platform/epics';
-import { findAllSpaces, getDb, Space } from '@hypha-platform/core/server';
+import { findAllSpaces, Space } from '@hypha-platform/core/server';
 import { Category } from '@hypha-platform/core/client';
 import { PlusIcon } from '@radix-ui/react-icons';
 import { getDhoPathGovernance } from '../dho/[id]/@tab/governance/constants';
