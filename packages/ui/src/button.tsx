@@ -16,7 +16,7 @@ const buttonVariants = cva(
       },
       size: {
         default: 'h-6 font-medium px-3',
-        sm: 'h-8 px-3',
+        sm: 'h-4 px-3',
         lg: 'h-11 px-8',
         icon: 'h-10 w-10',
       },
@@ -59,7 +59,7 @@ const buttonVariants = cva(
         variant: 'outline',
         colorVariant: 'neutral',
         className:
-          'border-neutral-9 text-neutral-9 hover:bg-neutral-2 hover:text-neutral-11',
+          'border-neutral-9 text-secondary-foreground bg-neutral-1 hover:text-neutral-12',
       },
       {
         variant: 'outline',
@@ -119,6 +119,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           buttonVariants({ variant, size, colorVariant }),
           className,
         )}
+        type="button"
         ref={ref}
         {...rest}
       />
