@@ -13,7 +13,7 @@ export const Container = ({ children, size = 'md', className }: Props) => {
   return (
     <div
       className={clsx(
-        'mx-auto px-5',
+        'w-full mx-auto px-5',
         'max-w-container-sm md:max-w-container-md',
         size == 'md' && 'lg:max-w-container-lg xl:max-w-container-xl',
         size == 'lg' && 'lg:max-w-container-xl xl:max-w-container-2xl',
