@@ -23,9 +23,8 @@ export const Recipient = ({
   value,
   defaultRecipientType = 'member',
 }: RecipientProps) => {
-  const [recipientType, setRecipientType] = useState<RecipientType>(
-    defaultRecipientType,
-  );
+  const [recipientType, setRecipientType] =
+    useState<RecipientType>(defaultRecipientType);
   const [selected, setSelected] = useState<
     Person | Space | { address: string } | null
   >(null);
