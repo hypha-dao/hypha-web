@@ -125,7 +125,6 @@ export const VotingMethodSelector = ({
 
   return (
     <div className="flex flex-col gap-4">
-      <h4 className="text-2 font-medium text-neutral-11">Voting Method</h4>
       {updatedVotingMethods.map((method) => (
         <Tooltip key={method.id}>
           <TooltipTrigger asChild>
