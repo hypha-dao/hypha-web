@@ -20,6 +20,11 @@ export default function ProfileWalletDepositFunds() {
           />
           <ButtonClose closeUrl={`/${lang}/profile/${personSlug}`} />
         </div>
+        <div className="flex gap-5 justify-between">
+          <span className="text-4 text-secondary-foreground">
+            Deposit Funds
+          </span>
+        </div>
         <PersonDepositFunds personAddress={person?.address as `0x${string}`} />
       </div>
     </SidePanel>
