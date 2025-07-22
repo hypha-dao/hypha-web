@@ -1,7 +1,7 @@
 'use client';
 
 import { useFormContext } from 'react-hook-form';
-import { Recipient } from './recipient';
+import { Recipient, RecipientType } from './recipient';
 import {
   FormControl,
   FormField,
@@ -13,9 +13,11 @@ import { Space, Person } from '@hypha-platform/core/client';
 export function RecipientField({
   members,
   spaces,
+  defaultRecipientType = 'member',
 }: {
   members: Person[];
   spaces?: Space[];
+  defaultRecipientType?: RecipientType;
 }) {
   const { control } = useFormContext();
   return (
@@ -31,6 +33,7 @@ export function RecipientField({
               }}
               members={members}
               spaces={spaces}
+              defaultRecipientType={defaultRecipientType}
             />
           </FormControl>
           <FormMessage />
