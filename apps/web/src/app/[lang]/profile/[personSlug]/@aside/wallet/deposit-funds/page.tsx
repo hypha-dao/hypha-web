@@ -13,17 +13,17 @@ export default function ProfileWalletDepositFunds() {
   return (
     <SidePanel>
       <div className="flex flex-col gap-5">
-        <div className="flex gap-5 justify-end items-center">
-          <ButtonBack
-            label="Back to wallet"
-            backUrl={`/${lang}/profile/${personSlug}/wallet`}
-          />
-          <ButtonClose closeUrl={`/${lang}/profile/${personSlug}`} />
-        </div>
         <div className="flex gap-5 justify-between">
-          <span className="text-4 text-secondary-foreground">
+          <span className="flex text-4 text-secondary-foreground justify-start items-center">
             Deposit Funds
           </span>
+          <div className="flex gap-5 justify-end items-center">
+            <ButtonBack
+              label="Back to wallet"
+              backUrl={`/${lang}/profile/${personSlug}/wallet`}
+            />
+            <ButtonClose closeUrl={`/${lang}/profile/${personSlug}`} />
+          </div>
         </div>
         <PersonDepositFunds personAddress={person?.address as `0x${string}`} />
       </div>
