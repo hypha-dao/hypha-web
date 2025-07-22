@@ -176,11 +176,7 @@ export const EditPersonSection = ({
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <Input
-                              disabled
-                              placeholder="Nickname"
-                              {...field}
-                            />
+                            <Input disabled placeholder="Nickname" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -190,7 +186,7 @@ export const EditPersonSection = ({
                 </div>
               </div>
               <div className="flex justify-end">
-                <ButtonClose closeUrl={closeUrl} className="px-0 md:px-3"/>
+                <ButtonClose closeUrl={closeUrl} className="px-0 md:px-3" />
               </div>
             </div>
             <Separator />

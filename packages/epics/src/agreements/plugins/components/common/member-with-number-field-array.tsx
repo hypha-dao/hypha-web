@@ -46,7 +46,9 @@ export const MemberWithNumberFieldFieldArray = ({
     <div className="flex flex-col gap-4">
       <Separator />
       <div className="flex flex-col md:flex-row gap-4">
-        <Text className="pt-1 text-2 text-neutral-11 text-nowrap">Initial voice allocation</Text>
+        <Text className="pt-1 text-2 text-neutral-11 text-nowrap">
+          Initial voice allocation
+        </Text>
         <div className="flex flex-col gap-2">
           {fields.map((field, index) => (
             <div key={field.id} className="flex items-center gap-2">
@@ -68,7 +70,10 @@ export const MemberWithNumberFieldFieldArray = ({
                   )}
                 />
               </div>
-              <Button variant="ghost" onClick={(ev) => handleDeleteField(ev, index)}>
+              <Button
+                variant="ghost"
+                onClick={(ev) => handleDeleteField(ev, index)}
+              >
                 <Cross2Icon />
               </Button>
             </div>
