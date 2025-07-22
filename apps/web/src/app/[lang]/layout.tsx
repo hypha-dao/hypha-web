@@ -84,7 +84,7 @@ export default async function RootLayout({
               />
             </MenuTop>
             <NextSSRPlugin routerConfig={extractRouterConfig(fileRouter)} />
-            <div className="mb-auto pb-4">
+            <div className="mb-auto pb-8">
               <div className="pt-9 h-full flex justify-normal">
                 <div className="w-full h-full">{children}</div>
               </div>
