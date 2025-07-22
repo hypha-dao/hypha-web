@@ -38,6 +38,7 @@ export const MemberWithNumberField = ({
       members.map((member) => ({
         value: String(member.address),
         label: `${member.name} ${member.surname}`,
+        searchText: `${member.name} ${member.surname}`.toLowerCase(),
         avatarUrl: member.avatarUrl,
         address: member.address,
       })),
@@ -45,19 +46,12 @@ export const MemberWithNumberField = ({
   );
 
   const handleMemberChange = useCallback(
-    (inputValue: string) => {
-      const lowerValue = inputValue.toLowerCase();
-      const found =
-        members.find(
-          (r) =>
-            String(r.address).toLowerCase() === lowerValue ||
-            r?.name?.toLowerCase() === lowerValue ||
-            r?.surname?.toLowerCase() === lowerValue,
-        ) || null;
-
-      setSelected(found);
+    (selectedAddress: string) => {
+      const foundMember =
+        members.find((m) => m.address === selectedAddress) || null;
+      setSelected(foundMember);
       onChange?.({
-        member: found?.address || '',
+        member: foundMember?.address || '',
         number,
       });
     },
