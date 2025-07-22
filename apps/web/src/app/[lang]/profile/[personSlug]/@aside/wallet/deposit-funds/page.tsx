@@ -14,9 +14,9 @@ export default function ProfileWalletDepositFunds() {
     <SidePanel>
       <div className="flex flex-col gap-5">
         <div className="flex gap-5 justify-between">
-          <span className="flex text-4 text-secondary-foreground justify-start items-center">
+          <h2 className="flex text-4 text-secondary-foreground justify-start items-center">
             Deposit Funds
-          </span>
+          </h2>
           <div className="flex gap-5 justify-end items-center">
             <ButtonBack
               label="Back to wallet"
