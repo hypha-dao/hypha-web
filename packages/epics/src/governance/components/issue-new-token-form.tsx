@@ -69,7 +69,7 @@ export const IssueNewTokenForm = ({
       maxSupply: 0,
       // tokenDescription: '',
       decaySettings: {
-        decayInterval: 604800,
+        decayInterval: 2592000,
         decayPercentage: 1,
       },
       label: 'Issue New Token',

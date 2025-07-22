@@ -10,20 +10,12 @@ import {
 import { PercentIcon } from 'lucide-react';
 import { useFormContext, useWatch } from 'react-hook-form';
 
-type TimeFormat = 'Minutes' | 'Hours' | 'Days' | 'Weeks' | 'Months';
+type TimeFormat = 'Weeks' | 'Months' | 'Years';
 
 const TIME_FORMAT_TO_SECONDS: Record<TimeFormat, number> = {
-  Minutes: 60,
-  Hours: 3600,
-  Days: 86400,
   Weeks: 604800,
   Months: 2592000,
-};
-
-type DecaySettingsInternal = {
-  decayPeriod: number | '';
-  timeFormat: TimeFormat;
-  decayPercent: number | '';
+  Years: 31536000,
 };
 
 type DecaySettingsOutput = {
@@ -96,7 +88,7 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
     <>
       <div className="flex justify-between items-center gap-3">
         <div className="text-2 text-neutral-11 font-medium">
-          Voice Decay Period
+          Voice Decay Frequency
         </div>
 
         <div className="flex justify-between flex-row flex-1 gap-3 max-w-[50%]">
@@ -116,11 +108,9 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
                 <SelectValue placeholder="Select time format" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Minutes">Minutes</SelectItem>
-                <SelectItem value="Hours">Hours</SelectItem>
-                <SelectItem value="Days">Days</SelectItem>
                 <SelectItem value="Weeks">Weeks</SelectItem>
                 <SelectItem value="Months">Months</SelectItem>
+                <SelectItem value="Years">Years</SelectItem>
               </SelectContent>
             </Select>
           </div>
