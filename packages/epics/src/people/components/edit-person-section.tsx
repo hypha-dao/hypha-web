@@ -19,14 +19,13 @@ import {
   UploadLeadImage,
   UploadAvatar,
 } from '@hypha-platform/ui';
-import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/ui-utils';
-import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { Links } from '../../common';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { ButtonClose } from '@hypha-platform/epics';
 
 interface Person {
   avatarUrl?: string;
@@ -114,7 +113,7 @@ export const EditPersonSection = ({
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
           <div className="flex flex-col gap-5">
-            <div className="flex gap-5 justify-between">
+            <div className="flex flex-col-reverse md:flex-row gap-5 justify-between">
               <div className="flex items-center space-x-2">
                 <FormField
                   control={form.control}
@@ -147,7 +146,6 @@ export const EditPersonSection = ({
                               <Input
                                 disabled={isLoading}
                                 placeholder="Name"
-                                className="text-2 text-neutral-11"
                                 {...field}
                               />
                             </FormControl>
@@ -164,7 +162,6 @@ export const EditPersonSection = ({
                               <Input
                                 disabled={isLoading}
                                 placeholder="Surname"
-                                className="text-2 text-neutral-11"
                                 {...field}
                               />
                             </FormControl>
@@ -179,12 +176,7 @@ export const EditPersonSection = ({
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <Input
-                              disabled
-                              placeholder="Nickname"
-                              className="text-1 text-neutral-11"
-                              {...field}
-                            />
+                            <Input disabled placeholder="Nickname" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -193,16 +185,9 @@ export const EditPersonSection = ({
                   </div>
                 </div>
               </div>
-              <Link href={closeUrl} scroll={false}>
-                <Button
-                  variant="ghost"
-                  colorVariant="neutral"
-                  className="flex items-center"
-                >
-                  Close
-                  <RxCross1 className="ml-2" />
-                </Button>
-              </Link>
+              <div className="flex justify-end">
+                <ButtonClose closeUrl={closeUrl} className="px-0 md:px-3" />
+              </div>
             </div>
             <Separator />
             <FormField
@@ -253,7 +238,7 @@ export const EditPersonSection = ({
                           <Input
                             disabled={isLoading}
                             placeholder="Email"
-                            className="text-1 text-neutral-11"
+                            className="w-60"
                             {...field}
                           />
                         </FormControl>
@@ -277,7 +262,7 @@ export const EditPersonSection = ({
                           <Input
                             disabled={isLoading}
                             placeholder="Location"
-                            className="text-1 text-neutral-11"
+                            className="w-60"
                             {...field}
                           />
                         </FormControl>
