@@ -51,6 +51,11 @@ export const ProfileTransferFunds = ({
           />
           <ButtonClose closeUrl={`/${lang}/profile/${personSlug}`} />
         </div>
+        <div className="flex gap-5 justify-between">
+          <span className="text-4 text-secondary-foreground">
+            Transfer Funds
+          </span>
+        </div>
         <PeopleTransferForm
           peoples={peoples}
           spaces={spaces}
