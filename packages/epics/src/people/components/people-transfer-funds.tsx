@@ -50,8 +50,8 @@ export const ProfileTransferFunds = ({
           </h2>
           <div className="flex gap-5 justify-end items-center">
             <ButtonBack
-              label="Back to wallet"
-              backUrl={`/${lang}/profile/${personSlug}/wallet`}
+              label="Back to actions"
+              backUrl={`/${lang}/profile/${personSlug}/actions`}
             />
             <ButtonClose closeUrl={`/${lang}/profile/${personSlug}`} />
           </div>

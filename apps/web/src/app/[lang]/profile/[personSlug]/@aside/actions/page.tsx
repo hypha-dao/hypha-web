@@ -68,14 +68,14 @@ export default function ProfileWallet() {
           <ButtonClose closeUrl={`/${lang}/profile/${personSlug}`} />
         </div>
         <SelectAction
-          title="Wallet"
+          title="Actions"
           content="Manage your personal funds, interact with the Hypha network, and contribute directly using your wallet."
           actions={WALLET_ACTIONS.map((action) => ({
             ...action,
             href:
               action.title === 'Migrate Hypha Tokens (Telos → Base)'
                 ? `${MIGRATE_HYPHA_TOKENS_URL}/${person?.address}`
-                : `/${lang}/profile/${personSlug}/wallet/${action.href}`,
+                : `/${lang}/profile/${personSlug}/actions/${action.href}`,
             target: action.target || undefined,
           }))}
         />

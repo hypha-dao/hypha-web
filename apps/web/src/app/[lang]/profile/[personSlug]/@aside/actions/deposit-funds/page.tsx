@@ -20,7 +20,7 @@ export default function ProfileWalletDepositFunds() {
           <div className="flex gap-5 justify-end items-center">
             <ButtonBack
               label="Back to wallet"
-              backUrl={`/${lang}/profile/${personSlug}/wallet`}
+              backUrl={`/${lang}/profile/${personSlug}/actions`}
             />
             <ButtonClose closeUrl={`/${lang}/profile/${personSlug}`} />
           </div>
