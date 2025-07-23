@@ -1,4 +1,4 @@
-import { asc, eq, inArray, sql } from 'drizzle-orm';
+import { asc, eq, inArray, sql, and } from 'drizzle-orm';
 import {
   memberships,
   Space,
@@ -41,19 +41,22 @@ export const findAllSpaces = async (
     .leftJoin(memberships, eq(memberships.spaceId, spaces.id))
     .leftJoin(documents, eq(documents.spaceId, spaces.id))
     .where(
-      props.search
-        ? sql`(
-            -- Full-text search for exact word matches (highest priority)
-            (setweight(to_tsvector('english', ${spaces.title}), 'A') ||
-             setweight(to_tsvector('english', ${spaces.description}), 'B')
-            ) @@ plainto_tsquery('english', ${props.search})
-            OR
-            -- Partial word matching with ILIKE (case-insensitive)
-            ${spaces.title} ILIKE ${'%' + props.search + '%'}
-            OR
-            ${spaces.description} ILIKE ${'%' + props.search + '%'}
-          )`
-        : undefined,
+      and(
+        eq(spaces.isArchived, false),
+        props.search
+          ? sql`(
+              -- Full-text search for exact word matches (highest priority)
+              (setweight(to_tsvector('english', ${spaces.title}), 'A') ||
+               setweight(to_tsvector('english', ${spaces.description}), 'B')
+              ) @@ plainto_tsquery('english', ${props.search})
+              OR
+              -- Partial word matching with ILIKE (case-insensitive)
+              ${spaces.title} ILIKE ${'%' + props.search + '%'}
+              OR
+              ${spaces.description} ILIKE ${'%' + props.search + '%'}
+            )`
+          : undefined,
+      ),
     )
     .groupBy(
       spaces.id,
@@ -115,7 +118,9 @@ export const findAllSpacesByMemberId = async (
     .select()
     .from(spaces)
     .innerJoin(memberships, eq(memberships.spaceId, spaces.id))
-    .where(eq(memberships.personId, memberId))
+    .where(
+      and(eq(memberships.personId, memberId), eq(spaces.isArchived, false)),
+    )
     .orderBy(asc(spaces.title));
 
   return results.map((row) => row.spaces);
@@ -131,7 +136,12 @@ export const findAllSpacesByWeb3SpaceIds = async (
   const results = await db
     .select()
     .from(spaces)
-    .where(inArray(spaces.web3SpaceId, web3SpaceIds))
+    .where(
+      and(
+        inArray(spaces.web3SpaceId, web3SpaceIds),
+        eq(spaces.isArchived, false),
+      ),
+    )
     .orderBy(asc(spaces.title));
 
   return results;
