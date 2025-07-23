@@ -56,7 +56,8 @@ export const SpaceGroupSlider = ({
             if (type) {
               seeAllSpaces(type);
             }
-          }}>
+          }}
+        >
           See all
         </Button>
       </div>

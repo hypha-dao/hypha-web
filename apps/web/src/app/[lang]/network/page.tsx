@@ -5,6 +5,7 @@ import { Category } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 import { NetworkAll } from './_components/network-all';
 import { NetworkSelected } from './_components/network-selected';
+import { useMembers } from '@web/hooks/use-members';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -50,6 +51,7 @@ export default async function Index(props: PageProps) {
           lang={lang}
           spaces={spaces}
           categories={categories}
+          useMembers={useMembers}
         />
       ) : (
         <NetworkAll
