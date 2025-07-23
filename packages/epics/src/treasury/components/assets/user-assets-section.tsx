@@ -33,7 +33,7 @@ export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
       <SectionFilter count={totalBalance || 0} label="Balance">
         <Button asChild className="ml-2">
           <Link href={`${basePath}/wallet`} scroll={false}>
-            Open Wallet
+            Actions
           </Link>
         </Button>
       </SectionFilter>
