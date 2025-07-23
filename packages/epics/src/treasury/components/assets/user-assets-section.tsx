@@ -32,7 +32,7 @@ export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
     <div className="flex flex-col w-full justify-center items-center gap-4">
       <SectionFilter count={totalBalance || 0} label="Balance">
         <Button asChild className="ml-2">
-          <Link href={`${basePath}/wallet`} scroll={false}>
+          <Link href={`${basePath}/actions`} scroll={false}>
             Actions
           </Link>
         </Button>
