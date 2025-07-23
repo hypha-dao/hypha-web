@@ -1,7 +1,7 @@
 'use client';
 
 import { Category, Space } from '@hypha-platform/core/client';
-import { CategorySpaces, UseMembers } from '@hypha-platform/epics';
+import { SpaceCardList, UseMembers } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Text } from '@radix-ui/themes';
@@ -28,7 +28,7 @@ export function NetworkSelected({
     categoriesIntersected(space.categories, categories),
   );
   return (
-    <>
+    <div className="flex flex-col">
       <div className="mb-6 flex items-center">
         <Link
           href={`/${lang}/network`}
@@ -37,33 +37,35 @@ export function NetworkSelected({
           <ChevronLeftIcon width={16} height={16} />
           <Text className="text-sm">Home</Text>
         </Link>
-        <Text className="text-sm text-gray-400 ml-1 font-medium capitalize">
-          {' '}
-          /{' '}
-        </Text>
+        <Text className="text-sm text-gray-400 ml-1 font-medium"> / </Text>
         {categories.map((category, index) => (
-          <Text className="text-sm text-gray-400 ml-1 font-medium capitalize">
-            {index !== 0 && '| '}
+          <Text
+            key={`cat-${index}`}
+            className="text-sm text-gray-400 ml-1 font-medium capitalize"
+          >
+            {index !== 0 && ' | '}
             {category}
           </Text>
         ))}
       </div>
       <Text className="text-5 text-left flex mb-8">
         {categories.map((category, index) => (
-          <Text className="capitalize">
-            {index !== 0 && '| '}
+          <Text key={`cat-title-${index}`} className="ml-1 capitalize">
+            {index !== 0 && ' | '}
             {category}
           </Text>
         ))}{' '}
-        {' | '} {selectedSpaces?.length}
+        <Text className="ml-1 mr-1">|</Text>
+        {selectedSpaces?.length}
       </Text>
       {/* TODO: search input */}
-      <CategorySpaces
-        lang={lang}
-        spaces={selectedSpaces}
-        categories={categories}
-        useMembers={useMembers}
-      />
-    </>
+      <div className="space-y-6">
+        <SpaceCardList
+          lang={lang}
+          spaces={selectedSpaces}
+          useMembers={useMembers}
+        />
+      </div>
+    </div>
   );
 }
