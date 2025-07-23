@@ -50,6 +50,7 @@ export default async function Index(props: PageProps) {
           lang={lang}
           spaces={spaces}
           categories={categories}
+          uniqueCategories={uniqueCategories}
           useMembers={useMembers}
         />
       ) : (

@@ -1,3 +1,4 @@
+export * from './category-search';
 export * from './category-spaces';
 export * from './create-space-form';
 export * from './create-subspace-form';

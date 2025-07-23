@@ -1,7 +1,7 @@
 'use client';
 
 import { Category, Space } from '@hypha-platform/core/client';
-import { SpaceCardList, UseMembers } from '@hypha-platform/epics';
+import { CategorySearch, SpaceCardList, UseMembers } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Text } from '@radix-ui/themes';
@@ -17,15 +17,20 @@ export function NetworkSelected({
   lang,
   spaces,
   categories,
+  uniqueCategories,
   useMembers,
 }: {
   lang: Locale;
   spaces: Space[];
   categories: Category[];
+  uniqueCategories: Category[];
   useMembers: UseMembers;
 }) {
   const selectedSpaces = spaces.filter((space) =>
     categoriesIntersected(space.categories, categories),
+  );
+  const categorySuggestions = uniqueCategories.map(
+    category => ({ title: String(category) })
   );
   return (
     <div className="flex flex-col">
@@ -58,9 +63,8 @@ export function NetworkSelected({
         <Text className="ml-1 mr-1">|</Text>
         {selectedSpaces?.length}
       </Text>
-      {/* <CategorySearch /> */}
-      {/* TODO: search input */}
-      <div className="space-y-6">
+      <CategorySearch suggestions={categorySuggestions} />
+      <div className="space-y-6 flex mt-6">
         <SpaceCardList
           lang={lang}
           spaces={selectedSpaces}
