@@ -7,6 +7,7 @@ export type Category =
   | 'flora'
   | 'food'
   | 'fungi'
+  | 'governance'
   | 'health'
   | 'housing'
   | 'mobility'
