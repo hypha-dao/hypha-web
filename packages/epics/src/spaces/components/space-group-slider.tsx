@@ -13,7 +13,6 @@ import { SpaceCard } from './space-card';
 import { Space } from '@hypha-platform/core/client';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
-import { Locale } from '@hypha-platform/i18n';
 
 type SpaceGroupSliderProps = {
   spaces?: Space[];

@@ -46,13 +46,13 @@ export default async function Index(props: PageProps) {
   return (
     <Container>
       {categories && categories.length > 0 ? (
-        <NetworkAll
+        <NetworkSelected
           lang={lang}
           spaces={spaces}
           categories={categories}
         />
       ) : (
-        <NetworkSelected
+        <NetworkAll
           lang={lang}
           spaces={spaces}
           uniqueCategories={uniqueCategories}
