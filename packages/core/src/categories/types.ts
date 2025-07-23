@@ -1,17 +1,15 @@
 export type Category =
-  | 'air'
   | 'art'
+  | 'biodiversity'
   | 'education'
   | 'energy'
-  | 'fauna'
-  | 'flora'
-  | 'food'
-  | 'fungi'
+  | 'events'
+  | 'governance'
   | 'health'
   | 'housing'
+  | 'land'
   | 'mobility'
+  | 'ocean'
   | 'sandbox'
-  | 'soil'
   | 'tech'
-  | 'usecase'
-  | 'water';
+  | 'usecase';
