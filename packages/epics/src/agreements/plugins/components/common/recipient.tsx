@@ -6,10 +6,13 @@ import { WalletAddress } from './wallet-address';
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
 import { Space, Person } from '@hypha-platform/core/client';
 
+export type RecipientType = 'member' | 'space';
+
 type RecipientProps = {
   spaces?: Space[];
   members?: Person[];
   value?: string;
+  defaultRecipientType?: RecipientType;
   onChange?: (selected: Person | Space | { address: string }) => void;
 };
 
@@ -18,10 +21,10 @@ export const Recipient = ({
   spaces = [],
   onChange,
   value,
+  defaultRecipientType = 'member',
 }: RecipientProps) => {
-  const [recipientType, setRecipientType] = useState<'member' | 'space'>(
-    'member',
-  );
+  const [recipientType, setRecipientType] =
+    useState<RecipientType>(defaultRecipientType);
   const [selected, setSelected] = useState<
     Person | Space | { address: string } | null
   >(null);
