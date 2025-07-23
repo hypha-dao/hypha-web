@@ -51,21 +51,144 @@ contract HyphaToken is
   ) internal override onlyOwner {}
 
   /**
-   * @dev Override transfer and transferFrom to make the token non-transferable
+   * @dev Override transfer to allow whitelisted addresses to transfer with special logic
    */
   function transfer(
-    address,
-    uint256
+    address to,
+    uint256 amount
   ) public virtual override(ERC20Upgradeable, IHyphaToken) returns (bool) {
+    address from = msg.sender;
+
+    // Check if sender is whitelisted for mint transfers
+    if (mintTransferWhitelist[from]) {
+      return _handleMintTransfer(from, to, amount);
+    }
+
+    // Check if sender is whitelisted for normal transfers
+    if (normalTransferWhitelist[from]) {
+      _transfer(from, to, amount);
+      return true;
+    }
+
+    // Default behavior: transfers are disabled
     revert('HYPHA: Transfers disabled');
   }
 
   function transferFrom(
-    address,
-    address,
-    uint256
+    address from,
+    address to,
+    uint256 amount
   ) public virtual override(ERC20Upgradeable, IHyphaToken) returns (bool) {
+    // Check if from address is whitelisted for mint transfers
+    if (mintTransferWhitelist[from]) {
+      // Check allowance first
+      uint256 currentAllowance = allowance(from, msg.sender);
+      if (currentAllowance != type(uint256).max) {
+        require(
+          currentAllowance >= amount,
+          'ERC20: transfer amount exceeds allowance'
+        );
+        _approve(from, msg.sender, currentAllowance - amount);
+      }
+      return _handleMintTransfer(from, to, amount);
+    }
+
+    // Check if from address is whitelisted for normal transfers
+    if (normalTransferWhitelist[from]) {
+      return super.transferFrom(from, to, amount);
+    }
+
+    // Default behavior: transfers are disabled
     revert('HYPHA: Transfers disabled');
+  }
+
+  /**
+   * @dev Handle transfer with minting capability for whitelisted addresses
+   * @param from Address sending tokens
+   * @param to Address receiving tokens
+   * @param amount Amount to transfer
+   */
+  function _handleMintTransfer(
+    address from,
+    address to,
+    uint256 amount
+  ) internal returns (bool) {
+    uint256 senderBalance = balanceOf(from);
+
+    if (senderBalance >= amount) {
+      // Sender has enough balance, perform normal transfer
+      _transfer(from, to, amount);
+    } else {
+      // Sender doesn't have enough balance, mint the difference to recipient
+      uint256 shortfall = amount - senderBalance;
+
+      // Ensure we don't exceed max supply
+      require(
+        totalMinted + shortfall <= MAX_SUPPLY,
+        'Exceeds max token supply'
+      );
+
+      // Transfer what the sender has (if any)
+      if (senderBalance > 0) {
+        _transfer(from, to, senderBalance);
+      }
+
+      // Mint the shortfall directly to recipient
+      _mint(to, shortfall);
+      totalMinted = totalMinted + shortfall;
+
+      emit TokensMinted(to, shortfall);
+    }
+
+    return true;
+  }
+
+  /**
+   * @dev Set mint transfer whitelist status for an address
+   * @param account Address to update
+   * @param status Whether the address should be whitelisted for mint transfers
+   */
+  function setMintTransferWhitelist(
+    address account,
+    bool status
+  ) external onlyOwner {
+    require(account != address(0), 'Cannot whitelist zero address');
+    mintTransferWhitelist[account] = status;
+    emit MintTransferWhitelistUpdated(account, status);
+  }
+
+  /**
+   * @dev Set normal transfer whitelist status for an address
+   * @param account Address to update
+   * @param status Whether the address should be whitelisted for normal transfers
+   */
+  function setNormalTransferWhitelist(
+    address account,
+    bool status
+  ) external onlyOwner {
+    require(account != address(0), 'Cannot whitelist zero address');
+    normalTransferWhitelist[account] = status;
+    emit NormalTransferWhitelistUpdated(account, status);
+  }
+
+  /**
+   * @dev Check if an address is whitelisted for mint transfers
+   * @param account Address to check
+   */
+  function isMintTransferWhitelisted(
+    address account
+  ) external view returns (bool) {
+    return mintTransferWhitelist[account];
+  }
+
+  /**
+   * @dev Check if an address is whitelisted for normal transfers
+   * @param account Address to check
+   */
+  function isNormalTransferWhitelisted(
+    address account
+  ) external view returns (bool) {
+    return normalTransferWhitelist[account];
   }
 
   /**
@@ -437,22 +560,15 @@ contract HyphaToken is
   }
 
   /**
-   * @dev Set the authorized mint address (governance function)
-   * @param _mintAddress Address authorized to call the mint function
-   */
-  function setMintAddress(address _mintAddress) external onlyOwner {
-    address oldMintAddress = mintAddress;
-    mintAddress = _mintAddress;
-    emit MintAddressUpdated(oldMintAddress, _mintAddress);
-  }
-
-  /**
    * @dev Mint HYPHA tokens to a specified address
    * @param to Address to receive the minted tokens
    * @param amount Amount of HYPHA tokens to mint
    */
   function mint(address to, uint256 amount) external {
-    require(msg.sender == mintAddress, 'Only authorized mint address can mint');
+    require(
+      mintTransferWhitelist[msg.sender],
+      'Only whitelisted addresses can mint'
+    );
     require(to != address(0), 'Cannot mint to zero address');
     require(amount > 0, 'Amount must be greater than zero');
     require(totalMinted + amount <= MAX_SUPPLY, 'Exceeds max token supply');
@@ -463,29 +579,20 @@ contract HyphaToken is
     // Mint tokens to the specified address
     _mint(to, amount);
 
-    // Update reward debt if the recipient is not the IEX address
-    if (to != iexAddress) {
-      // Update distribution state first
-      updateDistributionState();
-
-      // Set user's reward debt to current accumulator to prevent claiming rewards from before they had tokens
-      userRewardDebt[to] = accumulatedRewardPerToken;
-    }
-
     emit TokensMinted(to, amount);
   }
 
   /**
-   * @dev Handle reward accounting before any token transfer
-   * @param from Address sending tokens
-   * @param to Address receiving tokens
+   * @dev Handle reward accounting before any token transfer, mint, or burn
+   * @param from Address sending tokens (address(0) for minting)
+   * @param to Address receiving tokens (address(0) for burning)
    * @param amount Amount of tokens transferred
    */
-  function _beforeTokenTransfer(
+  function _update(
     address from,
     address to,
     uint256 amount
-  ) internal virtual {
+  ) internal virtual override {
     if (amount > 0) {
       // Update global distribution state first
       updateDistributionState();
@@ -508,5 +615,8 @@ contract HyphaToken is
         userRewardDebt[to] = accumulatedRewardPerToken;
       }
     }
+
+    // Call parent implementation to perform the actual transfer/mint/burn
+    super._update(from, to, amount);
   }
 }
