@@ -12,5 +12,8 @@ contract RegularTokenVotingPowerStorage is TokenVotingPowerStorage {
   // Storage for the factory
   address public tokenFactory;
 
+  // Storage for the space factory to check executor permissions
+  address public spaceFactory;
+
   // No events here - they should be defined in interfaces only
 }

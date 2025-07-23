@@ -243,7 +243,7 @@ contract DAOProposalsImplementation is
       );
     }
 
-    require(votingPower > 0, 'No voting power');
+    require(votingPower > 0, 'No voting powerr');
 
     proposal.hasVoted[msg.sender] = true;
     proposal.votingPowerAtSnapshot[msg.sender] = votingPower;
@@ -327,6 +327,14 @@ contract DAOProposalsImplementation is
     }
     // Check if proposal should be rejected (No votes reach unity threshold)
     else if (proposal.noVotes * 100 >= unityThreshold * totalVotesCast) {
+      proposal.expired = true; // Mark as expired to prevent further voting
+      spaceRejectedProposals[proposal.spaceId].push(_proposalId);
+
+      emit ProposalRejected(_proposalId, proposal.yesVotes, proposal.noVotes);
+    }
+    // Check if 100% quorum reached but no unity - reject due to lack of consensus
+    else if (quorumThreshold == 100) {
+      // If 100% participation achieved but neither side reached unity, reject
       proposal.expired = true; // Mark as expired to prevent further voting
       spaceRejectedProposals[proposal.spaceId].push(_proposalId);
 
