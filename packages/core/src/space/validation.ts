@@ -20,22 +20,20 @@ const createSpaceWeb2Props = {
   categories: z
     .array(
       z.enum([
-        'air',
         'art',
+        'biodiversity',
         'education',
         'energy',
-        'fauna',
-        'flora',
-        'food',
-        'fungi',
+        'events',
+        'governance',
         'health',
         'housing',
+        'land',
         'mobility',
+        'ocean',
         'sandbox',
-        'soil',
         'tech',
         'usecase',
-        'water',
       ]),
     )
     .default([]),
