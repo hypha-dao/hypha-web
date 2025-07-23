@@ -42,7 +42,7 @@ export const ButtonSigninMobile = ({
   const { person, isLoading: isPersonLoading } = useMe();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [backMobileUrl, setbackMobileUrl] = useState<string>(mobileRedirectUrl);
   const [shouldRedirect, setShouldRedirect] = useState<boolean>(false);
 
   useEffect(() => {
@@ -70,24 +70,16 @@ export const ButtonSigninMobile = ({
     const handleUserRedirect = async () => {
       try {
         if (user) {
-          if (person) {
-            if (isErrorUser(person)) {
-              setError(person.error);
-            } else {
-              const accessToken = await getAccessToken();
-              if (!accessToken) {
-                setToken(null);
-                setError('Failed to retrieve access token.');
-                return;
-              }
-              setToken(accessToken);
-              if (shouldRedirect) {
-                window.location.href = `${mobileRedirectUrl}?token=${accessToken}`;
-              }
-            }
-          } else {
-            logout(false);
-            setLoading(false);
+          const accessToken = await getAccessToken();
+          if (!accessToken) {
+            setbackMobileUrl(mobileRedirectUrl);
+            setError('Failed to retrieve access token.');
+            return;
+          }
+          const redirectWithToken = `${mobileRedirectUrl}?token=${accessToken}&user=${user.id}`;
+          setbackMobileUrl(redirectWithToken);
+          if (shouldRedirect) {
+            window.location.href = redirectWithToken;
           }
         }
       } catch (err) {
@@ -112,14 +104,14 @@ export const ButtonSigninMobile = ({
 
   const handleSignOut = async () => {
     setShouldRedirect(false);
-    setToken(null);
+    setbackMobileUrl(mobileRedirectUrl);
     setError(null);
     logout(false);
   };
 
   return (
     <div className="w-full flex flex-col items-center justify-center gap-4">
-      {(!isAuthenticated || loading || error) && (
+      {!isAuthenticated && (
         <Button
           onClick={() => login()}
           className="flex gap-2"
@@ -129,7 +121,7 @@ export const ButtonSigninMobile = ({
           <span>Sign in</span>
         </Button>
       )}
-      {isAuthenticated && !loading && !error && (
+      {isAuthenticated && !loading && (
         <Button
           variant="outline"
           colorVariant="error"
@@ -149,13 +141,7 @@ export const ButtonSigninMobile = ({
       )}
       {error && <p className="text-error-11">{error}</p>}
       <Button variant="link" asChild>
-        <Link
-          href={
-            token ? `${mobileRedirectUrl}?token=${token}` : mobileRedirectUrl
-          }
-        >
-          Return to the app
-        </Link>
+        <Link href={backMobileUrl}>Return to the app</Link>
       </Button>
     </div>
   );
