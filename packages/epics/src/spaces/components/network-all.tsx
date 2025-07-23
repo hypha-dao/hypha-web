@@ -7,7 +7,7 @@ import { Button } from '@hypha-platform/ui';
 import { PlusIcon } from '@radix-ui/react-icons';
 import { Text } from '@radix-ui/themes';
 import Link from 'next/link';
-import { getDhoPathGovernance } from '../../dho/[id]/@tab/governance/constants';
+import { getDhoPathGovernance } from '../../../../../apps/web/src/app/[lang]/dho/[id]/@tab/governance/constants';
 
 export function NetworkAll({
   lang,

@@ -58,6 +58,7 @@ export function NetworkSelected({
         <Text className="ml-1 mr-1">|</Text>
         {selectedSpaces?.length}
       </Text>
+      {/* <CategorySearch /> */}
       {/* TODO: search input */}
       <div className="space-y-6">
         <SpaceCardList

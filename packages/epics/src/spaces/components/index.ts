@@ -7,6 +7,8 @@ export * from './filtered-spaces';
 export * from './inner-space-card.wrapper';
 export * from './inner-space-card';
 export * from './join-space';
+export * from './network-all';
+export * from './network-selected';
 export * from './space-card-list';
 export * from './space-card.container';
 export * from './space-card.wrapper';
