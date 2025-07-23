@@ -433,7 +433,7 @@ contract HyphaToken is
     uint256 reward = pendingRewards(account);
     if (reward > 0) {
       // Ensure we don't exceed max supply
-      require(totalMinted + reward <= MAX_SUPPLY, 'Exceeds max token supply');
+      require(totalMinted + reward <= MAX_SUPPLY, 'Exceeds max token supplyy');
 
       unclaimedRewards[account] = 0;
       userRewardDebt[account] = accumulatedRewardPerToken;
