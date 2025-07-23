@@ -46,7 +46,7 @@ export default async function Index(props: PageProps) {
   return (
     <Container>
       <Text className="text-9 text-center flex mb-8">
-        Explore hundreds of Spaces in the Hypha Network
+        Explore the Hypha Network
       </Text>
       <div className="flex justify-center">
         <SpaceSearch />
