@@ -218,6 +218,13 @@
       "when": 1752480306338,
       "tag": "0030_windy_sprite",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1753253583544,
+      "tag": "0031_mighty_warlock",
+      "breakpoints": true
     }
   ]
 }

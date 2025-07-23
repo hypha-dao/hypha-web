@@ -5,6 +5,7 @@ import {
   sql,
 } from 'drizzle-orm';
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -33,6 +34,7 @@ export const spaces = pgTable(
       .default([]),
     parentId: integer('parent_id').references((): AnyPgColumn => spaces.id),
     address: text('web3_address'),
+    isArchived: boolean('is_archived').notNull().default(false),
     ...commonDateFields,
   },
   (table) => [
