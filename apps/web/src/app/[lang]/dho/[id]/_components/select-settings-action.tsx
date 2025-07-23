@@ -138,9 +138,9 @@ export const SETTINGS_ACTIONS = [
   },
   {
     group: 'Hypha Network Tokenomics',
-    title: 'Pay in Hypha Tokens (Hypha Network Contribution) (Coming Soon)',
+    title: 'Activate Space(s) (Coming Soon)',
     description:
-      'All spaces within the Network are required to make a monthly payment in Hypha tokens to use the platform.',
+      'Activate your Spaces by simply paying a Hypha Network Contribution with USDC or Hypha Tokens.',
     href: '#',
     icon: <ArrowRightIcon />,
     disabled: true,
