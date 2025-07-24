@@ -75,13 +75,19 @@ export async function GET(
       console.warn('Failed to fetch external token balances:', error);
     }
 
-    const parsedExternalTokens: Token[] = externalTokens.map((token) => ({
-      symbol: token.symbol || 'UNKNOWN',
-      name: token.name || 'Unnamed',
-      address: token?.tokenAddress?.lowercase as `0x${string}`,
-      icon: token.logo || '/placeholder/token-icon.png',
-      status: 'utility',
-    }));
+    const parsedExternalTokens: Token[] = externalTokens
+      .filter(
+        (token) =>
+          token?.tokenAddress?.lowercase &&
+          /^0x[a-fA-F0-9]{40}$/i.test(token.tokenAddress.lowercase),
+      )
+      .map((token) => ({
+        symbol: token.symbol || 'UNKNOWN',
+        name: token.name || 'Unnamed',
+        address: token?.tokenAddress?.lowercase as `0x${string}`,
+        icon: token.logo || '/placeholder/token-icon.png',
+        status: 'utility',
+      }));
 
     spaceTokens = spaceTokens
       .filter(
