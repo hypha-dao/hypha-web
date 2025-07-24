@@ -57,10 +57,7 @@ interface IHyphaToken {
     address indexed mainHyphaAddress
   );
 
-  event MintAddressUpdated(
-    address indexed oldMintAddress,
-    address indexed newMintAddress
-  );
+  event MintAddressAdded(address indexed mintAddress);
 
   event TokensMinted(address indexed to, uint256 amount);
 
@@ -108,7 +105,9 @@ interface IHyphaToken {
     address _mainHyphaAddress
   ) external;
 
-  function setMintAddress(address _mintAddress) external;
+  function addMintAddress(address _mintAddress) external;
+
+  function isAuthorizedMinter(address _address) external view returns (bool);
 
   function mint(address to, uint256 amount) external;
 }
