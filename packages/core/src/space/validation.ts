@@ -11,7 +11,7 @@ const createSpaceWeb2Props = {
     .min(1)
     .max(50)
     .regex(
-      /^[a-z0-9-]+$/,
+      /^[a-z0-9'-]+$/,
       'Slug must contain only lowercase letters, numbers, and hyphens',
     )
     .optional(),
