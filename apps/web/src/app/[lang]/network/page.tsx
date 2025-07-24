@@ -1,7 +1,7 @@
 import { Locale } from '@hypha-platform/i18n';
 import { Container } from '@hypha-platform/ui';
 import { findAllSpaces, Space } from '@hypha-platform/core/server';
-import { Category } from '@hypha-platform/core/client';
+import { CATEGORIES, Category } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 import { useMembers } from '@web/hooks/use-members';
 import { NetworkAll, NetworkSelected } from '@hypha-platform/epics';
@@ -33,7 +33,10 @@ export default async function Index(props: PageProps) {
   const categoriesRaw = searchParams?.category as Category;
   const categories: Category[] | undefined = categoriesRaw
     ?.split(',')
-    .map((category) => category as Category);
+    .map((category) => category.trim() as Category)
+    .filter((category): category is Category => {
+      return CATEGORIES.includes(category);
+    });
 
   const { lang } = params;
 

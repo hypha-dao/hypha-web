@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  Button,
   DisposableLabel,
   DropdownMenu,
   DropdownMenuContent,
@@ -48,26 +49,25 @@ export function CategorySearch({ suggestions }: CategorySearchProps) {
 
   const handleAddCategory = React.useCallback(
     (category: string) => {
-      currentCategoriesSet.add(category);
+      const newCategories = [...currentCategories, category];
       const params = new URLSearchParams(searchParams);
-      params.set('category', Array.from(currentCategoriesSet).join(','));
-      replace(`${pathname}?${params.toString()}`);
+      params.set('category', newCategories.join(','));
     },
-    [searchParams, currentCategoriesSet, pathname],
+    [searchParams, currentCategories, pathname, replace],
   );
 
   const handleRemoveCategory = React.useCallback(
     (category: string) => {
-      currentCategoriesSet.delete(category);
+      const newCategories = currentCategories.filter(cat => cat !== category);
       const params = new URLSearchParams(searchParams);
-      if (currentCategoriesSet.size > 0) {
-        params.set('category', Array.from(currentCategoriesSet).join(','));
+      if (newCategories.length > 0) {
+        params.set('category', newCategories.join(','));
       } else {
         params.delete('category');
       }
       replace(`${pathname}?${params.toString()}`);
     },
-    [searchParams, currentCategoriesSet, pathname],
+    [searchParams, currentCategories, pathname, replace],
   );
 
   return (
@@ -83,7 +83,9 @@ export function CategorySearch({ suggestions }: CategorySearchProps) {
       ))}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Input className="border-0" placeholder="Find a Category" />
+          <Button variant="ghost" className="border-0 justify-start">
+            Find a Category
+          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           {availableSuggestions?.map((suggestion) => (
@@ -91,7 +93,7 @@ export function CategorySearch({ suggestions }: CategorySearchProps) {
               key={suggestion.title}
               onSelect={() => handleAddCategory(suggestion.title)}
             >
-              <span className="capitalize">{suggestion.title}</span>
+              <span>{capitalizeFirstLetter(suggestion.title)}</span>
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>
