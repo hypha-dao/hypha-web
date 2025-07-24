@@ -35,11 +35,13 @@ export const ProfileTransferFunds = ({
     refreshInterval: 10000,
   });
 
-  const tokens: Token[] = assets.map((asset) => ({
-    icon: asset.icon,
-    symbol: asset.symbol,
-    address: asset.address as `0x${string}`,
-  }));
+  const tokens: Token[] = assets
+    .filter((asset) => !['ownership', 'voice'].includes(asset.status))
+    .map((asset) => ({
+      icon: asset.icon,
+      symbol: asset.symbol,
+      address: asset.address as `0x${string}`,
+    }));
 
   return (
     <SidePanel>
