@@ -1,9 +1,9 @@
 'use client';
 
-import { Button, Input } from "@hypha-platform/ui";
-import { SearchIcon } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useDebouncedCallback } from "use-debounce";
+import { Button, Input } from '@hypha-platform/ui';
+import { SearchIcon } from 'lucide-react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useDebouncedCallback } from 'use-debounce';
 
 type Suggestion = {
   title: string;
