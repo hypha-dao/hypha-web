@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  Button,
   DisposableLabel,
   DropdownMenu,
   DropdownMenuContent,
@@ -34,24 +33,20 @@ export function CategorySearch({ suggestions }: CategorySearchProps) {
     return categories;
   }, [searchParams]);
 
-  const currentCategoriesSet = React.useMemo(
-    () => new Set(currentCategories),
-    [currentCategories],
-  );
-
   const availableSuggestions = React.useMemo(() => {
     const result =
       suggestions?.filter((suggestion) => {
-        return !currentCategoriesSet.has(suggestion.title);
+        return !currentCategories.includes(suggestion.title);
       }) || [];
     return result;
-  }, [currentCategoriesSet, suggestions]);
+  }, [currentCategories, suggestions]);
 
   const handleAddCategory = React.useCallback(
     (category: string) => {
       const newCategories = [...currentCategories, category];
       const params = new URLSearchParams(searchParams);
       params.set('category', newCategories.join(','));
+      replace(`${pathname}?${params.toString()}`);
     },
     [searchParams, currentCategories, pathname, replace],
   );
@@ -83,9 +78,7 @@ export function CategorySearch({ suggestions }: CategorySearchProps) {
       ))}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="border-0 justify-start">
-            Find a Category
-          </Button>
+          <Input className="border-0" placeholder="Find a Category" />
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           {availableSuggestions?.map((suggestion) => (
