@@ -31,36 +31,36 @@ export function CategorySearch({ categories, suggestions }: SpaceSearchProps) {
   const searchParams = useSearchParams();
   const { replace } = useRouter();
 
+  const currentCategories = React.useMemo(() => {
+    const params = new URLSearchParams(searchParams);
+    const categories = params.has('category')
+        ? params.get('category')?.split(',') || []
+        : [];
+    return new Set(categories);
+  }, [searchParams]);
+
   const handleAddCategory = useCallback(
     (category: string) => {
+      currentCategories.add(category);
       const params = new URLSearchParams(searchParams);
-      const categories = params.has('category')
-        ? params.get('category')?.split(',')
-        : [];
-      const newCategories = new Set(categories);
-      newCategories.add(category);
-      params.set('category', Array.from(newCategories).join(','));
+      params.set('category', Array.from(currentCategories).join(','));
       replace(`${pathname}?${params.toString()}`);
     },
-    [searchParams, pathname],
+    [searchParams, currentCategories, pathname],
   );
 
   const handleRemoveCategory = useCallback(
     (category: string) => {
+      currentCategories.delete(category);
       const params = new URLSearchParams(searchParams);
-      const categories = params.has('category')
-        ? params.get('category')?.split(',')
-        : [];
-      const newCategories = new Set(categories);
-      newCategories.delete(category);
-      if (newCategories.size > 0) {
-        params.set('category', Array.from(newCategories).join(','));
+      if (currentCategories.size > 0) {
+        params.set('category', Array.from(currentCategories).join(','));
       } else {
         params.delete('category');
       }
       replace(`${pathname}?${params.toString()}`);
     },
-    [searchParams],
+    [searchParams, currentCategories, pathname],
   );
 
   return (
