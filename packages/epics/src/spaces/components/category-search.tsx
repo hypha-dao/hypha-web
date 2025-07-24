@@ -11,7 +11,7 @@ import {
 } from '@hypha-platform/ui';
 import { SearchIcon } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import React, { useCallback } from 'react';
+import React from 'react';
 
 type Suggestion = {
   title: string;
@@ -39,7 +39,14 @@ export function CategorySearch({ categories, suggestions }: SpaceSearchProps) {
     return new Set(categories);
   }, [searchParams]);
 
-  const handleAddCategory = useCallback(
+  const availableSuggestions = React.useMemo(() => {
+    const result = suggestions?.filter((suggestion) => {
+      return !currentCategories.has(suggestion.title);
+    }) || [];
+    return result;
+  }, [currentCategories, suggestions]);
+
+  const handleAddCategory = React.useCallback(
     (category: string) => {
       currentCategories.add(category);
       const params = new URLSearchParams(searchParams);
@@ -49,7 +56,7 @@ export function CategorySearch({ categories, suggestions }: SpaceSearchProps) {
     [searchParams, currentCategories, pathname],
   );
 
-  const handleRemoveCategory = useCallback(
+  const handleRemoveCategory = React.useCallback(
     (category: string) => {
       currentCategories.delete(category);
       const params = new URLSearchParams(searchParams);
@@ -79,12 +86,12 @@ export function CategorySearch({ categories, suggestions }: SpaceSearchProps) {
           <Input className="border-0" placeholder="Find a Category" />
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          {suggestions?.map((suggestion) => (
+          {availableSuggestions?.map((suggestion) => (
             <DropdownMenuItem
               key={suggestion.title}
               onSelect={() => handleAddCategory(suggestion.title)}
             >
-              <span>{suggestion.title}</span>
+              <span className='capitalize'>{suggestion.title}</span>
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>
