@@ -58,7 +58,7 @@ export function CategorySearch({ suggestions }: CategorySearchProps) {
 
   const handleRemoveCategory = React.useCallback(
     (category: string) => {
-      const newCategories = currentCategories.filter(cat => cat !== category);
+      const newCategories = currentCategories.filter((cat) => cat !== category);
       const params = new URLSearchParams(searchParams);
       if (newCategories.length > 0) {
         params.set('category', newCategories.join(','));

@@ -14,4 +14,4 @@ export const CATEGORIES = [
   'tech',
   'usecase',
 ] as const;
-export type Category = typeof CATEGORIES[number];
+export type Category = (typeof CATEGORIES)[number];
