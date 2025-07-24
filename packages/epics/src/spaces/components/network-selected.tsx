@@ -10,6 +10,7 @@ import { Locale } from '@hypha-platform/i18n';
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Text } from '@radix-ui/themes';
 import Link from 'next/link';
+import React from 'react';
 
 const categoriesIntersected = (
   categories1: Category[],
@@ -30,12 +31,20 @@ export function NetworkSelected({
   uniqueCategories: Category[];
   useMembers: UseMembers;
 }) {
-  const selectedSpaces = spaces.filter((space) =>
-    categoriesIntersected(space.categories, categories),
+  const selectedSpaces = React.useMemo(
+    () =>
+      spaces.filter((space) =>
+        categoriesIntersected(space.categories, categories),
+      ),
+    [spaces, categories],
   );
-  const categorySuggestions = uniqueCategories.map((category) => ({
-    title: String(category),
-  }));
+  const categorySuggestions = React.useMemo(
+    () =>
+      uniqueCategories.map((category) => ({
+        title: String(category),
+      })),
+    [uniqueCategories],
+  );
   return (
     <div className="flex flex-col">
       <div className="mb-6 flex items-center">
@@ -67,10 +76,7 @@ export function NetworkSelected({
         <Text className="ml-1 mr-1">|</Text>
         {selectedSpaces?.length}
       </Text>
-      <CategorySearch
-        suggestions={categorySuggestions}
-        categories={categories}
-      />
+      <CategorySearch suggestions={categorySuggestions} />
       <div className="space-y-6 flex mt-6">
         <SpaceCardList
           lang={lang}

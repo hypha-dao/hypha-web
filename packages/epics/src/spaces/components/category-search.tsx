@@ -19,11 +19,10 @@ type Suggestion = {
 };
 
 type SpaceSearchProps = {
-  categories: Category[];
   suggestions?: Suggestion[];
 };
 
-export function CategorySearch({ categories, suggestions }: SpaceSearchProps) {
+export function CategorySearch({ suggestions }: SpaceSearchProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
@@ -33,45 +32,50 @@ export function CategorySearch({ categories, suggestions }: SpaceSearchProps) {
     const categories = params.has('category')
       ? params.get('category')?.split(',') || []
       : [];
-    return new Set(categories);
+    return categories;
   }, [searchParams]);
+
+  const currentCategoriesSet = React.useMemo(
+    () => new Set(currentCategories),
+    [currentCategories],
+  );
 
   const availableSuggestions = React.useMemo(() => {
     const result =
       suggestions?.filter((suggestion) => {
-        return !currentCategories.has(suggestion.title);
+        return !currentCategoriesSet.has(suggestion.title);
       }) || [];
     return result;
-  }, [currentCategories, suggestions]);
+  }, [currentCategoriesSet, suggestions]);
 
   const handleAddCategory = React.useCallback(
     (category: string) => {
-      currentCategories.add(category);
+      currentCategoriesSet.add(category);
       const params = new URLSearchParams(searchParams);
-      params.set('category', Array.from(currentCategories).join(','));
+      params.set('category', Array.from(currentCategoriesSet).join(','));
       replace(`${pathname}?${params.toString()}`);
     },
-    [searchParams, currentCategories, pathname],
+    [searchParams, currentCategoriesSet, pathname],
   );
 
   const handleRemoveCategory = React.useCallback(
     (category: string) => {
-      currentCategories.delete(category);
+      currentCategoriesSet.delete(category);
       const params = new URLSearchParams(searchParams);
-      if (currentCategories.size > 0) {
-        params.set('category', Array.from(currentCategories).join(','));
+      if (currentCategoriesSet.size > 0) {
+        params.set('category', Array.from(currentCategoriesSet).join(','));
       } else {
         params.delete('category');
       }
       replace(`${pathname}?${params.toString()}`);
     },
-    [searchParams, currentCategories, pathname],
+    [searchParams, currentCategoriesSet, pathname],
   );
 
   return (
     <div className="flex flex-row flex-grow gap-1 border-1 bg-background rounded-lg p-1 items-start">
       <SearchIcon className="m-2 align-middle" size={16} />
-      {categories.map((category) => (
+      {currentCategories.map((category) => (
         <DisposableLabel
           key={category}
           label={capitalizeFirstLetter(category)}
