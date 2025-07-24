@@ -31,15 +31,16 @@ export function CategorySearch({ categories, suggestions }: SpaceSearchProps) {
   const currentCategories = React.useMemo(() => {
     const params = new URLSearchParams(searchParams);
     const categories = params.has('category')
-        ? params.get('category')?.split(',') || []
-        : [];
+      ? params.get('category')?.split(',') || []
+      : [];
     return new Set(categories);
   }, [searchParams]);
 
   const availableSuggestions = React.useMemo(() => {
-    const result = suggestions?.filter((suggestion) => {
-      return !currentCategories.has(suggestion.title);
-    }) || [];
+    const result =
+      suggestions?.filter((suggestion) => {
+        return !currentCategories.has(suggestion.title);
+      }) || [];
     return result;
   }, [currentCategories, suggestions]);
 
@@ -88,7 +89,7 @@ export function CategorySearch({ categories, suggestions }: SpaceSearchProps) {
               key={suggestion.title}
               onSelect={() => handleAddCategory(suggestion.title)}
             >
-              <span className='capitalize'>{suggestion.title}</span>
+              <span className="capitalize">{suggestion.title}</span>
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>
