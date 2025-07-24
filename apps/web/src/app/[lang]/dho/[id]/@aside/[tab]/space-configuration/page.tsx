@@ -74,7 +74,7 @@ export default function SpaceConfiguration() {
             ...space,
             title: space?.title || '',
             description: space?.description || '',
-            slug: spaceSlug,
+            slug: space?.slug || '',
             logoUrl: space?.logoUrl || '',
             leadImage: space?.leadImage || '',
             categories: space?.categories || [],
