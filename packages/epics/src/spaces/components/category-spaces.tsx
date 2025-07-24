@@ -6,15 +6,9 @@ import { UseMembers } from '../hooks';
 import { SpaceCardList } from './space-card-list';
 
 function filterSpaces(spaces: Space[], categories: Category[]) {
-  const categorySpaces: Space[] = spaces.filter((space) => {
-    for (const category of categories) {
-      if (space.categories.includes(category)) {
-        return true;
-      }
-    }
-    return false;
-  });
-  return categorySpaces;
+  return spaces.filter((space) =>
+    categories.some((category) => space.categories.includes(category)),
+  );
 }
 
 export function CategorySpaces({
@@ -29,7 +23,6 @@ export function CategorySpaces({
   useMembers: UseMembers;
 }) {
   const categorySpaces = filterSpaces(spaces, categories);
-  console.log('categorySpaces found:', categorySpaces.length);
 
   return (
     <div className="space-y-6">

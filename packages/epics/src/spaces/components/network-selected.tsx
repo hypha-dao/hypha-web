@@ -15,8 +15,7 @@ import React from 'react';
 const categoriesIntersected = (
   categories1: Category[],
   categories2: Category[],
-) =>
-  categories1.filter((category) => categories2.includes(category)).length > 0;
+) => categories1.some((category) => categories2.includes(category));
 
 export function NetworkSelected({
   lang,

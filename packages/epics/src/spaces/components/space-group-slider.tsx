@@ -32,10 +32,8 @@ export const SpaceGroupSlider = ({
   const { replace } = useRouter();
 
   const seeAllSpaces = useDebouncedCallback((category: string) => {
-    console.log(`Choose category... ${category}`);
-
     const params = new URLSearchParams(searchParams);
-    if (category) {
+    if (category && category.trim()) {
       params.set('category', category);
     } else {
       params.delete('category');

@@ -3,7 +3,7 @@ import { Button } from './button';
 import { Cross2Icon } from '@radix-ui/react-icons';
 import { Label } from './label';
 
-export type DisposableButtonProps = {
+export type DisposableLabelProps = {
   className?: string;
   label: string;
   closeTooltip?: string;
@@ -15,7 +15,7 @@ export const DisposableLabel = ({
   label,
   closeTooltip,
   onClose,
-}: DisposableButtonProps) => {
+}: DisposableLabelProps) => {
   return (
     <Label
       key={`disposable-button-${label}`}
@@ -31,10 +31,11 @@ export const DisposableLabel = ({
         colorVariant="neutral"
         size="icon"
         title={closeTooltip}
+        aria-label={closeTooltip || `Remove ${label}`}
         onClick={(e) => {
-          onClose?.(e);
           e.preventDefault();
           e.stopPropagation();
+          onClose?.(e);
         }}
       >
         <Cross2Icon fontSize={20} />

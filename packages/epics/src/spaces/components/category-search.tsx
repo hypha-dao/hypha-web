@@ -1,6 +1,5 @@
 'use client';
 
-import { Category } from '@hypha-platform/core/client';
 import {
   DisposableLabel,
   DropdownMenu,
@@ -18,19 +17,18 @@ type Suggestion = {
   title: string;
 };
 
-type SpaceSearchProps = {
+type CategorySearchProps = {
   suggestions?: Suggestion[];
 };
 
-export function CategorySearch({ suggestions }: SpaceSearchProps) {
+export function CategorySearch({ suggestions }: CategorySearchProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
 
   const currentCategories = React.useMemo(() => {
-    const params = new URLSearchParams(searchParams);
-    const categories = params.has('category')
-      ? params.get('category')?.split(',') || []
+    const categories = searchParams.has('category')
+      ? searchParams.get('category')?.split(',') || []
       : [];
     return categories;
   }, [searchParams]);
