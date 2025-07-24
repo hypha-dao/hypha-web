@@ -19,11 +19,14 @@ export const DisposableLabel = ({
   return (
     <Label
       key={`disposable-button-${label}`}
-      className={clsx('flex flex-row gap-1 bg-background border-1 rounded-lg', className)}
+      className={clsx(
+        'flex flex-row p-1 gap-1 bg-background border-1 rounded-lg',
+        className,
+      )}
     >
       <Button
         key={`disposable-button-close-${label}`}
-        className="m-1 mr-0 w-4 h-4"
+        className="w-4 h-4 align-middle"
         variant="ghost"
         colorVariant="neutral"
         size="icon"
@@ -34,9 +37,9 @@ export const DisposableLabel = ({
           e.stopPropagation();
         }}
       >
-        <Cross2Icon />
+        <Cross2Icon fontSize={20} />
       </Button>
-      <span className='m-1 ml-0 align-middle'>{label}</span>
+      <span className="h-[20px] align-middle text-2">{label}</span>
     </Label>
   );
 };
