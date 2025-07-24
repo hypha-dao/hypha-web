@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
   Input,
 } from '@hypha-platform/ui';
+import { capitalizeFirstLetter } from '@hypha-platform/ui-utils';
 import { SearchIcon } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import React from 'react';
@@ -21,10 +22,6 @@ type SpaceSearchProps = {
   categories: Category[];
   suggestions?: Suggestion[];
 };
-
-function capitalizeFirstLetter(str: string): string {
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
 
 export function CategorySearch({ categories, suggestions }: SpaceSearchProps) {
   const pathname = usePathname();

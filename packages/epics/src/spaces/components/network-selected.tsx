@@ -7,7 +7,6 @@ import {
   UseMembers,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
-import { DisposableLabel } from '@hypha-platform/ui';
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Text } from '@radix-ui/themes';
 import Link from 'next/link';
@@ -72,12 +71,6 @@ export function NetworkSelected({
         suggestions={categorySuggestions}
         categories={categories}
       />
-      {/* <div>
-        <DisposableLabel
-          label="123"
-          onClose={() => console.log('button closed')}
-        />
-      </div> */}
       <div className="space-y-6 flex mt-6">
         <SpaceCardList
           lang={lang}
