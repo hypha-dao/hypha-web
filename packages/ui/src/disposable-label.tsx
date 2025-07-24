@@ -1,34 +1,33 @@
 import clsx from 'clsx';
 import { Button } from './button';
 import { Cross2Icon } from '@radix-ui/react-icons';
+import { Label } from './label';
 
 export type DisposableButtonProps = {
-  classNames?: string;
+  className?: string;
   label: string;
-  onClick?: React.MouseEventHandler;
+  closeTooltip?: string;
   onClose?: React.MouseEventHandler;
 };
 
-export const DisposableButton = ({
-  classNames,
+export const DisposableLabel = ({
+  className,
   label,
-  onClick,
+  closeTooltip,
   onClose,
 }: DisposableButtonProps) => {
   return (
-    <Button
+    <Label
       key={`disposable-button-${label}`}
-      variant="outline"
-      colorVariant="neutral"
-      className={clsx('ml-0', classNames)}
-      onClick={onClick}
+      className={clsx('flex flex-row gap-1 bg-background border-1 rounded-lg', className)}
     >
       <Button
         key={`disposable-button-close-${label}`}
-        className="m-0 w-4 h-4"
+        className="m-1 mr-0 w-4 h-4"
         variant="ghost"
         colorVariant="neutral"
         size="icon"
+        title={closeTooltip}
         onClick={(e) => {
           onClose?.(e);
           e.preventDefault();
@@ -37,7 +36,7 @@ export const DisposableButton = ({
       >
         <Cross2Icon />
       </Button>
-      <span>{label}</span>
-    </Button>
+      <span className='m-1 ml-0 align-middle'>{label}</span>
+    </Label>
   );
 };
