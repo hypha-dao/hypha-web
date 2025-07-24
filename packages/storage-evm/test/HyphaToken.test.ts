@@ -1992,84 +1992,82 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
   });
 
-  describe('Mint Address and Minting Functions', function () {
-    it('Should allow owner to set mint address and emit event', async function () {
+  describe('Mint Whitelist and Minting Functions', function () {
+    it('Should allow owner to add address to mint whitelist and emit event', async function () {
       const { hyphaToken, owner, user1, user2 } = await loadFixture(
         deployHyphaFixture,
       );
 
-      // Initially, mint address should be zero address
-      expect(await hyphaToken.mintAddress()).to.equal(
-        '0x0000000000000000000000000000000000000000',
-      );
+      // Initially, user1 should not be whitelisted
+      expect(
+        await hyphaToken.isMintTransferWhitelisted(await user1.getAddress()),
+      ).to.equal(false);
 
-      // Owner sets mint address
+      // Owner adds user1 to mint whitelist
       await expect(
-        hyphaToken.connect(owner).setMintAddress(await user1.getAddress()),
+        hyphaToken
+          .connect(owner)
+          .setMintTransferWhitelist(await user1.getAddress(), true),
       )
-        .to.emit(hyphaToken, 'MintAddressUpdated')
-        .withArgs(
-          '0x0000000000000000000000000000000000000000',
-          await user1.getAddress(),
-        );
+        .to.emit(hyphaToken, 'MintTransferWhitelistUpdated')
+        .withArgs(await user1.getAddress(), true);
 
-      // Verify mint address was set
-      expect(await hyphaToken.mintAddress()).to.equal(await user1.getAddress());
+      // Verify user1 is now whitelisted
+      expect(
+        await hyphaToken.isMintTransferWhitelisted(await user1.getAddress()),
+      ).to.equal(true);
 
-      // Change mint address again
+      // Owner removes user1 from mint whitelist
       await expect(
-        hyphaToken.connect(owner).setMintAddress(await user2.getAddress()),
+        hyphaToken
+          .connect(owner)
+          .setMintTransferWhitelist(await user1.getAddress(), false),
       )
-        .to.emit(hyphaToken, 'MintAddressUpdated')
-        .withArgs(await user1.getAddress(), await user2.getAddress());
+        .to.emit(hyphaToken, 'MintTransferWhitelistUpdated')
+        .withArgs(await user1.getAddress(), false);
 
-      // Verify mint address was updated
-      expect(await hyphaToken.mintAddress()).to.equal(await user2.getAddress());
+      // Verify user1 is no longer whitelisted
+      expect(
+        await hyphaToken.isMintTransferWhitelisted(await user1.getAddress()),
+      ).to.equal(false);
     });
 
-    it('Should not allow non-owner to set mint address', async function () {
+    it('Should not allow non-owner to modify mint whitelist', async function () {
       const { hyphaToken, user1, user2 } = await loadFixture(
         deployHyphaFixture,
       );
 
-      // Non-owner tries to set mint address
+      // Non-owner tries to add address to mint whitelist
       await expect(
-        hyphaToken.connect(user1).setMintAddress(await user2.getAddress()),
+        hyphaToken
+          .connect(user1)
+          .setMintTransferWhitelist(await user2.getAddress(), true),
       ).to.be.reverted;
     });
 
-    it('Should allow setting mint address to zero address', async function () {
-      const { hyphaToken, owner, user1 } = await loadFixture(
-        deployHyphaFixture,
-      );
+    it('Should not allow whitelisting zero address', async function () {
+      const { hyphaToken, owner } = await loadFixture(deployHyphaFixture);
 
-      // Set mint address to user1 first
-      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
-
-      // Then set it to zero address
+      // Try to whitelist zero address
       await expect(
         hyphaToken
           .connect(owner)
-          .setMintAddress('0x0000000000000000000000000000000000000000'),
-      )
-        .to.emit(hyphaToken, 'MintAddressUpdated')
-        .withArgs(
-          await user1.getAddress(),
-          '0x0000000000000000000000000000000000000000',
-        );
-
-      expect(await hyphaToken.mintAddress()).to.equal(
-        '0x0000000000000000000000000000000000000000',
-      );
+          .setMintTransferWhitelist(
+            '0x0000000000000000000000000000000000000000',
+            true,
+          ),
+      ).to.be.revertedWith('Cannot whitelist zero address');
     });
 
-    it('Should allow authorized mint address to mint tokens', async function () {
+    it('Should allow whitelisted address to mint tokens', async function () {
       const { hyphaToken, owner, user1, user2 } = await loadFixture(
         deployHyphaFixture,
       );
 
-      // Set user1 as authorized mint address
-      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+      // Add user1 to mint whitelist
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user1.getAddress(), true);
 
       // Check initial balances
       const user2InitialBalance = await hyphaToken.balanceOf(
@@ -2079,7 +2077,7 @@ describe('HyphaToken Comprehensive Tests', function () {
 
       const mintAmount = ethers.parseUnits('1000', 18);
 
-      // Authorized address mints tokens
+      // Whitelisted address mints tokens
       await expect(
         hyphaToken.connect(user1).mint(await user2.getAddress(), mintAmount),
       )
@@ -2096,25 +2094,27 @@ describe('HyphaToken Comprehensive Tests', function () {
       expect(finalTotalMinted - initialTotalMinted).to.equal(mintAmount);
     });
 
-    it('Should not allow unauthorized addresses to mint tokens', async function () {
+    it('Should not allow non-whitelisted addresses to mint tokens', async function () {
       const { hyphaToken, owner, user1, user2, user3 } = await loadFixture(
         deployHyphaFixture,
       );
 
-      // Set user1 as authorized mint address
-      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+      // Add user1 to mint whitelist but not user2
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user1.getAddress(), true);
 
       const mintAmount = ethers.parseUnits('1000', 18);
 
-      // Unauthorized address tries to mint
+      // Non-whitelisted address tries to mint
       await expect(
         hyphaToken.connect(user2).mint(await user3.getAddress(), mintAmount),
-      ).to.be.revertedWith('Only authorized mint address can mint');
+      ).to.be.revertedWith('Only whitelisted addresses can mint');
 
-      // Owner tries to mint (should also fail since owner is not the mint address)
+      // Owner tries to mint (should also fail since owner is not whitelisted)
       await expect(
         hyphaToken.connect(owner).mint(await user3.getAddress(), mintAmount),
-      ).to.be.revertedWith('Only authorized mint address can mint');
+      ).to.be.revertedWith('Only whitelisted addresses can mint');
     });
 
     it('Should not allow minting to zero address', async function () {
@@ -2122,8 +2122,10 @@ describe('HyphaToken Comprehensive Tests', function () {
         deployHyphaFixture,
       );
 
-      // Set user1 as authorized mint address
-      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+      // Add user1 to mint whitelist
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user1.getAddress(), true);
 
       const mintAmount = ethers.parseUnits('1000', 18);
 
@@ -2140,8 +2142,10 @@ describe('HyphaToken Comprehensive Tests', function () {
         deployHyphaFixture,
       );
 
-      // Set user1 as authorized mint address
-      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+      // Add user1 to mint whitelist
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user1.getAddress(), true);
 
       // Try to mint zero amount
       await expect(
@@ -2154,8 +2158,10 @@ describe('HyphaToken Comprehensive Tests', function () {
         deployHyphaFixture,
       );
 
-      // Set user1 as authorized mint address
-      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+      // Add user1 to mint whitelist
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user1.getAddress(), true);
 
       const maxSupply = await hyphaToken.MAX_SUPPLY();
       const currentTotalMinted = await hyphaToken.totalMinted();
@@ -2174,8 +2180,10 @@ describe('HyphaToken Comprehensive Tests', function () {
         deployHyphaFixture,
       );
 
-      // Set user1 as authorized mint address
-      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+      // Add user1 to mint whitelist
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user1.getAddress(), true);
 
       const maxSupply = await hyphaToken.MAX_SUPPLY();
       const currentTotalMinted = await hyphaToken.totalMinted();
@@ -2200,12 +2208,24 @@ describe('HyphaToken Comprehensive Tests', function () {
       const { hyphaToken, owner, user1, user2, usdc, usdcPerDay } =
         await loadFixture(deployHyphaFixture);
 
-      // Set user1 as authorized mint address
-      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+      // Add user1 to mint whitelist
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user1.getAddress(), true);
 
-      // Create some rewards first by making a space payment
+      // First, user1 needs some tokens to be part of eligible supply
+      const user1Investment = ethers.parseUnits('100', 6);
+      await usdc.mint(
+        await user1.getAddress(),
+        user1Investment + usdcPerDay * 5n,
+      );
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), user1Investment);
+      await hyphaToken.connect(user1).investInHypha(user1Investment);
+
+      // Now create some rewards by making a space payment
       const spacePayment = usdcPerDay * 5n;
-      await usdc.mint(await user1.getAddress(), spacePayment);
       await usdc
         .connect(user1)
         .approve(await hyphaToken.getAddress(), spacePayment);
@@ -2215,10 +2235,10 @@ describe('HyphaToken Comprehensive Tests', function () {
       await ethers.provider.send('evm_increaseTime', [86400]); // 1 day
       await ethers.provider.send('evm_mine', []);
 
-      // Update distribution state
+      // Update distribution state to distribute rewards to existing holders
       await hyphaToken.updateDistributionState();
 
-      // Get current accumulator value
+      // Get current accumulator value after rewards have been distributed
       const accumulatedRewardPerToken = await ethers.provider.getStorage(
         await hyphaToken.getAddress(),
         ethers.solidityPackedKeccak256(
@@ -2226,6 +2246,12 @@ describe('HyphaToken Comprehensive Tests', function () {
           ['accumulatedRewardPerToken'],
         ),
       );
+
+      // Verify user1 has some pending rewards before we mint to user2
+      const user1RewardsBefore = await hyphaToken.pendingRewards(
+        await user1.getAddress(),
+      );
+      expect(user1RewardsBefore).to.be.gt(0);
 
       // Mint tokens to user2
       const mintAmount = ethers.parseUnits('1000', 18);
@@ -2247,7 +2273,7 @@ describe('HyphaToken Comprehensive Tests', function () {
 
       expect(user2RewardDebt).to.equal(accumulatedRewardPerToken);
 
-      // User2 should have 0 pending rewards after minting
+      // User2 should have 0 pending rewards after minting (reward debt properly set)
       const user2PendingRewards = await hyphaToken.pendingRewards(
         await user2.getAddress(),
       );
@@ -2258,8 +2284,10 @@ describe('HyphaToken Comprehensive Tests', function () {
       const { hyphaToken, owner, user1, iexAddress, usdc, usdcPerDay } =
         await loadFixture(deployHyphaFixture);
 
-      // Set user1 as authorized mint address
-      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+      // Add user1 to mint whitelist
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user1.getAddress(), true);
 
       // Create some rewards first
       const spacePayment = usdcPerDay * 5n;
@@ -2287,13 +2315,18 @@ describe('HyphaToken Comprehensive Tests', function () {
       expect(iexPendingRewards).to.equal(0);
     });
 
-    it('Should handle multiple mints correctly', async function () {
+    it('Should handle multiple whitelisted addresses correctly', async function () {
       const { hyphaToken, owner, user1, user2, user3 } = await loadFixture(
         deployHyphaFixture,
       );
 
-      // Set user1 as authorized mint address
-      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+      // Add both user1 and user2 to mint whitelist
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user1.getAddress(), true);
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user2.getAddress(), true);
 
       const mintAmount1 = ethers.parseUnits('1000', 18);
       const mintAmount2 = ethers.parseUnits('2000', 18);
@@ -2301,36 +2334,36 @@ describe('HyphaToken Comprehensive Tests', function () {
 
       const initialTotalMinted = await hyphaToken.totalMinted();
 
-      // Multiple mints
+      // Multiple whitelisted addresses can mint
       await hyphaToken
         .connect(user1)
-        .mint(await user2.getAddress(), mintAmount1);
+        .mint(await user3.getAddress(), mintAmount1);
       await hyphaToken
-        .connect(user1)
+        .connect(user2)
         .mint(await user3.getAddress(), mintAmount2);
       await hyphaToken
         .connect(user1)
-        .mint(await user2.getAddress(), mintAmount3);
+        .mint(await user3.getAddress(), mintAmount3);
 
       // Check final balances
-      const user2Balance = await hyphaToken.balanceOf(await user2.getAddress());
       const user3Balance = await hyphaToken.balanceOf(await user3.getAddress());
       const finalTotalMinted = await hyphaToken.totalMinted();
 
-      expect(user2Balance).to.equal(mintAmount1 + mintAmount3);
-      expect(user3Balance).to.equal(mintAmount2);
+      expect(user3Balance).to.equal(mintAmount1 + mintAmount2 + mintAmount3);
       expect(finalTotalMinted - initialTotalMinted).to.equal(
         mintAmount1 + mintAmount2 + mintAmount3,
       );
     });
 
-    it('Should handle mint address changes correctly', async function () {
+    it('Should handle whitelist changes correctly', async function () {
       const { hyphaToken, owner, user1, user2, user3 } = await loadFixture(
         deployHyphaFixture,
       );
 
-      // Set user1 as initial mint address
-      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+      // Add user1 to mint whitelist
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user1.getAddress(), true);
 
       const mintAmount = ethers.parseUnits('1000', 18);
 
@@ -2339,13 +2372,18 @@ describe('HyphaToken Comprehensive Tests', function () {
         .connect(user1)
         .mint(await user3.getAddress(), mintAmount);
 
-      // Change mint address to user2
-      await hyphaToken.connect(owner).setMintAddress(await user2.getAddress());
+      // Remove user1 from whitelist and add user2
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user1.getAddress(), false);
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user2.getAddress(), true);
 
       // User1 can no longer mint
       await expect(
         hyphaToken.connect(user1).mint(await user3.getAddress(), mintAmount),
-      ).to.be.revertedWith('Only authorized mint address can mint');
+      ).to.be.revertedWith('Only whitelisted addresses can mint');
 
       // User2 can now mint
       await hyphaToken
@@ -2362,8 +2400,10 @@ describe('HyphaToken Comprehensive Tests', function () {
         deployHyphaFixture,
       );
 
-      // Set user1 as authorized mint address
-      await hyphaToken.connect(owner).setMintAddress(await user1.getAddress());
+      // Add user1 to mint whitelist
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user1.getAddress(), true);
 
       // Try to mint a very large amount (but within supply limits)
       const largeMintAmount = ethers.parseUnits('1000000', 18); // 1 million HYPHA
@@ -2389,15 +2429,14 @@ describe('HyphaToken Comprehensive Tests', function () {
         deployHyphaFixture,
       );
 
-      // Test setMintAddress event
+      // Test setMintTransferWhitelist event
       await expect(
-        hyphaToken.connect(owner).setMintAddress(await user1.getAddress()),
+        hyphaToken
+          .connect(owner)
+          .setMintTransferWhitelist(await user1.getAddress(), true),
       )
-        .to.emit(hyphaToken, 'MintAddressUpdated')
-        .withArgs(
-          '0x0000000000000000000000000000000000000000',
-          await user1.getAddress(),
-        );
+        .to.emit(hyphaToken, 'MintTransferWhitelistUpdated')
+        .withArgs(await user1.getAddress(), true);
 
       // Test mint event
       const mintAmount = ethers.parseUnits('1000', 18);
@@ -2406,6 +2445,962 @@ describe('HyphaToken Comprehensive Tests', function () {
       )
         .to.emit(hyphaToken, 'TokensMinted')
         .withArgs(await user2.getAddress(), mintAmount);
+    });
+  });
+
+  describe('Transfer Whitelists and Functions', function () {
+    it('Should allow owner to manage mint transfer whitelist', async function () {
+      const { hyphaToken, owner, user1, user2 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Initially, addresses should not be whitelisted
+      expect(
+        await hyphaToken.isMintTransferWhitelisted(await user1.getAddress()),
+      ).to.equal(false);
+      expect(
+        await hyphaToken.isMintTransferWhitelisted(await user2.getAddress()),
+      ).to.equal(false);
+
+      // Owner adds user1 to mint transfer whitelist
+      await expect(
+        hyphaToken
+          .connect(owner)
+          .setMintTransferWhitelist(await user1.getAddress(), true),
+      )
+        .to.emit(hyphaToken, 'MintTransferWhitelistUpdated')
+        .withArgs(await user1.getAddress(), true);
+
+      expect(
+        await hyphaToken.isMintTransferWhitelisted(await user1.getAddress()),
+      ).to.equal(true);
+
+      // Owner removes user1 from mint transfer whitelist
+      await expect(
+        hyphaToken
+          .connect(owner)
+          .setMintTransferWhitelist(await user1.getAddress(), false),
+      )
+        .to.emit(hyphaToken, 'MintTransferWhitelistUpdated')
+        .withArgs(await user1.getAddress(), false);
+
+      expect(
+        await hyphaToken.isMintTransferWhitelisted(await user1.getAddress()),
+      ).to.equal(false);
+    });
+
+    it('Should allow owner to manage normal transfer whitelist', async function () {
+      const { hyphaToken, owner, user1, user2 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Initially, addresses should not be whitelisted
+      expect(
+        await hyphaToken.isNormalTransferWhitelisted(await user1.getAddress()),
+      ).to.equal(false);
+      expect(
+        await hyphaToken.isNormalTransferWhitelisted(await user2.getAddress()),
+      ).to.equal(false);
+
+      // Owner adds user1 to normal transfer whitelist
+      await expect(
+        hyphaToken
+          .connect(owner)
+          .setNormalTransferWhitelist(await user1.getAddress(), true),
+      )
+        .to.emit(hyphaToken, 'NormalTransferWhitelistUpdated')
+        .withArgs(await user1.getAddress(), true);
+
+      expect(
+        await hyphaToken.isNormalTransferWhitelisted(await user1.getAddress()),
+      ).to.equal(true);
+
+      // Owner removes user1 from normal transfer whitelist
+      await expect(
+        hyphaToken
+          .connect(owner)
+          .setNormalTransferWhitelist(await user1.getAddress(), false),
+      )
+        .to.emit(hyphaToken, 'NormalTransferWhitelistUpdated')
+        .withArgs(await user1.getAddress(), false);
+
+      expect(
+        await hyphaToken.isNormalTransferWhitelisted(await user1.getAddress()),
+      ).to.equal(false);
+    });
+
+    it('Should not allow non-owner to modify whitelists', async function () {
+      const { hyphaToken, user1, user2 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Non-owner tries to modify mint transfer whitelist
+      await expect(
+        hyphaToken
+          .connect(user1)
+          .setMintTransferWhitelist(await user2.getAddress(), true),
+      ).to.be.reverted;
+
+      // Non-owner tries to modify normal transfer whitelist
+      await expect(
+        hyphaToken
+          .connect(user1)
+          .setNormalTransferWhitelist(await user2.getAddress(), true),
+      ).to.be.reverted;
+    });
+
+    it('Should not allow whitelisting zero address', async function () {
+      const { hyphaToken, owner } = await loadFixture(deployHyphaFixture);
+
+      const zeroAddress = '0x0000000000000000000000000000000000000000';
+
+      // Try to whitelist zero address for mint transfer
+      await expect(
+        hyphaToken.connect(owner).setMintTransferWhitelist(zeroAddress, true),
+      ).to.be.revertedWith('Cannot whitelist zero address');
+
+      // Try to whitelist zero address for normal transfer
+      await expect(
+        hyphaToken.connect(owner).setNormalTransferWhitelist(zeroAddress, true),
+      ).to.be.revertedWith('Cannot whitelist zero address');
+    });
+
+    it('Should reject transfers from non-whitelisted addresses', async function () {
+      const { hyphaToken, usdc, user1, user2 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Give user1 some HYPHA tokens through investment
+      const investAmount = ethers.parseUnits('100', 6);
+      await usdc.mint(await user1.getAddress(), investAmount);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), investAmount);
+      await hyphaToken.connect(user1).investInHypha(investAmount);
+
+      const transferAmount = ethers.parseUnits('10', 18);
+
+      // User1 (not whitelisted) tries to transfer
+      await expect(
+        hyphaToken
+          .connect(user1)
+          .transfer(await user2.getAddress(), transferAmount),
+      ).to.be.revertedWith('HYPHA: Transfers disabled');
+
+      // User1 (not whitelisted) tries transferFrom
+      await expect(
+        hyphaToken
+          .connect(user1)
+          .transferFrom(
+            await user1.getAddress(),
+            await user2.getAddress(),
+            transferAmount,
+          ),
+      ).to.be.revertedWith('HYPHA: Transfers disabled');
+    });
+
+    it('Should allow normal transfer whitelist addresses to transfer with sufficient balance', async function () {
+      const { hyphaToken, usdc, owner, user1, user2 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Add user1 to normal transfer whitelist
+      await hyphaToken
+        .connect(owner)
+        .setNormalTransferWhitelist(await user1.getAddress(), true);
+
+      // Give user1 some HYPHA tokens through investment
+      const investAmount = ethers.parseUnits('100', 6);
+      await usdc.mint(await user1.getAddress(), investAmount);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), investAmount);
+      await hyphaToken.connect(user1).investInHypha(investAmount);
+
+      const user1Balance = await hyphaToken.balanceOf(await user1.getAddress());
+      const transferAmount = user1Balance / 2n; // Transfer half
+
+      // User1 should be able to transfer
+      await expect(
+        hyphaToken
+          .connect(user1)
+          .transfer(await user2.getAddress(), transferAmount),
+      ).to.not.be.reverted;
+
+      // Verify balances
+      const user1FinalBalance = await hyphaToken.balanceOf(
+        await user1.getAddress(),
+      );
+      const user2FinalBalance = await hyphaToken.balanceOf(
+        await user2.getAddress(),
+      );
+
+      expect(user1FinalBalance).to.equal(user1Balance - transferAmount);
+      expect(user2FinalBalance).to.equal(transferAmount);
+    });
+
+    it('Should reject normal transfer whitelist addresses with insufficient balance', async function () {
+      const { hyphaToken, usdc, owner, user1, user2 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Add user1 to normal transfer whitelist
+      await hyphaToken
+        .connect(owner)
+        .setNormalTransferWhitelist(await user1.getAddress(), true);
+
+      // Give user1 some HYPHA tokens through investment
+      const investAmount = ethers.parseUnits('100', 6);
+      await usdc.mint(await user1.getAddress(), investAmount);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), investAmount);
+      await hyphaToken.connect(user1).investInHypha(investAmount);
+
+      const user1Balance = await hyphaToken.balanceOf(await user1.getAddress());
+      const transferAmount = user1Balance + ethers.parseUnits('100', 18); // More than balance
+
+      // User1 should not be able to transfer more than balance
+      await expect(
+        hyphaToken
+          .connect(user1)
+          .transfer(await user2.getAddress(), transferAmount),
+      ).to.be.reverted; // Should revert due to insufficient balance
+    });
+
+    it('Should allow mint transfer whitelist addresses to transfer with sufficient balance (no minting)', async function () {
+      const { hyphaToken, usdc, owner, user1, user2 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Add user1 to mint transfer whitelist
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user1.getAddress(), true);
+
+      // Give user1 some HYPHA tokens through investment
+      const investAmount = ethers.parseUnits('100', 6);
+      await usdc.mint(await user1.getAddress(), investAmount);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), investAmount);
+      await hyphaToken.connect(user1).investInHypha(investAmount);
+
+      const user1Balance = await hyphaToken.balanceOf(await user1.getAddress());
+      const transferAmount = user1Balance / 2n; // Transfer half
+      const totalSupplyBefore = await hyphaToken.totalSupply();
+
+      // User1 should be able to transfer normally (no minting needed)
+      await expect(
+        hyphaToken
+          .connect(user1)
+          .transfer(await user2.getAddress(), transferAmount),
+      ).to.not.be.reverted;
+
+      // Verify balances - no new tokens should be minted
+      const user1FinalBalance = await hyphaToken.balanceOf(
+        await user1.getAddress(),
+      );
+      const user2FinalBalance = await hyphaToken.balanceOf(
+        await user2.getAddress(),
+      );
+      const totalSupplyAfter = await hyphaToken.totalSupply();
+
+      expect(user1FinalBalance).to.equal(user1Balance - transferAmount);
+      expect(user2FinalBalance).to.equal(transferAmount);
+      expect(totalSupplyAfter).to.equal(totalSupplyBefore); // No minting occurred
+    });
+
+    it('Should allow mint transfer whitelist addresses to transfer beyond balance (with minting)', async function () {
+      const { hyphaToken, usdc, owner, user1, user2 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Add user1 to mint transfer whitelist
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user1.getAddress(), true);
+
+      // Give user1 some HYPHA tokens through investment
+      const investAmount = ethers.parseUnits('100', 6);
+      await usdc.mint(await user1.getAddress(), investAmount);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), investAmount);
+      await hyphaToken.connect(user1).investInHypha(investAmount);
+
+      const user1Balance = await hyphaToken.balanceOf(await user1.getAddress());
+      const transferAmount = user1Balance + ethers.parseUnits('100', 18); // More than balance
+      const shortfall = transferAmount - user1Balance;
+      const totalSupplyBefore = await hyphaToken.totalSupply();
+      const totalMintedBefore = await hyphaToken.totalMinted();
+
+      // User1 should be able to transfer more than balance (shortfall will be minted)
+      await expect(
+        hyphaToken
+          .connect(user1)
+          .transfer(await user2.getAddress(), transferAmount),
+      )
+        .to.emit(hyphaToken, 'TokensMinted')
+        .withArgs(await user2.getAddress(), shortfall);
+
+      // Verify balances - user1 should have 0, user2 should have full transferAmount
+      const user1FinalBalance = await hyphaToken.balanceOf(
+        await user1.getAddress(),
+      );
+      const user2FinalBalance = await hyphaToken.balanceOf(
+        await user2.getAddress(),
+      );
+      const totalSupplyAfter = await hyphaToken.totalSupply();
+      const totalMintedAfter = await hyphaToken.totalMinted();
+
+      expect(user1FinalBalance).to.equal(0); // All balance transferred
+      expect(user2FinalBalance).to.equal(transferAmount); // Received full amount
+      expect(totalSupplyAfter).to.equal(totalSupplyBefore + shortfall); // New tokens minted
+      expect(totalMintedAfter).to.equal(totalMintedBefore + shortfall); // Tracked in totalMinted
+    });
+
+    it('Should handle mint transfer when sender has zero balance (pure minting)', async function () {
+      const { hyphaToken, owner, user1, user2 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Add user1 to mint transfer whitelist
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user1.getAddress(), true);
+
+      // User1 has no tokens, tries to transfer
+      const transferAmount = ethers.parseUnits('500', 18);
+      const totalSupplyBefore = await hyphaToken.totalSupply();
+      const totalMintedBefore = await hyphaToken.totalMinted();
+
+      // User1 should be able to "transfer" (actually mint) with zero balance
+      await expect(
+        hyphaToken
+          .connect(user1)
+          .transfer(await user2.getAddress(), transferAmount),
+      )
+        .to.emit(hyphaToken, 'TokensMinted')
+        .withArgs(await user2.getAddress(), transferAmount);
+
+      // Verify balances
+      const user1FinalBalance = await hyphaToken.balanceOf(
+        await user1.getAddress(),
+      );
+      const user2FinalBalance = await hyphaToken.balanceOf(
+        await user2.getAddress(),
+      );
+      const totalSupplyAfter = await hyphaToken.totalSupply();
+      const totalMintedAfter = await hyphaToken.totalMinted();
+
+      expect(user1FinalBalance).to.equal(0); // Still has no balance
+      expect(user2FinalBalance).to.equal(transferAmount); // Received minted tokens
+      expect(totalSupplyAfter).to.equal(totalSupplyBefore + transferAmount); // New tokens minted
+      expect(totalMintedAfter).to.equal(totalMintedBefore + transferAmount); // Tracked in totalMinted
+    });
+
+    it('Should handle transferFrom with mint transfer whitelist', async function () {
+      const { hyphaToken, usdc, owner, user1, user2, user3 } =
+        await loadFixture(deployHyphaFixture);
+
+      // Add user1 to mint transfer whitelist
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user1.getAddress(), true);
+
+      // Give user1 some HYPHA tokens
+      const investAmount = ethers.parseUnits('100', 6);
+      await usdc.mint(await user1.getAddress(), investAmount);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), investAmount);
+      await hyphaToken.connect(user1).investInHypha(investAmount);
+
+      const user1Balance = await hyphaToken.balanceOf(await user1.getAddress());
+      const transferAmount = user1Balance + ethers.parseUnits('50', 18); // More than balance
+      const shortfall = transferAmount - user1Balance;
+
+      // User1 approves user2 to spend unlimited amount
+      await hyphaToken
+        .connect(user1)
+        .approve(await user2.getAddress(), ethers.MaxUint256);
+
+      // User2 transfers from user1 to user3 (should trigger minting)
+      await expect(
+        hyphaToken
+          .connect(user2)
+          .transferFrom(
+            await user1.getAddress(),
+            await user3.getAddress(),
+            transferAmount,
+          ),
+      )
+        .to.emit(hyphaToken, 'TokensMinted')
+        .withArgs(await user3.getAddress(), shortfall);
+
+      // Verify balances
+      const user1FinalBalance = await hyphaToken.balanceOf(
+        await user1.getAddress(),
+      );
+      const user3FinalBalance = await hyphaToken.balanceOf(
+        await user3.getAddress(),
+      );
+
+      expect(user1FinalBalance).to.equal(0); // All balance transferred
+      expect(user3FinalBalance).to.equal(transferAmount); // Received full amount
+    });
+
+    it('Should handle transferFrom with normal transfer whitelist', async function () {
+      const { hyphaToken, usdc, owner, user1, user2, user3 } =
+        await loadFixture(deployHyphaFixture);
+
+      // Add user1 to normal transfer whitelist
+      await hyphaToken
+        .connect(owner)
+        .setNormalTransferWhitelist(await user1.getAddress(), true);
+
+      // Give user1 some HYPHA tokens
+      const investAmount = ethers.parseUnits('100', 6);
+      await usdc.mint(await user1.getAddress(), investAmount);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), investAmount);
+      await hyphaToken.connect(user1).investInHypha(investAmount);
+
+      const user1Balance = await hyphaToken.balanceOf(await user1.getAddress());
+      const transferAmount = user1Balance / 2n; // Half the balance
+
+      // User1 approves user2 to spend
+      await hyphaToken
+        .connect(user1)
+        .approve(await user2.getAddress(), transferAmount);
+
+      // User2 transfers from user1 to user3
+      await expect(
+        hyphaToken
+          .connect(user2)
+          .transferFrom(
+            await user1.getAddress(),
+            await user3.getAddress(),
+            transferAmount,
+          ),
+      ).to.not.be.reverted;
+
+      // Verify balances
+      const user1FinalBalance = await hyphaToken.balanceOf(
+        await user1.getAddress(),
+      );
+      const user3FinalBalance = await hyphaToken.balanceOf(
+        await user3.getAddress(),
+      );
+
+      expect(user1FinalBalance).to.equal(user1Balance - transferAmount);
+      expect(user3FinalBalance).to.equal(transferAmount);
+    });
+
+    it('Should reject mint transfers that exceed max supply', async function () {
+      const { hyphaToken, owner, user1, user2 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Add user1 to mint transfer whitelist
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user1.getAddress(), true);
+
+      const maxSupply = await hyphaToken.MAX_SUPPLY();
+      const currentTotalMinted = await hyphaToken.totalMinted();
+      const remainingSupply = maxSupply - currentTotalMinted;
+
+      // Try to transfer more than max supply allows
+      const excessAmount = remainingSupply + 1n;
+
+      await expect(
+        hyphaToken
+          .connect(user1)
+          .transfer(await user2.getAddress(), excessAmount),
+      ).to.be.revertedWith('Exceeds max token supply');
+    });
+
+    it('Should properly update reward debt during mint transfers', async function () {
+      const { hyphaToken, usdc, owner, user1, user2, usdcPerDay } =
+        await loadFixture(deployHyphaFixture);
+
+      // Add user1 to mint transfer whitelist
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user1.getAddress(), true);
+
+      // Set up some initial tokens and rewards
+      const investAmount = ethers.parseUnits('100', 6);
+      await usdc.mint(await user1.getAddress(), investAmount + usdcPerDay * 5n);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), investAmount);
+      await hyphaToken.connect(user1).investInHypha(investAmount);
+
+      // Create rewards
+      const spacePayment = usdcPerDay * 5n;
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), spacePayment);
+      await hyphaToken.connect(user1).payForSpaces([1], [spacePayment]);
+
+      // Advance time and update distribution
+      await ethers.provider.send('evm_increaseTime', [86400]);
+      await ethers.provider.send('evm_mine', []);
+      await hyphaToken.updateDistributionState();
+
+      // Check user1 has rewards before transfer
+      const user1RewardsBefore = await hyphaToken.pendingRewards(
+        await user1.getAddress(),
+      );
+      expect(user1RewardsBefore).to.be.gt(0);
+
+      const user1Balance = await hyphaToken.balanceOf(await user1.getAddress());
+      const transferAmount = user1Balance + ethers.parseUnits('100', 18); // Trigger minting
+
+      // Perform transfer that triggers minting
+      await hyphaToken
+        .connect(user1)
+        .transfer(await user2.getAddress(), transferAmount);
+
+      // User2 should have 0 pending rewards (reward debt properly set)
+      const user2RewardsAfter = await hyphaToken.pendingRewards(
+        await user2.getAddress(),
+      );
+      expect(user2RewardsAfter).to.equal(0);
+    });
+
+    it('Should handle both whitelists correctly when address is in both', async function () {
+      const { hyphaToken, usdc, owner, user1, user2 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Add user1 to both whitelists
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user1.getAddress(), true);
+      await hyphaToken
+        .connect(owner)
+        .setNormalTransferWhitelist(await user1.getAddress(), true);
+
+      // Give user1 some tokens
+      const investAmount = ethers.parseUnits('100', 6);
+      await usdc.mint(await user1.getAddress(), investAmount);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), investAmount);
+      await hyphaToken.connect(user1).investInHypha(investAmount);
+
+      const user1Balance = await hyphaToken.balanceOf(await user1.getAddress());
+      const transferAmount = user1Balance + ethers.parseUnits('50', 18); // More than balance
+
+      // Should use mint transfer whitelist (first check) and allow minting
+      await expect(
+        hyphaToken
+          .connect(user1)
+          .transfer(await user2.getAddress(), transferAmount),
+      )
+        .to.emit(hyphaToken, 'TokensMinted')
+        .withArgs(await user2.getAddress(), ethers.parseUnits('50', 18));
+
+      // Verify mint transfer whitelist took precedence
+      const user2Balance = await hyphaToken.balanceOf(await user2.getAddress());
+      expect(user2Balance).to.equal(transferAmount);
+    });
+
+    it('Should correctly calculate eligible supply after normal transfers', async function () {
+      const { hyphaToken, usdc, owner, user1, user2, iexAddress } =
+        await loadFixture(deployHyphaFixture);
+
+      // Add user1 to normal transfer whitelist
+      await hyphaToken
+        .connect(owner)
+        .setNormalTransferWhitelist(await user1.getAddress(), true);
+
+      // Give user1 some tokens
+      const investAmount = ethers.parseUnits('100', 6);
+      await usdc.mint(await user1.getAddress(), investAmount);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), investAmount);
+      await hyphaToken.connect(user1).investInHypha(investAmount);
+
+      // Check initial eligible supply
+      const totalSupplyBefore = await hyphaToken.totalSupply();
+      const iexBalanceBefore = await hyphaToken.balanceOf(iexAddress);
+      const eligibleSupplyBefore = totalSupplyBefore - iexBalanceBefore;
+
+      const user1Balance = await hyphaToken.balanceOf(await user1.getAddress());
+      const transferAmount = user1Balance / 2n;
+
+      // Transfer to user2 (normal transfer between eligible holders)
+      await hyphaToken
+        .connect(user1)
+        .transfer(await user2.getAddress(), transferAmount);
+
+      // Check eligible supply after transfer
+      const totalSupplyAfter = await hyphaToken.totalSupply();
+      const iexBalanceAfter = await hyphaToken.balanceOf(iexAddress);
+      const eligibleSupplyAfter = totalSupplyAfter - iexBalanceAfter;
+
+      // Eligible supply should remain the same (just moved between eligible holders)
+      expect(eligibleSupplyAfter).to.equal(eligibleSupplyBefore);
+      expect(totalSupplyAfter).to.equal(totalSupplyBefore); // No new tokens created
+      expect(iexBalanceAfter).to.equal(iexBalanceBefore); // IEX balance unchanged
+    });
+
+    it('Should correctly calculate eligible supply after mint transfers', async function () {
+      const { hyphaToken, usdc, owner, user1, user2, iexAddress } =
+        await loadFixture(deployHyphaFixture);
+
+      // Add user1 to mint transfer whitelist
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user1.getAddress(), true);
+
+      // Give user1 some tokens
+      const investAmount = ethers.parseUnits('100', 6);
+      await usdc.mint(await user1.getAddress(), investAmount);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), investAmount);
+      await hyphaToken.connect(user1).investInHypha(investAmount);
+
+      // Check initial eligible supply
+      const totalSupplyBefore = await hyphaToken.totalSupply();
+      const iexBalanceBefore = await hyphaToken.balanceOf(iexAddress);
+      const eligibleSupplyBefore = totalSupplyBefore - iexBalanceBefore;
+
+      const user1Balance = await hyphaToken.balanceOf(await user1.getAddress());
+      const transferAmount = user1Balance + ethers.parseUnits('100', 18); // More than balance
+      const mintedAmount = transferAmount - user1Balance;
+
+      // Transfer beyond balance (triggers minting)
+      await hyphaToken
+        .connect(user1)
+        .transfer(await user2.getAddress(), transferAmount);
+
+      // Check eligible supply after mint transfer
+      const totalSupplyAfter = await hyphaToken.totalSupply();
+      const iexBalanceAfter = await hyphaToken.balanceOf(iexAddress);
+      const eligibleSupplyAfter = totalSupplyAfter - iexBalanceAfter;
+
+      // Eligible supply should increase by the minted amount
+      expect(eligibleSupplyAfter).to.equal(eligibleSupplyBefore + mintedAmount);
+      expect(totalSupplyAfter).to.equal(totalSupplyBefore + mintedAmount); // New tokens created
+      expect(iexBalanceAfter).to.equal(iexBalanceBefore); // IEX balance unchanged
+    });
+
+    it('Should correctly handle eligible supply when transferring to IEX address', async function () {
+      const { hyphaToken, usdc, owner, user1, iexAddress, hyphaPerDay } =
+        await loadFixture(deployHyphaFixture);
+
+      // Add user1 to mint transfer whitelist
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user1.getAddress(), true);
+
+      // Give user1 some tokens
+      const investAmount = ethers.parseUnits('100', 6);
+      await usdc.mint(await user1.getAddress(), investAmount);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), investAmount);
+      await hyphaToken.connect(user1).investInHypha(investAmount);
+
+      // Check initial eligible supply
+      const totalSupplyBefore = await hyphaToken.totalSupply();
+      const iexBalanceBefore = await hyphaToken.balanceOf(iexAddress);
+      const eligibleSupplyBefore = totalSupplyBefore - iexBalanceBefore;
+
+      // User1 pays for space with HYPHA (transfers to IEX)
+      const hyphaPayment = hyphaPerDay * 2n;
+      await hyphaToken.connect(user1).payInHypha([1], [hyphaPayment]);
+
+      // Check eligible supply after transfer to IEX
+      const totalSupplyAfter = await hyphaToken.totalSupply();
+      const iexBalanceAfter = await hyphaToken.balanceOf(iexAddress);
+      const eligibleSupplyAfter = totalSupplyAfter - iexBalanceAfter;
+
+      // Eligible supply should decrease by the amount transferred to IEX
+      expect(eligibleSupplyAfter).to.equal(eligibleSupplyBefore - hyphaPayment);
+      expect(iexBalanceAfter).to.equal(iexBalanceBefore + hyphaPayment);
+
+      // Verify getEligibleSupply() function returns correct value
+      const contractEligibleSupply = await hyphaToken.getEligibleSupply();
+      expect(contractEligibleSupply).to.equal(eligibleSupplyAfter);
+    });
+
+    it('Should correctly distribute rewards proportional to eligible holdings after transfers', async function () {
+      const { hyphaToken, usdc, owner, user1, user2, user3, usdcPerDay } =
+        await loadFixture(deployHyphaFixture);
+
+      // Set up distribution multiplier for meaningful rewards
+      await hyphaToken.connect(owner).setDistributionMultiplier(100n);
+
+      // Add user1 to mint transfer whitelist
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user1.getAddress(), true);
+
+      // Give user1, user2, user3 different amounts of tokens
+      const amounts = [
+        ethers.parseUnits('100', 6), // user1: 400 HYPHA
+        ethers.parseUnits('200', 6), // user2: 800 HYPHA
+        ethers.parseUnits('300', 6), // user3: 1200 HYPHA
+      ];
+      const users = [user1, user2, user3];
+
+      for (let i = 0; i < users.length; i++) {
+        await usdc.mint(await users[i].getAddress(), amounts[i]);
+        await usdc
+          .connect(users[i])
+          .approve(await hyphaToken.getAddress(), amounts[i]);
+        await hyphaToken.connect(users[i]).investInHypha(amounts[i]);
+      }
+
+      // Create rewards
+      const spacePayment = usdcPerDay * 10n;
+      await usdc.mint(await user1.getAddress(), spacePayment);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), spacePayment);
+      await hyphaToken.connect(user1).payForSpaces([1], [spacePayment]);
+
+      // Advance time and distribute rewards
+      await ethers.provider.send('evm_increaseTime', [86400]);
+      await ethers.provider.send('evm_mine', []);
+      await hyphaToken.updateDistributionState();
+
+      // Get initial rewards for all users
+      const user1RewardsBefore = await hyphaToken.pendingRewards(
+        await user1.getAddress(),
+      );
+      const user2RewardsBefore = await hyphaToken.pendingRewards(
+        await user2.getAddress(),
+      );
+      const user3RewardsBefore = await hyphaToken.pendingRewards(
+        await user3.getAddress(),
+      );
+
+      expect(user1RewardsBefore).to.be.gt(0);
+      expect(user2RewardsBefore).to.be.gt(0);
+      expect(user3RewardsBefore).to.be.gt(0);
+
+      // Get balances before transfer
+      const user1BalanceBefore = await hyphaToken.balanceOf(
+        await user1.getAddress(),
+      );
+      const user2BalanceBefore = await hyphaToken.balanceOf(
+        await user2.getAddress(),
+      );
+      const user3BalanceBefore = await hyphaToken.balanceOf(
+        await user3.getAddress(),
+      );
+      const totalEligibleBefore =
+        user1BalanceBefore + user2BalanceBefore + user3BalanceBefore;
+
+      // User1 mint-transfers to user2 (increases eligible supply)
+      const mintTransferAmount = ethers.parseUnits('500', 18); // More than user1's balance
+      const user1Balance = await hyphaToken.balanceOf(await user1.getAddress());
+      const mintedAmount = mintTransferAmount - user1Balance;
+
+      await hyphaToken
+        .connect(user1)
+        .transfer(await user2.getAddress(), mintTransferAmount);
+
+      // Get balances after transfer
+      const user1BalanceAfter = await hyphaToken.balanceOf(
+        await user1.getAddress(),
+      );
+      const user2BalanceAfter = await hyphaToken.balanceOf(
+        await user2.getAddress(),
+      );
+      const user3BalanceAfter = await hyphaToken.balanceOf(
+        await user3.getAddress(),
+      );
+      const totalEligibleAfter =
+        user1BalanceAfter + user2BalanceAfter + user3BalanceAfter;
+
+      expect(totalEligibleAfter).to.equal(totalEligibleBefore + mintedAmount);
+
+      // Create more rewards after transfer
+      await usdc.mint(await user1.getAddress(), spacePayment);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), spacePayment);
+      await hyphaToken.connect(user1).payForSpaces([2], [spacePayment]);
+
+      // Advance time and distribute new rewards
+      await ethers.provider.send('evm_increaseTime', [86400]);
+      await ethers.provider.send('evm_mine', []);
+      await hyphaToken.updateDistributionState();
+
+      // Get final rewards
+      const user1RewardsAfter = await hyphaToken.pendingRewards(
+        await user1.getAddress(),
+      );
+      const user2RewardsAfter = await hyphaToken.pendingRewards(
+        await user2.getAddress(),
+      );
+      const user3RewardsAfter = await hyphaToken.pendingRewards(
+        await user3.getAddress(),
+      );
+
+      // Calculate expected reward ratio based on new balances
+      const user1Percentage =
+        Number((user1BalanceAfter * 10000n) / totalEligibleAfter) / 100;
+      const user2Percentage =
+        Number((user2BalanceAfter * 10000n) / totalEligibleAfter) / 100;
+      const user3Percentage =
+        Number((user3BalanceAfter * 10000n) / totalEligibleAfter) / 100;
+
+      // New rewards should be proportional to current holdings
+      const newRewardsUser1 = user1RewardsAfter - user1RewardsBefore;
+      const newRewardsUser2 = user2RewardsAfter - user2RewardsBefore;
+      const newRewardsUser3 = user3RewardsAfter - user3RewardsBefore;
+      const totalNewRewards =
+        newRewardsUser1 + newRewardsUser2 + newRewardsUser3;
+
+      if (totalNewRewards > 0) {
+        const actualUser1Percentage =
+          Number((newRewardsUser1 * 10000n) / totalNewRewards) / 100;
+        const actualUser2Percentage =
+          Number((newRewardsUser2 * 10000n) / totalNewRewards) / 100;
+        const actualUser3Percentage =
+          Number((newRewardsUser3 * 10000n) / totalNewRewards) / 100;
+
+        // Should be close to expected percentages (within 1% tolerance)
+        expect(actualUser1Percentage).to.be.closeTo(user1Percentage, 1);
+        expect(actualUser2Percentage).to.be.closeTo(user2Percentage, 1);
+        expect(actualUser3Percentage).to.be.closeTo(user3Percentage, 1);
+      }
+    });
+
+    it('Should maintain correct eligible supply when both normal and mint transfers occur', async function () {
+      const { hyphaToken, usdc, owner, user1, user2, user3, iexAddress } =
+        await loadFixture(deployHyphaFixture);
+
+      // Add user1 to mint transfer whitelist and user2 to normal transfer whitelist
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user1.getAddress(), true);
+      await hyphaToken
+        .connect(owner)
+        .setNormalTransferWhitelist(await user2.getAddress(), true);
+
+      // Give users tokens
+      const investAmount = ethers.parseUnits('100', 6);
+      await usdc.mint(await user1.getAddress(), investAmount);
+      await usdc.mint(await user2.getAddress(), investAmount);
+
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), investAmount);
+      await usdc
+        .connect(user2)
+        .approve(await hyphaToken.getAddress(), investAmount);
+
+      await hyphaToken.connect(user1).investInHypha(investAmount);
+      await hyphaToken.connect(user2).investInHypha(investAmount);
+
+      // Track eligible supply through multiple operations
+      const checkEligibleSupply = async (label: string) => {
+        const totalSupply = await hyphaToken.totalSupply();
+        const iexBalance = await hyphaToken.balanceOf(iexAddress);
+        const calculatedEligible = totalSupply - iexBalance;
+        const contractEligible = await hyphaToken.getEligibleSupply();
+
+        console.log(
+          `${label}: Total=${ethers.formatUnits(
+            totalSupply,
+            18,
+          )}, IEX=${ethers.formatUnits(
+            iexBalance,
+            18,
+          )}, Eligible=${ethers.formatUnits(calculatedEligible, 18)}`,
+        );
+
+        expect(contractEligible).to.equal(calculatedEligible);
+        return calculatedEligible;
+      };
+
+      // Initial state
+      const eligible1 = await checkEligibleSupply('Initial');
+
+      // User2 normal transfer to user3 (eligible supply unchanged)
+      const user2Balance = await hyphaToken.balanceOf(await user2.getAddress());
+      await hyphaToken
+        .connect(user2)
+        .transfer(await user3.getAddress(), user2Balance / 2n);
+
+      const eligible2 = await checkEligibleSupply('After normal transfer');
+      expect(eligible2).to.equal(eligible1);
+
+      // User1 mint transfer (eligible supply increases)
+      const user1Balance = await hyphaToken.balanceOf(await user1.getAddress());
+      const mintTransferAmount = user1Balance + ethers.parseUnits('200', 18);
+      const expectedIncrease = mintTransferAmount - user1Balance;
+
+      await hyphaToken
+        .connect(user1)
+        .transfer(await user3.getAddress(), mintTransferAmount);
+
+      const eligible3 = await checkEligibleSupply('After mint transfer');
+      expect(eligible3).to.equal(eligible2 + expectedIncrease);
+
+      console.log(
+        '✅ Eligible supply correctly maintained through mixed transfer types',
+      );
+    });
+
+    it('Should handle edge case when all eligible tokens are transferred to IEX', async function () {
+      const { hyphaToken, usdc, owner, user1, iexAddress, hyphaPerDay } =
+        await loadFixture(deployHyphaFixture);
+
+      // Add user1 to mint transfer whitelist
+      await hyphaToken
+        .connect(owner)
+        .setMintTransferWhitelist(await user1.getAddress(), true);
+
+      // Give user1 tokens
+      const investAmount = ethers.parseUnits('100', 6);
+      await usdc.mint(await user1.getAddress(), investAmount);
+      await usdc
+        .connect(user1)
+        .approve(await hyphaToken.getAddress(), investAmount);
+      await hyphaToken.connect(user1).investInHypha(investAmount);
+
+      const user1Balance = await hyphaToken.balanceOf(await user1.getAddress());
+
+      // Transfer all tokens to IEX (making eligible supply = 0)
+      await hyphaToken.connect(user1).payInHypha([1], [user1Balance]);
+
+      // Check eligible supply is 0
+      const eligibleSupply = await hyphaToken.getEligibleSupply();
+      expect(eligibleSupply).to.equal(0);
+
+      // Verify IEX has all the tokens
+      const iexBalance = await hyphaToken.balanceOf(iexAddress);
+      expect(iexBalance).to.equal(user1Balance);
+
+      // User1 should have no tokens and no rewards
+      const user1FinalBalance = await hyphaToken.balanceOf(
+        await user1.getAddress(),
+      );
+      const user1Rewards = await hyphaToken.pendingRewards(
+        await user1.getAddress(),
+      );
+
+      expect(user1FinalBalance).to.equal(0);
+      expect(user1Rewards).to.equal(0);
+
+      console.log(
+        '✅ Zero eligible supply handled correctly when all tokens go to IEX',
+      );
     });
   });
 
