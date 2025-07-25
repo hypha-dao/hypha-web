@@ -8,7 +8,6 @@ import {
   DropdownMenuTrigger,
   Input,
 } from '@hypha-platform/ui';
-import { capitalizeFirstLetter } from '@hypha-platform/ui-utils';
 import { SearchIcon } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import React from 'react';
@@ -71,7 +70,7 @@ export function CategorySearch({ suggestions }: CategorySearchProps) {
       {currentCategories.map((category) => (
         <DisposableLabel
           key={category}
-          label={capitalizeFirstLetter(category)}
+          label={category}
           closeTooltip="Remove"
           onClose={() => handleRemoveCategory(category)}
         />
@@ -86,7 +85,7 @@ export function CategorySearch({ suggestions }: CategorySearchProps) {
               key={suggestion.title}
               onSelect={() => handleAddCategory(suggestion.title)}
             >
-              <span>{capitalizeFirstLetter(suggestion.title)}</span>
+              <span className="capitalize">{suggestion.title}</span>
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>

@@ -1,4 +1,3 @@
-export * from './capitalize-first-letter';
 export * from './cn';
 export * from './copyToClipboard';
 export * from './isAbsoluteUrl';
