@@ -64,6 +64,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "@wagmi/core": "^2.16.7",
     "@xstate/store": "^3.2.1",
+    "alchemy-sdk": "^3.6.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
