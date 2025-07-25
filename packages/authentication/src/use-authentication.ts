@@ -56,10 +56,12 @@ export function useAuthentication() {
 
   const user = React.useMemo(() => {
     if (!authenticated || !privyUser?.id) return null;
-
     return {
       id: privyUser.id,
-      email: privyUser.email?.address,
+      email:
+        privyUser.email?.address ||
+        privyUser.google?.email ||
+        privyUser.apple?.email,
       ...(smartWallet?.address && {
         wallet: { address: smartWallet.address as `0x${string}` },
       }),
