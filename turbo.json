@@ -44,6 +44,13 @@
       "cache": false,
       "persistent": true,
       "env": ["*"]
+    },
+    "wagmi:generate": {
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "dependsOn": ["^wagmi:generate"],
+      "env": ["PRIVATE_KEY"],
+      "cache": false,
+      "persistent": true
     }
   }
 }

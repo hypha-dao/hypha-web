@@ -9,6 +9,7 @@
     "start": "turbo run start",
     "migrate": "turbo run migrate",
     "generate": "turbo run generate",
+    "wagmi:generate": "turbo run wagmi:generate",
     "add-component": "cd packages/ui && pnpm dlx shadcn@latest add",
     "format:check": "npx prettier --check 'apps/**/*.{ts,tsx}' --check 'packages/**/*.{ts,tsx}'",
     "format:fix": "npx prettier --write 'apps/**/*.{ts,tsx}' --write 'packages/**/*.{ts,tsx}'"
