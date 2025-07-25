@@ -883,22 +883,6 @@ importers:
         version: link:../../config/typescript
 
   packages/storage-evm:
-    dependencies:
-      '@hypha-platform/authentication':
-        specifier: workspace:*
-        version: link:../authentication
-      '@hypha-platform/storage-postgres':
-        specifier: workspace:*
-        version: link:../storage-postgres
-      '@hypha-platform/ui':
-        specifier: workspace:*
-        version: link:../ui
-      '@hypha-platform/ui-utils':
-        specifier: workspace:*
-        version: link:../ui-utils
-      '@wagmi/cli':
-        specifier: ^2.2.0
-        version: 2.2.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
     devDependencies:
       '@hypha-platform/config-eslint':
         specifier: workspace:*
@@ -906,6 +890,9 @@ importers:
       '@hypha-platform/config-typescript':
         specifier: workspace:*
         version: link:../../config/typescript
+      '@wagmi/cli':
+        specifier: ^2.2.0
+        version: 2.2.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
       hardhat:
         specifier: ^2.22.17
         version: 2.23.0(bufferutil@4.0.9)(ts-node@10.9.2(@swc/core@1.11.21(@swc/helpers@0.5.17))(@types/node@22.15.33)(typescript@5.8.3))(typescript@5.8.3)(utf-8-validate@5.0.10)
