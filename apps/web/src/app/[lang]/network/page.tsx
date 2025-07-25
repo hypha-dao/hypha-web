@@ -1,18 +1,17 @@
-import Link from 'next/link';
 import { Locale } from '@hypha-platform/i18n';
-import { Button, Container } from '@hypha-platform/ui';
-import { Text } from '@radix-ui/themes';
-import { SpaceGroupSlider, SpaceSearch } from '@hypha-platform/epics';
+import { Container } from '@hypha-platform/ui';
 import { findAllSpaces, Space } from '@hypha-platform/core/server';
-import { Category } from '@hypha-platform/core/client';
-import { PlusIcon } from '@radix-ui/react-icons';
-import { getDhoPathGovernance } from '../dho/[id]/@tab/governance/constants';
+import { CATEGORIES, Category } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
+import { useMembers } from '@web/hooks/use-members';
+import { NetworkAll, NetworkSelected } from '@hypha-platform/epics';
+import { getDhoPathGovernance } from '../dho/[id]/@tab/governance/constants';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
   searchParams?: Promise<{
     query?: string;
+    category?: string;
   }>;
 };
 
@@ -32,12 +31,15 @@ export default async function Index(props: PageProps) {
   const params = await props.params;
   const searchParams = await props.searchParams;
   const query = searchParams?.query;
+  const categoriesRaw = searchParams?.category;
+  const categories: Category[] | undefined = categoriesRaw
+    ?.split(',')
+    .map((category) => category.trim() as Category)
+    .filter((category): category is Category => {
+      return CATEGORIES.includes(category);
+    });
 
   const { lang } = params;
-
-  const getHref = (id: string) => {
-    return getDhoPathGovernance(lang, id);
-  };
 
   const spaces = await findAllSpaces({ db }, { search: query });
 
@@ -45,33 +47,22 @@ export default async function Index(props: PageProps) {
 
   return (
     <Container>
-      <Text className="text-9 text-center flex mb-8">
-        Explore the Hypha Network
-      </Text>
-      <div className="flex justify-center">
-        <SpaceSearch />
-        <Link href={`/${lang}/network/create`} scroll={false}>
-          <Button className="ml-2">
-            <PlusIcon className="mr-2" />
-            Create Space
-          </Button>
-        </Link>
-      </div>
-      {uniqueCategories.map((category) => (
-        <SpaceGroupSlider
-          key={category}
-          spaces={spaces.filter((space) =>
-            space.categories?.includes(category),
-          )}
-          type={category}
-          getHref={getHref}
+      {categories && categories.length > 0 ? (
+        <NetworkSelected
+          lang={lang}
+          spaces={spaces}
+          categories={categories}
+          uniqueCategories={uniqueCategories}
+          useMembers={useMembers}
         />
-      ))}
-      <SpaceGroupSlider
-        spaces={spaces.filter((space) => space.categories?.length === 0)}
-        type={'No Category'}
-        getHref={getHref}
-      />
+      ) : (
+        <NetworkAll
+          lang={lang}
+          spaces={spaces}
+          uniqueCategories={uniqueCategories}
+          getPathHelper={getDhoPathGovernance}
+        />
+      )}
     </Container>
   );
 }
