@@ -59,7 +59,7 @@ export async function GET(
         name: token.name || 'Unnamed',
         address: token?.tokenAddress?.lowercase as `0x${string}`,
         icon: token.logo || '/placeholder/token-icon.png',
-        status: 'utility',
+        type: 'utility',
       }));
 
     const allTokens: Token[] = [...TOKENS, ...parsedExternalTokens];

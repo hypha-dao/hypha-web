@@ -35,7 +35,7 @@ type AssetItem = {
   symbol: string;
   value: number;
   usdEqual: number;
-  status: string;
+  type: string;
   chartData: OneChartPoint[];
   transactions: TransactionCardProps[];
   closeUrl: string;
@@ -55,7 +55,7 @@ export const useUserAssets = ({
   refreshInterval = 10000,
   personSlug,
 }: {
-  filter?: { status: string };
+  filter?: { type: string };
   refreshInterval?: number;
   personSlug?: string;
 }): UseAssetsReturn => {
@@ -89,8 +89,8 @@ export const useUserAssets = ({
 
   const filteredAssets = React.useMemo(() => {
     if (!hasValidData) return [];
-    if (!filter || filter.status === 'all') return typedData.assets;
-    return typedData.assets.filter((asset) => asset.status === filter.status);
+    if (!filter || filter.type === 'all') return typedData.assets;
+    return typedData.assets.filter((asset) => asset.type === filter.type);
   }, [hasValidData, typedData?.assets, filter]);
 
   return {

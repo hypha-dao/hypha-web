@@ -36,7 +36,7 @@ export const ProfileTransferFunds = ({
   });
 
   const tokens: Token[] = assets
-    .filter((asset) => !['ownership', 'voice'].includes(asset.status))
+    .filter((asset) => !['ownership', 'voice'].includes(asset.type))
     .map((asset) => ({
       icon: asset.icon,
       symbol: asset.symbol,

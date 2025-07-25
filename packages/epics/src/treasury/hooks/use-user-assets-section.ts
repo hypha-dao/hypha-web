@@ -14,7 +14,7 @@ export const useUserAssetsSection = ({
   const [visibleCount, setVisibleCount] = React.useState(6);
 
   const { isLoading, balance, assets } = useUserAssets({
-    ...(activeFilter !== 'all' && { filter: { status: activeFilter } }),
+    ...(activeFilter !== 'all' && { filter: { type: activeFilter } }),
     personSlug,
   });
 

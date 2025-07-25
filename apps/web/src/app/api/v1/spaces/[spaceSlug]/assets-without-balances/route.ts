@@ -86,7 +86,7 @@ export async function GET(
         name: token.name || 'Unnamed',
         address: token?.tokenAddress?.lowercase as `0x${string}`,
         icon: token.logo || '/placeholder/token-icon.png',
-        status: 'utility',
+        type: 'utility',
       }));
 
     spaceTokens = spaceTokens
@@ -103,7 +103,7 @@ export async function GET(
         name: '',
         address,
         icon: '/placeholder/token-icon.png',
-        status: 'utility' as const,
+        type: 'utility' as const,
       })),
       ...parsedExternalTokens,
     ].filter(
