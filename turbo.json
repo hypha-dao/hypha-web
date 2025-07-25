@@ -29,6 +29,10 @@
       "cache": false,
       "persistent": true
     },
+    "start": {
+      "dependsOn": ["^build"],
+      "env": ["*"]
+    },
     "migrate": {
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "cache": false,
