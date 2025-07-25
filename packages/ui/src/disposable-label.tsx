@@ -40,7 +40,7 @@ export const DisposableLabel = ({
       >
         <Cross2Icon fontSize={20} />
       </Button>
-      <span className="h-[20px] align-middle text-2">{label}</span>
+      <span className="h-[20px] align-middle text-2 uppercase">{label}</span>
     </Label>
   );
 };
