@@ -4,8 +4,11 @@ import { findAllSpaces, Space } from '@hypha-platform/core/server';
 import { CATEGORIES, Category } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 import { useMembers } from '@web/hooks/use-members';
-import { NetworkAll, NetworkSelected } from '@hypha-platform/epics';
-import { getDhoPathGovernance } from '../dho/[id]/@tab/governance/constants';
+import {
+  getDhoPathGovernance,
+  NetworkAll,
+  NetworkSelected,
+} from '@hypha-platform/epics';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
