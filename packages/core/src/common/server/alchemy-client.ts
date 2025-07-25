@@ -1,5 +1,5 @@
 import 'server-only';
-import { Alchemy, Network} from 'alchemy-sdk';
+import { Alchemy, Network } from 'alchemy-sdk';
 
 const config = {
   apiKey: process.env.ALCHEMY_API_KEY,
@@ -7,9 +7,9 @@ const config = {
   connectionInfoOverrides: {
     skipFetchSetup: true,
   },
-}
+};
 
 export function getAlchemy() {
-  const alchemy = new Alchemy(config)
-  return alchemy
+  const alchemy = new Alchemy(config);
+  return alchemy;
 }
