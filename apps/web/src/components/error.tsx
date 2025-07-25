@@ -1,7 +1,7 @@
 import { Button } from '@hypha-platform/ui';
 import React from 'react';
 
-export function Error({
+export function ErrorComponent({
   message,
   error,
   reset,

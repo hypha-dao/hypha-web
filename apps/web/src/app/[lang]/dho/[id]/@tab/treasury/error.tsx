@@ -1,6 +1,6 @@
 'use client'; // Error boundaries must be Client Components
 
-import { Error } from '@web/components/error';
+import { ErrorComponent } from '@web/components/error';
 
 export default function ErrorBoundary({
   error,
@@ -10,7 +10,7 @@ export default function ErrorBoundary({
   reset: () => void;
 }) {
   return (
-    <Error
+    <ErrorComponent
       message="Oops, something went wrong. Couldn't load treasury tab."
       error={error}
       reset={() => reset()}
