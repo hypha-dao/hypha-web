@@ -4,7 +4,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "lint": "eslint . --max-warnings 0"
+    "lint": "eslint . --max-warnings 0",
+    "generate-abi": "wagmi generate"
   },
   "devDependencies": {
     "@hypha-platform/config-eslint": "workspace:*",
@@ -12,9 +13,10 @@
   },
   "dependencies": {
     "@hypha-platform/authentication": "workspace:*",
+    "@hypha-platform/storage-postgres": "workspace:*",
     "@hypha-platform/ui": "workspace:*",
     "@hypha-platform/ui-utils": "workspace:*",
-    "@hypha-platform/storage-postgres": "workspace:*"
+    "@wagmi/cli": "^2.2.0"
   },
   "exports": {
     "./client": "./src/client.ts",
