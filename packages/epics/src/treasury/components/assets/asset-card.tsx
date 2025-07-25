@@ -8,7 +8,7 @@ type AssetCardProps = {
   symbol?: string;
   value?: number;
   usdEqual?: number;
-  status?: string;
+  type?: string;
   isLoading?: boolean;
 };
 
