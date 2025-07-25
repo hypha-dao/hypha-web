@@ -5,6 +5,7 @@ import { CATEGORIES, Category } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 import { useMembers } from '@web/hooks/use-members';
 import { NetworkAll, NetworkSelected } from '@hypha-platform/epics';
+import { getDhoPathGovernance } from '../dho/[id]/@tab/governance/constants';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -59,6 +60,7 @@ export default async function Index(props: PageProps) {
           lang={lang}
           spaces={spaces}
           uniqueCategories={uniqueCategories}
+          getPathHelper={getDhoPathGovernance}
         />
       )}
     </Container>

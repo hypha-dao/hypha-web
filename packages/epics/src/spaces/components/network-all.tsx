@@ -7,19 +7,20 @@ import { Button } from '@hypha-platform/ui';
 import { PlusIcon } from '@radix-ui/react-icons';
 import { Text } from '@radix-ui/themes';
 import Link from 'next/link';
-import { getDhoPathGovernance } from '../../../../../apps/web/src/app/[lang]/dho/[id]/@tab/governance/constants';
 
 export function NetworkAll({
   lang,
   spaces,
   uniqueCategories,
+  getPathHelper,
 }: {
   lang: Locale;
   spaces: Space[];
   uniqueCategories: Category[];
+  getPathHelper: (lang: Locale, id: string) => string;
 }) {
   const getHref = (id: string) => {
-    return getDhoPathGovernance(lang, id);
+    return getPathHelper(lang, id);
   };
 
   return (
