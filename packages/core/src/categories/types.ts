@@ -4,6 +4,7 @@ export const CATEGORIES = [
   'education',
   'energy',
   'events',
+  'finance',
   'governance',
   'health',
   'housing',
