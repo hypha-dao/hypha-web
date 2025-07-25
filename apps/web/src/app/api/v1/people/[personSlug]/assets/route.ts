@@ -3,7 +3,7 @@ import {
   getTokenPrice,
   findPersonBySlug,
   getDb,
-  getWalletTokenBalancesPriceByAddress,
+  getTokenBalancesByAddress,
 } from '@hypha-platform/core/server';
 import {
   TOKENS,
@@ -43,7 +43,7 @@ export async function GET(
 
     let externalTokens: any[] = [];
     try {
-      externalTokens = await getWalletTokenBalancesPriceByAddress(address);
+      externalTokens = await getTokenBalancesByAddress(address);
     } catch (error) {
       console.warn('Failed to fetch external token balances:', error);
     }
@@ -51,24 +51,33 @@ export async function GET(
     const parsedExternalTokens: Token[] = externalTokens
       .filter(
         (token) =>
-          token?.tokenAddress?.lowercase &&
-          /^0x[a-fA-F0-9]{40}$/i.test(token.tokenAddress.lowercase),
+          token?.tokenAddress &&
+          /^0x[a-fA-F0-9]{40}$/i.test(token.tokenAddress),
       )
       .map((token) => ({
         symbol: token.symbol || 'UNKNOWN',
         name: token.name || 'Unnamed',
-        address: token?.tokenAddress?.lowercase as `0x${string}`,
+        address: token.tokenAddress as `0x${string}`,
         icon: token.logo || '/placeholder/token-icon.png',
-        type: 'utility',
+        type: 'utility' as const,
       }));
 
-    const allTokens: Token[] = [...TOKENS, ...parsedExternalTokens];
+    const addressMap = new Map<string, Token>();
+    TOKENS.forEach((token) =>
+      addressMap.set(token.address.toLowerCase(), token),
+    );
+    parsedExternalTokens.forEach((token) => {
+      if (!addressMap.has(token.address.toLowerCase())) {
+        addressMap.set(token.address.toLowerCase(), token);
+      }
+    });
+    const allTokens: Token[] = Array.from(addressMap.values());
 
     let prices: Record<string, number | undefined> = {};
     try {
       prices = await getTokenPrice(allTokens.map(({ address }) => address));
     } catch (error: unknown) {
-      console.error('Failed to fetch prices of tokens with Moralis:', error);
+      console.error('Failed to fetch token prices:', error);
     }
 
     const assets = await Promise.all(
