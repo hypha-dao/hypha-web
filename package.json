@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
+    "start": "turbo run start",
     "migrate": "turbo run migrate",
     "generate": "turbo run generate",
     "add-component": "cd packages/ui && pnpm dlx shadcn@latest add",
