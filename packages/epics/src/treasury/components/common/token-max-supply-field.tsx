@@ -20,6 +20,10 @@ export function TokenMaxSupplyField() {
   });
 
   const handleMaxSupplyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.value === '') {
+      setValue('maxSupply', '');
+      return;
+    }
     const val = Number(e.target.value);
     const num = Number.isNaN(val) ? 0 : val;
     setValue('maxSupply', num);
