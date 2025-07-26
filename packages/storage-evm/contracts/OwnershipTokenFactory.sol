@@ -70,14 +70,6 @@ contract OwnershipTokenFactory is
   ) public override returns (address) {
     require(spacesContract != address(0), 'Spaces contract not set');
 
-    // If isVotingToken is true, ensure a voting power contract is set
-    if (isVotingToken) {
-      require(
-        votingPowerContract != address(0),
-        'Voting power contract not set'
-      );
-    }
-
     // Strict authorization: only allow the space's executor to call this function
     address spaceExecutor = IDAOSpaceFactory(spacesContract).getSpaceExecutor(
       spaceId
@@ -107,15 +99,6 @@ contract OwnershipTokenFactory is
 
     // Make sure the event is using the right event signature
     emit TokenDeployed(spaceId, tokenAddress, name, symbol);
-
-    // Register as voting token if requested
-    if (isVotingToken) {
-      IOwnershipTokenVotingPower(votingPowerContract).setSpaceToken(
-        spaceId,
-        tokenAddress
-      );
-      emit VotingTokenSet(spaceId, tokenAddress);
-    }
 
     return tokenAddress;
   }

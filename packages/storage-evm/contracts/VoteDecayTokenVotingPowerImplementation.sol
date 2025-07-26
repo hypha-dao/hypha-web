@@ -8,6 +8,7 @@ import '@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol
 import './storage/DecayTokenVotingPowerStorage.sol';
 import './interfaces/IDecayTokenVotingPower.sol';
 import './interfaces/IDecayingSpaceToken.sol';
+import './interfaces/IDAOSpaceFactory.sol';
 
 /**
  * @title VoteDecayTokenVotingPowerImplementation
@@ -47,7 +48,20 @@ contract VoteDecayTokenVotingPowerImplementation is
   }
 
   /**
-   * @dev Link a space with its voting token - can only be set by the authorized decay token factory
+   * @dev Set the address of the space factory to check executor permissions
+   * @param _spaceFactory Address of the space factory contract
+   */
+  function setSpaceFactory(address _spaceFactory) external onlyOwner {
+    require(
+      _spaceFactory != address(0),
+      'Space factory cannot be zero address'
+    );
+    spaceFactory = _spaceFactory;
+    emit SpaceFactorySet(_spaceFactory);
+  }
+
+  /**
+   * @dev Link a space with its voting token - can only be set by the space's executor
    * @param _spaceId The space ID to link
    * @param _tokenAddress The DecayingSpaceToken address to use for voting power
    */
@@ -55,13 +69,18 @@ contract VoteDecayTokenVotingPowerImplementation is
     uint256 _spaceId,
     address _tokenAddress
   ) external override {
-    require(
-      msg.sender == decayTokenFactory,
-      'Only decay token factory can set space token'
-    );
     require(_spaceId > 0, 'Invalid space ID');
     require(_tokenAddress != address(0), 'Invalid token address');
-    require(spaceTokens[_spaceId] == address(0), 'Token already set for space');
+    require(spaceFactory != address(0), 'Space factory not set');
+
+    // Check that the caller is the space's executor
+    address spaceExecutor = IDAOSpaceFactory(spaceFactory).getSpaceExecutor(
+      _spaceId
+    );
+    require(
+      msg.sender == spaceExecutor,
+      'Only space executor can set space token'
+    );
 
     // Validate that it's a DecayingSpaceToken by checking if it has decay properties
     try IDecayingSpaceToken(_tokenAddress).decayPercentage() returns (uint256) {

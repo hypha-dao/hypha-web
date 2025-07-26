@@ -81,14 +81,6 @@ contract DecayingTokenFactory is
     );
     require(decayInterval > 0, 'Decay interval must be greater than 0');
 
-    // If isVotingToken is true, ensure a decay voting power contract is set
-    if (isVotingToken) {
-      require(
-        decayVotingPowerContract != address(0),
-        'Decay voting power contract not set'
-      );
-    }
-
     // Strict authorization: only allow the space's executor to call this function
     address spaceExecutor = IDAOSpaceFactory(spacesContract).getSpaceExecutor(
       spaceId
@@ -120,15 +112,6 @@ contract DecayingTokenFactory is
 
     // No need to explicitly add token to space anymore
     // SpaceFactory.hasToken() now checks the token's spaceId directly
-
-    // Register as voting token if requested
-    if (isVotingToken) {
-      IDecayTokenVotingPower(decayVotingPowerContract).setSpaceToken(
-        spaceId,
-        tokenAddress
-      );
-      emit VotingTokenSet(spaceId, tokenAddress);
-    }
 
     return tokenAddress;
   }

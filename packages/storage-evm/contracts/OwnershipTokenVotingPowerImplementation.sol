@@ -7,6 +7,7 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import './storage/OwnershipTokenVotingPowerStorage.sol';
 import './interfaces/IOwnershipTokenVotingPower.sol';
 import './interfaces/IOwnershipSpaceToken.sol';
+import './interfaces/IDAOSpaceFactory.sol';
 
 /**
  * @title OwnershipTokenVotingPowerImplementation
@@ -47,7 +48,20 @@ contract OwnershipTokenVotingPowerImplementation is
   }
 
   /**
-   * @dev Link a space with its voting token - can only be set by an authorized token factory
+   * @dev Set the address of the space factory to check executor permissions
+   * @param _spaceFactory Address of the space factory contract
+   */
+  function setSpaceFactory(address _spaceFactory) external onlyOwner {
+    require(
+      _spaceFactory != address(0),
+      'Space factory cannot be zero address'
+    );
+    spaceFactory = _spaceFactory;
+    emit SpaceFactorySet(_spaceFactory);
+  }
+
+  /**
+   * @dev Link a space with its voting token - can only be set by the space's executor
    * @param _spaceId The space ID to link
    * @param _tokenAddress The ownership token address to use for voting power
    */
@@ -55,13 +69,18 @@ contract OwnershipTokenVotingPowerImplementation is
     uint256 _spaceId,
     address _tokenAddress
   ) external override {
-    require(
-      msg.sender == ownershipTokenFactory,
-      'Only ownership token factory can set space token'
-    );
     require(_spaceId > 0, 'Invalid space ID');
     require(_tokenAddress != address(0), 'Invalid token address');
-    require(spaceTokens[_spaceId] == address(0), 'Token already set for space');
+    require(spaceFactory != address(0), 'Space factory not set');
+
+    // Check that the caller is the space's executor
+    address spaceExecutor = IDAOSpaceFactory(spaceFactory).getSpaceExecutor(
+      _spaceId
+    );
+    require(
+      msg.sender == spaceExecutor,
+      'Only space executor can set space token'
+    );
 
     spaceTokens[_spaceId] = _tokenAddress;
     emit SpaceTokenSet(_spaceId, _tokenAddress);

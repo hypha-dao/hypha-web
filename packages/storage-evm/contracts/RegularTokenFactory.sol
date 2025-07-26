@@ -72,14 +72,6 @@ contract RegularTokenFactory is
   ) public override returns (address) {
     require(spacesContract != address(0), 'Spaces contract not set');
 
-    // If isVotingToken is true, ensure a voting power contract is set
-    if (isVotingToken) {
-      require(
-        votingPowerContract != address(0),
-        'Voting power contract not set'
-      );
-    }
-
     // Strict authorization: only allow the space's executor to call this function
     address spaceExecutor = IDAOSpaceFactory(spacesContract).getSpaceExecutor(
       spaceId
@@ -105,15 +97,6 @@ contract RegularTokenFactory is
     allSpaceTokens[spaceId].push(tokenAddress);
 
     emit TokenDeployed(spaceId, tokenAddress, name, symbol);
-
-    // Register as voting token if requested
-    if (isVotingToken) {
-      IRegularTokenVotingPower(votingPowerContract).setSpaceToken(
-        spaceId,
-        tokenAddress
-      );
-      emit VotingTokenSet(spaceId, tokenAddress);
-    }
 
     return tokenAddress;
   }
