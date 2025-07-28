@@ -24,7 +24,7 @@ export const ProposalTokenItem = ({
       </div>
       <div className="flex justify-between items-center">
         <div className="text-1 text-neutral-11 w-full">Token Max.Supply</div>
-        <div className="text-1">{originalSupply}</div>
+        <div className="text-1">{Number(originalSupply).toFixed(2)}</div>
       </div>
     </div>
   );

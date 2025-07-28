@@ -21,7 +21,7 @@ export function useTokens({ spaceSlug }: { spaceSlug: string }) {
       address: asset.address,
       icon: '/placeholder/space-avatar-image.png',
       name: asset.name,
-      status: '',
+      type: '',
       symbol: asset.name,
     }));
 

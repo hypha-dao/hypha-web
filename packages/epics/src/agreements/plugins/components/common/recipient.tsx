@@ -6,10 +6,13 @@ import { WalletAddress } from './wallet-address';
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
 import { Space, Person } from '@hypha-platform/core/client';
 
+export type RecipientType = 'member' | 'space';
+
 type RecipientProps = {
   spaces?: Space[];
   members?: Person[];
   value?: string;
+  defaultRecipientType?: RecipientType;
   onChange?: (selected: Person | Space | { address: string }) => void;
 };
 
@@ -18,10 +21,10 @@ export const Recipient = ({
   spaces = [],
   onChange,
   value,
+  defaultRecipientType = 'member',
 }: RecipientProps) => {
-  const [recipientType, setRecipientType] = useState<'member' | 'space'>(
-    'member',
-  );
+  const [recipientType, setRecipientType] =
+    useState<RecipientType>(defaultRecipientType);
   const [selected, setSelected] = useState<
     Person | Space | { address: string } | null
   >(null);
@@ -43,6 +46,7 @@ export const Recipient = ({
       members.map((member) => ({
         value: String(member.address),
         label: `${member.name} ${member.surname}`,
+        searchText: `${member.name} ${member.surname}`.toLowerCase(),
         avatarUrl: member.avatarUrl,
         address: member.address,
       })),
@@ -54,6 +58,7 @@ export const Recipient = ({
       spaces.map((space) => ({
         value: String(space.address),
         label: space.title,
+        searchText: space.title.toLowerCase(),
         avatarUrl: space.logoUrl,
         address: space.address,
       })),
@@ -65,26 +70,22 @@ export const Recipient = ({
 
   const handleChange = useCallback(
     (value: string) => {
-      const lowerValue = value.toLowerCase();
-      const source = recipientType === 'member' ? members : spaces;
+      const found = currentOptions.find((option) => option.value === value);
 
-      const found =
-        source.find(
-          (item) =>
-            String(item.address).toLowerCase() === lowerValue ||
-            ('name' in item && item?.name?.toLowerCase() === lowerValue) ||
-            ('surname' in item &&
-              item?.surname?.toLowerCase() === lowerValue) ||
-            ('title' in item && item.title.toLowerCase() === lowerValue),
-        ) || null;
-
-      setSelected(found);
       if (found) {
-        setManualAddress(found.address || '');
-        onChange?.(found);
+        const source = recipientType === 'member' ? members : spaces;
+        const originalItem = source.find(
+          (item) => item.address === found.value,
+        );
+
+        if (originalItem) {
+          setSelected(originalItem);
+          setManualAddress(originalItem.address || '');
+          onChange?.(originalItem);
+        }
       }
     },
-    [members, spaces, recipientType, onChange],
+    [currentOptions, members, spaces, recipientType, onChange],
   );
 
   const handleAddressChange = useCallback(

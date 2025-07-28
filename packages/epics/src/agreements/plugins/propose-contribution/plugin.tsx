@@ -19,7 +19,11 @@ export const ProposeContributionPlugin = ({
   const { tokens, isLoading } = useTokens({ spaceSlug });
   return (
     <div className="flex flex-col gap-4">
-      <RecipientField members={members} spaces={spaces} />
+      <RecipientField
+        members={members}
+        spaces={spaces}
+        defaultRecipientType="member"
+      />
       <Separator />
       <PaymentSchedule />
       <Skeleton loading={isLoading} width={'100%'} height={90}>

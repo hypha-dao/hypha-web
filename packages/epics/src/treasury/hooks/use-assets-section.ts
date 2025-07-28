@@ -11,7 +11,7 @@ export const useAssetsSection = () => {
   const [visibleCount, setVisibleCount] = React.useState(PAGE_SIZE);
 
   const { isLoading, balance, assets } = useAssets({
-    ...(activeFilter !== 'all' && { filter: { status: activeFilter } }),
+    ...(activeFilter !== 'all' && { filter: { type: activeFilter } }),
   });
 
   React.useEffect(() => {

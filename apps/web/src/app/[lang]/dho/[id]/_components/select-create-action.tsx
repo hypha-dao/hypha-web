@@ -50,7 +50,7 @@ export const CREATE_ACTIONS = [
   {
     title: 'Deploy Funds',
     description:
-      'Allocate treasury funds for investments or distributing resources among sub-spaces.',
+      'Allocate treasury funds for investments to other spaces or distributing resources among sub-spaces.',
     href: 'governance/create/deploy-funds',
     icon: <Share1Icon />,
   },

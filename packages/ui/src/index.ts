@@ -17,6 +17,7 @@ export * from './chips';
 export * from './combobox';
 export * from './container';
 export * from './date-picker';
+export * from './disposable-label';
 export * from './dropdown-menu';
 export * from './error-alert';
 export * from './form';

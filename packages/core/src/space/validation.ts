@@ -11,8 +11,8 @@ const createSpaceWeb2Props = {
     .min(1)
     .max(50)
     .regex(
-      /^[a-z0-9-]+$/,
-      'Slug must contain only lowercase letters, numbers, and hyphens',
+      /^[a-z0-9'-]+$/,
+      'Slug must contain only lowercase letters, numbers, hyphens, and apostrophes',
     )
     .optional(),
   web3SpaceId: z.number().optional(),
@@ -20,20 +20,20 @@ const createSpaceWeb2Props = {
   categories: z
     .array(
       z.enum([
-        'housing',
-        'energy',
-        'mobility',
-        'water',
-        'air',
-        'soil',
-        'flora',
-        'fauna',
-        'fungi',
-        'food',
-        'education',
         'art',
+        'biodiversity',
+        'education',
+        'energy',
+        'events',
+        'governance',
         'health',
+        'housing',
+        'land',
+        'mobility',
+        'ocean',
+        'sandbox',
         'tech',
+        'usecase',
       ]),
     )
     .default([]),
@@ -64,7 +64,7 @@ export const schemaCreateSpaceWeb3 = z.object(createSpaceWeb3Props);
 
 export const createSpaceFiles = {
   logoUrl: z.union([
-    z.string().url('logoUrl URL must be a valid URL'),
+    z.string().url('Please upload a Space Icon'),
     z
       .instanceof(File)
       .refine(

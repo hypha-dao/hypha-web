@@ -4,16 +4,16 @@ import { useRouter } from 'next/navigation';
 import { useRef, useCallback, useEffect } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 
-const FIVE_MIN_IN_MS = 300000;
+const THIRTY_MINUTES_IN_MS = 1800000;
 
 /**
  * @brief Component to logout a user after a period of inactivity
  */
-export function InactivityGuard({ maxInactivity = FIVE_MIN_IN_MS }) {
+export function InactivityGuard({ maxInactivity = THIRTY_MINUTES_IN_MS }) {
   const { logout } = usePrivy();
 
   const router = useRouter();
-  const timer = useRef<NodeJS.Timeout>(setTimeout(() => {}, 0));
+  const timer = useRef<ReturnType<typeof setTimeout>>(setTimeout(() => {}, 0));
 
   const onLogout = useCallback(async () => {
     try {
@@ -22,7 +22,7 @@ export function InactivityGuard({ maxInactivity = FIVE_MIN_IN_MS }) {
     } catch (e) {
       console.error('Inactivity logout failed:', e);
     }
-  }, [router]);
+  }, [router, logout]);
 
   const onReset = useCallback(() => {
     if (timer.current) clearTimeout(timer.current);

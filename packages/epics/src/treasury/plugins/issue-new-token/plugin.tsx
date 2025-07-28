@@ -1,6 +1,6 @@
 'use client';
 
-import { Separator } from '@hypha-platform/ui';
+import { Separator, Switch } from '@hypha-platform/ui';
 import {
   TokenNameField,
   TokenSymbolField,
@@ -19,6 +19,7 @@ export const IssueNewTokenPlugin = () => {
   const { getValues, setValue } = useFormContext();
   const values = getValues();
   const [tokenType, setTokenType] = useState<string>(values['type']);
+  const [showDecaySettings, setShowDecaySettings] = useState<boolean>(true);
 
   useEffect(() => {
     if (tokenType === 'voice') {
@@ -41,8 +42,25 @@ export const IssueNewTokenPlugin = () => {
       <TokenMaxSupplyField />
       {tokenType === 'voice' && (
         <>
-          <Separator />
-          <DecaySettingsField name="decaySettings" />
+          <div className="flex items-center gap-3 justify-between">
+            <label
+              htmlFor="decay-settings-toggle"
+              className="text-2 text-neutral-11 font-medium"
+            >
+              Enable Decay Settings
+            </label>
+            <Switch
+              id="decay-settings-toggle"
+              checked={showDecaySettings}
+              onCheckedChange={setShowDecaySettings}
+            />
+          </div>
+          {showDecaySettings && (
+            <>
+              <Separator />
+              <DecaySettingsField name="decaySettings" />
+            </>
+          )}
         </>
       )}
       {tokenType !== 'voice' && <IsVotingTokenField />}
