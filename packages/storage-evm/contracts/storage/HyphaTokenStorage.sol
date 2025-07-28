@@ -17,9 +17,8 @@ contract HyphaTokenStorage {
   address public iexAddress; // Address to receive USDC from payForSpaces and HYPHA from payInHypha
   address public mainHyphaAddress; // Address to receive USDC from investInHypha
 
-  // Authorized mint addresses
-  mapping(address => bool) public authorizedMintAddresses; // Mapping of addresses authorized to call the mint function
-  uint256 public authorizedMintAddressCount; // Number of authorized mint addresses
+  // Authorized mint address (deprecated but kept for storage compatibility)
+  address public mintAddress; // Address authorized to call the mint function
 
   // Modifiable pricing parameters (no longer constants)
   uint256 public HYPHA_PRICE_USD; // 0.25 USD with 18 decimals (default)
@@ -36,4 +35,8 @@ contract HyphaTokenStorage {
   // User-specific tracking
   mapping(address => uint256) public userRewardDebt; // User's checkpoint for rewards
   mapping(address => uint256) public unclaimedRewards; // User's unclaimed rewards
+
+  // Transfer whitelists
+  mapping(address => bool) public mintTransferWhitelist; // Addresses that can transfer with minting capability
+  mapping(address => bool) public normalTransferWhitelist; // Addresses that can transfer normally without minting
 }

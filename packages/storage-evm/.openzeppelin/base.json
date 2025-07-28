@@ -102,6 +102,7 @@
       "kind": "uups"
     },
     {
+
       "address": "0x4B61250c8F19BA96C473c65022453E95176b0139",
       "txHash": "0x350b0103eebeb1b366cc96b201ae8596bc26195d2fe03ee4e3afa0b48887da75",
       "kind": "uups"
@@ -8654,7 +8655,8 @@
             "label": "paymentTracker",
             "offset": 0,
             "slot": "2",
-            "type": "t_contract(ISpacePaymentTracker)13823",
+            "type": "t_contract(ISpacePaymentTracker)14039",
+
             "contract": "HyphaTokenStorage",
             "src": "contracts/storage/HyphaTokenStorage.sol:14"
           },
@@ -8675,19 +8677,24 @@
             "src": "contracts/storage/HyphaTokenStorage.sol:18"
           },
           {
-            "label": "authorizedMintAddresses",
+            "label": "mintAddress",
             "offset": 0,
             "slot": "5",
-            "type": "t_mapping(t_address,t_bool)",
+            "type": "t_address",
             "contract": "HyphaTokenStorage",
             "src": "contracts/storage/HyphaTokenStorage.sol:21"
           },
           {
-            "label": "authorizedMintAddressCount",
+
+            "label": "HYPHA_PRICE_USD",
             "offset": 0,
             "slot": "6",
             "type": "t_uint256",
             "contract": "HyphaTokenStorage",
+            "src": "contracts/storage/HyphaTokenStorage.sol:24"
+          },
+          {
+            "label": "USDC_PER_DAY",
             "src": "contracts/storage/HyphaTokenStorage.sol:22"
           },
           {
@@ -8699,7 +8706,8 @@
             "src": "contracts/storage/HyphaTokenStorage.sol:25"
           },
           {
-            "label": "USDC_PER_DAY",
+            "label": "HYPHA_PER_DAY",
+
             "offset": 0,
             "slot": "8",
             "type": "t_uint256",
@@ -8712,18 +8720,18 @@
             "slot": "9",
             "type": "t_uint256",
             "contract": "HyphaTokenStorage",
-            "src": "contracts/storage/HyphaTokenStorage.sol:27"
+            "src": "contracts/storage/HyphaTokenStorage.sol:28"
           },
           {
-            "label": "distributionMultiplier",
+            "label": "accumulatedRewardPerToken",
             "offset": 0,
             "slot": "10",
             "type": "t_uint256",
             "contract": "HyphaTokenStorage",
-            "src": "contracts/storage/HyphaTokenStorage.sol:29"
+            "src": "contracts/storage/HyphaTokenStorage.sol:31"
           },
           {
-            "label": "accumulatedRewardPerToken",
+            "label": "lastUpdateTime",
             "offset": 0,
             "slot": "11",
             "type": "t_uint256",
@@ -8731,7 +8739,7 @@
             "src": "contracts/storage/HyphaTokenStorage.sol:32"
           },
           {
-            "label": "lastUpdateTime",
+            "label": "pendingDistribution",
             "offset": 0,
             "slot": "12",
             "type": "t_uint256",
@@ -8862,7 +8870,7 @@
             "label": "contract IERC20",
             "numberOfBytes": "20"
           },
-          "t_contract(ISpacePaymentTracker)13823": {
+          "t_contract(ISpacePaymentTracker)14039": {
             "label": "contract ISpacePaymentTracker",
             "numberOfBytes": "20"
           },
@@ -8945,115 +8953,147 @@
         }
       }
     },
-    "fe7bef02628d87c756ac7591f2784ec1a0fb68a4e3499883134dbad2b3c1b1cc": {
-      "address": "0x11e4B464Cd3d9F37ef49A865B05b8ef0ff7f6E20",
+    "7de2ba9df7ed31e76c16666850c97fc0f723305be3c1830f41ed2280515c7ad7": {
+      "address": "0x034F31B3e361c653c17899bdb4f92EB1a551CD4A",
+      "txHash": "0xbd8c958efaecf1d590243a9e8e4ceb3bb38d437cf64f09bff85e40c4126ca88d",
       "layout": {
         "solcVersion": "0.8.28",
         "storage": [
           {
-            "label": "spaceFactory",
+            "label": "totalMinted",
             "offset": 0,
             "slot": "0",
-
-            "type": "t_contract(IDAOSpaceFactory)14103",
-            "contract": "DAOProposalsStorage",
-            "src": "contracts/storage/DAOProposalsStorage.sol:60"
+            "type": "t_uint256",
+            "contract": "HyphaTokenStorage",
+            "src": "contracts/storage/HyphaTokenStorage.sol:10"
           },
           {
-            "label": "directoryContract",
+            "label": "usdc",
             "offset": 0,
             "slot": "1",
-            "type": "t_contract(IDirectory)14111",
-            "contract": "DAOProposalsStorage",
-            "src": "contracts/storage/DAOProposalsStorage.sol:61"
-          },
-          {
-            "label": "proposalCounter",
-            "offset": 0,
-            "slot": "2",
-            "type": "t_uint256",
-            "contract": "DAOProposalsStorage",
-            "src": "contracts/storage/DAOProposalsStorage.sol:63"
-          },
-          {
-            "label": "proposalsCoreData",
-            "offset": 0,
-            "slot": "3",
-            "type": "t_mapping(t_uint256,t_struct(ProposalCore)14172_storage)",
-            "contract": "DAOProposalsStorage",
-            "src": "contracts/storage/DAOProposalsStorage.sol:82"
-          },
-          {
-            "label": "proposalValues",
-            "offset": 0,
-            "slot": "4",
-            "type": "t_mapping(t_uint256,t_uint256)",
-            "contract": "DAOProposalsStorage",
-            "src": "contracts/storage/DAOProposalsStorage.sol:84"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "5",
-            "type": "t_array(t_uint256)48_storage",
-            "contract": "DAOProposalsStorage",
-            "src": "contracts/storage/DAOProposalsStorage.sol:90"
-          },
-          {
-            "label": "spaceAddresses",
-            "offset": 0,
-            "slot": "53",
-            "type": "t_mapping(t_uint256,t_address)",
-            "contract": "DAOProposalsStorage",
-            "src": "contracts/storage/DAOProposalsStorage.sol:93"
-          },
-          {
-            "label": "spaceTrialActivated",
-            "offset": 0,
-            "slot": "54",
-            "type": "t_mapping(t_uint256,t_bool)",
-            "contract": "DAOProposalsStorage",
-            "src": "contracts/storage/DAOProposalsStorage.sol:96"
+            "type": "t_contract(IERC20)1857",
+            "contract": "HyphaTokenStorage",
+            "src": "contracts/storage/HyphaTokenStorage.sol:13"
           },
           {
             "label": "paymentTracker",
             "offset": 0,
-            "slot": "55",
-            "type": "t_contract(ISpacePaymentTracker)13829",
-            "contract": "DAOProposalsStorage",
-            "src": "contracts/storage/DAOProposalsStorage.sol:98"
+            "slot": "2",
+            "type": "t_contract(ISpacePaymentTracker)3999",
+            "contract": "HyphaTokenStorage",
+            "src": "contracts/storage/HyphaTokenStorage.sol:14"
           },
           {
-            "label": "spaceExecutedProposals",
+            "label": "iexAddress",
             "offset": 0,
-            "slot": "56",
-            "type": "t_mapping(t_uint256,t_array(t_uint256)dyn_storage)",
-            "contract": "DAOProposalsStorage",
-            "src": "contracts/storage/DAOProposalsStorage.sol:101"
+            "slot": "3",
+            "type": "t_address",
+            "contract": "HyphaTokenStorage",
+            "src": "contracts/storage/HyphaTokenStorage.sol:17"
           },
           {
-            "label": "allExecutedProposals",
+            "label": "mainHyphaAddress",
             "offset": 0,
-            "slot": "57",
-            "type": "t_array(t_uint256)dyn_storage",
-            "contract": "DAOProposalsStorage",
-            "src": "contracts/storage/DAOProposalsStorage.sol:104"
+            "slot": "4",
+            "type": "t_address",
+            "contract": "HyphaTokenStorage",
+            "src": "contracts/storage/HyphaTokenStorage.sol:18"
           },
           {
-            "label": "spaceAcceptedProposals",
+            "label": "mintAddress",
             "offset": 0,
-            "slot": "58",
-            "type": "t_mapping(t_uint256,t_array(t_uint256)dyn_storage)",
-            "contract": "DAOProposalsStorage",
-            "src": "contracts/storage/DAOProposalsStorage.sol:107"
+            "slot": "5",
+            "type": "t_address",
+            "contract": "HyphaTokenStorage",
+            "src": "contracts/storage/HyphaTokenStorage.sol:21"
           },
           {
-            "label": "spaceRejectedProposals",
+            "label": "HYPHA_PRICE_USD",
             "offset": 0,
-            "slot": "59",
-            "type": "t_mapping(t_uint256,t_array(t_uint256)dyn_storage)",
-            "contract": "DAOProposalsStorage",
-            "src": "contracts/storage/DAOProposalsStorage.sol:108"
+            "slot": "6",
+            "type": "t_uint256",
+            "contract": "HyphaTokenStorage",
+            "src": "contracts/storage/HyphaTokenStorage.sol:24"
+          },
+          {
+            "label": "USDC_PER_DAY",
+            "offset": 0,
+            "slot": "7",
+            "type": "t_uint256",
+            "contract": "HyphaTokenStorage",
+            "src": "contracts/storage/HyphaTokenStorage.sol:25"
+          },
+          {
+            "label": "HYPHA_PER_DAY",
+            "offset": 0,
+            "slot": "8",
+            "type": "t_uint256",
+            "contract": "HyphaTokenStorage",
+            "src": "contracts/storage/HyphaTokenStorage.sol:26"
+          },
+          {
+            "label": "distributionMultiplier",
+            "offset": 0,
+            "slot": "9",
+            "type": "t_uint256",
+            "contract": "HyphaTokenStorage",
+            "src": "contracts/storage/HyphaTokenStorage.sol:28"
+          },
+          {
+            "label": "accumulatedRewardPerToken",
+            "offset": 0,
+            "slot": "10",
+            "type": "t_uint256",
+            "contract": "HyphaTokenStorage",
+            "src": "contracts/storage/HyphaTokenStorage.sol:31"
+          },
+          {
+            "label": "lastUpdateTime",
+            "offset": 0,
+            "slot": "11",
+            "type": "t_uint256",
+            "contract": "HyphaTokenStorage",
+            "src": "contracts/storage/HyphaTokenStorage.sol:32"
+          },
+          {
+            "label": "pendingDistribution",
+            "offset": 0,
+            "slot": "12",
+            "type": "t_uint256",
+            "contract": "HyphaTokenStorage",
+            "src": "contracts/storage/HyphaTokenStorage.sol:33"
+          },
+          {
+            "label": "userRewardDebt",
+            "offset": 0,
+            "slot": "13",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "HyphaTokenStorage",
+            "src": "contracts/storage/HyphaTokenStorage.sol:36"
+          },
+          {
+            "label": "unclaimedRewards",
+            "offset": 0,
+            "slot": "14",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "HyphaTokenStorage",
+            "src": "contracts/storage/HyphaTokenStorage.sol:37"
+          },
+          {
+            "label": "mintTransferWhitelist",
+            "offset": 0,
+            "slot": "15",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "HyphaTokenStorage",
+            "src": "contracts/storage/HyphaTokenStorage.sol:40"
+          },
+          {
+            "label": "normalTransferWhitelist",
+            "offset": 0,
+            "slot": "16",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "HyphaTokenStorage",
+            "src": "contracts/storage/HyphaTokenStorage.sol:41"
           }
         ],
         "types": {
@@ -9065,12 +9105,24 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_struct(InitializableStorage)73_storage": {
-            "label": "struct Initializable.InitializableStorage",
+          "t_mapping(t_address,t_mapping(t_address,t_uint256))": {
+            "label": "mapping(address => mapping(address => uint256))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+          },
+          "t_struct(ERC20Storage)222_storage": {
+            "label": "struct ERC20Upgradeable.ERC20Storage",
             "members": [
               {
-                "label": "_initialized",
-                "type": "t_uint64",
+                "label": "_balances",
+                "type": "t_mapping(t_address,t_uint256)",
                 "offset": 0,
                 "slot": "0"
               },
@@ -9444,10 +9496,20 @@
             ],
             "numberOfBytes": "32"
           },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+
           "t_uint64": {
             "label": "uint64",
             "numberOfBytes": "8"
           },
+          "t_contract(IERC20)1857": {
+            "label": "contract IERC20",
+            "numberOfBytes": "20"
+          },
+          "t_contract(ISpacePaymentTracker)3999": {
           "t_array(t_struct(Transaction)12456_storage)dyn_storage": {
             "label": "struct IDAOProposals.Transaction[]",
             "numberOfBytes": "32"
@@ -9620,6 +9682,48 @@
               "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:24",
               "offset": 0,
               "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.ERC20": [
+            {
+              "contract": "ERC20Upgradeable",
+              "label": "_balances",
+              "type": "t_mapping(t_address,t_uint256)",
+              "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:33",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "ERC20Upgradeable",
+              "label": "_allowances",
+              "type": "t_mapping(t_address,t_mapping(t_address,t_uint256))",
+              "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:35",
+              "offset": 0,
+              "slot": "1"
+            },
+            {
+              "contract": "ERC20Upgradeable",
+              "label": "_totalSupply",
+              "type": "t_uint256",
+              "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:37",
+              "offset": 0,
+              "slot": "2"
+            },
+            {
+              "contract": "ERC20Upgradeable",
+              "label": "_name",
+              "type": "t_string_storage",
+              "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:39",
+              "offset": 0,
+              "slot": "3"
+            },
+            {
+              "contract": "ERC20Upgradeable",
+              "label": "_symbol",
+              "type": "t_string_storage",
+              "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:40",
+              "offset": 0,
+              "slot": "4"
             }
           ],
           "erc7201:openzeppelin.storage.Initializable": [

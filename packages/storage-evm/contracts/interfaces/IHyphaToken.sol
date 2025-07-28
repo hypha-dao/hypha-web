@@ -57,9 +57,17 @@ interface IHyphaToken {
     address indexed mainHyphaAddress
   );
 
-  event MintAddressAdded(address indexed mintAddress);
-
   event TokensMinted(address indexed to, uint256 amount);
+
+  event MintTransferWhitelistUpdated(
+    address indexed account,
+    bool indexed status
+  );
+
+  event NormalTransferWhitelistUpdated(
+    address indexed account,
+    bool indexed status
+  );
 
   // Function signatures
   function initialize(address _usdc, address _paymentTracker) external;
@@ -105,9 +113,17 @@ interface IHyphaToken {
     address _mainHyphaAddress
   ) external;
 
-  function addMintAddress(address _mintAddress) external;
-
-  function isAuthorizedMinter(address _address) external view returns (bool);
-
   function mint(address to, uint256 amount) external;
+
+  function setMintTransferWhitelist(address account, bool status) external;
+
+  function setNormalTransferWhitelist(address account, bool status) external;
+
+  function isMintTransferWhitelisted(
+    address account
+  ) external view returns (bool);
+
+  function isNormalTransferWhitelisted(
+    address account
+  ) external view returns (bool);
 }
