@@ -1,4 +1,4 @@
-import { asc, eq, inArray, sql, and } from 'drizzle-orm';
+import { asc, eq, inArray, sql, and, isNull } from 'drizzle-orm';
 import {
   memberships,
   Space,
@@ -43,6 +43,7 @@ export const findAllSpaces = async (
     .where(
       and(
         eq(spaces.isArchived, false),
+        isNull(spaces.parentId),
         props.search
           ? sql`(
               -- Full-text search for exact word matches (highest priority)
@@ -119,7 +120,11 @@ export const findAllSpacesByMemberId = async (
     .from(spaces)
     .innerJoin(memberships, eq(memberships.spaceId, spaces.id))
     .where(
-      and(eq(memberships.personId, memberId), eq(spaces.isArchived, false)),
+      and(
+        eq(memberships.personId, memberId),
+        eq(spaces.isArchived, false),
+        isNull(spaces.parentId),
+      ),
     )
     .orderBy(asc(spaces.title));
 
@@ -140,6 +145,7 @@ export const findAllSpacesByWeb3SpaceIds = async (
       and(
         inArray(spaces.web3SpaceId, web3SpaceIds),
         eq(spaces.isArchived, false),
+        isNull(spaces.parentId),
       ),
     )
     .orderBy(asc(spaces.title));

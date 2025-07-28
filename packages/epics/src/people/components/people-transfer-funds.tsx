@@ -35,11 +35,13 @@ export const ProfileTransferFunds = ({
     refreshInterval: 10000,
   });
 
-  const tokens: Token[] = assets.map((asset) => ({
-    icon: asset.icon,
-    symbol: asset.symbol,
-    address: asset.address as `0x${string}`,
-  }));
+  const tokens: Token[] = assets
+    .filter((asset) => !['ownership', 'voice'].includes(asset.type))
+    .map((asset) => ({
+      icon: asset.icon,
+      symbol: asset.symbol,
+      address: asset.address as `0x${string}`,
+    }));
 
   return (
     <SidePanel>
@@ -50,8 +52,8 @@ export const ProfileTransferFunds = ({
           </h2>
           <div className="flex gap-5 justify-end items-center">
             <ButtonBack
-              label="Back to wallet"
-              backUrl={`/${lang}/profile/${personSlug}/wallet`}
+              label="Back to actions"
+              backUrl={`/${lang}/profile/${personSlug}/actions`}
             />
             <ButtonClose closeUrl={`/${lang}/profile/${personSlug}`} />
           </div>

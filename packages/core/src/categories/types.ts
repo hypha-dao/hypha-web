@@ -1,17 +1,18 @@
-export type Category =
-  | 'air'
-  | 'art'
-  | 'education'
-  | 'energy'
-  | 'fauna'
-  | 'flora'
-  | 'food'
-  | 'fungi'
-  | 'health'
-  | 'housing'
-  | 'mobility'
-  | 'sandbox'
-  | 'soil'
-  | 'tech'
-  | 'usecase'
-  | 'water';
+export const CATEGORIES = [
+  'art',
+  'biodiversity',
+  'education',
+  'energy',
+  'events',
+  'finance',
+  'governance',
+  'health',
+  'housing',
+  'land',
+  'mobility',
+  'ocean',
+  'sandbox',
+  'tech',
+  'usecase',
+] as const;
+export type Category = (typeof CATEGORIES)[number];

@@ -11,8 +11,8 @@ const createSpaceWeb2Props = {
     .min(1)
     .max(50)
     .regex(
-      /^[a-z0-9-]+$/,
-      'Slug must contain only lowercase letters, numbers, and hyphens',
+      /^[a-z0-9'-]+$/,
+      'Slug must contain only lowercase letters, numbers, hyphens, and apostrophes',
     )
     .optional(),
   web3SpaceId: z.number().optional(),
@@ -20,22 +20,21 @@ const createSpaceWeb2Props = {
   categories: z
     .array(
       z.enum([
-        'air',
         'art',
+        'biodiversity',
         'education',
         'energy',
-        'fauna',
-        'flora',
-        'food',
-        'fungi',
+        'events',
+        'finance',
+        'governance',
         'health',
         'housing',
+        'land',
         'mobility',
+        'ocean',
         'sandbox',
-        'soil',
         'tech',
         'usecase',
-        'water',
       ]),
     )
     .default([]),

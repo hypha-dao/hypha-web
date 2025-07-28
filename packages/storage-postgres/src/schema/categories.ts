@@ -1,22 +1,21 @@
 import { pgEnum } from 'drizzle-orm/pg-core';
 
 export const CATEGORIES = [
-  'air',
   'art',
+  'biodiversity',
   'education',
   'energy',
-  'fauna',
-  'flora',
-  'food',
-  'fungi',
+  'events',
+  'finance',
+  'governance',
   'health',
   'housing',
   'mobility',
+  'land',
   'sandbox',
-  'soil',
   'tech',
   'usecase',
-  'water',
+  'ocean',
 ] as const;
 
 export const categories = pgEnum('categories', CATEGORIES);
