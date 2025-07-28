@@ -9,5 +9,5 @@ export const CONNECT_SOURCES = [
   'https://api.web3modal.org',
   'https://mainnet.base.org',
   'https://api.developer.coinbase.com',
-  'https://sea1.ingest.uploadthing.com'
+  'https://*.uploadthing.com'
 ];
