@@ -6,6 +6,8 @@ interface IDecayTokenVotingPower {
 
   function setDecayTokenFactory(address _decayTokenFactory) external;
 
+  function setSpaceFactory(address _spaceFactory) external;
+
   function setSpaceToken(uint256 _spaceId, address _tokenAddress) external;
 
   function getVotingPower(
@@ -31,4 +33,5 @@ interface IDecayTokenVotingPower {
   // Events
   event SpaceTokenSet(uint256 indexed spaceId, address indexed tokenAddress);
   event DecayTokenFactorySet(address indexed decayTokenFactory);
+  event SpaceFactorySet(address indexed spaceFactory);
 }

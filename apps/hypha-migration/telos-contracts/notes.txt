@@ -1,0 +1,64 @@
+curl https://github.com/AntelopeIO/leap/releases/download/v4.0.2/leap_4.0.2-ubuntu20.04_amd64.deb
+sudo apt install ./leap_4.0.2-ubuntu20.04_amd64.deb
+
+🚀 Easiest: Use Docker
+You can deploy your .wasm and .abi using Docker like this:
+
+bash
+Copy
+Edit
+
+docker run -it --rm \
+  -v $(pwd):/contracts \
+  -w /contracts \
+  antelopeio/leap cleos set contract youraccount . -p youraccount@active
+
+This assumes you're in the folder where .wasm and .abi are located.
+
+📝 Antelope Development Setup (macOS)
+
+# Option 1: Use Docker (Recommended for macOS)
+# Pull the correct Antelope images:
+docker pull antelopeio/leap:latest
+
+# For CDT (Contract Development Toolkit), build from source or use releases:
+# Check releases at: https://github.com/AntelopeIO/cdt/releases
+
+# Option 2: Install CDT from GitHub releases (macOS)
+# Visit: https://github.com/AntelopeIO/cdt/releases
+# Download the macOS package (not Ubuntu .deb file)
+
+# Option 3: Build from source on macOS
+# Install dependencies first:
+brew install cmake git llvm@11
+# Then clone and build:
+# git clone --recursive https://github.com/AntelopeIO/cdt
+# cd cdt && mkdir build && cd build
+# cmake .. && make -j$(nproc)
+
+🐳 Docker Commands for Development:
+# Start a development container:
+docker run -it --rm antelopeio/leap:latest bash
+
+# For contract compilation, you'll need CDT tools
+# Check the official AntelopeIO GitHub for latest Docker setup instructions
+
+🚀 Telos Zero Development Workflow
+
+# Start development container with mounted volume:
+docker run -it --name telos-dev \
+  -v $(pwd)/contracts:/contracts \
+  -p 8888:8888 -p 9876:9876 \
+  ubuntu:22.04 bash
+
+# After initial setup, restart existing container:
+docker start -i telos-dev
+
+# Key Telos Zero endpoints:
+# Mainnet: https://mainnet.telos.net
+# Chain ID: 4667b205c6838ef70ff7988f6e8257e8be0e1284a2f59699054a018f743b1d11
+
+# Essential commands:
+# - cleos -u https://mainnet.telos.net get info
+# - cleos create key --to-console (for new accounts)
+# - cleos -u https://mainnet.telos.net get account ACCOUNTNAME

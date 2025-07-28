@@ -14,7 +14,7 @@ async function main(): Promise<void> {
 
   const spacePaymentTracker = await upgrades.deployProxy(
     SpacePaymentTracker,
-    [adminAddress], // Pass the admin address as initialOwner
+    [adminAddress],
     {
       initializer: 'initialize',
       kind: 'uups',

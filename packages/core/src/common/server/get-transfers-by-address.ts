@@ -1,6 +1,6 @@
 import 'server-only';
-
-import { getMoralis } from './moralis-client';
+import { getAlchemy } from './alchemy-client';
+import { AssetTransfersCategory } from 'alchemy-sdk';
 
 export type GetTransfersByAddressParams = {
   address: string;
@@ -15,9 +15,6 @@ export type GetTransfersByAddressParams = {
 export type Transfer = {
   from: string;
   to: string;
-  /**
-   * Note: string because it can be bigger than builtin number
-   */
   value: string;
   symbol: string;
   decimals: number;
@@ -31,21 +28,69 @@ export type Transfer = {
 export async function getTransfersByAddress(
   params: GetTransfersByAddressParams,
 ): Promise<Transfer[]> {
-  const moralis = await getMoralis();
-  const response = await moralis.EvmApi.token.getWalletTokenTransfers(params);
+  const { address, contractAddresses, limit = 50 } = params;
+  const alchemy = getAlchemy();
 
-  return response.toJSON().result.map((trx) => {
-    return {
-      from: trx.from_address,
-      to: trx.to_address,
-      value: trx.value,
-      symbol: trx.token_symbol,
-      decimals: +trx.token_decimals,
-      token: trx.address,
-      timestamp: Date.parse(trx.block_timestamp),
-      block_number: +trx.block_number,
-      transaction_index: trx.transaction_index,
-      transaction_hash: trx.transaction_hash,
-    } as Transfer;
+  const maxLimit = Math.min(limit, 50);
+
+  const fromTransfers = await alchemy.core.getAssetTransfers({
+    fromAddress: address,
+    category: [AssetTransfersCategory.ERC20],
+    contractAddresses,
+    withMetadata: true,
   });
+
+  const toTransfers = await alchemy.core.getAssetTransfers({
+    toAddress: address,
+    category: [AssetTransfersCategory.ERC20],
+    contractAddresses,
+    withMetadata: true,
+  });
+
+  const allTransfers = [...fromTransfers.transfers, ...toTransfers.transfers]
+    .slice(0, maxLimit)
+    .map((transfer) => {
+      const blockNumber = parseInt(transfer.blockNum, 16);
+      const getTimestampAndMetadata = async () => {
+        const block = await alchemy.core.getBlock(blockNumber);
+        const tokenMetadata = transfer.rawContract.address
+          ? await alchemy.core.getTokenMetadata(transfer.rawContract.address)
+          : { decimals: 18, symbol: transfer.asset || 'UNKNOWN' };
+        return {
+          timestamp: block.timestamp * 1000,
+          decimals: tokenMetadata.decimals ?? 18,
+          symbol: tokenMetadata.symbol ?? transfer.asset ?? 'UNKNOWN',
+        };
+      };
+
+      return {
+        from: transfer.from,
+        to: transfer.to ?? '',
+        value: transfer.value ? transfer.value.toString() : '0',
+        symbol: transfer.asset ?? 'UNKNOWN',
+        decimals: 18,
+        token: transfer.rawContract.address ?? '',
+        timestamp: 0,
+        block_number: blockNumber,
+        transaction_index: 0,
+        transaction_hash: transfer.hash,
+        _getTimestampAndMetadata: getTimestampAndMetadata,
+      };
+    });
+
+  const transfersWithData = await Promise.all(
+    allTransfers.map(async (transfer) => {
+      const { timestamp, decimals, symbol } =
+        await transfer._getTimestampAndMetadata();
+      const value = transfer.value ? transfer.value.toString() : '0';
+      const { _getTimestampAndMetadata, ...rest } = transfer;
+      return { ...rest, timestamp, decimals, symbol, value };
+    }),
+  );
+
+  transfersWithData.sort((a, b) => {
+    return b.block_number - a.block_number;
+  });
+
+  return transfersWithData;
 }

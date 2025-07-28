@@ -243,7 +243,7 @@ contract DAOProposalsImplementation is
       );
     }
 
-    require(votingPower > 0, 'No voting power');
+    require(votingPower > 0, 'No voting powerr');
 
     proposal.hasVoted[msg.sender] = true;
     proposal.votingPowerAtSnapshot[msg.sender] = votingPower;
@@ -279,9 +279,12 @@ contract DAOProposalsImplementation is
     // Calculate total participation
     uint256 totalVotesCast = proposal.yesVotes + proposal.noVotes;
 
-    // Check if quorum is reached - fix potential overflow by reordering arithmetic
-    bool quorumReached = totalVotesCast >=
-      (quorumThreshold * proposal.totalVotingPowerAtSnapshot) / 100;
+    // Check if quorum is reached - use ceiling division to prevent rounding errors
+    // Formula: ceil(a/b) = (a + b - 1) / b
+    uint256 requiredQuorum = (quorumThreshold *
+      proposal.totalVotingPowerAtSnapshot +
+      99) / 100;
+    bool quorumReached = totalVotesCast >= requiredQuorum;
 
     if (!quorumReached) {
       return; // Early return - insufficient participation
@@ -316,7 +319,7 @@ contract DAOProposalsImplementation is
 
       // Execute all transactions
       bool success = IExecutor(executor).executeTransactions(execTransactions);
-      require(success, 'Proposal execution failed');
+      require(success, 'Proposal execution failedd');
 
       emit ProposalExecuted(
         _proposalId,
@@ -327,6 +330,14 @@ contract DAOProposalsImplementation is
     }
     // Check if proposal should be rejected (No votes reach unity threshold)
     else if (proposal.noVotes * 100 >= unityThreshold * totalVotesCast) {
+      proposal.expired = true; // Mark as expired to prevent further voting
+      spaceRejectedProposals[proposal.spaceId].push(_proposalId);
+
+      emit ProposalRejected(_proposalId, proposal.yesVotes, proposal.noVotes);
+    }
+    // Check if 100% quorum reached but no unity - reject due to lack of consensus
+    else if (quorumThreshold == 100) {
+      // If 100% participation achieved but neither side reached unity, reject
       proposal.expired = true; // Mark as expired to prevent further voting
       spaceRejectedProposals[proposal.spaceId].push(_proposalId);
 

@@ -423,7 +423,7 @@ describe('HyphaToken Comprehensive Tests', function () {
       const userRewardDebtSlot = ethers.keccak256(
         ethers.solidityPacked(
           ['address', 'uint256'],
-          [await user1.getAddress(), 3], // userRewardDebt mapping is at slot 3
+          [await user1.getAddress(), 4], // userRewardDebt mapping slot (was 3, now 4 due to new mintAddress variables)
         ),
       );
       const userRewardDebt = await ethers.provider.getStorage(
@@ -1274,7 +1274,7 @@ describe('HyphaToken Comprehensive Tests', function () {
         const totalSupply = await hyphaToken.totalSupply();
         const pendingDistribution = await ethers.provider.getStorage(
           await hyphaToken.getAddress(),
-          12, // pendingDistribution is at storage slot 12 (was 11, now 12 due to new mintAddress variable)
+          13, // pendingDistribution is at storage slot 13 (was 11, then 12, now 13 due to new mintAddress variables)
         );
 
         const user1Balance = await hyphaToken.balanceOf(
@@ -1438,7 +1438,7 @@ describe('HyphaToken Comprehensive Tests', function () {
       // Check pending distribution
       const pendingDistribution = await ethers.provider.getStorage(
         await hyphaToken.getAddress(),
-        12, // pendingDistribution storage slot (was 11, now 12 due to new mintAddress variable)
+        13, // pendingDistribution storage slot (was 11, then 12, now 13 due to new mintAddress variables)
       );
 
       // Should be 440 HYPHA: (10 USDC * 4 * 10^12 / 1) * (10 + 1) = 440
@@ -1992,8 +1992,10 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
   });
 
+
   describe('Mint Whitelist and Minting Functions', function () {
     it('Should allow owner to add address to mint whitelist and emit event', async function () {
+
       const { hyphaToken, owner, user1, user2 } = await loadFixture(
         deployHyphaFixture,
       );
@@ -2033,6 +2035,7 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should not allow non-owner to modify mint whitelist', async function () {
+
       const { hyphaToken, user1, user2 } = await loadFixture(
         deployHyphaFixture,
       );
@@ -2069,29 +2072,40 @@ describe('HyphaToken Comprehensive Tests', function () {
         .connect(owner)
         .setMintTransferWhitelist(await user1.getAddress(), true);
 
+
       // Check initial balances
-      const user2InitialBalance = await hyphaToken.balanceOf(
-        await user2.getAddress(),
+      const user3InitialBalance = await hyphaToken.balanceOf(
+        await user3.getAddress(),
       );
       const initialTotalMinted = await hyphaToken.totalMinted();
 
-      const mintAmount = ethers.parseUnits('1000', 18);
+      const mintAmount1 = ethers.parseUnits('1000', 18);
+      const mintAmount2 = ethers.parseUnits('500', 18);
 
-      // Whitelisted address mints tokens
       await expect(
-        hyphaToken.connect(user1).mint(await user2.getAddress(), mintAmount),
+        hyphaToken.connect(user1).mint(await user3.getAddress(), mintAmount1),
       )
         .to.emit(hyphaToken, 'TokensMinted')
-        .withArgs(await user2.getAddress(), mintAmount);
+        .withArgs(await user3.getAddress(), mintAmount1);
+
+      await expect(
+        hyphaToken.connect(user2).mint(await user3.getAddress(), mintAmount2),
+      )
+        .to.emit(hyphaToken, 'TokensMinted')
+        .withArgs(await user3.getAddress(), mintAmount2);
 
       // Check final balances
-      const user2FinalBalance = await hyphaToken.balanceOf(
-        await user2.getAddress(),
+      const user3FinalBalance = await hyphaToken.balanceOf(
+        await user3.getAddress(),
       );
       const finalTotalMinted = await hyphaToken.totalMinted();
 
-      expect(user2FinalBalance - user2InitialBalance).to.equal(mintAmount);
-      expect(finalTotalMinted - initialTotalMinted).to.equal(mintAmount);
+      expect(user3FinalBalance - user3InitialBalance).to.equal(
+        mintAmount1 + mintAmount2,
+      );
+      expect(finalTotalMinted - initialTotalMinted).to.equal(
+        mintAmount1 + mintAmount2,
+      );
     });
 
     it('Should not allow non-whitelisted addresses to mint tokens', async function () {
@@ -2104,6 +2118,7 @@ describe('HyphaToken Comprehensive Tests', function () {
         .connect(owner)
         .setMintTransferWhitelist(await user1.getAddress(), true);
 
+
       const mintAmount = ethers.parseUnits('1000', 18);
 
       // Non-whitelisted address tries to mint
@@ -2111,7 +2126,6 @@ describe('HyphaToken Comprehensive Tests', function () {
         hyphaToken.connect(user2).mint(await user3.getAddress(), mintAmount),
       ).to.be.revertedWith('Only whitelisted addresses can mint');
 
-      // Owner tries to mint (should also fail since owner is not whitelisted)
       await expect(
         hyphaToken.connect(owner).mint(await user3.getAddress(), mintAmount),
       ).to.be.revertedWith('Only whitelisted addresses can mint');
@@ -2121,6 +2135,7 @@ describe('HyphaToken Comprehensive Tests', function () {
       const { hyphaToken, owner, user1 } = await loadFixture(
         deployHyphaFixture,
       );
+
 
       // Add user1 to mint whitelist
       await hyphaToken
@@ -2142,10 +2157,12 @@ describe('HyphaToken Comprehensive Tests', function () {
         deployHyphaFixture,
       );
 
+
       // Add user1 to mint whitelist
       await hyphaToken
         .connect(owner)
         .setMintTransferWhitelist(await user1.getAddress(), true);
+
 
       // Try to mint zero amount
       await expect(
@@ -2158,10 +2175,12 @@ describe('HyphaToken Comprehensive Tests', function () {
         deployHyphaFixture,
       );
 
+
       // Add user1 to mint whitelist
       await hyphaToken
         .connect(owner)
         .setMintTransferWhitelist(await user1.getAddress(), true);
+
 
       const maxSupply = await hyphaToken.MAX_SUPPLY();
       const currentTotalMinted = await hyphaToken.totalMinted();
@@ -2180,10 +2199,12 @@ describe('HyphaToken Comprehensive Tests', function () {
         deployHyphaFixture,
       );
 
+
       // Add user1 to mint whitelist
       await hyphaToken
         .connect(owner)
         .setMintTransferWhitelist(await user1.getAddress(), true);
+
 
       const maxSupply = await hyphaToken.MAX_SUPPLY();
       const currentTotalMinted = await hyphaToken.totalMinted();
@@ -2207,6 +2228,7 @@ describe('HyphaToken Comprehensive Tests', function () {
     it('Should correctly update reward debt when minting to eligible addresses', async function () {
       const { hyphaToken, owner, user1, user2, usdc, usdcPerDay } =
         await loadFixture(deployHyphaFixture);
+
 
       // Add user1 to mint whitelist
       await hyphaToken
@@ -2263,7 +2285,7 @@ describe('HyphaToken Comprehensive Tests', function () {
       const user2RewardDebtSlot = ethers.keccak256(
         ethers.solidityPacked(
           ['address', 'uint256'],
-          [await user2.getAddress(), 3], // userRewardDebt mapping slot
+          [await user2.getAddress(), 4], // userRewardDebt mapping slot (was 3, now 4 due to new mintAddress variables)
         ),
       );
       const user2RewardDebt = await ethers.provider.getStorage(
@@ -2288,6 +2310,7 @@ describe('HyphaToken Comprehensive Tests', function () {
       await hyphaToken
         .connect(owner)
         .setMintTransferWhitelist(await user1.getAddress(), true);
+
 
       // Create some rewards first
       const spacePayment = usdcPerDay * 5n;
@@ -2328,6 +2351,7 @@ describe('HyphaToken Comprehensive Tests', function () {
         .connect(owner)
         .setMintTransferWhitelist(await user2.getAddress(), true);
 
+
       const mintAmount1 = ethers.parseUnits('1000', 18);
       const mintAmount2 = ethers.parseUnits('2000', 18);
       const mintAmount3 = ethers.parseUnits('3000', 18);
@@ -2355,7 +2379,9 @@ describe('HyphaToken Comprehensive Tests', function () {
       );
     });
 
+
     it('Should handle whitelist changes correctly', async function () {
+
       const { hyphaToken, owner, user1, user2, user3 } = await loadFixture(
         deployHyphaFixture,
       );
@@ -2365,12 +2391,14 @@ describe('HyphaToken Comprehensive Tests', function () {
         .connect(owner)
         .setMintTransferWhitelist(await user1.getAddress(), true);
 
+
       const mintAmount = ethers.parseUnits('1000', 18);
 
       // User1 can mint
       await hyphaToken
         .connect(user1)
         .mint(await user3.getAddress(), mintAmount);
+
 
       // Remove user1 from whitelist and add user2
       await hyphaToken
@@ -2385,14 +2413,25 @@ describe('HyphaToken Comprehensive Tests', function () {
         hyphaToken.connect(user1).mint(await user3.getAddress(), mintAmount),
       ).to.be.revertedWith('Only whitelisted addresses can mint');
 
-      // User2 can now mint
+
+      // Both user1 and user2 can mint
+      await hyphaToken
+        .connect(user1)
+        .mint(await user3.getAddress(), mintAmount);
       await hyphaToken
         .connect(user2)
         .mint(await user3.getAddress(), mintAmount);
 
       // Check final balance
       const user3Balance = await hyphaToken.balanceOf(await user3.getAddress());
-      expect(user3Balance).to.equal(mintAmount * 2n);
+      expect(user3Balance).to.equal(mintAmount * 3n);
+
+      // Verify both addresses are still authorized
+      expect(await hyphaToken.isAuthorizedMinter(await user1.getAddress())).to
+        .be.true;
+      expect(await hyphaToken.isAuthorizedMinter(await user2.getAddress())).to
+        .be.true;
+      expect(await hyphaToken.authorizedMintAddressCount()).to.equal(2);
     });
 
     it('Should handle large mint amounts correctly', async function () {
@@ -2404,6 +2443,7 @@ describe('HyphaToken Comprehensive Tests', function () {
       await hyphaToken
         .connect(owner)
         .setMintTransferWhitelist(await user1.getAddress(), true);
+
 
       // Try to mint a very large amount (but within supply limits)
       const largeMintAmount = ethers.parseUnits('1000000', 18); // 1 million HYPHA
@@ -2438,6 +2478,7 @@ describe('HyphaToken Comprehensive Tests', function () {
         .to.emit(hyphaToken, 'MintTransferWhitelistUpdated')
         .withArgs(await user1.getAddress(), true);
 
+
       // Test mint event
       const mintAmount = ethers.parseUnits('1000', 18);
       await expect(
@@ -2445,6 +2486,35 @@ describe('HyphaToken Comprehensive Tests', function () {
       )
         .to.emit(hyphaToken, 'TokensMinted')
         .withArgs(await user2.getAddress(), mintAmount);
+    });
+
+    it('Should correctly track authorized mint address count', async function () {
+      const { hyphaToken, owner, user1, user2, user3 } = await loadFixture(
+        deployHyphaFixture,
+      );
+
+      // Initially should be 0
+      expect(await hyphaToken.authorizedMintAddressCount()).to.equal(0);
+
+      // Add first address
+      await hyphaToken.connect(owner).addMintAddress(await user1.getAddress());
+      expect(await hyphaToken.authorizedMintAddressCount()).to.equal(1);
+
+      // Add second address
+      await hyphaToken.connect(owner).addMintAddress(await user2.getAddress());
+      expect(await hyphaToken.authorizedMintAddressCount()).to.equal(2);
+
+      // Add third address
+      await hyphaToken.connect(owner).addMintAddress(await user3.getAddress());
+      expect(await hyphaToken.authorizedMintAddressCount()).to.equal(3);
+
+      // Verify all addresses are authorized
+      expect(await hyphaToken.isAuthorizedMinter(await user1.getAddress())).to
+        .be.true;
+      expect(await hyphaToken.isAuthorizedMinter(await user2.getAddress())).to
+        .be.true;
+      expect(await hyphaToken.isAuthorizedMinter(await user3.getAddress())).to
+        .be.true;
     });
   });
 

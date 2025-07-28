@@ -3,6 +3,16 @@ import { expect } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers';
 import { SpaceHelper } from './helpers/SpaceHelper';
 
+// Define token interface for proper typing
+interface MintableToken {
+  connect(signer: any): {
+    mint(to: string, amount: bigint): Promise<any>;
+    transfer(to: string, amount: bigint): Promise<any>;
+    approve(spender: string, amount: bigint): Promise<any>;
+    transferFrom(from: string, to: string, amount: bigint): Promise<any>;
+  };
+}
+
 describe('DAOSpaceFactoryImplementation', function () {
   // We define a fixture to reuse the same setup in every test
   async function deployFixture() {
@@ -134,10 +144,14 @@ describe('DAOSpaceFactoryImplementation', function () {
     await tokenVotingPower.setTokenFactory(
       await regularTokenFactory.getAddress(),
     );
+    await tokenVotingPower.setSpaceFactory(await daoSpaceFactory.getAddress());
 
     // Set DAOSpaceFactory in DecayTokenVotingPower
     await decayTokenVotingPower.setDecayTokenFactory(
       await decayingTokenFactory.getAddress(),
+    );
+    await decayTokenVotingPower.setSpaceFactory(
+      await daoSpaceFactory.getAddress(),
     );
 
     // Set SpacesContract in both token factories
@@ -914,7 +928,7 @@ describe('DAOSpaceFactoryImplementation', function () {
       const transferAmount = ethers.parseUnits('100', 18);
 
       // Executor calls transfer - this should mint instead of transfer
-      await token
+      await (token as unknown as MintableToken)
         .connect(executorSigner)
         .transfer(await voter1.getAddress(), transferAmount);
 
@@ -976,7 +990,7 @@ describe('DAOSpaceFactoryImplementation', function () {
       const transferFromAmount = ethers.parseUnits('50', 18);
 
       // Executor calls transferFrom with executor as from - this should mint instead of transfer
-      await token
+      await (token as unknown as MintableToken)
         .connect(executorSigner)
         .transferFrom(
           executorAddress,
@@ -1034,7 +1048,7 @@ describe('DAOSpaceFactoryImplementation', function () {
       );
 
       // First, give voter1 some tokens to transfer (via executor mint)
-      await token
+      await (token as unknown as MintableToken)
         .connect(executorSigner)
         .mint(await voter1.getAddress(), ethers.parseUnits('200', 18));
 
@@ -1049,7 +1063,7 @@ describe('DAOSpaceFactoryImplementation', function () {
       const normalTransferAmount = ethers.parseUnits('30', 18);
 
       // Regular user transfer - this should NOT mint, just transfer
-      await token
+      await (token as unknown as MintableToken)
         .connect(voter1)
         .transfer(await voter2.getAddress(), normalTransferAmount);
 
@@ -1083,9 +1097,12 @@ describe('DAOSpaceFactoryImplementation', function () {
 
   describe('Decaying Token Tests', function () {
     it('Should deploy a token with decay and verify decay parameters', async function () {
-      const { decayingTokenFactory, spaceHelper, owner } = await loadFixture(
-        deployFixture,
-      );
+      const {
+        decayingTokenFactory,
+        spaceHelper,
+        owner,
+        decayTokenVotingPower,
+      } = await loadFixture(deployFixture);
 
       // Create space
       const spaceParams = {
@@ -1177,8 +1194,13 @@ describe('DAOSpaceFactoryImplementation', function () {
     });
 
     it('Should demonstrate token decay over time', async function () {
-      const { decayingTokenFactory, spaceHelper, owner, voter1 } =
-        await loadFixture(deployFixture);
+      const {
+        decayingTokenFactory,
+        spaceHelper,
+        owner,
+        voter1,
+        decayTokenVotingPower,
+      } = await loadFixture(deployFixture);
 
       // Create space
       const spaceParams = {
@@ -1264,6 +1286,11 @@ describe('DAOSpaceFactoryImplementation', function () {
         tokenAddress,
       );
 
+      // Register the token with the voting power contract
+      await decayTokenVotingPower
+        .connect(executorSigner)
+        .setSpaceToken(spaceId, tokenAddress);
+
       // Join the space
       await spaceHelper.joinSpace(Number(spaceId), voter1);
 
@@ -1307,8 +1334,14 @@ describe('DAOSpaceFactoryImplementation', function () {
     });
 
     it('Should properly handle decay when tokens are transferred', async function () {
-      const { decayingTokenFactory, spaceHelper, owner, voter1, voter2 } =
-        await loadFixture(deployFixture);
+      const {
+        decayingTokenFactory,
+        spaceHelper,
+        owner,
+        voter1,
+        voter2,
+        decayTokenVotingPower,
+      } = await loadFixture(deployFixture);
 
       // Create space
       const spaceParams = {
@@ -1394,6 +1427,11 @@ describe('DAOSpaceFactoryImplementation', function () {
         tokenAddress,
       );
 
+      // Register the token with the voting power contract
+      await decayTokenVotingPower
+        .connect(executorSigner)
+        .setSpaceToken(spaceId, tokenAddress);
+
       // Join the space
       await spaceHelper.joinSpace(Number(spaceId), voter1);
       await spaceHelper.joinSpace(Number(spaceId), voter2);
@@ -1477,8 +1515,13 @@ describe('DAOSpaceFactoryImplementation', function () {
 
   describe('Enhanced Decay Token Tests', function () {
     it('Should demonstrate detailed vote decay with precise measurements', async function () {
-      const { decayingTokenFactory, spaceHelper, owner, voter1 } =
-        await loadFixture(deployFixture);
+      const {
+        decayingTokenFactory,
+        spaceHelper,
+        owner,
+        voter1,
+        decayTokenVotingPower,
+      } = await loadFixture(deployFixture);
 
       console.log('\n=== STARTING DETAILED VOTE DECAY TEST ===');
 
@@ -1570,6 +1613,11 @@ describe('DAOSpaceFactoryImplementation', function () {
         'DecayingSpaceToken',
         tokenAddress,
       );
+
+      // Register the token with the voting power contract
+      await decayTokenVotingPower
+        .connect(executorSigner)
+        .setSpaceToken(spaceId, tokenAddress);
 
       // Join the space
       await spaceHelper.joinSpace(Number(spaceId), voter1);
@@ -1807,8 +1855,14 @@ describe('DAOSpaceFactoryImplementation', function () {
     });
 
     it('Should demonstrate decay with multiple users and transfers', async function () {
-      const { decayingTokenFactory, spaceHelper, owner, voter1, voter2 } =
-        await loadFixture(deployFixture);
+      const {
+        decayingTokenFactory,
+        spaceHelper,
+        owner,
+        voter1,
+        voter2,
+        decayTokenVotingPower,
+      } = await loadFixture(deployFixture);
 
       console.log('\n=== STARTING MULTI-USER DECAY TEST WITH TRANSFERS ===');
 
@@ -1886,6 +1940,11 @@ describe('DAOSpaceFactoryImplementation', function () {
         'DecayingSpaceToken',
         tokenAddress,
       );
+
+      // Register the token with the voting power contract
+      await decayTokenVotingPower
+        .connect(executorSigner)
+        .setSpaceToken(spaceId, tokenAddress);
 
       // Join the space
       await spaceHelper.joinSpace(Number(spaceId), voter1);
@@ -2438,6 +2497,11 @@ describe('DAOSpaceFactoryImplementation', function () {
         tokenAddress,
       );
 
+      // Manually set the token as the voting token for the space (since we removed automatic registration)
+      await tokenVotingPower
+        .connect(executorSigner)
+        .setSpaceToken(spaceId, tokenAddress);
+
       // Join the space
       await spaceHelper.joinSpace(Number(spaceId), voter1);
       await spaceHelper.joinSpace(Number(spaceId), voter2);
@@ -2541,6 +2605,11 @@ describe('DAOSpaceFactoryImplementation', function () {
         'DecayingSpaceToken',
         tokenAddress,
       );
+
+      // Register the token with the voting power contract
+      await decayTokenVotingPower
+        .connect(executorSigner)
+        .setSpaceToken(spaceId, tokenAddress);
 
       // Join the space
       await spaceHelper.joinSpace(Number(spaceId), voter1);
@@ -2682,15 +2751,6 @@ describe('DAOSpaceFactoryImplementation', function () {
       expect(await token.maxSupply()).to.equal(maxSupply);
 
       // Mint exactly max supply
-      interface MintableToken {
-        connect(signer: any): {
-          mint(to: string, amount: bigint): Promise<any>;
-          transfer(to: string, amount: bigint): Promise<any>;
-          approve(spender: string, amount: bigint): Promise<any>;
-          transferFrom(from: string, to: string, amount: bigint): Promise<any>;
-        };
-      }
-
       await (token as unknown as MintableToken)
         .connect(executorSigner)
         .mint(await owner.getAddress(), maxSupply);
@@ -3163,7 +3223,7 @@ describe('DAOSpaceFactoryImplementation', function () {
       const transferAmount = ethers.parseUnits('100', 18);
 
       // Executor calls transfer - this should mint instead of transfer
-      await token
+      await (token as unknown as MintableToken)
         .connect(executorSigner)
         .transfer(await voter1.getAddress(), transferAmount);
 
@@ -3225,7 +3285,7 @@ describe('DAOSpaceFactoryImplementation', function () {
       const transferFromAmount = ethers.parseUnits('50', 18);
 
       // Executor calls transferFrom with executor as from - this should mint instead of transfer
-      await token
+      await (token as unknown as MintableToken)
         .connect(executorSigner)
         .transferFrom(
           executorAddress,
@@ -4512,6 +4572,218 @@ describe('DAOSpaceFactoryImplementation', function () {
       console.log(
         `✅ Total accepted: ${finalAccepted.length}, Total rejected: ${finalRejected.length}`,
       );
+    });
+
+    it('Should prevent quorum rounding error with 2 members, 51% quorum, and only 1 vote', async function () {
+      console.log('\n=== TESTING QUORUM ROUNDING ERROR FIX ===');
+      console.log('Scenario: 2 members, 51% quorum, 80% unity, 1 vote');
+      console.log(
+        'Expected: Proposal should NOT pass due to insufficient quorum',
+      );
+
+      // Create a separate space for this specific test (not using the beforeEach space)
+      const spaceParams = {
+        name: 'Quorum Rounding Test Space',
+        description: 'Testing quorum rounding error fix with 2 members',
+        imageUrl: 'https://test.com/image.png',
+        unity: 80, // 80% unity threshold
+        quorum: 51, // 51% quorum threshold - this is where rounding error could occur
+        votingPowerSource: 1, // Space membership voting (1 member = 1 vote)
+        exitMethod: 1,
+        joinMethod: 1,
+        createToken: false,
+        tokenName: '',
+        tokenSymbol: '',
+      };
+
+      await this.daoSpaceFactory.createSpace(spaceParams);
+      const testSpaceId = await this.daoSpaceFactory.spaceCounter();
+
+      console.log(`\nCreated test space ${testSpaceId} with:`);
+      console.log(`- Unity: ${spaceParams.unity}%`);
+      console.log(`- Quorum: ${spaceParams.quorum}%`);
+      console.log(
+        `- Voting Power Source: ${spaceParams.votingPowerSource} (Space voting)`,
+      );
+
+      // Add exactly 1 additional member (owner is already a member, so total = 2)
+      await this.daoSpaceFactory.connect(this.voter1).joinSpace(testSpaceId);
+
+      const members = await this.daoSpaceFactory.getSpaceMembers(testSpaceId);
+      console.log(
+        `\nSpace members (${members.length}): [${members.join(', ')}]`,
+      );
+      console.log(`Total voting power: ${members.length}`);
+
+      // Verify we have exactly 2 members
+      expect(members.length).to.equal(
+        2,
+        'Should have exactly 2 members for this test',
+      );
+
+      // Calculate expected quorum requirement
+      const totalVotingPower = members.length;
+      const requiredQuorum = Math.ceil(
+        (spaceParams.quorum * totalVotingPower) / 100,
+      );
+      console.log(`\nQuorum calculation:`);
+      console.log(
+        `- Required: ${spaceParams.quorum}% of ${totalVotingPower} = ceil(${
+          (spaceParams.quorum * totalVotingPower) / 100
+        }) = ${requiredQuorum} votes`,
+      );
+      console.log(
+        `- With old floor division: ${Math.floor(
+          (spaceParams.quorum * totalVotingPower) / 100,
+        )} votes`,
+      );
+      console.log(`- With new ceiling division: ${requiredQuorum} votes`);
+
+      // Create a simple test proposal
+      const proposalCalldata =
+        this.daoSpaceFactory.interface.encodeFunctionData('getSpaceDetails', [
+          testSpaceId,
+        ]);
+
+      await this.daoProposals.connect(this.voter1).createProposal({
+        spaceId: testSpaceId,
+        duration: 86400, // 1 day
+        transactions: [
+          {
+            target: await this.daoSpaceFactory.getAddress(),
+            value: 0,
+            data: proposalCalldata,
+          },
+        ],
+      });
+
+      const proposalId = await this.daoProposals.proposalCounter();
+      console.log(`\nCreated proposal ${proposalId} for quorum rounding test`);
+
+      // Check initial proposal state
+      let proposalData = await this.daoProposals.getProposalCore(proposalId);
+      const totalVotingPowerAtSnapshot = Number(
+        proposalData.totalVotingPowerAtSnapshot,
+      );
+
+      console.log(`\nInitial proposal state:`);
+      console.log(
+        `- Total voting power at snapshot: ${totalVotingPowerAtSnapshot}`,
+      );
+      console.log(`- Yes votes: ${proposalData.yesVotes}`);
+      console.log(`- No votes: ${proposalData.noVotes}`);
+      console.log(`- Executed: ${proposalData.executed}`);
+
+      // Verify the snapshot captured the correct voting power
+      expect(totalVotingPowerAtSnapshot).to.equal(
+        2,
+        'Snapshot should capture 2 total voting power',
+      );
+
+      // Cast exactly 1 vote (the critical test case)
+      console.log(`\nCasting single vote (voter1 votes YES)...`);
+      await this.daoProposals.connect(this.voter1).vote(proposalId, true);
+
+      // Check final proposal state
+      proposalData = await this.daoProposals.getProposalCore(proposalId);
+      const totalVotesCast =
+        Number(proposalData.yesVotes) + Number(proposalData.noVotes);
+      const yesVotes = Number(proposalData.yesVotes);
+      const executed = proposalData.executed;
+
+      console.log(`\nFinal proposal state after 1 vote:`);
+      console.log(`- Yes votes: ${yesVotes}`);
+      console.log(`- No votes: ${proposalData.noVotes}`);
+      console.log(`- Total votes cast: ${totalVotesCast}`);
+      console.log(`- Executed: ${executed}`);
+
+      // Calculate actual quorum requirement using ceiling division (the fix)
+      const actualRequiredQuorum = Math.ceil(
+        (51 * totalVotingPowerAtSnapshot) / 100,
+      );
+
+      console.log(`\nQuorum analysis:`);
+      console.log(`- Total voting power: ${totalVotingPowerAtSnapshot}`);
+      console.log(`- Votes cast: ${totalVotesCast}`);
+      console.log(
+        `- Required quorum (51% with ceiling): ${actualRequiredQuorum} votes`,
+      );
+      console.log(
+        `- Quorum reached: ${
+          totalVotesCast >= actualRequiredQuorum ? 'YES ✅' : 'NO ❌'
+        }`,
+      );
+
+      if (totalVotesCast >= actualRequiredQuorum) {
+        const yesPercentage = (yesVotes * 100) / totalVotesCast;
+        console.log(`- Yes vote percentage: ${yesPercentage}%`);
+        console.log(
+          `- Unity threshold (80%): ${
+            yesPercentage >= 80 ? 'REACHED ✅' : 'NOT REACHED ❌'
+          }`,
+        );
+      }
+
+      // Final verdict
+      console.log(`\n🏁 FINAL RESULT:`);
+      if (executed) {
+        console.log(
+          '❌ TEST FAILED: Proposal was executed when it should NOT have been!',
+        );
+        console.log('💡 This indicates the rounding error still exists.');
+        console.log(
+          '📊 Analysis: With only 1 vote out of 2 total voting power (50% participation),',
+        );
+        console.log('📊           this is below the 51% quorum requirement.');
+        console.log(
+          '📊           Ceiling division: ceil(51% × 2) = ceil(1.02) = 2 votes required',
+        );
+        console.log(
+          '📊           Floor division: floor(51% × 2) = floor(1.02) = 1 vote (WRONG!)',
+        );
+      } else {
+        console.log('✅ TEST PASSED: Proposal was correctly NOT executed!');
+        console.log('💡 The quorum rounding error has been fixed.');
+        console.log(
+          '📊 Analysis: 1 vote out of 2 total voting power = 50% participation',
+        );
+        console.log(
+          '📊           This is correctly below the 51% quorum requirement.',
+        );
+        console.log(
+          '📊           Ceiling division correctly requires 2 votes minimum.',
+        );
+      }
+
+      // Assertions to verify the fix
+      expect(executed).to.equal(
+        false,
+        'Proposal should not be executed with insufficient quorum',
+      );
+      expect(totalVotesCast).to.equal(1, 'Should have exactly 1 vote cast');
+      expect(totalVotingPowerAtSnapshot).to.equal(
+        2,
+        'Should have 2 total voting power',
+      );
+      expect(actualRequiredQuorum).to.equal(
+        2,
+        'Should require 2 votes for 51% quorum with ceiling division',
+      );
+      expect(totalVotesCast).to.be.lessThan(
+        actualRequiredQuorum,
+        'Votes cast should be less than required quorum',
+      );
+
+      console.log(`\n📋 Test Summary:`);
+      console.log(`   Space ID: ${testSpaceId}`);
+      console.log(`   Proposal ID: ${proposalId}`);
+      console.log(`   Total Voting Power: ${totalVotingPowerAtSnapshot}`);
+      console.log(`   Required Quorum: ${actualRequiredQuorum} votes`);
+      console.log(`   Actual Votes Cast: ${totalVotesCast}`);
+      console.log(
+        `   Proposal Status: ${executed ? 'Executed' : 'Not Executed'}`,
+      );
+      console.log(`   ✅ Quorum rounding error fix verified!`);
     });
   });
 

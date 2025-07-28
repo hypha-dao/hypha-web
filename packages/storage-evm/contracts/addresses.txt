@@ -69,8 +69,16 @@ Deploying OwnershipTokenVotingPower with admin address: 0x2687fe290b54d824c136Ce
 Deploying OwnershipTokenVotingPower...
 OwnershipTokenVotingPower proxy deployed to: 0x255c7b5DaC3696199fEF7A8CC6Cc87190bc36eFd
 
+Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying SpacePaymentTracker...
+SpacePaymentTracker deployed to: 0x4B61250c8F19BA96C473c65022453E95176b0139
 
+Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+USDC address: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
+Payment tracker address: 0x4B61250c8F19BA96C473c65022453E95176b0139
+Deploying HyphaToken...
 HyphaToken deployed to: 0x8b93862835C36e9689E9bb1Ab21De3982e266CD3
 
 Deploying TransferHelper...
 TransferHelper deployed to: 0x4D93f27A6eC6626812253707B4BA62C2dB53c6cF
+
