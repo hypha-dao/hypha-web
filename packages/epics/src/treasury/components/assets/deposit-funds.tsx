@@ -26,10 +26,10 @@ export const DepositFunds = ({
   isLoading,
 }: DepositFundsProps) => {
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({
-    spaceId: spaceId as number,
+    spaceIds: [spaceId as number],
   });
 
-  const spaceAddress = spaceDetails?.executor;
+  const spaceAddress = spaceDetails?.get(BigInt(spaceId as number))?.executor;
 
   return (
     <div className="flex flex-col gap-5">

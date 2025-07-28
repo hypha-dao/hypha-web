@@ -50,9 +50,13 @@ export const CreateProposalChangeEntryMethodForm = ({
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
+
   const { spaceDetails, isLoading } = useSpaceDetailsWeb3Rpc({
-    spaceId: web3SpaceId as number,
+    spaceIds: [web3SpaceId as number],
   });
+  const entryMethod = spaceDetails
+    ? Number(spaceDetails?.get(BigInt(web3SpaceId as number))?.joinMethod)
+    : EntryMethodType.OPEN_ACCESS;
 
   const {
     createChangeEntryMethod,
@@ -72,9 +76,7 @@ export const CreateProposalChangeEntryMethodForm = ({
       attachments: undefined,
       spaceId: spaceId ?? undefined,
       creatorId: person?.id,
-      entryMethod: spaceDetails
-        ? (Number(spaceDetails.joinMethod) as EntryMethodType)
-        : EntryMethodType.OPEN_ACCESS,
+      entryMethod,
       tokenBase: undefined,
       label: 'Entry Method',
     };
@@ -87,8 +89,6 @@ export const CreateProposalChangeEntryMethodForm = ({
 
   React.useEffect(() => {
     if (spaceDetails && !isLoading) {
-      const entryMethod =
-        spaceDetails?.joinMethod ?? EntryMethodType.OPEN_ACCESS;
       form.setValue('entryMethod', Number(entryMethod));
     }
   }, [spaceDetails, isLoading]);

@@ -44,7 +44,7 @@ export const CreateProposalChangeVotingMethodForm = ({
   const config = useConfig();
 
   const { spaceDetails, isLoading } = useSpaceDetailsWeb3Rpc({
-    spaceId: web3SpaceId as number,
+    spaceIds: [web3SpaceId as number],
   });
   const {
     createChangeVotingMethod,
@@ -89,10 +89,12 @@ export const CreateProposalChangeVotingMethodForm = ({
 
   React.useEffect(() => {
     if (spaceDetails && !isLoading) {
-      const quorum = Number(spaceDetails.quorum ?? 0);
-      const unity = Number(spaceDetails.unity ?? 0);
+      const details = spaceDetails.get(BigInt(web3SpaceId as number));
+
+      const quorum = Number(details?.quorum ?? 0);
+      const unity = Number(details?.unity ?? 0);
       const votingMethod = getVotingMethod(
-        Number(spaceDetails.votingPowerSource ?? 0),
+        Number(details?.votingPowerSource ?? 0),
       );
 
       form.setValue('quorumAndUnity.quorum', quorum);

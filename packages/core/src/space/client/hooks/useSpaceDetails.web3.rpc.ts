@@ -1,48 +1,24 @@
 'use client';
 
-import { publicClient } from '@hypha-platform/core/client';
 import useSWR from 'swr';
-import { getSpaceDetails } from '../web3';
-import React from 'react';
+import { getSpaceDetails } from '@hypha-platform/core/client';
 
-export const useSpaceDetailsWeb3Rpc = ({ spaceId }: { spaceId: number }) => {
+export const useSpaceDetailsWeb3Rpc = ({
+  spaceIds,
+}: {
+  spaceIds: number[];
+}) => {
   const { data, isLoading, error } = useSWR(
-    [spaceId, 'spaceDetails'],
-    async ([spaceId]) =>
-      publicClient.readContract(getSpaceDetails({ spaceId: BigInt(spaceId) })),
+    [spaceIds, 'spaceDetails'],
+    async ([spaceIds]) =>
+      getSpaceDetails({
+        spaceIds: spaceIds.map((id) => BigInt(id)),
+      }),
     { revalidateOnFocus: true },
   );
 
-  const spaceDetails = React.useMemo(() => {
-    if (data) {
-      const [
-        unity,
-        quorum,
-        votingPowerSource,
-        tokenAdresses,
-        members,
-        exitMethod,
-        joinMethod,
-        createdAt,
-        creator,
-        executor,
-      ] = data;
-      return {
-        unity,
-        quorum,
-        votingPowerSource,
-        tokenAdresses,
-        members,
-        exitMethod,
-        joinMethod,
-        createdAt,
-        creator,
-        executor,
-      };
-    }
-  }, [data]);
   return {
-    spaceDetails,
+    spaceDetails: data,
     isLoading,
     error,
   };

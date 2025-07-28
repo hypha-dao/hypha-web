@@ -27,10 +27,12 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
   const { lang } = useParams();
   const config = useConfig();
   const { jwt } = useJwt();
-  const { spaceDetails } = useSpaceDetailsWeb3Rpc({ spaceId: web3SpaceId });
+  const { spaceDetails } = useSpaceDetailsWeb3Rpc({ spaceIds: [web3SpaceId] });
   const [joinError, setJoinError] = useState<BaseError | null>(null);
-  const isInviteOnly = spaceDetails?.joinMethod === 2n;
-  const isTokenBased = spaceDetails?.joinMethod === 1n;
+  const isInviteOnly =
+    spaceDetails?.get(BigInt(web3SpaceId))?.joinMethod === 2n;
+  const isTokenBased =
+    spaceDetails?.get(BigInt(web3SpaceId))?.joinMethod === 1n;
 
   const { person } = useMe();
 
@@ -64,9 +66,9 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
         spaceId: spaceId,
         title: 'Invite Member',
         description: `**${person.name} ${person.surname} has just requested to join as a member!**
-      
+
       To move forward with onboarding, we’ll need our space’s approval on this proposal.
-      
+
       You can review ${person.name}’s profile <span className="text-accent-9">[here](${profilePageUrl}).</span>`,
         creatorId: person.id,
         memberAddress: person.address as `0x${string}`,

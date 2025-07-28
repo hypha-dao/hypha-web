@@ -4,7 +4,6 @@ import {
   findSpaceBySlug,
 } from '@hypha-platform/core/server';
 import { getSpaceDetails } from '@hypha-platform/core/client';
-import { publicClient } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 
 export async function GET(
@@ -22,9 +21,13 @@ export async function GET(
 
     let spaceDetails;
     try {
-      spaceDetails = await publicClient.readContract(
-        getSpaceDetails({ spaceId: BigInt(space.web3SpaceId as number) }),
+      const spaceId = BigInt(space.web3SpaceId as number);
+      spaceDetails = (await getSpaceDetails({ spaceIds: [spaceId] })).get(
+        spaceId,
       );
+      if (!spaceDetails) {
+        return NextResponse.json({ error: 'Space not found' }, { status: 404 });
+      }
     } catch (err: any) {
       const errorMessage =
         err?.message || err?.shortMessage || JSON.stringify(err);
@@ -48,7 +51,7 @@ export async function GET(
       );
     }
 
-    const [, , , , members] = spaceDetails;
+    const { members } = spaceDetails;
 
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1', 10);

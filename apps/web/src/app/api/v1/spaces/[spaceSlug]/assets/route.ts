@@ -35,9 +35,12 @@ export async function GET(
     let spaceDetails;
     let spaceTokens;
     try {
-      spaceDetails = await publicClient.readContract(
-        getSpaceDetails({ spaceId }),
+      spaceDetails = (await getSpaceDetails({ spaceIds: [spaceId] })).get(
+        spaceId,
       );
+      if (!spaceDetails) {
+        return NextResponse.json({ error: 'Space not found' }, { status: 404 });
+      }
 
       spaceTokens = await publicClient.multicall({
         contracts: [
@@ -69,7 +72,7 @@ export async function GET(
       );
     }
 
-    const spaceAddress = spaceDetails[9] as `0x${string}`;
+    const spaceAddress = spaceDetails.executor;
     if (!spaceAddress || !/^0x[a-fA-F0-9]{40}$/.test(spaceAddress)) {
       return NextResponse.json(
         { error: 'Invalid or missing executor address' },
