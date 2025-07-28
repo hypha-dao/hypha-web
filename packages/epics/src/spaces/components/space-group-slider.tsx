@@ -1,3 +1,5 @@
+'use client';
+
 import { Text } from '@radix-ui/themes';
 import {
   Carousel,
@@ -9,6 +11,8 @@ import Link from 'next/link';
 import { SpaceCard } from './space-card';
 // TODO: #594 declare UI interface separately
 import { Space } from '@hypha-platform/core/client';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useDebouncedCallback } from 'use-debounce';
 
 type SpaceGroupSliderProps = {
   spaces?: Space[];
@@ -23,13 +27,35 @@ export const SpaceGroupSlider = ({
   type,
   getHref,
 }: SpaceGroupSliderProps) => {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { replace } = useRouter();
+
+  const seeAllSpaces = useDebouncedCallback((category: string) => {
+    const params = new URLSearchParams(searchParams);
+    if (category && category.trim()) {
+      params.set('category', category);
+    } else {
+      params.delete('category');
+    }
+    replace(`${pathname}?${params.toString()}`);
+  }, 300);
+
   return (
     <div className="border-b-2 border-primary-foreground pt-6">
       <div className="flex justify-between items-center">
         <Text className="text-4 font-medium capitalize">
           {type} | {spaces?.length}
         </Text>
-        <Button variant="ghost" className="text-accent-11">
+        <Button
+          variant="ghost"
+          className="text-accent-11"
+          onClick={() => {
+            if (type) {
+              seeAllSpaces(type);
+            }
+          }}
+        >
           See all
         </Button>
       </div>

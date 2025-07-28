@@ -3,8 +3,14 @@ import {
   getTokenPrice,
   findPersonBySlug,
   getDb,
+  getWalletTokenBalancesPriceByAddress,
 } from '@hypha-platform/core/server';
-import { TOKENS, getBalance, getTokenMeta } from '@hypha-platform/core/client';
+import {
+  TOKENS,
+  getBalance,
+  getTokenMeta,
+  Token,
+} from '@hypha-platform/core/client';
 import { headers } from 'next/headers';
 
 export async function GET(
@@ -34,31 +40,65 @@ export async function GET(
         { status: 400 },
       );
     }
+
+    let externalTokens: any[] = [];
+    try {
+      externalTokens = await getWalletTokenBalancesPriceByAddress(address);
+    } catch (error) {
+      console.warn('Failed to fetch external token balances:', error);
+    }
+
+    const parsedExternalTokens: Token[] = externalTokens
+      .filter(
+        (token) =>
+          token?.tokenAddress?.lowercase &&
+          /^0x[a-fA-F0-9]{40}$/i.test(token.tokenAddress.lowercase),
+      )
+      .map((token) => ({
+        symbol: token.symbol || 'UNKNOWN',
+        name: token.name || 'Unnamed',
+        address: token?.tokenAddress?.lowercase as `0x${string}`,
+        icon: token.logo || '/placeholder/token-icon.png',
+        type: 'utility',
+      }));
+
+    const allTokens: Token[] = [...TOKENS, ...parsedExternalTokens];
+
     let prices: Record<string, number | undefined> = {};
     try {
-      prices = await getTokenPrice(TOKENS.map(({ address }) => address));
+      prices = await getTokenPrice(allTokens.map(({ address }) => address));
     } catch (error: unknown) {
       console.error('Failed to fetch prices of tokens with Moralis:', error);
     }
 
     const assets = await Promise.all(
-      TOKENS.map(async (token) => {
-        const meta = await getTokenMeta(token.address);
-        const { amount } = await getBalance(token.address, address);
-        const rate = prices[token.address] || 0;
-        return {
-          ...meta,
-          value: amount,
-          usdEqual: rate * amount,
-          chartData: [],
-          transactions: [],
-          closeUrl: [],
-          slug: '',
-        };
+      allTokens.map(async (token) => {
+        try {
+          const meta = await getTokenMeta(token.address);
+          const { amount } = await getBalance(token.address, address);
+          const rate = prices[token.address] || 0;
+          return {
+            ...meta,
+            address: token.address,
+            value: amount,
+            usdEqual: rate * amount,
+            chartData: [],
+            transactions: [],
+            closeUrl: [],
+            slug: '',
+          };
+        } catch (err) {
+          console.warn(`Skipping token ${token.address}: ${err}`);
+          return null;
+        }
       }),
     );
 
-    const sorted = assets.sort((a, b) =>
+    const validAssets = assets.filter((a) => a !== null) as NonNullable<
+      (typeof assets)[0]
+    >[];
+
+    const sorted = validAssets.sort((a, b) =>
       a.usdEqual === b.usdEqual ? b.value - a.value : b.usdEqual - a.usdEqual,
     );
 

@@ -49,7 +49,7 @@ export const ProposalTransactionItem = ({
           className="rounded-full"
         />
         <div className="text-sm font-medium text-neutral-9">
-          {formattedAmount} {token.symbol}
+          {Number(formattedAmount).toFixed(2)} {token.symbol}
         </div>
       </div>
       <div className="w-[140px]">

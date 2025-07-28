@@ -29,11 +29,28 @@
       "cache": false,
       "persistent": true
     },
+    "start": {
+      "dependsOn": ["^build"],
+      "env": ["*"]
+    },
     "migrate": {
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "cache": false,
       "persistent": true,
       "env": ["*"]
+    },
+    "generate": {
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "cache": false,
+      "persistent": true,
+      "env": ["*"]
+    },
+    "wagmi:generate": {
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "dependsOn": ["^wagmi:generate"],
+      "env": ["PRIVATE_KEY"],
+      "cache": false,
+      "persistent": true
     }
   }
 }

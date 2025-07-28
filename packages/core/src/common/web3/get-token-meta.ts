@@ -41,7 +41,7 @@ export async function getTokenMeta(
       symbol: symbol ?? 'MISSING SYMBOL',
       icon: '/placeholder/token-icon.png',
       name: name ?? 'MISSING NAME',
-      status: 'utility',
+      type: 'utility',
     };
   } catch (error: any) {
     console.error(`Failed to fetch token info for ${tokenAddress}:`, error);

@@ -119,13 +119,13 @@ export const SETTINGS_ACTIONS = [
   },
   {
     group: 'Ecosystem Verticals',
-    title: 'Hypha Energy (Coming Soon)',
+    title: 'Hypha Energy',
     description:
-      'A dedicated platform for your renewable energy community or hub. Enabling energy sharing, co-ownership, governance, and fair value distribution. Learn more at https://hypha.energy.',
-    href: '#',
+      'A dedicated platform for your renewable energy community or hub, enabling local energy sharing, energy asset co-ownership, governance, and fair value distribution between members.',
+    href: 'https://hypha.energy',
     icon: <RadiobuttonIcon />,
     baseTab: 'governance',
-    disabled: true,
+    target: '_blank',
   },
   {
     group: 'Hypha Network Tokenomics',
@@ -138,9 +138,9 @@ export const SETTINGS_ACTIONS = [
   },
   {
     group: 'Hypha Network Tokenomics',
-    title: 'Pay in Hypha Tokens (Hypha Network Contribution) (Coming Soon)',
+    title: 'Activate Space(s) (Coming Soon)',
     description:
-      'All spaces within the Network are required to make a monthly payment in Hypha tokens to use the platform.',
+      'Activate your Spaces by simply paying a Hypha Network Contribution with USDC or Hypha Tokens.',
     href: '#',
     icon: <ArrowRightIcon />,
     disabled: true,

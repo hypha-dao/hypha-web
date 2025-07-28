@@ -68,10 +68,9 @@ export const ConnectedButtonProfile = ({
     isPersonLoading,
     isAuthLoading,
     isAuthenticated,
-    // person, // TODO: will be fixed within the framework #868
+    person,
     user,
     router,
-    pathname,
     baseRedirectPath,
     newUserRedirectPath,
     isLoggingIn,

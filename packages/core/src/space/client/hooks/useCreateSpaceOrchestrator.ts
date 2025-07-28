@@ -165,8 +165,8 @@ export const useCreateSpaceOrchestrator = ({
 
       startTask('CREATE_WEB3_SPACE');
       const inputCreateSpaceWeb3 = schemaCreateSpaceWeb3.parse({
-        quorum: 80,
-        unity: 20,
+        quorum: 50,
+        unity: 80,
         votingPowerSource: 2,
         joinMethod: 0,
         exitMethod: 0,

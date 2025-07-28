@@ -33,7 +33,7 @@ type AssetItem = {
   symbol: string;
   value: number;
   usdEqual: number;
-  status: string;
+  type: string;
   chartData: OneChartPoint[];
   transactions: TransactionCardProps[];
   closeUrl: string;

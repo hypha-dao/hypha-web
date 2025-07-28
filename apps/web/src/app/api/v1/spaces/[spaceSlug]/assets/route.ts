@@ -1,18 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { findSpaceBySlug } from '@hypha-platform/core/server';
+import {
+  findSpaceBySlug,
+  getTokenPrice,
+  getWalletTokenBalancesPriceByAddress,
+} from '@hypha-platform/core/server';
 import {
   getSpaceDetails,
   getSpaceRegularTokens,
   getSpaceDecayingTokens,
   getSpaceOwnershipTokens,
-} from '@hypha-platform/core/client';
-import {
   TOKENS,
   publicClient,
   getBalance,
   getTokenMeta,
+  Token,
 } from '@hypha-platform/core/client';
-import { getTokenPrice } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 
 export async function GET(
@@ -67,14 +69,28 @@ export async function GET(
       );
     }
 
-    let prices: Record<string, number | undefined> = {};
-    try {
-      prices = await getTokenPrice(TOKENS.map(({ address }) => address));
-    } catch (error: unknown) {
-      console.error('Failed to fetch prices of tokens with Moralis:', error);
+    const spaceAddress = spaceDetails[9] as `0x${string}`;
+    if (!spaceAddress || !/^0x[a-fA-F0-9]{40}$/.test(spaceAddress)) {
+      return NextResponse.json(
+        { error: 'Invalid or missing executor address' },
+        { status: 400 },
+      );
     }
 
-    const spaceAddress = spaceDetails.at(-1) as `0x${string}`;
+    let externalTokens: any[] = [];
+    try {
+      externalTokens = await getWalletTokenBalancesPriceByAddress(spaceAddress);
+    } catch (error: unknown) {
+      console.warn('Failed to fetch external token balances:', error);
+    }
+
+    const parsedExternalTokens: Token[] = externalTokens.map((token) => ({
+      symbol: token.symbol || 'UNKNOWN',
+      name: token.name || 'Unnamed',
+      address: token?.tokenAddress?.lowercase as `0x${string}`,
+      icon: token.logo || '/placeholder/token-icon.png',
+      type: 'utility',
+    }));
 
     spaceTokens = spaceTokens
       .filter(
@@ -84,16 +100,40 @@ export async function GET(
       .map(({ result }) => result)
       .flat() as `0x${string}`[];
 
-    const assets = await Promise.all(
-      TOKENS.map((token) => token.address)
-        .concat(spaceTokens)
-        .map(async (token) => {
-          const meta = await getTokenMeta(token);
-          const { amount } = await getBalance(token, spaceAddress);
-          const rate = prices[token] || 0;
+    const allTokens: Token[] = [
+      ...TOKENS,
+      ...parsedExternalTokens,
+      ...spaceTokens.map((address) => ({
+        symbol: '',
+        name: '',
+        address,
+        icon: '/placeholder/token-icon.png',
+        type: 'utility' as const,
+      })),
+    ].filter(
+      (token, index, self) =>
+        index ===
+        self.findIndex(
+          (t) => t.address.toLowerCase() === token.address.toLowerCase(),
+        ),
+    );
 
+    let prices: Record<string, number | undefined> = {};
+    try {
+      prices = await getTokenPrice(allTokens.map(({ address }) => address));
+    } catch (error: unknown) {
+      console.error('Failed to fetch prices of tokens with Moralis:', error);
+    }
+
+    const assets = await Promise.all(
+      allTokens.map(async (token) => {
+        try {
+          const meta = await getTokenMeta(token.address);
+          const { amount } = await getBalance(token.address, spaceAddress);
+          const rate = prices[token.address] || 0;
           return {
             ...meta,
+            address: token.address,
             value: amount,
             usdEqual: rate * amount,
             chartData: [],
@@ -101,10 +141,18 @@ export async function GET(
             closeUrl: [],
             slug: '',
           };
-        }),
+        } catch (err) {
+          console.warn(`Skipping token ${token.address}: ${err}`);
+          return null;
+        }
+      }),
     );
 
-    const sorted = assets.sort((a, b) =>
+    const validAssets = assets.filter((a) => a !== null) as NonNullable<
+      (typeof assets)[0]
+    >[];
+
+    const sorted = validAssets.sort((a, b) =>
       a.usdEqual === b.usdEqual ? b.value - a.value : b.usdEqual - a.usdEqual,
     );
 

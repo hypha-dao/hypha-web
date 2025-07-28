@@ -7,3 +7,4 @@ export * from './order';
 export * from './moralis-client';
 export * from './get-token-price';
 export * from './get-transfers-by-address';
+export * from './get-wallet-token-balances-price';

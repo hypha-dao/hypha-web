@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "default",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "../ui-utils/src/global.css",
+    "baseColor": "neutral",
+    "cssVariables": true
+  },
+  "iconLibrary": "lucide",
+  "aliases": {
+    "components": "@hypha-platform/ui",
+    "utils": "@hypha-platform/ui-utils",
+    "lib": "@hypha-platform/ui-utils",
+    "ui": "src",
+    "hooks": "src/hooks"
+  }
+}
