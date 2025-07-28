@@ -1,0 +1,24 @@
+{
+  "name": "hypha-migration-api",
+  "version": "1.0.0",
+  "description": "API for HYPHA token migrations and Base network operations",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build step required'",
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@sendgrid/mail": "^7.7.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "ethers": "^6.8.0",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "vercel": "^32.5.0"
+  },
+  "keywords": ["hypha", "migration", "email", "notification", "base", "ethereum", "usdc"],
+  "author": "",
+  "license": "MIT"
+}

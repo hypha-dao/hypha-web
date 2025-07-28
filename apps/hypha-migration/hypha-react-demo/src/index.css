@@ -1,0 +1,333 @@
+/* Hypha Design System CSS Custom Properties */
+
+:root {
+  /* Base font size for rem calculations (62.5% = 10px base) */
+  font-size: 62.5%;
+
+  /* Light theme indigo scale (primary/accent) */
+  --indigo-1: 240deg 33.3% 99.4%;
+  --indigo-2: 225deg 100% 98.4%;
+  --indigo-3: 222deg 89.5% 96.3%;
+  --indigo-4: 224deg 100% 94.1%;
+  --indigo-5: 224deg 100% 91.2%;
+  --indigo-6: 225deg 100% 87.8%;
+  --indigo-7: 226deg 86.7% 82.4%;
+  --indigo-8: 226deg 75.4% 74.5%;
+  --indigo-9: 226deg 70% 55.5%;
+  --indigo-10: 226deg 65.2% 51.6%;
+  --indigo-11: 226deg 55.7% 50.4%;
+  --indigo-12: 226deg 49.6% 24.1%;
+
+  /* Light theme gray scale (neutral) */
+  --gray-1: 0deg 0% 99%;
+  --gray-2: 0deg 0% 97.3%;
+  --gray-3: 0deg 0% 95.1%;
+  --gray-4: 0deg 0% 93%;
+  --gray-5: 0deg 0% 90.9%;
+  --gray-6: 0deg 0% 88.7%;
+  --gray-7: 0deg 0% 85.8%;
+  --gray-8: 0deg 0% 78%;
+  --gray-9: 0deg 0% 56.1%;
+  --gray-10: 0deg 0% 52.3%;
+  --gray-11: 0deg 0% 43.5%;
+  --gray-12: 0deg 0% 9%;
+
+  /* Light theme red scale (error) */
+  --red-1: 359deg 100% 99.4%;
+  --red-2: 359deg 100% 98.6%;
+  --red-3: 360deg 100% 96.8%;
+  --red-4: 360deg 100% 94.5%;
+  --red-5: 360deg 100% 91.8%;
+  --red-6: 360deg 100% 88.5%;
+  --red-7: 360deg 96.2% 83.8%;
+  --red-8: 360deg 83.3% 77.8%;
+  --red-9: 360deg 83% 62%;
+  --red-10: 360deg 75.9% 57.8%;
+  --red-11: 360deg 65% 52.2%;
+  --red-12: 354deg 50% 14.6%;
+
+  /* Light theme green scale (success) */
+  --green-1: 136deg 50% 98.9%;
+  --green-2: 138deg 62.5% 96.9%;
+  --green-3: 139deg 55.2% 94.5%;
+  --green-4: 140deg 48.7% 91.8%;
+  --green-5: 141deg 43.7% 88.7%;
+  --green-6: 143deg 40.3% 85.3%;
+  --green-7: 146deg 38.5% 81.3%;
+  --green-8: 151deg 40.2% 72.5%;
+  --green-9: 151deg 55% 41.5%;
+  --green-10: 152deg 57.5% 37.6%;
+  --green-11: 153deg 67% 28.5%;
+  --green-12: 155deg 40% 14%;
+
+  /* Light theme blue scale (info) */
+  --blue-1: 206deg 100% 99.2%;
+  --blue-2: 210deg 100% 98%;
+  --blue-3: 209deg 100% 95.3%;
+  --blue-4: 210deg 98.8% 92.5%;
+  --blue-5: 209deg 95% 89.1%;
+  --blue-6: 209deg 81.2% 84.5%;
+  --blue-7: 208deg 77.5% 78.9%;
+  --blue-8: 206deg 81.9% 69.4%;
+  --blue-9: 206deg 100% 50%;
+  --blue-10: 208deg 100% 47.3%;
+  --blue-11: 211deg 100% 43.2%;
+  --blue-12: 211deg 100% 15%;
+
+  /* Light theme orange scale (warning) */
+  --orange-1: 24deg 100% 99.4%;
+  --orange-2: 24deg 100% 98.4%;
+  --orange-3: 24deg 100% 95.3%;
+  --orange-4: 25deg 100% 91.8%;
+  --orange-5: 25deg 100% 88.1%;
+  --orange-6: 25deg 100% 84.1%;
+  --orange-7: 24deg 100% 79.3%;
+  --orange-8: 24deg 94.5% 71.8%;
+  --orange-9: 24deg 94% 50%;
+  --orange-10: 24deg 100% 46.5%;
+  --orange-11: 24deg 100% 37%;
+  --orange-12: 15deg 25% 15%;
+
+  /* Semantic color mapping */
+  --accent-1: var(--indigo-1);
+  --accent-2: var(--indigo-2);
+  --accent-3: var(--indigo-3);
+  --accent-4: var(--indigo-4);
+  --accent-5: var(--indigo-5);
+  --accent-6: var(--indigo-6);
+  --accent-7: var(--indigo-7);
+  --accent-8: var(--indigo-8);
+  --accent-9: var(--indigo-9);
+  --accent-10: var(--indigo-10);
+  --accent-11: var(--indigo-11);
+  --accent-12: var(--indigo-12);
+
+  --neutral-1: var(--gray-1);
+  --neutral-2: var(--gray-2);
+  --neutral-3: var(--gray-3);
+  --neutral-4: var(--gray-4);
+  --neutral-5: var(--gray-5);
+  --neutral-6: var(--gray-6);
+  --neutral-7: var(--gray-7);
+  --neutral-8: var(--gray-8);
+  --neutral-9: var(--gray-9);
+  --neutral-10: var(--gray-10);
+  --neutral-11: var(--gray-11);
+  --neutral-12: var(--gray-12);
+
+  --error-1: var(--red-1);
+  --error-2: var(--red-2);
+  --error-3: var(--red-3);
+  --error-4: var(--red-4);
+  --error-5: var(--red-5);
+  --error-6: var(--red-6);
+  --error-7: var(--red-7);
+  --error-8: var(--red-8);
+  --error-9: var(--red-9);
+  --error-10: var(--red-10);
+  --error-11: var(--red-11);
+  --error-12: var(--red-12);
+
+  --success-1: var(--green-1);
+  --success-2: var(--green-2);
+  --success-3: var(--green-3);
+  --success-4: var(--green-4);
+  --success-5: var(--green-5);
+  --success-6: var(--green-6);
+  --success-7: var(--green-7);
+  --success-8: var(--green-8);
+  --success-9: var(--green-9);
+  --success-10: var(--green-10);
+  --success-11: var(--green-11);
+  --success-12: var(--green-12);
+
+  --info-1: var(--blue-1);
+  --info-2: var(--blue-2);
+  --info-3: var(--blue-3);
+  --info-4: var(--blue-4);
+  --info-5: var(--blue-5);
+  --info-6: var(--blue-6);
+  --info-7: var(--blue-7);
+  --info-8: var(--blue-8);
+  --info-9: var(--blue-9);
+  --info-10: var(--blue-10);
+  --info-11: var(--blue-11);
+  --info-12: var(--blue-12);
+
+  --warning-1: var(--orange-1);
+  --warning-2: var(--orange-2);
+  --warning-3: var(--orange-3);
+  --warning-4: var(--orange-4);
+  --warning-5: var(--orange-5);
+  --warning-6: var(--orange-6);
+  --warning-7: var(--orange-7);
+  --warning-8: var(--orange-8);
+  --warning-9: var(--orange-9);
+  --warning-10: var(--orange-10);
+  --warning-11: var(--orange-11);
+  --warning-12: var(--orange-12);
+
+  /* Background system */
+  --background-1: var(--neutral-1);
+  --background-2: var(--neutral-2);
+  --background-3: var(--neutral-3);
+  --background-4: var(--neutral-4);
+  --background-5: var(--neutral-5);
+  --background-6: var(--neutral-6);
+  --background-7: var(--neutral-7);
+  --background-8: var(--neutral-8);
+  --background-9: var(--neutral-9);
+  --background-10: var(--neutral-10);
+  --background-11: var(--neutral-11);
+  --background-12: var(--neutral-12);
+
+  /* UI colors */
+  --page-background: var(--background-1);
+  --foreground: var(--neutral-12);
+  --card: var(--neutral-2);
+  --card-foreground: var(--neutral-12);
+  --border: var(--neutral-6);
+  --input: var(--neutral-4);
+  --ring: var(--accent-9);
+
+  /* Font families */
+  --font-text: 'Source Sans 3', sans-serif;
+  --font-heading: 'Lato', sans-serif;
+  --font-code: 'Menlo', monospace;
+  --font-emphasis: 'Times New Roman', serif;
+  --font-quote: 'Times New Roman', serif;
+
+  /* Font weights */
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+
+  /* Typography scale (rem-based, 62.5% root = 10px base) */
+  --font-size-1: 1.2rem; /* 12px */
+  --font-size-2: 1.4rem; /* 14px */
+  --font-size-3: 1.6rem; /* 16px - base */
+  --font-size-4: 1.8rem; /* 18px */
+  --font-size-5: 2rem;   /* 20px */
+  --font-size-6: 2.4rem; /* 24px */
+  --font-size-7: 2.8rem; /* 28px */
+  --font-size-8: 3.5rem; /* 35px */
+  --font-size-9: 6rem;   /* 60px */
+
+  /* Line heights */
+  --line-height-1: 1.6rem;
+  --line-height-2: 2rem;
+  --line-height-3: 2.4rem;
+  --line-height-4: 2.6rem;
+  --line-height-5: 2.8rem;
+  --line-height-6: 3rem;
+  --line-height-7: 3.6rem;
+  --line-height-8: 4rem;
+  --line-height-9: 6rem;
+
+  /* Letter spacing */
+  --letter-spacing-1: 0.0025em;
+  --letter-spacing-2: 0em;
+  --letter-spacing-3: 0em;
+  --letter-spacing-4: -0.0025em;
+  --letter-spacing-5: -0.005em;
+
+  /* Spacing scale (rem-based) */
+  --spacing-1: 0.4rem;  /* 4px */
+  --spacing-2: 0.8rem;  /* 8px */
+  --spacing-3: 1.2rem;  /* 12px */
+  --spacing-4: 1.6rem;  /* 16px */
+  --spacing-5: 2.4rem;  /* 24px */
+  --spacing-6: 3.2rem;  /* 32px */
+  --spacing-7: 4rem;    /* 40px */
+  --spacing-8: 4.8rem;  /* 48px */
+  --spacing-9: 6.4rem;  /* 64px */
+
+  /* Component-specific tokens */
+  --button-height-1: var(--spacing-5); /* 24px */
+  --button-height-2: var(--spacing-6); /* 32px */
+  --button-height-3: var(--spacing-7); /* 40px */
+  --button-height-4: var(--spacing-8); /* 48px */
+  --button-height-5: var(--spacing-9); /* 64px */
+
+  /* Container sizes */
+  --spacing-container-sm: 64rem;  /* 640px */
+  --spacing-container-md: 76rem;  /* 760px */
+  --spacing-container-lg: 82rem;  /* 820px */
+  --spacing-container-xl: 110rem; /* 1100px */
+  --spacing-container-2xl: 120rem; /* 1200px */
+
+  /* Border radius */
+  --radius: 0.4rem;
+}
+
+/* Dark theme overrides */
+.dark {
+  /* Dark theme indigo scale */
+  --indigo-1: 231deg 29.2% 9.4%;
+  --indigo-2: 230deg 31% 11.4%;
+  --indigo-3: 225deg 50.5% 19%;
+  --indigo-4: 225deg 54.3% 24.9%;
+  --indigo-5: 225deg 51.6% 30%;
+  --indigo-6: 226deg 46.7% 35.3%;
+  --indigo-7: 226deg 44.5% 41%;
+  --indigo-8: 226deg 45.1% 47.8%;
+  --indigo-9: 226deg 70% 55.5%;
+  --indigo-10: 228deg 72.7% 61.2%;
+  --indigo-11: 228deg 100% 81%;
+  --indigo-12: 224deg 100% 92%;
+
+  /* Dark theme gray scale */
+  --gray-1: 0deg 0% 8.5%;
+  --gray-2: 0deg 0% 11%;
+  --gray-3: 0deg 0% 13.6%;
+  --gray-4: 0deg 0% 15.8%;
+  --gray-5: 0deg 0% 17.9%;
+  --gray-6: 0deg 0% 20.5%;
+  --gray-7: 0deg 0% 24.3%;
+  --gray-8: 0deg 0% 31.2%;
+  --gray-9: 0deg 0% 43.9%;
+  --gray-10: 0deg 0% 49.4%;
+  --gray-11: 0deg 0% 62.8%;
+  --gray-12: 0deg 0% 93%;
+
+  /* Update semantic colors for dark theme */
+  --foreground: var(--neutral-12);
+  --page-background: var(--background-1);
+  --card: var(--neutral-2);
+  --border: var(--neutral-6);
+  --input: var(--neutral-4);
+}
+
+/* Reset and base styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-text);
+  font-size: var(--font-size-3);
+  line-height: var(--line-height-3);
+  color: hsl(var(--foreground));
+  background: hsl(var(--page-background));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Utility classes */
+.text-1 { font-size: var(--font-size-1); line-height: var(--line-height-1); }
+.text-2 { font-size: var(--font-size-2); line-height: var(--line-height-2); }
+.text-3 { font-size: var(--font-size-3); line-height: var(--line-height-3); }
+.text-4 { font-size: var(--font-size-4); line-height: var(--line-height-4); }
+.text-5 { font-size: var(--font-size-5); line-height: var(--line-height-5); }
+.text-6 { font-size: var(--font-size-6); line-height: var(--line-height-6); }
+.text-7 { font-size: var(--font-size-7); line-height: var(--line-height-7); }
+.text-8 { font-size: var(--font-size-8); line-height: var(--line-height-8); }
+.text-9 { font-size: var(--font-size-9); line-height: var(--line-height-9); }
+
+.font-light { font-weight: var(--font-weight-light); }
+.font-regular { font-weight: var(--font-weight-regular); }
+.font-medium { font-weight: var(--font-weight-medium); }
+.font-bold { font-weight: var(--font-weight-bold); } 

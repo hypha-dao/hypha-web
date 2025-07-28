@@ -437,13 +437,29 @@ contract HyphaToken is
   }
 
   /**
-   * @dev Set the authorized mint address (governance function)
-   * @param _mintAddress Address authorized to call the mint function
+   * @dev Add an authorized mint address (governance function)
+   * @param _mintAddress Address to authorize for minting
    */
-  function setMintAddress(address _mintAddress) external onlyOwner {
-    address oldMintAddress = mintAddress;
-    mintAddress = _mintAddress;
-    emit MintAddressUpdated(oldMintAddress, _mintAddress);
+  function addMintAddress(address _mintAddress) external onlyOwner {
+    require(_mintAddress != address(0), 'Cannot authorize zero address');
+    require(
+      !authorizedMintAddresses[_mintAddress],
+      'Address already authorized'
+    );
+
+    authorizedMintAddresses[_mintAddress] = true;
+    authorizedMintAddressCount++;
+
+    emit MintAddressAdded(_mintAddress);
+  }
+
+  /**
+   * @dev Check if an address is authorized to mint tokens
+   * @param _address Address to check
+   * @return bool True if address is authorized to mint
+   */
+  function isAuthorizedMinter(address _address) external view returns (bool) {
+    return authorizedMintAddresses[_address];
   }
 
   /**
@@ -452,7 +468,10 @@ contract HyphaToken is
    * @param amount Amount of HYPHA tokens to mint
    */
   function mint(address to, uint256 amount) external {
-    require(msg.sender == mintAddress, 'Only authorized mint address can mint');
+    require(
+      authorizedMintAddresses[msg.sender],
+      'Only authorized mint address can mint'
+    );
     require(to != address(0), 'Cannot mint to zero address');
     require(amount > 0, 'Amount must be greater than zero');
     require(totalMinted + amount <= MAX_SUPPLY, 'Exceeds max token supply');
