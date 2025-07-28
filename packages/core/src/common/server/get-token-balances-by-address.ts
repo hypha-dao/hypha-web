@@ -1,8 +1,12 @@
 import 'server-only';
 import { getAlchemy } from './alchemy-client';
 import { TokenBalanceType } from 'alchemy-sdk';
+import { isAddress } from 'ethers';
 
 export async function getTokenBalancesByAddress(address: `0x${string}`) {
+  if (!isAddress(address)) {
+    throw new Error('Invalid Ethereum address format');
+  }
   const alchemy = getAlchemy();
 
   const balances = await alchemy.core.getTokenBalances(address, {
