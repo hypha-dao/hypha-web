@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   findSpaceBySlug,
   getTokenPrice,
-  getWalletTokenBalancesPriceByAddress,
+  getTokenBalancesByAddress,
 } from '@hypha-platform/core/server';
 import {
   getSpaceDetails,
@@ -79,18 +79,24 @@ export async function GET(
 
     let externalTokens: any[] = [];
     try {
-      externalTokens = await getWalletTokenBalancesPriceByAddress(spaceAddress);
+      externalTokens = await getTokenBalancesByAddress(spaceAddress);
     } catch (error: unknown) {
       console.warn('Failed to fetch external token balances:', error);
     }
 
-    const parsedExternalTokens: Token[] = externalTokens.map((token) => ({
-      symbol: token.symbol || 'UNKNOWN',
-      name: token.name || 'Unnamed',
-      address: token?.tokenAddress?.lowercase as `0x${string}`,
-      icon: token.logo || '/placeholder/token-icon.png',
-      type: 'utility',
-    }));
+    const parsedExternalTokens: Token[] = externalTokens
+      .filter(
+        (token) =>
+          token?.tokenAddress &&
+          /^0x[a-fA-F0-9]{40}$/i.test(token.tokenAddress),
+      )
+      .map((token) => ({
+        symbol: token.symbol || 'UNKNOWN',
+        name: token.name || 'Unnamed',
+        address: token.tokenAddress as `0x${string}`,
+        icon: token.logo || '/placeholder/token-icon.png',
+        type: 'utility' as const,
+      }));
 
     spaceTokens = spaceTokens
       .filter(
@@ -100,29 +106,33 @@ export async function GET(
       .map(({ result }) => result)
       .flat() as `0x${string}`[];
 
-    const allTokens: Token[] = [
-      ...TOKENS,
-      ...parsedExternalTokens,
-      ...spaceTokens.map((address) => ({
-        symbol: '',
-        name: '',
-        address,
-        icon: '/placeholder/token-icon.png',
-        type: 'utility' as const,
-      })),
-    ].filter(
-      (token, index, self) =>
-        index ===
-        self.findIndex(
-          (t) => t.address.toLowerCase() === token.address.toLowerCase(),
-        ),
+    const addressMap = new Map<string, Token>();
+    TOKENS.forEach((token) =>
+      addressMap.set(token.address.toLowerCase(), token),
     );
+    spaceTokens.forEach((address) => {
+      if (!addressMap.has(address.toLowerCase())) {
+        addressMap.set(address.toLowerCase(), {
+          symbol: '',
+          name: '',
+          address,
+          icon: '/placeholder/token-icon.png',
+          type: 'utility' as const,
+        });
+      }
+    });
+    parsedExternalTokens.forEach((token) => {
+      if (!addressMap.has(token.address.toLowerCase())) {
+        addressMap.set(token.address.toLowerCase(), token);
+      }
+    });
+    const allTokens: Token[] = Array.from(addressMap.values());
 
     let prices: Record<string, number | undefined> = {};
     try {
       prices = await getTokenPrice(allTokens.map(({ address }) => address));
     } catch (error: unknown) {
-      console.error('Failed to fetch prices of tokens with Moralis:', error);
+      console.error('Failed to fetch token prices:', error);
     }
 
     const assets = await Promise.all(

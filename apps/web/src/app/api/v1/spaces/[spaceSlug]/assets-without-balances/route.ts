@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   findSpaceBySlug,
-  getWalletTokenBalancesPriceByAddress,
+  getTokenBalancesByAddress,
 } from '@hypha-platform/core/server';
 import {
   getSpaceRegularTokens,
@@ -70,7 +70,7 @@ export async function GET(
 
     let externalTokens: any[] = [];
     try {
-      externalTokens = await getWalletTokenBalancesPriceByAddress(spaceAddress);
+      externalTokens = await getTokenBalancesByAddress(spaceAddress);
     } catch (error: unknown) {
       console.warn('Failed to fetch external token balances:', error);
     }
@@ -78,15 +78,15 @@ export async function GET(
     const parsedExternalTokens: Token[] = externalTokens
       .filter(
         (token) =>
-          token?.tokenAddress?.lowercase &&
-          /^0x[a-fA-F0-9]{40}$/i.test(token.tokenAddress.lowercase),
+          token?.tokenAddress &&
+          /^0x[a-fA-F0-9]{40}$/i.test(token.tokenAddress),
       )
       .map((token) => ({
         symbol: token.symbol || 'UNKNOWN',
         name: token.name || 'Unnamed',
-        address: token?.tokenAddress?.lowercase as `0x${string}`,
+        address: token.tokenAddress as `0x${string}`,
         icon: token.logo || '/placeholder/token-icon.png',
-        type: 'utility',
+        type: 'utility' as const,
       }));
 
     spaceTokens = spaceTokens
@@ -97,22 +97,22 @@ export async function GET(
       .map(({ result }) => result)
       .flat() as `0x${string}`[];
 
-    const allTokens: Token[] = [
-      ...spaceTokens.map((address) => ({
+    const addressMap = new Map<string, Token>();
+    spaceTokens.forEach((address) => {
+      addressMap.set(address.toLowerCase(), {
         symbol: '',
         name: '',
         address,
         icon: '/placeholder/token-icon.png',
         type: 'utility' as const,
-      })),
-      ...parsedExternalTokens,
-    ].filter(
-      (token, index, self) =>
-        index ===
-        self.findIndex(
-          (t) => t.address.toLowerCase() === token.address.toLowerCase(),
-        ),
-    );
+      });
+    });
+    parsedExternalTokens.forEach((token) => {
+      if (!addressMap.has(token.address.toLowerCase())) {
+        addressMap.set(token.address.toLowerCase(), token);
+      }
+    });
+    const allTokens: Token[] = Array.from(addressMap.values());
 
     const assets = await Promise.all(
       allTokens.map(async (token) => {
