@@ -1,0 +1,22 @@
+{
+  "name": "migration-table-populator",
+  "version": "1.0.0",
+  "description": "Script to populate Telos migration contract table from text files",
+  "main": "populate_migration.js",
+  "scripts": {
+    "populate": "node populate_migration.js",
+    "test": "node populate_migration.js --dry-run"
+  },
+  "dependencies": {
+    "eosjs": "^22.1.0",
+    "node-fetch": "^2.6.7"
+  },
+  "keywords": [
+    "telos",
+    "migration",
+    "eosio",
+    "blockchain"
+  ],
+  "author": "",
+  "license": "MIT"
+} 

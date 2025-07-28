@@ -25,6 +25,7 @@ const createSpaceWeb2Props = {
         'education',
         'energy',
         'events',
+        'finance',
         'governance',
         'health',
         'housing',

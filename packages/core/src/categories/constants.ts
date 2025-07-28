@@ -4,6 +4,7 @@ export const categories = [
   { value: 'education', label: 'Education' },
   { value: 'energy', label: 'Energy' },
   { value: 'events', label: 'Events' },
+  { value: 'finance', label: 'Finance' },
   { value: 'governance', label: 'Governance' },
   { value: 'health', label: 'Health' },
   { value: 'housing', label: 'Housing' },
