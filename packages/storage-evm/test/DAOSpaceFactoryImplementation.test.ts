@@ -3,6 +3,16 @@ import { expect } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers';
 import { SpaceHelper } from './helpers/SpaceHelper';
 
+// Define token interface for proper typing
+interface MintableToken {
+  connect(signer: any): {
+    mint(to: string, amount: bigint): Promise<any>;
+    transfer(to: string, amount: bigint): Promise<any>;
+    approve(spender: string, amount: bigint): Promise<any>;
+    transferFrom(from: string, to: string, amount: bigint): Promise<any>;
+  };
+}
+
 describe('DAOSpaceFactoryImplementation', function () {
   // We define a fixture to reuse the same setup in every test
   async function deployFixture() {
@@ -134,10 +144,14 @@ describe('DAOSpaceFactoryImplementation', function () {
     await tokenVotingPower.setTokenFactory(
       await regularTokenFactory.getAddress(),
     );
+    await tokenVotingPower.setSpaceFactory(await daoSpaceFactory.getAddress());
 
     // Set DAOSpaceFactory in DecayTokenVotingPower
     await decayTokenVotingPower.setDecayTokenFactory(
       await decayingTokenFactory.getAddress(),
+    );
+    await decayTokenVotingPower.setSpaceFactory(
+      await daoSpaceFactory.getAddress(),
     );
 
     // Set SpacesContract in both token factories
@@ -914,7 +928,7 @@ describe('DAOSpaceFactoryImplementation', function () {
       const transferAmount = ethers.parseUnits('100', 18);
 
       // Executor calls transfer - this should mint instead of transfer
-      await token
+      await (token as unknown as MintableToken)
         .connect(executorSigner)
         .transfer(await voter1.getAddress(), transferAmount);
 
@@ -976,7 +990,7 @@ describe('DAOSpaceFactoryImplementation', function () {
       const transferFromAmount = ethers.parseUnits('50', 18);
 
       // Executor calls transferFrom with executor as from - this should mint instead of transfer
-      await token
+      await (token as unknown as MintableToken)
         .connect(executorSigner)
         .transferFrom(
           executorAddress,
@@ -1034,7 +1048,7 @@ describe('DAOSpaceFactoryImplementation', function () {
       );
 
       // First, give voter1 some tokens to transfer (via executor mint)
-      await token
+      await (token as unknown as MintableToken)
         .connect(executorSigner)
         .mint(await voter1.getAddress(), ethers.parseUnits('200', 18));
 
@@ -1049,7 +1063,7 @@ describe('DAOSpaceFactoryImplementation', function () {
       const normalTransferAmount = ethers.parseUnits('30', 18);
 
       // Regular user transfer - this should NOT mint, just transfer
-      await token
+      await (token as unknown as MintableToken)
         .connect(voter1)
         .transfer(await voter2.getAddress(), normalTransferAmount);
 
@@ -1083,9 +1097,12 @@ describe('DAOSpaceFactoryImplementation', function () {
 
   describe('Decaying Token Tests', function () {
     it('Should deploy a token with decay and verify decay parameters', async function () {
-      const { decayingTokenFactory, spaceHelper, owner } = await loadFixture(
-        deployFixture,
-      );
+      const {
+        decayingTokenFactory,
+        spaceHelper,
+        owner,
+        decayTokenVotingPower,
+      } = await loadFixture(deployFixture);
 
       // Create space
       const spaceParams = {
@@ -1177,8 +1194,13 @@ describe('DAOSpaceFactoryImplementation', function () {
     });
 
     it('Should demonstrate token decay over time', async function () {
-      const { decayingTokenFactory, spaceHelper, owner, voter1 } =
-        await loadFixture(deployFixture);
+      const {
+        decayingTokenFactory,
+        spaceHelper,
+        owner,
+        voter1,
+        decayTokenVotingPower,
+      } = await loadFixture(deployFixture);
 
       // Create space
       const spaceParams = {
@@ -1264,6 +1286,11 @@ describe('DAOSpaceFactoryImplementation', function () {
         tokenAddress,
       );
 
+      // Register the token with the voting power contract
+      await decayTokenVotingPower
+        .connect(executorSigner)
+        .setSpaceToken(spaceId, tokenAddress);
+
       // Join the space
       await spaceHelper.joinSpace(Number(spaceId), voter1);
 
@@ -1307,8 +1334,14 @@ describe('DAOSpaceFactoryImplementation', function () {
     });
 
     it('Should properly handle decay when tokens are transferred', async function () {
-      const { decayingTokenFactory, spaceHelper, owner, voter1, voter2 } =
-        await loadFixture(deployFixture);
+      const {
+        decayingTokenFactory,
+        spaceHelper,
+        owner,
+        voter1,
+        voter2,
+        decayTokenVotingPower,
+      } = await loadFixture(deployFixture);
 
       // Create space
       const spaceParams = {
@@ -1394,6 +1427,11 @@ describe('DAOSpaceFactoryImplementation', function () {
         tokenAddress,
       );
 
+      // Register the token with the voting power contract
+      await decayTokenVotingPower
+        .connect(executorSigner)
+        .setSpaceToken(spaceId, tokenAddress);
+
       // Join the space
       await spaceHelper.joinSpace(Number(spaceId), voter1);
       await spaceHelper.joinSpace(Number(spaceId), voter2);
@@ -1477,8 +1515,13 @@ describe('DAOSpaceFactoryImplementation', function () {
 
   describe('Enhanced Decay Token Tests', function () {
     it('Should demonstrate detailed vote decay with precise measurements', async function () {
-      const { decayingTokenFactory, spaceHelper, owner, voter1 } =
-        await loadFixture(deployFixture);
+      const {
+        decayingTokenFactory,
+        spaceHelper,
+        owner,
+        voter1,
+        decayTokenVotingPower,
+      } = await loadFixture(deployFixture);
 
       console.log('\n=== STARTING DETAILED VOTE DECAY TEST ===');
 
@@ -1570,6 +1613,11 @@ describe('DAOSpaceFactoryImplementation', function () {
         'DecayingSpaceToken',
         tokenAddress,
       );
+
+      // Register the token with the voting power contract
+      await decayTokenVotingPower
+        .connect(executorSigner)
+        .setSpaceToken(spaceId, tokenAddress);
 
       // Join the space
       await spaceHelper.joinSpace(Number(spaceId), voter1);
@@ -1807,8 +1855,14 @@ describe('DAOSpaceFactoryImplementation', function () {
     });
 
     it('Should demonstrate decay with multiple users and transfers', async function () {
-      const { decayingTokenFactory, spaceHelper, owner, voter1, voter2 } =
-        await loadFixture(deployFixture);
+      const {
+        decayingTokenFactory,
+        spaceHelper,
+        owner,
+        voter1,
+        voter2,
+        decayTokenVotingPower,
+      } = await loadFixture(deployFixture);
 
       console.log('\n=== STARTING MULTI-USER DECAY TEST WITH TRANSFERS ===');
 
@@ -1886,6 +1940,11 @@ describe('DAOSpaceFactoryImplementation', function () {
         'DecayingSpaceToken',
         tokenAddress,
       );
+
+      // Register the token with the voting power contract
+      await decayTokenVotingPower
+        .connect(executorSigner)
+        .setSpaceToken(spaceId, tokenAddress);
 
       // Join the space
       await spaceHelper.joinSpace(Number(spaceId), voter1);
@@ -2438,6 +2497,11 @@ describe('DAOSpaceFactoryImplementation', function () {
         tokenAddress,
       );
 
+      // Manually set the token as the voting token for the space (since we removed automatic registration)
+      await tokenVotingPower
+        .connect(executorSigner)
+        .setSpaceToken(spaceId, tokenAddress);
+
       // Join the space
       await spaceHelper.joinSpace(Number(spaceId), voter1);
       await spaceHelper.joinSpace(Number(spaceId), voter2);
@@ -2541,6 +2605,11 @@ describe('DAOSpaceFactoryImplementation', function () {
         'DecayingSpaceToken',
         tokenAddress,
       );
+
+      // Register the token with the voting power contract
+      await decayTokenVotingPower
+        .connect(executorSigner)
+        .setSpaceToken(spaceId, tokenAddress);
 
       // Join the space
       await spaceHelper.joinSpace(Number(spaceId), voter1);
@@ -2682,15 +2751,6 @@ describe('DAOSpaceFactoryImplementation', function () {
       expect(await token.maxSupply()).to.equal(maxSupply);
 
       // Mint exactly max supply
-      interface MintableToken {
-        connect(signer: any): {
-          mint(to: string, amount: bigint): Promise<any>;
-          transfer(to: string, amount: bigint): Promise<any>;
-          approve(spender: string, amount: bigint): Promise<any>;
-          transferFrom(from: string, to: string, amount: bigint): Promise<any>;
-        };
-      }
-
       await (token as unknown as MintableToken)
         .connect(executorSigner)
         .mint(await owner.getAddress(), maxSupply);
@@ -3163,7 +3223,7 @@ describe('DAOSpaceFactoryImplementation', function () {
       const transferAmount = ethers.parseUnits('100', 18);
 
       // Executor calls transfer - this should mint instead of transfer
-      await token
+      await (token as unknown as MintableToken)
         .connect(executorSigner)
         .transfer(await voter1.getAddress(), transferAmount);
 
@@ -3225,7 +3285,7 @@ describe('DAOSpaceFactoryImplementation', function () {
       const transferFromAmount = ethers.parseUnits('50', 18);
 
       // Executor calls transferFrom with executor as from - this should mint instead of transfer
-      await token
+      await (token as unknown as MintableToken)
         .connect(executorSigner)
         .transferFrom(
           executorAddress,

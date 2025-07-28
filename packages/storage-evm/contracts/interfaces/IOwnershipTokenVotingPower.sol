@@ -6,6 +6,8 @@ interface IOwnershipTokenVotingPower {
 
   function setOwnershipTokenFactory(address _tokenFactory) external;
 
+  function setSpaceFactory(address _spaceFactory) external;
+
   function setSpaceToken(uint256 _spaceId, address _tokenAddress) external;
 
   function getVotingPower(
@@ -20,4 +22,5 @@ interface IOwnershipTokenVotingPower {
   // Events
   event SpaceTokenSet(uint256 indexed spaceId, address indexed tokenAddress);
   event OwnershipTokenFactorySet(address indexed tokenFactory);
+  event SpaceFactorySet(address indexed spaceFactory);
 }

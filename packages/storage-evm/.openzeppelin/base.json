@@ -8954,6 +8954,7 @@
             "label": "spaceFactory",
             "offset": 0,
             "slot": "0",
+
             "type": "t_contract(IDAOSpaceFactory)14103",
             "contract": "DAOProposalsStorage",
             "src": "contracts/storage/DAOProposalsStorage.sol:60"
