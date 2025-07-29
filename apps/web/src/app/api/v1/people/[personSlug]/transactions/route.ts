@@ -69,11 +69,9 @@ export async function GET(
           { address: counterpartyAddress },
           { db },
         );
-
         return {
           ...transfer,
           person: counterpartyPerson,
-          value: Number(transfer.value) / Math.pow(10, transfer.decimals),
           direction: isIncoming ? 'incoming' : 'outgoing',
           counterparty: isIncoming ? 'from' : 'to',
         };

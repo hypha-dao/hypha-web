@@ -82,13 +82,8 @@ export async function getTransfersByAddress(
     allTransfers.map(async (transfer) => {
       const { timestamp, decimals, symbol } =
         await transfer._getTimestampAndMetadata();
-      const value = transfer.value
-        ? (
-            parseFloat(transfer.value.toString()) * Math.pow(10, decimals)
-          ).toString()
-        : '0';
       const { _getTimestampAndMetadata, ...rest } = transfer;
-      return { ...rest, timestamp, decimals, symbol, value };
+      return { ...rest, timestamp, decimals, symbol };
     }),
   );
 
