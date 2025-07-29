@@ -1,13 +1,13 @@
 .mdxeditor {
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  background-color: hsl(var(--neutral-1));
+  background-color: var(--neutral-1);
   transition: border-color 0.2s ease-in-out;
 
   /* Focus state for the entire editor */
   &:focus-within {
-    border-color: hsl(var(--accent-7));
-    box-shadow: 0 0 0 1px hsl(var(--accent-7) / 0.3);
+    border-color: var(--accent-7);
+    box-shadow: 0 0 0 1px var(--accent-7);
   }
 
   .mdxeditor-popup-container {
@@ -16,9 +16,9 @@
   }
 
   .mdxeditor-toolbar {
-    background-color: hsl(var(--neutral-2));
+    background-color: var(--neutral-2);
     border-radius: var(--radius) var(--radius) 0 0;
-    border-bottom: 1px solid hsl(var(--border));
+    border-bottom: 1px solid var(--border);
     padding: 8px;
 
     /* Toolbar button improvements */
@@ -27,65 +27,65 @@
       border-radius: calc(var(--radius) - 2px);
 
       &:hover {
-        background-color: hsl(var(--neutral-3));
+        background-color: var(--neutral-3);
       }
 
       &:focus-visible {
-        outline: 2px solid hsl(var(--accent-7));
+        outline: 2px solid var(--accent-7);
         outline-offset: 2px;
       }
 
       &[data-state='on'] {
-        background-color: hsl(var(--accent-6));
-        color: hsl(var(--accent-12));
+        background-color: var(--accent-6);
+        color: var(--accent-12);
       }
     }
 
     .selectContainer {
-      background-color: hsl(var(--neutral-2));
+      background-color: var(--neutral-2);
       border-radius: var(--radius);
-      border: 1px solid hsl(var(--border));
-      box-shadow: 0 0 0 1px hsl(var(--border));
+      border: 1px solid var(--border);
+      box-shadow: 0 0 0 1px var(--border);
     }
 
     /* Separator styling */
     .separator {
-      background-color: hsl(var(--border));
+      background-color: var(--border);
     }
   }
 
   .mdxeditor-select-content {
-    background-color: hsl(var(--neutral-3));
-    border: 1px solid hsl(var(--border));
+    background-color: var(--neutral-3);
+    border: 1px solid var(--border);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3),
       0 2px 4px -1px rgba(0, 0, 0, 0.2);
   }
 
   ._selectTrigger_sects_308 {
     margin: 0;
-    background: hsl(var(--neutral-3));
-    border: 1px solid hsl(var(--border));
+    background: var(--neutral-3);
+    border: 1px solid var(--border);
     border-radius: calc(var(--radius) - 2px);
     transition: all 0.2s ease-in-out;
     min-height: 32px;
 
     &:hover {
-      background-color: hsl(var(--neutral-4));
-      border-color: hsl(var(--neutral-6));
+      background-color: var(--neutral-4);
+      border-color: var(--neutral-6);
     }
 
     &:focus-visible {
-      outline: 2px solid hsl(var(--accent-7));
+      outline: 2px solid var(--accent-7);
       outline-offset: 2px;
     }
 
     &[data-placeholder] > span:first-child {
-      color: hsl(var(--neutral-11));
+      color: var(--neutral-11);
     }
 
     /* Arrow icon styling */
     svg {
-      color: hsl(var(--neutral-11));
+      color: var(--neutral-11);
       transition: transform 0.2s ease-in-out;
     }
 
@@ -102,8 +102,8 @@
 
     /* Improved text selection */
     ::selection {
-      background-color: hsl(var(--accent-4));
-      color: hsl(var(--accent-12));
+      background-color: var(--accent-4);
+      color: var(--accent-12);
     }
 
     /* Focus styles for content */
@@ -125,7 +125,7 @@
         padding-left: 0.5em;
 
         &::before {
-          border-color: hsl(var(--neutral-11));
+          border-color: var(--neutral-11);
           top: 50%;
           transform: translateY(-50%);
         }
@@ -143,7 +143,7 @@
     h4,
     h5,
     h6 {
-      color: hsl(var(--neutral-12));
+      color: var(--neutral-12);
       font-weight: 600;
       margin: 1em 0 0.5em 0;
       line-height: 1.3;
@@ -151,17 +151,17 @@
 
     /* Enhanced blockquote styling */
     blockquote {
-      border-left: 3px solid hsl(var(--accent-6));
+      border-left: 3px solid var(--accent-6);
       padding-left: 1em;
       margin: 1em 0;
-      color: hsl(var(--neutral-11));
+      color: var(--neutral-11);
       font-style: italic;
     }
 
     /* Enhanced code styling */
     code {
-      background-color: hsl(var(--neutral-3));
-      border: 1px solid hsl(var(--border));
+      background-color: var(--neutral-3);
+      border: 1px solid var(--border);
       border-radius: calc(var(--radius) - 2px);
       padding: 0.2em 0.4em;
       font-family: var(--font-code);
@@ -170,16 +170,16 @@
 
     /* Enhanced link styling */
     a {
-      color: hsl(var(--accent-11));
+      color: var(--accent-11);
       text-decoration: underline;
       transition: color 0.2s ease-in-out;
 
       &:hover {
-        color: hsl(var(--accent-12));
+        color: var(--accent-12);
       }
 
       &:focus-visible {
-        outline: 2px solid hsl(var(--accent-7));
+        outline: 2px solid var(--accent-7);
         outline-offset: 2px;
         border-radius: 2px;
       }
@@ -189,8 +189,8 @@
 
 /* Enhanced dropdown list container styling - rendered outside .mdxeditor */
 [role='listbox'] {
-  background-color: hsl(var(--neutral-3)) !important;
-  border: 1px solid hsl(var(--border)) !important;
+  background-color: var(--neutral-3) !important;
+  border: 1px solid var(--border) !important;
   border-radius: var(--radius) !important;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3),
     0 4px 6px -2px rgba(0, 0, 0, 0.2) !important;
@@ -201,7 +201,7 @@
 /* Enhanced dropdown option styling - rendered outside .mdxeditor */
 ._selectItem_sects_301 {
   background-color: transparent !important;
-  color: hsl(var(--neutral-12)) !important;
+  color: var(--neutral-12) !important;
   border-radius: calc(var(--radius) - 2px) !important;
   padding: 8px 12px !important;
   margin: 2px 0 !important;
@@ -211,33 +211,33 @@
 
   &:hover,
   &[data-highlighted] {
-    background-color: hsl(var(--neutral-4)) !important;
-    color: hsl(var(--neutral-12)) !important;
+    background-color: var(--neutral-4) !important;
+    color: var(--neutral-12) !important;
   }
 
   &[data-state='checked'] {
-    background-color: hsl(var(--accent-4)) !important;
-    color: hsl(var(--accent-12)) !important;
+    background-color: var(--accent-4) !important;
+    color: var(--accent-12) !important;
     font-weight: 500 !important;
   }
 
   &:focus-visible {
-    outline: 2px solid hsl(var(--accent-7)) !important;
+    outline: 2px solid var(--accent-7) !important;
     outline-offset: 2px !important;
   }
 }
 
 /* Enhanced toolbar icon styling */
 .mdxeditor-toolbar [data-toolbar-item] {
-  color: hsl(var(--neutral-11));
+  color: var(--neutral-11);
   transition: color 0.2s ease-in-out;
 
   &:hover {
-    color: hsl(var(--neutral-12));
+    color: var(--neutral-12);
   }
 
   &[data-state='on'] {
-    color: hsl(var(--accent-12));
+    color: var(--accent-12);
   }
 }
 
@@ -249,19 +249,19 @@
 
 /* Error state styling */
 .mdxeditor[data-error='true'] {
-  border-color: hsl(var(--error-7));
+  border-color: var(--error-7);
 
   &:focus-within {
-    border-color: hsl(var(--error-8));
-    box-shadow: 0 0 0 1px hsl(var(--error-7) / 0.3);
+    border-color: var(--error-8);
+    box-shadow: 0 0 0 1px var(--error-7);
   }
 }
 
 /* Tooltip styling for MDX editor */
 [role='tooltip'] {
-  background-color: hsl(var(--neutral-2)) !important;
-  color: hsl(var(--neutral-12)) !important;
-  border: 1px solid hsl(var(--border)) !important;
+  background-color: var(--neutral-2) !important;
+  color: var(--neutral-12) !important;
+  border: 1px solid var(--border) !important;
   border-radius: var(--radius) !important;
   padding: 6px 8px !important;
   font-size: 12px !important;
@@ -276,9 +276,9 @@
 /* Tooltip content wrapper */
 ._tooltipContent_sects_681,
 [data-state='delayed-open'][class*='tooltipContent'] {
-  background-color: hsl(var(--neutral-2)) !important;
-  color: hsl(var(--neutral-12)) !important;
-  border: 1px solid hsl(var(--border)) !important;
+  background-color: var(--neutral-2) !important;
+  color: var(--neutral-12) !important;
+  border: 1px solid var(--border) !important;
   border-radius: var(--radius) !important;
   padding: 6px 8px !important;
   font-size: 12px !important;
@@ -303,9 +303,9 @@
 
 /* Global tooltip styling for any tooltips rendered outside the editor */
 body [role='tooltip']:not(.mdxeditor [role='tooltip']) {
-  background-color: hsl(var(--neutral-2)) !important;
-  color: hsl(var(--neutral-12)) !important;
-  border: 1px solid hsl(var(--border)) !important;
+  background-color: var(--neutral-2) !important;
+  color: var(--neutral-12) !important;
+  border: 1px solid var(--border) !important;
   border-radius: var(--radius) !important;
   padding: 6px 8px !important;
   font-size: 12px !important;
@@ -331,6 +331,6 @@ body [role='tooltip']:not(.mdxeditor [role='tooltip']) {
   }
 
   ._selectItem_sects_301 {
-    border: 1px solid hsl(var(--border)) !important;
+    border: 1px solid var(--border) !important;
   }
 }
