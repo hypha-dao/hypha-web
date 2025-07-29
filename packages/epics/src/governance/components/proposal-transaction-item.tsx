@@ -5,6 +5,7 @@ import { erc20Abi } from 'viem';
 import { Image } from '@hypha-platform/ui';
 import { EthAddress } from '../../people';
 import { useTokens } from '@hypha-platform/epics';
+import { Token } from '@hypha-platform/core/client';
 
 interface ProposalTransactionItemProps {
   recipient?: string;
@@ -21,7 +22,7 @@ export const ProposalTransactionItem = ({
 }: ProposalTransactionItemProps) => {
   const { tokens } = useTokens({ spaceSlug });
   const token = tokens.find(
-    (t) => t.address.toLowerCase() === tokenAddress?.toLowerCase(),
+    (t: Token) => t.address.toLowerCase() === tokenAddress?.toLowerCase(),
   );
 
   const { data: decimalsData, isError } = useReadContract({
