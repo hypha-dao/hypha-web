@@ -71,7 +71,6 @@ export async function GET(
         return {
           ...transfer,
           person,
-          value: Number(transfer.value) / Math.pow(10, transfer.decimals),
           direction: isIncoming ? 'incoming' : 'outgoing',
           counterparty: isIncoming ? 'from' : 'to',
         };
