@@ -80,7 +80,7 @@ export const TokenPayoutField = ({
           <DropdownMenuContent>
             {tokens.map((token) => (
               <DropdownMenuItem
-                key={token.address}
+                key={`${token.address}_${token.symbol}`}
                 onSelect={() => handleTokenChange(token)}
               >
                 <Image

@@ -10,6 +10,7 @@ import {
   getTokenMeta,
   publicClient,
   Token,
+  TOKENS,
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 
@@ -98,14 +99,19 @@ export async function GET(
       .flat() as `0x${string}`[];
 
     const addressMap = new Map<string, Token>();
+    TOKENS.forEach((token) =>
+      addressMap.set(token.address.toLowerCase(), token),
+    );
     spaceTokens.forEach((address) => {
-      addressMap.set(address.toLowerCase(), {
-        symbol: '',
-        name: '',
-        address,
-        icon: '/placeholder/token-icon.png',
-        type: 'utility' as const,
-      });
+      if (!addressMap.has(address.toLowerCase())) {
+        addressMap.set(address.toLowerCase(), {
+          symbol: '',
+          name: '',
+          address,
+          icon: '/placeholder/token-icon.png',
+          type: 'utility' as const,
+        });
+      }
     });
     parsedExternalTokens.forEach((token) => {
       if (!addressMap.has(token.address.toLowerCase())) {
@@ -119,8 +125,8 @@ export async function GET(
         try {
           const meta = await getTokenMeta(token.address);
           return {
+            ...meta,
             address: token.address,
-            name: meta.name || token.name || 'Unnamed',
           };
         } catch (err) {
           console.warn(`Skipping token ${token.address}: ${err}`);
@@ -132,7 +138,6 @@ export async function GET(
     const validAssets = assets.filter((a) => a !== null) as NonNullable<
       (typeof assets)[0]
     >[];
-
     return NextResponse.json({ assets: validAssets });
   } catch (error) {
     console.error('Failed to fetch assets:', error);

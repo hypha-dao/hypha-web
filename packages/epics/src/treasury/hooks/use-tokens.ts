@@ -3,6 +3,7 @@
 import { TOKENS } from '@hypha-platform/core/client';
 import useSWR from 'swr';
 import React from 'react';
+import { Token } from '@hypha-platform/core/client';
 
 export function useTokens({ spaceSlug }: { spaceSlug: string }) {
   const endpoint = React.useMemo(
@@ -16,16 +17,14 @@ export function useTokens({ spaceSlug }: { spaceSlug: string }) {
 
   const tokens = React.useMemo(() => {
     if (!data?.assets) return TOKENS;
-
-    const formattedAssets = data.assets.map((asset: any) => ({
+    const formattedAssets = data.assets.map((asset: Token) => ({
       address: asset.address,
-      icon: '/placeholder/space-avatar-image.png',
+      icon: asset.icon,
       name: asset.name,
       type: '',
       symbol: asset.name,
     }));
-
-    return TOKENS.concat(formattedAssets);
+    return formattedAssets;
   }, [data]);
 
   return {

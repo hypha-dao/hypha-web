@@ -1,5 +1,6 @@
 'use client';
 
+import { Token } from '@hypha-platform/core/client';
 import { useTokens } from '@hypha-platform/epics';
 import { Image } from '@hypha-platform/ui';
 
@@ -11,7 +12,7 @@ interface TokenLabelProps {
 export const TokenLabel = ({ tokenAddress, spaceSlug }: TokenLabelProps) => {
   const { tokens } = useTokens({ spaceSlug });
   const token = tokens.find(
-    (t) => t.address.toLowerCase() === tokenAddress?.toLowerCase(),
+    (t: Token) => t.address.toLowerCase() === tokenAddress?.toLowerCase(),
   );
 
   if (!token) return null;
