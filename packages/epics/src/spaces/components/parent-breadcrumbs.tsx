@@ -1,4 +1,3 @@
-// import { findSpaceById } from '@hypha-platform/core/server';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -7,18 +6,19 @@ import {
   BreadcrumbSeparator,
 } from '@hypha-platform/ui';
 import { ChevronLeftIcon } from 'lucide-react';
+import { Fragment } from 'react';
 
-type Breadcrumb = {
+type SpaceBreadcrumb = {
   slug: string;
   title: string;
 };
 
-type Breadcrumbs = Breadcrumb[];
+type SpaceBreadcrumbs = SpaceBreadcrumb[];
 
-export async function SpaceBreadcrumbs({
+export function SpaceBreadcrumbs({
   breadcrumbs,
 }: {
-  breadcrumbs: Breadcrumbs;
+  breadcrumbs: SpaceBreadcrumbs;
 }) {
   return (
     <Breadcrumb>
@@ -29,8 +29,8 @@ export async function SpaceBreadcrumbs({
             My Spaces
           </BreadcrumbLink>
         </BreadcrumbItem>
-        {breadcrumbs.map((breadcrumb, index) => (
-          <>
+        {breadcrumbs.map((breadcrumb) => (
+          <Fragment key={breadcrumb.slug}>
             <BreadcrumbSeparator>
               <ChevronLeftIcon width={16} height={16} />
             </BreadcrumbSeparator>
@@ -42,7 +42,7 @@ export async function SpaceBreadcrumbs({
                 {breadcrumb.title}
               </BreadcrumbLink>
             </BreadcrumbItem>
-          </>
+          </Fragment>
         ))}
       </BreadcrumbList>
     </Breadcrumb>

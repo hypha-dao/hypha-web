@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@hypha-platform/ui-utils": "workspace:*",
-    "@radix-ui/react-slot": "^1.1.2"
+    "@radix-ui/react-slot": "^1.2.3"
   },
   "exports": {
     ".": "./src/index.ts",
