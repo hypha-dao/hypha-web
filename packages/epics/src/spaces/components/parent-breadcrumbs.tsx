@@ -36,7 +36,7 @@ export function SpaceBreadcrumbs({
             </BreadcrumbSeparator>
             <BreadcrumbItem>
               <BreadcrumbLink
-                href={`/dho/${breadcrumb.slug}`}
+                href={`/dho/${breadcrumb.slug}/governance`}
                 className="flex items-center"
               >
                 {breadcrumb.title}
