@@ -76,6 +76,7 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
     } else {
       try {
         await joinSpace();
+        await revalidateIsMember();
       } catch (err) {
         console.error(err);
         if (isBaseError(err)) {
@@ -87,7 +88,6 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
           } as BaseError);
         }
       }
-      revalidateIsMember();
     }
   }, [
     isInviteOnly,

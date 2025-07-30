@@ -40,6 +40,7 @@ export default async function MembershipPage(props: PageProps) {
         basePath={`${basePath}/person`}
         useMembers={useMembers}
         spaceSlug={spaceFromDb.slug}
+        refreshInterval={2000}
       />
     </div>
   );
