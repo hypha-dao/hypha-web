@@ -250,8 +250,10 @@ contract DAOProposalsImplementation is
 
     if (_support) {
       proposal.yesVotes += votingPower;
+      proposalYesVoters[_proposalId].push(msg.sender);
     } else {
       proposal.noVotes += votingPower;
+      proposalNoVoters[_proposalId].push(msg.sender);
     }
 
     emit VoteCast(_proposalId, msg.sender, _support, votingPower);
@@ -431,7 +433,7 @@ contract DAOProposalsImplementation is
 
   // Add a function to set the payment tracker (setting the storage variable)
   function setPaymentTracker(address _paymentTracker) external onlyOwner {
-    require(_paymentTracker != address(0), 'Invalid payment tracker address');
+    require(_paymentTracker != address(0), 'Invalid paymnt tracker address');
     paymentTracker = ISpacePaymentTracker(_paymentTracker);
   }
 
@@ -450,5 +452,16 @@ contract DAOProposalsImplementation is
     returns (uint256[] memory)
   {
     return allExecutedProposals;
+  }
+
+  // Function to get voter addresses for a proposal
+  function getProposalVoters(
+    uint256 _proposalId
+  )
+    external
+    view
+    returns (address[] memory yesVoters, address[] memory noVoters)
+  {
+    return (proposalYesVoters[_proposalId], proposalNoVoters[_proposalId]);
   }
 }

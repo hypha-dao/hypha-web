@@ -4785,6 +4785,187 @@ describe('DAOSpaceFactoryImplementation', function () {
       );
       console.log(`   ✅ Quorum rounding error fix verified!`);
     });
+
+    it('Should track and retrieve voter addresses correctly with getProposalVoters function', async function () {
+      console.log('\n=== TESTING getProposalVoters FUNCTION ===');
+      console.log(
+        'Testing the new functionality to track and retrieve voter addresses',
+      );
+
+      // Create a separate space for this test with high quorum to prevent immediate execution
+      const voterTestSpaceParams = {
+        name: 'Voter Tracking Test Space',
+        description: 'Space specifically for testing voter address tracking',
+        imageUrl: 'https://test.com/image.png',
+        unity: 60, // 60% unity threshold
+        quorum: 80, // 80% quorum threshold - high to prevent immediate execution
+        votingPowerSource: 1, // Space membership voting (1 member = 1 vote)
+        exitMethod: 1,
+        joinMethod: 1,
+        createToken: false,
+        tokenName: '',
+        tokenSymbol: '',
+      };
+
+      await this.daoSpaceFactory.createSpace(voterTestSpaceParams);
+      const testSpaceId = await this.daoSpaceFactory.spaceCounter();
+      console.log(`Created test space ${testSpaceId} with high quorum (80%)`);
+
+      // Add members to the test space
+      await this.daoSpaceFactory.connect(this.voter1).joinSpace(testSpaceId);
+      await this.daoSpaceFactory.connect(this.voter2).joinSpace(testSpaceId);
+      await this.daoSpaceFactory.connect(this.voter3).joinSpace(testSpaceId);
+      await this.daoSpaceFactory.connect(this.other).joinSpace(testSpaceId);
+
+      // Verify we have 5 members total (owner + 4 others)
+      const spaceMembers = await this.daoSpaceFactory.getSpaceMembers(
+        testSpaceId,
+      );
+      expect(spaceMembers.length).to.equal(
+        5,
+        'Test space should have 5 members',
+      );
+      console.log(`Test space has ${spaceMembers.length} members`);
+
+      // Create a proposal for testing voter tracking
+      const voterTrackingCalldata =
+        this.regularTokenFactory.interface.encodeFunctionData('deployToken', [
+          testSpaceId,
+          'Voter Tracking Test',
+          'VOTE',
+          ethers.parseUnits('1000', 18),
+          true,
+          true,
+        ]);
+
+      await this.daoProposals.connect(this.voter1).createProposal({
+        spaceId: testSpaceId,
+        duration: 86400,
+        transactions: [
+          {
+            target: await this.regularTokenFactory.getAddress(),
+            value: 0,
+            data: voterTrackingCalldata,
+          },
+        ],
+      });
+
+      const proposalId = await this.daoProposals.proposalCounter();
+      console.log(`\nCreated proposal ${proposalId} for voter tracking test`);
+
+      // Initially, no voters should be tracked
+      let [yesVoters, noVoters] = await this.daoProposals.getProposalVoters(
+        proposalId,
+      );
+      expect(yesVoters.length).to.equal(
+        0,
+        'Should have no yes voters initially',
+      );
+      expect(noVoters.length).to.equal(0, 'Should have no no voters initially');
+      console.log('✅ Initial state: No voters tracked');
+
+      // Cast some yes votes (need 80% = 4 votes for quorum, but we'll only cast 2)
+      await this.daoProposals.connect(this.voter1).vote(proposalId, true);
+      console.log('Cast 1st YES vote from voter1');
+
+      // Check proposal status after first vote
+      let proposalStatus = await this.daoProposals.getProposalCore(proposalId);
+      console.log(
+        `After 1st vote - Executed: ${proposalStatus[3]}, YES: ${proposalStatus[5]}, NO: ${proposalStatus[6]}`,
+      );
+
+      await this.daoProposals.connect(this.voter2).vote(proposalId, true);
+      console.log('Cast 2nd YES vote from voter2');
+
+      // Cast some no votes
+      await this.daoProposals.connect(this.voter3).vote(proposalId, false);
+      console.log('Cast 1st NO vote from voter3');
+
+      await this.daoProposals.connect(this.other).vote(proposalId, false);
+      console.log('Cast 2nd NO vote from other');
+
+      // Check final proposal status
+      proposalStatus = await this.daoProposals.getProposalCore(proposalId);
+      console.log(
+        `Final status - Executed: ${proposalStatus[3]}, YES: ${proposalStatus[5]}, NO: ${proposalStatus[6]}`,
+      );
+
+      // Retrieve voter addresses
+      [yesVoters, noVoters] = await this.daoProposals.getProposalVoters(
+        proposalId,
+      );
+
+      console.log(`\nRetrieved voter addresses:`);
+      console.log(`YES voters: [${yesVoters.join(', ')}]`);
+      console.log(`NO voters: [${noVoters.join(', ')}]`);
+
+      // Verify yes voters
+      expect(yesVoters.length).to.equal(2, 'Should have 2 yes voters');
+      expect(yesVoters).to.include(
+        this.voter1.address,
+        'Should include voter1 in yes voters',
+      );
+      expect(yesVoters).to.include(
+        this.voter2.address,
+        'Should include voter2 in yes voters',
+      );
+
+      // Verify no voters
+      expect(noVoters.length).to.equal(2, 'Should have 2 no voters');
+      expect(noVoters).to.include(
+        this.voter3.address,
+        'Should include voter3 in no voters',
+      );
+      expect(noVoters).to.include(
+        this.other.address,
+        'Should include other in no voters',
+      );
+
+      // Verify no cross-contamination
+      expect(yesVoters).to.not.include(
+        this.voter3.address,
+        'voter3 should not be in yes voters',
+      );
+      expect(yesVoters).to.not.include(
+        this.other.address,
+        'other should not be in yes voters',
+      );
+      expect(noVoters).to.not.include(
+        this.voter1.address,
+        'voter1 should not be in no voters',
+      );
+      expect(noVoters).to.not.include(
+        this.voter2.address,
+        'voter2 should not be in no voters',
+      );
+
+      console.log('\n✅ All voter address tracking assertions passed!');
+      console.log('✅ getProposalVoters function working correctly');
+
+      // Additional verification: Check that the format matches the requested structure
+      console.log(
+        '\n📋 Voter tracking summary for proposal',
+        proposalId.toString(),
+      );
+      console.log(
+        '   YES voters:',
+        yesVoters.map((addr: string) => `"${addr}": "yes"`).join(', '),
+      );
+      console.log(
+        '   NO voters:',
+        noVoters.map((addr: string) => `"${addr}": "no"`).join(', '),
+      );
+
+      // Create a sample return format like the user requested
+      const voterResults: { [key: string]: string } = {};
+      yesVoters.forEach((addr: string) => (voterResults[addr] = 'yes'));
+      noVoters.forEach((addr: string) => (voterResults[addr] = 'no'));
+
+      console.log(
+        '\n🎯 Final voter result format:',
+        JSON.stringify(voterResults, null, 2),
+      );
+    });
   });
 
   describe('Space Governance Method Changes', function () {

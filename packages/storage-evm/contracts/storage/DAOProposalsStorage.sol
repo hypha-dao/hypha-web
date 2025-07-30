@@ -106,4 +106,8 @@ contract DAOProposalsStorage is Initializable {
   // New storage variables to track accepted and rejected proposals by space
   mapping(uint256 => uint256[]) internal spaceAcceptedProposals;
   mapping(uint256 => uint256[]) internal spaceRejectedProposals;
+
+  // New storage variables to track voter addresses
+  mapping(uint256 => address[]) public proposalYesVoters;
+  mapping(uint256 => address[]) public proposalNoVoters;
 }
