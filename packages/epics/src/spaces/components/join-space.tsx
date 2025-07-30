@@ -6,6 +6,7 @@ import { PersonIcon } from '@radix-ui/react-icons';
 import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import {
+  EntryMethodType,
   useSpaceDetailsWeb3Rpc,
   useMe,
   useJwt,
@@ -30,9 +31,11 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({ spaceIds: [web3SpaceId] });
   const [joinError, setJoinError] = useState<BaseError | null>(null);
   const isInviteOnly =
-    spaceDetails?.get(BigInt(web3SpaceId))?.joinMethod === 2n;
+    spaceDetails?.get(BigInt(web3SpaceId))?.joinMethod ===
+    BigInt(EntryMethodType.INVITE_ONLY);
   const isTokenBased =
-    spaceDetails?.get(BigInt(web3SpaceId))?.joinMethod === 1n;
+    spaceDetails?.get(BigInt(web3SpaceId))?.joinMethod ===
+    BigInt(EntryMethodType.TOKEN_BASED);
 
   const { person } = useMe();
 
