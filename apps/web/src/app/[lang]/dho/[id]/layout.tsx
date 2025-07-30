@@ -23,7 +23,7 @@ import { getSpaceDetails } from '@hypha-platform/core/client';
 import { useMembers } from '@web/hooks/use-members';
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
-import { SpaceBreadcrumbs } from '@hypha-platform/epics';
+import { Breadcrumbs } from './_components/breadcrumbs';
 
 export default async function DhoLayout({
   aside,
@@ -42,10 +42,6 @@ export default async function DhoLayout({
   if (!spaceFromDb) {
     return notFound();
   }
-  const parentSpace = await findParentSpaceById(
-    { id: spaceFromDb.parentId },
-    { db },
-  );
 
   const spaces = await findAllSpaces({
     db,
@@ -58,14 +54,7 @@ export default async function DhoLayout({
     <div className="flex max-w-container-2xl mx-auto">
       <Container className="flex-grow min-w-0">
         <div className="mb-6 flex items-center">
-          <SpaceBreadcrumbs
-            breadcrumbs={[
-              ...(parentSpace
-                ? [{ slug: parentSpace.slug, title: parentSpace.title }]
-                : []),
-              { slug: daoSlug, title: spaceFromDb.title },
-            ]}
-          />
+          <Breadcrumbs spaceId={spaceFromDb.id} />
         </div>
         <Card className="relative">
           <Image
