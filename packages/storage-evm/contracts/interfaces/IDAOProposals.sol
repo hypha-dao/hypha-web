@@ -69,6 +69,14 @@ interface IDAOProposals {
   // New function to get all executed proposals
   function getAllExecutedProposals() external view returns (uint256[] memory);
 
+  // New function to get voter addresses for a proposal
+  function getProposalVoters(
+    uint256 _proposalId
+  )
+    external
+    view
+    returns (address[] memory yesVoters, address[] memory noVoters);
+
   // Events
   event ProposalCreated(
     uint256 indexed proposalId,
