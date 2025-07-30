@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { NextMiddlewareChain, NextMiddlewareFunction } from './types';
 import { CONNECT_SOURCES } from '../../config/connect-sources';
-import { IMAGE_HOSTS } from '../../config/image-hosts';
 
 /**
  * Composes multiple Next.js middleware functions into a single middleware function
@@ -40,9 +39,11 @@ export function composeMiddleware(
  * @returns Middleware function
  */
 export function cspMiddleware(): NextMiddlewareFunction {
+  const imageHosts = process.env.NEXT_PUBLIC_IMAGE_HOSTS?.split(', ') ?? [];
+
   const imageSrc = [
     'data:',
-    ...IMAGE_HOSTS.map((host) => `https://${host}`),
+    ...imageHosts.map((host) => `https://${host}`),
   ].join(' ');
   const connectSrc = [
     ...CONNECT_SOURCES,
