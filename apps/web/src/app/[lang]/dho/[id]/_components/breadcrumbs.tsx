@@ -3,13 +3,28 @@ import { SpaceBreadcrumb, SpaceBreadcrumbItem } from '@hypha-platform/epics';
 import { db } from '@hypha-platform/storage-postgres';
 import { Fragment } from 'react';
 
-async function RecursiveBreadcrumbItem({ spaceId }: { spaceId: number }) {
+async function RecursiveBreadcrumbItem({
+  spaceId,
+  depth = 0,
+  maxDepth = 2,
+}: {
+  spaceId: number;
+  depth?: number;
+  maxDepth?: number;
+}) {
+  console.debug('RecursiveBreadcrumbItem', { spaceId, depth, maxDepth });
   const space = await findParentSpaceById({ id: spaceId }, { db });
-  if (!space) return null;
+  if (!space || depth > maxDepth) return null;
 
   return (
     <Fragment key={space.id}>
-      {space.parentId && <RecursiveBreadcrumbItem spaceId={space.parentId} />}
+      {space.parentId && (
+        <RecursiveBreadcrumbItem
+          spaceId={space.parentId}
+          depth={depth + 1}
+          maxDepth={maxDepth}
+        />
+      )}
       <SpaceBreadcrumbItem
         breadcrumb={{ slug: space.slug, title: space.title }}
       />
