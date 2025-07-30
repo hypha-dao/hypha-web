@@ -8064,11 +8064,15 @@
           },
           {
             "label": "USDC_PER_DAY",
+            "src": "contracts/storage/HyphaTokenStorage.sol:22"
+          },
+          {
+            "label": "HYPHA_PRICE_USD",
             "offset": 0,
             "slot": "7",
             "type": "t_uint256",
             "contract": "HyphaTokenStorage",
-            "src": "contracts/storage/HyphaTokenStorage.sol:22"
+            "src": "contracts/storage/HyphaTokenStorage.sol:25"
           },
           {
             "label": "HYPHA_PER_DAY",
@@ -8077,6 +8081,14 @@
             "type": "t_uint256",
             "contract": "HyphaTokenStorage",
             "src": "contracts/storage/HyphaTokenStorage.sol:26"
+          },
+          {
+            "label": "HYPHA_PER_DAY",
+            "offset": 0,
+            "slot": "9",
+            "type": "t_uint256",
+            "contract": "HyphaTokenStorage",
+            "src": "contracts/storage/HyphaTokenStorage.sol:28"
           },
           {
             "label": "accumulatedRewardPerToken",
@@ -8101,6 +8113,14 @@
             "type": "t_uint256",
             "contract": "HyphaTokenStorage",
             "src": "contracts/storage/HyphaTokenStorage.sol:33"
+          },
+          {
+            "label": "pendingDistribution",
+            "offset": 0,
+            "slot": "13",
+            "type": "t_uint256",
+            "contract": "HyphaTokenStorage",
+            "src": "contracts/storage/HyphaTokenStorage.sol:34"
           },
           {
             "label": "userRewardDebt",

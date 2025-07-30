@@ -8069,7 +8069,6 @@
             "type": "t_uint256",
             "contract": "HyphaTokenStorage",
             "src": "contracts/storage/HyphaTokenStorage.sol:22"
-          },
           {
             "label": "HYPHA_PER_DAY",
             "offset": 0,
@@ -8077,6 +8076,14 @@
             "type": "t_uint256",
             "contract": "HyphaTokenStorage",
             "src": "contracts/storage/HyphaTokenStorage.sol:26"
+          },
+          {
+            "label": "HYPHA_PER_DAY",
+            "offset": 0,
+            "slot": "9",
+            "type": "t_uint256",
+            "contract": "HyphaTokenStorage",
+            "src": "contracts/storage/HyphaTokenStorage.sol:28"
           },
           {
             "label": "accumulatedRewardPerToken",
