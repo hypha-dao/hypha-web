@@ -14,7 +14,7 @@ import Link from 'next/link';
 import {
   findAllSpaces,
   findSpaceBySlug,
-  getSpaceParentBreadcrumbs,
+  findParentSpaceById,
 } from '@hypha-platform/core/server';
 import { getDhoPathGovernance } from './@tab/governance/constants';
 import { ActionButtons } from './_components/action-buttons';
@@ -42,7 +42,7 @@ export default async function DhoLayout({
   if (!spaceFromDb) {
     return notFound();
   }
-  const parentSpace = await getSpaceParentBreadcrumbs(
+  const parentSpace = await findParentSpaceById(
     { id: spaceFromDb.parentId },
     { db },
   );
