@@ -9,6 +9,7 @@ export * from './upload/lead-image';
 
 export * from './avatar';
 export * from './badge';
+export * from './breadcrumb';
 export * from './button';
 export * from './button-nav-item';
 export * from './card';

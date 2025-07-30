@@ -11,7 +11,8 @@
     "@hypha-platform/config-typescript": "workspace:*"
   },
   "dependencies": {
-    "@hypha-platform/ui-utils": "workspace:*"
+    "@hypha-platform/ui-utils": "workspace:*",
+    "@radix-ui/react-slot": "^1.1.2"
   },
   "exports": {
     ".": "./src/index.ts",

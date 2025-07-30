@@ -7,15 +7,14 @@ import {
   AvatarImage,
   Separator,
 } from '@hypha-platform/ui';
-import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Text } from '@radix-ui/themes';
 import Image from 'next/image';
-import Link from 'next/link';
 import { Carousel, CarouselContent, CarouselItem } from '@hypha-platform/ui';
+import Link from 'next/link';
 import {
   findAllSpaces,
   findSpaceBySlug,
-  getDb,
+  getSpaceParentBreadcrumbs,
 } from '@hypha-platform/core/server';
 import { getDhoPathGovernance } from './@tab/governance/constants';
 import { ActionButtons } from './_components/action-buttons';
@@ -24,6 +23,7 @@ import { getSpaceDetails } from '@hypha-platform/core/client';
 import { useMembers } from '@web/hooks/use-members';
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
+import { SpaceBreadcrumbs } from '@hypha-platform/epics';
 
 export default async function DhoLayout({
   aside,
@@ -39,14 +39,17 @@ export default async function DhoLayout({
   const { id: daoSlug, lang } = await params;
 
   const spaceFromDb = await findSpaceBySlug({ slug: daoSlug }, { db });
+  if (!spaceFromDb) {
+    return notFound();
+  }
+  const parentSpace = await getSpaceParentBreadcrumbs(
+    { id: spaceFromDb.parentId },
+    { db },
+  );
 
   const spaces = await findAllSpaces({
     db,
   });
-
-  if (!spaceFromDb) {
-    return notFound();
-  }
 
   const spaceDetails = await publicClient.readContract(
     getSpaceDetails({ spaceId: BigInt(spaceFromDb.web3SpaceId as number) }),
@@ -55,17 +58,14 @@ export default async function DhoLayout({
     <div className="flex max-w-container-2xl mx-auto">
       <Container className="flex-grow min-w-0">
         <div className="mb-6 flex items-center">
-          <Link
-            href={`/${lang}/my-spaces`}
-            className="cursor-pointer flex items-center"
-          >
-            <ChevronLeftIcon width={16} height={16} />
-            <Text className="text-sm">My Spaces</Text>
-          </Link>
-          <Text className="text-sm text-gray-400 ml-1">
-            {' '}
-            / {spaceFromDb.title}
-          </Text>
+          <SpaceBreadcrumbs
+            breadcrumbs={[
+              ...(parentSpace
+                ? [{ slug: parentSpace.slug, title: parentSpace.title }]
+                : []),
+              { slug: daoSlug, title: spaceFromDb.title },
+            ]}
+          />
         </div>
         <Card className="relative">
           <Image

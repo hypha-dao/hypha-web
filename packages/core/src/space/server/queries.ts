@@ -85,6 +85,15 @@ export const findSpaceById = async (
   return space ? space : null;
 };
 
+export const getSpaceParentBreadcrumbs = async (
+  { id }: { id?: number | null },
+  { db }: DbConfig,
+) => {
+  if (!id) return null;
+  const space = await findSpaceById({ id }, { db });
+  return space ? space : null;
+};
+
 type FindSpaceBySlugInput = { slug: string };
 
 export const findSpaceBySlug = async (
