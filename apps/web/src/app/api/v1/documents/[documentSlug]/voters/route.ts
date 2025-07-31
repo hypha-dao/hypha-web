@@ -45,13 +45,11 @@ export async function GET(
       { db },
     );
 
-    const peopleWithVotes = people.map((person) => {
-      return {
-        name: `${person.name} ${person.surname}`,
-        avatarUrl: person.avatarUrl,
-        vote: yesVoters.includes(person.address ?? '0x') ? 'yes' : 'no',
-      };
-    });
+    const peopleWithVotes = people.map((person) => ({
+      name: `${person.name} ${person.surname}`,
+      avatarUrl: person.avatarUrl,
+      vote: yesVoters.includes(person.address as `0x${string}`) ? 'yes' : 'no',
+    }));
 
     return NextResponse.json({ voters: peopleWithVotes });
   } catch (error) {
