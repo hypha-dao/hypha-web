@@ -14,6 +14,7 @@ import {
   getBalance,
   getTokenMeta,
   Token,
+  ALLOWED_SPACES,
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 
@@ -107,9 +108,15 @@ export async function GET(
       .flat() as `0x${string}`[];
 
     const addressMap = new Map<string, Token>();
-    TOKENS.forEach((token) =>
+
+    const filteredTokens = TOKENS.filter((token) =>
+      token.symbol === 'HYPHA' ? ALLOWED_SPACES.includes(spaceAddress) : true,
+    );
+
+    filteredTokens.forEach((token) =>
       addressMap.set(token.address.toLowerCase(), token),
     );
+
     spaceTokens.forEach((address) => {
       if (!addressMap.has(address.toLowerCase())) {
         addressMap.set(address.toLowerCase(), {
@@ -121,11 +128,13 @@ export async function GET(
         });
       }
     });
+
     parsedExternalTokens.forEach((token) => {
       if (!addressMap.has(token.address.toLowerCase())) {
         addressMap.set(token.address.toLowerCase(), token);
       }
     });
+
     const allTokens: Token[] = Array.from(addressMap.values());
 
     let prices: Record<string, number | undefined> = {};

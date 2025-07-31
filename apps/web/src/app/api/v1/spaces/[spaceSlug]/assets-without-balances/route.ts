@@ -11,6 +11,7 @@ import {
   publicClient,
   Token,
   TOKENS,
+  ALLOWED_SPACES,
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 
@@ -99,9 +100,15 @@ export async function GET(
       .flat() as `0x${string}`[];
 
     const addressMap = new Map<string, Token>();
-    TOKENS.forEach((token) =>
+    const filteredTokens = TOKENS.filter((token) => {
+      return token.symbol === 'HYPHA'
+        ? ALLOWED_SPACES.includes(spaceAddress)
+        : true;
+    });
+    filteredTokens.forEach((token) =>
       addressMap.set(token.address.toLowerCase(), token),
     );
+
     spaceTokens.forEach((address) => {
       if (!addressMap.has(address.toLowerCase())) {
         addressMap.set(address.toLowerCase(), {
@@ -113,11 +120,13 @@ export async function GET(
         });
       }
     });
+
     parsedExternalTokens.forEach((token) => {
       if (!addressMap.has(token.address.toLowerCase())) {
         addressMap.set(token.address.toLowerCase(), token);
       }
     });
+
     const allTokens: Token[] = Array.from(addressMap.values());
 
     const assets = await Promise.all(
@@ -138,6 +147,7 @@ export async function GET(
     const validAssets = assets.filter((a) => a !== null) as NonNullable<
       (typeof assets)[0]
     >[];
+
     return NextResponse.json({ assets: validAssets });
   } catch (error) {
     console.error('Failed to fetch assets:', error);
