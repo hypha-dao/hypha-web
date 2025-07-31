@@ -10,6 +10,7 @@ import {
 } from '../types';
 // TODO: #602 Define RLS Policies for Spaces Table
 import { db } from '@hypha-platform/storage-postgres';
+import { revalidatePath } from 'next/cache';
 
 export async function createSpaceAction(
   data: CreateSpaceInput,
@@ -17,6 +18,8 @@ export async function createSpaceAction(
 ) {
   // TODO: #602 Define RLS Policies for Spaces Table
   // const db = getDb({ authToken });
+  const { slug } = data;
+  revalidatePath(`/[lang]/dho/${slug}`, 'layout');
   return createSpace(data, { db });
 }
 
@@ -26,7 +29,12 @@ export async function updateSpaceBySlugAction(
 ) {
   // TODO: #602 Define RLS Policies for Spaces Table
   // const db = getDb({ authToken });
-  return updateSpaceBySlug(data, { db });
+  const result = await updateSpaceBySlug(data, { db });
+
+  const { slug } = data;
+  revalidatePath(`/[lang]/dho/${slug}`, 'layout');
+
+  return result;
 }
 
 export async function deleteSpaceBySlugAction(

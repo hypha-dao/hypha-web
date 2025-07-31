@@ -25,7 +25,6 @@ export const useJoinSpace = ({ spaceId }: { spaceId: number }) => {
       await publicClient.readContract(
         isMemberConfig({ spaceId: BigInt(spaceId), memberAddress: address }),
       ),
-    { revalidateOnFocus: true },
   );
 
   return {
