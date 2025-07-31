@@ -25,6 +25,7 @@ export default function Loading() {
         isLoading={true}
         spaceSlug={''}
         label={''}
+        documentSlug={''}
       />
     </SidePanel>
   );
