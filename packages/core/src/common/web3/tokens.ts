@@ -35,4 +35,11 @@ export const TOKENS: Token[] = [
     name: 'Bitcoin',
     type: 'utility',
   },
+  {
+    symbol: 'HYPHA',
+    icon: '/placeholder/token-icon.png',
+    address: '0x8b93862835C36e9689E9bb1Ab21De3982e266CD3',
+    name: 'Hypha',
+    type: 'utility',
+  },
 ];

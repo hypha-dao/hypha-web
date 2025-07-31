@@ -17,6 +17,12 @@ import {
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 
+const ALLOWED_SPACES = [
+  '0x3dEf11d005F8C85c93e3374B28fcC69B25a650Af',
+  '0xb607E701Fe8A75821c96825A628a7576A311C952',
+  '0x695f21B04B22609c4ab9e5886EB0F65cDBd464B6',
+];
+
 export async function GET(
   _: NextRequest,
   { params }: { params: Promise<{ spaceSlug: string }> },
@@ -107,9 +113,15 @@ export async function GET(
       .flat() as `0x${string}`[];
 
     const addressMap = new Map<string, Token>();
-    TOKENS.forEach((token) =>
+
+    const filteredTokens = TOKENS.filter((token) =>
+      token.symbol === 'HYPHA' ? ALLOWED_SPACES.includes(spaceAddress) : true,
+    );
+
+    filteredTokens.forEach((token) =>
       addressMap.set(token.address.toLowerCase(), token),
     );
+
     spaceTokens.forEach((address) => {
       if (!addressMap.has(address.toLowerCase())) {
         addressMap.set(address.toLowerCase(), {
@@ -121,11 +133,13 @@ export async function GET(
         });
       }
     });
+
     parsedExternalTokens.forEach((token) => {
       if (!addressMap.has(token.address.toLowerCase())) {
         addressMap.set(token.address.toLowerCase(), token);
       }
     });
+
     const allTokens: Token[] = Array.from(addressMap.values());
 
     let prices: Record<string, number | undefined> = {};
