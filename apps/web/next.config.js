@@ -1,6 +1,6 @@
 //@ts-check
 
-import { IMAGE_HOSTS } from './src/config/image-hosts.js';
+const IMAGE_HOSTS = process.env.NEXT_PUBLIC_IMAGE_HOSTS?.split(', ') ?? [];
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
