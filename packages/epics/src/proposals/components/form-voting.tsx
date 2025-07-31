@@ -1,4 +1,4 @@
-import { Button, Skeleton } from '@hypha-platform/ui';
+import { Button, Skeleton, Separator } from '@hypha-platform/ui';
 import { ProgressLine } from './progress-line';
 import { intervalToDuration, isPast } from 'date-fns';
 import { Loader2 } from 'lucide-react';
@@ -58,6 +58,7 @@ export const FormVoting = ({
   return (
     <div className="flex flex-col gap-5 text-neutral-11">
       <VoterList documentSlug={documentSlug} />
+      <Separator />
       <div className="flex flex-col gap-4">
         <Skeleton
           width="100%"
