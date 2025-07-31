@@ -4,3 +4,4 @@ export * from './get-token-meta';
 export * from './order';
 export * from './public-client';
 export * from './tokens';
+export * from './allowed-spaces';
