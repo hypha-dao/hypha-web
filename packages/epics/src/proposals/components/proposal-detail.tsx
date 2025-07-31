@@ -36,6 +36,7 @@ type ProposalDetailProps = ProposalHeadProps & {
   proposalId?: number | null | undefined;
   spaceSlug: string;
   label?: string;
+  documentSlug: string;
 };
 
 export const ProposalDetail = ({
@@ -57,6 +58,7 @@ export const ProposalDetail = ({
   spaceSlug,
   isVoting,
   label,
+  documentSlug,
 }: ProposalDetailProps) => {
   const router = useRouter();
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
@@ -196,6 +198,7 @@ export const ProposalDetail = ({
           onCheckProposalExpiration={handleOnCheckProposalExpiration}
           isLoading={isLoading}
           isVoting={isVoting}
+          documentSlug={documentSlug}
         />
         {/* TODO: uncomment when comments support will be implemented */}
         {/* <Separator />

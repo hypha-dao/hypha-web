@@ -156,6 +156,25 @@ export const findPersonByWeb3Address = async (
   return mapToDomainPerson(person);
 };
 
+export type FindPeopleByWeb3AddressesInput = {
+  addresses: string[];
+};
+export const findPeopleByWeb3Addresses = async (
+  { addresses }: FindPeopleByWeb3AddressesInput,
+  { db }: DbConfig,
+) => {
+  if (addresses.length === 0) return [];
+
+  const upperAddresses = addresses.map((addr) => addr.toUpperCase());
+  console.debug('upperAddresses', upperAddresses);
+  const dbPeople = await db
+    .select()
+    .from(people)
+    .where(inArray(sql`upper(${people.address})`, upperAddresses));
+
+  return dbPeople.map(mapToDomainPerson);
+};
+
 export type FindPersonBySpaceIdInput = { spaceId: number };
 export type FindPersonBySpaceIdConfig = {
   db: DatabaseInstance;

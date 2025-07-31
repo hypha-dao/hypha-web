@@ -2,6 +2,7 @@ import { Button, Skeleton } from '@hypha-platform/ui';
 import { ProgressLine } from './progress-line';
 import { intervalToDuration, isPast } from 'date-fns';
 import { Loader2 } from 'lucide-react';
+import { VoterList } from '../../governance/components/voter-list';
 
 function formatTimeRemaining(
   endTime: string,
@@ -40,6 +41,7 @@ export const FormVoting = ({
   onReject,
   onCheckProposalExpiration,
   isVoting,
+  documentSlug,
 }: {
   unity: number;
   quorum: number;
@@ -51,9 +53,11 @@ export const FormVoting = ({
   onReject: () => void;
   onCheckProposalExpiration: () => void;
   isVoting?: boolean;
+  documentSlug: string;
 }) => {
   return (
     <div className="flex flex-col gap-5 text-neutral-11">
+      <VoterList documentSlug={documentSlug} />
       <div className="flex flex-col gap-4">
         <Skeleton
           width="100%"
