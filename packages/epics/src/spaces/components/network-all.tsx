@@ -3,9 +3,8 @@
 import { Category, Space } from '@hypha-platform/core/client';
 import { SpaceGroupSlider, SpaceSearch } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
-import { Button } from '@hypha-platform/ui';
+import { Button, Heading } from '@hypha-platform/ui';
 import { PlusIcon } from '@radix-ui/react-icons';
-import { Text } from '@radix-ui/themes';
 import Link from 'next/link';
 
 export function NetworkAll({
@@ -25,9 +24,9 @@ export function NetworkAll({
 
   return (
     <>
-      <Text className="text-9 text-center flex mb-8">
+      <Heading size="9" color="secondary" weight="medium" align="center">
         Explore the Hypha Network
-      </Text>
+      </Heading>
       <div className="flex justify-center">
         <SpaceSearch />
         <Link href={`/${lang}/network/create`} scroll={false}>

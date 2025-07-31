@@ -42,7 +42,7 @@ export const SpaceGroupSlider = ({
   }, 300);
 
   return (
-    <div className="border-b-2 border-primary-foreground pt-6">
+    <div className="border-b-2 border-primary-foreground">
       <div className="flex justify-between items-center">
         <Text className="text-4 font-medium capitalize">
           {type} | {spaces?.length}

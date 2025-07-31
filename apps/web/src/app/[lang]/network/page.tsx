@@ -49,7 +49,7 @@ export default async function Index(props: PageProps) {
   const uniqueCategories = extractUniqueCategories(spaces);
 
   return (
-    <Container>
+    <Container className="flex flex-col gap-9 py-9">
       {categories && categories.length > 0 ? (
         <NetworkSelected
           lang={lang}
