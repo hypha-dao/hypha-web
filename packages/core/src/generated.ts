@@ -626,6 +626,16 @@ export const daoProposalsImplementationAbi = [
   },
   {
     type: 'function',
+    inputs: [{ name: '_proposalId', internalType: 'uint256', type: 'uint256' }],
+    name: 'getProposalVoters',
+    outputs: [
+      { name: 'yesVoters', internalType: 'address[]', type: 'address[]' },
+      { name: 'noVoters', internalType: 'address[]', type: 'address[]' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     inputs: [{ name: '_spaceId', internalType: 'uint256', type: 'uint256' }],
     name: 'getSpaceProposals',
     outputs: [
@@ -678,6 +688,26 @@ export const daoProposalsImplementationAbi = [
     inputs: [],
     name: 'proposalCounter',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '', internalType: 'uint256', type: 'uint256' },
+      { name: '', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'proposalNoVoters',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '', internalType: 'uint256', type: 'uint256' },
+      { name: '', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'proposalYesVoters',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
     stateMutability: 'view',
   },
   {
@@ -2460,6 +2490,19 @@ export const ownershipTokenVotingPowerImplementationAbi = [
     anonymous: false,
     inputs: [
       {
+        name: 'spaceFactory',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'SpaceFactorySet',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
         name: 'spaceId',
         internalType: 'uint256',
         type: 'uint256',
@@ -2562,12 +2605,28 @@ export const ownershipTokenVotingPowerImplementationAbi = [
   {
     type: 'function',
     inputs: [
+      { name: '_spaceFactory', internalType: 'address', type: 'address' },
+    ],
+    name: 'setSpaceFactory',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
       { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
       { name: '_tokenAddress', internalType: 'address', type: 'address' },
     ],
     name: 'setSpaceToken',
     outputs: [],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'spaceFactory',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -3241,6 +3300,19 @@ export const tokenVotingPowerImplementationAbi = [
     anonymous: false,
     inputs: [
       {
+        name: 'spaceFactory',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'SpaceFactorySet',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
         name: 'spaceId',
         internalType: 'uint256',
         type: 'uint256',
@@ -3340,6 +3412,15 @@ export const tokenVotingPowerImplementationAbi = [
   {
     type: 'function',
     inputs: [
+      { name: '_spaceFactory', internalType: 'address', type: 'address' },
+    ],
+    name: 'setSpaceFactory',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
       { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
       { name: '_tokenAddress', internalType: 'address', type: 'address' },
     ],
@@ -3355,6 +3436,13 @@ export const tokenVotingPowerImplementationAbi = [
     name: 'setTokenFactory',
     outputs: [],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'spaceFactory',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
   },
   {
     type: 'function',

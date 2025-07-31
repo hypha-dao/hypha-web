@@ -52,6 +52,7 @@ export default function Agreements() {
         proposalId={document?.web3ProposalId}
         spaceSlug={space?.slug || ''}
         label={document?.label || ''}
+        documentSlug={documentSlug}
       />
     </SidePanel>
   );

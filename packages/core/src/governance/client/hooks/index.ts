@@ -10,6 +10,7 @@ export * from './useCreatePayForExpensesOrchestrator';
 export * from './useCreateProposeAContributionOrchestrator';
 export * from './useDeployFundsMutations.web3.rpc';
 export * from './useProposalDetails.web3.rpc';
+export * from './useProposalVoters';
 export * from './useIssueNewTokenOrchestrator';
 export * from './useProposeAContributionMutations.web3.rsc';
 export * from './useVote';
