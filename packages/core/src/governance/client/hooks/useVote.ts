@@ -9,7 +9,7 @@ export const useVote = ({ proposalId }: { proposalId?: number | null }) => {
   const { address } = useAccount();
   const { client } = useSmartWallets();
 
-  const [hasVoted, setHasVoted] = useState(false);
+  const [isVoting, setIsVoting] = useState(false);
   const [isCheckingExpiration, setIsCheckingExpiration] = useState(false);
 
   const vote = useCallback(
@@ -19,7 +19,7 @@ export const useVote = ({ proposalId }: { proposalId?: number | null }) => {
       if (proposalId === undefined || proposalId === null)
         throw new Error('Proposal ID is required');
 
-      setHasVoted(true);
+      setIsVoting(true);
       try {
         const txHash = await client.writeContract({
           address: daoProposalsImplementationConfig.address[8453],
@@ -32,7 +32,7 @@ export const useVote = ({ proposalId }: { proposalId?: number | null }) => {
         console.error('Voting failed:', error);
         throw error;
       } finally {
-        setHasVoted(false);
+        setIsVoting(false);
       }
     },
     [address, client],
@@ -92,7 +92,7 @@ export const useVote = ({ proposalId }: { proposalId?: number | null }) => {
     handleAccept,
     handleReject,
     handleCheckProposalExpiration,
-    hasVoted,
+    isVoting,
     isCheckingExpiration,
   };
 };

@@ -18,7 +18,7 @@ export default function Agreements() {
     handleAccept,
     handleReject,
     handleCheckProposalExpiration,
-    hasVoted,
+    isVoting,
   } = useVote({
     proposalId: document?.web3ProposalId,
   });
@@ -37,7 +37,7 @@ export default function Agreements() {
         onCheckProposalExpiration={handleCheckProposalExpiration}
         updateProposalData={mutate}
         updateProposalsList={update}
-        isVoting={hasVoted}
+        isVoting={isVoting}
         content={document?.description}
         creator={{
           avatar: document?.creator?.avatarUrl || '',
