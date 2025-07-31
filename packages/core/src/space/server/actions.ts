@@ -18,6 +18,8 @@ export async function createSpaceAction(
 ) {
   // TODO: #602 Define RLS Policies for Spaces Table
   // const db = getDb({ authToken });
+  const { slug } = data;
+  revalidatePath(`/[lang]/dho/${slug}`, 'layout');
   return createSpace(data, { db });
 }
 
