@@ -107,28 +107,46 @@ export const Recipient = ({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex w-full justify-between items-center">
-        <label className="text-sm text-neutral-11">Recipient</label>
-        <div className="flex gap-2 items-center">
+      <div className="flex flex-col md:flex-row md:items-center w-full gap-2">
+        <div className="flex items-center justify-between gap-2 w-full">
+          <label className="text-sm text-neutral-11">Recipient</label>
           <Tabs
             value={recipientType}
             onValueChange={(value) =>
               setRecipientType(value as 'member' | 'space')
             }
-            className="ml-4"
           >
+            {/* rounded */}
             <TabsList>
               <TabsTrigger value="member">Member</TabsTrigger>
               <TabsTrigger value="space">Space</TabsTrigger>
             </TabsList>
           </Tabs>
-          <div className="flex items-center gap-2 min-w-[220px]">
-            <Combobox
-              options={currentOptions}
-              placeholder={placeholder}
-              onChange={handleChange}
-              renderOption={(option) => (
-                <>
+        </div>
+        <div className="min-w-72 w-full md:w-auto">
+          <Combobox
+            options={currentOptions}
+            placeholder={placeholder}
+            onChange={handleChange}
+            renderOption={(option) => (
+              <>
+                {option.avatarUrl && (
+                  <Image
+                    src={option.avatarUrl}
+                    alt={option.label}
+                    width={24}
+                    height={24}
+                    className="rounded-full min-h-5"
+                  />
+                )}
+                <span className="text-ellipsis overflow-hidden text-nowrap">
+                  {option.label}
+                </span>
+              </>
+            )}
+            renderValue={(option) =>
+              option ? (
+                <div className="flex items-center gap-2 truncate">
                   {option.avatarUrl && (
                     <Image
                       src={option.avatarUrl}
@@ -138,33 +156,15 @@ export const Recipient = ({
                       className="rounded-full min-h-5"
                     />
                   )}
-                  <span className="text-ellipsis overflow-hidden text-nowrap">
+                  <span className="truncate text-ellipsis overflow-hidden text-nowrap">
                     {option.label}
                   </span>
-                </>
-              )}
-              renderValue={(option) =>
-                option ? (
-                  <div className="flex items-center gap-2 truncate">
-                    {option.avatarUrl && (
-                      <Image
-                        src={option.avatarUrl}
-                        alt={option.label}
-                        width={24}
-                        height={24}
-                        className="rounded-full min-h-5"
-                      />
-                    )}
-                    <span className="truncate text-ellipsis overflow-hidden text-nowrap">
-                      {option.label}
-                    </span>
-                  </div>
-                ) : (
-                  placeholder
-                )
-              }
-            />
-          </div>
+                </div>
+              ) : (
+                placeholder
+              )
+            }
+          />
         </div>
       </div>
       <WalletAddress address={manualAddress} onChange={handleAddressChange} />

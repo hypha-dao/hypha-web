@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
   Input,
   Image,
+  Button,
 } from '@hypha-platform/ui';
 import { Address } from '@hypha-platform/core/client';
 
@@ -43,7 +44,7 @@ export const EntryMethodTokenField = ({
   };
 
   return (
-    <div className="flex justify-between w-full">
+    <div className="flex flex-col md:flex-row gap-4 md:justify-between w-full">
       <label className="text-2 text-neutral-11 flex items-center">
         Required Min. Token Number (Optional)
       </label>
@@ -56,8 +57,13 @@ export const EntryMethodTokenField = ({
         />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <div className="flex justify-between items-center gap-2 min-w-[140px] px-4 py-2 border border-neutral-7 rounded-md hover:bg-neutral-3 cursor-pointer">
-              <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              colorVariant="neutral"
+              role="combobox"
+              className="w-full text-2 md:w-72 justify-between py-2 font-normal"
+            >
+              <div className="flex items-center gap-2 flex-1">
                 {selectedToken ? (
                   <>
                     <Image
@@ -77,7 +83,7 @@ export const EntryMethodTokenField = ({
                 )}
               </div>
               <ChevronDownIcon />
-            </div>
+            </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             {tokens.map((token) => (

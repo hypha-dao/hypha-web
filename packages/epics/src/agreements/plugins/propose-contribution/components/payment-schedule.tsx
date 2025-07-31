@@ -12,7 +12,8 @@ import {
   DatePicker,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { ChevronDownIcon, PlusIcon } from '@radix-ui/react-icons';
+import { PlusIcon } from '@radix-ui/react-icons';
+import { ChevronDownIcon } from '@radix-ui/themes';
 import { validateMilestones, validateFutureDate } from '../validation';
 import { MilestoneField } from './milestone-field';
 import { Cross2Icon } from '@radix-ui/react-icons';
@@ -61,20 +62,20 @@ export function PaymentSchedule({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex w-full justify-between items-center gap-2">
+      <div className="flex flex-col md:flex-row w-full md:justify-between md:items-center gap-4">
         <label className="text-sm text-neutral-11">Payment Schedule</label>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
               colorVariant="neutral"
-              className="justify-between w-fit"
+              className="flex gap-2 justify-between w-full md:w-fit font-normal"
             >
-              {selectedOption}
-              <ChevronDownIcon className="w-2 h-2 ml-1" />
+              <span>{selectedOption}</span>
+              <ChevronDownIcon className="size-2" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent>
+          <DropdownMenuContent align="end">
             {options.map((option) => (
               <DropdownMenuItem
                 key={option}

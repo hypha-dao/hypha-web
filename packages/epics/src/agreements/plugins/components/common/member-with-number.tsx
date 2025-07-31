@@ -115,7 +115,6 @@ export const MemberWithNumberField = ({
         placeholder="Number"
         value={number}
         onChange={handleNumberChange}
-        className="w-[100px]"
         min={0}
       />
     </div>
