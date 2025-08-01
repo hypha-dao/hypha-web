@@ -1,7 +1,7 @@
 import { db } from '@hypha-platform/storage-postgres';
 import {
   findAllPeopleWithoutPagination,
-  findAllSpaces,
+  getAllSpaces,
 } from '@hypha-platform/core/server';
 import { ProfileTransferFunds } from '@hypha-platform/epics';
 
@@ -12,7 +12,7 @@ type PageProps = {
 export default async function ProfileTransferFundsWrapper(props: PageProps) {
   const { lang, personSlug } = await props.params;
 
-  const spaces = await findAllSpaces({ db });
+  const spaces = await getAllSpaces();
   const peoples = await findAllPeopleWithoutPagination({ db });
 
   const filteredSpaces = spaces.filter(
