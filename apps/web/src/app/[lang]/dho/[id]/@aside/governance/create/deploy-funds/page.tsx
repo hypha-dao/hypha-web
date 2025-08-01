@@ -4,7 +4,7 @@ import { getDhoPathGovernance } from '../../../../@tab/governance/constants';
 import { Plugin } from '../plugins';
 import { notFound } from 'next/navigation';
 import { PATH_SELECT_CREATE_ACTION } from '@web/app/constants';
-import { findSpaceBySlug, findAllSpaces } from '@hypha-platform/core/server';
+import { findSpaceBySlug, getAllSpaces } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 
 type PageProps = {
@@ -22,10 +22,7 @@ export default async function CreateDeployFundsPage({ params }: PageProps) {
 
   const successfulUrl = getDhoPathGovernance(lang as Locale, id);
 
-  const spaces = await findAllSpaces({
-    db,
-  });
-
+  const spaces = await getAllSpaces();
   const filteredSpaces = spaces.filter(
     (space) => space.address && space.address.trim() !== '',
   );

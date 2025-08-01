@@ -12,14 +12,13 @@ import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem } from '@hypha-platform/ui';
 import Link from 'next/link';
 import {
-  findAllSpaces,
+  getAllSpaces,
   findSpaceBySlug,
   findParentSpaceById,
 } from '@hypha-platform/core/server';
 import { getDhoPathGovernance } from './@tab/governance/constants';
 import { ActionButtons } from './_components/action-buttons';
-import { publicClient } from '@hypha-platform/core/client';
-import { getSpaceDetails } from '@hypha-platform/core/client';
+import { fetchSpaceDetails } from '@hypha-platform/core/client';
 import { useMembers } from '@web/hooks/use-members';
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
@@ -42,14 +41,21 @@ export default async function DhoLayout({
   if (!spaceFromDb) {
     return notFound();
   }
+  let spaceMembers = 0;
+  try {
+    const [spaceDetails] = await fetchSpaceDetails({
+      spaceIds: [BigInt(spaceFromDb.web3SpaceId as number)],
+    });
+    spaceMembers = spaceDetails?.members.length ?? 0;
+  } catch (error) {
+    console.error(
+      `Failed to get space details for space ${spaceFromDb.web3SpaceId}:`,
+      error,
+    );
+  }
 
-  const spaces = await findAllSpaces({
-    db,
-  });
+  const spaces = await getAllSpaces();
 
-  const spaceDetails = await publicClient.readContract(
-    getSpaceDetails({ spaceId: BigInt(spaceFromDb.web3SpaceId as number) }),
-  );
   return (
     <div className="flex max-w-container-2xl mx-auto">
       <Container className="flex-grow min-w-0">
@@ -90,9 +96,7 @@ export default async function DhoLayout({
         </div>
         <div className="flex gap-2 items-center mt-6">
           <div className="flex">
-            <div className="font-bold text-1">
-              {spaceDetails[4].length || 0}
-            </div>
+            <div className="font-bold text-1">{spaceMembers}</div>
             <div className="text-gray-500 ml-1 text-1">Members</div>
           </div>
           <div className="flex ml-3">
