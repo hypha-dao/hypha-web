@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "hardhat-gas-reporter": "^2.3.0"
+  }
+}

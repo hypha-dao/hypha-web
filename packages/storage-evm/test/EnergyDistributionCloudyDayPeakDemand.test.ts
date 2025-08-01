@@ -41,6 +41,7 @@ describe('EnergyDistributionCloudyDayPeakDemand', function () {
       member5,
       member6,
       member7,
+      community: other, // Add community member for balance tracking
       other,
     };
   }
@@ -83,6 +84,16 @@ describe('EnergyDistributionCloudyDayPeakDemand', function () {
     console.log(`  Member6: 10% ownership - Small household [devices: 6001]`);
     console.log(
       `  Member7: 10% ownership - Small household [devices: 7001, 7002]`,
+    );
+
+    // Add community address for receiving self-consumption payments
+    await energyDistribution.addMember(other.address, [8888], 0); // 0% ownership - Community fund
+    console.log(`  Community: 0% ownership - Community fund [device: 8888]`);
+
+    // Set community device ID for self-consumption payments
+    await energyDistribution.setCommunityDeviceId(8888);
+    console.log(
+      'Community device ID set: 8888 (receives self-consumption payments)',
     );
 
     // Configure community battery: $0.14/kWh, 50 kWh capacity, starting empty (worst case scenario)
@@ -250,6 +261,7 @@ describe('EnergyDistributionCloudyDayPeakDemand', function () {
     energyDistribution: any,
     members: any[],
     timeLabel: string,
+    communityMember?: any,
   ) {
     console.log(`\n=== ${timeLabel} ===`);
     let totalMemberBalance = 0;
@@ -261,6 +273,18 @@ describe('EnergyDistributionCloudyDayPeakDemand', function () {
       const balanceInDollars = Number(balance) / 100;
       console.log(`Member${index + 1}: $${balanceInDollars.toFixed(2)}`);
       totalMemberBalance += Number(balance);
+    }
+
+    // Include community member balance if provided
+    let communityBalance = 0;
+    if (communityMember) {
+      const balance = await energyDistribution.getCashCreditBalance(
+        communityMember.address,
+      );
+      communityBalance = Number(balance);
+      const balanceInDollars = communityBalance / 100;
+      console.log(`Community Fund: $${balanceInDollars.toFixed(2)}`);
+      totalMemberBalance += communityBalance;
     }
 
     const exportBalance = await energyDistribution.getExportCashCreditBalance();
@@ -282,6 +306,7 @@ describe('EnergyDistributionCloudyDayPeakDemand', function () {
       totalMemberBalance,
       exportBalance: Number(exportBalance),
       importBalance: Number(importBalance),
+      communityBalance,
       systemTotal,
     };
   }
@@ -445,6 +470,7 @@ describe('EnergyDistributionCloudyDayPeakDemand', function () {
         member5,
         member6,
         member7,
+        other,
       } = await loadFixture(setup7MemberCommunityFixture);
 
       const members = [
@@ -566,6 +592,7 @@ describe('EnergyDistributionCloudyDayPeakDemand', function () {
         energyDistribution,
         members,
         'CLOUDY DAYTIME CASH CREDIT BALANCES',
+        other, // Include community member
       );
 
       // =================== EVENING PEAK PHASE: CRITICAL DEMAND ===================
@@ -583,7 +610,7 @@ describe('EnergyDistributionCloudyDayPeakDemand', function () {
         '  🌆 Minimal Solar: 30 kWh @ $0.12/kWh = $3.60 (almost sunset)',
       );
       console.log(
-        '  🚨 Peak Grid Imports: 220 kWh @ $0.28/kWh = $61.60 (CRITICAL PEAK RATES)',
+        '  �� Peak Grid Imports: 220 kWh @ $0.28/kWh = $61.60 (CRITICAL PEAK RATES)',
       );
       console.log('  🔋 Battery: Remains empty (no stored energy available)');
       console.log('  ⚠️ Energy crisis: 88% dependency on peak-rate imports');
@@ -671,6 +698,7 @@ describe('EnergyDistributionCloudyDayPeakDemand', function () {
         energyDistribution,
         members,
         'FINAL CASH CREDIT BALANCES',
+        other, // Include community member
       );
 
       // =================== DAILY ANALYSIS ===================

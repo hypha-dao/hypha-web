@@ -1,6 +1,5 @@
 import { HardhatUserConfig } from 'hardhat/config';
 import '@nomicfoundation/hardhat-toolbox';
-import 'hardhat-gas-reporter';
 import '@openzeppelin/hardhat-upgrades';
 import 'hardhat-deploy';
 
@@ -12,6 +11,9 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       chainId: 31337, // it's the default chain id, doesn't need to add it.
+      accounts: {
+        count: 60, // Increased from default 20 to support 50-member tests
+      },
     },
   },
 };

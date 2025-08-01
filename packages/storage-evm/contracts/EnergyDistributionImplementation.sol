@@ -27,6 +27,7 @@ contract EnergyDistributionImplementation is
     batteryCurrentState = 0;
     batteryConfigured = false;
     exportDeviceId = 0;
+    communityDeviceId = 0;
     importCashCreditBalance = 0;
   }
 
@@ -53,6 +54,11 @@ contract EnergyDistributionImplementation is
     emit ExportDeviceIdSet(deviceId);
   }
 
+  function setCommunityDeviceId(uint256 deviceId) external override onlyOwner {
+    communityDeviceId = deviceId;
+    emit CommunityDeviceIdSet(deviceId);
+  }
+
   function addMember(
     address memberAddress,
     uint256[] calldata deviceIds,
@@ -60,10 +66,6 @@ contract EnergyDistributionImplementation is
   ) external override onlyOwner {
     require(memberAddress != address(0), 'Invalid member address');
     require(deviceIds.length > 0, 'No device IDs provided');
-    require(
-      ownershipPercentage > 0,
-      'Ownership percentage must be greater than 0'
-    );
     require(!members[memberAddress].isActive, 'Member already exists');
     require(
       totalOwnershipPercentage + ownershipPercentage <= 10000,
@@ -294,12 +296,23 @@ contract EnergyDistributionImplementation is
           int256 cost = int256(canConsume * collectiveConsumption[j].price);
           totalCost += cost;
 
-          // Pay the token owner (even if it's the consumer themselves)
+          // Pay the token owner
           if (collectiveConsumption[j].owner != address(0)) {
-            // Member-owned tokens - pay the member
-            cashCreditBalances[collectiveConsumption[j].owner] += cost;
+            if (collectiveConsumption[j].owner != memberAddress) {
+              // Different member owns the token - pay them
+              cashCreditBalances[collectiveConsumption[j].owner] += cost;
+            } else {
+              // Self-consumption: credit payment to community address to maintain zero-sum
+              address communityAddress = deviceToMember[communityDeviceId];
+              require(
+                communityAddress != address(0),
+                'Community address not set'
+              );
+              cashCreditBalances[communityAddress] += cost;
+            }
           }
           // Note: For community-owned tokens (imports), no payment to owner
+          // Note: For self-consumption, payment goes to community address
 
           collectiveConsumption[j].quantity -= canConsume;
           remainingToConsume -= canConsume;
@@ -451,6 +464,10 @@ contract EnergyDistributionImplementation is
 
   function getExportDeviceId() external view override returns (uint256) {
     return exportDeviceId;
+  }
+
+  function getCommunityDeviceId() external view override returns (uint256) {
+    return communityDeviceId;
   }
 
   function getImportCashCreditBalance()

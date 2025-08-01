@@ -66,6 +66,8 @@ interface IEnergyDistribution {
 
   function setExportDeviceId(uint256 deviceId) external;
 
+  function setCommunityDeviceId(uint256 deviceId) external;
+
   function getCashCreditBalance(address member) external view returns (int256);
 
   function getCollectiveConsumption()
@@ -88,6 +90,8 @@ interface IEnergyDistribution {
   function getBatteryInfo() external view returns (BatteryInfo memory);
 
   function getExportDeviceId() external view returns (uint256);
+
+  function getCommunityDeviceId() external view returns (uint256);
 
   function getImportCashCreditBalance() external view returns (int256);
 
@@ -113,5 +117,6 @@ interface IEnergyDistribution {
     int256 energyChange
   );
   event ExportDeviceIdSet(uint256 deviceId);
+  event CommunityDeviceIdSet(uint256 deviceId);
   event EnergyImported(uint256 totalQuantity, int256 importCost);
 }
