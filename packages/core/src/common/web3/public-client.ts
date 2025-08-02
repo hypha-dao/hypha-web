@@ -1,6 +1,9 @@
 import { createPublicClient, http } from 'viem';
 import { base } from 'viem/chains';
 
+/**
+ * @deprecated Insecure. Use server-side version instead
+ */
 export const publicClient = createPublicClient({
   batch: {
     multicall: { wait: 100 },
