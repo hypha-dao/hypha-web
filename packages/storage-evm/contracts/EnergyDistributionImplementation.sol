@@ -59,6 +59,12 @@ contract EnergyDistributionImplementation is
     emit CommunityDeviceIdSet(deviceId);
   }
 
+  function setExportPrice(uint256 price) external onlyOwner {
+    require(price > 0, 'Export price must be greater than 0');
+    exportPrice = price;
+    emit ExportPriceSet(price);
+  }
+
   function addMember(
     address memberAddress,
     uint256[] calldata deviceIds,
@@ -132,9 +138,15 @@ contract EnergyDistributionImplementation is
   function distributeEnergyTokens(
     EnergySource[] calldata sources,
     uint256 batteryState
-  ) external override onlyOwner {
+  ) external override onlyOwner ensureZeroSum {
     require(sources.length > 0, 'No sources provided');
     require(totalOwnershipPercentage == 10000, 'Total ownership must be 100%');
+
+    // FIX 1: Prevent distribution if energy remains unconsumed
+    require(
+      _getTotalAvailableEnergy() == 0,
+      'Previous energy distribution must be fully consumed before new distribution'
+    );
 
     // Handle battery state changes
     int256 batteryEnergyChange = 0;
@@ -177,7 +189,7 @@ contract EnergyDistributionImplementation is
       if (source.sourceId == 1 && batteryEnergyChange > 0) {
         require(
           source.quantity >= uint256(batteryEnergyChange),
-          'Insufficient local production for battery charging'
+          'Inuf local prodion for battery chargng'
         );
         source.quantity -= uint256(batteryEnergyChange);
       }
@@ -227,7 +239,7 @@ contract EnergyDistributionImplementation is
 
   function consumeEnergyTokens(
     ConsumptionRequest[] calldata consumptionRequests
-  ) external override onlyOwner {
+  ) external override onlyOwner ensureZeroSum {
     require(consumptionRequests.length > 0, 'No consumption requests provided');
 
     // Sort collective consumption by price (cheapest first)
@@ -254,14 +266,14 @@ contract EnergyDistributionImplementation is
       }
     }
 
-    // Process member consumption requests (buy from collective pool)
-    if (memberCount > 0) {
-      _processMemberConsumption(memberRequests, memberCount);
-    }
-
-    // Process export requests (sell leftover tokens)
+    // Process export requests FIRST (prioritize exports)
     if (exportCount > 0) {
       _processExportRequests(exportRequests);
+    }
+
+    // Process member consumption requests (buy from remaining collective pool)
+    if (memberCount > 0) {
+      _processMemberConsumption(memberRequests, memberCount);
     }
 
     emit CollectiveConsumptionUpdated(collectiveConsumption.length);
@@ -281,13 +293,46 @@ contract EnergyDistributionImplementation is
       uint256 remainingToConsume = request.quantity;
       int256 totalCost = 0;
 
-      // Buy tokens from collective pool (cheapest first)
+      // FIRST PASS: Prioritize self-consumption (own tokens first)
       for (
         uint256 j = 0;
         j < collectiveConsumption.length && remainingToConsume > 0;
         j++
       ) {
-        if (collectiveConsumption[j].quantity > 0) {
+        // Only consume own tokens in first pass
+        if (
+          collectiveConsumption[j].quantity > 0 &&
+          collectiveConsumption[j].owner == memberAddress
+        ) {
+          uint256 canConsume = remainingToConsume >
+            collectiveConsumption[j].quantity
+            ? collectiveConsumption[j].quantity
+            : remainingToConsume;
+
+          int256 cost = int256(canConsume * collectiveConsumption[j].price);
+          totalCost += cost;
+
+          // Self-consumption: credit payment to community address to maintain zero-sum
+          address communityAddress = deviceToMember[communityDeviceId];
+          require(communityAddress != address(0), 'Community address not set');
+          cashCreditBalances[communityAddress] += cost;
+
+          collectiveConsumption[j].quantity -= canConsume;
+          remainingToConsume -= canConsume;
+        }
+      }
+
+      // SECOND PASS: Buy from others if still needed (other members' tokens or imports)
+      for (
+        uint256 j = 0;
+        j < collectiveConsumption.length && remainingToConsume > 0;
+        j++
+      ) {
+        // Skip own tokens (already consumed in first pass) and empty slots
+        if (
+          collectiveConsumption[j].quantity > 0 &&
+          collectiveConsumption[j].owner != memberAddress
+        ) {
           uint256 canConsume = remainingToConsume >
             collectiveConsumption[j].quantity
             ? collectiveConsumption[j].quantity
@@ -298,21 +343,13 @@ contract EnergyDistributionImplementation is
 
           // Pay the token owner
           if (collectiveConsumption[j].owner != address(0)) {
-            if (collectiveConsumption[j].owner != memberAddress) {
-              // Different member owns the token - pay them
-              cashCreditBalances[collectiveConsumption[j].owner] += cost;
-            } else {
-              // Self-consumption: credit payment to community address to maintain zero-sum
-              address communityAddress = deviceToMember[communityDeviceId];
-              require(
-                communityAddress != address(0),
-                'Community address not set'
-              );
-              cashCreditBalances[communityAddress] += cost;
-            }
+            // Different member owns the token - pay them
+            cashCreditBalances[collectiveConsumption[j].owner] += cost;
+          } else {
+            // Community-owned tokens (imports): member payment goes to import cash balance
+            // This maintains zero-sum accounting: member pays, import balance receives
+            importCashCreditBalance += cost;
           }
-          // Note: For community-owned tokens (imports), no payment to owner
-          // Note: For self-consumption, payment goes to community address
 
           collectiveConsumption[j].quantity -= canConsume;
           remainingToConsume -= canConsume;
@@ -331,6 +368,11 @@ contract EnergyDistributionImplementation is
   function _processExportRequests(
     ConsumptionRequest[] memory exportRequests
   ) internal {
+    require(
+      exportPrice > 0,
+      'Export price must be configured before exporting'
+    );
+
     uint256 totalExportedTokens = 0;
     uint256 totalExportRequested = 0;
     int256 totalCalculatedExportRevenue = 0;
@@ -345,22 +387,23 @@ contract EnergyDistributionImplementation is
         totalExportedTokens < totalExportRequested;
       j++
     ) {
-      if (collectiveConsumption[j].quantity > 0) {
+      // FIXED: Only export member-owned tokens, skip import tokens (owner == address(0))
+      if (
+        collectiveConsumption[j].quantity > 0 &&
+        collectiveConsumption[j].owner != address(0)
+      ) {
         uint256 canExport = totalExportRequested - totalExportedTokens;
         uint256 exportAmount = canExport > collectiveConsumption[j].quantity
           ? collectiveConsumption[j].quantity
           : canExport;
 
-        int256 tokenValue = int256(
-          exportAmount * collectiveConsumption[j].price
-        );
+        // Use configurable export price instead of token's original price
+        int256 tokenValue = int256(exportAmount * exportPrice);
 
         totalCalculatedExportRevenue += tokenValue;
 
-        // Pay the token owner when their tokens are exported
-        if (collectiveConsumption[j].owner != address(0)) {
-          cashCreditBalances[collectiveConsumption[j].owner] += tokenValue;
-        }
+        // Pay the token owner the export price when their tokens are exported
+        cashCreditBalances[collectiveConsumption[j].owner] += tokenValue;
 
         totalExportedTokens += exportAmount;
         collectiveConsumption[j].quantity -= exportAmount;
@@ -368,7 +411,7 @@ contract EnergyDistributionImplementation is
     }
 
     if (totalCalculatedExportRevenue > 0) {
-      // Grid owes community for exported energy
+      // Grid owes community for exported energy at export price
       exportCashCreditBalance -= totalCalculatedExportRevenue;
 
       // NO ADDITIONAL DISTRIBUTION - token owners already got paid above
@@ -392,6 +435,125 @@ contract EnergyDistributionImplementation is
         }
       }
     }
+  }
+
+  // FIX 1: Helper function to calculate total available energy in collective pool
+  function _getTotalAvailableEnergy() internal view returns (uint256) {
+    uint256 total = 0;
+    for (uint256 i = 0; i < collectiveConsumption.length; i++) {
+      total += collectiveConsumption[i].quantity;
+    }
+    return total;
+  }
+
+  // FIX 3: Zero-sum verification functions
+  function verifyZeroSumProperty() public view returns (bool, int256) {
+    int256 totalMemberBalances = 0;
+
+    // Sum all member balances
+    for (uint256 i = 0; i < memberAddresses.length; i++) {
+      totalMemberBalances += cashCreditBalances[memberAddresses[i]];
+    }
+
+    // Include community balance ONLY if it's NOT already in memberAddresses array
+    address communityAddress = deviceToMember[communityDeviceId];
+    if (communityAddress != address(0)) {
+      // Check if community address is already counted in memberAddresses
+      bool communityAlreadyCounted = false;
+      for (uint256 i = 0; i < memberAddresses.length; i++) {
+        if (memberAddresses[i] == communityAddress) {
+          communityAlreadyCounted = true;
+          break;
+        }
+      }
+
+      // Only add community balance if not already counted
+      if (!communityAlreadyCounted) {
+        totalMemberBalances += cashCreditBalances[communityAddress];
+      }
+    }
+
+    // Calculate total system balance (should be zero)
+    int256 totalSystemBalance = totalMemberBalances +
+      exportCashCreditBalance +
+      importCashCreditBalance;
+
+    return (totalSystemBalance == 0, totalSystemBalance);
+  }
+
+  // FIX 3: Modifier to ensure zero-sum property is maintained
+  modifier ensureZeroSum() {
+    _;
+    (bool isZeroSum, int256 balance) = verifyZeroSumProperty();
+    require(
+      isZeroSum,
+      string(abi.encodePacked('Zero-sum violation: ', _int256ToString(balance)))
+    );
+  }
+
+  // FIX 5: Emergency reset function
+  function emergencyReset() external onlyOwner {
+    // Clear all collective consumption
+    delete collectiveConsumption;
+
+    // Reset all allocated tokens
+    for (uint256 i = 0; i < memberAddresses.length; i++) {
+      allocatedTokens[memberAddresses[i]] = 0;
+    }
+
+    // Reset all member cash balances to zero
+    for (uint256 i = 0; i < memberAddresses.length; i++) {
+      cashCreditBalances[memberAddresses[i]] = 0;
+    }
+
+    // Reset community balance if it exists
+    address communityAddress = deviceToMember[communityDeviceId];
+    if (communityAddress != address(0)) {
+      cashCreditBalances[communityAddress] = 0;
+    }
+
+    // Reset system balances
+    exportCashCreditBalance = 0;
+    importCashCreditBalance = 0;
+
+    // Reset battery state
+    batteryCurrentState = 0;
+
+    emit EmergencyReset();
+  }
+
+  // Helper function to convert int256 to string
+  function _int256ToString(int256 value) internal pure returns (string memory) {
+    if (value == 0) {
+      return '0';
+    }
+
+    bool negative = value < 0;
+    if (negative) {
+      value = -value;
+    }
+
+    uint256 temp = uint256(value);
+    uint256 digits;
+    while (temp != 0) {
+      digits++;
+      temp /= 10;
+    }
+
+    bytes memory buffer = new bytes(digits + (negative ? 1 : 0));
+    uint256 index = digits;
+    temp = uint256(value);
+
+    while (temp != 0) {
+      buffer[--index] = bytes1(uint8(48 + (temp % 10)));
+      temp /= 10;
+    }
+
+    if (negative) {
+      buffer[0] = '-';
+    }
+
+    return string(buffer);
   }
 
   // View functions
@@ -479,6 +641,10 @@ contract EnergyDistributionImplementation is
     return importCashCreditBalance;
   }
 
+  function getExportPrice() external view returns (uint256) {
+    return exportPrice;
+  }
+
   function _handleOwnedSource(EnergySource memory source) internal {
     uint256 totalDistributed = 0;
 
@@ -513,9 +679,8 @@ contract EnergyDistributionImplementation is
   }
 
   function _handleImportSource(EnergySource memory source) internal {
-    // Track total import cost as debt that needs to be paid by consumers
-    int256 importCost = int256(source.quantity * source.price);
-    importCashCreditBalance += importCost; // This correctly stores import cost as a positive value
+    // Import energy makes it available for consumption - no cash flow yet
+    // importCashCreditBalance will increase when users actually pay for consumed imported energy
 
     // Add imported energy to community pool (owned by address(0))
     // Over-consumers will buy from this pool at cost price
@@ -527,6 +692,9 @@ contract EnergyDistributionImplementation is
       })
     );
 
-    emit EnergyImported(source.quantity, importCost);
+    emit EnergyImported(
+      source.quantity,
+      int256(source.quantity * source.price)
+    );
   }
 }

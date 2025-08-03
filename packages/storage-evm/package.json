@@ -4,7 +4,18 @@
   "private": true,
   "scripts": {
     "lint": "eslint . --max-warnings 0",
-    "wagmi:generate": "wagmi generate"
+    "wagmi:generate": "wagmi generate",
+    "configure-energy": "npx ts-node scripts/base-mainnet-contracts-scripts/configure-energy-distribution.ts",
+    "configure-energy:view": "npx ts-node scripts/base-mainnet-contracts-scripts/configure-energy-distribution.ts view",
+    "configure-energy:both": "npx ts-node scripts/base-mainnet-contracts-scripts/configure-energy-distribution.ts both",
+    "add-missing-households": "npx ts-node scripts/base-mainnet-contracts-scripts/add-missing-households.ts",
+    "add-missing-households:check": "npx ts-node scripts/base-mainnet-contracts-scripts/add-missing-households.ts check",
+    "add-missing-households:both": "npx ts-node scripts/base-mainnet-contracts-scripts/add-missing-households.ts both",
+    "setup-community": "npx ts-node scripts/base-mainnet-contracts-scripts/setup-community-address.ts",
+    "setup-community:check": "npx ts-node scripts/base-mainnet-contracts-scripts/setup-community-address.ts check",
+    "energy-simulation": "npx ts-node scripts/base-mainnet-contracts-scripts/energy-simulation.ts",
+    "energy-simulation:consumption": "npx ts-node scripts/base-mainnet-contracts-scripts/energy-simulation.ts consumption",
+    "debug-energy-tokens": "npx ts-node scripts/base-mainnet-contracts-scripts/debug-energy-tokens.ts"
   },
   "devDependencies": {
     "@hypha-platform/config-eslint": "workspace:*",

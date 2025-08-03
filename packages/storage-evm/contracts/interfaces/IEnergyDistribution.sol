@@ -68,6 +68,8 @@ interface IEnergyDistribution {
 
   function setCommunityDeviceId(uint256 deviceId) external;
 
+  function setExportPrice(uint256 price) external;
+
   function getCashCreditBalance(address member) external view returns (int256);
 
   function getCollectiveConsumption()
@@ -95,6 +97,14 @@ interface IEnergyDistribution {
 
   function getImportCashCreditBalance() external view returns (int256);
 
+  function getExportPrice() external view returns (uint256);
+
+  // FIX 3: Zero-sum verification function
+  function verifyZeroSumProperty() external view returns (bool, int256);
+
+  // FIX 5: Emergency reset function
+  function emergencyReset() external;
+
   // Events
   event MemberAdded(
     address indexed memberAddress,
@@ -118,5 +128,9 @@ interface IEnergyDistribution {
   );
   event ExportDeviceIdSet(uint256 deviceId);
   event CommunityDeviceIdSet(uint256 deviceId);
+  event ExportPriceSet(uint256 price);
   event EnergyImported(uint256 totalQuantity, int256 importCost);
+
+  // FIX 5: Emergency reset event
+  event EmergencyReset();
 }

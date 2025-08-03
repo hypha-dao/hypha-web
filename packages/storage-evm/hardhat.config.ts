@@ -13,7 +13,15 @@ import '@openzeppelin/hardhat-upgrades';
 import '@nomicfoundation/hardhat-ignition';
 
 const config: HardhatUserConfig = {
-  solidity: '0.8.28',
+  solidity: {
+    version: '0.8.28',
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200, // Low runs value for smaller contract size
+      },
+    },
+  },
   networks: {
     'base-mainnet': {
       url: 'https://mainnet.base.org',

@@ -42,9 +42,12 @@ contract EnergyDistributionStorage is Initializable {
   // Community device ID for receiving self-consumption payments
   uint256 internal communityDeviceId;
 
+  // Export price per kWh (separate from production cost)
+  uint256 internal exportPrice;
+
   /**
    * @dev This empty reserved space is put in place to allow future versions to add new
    * variables without shifting down storage in the inheritance chain.
    */
-  uint256[36] private __gap; // Reduced by 7 due to new variables
+  uint256[35] private __gap; // Reduced by 8 due to new variables
 }
