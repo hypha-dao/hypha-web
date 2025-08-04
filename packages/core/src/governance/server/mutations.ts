@@ -1,10 +1,11 @@
 import slugify from 'slugify';
-import { documents } from '@hypha-platform/storage-postgres';
+import { documents, tokens } from '@hypha-platform/storage-postgres';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
 import { CreateAgreementInput, UpdateAgreementInput } from '../types';
 import { DatabaseInstance } from '../../server';
+import { CreateTokenInput, DeleteTokenInput } from '../types';
 
 export const createAgreement = async (
   { title, slug: maybeSlug, creatorId, ...rest }: CreateAgreementInput,
@@ -64,4 +65,38 @@ export const deleteAgreementBySlug = async (
   }
 
   return deleted[0];
+};
+
+export const createToken = async (
+  input: CreateTokenInput,
+  { db }: { db: DatabaseInstance },
+) => {
+  const [token] = await db
+    .insert(tokens)
+    .values({
+      agreementId: input.agreementId,
+      spaceId: input.spaceId,
+      name: input.name,
+      symbol: input.symbol,
+      maxSupply: input.maxSupply,
+      type: input.type,
+      iconUrl: input.iconUrl,
+      transferable: input.transferable,
+      isVotingToken: input.isVotingToken,
+      decayInterval: input.decaySettings?.decayInterval,
+      decayPercentage: input.decaySettings?.decayPercentage,
+    })
+    .returning();
+  return token;
+};
+
+export const deleteToken = async (
+  input: DeleteTokenInput,
+  { db }: { db: DatabaseInstance },
+) => {
+  const [deleted] = await db
+    .delete(tokens)
+    .where(eq(tokens.id, Number(input.id)))
+    .returning();
+  return deleted;
 };

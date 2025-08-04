@@ -6,12 +6,16 @@ import {
   createAgreement,
   updateAgreementBySlug,
   deleteAgreementBySlug,
+  createToken,
+  deleteToken,
 } from './mutations';
 import {
   CreateAgreementInput,
   CreateChangeEntryMethodInput,
   UpdateAgreementBySlugInput,
   UpdateChangeEntryMethodBySlugInput,
+  CreateTokenInput,
+  DeleteTokenInput,
 } from '../types';
 // TODO: #602 Define RLS Policies for Agreement Table
 import { db } from '@hypha-platform/storage-postgres';
@@ -66,4 +70,18 @@ export async function deleteChangeEntryMethodBySlugAction(
   // TODO: #602 Define RLS Policies for Spaces Table
   // const db = getDb({ authToken });
   return deleteAgreementBySlug(data, { db });
+}
+
+export async function createTokenAction(
+  input: CreateTokenInput,
+  { authToken }: { authToken: string },
+) {
+  return createToken(input, { db });
+}
+
+export async function deleteTokenAction(
+  input: DeleteTokenInput,
+  { authToken }: { authToken: string },
+) {
+  return deleteToken(input, { db });
 }

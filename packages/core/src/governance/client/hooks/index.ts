@@ -14,3 +14,4 @@ export * from './useProposalVoters';
 export * from './useIssueNewTokenOrchestrator';
 export * from './useProposeAContributionMutations.web3.rsc';
 export * from './useVote';
+export * from './useTokenMutationWeb2.rsc';

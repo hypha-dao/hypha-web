@@ -248,17 +248,25 @@ export const schemaIssueNewToken = z.object({
       message: 'Token symbol must contain only uppercase letters',
     }),
 
-  icon: z
-    .instanceof(File)
-    .refine(
-      (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-      'File size must be less than 4MB',
-    )
-    .refine(
-      (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
-      'File must be an image (JPEG, PNG, GIF, WEBP)',
-    )
-    .optional(),
+  iconUrl: z
+    .union([
+      z.string().url('Icon URL must be a valid URL'),
+      z.literal(''),
+      z.null(),
+      z.undefined(),
+      z
+        .instanceof(File)
+        .refine(
+          (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
+          'File size must be less than 4MB',
+        )
+        .refine(
+          (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
+          'File must be an image (JPEG, PNG, GIF, WEBP)',
+        ),
+    ])
+    .optional()
+    .transform((val) => (val === '' || val === null ? undefined : val)),
 
   // tokenDescription: z
   //   .string()
@@ -289,6 +297,9 @@ export const schemaIssueNewToken = z.object({
   ),
   decaySettings: decaySettingsSchema,
   isVotingToken: z.boolean(),
+  transferable: z
+    .boolean({ required_error: 'Transferable flag is required' })
+    .optional(),
 });
 
 export const schemaChangeVotingMethod = z.object({
