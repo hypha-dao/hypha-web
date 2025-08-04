@@ -18,7 +18,10 @@ import {
 } from '@hypha-platform/core/server';
 import { getDhoPathGovernance } from './@tab/governance/constants';
 import { ActionButtons } from './_components/action-buttons';
-import { fetchSpaceDetails } from '@hypha-platform/core/client';
+import {
+  fetchSpaceDetails,
+  fetchSpaceProposalsIds,
+} from '@hypha-platform/core/client';
 import { useMembers } from '@web/hooks/use-members';
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
@@ -41,18 +44,38 @@ export default async function DhoLayout({
   if (!spaceFromDb) {
     return notFound();
   }
-  let spaceMembers = 0;
-  try {
-    const [spaceDetails] = await fetchSpaceDetails({
-      spaceIds: [BigInt(spaceFromDb.web3SpaceId as number)],
-    });
-    spaceMembers = spaceDetails?.members.length ?? 0;
-  } catch (error) {
-    console.error(
-      `Failed to get space details for space ${spaceFromDb.web3SpaceId}:`,
-      error,
-    );
-  }
+
+  const spaceMembers = await (async () => {
+    try {
+      const [spaceDetails] = await fetchSpaceDetails({
+        spaceIds: [BigInt(spaceFromDb.web3SpaceId as number)],
+      });
+      return spaceDetails?.members.length ?? 0;
+    } catch (error) {
+      console.error(
+        `Failed to get space details for a space ${spaceFromDb.web3SpaceId}:`,
+        error,
+      );
+
+      return 0;
+    }
+  })();
+
+  const spaceAgreements = await (async () => {
+    try {
+      const [proposals] = await fetchSpaceProposalsIds({
+        spaceIds: [BigInt(spaceFromDb.web3SpaceId as number)],
+      });
+      return proposals?.accepted?.length ?? 0;
+    } catch (error) {
+      console.error(
+        `Failed to get space details for a space ${spaceFromDb.web3SpaceId}:`,
+        error,
+      );
+
+      return 0;
+    }
+  })();
 
   const spaces = await getAllSpaces();
 
@@ -102,7 +125,7 @@ export default async function DhoLayout({
           <div className="flex ml-3">
             <div className="font-bold text-1">
               {/* @ts-ignore: TODO: infer types from relations */}
-              {spaceFromDb.documents?.length || 0}
+              {spaceAgreements}
             </div>
             <div className="text-gray-500 ml-1 text-1">Agreements</div>
           </div>
