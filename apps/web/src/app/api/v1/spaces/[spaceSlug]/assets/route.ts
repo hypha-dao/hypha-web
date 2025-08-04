@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  web3Client,
   findSpaceBySlug,
   getTokenPrice,
   getTokenBalancesByAddress,
+  getBalance,
+  getTokenMeta,
 } from '@hypha-platform/core/server';
 import {
   getSpaceDetails,
@@ -10,9 +13,6 @@ import {
   getSpaceDecayingTokens,
   getSpaceOwnershipTokens,
   TOKENS,
-  publicClient,
-  getBalance,
-  getTokenMeta,
   Token,
   ALLOWED_SPACES,
 } from '@hypha-platform/core/client';
@@ -36,11 +36,11 @@ export async function GET(
     let spaceDetails;
     let spaceTokens;
     try {
-      spaceDetails = await publicClient.readContract(
+      spaceDetails = await web3Client.readContract(
         getSpaceDetails({ spaceId }),
       );
 
-      spaceTokens = await publicClient.multicall({
+      spaceTokens = await web3Client.multicall({
         contracts: [
           getSpaceRegularTokens({ spaceId }),
           getSpaceOwnershipTokens({ spaceId }),
