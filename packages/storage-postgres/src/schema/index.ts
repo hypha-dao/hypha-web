@@ -24,5 +24,5 @@ export const schema = {
   peopleRelations,
   documentRelation,
   tokens,
-  tokenRelations
+  tokenRelations,
 };
