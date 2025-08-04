@@ -3,7 +3,7 @@ import { faker } from '@faker-js/faker';
 import { seed, reset } from 'drizzle-seed';
 
 import { resetIndexes } from './utils/reset-index';
-import { documents, memberships, people, schema, spaces } from './schema';
+import { documents, memberships, people, schema, spaces, tokens } from './schema';
 import { CATEGORIES } from './schema/categories';
 
 const AVATAR_URLS = Array.from({ length: 10 }, () => faker.image.avatar());
@@ -25,8 +25,8 @@ const SAMPLE_CATEGORIES = [...CATEGORIES];
 
 async function main() {
   const db = drizzle(process.env.BRANCH_DB_URL! || process.env.DEFAULT_DB_URL!);
-  await reset(db, { people, memberships, spaces, documents });
-  await seed(db, { people, memberships, spaces, documents }).refine((f) => {
+  await reset(db, { people, memberships, spaces, documents, tokens });
+  await seed(db, { people, memberships, spaces, documents, tokens }).refine((f) => {
     return {
       people: {
         // count: 1000,
