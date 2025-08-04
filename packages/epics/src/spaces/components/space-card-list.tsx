@@ -1,6 +1,6 @@
 'use client';
 
-import { Empty, UseMembers, SpaceCardContainer } from '@hypha-platform/epics';
+import { Empty, SpaceCardContainer } from '@hypha-platform/epics';
 import Link from 'next/link';
 import { Locale } from '@hypha-platform/i18n';
 import { Space } from '@hypha-platform/core/server';
@@ -14,14 +14,12 @@ type SpaceCardListProps = {
   lang: Locale;
   spaces: Space[];
   pageSize?: number;
-  useMembers: UseMembers;
 };
 
 export function SpaceCardList({
   lang,
   spaces,
   pageSize = 2,
-  useMembers,
 }: SpaceCardListProps) {
   const { pages, loadMore, pagination } = useSpaceCardList({
     spaces,
@@ -42,7 +40,6 @@ export function SpaceCardList({
                   key={index}
                   spaces={pageSpaces}
                   lang={lang}
-                  useMembers={useMembers}
                 />
               );
             })}

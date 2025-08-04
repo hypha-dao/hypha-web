@@ -1,6 +1,6 @@
 'use client';
 
-import { SpaceCardWrapper, UseMembers } from '@hypha-platform/epics';
+import { SpaceCard } from '@hypha-platform/epics';
 import Link from 'next/link';
 import { Locale } from '@hypha-platform/i18n';
 import { Space } from '@hypha-platform/core/client';
@@ -12,13 +12,11 @@ export const getDhoPathGovernance = (lang: Locale, id: string) => {
 type SpaceCardContainerProps = {
   lang: Locale;
   spaces: Space[];
-  useMembers: UseMembers;
 };
 
 export const SpaceCardContainer = ({
   lang,
   spaces,
-  useMembers,
 }: SpaceCardContainerProps) => (
   <div
     data-testid="member-spaces-container"
@@ -31,14 +29,13 @@ export const SpaceCardContainer = ({
             href={getDhoPathGovernance(lang, space.slug)}
             aria-label={`View governance for ${space.title}`}
           >
-            <SpaceCardWrapper
+            <SpaceCard
               description={space.description || ''}
               icon={space.logoUrl || ''}
               leadImage={space.leadImage || ''}
+              members={space.memberCount}
               agreements={space.documentCount}
               title={space.title || ''}
-              spaceSlug={space.slug}
-              useMembers={useMembers}
             />
           </Link>
         </div>

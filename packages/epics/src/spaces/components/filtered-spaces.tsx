@@ -2,11 +2,7 @@
 
 import { Locale } from '@hypha-platform/i18n';
 import { Address, Space } from '@hypha-platform/core/client';
-import {
-  UseMembers,
-  SpaceCardList,
-  useMemberWeb3SpaceIds,
-} from '@hypha-platform/epics';
+import { SpaceCardList, useMemberWeb3SpaceIds } from '@hypha-platform/epics';
 import { useMe } from '@hypha-platform/core/client';
 import React from 'react';
 import { Text } from '@radix-ui/themes';
@@ -29,11 +25,9 @@ export function filterSpaces(
 export function FilteredSpaces({
   lang,
   spaces,
-  useMembers,
 }: {
   lang: Locale;
   spaces: Space[];
-  useMembers: UseMembers;
 }) {
   const { person } = useMe();
   const { web3SpaceIds } = useMemberWeb3SpaceIds({
@@ -50,11 +44,7 @@ export function FilteredSpaces({
       <div className="justify-between items-center flex">
         <Text className="text-4">My Spaces | {filteredSpaces.length}</Text>
       </div>
-      <SpaceCardList
-        lang={lang}
-        spaces={filteredSpaces}
-        useMembers={useMembers}
-      />
+      <SpaceCardList lang={lang} spaces={filteredSpaces} />
     </div>
   );
 }

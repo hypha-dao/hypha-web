@@ -2,7 +2,6 @@ import { Locale } from '@hypha-platform/i18n';
 import { Container } from '@hypha-platform/ui';
 import { getAllSpaces, Space } from '@hypha-platform/core/server';
 import { CATEGORIES, Category } from '@hypha-platform/core/client';
-import { useMembers } from '@web/hooks/use-members';
 import {
   getDhoPathGovernance,
   NetworkAll,
@@ -55,7 +54,6 @@ export default async function Index(props: PageProps) {
           spaces={spaces}
           categories={categories}
           uniqueCategories={uniqueCategories}
-          useMembers={useMembers}
         />
       ) : (
         <NetworkAll

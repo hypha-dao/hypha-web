@@ -13,7 +13,6 @@ export * from './network-selected';
 export * from './breadcrumbs';
 export * from './space-card-list';
 export * from './space-card.container';
-export * from './space-card.wrapper';
 export * from './space-card';
 export * from './space-group-slider';
 export * from './space-search';

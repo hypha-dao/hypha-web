@@ -1,4 +1,4 @@
-import { JoinSpace, SpaceCardWrapper, WebLinks } from '@hypha-platform/epics';
+import { JoinSpace, SpaceCard, WebLinks } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import {
   Container,
@@ -22,7 +22,6 @@ import {
   fetchSpaceDetails,
   fetchSpaceProposalsIds,
 } from '@hypha-platform/core/client';
-import { useMembers } from '@web/hooks/use-members';
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
 import { Breadcrumbs } from './_components/breadcrumbs';
@@ -147,14 +146,13 @@ export default async function DhoLayout({
                       className="flex flex-col flex-1"
                       href={getDhoPathGovernance(lang, space.slug as string)}
                     >
-                      <SpaceCardWrapper
+                      <SpaceCard
                         description={space.description as string}
                         icon={space.logoUrl || ''}
                         leadImage={space.leadImage || ''}
+                        members={space.memberCount}
                         agreements={space.documentCount}
                         title={space.title as string}
-                        spaceSlug={space.slug as string}
-                        useMembers={useMembers}
                       />
                     </Link>
                   </CarouselItem>
