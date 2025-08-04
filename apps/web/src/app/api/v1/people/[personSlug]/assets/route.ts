@@ -4,6 +4,9 @@ import {
   findPersonBySlug,
   getDb,
   getTokenBalancesByAddress,
+  findAllTokens,
+} from '@hypha-platform/core/server';
+import {
   getBalance,
   getTokenMeta,
 } from '@hypha-platform/core/server';
@@ -76,6 +79,22 @@ export async function GET(
     } catch (error: unknown) {
       console.error('Failed to fetch token prices:', error);
     }
+
+    const rawDbTokens = await findAllTokens(
+      { db: getDb({ authToken }) },
+      { search: undefined },
+    );
+    const dbTokens = rawDbTokens.map((token) => ({
+      agreementId: token.agreementId ?? undefined,
+      spaceId: token.spaceId ?? undefined,
+      name: token.name,
+      symbol: token.symbol,
+      maxSupply: token.maxSupply,
+      type: token.type as 'utility' | 'credits' | 'ownership' | 'voice',
+      iconUrl: token.iconUrl ?? undefined,
+      transferable: token.transferable,
+      isVotingToken: token.isVotingToken,
+    }));
 
     const assets = await Promise.all(
       allTokens.map(async (token) => {

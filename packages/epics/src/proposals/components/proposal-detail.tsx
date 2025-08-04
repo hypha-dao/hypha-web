@@ -22,6 +22,18 @@ import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+export type DbToken = {
+  agreementId?: number;
+  spaceId: number;
+  name: string;
+  symbol: string;
+  maxSupply: number;
+  type: 'utility' | 'credits' | 'ownership' | 'voice';
+  iconUrl?: string;
+  transferable: boolean;
+  isVotingToken: boolean;
+};
+
 type ProposalDetailProps = ProposalHeadProps & {
   onAccept: () => void;
   onReject: () => void;
@@ -37,6 +49,7 @@ type ProposalDetailProps = ProposalHeadProps & {
   spaceSlug: string;
   label?: string;
   documentSlug: string;
+  dbTokens?: DbToken[];
 };
 
 export const ProposalDetail = ({
@@ -59,6 +72,7 @@ export const ProposalDetail = ({
   isVoting,
   label,
   documentSlug,
+  dbTokens,
 }: ProposalDetailProps) => {
   const router = useRouter();
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
@@ -169,6 +183,7 @@ export const ProposalDetail = ({
             name={token.name}
             symbol={token.symbol}
             initialSupply={token.maxSupply}
+            dbTokens={dbTokens}
           />
         ))}
         {proposalDetails?.transfers.map((tx, idx) => (

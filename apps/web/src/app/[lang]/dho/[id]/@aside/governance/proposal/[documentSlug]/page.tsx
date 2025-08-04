@@ -9,6 +9,7 @@ import { getDhoPathGovernance } from '../../../../@tab/governance/constants';
 import { useVote } from '@hypha-platform/core/client';
 import { useSpaceDocumentsWithStatuses } from '@hypha-platform/epics';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
+import { useDbTokens } from '@web/hooks/use-db-tokens';
 
 export default function Agreements() {
   const { id, lang } = useParams();
@@ -27,6 +28,7 @@ export default function Agreements() {
     spaceSlug: space?.slug as string,
     spaceId: space?.web3SpaceId as number,
   });
+  const { tokens } = useDbTokens();
 
   return (
     <SidePanel>
@@ -53,6 +55,7 @@ export default function Agreements() {
         spaceSlug={space?.slug || ''}
         label={document?.label || ''}
         documentSlug={documentSlug}
+        dbTokens={tokens || []}
       />
     </SidePanel>
   );

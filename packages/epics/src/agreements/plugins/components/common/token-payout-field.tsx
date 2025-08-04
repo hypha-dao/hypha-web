@@ -65,6 +65,7 @@ export const TokenPayoutField = ({
                     width={20}
                     height={20}
                     alt={selectedToken.symbol}
+                    className="mr-2 object-cover rounded-full max-w-5 max-h-5"
                   />
                   <span className="text-2">{selectedToken.symbol}</span>
                 </>
@@ -86,7 +87,7 @@ export const TokenPayoutField = ({
                 width={24}
                 height={24}
                 alt={token.symbol}
-                className="mr-2 object-cover"
+                className="mr-2 object-cover rounded-full max-w-5 max-h-5"
               />
               <span className="text-2 text-neutral-11">{token.symbol}</span>
             </DropdownMenuItem>

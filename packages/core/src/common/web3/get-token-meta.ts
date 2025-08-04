@@ -1,15 +1,34 @@
 import { publicClient, TOKENS, Token } from '@hypha-platform/core/client';
 import { erc20Abi } from 'viem';
 
+type DbToken = {
+  agreementId?: number | undefined;
+  spaceId?: number;
+  name: string;
+  symbol: string;
+  maxSupply: number;
+  type: 'utility' | 'credits' | 'ownership' | 'voice';
+  iconUrl?: string;
+  transferable: boolean;
+  isVotingToken: boolean;
+};
 export async function getTokenMeta(
   tokenAddress: `0x${string}`,
+  dbTokens?: DbToken[],
 ): Promise<Omit<Token, 'address'>> {
-  const stable = TOKENS.find((token) => token.address == tokenAddress);
-  if (stable) {
-    return stable;
+  const stableToken = TOKENS.find((token) => token.address === tokenAddress);
+  if (stableToken) {
+    const { symbol, icon, name, type } = stableToken;
+    const dbToken = dbTokens?.find(
+      (t) => t.symbol.toUpperCase() === symbol.toUpperCase(),
+    );
+    return {
+      symbol,
+      name,
+      type,
+      icon: dbToken?.iconUrl ?? icon,
+    };
   }
-
-  // TODO: implement fetching meta data for space tokens
 
   const contract = {
     address: tokenAddress,
@@ -31,16 +50,28 @@ export async function getTokenMeta(
         },
       ],
     });
-    const failure = results.find((result) => result.status === 'failure');
-    if (failure?.error) throw failure.error;
 
-    // Check above will eliminate undefined results
-    const [symbol, name] = results.map(({ result }) => result as string);
+    const failure = results.find((result) => result.status === 'failure');
+    if (failure?.error) {
+      throw new Error(`Contract call failed: ${failure.error.message}`);
+    }
+
+    const [symbolResult, nameResult] = results.map(
+      ({ result }) => result as string,
+    );
+
+    const symbol = symbolResult || 'MISSING SYMBOL';
+    const name = nameResult || 'MISSING NAME';
+
+    const dbToken = dbTokens?.find(
+      (t) => t.symbol.toUpperCase() === symbol.toUpperCase(),
+    );
+    const icon = dbToken?.iconUrl ?? '/placeholder/token-icon.png';
 
     return {
-      symbol: symbol ?? 'MISSING SYMBOL',
-      icon: '/placeholder/token-icon.png',
-      name: name ?? 'MISSING NAME',
+      symbol,
+      name,
+      icon,
       type: 'utility',
     };
   } catch (error: any) {
