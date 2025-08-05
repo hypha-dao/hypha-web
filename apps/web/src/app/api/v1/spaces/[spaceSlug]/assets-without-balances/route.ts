@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   findSpaceBySlug,
   getTokenBalancesByAddress,
+  getTokenMeta,
+  web3Client,
 } from '@hypha-platform/core/server';
 import {
   getSpaceRegularTokens,
   getSpaceDecayingTokens,
   getSpaceOwnershipTokens,
-  getTokenMeta,
-  publicClient,
   Token,
   TOKENS,
   ALLOWED_SPACES,
@@ -40,7 +40,7 @@ export async function GET(
 
     let spaceTokens;
     try {
-      spaceTokens = await publicClient.multicall({
+      spaceTokens = await web3Client.multicall({
         contracts: [
           getSpaceRegularTokens({ spaceId }),
           getSpaceOwnershipTokens({ spaceId }),

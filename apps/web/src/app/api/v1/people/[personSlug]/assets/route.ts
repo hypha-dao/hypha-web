@@ -4,13 +4,10 @@ import {
   findPersonBySlug,
   getDb,
   getTokenBalancesByAddress,
-} from '@hypha-platform/core/server';
-import {
-  TOKENS,
   getBalance,
   getTokenMeta,
-  Token,
-} from '@hypha-platform/core/client';
+} from '@hypha-platform/core/server';
+import { TOKENS, Token } from '@hypha-platform/core/client';
 import { headers } from 'next/headers';
 
 export async function GET(
