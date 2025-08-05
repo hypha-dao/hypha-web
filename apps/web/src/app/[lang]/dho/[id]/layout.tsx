@@ -1,4 +1,4 @@
-import { JoinSpace, SpaceCardWrapper, WebLinks } from '@hypha-platform/epics';
+import { JoinSpace, SpaceCard, WebLinks } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import {
   Container,
@@ -12,15 +12,16 @@ import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem } from '@hypha-platform/ui';
 import Link from 'next/link';
 import {
-  findAllSpaces,
+  getAllSpaces,
   findSpaceBySlug,
   findParentSpaceById,
 } from '@hypha-platform/core/server';
 import { getDhoPathGovernance } from './@tab/governance/constants';
 import { ActionButtons } from './_components/action-buttons';
-import { publicClient } from '@hypha-platform/core/client';
-import { getSpaceDetails } from '@hypha-platform/core/client';
-import { useMembers } from '@web/hooks/use-members';
+import {
+  fetchSpaceDetails,
+  fetchSpaceProposalsIds,
+} from '@hypha-platform/core/client';
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
 import { Breadcrumbs } from './_components/breadcrumbs';
@@ -43,13 +44,40 @@ export default async function DhoLayout({
     return notFound();
   }
 
-  const spaces = await findAllSpaces({
-    db,
-  });
+  const spaceMembers = await (async () => {
+    try {
+      const [spaceDetails] = await fetchSpaceDetails({
+        spaceIds: [BigInt(spaceFromDb.web3SpaceId as number)],
+      });
+      return spaceDetails?.members.length ?? 0;
+    } catch (error) {
+      console.error(
+        `Failed to get space details for a space ${spaceFromDb.web3SpaceId}:`,
+        error,
+      );
 
-  const spaceDetails = await publicClient.readContract(
-    getSpaceDetails({ spaceId: BigInt(spaceFromDb.web3SpaceId as number) }),
-  );
+      return 0;
+    }
+  })();
+
+  const spaceAgreements = await (async () => {
+    try {
+      const [proposals] = await fetchSpaceProposalsIds({
+        spaceIds: [BigInt(spaceFromDb.web3SpaceId as number)],
+      });
+      return proposals?.accepted?.length ?? 0;
+    } catch (error) {
+      console.error(
+        `Failed to get space details for a space ${spaceFromDb.web3SpaceId}:`,
+        error,
+      );
+
+      return 0;
+    }
+  })();
+
+  const spaces = await getAllSpaces();
+
   return (
     <div className="flex max-w-container-2xl mx-auto">
       <Container className="flex-grow min-w-0">
@@ -90,15 +118,13 @@ export default async function DhoLayout({
         </div>
         <div className="flex gap-2 items-center mt-6">
           <div className="flex">
-            <div className="font-bold text-1">
-              {spaceDetails[4].length || 0}
-            </div>
+            <div className="font-bold text-1">{spaceMembers}</div>
             <div className="text-gray-500 ml-1 text-1">Members</div>
           </div>
           <div className="flex ml-3">
             <div className="font-bold text-1">
               {/* @ts-ignore: TODO: infer types from relations */}
-              {spaceFromDb.documents?.length || 0}
+              {spaceAgreements}
             </div>
             <div className="text-gray-500 ml-1 text-1">Agreements</div>
           </div>
@@ -120,14 +146,13 @@ export default async function DhoLayout({
                       className="flex flex-col flex-1"
                       href={getDhoPathGovernance(lang, space.slug as string)}
                     >
-                      <SpaceCardWrapper
+                      <SpaceCard
                         description={space.description as string}
                         icon={space.logoUrl || ''}
                         leadImage={space.leadImage || ''}
+                        members={space.memberCount}
                         agreements={space.documentCount}
                         title={space.title as string}
-                        spaceSlug={space.slug as string}
-                        useMembers={useMembers}
                       />
                     </Link>
                   </CarouselItem>

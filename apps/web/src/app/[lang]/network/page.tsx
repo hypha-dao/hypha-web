@@ -1,9 +1,7 @@
 import { Locale } from '@hypha-platform/i18n';
 import { Container } from '@hypha-platform/ui';
-import { findAllSpaces, Space } from '@hypha-platform/core/server';
+import { getAllSpaces, Space } from '@hypha-platform/core/server';
 import { CATEGORIES, Category } from '@hypha-platform/core/client';
-import { db } from '@hypha-platform/storage-postgres';
-import { useMembers } from '@web/hooks/use-members';
 import {
   getDhoPathGovernance,
   NetworkAll,
@@ -44,7 +42,7 @@ export default async function Index(props: PageProps) {
 
   const { lang } = params;
 
-  const spaces = await findAllSpaces({ db }, { search: query });
+  const spaces = await getAllSpaces({ search: query });
 
   const uniqueCategories = extractUniqueCategories(spaces);
 
@@ -56,7 +54,6 @@ export default async function Index(props: PageProps) {
           spaces={spaces}
           categories={categories}
           uniqueCategories={uniqueCategories}
-          useMembers={useMembers}
         />
       ) : (
         <NetworkAll

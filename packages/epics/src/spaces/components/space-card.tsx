@@ -34,11 +34,11 @@ const customAvatarStyles: React.CSSProperties = {
 export const SpaceCard: React.FC<SpaceCardProps> = ({
   description,
   icon,
-  members,
-  agreements,
+  members = 0,
+  agreements = 0,
   isLoading = false,
   title,
-  leadImage,
+  leadImage = '/placeholder/space-lead-image.png',
 }) => {
   return (
     <Card className="w-full h-full flex flex-col">
@@ -51,7 +51,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
             width={454}
             height={150}
             className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
-            src={leadImage || '/placeholder/space-lead-image.png'}
+            src={leadImage}
             alt={title}
           />
         </Skeleton>

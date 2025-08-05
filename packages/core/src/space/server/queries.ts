@@ -1,10 +1,5 @@
 import { asc, eq, inArray, sql, and, isNull } from 'drizzle-orm';
-import {
-  memberships,
-  Space,
-  spaces,
-  documents,
-} from '@hypha-platform/storage-postgres';
+import { memberships, Space, spaces } from '@hypha-platform/storage-postgres';
 import { DbConfig } from '@hypha-platform/core/server';
 
 type FindAllSpacesProps = {
@@ -29,17 +24,9 @@ export const findAllSpaces = async (
       parentId: spaces.parentId,
       createdAt: spaces.createdAt,
       updatedAt: spaces.updatedAt,
-      memberCount: sql<number>`count(distinct ${memberships.personId})`.mapWith(
-        Number,
-      ),
-      documentCount: sql<number>`count(distinct ${documents.id})`.mapWith(
-        Number,
-      ),
       address: spaces.address,
     })
     .from(spaces)
-    .leftJoin(memberships, eq(memberships.spaceId, spaces.id))
-    .leftJoin(documents, eq(documents.spaceId, spaces.id))
     .where(
       and(
         eq(spaces.isArchived, false),
@@ -59,24 +46,11 @@ export const findAllSpaces = async (
           : undefined,
       ),
     )
-    .groupBy(
-      spaces.id,
-      spaces.logoUrl,
-      spaces.leadImage,
-      spaces.title,
-      spaces.description,
-      spaces.slug,
-      spaces.web3SpaceId,
-      spaces.links,
-      spaces.categories,
-      spaces.parentId,
-      spaces.createdAt,
-      spaces.updatedAt,
-      spaces.address,
-    )
     .orderBy(asc(spaces.title));
+
   return results;
 };
+
 export const findSpaceById = async (
   { id }: { id: number },
   { db }: DbConfig,

@@ -1,8 +1,4 @@
-import {
-  SpaceCardWrapper,
-  FilteredSpaces,
-  SpaceSearch,
-} from '@hypha-platform/epics';
+import { SpaceCard, FilteredSpaces, SpaceSearch } from '@hypha-platform/epics';
 import Link from 'next/link';
 import { Locale } from '@hypha-platform/i18n';
 import {
@@ -14,11 +10,9 @@ import {
 } from '@hypha-platform/ui';
 import { Heading } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
-import { findAllSpaces } from '@hypha-platform/core/server';
+import { getAllSpaces } from '@hypha-platform/core/server';
 import { getDhoPathGovernance } from '../dho/[id]/@tab/governance/constants';
-import { useMembers } from '@web/hooks/use-members';
 import { PlusIcon } from '@radix-ui/react-icons';
-import { db } from '@hypha-platform/storage-postgres';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -34,12 +28,7 @@ export default async function Index(props: PageProps) {
 
   const { lang } = params;
 
-  const spaces = await findAllSpaces(
-    {
-      db,
-    },
-    { search: query },
-  );
+  const spaces = await getAllSpaces({ search: query });
 
   return (
     <div className="w-full overflow-auto">
@@ -56,7 +45,7 @@ export default async function Index(props: PageProps) {
             </Button>
           </Link>
         </div>
-        <FilteredSpaces lang={lang} spaces={spaces} useMembers={useMembers} />
+        <FilteredSpaces lang={lang} spaces={spaces} />
         <div
           data-testid="recommended-spaces-container"
           className="w-full space-y-6"
@@ -73,14 +62,13 @@ export default async function Index(props: PageProps) {
                     className="flex flex-col flex-1"
                     href={getDhoPathGovernance(lang, space.slug as string)}
                   >
-                    <SpaceCardWrapper
+                    <SpaceCard
                       description={space.description as string}
                       icon={space.logoUrl || ''}
                       leadImage={space.leadImage || ''}
+                      members={space.memberCount}
                       agreements={space.documentCount}
                       title={space.title as string}
-                      spaceSlug={space.slug as string}
-                      useMembers={useMembers}
                     />
                   </Link>
                 </CarouselItem>

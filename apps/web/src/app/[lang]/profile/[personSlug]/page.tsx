@@ -5,7 +5,7 @@ import { Text } from '@radix-ui/themes';
 import { Container, Separator } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
 import React from 'react';
-import { findAllSpaces, findPersonBySlug } from '@hypha-platform/core/server';
+import { getAllSpaces, findPersonBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { Address } from '@hypha-platform/core/client';
 import { ProfileTabs } from './_components/profile-tabs';
@@ -27,7 +27,7 @@ export default async function ProfilePage(props: PageProps) {
   const { lang, personSlug } = params;
 
   const person = await findPersonBySlug({ slug: personSlug }, { db });
-  const spaces = await findAllSpaces({ db });
+  const spaces = await getAllSpaces();
 
   return (
     <Container className="w-full">

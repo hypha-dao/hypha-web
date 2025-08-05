@@ -1,11 +1,7 @@
 'use client';
 
 import { Category, Space } from '@hypha-platform/core/client';
-import {
-  CategorySearch,
-  SpaceCardList,
-  UseMembers,
-} from '@hypha-platform/epics';
+import { CategorySearch, SpaceCardList } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Text } from '@radix-ui/themes';
@@ -22,13 +18,11 @@ export function NetworkSelected({
   spaces,
   categories,
   uniqueCategories,
-  useMembers,
 }: {
   lang: Locale;
   spaces: Space[];
   categories: Category[];
   uniqueCategories: Category[];
-  useMembers: UseMembers;
 }) {
   const selectedSpaces = React.useMemo(
     () =>
@@ -77,11 +71,7 @@ export function NetworkSelected({
       </Text>
       <CategorySearch suggestions={categorySuggestions} />
       <div className="space-y-6 flex mt-6">
-        <SpaceCardList
-          lang={lang}
-          spaces={selectedSpaces}
-          useMembers={useMembers}
-        />
+        <SpaceCardList lang={lang} spaces={selectedSpaces} />
       </div>
     </div>
   );
