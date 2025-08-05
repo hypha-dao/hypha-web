@@ -252,8 +252,6 @@ export const schemaIssueNewToken = z.object({
     .union([
       z.string().url('Icon URL must be a valid URL'),
       z.literal(''),
-      z.null(),
-      z.undefined(),
       z
         .instanceof(File)
         .refine(
@@ -265,7 +263,6 @@ export const schemaIssueNewToken = z.object({
           'File must be an image (JPEG, PNG, GIF, WEBP)',
         ),
     ])
-    .optional()
     .transform((val) => (val === '' || val === null ? undefined : val)),
 
   // tokenDescription: z
