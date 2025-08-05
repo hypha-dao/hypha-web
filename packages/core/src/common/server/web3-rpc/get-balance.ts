@@ -41,8 +41,7 @@ export async function getBalance(
     };
   } catch (error: any) {
     throw new Error(
-      `Failed to fetch balance of ${ownerAddress} for token ${tokenAddress}:`,
-      error,
+      `Failed to fetch balance of ${ownerAddress} for token ${tokenAddress}: ${error}`,
     );
   }
 }
