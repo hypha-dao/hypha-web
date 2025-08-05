@@ -39,7 +39,7 @@ export const IssueNewTokenPlugin = () => {
           setTokenType(value);
         }}
       />
-      <TokenMaxSupplyField />
+      {/* <TokenMaxSupplyField /> */}
       {tokenType === 'voice' && (
         <>
           <div className="flex items-center gap-3 justify-between">
