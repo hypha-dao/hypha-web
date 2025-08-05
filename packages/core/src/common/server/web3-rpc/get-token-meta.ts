@@ -7,7 +7,9 @@ import { erc20Abi } from 'viem';
 export async function getTokenMeta(
   tokenAddress: `0x${string}`,
 ): Promise<Omit<Token, 'address'>> {
-  const stable = TOKENS.find((token) => token.address == tokenAddress);
+  const stable = TOKENS.find(
+    (token) => token.address.toLowerCase() === tokenAddress.toLowerCase(),
+  );
   if (stable) {
     return stable;
   }
