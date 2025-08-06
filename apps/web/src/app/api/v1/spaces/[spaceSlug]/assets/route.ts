@@ -161,7 +161,7 @@ export async function GET(
     const assets = await Promise.all(
       allTokens.map(async (token) => {
         try {
-          const meta = await getTokenMeta(token.address);
+          const meta = await getTokenMeta(token.address, dbTokens);
           const { amount } = await getBalance(token.address, spaceAddress);
           const rate = prices[token.address] || 0;
           return {
