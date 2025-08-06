@@ -117,9 +117,13 @@ export const Recipient = ({
             }
           >
             {/* rounded */}
-            <TabsList>
-              <TabsTrigger value="member">Member</TabsTrigger>
-              <TabsTrigger value="space">Space</TabsTrigger>
+            <TabsList triggerVariant="switch">
+              <TabsTrigger variant="switch" value="member">
+                Member
+              </TabsTrigger>
+              <TabsTrigger variant="switch" value="space">
+                Space
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
