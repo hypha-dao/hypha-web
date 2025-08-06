@@ -6,12 +6,15 @@ const Tabs = TabsPrimitive.Root;
 
 const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
->(({ className, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> & {
+    triggerVariant?: 'default' | 'ghost' | 'outlined' | 'switch';
+  }
+>(({ className, triggerVariant, ...props }, ref) => (
   <TabsPrimitive.List
     ref={ref}
     className={cn(
       'inline-flex h-10 items-center justify-center rounded-md text-muted-foreground',
+      triggerVariant === 'switch' && 'bg-neutral-3 px-1 rounded-lg',
       className,
     )}
     {...props}
@@ -22,7 +25,7 @@ TabsList.displayName = TabsPrimitive.List.displayName;
 const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> & {
-    variant?: 'default' | 'ghost' | 'outlined';
+    variant?: 'default' | 'ghost' | 'outlined' | 'switch';
   }
 >(({ className, variant = 'default', ...props }, ref) => (
   <TabsPrimitive.Trigger
@@ -32,9 +35,11 @@ const TabsTrigger = React.forwardRef<
       variant === 'ghost' &&
         'bg-transparent border-b-2 border-primary-foreground data-[state=active]:border-blue-500 data-[state=active]:text-secondary-foreground opacity-100',
       variant === 'default' &&
-        'data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm',
+        'data-[state=active]:bg-background rounded-lg data-[state=active]:text-foreground data-[state=active]:shadow-sm',
       variant === 'outlined' &&
         'mr-2 rounded-lg border data-[state=active]:bg-secondary-foreground data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm',
+      variant === 'switch' &&
+        'bg-neutral-3 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm',
       className,
     )}
     {...props}

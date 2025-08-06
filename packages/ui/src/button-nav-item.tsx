@@ -26,8 +26,8 @@ export const ButtonNavItem = ({
       variant="ghost"
       colorVariant="neutral"
       className={clsx(
-        isActive && 'bg-primary-foreground',
-        'hover:bg-primary-foreground',
+        isActive && 'bg-neutral-3',
+        'hover:bg-neutral-3',
         classNames,
       )}
       asChild={!!href}
