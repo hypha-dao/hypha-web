@@ -8,7 +8,10 @@ const createSpaceWeb2Props = {
     .string()
     .min(1, 'Title must contain at least 1 character')
     .max(50, 'Title must contain at most 50 characters'),
-  description: z.string().min(1).max(300),
+  description: z
+    .string()
+    .min(1, 'Description must contain at least 1 character')
+    .max(300, 'Description must contain at most 500 character'),
   slug: z
     .string()
     .min(1)
