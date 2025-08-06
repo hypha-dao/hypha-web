@@ -81,7 +81,7 @@ export const createSpaceFiles = {
       ),
   ]),
   leadImage: z.union([
-    z.string().url('Lead Image URL must be a valid URL'),
+    z.string().url('Please upload a space banner image'),
     z
       .instanceof(File)
       .refine(
