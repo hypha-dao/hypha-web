@@ -11,7 +11,7 @@ const createSpaceWeb2Props = {
   description: z
     .string()
     .min(1, 'Description must contain at least 1 character')
-    .max(300, 'Description must contain at most 500 character'),
+    .max(300, 'Description must contain at most 300 character'),
   slug: z
     .string()
     .min(1)
