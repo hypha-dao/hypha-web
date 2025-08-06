@@ -10,11 +10,17 @@ import { useVote } from '@hypha-platform/core/client';
 import { useSpaceDocumentsWithStatuses } from '@hypha-platform/epics';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { useDbTokens } from '@web/hooks/use-db-tokens';
+import { useJwt } from '@hypha-platform/core/client';
+import { useProposalDetailsWeb3Rpc } from '@hypha-platform/core/client';
 
 export default function Agreements() {
+  const { jwt: authToken } = useJwt();
   const { id, lang } = useParams();
   const documentSlug = useDocumentSlug();
   const { document, isLoading, mutate } = useDocumentBySlug(documentSlug);
+  const { proposalDetails } = useProposalDetailsWeb3Rpc({
+    proposalId: document?.web3ProposalId as number,
+  });
   const {
     handleAccept,
     handleReject,
@@ -22,6 +28,8 @@ export default function Agreements() {
     isVoting,
   } = useVote({
     proposalId: document?.web3ProposalId,
+    authToken: authToken,
+    tokenSymbol: proposalDetails?.tokens[0]?.symbol,
   });
   const { space } = useSpaceBySlug(id as string);
   const { update } = useSpaceDocumentsWithStatuses({
