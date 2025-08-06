@@ -9,12 +9,14 @@ export type UploadLeadImageProps = {
   onChange: (acceptedFile: File | null) => void;
   defaultImage?: string;
   maxFileSize?: number;
+  uploadText?: React.ReactNode;
 };
 
 export const UploadLeadImage = ({
   onChange,
   defaultImage,
   maxFileSize,
+  uploadText,
 }: UploadLeadImageProps) => {
   const [preview, setPreview] = React.useState<string | null>(
     defaultImage || null,
@@ -73,7 +75,13 @@ export const UploadLeadImage = ({
           <span>Drop the image here</span>
         ) : (
           <span>
-            <span className="text-accent-11">Upload</span> an image
+            {uploadText ? (
+              uploadText
+            ) : (
+              <>
+                <span className="text-accent-11">Upload</span> an image
+              </>
+            )}
           </span>
         )}
       </PreviewOverlay>

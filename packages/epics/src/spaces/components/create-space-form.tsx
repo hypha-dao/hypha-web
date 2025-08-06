@@ -166,6 +166,12 @@ export const SpaceForm = ({
                       ? defaultValues?.leadImage
                       : undefined
                   }
+                  uploadText={
+                    <>
+                      <span className="text-accent-11">Upload</span> space
+                      banner
+                    </>
+                  }
                 />
               </FormControl>
               <FormMessage />

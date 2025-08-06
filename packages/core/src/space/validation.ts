@@ -4,8 +4,14 @@ import { z } from 'zod';
 export const ALLOWED_IMAGE_FILE_SIZE = 4 * 1024 * 1024;
 
 const createSpaceWeb2Props = {
-  title: z.string().min(1).max(50),
-  description: z.string().min(1).max(300),
+  title: z
+    .string()
+    .min(1, 'Title must contain at least 1 character')
+    .max(50, 'Title must contain at most 50 characters'),
+  description: z
+    .string()
+    .min(1, 'Description must contain at least 1 character')
+    .max(300, 'Description must contain at most 300 character'),
   slug: z
     .string()
     .min(1)
@@ -78,7 +84,7 @@ export const createSpaceFiles = {
       ),
   ]),
   leadImage: z.union([
-    z.string().url('Lead Image URL must be a valid URL'),
+    z.string().url('Please upload a space banner image'),
     z
       .instanceof(File)
       .refine(
