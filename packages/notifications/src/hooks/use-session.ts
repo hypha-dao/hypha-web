@@ -3,23 +3,27 @@
 import { useState, useEffect } from 'react';
 import OneSignal from 'react-onesignal';
 
+const useOneSignalState = (effect: () => Promise<void>) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | undefined>(undefined);
+
+  useEffect(() => {
+    effect()
+      .catch((err) =>
+        setError(err instanceof Error ? err : new Error(String(err))),
+      )
+      .finally(() => setIsLoading(false));
+  }, [effect]);
+
+  return { isLoading, error };
+};
+
 export function useSession() {
   /**
    * @brief Links current client session to a unique user
    */
   const linkToUser = (userId: string) => {
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<Error | undefined>(undefined);
-
-    useEffect(() => {
-      OneSignal.login(userId)
-        .catch((err) =>
-          setError(err instanceof Error ? err : new Error(String(err))),
-        )
-        .finally(() => setIsLoading(false));
-    }, [userId]);
-
-    return { isLoading, error };
+    return useOneSignalState(() => OneSignal.login(userId));
   };
 
   /**
@@ -27,28 +31,25 @@ export function useSession() {
    *        when the user is logging out)
    */
   const unlinkFromUser = () => {
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<Error | undefined>(undefined);
-
-    useEffect(() => {
-      OneSignal.logout()
-        .catch((err) =>
-          setError(err instanceof Error ? err : new Error(String(err))),
-        )
-        .finally(() => setIsLoading(false));
-    }, []);
-
-    return { isLoading, error };
+    return useOneSignalState(OneSignal.logout);
   };
 
-  /**
-   * @brief Get current session IDs
-   */
-  const currentSession = () => {
-    const { onesignalId: sessionId, externalId: userId } = OneSignal.User;
+  return { linkToUser, unlinkFromUser };
+}
 
-    return { sessionId, userId };
-  };
+/**
+ * @brief Get current session IDs
+ */
+export function useCurrentSession() {
+  const [sessionId, setSessionId] = useState<string | undefined>(undefined);
+  const [userId, setUserId] = useState<string | undefined>(undefined);
 
-  return { currentSession, linkToUser, unlinkFromUser };
+  useEffect(() => {
+    const { onesignalId, externalId } = OneSignal.User;
+
+    setSessionId(onesignalId);
+    setUserId(externalId);
+  }, [OneSignal.User]);
+
+  return { sessionId, userId };
 }
