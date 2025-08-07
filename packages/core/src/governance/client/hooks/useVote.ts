@@ -165,20 +165,24 @@ export const useVote = ({
 
     eventSource.onmessage = async (event) => {
       console.log('SSE event received:', event.data);
-      const data = JSON.parse(event.data);
-      if (
-        data.event === 'ProposalRejected' &&
-        data.proposalId === String(proposalId)
-      ) {
-        const actions = await fetchProposalActions(Number(proposalId));
-        if (!isValidProposalAction(actions)) return;
+      try {
+        const data = JSON.parse(event.data);
+        if (
+          data.event === 'ProposalRejected' &&
+          data.proposalId === String(proposalId)
+        ) {
+          const actions = await fetchProposalActions(Number(proposalId));
+          if (!isValidProposalAction(actions)) return;
 
-        const tokens = await fetchTokens();
-        const token = tokens?.find((t) => t.symbol === tokenSymbol);
-        if (token) {
-          await deleteToken({ id: BigInt(token.id) });
-          console.log(`Token ${tokenSymbol} (ID: ${token.id}) deleted`);
+          const tokens = await fetchTokens();
+          const token = tokens?.find((t) => t.symbol === tokenSymbol);
+          if (token) {
+            await deleteToken({ id: BigInt(token.id) });
+            console.log(`Token ${tokenSymbol} (ID: ${token.id}) deleted`);
+          }
         }
+      } catch (error) {
+        console.error('Error handling SSE event:', error);
       }
     };
 
