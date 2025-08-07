@@ -48,7 +48,7 @@ export const MemberSpaces = ({
 
   return (
     <div className="flex justify-between items-center mt-4 mb-4">
-      {!filterSpaces?.length ? (
+      {!filteredSpaces?.length ? (
         <Empty>
           <div className="flex flex-col gap-7">
             <p>
