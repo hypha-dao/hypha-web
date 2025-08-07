@@ -11,7 +11,7 @@ import { formMap } from './internal';
 
 export async function getSpacesByWeb3Ids(
   spaceIds: number[],
-  { parentOnly }: { parentOnly?: boolean },
+  { parentOnly = true }: { parentOnly?: boolean } = {},
 ): Promise<Space[]> {
   if (spaceIds.length === 0) return [];
 
