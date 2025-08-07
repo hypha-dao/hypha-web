@@ -8,28 +8,13 @@ import {
   regularTokenFactoryAbi,
   ownershipTokenFactoryAbi,
   decayingTokenFactoryAbi,
-  daoSpaceFactoryImplementationAbi,
-  decayingSpaceTokenAbi,
-  tokenBalanceJoinImplementationAbi,
 } from '@hypha-platform/core/generated';
-import { publicClient, getProposalDetails } from '@hypha-platform/core/client';
+import { getProposalDetails, DbToken } from '@hypha-platform/core/client';
 import useSWRMutation from 'swr/mutation';
 import { decodeFunctionData } from 'viem';
 import { deleteTokenAction } from '../../server/actions';
 import { DeleteTokenInput } from '../../types';
-
-export type DbToken = {
-  id: number;
-  agreementId?: number;
-  spaceId: number;
-  name: string;
-  symbol: string;
-  maxSupply: number;
-  type: 'utility' | 'credits' | 'ownership' | 'voice';
-  iconUrl?: string;
-  transferable: boolean;
-  isVotingToken: boolean;
-};
+import { web3Client } from '../../../server';
 
 export const useVote = ({
   proposalId,
@@ -67,7 +52,7 @@ export const useVote = ({
 
   const fetchProposalActions = useCallback(async (proposalId: number) => {
     try {
-      const data = await publicClient.readContract(
+      const data = await web3Client.readContract(
         getProposalDetails({ proposalId: BigInt(proposalId) }),
       );
 

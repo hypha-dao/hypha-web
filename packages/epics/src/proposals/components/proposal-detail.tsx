@@ -7,7 +7,10 @@ import { Separator, AttachmentList, Skeleton } from '@hypha-platform/ui';
 // TODO(#891): restore when comments support is implemented
 // import { CommentsList } from '../../interactions/components/comments-list';
 import Image from 'next/image';
-import { useProposalDetailsWeb3Rpc } from '@hypha-platform/core/client';
+import {
+  useProposalDetailsWeb3Rpc,
+  DbToken,
+} from '@hypha-platform/core/client';
 import {
   ProposalTransactionItem,
   ProposalTokenItem,
@@ -21,18 +24,6 @@ import { ButtonClose } from '@hypha-platform/epics';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-
-export type DbToken = {
-  agreementId?: number;
-  spaceId: number;
-  name: string;
-  symbol: string;
-  maxSupply: number;
-  type: 'utility' | 'credits' | 'ownership' | 'voice';
-  iconUrl?: string;
-  transferable: boolean;
-  isVotingToken: boolean;
-};
 
 type ProposalDetailProps = ProposalHeadProps & {
   onAccept: () => void;

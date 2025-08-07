@@ -1,17 +1,7 @@
-import { publicClient, TOKENS, Token } from '@hypha-platform/core/client';
+import { TOKENS, Token, DbToken } from '@hypha-platform/core/client';
 import { erc20Abi } from 'viem';
+import { web3Client } from '../server';
 
-type DbToken = {
-  agreementId?: number | undefined;
-  spaceId?: number;
-  name: string;
-  symbol: string;
-  maxSupply: number;
-  type: 'utility' | 'credits' | 'ownership' | 'voice';
-  iconUrl?: string;
-  transferable: boolean;
-  isVotingToken: boolean;
-};
 export async function getTokenMeta(
   tokenAddress: `0x${string}`,
   dbTokens?: DbToken[],
@@ -36,7 +26,7 @@ export async function getTokenMeta(
   } as const;
 
   try {
-    const results = await publicClient.multicall({
+    const results = await web3Client.multicall({
       contracts: [
         {
           ...contract,

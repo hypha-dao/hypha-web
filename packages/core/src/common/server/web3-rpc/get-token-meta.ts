@@ -1,20 +1,8 @@
 'use server';
 
-import { TOKENS, Token } from '@hypha-platform/core/client';
+import { TOKENS, Token, DbToken } from '@hypha-platform/core/client';
 import { erc20Abi } from 'viem';
 import { web3Client } from './client';
-
-type DbToken = {
-  agreementId?: number | undefined;
-  spaceId?: number;
-  name: string;
-  symbol: string;
-  maxSupply: number;
-  type: 'utility' | 'credits' | 'ownership' | 'voice';
-  iconUrl?: string;
-  transferable: boolean;
-  isVotingToken: boolean;
-};
 
 export async function getTokenMeta(
   tokenAddress: `0x${string}`,
