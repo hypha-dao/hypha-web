@@ -1,3 +1,5 @@
+'use server';
+
 import { TOKENS, Token, DbToken } from '@hypha-platform/core/client';
 import { erc20Abi } from 'viem';
 import { web3Client } from '../server';
