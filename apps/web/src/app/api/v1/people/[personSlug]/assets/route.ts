@@ -11,6 +11,9 @@ import {
 import { TOKENS, Token } from '@hypha-platform/core/client';
 import { headers } from 'next/headers';
 
+const validTokenTypes = ['utility', 'credits', 'ownership', 'voice'] as const;
+type TokenType = (typeof validTokenTypes)[number];
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ personSlug: string }> },
@@ -88,7 +91,9 @@ export async function GET(
       name: token.name,
       symbol: token.symbol,
       maxSupply: token.maxSupply,
-      type: token.type as 'utility' | 'credits' | 'ownership' | 'voice',
+      type: validTokenTypes.includes(token.type as TokenType)
+        ? (token.type as TokenType)
+        : 'utility',
       iconUrl: token.iconUrl ?? undefined,
       transferable: token.transferable,
       isVotingToken: token.isVotingToken,
