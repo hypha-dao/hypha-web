@@ -1,7 +1,6 @@
 import { ethers } from 'ethers';
 import { NextResponse } from 'next/server';
 import { daoProposalsImplementationConfig } from '@hypha-platform/core/generated';
-import { headers } from 'next/headers';
 
 if (!process.env.ALCHEMY_API_KEY) {
   throw new Error('ALCHEMY_API_KEY environment variable is not set');
@@ -10,8 +9,6 @@ if (!process.env.ALCHEMY_API_KEY) {
 const WS_URL = `wss://base-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`;
 
 export async function GET(request: Request) {
-  const headersList = await headers();
-  const authToken = headersList.get('Authorization')?.split(' ')[1] || '';
   const { searchParams } = new URL(request.url);
   const proposalId = searchParams.get('proposalId');
 
@@ -20,14 +17,6 @@ export async function GET(request: Request) {
   }
 
   try {
-    if (!authToken) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        {
-          status: 401,
-        },
-      );
-    }
     const provider = new ethers.WebSocketProvider(WS_URL);
     const contract = new ethers.Contract(
       daoProposalsImplementationConfig.address[8453],
