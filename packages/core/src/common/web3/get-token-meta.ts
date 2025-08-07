@@ -6,7 +6,9 @@ export async function getTokenMeta(
   tokenAddress: `0x${string}`,
   dbTokens?: DbToken[],
 ): Promise<Omit<Token, 'address'>> {
-  const stableToken = TOKENS.find((token) => token.address === tokenAddress);
+  const stableToken = TOKENS.find(
+    (token) => token.address.toLowerCase() === tokenAddress.toLowerCase(),
+  );
   if (stableToken) {
     const { symbol, icon, name, type } = stableToken;
     const dbToken = dbTokens?.find(
