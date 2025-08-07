@@ -179,9 +179,11 @@ export const useVote = ({
 
           const tokens = await fetchTokens();
           const token = tokens?.find((t) => t.symbol === tokenSymbol);
-          if (token) {
+          if (token?.id != null) {
             await deleteToken({ id: BigInt(token.id) });
             console.log(`Token ${tokenSymbol} (ID: ${token.id}) deleted`);
+          } else {
+            console.error('Token not found');
           }
         }
       } catch (error) {
