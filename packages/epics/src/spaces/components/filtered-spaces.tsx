@@ -25,9 +25,11 @@ export function filterSpaces(
 export function FilteredSpaces({
   lang,
   spaces,
+  showLoadMore = true,
 }: {
   lang: Locale;
   spaces: Space[];
+  showLoadMore?: boolean;
 }) {
   const { person } = useMe();
   const { web3SpaceIds } = useMemberWeb3SpaceIds({
@@ -44,7 +46,11 @@ export function FilteredSpaces({
       <div className="justify-between items-center flex">
         <Text className="text-4">My Spaces | {filteredSpaces.length}</Text>
       </div>
-      <SpaceCardList lang={lang} spaces={filteredSpaces} />
+      <SpaceCardList
+        lang={lang}
+        spaces={filteredSpaces}
+        showLoadMore={showLoadMore}
+      />
     </div>
   );
 }

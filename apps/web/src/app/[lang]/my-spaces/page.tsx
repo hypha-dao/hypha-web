@@ -28,7 +28,7 @@ export default async function Index(props: PageProps) {
 
   const { lang } = params;
 
-  const spaces = await getAllSpaces({ search: query });
+  const spaces = await getAllSpaces({ search: query, parentOnly: false });
 
   return (
     <div className="w-full overflow-auto">
@@ -45,7 +45,7 @@ export default async function Index(props: PageProps) {
             </Button>
           </Link>
         </div>
-        <FilteredSpaces lang={lang} spaces={spaces} />
+        <FilteredSpaces lang={lang} spaces={spaces} showLoadMore={false} />
         <div
           data-testid="recommended-spaces-container"
           className="w-full space-y-6"

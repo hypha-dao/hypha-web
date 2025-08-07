@@ -4,11 +4,12 @@ import { DbConfig } from '@hypha-platform/core/server';
 
 type FindAllSpacesProps = {
   search?: string;
+  parentOnly?: boolean;
 };
 
 export const findAllSpaces = async (
   { db }: DbConfig,
-  props: FindAllSpacesProps = {},
+  { search, parentOnly = true }: FindAllSpacesProps,
 ) => {
   const results = await db
     .select({
@@ -30,18 +31,18 @@ export const findAllSpaces = async (
     .where(
       and(
         eq(spaces.isArchived, false),
-        isNull(spaces.parentId),
-        props.search
+        parentOnly ? isNull(spaces.parentId) : undefined,
+        search
           ? sql`(
               -- Full-text search for exact word matches (highest priority)
               (setweight(to_tsvector('english', ${spaces.title}), 'A') ||
                setweight(to_tsvector('english', ${spaces.description}), 'B')
-              ) @@ plainto_tsquery('english', ${props.search})
+              ) @@ plainto_tsquery('english', ${search})
               OR
               -- Partial word matching with ILIKE (case-insensitive)
-              ${spaces.title} ILIKE ${'%' + props.search + '%'}
+              ${spaces.title} ILIKE ${'%' + search + '%'}
               OR
-              ${spaces.description} ILIKE ${'%' + props.search + '%'}
+              ${spaces.description} ILIKE ${'%' + search + '%'}
             )`
           : undefined,
       ),
@@ -92,9 +93,10 @@ export const findSpaceBySlug = async (
 
 type FindAllSpacesByMemberIdInput = {
   memberId: number;
+  parentOnly?: boolean;
 };
 export const findAllSpacesByMemberId = async (
-  { memberId }: FindAllSpacesByMemberIdInput,
+  { memberId, parentOnly = true }: FindAllSpacesByMemberIdInput,
   { db }: DbConfig,
 ) => {
   const results = await db
@@ -105,7 +107,7 @@ export const findAllSpacesByMemberId = async (
       and(
         eq(memberships.personId, memberId),
         eq(spaces.isArchived, false),
-        isNull(spaces.parentId),
+        parentOnly ? isNull(spaces.parentId) : undefined,
       ),
     )
     .orderBy(asc(spaces.title));
