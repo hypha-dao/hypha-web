@@ -1,14 +1,19 @@
-import { MemberSpaces, PersonHead } from '@hypha-platform/epics';
+import { PersonHead, ProfileMemberSpaces } from '@hypha-platform/epics';
 import Link from 'next/link';
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Text } from '@radix-ui/themes';
 import { Container, Separator } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
 import React from 'react';
-import { getAllSpaces, findPersonBySlug } from '@hypha-platform/core/server';
+import {
+  findPersonBySlug,
+  getSpacesByWeb3Ids,
+} from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
-import { Address } from '@hypha-platform/core/client';
+import { getMemberSpaces } from '@hypha-platform/core/client';
 import { ProfileTabs } from './_components/profile-tabs';
+import { web3Client } from '@hypha-platform/core/server';
+import { Hex, zeroAddress } from 'viem';
 
 type PageProps = {
   params: Promise<{ lang: Locale; personSlug: string }>;
@@ -27,7 +32,13 @@ export default async function ProfilePage(props: PageProps) {
   const { lang, personSlug } = params;
 
   const person = await findPersonBySlug({ slug: personSlug }, { db });
-  const spaces = await getAllSpaces();
+  const personAddress = (person?.address as Hex) || zeroAddress;
+  const web3SpaceIds = await web3Client.readContract(
+    getMemberSpaces({ memberAddress: personAddress }),
+  );
+  const spaces = await getSpacesByWeb3Ids(web3SpaceIds.map(Number), {
+    parentOnly: false,
+  });
 
   return (
     <Container className="w-full">
@@ -56,12 +67,7 @@ export default async function ProfilePage(props: PageProps) {
             exportEmbeddedWallet={true}
           />
           <Separator />
-          <MemberSpaces
-            spaces={spaces}
-            personAddress={person?.address as Address | undefined}
-            personSlug={person?.slug}
-            profileView={true}
-          />
+          <ProfileMemberSpaces spaces={spaces} profileView={true} />
           <ProfileTabs person={person} lang={lang} />
         </div>
       ) : (

@@ -115,9 +115,10 @@ export const findAllSpacesByMemberId = async (
 
 type FindAllSpacesByWeb3SpaceIdsInput = {
   web3SpaceIds: number[];
+  parentOnly?: boolean;
 };
 export const findAllSpacesByWeb3SpaceIds = async (
-  { web3SpaceIds }: FindAllSpacesByWeb3SpaceIdsInput,
+  { web3SpaceIds, parentOnly = true }: FindAllSpacesByWeb3SpaceIdsInput,
   { db }: DbConfig,
 ) => {
   const results = await db
@@ -127,7 +128,7 @@ export const findAllSpacesByWeb3SpaceIds = async (
       and(
         inArray(spaces.web3SpaceId, web3SpaceIds),
         eq(spaces.isArchived, false),
-        isNull(spaces.parentId),
+        parentOnly ? isNull(spaces.parentId) : undefined,
       ),
     )
     .orderBy(asc(spaces.title));
