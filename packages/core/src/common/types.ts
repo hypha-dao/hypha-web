@@ -36,7 +36,7 @@ export type PaginationParams<T> = {
 };
 
 export type DbToken = {
-  id: number;
+  id?: number;
   agreementId?: number | undefined;
   spaceId?: number;
   name: string;
