@@ -64,12 +64,17 @@ export async function GET(request: Request) {
 
         request.signal.addEventListener('abort', () => {
           clearInterval(keepAlive);
-          provider.destroy?.();
+          contract.removeAllListeners('ProposalRejected');
+          if (provider.destroy) {
+            provider.destroy();
+          }
           controller.close();
         });
       },
       cancel() {
-        provider.destroy?.();
+        if (provider.destroy) {
+          provider.destroy();
+        }
       },
     });
 
