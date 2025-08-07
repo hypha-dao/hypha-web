@@ -69,7 +69,9 @@ export const TokenIconUpload = ({
       )}
     >
       <input {...getInputProps()} />
-      {preview && <PreviewImg src={preview} />}
+      {typeof preview === 'string' && (
+        <PreviewImg src={preview || '/placeholder/token-icon.png'} />
+      )}
       <PreviewOverlay isVisible={!preview || isDragActive}>
         {isDragActive ? (
           <DropIcon className="h-5 w-5" />
