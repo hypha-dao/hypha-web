@@ -250,7 +250,9 @@ export const schemaIssueNewToken = z.object({
 
   iconUrl: z
     .union([
-      z.string().url('Icon URL must be a valid URL'),
+      z
+        .string({ message: 'Uploading a token icon is required' })
+        .url('Icon URL must be a valid URL'),
       z.literal(''),
       z
         .instanceof(File)
