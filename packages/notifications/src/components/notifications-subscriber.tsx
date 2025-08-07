@@ -17,7 +17,7 @@ export function NotificationSubscriber({
       appId,
       serviceWorkerPath,
     });
-  }, []);
+  }, [appId, serviceWorkerPath]);
 
   return <></>;
 }
