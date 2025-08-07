@@ -2,6 +2,10 @@ import { ethers } from 'ethers';
 import { NextResponse } from 'next/server';
 import { daoProposalsImplementationConfig } from '@hypha-platform/core/generated';
 
+if (!process.env.ALCHEMY_API_KEY) {
+  throw new Error('ALCHEMY_API_KEY environment variable is not set');
+}
+
 const WS_URL = `wss://base-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`;
 
 export async function GET(request: Request) {
