@@ -9,12 +9,15 @@ import {
   ownershipTokenFactoryAbi,
   decayingTokenFactoryAbi,
 } from '@hypha-platform/core/generated';
-import { getProposalDetails, DbToken } from '@hypha-platform/core/client';
+import {
+  getProposalDetails,
+  DbToken,
+  publicClient,
+} from '@hypha-platform/core/client';
 import useSWRMutation from 'swr/mutation';
 import { decodeFunctionData } from 'viem';
 import { deleteTokenAction } from '../../server/actions';
 import { DeleteTokenInput } from '../../types';
-import { web3Client } from '../../../server';
 
 export const useVote = ({
   proposalId,
@@ -52,7 +55,7 @@ export const useVote = ({
 
   const fetchProposalActions = useCallback(async (proposalId: number) => {
     try {
-      const data = await web3Client.readContract(
+      const data = await publicClient.readContract(
         getProposalDetails({ proposalId: BigInt(proposalId) }),
       );
 
