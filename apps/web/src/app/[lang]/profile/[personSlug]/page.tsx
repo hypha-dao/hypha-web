@@ -10,7 +10,7 @@ import {
   getSpacesByWeb3Ids,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
-import { getMemberSpaces } from '@hypha-platform/core/client';
+import { getMemberSpaces, Space } from '@hypha-platform/core/client';
 import { ProfileTabs } from './_components/profile-tabs';
 import { web3Client } from '@hypha-platform/core/server';
 import { Hex, zeroAddress } from 'viem';
@@ -33,12 +33,17 @@ export default async function ProfilePage(props: PageProps) {
 
   const person = await findPersonBySlug({ slug: personSlug }, { db });
   const personAddress = (person?.address as Hex) || zeroAddress;
-  const web3SpaceIds = await web3Client.readContract(
-    getMemberSpaces({ memberAddress: personAddress }),
-  );
-  const spaces = await getSpacesByWeb3Ids(web3SpaceIds.map(Number), {
-    parentOnly: false,
-  });
+  let spaces: Space[] = [];
+  try {
+    const web3SpaceIds = await web3Client.readContract(
+      getMemberSpaces({ memberAddress: personAddress }),
+    );
+    spaces = await getSpacesByWeb3Ids(web3SpaceIds.map(Number), {
+      parentOnly: false,
+    });
+  } catch (error) {
+    console.error('Failed to fetch member spaces:', error);
+  }
 
   return (
     <Container className="w-full">

@@ -87,7 +87,7 @@ export const ProfileMemberSpaces = ({
             <div className="flex flex-row gap-3 overflow-x-auto">
               {spaces?.map((space, index) => (
                 <Link
-                  key={index}
+                  key={space.id || index}
                   href={getDhoPathGovernance(lang as Locale, space.slug ?? '')}
                 >
                   <div title={space.title}>
