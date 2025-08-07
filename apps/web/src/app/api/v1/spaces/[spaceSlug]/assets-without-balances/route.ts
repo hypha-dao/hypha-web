@@ -4,6 +4,7 @@ import {
   getTokenBalancesByAddress,
   getTokenMeta,
   web3Client,
+  findAllTokens,
 } from '@hypha-platform/core/server';
 import {
   getSpaceRegularTokens,
@@ -37,6 +38,19 @@ export async function GET(
     }
 
     const spaceId = BigInt(space.web3SpaceId as number);
+
+    const rawDbTokens = await findAllTokens({ db }, { search: undefined });
+    const dbTokens = rawDbTokens.map((token) => ({
+      agreementId: token.agreementId ?? undefined,
+      spaceId: token.spaceId ?? undefined,
+      name: token.name,
+      symbol: token.symbol,
+      maxSupply: token.maxSupply,
+      type: token.type as 'utility' | 'credits' | 'ownership' | 'voice',
+      iconUrl: token.iconUrl ?? undefined,
+      transferable: token.transferable,
+      isVotingToken: token.isVotingToken,
+    }));
 
     let spaceTokens;
     try {
@@ -132,7 +146,7 @@ export async function GET(
     const assets = await Promise.all(
       allTokens.map(async (token) => {
         try {
-          const meta = await getTokenMeta(token.address);
+          const meta = await getTokenMeta(token.address, dbTokens);
           return {
             ...meta,
             address: token.address,

@@ -34,3 +34,16 @@ export type PaginationParams<T> = {
   filter?: FilterParams<T>;
   order?: Order<T>;
 };
+
+export type DbToken = {
+  id?: number;
+  agreementId?: number | undefined;
+  spaceId?: number;
+  name: string;
+  symbol: string;
+  maxSupply: number;
+  type: 'utility' | 'credits' | 'ownership' | 'voice';
+  iconUrl?: string;
+  transferable: boolean;
+  isVotingToken: boolean;
+};

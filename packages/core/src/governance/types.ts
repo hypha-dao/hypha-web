@@ -88,3 +88,24 @@ export type TokenBase = {
   amount: number;
   token: Address;
 };
+
+export type CreateTokenInput = {
+  agreementId?: number;
+  spaceId: number;
+  name: string;
+  symbol: string;
+  maxSupply: number;
+  type: 'utility' | 'credits' | 'ownership' | 'voice';
+  iconUrl?: string;
+  transferable: boolean;
+  isVotingToken: boolean;
+  decaySettings: {
+    decayInterval: number;
+    decayPercentage: number;
+  };
+  web3SpaceId: number;
+};
+
+export type DeleteTokenInput = {
+  id: bigint;
+};

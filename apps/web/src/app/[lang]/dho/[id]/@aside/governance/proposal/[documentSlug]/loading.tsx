@@ -26,6 +26,7 @@ export default function Loading() {
         spaceSlug={''}
         label={''}
         documentSlug={''}
+        dbTokens={[]}
       />
     </SidePanel>
   );

@@ -225,6 +225,13 @@
       "when": 1753253583544,
       "tag": "0031_mighty_warlock",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1754293048284,
+      "tag": "0032_medical_master_mold",
+      "breakpoints": true
     }
   ]
 }

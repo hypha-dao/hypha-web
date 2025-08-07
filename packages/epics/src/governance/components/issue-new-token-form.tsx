@@ -63,11 +63,9 @@ export const IssueNewTokenForm = ({
       creatorId: person?.id,
       name: '',
       symbol: '',
-      icon: undefined,
-      // digits: 0,
+      iconUrl: undefined,
       type: undefined,
       maxSupply: 0,
-      // tokenDescription: '',
       decaySettings: {
         decayInterval: 2592000,
         decayPercentage: 1,
@@ -86,6 +84,7 @@ export const IssueNewTokenForm = ({
   const handleCreate = async (data: FormValues) => {
     await createIssueToken({
       ...data,
+      iconUrl: data.iconUrl || undefined,
       spaceId: spaceId as number,
       web3SpaceId: web3SpaceId as number,
       transferable: data.type !== 'voice',
@@ -121,7 +120,7 @@ export const IssueNewTokenForm = ({
             }}
             closeUrl={successfulUrl}
             backUrl={backUrl}
-            backLabel="Back to Settings"
+            backLabel="Back to settings"
             isLoading={false}
             label="Issue New Token"
           />

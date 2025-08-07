@@ -7,7 +7,10 @@ import { Separator, AttachmentList, Skeleton } from '@hypha-platform/ui';
 // TODO(#891): restore when comments support is implemented
 // import { CommentsList } from '../../interactions/components/comments-list';
 import Image from 'next/image';
-import { useProposalDetailsWeb3Rpc } from '@hypha-platform/core/client';
+import {
+  useProposalDetailsWeb3Rpc,
+  DbToken,
+} from '@hypha-platform/core/client';
 import {
   ProposalTransactionItem,
   ProposalTokenItem,
@@ -37,6 +40,7 @@ type ProposalDetailProps = ProposalHeadProps & {
   spaceSlug: string;
   label?: string;
   documentSlug: string;
+  dbTokens?: DbToken[];
 };
 
 export const ProposalDetail = ({
@@ -59,6 +63,7 @@ export const ProposalDetail = ({
   isVoting,
   label,
   documentSlug,
+  dbTokens,
 }: ProposalDetailProps) => {
   const router = useRouter();
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
@@ -169,6 +174,7 @@ export const ProposalDetail = ({
             name={token.name}
             symbol={token.symbol}
             initialSupply={token.maxSupply}
+            dbTokens={dbTokens}
           />
         ))}
         {proposalDetails?.transfers.map((tx, idx) => (

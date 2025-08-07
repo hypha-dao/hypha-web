@@ -8,17 +8,21 @@ import { produce } from 'immer';
 
 import { useIssueTokenMutationsWeb3Rpc } from './useIssueNewTokenMutations.web3.rsc';
 import { useAgreementFileUploads } from './useAgreementFileUploads';
+import { useTokenFileUploads } from './useTokenFileUploads';
 import { useAgreementMutationsWeb2Rsc } from './useAgreementMutations.web2.rsc';
 import {
   schemaCreateAgreementWeb2,
   schemaCreateAgreementFiles,
 } from '../../validation';
+import { useTokenMutationsWeb2Rsc } from './useTokenMutationWeb2.rsc';
 import { Config } from '@wagmi/core';
 
 type TaskName =
   | 'CREATE_WEB2_AGREEMENT'
   | 'CREATE_WEB3_AGREEMENT'
   | 'UPLOAD_FILES'
+  | 'UPLOAD_TOKEN_ICON'
+  | 'CREATE_TOKEN'
   | 'LINK_WEB2_AND_WEB3_AGREEMENT';
 
 type TaskState = {
@@ -36,16 +40,20 @@ enum TaskStatus {
 }
 
 const taskActionDescriptions: Record<TaskName, string> = {
-  CREATE_WEB2_AGREEMENT: 'Creating Web2 agreement...',
-  CREATE_WEB3_AGREEMENT: 'Creating Web3 agreement...',
-  UPLOAD_FILES: 'Uploading Files...',
-  LINK_WEB2_AND_WEB3_AGREEMENT: 'Linking Web2 and Web3 agreements',
+  CREATE_WEB2_AGREEMENT: 'Creating Web2 Agreement...',
+  CREATE_WEB3_AGREEMENT: 'Creating Web3 Agreement...',
+  UPLOAD_FILES: 'Uploading files...',
+  UPLOAD_TOKEN_ICON: 'Uploading token icon...',
+  CREATE_TOKEN: 'Creating token...',
+  LINK_WEB2_AND_WEB3_AGREEMENT: 'Linking Web2 and Web3 agreements...',
 };
 
 const initialTaskState: TaskState = {
   CREATE_WEB2_AGREEMENT: { status: TaskStatus.IDLE },
   CREATE_WEB3_AGREEMENT: { status: TaskStatus.IDLE },
   UPLOAD_FILES: { status: TaskStatus.IDLE },
+  UPLOAD_TOKEN_ICON: { status: TaskStatus.IDLE },
+  CREATE_TOKEN: { status: TaskStatus.IDLE },
   LINK_WEB2_AND_WEB3_AGREEMENT: { status: TaskStatus.IDLE },
 };
 
@@ -86,17 +94,20 @@ const computeProgress = (tasks: TaskState): number => {
 };
 
 type CreateIssueTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
-  web3SpaceId: number;
+  agreementId?: number;
+  spaceId: number;
   name: string;
   symbol: string;
   maxSupply: number;
+  type: 'utility' | 'credits' | 'ownership' | 'voice';
+  iconUrl?: string | File;
   transferable: boolean;
   isVotingToken: boolean;
   decaySettings: {
     decayInterval: number;
     decayPercentage: number;
   };
-  type: 'voice' | 'ownership' | 'utility' | 'credits';
+  web3SpaceId: number;
 };
 
 export const useCreateIssueTokenOrchestrator = ({
@@ -107,6 +118,7 @@ export const useCreateIssueTokenOrchestrator = ({
   config?: Config;
 }) => {
   const web2 = useAgreementMutationsWeb2Rsc(authToken);
+  const web2TokenMutations = useTokenMutationsWeb2Rsc(authToken);
   const web3 = useIssueTokenMutationsWeb3Rpc({
     proposalSlug: web2.createdAgreement?.slug,
   });
@@ -120,6 +132,7 @@ export const useCreateIssueTokenOrchestrator = ({
       });
     },
   );
+  const tokenFiles = useTokenFileUploads(authToken);
 
   const [taskState, dispatch] = useReducer(
     progressStateReducer,
@@ -169,6 +182,25 @@ export const useCreateIssueTokenOrchestrator = ({
 
       const web2Slug = createdAgreement?.slug;
 
+      let iconUrl: string | undefined;
+      if (arg.iconUrl instanceof File) {
+        startTask('UPLOAD_TOKEN_ICON');
+        const result = await tokenFiles.upload({ iconUrl: arg.iconUrl });
+        iconUrl = result.iconUrl;
+        console.log('iconUrl after upload:', iconUrl);
+        completeTask('UPLOAD_TOKEN_ICON');
+      } else {
+        iconUrl = arg.iconUrl;
+      }
+
+      startTask('CREATE_TOKEN');
+      const createdToken = await web2TokenMutations.createToken({
+        ...arg,
+        agreementId: createdAgreement.id,
+        iconUrl,
+      });
+      completeTask('CREATE_TOKEN');
+
       try {
         if (config) {
           startTask('CREATE_WEB3_AGREEMENT');
@@ -212,10 +244,11 @@ export const useCreateIssueTokenOrchestrator = ({
   const { data: updatedWeb2Agreement } = useSWR(
     web2.createdAgreement?.slug &&
       taskState.UPLOAD_FILES.status === TaskStatus.IS_DONE &&
-      (!config || taskState.CREATE_WEB3_AGREEMENT.status === TaskStatus.IS_DONE)
+      taskState.CREATE_WEB3_AGREEMENT.status === TaskStatus.IS_DONE &&
+      web3.createdToken?.proposalId
       ? [
           web2.createdAgreement.slug,
-          web3.createdToken?.proposalId,
+          web3.createdToken.proposalId,
           'linkingWeb2AndWeb3',
         ]
       : null,
@@ -224,7 +257,7 @@ export const useCreateIssueTokenOrchestrator = ({
         startTask('LINK_WEB2_AND_WEB3_AGREEMENT');
         const result = await web2.updateAgreementBySlug({
           slug,
-          web3ProposalId: web3ProposalId ? Number(web3ProposalId) : undefined,
+          web3ProposalId: Number(web3ProposalId),
         });
         completeTask('LINK_WEB2_AND_WEB3_AGREEMENT');
         return result;

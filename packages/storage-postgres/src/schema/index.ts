@@ -6,11 +6,13 @@ import { spacesRelations } from './space.relations';
 import { membershipRelation } from './membership.relations';
 import { peopleRelations } from './people.relations';
 import { documentRelation } from './document.relations';
+import { tokenRelations, tokens } from './tokens';
 
 export * from './document';
 export * from './membership';
 export * from './people';
 export * from './space';
+export * from './tokens';
 
 export const schema = {
   documents,
@@ -21,4 +23,6 @@ export const schema = {
   membershipRelation,
   peopleRelations,
   documentRelation,
+  tokens,
+  tokenRelations,
 };

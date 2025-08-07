@@ -4,11 +4,15 @@ import {
   findPersonBySlug,
   getDb,
   getTokenBalancesByAddress,
+  findAllTokens,
   getBalance,
   getTokenMeta,
 } from '@hypha-platform/core/server';
 import { TOKENS, Token } from '@hypha-platform/core/client';
 import { headers } from 'next/headers';
+
+const validTokenTypes = ['utility', 'credits', 'ownership', 'voice'] as const;
+type TokenType = (typeof validTokenTypes)[number];
 
 export async function GET(
   request: NextRequest,
@@ -77,10 +81,28 @@ export async function GET(
       console.error('Failed to fetch token prices:', error);
     }
 
+    const rawDbTokens = await findAllTokens(
+      { db: getDb({ authToken }) },
+      { search: undefined },
+    );
+    const dbTokens = rawDbTokens.map((token) => ({
+      agreementId: token.agreementId ?? undefined,
+      spaceId: token.spaceId ?? undefined,
+      name: token.name,
+      symbol: token.symbol,
+      maxSupply: token.maxSupply,
+      type: validTokenTypes.includes(token.type as TokenType)
+        ? (token.type as TokenType)
+        : 'utility',
+      iconUrl: token.iconUrl ?? undefined,
+      transferable: token.transferable,
+      isVotingToken: token.isVotingToken,
+    }));
+
     const assets = await Promise.all(
       allTokens.map(async (token) => {
         try {
-          const meta = await getTokenMeta(token.address);
+          const meta = await getTokenMeta(token.address, dbTokens);
           const { amount } = await getBalance(token.address, address);
           const rate = prices[token.address] || 0;
           return {
