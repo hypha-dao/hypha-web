@@ -1,7 +1,7 @@
 'use client';
 
 import { Image } from '@hypha-platform/ui';
-import { DbToken } from '../../proposals';
+import { DbToken } from '@hypha-platform/core/server';
 
 interface ProposalTokenItemProps {
   name?: string;
