@@ -76,6 +76,7 @@ export async function createTokenAction(
   input: CreateTokenInput,
   { authToken }: { authToken: string },
 ) {
+  if (!authToken) throw new Error('authToken is required to create token');
   return createToken(input, { db });
 }
 
@@ -83,5 +84,6 @@ export async function deleteTokenAction(
   input: DeleteTokenInput,
   { authToken }: { authToken: string },
 ) {
+  if (!authToken) throw new Error('authToken is required to delete token');
   return deleteToken(input, { db });
 }
