@@ -9,12 +9,15 @@ import {
 } from '@hypha-platform/core/client';
 import { formMap } from './internal';
 
-export async function getSpacesByWeb3Ids(spaceIds: number[]): Promise<Space[]> {
+export async function getSpacesByWeb3Ids(
+  spaceIds: number[],
+  { parentOnly = true }: { parentOnly?: boolean } = {},
+): Promise<Space[]> {
   if (spaceIds.length === 0) return [];
 
   try {
     const spaces = await findAllSpacesByWeb3SpaceIds(
-      { web3SpaceIds: spaceIds },
+      { web3SpaceIds: spaceIds, parentOnly },
       { db },
     );
 

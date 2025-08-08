@@ -11,6 +11,7 @@ import { formMap } from './internal';
 
 interface GetAllSpacesProps {
   search?: string;
+  parentOnly?: boolean;
 }
 
 export async function getAllSpaces(

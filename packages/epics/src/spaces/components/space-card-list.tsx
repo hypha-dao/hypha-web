@@ -14,12 +14,14 @@ type SpaceCardListProps = {
   lang: Locale;
   spaces: Space[];
   pageSize?: number;
+  showLoadMore?: boolean;
 };
 
 export function SpaceCardList({
   lang,
   spaces,
   pageSize = 2,
+  showLoadMore = true,
 }: SpaceCardListProps) {
   const { pages, loadMore, pagination } = useSpaceCardList({
     spaces,
@@ -31,25 +33,35 @@ export function SpaceCardList({
       {pagination?.totalPages > 0 ? (
         <div className="flex flex-col justify-around items-center gap-4">
           <div className="w-full space-y-2">
-            {Array.from({ length: pages }).map((_, index) => {
-              const startIndex = index * pageSize;
-              const endIndex = startIndex + pageSize;
-              const pageSpaces = spaces.slice(startIndex, endIndex);
-              return (
-                <SpaceCardContainer
-                  key={index}
-                  spaces={pageSpaces}
-                  lang={lang}
-                />
-              );
-            })}
+            {showLoadMore ? (
+              Array.from({ length: pages }).map((_, index) => {
+                const startIndex = index * pageSize;
+                const endIndex = startIndex + pageSize;
+                const pageSpaces = spaces.slice(startIndex, endIndex);
+                return (
+                  <SpaceCardContainer
+                    key={index}
+                    spaces={pageSpaces}
+                    lang={lang}
+                  />
+                );
+              })
+            ) : (
+              <SpaceCardContainer
+                key={`spaces-${spaces.length}`}
+                spaces={spaces}
+                lang={lang}
+              />
+            )}
           </div>
-          <SectionLoadMore
-            onClick={loadMore}
-            disabled={!pagination?.hasNextPage}
-          >
-            <Text>{pagination?.hasNextPage ? 'Load more' : 'No more'}</Text>
-          </SectionLoadMore>
+          {showLoadMore && (
+            <SectionLoadMore
+              onClick={loadMore}
+              disabled={!pagination?.hasNextPage}
+            >
+              <Text>{pagination?.hasNextPage ? 'Load more' : 'No more'}</Text>
+            </SectionLoadMore>
+          )}
         </div>
       ) : (
         <Empty>

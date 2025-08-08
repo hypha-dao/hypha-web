@@ -12,3 +12,4 @@ export * from './signup-panel';
 export * from './person-deposit-funds';
 export * from './people-transfer-form';
 export * from './people-transfer-funds';
+export * from './profile-member-spaces';
