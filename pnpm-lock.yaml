@@ -705,6 +705,9 @@ importers:
       '@hypha-platform/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      '@hypha-platform/notifications':
+        specifier: workspace:*
+        version: link:../../packages/notifications
       '@hypha-platform/storage-postgres':
         specifier: workspace:*
         version: link:../../packages/storage-postgres

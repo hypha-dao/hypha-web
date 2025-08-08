@@ -18,6 +18,7 @@ import { fileRouter } from '@hypha-platform/core/server';
 import { HYPHA_LOCALE } from '@hypha-platform/cookie';
 import { i18nConfig } from '@hypha-platform/i18n';
 import { MenuTop } from '@hypha-platform/ui';
+import { NotificationSubscriber } from '@hypha-platform/notifications/client';
 
 import '@hypha-platform/ui-utils/global.css';
 
@@ -57,6 +58,10 @@ export default async function RootLayout({
           appId: process.env.NEXT_PUBLIC_PRIVY_APP_ID!,
         }}
       >
+        <NotificationSubscriber
+          appId={process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? ''}
+          serviceWorkerPath="/onesignal/OneSignalSDKWorker.js"
+        />
         <InactivityGuard />
         <ThemeProvider
           attribute="class"
