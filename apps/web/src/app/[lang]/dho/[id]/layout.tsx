@@ -19,6 +19,7 @@ import {
 import { getDhoPathGovernance } from './@tab/governance/constants';
 import { ActionButtons } from './_components/action-buttons';
 import {
+  DEFAULT_SPACE_LEAD_IMAGE,
   fetchSpaceDetails,
   fetchSpaceProposalsIds,
 } from '@hypha-platform/core/client';
@@ -89,7 +90,7 @@ export default async function DhoLayout({
             width={768}
             height={270}
             className="rounded-xl min-h-[270px] max-h-[270px] w-full object-cover"
-            src={spaceFromDb.leadImage || '/placeholder/space-lead-image.png'}
+            src={spaceFromDb.leadImage || DEFAULT_SPACE_LEAD_IMAGE}
             alt={spaceFromDb.title}
           ></Image>
           <Avatar className="border-4 w-[128px] h-[128px] absolute bottom-[-35px] left-[15px]">
@@ -150,7 +151,7 @@ export default async function DhoLayout({
                         description={space.description as string}
                         icon={space.logoUrl || ''}
                         leadImage={
-                          space.leadImage || '/placeholder/space-lead-image.png'
+                          space.leadImage || DEFAULT_SPACE_LEAD_IMAGE
                         }
                         members={space.memberCount}
                         agreements={space.documentCount}

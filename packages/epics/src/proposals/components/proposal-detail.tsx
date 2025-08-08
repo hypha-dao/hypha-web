@@ -10,6 +10,7 @@ import Image from 'next/image';
 import {
   useProposalDetailsWeb3Rpc,
   DbToken,
+  DEFAULT_SPACE_LEAD_IMAGE,
 } from '@hypha-platform/core/client';
 import {
   ProposalTransactionItem,
@@ -143,7 +144,7 @@ export const ProposalDetail = ({
             height={150}
             width={554}
             className="w-full object-cover rounded-lg max-h-[150px]"
-            src={leadImage || '/placeholder/space-lead-image.png'}
+            src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
             alt={title ?? ''}
           />
         </Skeleton>

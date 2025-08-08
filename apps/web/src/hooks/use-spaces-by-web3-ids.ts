@@ -7,7 +7,7 @@ import { Space, useJwt } from '@hypha-platform/core/client';
 
 type UseSpacesByWeb3IdsReturn = {
   spaces: Space[];
-  error?: Object;
+  error?: unknown;
   isLoading: boolean;
 };
 
