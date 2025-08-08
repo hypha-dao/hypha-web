@@ -30,7 +30,7 @@ export const Footer = () => {
               variant="ghost"
               className="rounded-lg justify-start text-gray-400 px-0"
             >
-              <Link style={customLinkStyles} href="#">
+              <Link style={customLinkStyles} target='_blank' href="https://discord.gg/cvTgbymA">
                 Hypha Services
               </Link>
             </Button>
