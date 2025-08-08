@@ -116,6 +116,16 @@ npx nx run storage-evm:test ./test/DAOProposalsImplementation.test.ts
 npx nx run storage-evm:test ./test/HyphaToken.test.ts
 npx nx run storage-evm:test ./test/ProposalVotingComprehensive.test.ts
 
+
+
+# If node is in /usr/local/bin/node
+export PATH="/usr/local/bin:$PATH"
+# If using NVM
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+cd /Users/vlad/hypha-web/packages/storage-evm && REPORT_GAS=true npx hardhat test --config hardhat.local.config.ts ./test/DAOSpaceFactoryImplementation.test.ts | cat
+
 ```
 
 ### Upgrade Space Factory
