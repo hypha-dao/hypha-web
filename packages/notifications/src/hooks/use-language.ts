@@ -1,22 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import OneSignal from 'react-onesignal';
+import { useRef } from 'react';
+import { useOnesignal } from './use-onesignal';
 
 export function useLanguage() {
-  const [getLanguage, setLanguageGetter] = useState<(() => string) | undefined>(
-    undefined,
-  );
-  const [setLanguage, setLanguageSetter] = useState<
-    ((language: string) => void) | undefined
-  >(undefined);
+  const { onesignal } = useOnesignal();
 
-  useEffect(() => {
-    const { getLanguage: getter, setLanguage: setter } = OneSignal.User;
+  const getLanguage = useRef(onesignal?.User.getLanguage);
+  const setLanguage = useRef(onesignal?.User.setLanguage);
 
-    setLanguageGetter(getter);
-    setLanguageSetter(setter);
-  }, [OneSignal.User]);
-
-  return { getLanguage, setLanguage };
+  return { getLanguage: getLanguage.current, setLanguage: setLanguage.current };
 }

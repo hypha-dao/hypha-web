@@ -1,26 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import OneSignal from 'react-onesignal';
+import { useRef } from 'react';
+import { useOnesignal } from './use-onesignal';
 
 export function usePersonalizedTags() {
-  const [addTag, setTagAdder] = useState<
-    ((key: string, value: string) => void) | undefined
-  >(undefined);
-  const [removeTag, setTagRemover] = useState<
-    ((tag: string) => void) | undefined
-  >(undefined);
-  const [getTags, setTagsGetter] = useState<
-    (() => Record<string, string>) | undefined
-  >(undefined);
+  const { onesignal } = useOnesignal();
 
-  useEffect(() => {
-    const { addTag, removeTag, getTags } = OneSignal.User;
+  const addTag = useRef(onesignal?.User.addTag);
+  const removeTag = useRef(onesignal?.User.removeTag);
+  const getTags = useRef(onesignal?.User.getTags);
 
-    setTagAdder(addTag);
-    setTagRemover(removeTag);
-    setTagsGetter(getTags);
-  }, [OneSignal.User]);
-
-  return { addTag, removeTag, getTags };
+  return {
+    addTag: addTag.current,
+    removeTag: removeTag.current,
+    getTags: getTags.current,
+  };
 }

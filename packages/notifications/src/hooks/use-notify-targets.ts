@@ -1,30 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import OneSignal from 'react-onesignal';
+import { useRef } from 'react';
+import { useOnesignal } from './use-onesignal';
 
 export function useNotifyTargets() {
-  const [addEmail, setEmailAdder] = useState<
-    ((email: string) => void) | undefined
-  >(undefined);
-  const [removeEmail, setEmailRemover] = useState<
-    ((email: string) => void) | undefined
-  >(undefined);
-  const [addSms, setSmsAdder] = useState<((sms: string) => void) | undefined>(
-    undefined,
-  );
-  const [removeSms, setSmsRemover] = useState<
-    ((sms: string) => void) | undefined
-  >(undefined);
+  const { onesignal } = useOnesignal();
 
-  useEffect(() => {
-    const { addEmail, removeEmail, addSms, removeSms } = OneSignal.User;
+  const addEmail = useRef(onesignal?.User.addEmail);
+  const removeEmail = useRef(onesignal?.User.removeEmail);
+  const addSms = useRef(onesignal?.User.addSms);
+  const removeSms = useRef(onesignal?.User.removeSms);
 
-    setEmailAdder(addEmail);
-    setEmailRemover(removeEmail);
-    setSmsAdder(addSms);
-    setSmsRemover(removeSms);
-  }, [OneSignal.User]);
-
-  return { addEmail, removeEmail, addSms, removeSms };
+  return {
+    addEmail: addEmail.current,
+    removeEmail: removeEmail.current,
+    addSms: addSms.current,
+    removeSms: removeSms.current,
+  };
 }
