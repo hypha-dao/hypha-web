@@ -17,7 +17,9 @@ import { useSpacesByWeb3Ids } from '@web/hooks/use-spaces-by-web3-ids';
 
 export default function Member() {
   const { id, lang, personSlug } = useParams();
-  const { person, isLoading: isLoadingPersons } = useMemberBySlug(personSlug as string);
+  const { person, isLoading: isLoadingPersons } = useMemberBySlug(
+    personSlug as string,
+  );
   const { web3SpaceIds, isLoading: isLoadingSpaces } = useMemberWeb3SpaceIds({
     personAddress: person?.address,
   });
