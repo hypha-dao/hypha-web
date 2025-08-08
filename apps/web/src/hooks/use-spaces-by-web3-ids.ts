@@ -7,6 +7,7 @@ import { Space, useJwt } from '@hypha-platform/core/client';
 
 type UseSpacesByWeb3IdsReturn = {
   spaces: Space[];
+  error?: Object;
   isLoading: boolean;
 };
 
@@ -33,6 +34,10 @@ export const useSpacesByWeb3Ids = (
         },
       }).then((res) => res.json()),
   );
+
+  if (spaces && 'error' in spaces) {
+    return { spaces: [], error: spaces, isLoading };
+  }
 
   return { spaces: spaces || [], isLoading };
 };

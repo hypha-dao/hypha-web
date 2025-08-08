@@ -3,11 +3,11 @@ import { Locale } from '@hypha-platform/i18n';
 import { useSpaceDocuments } from '@web/hooks/use-space-documents';
 
 type PageProps = {
-  params: Promise<{ slug: string; id: string; lang: string }>;
+  params: Promise<{ personSlug: string; id: string; lang: string }>;
 };
 
 export default async function Loading(props: PageProps) {
-  const { lang } = await props.params;
+  const { lang } = (await props.params) ?? { lang: 'en' };
   return (
     <SidePanel>
       <MemberDetail
