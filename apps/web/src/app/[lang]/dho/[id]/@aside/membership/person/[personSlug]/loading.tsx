@@ -1,11 +1,12 @@
-import {
-  MemberDetail,
-  SidePanel,
+'use client';
+
+import { MemberDetail, SidePanel } from '@hypha-platform/epics';
+import type {
   UseDocuments,
   UseDocumentsProps,
   UseDocumentsReturn,
 } from '@hypha-platform/epics';
-import { Locale } from '@hypha-platform/i18n';
+import type { Locale } from '@hypha-platform/i18n';
 
 export default async function Loading() {
   const lang: Locale = 'en';
