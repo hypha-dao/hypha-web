@@ -83,7 +83,7 @@ export const Footer = () => {
                 Privacy Policy
               </Link>
             </Button>
-            <Button
+            {/* <Button
               asChild
               variant="ghost"
               className="rounded-lg justify-start text-gray-400 px-0"
@@ -91,7 +91,7 @@ export const Footer = () => {
               <Link style={customLinkStyles} target='_blank' href="https://hypha.earth/cookie-policy/">
                 Cookie Policy
               </Link>
-            </Button>
+            </Button> */}
           </div>
         </div>
       </Container>
