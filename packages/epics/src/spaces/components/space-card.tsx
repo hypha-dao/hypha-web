@@ -1,3 +1,4 @@
+import { DEFAULT_SPACE_LEAD_IMAGE } from '@hypha-platform/core/client';
 import {
   Avatar,
   AvatarImage,
@@ -38,7 +39,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
   agreements = 0,
   isLoading = false,
   title,
-  leadImage = '/placeholder/space-lead-image.png',
+  leadImage = DEFAULT_SPACE_LEAD_IMAGE,
 }) => {
   return (
     <Card className="w-full h-full flex flex-col">

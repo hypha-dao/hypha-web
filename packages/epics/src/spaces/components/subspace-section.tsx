@@ -3,7 +3,7 @@ import { Button } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { PlusIcon } from '@radix-ui/react-icons';
 import { UseMembers, InnerSpaceCardWrapper } from '@hypha-platform/epics';
-import { Space } from '@hypha-platform/core/client';
+import { DEFAULT_SPACE_LEAD_IMAGE, Space } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 
 interface SubspaceSectionProps {
@@ -49,9 +49,7 @@ export const SubspaceSection = ({
                   spaceSlug={space.slug}
                   title={space.title}
                   description={space.description as string}
-                  leadImageUrl={
-                    space.leadImage || '/placeholder/space-lead-image.png'
-                  }
+                  leadImageUrl={space.leadImage || DEFAULT_SPACE_LEAD_IMAGE}
                   useMembers={useMembers}
                 />
               </Link>

@@ -2,7 +2,10 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Image, Combobox, Input } from '@hypha-platform/ui';
-import { Person } from '@hypha-platform/core/client';
+import {
+  DEFAULT_SPACE_AVATAR_IMAGE,
+  Person,
+} from '@hypha-platform/core/client';
 
 type MemberWithNumberValue = {
   member: string;
@@ -80,7 +83,7 @@ export const MemberWithNumberField = ({
           renderOption={(option) => (
             <>
               <Image
-                src={option.avatarUrl || '/placeholder/space-avatar-image.png'}
+                src={option.avatarUrl || DEFAULT_SPACE_AVATAR_IMAGE}
                 alt={option.label}
                 width={24}
                 height={24}
@@ -93,9 +96,7 @@ export const MemberWithNumberField = ({
             option ? (
               <div className="flex items-center gap-2 truncate">
                 <Image
-                  src={
-                    option.avatarUrl || '/placeholder/space-avatar-image.png'
-                  }
+                  src={option.avatarUrl || DEFAULT_SPACE_AVATAR_IMAGE}
                   alt={option.label}
                   width={24}
                   height={24}

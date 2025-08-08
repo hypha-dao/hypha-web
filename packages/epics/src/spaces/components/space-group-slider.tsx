@@ -10,7 +10,11 @@ import {
 import Link from 'next/link';
 import { SpaceCard } from './space-card';
 // TODO: #594 declare UI interface separately
-import { Space } from '@hypha-platform/core/client';
+import {
+  DEFAULT_SPACE_AVATAR_IMAGE,
+  DEFAULT_SPACE_LEAD_IMAGE,
+  Space,
+} from '@hypha-platform/core/client';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
 
@@ -72,10 +76,8 @@ export const SpaceGroupSlider = ({
               >
                 <SpaceCard
                   description={space.description as string}
-                  icon={space.logoUrl ?? '/placeholder/space-avatar-image.png'}
-                  leadImage={
-                    space.leadImage || '/placeholder/space-lead-image.png'
-                  }
+                  icon={space.logoUrl ?? DEFAULT_SPACE_AVATAR_IMAGE}
+                  leadImage={space.leadImage || DEFAULT_SPACE_LEAD_IMAGE}
                   title={space.title as string}
                   isLoading={isLoading}
                   members={space.memberCount}

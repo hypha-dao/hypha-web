@@ -1,7 +1,11 @@
 'use client';
 
 import { Skeleton, Image, Button } from '@hypha-platform/ui';
-import { Address, Space } from '@hypha-platform/core/client';
+import {
+  Address,
+  DEFAULT_SPACE_AVATAR_IMAGE,
+  Space,
+} from '@hypha-platform/core/client';
 import {
   filterSpaces,
   getDhoPathGovernance,
@@ -123,9 +127,7 @@ export const MemberSpaces = ({
                         className="aspect-square h-full w-full object-cover"
                         width={iconSize}
                         height={iconSize}
-                        src={
-                          space.logoUrl ?? '/placeholder/space-avatar-image.png'
-                        }
+                        src={space.logoUrl ?? DEFAULT_SPACE_AVATAR_IMAGE}
                         alt={space.title ?? ''}
                       />
                     </div>
