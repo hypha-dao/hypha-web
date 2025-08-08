@@ -1,13 +1,17 @@
-import { MemberDetail, SidePanel } from '@hypha-platform/epics';
+import {
+  MemberDetail,
+  SidePanel,
+  UseDocuments,
+  UseDocumentsProps,
+  UseDocumentsReturn,
+} from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
-import { useSpaceDocuments } from '@web/hooks/use-space-documents';
 
-type PageProps = {
-  params: Promise<{ personSlug: string; id: string; lang: string }>;
-};
-
-export default async function Loading(props: PageProps) {
-  const { lang } = (await props.params) ?? { lang: 'en' };
+export default async function Loading() {
+  const lang: Locale = 'en';
+  const useSpaceDocuments: UseDocuments = (
+    _: UseDocumentsProps,
+  ): UseDocumentsReturn => ({ documents: [], isLoading: false });
   return (
     <SidePanel>
       <MemberDetail
@@ -16,7 +20,7 @@ export default async function Loading(props: PageProps) {
         isLoading={true}
         basePath=""
         spaces={[]}
-        lang={lang as Locale}
+        lang={lang}
         useDocuments={useSpaceDocuments}
       />
     </SidePanel>
