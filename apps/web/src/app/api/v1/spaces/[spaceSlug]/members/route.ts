@@ -51,13 +51,23 @@ export async function GET(
     const [, , , , members] = spaceDetails;
 
     const url = new URL(request.url);
-    const page = parseInt(url.searchParams.get('page') || '1', 10);
-    const pageSize = parseInt(url.searchParams.get('pageSize') || '4', 10);
+    const page = url.searchParams.get('page');
+    const pageSize = url.searchParams.get('pageSize');
     const searchTerm = url.searchParams.get('searchTerm') || undefined;
+
+    const paginationOptions =
+      page && pageSize
+        ? {
+            pagination: {
+              page: parseInt(page, 10),
+              pageSize: parseInt(pageSize, 10),
+            },
+          }
+        : {};
 
     const result = await findPersonByAddresses(
       members as `0x${string}`[],
-      { pagination: { page, pageSize }, searchTerm },
+      { ...paginationOptions, searchTerm },
       { db },
     );
 

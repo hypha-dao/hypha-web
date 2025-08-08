@@ -17,6 +17,7 @@ export type UseMembersProps = {
   spaceSlug?: string;
   searchTerm?: string;
   refreshInterval?: number;
+  paginationDisabled?: boolean;
 };
 
 export type UseMembers = (props: UseMembersProps) => UseMembersReturn;

@@ -33,7 +33,7 @@ export const Plugin = ({
   web3SpaceId,
   spaces,
 }: PluginProps) => {
-  const { members } = useMembers({ spaceSlug });
+  const { members } = useMembers({ spaceSlug, paginationDisabled: true });
 
   const PluginCmp = PLUGINS[name];
 
