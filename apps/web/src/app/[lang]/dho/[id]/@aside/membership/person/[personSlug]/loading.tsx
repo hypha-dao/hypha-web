@@ -8,17 +8,18 @@ import type {
 } from '@hypha-platform/epics';
 import type { Locale } from '@hypha-platform/i18n';
 
-export default async function Loading() {
+export default function Loading() {
   const lang: Locale = 'en';
+  const isLoading: boolean = true;
   const useSpaceDocuments: UseDocuments = (
     _: UseDocumentsProps,
-  ): UseDocumentsReturn => ({ documents: [], isLoading: false });
+  ): UseDocumentsReturn => ({ documents: [], isLoading });
   return (
     <SidePanel>
       <MemberDetail
         closeUrl=""
         member={{}}
-        isLoading={true}
+        isLoading={isLoading}
         basePath=""
         spaces={[]}
         lang={lang}
