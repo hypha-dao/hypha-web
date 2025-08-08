@@ -3,6 +3,7 @@ import { ProgressLine } from './progress-line';
 import { intervalToDuration, isPast } from 'date-fns';
 import { Loader2 } from 'lucide-react';
 import { VoterList } from '../../governance/components/voter-list';
+import { useMyVote } from '@hypha-platform/core/client';
 
 function formatTimeRemaining(
   endTime: string,
@@ -55,6 +56,8 @@ export const FormVoting = ({
   isVoting?: boolean;
   documentSlug: string;
 }) => {
+  const { myVote } = useMyVote(documentSlug);
+
   return (
     <div className="flex flex-col gap-5 text-neutral-11">
       <VoterList documentSlug={documentSlug} />
@@ -106,6 +109,10 @@ export const FormVoting = ({
                 <div className="flex items-center gap-2 text-sm text-neutral-10">
                   <Loader2 className="animate-spin w-4 h-4" />
                   Processing vote...
+                </div>
+              ) : myVote ? (
+                <div className="text-sm text-neutral-10">
+                  You already voted {myVote}
                 </div>
               ) : (
                 <>
