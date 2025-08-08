@@ -49,6 +49,7 @@ export async function GET(
       name: `${person.name} ${person.surname}`,
       avatarUrl: person.avatarUrl,
       vote: yesVoters.includes(person.address as `0x${string}`) ? 'yes' : 'no',
+      address: person.address,
     }));
 
     return NextResponse.json({ voters: peopleWithVotes });

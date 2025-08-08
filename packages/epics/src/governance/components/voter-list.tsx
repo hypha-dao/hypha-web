@@ -6,7 +6,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@hypha-platform/ui';
 
 export const VoterList = ({ documentSlug }: { documentSlug: string }) => {
   const { voters } = useProposalVoters(documentSlug);
-
   return voters && voters.length > 0 ? (
     <div className="flex gap-2 overflow-x-auto">
       {voters.map((voter) => (
