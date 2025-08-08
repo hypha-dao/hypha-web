@@ -13,6 +13,7 @@ export type UseMembersReturn = {
 
 export type UseMembersProps = {
   page?: number;
+  pageSize?: number;
   filter?: FilterParams<Person>;
   spaceSlug?: string;
   searchTerm?: string;
