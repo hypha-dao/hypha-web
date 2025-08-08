@@ -6,6 +6,7 @@
     "@hypha-platform/config-typescript": "workspace:*"
   },
   "dependencies": {
+    "@onesignal/node-onesignal": "5.2.0-beta1",
     "react": "^19.1.0",
     "react-onesignal": "^3.2.3"
   },
