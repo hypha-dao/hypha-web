@@ -5,7 +5,7 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from '@hypha-platform/ui';
-import { ChevronLeftIcon } from 'lucide-react';
+import { ChevronRightIcon } from 'lucide-react';
 import { Fragment } from 'react';
 
 type SpaceBreadcrumb = {
@@ -19,7 +19,6 @@ export function SpaceBreadcrumb({ children }: { children: React.ReactNode }) {
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink href="/my-spaces" className="flex items-center">
-            <ChevronLeftIcon width={16} height={16} />
             My Spaces
           </BreadcrumbLink>
         </BreadcrumbItem>
@@ -37,7 +36,7 @@ export const SpaceBreadcrumbItem = ({
   return (
     <Fragment key={breadcrumb.slug}>
       <BreadcrumbSeparator>
-        <ChevronLeftIcon width={16} height={16} />
+        <ChevronRightIcon width={16} height={16} />
       </BreadcrumbSeparator>
       <BreadcrumbItem>
         <BreadcrumbLink
