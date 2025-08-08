@@ -198,9 +198,8 @@ contract DAOSpaceFactoryImplementation is
     emit MemberJoined(_spaceId, _memberAddress);
   }
 
-  /*
   function removeMember(uint256 _spaceId, address _memberToRemove) public {
-    //require(_spaceId > 0 && _spaceId <= spaceCounter, 'Invalid space ID');
+    require(_spaceId > 0 && _spaceId <= spaceCounter, 'Invalid space ID');
     require(
       exitMethodDirectoryAddress != address(0),
       'Exit directory contract not set'
@@ -208,21 +207,30 @@ contract DAOSpaceFactoryImplementation is
 
     Space storage space = spaces[_spaceId];
 
-    // If exit method is 1, only executor can remove members
-    if (space.exitMethod == 1) {
-      require(msg.sender == space.executor, 'Only executor can remove members');
-    }
+    // Allow contract owner to remove members regardless of exit method
+    bool isOwner = msg.sender == owner();
 
-    // Check if exit is allowed through exit method directory
-    if (space.exitMethod != 1) {
-      require(
-        IExitMethodDirectory(exitMethodDirectoryAddress).exitcheck(
-          _spaceId,
-          space.exitMethod,
-          _memberToRemove
-        ),
-        'exnm'
-      );
+    // If not owner, check exit method authorization
+    if (!isOwner) {
+      // If exit method is 1, only executor can remove members
+      if (space.exitMethod == 1) {
+        require(
+          msg.sender == space.executor,
+          'Only executor can remove members'
+        );
+      }
+
+      // Check if exit is allowed through exit method directory
+      if (space.exitMethod != 1) {
+        require(
+          IExitMethodDirectory(exitMethodDirectoryAddress).exitcheck(
+            _spaceId,
+            space.exitMethod,
+            _memberToRemove
+          ),
+          'Exit criteria not met'
+        );
+      }
     }
 
     SpaceMembers storage members = spaceMembers[_spaceId];
@@ -238,41 +246,15 @@ contract DAOSpaceFactoryImplementation is
       }
     }
 
-    require(found, 'mnf');
-    require(_memberToRemove != space.creator, 'crsc');
+    require(found, 'Member not found');
+    require(_memberToRemove != space.creator, 'Cannot remove space creator');
 
-    // Remove from regular members
+    // Remove from regular members array
     space.members[memberIndex] = space.members[space.members.length - 1];
     space.members.pop();
 
-
-    // Remove this space from the member's list of spaces
-    uint256[] storage memberSpacesList = memberSpaces[_memberToRemove];
-    for (uint256 i = 0; i < memberSpacesList.length; i++) {
-      if (memberSpacesList[i] == _spaceId) {
-        memberSpacesList[i] = memberSpacesList[memberSpacesList.length - 1];
-        memberSpacesList.pop();
-        break;
-      }
-    }
-
-    // If member is a space member, remove from space members too
-    if (members.isSpaceMember[_memberToRemove]) {
-      for (uint256 i = 0; i < members.spaceMemberAddresses.length; i++) {
-        if (members.spaceMemberAddresses[i] == _memberToRemove) {
-          members.spaceMemberAddresses[i] = members.spaceMemberAddresses[
-            members.spaceMemberAddresses.length - 1
-          ];
-          members.spaceMemberAddresses.pop();
-          members.isSpaceMember[_memberToRemove] = false;
-          break;
-        }
-      }
-    }
-
     emit MemberRemoved(_spaceId, _memberToRemove);
   }
-  */
 
   function getSpaceMembers(
     uint256 _spaceId
@@ -403,8 +385,8 @@ contract DAOSpaceFactoryImplementation is
       'Not authorized: only executor or owner'
     );
     require(_newVotingPowerSource > 0, 'Invalid voting power source');
-    require(_newQuorum > 0 && _newQuorum <= 100, 'Invalid quorum');
-    require(_newUnity > 0 && _newUnity <= 99, 'Invalid unity');
+    require(_newQuorum > 0 && _newQuorum <= 100, 'Invalid quorm');
+    require(_newUnity > 0 && _newUnity <= 99, 'Invalid unityy');
 
     Space storage space = spaces[_spaceId];
     uint256 oldVotingPowerSource = space.votingPowerSource;

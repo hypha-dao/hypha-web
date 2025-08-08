@@ -129,6 +129,14 @@ Use this script during initial setup or when updating the contract infrastructur
 
 ```
 ts-node set-space-factory-injoinmethoddirectory.ts
+
+ts-node remove-member.ts --space 240 --members 0xA495FcBB1b17C43983C6252cB532d252A017E2bE,0x034d4AB1F2Fa7221DA0F7f8F4856167e4184Ac94
+
+ ts-node remove-member.ts --space 242 --members 0x034d4AB1F2Fa7221DA0F7f8F4856167e4184Ac94
+
+0xA495FcBB1b17C43983C6252cB532d252A017E2bE
+0x034d4AB1F2Fa7221DA0F7f8F4856167e4184Ac94
+
 ```
 
 ## Note on Security
