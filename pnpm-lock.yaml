@@ -705,6 +705,9 @@ importers:
       '@hypha-platform/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      '@hypha-platform/notifications':
+        specifier: workspace:*
+        version: link:../../packages/notifications
       '@hypha-platform/storage-postgres':
         specifier: workspace:*
         version: link:../../packages/storage-postgres
@@ -883,6 +886,19 @@ importers:
       '@hypha-platform/cookie':
         specifier: workspace:*
         version: link:../cookie
+    devDependencies:
+      '@hypha-platform/config-typescript':
+        specifier: workspace:*
+        version: link:../../config/typescript
+
+  packages/notifications:
+    dependencies:
+      react:
+        specifier: ^19.1.0
+        version: 19.1.0
+      react-onesignal:
+        specifier: ^3.2.3
+        version: 3.2.3
     devDependencies:
       '@hypha-platform/config-typescript':
         specifier: workspace:*
@@ -16315,6 +16331,10 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  react-onesignal@3.2.3:
+    resolution: {integrity: sha512-5LIbQbybNTQ8ngaMeJEBB1EEzDEYJ8SS10L7hHKNCIIWrTmeKpYFhCgwjwb1QFdZ+eRjil5y+ujJR6syf7SVVw==}
+    engines: {node: '>=14', npm: '>=6'}
 
   react-qr-code@2.0.15:
     resolution: {integrity: sha512-MkZcjEXqVKqXEIMVE0mbcGgDpkfSdd8zhuzXEl9QzYeNcw8Hq2oVIzDLWuZN2PQBwM5PWjc2S31K8Q1UbcFMfw==}
@@ -40582,6 +40602,8 @@ snapshots:
     dependencies:
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
+
+  react-onesignal@3.2.3: {}
 
   react-qr-code@2.0.15(react@19.1.0):
     dependencies:

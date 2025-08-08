@@ -1,0 +1,15 @@
+{
+  "name": "@hypha-platform/notifications",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@hypha-platform/config-typescript": "workspace:*"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-onesignal": "^3.2.3"
+  },
+  "exports": {
+    "./client": "./src/client.ts"
+  }
+}
