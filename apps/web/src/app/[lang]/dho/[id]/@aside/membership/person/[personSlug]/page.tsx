@@ -11,15 +11,13 @@ import { Locale } from '@hypha-platform/i18n';
 
 import { useMemberBySlug } from '@web/hooks/use-member-by-slug';
 import { useSpaceDocuments } from '@web/hooks/use-space-documents';
-import { usePersonSlug } from '@web/hooks/use-person-slug';
 import { getDhoPathMembership } from '../../../../@tab/membership/constants';
 import { getDhoPathGovernance } from '../../../../@tab/governance/constants';
 import { useSpacesByWeb3Ids } from '@web/hooks/use-spaces-by-web3-ids';
 
 export default function Member() {
-  const { id, lang } = useParams();
-  const personSlug = usePersonSlug();
-  const { person, isLoading: isLoadingPersons } = useMemberBySlug(personSlug);
+  const { id, lang, personSlug } = useParams();
+  const { person, isLoading: isLoadingPersons } = useMemberBySlug(personSlug as string);
   const { web3SpaceIds, isLoading: isLoadingSpaces } = useMemberWeb3SpaceIds({
     personAddress: person?.address,
   });
