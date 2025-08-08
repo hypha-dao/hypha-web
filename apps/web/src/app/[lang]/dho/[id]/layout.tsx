@@ -151,9 +151,7 @@ export default async function DhoLayout({
                       <SpaceCard
                         description={space.description as string}
                         icon={space.logoUrl || ''}
-                        leadImage={
-                          space.leadImage || DEFAULT_SPACE_LEAD_IMAGE
-                        }
+                        leadImage={space.leadImage || DEFAULT_SPACE_LEAD_IMAGE}
                         members={space.memberCount}
                         agreements={space.documentCount}
                         title={space.title as string}

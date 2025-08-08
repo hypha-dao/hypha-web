@@ -49,9 +49,7 @@ export const SubspaceSection = ({
                   spaceSlug={space.slug}
                   title={space.title}
                   description={space.description as string}
-                  leadImageUrl={
-                    space.leadImage || DEFAULT_SPACE_LEAD_IMAGE
-                  }
+                  leadImageUrl={space.leadImage || DEFAULT_SPACE_LEAD_IMAGE}
                   useMembers={useMembers}
                 />
               </Link>
