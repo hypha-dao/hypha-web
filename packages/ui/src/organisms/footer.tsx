@@ -30,7 +30,11 @@ export const Footer = () => {
               variant="ghost"
               className="rounded-lg justify-start text-gray-400 px-0"
             >
-              <Link style={customLinkStyles} target='_blank' href="https://discord.gg/cvTgbymA">
+              <Link
+                style={customLinkStyles}
+                target="_blank"
+                href="https://discord.gg/cvTgbymA"
+              >
                 Hypha Services
               </Link>
             </Button>
@@ -39,7 +43,11 @@ export const Footer = () => {
               variant="ghost"
               className="rounded-lg justify-start text-gray-400 px-0"
             >
-              <Link style={customLinkStyles} target='_blank' href="https://assets.hypha.earth/files/Hypha%20DAO%20Constitution.pdf?_gl=1*1firc45*_ga*MTk3MzcyMDY5LjE2OTcwMzY0NDA.*_ga_JM4W5HJMYV*czE3NTQ1ODMzMDkkbzM4MyRnMSR0MTc1NDU4MzMxNyRqNjAkbDAkaDA">
+              <Link
+                style={customLinkStyles}
+                target="_blank"
+                href="https://assets.hypha.earth/files/Hypha%20DAO%20Constitution.pdf?_gl=1*1firc45*_ga*MTk3MzcyMDY5LjE2OTcwMzY0NDA.*_ga_JM4W5HJMYV*czE3NTQ1ODMzMDkkbzM4MyRnMSR0MTc1NDU4MzMxNyRqNjAkbDAkaDA"
+              >
                 Hypha Constitution
               </Link>
             </Button>
@@ -48,7 +56,11 @@ export const Footer = () => {
               variant="ghost"
               className="rounded-lg justify-start text-gray-400 px-0"
             >
-              <Link style={customLinkStyles} target='_blank' href="https://docs.google.com/document/d/1wT-FHdD5AxXdzL8iuZ45aeLse18DkvHFeeL0HBle4wc/edit?tab=t.0">
+              <Link
+                style={customLinkStyles}
+                target="_blank"
+                href="https://docs.google.com/document/d/1wT-FHdD5AxXdzL8iuZ45aeLse18DkvHFeeL0HBle4wc/edit?tab=t.0"
+              >
                 Hypha Tokenomics
               </Link>
             </Button>
@@ -61,7 +73,11 @@ export const Footer = () => {
               variant="ghost"
               className="rounded-lg justify-start text-gray-400 px-0"
             >
-              <Link style={customLinkStyles} target='_blank' href="https://www.gnu.org/licenses/gpl-3.0.html">
+              <Link
+                style={customLinkStyles}
+                target="_blank"
+                href="https://www.gnu.org/licenses/gpl-3.0.html"
+              >
                 AGPLv3 License
               </Link>
             </Button>
@@ -70,7 +86,11 @@ export const Footer = () => {
               variant="ghost"
               className="rounded-lg justify-start text-gray-400 px-0"
             >
-              <Link style={customLinkStyles} target='_blank' href="https://hypha.earth/terms-conditions/">
+              <Link
+                style={customLinkStyles}
+                target="_blank"
+                href="https://hypha.earth/terms-conditions/"
+              >
                 Terms & Conditions
               </Link>
             </Button>
@@ -79,7 +99,11 @@ export const Footer = () => {
               variant="ghost"
               className="rounded-lg justify-start text-gray-400 px-0"
             >
-              <Link style={customLinkStyles} target='_blank' href="https://hypha.earth/privacy-policy/">
+              <Link
+                style={customLinkStyles}
+                target="_blank"
+                href="https://hypha.earth/privacy-policy/"
+              >
                 Privacy Policy
               </Link>
             </Button>
