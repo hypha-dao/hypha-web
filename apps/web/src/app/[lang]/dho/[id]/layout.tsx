@@ -19,6 +19,7 @@ import {
 import { getDhoPathGovernance } from './@tab/governance/constants';
 import { ActionButtons } from './_components/action-buttons';
 import {
+  DEFAULT_SPACE_AVATAR_IMAGE,
   DEFAULT_SPACE_LEAD_IMAGE,
   fetchSpaceDetails,
   fetchSpaceProposalsIds,
@@ -95,7 +96,7 @@ export default async function DhoLayout({
           ></Image>
           <Avatar className="border-4 w-[128px] h-[128px] absolute bottom-[-35px] left-[15px]">
             <AvatarImage
-              src={spaceFromDb.logoUrl || '/placeholder/space-avatar-image.png'}
+              src={spaceFromDb.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
               alt="logo"
             />
           </Avatar>

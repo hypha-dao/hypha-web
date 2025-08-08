@@ -7,3 +7,4 @@ export const DEFAULT_IMAGE_ACCEPT = [
 ];
 
 export const DEFAULT_SPACE_LEAD_IMAGE = '/placeholder/space-lead-image.png';
+export const DEFAULT_SPACE_AVATAR_IMAGE = '/placeholder/space-avatar-image.png';

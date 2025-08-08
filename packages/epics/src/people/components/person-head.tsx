@@ -17,7 +17,7 @@ import Link from 'next/link';
 import { useAuthentication } from '@hypha-platform/authentication';
 import React from 'react';
 import { ExportEmbeddedWalletButton } from '@hypha-platform/epics';
-import { DEFAULT_SPACE_LEAD_IMAGE, useMe } from '@hypha-platform/core/client';
+import { DEFAULT_SPACE_AVATAR_IMAGE, DEFAULT_SPACE_LEAD_IMAGE, useMe } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
 
 export type MemberType = {
@@ -40,7 +40,7 @@ interface PersonHeadProps {
 
 export const PersonHead = ({
   isLoading = false,
-  avatar = '/placeholder/space-avatar-image.png',
+  avatar = DEFAULT_SPACE_AVATAR_IMAGE,
   name,
   surname,
   slug,
@@ -79,7 +79,7 @@ export const PersonHead = ({
         <Avatar style={customLogoStyles}>
           <Skeleton loading={isLoading} width={128} height={128}>
             <AvatarImage
-              src={avatar || '/placeholder/space-avatar-image.png'}
+              src={avatar || DEFAULT_SPACE_AVATAR_IMAGE}
               alt={`Profile Avatar Image: ${name} ${surname}`}
             />
           </Skeleton>
