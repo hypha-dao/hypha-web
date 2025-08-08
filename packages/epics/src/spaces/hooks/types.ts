@@ -13,10 +13,12 @@ export type UseMembersReturn = {
 
 export type UseMembersProps = {
   page?: number;
+  pageSize?: number;
   filter?: FilterParams<Person>;
   spaceSlug?: string;
   searchTerm?: string;
   refreshInterval?: number;
+  paginationDisabled?: boolean;
 };
 
 export type UseMembers = (props: UseMembersProps) => UseMembersReturn;

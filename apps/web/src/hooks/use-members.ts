@@ -26,6 +26,7 @@ export const useMembers: UseMembers = ({
   spaceSlug,
   searchTerm,
   refreshInterval,
+  paginationDisabled = false,
 }: {
   page?: number;
   pageSize?: number;
@@ -33,17 +34,16 @@ export const useMembers: UseMembers = ({
   spaceSlug?: string;
   searchTerm?: string;
   refreshInterval?: number;
+  paginationDisabled?: boolean;
 }): UseMembersReturn => {
   const { jwt } = useJwt();
 
   const queryParams = React.useMemo(() => {
-    const effectiveFilter = {
-      page,
-      pageSize,
-      ...(searchTerm ? { searchTerm } : {}),
-    };
+    const effectiveFilter = paginationDisabled
+      ? { ...(searchTerm ? { searchTerm } : {}) }
+      : { page, pageSize, ...(searchTerm ? { searchTerm } : {}) };
     return `?${queryString.stringify(effectiveFilter)}`;
-  }, [page, pageSize, searchTerm]);
+  }, [page, pageSize, searchTerm, paginationDisabled]);
 
   console.debug('useMembers', { queryParams });
 
