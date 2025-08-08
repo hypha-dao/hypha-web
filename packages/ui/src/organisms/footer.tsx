@@ -11,7 +11,7 @@ const customLinkStyles: React.CSSProperties = {
 
 const customLabelStyles: React.CSSProperties = {
   fontSize: '12px',
-  fontWeight: '510',
+  fontWeight: '500',
   marginBottom: '12px',
 };
 
@@ -28,7 +28,7 @@ export const Footer = () => {
             <Button
               asChild
               variant="ghost"
-              className="rounded-lg justify-start text-foreground-muted px-0"
+              className="rounded-lg justify-start text-gray-400 px-0"
             >
               <Link
                 rel="noopener noreferrer"
@@ -42,7 +42,7 @@ export const Footer = () => {
             <Button
               asChild
               variant="ghost"
-              className="rounded-lg justify-start text-foreground-muted px-0"
+              className="rounded-lg justify-start text-gray-400 px-0"
             >
               <Link
                 rel="noopener noreferrer"
@@ -56,7 +56,7 @@ export const Footer = () => {
             <Button
               asChild
               variant="ghost"
-              className="rounded-lg justify-start text-foreground-muted px-0"
+              className="rounded-lg justify-start text-gray-400 px-0"
             >
               <Link
                 rel="noopener noreferrer"
@@ -74,7 +74,7 @@ export const Footer = () => {
             <Button
               asChild
               variant="ghost"
-              className="rounded-lg justify-start text-foreground-muted px-0"
+              className="rounded-lg justify-start text-gray-400 px-0"
             >
               <Link
                 rel="noopener noreferrer"
@@ -88,7 +88,7 @@ export const Footer = () => {
             <Button
               asChild
               variant="ghost"
-              className="rounded-lg justify-start text-foreground-muted px-0"
+              className="rounded-lg justify-start text-gray-400 px-0"
             >
               <Link
                 rel="noopener noreferrer"
@@ -102,7 +102,7 @@ export const Footer = () => {
             <Button
               asChild
               variant="ghost"
-              className="rounded-lg justify-start text-foreground-muted px-0"
+              className="rounded-lg justify-start text-gray-400 px-0"
             >
               <Link
                 rel="noopener noreferrer"
@@ -116,7 +116,7 @@ export const Footer = () => {
             {/* <Button
               asChild
               variant="ghost"
-              className="rounded-lg justify-start text-foreground-muted px-0"
+              className="rounded-lg justify-start text-gray-400 px-0"
             >
               <Link
                 rel="noopener noreferrer"
