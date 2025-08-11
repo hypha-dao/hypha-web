@@ -11,6 +11,7 @@
     "react-onesignal": "^3.2.3"
   },
   "exports": {
-    "./client": "./src/client.ts"
+    "./client": "./src/client.ts",
+    "./server": "./src/server.ts"
   }
 }
