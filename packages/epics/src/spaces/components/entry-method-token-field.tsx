@@ -50,7 +50,7 @@ export const EntryMethodTokenField = ({
       </label>
       <div className="flex gap-2 items-center">
         <Input
-          value={value.amount}
+          value={String(value.amount)}
           type="number"
           placeholder="Type an amount"
           onChange={(e) => handleAmountChange(e.target.value)}
