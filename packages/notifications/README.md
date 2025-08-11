@@ -1,5 +1,8 @@
 # Notifications package
 
+> [!IMPORTANT]
+> Server part of the package uses beta version of OneSignal's SDK.
+
 A wrapper for [OneSignal web
 SDK](https://documentation.onesignal.com/docs/web-sdk-reference).
 
