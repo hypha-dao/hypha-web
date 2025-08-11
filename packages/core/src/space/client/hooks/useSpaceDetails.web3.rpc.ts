@@ -5,7 +5,7 @@ import useSWR from 'swr';
 import { getSpaceDetails } from '../web3';
 import React from 'react';
 
-export const useSpaceDetailsWeb3Rpc = ({ spaceId }: { spaceId: number }) => {
+export const useSpaceDetailsWeb3Rpc = ({ spaceId }: { spaceId: bigint }) => {
   const { data, isLoading, error } = useSWR(
     [spaceId, 'spaceDetails'],
     async ([spaceId]) =>
