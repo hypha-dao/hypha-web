@@ -50,5 +50,11 @@ contract DAOSpaceFactoryStorage is Initializable {
   // New mapping to track which spaces a member is part of
   mapping(address => uint256[]) internal memberSpaces;
 
-}
+  // New storage variables for tracking invite proposals
+  // Track the last time a member created an invite proposal for a specific space
+  mapping(uint256 => mapping(address => uint256)) public memberLastInviteTime;
 
+  // Track active invite proposals for each space and member
+  mapping(uint256 => mapping(address => uint256))
+    public memberActiveInviteProposal;
+}
