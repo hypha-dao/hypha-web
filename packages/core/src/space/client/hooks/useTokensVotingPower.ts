@@ -1,6 +1,10 @@
 'use client';
 
-import { publicClient } from '@hypha-platform/core/client';
+import {
+  publicClient,
+  useSpaceDetailsWeb3Rpc,
+  ALLOWED_SPACES,
+} from '@hypha-platform/core/client';
 import { getTokensVotingPower, getOwnershipTokensVotingPower } from '../web3';
 import useSWR from 'swr';
 import { ethers } from 'ethers';
@@ -10,6 +14,9 @@ const isZeroAddress = (address: string): boolean => {
 };
 
 export const useTokensVotingPower = ({ spaceId }: { spaceId: bigint }) => {
+  const { spaceDetails } = useSpaceDetailsWeb3Rpc({
+    spaceId: Number(spaceId),
+  });
   const {
     data: tokenVotingPower,
     isLoading: isLoadingTokens,
@@ -36,7 +43,12 @@ export const useTokensVotingPower = ({ spaceId }: { spaceId: bigint }) => {
     { revalidateOnFocus: true },
   );
 
+  const isAllowedSpace = spaceDetails?.executor
+    ? ALLOWED_SPACES.includes(spaceDetails.executor)
+    : false;
+
   const hasVotingTokens =
+    isAllowedSpace ||
     !isZeroAddress(tokenVotingPower || '0x') ||
     !isZeroAddress(ownershipTokenVotingPower || '0x');
 
