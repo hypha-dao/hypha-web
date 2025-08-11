@@ -9,6 +9,7 @@ import {
   FormMessage,
   Input,
 } from '@hypha-platform/ui';
+import { handleNumberChange } from '@hypha-platform/ui-utils';
 
 export function TokenMaxSupplyField() {
   const { setValue, control } = useFormContext();
@@ -19,15 +20,10 @@ export function TokenMaxSupplyField() {
     defaultValue: 0,
   });
 
-  const handleMaxSupplyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.value === '') {
-      setValue('maxSupply', '');
-      return;
-    }
-    const val = Number(e.target.value);
-    const num = Number.isNaN(val) ? 0 : val;
-    setValue('maxSupply', num);
-  };
+  const handleMaxSupplyChange = handleNumberChange(
+    setValue,
+    'maxSupply',
+  );
 
   return (
     <FormField
