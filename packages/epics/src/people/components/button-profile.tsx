@@ -101,7 +101,7 @@ export const ButtonProfile = ({
                 />
               ))}
             </div>
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger>
                 <PersonAvatar
                   size="md"
