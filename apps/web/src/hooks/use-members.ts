@@ -56,7 +56,7 @@ export const useMembers: UseMembers = ({
   const keepPreviousData = !!interval;
 
   const { data: response, isLoading } = useSWR(
-    jwt ? [endpoint] : null,
+    jwt && spaceSlug ? [endpoint] : null,
     ([endpoint]) =>
       fetch(endpoint, {
         headers: {
