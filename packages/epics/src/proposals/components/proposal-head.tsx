@@ -15,6 +15,7 @@ export type ProposalHeadProps = {
   status?: string;
   isLoading?: boolean;
   label?: string;
+  createDate?: string;
 };
 
 export const ProposalHead = ({
@@ -24,6 +25,7 @@ export const ProposalHead = ({
   status,
   isLoading,
   label,
+  createDate,
 }: ProposalHeadProps) => {
   return (
     <div className="flex items-center space-x-3">
@@ -55,7 +57,7 @@ export const ProposalHead = ({
 
           <Skeleton height="16px" width="80px" loading={isLoading}>
             <Text className="text-1 text-gray-500">
-              {creator?.name} {creator?.surname}
+              {creator?.name} {creator?.surname} · {createDate}
             </Text>
           </Skeleton>
         </div>
