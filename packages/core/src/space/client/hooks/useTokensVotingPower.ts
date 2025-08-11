@@ -15,7 +15,7 @@ const isZeroAddress = (address: string): boolean => {
 
 export const useTokensVotingPower = ({ spaceId }: { spaceId: bigint }) => {
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({
-    spaceId: spaceId,
+    spaceId: Number(spaceId),
   });
   const {
     data: tokenVotingPower,
