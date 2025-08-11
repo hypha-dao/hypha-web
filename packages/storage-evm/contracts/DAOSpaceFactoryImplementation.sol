@@ -112,13 +112,10 @@ contract DAOSpaceFactoryImplementation is
 
       // Check if the member has an active invite proposal or created one within 24 hours
       require(
-        memberActiveInviteProposal[_spaceId][msg.sender] == 0,
-        'Active invite proposal exists'
-      );
-      require(
-        block.timestamp >=
+        memberActiveInviteProposal[_spaceId][msg.sender] == 0 ||
+          block.timestamp >=
           memberLastInviteTime[_spaceId][msg.sender] + 24 hours,
-        'Must wait 24h between invites'
+        'Active proposal exists or must wait 24h between invites'
       );
 
       // Encode the function call data for addMember
@@ -448,7 +445,12 @@ contract DAOSpaceFactoryImplementation is
   function getInviteInfo(
     uint256 _spaceId,
     address _memberAddress
-  ) external view returns (bool) {
-    return memberActiveInviteProposal[_spaceId][_memberAddress] != 0;
+  ) external view returns (uint256 lastInviteTime, bool hasActiveProposal) {
+    uint256 activeProposalId = memberActiveInviteProposal[_spaceId][
+      _memberAddress
+    ];
+    uint256 lastInvite = memberLastInviteTime[_spaceId][_memberAddress];
+
+    return (lastInvite, activeProposalId != 0);
   }
 }
