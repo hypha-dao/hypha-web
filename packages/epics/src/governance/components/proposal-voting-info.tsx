@@ -9,11 +9,11 @@ interface ProposalVotingInfoProps {
 const getVotingMethodLabel = (source: bigint): string => {
   switch (source) {
     case 1n:
-      return '1 Voice 1 Vote';
+      return '1 Token 1 Vote';
     case 2n:
       return '1 Member 1 Vote';
     case 3n:
-      return '1 Token 1 Vote';
+      return '1 Voice 1 Vote';
     default:
       return 'Unknown';
   }
