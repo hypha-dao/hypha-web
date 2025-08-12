@@ -40,6 +40,7 @@ export const TokenPayoutField = ({
   const handleAmountChange = (amount: string) => {
     if (amount === '') {
       onChange({ amount: '', token: value.token });
+      return;
     }
     const parsed = Number.parseInt(amount, 10);
     onChange({
