@@ -9,6 +9,7 @@ import {
 } from '@hypha-platform/ui';
 import { PercentIcon } from 'lucide-react';
 import { useFormContext, useWatch } from 'react-hook-form';
+import { handleNumberChange } from '@hypha-platform/ui-utils';
 
 type TimeFormat = 'Weeks' | 'Months' | 'Years';
 
@@ -67,26 +68,14 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
     }
   };
 
-  const handleDecayPeriodChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = Number(e.target.value);
-    const num = Number.isNaN(val) ? 0 : val;
-    setValue('decayPeriod', num);
-  };
+  const handleDecayPeriodChange = handleNumberChange(setValue, 'decayPeriod');
 
   const handleTimeFormatChange = (val: string) => {
     const format = val as TimeFormat;
     setTimeFormat(format);
   };
 
-  const handleDecayPercentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.value === '') {
-      setValue('decayPercent', '');
-      return;
-    }
-    const val = Number(e.target.value);
-    const num = Number.isNaN(val) ? 0 : val;
-    setValue('decayPercent', num);
-  };
+  const handleDecayPercentChange = handleNumberChange(setValue, 'decayPercent');
 
   return (
     <>

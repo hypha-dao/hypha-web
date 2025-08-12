@@ -40,7 +40,10 @@ export const EntryMethodTokenField = ({
 
   const handleAmountChange = (amount: string) => {
     const parsed = Number.parseInt(amount, 10);
-    onChange({ amount: Number.isNaN(parsed) ? 0 : parsed, token: value.token });
+    onChange({
+      amount: Number.isNaN(parsed) ? 0 : parsed,
+      token: value.token,
+    });
   };
 
   return (
@@ -50,7 +53,7 @@ export const EntryMethodTokenField = ({
       </label>
       <div className="flex gap-2 items-center">
         <Input
-          value={value.amount}
+          value={String(value.amount)}
           type="number"
           placeholder="Type an amount"
           onChange={(e) => handleAmountChange(e.target.value)}
