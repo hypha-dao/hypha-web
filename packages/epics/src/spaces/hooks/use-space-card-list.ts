@@ -10,7 +10,7 @@ export const useSpaceCardList = ({
   spaces: Space[];
   pageSize?: number;
 }) => {
-  const [pages, setPages] = React.useState(1);
+  const [pages, setPages] = React.useState<number>(1);
 
   const pagination = React.useMemo(() => {
     const total = spaces.length;

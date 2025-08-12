@@ -20,7 +20,7 @@ type SpaceCardListProps = {
 export function SpaceCardList({
   lang,
   spaces,
-  pageSize = 2,
+  pageSize = 3,
   showLoadMore = true,
 }: SpaceCardListProps) {
   const { pages, loadMore, pagination } = useSpaceCardList({

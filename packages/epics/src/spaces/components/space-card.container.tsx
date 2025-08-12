@@ -20,7 +20,7 @@ export const SpaceCardContainer = ({
 }: SpaceCardContainerProps) => (
   <div
     data-testid="member-spaces-container"
-    className="grid grid-cols-1 sm:grid-cols-2 gap-2"
+    className="grid grid-cols-1 sm:grid-cols-3 gap-2"
   >
     {spaces.map((space) =>
       space.slug ? (
