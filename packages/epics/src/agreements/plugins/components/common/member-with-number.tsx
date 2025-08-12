@@ -64,11 +64,11 @@ export const MemberWithNumberField = ({
   const handleNumberChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const rawValue = Number(e.target.value);
-      const value = Number.isNaN(rawValue) ? 0 : rawValue;
-      setNumber(value);
+      const nextNumber = Number.isNaN(rawValue) ? 0 : rawValue;
+      setNumber(nextNumber);
       onChange?.({
         member: selected?.address || '',
-        number: value,
+        number: nextNumber,
       });
     },
     [selected, onChange],
