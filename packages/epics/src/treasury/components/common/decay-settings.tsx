@@ -68,20 +68,14 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
     }
   };
 
-  const handleDecayPeriodChange = handleNumberChange(
-    setValue,
-    'decayPeriod',
-  );
+  const handleDecayPeriodChange = handleNumberChange(setValue, 'decayPeriod');
 
   const handleTimeFormatChange = (val: string) => {
     const format = val as TimeFormat;
     setTimeFormat(format);
   };
 
-  const handleDecayPercentChange = handleNumberChange(
-    setValue,
-    'decayPercent',
-  );
+  const handleDecayPercentChange = handleNumberChange(setValue, 'decayPercent');
 
   return (
     <>

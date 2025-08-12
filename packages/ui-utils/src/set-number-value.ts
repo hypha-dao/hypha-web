@@ -1,6 +1,8 @@
 import type { FieldValues, Path } from 'react-hook-form';
 
-export const handleNumberChange = <TFieldValues extends FieldValues = FieldValues>(
+export const handleNumberChange = <
+  TFieldValues extends FieldValues = FieldValues,
+>(
   setValue: (valueName: string, value: any) => void,
   valueName: Path<TFieldValues>,
 ) => {

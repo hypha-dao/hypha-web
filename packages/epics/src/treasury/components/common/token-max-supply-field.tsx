@@ -20,10 +20,7 @@ export function TokenMaxSupplyField() {
     defaultValue: 0,
   });
 
-  const handleMaxSupplyChange = handleNumberChange(
-    setValue,
-    'maxSupply',
-  );
+  const handleMaxSupplyChange = handleNumberChange(setValue, 'maxSupply');
 
   return (
     <FormField
