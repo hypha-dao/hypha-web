@@ -45,7 +45,7 @@ export const SETTINGS_ACTIONS = [
   },
   {
     group: 'Governance',
-    title: 'Voting Method',
+    title: 'Voting Method', // duration: 4 days
     description:
       'Select and configure the voting method for decision-making within your space.',
     href: 'create/change-voting-method',
@@ -54,7 +54,7 @@ export const SETTINGS_ACTIONS = [
   },
   {
     group: 'Membership',
-    title: 'Entry Method',
+    title: 'Entry Method', // duration: 4 days
     description:
       'Select and configure the process by which new members join your space.',
     href: 'create/change-entry-method',
@@ -81,7 +81,7 @@ export const SETTINGS_ACTIONS = [
   },
   {
     group: 'Treasury',
-    title: 'Issue New Token',
+    title: 'Issue New Token', // duration: 4 days
     description:
       'Create a new token for utility, cash credit, or ownership within your space.',
     href: 'create/issue-new-token',
