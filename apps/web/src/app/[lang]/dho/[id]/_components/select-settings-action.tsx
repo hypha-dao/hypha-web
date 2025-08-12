@@ -43,7 +43,8 @@ export const SETTINGS_ACTIONS = [
     baseTab: 'membership',
     disabled: true,
   },
-  { //NOTE duration: 4 days
+  {
+    //NOTE duration: 4 days
     group: 'Governance',
     title: 'Voting Method',
     description:
@@ -52,7 +53,8 @@ export const SETTINGS_ACTIONS = [
     icon: <MixerVerticalIcon />,
     baseTab: 'governance',
   },
-  { //NOTE duration: 4 days
+  {
+    //NOTE duration: 4 days
     group: 'Membership',
     title: 'Entry Method',
     description:
@@ -79,7 +81,8 @@ export const SETTINGS_ACTIONS = [
     icon: <CrossCircledIcon />,
     disabled: true,
   },
-  { //NOTE duration: 4 days
+  {
+    //NOTE duration: 4 days
     group: 'Treasury',
     title: 'Issue New Token',
     description:
