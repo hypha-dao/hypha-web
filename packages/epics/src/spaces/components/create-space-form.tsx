@@ -184,7 +184,7 @@ export const SpaceForm = ({
           name="description"
           render={({ field }) => (
             <FormItem>
-              <Label>Purpose</Label>
+              <FormLabel className="text-white">Purpose</FormLabel>
               <FormControl>
                 <Textarea
                   disabled={isLoading}
