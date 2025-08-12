@@ -63,7 +63,9 @@ export const IssueNewTokenPlugin = () => {
           )}
         </>
       )}
-      {tokenType !== 'voice' && <IsVotingTokenField />}
+      {tokenType !== 'voice' && tokenType !== 'ownership' && (
+        <IsVotingTokenField />
+      )}
     </div>
   );
 };
