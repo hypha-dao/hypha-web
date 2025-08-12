@@ -352,6 +352,13 @@ contract DAOProposalsImplementation is
   ) public override returns (bool) {
     ProposalCore storage proposal = proposalsCoreData[_proposalId];
 
+    // Only space members can trigger proposal expiration checks
+    require(address(spaceFactory) != address(0), 'Contracts are  not initialized');
+    require(
+      spaceFactory.isMember(proposal.spaceId, msg.sender),
+      'Not a space member'
+    );
+
     if (
       !proposal.expired && block.timestamp > getProposalEndTime(_proposalId)
     ) {

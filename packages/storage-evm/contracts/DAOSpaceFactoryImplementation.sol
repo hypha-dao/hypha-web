@@ -110,6 +110,14 @@ contract DAOSpaceFactoryImplementation is
       // If join method is 2, create a proposal to add the member
       require(proposalManagerAddress != address(0), 'Proposal manager not st');
 
+      // Check if the member has an active invite proposal or created one within 24 hours
+      require(
+        memberActiveInviteProposal[_spaceId][msg.sender] == 0 ||
+          block.timestamp >=
+          memberLastInviteTime[_spaceId][msg.sender] + 24 hours,
+        'Active proposal exists or must wait 24h between invites'
+      );
+
       // Encode the function call data for addMember
       bytes memory executionData = abi.encodeWithSelector(
         this.addMember.selector,
@@ -137,6 +145,10 @@ contract DAOSpaceFactoryImplementation is
       uint256 proposalId = IDAOProposals(proposalManagerAddress).createProposal(
         params
       );
+
+      // Track the invite proposal
+      memberLastInviteTime[_spaceId][msg.sender] = block.timestamp;
+      memberActiveInviteProposal[_spaceId][msg.sender] = proposalId;
 
       //emit JoinRequestedWithProposal(_spaceId, msg.sender, proposalId);
       return;
@@ -427,5 +439,18 @@ contract DAOSpaceFactoryImplementation is
     address _memberAddress
   ) external view returns (uint256[] memory) {
     return memberSpaces[_memberAddress];
+  }
+
+  // View function to check if a member has an active invite proposal for a space
+  function getInviteInfo(
+    uint256 _spaceId,
+    address _memberAddress
+  ) external view returns (uint256 lastInviteTime, bool hasActiveProposal) {
+    uint256 activeProposalId = memberActiveInviteProposal[_spaceId][
+      _memberAddress
+    ];
+    uint256 lastInvite = memberLastInviteTime[_spaceId][_memberAddress];
+
+    return (lastInvite, activeProposalId != 0);
   }
 }
