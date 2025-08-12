@@ -39,7 +39,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
   agreements = 0,
   isLoading = false,
   title,
-  leadImage = DEFAULT_SPACE_LEAD_IMAGE,
+  leadImage,
 }) => {
   return (
     <Card className="w-full h-full flex flex-col">
@@ -52,7 +52,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
             width={454}
             height={150}
             className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
-            src={leadImage ? leadImage : DEFAULT_SPACE_LEAD_IMAGE}
+            src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
             alt={title}
           />
         </Skeleton>

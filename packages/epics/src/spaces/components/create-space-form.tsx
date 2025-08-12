@@ -15,13 +15,10 @@ import {
   UploadAvatar,
   UploadLeadImage,
   MultiSelect,
-  Label,
 } from '@hypha-platform/ui';
-import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
 import React from 'react';
 
-import Link from 'next/link';
 
 import { z } from 'zod';
 import clsx from 'clsx';
