@@ -52,7 +52,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
             width={454}
             height={150}
             className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
-            src={leadImage}
+            src={leadImage ? leadImage : DEFAULT_SPACE_LEAD_IMAGE}
             alt={title}
           />
         </Skeleton>
