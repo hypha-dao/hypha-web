@@ -24,6 +24,7 @@ import {
 
 import { transactionSchema } from '@hypha-platform/core/client';
 import { VotingMethodType } from '@hypha-platform/core/client';
+import { getDuration } from '@hypha-platform/ui-utils';
 
 const chainId = 8453;
 type TxData = z.infer<typeof transactionSchema>;
@@ -106,7 +107,7 @@ export const useChangeVotingMethodMutationsWeb3Rpc = ({
 
       const input = {
         spaceId: arg.spaceId,
-        duration: 604800,
+        duration: getDuration(4),
         transactions,
       };
 

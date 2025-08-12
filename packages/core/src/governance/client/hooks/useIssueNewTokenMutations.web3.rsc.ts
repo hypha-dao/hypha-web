@@ -20,6 +20,7 @@ import {
   decayingTokenFactoryAbi,
   decayingTokenFactoryAddress,
 } from '@hypha-platform/core/generated';
+import { getDuration } from '@hypha-platform/ui-utils';
 
 interface CreateTokenArgs {
   spaceId: number;
@@ -130,7 +131,7 @@ export const useIssueTokenMutationsWeb3Rpc = ({
 
       const parsedProposal = schemaCreateProposalWeb3.parse({
         spaceId: arg.spaceId,
-        duration: 604800,
+        duration: getDuration(4),
         transactions: txData,
       });
 

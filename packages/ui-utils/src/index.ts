@@ -5,3 +5,4 @@ export * from './strip-markdown';
 export * from './formatCurrencyValue';
 export * from './formatDate';
 export * from './set-number-value';
+export * from './get-duration';

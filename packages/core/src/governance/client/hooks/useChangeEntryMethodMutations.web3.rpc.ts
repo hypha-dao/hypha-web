@@ -22,6 +22,7 @@ import {
 
 import { Address, EntryMethodType, TokenBase } from '../../types';
 import { schemaCreateProposalWeb3, transactionSchema } from '../../validation';
+import { getDuration } from '@hypha-platform/ui-utils';
 
 type TxData = z.infer<typeof transactionSchema>;
 
@@ -104,7 +105,7 @@ export const useChangeEntryMethodMutationsWeb3Rpc = ({
 
       const input = {
         spaceId: arg.spaceId,
-        duration: 86400,
+        duration: getDuration(4),
         transactions,
       };
 
