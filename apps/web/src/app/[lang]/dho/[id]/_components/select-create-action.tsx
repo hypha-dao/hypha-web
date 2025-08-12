@@ -25,9 +25,9 @@ export const CREATE_ACTIONS = [
     icon: <RocketIcon />,
   },
   {
-    title: 'Pay for Expenses',
+    title: 'Pay for Products or Services',
     description:
-      'Cover expenses by sending funds from the treasury to another space, entity, or wallet.',
+      'Make payments for products and services by transferring funds from your Space treasury to another space, entity, or individual wallet.',
     href: 'governance/create/pay-for-expenses',
     icon: <ArrowUpIcon />,
   },
