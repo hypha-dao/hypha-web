@@ -10,45 +10,45 @@ import {
 } from '@radix-ui/react-icons';
 
 export const CREATE_ACTIONS = [
-  {
-    title: 'Make a Collective Agreement', // duration: 3 days
+  { //NOTE duration: 3 days
+    title: 'Make a Collective Agreement',
     description:
       'Define and formalize a mutual understanding, policy, or decision among members of the space.',
     href: 'governance/create',
     icon: <FileIcon />,
   },
-  {
-    title: 'Propose a Contribution', // duration: 4 days
+  { //NOTE duration: 4 days
+    title: 'Propose a Contribution',
     description:
       'Propose a new contribution, such as work, knowledge, capital, or resources, for the space to consider.',
     href: 'governance/create/propose-contribution',
     icon: <RocketIcon />,
   },
-  {
-    title: 'Pay for Products or Services', // duration: 7 days
+  { //NOTE duration: 7 days
+    title: 'Pay for Products or Services',
     description:
       'Make payments for products and services by transferring funds from your Space treasury to another space, entity, or individual wallet.',
     href: 'governance/create/pay-for-expenses',
     icon: <ArrowUpIcon />,
   },
-  {
-    title: 'Accept Investment (Coming Soon)', // duration: 7 days
+  { //NOTE duration: 7 days
+    title: 'Accept Investment (Coming Soon)',
     description:
       'Receive capital from investors, members, or aligned spaces in exchange for native space tokens.',
     href: '#',
     icon: <PlusCircledIcon />,
     disabled: true,
   },
-  {
-    title: 'Exchange Ownership (Coming Soon)', // duration: 7 days
+  { //NOTE duration: 7 days
+    title: 'Exchange Ownership (Coming Soon)',
     description:
       'Swap ownership between members or spaces, whether selling a stake or exchanging assets.',
     href: '#',
     icon: <PlusCircledIcon />,
     disabled: true,
   },
-  {
-    title: 'Deploy Funds', // duration: 7 days
+  { //NOTE duration: 7 days
+    title: 'Deploy Funds',
     description:
       'Allocate treasury funds for investments to other spaces or distributing resources among sub-spaces.',
     href: 'governance/create/deploy-funds',

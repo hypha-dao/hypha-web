@@ -43,18 +43,18 @@ export const SETTINGS_ACTIONS = [
     baseTab: 'membership',
     disabled: true,
   },
-  {
+  { //NOTE duration: 4 days
     group: 'Governance',
-    title: 'Voting Method', // duration: 4 days
+    title: 'Voting Method',
     description:
       'Select and configure the voting method for decision-making within your space.',
     href: 'create/change-voting-method',
     icon: <MixerVerticalIcon />,
     baseTab: 'governance',
   },
-  {
+  { //NOTE duration: 4 days
     group: 'Membership',
-    title: 'Entry Method', // duration: 4 days
+    title: 'Entry Method',
     description:
       'Select and configure the process by which new members join your space.',
     href: 'create/change-entry-method',
@@ -79,9 +79,9 @@ export const SETTINGS_ACTIONS = [
     icon: <CrossCircledIcon />,
     disabled: true,
   },
-  {
+  { //NOTE duration: 4 days
     group: 'Treasury',
-    title: 'Issue New Token', // duration: 4 days
+    title: 'Issue New Token',
     description:
       'Create a new token for utility, cash credit, or ownership within your space.',
     href: 'create/issue-new-token',
