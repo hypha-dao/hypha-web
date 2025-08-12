@@ -38,6 +38,9 @@ export const TokenPayoutField = ({
   };
 
   const handleAmountChange = (amount: string) => {
+    if (amount === '') {
+      onChange({ amount: '', token: value.token });
+    }
     const parsed = Number.parseInt(amount, 10);
     onChange({ amount: String(Number.isNaN(parsed) ? 0 : parsed), token: value.token });
   };

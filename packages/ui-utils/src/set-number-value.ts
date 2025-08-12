@@ -3,7 +3,6 @@ import type { FieldValues, Path } from 'react-hook-form';
 export const handleNumberChange = <TFieldValues extends FieldValues = FieldValues>(
   setValue: (valueName: string, value: any) => void,
   valueName: Path<TFieldValues>,
-  onChange?: () => {},
 ) => {
   return (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.value === '') {
@@ -13,6 +12,5 @@ export const handleNumberChange = <TFieldValues extends FieldValues = FieldValue
     const val = Number(e.target.value);
     const num = Number.isNaN(val) ? 0 : val;
     setValue(valueName, num);
-    onChange?.();
   };
 };
