@@ -13,7 +13,6 @@ import { useDbTokens } from '@web/hooks/use-db-tokens';
 import { useJwt } from '@hypha-platform/core/client';
 import { useProposalDetailsWeb3Rpc } from '@hypha-platform/core/client';
 import { LoadingBackdrop } from '@hypha-platform/ui';
-import { useState } from 'react';
 
 export default function Agreements() {
   const { jwt: authToken } = useJwt();
@@ -40,7 +39,6 @@ export default function Agreements() {
   });
   const { tokens } = useDbTokens();
 
-  const [isBackdropVisible, setIsBackdropVisible] = useState(false);
   const handleOnAccept = async () => {
     try {
       await handleAccept();
@@ -48,7 +46,6 @@ export default function Agreements() {
       await update();
     } catch (err) {
       console.debug(err);
-      setIsBackdropVisible(false);
     }
   };
 
@@ -59,7 +56,6 @@ export default function Agreements() {
       await update();
     } catch (err) {
       console.debug(err);
-      setIsBackdropVisible(false);
     }
   };
 
@@ -70,14 +66,13 @@ export default function Agreements() {
       await update();
     } catch (err) {
       console.debug(err);
-      setIsBackdropVisible(false);
     }
   };
 
   return (
     <SidePanel>
       <LoadingBackdrop
-        isLoading={isBackdropVisible || isLoading}
+        isLoading={isLoading}
         message={<span>Please wait...</span>}
         className="-m-4 lg:-m-7"
       >
