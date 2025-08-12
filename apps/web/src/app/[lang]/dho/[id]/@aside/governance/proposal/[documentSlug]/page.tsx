@@ -12,6 +12,7 @@ import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { useDbTokens } from '@web/hooks/use-db-tokens';
 import { useJwt } from '@hypha-platform/core/client';
 import { useProposalDetailsWeb3Rpc } from '@hypha-platform/core/client';
+import { LoadingBackdrop } from '@hypha-platform/ui';
 
 export default function Agreements() {
   const { jwt: authToken } = useJwt();
@@ -38,33 +39,67 @@ export default function Agreements() {
   });
   const { tokens } = useDbTokens();
 
+  const handleOnAccept = async () => {
+    try {
+      await handleAccept();
+      await mutate();
+      await update();
+    } catch (err) {
+      console.debug(err);
+    }
+  };
+
+  const handleOnReject = async () => {
+    try {
+      await handleReject();
+      await mutate();
+      await update();
+    } catch (err) {
+      console.debug(err);
+    }
+  };
+
+  const handleOnCheckProposalExpiration = async () => {
+    try {
+      await handleCheckProposalExpiration();
+      await mutate();
+      await update();
+    } catch (err) {
+      console.debug(err);
+    }
+  };
+
   return (
     <SidePanel>
-      <ProposalDetail
-        closeUrl={getDhoPathGovernance(lang as Locale, id as string)}
-        onAccept={handleAccept}
-        onReject={handleReject}
-        onCheckProposalExpiration={handleCheckProposalExpiration}
-        updateProposalData={mutate}
-        updateProposalsList={update}
-        isVoting={isVoting}
-        content={document?.description}
-        creator={{
-          avatar: document?.creator?.avatarUrl || '',
-          name: document?.creator?.name || '',
-          surname: document?.creator?.surname || '',
-        }}
-        title={document?.title}
-        status={document?.state}
+      <LoadingBackdrop
         isLoading={isLoading}
-        leadImage={document?.leadImage}
-        attachments={document?.attachments}
-        proposalId={document?.web3ProposalId}
-        spaceSlug={space?.slug || ''}
-        label={document?.label || ''}
-        documentSlug={documentSlug}
-        dbTokens={tokens || []}
-      />
+        message={<span>Please wait...</span>}
+        className="-m-4 lg:-m-7"
+      >
+        <ProposalDetail
+          closeUrl={getDhoPathGovernance(lang as Locale, id as string)}
+          onAccept={handleOnAccept}
+          onReject={handleOnReject}
+          onCheckProposalExpiration={handleOnCheckProposalExpiration}
+          isVoting={isVoting}
+          content={document?.description}
+          creator={{
+            avatar: document?.creator?.avatarUrl || '',
+            name: document?.creator?.name || '',
+            surname: document?.creator?.surname || '',
+          }}
+          title={document?.title}
+          status={document?.state}
+          isLoading={isLoading}
+          leadImage={document?.leadImage}
+          attachments={document?.attachments}
+          proposalId={document?.web3ProposalId}
+          spaceSlug={space?.slug || ''}
+          label={document?.label || ''}
+          documentSlug={documentSlug}
+          dbTokens={tokens || []}
+        />
+      </LoadingBackdrop>
     </SidePanel>
   );
 }
