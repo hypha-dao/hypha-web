@@ -15,6 +15,7 @@ import {
   UploadAvatar,
   UploadLeadImage,
   MultiSelect,
+  Label,
 } from '@hypha-platform/ui';
 import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
@@ -183,7 +184,7 @@ export const SpaceForm = ({
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Purpose</FormLabel>
+              <Label>Purpose</Label>
               <FormControl>
                 <Textarea
                   disabled={isLoading}
