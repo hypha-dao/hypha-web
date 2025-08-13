@@ -70,8 +70,6 @@ export const CreatePayForExpensesForm = ({
     },
   });
 
-  console.log(form);
-
   React.useEffect(() => {
     if (progress === 100 && agreementSlug) {
       router.push(successfulUrl);
@@ -140,7 +138,7 @@ export const CreatePayForExpensesForm = ({
             closeUrl={successfulUrl}
             backUrl={backUrl}
             isLoading={false}
-            label="Expenses"
+            label="Payment"
           />
           {plugin}
           <Separator />
