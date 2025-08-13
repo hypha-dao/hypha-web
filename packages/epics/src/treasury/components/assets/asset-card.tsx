@@ -10,6 +10,10 @@ type AssetCardProps = {
   usdEqual?: number;
   type?: string;
   isLoading?: boolean;
+  supply?: {
+    total: number;
+    max: number;
+  };
 };
 
 export const AssetCard: React.FC<AssetCardProps> = ({
@@ -19,6 +23,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   value,
   usdEqual,
   isLoading,
+  supply,
 }) => {
   return (
     <Card className="w-full h-full p-5 mb-2 flex flex-col justify-between">
@@ -55,8 +60,14 @@ export const AssetCard: React.FC<AssetCardProps> = ({
           </Skeleton>
         </div>
       </div>
-      <div className="w-full flex flex-row">
+      <div className="w-full flex flex-row gap-1">
         <Text className="text-1">{name}</Text>
+        {supply?.total !== undefined && supply?.max !== undefined && (
+          <Text className="text-1 text-neutral-11">
+            {formatCurrencyValue(supply.total)} Issued /{' '}
+            {formatCurrencyValue(supply.max)} Max supply
+          </Text>
+        )}
       </div>
     </Card>
   );

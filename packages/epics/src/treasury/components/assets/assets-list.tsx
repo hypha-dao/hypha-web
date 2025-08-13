@@ -38,6 +38,10 @@ type AssetItem = {
   transactions: TransactionCardProps[];
   closeUrl: string;
   slug: string;
+  supply?: {
+    total: number;
+    max: number;
+  };
 };
 
 type AssetsListProps = {
