@@ -405,7 +405,7 @@ async function testOwnershipTokenCreationAndMinting(): Promise<void> {
       spaceId: spaceId,
       name: 'Test Ownership Token',
       symbol: 'TOT',
-      maxSupply: ethers.parseUnits('1000000', 18), // 1M tokens max
+      maxSupply: ethers.parseUnits('1000000000000000000000000', 18), // 1M tokens max
       isVotingToken: false, // Not setting as voting token for simplicity
     };
 
