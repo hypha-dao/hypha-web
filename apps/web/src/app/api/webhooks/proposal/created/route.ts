@@ -5,7 +5,7 @@ import { daoProposalsImplementationAbi } from '@hypha-platform/core/generated';
 
 export async function POST(request: NextRequest) {
   if (process.env.NODE_ENV === 'production') {
-    const alchemySigningKey = process.env.ALCHEMY_WEBHOOK_SIGNING_KEY;
+    const alchemySigningKey = process.env.WH_PROPOSAL_CREATED_SIGN_KEY;
     if (!alchemySigningKey) {
       console.error('Alchemy signing key for a webhook is missing');
 
