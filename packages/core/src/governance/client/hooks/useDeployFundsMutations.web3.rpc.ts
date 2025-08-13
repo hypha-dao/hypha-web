@@ -12,6 +12,7 @@ import {
   daoProposalsImplementationAddress,
 } from '@hypha-platform/core/generated';
 import { getTokenDecimals } from '@hypha-platform/core/client';
+import { getDuration } from '@hypha-platform/ui-utils';
 
 interface CreateDeployFundsInput {
   spaceId: number;
@@ -63,7 +64,7 @@ export const useDeployFundsMutationsWeb3Rpc = ({
 
       const proposalParams = {
         spaceId: BigInt(arg.spaceId),
-        duration: BigInt(86400),
+        duration: getDuration(7),
         transactions,
       };
 

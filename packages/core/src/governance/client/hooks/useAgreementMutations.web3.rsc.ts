@@ -20,6 +20,7 @@ import {
   daoProposalsImplementationAbi,
   daoProposalsImplementationAddress,
 } from '@hypha-platform/core/generated';
+import { getDuration } from '@hypha-platform/ui-utils';
 
 export const useAgreementMutationsWeb3Rpc = ({
   proposalSlug,
@@ -58,8 +59,8 @@ export const useAgreementMutationsWeb3Rpc = ({
       };
 
       const input = {
-        spaceId: arg.spaceId,
-        duration: 86400,
+        spaceId: BigInt(arg.spaceId),
+        duration: getDuration(3),
         transactions: [acceptAgreementTx],
       };
 

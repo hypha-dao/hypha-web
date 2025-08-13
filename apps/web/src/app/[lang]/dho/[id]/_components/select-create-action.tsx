@@ -11,6 +11,7 @@ import {
 
 export const CREATE_ACTIONS = [
   {
+    defaultDurationDays: 3,
     title: 'Make a Collective Agreement',
     description:
       'Define and formalize a mutual understanding, policy, or decision among members of the space.',
@@ -18,6 +19,7 @@ export const CREATE_ACTIONS = [
     icon: <FileIcon />,
   },
   {
+    defaultDurationDays: 4,
     title: 'Propose a Contribution',
     description:
       'Propose a new contribution, such as work, knowledge, capital, or resources, for the space to consider.',
@@ -25,6 +27,7 @@ export const CREATE_ACTIONS = [
     icon: <RocketIcon />,
   },
   {
+    defaultDurationDays: 7,
     title: 'Pay for Products or Services',
     description:
       'Make payments for products and services by transferring funds from your Space treasury to another space, entity, or individual wallet.',
@@ -32,6 +35,7 @@ export const CREATE_ACTIONS = [
     icon: <ArrowUpIcon />,
   },
   {
+    defaultDurationDays: 7,
     title: 'Accept Investment (Coming Soon)',
     description:
       'Receive capital from investors, members, or aligned spaces in exchange for native space tokens.',
@@ -40,6 +44,7 @@ export const CREATE_ACTIONS = [
     disabled: true,
   },
   {
+    defaultDurationDays: 7,
     title: 'Exchange Ownership (Coming Soon)',
     description:
       'Swap ownership between members or spaces, whether selling a stake or exchanging assets.',
@@ -48,6 +53,7 @@ export const CREATE_ACTIONS = [
     disabled: true,
   },
   {
+    defaultDurationDays: 7,
     title: 'Deploy Funds',
     description:
       'Allocate treasury funds for investments to other spaces or distributing resources among sub-spaces.',

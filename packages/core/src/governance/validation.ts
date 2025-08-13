@@ -319,8 +319,10 @@ export const schemaCreateAgreementForm = z.object({
 });
 
 export const schemaCreateProposalWeb3 = z.object({
-  spaceId: z.number().min(1, { message: 'Space ID must be a positive number' }),
-  duration: z.number().min(1, { message: 'Duration must be greater than 0' }),
+  spaceId: z
+    .bigint()
+    .min(1n, { message: 'Space ID must be a positive number' }),
+  duration: z.bigint().min(1n, { message: 'Duration must be greater than 0' }),
   transactions: z
     .array(transactionSchema)
     .min(1, { message: 'At least one transaction is required' })
