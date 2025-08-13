@@ -14,6 +14,7 @@ type ActionProps = {
   icon: React.ReactNode;
   disabled?: boolean;
   target?: string;
+  defaultDurationDays?: number;
 };
 
 type SelectActionProps = {

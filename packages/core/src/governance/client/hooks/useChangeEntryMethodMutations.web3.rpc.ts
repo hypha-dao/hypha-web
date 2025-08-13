@@ -104,7 +104,7 @@ export const useChangeEntryMethodMutationsWeb3Rpc = ({
       }
 
       const input = {
-        spaceId: arg.spaceId,
+        spaceId: BigInt(arg.spaceId),
         duration: getDuration(4),
         transactions,
       };

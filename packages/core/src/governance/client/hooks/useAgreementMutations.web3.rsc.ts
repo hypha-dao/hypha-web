@@ -59,7 +59,7 @@ export const useAgreementMutationsWeb3Rpc = ({
       };
 
       const input = {
-        spaceId: arg.spaceId,
+        spaceId: BigInt(arg.spaceId),
         duration: getDuration(3),
         transactions: [acceptAgreementTx],
       };

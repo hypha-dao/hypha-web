@@ -44,7 +44,7 @@ export const SETTINGS_ACTIONS = [
     disabled: true,
   },
   {
-    //NOTE duration: 4 days
+    defaultDurationDays: 4,
     group: 'Governance',
     title: 'Voting Method',
     description:
@@ -54,7 +54,7 @@ export const SETTINGS_ACTIONS = [
     baseTab: 'governance',
   },
   {
-    //NOTE duration: 4 days
+    defaultDurationDays: 4,
     group: 'Membership',
     title: 'Entry Method',
     description:
@@ -82,7 +82,7 @@ export const SETTINGS_ACTIONS = [
     disabled: true,
   },
   {
-    //NOTE duration: 4 days
+    defaultDurationDays: 4,
     group: 'Treasury',
     title: 'Issue New Token',
     description:

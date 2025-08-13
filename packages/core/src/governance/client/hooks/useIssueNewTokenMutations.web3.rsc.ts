@@ -130,7 +130,7 @@ export const useIssueTokenMutationsWeb3Rpc = ({
       }
 
       const parsedProposal = schemaCreateProposalWeb3.parse({
-        spaceId: arg.spaceId,
+        spaceId: BigInt(arg.spaceId),
         duration: getDuration(4),
         transactions: txData,
       });
