@@ -54,7 +54,7 @@ export const AssetsList: FC<AssetsListProps> = ({
 }) => {
   return (
     <div className="w-full">
-      <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+      <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
         {assets.map((asset, index) => (
           // <Link
           //   key={`${asset.slug}_${index}`}
@@ -71,7 +71,8 @@ export const AssetsList: FC<AssetsListProps> = ({
       </div>
 
       {isLoading && (
-        <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+        <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+          <AssetCard isLoading />
           <AssetCard isLoading />
           <AssetCard isLoading />
         </div>
