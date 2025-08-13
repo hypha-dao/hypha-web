@@ -1,5 +1,5 @@
 'use client';
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import { AssetsList } from './assets-list';
 import { Text } from '@radix-ui/themes';
 import { useAssetsSection } from '../../hooks/use-assets-section';
@@ -8,6 +8,7 @@ import { Button } from '@hypha-platform/ui';
 import { CopyIcon, RadiobuttonIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
 import { Empty } from '../../../common';
+import { Input } from '@hypha-platform/ui';
 
 type AssetSectionProps = {
   basePath: string;
@@ -27,9 +28,24 @@ export const AssetsSection: FC<AssetSectionProps> = ({
     totalBalance,
   } = useAssetsSection();
 
+  const [hideSmallBalances, setHideSmallBalances] = useState(false);
+
+  const filteredAssets = hideSmallBalances
+    ? visibleAssets.filter((asset) => asset.value >= 1)
+    : visibleAssets;
+
   return (
     <div className="flex flex-col w-full justify-center items-center gap-4">
       <SectionFilter count={totalBalance || 0} label="Balance">
+        <label className="flex items-center gap-1">
+          <Input
+            type="checkbox"
+            checked={hideSmallBalances}
+            onChange={(e) => setHideSmallBalances(e.target.checked)}
+            className="h-4 w-4"
+          />
+          <span>Hide small balances</span>
+        </label>
         <Button asChild className="ml-2">
           <Link
             href={`${governancePath}/create/issue-new-token?back=${basePath}`}
@@ -46,14 +62,14 @@ export const AssetsSection: FC<AssetSectionProps> = ({
           </Link>
         </Button>
       </SectionFilter>
-      {visibleAssets.length === 0 && !isLoading ? (
+      {filteredAssets.length === 0 && !isLoading ? (
         <Empty>
           <p>List is empty</p>
         </Empty>
       ) : (
         <AssetsList
           basePath={`${basePath}/token`}
-          assets={visibleAssets}
+          assets={filteredAssets}
           activeFilter={activeFilter}
           isLoading={isLoading}
         />
