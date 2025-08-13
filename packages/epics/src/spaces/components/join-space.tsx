@@ -136,7 +136,7 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
         isTokenBased &&
         joinError && (
           <ErrorAlert
-            lines={[`Token Based Entry fail: ${joinError.shortMessage}`]}
+            lines={[`Token-based entry failed: ${joinError.shortMessage}`]}
           />
         )
       )}

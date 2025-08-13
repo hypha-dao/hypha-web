@@ -24,7 +24,7 @@ const ErrorAlertLabel = React.forwardRef<
   >
     <p className="inline-flex mb-2 mt-2 ml-4">{text}</p>
     <Button
-      className="ml-2 rounded-lg bg-transparent hover:bg-transparent"
+      className="ml-2 rounded-lg bg-transparent hover:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
       onClick={onClose}
       colorVariant="neutral"
       variant="ghost"
@@ -61,7 +61,7 @@ const ErrorAlert = React.forwardRef<ErrorAlertElement, ErrorAlertProps>(
       >
         {errorLines.map((line, index) => (
           <ErrorAlertLabel
-            key={`error-${uuidv4()}`}
+            key={`error-${index}-${line}`}
             text={line}
             onClose={() => {
               setErrorLines(removeLine(errorLines, index));
