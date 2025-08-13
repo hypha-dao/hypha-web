@@ -74,6 +74,14 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
         label: 'Invite',
       });
     } else {
+      if (!person?.id || !person?.address) {
+        const err = {
+          shortMessage: 'User is not authorized',
+        } as BaseError;
+        console.error(err);
+        setJoinError(err);
+        return;
+      }
       try {
         await joinSpace();
         await revalidateIsMember();
@@ -84,7 +92,8 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
         } else {
           // Handle other error types or set a generic error message
           setJoinError({
-            details: 'An unexpected error occurred while joining the space',
+            shortMessage:
+              'An unexpected error occurred while joining the space',
           } as BaseError);
         }
       }
@@ -127,7 +136,7 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
         isTokenBased &&
         joinError && (
           <ErrorAlert
-            lines={[`Token Based Entry fail: ${joinError.details}`]}
+            lines={[`Token-based entry failed: ${joinError.shortMessage}`]}
           />
         )
       )}
