@@ -30,7 +30,7 @@ export const CREATE_ACTIONS = [
     defaultDurationDays: 7,
     title: 'Pay for Products or Services',
     description:
-      'Make payments for products and services by transferring funds from your Space treasury to another space, entity, or individual wallet.',
+      'Make payments for products and services by transferring funds from your space treasury to another space, entity, or individual wallet.',
     href: 'governance/create/pay-for-expenses',
     icon: <ArrowUpIcon />,
   },
