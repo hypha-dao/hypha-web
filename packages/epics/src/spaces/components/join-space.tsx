@@ -84,7 +84,7 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
         } else {
           // Handle other error types or set a generic error message
           setJoinError({
-            details: 'An unexpected error occurred while joining the space',
+            shortMessage: 'An unexpected error occurred while joining the space',
           } as BaseError);
         }
       }
@@ -127,7 +127,7 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
         isTokenBased &&
         joinError && (
           <ErrorAlert
-            lines={[`Token Based Entry fail: ${joinError.details}`]}
+            lines={[`Token Based Entry fail: ${joinError.shortMessage}`]}
           />
         )
       )}
