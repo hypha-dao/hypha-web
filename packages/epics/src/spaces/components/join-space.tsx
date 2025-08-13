@@ -74,6 +74,14 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
         label: 'Invite',
       });
     } else {
+      if (!person?.id || !person?.address) {
+        const err = {
+          shortMessage: 'User is not authorized',
+        } as BaseError;
+        console.error(err);
+        setJoinError(err);
+        return;
+      }
       try {
         await joinSpace();
         await revalidateIsMember();
