@@ -133,6 +133,12 @@ export async function GET(
                     max: Number(maxSupply / 10n ** 18n),
                   }
                 : undefined,
+            space: meta.space
+              ? {
+                  slug: meta.space.slug,
+                  title: meta.space.title,
+                }
+              : undefined,
           };
         } catch (err) {
           console.warn(`Skipping token ${token.address}: ${err}`);

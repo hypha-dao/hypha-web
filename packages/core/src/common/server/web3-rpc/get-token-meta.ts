@@ -1,13 +1,17 @@
 'use server';
 
 import { TOKENS, Token, DbToken } from '@hypha-platform/core/client';
+import { findSpaceByWeb3Id } from '@hypha-platform/core/server';
 import { erc20Abi } from 'viem';
 import { web3Client } from './client';
+import { db } from '@hypha-platform/storage-postgres';
 
 export async function getTokenMeta(
   tokenAddress: `0x${string}`,
   dbTokens?: DbToken[],
-): Promise<Omit<Token, 'address'>> {
+): Promise<
+  Omit<Token, 'address'> & { space?: { slug: string; title: string } }
+> {
   const stable = TOKENS.find(
     (token) => token.address.toLowerCase() === tokenAddress.toLowerCase(),
   );
@@ -16,11 +20,18 @@ export async function getTokenMeta(
     const dbToken = dbTokens?.find(
       (t) => t.symbol.toUpperCase() === symbol.toUpperCase(),
     );
+
+    let space = null;
+    if (dbToken?.spaceId) {
+      space = await findSpaceByWeb3Id({ id: dbToken.spaceId }, { db });
+    }
+
     return {
       symbol,
       name,
       type,
       icon: dbToken?.iconUrl ?? icon,
+      ...(space && { space: { slug: space.slug, title: space.title } }),
     };
   }
 
@@ -64,11 +75,17 @@ export async function getTokenMeta(
     );
     const icon = dbToken?.iconUrl ?? '/placeholder/token-icon.png';
 
+    let space = null;
+    if (dbToken?.spaceId) {
+      space = await findSpaceByWeb3Id({ id: dbToken.spaceId }, { db });
+    }
+
     return {
       symbol,
       name,
       icon,
       type: 'utility',
+      ...(space && { space: { slug: space.slug, title: space.title } }),
     };
   } catch (error: any) {
     console.error(`Failed to fetch token info for ${tokenAddress}:`, error);

@@ -42,6 +42,10 @@ type AssetItem = {
     total: number;
     max: number;
   };
+  space?: {
+    title: string;
+    slug: string;
+  };
 };
 
 type AssetsListProps = {

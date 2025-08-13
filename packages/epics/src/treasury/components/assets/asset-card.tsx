@@ -1,6 +1,9 @@
 import { Text } from '@radix-ui/themes';
 import { Card, Skeleton, Image } from '@hypha-platform/ui';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
+import { getDhoPathGovernance } from '@hypha-platform/epics';
+import { Locale } from '@hypha-platform/i18n';
+import Link from 'next/link';
 
 type AssetCardProps = {
   icon?: string;
@@ -14,6 +17,11 @@ type AssetCardProps = {
     total: number;
     max: number;
   };
+  space?: {
+    title: string;
+    slug: string;
+  };
+  lang?: Locale;
 };
 
 export const AssetCard: React.FC<AssetCardProps> = ({
@@ -24,6 +32,8 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   usdEqual,
   isLoading,
   supply,
+  space,
+  lang,
 }) => {
   return (
     <Card className="w-full h-full p-5 mb-2 flex flex-col justify-between">
@@ -49,11 +59,19 @@ export const AssetCard: React.FC<AssetCardProps> = ({
             width="80px"
             height="16px"
             loading={isLoading}
-            className="mb-1"
+            className="mb-1 flex gap-1"
           >
             <Text className="text-4 font-medium text-secondary-foreground">
               {formatCurrencyValue(value ?? 0)}
             </Text>
+            {space?.title ? (
+              <Link
+                href={getDhoPathGovernance(lang as Locale, space.slug)}
+                className="text-accent-11 text-1 text-ellipsis overflow-hidden text-nowrap hover:underline"
+              >
+                by {space.title}
+              </Link>
+            ) : null}
           </Skeleton>
           <Skeleton width="80px" height="16px" loading={isLoading}>
             <Text className="text-1 text-gray-500">{symbol}</Text>
