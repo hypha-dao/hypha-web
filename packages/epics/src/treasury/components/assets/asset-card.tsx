@@ -1,6 +1,6 @@
 import { Text } from '@radix-ui/themes';
 import { Card, Skeleton, Image } from '@hypha-platform/ui';
-import { Amount } from '@hypha-platform/ui/server';
+import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 
 type AssetCardProps = {
   icon?: string;
@@ -23,7 +23,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   return (
     <Card className="w-full h-full p-5 mb-2 flex flex-col justify-between">
       <div className="w-full flex flex-row items-center mb-2">
-        <div className="mr-5">
+        <div className="mr-3">
           <Skeleton
             width="40px"
             height="40px"
@@ -47,7 +47,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
             className="mb-1"
           >
             <Text className="text-4 font-medium text-secondary-foreground">
-              {name}
+              {formatCurrencyValue(value ?? 0)}
             </Text>
           </Skeleton>
           <Skeleton width="80px" height="16px" loading={isLoading}>
@@ -56,23 +56,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
         </div>
       </div>
       <div className="w-full flex flex-row">
-        <Amount
-          className="text-secondary-foreground"
-          isLoading={isLoading}
-          value={usdEqual}
-          variant="ghost"
-          size="xs"
-          withUsdSymbol
-        />
-        <Amount
-          className="ml-1"
-          isLoading={isLoading}
-          value={value}
-          variant="ghost"
-          size="xs"
-        >
-          {symbol}
-        </Amount>
+        <Text className="text-1">{name}</Text>
       </div>
     </Card>
   );
