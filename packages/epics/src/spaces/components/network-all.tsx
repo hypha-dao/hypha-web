@@ -31,7 +31,7 @@ export function NetworkAll({
         <SpaceSearch />
         <Link href={`/${lang}/network/create`} scroll={false}>
           <Button className="ml-2">
-            <PlusIcon className="mr-2" />
+            <PlusIcon />
             Create Space
           </Button>
         </Link>
