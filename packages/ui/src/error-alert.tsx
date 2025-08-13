@@ -24,7 +24,7 @@ const ErrorAlertLabel = React.forwardRef<
   >
     <p className="inline-flex mb-2 mt-2 ml-4">{text}</p>
     <Button
-      className="ml-2 rounded-lg"
+      className="ml-2 rounded-lg bg-transparent hover:bg-transparent"
       onClick={onClose}
       colorVariant="neutral"
       variant="ghost"
