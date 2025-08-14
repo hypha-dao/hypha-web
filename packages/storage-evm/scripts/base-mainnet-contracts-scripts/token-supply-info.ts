@@ -464,7 +464,10 @@ async function main(): Promise<void> {
 
               console.log('Name:', tokenInfo.name);
               console.log('Symbol:', tokenInfo.symbol);
-              console.log('Type:', tokenInfo.isSpaceToken ? 'SpaceToken' : 'Standard ERC20');
+              console.log(
+                'Type:',
+                tokenInfo.isSpaceToken ? 'SpaceToken' : 'Standard ERC20',
+              );
               console.log('Decimals:', tokenInfo.decimals);
               console.log(
                 'Total Supply:',

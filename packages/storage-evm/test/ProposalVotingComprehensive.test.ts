@@ -538,6 +538,144 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       console.log('✅ Efficient handling of multiple delegations');
     });
 
+    it('Should handle when a delegate further delegates their own power', async function () {
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Delegate Redelegation Test',
+      });
+
+      const alice = members[0]; // Will delegate to bob
+      const bob = members[1]; // Will receive delegation from alice, then delegate to charlie
+      const charlie = members[2]; // Will receive delegation from bob
+      const dave = members[3]; // Will delegate to bob
+
+      console.log('\n--- Testing Delegate Further Delegating Their Power ---');
+
+      // Initial state: everyone has 1 vote
+      console.log('Initial voting powers:');
+      console.log(
+        `Alice: ${await spaceVotingPower.getVotingPower(
+          alice.address,
+          spaceId,
+        )}`,
+      );
+      console.log(
+        `Bob: ${await spaceVotingPower.getVotingPower(bob.address, spaceId)}`,
+      );
+      console.log(
+        `Charlie: ${await spaceVotingPower.getVotingPower(
+          charlie.address,
+          spaceId,
+        )}`,
+      );
+      console.log(
+        `Dave: ${await spaceVotingPower.getVotingPower(dave.address, spaceId)}`,
+      );
+
+      // Step 1: Alice delegates to Bob
+      await votingPowerDelegation.connect(alice).delegate(bob.address, spaceId);
+      console.log('\n✅ Step 1: Alice → Bob');
+      console.log(
+        `Bob now has: ${await spaceVotingPower.getVotingPower(
+          bob.address,
+          spaceId,
+        )} votes (own + Alice's)`,
+      );
+
+      // Step 2: Dave also delegates to Bob
+      await votingPowerDelegation.connect(dave).delegate(bob.address, spaceId);
+      console.log('\n✅ Step 2: Dave → Bob');
+      console.log(
+        `Bob now has: ${await spaceVotingPower.getVotingPower(
+          bob.address,
+          spaceId,
+        )} votes (own + Alice's + Dave's)`,
+      );
+
+      // Step 3: Bob (who has accumulated power) delegates to Charlie
+      await votingPowerDelegation
+        .connect(bob)
+        .delegate(charlie.address, spaceId);
+      console.log(
+        '\n✅ Step 3: Bob → Charlie (Bob delegates his accumulated power)',
+      );
+
+      // Check final voting powers
+      const alicePower = await spaceVotingPower.getVotingPower(
+        alice.address,
+        spaceId,
+      );
+      const bobPower = await spaceVotingPower.getVotingPower(
+        bob.address,
+        spaceId,
+      );
+      const charliePower = await spaceVotingPower.getVotingPower(
+        charlie.address,
+        spaceId,
+      );
+      const davePower = await spaceVotingPower.getVotingPower(
+        dave.address,
+        spaceId,
+      );
+
+      console.log('\nFinal voting powers:');
+      console.log(
+        `Alice: ${alicePower} (delegated to Bob, but Bob delegated to Charlie)`,
+      );
+      console.log(`Bob: ${bobPower} (delegated own power to Charlie)`);
+      console.log(`Charlie: ${charliePower} (received Bob's delegation)`);
+      console.log(
+        `Dave: ${davePower} (delegated to Bob, but Bob delegated to Charlie)`,
+      );
+
+      // Verify the behavior
+      expect(alicePower).to.equal(0); // Alice delegated to Bob
+      expect(bobPower).to.equal(2); // Bob still gets Alice and Dave's delegated power since they delegated TO him
+      expect(charliePower).to.equal(2); // Charlie gets Bob's own power + Bob as a delegator
+      expect(davePower).to.equal(0); // Dave delegated to Bob
+
+      console.log('\n🔍 Key Insight: When Bob delegates to Charlie:');
+      console.log(
+        '• Bob still receives delegated power from Alice and Dave (they delegated TO Bob)',
+      );
+      console.log(
+        "• Charlie gets Bob's own voting power (since Bob delegated TO Charlie)",
+      );
+      console.log(
+        '• This creates a scenario where Bob has power but cannot vote with it (delegated away)',
+      );
+      console.log(
+        '• Alice and Dave\'s votes are "stuck" with Bob who cannot vote',
+      );
+
+      // Demonstrate the voting scenario
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Bob cannot vote even though he has 2 voting power (he delegated to Charlie)
+      console.log('\n--- Voting Scenario ---');
+      console.log(
+        'If Bob tries to vote, it will fail because he delegated his power to Charlie',
+      );
+      console.log(
+        "Only Charlie can vote with the power Bob delegated (Bob's own 1 vote)",
+      );
+      console.log('Alice and Dave\'s power is effectively "trapped" with Bob');
+
+      // Charlie votes with Bob's delegated power (just Bob's 1 vote)
+      await daoProposals.connect(charlie).vote(proposalId, true);
+      const proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.yesVotes).to.equal(2); // Charlie's own 1 + Bob's delegated 1
+
+      console.log(
+        `Charlie voted with ${proposalState.yesVotes} votes (own + Bob's delegated power)`,
+      );
+      console.log(
+        '✅ Delegation chains work but can create "trapped" voting power scenarios',
+      );
+    });
+
     it('Should prevent delegation loops and cycles', async function () {
       const { spaceId } = await createSpace({
         unity: 60,

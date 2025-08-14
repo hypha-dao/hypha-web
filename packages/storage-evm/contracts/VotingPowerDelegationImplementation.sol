@@ -42,6 +42,14 @@ contract VotingPowerDelegationImplementation is
     require(_delegate != msg.sender, 'Cannot delegate to self');
     require(_spaceId > 0, 'Invalid space ID');
 
+    // If already delegated to the same address, no-op to save gas
+    if (
+      userHasDelegated[msg.sender][_spaceId] &&
+      userDelegates[msg.sender][_spaceId] == _delegate
+    ) {
+      return;
+    }
+
     // Remove previous delegation if exists
     if (userHasDelegated[msg.sender][_spaceId]) {
       _removeDelegation(msg.sender, _spaceId);
