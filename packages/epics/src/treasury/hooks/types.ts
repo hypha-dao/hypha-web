@@ -1,4 +1,4 @@
-export interface TransferWithPerson {
+export interface TransferWithEntity {
   transactionHash: string;
   from: string;
   to: string;
@@ -8,6 +8,10 @@ export interface TransferWithPerson {
   person?: {
     name?: string;
     surname?: string;
+    avatarUrl?: string;
+  };
+  space?: {
+    title?: string;
     avatarUrl?: string;
   };
   direction: 'incoming' | 'outgoing';

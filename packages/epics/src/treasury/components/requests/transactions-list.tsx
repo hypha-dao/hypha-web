@@ -1,9 +1,9 @@
 import { FC } from 'react';
 import { TransferCard } from './transfer-card';
-import { TransferWithPerson } from '../../hooks';
+import { TransferWithEntity } from '../../hooks';
 
 type TransactionsListProps = {
-  transfers: TransferWithPerson[];
+  transfers: TransferWithEntity[];
   activeSort: string;
   isLoading?: boolean;
 };
@@ -20,13 +20,17 @@ export const TransactionsList: FC<TransactionsListProps> = ({
           key={`${transfer.transactionHash}-${index}`}
           name={transfer.person?.name}
           surname={transfer.person?.surname}
-          avatar={transfer.person?.avatarUrl}
+          title={transfer.space?.title}
+          avatar={transfer.person?.avatarUrl || transfer.space?.avatarUrl}
           value={transfer.value}
           symbol={transfer.symbol}
           date={transfer.timestamp}
           isLoading={isLoading}
           direction={transfer.direction}
           counterparty={transfer.counterparty}
+          isMint={
+            transfer.from === '0x0000000000000000000000000000000000000000'
+          }
         />
       ))}
       {isLoading && (

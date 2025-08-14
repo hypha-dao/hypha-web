@@ -4,10 +4,12 @@ import { CalendarIcon } from '@radix-ui/react-icons';
 import { formatDate } from '@hypha-platform/ui-utils';
 import { Amount } from '@hypha-platform/ui/server';
 import { PersonAvatar } from '../../../people/components/person-avatar';
+import { HandCoins } from 'lucide-react';
 
 type TransferCardProps = {
   name?: string;
   surname?: string;
+  title?: string;
   avatar?: string;
   value?: number;
   symbol?: string;
@@ -15,11 +17,13 @@ type TransferCardProps = {
   isLoading?: boolean;
   direction?: 'incoming' | 'outgoing';
   counterparty?: 'from' | 'to';
+  isMint?: boolean;
 };
 
 export const TransferCard: React.FC<TransferCardProps> = ({
   name,
   surname,
+  title,
   avatar,
   value,
   symbol,
@@ -27,15 +31,25 @@ export const TransferCard: React.FC<TransferCardProps> = ({
   isLoading,
   direction,
   counterparty,
+  isMint,
 }) => {
+  const displayName = isMint
+    ? ''
+    : title || `${name || ''} ${surname || ''}`.trim() || 'Unknown';
   return (
     <Card className="w-full p-5 mb-2 flex space-x-3">
-      <PersonAvatar
-        size="lg"
-        isLoading={isLoading}
-        avatarSrc={avatar}
-        userName={`${name} ${surname}`}
-      />
+      {isMint ? (
+        <div className="flex items-center min-h-full">
+          <HandCoins className="w-10 h-10" />
+        </div>
+      ) : (
+        <PersonAvatar
+          size="lg"
+          isLoading={isLoading}
+          avatarSrc={avatar}
+          userName={displayName}
+        />
+      )}
       <div className="flex justify-between items-center w-full">
         <div className="flex flex-col">
           <div className="flex gap-x-1">
@@ -49,20 +63,22 @@ export const TransferCard: React.FC<TransferCardProps> = ({
             <Badge
               isLoading={isLoading}
               variant="surface"
-              colorVariant={direction === 'incoming' ? 'success' : 'error'}
+              colorVariant={
+                direction === 'incoming' || isMint ? 'success' : 'error'
+              }
             >
-              {counterparty === 'from' ? 'From' : 'To'}
+              {isMint ? 'Mint' : counterparty === 'from' ? 'From' : 'To'}
             </Badge>
           </div>
           <Amount isLoading={isLoading} value={value} />
-          <Skeleton loading={isLoading} width="80px" height="16px">
-            <Text className="text-1 text-gray-500">
-              {name} {surname}
-            </Text>
-          </Skeleton>
+          {!isMint && (
+            <Skeleton loading={isLoading} width="80px" height="16px">
+              <Text className="text-1 text-neutral-11">{displayName}</Text>
+            </Skeleton>
+          )}
         </div>
         <Skeleton width="96px" height="16px" loading={isLoading}>
-          <div className="flex h-full justify-end items-end text-gray-500">
+          <div className="flex h-full justify-end items-end text-neutral-11">
             <CalendarIcon className="mr-1" />
             <Text className="text-1">{date ? formatDate(date) : null}</Text>
           </div>

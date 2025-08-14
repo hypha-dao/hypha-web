@@ -4,6 +4,7 @@ import { publicClient } from '@hypha-platform/core/client';
 import {
   findSpaceBySlug,
   getTransfersByAddress,
+  findSpaceByAddress,
 } from '@hypha-platform/core/server';
 import { schemaGetTransfersQuery } from '@hypha-platform/core/client';
 import { findPersonByWeb3Address } from '@hypha-platform/core/server';
@@ -14,15 +15,11 @@ import { db } from '@hypha-platform/storage-postgres';
  *
  * Query parameters:
  * - token: addresses of token contracts divided by commas. Optional
- * - fromDate: timestamp of the start date from which to get the transfers.
- *   Optional
+ * - fromDate: timestamp of the start date from which to get the transfers. Optional
  * - toDate: timestamp of the end date from which to get the transfers. Optional
- * - fromBlock: the minimum block number from which to get the transfers.
- *   Optional
- * - toBlock: the maximum block number from which to get the transfers.
- *   Optional
- * - limit: the desired number of the result. Not greater than 50.
- *   Defaults to 10
+ * - fromBlock: the minimum block number from which to get the transfers. Optional
+ * - toBlock: the maximum block number from which to get the transfers. Optional
+ * - limit: the desired number of the result. Not greater than 50. Defaults to 10
  */
 export async function GET(
   { nextUrl }: NextRequest,
@@ -57,27 +54,51 @@ export async function GET(
       limit,
     });
 
-    const transfersWithPersonsInfo = await Promise.all(
+    const transfersWithEntityInfo = await Promise.all(
       transfers.map(async (transfer) => {
         const isIncoming =
           transfer.to.toUpperCase() === spaceAddress.toUpperCase();
-        const personAddress = isIncoming ? transfer.from : transfer.to;
+        const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
 
-        const person = await findPersonByWeb3Address(
-          { address: personAddress },
-          { db },
-        );
+        let person = null;
+        let space = null;
+        if (
+          counterpartyAddress !== '0x0000000000000000000000000000000000000000'
+        ) {
+          person = await findPersonByWeb3Address(
+            { address: counterpartyAddress },
+            { db },
+          );
+          if (!person) {
+            space = await findSpaceByAddress(
+              { address: counterpartyAddress },
+              { db },
+            );
+          }
+        }
 
         return {
           ...transfer,
-          person,
+          person: person
+            ? {
+                name: person.name,
+                surname: person.surname,
+                avatarUrl: person.avatarUrl,
+              }
+            : undefined,
+          space: space
+            ? {
+                title: space.title,
+                avatarUrl: space.logoUrl,
+              }
+            : undefined,
           direction: isIncoming ? 'incoming' : 'outgoing',
           counterparty: isIncoming ? 'from' : 'to',
         };
       }),
     );
 
-    return NextResponse.json(transfersWithPersonsInfo);
+    return NextResponse.json(transfersWithEntityInfo);
   } catch (error: any) {
     const errorMessage =
       error?.message || error?.shortMessage || JSON.stringify(error);
