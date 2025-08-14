@@ -4,7 +4,11 @@ import {
   getTokenMeta,
   findAllTokens,
 } from '@hypha-platform/core/server';
-import { schemaGetTransfersQuery } from '@hypha-platform/core/client';
+import {
+  schemaGetTransfersQuery,
+  validTokenTypes,
+  TokenType,
+} from '@hypha-platform/core/client';
 import {
   findPersonByWeb3Address,
   findSpaceByAddress,
@@ -24,9 +28,6 @@ import { zeroAddress } from 'viem';
  * - toBlock: the maximum block number from which to get the transfers. Optional
  * - limit: the desired number of the result. Not greater than 50. Defaults to 10
  */
-
-const validTokenTypes = ['utility', 'credits', 'ownership', 'voice'] as const;
-type TokenType = (typeof validTokenTypes)[number];
 
 export async function GET(
   request: NextRequest,
