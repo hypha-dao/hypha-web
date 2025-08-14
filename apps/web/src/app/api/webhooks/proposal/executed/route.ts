@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAlchemyValidator } from '@hypha-platform/core/server';
+import {
+  getAlchemyValidator,
+  schemaAlchemyWebhook,
+} from '@hypha-platform/core/server';
 import { parseEventLogs } from 'viem';
+import type { Log } from 'viem';
 import { daoProposalsImplementationAbi } from '@hypha-platform/core/generated';
 
 export async function POST(request: NextRequest) {
@@ -23,15 +27,27 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const body = await request.json();
-  const logs = body?.event?.data?.block?.logs;
-  const events = parseEventLogs({
-    abi: daoProposalsImplementationAbi,
-    eventName: 'ProposalExecuted',
-    logs: logs ?? [],
-  });
+  const payload = await request.json();
+  const body = schemaAlchemyWebhook.safeParse(payload);
+  if (!body.success) {
+    console.error(`Failed to parse body "${payload}":`, body.error);
 
-  console.log('events:', events);
+    return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
+  }
 
-  return NextResponse.json({ status: 'ok' }, { status: 200 });
+  const logs = body.data.event.data.block.logs;
+  try {
+    const events = parseEventLogs({
+      abi: daoProposalsImplementationAbi,
+      eventName: 'ProposalExecuted',
+      logs: logs as Array<Log>,
+    });
+    console.log('events:', events);
+
+    return NextResponse.json({ status: 'ok' }, { status: 200 });
+  } catch (error) {
+    console.error(`Failed to parse logs "${logs}": ${error}`);
+
+    return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
+  }
 }
