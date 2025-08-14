@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAlchemyValidator } from '@hypha-platform/core/server';
+import { parseEventLogs } from 'viem';
+import { daoProposalsImplementationAbi } from '@hypha-platform/core/generated';
 
 export async function POST(request: NextRequest) {
   if (process.env.NODE_ENV === 'production') {
@@ -21,7 +23,15 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  console.debug('body:', await request.json());
+  const body = await request.json();
+  const logs = body?.event?.data?.block?.logs;
+  const events = parseEventLogs({
+    abi: daoProposalsImplementationAbi,
+    eventName: 'ProposalExecuted',
+    logs: logs ?? [],
+  });
+
+  console.log('events:', events);
 
   return NextResponse.json({ status: 'ok' }, { status: 200 });
 }
