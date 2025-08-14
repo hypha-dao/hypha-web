@@ -58,22 +58,20 @@ export default async function Index(props: PageProps) {
           categories={categories}
           uniqueCategories={uniqueCategories}
         />
+      ) : categories && categories.length > 0 ? (
+        <NetworkSelected
+          lang={lang}
+          spaces={spaces}
+          categories={categories}
+          uniqueCategories={uniqueCategories}
+        />
       ) : (
-        categories && categories.length > 0 ? (
-          <NetworkSelected
-            lang={lang}
-            spaces={spaces}
-            categories={categories}
-            uniqueCategories={uniqueCategories}
-          />
-        ) : (
-          <NetworkAll
-            lang={lang}
-            spaces={spaces}
-            uniqueCategories={uniqueCategories}
-            getPathHelper={getDhoPathGovernance}
-          />
-        )
+        <NetworkAll
+          lang={lang}
+          spaces={spaces}
+          uniqueCategories={uniqueCategories}
+          getPathHelper={getDhoPathGovernance}
+        />
       )}
       {/* {categories && categories.length > 0 ? (
         <NetworkSelected

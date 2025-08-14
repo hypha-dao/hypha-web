@@ -1,4 +1,6 @@
-export const categories = [
+import { Category } from './types';
+
+export const categories: { value: Category; label: string }[] = [
   { value: 'art', label: 'Art' },
   { value: 'biodiversity', label: 'Biodiversity' },
   { value: 'education', label: 'Education' },
