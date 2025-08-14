@@ -43,13 +43,13 @@ contract VotingPowerDelegationImplementation is
     require(_spaceId > 0, 'Invalid space ID');
 
     // Remove previous delegation if exists
-    if (hasDelegated[msg.sender][_spaceId]) {
+    if (userHasDelegated[msg.sender][_spaceId]) {
       _removeDelegation(msg.sender, _spaceId);
     }
 
     // Set new delegation
     userDelegates[msg.sender][_spaceId] = _delegate;
-    hasDelegated[msg.sender][_spaceId] = true;
+    userHasDelegated[msg.sender][_spaceId] = true;
 
     // Add to delegate's list
     delegatorIndex[msg.sender][_spaceId][_delegate] = delegateToDelegators[
@@ -66,7 +66,7 @@ contract VotingPowerDelegationImplementation is
    */
   function undelegate(uint256 _spaceId) external override {
     require(_spaceId > 0, 'Invalid space ID');
-    require(hasDelegated[msg.sender][_spaceId], 'No delegation to remove');
+    require(userHasDelegated[msg.sender][_spaceId], 'No delegation to remove');
 
     address previousDelegate = userDelegates[msg.sender][_spaceId];
     _removeDelegation(msg.sender, _spaceId);
@@ -78,25 +78,27 @@ contract VotingPowerDelegationImplementation is
    * @dev Internal function to remove delegation
    */
   function _removeDelegation(address _user, uint256 _spaceId) internal {
-    address delegate = userDelegates[_user][_spaceId];
+    address delegateAddress = userDelegates[_user][_spaceId];
 
     // Remove from delegate's list
-    address[] storage delegators = delegateToDelegators[delegate][_spaceId];
-    uint256 index = delegatorIndex[_user][_spaceId][delegate];
+    address[] storage delegators = delegateToDelegators[delegateAddress][
+      _spaceId
+    ];
+    uint256 index = delegatorIndex[_user][_spaceId][delegateAddress];
     uint256 lastIndex = delegators.length - 1;
 
     if (index != lastIndex) {
       address lastDelegator = delegators[lastIndex];
       delegators[index] = lastDelegator;
-      delegatorIndex[lastDelegator][_spaceId][delegate] = index;
+      delegatorIndex[lastDelegator][_spaceId][delegateAddress] = index;
     }
 
     delegators.pop();
-    delete delegatorIndex[_user][_spaceId][delegate];
+    delete delegatorIndex[_user][_spaceId][delegateAddress];
 
     // Clean up user delegation
     delete userDelegates[_user][_spaceId];
-    delete hasDelegated[_user][_spaceId];
+    delete userHasDelegated[_user][_spaceId];
   }
 
   /**
@@ -109,7 +111,7 @@ contract VotingPowerDelegationImplementation is
     address _user,
     uint256 _spaceId
   ) external view override returns (address) {
-    if (hasDelegated[_user][_spaceId]) {
+    if (userHasDelegated[_user][_spaceId]) {
       return userDelegates[_user][_spaceId];
     }
     return _user;
@@ -138,21 +140,41 @@ contract VotingPowerDelegationImplementation is
     address _user,
     uint256 _spaceId
   ) external view override returns (bool) {
-    return hasDelegated[_user][_spaceId];
+    return userHasDelegated[_user][_spaceId];
+  }
+
+  /**
+   * @dev Check if a user has delegated their voting power in a space (same as isDelegated)
+   * @param _user The user address
+   * @param _spaceId The space ID
+   * @return True if the user has delegated
+   */
+  function hasDelegated(
+    address _user,
+    uint256 _spaceId
+  ) external view override returns (bool) {
+    return userHasDelegated[_user][_spaceId];
   }
 
   /**
    * @dev Get delegation information for a user in a space
    * @param _user The user address
    * @param _spaceId The space ID
-   * @return delegate The delegate address
-   * @return isDelegated Whether the user has delegated
+   * @return delegateAddress The delegate address
+   * @return hasDelegatedStatus Whether the user has delegated
    */
   function getDelegationInfo(
     address _user,
     uint256 _spaceId
-  ) external view override returns (address delegate, bool isDelegated) {
-    isDelegated = hasDelegated[_user][_spaceId];
-    delegate = isDelegated ? userDelegates[_user][_spaceId] : _user;
+  )
+    external
+    view
+    override
+    returns (address delegateAddress, bool hasDelegatedStatus)
+  {
+    hasDelegatedStatus = userHasDelegated[_user][_spaceId];
+    delegateAddress = hasDelegatedStatus
+      ? userDelegates[_user][_spaceId]
+      : _user;
   }
 }

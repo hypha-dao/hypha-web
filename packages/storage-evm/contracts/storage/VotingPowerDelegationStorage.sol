@@ -15,7 +15,7 @@ contract VotingPowerDelegationStorage is Initializable {
   mapping(address => mapping(uint256 => address[])) public delegateToDelegators;
 
   // Mapping to track if a user has delegated in a space (for efficient cleanup)
-  mapping(address => mapping(uint256 => bool)) public hasDelegated;
+  mapping(address => mapping(uint256 => bool)) public userHasDelegated;
 
   // Mapping to find index of delegator in delegate's array for efficient removal
   mapping(address => mapping(uint256 => mapping(address => uint256)))
