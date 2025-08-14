@@ -61,17 +61,19 @@ export const AssetCard: React.FC<AssetCardProps> = ({
             loading={isLoading}
             className="mb-1 flex gap-1"
           >
-            <Text className="text-4 font-medium text-secondary-foreground">
-              {formatCurrencyValue(value ?? 0)}
-            </Text>
-            {space?.title ? (
-              <Link
-                href={getDhoPathGovernance(lang as Locale, space.slug)}
-                className="text-accent-11 text-1 text-ellipsis overflow-hidden text-nowrap hover:underline"
-              >
-                by {space.title}
-              </Link>
-            ) : null}
+            <span className="flex gap-1">
+              <Text className="text-4 font-medium text-secondary-foreground">
+                {formatCurrencyValue(value ?? 0)}
+              </Text>
+              {space?.title ? (
+                <Link
+                  href={getDhoPathGovernance(lang as Locale, space.slug)}
+                  className="text-accent-11 text-1 text-ellipsis overflow-hidden text-nowrap hover:underline"
+                >
+                  by {space.title}
+                </Link>
+              ) : null}
+            </span>
           </Skeleton>
           <Skeleton width="80px" height="16px" loading={isLoading}>
             <Text className="text-1 text-gray-500">{symbol}</Text>

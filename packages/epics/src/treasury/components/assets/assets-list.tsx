@@ -1,5 +1,9 @@
+'use client';
+
 import { FC } from 'react';
 import { AssetCard } from './asset-card';
+import { useParams } from 'next/navigation';
+import { Locale } from '@hypha-platform/i18n';
 import Link from 'next/link';
 
 type OneChartPoint = {
@@ -60,6 +64,7 @@ export const AssetsList: FC<AssetsListProps> = ({
   activeFilter,
   isLoading,
 }) => {
+  const { lang } = useParams<{ lang: Locale }>();
   return (
     <div className="w-full">
       <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
@@ -73,6 +78,7 @@ export const AssetsList: FC<AssetsListProps> = ({
             key={`${asset.slug}_${index}`}
             {...asset}
             isLoading={isLoading}
+            lang={lang}
           />
           // </Link>
         ))}
