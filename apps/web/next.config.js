@@ -13,6 +13,10 @@ const nextConfig = {
             key: 'X-Frame-Options',
             value: 'DENY',
           },
+          {
+            key: 'Service-Worker-Allowed',
+            value: '/',
+          },
         ],
       },
     ];
