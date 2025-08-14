@@ -1,7 +1,7 @@
 'use server';
 
 import { TOKENS, Token, DbToken } from '@hypha-platform/core/client';
-import { findSpaceByWeb3Id } from '@hypha-platform/core/server';
+import { findSpaceById } from '../../../server';
 import { erc20Abi } from 'viem';
 import { web3Client } from './client';
 import { db } from '@hypha-platform/storage-postgres';
@@ -23,7 +23,7 @@ export async function getTokenMeta(
 
     let space = null;
     if (dbToken?.spaceId) {
-      space = await findSpaceByWeb3Id({ id: dbToken.spaceId }, { db });
+      space = await findSpaceById({ id: dbToken.spaceId }, { db });
     }
 
     return {
@@ -77,7 +77,7 @@ export async function getTokenMeta(
 
     let space = null;
     if (dbToken?.spaceId) {
-      space = await findSpaceByWeb3Id({ id: dbToken.spaceId }, { db });
+      space = await findSpaceById({ id: dbToken.spaceId }, { db });
     }
 
     return {
