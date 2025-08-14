@@ -34,7 +34,7 @@ export default async function Index(props: PageProps) {
   const params = await props.params;
   const searchParams = await props.searchParams;
   const query = searchParams?.query;
-  const test = searchParams?.test ?? false;
+  const test = searchParams?.test ?? true;
   const categoriesRaw = searchParams?.category;
   const categories: Category[] | undefined = categoriesRaw
     ?.split(',')
