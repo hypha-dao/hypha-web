@@ -4,7 +4,13 @@ import { Category, Space } from '@hypha-platform/core/client';
 import { SpaceCardList, SpaceSearch } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { Text } from '@radix-ui/themes';
-import { Button, Heading, MultiSelect, Separator } from '@hypha-platform/ui';
+import {
+  Button,
+  Combobox,
+  Heading,
+  MultiSelect,
+  Separator,
+} from '@hypha-platform/ui';
 import React from 'react';
 import Link from 'next/link';
 import { ChevronDownIcon, PlusIcon } from '@radix-ui/react-icons';
@@ -45,6 +51,28 @@ const ChooseOrderComboBox = ({ orders }: { orders: Order[] }) => {
   );
 };
 
+const orderOptions: {
+  value: Order;
+  label: string;
+  searchText: string;
+}[] = [
+  {
+    value: 'Most Members',
+    label: 'Most Members',
+    searchText: 'Most Members',
+  },
+  {
+    value: 'Most Active',
+    label: 'Most Active',
+    searchText: 'Most Active',
+  },
+  {
+    value: 'Most Recent',
+    label: 'Most Recent',
+    searchText: 'Most Recent',
+  },
+];
+
 const CategoryLabel = ({
   spaces,
   selectedSpaces,
@@ -57,7 +85,7 @@ const CategoryLabel = ({
   className?: string | undefined;
 }) => {
   return (
-    <Text className={cn("text-5 text-left", className)}>
+    <Text className={cn('text-5 text-left', className)}>
       {categories && selectedSpaces ? (
         <Text className="text-3 text-left">
           {categories.map((category, index) => (
@@ -151,16 +179,16 @@ export function ExploreSpaces({
         </div>
       </div>
       <Separator className="mt-1 mb-1" />
-      <div className="flex flex-row w-full h-4 pt-10 pb-10 content-center">
+      <div className="flex flex-row w-full h-4 pt-10 pb-10 items-center">
         <CategoryLabel
           spaces={spaces}
           selectedSpaces={selectedSpaces}
           categories={categories}
-          className="flex mb-8 grow align-middle"
+          className="flex grow"
         />
-        <div className="flex flex-col grow-0 pt-0 align-top">
+        <div className="flex flex-col grow-0">
           <MultiSelect
-            placeholder={'Select one or more'}
+            placeholder={'All categories'}
             options={categoryOptions}
             // defaultValue={field.value}
             className="border-0"
@@ -169,8 +197,13 @@ export function ExploreSpaces({
             }}
           />
         </div>
-        {/* <ChooseCategoriesComboBox categories={uniqueCategories} /> */}
-        <ChooseOrderComboBox orders={orders} />
+        <div className="flex flex-col grow-0">
+          <Combobox
+            options={orderOptions}
+            initialValue={orderOptions[0]?.value}
+            className="border-0"
+          />
+        </div>
         <Link href={`/${lang}/network/create`} scroll={false}>
           <Button className="ml-2">
             <PlusIcon />
