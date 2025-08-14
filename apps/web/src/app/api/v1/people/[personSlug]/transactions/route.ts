@@ -108,12 +108,12 @@ export async function GET(
         } else {
           person = await findPersonByWeb3Address(
             { address: counterpartyAddress },
-            { db },
+            { db: getDb({ authToken }) },
           );
           if (!person) {
             space = await findSpaceByAddress(
               { address: counterpartyAddress },
-              { db },
+              { db: getDb({ authToken }) },
             );
           }
         }
