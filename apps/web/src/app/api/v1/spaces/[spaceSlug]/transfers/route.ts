@@ -15,6 +15,7 @@ import {
 import { db } from '@hypha-platform/storage-postgres';
 import { getDb } from '@hypha-platform/core/server';
 import { headers } from 'next/headers';
+import { zeroAddress } from 'viem';
 
 /**
  * A route to get ERC20 transfers.
@@ -92,8 +93,7 @@ export async function GET(
         const isIncoming =
           transfer.to.toUpperCase() === spaceAddress.toUpperCase();
         const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
-        const isMint =
-          transfer.from === '0x0000000000000000000000000000000000000000';
+        const isMint = transfer.from === zeroAddress;
 
         let person = null;
         let space = null;

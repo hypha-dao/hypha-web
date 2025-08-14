@@ -9,9 +9,9 @@ import {
   findPersonByWeb3Address,
   findSpaceByAddress,
 } from '@hypha-platform/core/server';
-import { db } from '@hypha-platform/storage-postgres';
 import { findPersonBySlug, getDb } from '@hypha-platform/core/server';
 import { headers } from 'next/headers';
+import { zeroAddress } from 'viem';
 
 /**
  * A route to get ERC20 transfers for a user.
@@ -93,8 +93,7 @@ export async function GET(
       transfers.map(async (transfer) => {
         const isIncoming = transfer.to.toUpperCase() === address.toUpperCase();
         const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
-        const isMint =
-          transfer.from === '0x0000000000000000000000000000000000000000';
+        const isMint = transfer.from === zeroAddress;
 
         let person = null;
         let space = null;
