@@ -14,7 +14,6 @@ import {
   findSpaceByAddress,
 } from '@hypha-platform/core/server';
 import { findPersonBySlug, getDb } from '@hypha-platform/core/server';
-import { headers } from 'next/headers';
 import { zeroAddress } from 'viem';
 
 /**
@@ -34,8 +33,7 @@ export async function GET(
   { params }: { params: Promise<{ personSlug: string }> },
 ) {
   const { personSlug } = await params;
-  const headersList = await headers();
-  const authToken = headersList.get('Authorization')?.split(' ')[1] || '';
+  const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';
   if (!authToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

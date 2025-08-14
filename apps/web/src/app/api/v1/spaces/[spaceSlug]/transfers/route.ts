@@ -18,7 +18,6 @@ import {
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { getDb } from '@hypha-platform/core/server';
-import { headers } from 'next/headers';
 import { zeroAddress } from 'viem';
 
 /**
@@ -34,12 +33,11 @@ import { zeroAddress } from 'viem';
  */
 
 export async function GET(
-  { nextUrl }: NextRequest,
+  { nextUrl, headers }: NextRequest,
   { params }: { params: Promise<{ spaceSlug: string }> },
 ) {
   const { spaceSlug } = await params;
-  const headersList = await headers();
-  const authToken = headersList.get('Authorization')?.split(' ')[1] || '';
+  const authToken = headers.get('Authorization')?.split(' ')[1] || '';
   if (!authToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
