@@ -72,7 +72,7 @@ export function ExploreSpaces({
   return (
     <div className="flex flex-col">
       <Heading size="9" color="secondary" weight="medium" align="center" className="flex flex-col mb-21 mt-14">
-        Explore the Hypha Network
+        Explore Spaces in the Hypha Network
       </Heading>
       <div className="flex justify-center">
         <SpaceSearch />
