@@ -9,6 +9,7 @@ import React from 'react';
 import Link from 'next/link';
 import { ChevronDownIcon, PlusIcon } from '@radix-ui/react-icons';
 import { categories as categoryOptions } from '@hypha-platform/core/client';
+import { cn } from '@hypha-platform/ui-utils';
 
 interface ExploreSpacesProps {
   lang: Locale;
@@ -40,6 +41,41 @@ const ChooseOrderComboBox = ({ orders }: { orders: Order[] }) => {
   return (
     <Text className="flex flex-row text-2">
       Order <ChevronDownIcon />
+    </Text>
+  );
+};
+
+const CategoryLabel = ({
+  spaces,
+  selectedSpaces,
+  categories,
+  className,
+}: {
+  spaces: Space[];
+  selectedSpaces: Space[];
+  categories?: Category[];
+  className?: string | undefined;
+}) => {
+  return (
+    <Text className={cn("text-5 text-left", className)}>
+      {categories && selectedSpaces ? (
+        <Text className="text-3 text-left">
+          {categories.map((category, index) => (
+            <Text key={`cat-title-${index}`} className="ml-1 capitalize">
+              {index !== 0 && ' | '}
+              {category}
+            </Text>
+          ))}{' '}
+          <Text className="ml-1 mr-1">|</Text>
+          {selectedSpaces?.length}
+        </Text>
+      ) : (
+        <Text className="text-3 text-left">
+          <Text className="ml-1 capitalize">All</Text>
+          <Text className="ml-1 mr-1">|</Text>
+          {spaces?.length}
+        </Text>
+      )}
     </Text>
   );
 };
@@ -115,28 +151,14 @@ export function ExploreSpaces({
         </div>
       </div>
       <Separator className="mt-1 mb-1" />
-      <div className="flex flex-row w-full h-4 mt-10 mb-10">
-        <Text className="text-5 text-left flex mb-8 grow">
-          {categories ? (
-            <Text className="text-3 text-left flex mb-8">
-              {categories.map((category, index) => (
-                <Text key={`cat-title-${index}`} className="ml-1 capitalize">
-                  {index !== 0 && ' | '}
-                  {category}
-                </Text>
-              ))}{' '}
-              <Text className="ml-1 mr-1">|</Text>
-              {selectedSpaces?.length}
-            </Text>
-          ) : (
-            <Text className="text-3 text-left flex mb-8">
-              <Text className="ml-1 capitalize">All</Text>
-              <Text className="ml-1 mr-1">|</Text>
-              {spaces?.length}
-            </Text>
-          )}
-        </Text>
-        <Text className="text-5 text-left flex mb-8 grow">
+      <div className="flex flex-row w-full h-4 pt-10 pb-10 content-center">
+        <CategoryLabel
+          spaces={spaces}
+          selectedSpaces={selectedSpaces}
+          categories={categories}
+          className="flex mb-8 grow align-middle"
+        />
+        <div className="flex flex-col grow-0 pt-0 align-top">
           <MultiSelect
             placeholder={'Select one or more'}
             options={categoryOptions}
@@ -146,7 +168,7 @@ export function ExploreSpaces({
               console.log('MultiSelect:', values);
             }}
           />
-        </Text>
+        </div>
         {/* <ChooseCategoriesComboBox categories={uniqueCategories} /> */}
         <ChooseOrderComboBox orders={orders} />
         <Link href={`/${lang}/network/create`} scroll={false}>
