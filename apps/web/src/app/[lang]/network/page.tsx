@@ -3,6 +3,7 @@ import { Container } from '@hypha-platform/ui';
 import { getAllSpaces, Space } from '@hypha-platform/core/server';
 import { CATEGORIES, Category } from '@hypha-platform/core/client';
 import {
+  ExploreSpaces,
   getDhoPathGovernance,
   NetworkAll,
   NetworkSelected,
@@ -13,6 +14,7 @@ type PageProps = {
   searchParams?: Promise<{
     query?: string;
     category?: string;
+    test?: boolean;
   }>;
 };
 
@@ -32,6 +34,7 @@ export default async function Index(props: PageProps) {
   const params = await props.params;
   const searchParams = await props.searchParams;
   const query = searchParams?.query;
+  const test = searchParams?.test ?? false;
   const categoriesRaw = searchParams?.category;
   const categories: Category[] | undefined = categoriesRaw
     ?.split(',')
@@ -48,7 +51,31 @@ export default async function Index(props: PageProps) {
 
   return (
     <Container className="flex flex-col gap-9 py-9">
-      {categories && categories.length > 0 ? (
+      {test ? (
+        <ExploreSpaces
+          lang={lang}
+          spaces={spaces}
+          categories={categories}
+          uniqueCategories={uniqueCategories}
+        />
+      ) : (
+        categories && categories.length > 0 ? (
+          <NetworkSelected
+            lang={lang}
+            spaces={spaces}
+            categories={categories}
+            uniqueCategories={uniqueCategories}
+          />
+        ) : (
+          <NetworkAll
+            lang={lang}
+            spaces={spaces}
+            uniqueCategories={uniqueCategories}
+            getPathHelper={getDhoPathGovernance}
+          />
+        )
+      )}
+      {/* {categories && categories.length > 0 ? (
         <NetworkSelected
           lang={lang}
           spaces={spaces}
@@ -62,7 +89,7 @@ export default async function Index(props: PageProps) {
           uniqueCategories={uniqueCategories}
           getPathHelper={getDhoPathGovernance}
         />
-      )}
+      )} */}
     </Container>
   );
 }
