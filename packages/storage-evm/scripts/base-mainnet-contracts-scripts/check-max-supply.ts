@@ -22,12 +22,10 @@ interface DAOSpaceFactoryInterface {
 }
 
 interface TokenInterface {
-  totalSupply: () => Promise<bigint>;
   maxSupply: () => Promise<bigint>;
   name: () => Promise<string>;
   symbol: () => Promise<string>;
   decimals: () => Promise<bigint>;
-  balanceOf: (address: string) => Promise<bigint>;
 }
 
 const daoSpaceFactoryAbi = [
@@ -110,21 +108,8 @@ const daoSpaceFactoryAbi = [
   },
 ];
 
-// Standard ERC20 + SpaceToken ABI for the functions we need
+// Minimal ABI for max supply checking
 const tokenAbi = [
-  {
-    inputs: [],
-    name: 'totalSupply',
-    outputs: [
-      {
-        internalType: 'uint256',
-        name: '',
-        type: 'uint256',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
   {
     inputs: [],
     name: 'maxSupply',
@@ -177,25 +162,6 @@ const tokenAbi = [
     stateMutability: 'view',
     type: 'function',
   },
-  {
-    inputs: [
-      {
-        internalType: 'address',
-        name: 'account',
-        type: 'address',
-      },
-    ],
-    name: 'balanceOf',
-    outputs: [
-      {
-        internalType: 'uint256',
-        name: '',
-        type: 'uint256',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
 ];
 
 function parseArguments(): {
@@ -242,7 +208,7 @@ function parseArguments(): {
       i++; // Skip the next argument as it's the value
     } else if (arg === '--help' || arg === '-h') {
       console.log(`
-Usage: npx tsx token-supply-info.ts [options]
+Usage: npx tsx check-max-supply.ts [options]
 
 Options:
   --start, --from <number>         Start space ID (default: 1)
@@ -253,11 +219,11 @@ Options:
   --help, -h                       Show this help message
 
 Examples:
-  npx tsx token-supply-info.ts                           # Check all spaces' tokens
-  npx tsx token-supply-info.ts --start 10 --end 20       # Check spaces 10-20
-  npx tsx token-supply-info.ts --range 100,115           # Check spaces 100-115
-  npx tsx token-supply-info.ts --space 123               # Check tokens for space 123 only
-  npx tsx token-supply-info.ts --token 0x1234...         # Check specific token address
+  npx tsx check-max-supply.ts                           # Check all spaces' tokens
+  npx tsx check-max-supply.ts --start 10 --end 20       # Check spaces 10-20
+  npx tsx check-max-supply.ts --range 100,115           # Check spaces 100-115
+  npx tsx check-max-supply.ts --space 123               # Check tokens for space 123 only
+  npx tsx check-max-supply.ts --token 0x1234...         # Check specific token address
       `);
       process.exit(0);
     }
@@ -266,16 +232,14 @@ Examples:
   return result;
 }
 
-async function getTokenSupplyInfo(
+async function getTokenMaxSupply(
   tokenAddress: string,
   provider: ethers.JsonRpcProvider,
 ): Promise<{
   name: string;
   symbol: string;
   decimals: number;
-  totalSupply: bigint;
   maxSupply: bigint | null;
-  utilization: number;
   isSpaceToken: boolean;
 }> {
   const token = new ethers.Contract(
@@ -284,12 +248,11 @@ async function getTokenSupplyInfo(
     provider,
   ) as ethers.Contract & TokenInterface;
 
-  // Get basic ERC20 info first
-  const [name, symbol, decimals, totalSupply] = await Promise.all([
+  // Get basic token info first
+  const [name, symbol, decimals] = await Promise.all([
     token.name(),
     token.symbol(),
     token.decimals(),
-    token.totalSupply(),
   ]);
 
   // Try to get maxSupply - this might fail for standard ERC20 tokens
@@ -314,19 +277,11 @@ async function getTokenSupplyInfo(
     }
   }
 
-  // Calculate utilization percentage (null maxSupply means no limit/not applicable)
-  const utilization =
-    maxSupply === null || maxSupply === 0n
-      ? 0
-      : Number((totalSupply * 10000n) / maxSupply) / 100;
-
   return {
     name,
     symbol,
     decimals: Number(decimals),
-    totalSupply,
     maxSupply,
-    utilization,
     isSpaceToken,
   };
 }
@@ -339,10 +294,10 @@ async function main(): Promise<void> {
 
   // If specific token address is provided, check only that token
   if (tokenAddress) {
-    console.log(`Checking token supply for address: ${tokenAddress}\n`);
+    console.log(`Checking max supply for token: ${tokenAddress}\n`);
 
     try {
-      const tokenInfo = await getTokenSupplyInfo(tokenAddress, provider);
+      const tokenInfo = await getTokenMaxSupply(tokenAddress, provider);
 
       console.log(`=== Token: ${tokenInfo.name} (${tokenInfo.symbol}) ===`);
       console.log('Address:', tokenAddress);
@@ -352,24 +307,12 @@ async function main(): Promise<void> {
       );
       console.log('Decimals:', tokenInfo.decimals);
       console.log(
-        'Total Supply:',
-        ethers.formatUnits(tokenInfo.totalSupply, tokenInfo.decimals),
-      );
-      console.log(
         'Max Supply:',
         tokenInfo.maxSupply === null
           ? 'N/A (Standard ERC20)'
           : tokenInfo.maxSupply === 0n
           ? 'Unlimited'
           : ethers.formatUnits(tokenInfo.maxSupply, tokenInfo.decimals),
-      );
-      console.log(
-        'Utilization:',
-        tokenInfo.maxSupply === null
-          ? 'N/A (Standard ERC20)'
-          : tokenInfo.maxSupply === 0n
-          ? 'N/A (unlimited)'
-          : `${tokenInfo.utilization.toFixed(2)}%`,
       );
       console.log('===============\n');
     } catch (error: any) {
@@ -413,13 +356,15 @@ async function main(): Promise<void> {
     }
 
     console.log(
-      `Querying token supply for spaces ${actualStartId} to ${actualEndId}\n`,
+      `Checking max supply for spaces ${actualStartId} to ${actualEndId}\n`,
     );
 
     let validSpaces = 0;
     let invalidSpaces = 0;
     let totalTokensChecked = 0;
     let tokenErrors = 0;
+    let spaceTokens = 0;
+    let standardTokens = 0;
     const failedSpaceIds: number[] = [];
 
     // Iterate through the specified range of spaces
@@ -460,16 +405,15 @@ async function main(): Promise<void> {
             console.log(`\n--- Token: ${tokenAddr} ---`);
 
             try {
-              const tokenInfo = await getTokenSupplyInfo(tokenAddr, provider);
+              const tokenInfo = await getTokenMaxSupply(tokenAddr, provider);
 
               console.log('Name:', tokenInfo.name);
               console.log('Symbol:', tokenInfo.symbol);
-              console.log('Type:', tokenInfo.isSpaceToken ? 'SpaceToken' : 'Standard ERC20');
-              console.log('Decimals:', tokenInfo.decimals);
               console.log(
-                'Total Supply:',
-                ethers.formatUnits(tokenInfo.totalSupply, tokenInfo.decimals),
+                'Type:',
+                tokenInfo.isSpaceToken ? 'SpaceToken' : 'Standard ERC20',
               );
+              console.log('Decimals:', tokenInfo.decimals);
               console.log(
                 'Max Supply:',
                 tokenInfo.maxSupply === null
@@ -478,14 +422,12 @@ async function main(): Promise<void> {
                   ? 'Unlimited'
                   : ethers.formatUnits(tokenInfo.maxSupply, tokenInfo.decimals),
               );
-              console.log(
-                'Utilization:',
-                tokenInfo.maxSupply === null
-                  ? 'N/A (Standard ERC20)'
-                  : tokenInfo.maxSupply === 0n
-                  ? 'N/A (unlimited)'
-                  : `${tokenInfo.utilization.toFixed(2)}%`,
-              );
+
+              if (tokenInfo.isSpaceToken) {
+                spaceTokens++;
+              } else {
+                standardTokens++;
+              }
             } catch (error: any) {
               tokenErrors++;
               console.error(`Error reading token info: ${error.message}`);
@@ -512,11 +454,13 @@ async function main(): Promise<void> {
     }
 
     // Summary
-    console.log('\n=== SUMMARY ===');
+    console.log('\n=== MAX SUPPLY SUMMARY ===');
     console.log(`Range queried: ${actualStartId} to ${actualEndId}`);
     console.log(`Valid spaces: ${validSpaces}`);
     console.log(`Invalid/missing spaces: ${invalidSpaces}`);
     console.log(`Total tokens checked: ${totalTokensChecked}`);
+    console.log(`SpaceTokens (with maxSupply): ${spaceTokens}`);
+    console.log(`Standard ERC20 tokens: ${standardTokens}`);
     console.log(`Token read errors: ${tokenErrors}`);
     console.log(`Total spaces in contract: ${spaceCounter}`);
 
