@@ -22,6 +22,7 @@ export const TransactionsList: FC<TransactionsListProps> = ({
           surname={transfer.person?.surname}
           title={transfer.space?.title}
           avatar={transfer.person?.avatarUrl || transfer.space?.avatarUrl}
+          tokenIcon={transfer.tokenIcon}
           value={transfer.value}
           symbol={transfer.symbol}
           date={transfer.timestamp}

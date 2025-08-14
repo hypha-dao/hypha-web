@@ -4,13 +4,13 @@ import { CalendarIcon } from '@radix-ui/react-icons';
 import { formatDate } from '@hypha-platform/ui-utils';
 import { Amount } from '@hypha-platform/ui/server';
 import { PersonAvatar } from '../../../people/components/person-avatar';
-import { HandCoins } from 'lucide-react';
 
 type TransferCardProps = {
   name?: string;
   surname?: string;
   title?: string;
   avatar?: string;
+  tokenIcon?: string;
   value?: number;
   symbol?: string;
   date?: string;
@@ -25,6 +25,7 @@ export const TransferCard: React.FC<TransferCardProps> = ({
   surname,
   title,
   avatar,
+  tokenIcon,
   value,
   symbol,
   date,
@@ -39,9 +40,11 @@ export const TransferCard: React.FC<TransferCardProps> = ({
   return (
     <Card className="w-full p-5 mb-2 flex space-x-3">
       {isMint ? (
-        <div className="flex items-center min-h-full">
-          <HandCoins className="w-10 h-10" />
-        </div>
+        <img
+          src={tokenIcon || '/placeholder/token-icon.png'}
+          alt="Token Icon"
+          className="w-10 h-10 rounded-full object-cover"
+        />
       ) : (
         <PersonAvatar
           size="lg"
@@ -63,11 +66,18 @@ export const TransferCard: React.FC<TransferCardProps> = ({
             <Badge
               isLoading={isLoading}
               variant="surface"
+              colorVariant="accent"
+            >
+              {isMint ? 'Mint' : 'Transfer'}
+            </Badge>
+            <Badge
+              isLoading={isLoading}
+              variant="surface"
               colorVariant={
-                direction === 'incoming' || isMint ? 'success' : 'error'
+                isMint || direction === 'incoming' ? 'success' : 'error'
               }
             >
-              {isMint ? 'Mint' : counterparty === 'from' ? 'From' : 'To'}
+              {counterparty === 'from' ? 'From' : 'To'}
             </Badge>
           </div>
           <Amount isLoading={isLoading} value={value} />

@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTransfersByAddress } from '@hypha-platform/core/server';
+import {
+  getTransfersByAddress,
+  getTokenMeta,
+  findAllTokens,
+} from '@hypha-platform/core/server';
 import { schemaGetTransfersQuery } from '@hypha-platform/core/client';
 import {
   findPersonByWeb3Address,
@@ -20,6 +24,10 @@ import { headers } from 'next/headers';
  * - toBlock: the maximum block number from which to get the transfers. Optional
  * - limit: the desired number of the result. Not greater than 50. Defaults to 10
  */
+
+const validTokenTypes = ['utility', 'credits', 'ownership', 'voice'] as const;
+type TokenType = (typeof validTokenTypes)[number];
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ personSlug: string }> },
@@ -63,16 +71,41 @@ export async function GET(
       limit,
     });
 
+    const rawDbTokens = await findAllTokens(
+      { db: getDb({ authToken }) },
+      { search: undefined },
+    );
+    const dbTokens = rawDbTokens.map((token) => ({
+      agreementId: token.agreementId ?? undefined,
+      spaceId: token.spaceId ?? undefined,
+      name: token.name,
+      symbol: token.symbol,
+      maxSupply: token.maxSupply,
+      type: validTokenTypes.includes(token.type as TokenType)
+        ? (token.type as TokenType)
+        : 'utility',
+      iconUrl: token.iconUrl ?? undefined,
+      transferable: token.transferable,
+      isVotingToken: token.isVotingToken,
+    }));
+
     const transfersWithEntityInfo = await Promise.all(
       transfers.map(async (transfer) => {
         const isIncoming = transfer.to.toUpperCase() === address.toUpperCase();
         const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
+        const isMint =
+          transfer.from === '0x0000000000000000000000000000000000000000';
 
         let person = null;
         let space = null;
-        if (
-          counterpartyAddress !== '0x0000000000000000000000000000000000000000'
-        ) {
+        let tokenIcon = null;
+        if (isMint) {
+          const tokenMeta = await getTokenMeta(
+            transfer.token as `0x${string}`,
+            dbTokens,
+          );
+          tokenIcon = tokenMeta.icon;
+        } else {
           person = await findPersonByWeb3Address(
             { address: counterpartyAddress },
             { db },
@@ -100,6 +133,7 @@ export async function GET(
                 avatarUrl: space.logoUrl,
               }
             : undefined,
+          tokenIcon,
           direction: isIncoming ? 'incoming' : 'outgoing',
           counterparty: isIncoming ? 'from' : 'to',
         };
