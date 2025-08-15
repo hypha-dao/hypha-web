@@ -101,6 +101,14 @@ export function ExploreSpaces({
   const searchParams = useSearchParams();
   const { replace } = useRouter();
 
+  const memberCount = React.useMemo(() => {
+    return spaces.reduce(
+      (accumulator: number, { memberCount }) =>
+        accumulator + (memberCount ?? 0),
+      0,
+    );
+  }, [spaces]);
+
   const selectedSpaces = React.useMemo(
     () =>
       categories
@@ -121,7 +129,6 @@ export function ExploreSpaces({
     [uniqueCategories, categoryOptions],
   );
 
-  const memberCount = 1342;
   const mintedTokens = '$1M';
 
   const setCategories = React.useCallback(
