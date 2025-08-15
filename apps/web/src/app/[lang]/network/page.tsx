@@ -1,7 +1,12 @@
 import { Locale } from '@hypha-platform/i18n';
 import { Container } from '@hypha-platform/ui';
 import { getAllSpaces, Space } from '@hypha-platform/core/server';
-import { CATEGORIES, Category } from '@hypha-platform/core/client';
+import {
+  CATEGORIES,
+  Category,
+  SPACE_ORDERS,
+  SpaceOrder,
+} from '@hypha-platform/core/client';
 import {
   ExploreSpaces,
   getDhoPathGovernance,
@@ -14,6 +19,7 @@ type PageProps = {
   searchParams?: Promise<{
     query?: string;
     category?: string;
+    order?: string;
     test?: boolean;
   }>;
 };
@@ -42,6 +48,11 @@ export default async function Index(props: PageProps) {
     .filter((category): category is Category => {
       return CATEGORIES.includes(category);
     });
+  const orderRaw = searchParams?.order;
+  const order =
+    orderRaw && SPACE_ORDERS.includes(orderRaw as SpaceOrder)
+      ? orderRaw
+      : SPACE_ORDERS[0];
 
   const { lang } = params;
 
@@ -56,6 +67,7 @@ export default async function Index(props: PageProps) {
           lang={lang}
           spaces={spaces}
           categories={categories}
+          order={order}
           uniqueCategories={uniqueCategories}
         />
       ) : categories && categories.length > 0 ? (
