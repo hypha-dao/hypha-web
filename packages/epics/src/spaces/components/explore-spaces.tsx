@@ -205,7 +205,7 @@ export function ExploreSpaces({
           <Combobox
             options={orderOptions}
             initialValue={orderOptions[0]?.value}
-            className="border-0"
+            className="border-0 md:w-40"
           />
         </div>
         <Link href={`/${lang}/network/create`} scroll={false}>
