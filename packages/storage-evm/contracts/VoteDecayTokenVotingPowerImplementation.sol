@@ -12,7 +12,7 @@ import './interfaces/IDAOSpaceFactory.sol';
 
 /**
  * @title VoteDecayTokenVotingPowerImplementation
- * @dev Manages voting power calculations based on decaying token holdings
+ * @dev Manages voting power calculations based on decaying token holdings with delegation support
  */
 contract VoteDecayTokenVotingPowerImplementation is
   Initializable,
@@ -36,6 +36,21 @@ contract VoteDecayTokenVotingPowerImplementation is
   function _authorizeUpgrade(
     address newImplementation
   ) internal override onlyOwner {}
+
+  /**
+   * @dev Set the delegation contract address
+   * @param _delegationContract Address of the delegation contract
+   */
+  function setDelegationContract(
+    address _delegationContract
+  ) external onlyOwner {
+    require(
+      _delegationContract != address(0),
+      'Delegation contract cannot be zero address'
+    );
+    delegationContract = IVotingPowerDelegation(_delegationContract);
+    emit DelegationContractSet(_delegationContract);
+  }
 
   /**
    * @dev Set the address of the decaying token factory that can call setSpaceToken
@@ -93,15 +108,65 @@ contract VoteDecayTokenVotingPowerImplementation is
   }
 
   /**
-   * @dev Get voting power for a user from a specific space based on decayed token holdings
+   * @dev Get voting power for a user from a specific space based on decayed token holdings (including delegated power)
    * @param _user The address to check voting power for
    * @param _sourceSpaceId The space ID from which to derive voting power
-   * @return The voting power (decayed token balance of the user)
+   * @return The voting power (decayed token balance of the user + delegated balances from space members only)
    */
   function getVotingPower(
     address _user,
     uint256 _sourceSpaceId
   ) external view override returns (uint256) {
+    uint256 totalPower = 0;
+
+    // Add user's own power if not delegated or no delegation contract set
+    if (
+      address(delegationContract) == address(0) ||
+      !delegationContract.hasDelegated(_user, _sourceSpaceId)
+    ) {
+      totalPower += _getOwnVotingPower(_user, _sourceSpaceId);
+    }
+
+    // Add delegated power if delegation contract is set (only from space members)
+    if (address(delegationContract) != address(0)) {
+      address[] memory delegators = delegationContract.getDelegators(
+        _user,
+        _sourceSpaceId
+      );
+      for (uint256 i = 0; i < delegators.length; i++) {
+        // Only count delegated power from space members
+        if (
+          spaceFactory != address(0) &&
+          IDAOSpaceFactory(spaceFactory).isMember(_sourceSpaceId, delegators[i])
+        ) {
+          totalPower += _getOwnVotingPower(delegators[i], _sourceSpaceId);
+        }
+      }
+    }
+
+    return totalPower;
+  }
+
+  /**
+   * @dev Get only the user's own voting power (without delegation)
+   * @param _user The address to check voting power for
+   * @param _sourceSpaceId The space ID from which to derive voting power
+   * @return The user's own voting power
+   */
+  function getOwnVotingPower(
+    address _user,
+    uint256 _sourceSpaceId
+  ) external view returns (uint256) {
+    return _getOwnVotingPower(_user, _sourceSpaceId);
+  }
+
+  /**
+   * @dev Internal function to get user's own voting power
+   */
+  function _getOwnVotingPower(
+    address _user,
+    uint256 _sourceSpaceId
+  ) internal view returns (uint256) {
     require(_sourceSpaceId > 0, 'Invalid space ID');
     address tokenAddress = spaceTokens[_sourceSpaceId];
     require(tokenAddress != address(0), 'Token not set for space');
@@ -127,16 +192,56 @@ contract VoteDecayTokenVotingPowerImplementation is
   }
 
   /**
-   * @dev Apply decay to a user's balance and return the updated voting power
+   * @dev Apply decay to a user's balance and return the updated voting power (including delegated power)
    *      Protected against re-entrancy.
    * @param _user The address to apply decay and check voting power for
    * @param _sourceSpaceId The space ID from which to derive voting power
-   * @return The updated voting power after applying decay
+   * @return The updated voting power after applying decay (from space members only)
    */
   function applyDecayAndGetVotingPower(
     address _user,
     uint256 _sourceSpaceId
   ) external nonReentrant returns (uint256) {
+    uint256 totalPower = 0;
+
+    // Add user's own power if not delegated or no delegation contract set, applying decay
+    if (
+      address(delegationContract) == address(0) ||
+      !delegationContract.hasDelegated(_user, _sourceSpaceId)
+    ) {
+      totalPower += _applyDecayAndGetOwnVotingPower(_user, _sourceSpaceId);
+    }
+
+    // Add delegated power if delegation contract is set, applying decay to each space member delegator
+    if (address(delegationContract) != address(0)) {
+      address[] memory delegators = delegationContract.getDelegators(
+        _user,
+        _sourceSpaceId
+      );
+      for (uint256 i = 0; i < delegators.length; i++) {
+        // Only count delegated power from space members
+        if (
+          spaceFactory != address(0) &&
+          IDAOSpaceFactory(spaceFactory).isMember(_sourceSpaceId, delegators[i])
+        ) {
+          totalPower += _applyDecayAndGetOwnVotingPower(
+            delegators[i],
+            _sourceSpaceId
+          );
+        }
+      }
+    }
+
+    return totalPower;
+  }
+
+  /**
+   * @dev Internal function to apply decay and get user's own voting power
+   */
+  function _applyDecayAndGetOwnVotingPower(
+    address _user,
+    uint256 _sourceSpaceId
+  ) internal returns (uint256) {
     require(_sourceSpaceId > 0, 'Invalid space ID');
     address tokenAddress = spaceTokens[_sourceSpaceId];
     require(tokenAddress != address(0), 'Token not set for space');
@@ -147,4 +252,7 @@ contract VoteDecayTokenVotingPowerImplementation is
     // State read after external call
     return IDecayingSpaceToken(tokenAddress).balanceOf(_user);
   }
+
+  // New event for delegation contract
+  event DelegationContractSet(address indexed delegationContract);
 }
