@@ -106,6 +106,18 @@ interface MultiSelectProps
   className?: string;
 }
 
+function arraysShallowEqual(arr1: any[], arr2: any[]): boolean {
+  if (arr1.length !== arr2.length) {
+    return false;
+  }
+  for (let i = 0; i < arr1.length; i++) {
+    if (arr1[i] !== arr2[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export const MultiSelect = React.forwardRef<
   HTMLButtonElement,
   MultiSelectProps
@@ -121,6 +133,7 @@ export const MultiSelect = React.forwardRef<
       maxCount = 3,
       modalPopover = false,
       asChild = false,
+      value,
       className,
       ...props
     },
@@ -129,6 +142,12 @@ export const MultiSelect = React.forwardRef<
     const [selectedValues, setSelectedValues] =
       React.useState<string[]>(defaultValue);
     const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
+
+    React.useEffect(() => {
+      if (value && arraysShallowEqual(selectedValues, value as string[])) {
+        setSelectedValues(value as string[]);
+      }
+    }, [value]);
 
     const handleInputKeyDown = (
       event: React.KeyboardEvent<HTMLInputElement>,
