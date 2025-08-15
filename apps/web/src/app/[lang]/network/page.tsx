@@ -7,12 +7,7 @@ import {
   SPACE_ORDERS,
   SpaceOrder,
 } from '@hypha-platform/core/client';
-import {
-  ExploreSpaces,
-  // getDhoPathGovernance,
-  // NetworkAll,
-  // NetworkSelected,
-} from '@hypha-platform/epics';
+import { ExploreSpaces } from '@hypha-platform/epics';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -47,7 +42,7 @@ export default async function Index(props: PageProps) {
       return CATEGORIES.includes(category);
     });
   const orderRaw = searchParams?.order;
-  const order =
+  const order: SpaceOrder =
     orderRaw && SPACE_ORDERS.includes(orderRaw as SpaceOrder)
       ? (orderRaw as SpaceOrder)
       : SPACE_ORDERS[0];
@@ -67,21 +62,6 @@ export default async function Index(props: PageProps) {
         order={order}
         uniqueCategories={uniqueCategories}
       />
-      {/* {categories && categories.length > 0 ? (
-        <NetworkSelected
-          lang={lang}
-          spaces={spaces}
-          categories={categories}
-          uniqueCategories={uniqueCategories}
-        />
-      ) : (
-        <NetworkAll
-          lang={lang}
-          spaces={spaces}
-          uniqueCategories={uniqueCategories}
-          getPathHelper={getDhoPathGovernance}
-        />
-      )} */}
     </Container>
   );
 }

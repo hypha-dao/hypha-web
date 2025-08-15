@@ -196,7 +196,7 @@ export function ExploreSpaces({
   };
 
   const sortedSpaces = React.useMemo(() => {
-    return ([] as Space[]).concat(selectedSpaces).sort((a, b) => {
+    return [...selectedSpaces].sort((a, b) => {
       switch (order) {
         case 'mostmembers':
           return compareMembers(a, b);
@@ -283,7 +283,6 @@ export function ExploreSpaces({
           <MultiSelect
             placeholder={'All categories'}
             options={categoryOptions}
-            defaultValue={categories}
             value={categories}
             className="border-0"
             onValueChange={setCategories}
