@@ -41,8 +41,10 @@ function parseAddressesFile(): Record<string, string> {
   const patterns = {
     SpaceVotingPower: /SpaceVotingPower deployed to: (0x[a-fA-F0-9]{40})/,
     TokenVotingPower: /TokenVotingPower deployed to: (0x[a-fA-F0-9]{40})/,
-    VoteDecayTokenVotingPower: /VoteDecayTokenVotingPower proxy deployed to: (0x[a-fA-F0-9]{40})/,
-    VotingPowerDelegation: /VotingPowerDelegation deployed to: (0x[a-fA-F0-9]{40})/,
+    VoteDecayTokenVotingPower:
+      /VoteDecayTokenVotingPower proxy deployed to: (0x[a-fA-F0-9]{40})/,
+    VotingPowerDelegation:
+      /VotingPowerDelegation deployed to: (0x[a-fA-F0-9]{40})/,
   };
 
   for (const [key, pattern] of Object.entries(patterns)) {
@@ -91,9 +93,9 @@ async function main(): Promise<void> {
   // Verify all required addresses are available
   const requiredAddresses = [
     'SpaceVotingPower',
-    'TokenVotingPower', 
+    'TokenVotingPower',
     'VoteDecayTokenVotingPower',
-    'VotingPowerDelegation'
+    'VotingPowerDelegation',
   ];
 
   for (const contractName of requiredAddresses) {
@@ -116,7 +118,10 @@ async function main(): Promise<void> {
   const contractsToUpdate = [
     { name: 'SpaceVotingPower', address: addresses['SpaceVotingPower'] },
     { name: 'TokenVotingPower', address: addresses['TokenVotingPower'] },
-    { name: 'VoteDecayTokenVotingPower', address: addresses['VoteDecayTokenVotingPower'] },
+    {
+      name: 'VoteDecayTokenVotingPower',
+      address: addresses['VoteDecayTokenVotingPower'],
+    },
   ];
 
   // Process each contract
@@ -152,10 +157,14 @@ async function main(): Promise<void> {
 
       console.log('Transaction sent, waiting for confirmation...');
       await tx.wait();
-      console.log(`✅ Delegation contract set successfully on ${contractInfo.name}!`);
-
+      console.log(
+        `✅ Delegation contract set successfully on ${contractInfo.name}!`,
+      );
     } catch (error: any) {
-      console.error(`❌ Error setting delegation contract on ${contractInfo.name}:`, error.message);
+      console.error(
+        `❌ Error setting delegation contract on ${contractInfo.name}:`,
+        error.message,
+      );
       throw error;
     }
   }
@@ -164,8 +173,12 @@ async function main(): Promise<void> {
   console.log('\nSummary:');
   console.log(`- SpaceVotingPower: ${addresses['SpaceVotingPower']}`);
   console.log(`- TokenVotingPower: ${addresses['TokenVotingPower']}`);
-  console.log(`- VoteDecayTokenVotingPower: ${addresses['VoteDecayTokenVotingPower']}`);
-  console.log(`- All now linked to VotingPowerDelegation: ${delegationAddress}`);
+  console.log(
+    `- VoteDecayTokenVotingPower: ${addresses['VoteDecayTokenVotingPower']}`,
+  );
+  console.log(
+    `- All now linked to VotingPowerDelegation: ${delegationAddress}`,
+  );
 }
 
 main()
@@ -173,4 +186,4 @@ main()
   .catch((error) => {
     console.error(error);
     process.exit(1);
-  }); 
+  });
