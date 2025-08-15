@@ -16,7 +16,6 @@ import {
   findPersonByWeb3Address,
   findAllTokens,
 } from '@hypha-platform/core/server';
-import { db } from '@hypha-platform/storage-postgres';
 import { getDb } from '@hypha-platform/core/server';
 import { zeroAddress } from 'viem';
 
@@ -48,8 +47,10 @@ export async function GET(
     );
 
   try {
-    // TODO: implement authorization
-    const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
+    const space = await findSpaceBySlug(
+      { slug: spaceSlug },
+      { db: getDb({ authToken }) },
+    );
     if (!space) {
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
