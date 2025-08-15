@@ -13,9 +13,10 @@ import {
 } from '@hypha-platform/ui';
 import React from 'react';
 import Link from 'next/link';
-import { ChevronDownIcon, PlusIcon } from '@radix-ui/react-icons';
+import { PlusIcon } from '@radix-ui/react-icons';
 import { categories as categoryOptions } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 interface ExploreSpacesProps {
   lang: Locale;
@@ -29,27 +30,7 @@ const categoriesIntersected = (
   categories2: Category[],
 ) => categories1.some((category) => categories2.includes(category));
 
-const ChooseCategoriesComboBox = ({
-  categories,
-}: {
-  categories: Category[];
-}) => {
-  return (
-    <Text className="flex flex-row text-2">
-      Categores <ChevronDownIcon />
-    </Text>
-  );
-};
-
 type Order = 'mostmembers' | 'mostactive' | 'mostrecent';
-
-const ChooseOrderComboBox = ({ orders }: { orders: Order[] }) => {
-  return (
-    <Text className="flex flex-row text-2">
-      Order <ChevronDownIcon />
-    </Text>
-  );
-};
 
 const orderOptions: {
   value: Order;
@@ -114,6 +95,17 @@ export function ExploreSpaces({
   categories,
   uniqueCategories,
 }: ExploreSpacesProps) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { replace } = useRouter();
+
+  const currentCategories = React.useMemo(() => {
+    const categories = searchParams.has('category')
+      ? searchParams.get('category')?.split(',') || []
+      : [];
+    return categories;
+  }, [searchParams]);
+
   const selectedSpaces = React.useMemo(
     () =>
       categories
@@ -123,14 +115,34 @@ export function ExploreSpaces({
         : [],
     [spaces, categories],
   );
-  const tags = uniqueCategories.map(category =>
-    categoryOptions.find((option =>
-      option.value === category)
+
+  const tags = React.useMemo(() =>
+    uniqueCategories.map(category =>
+      categoryOptions.find((option =>
+        option.value === category)
+      )
     )
-  )
-  .filter(category => !!category);
+    .filter(category => !!category),
+    [uniqueCategories, categoryOptions],
+  );
+
   const memberCount = 1342;
   const mintedTokens = '$1M';
+
+  const setCategories = React.useCallback(
+    (categories: string[]) => {
+      console.log('setCategories:', categories);//TODO: remove before PR
+      const params = new URLSearchParams(searchParams);
+      if (categories.length > 0) {
+        params.set('category', categories.join(','));
+      } else {
+        params.delete('category');
+      }
+      replace(`${pathname}?${params.toString()}`);
+    },
+    [searchParams, pathname, replace],
+  );
+
   return (
     <div className="flex flex-col">
       <Heading
@@ -194,11 +206,9 @@ export function ExploreSpaces({
           <MultiSelect
             placeholder={'All categories'}
             options={categoryOptions}
-            defaultValue={[]}
+            defaultValue={currentCategories}
             className="border-0"
-            onValueChange={(values: string[]) => {
-              console.log('MultiSelect:', values);
-            }}
+            onValueChange={setCategories}
           />
         </div>
         <div className="flex flex-col grow-0">
