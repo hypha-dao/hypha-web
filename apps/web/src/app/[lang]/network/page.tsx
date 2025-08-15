@@ -40,7 +40,6 @@ export default async function Index(props: PageProps) {
   const params = await props.params;
   const searchParams = await props.searchParams;
   const query = searchParams?.query;
-  const test = searchParams?.test ?? true;
   const categoriesRaw = searchParams?.category;
   const categories: Category[] | undefined = categoriesRaw
     ?.split(',')
@@ -62,29 +61,13 @@ export default async function Index(props: PageProps) {
 
   return (
     <Container className="flex flex-col gap-9 py-9">
-      {test ? (
-        <ExploreSpaces
-          lang={lang}
-          spaces={spaces}
-          categories={categories}
-          order={order}
-          uniqueCategories={uniqueCategories}
-        />
-      ) : categories && categories.length > 0 ? (
-        <NetworkSelected
-          lang={lang}
-          spaces={spaces}
-          categories={categories}
-          uniqueCategories={uniqueCategories}
-        />
-      ) : (
-        <NetworkAll
-          lang={lang}
-          spaces={spaces}
-          uniqueCategories={uniqueCategories}
-          getPathHelper={getDhoPathGovernance}
-        />
-      )}
+      <ExploreSpaces
+        lang={lang}
+        spaces={spaces}
+        categories={categories}
+        order={order}
+        uniqueCategories={uniqueCategories}
+      />
       {/* {categories && categories.length > 0 ? (
         <NetworkSelected
           lang={lang}
