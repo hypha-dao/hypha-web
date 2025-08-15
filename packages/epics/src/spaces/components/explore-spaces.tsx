@@ -133,8 +133,10 @@ export function ExploreSpaces({
         .map((category) =>
           categoryOptions.find((option) => option.value === category),
         )
-        .filter((category) => !!category),
-    [uniqueCategories, categoryOptions],
+        .filter(
+          (category): category is NonNullable<typeof category> => !!category,
+        ),
+    [uniqueCategories],
   );
 
   const setCategories = React.useCallback(
@@ -184,24 +186,24 @@ export function ExploreSpaces({
   );
 
   const compareMembers = (a: Space, b: Space) => {
-    return (a.memberCount ?? 0) > (b.memberCount ?? 0) ? 1 : -1;
+    return (b.memberCount ?? 0) - (a.memberCount ?? 0);
   };
   const compareActive = (a: Space, b: Space) => {
-    return (a.documentCount ?? 0) > (b.documentCount ?? 0) ? 1 : -1;
+    return (b.documentCount ?? 0) - (a.documentCount ?? 0);
   };
   const compareRecent = (a: Space, b: Space) => {
-    return a.id > b.id ? 1 : -1;
+    return b.id - a.id;
   };
 
   const sortedSpaces = React.useMemo(() => {
     return ([] as Space[]).concat(selectedSpaces).sort((a, b) => {
       switch (order) {
         case 'mostmembers':
-          return -compareMembers(a, b);
+          return compareMembers(a, b);
         case 'mostactive':
-          return -compareActive(a, b);
+          return compareActive(a, b);
         case 'mostrecent':
-          return -compareRecent(a, b);
+          return compareRecent(a, b);
         default:
           return 0;
       }

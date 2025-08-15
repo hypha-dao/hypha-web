@@ -9,9 +9,9 @@ import {
 } from '@hypha-platform/core/client';
 import {
   ExploreSpaces,
-  getDhoPathGovernance,
-  NetworkAll,
-  NetworkSelected,
+  // getDhoPathGovernance,
+  // NetworkAll,
+  // NetworkSelected,
 } from '@hypha-platform/epics';
 
 type PageProps = {
@@ -20,7 +20,6 @@ type PageProps = {
     query?: string;
     category?: string;
     order?: string;
-    test?: boolean;
   }>;
 };
 
@@ -50,7 +49,7 @@ export default async function Index(props: PageProps) {
   const orderRaw = searchParams?.order;
   const order =
     orderRaw && SPACE_ORDERS.includes(orderRaw as SpaceOrder)
-      ? orderRaw
+      ? (orderRaw as SpaceOrder)
       : SPACE_ORDERS[0];
 
   const { lang } = params;

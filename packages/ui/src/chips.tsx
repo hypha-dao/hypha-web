@@ -144,13 +144,11 @@ export const MultiSelect = React.forwardRef<
     const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
 
     React.useEffect(() => {
-      if (!value) {
-        setSelectedValues([]);
-      }
-      const currentValues = Array.isArray(value) ? (value as string[]) : [];
-      if (!arraysShallowEqual(selectedValues, currentValues)) {
-        setSelectedValues(currentValues);
-      }
+      if (value === undefined) return;
+      const next = Array.isArray(value) ? (value as string[]) : [];
+      setSelectedValues((prev) =>
+        arraysShallowEqual(prev, next) ? prev : next,
+      );
     }, [value]);
 
     const handleInputKeyDown = (
