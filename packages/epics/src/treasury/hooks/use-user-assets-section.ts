@@ -11,7 +11,7 @@ export const useUserAssetsSection = ({
   personSlug?: string;
 }) => {
   const [activeFilter, setActiveFilter] = React.useState('all');
-  const [visibleCount, setVisibleCount] = React.useState(6);
+  const [visibleCount, setVisibleCount] = React.useState(3);
 
   const { isLoading, balance, assets } = useUserAssets({
     ...(activeFilter !== 'all' && { filter: { type: activeFilter } }),
@@ -19,11 +19,11 @@ export const useUserAssetsSection = ({
   });
 
   React.useEffect(() => {
-    setVisibleCount(6);
+    setVisibleCount(3);
   }, [activeFilter, assets]);
 
   const loadMore = React.useCallback(() => {
-    setVisibleCount((prev) => prev + 6);
+    setVisibleCount((prev) => prev + 3);
   }, []);
 
   const totalBalance = `$ ${formatCurrencyValue(balance)}`;

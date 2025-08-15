@@ -7,10 +7,7 @@ import clsx from 'clsx';
 
 import { Footer, Html, ThemeProvider } from '@hypha-platform/ui/server';
 import { AuthProvider } from '@hypha-platform/authentication';
-import {
-  useAuthentication,
-  InactivityGuard,
-} from '@hypha-platform/authentication';
+import { useAuthentication } from '@hypha-platform/authentication';
 import { ConnectedButtonProfile } from '@hypha-platform/epics';
 import { EvmProvider } from '@hypha-platform/evm';
 import { useMe } from '@hypha-platform/core/client';
@@ -57,7 +54,6 @@ export default async function RootLayout({
           appId: process.env.NEXT_PUBLIC_PRIVY_APP_ID!,
         }}
       >
-        <InactivityGuard />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

@@ -26,7 +26,7 @@ export const SubspaceSection = ({
         <div className="flex items-center">
           <Link href={`membership/space/create`} scroll={false}>
             <Button className="ml-2">
-              <PlusIcon className="mr-2" />
+              <PlusIcon />
               Create Sub-Space
             </Button>
           </Link>

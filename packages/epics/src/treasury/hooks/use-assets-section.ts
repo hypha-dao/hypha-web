@@ -4,7 +4,7 @@ import { FILTER_OPTIONS_ASSETS } from '../../common/constants';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 
 const filterOptions = FILTER_OPTIONS_ASSETS;
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 3;
 
 export const useAssetsSection = () => {
   const [activeFilter, setActiveFilter] = React.useState('all');

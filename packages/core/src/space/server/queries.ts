@@ -60,6 +60,28 @@ export const findSpaceById = async (
   return space ? space : null;
 };
 
+export const findSpaceByAddress = async (
+  { address }: { address: string },
+  { db }: DbConfig,
+) => {
+  const [space] = await db
+    .select()
+    .from(spaces)
+    .where(eq(sql`upper(${spaces.address})`, address.toUpperCase()));
+  return space ? space : null;
+};
+
+export const findSpaceByWeb3Id = async (
+  { id }: { id: number },
+  { db }: DbConfig,
+) => {
+  const [space] = await db
+    .select()
+    .from(spaces)
+    .where(eq(spaces.web3SpaceId, id));
+  return space ? space : null;
+};
+
 export const findParentSpaceById = async (
   { id }: { id?: number | null },
   { db }: DbConfig,
