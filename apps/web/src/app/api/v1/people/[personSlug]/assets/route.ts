@@ -7,6 +7,7 @@ import {
   findAllTokens,
   getBalance,
   getTokenMeta,
+  getSupply,
 } from '@hypha-platform/core/server';
 import { TOKENS, Token } from '@hypha-platform/core/client';
 import { headers } from 'next/headers';
@@ -104,6 +105,17 @@ export async function GET(
         try {
           const meta = await getTokenMeta(token.address, dbTokens);
           const { amount } = await getBalance(token.address, address);
+          let totalSupply: bigint | undefined;
+          let maxSupply: bigint | undefined;
+          try {
+            const supply = await getSupply(token.address);
+            totalSupply = supply.totalSupply;
+            maxSupply = supply.maxSupply;
+          } catch (err) {
+            console.warn(
+              `Failed to fetch supply for token ${token.address}: ${err}`,
+            );
+          }
           const rate = prices[token.address] || 0;
           return {
             ...meta,
@@ -114,6 +126,19 @@ export async function GET(
             transactions: [],
             closeUrl: [],
             slug: '',
+            supply:
+              totalSupply && maxSupply
+                ? {
+                    total: Number(totalSupply / 10n ** 18n),
+                    max: Number(maxSupply / 10n ** 18n),
+                  }
+                : undefined,
+            space: meta.space
+              ? {
+                  slug: meta.space.slug,
+                  title: meta.space.title,
+                }
+              : undefined,
           };
         } catch (err) {
           console.warn(`Skipping token ${token.address}: ${err}`);

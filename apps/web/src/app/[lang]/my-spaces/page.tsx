@@ -40,7 +40,7 @@ export default async function Index(props: PageProps) {
           <SpaceSearch />
           <Link href={`/${lang}/my-spaces/create`} scroll={false}>
             <Button className="ml-2">
-              <PlusIcon className="mr-2" />
+              <PlusIcon />
               Create Space
             </Button>
           </Link>
