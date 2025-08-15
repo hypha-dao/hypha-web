@@ -12,3 +12,4 @@ export * from './get-space-regular-tokens';
 export * from './get-tokens-voting-power';
 export * from './is-member';
 export * from './join-space';
+export * from './get-invite-status';

@@ -1147,6 +1147,19 @@ export const daoSpaceFactoryImplementationAbi = [
   {
     type: 'function',
     inputs: [
+      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: '_memberAddress', internalType: 'address', type: 'address' },
+    ],
+    name: 'getInviteInfo',
+    outputs: [
+      { name: 'lastInviteTime', internalType: 'uint256', type: 'uint256' },
+      { name: 'hasActiveProposal', internalType: 'bool', type: 'bool' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
       { name: '_memberAddress', internalType: 'address', type: 'address' },
     ],
     name: 'getMemberSpaces',
@@ -1247,6 +1260,26 @@ export const daoSpaceFactoryImplementationAbi = [
   },
   {
     type: 'function',
+    inputs: [
+      { name: '', internalType: 'uint256', type: 'uint256' },
+      { name: '', internalType: 'address', type: 'address' },
+    ],
+    name: 'memberActiveInviteProposal',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '', internalType: 'uint256', type: 'uint256' },
+      { name: '', internalType: 'address', type: 'address' },
+    ],
+    name: 'memberLastInviteTime',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     inputs: [],
     name: 'owner',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
@@ -1274,6 +1307,16 @@ export const daoSpaceFactoryImplementationAbi = [
     name: 'proxiableUUID',
     outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
     stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: '_memberToRemove', internalType: 'address', type: 'address' },
+    ],
+    name: 'removeMember',
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
