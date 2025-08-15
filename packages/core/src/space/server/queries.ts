@@ -67,7 +67,7 @@ export const findSpaceByAddress = async (
   const [space] = await db
     .select()
     .from(spaces)
-    .where(eq(spaces.address, address));
+    .where(eq(sql`upper(${spaces.address})`, address.toUpperCase()));
   return space ? space : null;
 };
 
