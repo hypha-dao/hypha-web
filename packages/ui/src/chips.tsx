@@ -144,8 +144,12 @@ export const MultiSelect = React.forwardRef<
     const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
 
     React.useEffect(() => {
-      if (value && arraysShallowEqual(selectedValues, value as string[])) {
-        setSelectedValues(value as string[]);
+      if (!value) {
+        setSelectedValues([]);
+      }
+      const currentValues = Array.isArray(value) ? (value as string[]) : [];
+      if (!arraysShallowEqual(selectedValues, currentValues)) {
+        setSelectedValues(currentValues);
       }
     }, [value]);
 
