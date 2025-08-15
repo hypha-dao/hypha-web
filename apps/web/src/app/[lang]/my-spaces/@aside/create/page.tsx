@@ -1,7 +1,7 @@
 'use client';
 
 import { SpaceForm, SidePanel } from '@hypha-platform/epics';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, usePathname } from 'next/navigation';
 import React from 'react';
 import { Locale } from '@hypha-platform/i18n';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
@@ -20,6 +20,7 @@ export default function AsideCreateSpacePage() {
   const config = useConfig();
   const { person } = useMe();
   const { jwt, isLoadingJwt } = useJwt();
+  const pathname = usePathname();
   const {
     createSpace,
     reset,
@@ -36,7 +37,7 @@ export default function AsideCreateSpacePage() {
     }
   }, [progress, spaceSlug]);
 
-  const mySpacesUrl = `/${lang}/my-spaces/`;
+  const closeUrl = pathname.split('/').slice(0, -1).join('/') || '/';
 
   return progress !== 100 ? (
     <SidePanel>
@@ -60,8 +61,8 @@ export default function AsideCreateSpacePage() {
             name: person?.name,
             surname: person?.surname,
           }}
-          closeUrl={mySpacesUrl}
-          backUrl={mySpacesUrl}
+          closeUrl={closeUrl}
+          backUrl={closeUrl}
           backLabel="Back"
           onSubmit={createSpace}
           isLoading={isLoadingJwt}
