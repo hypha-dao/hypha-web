@@ -9,11 +9,13 @@ import {
   getTokenMeta,
   getSupply,
 } from '@hypha-platform/core/server';
-import { TOKENS, Token } from '@hypha-platform/core/client';
+import {
+  TOKENS,
+  Token,
+  validTokenTypes,
+  TokenType,
+} from '@hypha-platform/core/client';
 import { headers } from 'next/headers';
-
-const validTokenTypes = ['utility', 'credits', 'ownership', 'voice'] as const;
-type TokenType = (typeof validTokenTypes)[number];
 
 export async function GET(
   request: NextRequest,

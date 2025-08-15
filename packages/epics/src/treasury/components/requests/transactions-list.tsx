@@ -1,9 +1,10 @@
 import { FC } from 'react';
 import { TransferCard } from './transfer-card';
-import { TransferWithPerson } from '../../hooks';
+import { TransferWithEntity } from '../../hooks';
+import { ZeroAddress } from 'ethers';
 
 type TransactionsListProps = {
-  transfers: TransferWithPerson[];
+  transfers: TransferWithEntity[];
   activeSort: string;
   isLoading?: boolean;
 };
@@ -20,13 +21,16 @@ export const TransactionsList: FC<TransactionsListProps> = ({
           key={`${transfer.transactionHash}-${index}`}
           name={transfer.person?.name}
           surname={transfer.person?.surname}
-          avatar={transfer.person?.avatarUrl}
+          title={transfer.space?.title}
+          avatar={transfer.person?.avatarUrl || transfer.space?.avatarUrl}
+          tokenIcon={transfer.tokenIcon}
           value={transfer.value}
           symbol={transfer.symbol}
           date={transfer.timestamp}
           isLoading={isLoading}
           direction={transfer.direction}
           counterparty={transfer.counterparty}
+          isMint={transfer.from === ZeroAddress}
         />
       ))}
       {isLoading && (

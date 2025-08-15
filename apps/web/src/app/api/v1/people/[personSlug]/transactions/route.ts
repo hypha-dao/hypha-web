@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTransfersByAddress } from '@hypha-platform/core/server';
-import { schemaGetTransfersQuery } from '@hypha-platform/core/client';
-import { findPersonByWeb3Address } from '@hypha-platform/core/server';
-import { db } from '@hypha-platform/storage-postgres';
+import {
+  getTransfersByAddress,
+  getTokenMeta,
+  findAllTokens,
+} from '@hypha-platform/core/server';
+import {
+  schemaGetTransfersQuery,
+  validTokenTypes,
+  TokenType,
+} from '@hypha-platform/core/client';
+import {
+  findPersonByWeb3Address,
+  findSpaceByAddress,
+} from '@hypha-platform/core/server';
 import { findPersonBySlug, getDb } from '@hypha-platform/core/server';
-import { headers } from 'next/headers';
+import { zeroAddress } from 'viem';
 
 /**
  * A route to get ERC20 transfers for a user.
@@ -17,13 +27,13 @@ import { headers } from 'next/headers';
  * - toBlock: the maximum block number from which to get the transfers. Optional
  * - limit: the desired number of the result. Not greater than 50. Defaults to 10
  */
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ personSlug: string }> },
 ) {
   const { personSlug } = await params;
-  const headersList = await headers();
-  const authToken = headersList.get('Authorization')?.split(' ')[1] || '';
+  const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';
   if (!authToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -60,25 +70,75 @@ export async function GET(
       limit,
     });
 
-    const transfersWithPersonsInfo = await Promise.all(
+    const rawDbTokens = await findAllTokens(
+      { db: getDb({ authToken }) },
+      { search: undefined },
+    );
+    const dbTokens = rawDbTokens.map((token) => ({
+      agreementId: token.agreementId ?? undefined,
+      spaceId: token.spaceId ?? undefined,
+      name: token.name,
+      symbol: token.symbol,
+      maxSupply: token.maxSupply,
+      type: validTokenTypes.includes(token.type as TokenType)
+        ? (token.type as TokenType)
+        : 'utility',
+      iconUrl: token.iconUrl ?? undefined,
+      transferable: token.transferable,
+      isVotingToken: token.isVotingToken,
+    }));
+
+    const transfersWithEntityInfo = await Promise.all(
       transfers.map(async (transfer) => {
         const isIncoming = transfer.to.toUpperCase() === address.toUpperCase();
         const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
+        const isMint = transfer.from === zeroAddress;
 
-        const counterpartyPerson = await findPersonByWeb3Address(
-          { address: counterpartyAddress },
-          { db },
-        );
+        let person = null;
+        let space = null;
+        let tokenIcon = null;
+        if (isMint) {
+          const tokenMeta = await getTokenMeta(
+            transfer.token as `0x${string}`,
+            dbTokens,
+          );
+          tokenIcon = tokenMeta.icon;
+        } else {
+          person = await findPersonByWeb3Address(
+            { address: counterpartyAddress },
+            { db: getDb({ authToken }) },
+          );
+          if (!person) {
+            space = await findSpaceByAddress(
+              { address: counterpartyAddress },
+              { db: getDb({ authToken }) },
+            );
+          }
+        }
+
         return {
           ...transfer,
-          person: counterpartyPerson,
+          person: person
+            ? {
+                name: person.name,
+                surname: person.surname,
+                avatarUrl: person.avatarUrl,
+              }
+            : undefined,
+          space: space
+            ? {
+                title: space.title,
+                avatarUrl: space.logoUrl,
+              }
+            : undefined,
+          tokenIcon,
           direction: isIncoming ? 'incoming' : 'outgoing',
           counterparty: isIncoming ? 'from' : 'to',
         };
       }),
     );
 
-    return NextResponse.json(transfersWithPersonsInfo);
+    return NextResponse.json(transfersWithEntityInfo);
   } catch (error: any) {
     const errorMessage =
       error?.message || error?.shortMessage || JSON.stringify(error);

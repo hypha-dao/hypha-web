@@ -43,3 +43,11 @@ export const TOKENS: Token[] = [
     type: 'utility',
   },
 ];
+
+export const validTokenTypes = [
+  'utility',
+  'credits',
+  'ownership',
+  'voice',
+] as const;
+export type TokenType = (typeof validTokenTypes)[number];
