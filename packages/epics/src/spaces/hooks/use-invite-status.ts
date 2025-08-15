@@ -23,14 +23,19 @@ export const useInviteStatus = ({
         address: address as `0x${string}`,
         spaceId: spaceId as bigint,
       });
-      const result = (await publicClient.readContract(config)) as readonly [
-        bigint,
-        boolean,
-      ];
-      return {
-        lastInviteTime: Number(result[0]),
-        hasActiveProposal: result[1],
-      };
+      try {
+        const result = (await publicClient.readContract(config)) as readonly [
+          bigint,
+          boolean,
+        ];
+        return {
+          lastInviteTime: Number(result[0]),
+          hasActiveProposal: result[1],
+        };
+      } catch (error) {
+        console.error('Failed to fetch invite info:', error);
+        throw error;
+      }
     },
   );
 
