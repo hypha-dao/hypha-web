@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
   const payload = await request.json();
   const body = schemaAlchemyWebhook.safeParse(payload);
   if (!body.success) {
-    console.error(`Failed to parse body "${payload}":`, body.error);
+    console.error('Failed to parse body:', body.error);
 
     return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
   }
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ status: 'ok' }, { status: 200 });
   } catch (error) {
-    console.error(`Failed to parse logs "${logs}": ${error}`);
+    console.error('Failed to parse logs:', error);
 
     return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
   }
