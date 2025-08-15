@@ -100,20 +100,25 @@ interface MultiSelectProps
   asChild?: boolean;
 
   /**
+   * Selected passed into selector
+   */
+  value?: string[];
+
+  /**
    * Additional class names to apply custom styles to the multi-select component.
    * Optional, can be used to add custom styles.
    */
   className?: string;
 }
 
-function arraysShallowEqual(arr1: any[], arr2: any[]): boolean {
-  if (arr1.length !== arr2.length) {
-    return false;
-  }
+function arraysShallowEqual(
+  arr1: readonly string[],
+  arr2: readonly string[],
+): boolean {
+  if (arr1 === arr2) return true;
+  if (arr1.length !== arr2.length) return false;
   for (let i = 0; i < arr1.length; i++) {
-    if (arr1[i] !== arr2[i]) {
-      return false;
-    }
+    if (arr1[i] !== arr2[i]) return false;
   }
   return true;
 }
