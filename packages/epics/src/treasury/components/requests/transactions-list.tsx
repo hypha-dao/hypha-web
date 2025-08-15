@@ -1,6 +1,7 @@
 import { FC } from 'react';
 import { TransferCard } from './transfer-card';
 import { TransferWithEntity } from '../../hooks';
+import { ZeroAddress } from 'ethers';
 
 type TransactionsListProps = {
   transfers: TransferWithEntity[];
@@ -29,9 +30,7 @@ export const TransactionsList: FC<TransactionsListProps> = ({
           isLoading={isLoading}
           direction={transfer.direction}
           counterparty={transfer.counterparty}
-          isMint={
-            transfer.from === '0x0000000000000000000000000000000000000000'
-          }
+          isMint={transfer.from === ZeroAddress}
         />
       ))}
       {isLoading && (
