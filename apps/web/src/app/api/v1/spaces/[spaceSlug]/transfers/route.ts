@@ -4,31 +4,42 @@ import { publicClient } from '@hypha-platform/core/client';
 import {
   findSpaceBySlug,
   getTransfersByAddress,
+  findSpaceByAddress,
+  getTokenMeta,
 } from '@hypha-platform/core/server';
-import { schemaGetTransfersQuery } from '@hypha-platform/core/client';
-import { findPersonByWeb3Address } from '@hypha-platform/core/server';
-import { db } from '@hypha-platform/storage-postgres';
+import {
+  schemaGetTransfersQuery,
+  validTokenTypes,
+  TokenType,
+} from '@hypha-platform/core/client';
+import {
+  findPersonByWeb3Address,
+  findAllTokens,
+} from '@hypha-platform/core/server';
+import { getDb } from '@hypha-platform/core/server';
+import { zeroAddress } from 'viem';
 
 /**
  * A route to get ERC20 transfers.
  *
  * Query parameters:
  * - token: addresses of token contracts divided by commas. Optional
- * - fromDate: timestamp of the start date from which to get the transfers.
- *   Optional
+ * - fromDate: timestamp of the start date from which to get the transfers. Optional
  * - toDate: timestamp of the end date from which to get the transfers. Optional
- * - fromBlock: the minimum block number from which to get the transfers.
- *   Optional
- * - toBlock: the maximum block number from which to get the transfers.
- *   Optional
- * - limit: the desired number of the result. Not greater than 50.
- *   Defaults to 10
+ * - fromBlock: the minimum block number from which to get the transfers. Optional
+ * - toBlock: the maximum block number from which to get the transfers. Optional
+ * - limit: the desired number of the result. Not greater than 50. Defaults to 10
  */
+
 export async function GET(
-  { nextUrl }: NextRequest,
+  { nextUrl, headers }: NextRequest,
   { params }: { params: Promise<{ spaceSlug: string }> },
 ) {
   const { spaceSlug } = await params;
+  const authToken = headers.get('Authorization')?.split(' ')[1] || '';
+  if (!authToken) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
   const { fromDate, toDate, fromBlock, toBlock, limit, token } =
     schemaGetTransfersQuery.parse(
@@ -36,8 +47,10 @@ export async function GET(
     );
 
   try {
-    // TODO: implement authorization
-    const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
+    const space = await findSpaceBySlug(
+      { slug: spaceSlug },
+      { db: getDb({ authToken }) },
+    );
     if (!space) {
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
@@ -57,27 +70,76 @@ export async function GET(
       limit,
     });
 
-    const transfersWithPersonsInfo = await Promise.all(
+    const rawDbTokens = await findAllTokens(
+      { db: getDb({ authToken }) },
+      { search: undefined },
+    );
+    const dbTokens = rawDbTokens.map((token) => ({
+      agreementId: token.agreementId ?? undefined,
+      spaceId: token.spaceId ?? undefined,
+      name: token.name,
+      symbol: token.symbol,
+      maxSupply: token.maxSupply,
+      type: validTokenTypes.includes(token.type as TokenType)
+        ? (token.type as TokenType)
+        : 'utility',
+      iconUrl: token.iconUrl ?? undefined,
+      transferable: token.transferable,
+      isVotingToken: token.isVotingToken,
+    }));
+
+    const transfersWithEntityInfo = await Promise.all(
       transfers.map(async (transfer) => {
         const isIncoming =
           transfer.to.toUpperCase() === spaceAddress.toUpperCase();
-        const personAddress = isIncoming ? transfer.from : transfer.to;
+        const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
+        const isMint = transfer.from === zeroAddress;
 
-        const person = await findPersonByWeb3Address(
-          { address: personAddress },
-          { db },
-        );
+        let person = null;
+        let space = null;
+        let tokenIcon = null;
+        if (isMint) {
+          const tokenMeta = await getTokenMeta(
+            transfer.token as `0x${string}`,
+            dbTokens,
+          );
+          tokenIcon = tokenMeta.icon;
+        } else {
+          person = await findPersonByWeb3Address(
+            { address: counterpartyAddress },
+            { db: getDb({ authToken }) },
+          );
+          if (!person) {
+            space = await findSpaceByAddress(
+              { address: counterpartyAddress },
+              { db: getDb({ authToken }) },
+            );
+          }
+        }
 
         return {
           ...transfer,
-          person,
+          person: person
+            ? {
+                name: person.name,
+                surname: person.surname,
+                avatarUrl: person.avatarUrl,
+              }
+            : undefined,
+          space: space
+            ? {
+                title: space.title,
+                avatarUrl: space.logoUrl,
+              }
+            : undefined,
+          tokenIcon,
           direction: isIncoming ? 'incoming' : 'outgoing',
           counterparty: isIncoming ? 'from' : 'to',
         };
       }),
     );
 
-    return NextResponse.json(transfersWithPersonsInfo);
+    return NextResponse.json(transfersWithEntityInfo);
   } catch (error: any) {
     const errorMessage =
       error?.message || error?.shortMessage || JSON.stringify(error);

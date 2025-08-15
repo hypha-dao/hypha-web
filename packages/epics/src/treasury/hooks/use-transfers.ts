@@ -2,7 +2,7 @@
 
 import React from 'react';
 import useSWR from 'swr';
-import { TransferWithPerson } from './types';
+import { TransferWithEntity } from './types';
 
 export const useTransfers = ({
   sort,
@@ -38,7 +38,7 @@ export const useTransfers = ({
   );
 
   return {
-    transfers: data as TransferWithPerson[],
+    transfers: data as TransferWithEntity[],
     isLoading,
     error,
   };

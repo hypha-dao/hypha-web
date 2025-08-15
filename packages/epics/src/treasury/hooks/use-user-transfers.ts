@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import useSWR from 'swr';
-import { TransferWithPerson } from './types';
+import { TransferWithEntity } from './types';
 import { useJwt } from '@hypha-platform/core/client';
 
 export const useUserTransfers = ({
@@ -32,7 +32,7 @@ export const useUserTransfers = ({
           'Content-Type': 'application/json',
           Authorization: `Bearer ${jwt}`,
         },
-      }).then(async (res): Promise<TransferWithPerson[]> => {
+      }).then(async (res): Promise<TransferWithEntity[]> => {
         if (!res.ok) {
           throw new Error(`Failed to fetch transactions: ${res.statusText}`);
         }
@@ -43,7 +43,7 @@ export const useUserTransfers = ({
   );
 
   return {
-    transfers: data as TransferWithPerson[],
+    transfers: data as TransferWithEntity[],
     isLoading,
     error,
   };
