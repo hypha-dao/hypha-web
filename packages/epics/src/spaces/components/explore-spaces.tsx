@@ -1,6 +1,6 @@
 'use client';
 
-import { Category, Space } from '@hypha-platform/core/client';
+import { Category, Space, SpaceOrder } from '@hypha-platform/core/client';
 import { SpaceCardList, SpaceSearch } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { Text } from '@radix-ui/themes';
@@ -24,6 +24,7 @@ interface ExploreSpacesProps {
   lang: Locale;
   spaces: Space[];
   categories?: Category[];
+  order?: string;
   uniqueCategories: Category[];
 }
 
@@ -32,10 +33,8 @@ const categoriesIntersected = (
   categories2: Category[],
 ) => categories1.some((category) => categories2.includes(category));
 
-type Order = 'mostmembers' | 'mostactive' | 'mostrecent';
-
 const orderOptions: {
-  value: Order;
+  value: SpaceOrder;
   label: string;
   searchText: string;
 }[] = [
@@ -95,6 +94,7 @@ export function ExploreSpaces({
   lang,
   spaces,
   categories,
+  order,
   uniqueCategories,
 }: ExploreSpacesProps) {
   const pathname = usePathname();
@@ -115,7 +115,7 @@ export function ExploreSpaces({
         ? spaces.filter((space) =>
             categoriesIntersected(space.categories, categories),
           )
-        : [],
+        : spaces,
     [spaces, categories],
   );
 
@@ -144,6 +144,19 @@ export function ExploreSpaces({
     [searchParams, pathname, replace],
   );
 
+  const setOrder = React.useCallback(
+    (order: string) => {
+      const params = new URLSearchParams(searchParams);
+      if (order) {
+        params.set('order', order);
+      } else {
+        params.delete('order');
+      }
+      replace(`${pathname}?${params.toString()}`);
+    },
+    [searchParams, pathname, replace],
+  );
+
   const multiSelectVariants = cva(
     'm-1 transition ease-in-out delay-150 hover:-translate-y-1 hover:scale-110 duration-300',
     {
@@ -163,6 +176,31 @@ export function ExploreSpaces({
       },
     },
   );
+
+  const compareMembers = (a: Space, b: Space) => {
+    return (a.memberCount ?? 0) > (b.memberCount ?? 0) ? 1 : -1;
+  };
+  const compareActive = (a: Space, b: Space) => {
+    return (a.documentCount ?? 0) > (b.documentCount ?? 0) ? 1 : -1;
+  };
+  const compareRecent = (a: Space, b: Space) => {
+    return a.id > b.id ? 1 : -1;
+  };
+
+  const sortedSpaces = React.useMemo(() => {
+    return ([] as Space[]).concat(selectedSpaces).sort((a, b) => {
+      switch (order) {
+        case 'mostmembers':
+          return -compareMembers(a, b);
+        case 'mostactive':
+          return -compareActive(a, b);
+        case 'mostrecent':
+          return -compareRecent(a, b);
+        default:
+          return 0;
+      }
+    });
+  }, [selectedSpaces, order]);
 
   return (
     <div className="flex flex-col">
@@ -246,8 +284,9 @@ export function ExploreSpaces({
         <div className="flex flex-col grow-0">
           <Combobox
             options={orderOptions}
-            initialValue={orderOptions[0]?.value}
+            initialValue={order}
             className="border-0 md:w-40"
+            onChange={setOrder}
           />
         </div>
         <Link href={`/${lang}/network/create`} scroll={false}>
@@ -258,11 +297,7 @@ export function ExploreSpaces({
         </Link>
       </div>
       <div className="space-y-6 flex mt-4">
-        {categories ? (
-          <SpaceCardList lang={lang} spaces={selectedSpaces} />
-        ) : (
-          <SpaceCardList lang={lang} spaces={spaces} />
-        )}
+        <SpaceCardList lang={lang} spaces={sortedSpaces} />
       </div>
     </div>
   );
