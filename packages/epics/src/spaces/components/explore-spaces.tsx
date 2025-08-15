@@ -101,13 +101,6 @@ export function ExploreSpaces({
   const searchParams = useSearchParams();
   const { replace } = useRouter();
 
-  const currentCategories = React.useMemo(() => {
-    const categories = searchParams.has('category')
-      ? searchParams.get('category')?.split(',') || []
-      : [];
-    return categories;
-  }, [searchParams]);
-
   const selectedSpaces = React.useMemo(
     () =>
       categories
@@ -165,9 +158,6 @@ export function ExploreSpaces({
     },
   );
 
-  const variant = 'default';
-  const animation = 0;
-
   return (
     <div className="flex flex-col">
       <Heading
@@ -186,8 +176,8 @@ export function ExploreSpaces({
         {tags.map((tag) => (
           <Badge
             key={tag.value}
-            className={cn(multiSelectVariants({ variant }))}
-            style={{ cursor: 'pointer', animationDuration: `${animation}s` }}
+            className={cn(multiSelectVariants({ variant: categories?.includes(tag.value) ? 'secondary' : 'default' }))}
+            style={{ cursor: 'pointer', animationDuration: '0s' }}
             onClick={() => {
               setCategories([tag.value]);
             }}
@@ -235,8 +225,8 @@ export function ExploreSpaces({
           <MultiSelect
             placeholder={'All categories'}
             options={categoryOptions}
-            defaultValue={currentCategories}
-            value={currentCategories}
+            defaultValue={categories}
+            value={categories}
             className="border-0"
             onValueChange={setCategories}
           />
