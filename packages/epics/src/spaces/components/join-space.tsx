@@ -3,7 +3,7 @@
 import { Button, ErrorAlert } from '@hypha-platform/ui';
 import { useJoinSpace } from '../hooks/use-join-space';
 import { PersonIcon } from '@radix-ui/react-icons';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 import {
   useSpaceDetailsWeb3Rpc,
@@ -113,16 +113,14 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
     person,
   ]);
 
-  const getButtonTitle = () => {
+  const buttonTitle = useMemo(() => {
     if (isMember) return 'Already member';
     if (isInviteOnly) {
       if (hasActiveProposal) return 'Invite pending';
       return 'Request Invite';
     }
     return 'Become member';
-  };
-
-  const buttonTitle = getButtonTitle();
+  }, [isMember, isInviteOnly, hasActiveProposal]);
   const isInvitePending = isInviteOnly && hasActiveProposal;
   const isButtonDisabled =
     isMember || isLoading || isJoiningSpace || isCreating || isInvitePending;
