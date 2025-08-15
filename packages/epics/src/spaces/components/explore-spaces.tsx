@@ -41,7 +41,7 @@ const ChooseCategoriesComboBox = ({
   );
 };
 
-type Order = 'Most Members' | 'Most Active' | 'Most Recent';
+type Order = 'mostmembers' | 'mostactive' | 'mostrecent';
 
 const ChooseOrderComboBox = ({ orders }: { orders: Order[] }) => {
   return (
@@ -57,17 +57,17 @@ const orderOptions: {
   searchText: string;
 }[] = [
   {
-    value: 'Most Members',
+    value: 'mostmembers',
     label: 'Most Members',
     searchText: 'Most Members',
   },
   {
-    value: 'Most Active',
+    value: 'mostactive',
     label: 'Most Active',
     searchText: 'Most Active',
   },
   {
-    value: 'Most Recent',
+    value: 'mostrecent',
     label: 'Most Recent',
     searchText: 'Most Recent',
   },
@@ -123,8 +123,12 @@ export function ExploreSpaces({
         : [],
     [spaces, categories],
   );
-  const tags = ['Solar panels', 'Tokenomics', 'Regenerative economy', 'Web3'];
-  const orders: Order[] = ['Most Members', 'Most Active', 'Most Recent'];
+  const tags = uniqueCategories.map(category =>
+    categoryOptions.find((option =>
+      option.value === category)
+    )
+  )
+  .filter(category => !!category);
   const memberCount = 1342;
   const mintedTokens = '$1M';
   return (
@@ -141,13 +145,13 @@ export function ExploreSpaces({
       <div className="flex justify-center">
         <SpaceSearch />
       </div>
-      <div className="flex justify-center space-x-2 mt-2 mb-2">
+      <div className="flex justify-center space-x-2 space-y-2 mt-2 mb-2 flex-wrap">
         {tags.map((tag) => (
           <span
-            key={tag}
+            key={tag.value}
             className="text-1 text-neutral-500 border rounded-lg p-1"
           >
-            {tag}
+            {tag.label}
           </span>
         ))}
       </div>
@@ -190,7 +194,7 @@ export function ExploreSpaces({
           <MultiSelect
             placeholder={'All categories'}
             options={categoryOptions}
-            // defaultValue={field.value}
+            defaultValue={[]}
             className="border-0"
             onValueChange={(values: string[]) => {
               console.log('MultiSelect:', values);
