@@ -126,7 +126,6 @@ export function ExploreSpaces({
 
   const setCategories = React.useCallback(
     (categories: string[]) => {
-      console.log('setCategories:', categories); //TODO: remove before PR
       const params = new URLSearchParams(searchParams);
       if (categories.length > 0) {
         params.set('category', categories.join(','));
@@ -176,7 +175,13 @@ export function ExploreSpaces({
         {tags.map((tag) => (
           <Badge
             key={tag.value}
-            className={cn(multiSelectVariants({ variant: categories?.includes(tag.value) ? 'secondary' : 'default' }))}
+            className={cn(
+              multiSelectVariants({
+                variant: categories?.includes(tag.value)
+                  ? 'secondary'
+                  : 'default',
+              }),
+            )}
             style={{ cursor: 'pointer', animationDuration: '0s' }}
             onClick={() => {
               setCategories([tag.value]);
