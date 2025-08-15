@@ -109,6 +109,14 @@ export function ExploreSpaces({
     );
   }, [spaces]);
 
+  const agreementCount = React.useMemo(() => {
+    return spaces.reduce(
+      (accumulator: number, { documentCount }) =>
+        accumulator + (documentCount ?? 0),
+      0,
+    );
+  }, [spaces]);
+
   const selectedSpaces = React.useMemo(
     () =>
       categories
@@ -128,8 +136,6 @@ export function ExploreSpaces({
         .filter((category) => !!category),
     [uniqueCategories, categoryOptions],
   );
-
-  const mintedTokens = '$1M';
 
   const setCategories = React.useCallback(
     (categories: string[]) => {
@@ -256,10 +262,10 @@ export function ExploreSpaces({
         </div>
         <div className="flex flex-col">
           <div className="flex justify-center text-7 font-medium">
-            {mintedTokens}
+            {agreementCount}
           </div>
           <div className="flex justify-center text-1 mt-2 text-neutral-500">
-            Minted Tokens
+            Agreements
           </div>
         </div>
       </div>
