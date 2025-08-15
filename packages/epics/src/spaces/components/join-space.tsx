@@ -13,6 +13,7 @@ import {
 } from '@hypha-platform/core/client';
 import { BaseError, useConfig } from 'wagmi';
 import { useParams } from 'next/navigation';
+import { useInviteStatus } from '../hooks';
 
 type JoinSpaceProps = {
   spaceId: number;
@@ -51,6 +52,11 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
     memberAddress: person?.address as `0x${string}`,
   });
 
+  const { hasActiveProposal, revalidateInviteStatus } = useInviteStatus({
+    spaceId: BigInt(web3SpaceId),
+    address: person?.address as `0x${string}`,
+  });
+
   const profilePageUrl = `/${lang}/profile/${person?.slug}`;
 
   const handleJoinSpace = React.useCallback(async () => {
@@ -65,14 +71,15 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
         title: 'Invite Member',
         description: `**${person.name} ${person.surname} has just requested to join as a member!**
       
-      To move forward with onboarding, we’ll need our space’s approval on this proposal.
+      To move forward with onboarding, we'll need our space's approval on this proposal.
       
-      You can review ${person.name}’s profile <span className="text-accent-9">[here](${profilePageUrl}).</span>`,
+      You can review ${person.name}'s profile <span className="text-accent-9">[here](${profilePageUrl}).</span>`,
         creatorId: person.id,
         memberAddress: person.address as `0x${string}`,
         slug: `invite-request-${spaceId}-${Date.now()}`,
         label: 'Invite',
       });
+      await revalidateInviteStatus();
     } else {
       if (!person?.id || !person?.address) {
         const err = {
@@ -90,7 +97,6 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
         if (isBaseError(err)) {
           setJoinError(err as BaseError);
         } else {
-          // Handle other error types or set a generic error message
           setJoinError({
             shortMessage:
               'An unexpected error occurred while joining the space',
@@ -107,16 +113,24 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
     person,
   ]);
 
-  const buttonTitle = isMember
-    ? 'Already member'
-    : isInviteOnly
-    ? 'Request Invite'
-    : 'Become member';
+  const getButtonTitle = () => {
+    if (isMember) return 'Already member';
+    if (isInviteOnly) {
+      if (hasActiveProposal) return 'Invite pending';
+      return 'Request Invite';
+    }
+    return 'Become member';
+  };
+
+  const buttonTitle = getButtonTitle();
+  const isInvitePending = isInviteOnly && hasActiveProposal;
+  const isButtonDisabled =
+    isMember || isLoading || isJoiningSpace || isCreating || isInvitePending;
 
   return (
     <div>
       <Button
-        disabled={isMember || isLoading || isJoiningSpace || isCreating}
+        disabled={isButtonDisabled}
         onClick={handleJoinSpace}
         className="rounded-lg"
         colorVariant={isMember ? 'neutral' : 'accent'}
