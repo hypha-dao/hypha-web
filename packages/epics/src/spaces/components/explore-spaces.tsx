@@ -5,6 +5,7 @@ import { SpaceCardList, SpaceSearch } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { Text } from '@radix-ui/themes';
 import {
+  Badge,
   Button,
   Combobox,
   Heading,
@@ -17,6 +18,7 @@ import { PlusIcon } from '@radix-ui/react-icons';
 import { categories as categoryOptions } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { cva } from 'class-variance-authority';
 
 interface ExploreSpacesProps {
   lang: Locale;
@@ -116,13 +118,13 @@ export function ExploreSpaces({
     [spaces, categories],
   );
 
-  const tags = React.useMemo(() =>
-    uniqueCategories.map(category =>
-      categoryOptions.find((option =>
-        option.value === category)
-      )
-    )
-    .filter(category => !!category),
+  const tags = React.useMemo(
+    () =>
+      uniqueCategories
+        .map((category) =>
+          categoryOptions.find((option) => option.value === category),
+        )
+        .filter((category) => !!category),
     [uniqueCategories, categoryOptions],
   );
 
@@ -131,7 +133,7 @@ export function ExploreSpaces({
 
   const setCategories = React.useCallback(
     (categories: string[]) => {
-      console.log('setCategories:', categories);//TODO: remove before PR
+      console.log('setCategories:', categories); //TODO: remove before PR
       const params = new URLSearchParams(searchParams);
       if (categories.length > 0) {
         params.set('category', categories.join(','));
@@ -142,6 +144,29 @@ export function ExploreSpaces({
     },
     [searchParams, pathname, replace],
   );
+
+  const multiSelectVariants = cva(
+    'm-1 transition ease-in-out delay-150 hover:-translate-y-1 hover:scale-110 duration-300',
+    {
+      variants: {
+        variant: {
+          default:
+            'border-foreground/10 text-foreground text-neutral-500 bg-card hover:bg-card/80',
+          secondary:
+            'border-foreground/10 bg-secondary text-secondary-foreground hover:bg-secondary/80',
+          destructive:
+            'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
+          inverted: 'inverted',
+        },
+      },
+      defaultVariants: {
+        variant: 'default',
+      },
+    },
+  );
+
+  const variant = 'default';
+  const animation = 0;
 
   return (
     <div className="flex flex-col">
@@ -159,12 +184,16 @@ export function ExploreSpaces({
       </div>
       <div className="flex justify-center space-x-2 space-y-2 mt-2 mb-2 flex-wrap">
         {tags.map((tag) => (
-          <span
+          <Badge
             key={tag.value}
-            className="text-1 text-neutral-500 border rounded-lg p-1"
+            className={cn(multiSelectVariants({ variant }))}
+            style={{ cursor: 'pointer', animationDuration: `${animation}s` }}
+            onClick={() => {
+              setCategories([tag.value]);
+            }}
           >
             {tag.label}
-          </span>
+          </Badge>
         ))}
       </div>
       <Separator className="mt-1 mb-1" />
@@ -207,6 +236,7 @@ export function ExploreSpaces({
             placeholder={'All categories'}
             options={categoryOptions}
             defaultValue={currentCategories}
+            value={currentCategories}
             className="border-0"
             onValueChange={setCategories}
           />
