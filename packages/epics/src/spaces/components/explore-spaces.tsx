@@ -226,7 +226,7 @@ export function ExploreSpaces({
         Hypha Network
       </Heading>
       <div className="flex justify-center">
-        <SpaceSearch initialValue={query}/>
+        <SpaceSearch value={query}/>
       </div>
       <div className="flex justify-center space-x-2 space-y-2 mt-3 mb-15 flex-wrap">
         {tags.map((tag) => (
@@ -241,11 +241,10 @@ export function ExploreSpaces({
             )}
             style={{ cursor: 'pointer', animationDuration: '0s' }}
             onClick={() => {
-              if (categories?.includes(tag.value)) {
-                setCategories([]);
-              } else {
-                setCategories([tag.value]);
-              }
+              const newCategories = categories?.includes(tag.value)
+                ? categories.filter((category) => category != tag.value)
+                : (categories ?? []).concat(tag.value);
+              setCategories(newCategories);
             }}
           >
             {tag.label}
