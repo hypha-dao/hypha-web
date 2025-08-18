@@ -101,22 +101,6 @@ export function ExploreSpaces({
   const searchParams = useSearchParams();
   const { replace } = useRouter();
 
-  const memberCount = React.useMemo(() => {
-    return spaces.reduce(
-      (accumulator: number, { memberCount }) =>
-        accumulator + (memberCount ?? 0),
-      0,
-    );
-  }, [spaces]);
-
-  const agreementCount = React.useMemo(() => {
-    return spaces.reduce(
-      (accumulator: number, { documentCount }) =>
-        accumulator + (documentCount ?? 0),
-      0,
-    );
-  }, [spaces]);
-
   const selectedSpaces = React.useMemo(
     () =>
       categories
@@ -126,6 +110,22 @@ export function ExploreSpaces({
         : spaces,
     [spaces, categories],
   );
+
+  const memberCount = React.useMemo(() => {
+    return selectedSpaces.reduce(
+      (accumulator: number, { memberCount }) =>
+        accumulator + (memberCount ?? 0),
+      0,
+    );
+  }, [selectedSpaces]);
+
+  const agreementCount = React.useMemo(() => {
+    return selectedSpaces.reduce(
+      (accumulator: number, { documentCount }) =>
+        accumulator + (documentCount ?? 0),
+      0,
+    );
+  }, [selectedSpaces]);
 
   const tags = React.useMemo(
     () =>
@@ -254,7 +254,7 @@ export function ExploreSpaces({
       <div className="flex justify-around flex-row columns-3 space-x-3 mt-6 mb-6">
         <div className="flex flex-col">
           <div className="flex justify-center text-7 font-medium">
-            {spaces.length}
+            {selectedSpaces.length}
           </div>
           <div className="flex justify-center text-1 mt-2 text-neutral-500">
             Spaces
