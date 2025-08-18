@@ -24,7 +24,7 @@ interface ExploreSpacesProps {
   lang: Locale;
   spaces: Space[];
   categories?: Category[];
-  order?: string;
+  order?: SpaceOrder;
   uniqueCategories: Category[];
 }
 
