@@ -5,7 +5,7 @@ import { ChangeEventHandler } from 'react';
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
-  value?: string;
+  value?: string | number | readonly string[] | undefined;
   onChange?: ChangeEventHandler<HTMLInputElement>;
 }
 
@@ -14,7 +14,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     { className, type, leftIcon, rightIcon, value, onChange, ...props },
     ref,
   ) => {
-    const [inputValue, setInputValue] = React.useState<string>(value ?? '');
+    const [inputValue, setInputValue] = React.useState(value ?? '');
     React.useEffect(() => {
       if (inputValue !== value) {
         setInputValue(value ?? '');
