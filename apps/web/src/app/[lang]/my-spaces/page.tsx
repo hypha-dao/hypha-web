@@ -34,7 +34,7 @@ export default async function Index(props: PageProps) {
     <div className="w-full overflow-auto">
       <Container className="flex flex-col gap-9 py-9">
         <Heading size="9" color="secondary" weight="medium" align="center">
-          All your spaces, in one place
+          All your spaces,<br />in one place
         </Heading>
         <div className="flex justify-center">
           <SpaceSearch />
