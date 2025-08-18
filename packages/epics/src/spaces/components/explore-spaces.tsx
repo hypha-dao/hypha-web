@@ -188,7 +188,7 @@ export function ExploreSpaces({
   const compareMembers = (a: Space, b: Space) => {
     return (b.memberCount ?? 0) - (a.memberCount ?? 0);
   };
-  const compareActive = (a: Space, b: Space) => {
+  const compareAgreements = (a: Space, b: Space) => {
     return (b.documentCount ?? 0) - (a.documentCount ?? 0);
   };
   const compareRecent = (a: Space, b: Space) => {
@@ -200,8 +200,8 @@ export function ExploreSpaces({
       switch (order) {
         case 'mostmembers':
           return compareMembers(a, b);
-        case 'mostactive':
-          return compareActive(a, b);
+        case 'mostagreements':
+          return compareAgreements(a, b);
         case 'mostrecent':
           return compareRecent(a, b);
         default:
