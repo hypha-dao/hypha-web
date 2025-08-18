@@ -34,8 +34,8 @@ export const AssetsSection: FC<AssetSectionProps> = ({
     ? visibleAssets.filter((asset) => asset.value >= 1)
     : visibleAssets;
 
-  return (
-    <div className="flex flex-col w-full justify-center items-center gap-4">
+  const renderFilterAndButtons = () => (
+    <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-2">
       <SectionFilter count={totalBalance || 0} label="Balance">
         <label className="flex items-center gap-1">
           <Input
@@ -46,7 +46,9 @@ export const AssetsSection: FC<AssetSectionProps> = ({
           />
           <span>Hide small balances</span>
         </label>
-        <Button asChild className="ml-2">
+      </SectionFilter>
+      <div className="flex gap-2 justify-end">
+        <Button asChild>
           <Link
             href={`${governancePath}/create/issue-new-token?back=${basePath}`}
             scroll={false}
@@ -55,13 +57,19 @@ export const AssetsSection: FC<AssetSectionProps> = ({
             New Token
           </Link>
         </Button>
-        <Button asChild className="ml-2">
+        <Button asChild>
           <Link href={`${basePath}/deposit`} scroll={false}>
             <CopyIcon />
             Deposit funds
           </Link>
         </Button>
-      </SectionFilter>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col w-full justify-center items-center gap-4">
+      <div className="w-full">{renderFilterAndButtons()}</div>
       {filteredAssets.length === 0 && !isLoading ? (
         <Empty>
           <p>List is empty</p>
