@@ -219,7 +219,7 @@ export function ExploreSpaces({
         align="center"
         className="flex flex-col mb-21 mt-14"
       >
-        Explore Spaces in the Hypha Network
+        Explore Spaces in the<br />Hypha Network
       </Heading>
       <div className="flex justify-center">
         <SpaceSearch />
