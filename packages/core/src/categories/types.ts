@@ -19,7 +19,7 @@ export type Category = (typeof CATEGORIES)[number];
 
 export const SPACE_ORDERS = [
   'mostmembers',
-  'mostactive',
+  'mostagreements',
   'mostrecent',
 ] as const;
 export type SpaceOrder = (typeof SPACE_ORDERS)[number];
