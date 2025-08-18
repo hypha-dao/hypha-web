@@ -224,7 +224,7 @@ export function ExploreSpaces({
       <div className="flex justify-center">
         <SpaceSearch />
       </div>
-      <div className="flex justify-center space-x-2 space-y-2 mt-2 mb-2 flex-wrap">
+      <div className="flex justify-center space-x-2 space-y-2 mt-3 mb-15 flex-wrap">
         {tags.map((tag) => (
           <Badge
             key={tag.value}
