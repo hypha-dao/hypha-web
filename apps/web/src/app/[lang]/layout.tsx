@@ -61,7 +61,7 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <EvmProvider>
-            <MenuTop logoHref='https://network.hypha.earth' hrefTarget='_blank'>
+            <MenuTop logoHref="https://network.hypha.earth" hrefTarget="_blank">
               <ConnectedButtonProfile
                 useAuthentication={useAuthentication}
                 useMe={useMe}
