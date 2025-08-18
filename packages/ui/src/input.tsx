@@ -5,21 +5,31 @@ import { ChangeEventHandler } from 'react';
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
-  value?: string | number | readonly string[] | undefined;
-  onChange?: ChangeEventHandler<HTMLInputElement>;
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   (
-    { className, type, leftIcon, rightIcon, value, onChange, ...props },
+    {
+      className,
+      type,
+      leftIcon,
+      rightIcon,
+      value,
+      defaultValue,
+      onChange,
+      ...props
+    },
     ref,
   ) => {
-    const [inputValue, setInputValue] = React.useState(value ?? '');
+    const initial =
+      value ??
+      (defaultValue as string | number | readonly string[] | undefined);
+    const [inputValue, setInputValue] = React.useState(initial);
     React.useEffect(() => {
       if (inputValue !== value) {
         setInputValue(value ?? '');
       }
-    }, [value]);
+    }, [inputValue, value]);
     return (
       <div className="relative flex items-center h-6 w-full">
         {leftIcon && (
