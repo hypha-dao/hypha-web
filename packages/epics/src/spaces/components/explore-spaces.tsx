@@ -301,7 +301,7 @@ export function ExploreSpaces({
         </Link>
       </div>
       <div className="space-y-6 flex mt-4">
-        <SpaceCardList lang={lang} spaces={sortedSpaces} />
+        <SpaceCardList lang={lang} spaces={sortedSpaces} pageSize={15} />
       </div>
     </div>
   );
