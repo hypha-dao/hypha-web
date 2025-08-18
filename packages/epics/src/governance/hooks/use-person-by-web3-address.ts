@@ -5,7 +5,7 @@ import useSWR from 'swr';
 import { useJwt, Person } from '@hypha-platform/core/client';
 
 type UsePersonByWeb3AddressReturn = {
-  person: Person;
+  person?: Person | null;
   isLoading: boolean;
 };
 
