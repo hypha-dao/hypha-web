@@ -1,0 +1,26 @@
+import { db } from '@hypha-platform/storage-postgres';
+import { findAllSpaces } from '@hypha-platform/core/server';
+import { NextResponse } from 'next/server';
+
+export async function GET() {
+  try {
+    const spaces = await findAllSpaces({ db }, {});
+
+    return NextResponse.json(
+      { total: spaces.length },
+      {
+        headers: new Headers({
+          'Cache-Control': 'public,max-age=60,immutable',
+        }),
+      },
+    );
+  } catch (error) {
+    console.error('Error fetching total number of users:', error);
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      {
+        status: 500,
+      },
+    );
+  }
+}
