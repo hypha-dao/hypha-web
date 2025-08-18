@@ -24,7 +24,7 @@ interface ExploreSpacesProps {
   lang: Locale;
   spaces: Space[];
   categories?: Category[];
-  order?: string;
+  order?: SpaceOrder;
   uniqueCategories: Category[];
 }
 
@@ -44,9 +44,9 @@ const orderOptions: {
     searchText: 'Most Members',
   },
   {
-    value: 'mostactive',
-    label: 'Most Active',
-    searchText: 'Most Active',
+    value: 'mostagreements',
+    label: 'Most Agreements',
+    searchText: 'Most Agreements',
   },
   {
     value: 'mostrecent',
@@ -188,7 +188,7 @@ export function ExploreSpaces({
   const compareMembers = (a: Space, b: Space) => {
     return (b.memberCount ?? 0) - (a.memberCount ?? 0);
   };
-  const compareActive = (a: Space, b: Space) => {
+  const compareAgreements = (a: Space, b: Space) => {
     return (b.documentCount ?? 0) - (a.documentCount ?? 0);
   };
   const compareRecent = (a: Space, b: Space) => {
@@ -200,8 +200,8 @@ export function ExploreSpaces({
       switch (order) {
         case 'mostmembers':
           return compareMembers(a, b);
-        case 'mostactive':
-          return compareActive(a, b);
+        case 'mostagreements':
+          return compareAgreements(a, b);
         case 'mostrecent':
           return compareRecent(a, b);
         default:
@@ -217,14 +217,16 @@ export function ExploreSpaces({
         color="secondary"
         weight="medium"
         align="center"
-        className="flex flex-col mb-21 mt-14"
+        className="flex flex-col mb-16"
       >
-        Explore Spaces in the Hypha Network
+        Explore Spaces in the
+        <br />
+        Hypha Network
       </Heading>
       <div className="flex justify-center">
         <SpaceSearch />
       </div>
-      <div className="flex justify-center space-x-2 space-y-2 mt-2 mb-2 flex-wrap">
+      <div className="flex justify-center space-x-2 space-y-2 mt-3 mb-15 flex-wrap">
         {tags.map((tag) => (
           <Badge
             key={tag.value}
@@ -237,7 +239,11 @@ export function ExploreSpaces({
             )}
             style={{ cursor: 'pointer', animationDuration: '0s' }}
             onClick={() => {
-              setCategories([tag.value]);
+              if (categories?.includes(tag.value)) {
+                setCategories([]);
+              } else {
+                setCategories([tag.value]);
+              }
             }}
           >
             {tag.label}
@@ -279,15 +285,6 @@ export function ExploreSpaces({
           categories={categories}
           className="flex grow"
         />
-        <div className="flex flex-col grow-0">
-          <MultiSelect
-            placeholder={'All categories'}
-            options={categoryOptions}
-            value={categories}
-            className="border-0"
-            onValueChange={setCategories}
-          />
-        </div>
         <div className="flex flex-col grow-0">
           <Combobox
             options={orderOptions}
