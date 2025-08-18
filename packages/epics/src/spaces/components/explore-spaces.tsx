@@ -217,7 +217,7 @@ export function ExploreSpaces({
         color="secondary"
         weight="medium"
         align="center"
-        className="flex flex-col mb-21 mt-14"
+        className="flex flex-col mb-16"
       >
         Explore Spaces in the<br />Hypha Network
       </Heading>
