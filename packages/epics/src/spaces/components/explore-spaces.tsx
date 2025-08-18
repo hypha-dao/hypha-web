@@ -239,7 +239,11 @@ export function ExploreSpaces({
             )}
             style={{ cursor: 'pointer', animationDuration: '0s' }}
             onClick={() => {
-              setCategories([tag.value]);
+              if (categories?.includes(tag.value)) {
+                setCategories([]);
+              } else {
+                setCategories([tag.value]);
+              }
             }}
           >
             {tag.label}
