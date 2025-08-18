@@ -9,7 +9,7 @@ import {
   memberships,
   spaces,
 } from '@hypha-platform/storage-postgres';
-import { sql, eq, inArray, and } from 'drizzle-orm';
+import { sql, eq, inArray, and, count } from 'drizzle-orm';
 import invariant from 'tiny-invariant';
 import { DatabaseInstance, DbConfig } from '../../server';
 
@@ -118,6 +118,12 @@ export const findAllPeopleWithoutPagination = async ({
     .from(people)) as ResultRow[];
 
   return dbPeople.map(mapToDomainPerson);
+};
+
+export const countAllPeople = async ({ db }: DbConfig): Promise<number> => {
+  const result = await db.select({ count: count() }).from(people);
+
+  return result.at(0)?.count ?? 0;
 };
 
 export type FindPersonByIdInput = {
