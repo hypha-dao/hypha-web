@@ -325,8 +325,7 @@ export const schemaCreateProposalWeb3 = z.object({
   duration: z.bigint().min(1n, { message: 'Duration must be greater than 0' }),
   transactions: z
     .array(transactionSchema)
-    .min(1, { message: 'At least one transaction is required' })
-    .max(10, { message: 'A proposal cannot have more than 10 transactions' }),
+    .min(1, { message: 'At least one transaction is required' }),
 });
 
 export const schemaChangeEntryMethod = z.object({
