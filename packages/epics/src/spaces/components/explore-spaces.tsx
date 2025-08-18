@@ -44,9 +44,9 @@ const orderOptions: {
     searchText: 'Most Members',
   },
   {
-    value: 'mostactive',
-    label: 'Most Active',
-    searchText: 'Most Active',
+    value: 'mostagreements',
+    label: 'Most Agreements',
+    searchText: 'Most Agreements',
   },
   {
     value: 'mostrecent',
