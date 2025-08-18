@@ -226,7 +226,7 @@ export function ExploreSpaces({
         Hypha Network
       </Heading>
       <div className="flex justify-center">
-        <SpaceSearch value={query}/>
+        <SpaceSearch value={query} />
       </div>
       <div className="flex justify-center space-x-2 space-y-2 mt-3 mb-15 flex-wrap">
         {tags.map((tag) => (

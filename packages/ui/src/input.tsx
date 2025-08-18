@@ -10,7 +10,10 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, leftIcon, rightIcon, value, onChange, ...props }, ref) => {
+  (
+    { className, type, leftIcon, rightIcon, value, onChange, ...props },
+    ref,
+  ) => {
     const [inputValue, setInputValue] = React.useState<string>(value ?? '');
     React.useEffect(() => {
       if (inputValue !== value) {
