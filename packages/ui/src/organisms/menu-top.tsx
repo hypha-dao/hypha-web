@@ -10,9 +10,10 @@ import clsx from 'clsx';
 type MenuTopProps = {
   children?: React.ReactNode;
   logoHref?: string;
+  hrefTarget?: string;
 };
 
-export const MenuTop = ({ children, logoHref }: MenuTopProps) => {
+export const MenuTop = ({ children, logoHref, hrefTarget }: MenuTopProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
@@ -28,7 +29,7 @@ export const MenuTop = ({ children, logoHref }: MenuTopProps) => {
           children ? 'justify-between' : 'justify-center',
         )}
       >
-        {!!logoHref && <Logo width={110} href={logoHref} />}
+        {!!logoHref && <Logo width={110} href={logoHref} target={hrefTarget} />}
 
         {/* Desktop Nav */}
         {children && (

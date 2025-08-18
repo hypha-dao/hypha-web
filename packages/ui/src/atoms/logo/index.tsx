@@ -10,9 +10,10 @@ type logoProps = {
   width?: number;
   height?: number;
   href?: string;
+  target?: string;
 };
 
-export const Logo = ({ width = 100, height = 100, href }: logoProps) => {
+export const Logo = ({ width = 100, height = 100, href, target }: logoProps) => {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -35,7 +36,7 @@ export const Logo = ({ width = 100, height = 100, href }: logoProps) => {
     />
   );
   if (href) {
-    return <Link href={href}>{img}</Link>;
+    return <Link href={href} target={target}>{img}</Link>;
   }
   return img;
 };
