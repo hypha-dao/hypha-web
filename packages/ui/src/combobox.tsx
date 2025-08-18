@@ -29,6 +29,7 @@ type ComboboxProps = {
   renderOption?: (option: Option) => React.ReactNode;
   renderValue?: (option: Option | undefined) => React.ReactNode;
   initialValue?: string;
+  className?: string;
 };
 
 export function Combobox({
@@ -38,6 +39,7 @@ export function Combobox({
   renderOption,
   renderValue,
   initialValue = '',
+  className,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState(initialValue);
@@ -67,7 +69,10 @@ export function Combobox({
           colorVariant="neutral"
           role="combobox"
           aria-expanded={open}
-          className="w-full text-2 md:w-72 justify-between py-2 font-normal"
+          className={cn(
+            'w-full text-2 md:w-72 justify-between py-2 font-normal',
+            className,
+          )}
         >
           <div className="flex items-center gap-2 truncate">
             {renderValue
