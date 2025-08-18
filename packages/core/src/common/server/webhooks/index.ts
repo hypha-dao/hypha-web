@@ -1,2 +1,2 @@
-export * from './request-validator';
+export * from './alchemy-middleware';
 export * from './types';

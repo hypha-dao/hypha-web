@@ -1,33 +1,32 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import {
-  getAlchemyValidator,
+  newHandler,
+  newAlchemyMiddleware,
   schemaAlchemyWebhook,
 } from '@hypha-platform/core/server';
-import { parseEventLogs } from 'viem';
-import type { Log } from 'viem';
+import { type Log, parseEventLogs } from 'viem';
 import { daoProposalsImplementationAbi } from '@hypha-platform/core/generated';
 
-export async function POST(request: NextRequest) {
-  if (process.env.NODE_ENV === 'production') {
-    const alchemySigningKey = process.env.WH_PROPOSAL_EXECUTED_SIGN_KEY;
-    if (!alchemySigningKey) {
-      console.error('Alchemy signing key for a webhook is missing');
+const middleware = (() => {
+  if (process.env.NODE_ENV !== 'production') return [];
 
-      return NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 },
-      );
+  const signKey = process.env.WH_PROPOSAL_EXECUTED_SIGN_KEY;
+  if (!signKey) throw new Error('Webhook signing key is not set');
+
+  return [newAlchemyMiddleware(signKey)];
+})();
+
+export const POST = newHandler(middleware, async (request: NextRequest) => {
+  const payload = await (async () => {
+    try {
+      return request.json();
+    } catch (error) {
+      console.error('Failed to get request body:', error);
     }
+  })();
+  if (!payload)
+    return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
 
-    const isSignatureValid = await getAlchemyValidator(alchemySigningKey)(
-      request,
-    );
-    if (!isSignatureValid) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-  }
-
-  const payload = await request.json();
   const body = schemaAlchemyWebhook.safeParse(payload);
   if (!body.success) {
     console.error('Failed to parse body:', body.error);
@@ -50,4 +49,4 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
   }
-}
+});
