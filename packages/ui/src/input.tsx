@@ -4,10 +4,11 @@ import { cn } from '@hypha-platform/ui-utils';
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  initialValue?: string;
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, leftIcon, rightIcon, ...props }, ref) => {
+  ({ className, type, leftIcon, rightIcon, initialValue, ...props }, ref) => {
     return (
       <div className="relative flex items-center h-6 w-full">
         {leftIcon && (
@@ -25,6 +26,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             className,
           )}
           ref={ref}
+          value={initialValue}
           {...props}
         />
         {rightIcon && (

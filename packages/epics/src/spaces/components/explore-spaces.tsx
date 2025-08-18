@@ -22,6 +22,7 @@ import { cva } from 'class-variance-authority';
 
 interface ExploreSpacesProps {
   lang: Locale;
+  query?: string;
   spaces: Space[];
   categories?: Category[];
   order?: SpaceOrder;
@@ -92,6 +93,7 @@ const CategoryLabel = ({
 
 export function ExploreSpaces({
   lang,
+  query,
   spaces,
   categories,
   order,
@@ -224,7 +226,7 @@ export function ExploreSpaces({
         Hypha Network
       </Heading>
       <div className="flex justify-center">
-        <SpaceSearch />
+        <SpaceSearch initialValue={query}/>
       </div>
       <div className="flex justify-center space-x-2 space-y-2 mt-3 mb-15 flex-wrap">
         {tags.map((tag) => (

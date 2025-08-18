@@ -10,9 +10,10 @@ type Suggestion = {
 
 type SpaceSearchProps = {
   suggestions?: Suggestion[];
+  initialValue?: string;
 };
 
-export const SpaceSearch = ({ suggestions }: SpaceSearchProps) => {
+export const SpaceSearch = ({ suggestions, initialValue }: SpaceSearchProps) => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
@@ -35,6 +36,7 @@ export const SpaceSearch = ({ suggestions }: SpaceSearchProps) => {
         type="search"
         placeholder="Find a Space"
         leftIcon={<SearchIcon size="16px" />}
+        initialValue={initialValue}
         onChange={(e) => handleSearch(e.target.value)}
       />
       {suggestions && (
