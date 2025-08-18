@@ -280,15 +280,6 @@ export function ExploreSpaces({
           className="flex grow"
         />
         <div className="flex flex-col grow-0">
-          <MultiSelect
-            placeholder={'All categories'}
-            options={categoryOptions}
-            value={categories}
-            className="border-0"
-            onValueChange={setCategories}
-          />
-        </div>
-        <div className="flex flex-col grow-0">
           <Combobox
             options={orderOptions}
             initialValue={order}
