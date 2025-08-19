@@ -242,8 +242,8 @@ export function ExploreSpaces({
             style={{ cursor: 'pointer', animationDuration: '0s' }}
             onClick={() => {
               const newCategories = categories?.includes(tag.value)
-                ? categories.filter((category) => category !== tag.value)
-                : (categories ?? []).concat(tag.value);
+                ? []
+                : [tag.value];
               setCategories(newCategories);
             }}
           >
