@@ -28,7 +28,7 @@ export const MenuTop = ({ children, logoHref }: MenuTopProps) => {
           children ? 'justify-between' : 'justify-center',
         )}
       >
-        {!!logoHref && <Logo width={140} href={logoHref} />}
+        {!!logoHref && <Logo width={110} href={logoHref} />}
 
         {/* Desktop Nav */}
         {children && (
