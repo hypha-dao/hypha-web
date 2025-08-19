@@ -121,6 +121,14 @@ export function ExploreSpaces({
     );
   }, [selectedSpaces]);
 
+  const agreementCount = React.useMemo(() => {
+    return selectedSpaces.reduce(
+      (accumulator: number, { documentCount }) =>
+        accumulator + (documentCount ?? 0),
+      0,
+    );
+  }, [selectedSpaces]);
+
   const memberAddresses = React.useMemo(() => {
     return selectedSpaces.reduce(
       (accumulator: Set<`0x{string}`>, { memberAddresses }) => {
@@ -130,14 +138,6 @@ export function ExploreSpaces({
         return accumulator;
       },
       new Set<`0x{string}`>(),
-    );
-  }, [spaces]);
-
-  const agreementCount = React.useMemo(() => {
-    return selectedSpaces.reduce(
-      (accumulator: number, { documentCount }) =>
-        accumulator + (documentCount ?? 0),
-      0,
     );
   }, [selectedSpaces]);
 
