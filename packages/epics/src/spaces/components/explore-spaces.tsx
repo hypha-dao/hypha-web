@@ -22,6 +22,7 @@ import { cva } from 'class-variance-authority';
 
 interface ExploreSpacesProps {
   lang: Locale;
+  query?: string;
   spaces: Space[];
   categories?: Category[];
   order?: SpaceOrder;
@@ -92,6 +93,7 @@ const CategoryLabel = ({
 
 export function ExploreSpaces({
   lang,
+  query,
   spaces,
   categories,
   order,
@@ -100,22 +102,6 @@ export function ExploreSpaces({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
-
-  const memberCount = React.useMemo(() => {
-    return spaces.reduce(
-      (accumulator: number, { memberCount }) =>
-        accumulator + (memberCount ?? 0),
-      0,
-    );
-  }, [spaces]);
-
-  const agreementCount = React.useMemo(() => {
-    return spaces.reduce(
-      (accumulator: number, { documentCount }) =>
-        accumulator + (documentCount ?? 0),
-      0,
-    );
-  }, [spaces]);
 
   const selectedSpaces = React.useMemo(
     () =>
@@ -126,6 +112,22 @@ export function ExploreSpaces({
         : spaces,
     [spaces, categories],
   );
+
+  const memberCount = React.useMemo(() => {
+    return selectedSpaces.reduce(
+      (accumulator: number, { memberCount }) =>
+        accumulator + (memberCount ?? 0),
+      0,
+    );
+  }, [selectedSpaces]);
+
+  const agreementCount = React.useMemo(() => {
+    return selectedSpaces.reduce(
+      (accumulator: number, { documentCount }) =>
+        accumulator + (documentCount ?? 0),
+      0,
+    );
+  }, [selectedSpaces]);
 
   const tags = React.useMemo(
     () =>
@@ -224,7 +226,7 @@ export function ExploreSpaces({
         Hypha Network
       </Heading>
       <div className="flex justify-center">
-        <SpaceSearch />
+        <SpaceSearch value={query} />
       </div>
       <div className="flex justify-center space-x-2 space-y-2 mt-3 mb-15 flex-wrap">
         {tags.map((tag) => (
@@ -239,11 +241,10 @@ export function ExploreSpaces({
             )}
             style={{ cursor: 'pointer', animationDuration: '0s' }}
             onClick={() => {
-              if (categories?.includes(tag.value)) {
-                setCategories([]);
-              } else {
-                setCategories([tag.value]);
-              }
+              const newCategories = categories?.includes(tag.value)
+                ? []
+                : [tag.value];
+              setCategories(newCategories);
             }}
           >
             {tag.label}
@@ -254,7 +255,7 @@ export function ExploreSpaces({
       <div className="flex justify-around flex-row columns-3 space-x-3 mt-6 mb-6">
         <div className="flex flex-col">
           <div className="flex justify-center text-7 font-medium">
-            {spaces.length}
+            {selectedSpaces.length}
           </div>
           <div className="flex justify-center text-1 mt-2 text-neutral-500">
             Spaces

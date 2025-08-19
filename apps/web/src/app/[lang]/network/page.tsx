@@ -60,6 +60,7 @@ export default async function Index(props: PageProps) {
     <Container className="flex flex-col gap-9 py-9">
       <ExploreSpaces
         lang={lang}
+        query={query}
         spaces={spaces}
         categories={categories}
         order={order}
