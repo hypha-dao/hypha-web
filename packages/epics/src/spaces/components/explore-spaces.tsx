@@ -113,14 +113,6 @@ export function ExploreSpaces({
     [spaces, categories],
   );
 
-  const memberCount = React.useMemo(() => {
-    return selectedSpaces.reduce(
-      (accumulator: number, { memberCount }) =>
-        accumulator + (memberCount ?? 0),
-      0,
-    );
-  }, [selectedSpaces]);
-
   const agreementCount = React.useMemo(() => {
     return selectedSpaces.reduce(
       (accumulator: number, { documentCount }) =>
