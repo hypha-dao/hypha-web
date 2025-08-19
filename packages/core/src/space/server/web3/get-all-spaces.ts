@@ -45,11 +45,17 @@ export async function getAllSpaces(
       return {
         ...space,
         memberCount: spaceDetails?.members?.length ?? 0,
-        memberAddresses: (spaceDetails?.members ?? []) as `0x{string}`[],
+        memberAddresses: Array.isArray(spaceDetails?.members)
+          ? (spaceDetails!.members
+              .filter((m): m is string => typeof m === 'string')
+              .map((m) => m.toLowerCase()) as `0x{string}`[])
+          : [],
         documentCount: spaceProposals?.accepted.length ?? 0,
       };
     });
   } catch (error) {
-    throw new Error(`Failed to get spaces: ${error}`);
+    throw new Error('Failed to get spaces', {
+      cause: error instanceof Error ? error : new Error(String(error)),
+    });
   }
 }
