@@ -125,7 +125,9 @@ export function ExploreSpaces({
     return selectedSpaces.reduce(
       (accumulator: Set<`0x{string}`>, { memberAddresses }) => {
         if (memberAddresses) {
-          memberAddresses.forEach((address) => accumulator.add(address));
+          for (const address of memberAddresses) {
+            accumulator.add(address);
+          }
         }
         return accumulator;
       },
