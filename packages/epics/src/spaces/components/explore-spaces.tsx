@@ -275,7 +275,7 @@ export function ExploreSpaces({
         </div>
         <div className="flex flex-col">
           <div className="flex justify-center text-7 font-medium">
-            {memberCount} | {memberAddresses.size}
+            {memberAddresses.size}
           </div>
           <div className="flex justify-center text-1 mt-2 text-neutral-500">
             Members
