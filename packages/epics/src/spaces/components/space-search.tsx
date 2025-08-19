@@ -36,7 +36,7 @@ export const SpaceSearch = ({ suggestions, value }: SpaceSearchProps) => {
         type="search"
         placeholder="Find a Space"
         leftIcon={<SearchIcon size="16px" />}
-        value={value}
+        defaultValue={value}
         onChange={(e) => handleSearch(e.target.value)}
       />
       {suggestions && (

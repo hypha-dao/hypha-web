@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { cn } from '@hypha-platform/ui-utils';
-import { ChangeEventHandler } from 'react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   leftIcon?: React.ReactNode;
@@ -8,28 +7,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  (
-    {
-      className,
-      type,
-      leftIcon,
-      rightIcon,
-      value,
-      defaultValue,
-      onChange,
-      ...props
-    },
-    ref,
-  ) => {
-    const initial =
-      value ??
-      (defaultValue as string | number | readonly string[] | undefined);
-    const [inputValue, setInputValue] = React.useState(initial);
-    React.useEffect(() => {
-      if (inputValue !== value) {
-        setInputValue(value ?? '');
-      }
-    }, [inputValue, value]);
+  ({ className, type, leftIcon, rightIcon, ...props }, ref) => {
     return (
       <div className="relative flex items-center h-6 w-full">
         {leftIcon && (
@@ -47,12 +25,6 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             className,
           )}
           ref={ref}
-          value={inputValue}
-          onChange={(e) => {
-            e.stopPropagation();
-            onChange?.(e);
-            setInputValue(e.target.value);
-          }}
           {...props}
         />
         {rightIcon && (
