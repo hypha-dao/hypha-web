@@ -49,7 +49,10 @@ export default async function Index(props: PageProps) {
 
   const { lang } = params;
 
-  const spaces = await getAllSpaces({ search: query });
+  const spaces = await getAllSpaces({
+    search: query?.trim() || undefined,
+    parentOnly: false,
+  });
 
   const uniqueCategories = extractUniqueCategories(spaces);
 
