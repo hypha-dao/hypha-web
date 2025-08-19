@@ -113,20 +113,23 @@ export function ExploreSpaces({
     [spaces, categories],
   );
 
-  const memberCount = React.useMemo(() => {
-    return selectedSpaces.reduce(
-      (accumulator: number, { memberCount }) =>
-        accumulator + (memberCount ?? 0),
-      0,
-    );
-  }, [selectedSpaces]);
-
   const agreementCount = React.useMemo(() => {
     return selectedSpaces.reduce(
       (accumulator: number, { documentCount }) =>
         accumulator + (documentCount ?? 0),
       0,
     );
+  }, [selectedSpaces]);
+
+  const uniqueMemberAddresses = React.useMemo(() => {
+    const acc = new Set<`0x{string}`>();
+    for (const space of selectedSpaces) {
+      if (!space.memberAddresses) continue;
+      for (const address of space.memberAddresses) {
+        acc.add(address.toLowerCase() as `0x{string}`);
+      }
+    }
+    return acc;
   }, [selectedSpaces]);
 
   const tags = React.useMemo(
@@ -188,7 +191,9 @@ export function ExploreSpaces({
   );
 
   const compareMembers = (a: Space, b: Space) => {
-    return (b.memberCount ?? 0) - (a.memberCount ?? 0);
+    const aCount = a.memberAddresses?.length ?? a.memberCount ?? 0;
+    const bCount = b.memberAddresses?.length ?? b.memberCount ?? 0;
+    return bCount - aCount;
   };
   const compareAgreements = (a: Space, b: Space) => {
     return (b.documentCount ?? 0) - (a.documentCount ?? 0);
@@ -263,7 +268,7 @@ export function ExploreSpaces({
         </div>
         <div className="flex flex-col">
           <div className="flex justify-center text-7 font-medium">
-            {memberCount}
+            {uniqueMemberAddresses.size}
           </div>
           <div className="flex justify-center text-1 mt-2 text-neutral-500">
             Members
