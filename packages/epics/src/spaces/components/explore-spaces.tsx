@@ -141,7 +141,7 @@ export function ExploreSpaces({
         .filter(
           (category): category is NonNullable<typeof category> => !!category,
         )
-        .sort((a, b) => a.label < b.label ? 1 : -1),
+        .sort((a, b) => (a.label < b.label ? 1 : -1)),
     [uniqueCategories],
   );
 
