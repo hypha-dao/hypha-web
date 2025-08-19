@@ -17,6 +17,7 @@ import { i18nConfig } from '@hypha-platform/i18n';
 import { MenuTop } from '@hypha-platform/ui';
 
 import '@hypha-platform/ui-utils/global.css';
+import { NETWORK_HYPHA_EARTH_URL } from './constants';
 
 const lato = Lato({
   subsets: ['latin'],
@@ -61,7 +62,7 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <EvmProvider>
-            <MenuTop logoHref="https://network.hypha.earth" hrefTarget="_blank">
+            <MenuTop logoHref={NETWORK_HYPHA_EARTH_URL} hrefTarget="_blank">
               <ConnectedButtonProfile
                 useAuthentication={useAuthentication}
                 useMe={useMe}
