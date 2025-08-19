@@ -121,6 +121,18 @@ export function ExploreSpaces({
     );
   }, [selectedSpaces]);
 
+  const memberAddresses = React.useMemo(() => {
+    return selectedSpaces.reduce(
+      (accumulator: Set<`0x{string}`>, { memberAddresses }) => {
+        if (memberAddresses) {
+          memberAddresses.forEach((address) => accumulator.add(address));
+        }
+        return accumulator;
+      },
+      new Set<`0x{string}`>(),
+    );
+  }, [spaces]);
+
   const agreementCount = React.useMemo(() => {
     return selectedSpaces.reduce(
       (accumulator: number, { documentCount }) =>
@@ -263,7 +275,7 @@ export function ExploreSpaces({
         </div>
         <div className="flex flex-col">
           <div className="flex justify-center text-7 font-medium">
-            {memberCount}
+            {memberCount} | {memberAddresses.size}
           </div>
           <div className="flex justify-center text-1 mt-2 text-neutral-500">
             Members

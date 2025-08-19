@@ -45,6 +45,7 @@ export async function getAllSpaces(
       return {
         ...space,
         memberCount: spaceDetails?.members?.length ?? 0,
+        memberAddresses: (spaceDetails?.members ?? []) as `0x{string}`[],
         documentCount: spaceProposals?.accepted.length ?? 0,
       };
     });
