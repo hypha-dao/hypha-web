@@ -9,7 +9,6 @@ import {
   Button,
   Combobox,
   Heading,
-  MultiSelect,
   Separator,
 } from '@hypha-platform/ui';
 import React from 'react';
@@ -57,12 +56,10 @@ const orderOptions: {
 ];
 
 const CategoryLabel = ({
-  spaces,
   selectedSpaces,
   categories,
   className,
 }: {
-  spaces: Space[];
   selectedSpaces: Space[];
   categories?: Category[];
   className?: string | undefined;
@@ -84,7 +81,7 @@ const CategoryLabel = ({
         <Text className="text-3 text-left">
           <Text className="ml-1 capitalize">All</Text>
           <Text className="ml-1 mr-1">|</Text>
-          {spaces?.length}
+          {selectedSpaces?.length}
         </Text>
       )}
     </Text>
@@ -105,7 +102,7 @@ export function ExploreSpaces({
 
   const selectedSpaces = React.useMemo(
     () =>
-      categories
+      categories && categories.length > 0
         ? spaces.filter((space) =>
             categoriesIntersected(space.categories, categories),
           )
@@ -287,7 +284,6 @@ export function ExploreSpaces({
       <Separator className="mt-1 mb-1" />
       <div className="flex flex-row w-full h-4 pt-10 pb-10 items-center">
         <CategoryLabel
-          spaces={spaces}
           selectedSpaces={selectedSpaces}
           categories={categories}
           className="flex grow"
