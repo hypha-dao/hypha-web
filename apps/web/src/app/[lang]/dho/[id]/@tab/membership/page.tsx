@@ -1,13 +1,9 @@
 import { Locale } from '@hypha-platform/i18n';
-import { MembersSection, SubspaceSection } from '@hypha-platform/epics';
+import { MembersSection } from '@hypha-platform/epics';
 
 import { useMembers } from '@web/hooks/use-members';
 
 import { getDhoPathMembership } from './constants';
-import { getDhoPathGovernance } from '../governance/constants';
-import { findSpaceBySlug, getDb } from '@hypha-platform/core/server';
-import { notFound } from 'next/navigation';
-import { db } from '@hypha-platform/storage-postgres';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
