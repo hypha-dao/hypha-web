@@ -33,7 +33,7 @@ export const SubspaceSection = ({
       {!spaces.length ? (
         <span className="text-2 text-center text-neutral-11">
           {' '}
-          No sub-spaces
+          No inner spaces
         </span>
       ) : (
         <div
