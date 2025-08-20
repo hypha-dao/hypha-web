@@ -309,9 +309,37 @@ export function ExploreSpaces({
           </Button>
         </Link>
       </div>
-      <div className="space-y-6 flex mt-4">
+      <div className="space-y-6 flex mt-4 mb-4">
         <SpaceCardList lang={lang} spaces={sortedSpaces} pageSize={15} />
       </div>
+      <Separator className="mt-1 mb-1" />
+      <div className="flex justify-around flex-row columns-3 space-x-3 mt-6 mb-6">
+        <div className="flex flex-col">
+          <div className="flex justify-center text-7 font-medium">
+            {selectedSpaces.length}
+          </div>
+          <div className="flex justify-center text-1 mt-2 text-neutral-500">
+            Spaces
+          </div>
+        </div>
+        <div className="flex flex-col">
+          <div className="flex justify-center text-7 font-medium">
+            {uniqueMemberAddresses.size}
+          </div>
+          <div className="flex justify-center text-1 mt-2 text-neutral-500">
+            Members
+          </div>
+        </div>
+        <div className="flex flex-col">
+          <div className="flex justify-center text-7 font-medium">
+            {agreementCount}
+          </div>
+          <div className="flex justify-center text-1 mt-2 text-neutral-500">
+            Agreements
+          </div>
+        </div>
+      </div>
+      <Separator className="mt-1 mb-1" />
     </div>
   );
 }
