@@ -65,27 +65,27 @@ const CategoryLabel = ({
   className?: string | undefined;
 }) => {
   return (
-    <Text className={cn('text-5 text-left', className)}>
+    <Text className={cn('text-4 text-left', className)}>
       {categories ? (
-        <Text className="text-3 text-left">
+        <Text className="text-4 text-left">
           {categories.map((category, index) => {
             const label =
               categoryOptions.find((o) => o.value === category)?.label ??
               category;
             return (
-              <Text key={`cat-title-${category}`} className="ml-1">
+              <Text key={`cat-title-${category}`} className="text-4 ml-1">
                 {index !== 0 && ' | '}
                 {label}
               </Text>
             );
           })}{' '}
-          <Text className="ml-1 mr-1">|</Text>
+          <Text className="text-4 ml-1 mr-1">|</Text>
           {selectedSpaces?.length}
         </Text>
       ) : (
-        <Text className="text-3 text-left">
-          <Text className="ml-1 capitalize">All</Text>
-          <Text className="ml-1 mr-1">|</Text>
+        <Text className="text-4 text-left">
+          <Text className="text-4 ml-1 capitalize">All</Text>
+          <Text className="text-4 ml-1 mr-1">|</Text>
           {selectedSpaces?.length}
         </Text>
       )}
@@ -236,7 +236,9 @@ export function ExploreSpaces({
       <div className="flex justify-center">
         <SpaceSearch value={query} />
       </div>
-      <div className="flex justify-center space-x-2 space-y-2 mt-3 mb-15 flex-wrap">
+      {/* Restore after bring counters back to top */}
+      {/* <div className="flex justify-center space-x-2 space-y-2 mt-3 mb-15 flex-wrap"> */}
+      <div className="flex justify-center space-x-2 space-y-2 mt-3 mb-3 flex-wrap">
         {tags.map((tag) => (
           <Badge
             key={tag.value}
@@ -259,7 +261,11 @@ export function ExploreSpaces({
           </Badge>
         ))}
       </div>
-      <Separator className="mt-1 mb-1" />
+      {/*
+        Uncomment following piece when counters
+        are needed to be moved to top
+      */}
+      {/* <Separator className="mt-1 mb-1" />
       <div className="flex justify-around flex-row columns-3 space-x-3 mt-6 mb-6">
         <div className="flex flex-col">
           <div className="flex justify-center text-7 font-medium">
@@ -286,7 +292,7 @@ export function ExploreSpaces({
           </div>
         </div>
       </div>
-      <Separator className="mt-1 mb-1" />
+      <Separator className="mt-1 mb-1" /> */}
       <div className="flex flex-row w-full h-4 pt-10 pb-10 items-center">
         <CategoryLabel
           selectedSpaces={selectedSpaces}
@@ -309,8 +315,35 @@ export function ExploreSpaces({
           </Button>
         </Link>
       </div>
-      <div className="space-y-6 flex mt-4">
+      <div className="space-y-6 flex mt-4 mb-7">
         <SpaceCardList lang={lang} spaces={sortedSpaces} pageSize={15} />
+      </div>
+      <Separator className="mt-1 mb-1" />
+      <div className="flex justify-around flex-row columns-3 space-x-3 mt-6 -mb-15">
+        <div className="flex flex-col">
+          <div className="flex justify-center text-7 font-medium">
+            {selectedSpaces.length}
+          </div>
+          <div className="flex justify-center text-1 mt-2 text-neutral-500">
+            Spaces
+          </div>
+        </div>
+        <div className="flex flex-col">
+          <div className="flex justify-center text-7 font-medium">
+            {uniqueMemberAddresses.size}
+          </div>
+          <div className="flex justify-center text-1 mt-2 text-neutral-500">
+            Members
+          </div>
+        </div>
+        <div className="flex flex-col">
+          <div className="flex justify-center text-7 font-medium">
+            {agreementCount}
+          </div>
+          <div className="flex justify-center text-1 mt-2 text-neutral-500">
+            Agreements
+          </div>
+        </div>
       </div>
     </div>
   );
