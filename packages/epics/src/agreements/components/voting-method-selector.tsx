@@ -3,10 +3,7 @@
 import { Card } from '@hypha-platform/ui';
 import clsx from 'clsx';
 import { PlusCircledIcon } from '@radix-ui/react-icons';
-import {
-  useSpaceHasVoiceToken,
-  useTokensVotingPower,
-} from '@hypha-platform/core/client';
+import { useSpaceHasVoiceToken } from '@hypha-platform/core/client';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -57,9 +54,6 @@ export const VotingMethodSelector = ({
   const { hasVoiceToken } = useSpaceHasVoiceToken({
     spaceId: web3SpaceId ? BigInt(web3SpaceId) : BigInt(0),
   });
-  const { hasVotingTokens } = useTokensVotingPower({
-    spaceId: web3SpaceId ? BigInt(web3SpaceId) : BigInt(0),
-  });
 
   if (!web3SpaceId) return null;
 
@@ -87,27 +81,6 @@ export const VotingMethodSelector = ({
                 Click here
               </Link>{' '}
               to create your Voice Token
-            </div>
-          ) : undefined,
-        };
-      }
-
-      if (method.id === '1t1v') {
-        return {
-          ...method,
-          disabled: method.disabled || !hasVotingTokens,
-          disabledTooltip: !hasVotingTokens ? (
-            <div className="p-2">
-              To select this voting method you first need to issue your Reqular
-              Token (with enabled <strong>Is Voting Token</strong> option).{' '}
-              <Link
-                href={`/${lang}/dho/${id}/governance/create/issue-new-token`}
-                className="text-accent-9 underline"
-                onClick={(e) => e.stopPropagation()}
-              >
-                Click here
-              </Link>{' '}
-              to create your Regular Token
             </div>
           ) : undefined,
         };

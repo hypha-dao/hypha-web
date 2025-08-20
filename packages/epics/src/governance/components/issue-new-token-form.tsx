@@ -88,7 +88,7 @@ export const IssueNewTokenForm = ({
       spaceId: spaceId as number,
       web3SpaceId: web3SpaceId as number,
       transferable: data.type !== 'voice',
-      isVotingToken: data.type === 'voice' ? true : data.isVotingToken,
+      isVotingToken: false, // TODO: in the future it is necessary to get rid of this field at the application level
     });
   };
 

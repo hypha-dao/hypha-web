@@ -15,6 +15,10 @@ export interface Token {
   icon: string;
   symbol: string;
   address: `0x${string}`;
+  space?: {
+    title: string;
+    slug: string;
+  };
 }
 
 interface TokenPayoutFieldArrayProps {

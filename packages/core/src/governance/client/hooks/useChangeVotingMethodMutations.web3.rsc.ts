@@ -2,7 +2,7 @@
 
 import useSWRMutation from 'swr/mutation';
 import useSWR from 'swr';
-import { encodeFunctionData, zeroAddress } from 'viem';
+import { encodeFunctionData } from 'viem';
 import { z } from 'zod';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 
@@ -18,8 +18,10 @@ import {
   daoSpaceFactoryImplementationAbi,
   daoSpaceFactoryImplementationAddress,
   decayingSpaceTokenAbi,
-  decayingTokenFactoryAbi,
-  decayingTokenFactoryAddress,
+  tokenVotingPowerImplementationAbi,
+  tokenVotingPowerImplementationAddress,
+  voteDecayTokenVotingPowerImplementationAbi,
+  voteDecayTokenVotingPowerImplementationAddress,
 } from '@hypha-platform/core/generated';
 
 import { transactionSchema } from '@hypha-platform/core/client';
@@ -80,21 +82,25 @@ export const useChangeVotingMethodMutationsWeb3Rpc = ({
         }),
       });
 
-      if (arg.votingMethod === '1v1v') {
-        const [tokenAddress] = await publicClient.readContract({
-          abi: decayingTokenFactoryAbi,
-          address: decayingTokenFactoryAddress[chainId],
-          functionName: 'getSpaceToken',
-          args: [BigInt(arg.spaceId)],
-        });
-
-        if (!tokenAddress || tokenAddress === zeroAddress) {
-          throw new Error('Invalid token address returned from getSpaceToken');
+      if (arg.votingMethod === '1t1v') {
+        if (!arg.token || !/^0x[a-fA-F0-9]{40}$/.test(arg.token)) {
+          throw new Error('Invalid or missing token address for 1t1v');
         }
+        transactions.push({
+          target: tokenVotingPowerImplementationAddress[chainId],
+          value: 0,
+          data: encodeFunctionData({
+            abi: tokenVotingPowerImplementationAbi,
+            functionName: 'setSpaceToken',
+            args: [BigInt(arg.spaceId), arg.token as `0x${string}`],
+          }),
+        });
+      }
 
+      if (arg.votingMethod === '1v1v') {
         for (const { member, number } of arg.members) {
           transactions.push({
-            target: tokenAddress,
+            target: arg.token as `0x${string}`,
             value: 0,
             data: encodeFunctionData({
               abi: decayingSpaceTokenAbi,
@@ -103,6 +109,16 @@ export const useChangeVotingMethodMutationsWeb3Rpc = ({
             }),
           });
         }
+
+        transactions.push({
+          target: voteDecayTokenVotingPowerImplementationAddress[chainId],
+          value: 0,
+          data: encodeFunctionData({
+            abi: voteDecayTokenVotingPowerImplementationAbi,
+            functionName: 'setSpaceToken',
+            args: [BigInt(arg.spaceId), arg.token as `0x${string}`],
+          }),
+        });
       }
 
       const input = {
