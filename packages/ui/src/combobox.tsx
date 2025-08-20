@@ -52,7 +52,9 @@ export function Combobox({
   const filteredOptions = React.useMemo(() => {
     if (!searchTerm) return options;
     const term = searchTerm.toLowerCase();
-    return options.filter((option) => option.searchText.includes(term));
+    return options.filter((option) =>
+      option.searchText.toLowerCase().includes(term),
+    );
   }, [options, searchTerm]);
 
   const handleSelect = (currentValue: string) => {
