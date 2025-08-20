@@ -44,7 +44,6 @@ export const MemberWithNumberFieldFieldArray = ({
 
   return (
     <div className="flex flex-col gap-4">
-      <Separator />
       <div className="flex flex-col md:flex-row gap-4">
         <Text className="pt-1 text-2 text-neutral-11 text-nowrap">
           Initial voice allocation

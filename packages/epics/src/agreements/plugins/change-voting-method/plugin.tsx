@@ -6,7 +6,7 @@ import { TokenSelectorField } from '../components/common/token-selector-field';
 import { useTokens } from '@hypha-platform/epics';
 import { QuorumAndUnityChangerField } from '../components/common/quorum-and-unity-change-field';
 import { useFormContext, useWatch } from 'react-hook-form';
-import { Skeleton } from '@hypha-platform/ui';
+import { Skeleton, Separator } from '@hypha-platform/ui';
 import { VotingMethodSelector } from '../../components/voting-method-selector';
 import { VotingMethodType } from '@hypha-platform/core/client';
 import React from 'react';
@@ -74,6 +74,7 @@ export const ChangeVotingMethodPlugin = ({
         onChange={handleMethodChange}
         web3SpaceId={web3SpaceId}
       />
+      <Separator />
       <h4 className="text-2 font-medium text-neutral-11">Voting Rules</h4>
       {votingMethod === '1v1v' && (
         <>
