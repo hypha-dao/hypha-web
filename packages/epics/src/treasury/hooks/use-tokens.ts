@@ -5,6 +5,13 @@ import useSWR from 'swr';
 import React from 'react';
 import { Token } from '@hypha-platform/core/client';
 
+export interface ExtendedToken extends Token {
+  space?: {
+    title: string;
+    slug: string;
+  };
+}
+
 export function useTokens({ spaceSlug }: { spaceSlug: string }) {
   const endpoint = React.useMemo(
     () => `/api/v1/spaces/${spaceSlug}/assets-without-balances`,
@@ -17,12 +24,13 @@ export function useTokens({ spaceSlug }: { spaceSlug: string }) {
 
   const tokens = React.useMemo(() => {
     if (!data?.assets) return TOKENS;
-    const formattedAssets = data.assets.map((asset: Token) => ({
+    const formattedAssets = data.assets.map((asset: ExtendedToken) => ({
       address: asset.address,
       icon: asset.icon,
       name: asset.name,
       type: asset.type,
       symbol: asset.name,
+      space: asset.space,
     }));
     return formattedAssets;
   }, [data]);
