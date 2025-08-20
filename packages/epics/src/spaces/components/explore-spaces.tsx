@@ -313,11 +313,11 @@ export function ExploreSpaces({
           </Button>
         </Link>
       </div>
-      <div className="space-y-6 flex mt-4 mb-4">
+      <div className="space-y-6 flex mt-4 mb-7">
         <SpaceCardList lang={lang} spaces={sortedSpaces} pageSize={15} />
       </div>
       <Separator className="mt-1 mb-1" />
-      <div className="flex justify-around flex-row columns-3 space-x-3 mt-6 mb-6">
+      <div className="flex justify-around flex-row columns-3 space-x-3 mt-6 -mb-15">
         <div className="flex flex-col">
           <div className="flex justify-center text-7 font-medium">
             {selectedSpaces.length}
@@ -343,7 +343,6 @@ export function ExploreSpaces({
           </div>
         </div>
       </div>
-      <Separator className="mt-1 mb-1" />
     </div>
   );
 }
