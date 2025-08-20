@@ -46,7 +46,7 @@ export function Combobox({
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState(initialValue);
   const [searchTerm, setSearchTerm] = React.useState('');
-  
+
   React.useEffect(() => {
     setValue(initialValue);
   }, [initialValue]);
@@ -56,9 +56,10 @@ export function Combobox({
   const filteredOptions = React.useMemo(() => {
     if (!searchTerm) return options;
     const term = searchTerm.toLowerCase();
-    return options.filter((option) =>
-      option.searchText.toLowerCase().includes(term),
-    );
+    return options.filter((option) => {
+      const haystack = (option.searchText || option.label || '').toLowerCase();
+      return haystack.includes(term);
+    });
   }, [options, searchTerm]);
 
   const handleSelect = (currentValue: string) => {
