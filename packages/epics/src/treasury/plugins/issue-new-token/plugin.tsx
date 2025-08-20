@@ -10,7 +10,6 @@ import {
   TokenTypeField,
   TokenMaxSupplyField,
 } from '../../components';
-import { IsVotingTokenField } from '../../components/common/is-voting-token-field';
 import { DecaySettingsField } from '../../components/common/decay-settings-field';
 import { useFormContext } from 'react-hook-form';
 import { useState, useEffect } from 'react';
@@ -62,9 +61,6 @@ export const IssueNewTokenPlugin = () => {
             </>
           )}
         </>
-      )}
-      {tokenType !== 'voice' && tokenType !== 'ownership' && (
-        <IsVotingTokenField />
       )}
     </div>
   );
