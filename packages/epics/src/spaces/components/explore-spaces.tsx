@@ -68,12 +68,17 @@ const CategoryLabel = ({
     <Text className={cn('text-5 text-left', className)}>
       {categories ? (
         <Text className="text-3 text-left">
-          {categories.map((category, index) => (
-            <Text key={`cat-title-${category}`} className="ml-1 capitalize">
-              {index !== 0 && ' | '}
-              {category}
-            </Text>
-          ))}{' '}
+          {categories.map((category, index) => {
+            const label =
+              categoryOptions.find((o) => o.value === category)?.label ??
+              category;
+            return (
+              <Text key={`cat-title-${category}`} className="ml-1">
+                {index !== 0 && ' | '}
+                {label}
+              </Text>
+            );
+          })}{' '}
           <Text className="ml-1 mr-1">|</Text>
           {selectedSpaces?.length}
         </Text>
