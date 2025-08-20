@@ -294,7 +294,7 @@ export function ExploreSpaces({
             initialValue={order}
             className="border-0 md:w-40"
             onChange={setOrder}
-            allowEmptyChoise={false}
+            allowEmptyChoice={false}
           />
         </div>
         <Link href={`/${lang}/network/create`} scroll={false}>

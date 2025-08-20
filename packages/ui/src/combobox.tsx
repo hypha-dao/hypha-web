@@ -29,7 +29,7 @@ type ComboboxProps = {
   renderOption?: (option: Option) => React.ReactNode;
   renderValue?: (option: Option | undefined) => React.ReactNode;
   initialValue?: string;
-  allowEmptyChoise?: boolean;
+  allowEmptyChoice?: boolean;
   className?: string;
 };
 
@@ -40,7 +40,7 @@ export function Combobox({
   renderOption,
   renderValue,
   initialValue = '',
-  allowEmptyChoise = true,
+  allowEmptyChoice = true,
   className,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
@@ -56,7 +56,7 @@ export function Combobox({
   }, [options, searchTerm]);
 
   const handleSelect = (currentValue: string) => {
-    const newValue = allowEmptyChoise
+    const newValue = allowEmptyChoice
       ? currentValue === value
         ? ''
         : currentValue
