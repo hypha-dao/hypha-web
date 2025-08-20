@@ -66,10 +66,10 @@ const CategoryLabel = ({
 }) => {
   return (
     <Text className={cn('text-5 text-left', className)}>
-      {categories && selectedSpaces ? (
+      {categories ? (
         <Text className="text-3 text-left">
           {categories.map((category, index) => (
-            <Text key={`cat-title-${index}`} className="ml-1 capitalize">
+            <Text key={`cat-title-${category}`} className="ml-1 capitalize">
               {index !== 0 && ' | '}
               {category}
             </Text>
