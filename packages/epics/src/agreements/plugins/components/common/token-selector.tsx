@@ -49,6 +49,7 @@ export const TokenSelector = ({
                       width={20}
                       height={20}
                       alt={selectedToken.symbol}
+                      className="mr-2 rounded-full h-4 w-4"
                     />
                     <span className="text-2 text-neutral-11">
                       {selectedToken.symbol}

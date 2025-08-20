@@ -9,6 +9,7 @@ import { useFormContext, useWatch } from 'react-hook-form';
 import { Skeleton } from '@hypha-platform/ui';
 import { VotingMethodSelector } from '../../components/voting-method-selector';
 import { VotingMethodType } from '@hypha-platform/core/client';
+import React from 'react';
 
 export const ChangeVotingMethodPlugin = ({
   spaceSlug,
@@ -27,14 +28,20 @@ export const ChangeVotingMethodPlugin = ({
   const HYPHA_ADDRESS =
     TOKENS.find((t) => t.symbol === 'HYPHA')?.address.toLowerCase() || '';
 
-  const filteredTokens = rawTokens.filter((token) => {
-    if (token.type === 'voice') return false;
-    const isInTokensList = TOKENS.some(
-      (t) => t.address.toLowerCase() === token.address.toLowerCase(),
-    );
-    const isHypha = token.address.toLowerCase() === HYPHA_ADDRESS;
-    return !isInTokensList || isHypha;
-  });
+  const filteredTokensFor1t1v = React.useMemo(() => {
+    return rawTokens.filter((token) => {
+      if (token.type === 'voice') return false;
+      const isInTokensList = TOKENS.some(
+        (t) => t.address.toLowerCase() === token.address.toLowerCase(),
+      );
+      const isHypha = token.address.toLowerCase() === HYPHA_ADDRESS;
+      return !isInTokensList || isHypha;
+    });
+  }, [rawTokens, HYPHA_ADDRESS]);
+
+  const filteredTokensFor1v1v = React.useMemo(() => {
+    return rawTokens.filter((token) => token.type === 'voice');
+  }, [rawTokens]);
 
   const { setValue, control } = useFormContext();
 
@@ -70,12 +77,13 @@ export const ChangeVotingMethodPlugin = ({
       <h4 className="text-2 font-medium text-neutral-11">Voting Rules</h4>
       {votingMethod === '1v1v' && (
         <>
+          <TokenSelectorField name="token" tokens={filteredTokensFor1v1v} />
           <MemberWithNumberFieldFieldArray name="members" members={members} />
         </>
       )}
       {votingMethod === '1t1v' && (
         <Skeleton loading={isLoading} width={'100%'} height={24}>
-          <TokenSelectorField name="token" tokens={filteredTokens} />
+          <TokenSelectorField name="token" tokens={filteredTokensFor1t1v} />
         </Skeleton>
       )}
       <QuorumAndUnityChangerField name="quorumAndUnity" />
