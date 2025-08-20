@@ -65,27 +65,27 @@ const CategoryLabel = ({
   className?: string | undefined;
 }) => {
   return (
-    <Text className={cn('text-5 text-left', className)}>
+    <Text className={cn('text-4 text-left', className)}>
       {categories ? (
-        <Text className="text-3 text-left">
+        <Text className="text-4 text-left">
           {categories.map((category, index) => {
             const label =
               categoryOptions.find((o) => o.value === category)?.label ??
               category;
             return (
-              <Text key={`cat-title-${category}`} className="ml-1">
+              <Text key={`cat-title-${category}`} className="text-4 ml-1">
                 {index !== 0 && ' | '}
                 {label}
               </Text>
             );
           })}{' '}
-          <Text className="ml-1 mr-1">|</Text>
+          <Text className="text-4 ml-1 mr-1">|</Text>
           {selectedSpaces?.length}
         </Text>
       ) : (
-        <Text className="text-3 text-left">
-          <Text className="ml-1 capitalize">All</Text>
-          <Text className="ml-1 mr-1">|</Text>
+        <Text className="text-4 text-left">
+          <Text className="text-4 ml-1 capitalize">All</Text>
+          <Text className="text-4 ml-1 mr-1">|</Text>
           {selectedSpaces?.length}
         </Text>
       )}
