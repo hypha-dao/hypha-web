@@ -46,6 +46,10 @@ export function Combobox({
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState(initialValue);
   const [searchTerm, setSearchTerm] = React.useState('');
+  
+  React.useEffect(() => {
+    setValue(initialValue);
+  }, [initialValue]);
 
   const selectedOption = options.find((option) => option.value === value);
 
