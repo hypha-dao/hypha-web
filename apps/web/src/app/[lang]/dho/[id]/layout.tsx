@@ -2,7 +2,6 @@ import {
   JoinSpace,
   SpaceCard,
   SpaceModeLabel,
-  SubspaceSection,
   WebLinks,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
@@ -17,11 +16,7 @@ import { Text } from '@radix-ui/themes';
 import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem } from '@hypha-platform/ui';
 import Link from 'next/link';
-import {
-  getAllSpaces,
-  findSpaceBySlug,
-  findParentSpaceById,
-} from '@hypha-platform/core/server';
+import { getAllSpaces, findSpaceBySlug } from '@hypha-platform/core/server';
 import { getDhoPathGovernance } from './@tab/governance/constants';
 import { ActionButtons } from './_components/action-buttons';
 import {
@@ -33,7 +28,7 @@ import {
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
 import { Breadcrumbs } from './_components/breadcrumbs';
-import { useMembers } from '@web/hooks/use-members';
+import { InnerSpacesSection } from './_components/inner-spaces-section';
 
 export default async function DhoLayout({
   aside,
@@ -151,12 +146,7 @@ export default async function DhoLayout({
           />
         </div>
         <div className="w-full mt-16">
-          <SubspaceSection
-            spaces={subspaces || []}
-            lang={lang}
-            getSpaceDetailLink={getDhoPathGovernance}
-            useMembers={useMembers}
-          />
+          <InnerSpacesSection spaces={subspaces || []} lang={lang} />
         </div>
         {tab}
         {children}
