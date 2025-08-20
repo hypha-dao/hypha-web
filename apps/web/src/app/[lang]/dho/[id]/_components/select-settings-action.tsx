@@ -26,9 +26,9 @@ export const SETTINGS_ACTIONS = [
   },
   {
     group: 'Organisation',
-    title: 'New Sub-Space',
+    title: 'New Inner Space',
     description:
-      'Create and configure a new sub-space within your main space for specific activities or teams.',
+      'Create and configure a new inner space within your main space for specific activities or teams.',
     href: 'space/create',
     icon: <PlusCircledIcon />,
     baseTab: 'membership',
