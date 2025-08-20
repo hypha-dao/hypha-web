@@ -1,4 +1,9 @@
-import { JoinSpace, SpaceCard, SubspaceSection, WebLinks } from '@hypha-platform/epics';
+import {
+  JoinSpace,
+  SpaceCard,
+  SubspaceSection,
+  WebLinks,
+} from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import {
   Container,
@@ -136,11 +141,11 @@ export default async function DhoLayout({
         </div>
         <div className="w-full mt-16">
           <SubspaceSection
-          spaces={subspaces || []}
-          lang={lang}
-          getSpaceDetailLink={getDhoPathGovernance}
-          useMembers={useMembers}
-        />
+            spaces={subspaces || []}
+            lang={lang}
+            getSpaceDetailLink={getDhoPathGovernance}
+            useMembers={useMembers}
+          />
         </div>
         {tab}
         {children}

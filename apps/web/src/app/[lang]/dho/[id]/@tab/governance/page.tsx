@@ -36,7 +36,10 @@ export default async function AgreementsPage(props: PageProps) {
           dir: DirectionType.DESC,
         },
       ]}
-      createProposalPath={`${getDhoPathGovernance(lang, id)}${PATH_SELECT_CREATE_ACTION}`}
+      createProposalPath={`${getDhoPathGovernance(
+        lang,
+        id,
+      )}${PATH_SELECT_CREATE_ACTION}`}
     />
   );
 }
