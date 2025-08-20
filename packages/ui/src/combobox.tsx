@@ -18,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './popover';
 type Option = {
   value: string;
   label: string;
-  searchText: string;
+  searchText?: string;
   [key: string]: any;
 };
 
@@ -57,17 +57,14 @@ export function Combobox({
     if (!searchTerm) return options;
     const term = searchTerm.toLowerCase();
     return options.filter((option) => {
-      const haystack = (option.searchText || option.label || '').toLowerCase();
+      const haystack = (option.searchText ?? option.label ?? '').toLowerCase();
       return haystack.includes(term);
     });
   }, [options, searchTerm]);
 
   const handleSelect = (currentValue: string) => {
-    const newValue = allowEmptyChoice
-      ? currentValue === value
-        ? ''
-        : currentValue
-      : currentValue;
+    const isSameSelection = currentValue === value;
+    const newValue = allowEmptyChoice && isSameSelection ? '' : currentValue;
     if (newValue !== value) {
       setValue(newValue);
       onChange?.(newValue);
