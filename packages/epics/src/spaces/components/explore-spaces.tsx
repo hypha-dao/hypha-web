@@ -289,8 +289,8 @@ export function ExploreSpaces({
             Agreements
           </div>
         </div>
-      </div> */}
-      <Separator className="mt-1 mb-1" />
+      </div>
+      <Separator className="mt-1 mb-1" /> */}
       <div className="flex flex-row w-full h-4 pt-10 pb-10 items-center">
         <CategoryLabel
           selectedSpaces={selectedSpaces}
