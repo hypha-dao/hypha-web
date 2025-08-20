@@ -9,7 +9,6 @@ import {
   Button,
   Combobox,
   Heading,
-  MultiSelect,
   Separator,
 } from '@hypha-platform/ui';
 import React from 'react';
@@ -57,26 +56,29 @@ const orderOptions: {
 ];
 
 const CategoryLabel = ({
-  spaces,
   selectedSpaces,
   categories,
   className,
 }: {
-  spaces: Space[];
   selectedSpaces: Space[];
   categories?: Category[];
   className?: string | undefined;
 }) => {
   return (
     <Text className={cn('text-5 text-left', className)}>
-      {categories && selectedSpaces ? (
+      {categories ? (
         <Text className="text-3 text-left">
-          {categories.map((category, index) => (
-            <Text key={`cat-title-${index}`} className="ml-1 capitalize">
-              {index !== 0 && ' | '}
-              {category}
-            </Text>
-          ))}{' '}
+          {categories.map((category, index) => {
+            const label =
+              categoryOptions.find((o) => o.value === category)?.label ??
+              category;
+            return (
+              <Text key={`cat-title-${category}`} className="ml-1">
+                {index !== 0 && ' | '}
+                {label}
+              </Text>
+            );
+          })}{' '}
           <Text className="ml-1 mr-1">|</Text>
           {selectedSpaces?.length}
         </Text>
@@ -84,7 +86,7 @@ const CategoryLabel = ({
         <Text className="text-3 text-left">
           <Text className="ml-1 capitalize">All</Text>
           <Text className="ml-1 mr-1">|</Text>
-          {spaces?.length}
+          {selectedSpaces?.length}
         </Text>
       )}
     </Text>
@@ -105,7 +107,7 @@ export function ExploreSpaces({
 
   const selectedSpaces = React.useMemo(
     () =>
-      categories
+      categories && categories.length > 0
         ? spaces.filter((space) =>
             categoriesIntersected(space.categories, categories),
           )
@@ -287,7 +289,6 @@ export function ExploreSpaces({
       <Separator className="mt-1 mb-1" />
       <div className="flex flex-row w-full h-4 pt-10 pb-10 items-center">
         <CategoryLabel
-          spaces={spaces}
           selectedSpaces={selectedSpaces}
           categories={categories}
           className="flex grow"
@@ -298,6 +299,7 @@ export function ExploreSpaces({
             initialValue={order}
             className="border-0 md:w-40"
             onChange={setOrder}
+            allowEmptyChoice={false}
           />
         </div>
         <Link href={`/${lang}/network/create`} scroll={false}>
