@@ -34,7 +34,7 @@ export const Footer = () => {
                 rel="noopener noreferrer"
                 style={customLinkStyles}
                 target="_blank"
-                href="https://discord.gg/cvTgbymA"
+                href="https://discord.gg/Um9vASx8a8"
               >
                 Hypha Services
               </Link>
