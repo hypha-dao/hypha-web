@@ -3,12 +3,16 @@
 import { DocumentSection } from './document-section';
 import { useSpaceDocumentsWithStatuses } from '../hooks/use-space-documents-with-statuses';
 import { Document, Order } from '@hypha-platform/core/client';
+import { Button } from '@hypha-platform/ui';
+import Link from 'next/link';
+import { PlusIcon } from '@radix-ui/react-icons';
 
 type DocumentsSectionsProps = {
   lang: string;
   spaceSlug: string;
   web3SpaceId: number;
   order?: Order<Document>;
+  createProposalPath?: string;
 };
 
 export function DocumentsSections({
@@ -16,6 +20,7 @@ export function DocumentsSections({
   spaceSlug,
   web3SpaceId,
   order,
+  createProposalPath,
 }: DocumentsSectionsProps) {
   const { documents, isLoading } = useSpaceDocumentsWithStatuses({
     spaceId: web3SpaceId,
@@ -33,6 +38,16 @@ export function DocumentsSections({
         label="On Voting"
         hasSearch={true}
         isLoading={isLoading}
+        headSectionButton={
+          createProposalPath && (
+            <Button asChild colorVariant="accent">
+              <Link href={createProposalPath}>
+                <PlusIcon />
+                Create Proposal
+              </Link>
+            </Button>
+          )
+        }
       />
       <DocumentSection
         basePath={`${basePath}/proposal`}
