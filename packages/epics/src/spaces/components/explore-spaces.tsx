@@ -259,7 +259,7 @@ export function ExploreSpaces({
           </Badge>
         ))}
       </div>
-      <Separator className="mt-1 mb-1" />
+      {/* <Separator className="mt-1 mb-1" />
       <div className="flex justify-around flex-row columns-3 space-x-3 mt-6 mb-6">
         <div className="flex flex-col">
           <div className="flex justify-center text-7 font-medium">
@@ -285,7 +285,7 @@ export function ExploreSpaces({
             Agreements
           </div>
         </div>
-      </div>
+      </div> */}
       <Separator className="mt-1 mb-1" />
       <div className="flex flex-row w-full h-4 pt-10 pb-10 items-center">
         <CategoryLabel
