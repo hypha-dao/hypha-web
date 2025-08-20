@@ -236,7 +236,9 @@ export function ExploreSpaces({
       <div className="flex justify-center">
         <SpaceSearch value={query} />
       </div>
-      <div className="flex justify-center space-x-2 space-y-2 mt-3 mb-15 flex-wrap">
+      {/* Restore after bring counters back to top */}
+      {/* <div className="flex justify-center space-x-2 space-y-2 mt-3 mb-15 flex-wrap"> */}
+      <div className="flex justify-center space-x-2 space-y-2 mt-3 mb-10 flex-wrap">
         {tags.map((tag) => (
           <Badge
             key={tag.value}
