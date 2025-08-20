@@ -14,7 +14,7 @@ export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
   const activeTab = getActiveTabFromPath(pathname);
 
   return (
-    <Tabs value={activeTab} className="w-full mt-16">
+    <Tabs value={activeTab} className="w-full mt-5">
       <TabsList className="w-full mb-4">
         <TabsTrigger
           asChild

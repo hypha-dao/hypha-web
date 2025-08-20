@@ -1,4 +1,4 @@
-import { JoinSpace, SpaceCard, WebLinks } from '@hypha-platform/epics';
+import { JoinSpace, SpaceCard, SubspaceSection, WebLinks } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import {
   Container,
@@ -27,6 +27,7 @@ import {
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
 import { Breadcrumbs } from './_components/breadcrumbs';
+import { useMembers } from '@web/hooks/use-members';
 
 export default async function DhoLayout({
   aside,
@@ -80,6 +81,8 @@ export default async function DhoLayout({
 
   const spaces = await getAllSpaces();
 
+  const subspaces = spaceFromDb.subspaces;
+
   return (
     <div className="flex max-w-container-2xl mx-auto">
       <Container className="flex-grow min-w-0">
@@ -130,6 +133,14 @@ export default async function DhoLayout({
             </div>
             <div className="text-gray-500 ml-1 text-1">Agreements</div>
           </div>
+        </div>
+        <div className="w-full mt-16">
+          <SubspaceSection
+          spaces={subspaces || []}
+          lang={lang}
+          getSpaceDetailLink={getDhoPathGovernance}
+          useMembers={useMembers}
+        />
         </div>
         {tab}
         {children}
