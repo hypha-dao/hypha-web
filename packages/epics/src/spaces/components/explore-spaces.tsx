@@ -259,6 +259,10 @@ export function ExploreSpaces({
           </Badge>
         ))}
       </div>
+      {/*
+        Uncomment following piece when counters
+        are needed to be moved to top
+      */}
       {/* <Separator className="mt-1 mb-1" />
       <div className="flex justify-around flex-row columns-3 space-x-3 mt-6 mb-6">
         <div className="flex flex-col">
