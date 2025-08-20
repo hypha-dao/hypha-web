@@ -2,6 +2,7 @@ import {
   JoinSpace,
   SpaceCard,
   SpaceModeLabel,
+  SubspaceSection,
   WebLinks,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
@@ -32,6 +33,7 @@ import {
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
 import { Breadcrumbs } from './_components/breadcrumbs';
+import { useMembers } from '@web/hooks/use-members';
 
 export default async function DhoLayout({
   aside,
@@ -84,6 +86,8 @@ export default async function DhoLayout({
   })();
 
   const spaces = await getAllSpaces();
+
+  const subspaces = spaceFromDb.subspaces;
 
   return (
     <div className="flex max-w-container-2xl mx-auto">
@@ -144,6 +148,14 @@ export default async function DhoLayout({
               daoSlug,
             )}/space-configuration`}
             className="ml-3"
+          />
+        </div>
+        <div className="w-full mt-16">
+          <SubspaceSection
+            spaces={subspaces || []}
+            lang={lang}
+            getSpaceDetailLink={getDhoPathGovernance}
+            useMembers={useMembers}
           />
         </div>
         {tab}
