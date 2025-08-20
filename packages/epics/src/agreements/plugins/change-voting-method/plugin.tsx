@@ -1,6 +1,6 @@
 'use client';
 
-import { Person } from '@hypha-platform/core/client';
+import { Person, TOKENS, Token } from '@hypha-platform/core/client';
 import { MemberWithNumberFieldFieldArray } from '../components/common/member-with-number-field-array';
 import { TokenSelectorField } from '../components/common/token-selector-field';
 import { useTokens } from '@hypha-platform/epics';
@@ -19,7 +19,23 @@ export const ChangeVotingMethodPlugin = ({
   spaceSlug: string;
   members: Person[];
 }) => {
-  const { tokens, isLoading } = useTokens({ spaceSlug });
+  const { tokens: rawTokens, isLoading } = useTokens({ spaceSlug }) as {
+    tokens: Token[];
+    isLoading: boolean;
+  };
+
+  const HYPHA_ADDRESS =
+    TOKENS.find((t) => t.symbol === 'HYPHA')?.address.toLowerCase() || '';
+
+  const filteredTokens = rawTokens.filter((token) => {
+    if (token.type === 'voice') return false;
+    const isInTokensList = TOKENS.some(
+      (t) => t.address.toLowerCase() === token.address.toLowerCase(),
+    );
+    const isHypha = token.address.toLowerCase() === HYPHA_ADDRESS;
+    return !isInTokensList || isHypha;
+  });
+
   const { setValue, control } = useFormContext();
 
   const votingMethod = useWatch({
@@ -59,7 +75,7 @@ export const ChangeVotingMethodPlugin = ({
       )}
       {votingMethod === '1t1v' && (
         <Skeleton loading={isLoading} width={'100%'} height={24}>
-          <TokenSelectorField name="token" tokens={tokens} />
+          <TokenSelectorField name="token" tokens={filteredTokens} />
         </Skeleton>
       )}
       <QuorumAndUnityChangerField name="quorumAndUnity" />

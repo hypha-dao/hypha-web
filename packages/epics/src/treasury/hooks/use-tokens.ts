@@ -21,7 +21,7 @@ export function useTokens({ spaceSlug }: { spaceSlug: string }) {
       address: asset.address,
       icon: asset.icon,
       name: asset.name,
-      type: '',
+      type: asset.type,
       symbol: asset.name,
     }));
     return formattedAssets;
