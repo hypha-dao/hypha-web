@@ -12,6 +12,10 @@ import {
 import { Avatar, AvatarImage } from '@radix-ui/react-avatar';
 import { Text } from '@radix-ui/themes';
 import { useJoinSpace } from '../hooks/use-join-space';
+import { Locale } from '@hypha-platform/i18n';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { getDhoPathGovernance } from './space-card.container';
 
 type Member = {
   avatar: string;
@@ -26,6 +30,8 @@ type InnerSpaceCardProps = {
   description?: string;
   isLoading?: boolean;
   spaceId?: number | null | undefined;
+  parentTitle?: string;
+  parentSlug?: string;
 };
 
 export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
@@ -35,8 +41,11 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
   members,
   isLoading,
   spaceId,
+  parentTitle,
+  parentSlug,
 }) => {
   const { isMember, joinSpace } = useJoinSpace({ spaceId: spaceId as number });
+  const { lang } = useParams();
   return (
     <Card className="h-full w-full">
       <CardHeader className="p-0 rounded-tl-md rounded-tr-md overflow-hidden h-[150px]">
@@ -59,7 +68,22 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
       <CardContent className="pt-5 relative">
         <div className="flex flex-col items-start mb-5">
           <Skeleton width="150px" height="18px" loading={isLoading}>
-            <CardTitle>{title}</CardTitle>
+            <CardTitle>
+              {title}
+              {parentTitle ? (
+                <Link
+                  href={
+                    parentSlug
+                      ? getDhoPathGovernance(lang as Locale, parentSlug)
+                      : ''
+                  }
+                  className="text-accent-11 text-3 text-ellipsis overflow-hidden hover:underline"
+                >
+                  {' '}
+                  by {parentTitle}
+                </Link>
+              ) : null}
+            </CardTitle>
           </Skeleton>
         </div>
 
