@@ -21,6 +21,7 @@ export interface Space {
   documents?: Document[];
   address?: string | null;
   flags: SpaceFlags[];
+  parent?: Space | null;
 }
 
 export interface CreateSpaceInput {
