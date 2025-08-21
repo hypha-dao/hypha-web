@@ -130,9 +130,6 @@ export default async function DhoLayout({
             <div className="text-gray-500 ml-1 text-1">Agreements</div>
           </div>
         </div>
-        <div className="w-full mt-16">
-          <InnerSpacesSection spaces={subspaces || []} lang={lang} />
-        </div>
         {tab}
         {children}
         <div className="space-y-9">

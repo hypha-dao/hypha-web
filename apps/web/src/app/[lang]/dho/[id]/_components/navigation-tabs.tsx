@@ -8,14 +8,29 @@ import { getDhoPathGovernance } from '../@tab/governance/constants';
 import { getDhoPathMembership } from '../@tab/membership/constants';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
 import { getDhoPathTreasury } from '../@tab/treasury/constants';
+import { getDhoPathOrganisation } from '../@tab/organisation/constants';
 
 export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
   const pathname = usePathname();
   const activeTab = getActiveTabFromPath(pathname);
 
   return (
-    <Tabs value={activeTab} className="w-full mt-5">
+    <Tabs value={activeTab} className="w-full mt-16">
       <TabsList className="w-full mb-4">
+        <TabsTrigger
+          asChild
+          value="organisation"
+          className="w-full"
+          variant="ghost"
+        >
+          <Link
+            href={getDhoPathOrganisation(lang, id)}
+            className="w-full"
+            passHref
+          >
+            Organisation
+          </Link>
+        </TabsTrigger>
         <TabsTrigger
           asChild
           value="governance"
