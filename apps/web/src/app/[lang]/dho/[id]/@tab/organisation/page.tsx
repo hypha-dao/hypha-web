@@ -1,6 +1,6 @@
 import { Locale } from '@hypha-platform/i18n';
-import { DocumentsSections, SubspaceSection } from '@hypha-platform/epics';
-import { DirectionType } from '@hypha-platform/core/client';
+import { SubspaceSection } from '@hypha-platform/epics';
+import { Space } from '@hypha-platform/core/client';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
@@ -24,11 +24,14 @@ export default async function AgreementsPage(props: PageProps) {
     return notFound();
   }
 
-  const subspaces = spaceFromDb.subspaces;
+  const spaces: Space[] = [
+    spaceFromDb,
+    ...spaceFromDb.subspaces,
+  ];
 
   return (
     <SubspaceSection
-      spaces={subspaces || []}
+      spaces={spaces}
       lang={lang}
       getSpaceDetailLink={(lang, id) =>
         `${getDhoPathGovernance(lang, id)}${PATH_SELECT_CREATE_ACTION}`
