@@ -288,50 +288,30 @@ contract DAOProposalsImplementation is
       99) / 100;
     bool quorumReached = totalVotesCast >= requiredQuorum;
 
+    // Check for early rejection if quorum is reached
+    if (quorumReached && _shouldRejectEarly(_proposalId, unityThreshold)) {
+      proposal.expired = true;
+      spaceRejectedProposals[proposal.spaceId].push(_proposalId);
+      emit ProposalRejected(_proposalId, proposal.yesVotes, proposal.noVotes);
+      return;
+    }
+
     if (!quorumReached) {
       return; // Early return - insufficient participation
     }
 
     // Check if proposal should be executed (Yes votes reach unity threshold)
-    if (proposal.yesVotes * 100 >= unityThreshold * totalVotesCast) {
-      proposal.executed = true;
-
-      // Add this proposal to the space's executed proposals list
-      spaceExecutedProposals[proposal.spaceId].push(_proposalId);
-
-      // Also add it to the global list of executed proposals
-      allExecutedProposals.push(_proposalId);
-
-      spaceAcceptedProposals[proposal.spaceId].push(_proposalId);
-
-      address executor = spaceFactory.getSpaceExecutor(proposal.spaceId);
-
-      // Convert proposal transactions to Executor.Transaction format
-      IExecutor.Transaction[]
-        memory execTransactions = new IExecutor.Transaction[](
-          proposal.transactions.length
-        );
-      for (uint i = 0; i < proposal.transactions.length; i++) {
-        execTransactions[i] = IExecutor.Transaction({
-          target: proposal.transactions[i].target,
-          value: proposal.transactions[i].value,
-          data: proposal.transactions[i].data
-        });
-      }
-
-      // Execute all transactions
-      bool success = IExecutor(executor).executeTransactions(execTransactions);
-      require(success, 'Proposal execution failedd');
-
-      emit ProposalExecuted(
-        _proposalId,
-        true,
-        proposal.yesVotes,
-        proposal.noVotes
-      );
+    if (
+      proposal.yesVotes * 100 >=
+      unityThreshold * proposal.totalVotingPowerAtSnapshot
+    ) {
+      _executeProposal(_proposalId, proposal);
     }
     // Check if proposal should be rejected (No votes reach unity threshold)
-    else if (proposal.noVotes * 100 >= unityThreshold * totalVotesCast) {
+    else if (
+      proposal.noVotes * 100 >=
+      unityThreshold * proposal.totalVotingPowerAtSnapshot
+    ) {
       proposal.expired = true; // Mark as expired to prevent further voting
       spaceRejectedProposals[proposal.spaceId].push(_proposalId);
 
@@ -347,13 +327,83 @@ contract DAOProposalsImplementation is
     }
   }
 
+  // Helper function to check if proposal should be rejected early due to mathematical impossibility
+  function _shouldRejectEarly(
+    uint256 _proposalId,
+    uint256 unityThreshold
+  ) internal view returns (bool) {
+    ProposalCore storage proposal = proposalsCoreData[_proposalId];
+
+    uint256 totalVotesCast = proposal.yesVotes + proposal.noVotes;
+    uint256 remainingVotingPower = proposal.totalVotingPowerAtSnapshot -
+      totalVotesCast;
+
+    // Check if even with all remaining voters voting "yes", unity threshold cannot be reached
+    uint256 maxPossibleYesVotes = proposal.yesVotes + remainingVotingPower;
+
+    // Unity is calculated against total voting power at snapshot, not votes cast
+    if (
+      maxPossibleYesVotes * 100 <
+      unityThreshold * proposal.totalVotingPowerAtSnapshot
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  // Helper function to execute a proposal
+  function _executeProposal(
+    uint256 _proposalId,
+    ProposalCore storage proposal
+  ) internal {
+    proposal.executed = true;
+
+    // Add this proposal to the space's executed proposals list
+    spaceExecutedProposals[proposal.spaceId].push(_proposalId);
+
+    // Also add it to the global list of executed proposals
+    allExecutedProposals.push(_proposalId);
+
+    spaceAcceptedProposals[proposal.spaceId].push(_proposalId);
+
+    address executor = spaceFactory.getSpaceExecutor(proposal.spaceId);
+
+    // Convert proposal transactions to Executor.Transaction format
+    IExecutor.Transaction[]
+      memory execTransactions = new IExecutor.Transaction[](
+        proposal.transactions.length
+      );
+    for (uint i = 0; i < proposal.transactions.length; i++) {
+      execTransactions[i] = IExecutor.Transaction({
+        target: proposal.transactions[i].target,
+        value: proposal.transactions[i].value,
+        data: proposal.transactions[i].data
+      });
+    }
+
+    // Execute all transactions
+    bool success = IExecutor(executor).executeTransactions(execTransactions);
+    require(success, 'Proposal execution failedd');
+
+    emit ProposalExecuted(
+      _proposalId,
+      true,
+      proposal.yesVotes,
+      proposal.noVotes
+    );
+  }
+
   function checkProposalExpiration(
     uint256 _proposalId
   ) public override returns (bool) {
     ProposalCore storage proposal = proposalsCoreData[_proposalId];
 
     // Only space members can trigger proposal expiration checks
-    require(address(spaceFactory) != address(0), 'Contracts are  not initialized');
+    require(
+      address(spaceFactory) != address(0),
+      'Contracts are  not initialized'
+    );
     require(
       spaceFactory.isMember(proposal.spaceId, msg.sender),
       'Not a space member'
