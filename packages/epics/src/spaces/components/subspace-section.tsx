@@ -26,7 +26,7 @@ export const SubspaceSection = ({
         <div className="flex items-center">
           <AuthenticatedLinkButton href={`membership/space/create`}>
             <PlusIcon />
-            Create Inner Space
+            Add Space
           </AuthenticatedLinkButton>
         </div>
       </div>
