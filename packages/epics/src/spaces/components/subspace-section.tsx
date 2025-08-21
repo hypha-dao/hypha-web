@@ -27,7 +27,7 @@ export const SubspaceSection = ({
           <Link href={`membership/space/create`} scroll={false}>
             <Button className="ml-2">
               <PlusIcon />
-              Create Inner Space
+              Add Space
             </Button>
           </Link>
         </div>
