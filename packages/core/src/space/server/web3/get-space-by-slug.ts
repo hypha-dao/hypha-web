@@ -12,9 +12,9 @@ interface GetSpaceBySlugProps {
   slug: string;
 }
 
-export async function getSpaceBySlug(
-  { slug }: GetSpaceBySlugProps,
-): Promise<Space | null> {
+export async function getSpaceBySlug({
+  slug,
+}: GetSpaceBySlugProps): Promise<Space | null> {
   try {
     const space = await findSpaceBySlug({ slug }, { db });
 
@@ -33,7 +33,7 @@ export async function getSpaceBySlug(
 
     const [spaceDetails] = web3details;
     const [spaceProposals] = web3proposalsIds;
-  
+
     return {
       ...space,
       memberCount: spaceDetails?.members?.length ?? 0,
