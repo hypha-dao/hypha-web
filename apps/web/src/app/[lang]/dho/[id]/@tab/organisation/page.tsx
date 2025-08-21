@@ -3,8 +3,6 @@ import { SubspaceSection } from '@hypha-platform/epics';
 import { Space } from '@hypha-platform/core/client';
 import { getSpaceBySlug } from '@hypha-platform/core/server';
 import { notFound } from 'next/navigation';
-import { PATH_SELECT_CREATE_ACTION } from '@web/app/constants';
-import { getDhoPathGovernance } from '../governance/constants';
 import { useMembers } from '@web/hooks/use-members';
 
 type PageProps = {
@@ -22,19 +20,9 @@ export default async function OrganisationPage(props: PageProps) {
     return notFound();
   }
 
-  const spaces: Space[] = [
-    spaceFromDb,
-    ...(spaceFromDb.subspaces || []),
-  ];
+  const spaces: Space[] = [spaceFromDb, ...(spaceFromDb.subspaces || [])];
 
   return (
-    <SubspaceSection
-      spaces={spaces}
-      lang={lang}
-      getSpaceDetailLink={(lang, id) =>
-        `${getDhoPathGovernance(lang, id)}${PATH_SELECT_CREATE_ACTION}`
-      }
-      useMembers={useMembers}
-    />
+    <SubspaceSection spaces={spaces} lang={lang} useMembers={useMembers} />
   );
 }
