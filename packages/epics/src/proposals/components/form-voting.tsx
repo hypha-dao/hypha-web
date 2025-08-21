@@ -62,39 +62,20 @@ export const FormVoting = ({
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    let timeout: NodeJS.Timeout;
 
-    if (isVoting) {
+    if (isVoting && !myVote) {
       setIsProcessing(true);
-      const minDelay = new Promise((resolve) => setTimeout(resolve, 1000));
-
       interval = setInterval(async () => {
         await mutate();
         if (myVote) {
-          await minDelay;
           setIsProcessing(false);
           clearInterval(interval);
-          clearTimeout(timeout);
         }
-      }, 500);
-
-      timeout = setTimeout(() => {
-        setIsProcessing(false);
-        clearInterval(interval);
-      }, 30000);
-      return () => {
-        clearInterval(interval);
-        clearTimeout(timeout);
-      };
-    } else if (!isVoting && myVote) {
-      setIsProcessing(false);
+      }, 2000);
     }
 
-    return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
-    };
-  }, [isVoting, myVote, mutate, unity, quorum]);
+    return () => clearInterval(interval);
+  }, [isVoting, myVote, mutate]);
 
   return (
     <div className="flex flex-col gap-5 text-neutral-11">
