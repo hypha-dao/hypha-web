@@ -28,7 +28,6 @@ import {
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
 import { Breadcrumbs } from './_components/breadcrumbs';
-import { InnerSpacesSection } from './_components/inner-spaces-section';
 
 export default async function DhoLayout({
   aside,
@@ -81,8 +80,6 @@ export default async function DhoLayout({
   })();
 
   const spaces = await getAllSpaces();
-
-  const subspaces = spaceFromDb.subspaces;
 
   return (
     <div className="flex max-w-container-2xl mx-auto">
