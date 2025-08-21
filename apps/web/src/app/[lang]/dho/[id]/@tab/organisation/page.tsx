@@ -21,6 +21,11 @@ export default async function OrganisationPage(props: PageProps) {
   }
 
   const spaces: Space[] = [spaceFromDb, ...(spaceFromDb.subspaces || [])];
+  for (const space of spaces) {
+    if (space.parentId) {
+      space.parent = spaces.find((s) => s.id === space.parentId);
+    }
+  }
 
   return (
     <SubspaceSection spaces={spaces} lang={lang} useMembers={useMembers} />

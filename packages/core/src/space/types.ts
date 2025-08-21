@@ -20,6 +20,7 @@ export interface Space {
   documentCount?: number;
   documents?: Document[];
   address?: string | null;
+  parent?: Space | null;
 }
 
 export interface CreateSpaceInput {
