@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Button, Skeleton, Separator } from '@hypha-platform/ui';
 import { ProgressLine } from './progress-line';
 import { intervalToDuration, isPast } from 'date-fns';
@@ -56,7 +57,44 @@ export const FormVoting = ({
   isVoting?: boolean;
   documentSlug: string;
 }) => {
-  const { myVote } = useMyVote(documentSlug);
+  const { myVote, mutate } = useMyVote(documentSlug);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    let timeout: NodeJS.Timeout;
+
+    if (isVoting) {
+      setIsProcessing(true);
+      const minDelay = new Promise((resolve) => setTimeout(resolve, 1000));
+
+      interval = setInterval(async () => {
+        await mutate();
+        if (myVote) {
+          await minDelay;
+          setIsProcessing(false);
+          clearInterval(interval);
+          clearTimeout(timeout);
+        }
+      }, 500);
+
+      timeout = setTimeout(() => {
+        setIsProcessing(false);
+        clearInterval(interval);
+      }, 30000);
+      return () => {
+        clearInterval(interval);
+        clearTimeout(timeout);
+      };
+    } else if (!isVoting && myVote) {
+      setIsProcessing(false);
+    }
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [isVoting, myVote, mutate, unity, quorum]);
 
   return (
     <div className="flex flex-col gap-5 text-neutral-11">
@@ -105,7 +143,7 @@ export const FormVoting = ({
           ) : null}
           {executed || expired || isPast(new Date(endTime)) ? null : (
             <div className="flex gap-2">
-              {isVoting ? (
+              {isProcessing ? (
                 <div className="flex items-center gap-2 text-sm text-neutral-10">
                   <Loader2 className="animate-spin w-4 h-4" />
                   Processing vote...
@@ -116,10 +154,19 @@ export const FormVoting = ({
                 </div>
               ) : (
                 <>
-                  <Button variant="outline" onClick={onReject}>
+                  <Button
+                    variant="outline"
+                    onClick={onReject}
+                    disabled={isProcessing || isVoting}
+                  >
                     Vote no
                   </Button>
-                  <Button onClick={onAccept}>Vote yes</Button>
+                  <Button
+                    onClick={onAccept}
+                    disabled={isProcessing || isVoting}
+                  >
+                    Vote yes
+                  </Button>
                 </>
               )}
             </div>
