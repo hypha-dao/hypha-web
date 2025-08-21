@@ -2,17 +2,12 @@ import { Text } from '@radix-ui/themes';
 import { Button } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { PlusIcon } from '@radix-ui/react-icons';
-import {
-  UseMembers,
-  InnerSpaceCardWrapper,
-  SpaceCard,
-} from '@hypha-platform/epics';
-import { DEFAULT_SPACE_LEAD_IMAGE, Space } from '@hypha-platform/core/client';
+import { UseMembers } from '@hypha-platform/epics';
+import { Space } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 import { InnerSpaceCardList } from './inner-space-card-list';
 
 interface SubspaceSectionProps {
-  getSpaceDetailLink: (lang: Locale, id: string) => string;
   spaces: Space[];
   lang: Locale;
   useMembers: UseMembers;
@@ -21,7 +16,6 @@ interface SubspaceSectionProps {
 export const SubspaceSection = ({
   spaces,
   lang,
-  getSpaceDetailLink,
   useMembers,
 }: SubspaceSectionProps) => {
   return (
