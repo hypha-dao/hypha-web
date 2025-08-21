@@ -7,10 +7,8 @@ import { notify } from './notify';
 export async function sendEmail(params: Email) {
   const notification = new Notification();
 
-  for (const key in params) {
-    if (notification.hasOwnProperty(key)) {
-      notification[key] = params[key];
-    }
+  for (const [key, value] of Object.entries(params)) {
+    (notification as any)[key as keyof typeof notification] = value as any;
   }
 
   return await notify(notification);
