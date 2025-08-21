@@ -17,6 +17,8 @@ import { i18nConfig } from '@hypha-platform/i18n';
 import { MenuTop } from '@hypha-platform/ui';
 
 import '@hypha-platform/ui-utils/global.css';
+import 'react-tooltip/dist/react-tooltip.css';
+
 import { NETWORK_HYPHA_EARTH_URL } from './constants';
 
 const lato = Lato({

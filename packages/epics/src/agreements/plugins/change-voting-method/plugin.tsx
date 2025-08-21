@@ -68,12 +68,15 @@ export const ChangeVotingMethodPlugin = ({
 
   return (
     <div className="flex flex-col gap-4">
-      <h4 className="text-2 font-medium text-neutral-11">Voting Method</h4>
-      <VotingMethodSelector
-        value={votingMethod}
-        onChange={handleMethodChange}
-        web3SpaceId={web3SpaceId}
-      />
+      <Skeleton loading={isLoading} width={'100%'} height={280}>
+        <h4 className="text-2 font-medium text-neutral-11">Voting Method</h4>
+        <VotingMethodSelector
+          value={votingMethod}
+          onChange={handleMethodChange}
+          web3SpaceId={web3SpaceId}
+          hasVotingTokens={filteredTokensFor1t1v.length > 0}
+        />
+      </Skeleton>
       <Separator />
       <h4 className="text-2 font-medium text-neutral-11">Voting Rules</h4>
       {votingMethod === '1v1v' && (
