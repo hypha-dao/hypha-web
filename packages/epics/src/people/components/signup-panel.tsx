@@ -27,6 +27,7 @@ import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { Links } from '../../common';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { useEffect } from 'react';
 
 const schemaSignupPersonForm = schemaSignupPerson.extend(editPersonFiles.shape);
 
@@ -58,11 +59,20 @@ export const SignupPanel = ({
       leadImageUrl: undefined,
       description: '',
       location: undefined,
-      email: user?.email?.trim() || undefined,
-      address: user?.wallet?.address || '',
+      email: undefined,
+      address: '',
       links: [],
     },
   });
+
+  useEffect(() => {
+    if (user?.email) {
+      form.setValue('email', user.email.trim());
+    }
+    if (user?.wallet?.address) {
+      form.setValue('address', user.wallet.address);
+    }
+  }, [user, form]);
 
   return (
     <Form {...form}>
