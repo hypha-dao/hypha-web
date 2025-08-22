@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { Button, Skeleton, Separator } from '@hypha-platform/ui';
 import { ProgressLine } from './progress-line';
 import { intervalToDuration, isPast } from 'date-fns';
@@ -58,7 +57,6 @@ export const FormVoting = ({
   documentSlug: string;
 }) => {
   const { myVote } = useMyVote(documentSlug);
-
   return (
     <div className="flex flex-col gap-5 text-neutral-11">
       <VoterList documentSlug={documentSlug} />

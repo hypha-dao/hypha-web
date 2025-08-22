@@ -19,7 +19,7 @@ import {
   useMyVote,
 } from '@hypha-platform/core/client';
 import { LoadingBackdrop } from '@hypha-platform/ui';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function Agreements() {
   const { jwt: authToken } = useJwt();
@@ -29,7 +29,7 @@ export default function Agreements() {
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: document?.web3ProposalId as number,
   });
-  const { mutate: votersMutate } = useMyVote(documentSlug);
+  const { mutate: votersMutate, myVote } = useMyVote(documentSlug);
   const { handleAccept, handleReject, handleCheckProposalExpiration } = useVote(
     {
       proposalId: document?.web3ProposalId,
@@ -52,10 +52,14 @@ export default function Agreements() {
       await Promise.all([mutate(), update(), votersMutate()]);
     } catch (err) {
       console.debug(err);
-    } finally {
-      setIsVoting(false);
     }
   };
+
+  useEffect(() => {
+    if (myVote) {
+      setIsVoting(false);
+    }
+  }, [myVote, mutate, update, voteAndRefresh]);
 
   const handleOnAccept = async () => voteAndRefresh(handleAccept);
   const handleOnReject = async () => voteAndRefresh(handleReject);
