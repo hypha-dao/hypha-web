@@ -5,10 +5,10 @@ import {
   InnerSpaceCardContainer,
   UseMembers,
 } from '@hypha-platform/epics';
-import { Locale } from '@hypha-platform/i18n';
-import { Space } from '@hypha-platform/core/server';
+import type { Locale } from '@hypha-platform/i18n';
+import type { Space } from '@hypha-platform/core/server';
 import { useSpaceCardList } from '../hooks/use-space-card-list';
-import { SectionLoadMore } from '@hypha-platform/ui/server';
+import { SectionLoadMore } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 
 type InnerSpaceCardListProps = {
