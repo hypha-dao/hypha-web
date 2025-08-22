@@ -368,6 +368,7 @@ contract DAOProposalsImplementation is
     spaceAcceptedProposals[proposal.spaceId].push(_proposalId);
 
     address executor = spaceFactory.getSpaceExecutor(proposal.spaceId);
+    require(executor != address(0), 'Executor not set for space');
 
     // Convert proposal transactions to Executor.Transaction format
     IExecutor.Transaction[]
@@ -384,7 +385,7 @@ contract DAOProposalsImplementation is
 
     // Execute all transactions
     bool success = IExecutor(executor).executeTransactions(execTransactions);
-    require(success, 'Proposal execution failedd');
+    require(success, 'Proposal execution failed');
 
     emit ProposalExecuted(
       _proposalId,
