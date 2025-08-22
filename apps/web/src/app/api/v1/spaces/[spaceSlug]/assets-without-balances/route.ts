@@ -52,15 +52,32 @@ export async function GET(
       isVotingToken: token.isVotingToken,
     }));
 
-    let spaceTokens;
+    let regularTokens: readonly `0x${string}`[] = [];
+    let ownershipTokens: readonly `0x${string}`[] = [];
+    let decayingTokens: readonly `0x${string}`[] = [];
     try {
-      spaceTokens = await web3Client.multicall({
-        contracts: [
-          getSpaceRegularTokens({ spaceId }),
-          getSpaceOwnershipTokens({ spaceId }),
-          getSpaceDecayingTokens({ spaceId }),
-        ],
-      });
+      const [regularResult, ownershipResult, decayingResult] =
+        await web3Client.multicall({
+          contracts: [
+            getSpaceRegularTokens({ spaceId }),
+            getSpaceOwnershipTokens({ spaceId }),
+            getSpaceDecayingTokens({ spaceId }),
+          ],
+        });
+      regularTokens =
+        regularResult.status === 'success' && regularResult.result.length !== 0
+          ? regularResult.result
+          : [];
+      ownershipTokens =
+        ownershipResult.status === 'success' &&
+        ownershipResult.result.length !== 0
+          ? ownershipResult.result
+          : [];
+      decayingTokens =
+        decayingResult.status === 'success' &&
+        decayingResult.result.length !== 0
+          ? decayingResult.result
+          : [];
     } catch (err: any) {
       const errorMessage =
         err?.message || err?.shortMessage || JSON.stringify(err);
@@ -105,14 +122,6 @@ export async function GET(
         type: 'utility' as const,
       }));
 
-    spaceTokens = spaceTokens
-      .filter(
-        (response) =>
-          response.status === 'success' && response.result.length !== 0,
-      )
-      .map(({ result }) => result)
-      .flat() as `0x${string}`[];
-
     const addressMap = new Map<string, Token>();
     const filteredTokens = TOKENS.filter((token) => {
       return token.symbol === 'HYPHA'
@@ -123,14 +132,53 @@ export async function GET(
       addressMap.set(token.address.toLowerCase(), token),
     );
 
-    spaceTokens.forEach((address) => {
+    regularTokens.forEach((address) => {
       if (!addressMap.has(address.toLowerCase())) {
         addressMap.set(address.toLowerCase(), {
           symbol: '',
           name: '',
           address,
           icon: '/placeholder/token-icon.png',
-          type: 'utility' as const,
+          type: 'utility',
+        });
+      } else {
+        addressMap.set(address.toLowerCase(), {
+          ...addressMap.get(address.toLowerCase())!,
+          type: 'utility',
+        });
+      }
+    });
+
+    ownershipTokens.forEach((address) => {
+      if (!addressMap.has(address.toLowerCase())) {
+        addressMap.set(address.toLowerCase(), {
+          symbol: '',
+          name: '',
+          address,
+          icon: '/placeholder/token-icon.png',
+          type: 'ownership',
+        });
+      } else {
+        addressMap.set(address.toLowerCase(), {
+          ...addressMap.get(address.toLowerCase())!,
+          type: 'ownership',
+        });
+      }
+    });
+
+    decayingTokens.forEach((address) => {
+      if (!addressMap.has(address.toLowerCase())) {
+        addressMap.set(address.toLowerCase(), {
+          symbol: '',
+          name: '',
+          address,
+          icon: '/placeholder/token-icon.png',
+          type: 'voice',
+        });
+      } else {
+        addressMap.set(address.toLowerCase(), {
+          ...addressMap.get(address.toLowerCase())!,
+          type: 'voice',
         });
       }
     });
@@ -150,6 +198,7 @@ export async function GET(
           return {
             ...meta,
             address: token.address,
+            type: token.type,
           };
         } catch (err) {
           console.warn(`Skipping token ${token.address}: ${err}`);

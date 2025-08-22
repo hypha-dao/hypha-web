@@ -12,6 +12,8 @@ import {
   daoSpaceFactoryImplementationAbi,
   decayingSpaceTokenAbi,
   tokenBalanceJoinImplementationAbi,
+  tokenVotingPowerImplementationAbi,
+  voteDecayTokenVotingPowerImplementationAbi,
 } from '@hypha-platform/core/generated';
 
 export const useProposalDetailsWeb3Rpc = ({
@@ -100,6 +102,14 @@ export const useProposalDetailsWeb3Rpc = ({
       token: `0x${string}`;
       amount: bigint;
     }> = [];
+
+    let votingMethodsToken: {
+      spaceId: bigint | undefined;
+      token: `0x${string}` | '';
+    } = {
+      spaceId: undefined,
+      token: '',
+    };
 
     (transactions as any[]).forEach((tx) => {
       try {
@@ -304,7 +314,7 @@ export const useProposalDetailsWeb3Rpc = ({
         if (decoded.functionName === 'setTokenRequirement') {
           const [spaceId, token, amount] = decoded.args as unknown as [
             bigint,
-            `0x{string}`,
+            `0x${string}`,
             bigint,
           ];
 
@@ -313,6 +323,48 @@ export const useProposalDetailsWeb3Rpc = ({
             token,
             amount,
           });
+        }
+      } catch (error) {
+        console.error('Failed to decode function data:', error);
+      }
+
+      try {
+        const decoded = decodeFunctionData({
+          abi: tokenVotingPowerImplementationAbi,
+          data: tx.data,
+        });
+
+        if (decoded.functionName === 'setSpaceToken') {
+          const [spaceId, token] = decoded.args as unknown as [
+            bigint,
+            `0x${string}`,
+          ];
+
+          votingMethodsToken = {
+            spaceId,
+            token,
+          };
+        }
+      } catch (error) {
+        console.error('Failed to decode function data:', error);
+      }
+
+      try {
+        const decoded = decodeFunctionData({
+          abi: voteDecayTokenVotingPowerImplementationAbi,
+          data: tx.data,
+        });
+
+        if (decoded.functionName === 'setSpaceToken') {
+          const [spaceId, token] = decoded.args as unknown as [
+            bigint,
+            `0x${string}`,
+          ];
+
+          votingMethodsToken = {
+            spaceId,
+            token,
+          };
         }
       } catch (error) {
         console.error('Failed to decode function data:', error);
@@ -337,6 +389,7 @@ export const useProposalDetailsWeb3Rpc = ({
       mintings,
       entryMethods,
       tokenRequirements,
+      votingMethodsToken,
     };
   }, [data]);
 

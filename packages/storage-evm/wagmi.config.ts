@@ -21,6 +21,7 @@ export default defineConfig({
         'TokenBalanceJoinImplementation.sol/**',
         'TokenVotingPowerImplementation.sol/**',
         'OwnershipTokenVotingPowerImplementation.sol/**',
+        'VoteDecayTokenVotingPowerImplementation.sol/**',
       ],
       deployments: {
         DAOSpaceFactoryImplementation: {
@@ -52,6 +53,9 @@ export default defineConfig({
         },
         OwnershipTokenVotingPowerImplementation: {
           [base.id]: '0x255c7b5DaC3696199fEF7A8CC6Cc87190bc36eFd',
+        },
+        VoteDecayTokenVotingPowerImplementation: {
+          [base.id]: '0x6dB5E05B21c68550B63a7404a3B68F81c159DAee',
         },
       },
     }),

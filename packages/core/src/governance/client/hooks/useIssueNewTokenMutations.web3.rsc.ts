@@ -92,7 +92,7 @@ export const useIssueTokenMutationsWeb3Rpc = ({
                 arg.name,
                 arg.symbol,
                 BigInt(arg.maxSupply) * 10n ** 18n,
-                false, // TODO: temporary solution until isVotingToken is removed completely in the future
+                arg.isVotingToken,
               ],
             }),
           },

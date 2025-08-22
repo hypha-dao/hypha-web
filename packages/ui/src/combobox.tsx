@@ -18,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './popover';
 type Option = {
   value: string;
   label: string;
-  searchText: string;
+  searchText?: string;
   [key: string]: any;
 };
 
@@ -29,6 +29,7 @@ type ComboboxProps = {
   renderOption?: (option: Option) => React.ReactNode;
   renderValue?: (option: Option | undefined) => React.ReactNode;
   initialValue?: string;
+  allowEmptyChoice?: boolean;
   className?: string;
 };
 
@@ -39,24 +40,35 @@ export function Combobox({
   renderOption,
   renderValue,
   initialValue = '',
+  allowEmptyChoice = true,
   className,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState(initialValue);
   const [searchTerm, setSearchTerm] = React.useState('');
 
+  React.useEffect(() => {
+    setValue(initialValue);
+  }, [initialValue]);
+
   const selectedOption = options.find((option) => option.value === value);
 
   const filteredOptions = React.useMemo(() => {
     if (!searchTerm) return options;
     const term = searchTerm.toLowerCase();
-    return options.filter((option) => option.searchText.includes(term));
+    return options.filter((option) => {
+      const haystack = (option.searchText ?? option.label ?? '').toLowerCase();
+      return haystack.includes(term);
+    });
   }, [options, searchTerm]);
 
   const handleSelect = (currentValue: string) => {
-    const newValue = currentValue === value ? '' : currentValue;
-    setValue(newValue);
-    onChange?.(newValue);
+    const isSameSelection = currentValue === value;
+    const newValue = allowEmptyChoice && isSameSelection ? '' : currentValue;
+    if (newValue !== value) {
+      setValue(newValue);
+      onChange?.(newValue);
+    }
     setOpen(false);
     setSearchTerm('');
   };
