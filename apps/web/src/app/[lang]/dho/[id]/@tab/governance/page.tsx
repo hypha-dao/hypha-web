@@ -4,8 +4,6 @@ import { DirectionType } from '@hypha-platform/core/client';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
-import { PATH_SELECT_CREATE_ACTION } from '@web/app/constants';
-import { getDhoPathGovernance } from './constants';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -36,10 +34,6 @@ export default async function AgreementsPage(props: PageProps) {
           dir: DirectionType.DESC,
         },
       ]}
-      createProposalPath={`${getDhoPathGovernance(
-        lang,
-        id,
-      )}${PATH_SELECT_CREATE_ACTION}`}
     />
   );
 }

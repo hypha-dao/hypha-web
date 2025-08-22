@@ -12,7 +12,6 @@ type DocumentsSectionsProps = {
   spaceSlug: string;
   web3SpaceId: number;
   order?: Order<Document>;
-  createProposalPath?: string;
 };
 
 export function DocumentsSections({
@@ -20,7 +19,6 @@ export function DocumentsSections({
   spaceSlug,
   web3SpaceId,
   order,
-  createProposalPath,
 }: DocumentsSectionsProps) {
   const { documents, isLoading } = useSpaceDocumentsWithStatuses({
     spaceId: web3SpaceId,
@@ -38,16 +36,6 @@ export function DocumentsSections({
         label="On Voting"
         hasSearch={true}
         isLoading={isLoading}
-        headSectionButton={
-          createProposalPath && (
-            <Button asChild colorVariant="accent">
-              <Link href={createProposalPath}>
-                <PlusIcon />
-                Create Proposal
-              </Link>
-            </Button>
-          )
-        }
       />
       <DocumentSection
         basePath={`${basePath}/proposal`}
