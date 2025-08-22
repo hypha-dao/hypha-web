@@ -4,11 +4,14 @@ import {
   getDhoPathGovernance,
   InnerSpaceCardWrapper,
   SpaceCard,
-  UseMembers,
+  type UseMembers,
 } from '@hypha-platform/epics';
 import Link from 'next/link';
 import { Locale } from '@hypha-platform/i18n';
-import { DEFAULT_SPACE_LEAD_IMAGE, Space } from '@hypha-platform/core/client';
+import {
+  DEFAULT_SPACE_LEAD_IMAGE,
+  type Space,
+} from '@hypha-platform/core/client';
 
 type SpaceCardContainerProps = {
   lang: Locale;
