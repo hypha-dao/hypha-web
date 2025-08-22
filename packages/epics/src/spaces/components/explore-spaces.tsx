@@ -56,6 +56,10 @@ const orderOptions: {
   },
 ];
 
+function toLowerHex<A extends `0x${string}`>(a: A): Lowercase<A> {
+  return a.toLowerCase() as Lowercase<A>;
+}
+
 const CategoryLabel = ({
   selectedSpaces,
   categories,
@@ -125,11 +129,11 @@ export function ExploreSpaces({
   }, [selectedSpaces]);
 
   const uniqueMemberAddresses = React.useMemo(() => {
-    const acc = new Set<`0x${string}`>();
+    const acc = new Set<Lowercase<`0x${string}`>>();
     for (const space of selectedSpaces) {
       if (!space.memberAddresses) continue;
       for (const address of space.memberAddresses) {
-        acc.add(address.toLowerCase() as `0x${string}`);
+        acc.add(toLowerHex(address));
       }
     }
     return acc;
