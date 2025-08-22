@@ -25,10 +25,11 @@ export default function Agreements() {
   const { jwt: authToken } = useJwt();
   const { id, lang } = useParams();
   const documentSlug = useDocumentSlug();
-  const { document, isLoading, mutate } = useDocumentBySlug(documentSlug);
-  const { proposalDetails } = useProposalDetailsWeb3Rpc({
-    proposalId: document?.web3ProposalId as number,
-  });
+  const { document, isLoading } = useDocumentBySlug(documentSlug);
+  const { proposalDetails, isLoading: isLoadingProposal } =
+    useProposalDetailsWeb3Rpc({
+      proposalId: document?.web3ProposalId as number,
+    });
   const { mutate: votersMutate, myVote } = useMyVote(documentSlug);
   const { handleAccept, handleReject, handleCheckProposalExpiration } = useVote(
     {
@@ -55,9 +56,10 @@ export default function Agreements() {
       const txHash = await voteFn();
       setProgress(25);
       setVoteMessage('Saving vote...');
-      await Promise.all([mutate(), update(), votersMutate()]);
+      await update();
       setProgress(70);
       setVoteMessage('Getting updated data...');
+      await votersMutate();
     } catch (err) {
       console.debug(err);
       setProgress(0);
@@ -66,12 +68,12 @@ export default function Agreements() {
   };
 
   useEffect(() => {
-    if (myVote) {
+    if (myVote !== null && !isLoadingProposal && !isLoading) {
       setIsVoting(false);
       setProgress(100);
       setVoteMessage('Vote processed!');
     }
-  }, [myVote]);
+  }, [myVote, votersMutate, isLoading, isLoadingProposal]);
 
   const handleOnAccept = async () => voteAndRefresh(handleAccept);
   const handleOnReject = async () => voteAndRefresh(handleReject);
@@ -79,7 +81,6 @@ export default function Agreements() {
   const handleOnCheckProposalExpiration = async () => {
     try {
       await handleCheckProposalExpiration();
-      await mutate();
       await update();
     } catch (err) {
       console.debug(err);
