@@ -57,25 +57,7 @@ export const FormVoting = ({
   isVoting?: boolean;
   documentSlug: string;
 }) => {
-  const { myVote, mutate } = useMyVote(documentSlug);
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-
-    if (isVoting && !myVote) {
-      setIsProcessing(true);
-      interval = setInterval(async () => {
-        await mutate();
-        if (myVote) {
-          setIsProcessing(false);
-          clearInterval(interval);
-        }
-      }, 2000);
-    }
-
-    return () => clearInterval(interval);
-  }, [isVoting, myVote, mutate]);
+  const { myVote } = useMyVote(documentSlug);
 
   return (
     <div className="flex flex-col gap-5 text-neutral-11">
@@ -124,7 +106,7 @@ export const FormVoting = ({
           ) : null}
           {executed || expired || isPast(new Date(endTime)) ? null : (
             <div className="flex gap-2">
-              {isProcessing ? (
+              {isVoting ? (
                 <div className="flex items-center gap-2 text-sm text-neutral-10">
                   <Loader2 className="animate-spin w-4 h-4" />
                   Processing vote...
@@ -138,14 +120,11 @@ export const FormVoting = ({
                   <Button
                     variant="outline"
                     onClick={onReject}
-                    disabled={isProcessing || isVoting}
+                    disabled={isVoting}
                   >
                     Vote no
                   </Button>
-                  <Button
-                    onClick={onAccept}
-                    disabled={isProcessing || isVoting}
-                  >
+                  <Button onClick={onAccept} disabled={isVoting}>
                     Vote yes
                   </Button>
                 </>

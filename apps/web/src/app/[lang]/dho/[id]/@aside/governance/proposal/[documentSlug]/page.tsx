@@ -1,18 +1,25 @@
 'use client';
 
-import { ProposalDetail, SidePanel } from '@hypha-platform/epics';
+import {
+  ProposalDetail,
+  SidePanel,
+  useSpaceDocumentsWithStatuses,
+} from '@hypha-platform/epics';
 import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
 import { useDocumentSlug } from '@web/hooks/use-document-slug';
 import { useDocumentBySlug } from '@web/hooks/use-document-by-slug';
 import { getDhoPathGovernance } from '../../../../@tab/governance/constants';
-import { useVote } from '@hypha-platform/core/client';
-import { useSpaceDocumentsWithStatuses } from '@hypha-platform/epics';
-import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { useDbTokens } from '@web/hooks/use-db-tokens';
-import { useJwt } from '@hypha-platform/core/client';
-import { useProposalDetailsWeb3Rpc } from '@hypha-platform/core/client';
+import {
+  useVote,
+  useJwt,
+  useProposalDetailsWeb3Rpc,
+  useSpaceBySlug,
+  useMyVote,
+} from '@hypha-platform/core/client';
 import { LoadingBackdrop } from '@hypha-platform/ui';
+import { useState } from 'react';
 
 export default function Agreements() {
   const { jwt: authToken } = useJwt();
@@ -22,40 +29,45 @@ export default function Agreements() {
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: document?.web3ProposalId as number,
   });
-  const {
-    handleAccept,
-    handleReject,
-    handleCheckProposalExpiration,
-    isVoting,
-  } = useVote({
-    proposalId: document?.web3ProposalId,
-    authToken: authToken,
-    tokenSymbol: proposalDetails?.tokens[0]?.symbol,
-  });
+  const { mutate: votersMutate } = useMyVote(documentSlug);
+  const { handleAccept, handleReject, handleCheckProposalExpiration } = useVote(
+    {
+      proposalId: document?.web3ProposalId,
+      authToken: authToken,
+      tokenSymbol: proposalDetails?.tokens[0]?.symbol,
+    },
+  );
   const { space } = useSpaceBySlug(id as string);
   const { update } = useSpaceDocumentsWithStatuses({
     spaceSlug: space?.slug as string,
     spaceId: space?.web3SpaceId as number,
   });
   const { tokens } = useDbTokens();
+  const [isVoting, setIsVoting] = useState(false);
 
   const handleOnAccept = async () => {
     try {
+      setIsVoting(true);
       await handleAccept();
-      await mutate();
-      await update();
+      await Promise.all([mutate(), update(), votersMutate()]);
     } catch (err) {
+      setIsVoting(false);
       console.debug(err);
+    } finally {
+      setIsVoting(false);
     }
   };
 
   const handleOnReject = async () => {
     try {
+      setIsVoting(true);
       await handleReject();
-      await mutate();
-      await update();
+      await Promise.all([mutate(), update(), votersMutate()]);
     } catch (err) {
+      setIsVoting(false);
       console.debug(err);
+    } finally {
+      setIsVoting(false);
     }
   };
 
