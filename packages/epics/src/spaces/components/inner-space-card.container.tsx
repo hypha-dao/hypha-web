@@ -54,7 +54,7 @@ export const InnerSpaceCardContainer = ({
               <InnerSpaceCardWrapper
                 spaceSlug={space.slug}
                 title={space.title}
-                description={space.description as string}
+                description={space.description || ''}
                 leadImageUrl={space.leadImage || DEFAULT_SPACE_LEAD_IMAGE}
                 useMembers={useMembers}
                 parentTitle={space.parent?.title}
