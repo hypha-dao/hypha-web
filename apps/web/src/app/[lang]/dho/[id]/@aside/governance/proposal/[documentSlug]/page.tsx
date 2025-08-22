@@ -44,22 +44,34 @@ export default function Agreements() {
   });
   const { tokens } = useDbTokens();
   const [isVoting, setIsVoting] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [voteMessage, setVoteMessage] = useState('Processing vote...');
 
   const voteAndRefresh = async (voteFn: () => Promise<unknown>) => {
     setIsVoting(true);
+    setProgress(0);
+    setVoteMessage('Processing vote...');
     try {
       const txHash = await voteFn();
+      setProgress(25);
+      setVoteMessage('Saving vote...');
       await Promise.all([mutate(), update(), votersMutate()]);
+      setProgress(70);
+      setVoteMessage('Getting updated data...');
     } catch (err) {
       console.debug(err);
+      setProgress(0);
+      setVoteMessage('Processing vote...');
     }
   };
 
   useEffect(() => {
     if (myVote) {
       setIsVoting(false);
+      setProgress(100);
+      setVoteMessage('Vote processed!');
     }
-  }, [myVote, mutate, update, voteAndRefresh]);
+  }, [myVote]);
 
   const handleOnAccept = async () => voteAndRefresh(handleAccept);
   const handleOnReject = async () => voteAndRefresh(handleReject);
@@ -77,8 +89,11 @@ export default function Agreements() {
   return (
     <SidePanel>
       <LoadingBackdrop
-        isLoading={isLoading}
-        message={<span>Please wait...</span>}
+        progress={progress}
+        isLoading={isLoading || isVoting}
+        message={
+          isLoading ? <span>Please wait...</span> : <span>{voteMessage}</span>
+        }
         className="-m-4 lg:-m-7"
       >
         <ProposalDetail

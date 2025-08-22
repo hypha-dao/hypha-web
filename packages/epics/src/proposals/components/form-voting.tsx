@@ -1,7 +1,6 @@
 import { Button, Skeleton, Separator } from '@hypha-platform/ui';
 import { ProgressLine } from './progress-line';
 import { intervalToDuration, isPast } from 'date-fns';
-import { Loader2 } from 'lucide-react';
 import { VoterList } from '../../governance/components/voter-list';
 import { useMyVote } from '@hypha-platform/core/client';
 
@@ -104,12 +103,7 @@ export const FormVoting = ({
           ) : null}
           {executed || expired || isPast(new Date(endTime)) ? null : (
             <div className="flex gap-2">
-              {isVoting ? (
-                <div className="flex items-center gap-2 text-sm text-neutral-10">
-                  <Loader2 className="animate-spin w-4 h-4" />
-                  Processing vote...
-                </div>
-              ) : myVote ? (
+              {myVote ? (
                 <div className="text-sm text-neutral-10">
                   You already voted {myVote}
                 </div>
