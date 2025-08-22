@@ -28,6 +28,11 @@ export default async function OrganisationPage(props: PageProps) {
   }
 
   return (
-    <SubspaceSection spaces={spaces} lang={lang} useMembers={useMembers} />
+    <SubspaceSection
+      spaces={spaces}
+      lang={lang}
+      currentSpaceId={spaceFromDb.id}
+      useMembers={useMembers}
+    />
   );
 }
