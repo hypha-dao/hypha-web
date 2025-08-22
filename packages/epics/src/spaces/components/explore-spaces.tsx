@@ -125,11 +125,11 @@ export function ExploreSpaces({
   }, [selectedSpaces]);
 
   const uniqueMemberAddresses = React.useMemo(() => {
-    const acc = new Set<`0x{string}`>();
+    const acc = new Set<`0x${string}`>();
     for (const space of selectedSpaces) {
       if (!space.memberAddresses) continue;
       for (const address of space.memberAddresses) {
-        acc.add(address.toLowerCase() as `0x{string}`);
+        acc.add(address.toLowerCase() as `0x${string}`);
       }
     }
     return acc;
