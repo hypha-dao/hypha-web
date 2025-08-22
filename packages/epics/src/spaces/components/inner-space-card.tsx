@@ -71,17 +71,10 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
             <CardTitle>
               {title}
               {parentTitle ? (
-                <Link
-                  href={
-                    parentSlug
-                      ? getDhoPathGovernance(lang as Locale, parentSlug)
-                      : ''
-                  }
-                  className="text-accent-11 text-3 text-ellipsis overflow-hidden hover:underline"
-                >
+                <span className="text-accent-11 text-3 text-ellipsis overflow-hidden">
                   {' '}
                   by {parentTitle}
-                </Link>
+                </span>
               ) : null}
             </CardTitle>
           </Skeleton>
