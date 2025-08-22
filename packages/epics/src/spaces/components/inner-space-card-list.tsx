@@ -16,6 +16,7 @@ type InnerSpaceCardListProps = {
   spaces: Space[];
   pageSize?: number;
   showLoadMore?: boolean;
+  currentSpaceId: number;
   useMembers: UseMembers;
 };
 
@@ -24,6 +25,7 @@ export function InnerSpaceCardList({
   spaces,
   pageSize = 3,
   showLoadMore = true,
+  currentSpaceId,
   useMembers,
 }: InnerSpaceCardListProps) {
   const { pages, loadMore, pagination } = useSpaceCardList({
@@ -48,6 +50,7 @@ export function InnerSpaceCardList({
                     lang={lang}
                     useMembers={useMembers}
                     differentFirstCard={index === 0}
+                    currentSpaceId={currentSpaceId}
                   />
                 );
               })
@@ -58,6 +61,7 @@ export function InnerSpaceCardList({
                 lang={lang}
                 useMembers={useMembers}
                 differentFirstCard={true}
+                currentSpaceId={currentSpaceId}
               />
             )}
           </div>

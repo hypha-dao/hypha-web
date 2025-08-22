@@ -16,6 +16,7 @@ import { Locale } from '@hypha-platform/i18n';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { getDhoPathGovernance } from './space-card.container';
+import { cn } from '@hypha-platform/ui-utils';
 
 type Member = {
   avatar: string;
@@ -31,7 +32,7 @@ type InnerSpaceCardProps = {
   isLoading?: boolean;
   spaceId?: number | null | undefined;
   parentTitle?: string;
-  parentSlug?: string;
+  className?: string;
 };
 
 export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
@@ -42,12 +43,12 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
   isLoading,
   spaceId,
   parentTitle,
-  parentSlug,
+  className,
 }) => {
   const { isMember, joinSpace } = useJoinSpace({ spaceId: spaceId as number });
   const { lang } = useParams();
   return (
-    <Card className="h-full w-full">
+    <Card className={cn('h-full w-full', className)}>
       <CardHeader className="p-0 rounded-tl-md rounded-tr-md overflow-hidden h-[150px]">
         <Skeleton
           width="100%"
