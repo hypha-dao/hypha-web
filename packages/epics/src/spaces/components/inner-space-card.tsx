@@ -5,17 +5,11 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Button,
   Skeleton,
   Image,
 } from '@hypha-platform/ui';
 import { Avatar, AvatarImage } from '@radix-ui/react-avatar';
 import { Text } from '@radix-ui/themes';
-import { useJoinSpace } from '../hooks/use-join-space';
-import { Locale } from '@hypha-platform/i18n';
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { getDhoPathGovernance } from './space-card.container';
 import { cn } from '@hypha-platform/ui-utils';
 
 type Member = {
@@ -45,8 +39,6 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
   parentTitle,
   className,
 }) => {
-  const { isMember, joinSpace } = useJoinSpace({ spaceId: spaceId as number });
-  const { lang } = useParams();
   return (
     <Card className={cn('h-full w-full', className)}>
       <CardHeader className="p-0 rounded-tl-md rounded-tr-md overflow-hidden h-[150px]">
@@ -113,27 +105,6 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
             ) : null}
           </Skeleton>
         </div>
-
-        {/* <Skeleton width="200px" height="32px" loading={isLoading}>
-          <div>
-            {isMember ? (
-              <Button className="rounded-lg w-full" variant="outline">
-                Joined
-              </Button>
-            ) : (
-              <Button
-                className="rounded-lg w-full"
-                variant="outline"
-                onClick={(e) => {
-                  e.preventDefault();
-                  joinSpace();
-                }}
-              >
-                Join
-              </Button>
-            )}
-          </div>
-        </Skeleton> */}
       </CardContent>
     </Card>
   );
