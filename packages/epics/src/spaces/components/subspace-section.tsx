@@ -1,3 +1,5 @@
+'use client';
+
 import { Text } from '@radix-ui/themes';
 import { Button } from '@hypha-platform/ui';
 import Link from 'next/link';
