@@ -45,31 +45,20 @@ export default function Agreements() {
   const { tokens } = useDbTokens();
   const [isVoting, setIsVoting] = useState(false);
 
-  const handleOnAccept = async () => {
+  const voteAndRefresh = async (voteFn: () => Promise<unknown>) => {
+    setIsVoting(true);
     try {
-      setIsVoting(true);
-      await handleAccept();
+      const txHash = await voteFn();
       await Promise.all([mutate(), update(), votersMutate()]);
     } catch (err) {
-      setIsVoting(false);
       console.debug(err);
     } finally {
       setIsVoting(false);
     }
   };
 
-  const handleOnReject = async () => {
-    try {
-      setIsVoting(true);
-      await handleReject();
-      await Promise.all([mutate(), update(), votersMutate()]);
-    } catch (err) {
-      setIsVoting(false);
-      console.debug(err);
-    } finally {
-      setIsVoting(false);
-    }
-  };
+  const handleOnAccept = async () => voteAndRefresh(handleAccept);
+  const handleOnReject = async () => voteAndRefresh(handleReject);
 
   const handleOnCheckProposalExpiration = async () => {
     try {
