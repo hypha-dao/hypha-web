@@ -40,7 +40,7 @@ export default async function Index(props: PageProps) {
           align="center"
           className="flex flex-col"
         >
-          <span>All Your Spaces,</span>
+          <span>All your Spaces,</span>
           <span> in One Place</span>
         </Heading>
         <div className="flex justify-center">
