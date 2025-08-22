@@ -14,6 +14,7 @@ type SpaceCardContainerProps = {
   lang: Locale;
   spaces: Space[];
   differentFirstCard?: boolean;
+  currentSpaceId: number;
   useMembers: UseMembers;
 };
 
@@ -21,6 +22,7 @@ export const InnerSpaceCardContainer = ({
   lang,
   spaces,
   differentFirstCard = false,
+  currentSpaceId,
   useMembers,
 }: SpaceCardContainerProps) => (
   <div
@@ -42,6 +44,11 @@ export const InnerSpaceCardContainer = ({
                 members={space.memberCount}
                 agreements={space.documentCount}
                 title={space.title || ''}
+                className={
+                  space.id === currentSpaceId
+                    ? 'border-2 border-action-light'
+                    : undefined
+                }
               />
             ) : (
               <InnerSpaceCardWrapper
@@ -51,7 +58,11 @@ export const InnerSpaceCardContainer = ({
                 leadImageUrl={space.leadImage || DEFAULT_SPACE_LEAD_IMAGE}
                 useMembers={useMembers}
                 parentTitle={space.parent?.title}
-                parentSlug={space.parent?.slug}
+                className={
+                  space.id === currentSpaceId
+                    ? 'border-2 border-action-light'
+                    : undefined
+                }
               />
             )}
           </Link>

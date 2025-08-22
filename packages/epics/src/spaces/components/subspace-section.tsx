@@ -10,12 +10,14 @@ import { InnerSpaceCardList } from './inner-space-card-list';
 interface SubspaceSectionProps {
   spaces: Space[];
   lang: Locale;
+  currentSpaceId: number;
   useMembers: UseMembers;
 }
 
 export const SubspaceSection = ({
   spaces,
   lang,
+  currentSpaceId,
   useMembers,
 }: SubspaceSectionProps) => {
   return (
@@ -36,6 +38,7 @@ export const SubspaceSection = ({
           lang={lang}
           spaces={spaces}
           pageSize={15}
+          currentSpaceId={currentSpaceId}
           useMembers={useMembers}
         />
       )}
