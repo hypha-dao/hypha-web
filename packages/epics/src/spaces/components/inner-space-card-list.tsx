@@ -6,7 +6,7 @@ import {
   UseMembers,
 } from '@hypha-platform/epics';
 import type { Locale } from '@hypha-platform/i18n';
-import type { Space } from '@hypha-platform/core/server';
+import type { Space } from '@hypha-platform/core/client';
 import { useSpaceCardList } from '../hooks/use-space-card-list';
 import { SectionLoadMore } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
