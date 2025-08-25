@@ -13,8 +13,7 @@ export const createPerson = async (
   const slug = person.nickname?.toLowerCase().replace(/\s+/g, '-') || '';
   const insertData = {
     ...person,
-    email:
-      person.email === '' || person.email === undefined ? null : person.email,
+    email: person.email || null,
     slug,
   };
   const [dbPerson] = await db.insert(people).values(insertData).returning();
@@ -31,8 +30,7 @@ export const updatePerson = async (
 ) => {
   const updateData = {
     ...person,
-    email:
-      person.email === '' || person.email === undefined ? null : person.email,
+    email: person.email || null,
   };
   const [dbPerson] = await db
     .update(people)
