@@ -21,10 +21,7 @@ import {
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/ui-utils';
-import { Loader2 } from 'lucide-react';
 import { Links } from '../../common';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { ButtonClose } from '@hypha-platform/epics';
 
 interface Person {
@@ -61,8 +58,6 @@ export const EditPersonSection = ({
   onUpdate,
   error,
 }: EditPersonSectionProps) => {
-  const router = useRouter();
-  const [isSuccess, setIsSuccess] = useState(false);
   const form = useForm<FormData>({
     resolver: zodResolver(schemaEditPersonForm),
     defaultValues: {
@@ -83,33 +78,14 @@ export const EditPersonSection = ({
   const handleSubmit = async (values: FormData) => {
     try {
       await onEdit(values);
-      setIsSuccess(true);
       onUpdate();
     } catch (e) {
       console.log(e);
     }
   };
 
-  useEffect(() => {
-    if (isSuccess) {
-      const timer = setTimeout(() => {
-        setIsSuccess(false);
-        router.push('/profile');
-      }, 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [isSuccess, router]);
-
   return (
     <div className="relative">
-      {isSuccess && (
-        <div className="absolute top-0 left-0 right-0 bottom-0 flex flex-col items-center justify-center space-y-2 bg-background/75">
-          <Text className="text-neutral-11">
-            Your changes have been saved and will appear on your profile
-            shortly.
-          </Text>
-        </div>
-      )}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
           <div className="flex flex-col gap-5">
@@ -297,21 +273,14 @@ export const EditPersonSection = ({
                   <Text className="text-error-11 text-sm">{error}</Text>
                 )}
                 <div className="flex gap-2">
-                  {isLoading ? (
-                    <div className="flex items-center gap-2 text-sm text-neutral-10">
-                      <Loader2 className="animate-spin w-4 h-4" />
-                      Updating profile...
-                    </div>
-                  ) : (
-                    <Button
-                      type="submit"
-                      variant="default"
-                      className="rounded-lg justify-start text-white w-fit"
-                      disabled={isLoading}
-                    >
-                      {error ? 'Retry' : 'Save'}
-                    </Button>
-                  )}
+                  <Button
+                    type="submit"
+                    variant="default"
+                    className="rounded-lg justify-start text-white w-fit"
+                    disabled={isLoading}
+                  >
+                    {error ? 'Retry' : 'Save'}
+                  </Button>
                 </div>
               </div>
             </div>
