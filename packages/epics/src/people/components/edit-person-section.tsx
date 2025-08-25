@@ -152,7 +152,7 @@ export const EditPersonSection = ({
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <Input disabled placeholder="Nickname" {...field} />
+                            <Input placeholder="Nickname" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
