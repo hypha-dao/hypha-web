@@ -101,6 +101,8 @@ export const ProposalDetail = ({
           votingPowerSource={method.votingPowerSource}
           unity={method.unity}
           quorum={method.quorum}
+          token={proposalDetails?.votingMethodsToken}
+          spaceSlug={spaceSlug}
         />
       ))}
       {proposalDetails?.entryMethods.map((method, idx) => (

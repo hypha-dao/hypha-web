@@ -15,6 +15,15 @@ const nextConfig = {
           },
         ],
       },
+      {
+        source: '/onesignal/:path*',
+        headers: [
+          {
+            key: 'Service-Worker-Allowed',
+            value: '/',
+          },
+        ],
+      },
     ];
   },
   images: {

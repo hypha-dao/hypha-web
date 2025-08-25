@@ -9,7 +9,6 @@ import {
   Button,
   Combobox,
   Heading,
-  MultiSelect,
   Separator,
 } from '@hypha-platform/ui';
 import React from 'react';
@@ -22,6 +21,7 @@ import { cva } from 'class-variance-authority';
 
 interface ExploreSpacesProps {
   lang: Locale;
+  query?: string;
   spaces: Space[];
   categories?: Category[];
   order?: SpaceOrder;
@@ -56,34 +56,37 @@ const orderOptions: {
 ];
 
 const CategoryLabel = ({
-  spaces,
   selectedSpaces,
   categories,
   className,
 }: {
-  spaces: Space[];
   selectedSpaces: Space[];
   categories?: Category[];
   className?: string | undefined;
 }) => {
   return (
-    <Text className={cn('text-5 text-left', className)}>
-      {categories && selectedSpaces ? (
-        <Text className="text-3 text-left">
-          {categories.map((category, index) => (
-            <Text key={`cat-title-${index}`} className="ml-1 capitalize">
-              {index !== 0 && ' | '}
-              {category}
-            </Text>
-          ))}{' '}
-          <Text className="ml-1 mr-1">|</Text>
+    <Text className={cn('text-4 text-left', className)}>
+      {categories ? (
+        <Text className="text-4 text-left">
+          {categories.map((category, index) => {
+            const label =
+              categoryOptions.find((o) => o.value === category)?.label ??
+              category;
+            return (
+              <Text key={`cat-title-${category}`} className="text-4 ml-1">
+                {index !== 0 && ' | '}
+                {label}
+              </Text>
+            );
+          })}{' '}
+          <Text className="text-4 ml-1 mr-1">|</Text>
           {selectedSpaces?.length}
         </Text>
       ) : (
-        <Text className="text-3 text-left">
-          <Text className="ml-1 capitalize">All</Text>
-          <Text className="ml-1 mr-1">|</Text>
-          {spaces?.length}
+        <Text className="text-4 text-left">
+          <Text className="text-4 ml-1 capitalize">All</Text>
+          <Text className="text-4 ml-1 mr-1">|</Text>
+          {selectedSpaces?.length}
         </Text>
       )}
     </Text>
@@ -92,6 +95,7 @@ const CategoryLabel = ({
 
 export function ExploreSpaces({
   lang,
+  query,
   spaces,
   categories,
   order,
@@ -101,31 +105,34 @@ export function ExploreSpaces({
   const searchParams = useSearchParams();
   const { replace } = useRouter();
 
-  const memberCount = React.useMemo(() => {
-    return spaces.reduce(
-      (accumulator: number, { memberCount }) =>
-        accumulator + (memberCount ?? 0),
-      0,
-    );
-  }, [spaces]);
-
-  const agreementCount = React.useMemo(() => {
-    return spaces.reduce(
-      (accumulator: number, { documentCount }) =>
-        accumulator + (documentCount ?? 0),
-      0,
-    );
-  }, [spaces]);
-
   const selectedSpaces = React.useMemo(
     () =>
-      categories
+      categories && categories.length > 0
         ? spaces.filter((space) =>
             categoriesIntersected(space.categories, categories),
           )
         : spaces,
     [spaces, categories],
   );
+
+  const agreementCount = React.useMemo(() => {
+    return selectedSpaces.reduce(
+      (accumulator: number, { documentCount }) =>
+        accumulator + (documentCount ?? 0),
+      0,
+    );
+  }, [selectedSpaces]);
+
+  const uniqueMemberAddresses = React.useMemo(() => {
+    const acc = new Set<`0x{string}`>();
+    for (const space of selectedSpaces) {
+      if (!space.memberAddresses) continue;
+      for (const address of space.memberAddresses) {
+        acc.add(address.toLowerCase() as `0x{string}`);
+      }
+    }
+    return acc;
+  }, [selectedSpaces]);
 
   const tags = React.useMemo(
     () =>
@@ -135,7 +142,8 @@ export function ExploreSpaces({
         )
         .filter(
           (category): category is NonNullable<typeof category> => !!category,
-        ),
+        )
+        .sort((a, b) => (a.label > b.label ? 1 : -1)),
     [uniqueCategories],
   );
 
@@ -186,7 +194,9 @@ export function ExploreSpaces({
   );
 
   const compareMembers = (a: Space, b: Space) => {
-    return (b.memberCount ?? 0) - (a.memberCount ?? 0);
+    const aCount = a.memberAddresses?.length ?? a.memberCount ?? 0;
+    const bCount = b.memberAddresses?.length ?? b.memberCount ?? 0;
+    return bCount - aCount;
   };
   const compareAgreements = (a: Space, b: Space) => {
     return (b.documentCount ?? 0) - (a.documentCount ?? 0);
@@ -219,14 +229,15 @@ export function ExploreSpaces({
         align="center"
         className="flex flex-col mb-16"
       >
-        Explore Spaces in the
-        <br />
-        Hypha Network
+        <span>Many Spaces,</span>
+        <span>One Vibrant Network</span>
       </Heading>
       <div className="flex justify-center">
-        <SpaceSearch />
+        <SpaceSearch value={query} />
       </div>
-      <div className="flex justify-center space-x-2 space-y-2 mt-3 mb-15 flex-wrap">
+      {/* Restore after bring counters back to top */}
+      {/* <div className="flex justify-center space-x-2 space-y-2 mt-3 mb-15 flex-wrap"> */}
+      <div className="flex justify-center space-x-2 space-y-2 mt-3 mb-3 flex-wrap">
         {tags.map((tag) => (
           <Badge
             key={tag.value}
@@ -239,22 +250,25 @@ export function ExploreSpaces({
             )}
             style={{ cursor: 'pointer', animationDuration: '0s' }}
             onClick={() => {
-              if (categories?.includes(tag.value)) {
-                setCategories([]);
-              } else {
-                setCategories([tag.value]);
-              }
+              const newCategories = categories?.includes(tag.value)
+                ? []
+                : [tag.value];
+              setCategories(newCategories);
             }}
           >
             {tag.label}
           </Badge>
         ))}
       </div>
-      <Separator className="mt-1 mb-1" />
+      {/*
+        Uncomment following piece when counters
+        are needed to be moved to top
+      */}
+      {/* <Separator className="mt-1 mb-1" />
       <div className="flex justify-around flex-row columns-3 space-x-3 mt-6 mb-6">
         <div className="flex flex-col">
           <div className="flex justify-center text-7 font-medium">
-            {spaces.length}
+            {selectedSpaces.length}
           </div>
           <div className="flex justify-center text-1 mt-2 text-neutral-500">
             Spaces
@@ -262,7 +276,7 @@ export function ExploreSpaces({
         </div>
         <div className="flex flex-col">
           <div className="flex justify-center text-7 font-medium">
-            {memberCount}
+            {uniqueMemberAddresses.size}
           </div>
           <div className="flex justify-center text-1 mt-2 text-neutral-500">
             Members
@@ -277,10 +291,9 @@ export function ExploreSpaces({
           </div>
         </div>
       </div>
-      <Separator className="mt-1 mb-1" />
+      <Separator className="mt-1 mb-1" /> */}
       <div className="flex flex-row w-full h-4 pt-10 pb-10 items-center">
         <CategoryLabel
-          spaces={spaces}
           selectedSpaces={selectedSpaces}
           categories={categories}
           className="flex grow"
@@ -291,6 +304,7 @@ export function ExploreSpaces({
             initialValue={order}
             className="border-0 md:w-40"
             onChange={setOrder}
+            allowEmptyChoice={false}
           />
         </div>
         <Link href={`/${lang}/network/create`} scroll={false}>
@@ -300,8 +314,35 @@ export function ExploreSpaces({
           </Button>
         </Link>
       </div>
-      <div className="space-y-6 flex mt-4">
-        <SpaceCardList lang={lang} spaces={sortedSpaces} />
+      <div className="space-y-6 flex mt-4 mb-7">
+        <SpaceCardList lang={lang} spaces={sortedSpaces} pageSize={15} />
+      </div>
+      <Separator className="mt-1 mb-1" />
+      <div className="flex justify-around flex-row columns-3 space-x-3 mt-6 -mb-15">
+        <div className="flex flex-col">
+          <div className="flex justify-center text-7 font-medium">
+            {selectedSpaces.length}
+          </div>
+          <div className="flex justify-center text-1 mt-2 text-neutral-500">
+            Spaces
+          </div>
+        </div>
+        <div className="flex flex-col">
+          <div className="flex justify-center text-7 font-medium">
+            {uniqueMemberAddresses.size}
+          </div>
+          <div className="flex justify-center text-1 mt-2 text-neutral-500">
+            Members
+          </div>
+        </div>
+        <div className="flex flex-col">
+          <div className="flex justify-center text-7 font-medium">
+            {agreementCount}
+          </div>
+          <div className="flex justify-center text-1 mt-2 text-neutral-500">
+            Agreements
+          </div>
+        </div>
       </div>
     </div>
   );

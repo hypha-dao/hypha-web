@@ -49,7 +49,10 @@ export default async function Index(props: PageProps) {
 
   const { lang } = params;
 
-  const spaces = await getAllSpaces({ search: query });
+  const spaces = await getAllSpaces({
+    search: query?.trim() || undefined,
+    parentOnly: false,
+  });
 
   const uniqueCategories = extractUniqueCategories(spaces);
 
@@ -57,6 +60,7 @@ export default async function Index(props: PageProps) {
     <Container className="flex flex-col gap-9 py-9">
       <ExploreSpaces
         lang={lang}
+        query={query}
         spaces={spaces}
         categories={categories}
         order={order}

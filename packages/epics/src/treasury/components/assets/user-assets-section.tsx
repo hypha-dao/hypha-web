@@ -35,26 +35,32 @@ export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
     ? visibleAssets.filter((asset) => asset.value >= 1)
     : visibleAssets;
 
+  const renderFilterAndButtons = () => (
+    <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-2">
+      <SectionFilter count={totalBalance || 0} label="Balance">
+        <label className="flex items-center gap-1">
+          <Input
+            type="checkbox"
+            checked={hideSmallBalances}
+            onChange={(e) => setHideSmallBalances(e.target.checked)}
+            className="h-4 w-4"
+          />
+          <span>Hide small balances</span>
+        </label>
+      </SectionFilter>
+      <div className="flex gap-2 justify-end">
+        <Button asChild>
+          <Link href={`${basePath}/actions`} scroll={false}>
+            Actions
+          </Link>
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex flex-col w-full justify-center items-center gap-4">
-      <SectionFilter count={totalBalance || 0} label="Balance">
-        <div className="ml-2 flex items-center gap-2">
-          <label className="flex items-center gap-1">
-            <Input
-              type="checkbox"
-              checked={hideSmallBalances}
-              onChange={(e) => setHideSmallBalances(e.target.checked)}
-              className="h-4 w-4"
-            />
-            <span>Hide small balances</span>
-          </label>
-          <Button asChild>
-            <Link href={`${basePath}/actions`} scroll={false}>
-              Actions
-            </Link>
-          </Button>
-        </div>
-      </SectionFilter>
+      <div className="w-full">{renderFilterAndButtons()}</div>
       {filteredAssets.length === 0 && !isLoading ? (
         <Empty>
           <p>No assets found for this user</p>
