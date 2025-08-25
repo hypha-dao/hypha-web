@@ -418,9 +418,23 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       );
 
       // Check if proposal can execute with just this vote
-      // 2 votes = 50% quorum ✓, 2/2 = 100% unity ✓
+      // Total voting power: 4, YES votes: 2, Unity needed: 60%
+      // Unity check: 2 * 100 >= 60 * 4 → 200 >= 240 ❌ (doesn't reach 60% unity)
+      // Need more votes to reach unity against total voting power
+      expect(proposalState.executed).to.equal(false);
+      console.log(
+        '✅ Proposal needs more votes to reach unity against total voting power',
+      );
+
+      // Add one more YES vote to reach unity
+      await daoProposals.connect(members[2]).vote(proposalId, true);
+
+      proposalState = await daoProposals.getProposalCore(proposalId);
+      // Now: 3 YES votes out of 4 total voting power = 75% > 60% ✓
       expect(proposalState.executed).to.equal(true);
-      console.log('✅ Proposal executed with delegated voting power');
+      console.log(
+        '✅ Proposal executed with sufficient votes for unity against total voting power',
+      );
     });
 
     it('Should handle complex delegation scenarios', async function () {
@@ -753,6 +767,479 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
 
       expect(proposalState.executed).to.equal(true);
       console.log(`✅ Space Voting proposal executed with delegated power`);
+    });
+  });
+
+  describe('Advanced Early Rejection Logic Tests - Round 2', function () {
+    it('Should test early rejection with precise mathematical boundaries', async function () {
+      console.log('\n--- Advanced Test: Precise Mathematical Boundaries ---');
+
+      // Test with numbers that create exact mathematical boundaries
+      const { spaceId } = await createSpace({
+        unity: 66, // Exactly 2/3 majority
+        quorum: 50, // 50% quorum
+        memberCount: 9, // Perfect for 66% calculations
+        name: 'Precise Math Boundaries',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      console.log(
+        'Setup: 9 members, 66% unity (need 6/9 = 66.67%), 50% quorum',
+      );
+
+      // Vote pattern that tests exact boundaries
+      // 2 YES, 3 NO = 5 votes (quorum reached: 5 >= 4.5)
+      await daoProposals.connect(members[0]).vote(proposalId, true);
+      await daoProposals.connect(members[1]).vote(proposalId, true);
+      await daoProposals.connect(members[2]).vote(proposalId, false);
+      await daoProposals.connect(members[3]).vote(proposalId, false);
+      await daoProposals.connect(members[4]).vote(proposalId, false);
+
+      let proposalState = await daoProposals.getProposalCore(proposalId);
+      console.log(
+        `State: ${proposalState.yesVotes} YES, ${proposalState.noVotes} NO, Expired: ${proposalState.expired}`,
+      );
+
+      // Math check: Max possible YES = 2 + 4 = 6, Total power = 9
+      // Unity: 6 * 100 = 600, 66 * 9 = 594, so 600 >= 594 ✓ Should still be possible
+      expect(proposalState.expired).to.equal(false);
+      console.log(
+        '✅ Proposal remains active (6/9 = 66.67% > 66% - barely possible)',
+      );
+
+      // Add one more NO to make it impossible
+      await daoProposals.connect(members[5]).vote(proposalId, false);
+
+      proposalState = await daoProposals.getProposalCore(proposalId);
+      console.log(
+        `After 4th NO: ${proposalState.yesVotes} YES, ${proposalState.noVotes} NO, Expired: ${proposalState.expired}`,
+      );
+
+      // Now: Max possible YES = 2 + 3 = 5, Total power = 9
+      // Unity: 5 * 100 = 500, 66 * 9 = 594, so 500 < 594 ✓ Should be rejected
+      expect(proposalState.expired).to.equal(true);
+      console.log('✅ Proposal correctly rejected (5/9 = 55.56% < 66%)');
+    });
+
+    it('Should test early rejection vs existing NO unity logic', async function () {
+      console.log('\n--- Advanced Test: Early Rejection vs NO Unity Logic ---');
+
+      const { spaceId } = await createSpace({
+        unity: 70, // 70% unity
+        quorum: 40, // 40% quorum
+        memberCount: 10,
+        name: 'Early vs NO Unity Test',
+      });
+
+      console.log('Testing that early rejection works correctly');
+
+      // Test early rejection scenario
+      console.log('\n--- Early Rejection Scenario ---');
+      const proposalId1 = await createTestProposal(spaceId, owner);
+
+      // Vote incrementally and check when early rejection triggers
+      await daoProposals.connect(members[0]).vote(proposalId1, true);
+      await daoProposals.connect(members[1]).vote(proposalId1, true);
+
+      // Add NO votes one by one until early rejection triggers
+      for (let i = 2; i < 8; i++) {
+        await daoProposals.connect(members[i]).vote(proposalId1, false);
+
+        const proposalState = await daoProposals.getProposalCore(proposalId1);
+        console.log(
+          `After vote ${i - 1}: ${proposalState.yesVotes} YES, ${
+            proposalState.noVotes
+          } NO, Expired: ${proposalState.expired}`,
+        );
+
+        if (proposalState.expired) {
+          console.log('✅ Early rejection triggered correctly');
+          break;
+        }
+      }
+
+      let finalState = await daoProposals.getProposalCore(proposalId1);
+      expect(finalState.expired).to.equal(true);
+      console.log('✅ Early rejection logic working correctly');
+
+      // Test NO unity scenario with a fresh proposal
+      console.log('\n--- NO Unity Scenario ---');
+      const proposalId2 = await createTestProposal(spaceId, owner);
+
+      // Vote to reach NO unity directly: need 70% of 10 = 7 NO votes
+      const noVotesNeeded = 7;
+      for (let i = 0; i < noVotesNeeded; i++) {
+        await daoProposals.connect(members[i]).vote(proposalId2, false);
+
+        const proposalState = await daoProposals.getProposalCore(proposalId2);
+        console.log(
+          `NO vote ${i + 1}: ${proposalState.yesVotes} YES, ${
+            proposalState.noVotes
+          } NO, Expired: ${proposalState.expired}`,
+        );
+
+        if (proposalState.expired) {
+          console.log('✅ NO unity logic triggered');
+          break;
+        }
+      }
+
+      const finalState2 = await daoProposals.getProposalCore(proposalId2);
+      expect(finalState2.expired).to.equal(true);
+      console.log('✅ NO unity logic working correctly');
+    });
+
+    it('Should test early rejection with incremental voting', async function () {
+      console.log('\n--- Advanced Test: Incremental Voting Progression ---');
+
+      const { spaceId } = await createSpace({
+        unity: 75, // 75% unity
+        quorum: 30, // Low quorum for focus on unity
+        memberCount: 12,
+        name: 'Incremental Voting Test',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      console.log('Setup: 12 members, 75% unity (need 9/12), 30% quorum');
+      console.log(
+        'Strategy: Vote incrementally and check when early rejection triggers',
+      );
+
+      // Start with 2 YES votes
+      await daoProposals.connect(members[0]).vote(proposalId, true);
+      await daoProposals.connect(members[1]).vote(proposalId, true);
+
+      // Add NO votes incrementally and check when early rejection triggers
+      const maxNoVotes = 8; // Will test up to 8 NO votes
+
+      for (let noVotes = 1; noVotes <= maxNoVotes; noVotes++) {
+        await daoProposals
+          .connect(members[1 + noVotes])
+          .vote(proposalId, false);
+
+        const proposalState = await daoProposals.getProposalCore(proposalId);
+        const totalVotes =
+          Number(proposalState.yesVotes) + Number(proposalState.noVotes);
+        const remainingVoters = 12 - totalVotes;
+        const maxPossibleYes = Number(proposalState.yesVotes) + remainingVoters;
+        const canReachUnity = maxPossibleYes * 100 >= 75 * 12; // 75% of 12 = 9
+
+        console.log(
+          `After ${noVotes} NO votes: ${proposalState.yesVotes} YES, ${proposalState.noVotes} NO, Max YES: ${maxPossibleYes}/12, Can reach unity: ${canReachUnity}, Expired: ${proposalState.expired}`,
+        );
+
+        if (!canReachUnity && totalVotes >= 4) {
+          // Quorum check (30% of 12 = 3.6 ≈ 4)
+          expect(proposalState.expired).to.equal(true);
+          console.log(
+            `✅ Early rejection correctly triggered after ${noVotes} NO votes`,
+          );
+          break;
+        } else if (canReachUnity) {
+          expect(proposalState.expired).to.equal(false);
+        }
+
+        // Stop if we've reached the rejection point
+        if (proposalState.expired) break;
+      }
+    });
+
+    it('Should test early rejection with complex delegation scenarios', async function () {
+      console.log(
+        '\n--- Advanced Test: Complex Delegation Early Rejection ---',
+      );
+
+      const { spaceId } = await createSpace({
+        unity: 60, // 60% unity
+        quorum: 50, // 50% quorum
+        memberCount: 15, // Large group for complex delegation
+        name: 'Complex Delegation Early Rejection',
+      });
+
+      // Complex delegation setup:
+      // Group 1: members[0,1,2,3] → members[4] (gives members[4] = 5 votes)
+      // Group 2: members[5,6,7] → members[8] (gives members[8] = 4 votes)
+      // Group 3: members[9,10] → members[11] (gives members[11] = 3 votes)
+      // Individual: owner, members[12], members[13], members[14] (1 vote each)
+      // Total: 5 + 4 + 3 + 4 = 16 total voting power
+
+      for (let i = 0; i <= 3; i++) {
+        await votingPowerDelegation
+          .connect(members[i])
+          .delegate(members[4].address, spaceId);
+      }
+      for (let i = 5; i <= 7; i++) {
+        await votingPowerDelegation
+          .connect(members[i])
+          .delegate(members[8].address, spaceId);
+      }
+      for (let i = 9; i <= 10; i++) {
+        await votingPowerDelegation
+          .connect(members[i])
+          .delegate(members[11].address, spaceId);
+      }
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      console.log('Setup: 15 members with complex delegation');
+      console.log(
+        'Effective voters: members[4](5), members[8](4), members[11](3), owner(1), members[12](1), members[13](1), members[14](1)',
+      );
+      console.log('Total voting power: 16, Unity needed: 60% = 9.6 ≈ 10 votes');
+
+      // Vote with high-power delegates
+      await daoProposals.connect(members[4]).vote(proposalId, true); // 5 YES
+      await daoProposals.connect(members[8]).vote(proposalId, false); // 4 NO
+      await daoProposals.connect(members[11]).vote(proposalId, false); // 3 NO (total: 7 NO)
+
+      let proposalState = await daoProposals.getProposalCore(proposalId);
+      console.log(
+        `After delegate votes: ${proposalState.yesVotes} YES, ${proposalState.noVotes} NO, Expired: ${proposalState.expired}`,
+      );
+
+      // Current: 5 YES, 7 NO, 4 remaining individual voters
+      // Max possible YES = 5 + 4 = 9, Total power = 16
+      // Unity: 9 * 100 = 900, 60 * 16 = 960, so 900 < 960 ✓ Should be rejected
+      expect(proposalState.expired).to.equal(true);
+      console.log(
+        '✅ Early rejection works with complex delegation (9/16 = 56.25% < 60%)',
+      );
+    });
+
+    it('Should test early rejection timing with quorum requirements', async function () {
+      console.log('\n--- Advanced Test: Early Rejection Timing vs Quorum ---');
+
+      const scenarios = [
+        { unity: 60, quorum: 20, members: 10, name: 'Low Quorum' },
+        { unity: 60, quorum: 60, members: 10, name: 'High Quorum' },
+        { unity: 60, quorum: 90, members: 10, name: 'Very High Quorum' },
+      ];
+
+      for (const scenario of scenarios) {
+        console.log(
+          `\n--- Testing: ${scenario.name} (${scenario.quorum}% quorum) ---`,
+        );
+
+        const { spaceId } = await createSpace({
+          unity: scenario.unity,
+          quorum: scenario.quorum,
+          memberCount: scenario.members,
+          name: scenario.name,
+        });
+
+        const proposalId = await createTestProposal(spaceId, owner);
+        const requiredQuorum = Math.ceil(
+          (scenario.quorum * scenario.members) / 100,
+        );
+
+        console.log(
+          `Setup: ${scenario.members} members, ${scenario.unity}% unity, ${scenario.quorum}% quorum (need ${requiredQuorum} votes)`,
+        );
+
+        // Vote pattern: 1 YES, then incrementally add NO votes
+        await daoProposals.connect(members[0]).vote(proposalId, true);
+
+        let votesBeforeQuorum = 0;
+        let votesAfterQuorum = 0;
+
+        for (let i = 1; i < scenario.members; i++) {
+          await daoProposals.connect(members[i]).vote(proposalId, false);
+
+          const proposalState = await daoProposals.getProposalCore(proposalId);
+          const totalVotes =
+            Number(proposalState.yesVotes) + Number(proposalState.noVotes);
+          const quorumReached = totalVotes >= requiredQuorum;
+
+          console.log(
+            `Vote ${i}: ${proposalState.yesVotes} YES, ${proposalState.noVotes} NO, Quorum: ${quorumReached}, Expired: ${proposalState.expired}`,
+          );
+
+          if (!quorumReached && proposalState.expired) {
+            console.log('❌ ERROR: Early rejection triggered before quorum!');
+            expect(proposalState.expired).to.equal(false);
+          }
+
+          if (quorumReached && !proposalState.expired) {
+            votesAfterQuorum++;
+          } else if (!quorumReached) {
+            votesBeforeQuorum++;
+          }
+
+          if (proposalState.expired) {
+            console.log(
+              `✅ Early rejection triggered after quorum with ${totalVotes} votes`,
+            );
+            break;
+          }
+        }
+
+        console.log(
+          `Summary: ${votesBeforeQuorum} votes before quorum, ${votesAfterQuorum} votes after quorum before rejection`,
+        );
+      }
+    });
+
+    it('Should test early rejection with extreme unity thresholds', async function () {
+      console.log('\n--- Advanced Test: Extreme Unity Thresholds ---');
+
+      const extremeScenarios = [
+        { unity: 99, members: 100, name: 'Near Unanimous (99%)' },
+        { unity: 95, members: 20, name: 'Very High Consensus (95%)' },
+        { unity: 51, members: 100, name: 'Bare Majority Large Group (51%)' },
+        { unity: 100, members: 10, name: 'Perfect Consensus (100%)' },
+      ];
+
+      for (const scenario of extremeScenarios) {
+        console.log(`\n--- Extreme Scenario: ${scenario.name} ---`);
+
+        const { spaceId } = await createSpace({
+          unity: scenario.unity,
+          quorum: 20, // Low quorum to focus on unity
+          memberCount: Math.min(scenario.members, 20), // Limit for test performance
+          name: scenario.name,
+        });
+
+        const proposalId = await createTestProposal(spaceId, owner);
+        const actualMembers = Math.min(scenario.members, 20);
+        const unityVotesNeeded = Math.ceil(
+          (scenario.unity * actualMembers) / 100,
+        );
+
+        console.log(
+          `Setup: ${actualMembers} members, ${scenario.unity}% unity (need ${unityVotesNeeded} votes), 20% quorum`,
+        );
+
+        // Calculate how many NO votes make YES impossible
+        const maxNoVotesBeforeImpossible = actualMembers - unityVotesNeeded;
+
+        console.log(
+          `Max NO votes before YES impossible: ${maxNoVotesBeforeImpossible}`,
+        );
+
+        // Vote with exactly that many NO votes + 1 YES
+        await daoProposals.connect(members[0]).vote(proposalId, true);
+
+        for (
+          let i = 1;
+          i <= maxNoVotesBeforeImpossible && i < actualMembers;
+          i++
+        ) {
+          await daoProposals.connect(members[i]).vote(proposalId, false);
+        }
+
+        let proposalState = await daoProposals.getProposalCore(proposalId);
+        const remainingVoters =
+          actualMembers -
+          Number(proposalState.yesVotes) -
+          Number(proposalState.noVotes);
+        const maxPossibleYes = Number(proposalState.yesVotes) + remainingVoters;
+
+        console.log(
+          `State: ${proposalState.yesVotes} YES, ${proposalState.noVotes} NO, Max possible YES: ${maxPossibleYes}/${actualMembers}`,
+        );
+        console.log(
+          `Unity check: ${maxPossibleYes}/${actualMembers} = ${(
+            (maxPossibleYes * 100) /
+            actualMembers
+          ).toFixed(1)}% ${
+            (maxPossibleYes * 100) / actualMembers >= scenario.unity
+              ? '>='
+              : '<'
+          } ${scenario.unity}%`,
+        );
+
+        const shouldBeRejected =
+          maxPossibleYes * 100 < scenario.unity * actualMembers;
+        expect(proposalState.expired).to.equal(shouldBeRejected);
+
+        if (shouldBeRejected) {
+          console.log('✅ Correctly rejected due to extreme unity requirement');
+        } else {
+          console.log(
+            '✅ Correctly remains active (can still meet extreme unity)',
+          );
+        }
+      }
+    });
+
+    it('Should test early rejection mathematical precision with fractional calculations', async function () {
+      console.log(
+        '\n--- Advanced Test: Mathematical Precision with Fractions ---',
+      );
+
+      // Test scenarios that create fractional percentages
+      const precisionTests = [
+        { unity: 67, members: 15, name: 'Two-thirds (67% of 15)' }, // 67% of 15 = 10.05
+        { unity: 80, members: 10, name: 'High precision (80% of 10)' }, // 80% of 10 = 8.0 (exact)
+      ];
+
+      for (const test of precisionTests) {
+        console.log(`\n--- Precision Test: ${test.name} ---`);
+
+        const { spaceId } = await createSpace({
+          unity: test.unity,
+          quorum: 40,
+          memberCount: test.members,
+          name: test.name,
+        });
+
+        const proposalId = await createTestProposal(spaceId, owner);
+
+        const exactUnityVotes = (test.unity * test.members) / 100;
+        console.log(
+          `Unity calculation: ${test.unity}% of ${test.members} = ${exactUnityVotes}`,
+        );
+
+        // Vote in a way that makes unity impossible
+        await daoProposals.connect(members[0]).vote(proposalId, true); // 1 YES
+
+        // Add NO votes incrementally until early rejection triggers
+        const maxNoVotes = test.members - 2; // Leave room for the YES vote
+        let rejectionTriggered = false;
+
+        for (let i = 1; i <= maxNoVotes; i++) {
+          await daoProposals.connect(members[i]).vote(proposalId, false);
+
+          const proposalState = await daoProposals.getProposalCore(proposalId);
+          const remainingVoters =
+            test.members -
+            Number(proposalState.yesVotes) -
+            Number(proposalState.noVotes);
+          const maxPossibleYes =
+            Number(proposalState.yesVotes) + remainingVoters;
+
+          console.log(
+            `Vote ${i}: ${proposalState.yesVotes} YES, ${proposalState.noVotes} NO, Max possible: ${maxPossibleYes}/${test.members}, Expired: ${proposalState.expired}`,
+          );
+
+          if (proposalState.expired) {
+            rejectionTriggered = true;
+            console.log(
+              '✅ Early rejection triggered at correct mathematical point',
+            );
+
+            // Verify the math is correct
+            const shouldBeRejected =
+              maxPossibleYes * 100 < test.unity * test.members;
+            expect(shouldBeRejected).to.equal(true);
+            console.log(
+              `✅ Math verification: ${maxPossibleYes} * 100 < ${
+                test.unity
+              } * ${test.members} → ${maxPossibleYes * 100} < ${
+                test.unity * test.members
+              } ✓`,
+            );
+            break;
+          }
+        }
+
+        expect(rejectionTriggered).to.equal(true);
+        console.log(
+          '✅ Precision test passed - early rejection working correctly',
+        );
+      }
     });
   });
 });

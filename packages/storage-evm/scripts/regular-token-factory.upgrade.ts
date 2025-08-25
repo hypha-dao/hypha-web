@@ -1,10 +1,10 @@
 import { ethers, upgrades } from 'hardhat';
 
-// Replace this with your actual proxy address from addresses.txt
-const PROXY_ADDRESS = '0x95A33EC94de2189893884DaD63eAa19f7390144a';
+// Replace this with your actual proxy address when upgrading
+const PROXY_ADDRESS = '0x95A33EC94de2189893884DaD63eAa19f7390144a'; // RegularTokenFactory from addresses.txt
 
 async function main(): Promise<void> {
-  // Get the deployer's address (first account from the connected provider)
+  // Get the deployer's address
   const [deployer] = await ethers.getSigners();
   const adminAddress = await deployer.getAddress();
 
