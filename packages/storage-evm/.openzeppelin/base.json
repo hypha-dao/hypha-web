@@ -10428,7 +10428,7 @@
             "label": "spaceFactory",
             "offset": 0,
             "slot": "0",
-            "type": "t_contract(IDAOSpaceFactory)3023",
+            "type": "t_contract(IDAOSpaceFactory)15850",
             "contract": "DAOProposalsStorage",
             "src": "contracts/storage/DAOProposalsStorage.sol:60"
           },
@@ -10436,7 +10436,7 @@
             "label": "directoryContract",
             "offset": 0,
             "slot": "1",
-            "type": "t_contract(IDirectory)3031",
+            "type": "t_contract(IDirectory)15858",
             "contract": "DAOProposalsStorage",
             "src": "contracts/storage/DAOProposalsStorage.sol:61"
           },
@@ -10452,7 +10452,7 @@
             "label": "proposalsCoreData",
             "offset": 0,
             "slot": "3",
-            "type": "t_mapping(t_uint256,t_struct(ProposalCore)3092_storage)",
+            "type": "t_mapping(t_uint256,t_struct(ProposalCore)15919_storage)",
             "contract": "DAOProposalsStorage",
             "src": "contracts/storage/DAOProposalsStorage.sol:82"
           },
@@ -10492,7 +10492,7 @@
             "label": "paymentTracker",
             "offset": 0,
             "slot": "55",
-            "type": "t_contract(ISpacePaymentTracker)2965",
+            "type": "t_contract(ISpacePaymentTracker)15492",
             "contract": "DAOProposalsStorage",
             "src": "contracts/storage/DAOProposalsStorage.sol:98"
           },
@@ -10592,7 +10592,7 @@
             "label": "address[]",
             "numberOfBytes": "32"
           },
-          "t_array(t_struct(Transaction)2646_storage)dyn_storage": {
+          "t_array(t_struct(Transaction)14050_storage)dyn_storage": {
             "label": "struct IDAOProposals.Transaction[]",
             "numberOfBytes": "32"
           },
@@ -10608,15 +10608,15 @@
             "label": "bytes",
             "numberOfBytes": "32"
           },
-          "t_contract(IDAOSpaceFactory)3023": {
+          "t_contract(IDAOSpaceFactory)15850": {
             "label": "contract IDAOSpaceFactory",
             "numberOfBytes": "20"
           },
-          "t_contract(IDirectory)3031": {
+          "t_contract(IDirectory)15858": {
             "label": "contract IDirectory",
             "numberOfBytes": "20"
           },
-          "t_contract(ISpacePaymentTracker)2965": {
+          "t_contract(ISpacePaymentTracker)15492": {
             "label": "contract ISpacePaymentTracker",
             "numberOfBytes": "20"
           },
@@ -10644,7 +10644,7 @@
             "label": "mapping(uint256 => bool)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_uint256,t_struct(ProposalCore)3092_storage)": {
+          "t_mapping(t_uint256,t_struct(ProposalCore)15919_storage)": {
             "label": "mapping(uint256 => struct DAOProposalsStorage.ProposalCore)",
             "numberOfBytes": "32"
           },
@@ -10652,7 +10652,7 @@
             "label": "mapping(uint256 => uint256)",
             "numberOfBytes": "32"
           },
-          "t_struct(ProposalCore)3092_storage": {
+          "t_struct(ProposalCore)15919_storage": {
             "label": "struct DAOProposalsStorage.ProposalCore",
             "members": [
               {
@@ -10723,14 +10723,14 @@
               },
               {
                 "label": "transactions",
-                "type": "t_array(t_struct(Transaction)2646_storage)dyn_storage",
+                "type": "t_array(t_struct(Transaction)14050_storage)dyn_storage",
                 "offset": 0,
                 "slot": "10"
               }
             ],
             "numberOfBytes": "352"
           },
-          "t_struct(Transaction)2646_storage": {
+          "t_struct(Transaction)14050_storage": {
             "label": "struct IDAOProposals.Transaction",
             "members": [
               {
@@ -13324,6 +13324,1067 @@
               }
             ],
             "numberOfBytes": "64"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.Ownable": [
+            {
+              "contract": "OwnableUpgradeable",
+              "label": "_owner",
+              "type": "t_address",
+              "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:24",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
+    },
+    "81c091d9dfc1245054f52cbe308c61e17472685975b95d655cc0f433e2f2593f": {
+      "address": "0xF3aa2aAbfCfC63AD8DcdAfFac5EefcD37E0c1e2D",
+      "txHash": "0x19261c776570242b858ec01fac014ea46b21f63ab0b7c9bcaa0985192db81503",
+      "layout": {
+        "solcVersion": "0.8.28",
+        "storage": [
+          {
+            "label": "spaceFactory",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_contract(IDAOSpaceFactory)15960",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:60"
+          },
+          {
+            "label": "directoryContract",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_contract(IDirectory)15968",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:61"
+          },
+          {
+            "label": "proposalCounter",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_uint256",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:63"
+          },
+          {
+            "label": "proposalsCoreData",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_mapping(t_uint256,t_struct(ProposalCore)16029_storage)",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:82"
+          },
+          {
+            "label": "proposalValues",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_mapping(t_uint256,t_uint256)",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:84"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "5",
+            "type": "t_array(t_uint256)48_storage",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:90"
+          },
+          {
+            "label": "spaceAddresses",
+            "offset": 0,
+            "slot": "53",
+            "type": "t_mapping(t_uint256,t_address)",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:93"
+          },
+          {
+            "label": "spaceTrialActivated",
+            "offset": 0,
+            "slot": "54",
+            "type": "t_mapping(t_uint256,t_bool)",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:96"
+          },
+          {
+            "label": "paymentTracker",
+            "offset": 0,
+            "slot": "55",
+            "type": "t_contract(ISpacePaymentTracker)15602",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:98"
+          },
+          {
+            "label": "spaceExecutedProposals",
+            "offset": 0,
+            "slot": "56",
+            "type": "t_mapping(t_uint256,t_array(t_uint256)dyn_storage)",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:101"
+          },
+          {
+            "label": "allExecutedProposals",
+            "offset": 0,
+            "slot": "57",
+            "type": "t_array(t_uint256)dyn_storage",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:104"
+          },
+          {
+            "label": "spaceAcceptedProposals",
+            "offset": 0,
+            "slot": "58",
+            "type": "t_mapping(t_uint256,t_array(t_uint256)dyn_storage)",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:107"
+          },
+          {
+            "label": "spaceRejectedProposals",
+            "offset": 0,
+            "slot": "59",
+            "type": "t_mapping(t_uint256,t_array(t_uint256)dyn_storage)",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:108"
+          },
+          {
+            "label": "proposalYesVoters",
+            "offset": 0,
+            "slot": "60",
+            "type": "t_mapping(t_uint256,t_array(t_address)dyn_storage)",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:111"
+          },
+          {
+            "label": "proposalNoVoters",
+            "offset": 0,
+            "slot": "61",
+            "type": "t_mapping(t_uint256,t_array(t_address)dyn_storage)",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:112"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)73_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(OwnableStorage)13_storage": {
+            "label": "struct OwnableUpgradeable.OwnableStorage",
+            "members": [
+              {
+                "label": "_owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_struct(Transaction)14160_storage)dyn_storage": {
+            "label": "struct IDAOProposals.Transaction[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)48_storage": {
+            "label": "uint256[48]",
+            "numberOfBytes": "1536"
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]",
+            "numberOfBytes": "32"
+          },
+          "t_bytes_storage": {
+            "label": "bytes",
+            "numberOfBytes": "32"
+          },
+          "t_contract(IDAOSpaceFactory)15960": {
+            "label": "contract IDAOSpaceFactory",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IDirectory)15968": {
+            "label": "contract IDirectory",
+            "numberOfBytes": "20"
+          },
+          "t_contract(ISpacePaymentTracker)15602": {
+            "label": "contract ISpacePaymentTracker",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_address)": {
+            "label": "mapping(uint256 => address)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_array(t_address)dyn_storage)": {
+            "label": "mapping(uint256 => address[])",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_array(t_uint256)dyn_storage)": {
+            "label": "mapping(uint256 => uint256[])",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_bool)": {
+            "label": "mapping(uint256 => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(ProposalCore)16029_storage)": {
+            "label": "mapping(uint256 => struct DAOProposalsStorage.ProposalCore)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_uint256)": {
+            "label": "mapping(uint256 => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(ProposalCore)16029_storage": {
+            "label": "struct DAOProposalsStorage.ProposalCore",
+            "members": [
+              {
+                "label": "spaceId",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "startTime",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "duration",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "executed",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "expired",
+                "type": "t_bool",
+                "offset": 1,
+                "slot": "3"
+              },
+              {
+                "label": "yesVotes",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "noVotes",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "5"
+              },
+              {
+                "label": "totalVotingPowerAtSnapshot",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "6"
+              },
+              {
+                "label": "creator",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "7"
+              },
+              {
+                "label": "hasVoted",
+                "type": "t_mapping(t_address,t_bool)",
+                "offset": 0,
+                "slot": "8"
+              },
+              {
+                "label": "votingPowerAtSnapshot",
+                "type": "t_mapping(t_address,t_uint256)",
+                "offset": 0,
+                "slot": "9"
+              },
+              {
+                "label": "transactions",
+                "type": "t_array(t_struct(Transaction)14160_storage)dyn_storage",
+                "offset": 0,
+                "slot": "10"
+              }
+            ],
+            "numberOfBytes": "352"
+          },
+          "t_struct(Transaction)14160_storage": {
+            "label": "struct IDAOProposals.Transaction",
+            "members": [
+              {
+                "label": "target",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "value",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "data",
+                "type": "t_bytes_storage",
+                "offset": 0,
+                "slot": "2"
+              }
+            ],
+            "numberOfBytes": "96"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.Ownable": [
+            {
+              "contract": "OwnableUpgradeable",
+              "label": "_owner",
+              "type": "t_address",
+              "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:24",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
+    },
+    "233db129286dfc6696a5fff1ea74df06da6f38b89499cd90f7235413a9e70e34": {
+      "address": "0xBa5250A30b3649F092D2e060232EFd711E369921",
+      "txHash": "0x431569a7a5fb4f15e48b3569480922256b945e2915c8b5de353fef37260f30ad",
+      "layout": {
+        "solcVersion": "0.8.28",
+        "storage": [
+          {
+            "label": "spaces",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_mapping(t_uint256,t_struct(Space)4863_storage)",
+            "contract": "DAOSpaceFactoryStorage",
+            "src": "contracts/storage/DAOSpaceFactoryStorage.sol:33"
+          },
+          {
+            "label": "spaceCounter",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_uint256",
+            "contract": "DAOSpaceFactoryStorage",
+            "src": "contracts/storage/DAOSpaceFactoryStorage.sol:34"
+          },
+          {
+            "label": "directoryContract",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_contract(IDirectory)4832",
+            "contract": "DAOSpaceFactoryStorage",
+            "src": "contracts/storage/DAOSpaceFactoryStorage.sol:35"
+          },
+          {
+            "label": "tokenFactoryAddress",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_address",
+            "contract": "DAOSpaceFactoryStorage",
+            "src": "contracts/storage/DAOSpaceFactoryStorage.sol:36"
+          },
+          {
+            "label": "joinMethodDirectoryAddress",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_address",
+            "contract": "DAOSpaceFactoryStorage",
+            "src": "contracts/storage/DAOSpaceFactoryStorage.sol:37"
+          },
+          {
+            "label": "proposalManagerAddress",
+            "offset": 0,
+            "slot": "5",
+            "type": "t_address",
+            "contract": "DAOSpaceFactoryStorage",
+            "src": "contracts/storage/DAOSpaceFactoryStorage.sol:38"
+          },
+          {
+            "label": "exitMethodDirectoryAddress",
+            "offset": 0,
+            "slot": "6",
+            "type": "t_address",
+            "contract": "DAOSpaceFactoryStorage",
+            "src": "contracts/storage/DAOSpaceFactoryStorage.sol:39"
+          },
+          {
+            "label": "spaceMembers",
+            "offset": 0,
+            "slot": "7",
+            "type": "t_mapping(t_uint256,t_struct(SpaceMembers)4889_storage)",
+            "contract": "DAOSpaceFactoryStorage",
+            "src": "contracts/storage/DAOSpaceFactoryStorage.sol:47"
+          },
+          {
+            "label": "executorToSpaceId",
+            "offset": 0,
+            "slot": "8",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "DAOSpaceFactoryStorage",
+            "src": "contracts/storage/DAOSpaceFactoryStorage.sol:48"
+          },
+          {
+            "label": "memberSpaces",
+            "offset": 0,
+            "slot": "9",
+            "type": "t_mapping(t_address,t_array(t_uint256)dyn_storage)",
+            "contract": "DAOSpaceFactoryStorage",
+            "src": "contracts/storage/DAOSpaceFactoryStorage.sol:51"
+          },
+          {
+            "label": "memberLastInviteTime",
+            "offset": 0,
+            "slot": "10",
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_uint256))",
+            "contract": "DAOSpaceFactoryStorage",
+            "src": "contracts/storage/DAOSpaceFactoryStorage.sol:55"
+          },
+          {
+            "label": "memberActiveInviteProposal",
+            "offset": 0,
+            "slot": "11",
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_uint256))",
+            "contract": "DAOSpaceFactoryStorage",
+            "src": "contracts/storage/DAOSpaceFactoryStorage.sol:58"
+          },
+          {
+            "label": "proposalsContract",
+            "offset": 0,
+            "slot": "12",
+            "type": "t_contract(IDAOProposals)4282",
+            "contract": "DAOSpaceFactoryImplementation",
+            "src": "contracts/DAOSpaceFactoryImplementation.sol:42"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)73_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(OwnableStorage)13_storage": {
+            "label": "struct OwnableUpgradeable.OwnableStorage",
+            "members": [
+              {
+                "label": "_owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]",
+            "numberOfBytes": "32"
+          },
+          "t_contract(IDAOProposals)4282": {
+            "label": "contract IDAOProposals",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IDirectory)4832": {
+            "label": "contract IDirectory",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_address,t_array(t_uint256)dyn_storage)": {
+            "label": "mapping(address => uint256[])",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_mapping(t_address,t_uint256))": {
+            "label": "mapping(uint256 => mapping(address => uint256))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(Space)4863_storage)": {
+            "label": "mapping(uint256 => struct DAOSpaceFactoryStorage.Space)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(SpaceMembers)4889_storage)": {
+            "label": "mapping(uint256 => struct DAOSpaceFactoryStorage.SpaceMembers)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Space)4863_storage": {
+            "label": "struct DAOSpaceFactoryStorage.Space",
+            "members": [
+              {
+                "label": "unity",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "quorum",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "votingPowerSource",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "tokenAddresses",
+                "type": "t_array(t_address)dyn_storage",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "members",
+                "type": "t_array(t_address)dyn_storage",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "exitMethod",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "5"
+              },
+              {
+                "label": "joinMethod",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "6"
+              },
+              {
+                "label": "createdAt",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "7"
+              },
+              {
+                "label": "creator",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "8"
+              },
+              {
+                "label": "executor",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "9"
+              }
+            ],
+            "numberOfBytes": "320"
+          },
+          "t_struct(SpaceMembers)4889_storage": {
+            "label": "struct DAOSpaceFactoryStorage.SpaceMembers",
+            "members": [
+              {
+                "label": "spaceMemberAddresses",
+                "type": "t_array(t_address)dyn_storage",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "isSpaceMember",
+                "type": "t_mapping(t_address,t_bool)",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.Ownable": [
+            {
+              "contract": "OwnableUpgradeable",
+              "label": "_owner",
+              "type": "t_address",
+              "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:24",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
+    },
+    "b84526f6446ef4c61abff8830406845aa5690e4818d8dd3ea0c69a3e2283bdcb": {
+      "address": "0x8D1D40E5d3309cF6Ec5d1A3e1f6d58436ac61eA2",
+      "txHash": "0xda2e9542e6fbd425aa4a6d4b8c6b9d474d42eb82802c1b9c363d2feebd81358d",
+      "layout": {
+        "solcVersion": "0.8.28",
+        "storage": [
+          {
+            "label": "spaceFactory",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_contract(IDAOSpaceFactory)4694",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:60"
+          },
+          {
+            "label": "directoryContract",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_contract(IDirectory)4702",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:61"
+          },
+          {
+            "label": "proposalCounter",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_uint256",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:63"
+          },
+          {
+            "label": "proposalsCoreData",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_mapping(t_uint256,t_struct(ProposalCore)4763_storage)",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:82"
+          },
+          {
+            "label": "proposalValues",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_mapping(t_uint256,t_uint256)",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:84"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "5",
+            "type": "t_array(t_uint256)48_storage",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:90"
+          },
+          {
+            "label": "spaceAddresses",
+            "offset": 0,
+            "slot": "53",
+            "type": "t_mapping(t_uint256,t_address)",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:93"
+          },
+          {
+            "label": "spaceTrialActivated",
+            "offset": 0,
+            "slot": "54",
+            "type": "t_mapping(t_uint256,t_bool)",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:96"
+          },
+          {
+            "label": "paymentTracker",
+            "offset": 0,
+            "slot": "55",
+            "type": "t_contract(ISpacePaymentTracker)4636",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:98"
+          },
+          {
+            "label": "spaceExecutedProposals",
+            "offset": 0,
+            "slot": "56",
+            "type": "t_mapping(t_uint256,t_array(t_uint256)dyn_storage)",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:101"
+          },
+          {
+            "label": "allExecutedProposals",
+            "offset": 0,
+            "slot": "57",
+            "type": "t_array(t_uint256)dyn_storage",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:104"
+          },
+          {
+            "label": "spaceAcceptedProposals",
+            "offset": 0,
+            "slot": "58",
+            "type": "t_mapping(t_uint256,t_array(t_uint256)dyn_storage)",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:107"
+          },
+          {
+            "label": "spaceRejectedProposals",
+            "offset": 0,
+            "slot": "59",
+            "type": "t_mapping(t_uint256,t_array(t_uint256)dyn_storage)",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:108"
+          },
+          {
+            "label": "proposalYesVoters",
+            "offset": 0,
+            "slot": "60",
+            "type": "t_mapping(t_uint256,t_array(t_address)dyn_storage)",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:111"
+          },
+          {
+            "label": "proposalNoVoters",
+            "offset": 0,
+            "slot": "61",
+            "type": "t_mapping(t_uint256,t_array(t_address)dyn_storage)",
+            "contract": "DAOProposalsStorage",
+            "src": "contracts/storage/DAOProposalsStorage.sol:112"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)73_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(OwnableStorage)13_storage": {
+            "label": "struct OwnableUpgradeable.OwnableStorage",
+            "members": [
+              {
+                "label": "_owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_struct(Transaction)4085_storage)dyn_storage": {
+            "label": "struct IDAOProposals.Transaction[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)48_storage": {
+            "label": "uint256[48]",
+            "numberOfBytes": "1536"
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]",
+            "numberOfBytes": "32"
+          },
+          "t_bytes_storage": {
+            "label": "bytes",
+            "numberOfBytes": "32"
+          },
+          "t_contract(IDAOSpaceFactory)4694": {
+            "label": "contract IDAOSpaceFactory",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IDirectory)4702": {
+            "label": "contract IDirectory",
+            "numberOfBytes": "20"
+          },
+          "t_contract(ISpacePaymentTracker)4636": {
+            "label": "contract ISpacePaymentTracker",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_address)": {
+            "label": "mapping(uint256 => address)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_array(t_address)dyn_storage)": {
+            "label": "mapping(uint256 => address[])",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_array(t_uint256)dyn_storage)": {
+            "label": "mapping(uint256 => uint256[])",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_bool)": {
+            "label": "mapping(uint256 => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(ProposalCore)4763_storage)": {
+            "label": "mapping(uint256 => struct DAOProposalsStorage.ProposalCore)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_uint256)": {
+            "label": "mapping(uint256 => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(ProposalCore)4763_storage": {
+            "label": "struct DAOProposalsStorage.ProposalCore",
+            "members": [
+              {
+                "label": "spaceId",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "startTime",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "duration",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "executed",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "expired",
+                "type": "t_bool",
+                "offset": 1,
+                "slot": "3"
+              },
+              {
+                "label": "yesVotes",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "noVotes",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "5"
+              },
+              {
+                "label": "totalVotingPowerAtSnapshot",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "6"
+              },
+              {
+                "label": "creator",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "7"
+              },
+              {
+                "label": "hasVoted",
+                "type": "t_mapping(t_address,t_bool)",
+                "offset": 0,
+                "slot": "8"
+              },
+              {
+                "label": "votingPowerAtSnapshot",
+                "type": "t_mapping(t_address,t_uint256)",
+                "offset": 0,
+                "slot": "9"
+              },
+              {
+                "label": "transactions",
+                "type": "t_array(t_struct(Transaction)4085_storage)dyn_storage",
+                "offset": 0,
+                "slot": "10"
+              }
+            ],
+            "numberOfBytes": "352"
+          },
+          "t_struct(Transaction)4085_storage": {
+            "label": "struct IDAOProposals.Transaction",
+            "members": [
+              {
+                "label": "target",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "value",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "data",
+                "type": "t_bytes_storage",
+                "offset": 0,
+                "slot": "2"
+              }
+            ],
+            "numberOfBytes": "96"
           },
           "t_uint256": {
             "label": "uint256",

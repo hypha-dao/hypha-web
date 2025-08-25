@@ -94,7 +94,7 @@ contract DAOProposalsImplementation is
     uint256 _duration,
     Transaction[] calldata _transactions
   ) internal view {
-    require(address(spaceFactory) != address(0), 'Contracts not initialized');
+    require(address(spaceFactory) != address(0), 'Contracts is not initialized');
 
     // Allow space factory to create proposals regardless of membership
     // This is needed for join requests with join method 2

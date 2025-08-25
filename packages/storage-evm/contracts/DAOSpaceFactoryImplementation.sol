@@ -159,7 +159,7 @@ contract DAOSpaceFactoryImplementation is
           space.joinMethod,
           msg.sender
         ),
-        'Join criteria not met'
+        'Join criteria is not met'
       );
 
       addMemberInternal(_spaceId, msg.sender);
