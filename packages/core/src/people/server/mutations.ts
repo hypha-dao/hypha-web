@@ -11,14 +11,13 @@ export const createPerson = async (
   { db }: CreatePersonConfig,
 ) => {
   const slug = person.nickname?.toLowerCase().replace(/\s+/g, '-') || '';
-
-  const [dbPerson] = await db
-    .insert(people)
-    .values({
-      ...person,
-      slug,
-    })
-    .returning();
+  const insertData = {
+    ...person,
+    email:
+      person.email === '' || person.email === undefined ? null : person.email,
+    slug,
+  };
+  const [dbPerson] = await db.insert(people).values(insertData).returning();
   if (!dbPerson) {
     throw new Error('Failed to create person');
   }
@@ -30,9 +29,14 @@ export const updatePerson = async (
   person: Person,
   { db }: CreatePersonConfig,
 ) => {
+  const updateData = {
+    ...person,
+    email:
+      person.email === '' || person.email === undefined ? null : person.email,
+  };
   const [dbPerson] = await db
     .update(people)
-    .set(person)
+    .set(updateData)
     .where(eq(people.id, person.id))
     .returning();
   if (!dbPerson) {
