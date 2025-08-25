@@ -12,6 +12,8 @@ type InnerSpaceCardWrapperProps = {
   description?: string;
   leadImageUrl?: string;
   useMembers: UseMembers;
+  parentTitle?: string;
+  className?: string;
 };
 
 export const InnerSpaceCardWrapper = ({
@@ -20,6 +22,8 @@ export const InnerSpaceCardWrapper = ({
   description,
   leadImageUrl,
   useMembers,
+  parentTitle,
+  className,
 }: InnerSpaceCardWrapperProps) => {
   const { members = [], isLoading } = useMembers({ spaceSlug });
 
@@ -40,6 +44,8 @@ export const InnerSpaceCardWrapper = ({
       leadImageUrl={leadImageUrl}
       members={mappedMembers}
       isLoading={isLoading}
+      parentTitle={parentTitle}
+      className={className}
     />
   );
 };

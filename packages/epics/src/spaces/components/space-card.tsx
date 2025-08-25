@@ -10,6 +10,7 @@ import {
   Skeleton,
   Image,
 } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 
 type SpaceCardProps = {
   description: string;
@@ -19,6 +20,7 @@ type SpaceCardProps = {
   title: string;
   isLoading?: boolean;
   leadImage?: string;
+  className?: string;
 };
 
 const customCardHeaderStyles: React.CSSProperties = {
@@ -40,9 +42,10 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
   isLoading = false,
   title,
   leadImage,
+  className,
 }) => {
   return (
-    <Card className="w-full h-full flex flex-col">
+    <Card className={cn('w-full h-full flex flex-col', className)}>
       <CardHeader
         style={customCardHeaderStyles}
         className="p-0 rounded-tl-md rounded-tr-md overflow-hidden flex-shrink-0"

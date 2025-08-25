@@ -16,10 +16,11 @@ export interface Space {
   subspaces?: Space[];
   members?: Person[];
   memberCount?: number;
-  memberAddresses?: `0x{string}`[];
+  memberAddresses?: `0x${string}`[];
   documentCount?: number;
   documents?: Document[];
   address?: string | null;
+  parent?: Space | null;
 }
 
 export interface CreateSpaceInput {
