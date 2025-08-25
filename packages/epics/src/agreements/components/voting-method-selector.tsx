@@ -63,7 +63,7 @@ export const VotingMethodSelector = ({
     .map((method) => {
       return {
         ...method,
-        disabled: method.disabled || method.id === value,
+        disabled: method.disabled,
       };
     })
     .map((method) => {
