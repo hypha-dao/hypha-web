@@ -130,14 +130,18 @@ export const PersonHead = ({
           <div className="flex flex-col gap-4">
             <WebLinks links={links} />
             <div className="flex gap-5 text-1">
-              <span className="flex gap-3">
-                <MailIcon width={16} height={16} />
-                {email}
-              </span>
-              <span className="flex gap-3">
-                <MapPinIcon width={16} height={16} />
-                {location}
-              </span>
+              {email ? (
+                <span className="flex gap-3">
+                  <MailIcon width={16} height={16} />
+                  {email}
+                </span>
+              ) : null}
+              {location ? (
+                <span className="flex gap-3">
+                  <MapPinIcon width={16} height={16} />
+                  {location}
+                </span>
+              ) : null}
             </div>
           </div>
           <Skeleton loading={isLoading} height={72} width={768}>
