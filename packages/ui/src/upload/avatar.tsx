@@ -13,6 +13,7 @@ export type UploadAvatarProps = {
   onChange: (acceptedFile: File | null) => void;
   defaultImage?: string;
   maxFileSize?: number;
+  required?: boolean;
 };
 
 export const UploadAvatar = ({
@@ -21,6 +22,7 @@ export const UploadAvatar = ({
   onChange,
   defaultImage,
   maxFileSize,
+  required = false,
 }: UploadAvatarProps) => {
   const [preview, setPreview] = React.useState<string | null>(
     defaultImage || null,
@@ -79,7 +81,7 @@ export const UploadAvatar = ({
           ) : (
             <EditIcon className="h-5 w-5" />
           )}
-          <AsteriskIcon className="text-destructive absolute right-0 top-0 z-10 w-5 h-5" />
+          {required && (<AsteriskIcon className="text-destructive absolute right-0 top-0 z-10 w-5 h-5" />)}
         </div>
       </PreviewOverlay>
     </div>

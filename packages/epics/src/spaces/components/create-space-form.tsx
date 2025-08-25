@@ -29,6 +29,7 @@ import {
 } from '@hypha-platform/core/client';
 import { Links } from '../../common/links';
 import { ButtonClose, ButtonBack } from '@hypha-platform/epics';
+import { AsteriskIcon } from 'lucide-react';
 
 const schemaCreateSpaceForm = schemaCreateSpace.extend(createSpaceFiles);
 
@@ -108,6 +109,7 @@ export const SpaceForm = ({
                           ? defaultValues?.logoUrl
                           : undefined
                       }
+                      required={true}
                     />
                   </FormControl>
                   <FormMessage />
@@ -166,7 +168,7 @@ export const SpaceForm = ({
                   uploadText={
                     <>
                       <span className="text-accent-11">Upload</span> space
-                      banner
+                      banner<AsteriskIcon className="text-destructive inline w-4 h-4 align-super" />
                     </>
                   }
                 />
@@ -180,7 +182,7 @@ export const SpaceForm = ({
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-foreground">Purpose</FormLabel>
+              <FormLabel className="text-foreground">Purpose<AsteriskIcon className="text-destructive inline w-4 h-4 align-super" /></FormLabel>
               <FormControl>
                 <Textarea
                   disabled={isLoading}
