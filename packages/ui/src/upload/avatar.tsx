@@ -4,6 +4,8 @@ import { LuImagePlus, LuImageUp } from 'react-icons/lu';
 import clsx from 'clsx';
 import { PreviewOverlay } from './preview-overlay';
 import { PreviewImg } from './preview-img';
+import { Text } from '@radix-ui/themes';
+import { AsteriskIcon } from 'lucide-react';
 
 export type UploadAvatarProps = {
   EditIcon?: React.ElementType;
@@ -71,11 +73,14 @@ export const UploadAvatar = ({
       <input {...getInputProps()} />
       {preview && <PreviewImg src={preview} />}
       <PreviewOverlay isVisible={!preview || isDragActive}>
-        {isDragActive ? (
-          <DropIcon className="h-5 w-5" />
-        ) : (
-          <EditIcon className="h-5 w-5" />
-        )}
+        <div className="inline-block">
+          {isDragActive ? (
+            <DropIcon className="h-5 w-5" />
+          ) : (
+            <EditIcon className="h-5 w-5" />
+          )}
+          <AsteriskIcon className="text-destructive absolute right-0 top-0 z-10 w-5 h-5" />
+        </div>
       </PreviewOverlay>
     </div>
   );
