@@ -24,7 +24,7 @@ import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
-import { Loader2 } from 'lucide-react';
+import { AsteriskIcon, Loader2 } from 'lucide-react';
 import { Links } from '../../common';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useEffect } from 'react';
@@ -103,8 +103,16 @@ export const SignupPanel = ({
                           <FormControl>
                             <Input
                               disabled={isLoading}
-                              placeholder="Name *"
+                              placeholder="Name"
                               className="text-2 text-neutral-11"
+                              rightIcon={
+                                !field.value && (
+                                  <AsteriskIcon
+                                    size={12}
+                                    className="text-destructive w-4 h-4 left-0 align-super"
+                                  />
+                                )
+                              }
                               {...field}
                             />
                           </FormControl>
@@ -120,8 +128,16 @@ export const SignupPanel = ({
                           <FormControl>
                             <Input
                               disabled={isLoading}
-                              placeholder="Surname *"
+                              placeholder="Surname"
                               className="text-2 text-neutral-11"
+                              rightIcon={
+                                !field.value && (
+                                  <AsteriskIcon
+                                    size={12}
+                                    className="text-destructive w-4 h-4 align-super"
+                                  />
+                                )
+                              }
                               {...field}
                             />
                           </FormControl>
@@ -138,8 +154,16 @@ export const SignupPanel = ({
                         <FormControl>
                           <Input
                             disabled={isLoading}
-                            placeholder="Nickname *"
+                            placeholder="Nickname"
                             className="text-1 text-neutral-11"
+                            rightIcon={
+                              !field.value && (
+                                <AsteriskIcon
+                                  size={12}
+                                  className="text-destructive w-4 h-4 left-0 align-super"
+                                />
+                              )
+                            }
                             {...field}
                           />
                         </FormControl>

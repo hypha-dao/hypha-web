@@ -23,6 +23,7 @@ import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/ui-utils';
 import { Links } from '../../common';
 import { ButtonClose } from '@hypha-platform/epics';
+import { AsteriskIcon } from 'lucide-react';
 
 interface Person {
   avatarUrl?: string;
@@ -122,6 +123,14 @@ export const EditPersonSection = ({
                               <Input
                                 disabled={isLoading}
                                 placeholder="Name"
+                                rightIcon={
+                                  !field.value && (
+                                    <AsteriskIcon
+                                      size={12}
+                                      className="text-destructive w-4 h-4 align-super"
+                                    />
+                                  )
+                                }
                                 {...field}
                               />
                             </FormControl>
@@ -138,6 +147,14 @@ export const EditPersonSection = ({
                               <Input
                                 disabled={isLoading}
                                 placeholder="Surname"
+                                rightIcon={
+                                  !field.value && (
+                                    <AsteriskIcon
+                                      size={12}
+                                      className="text-destructive w-4 h-4 align-super"
+                                    />
+                                  )
+                                }
                                 {...field}
                               />
                             </FormControl>
@@ -152,7 +169,18 @@ export const EditPersonSection = ({
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <Input placeholder="Nickname" {...field} />
+                            <Input
+                              placeholder="Nickname"
+                              rightIcon={
+                                !field.value && (
+                                  <AsteriskIcon
+                                    size={12}
+                                    className="text-destructive w-4 h-4 align-super"
+                                  />
+                                )
+                              }
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
