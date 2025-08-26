@@ -24,6 +24,7 @@ import {
 } from '@hypha-platform/core/client';
 
 import { ButtonClose, ButtonBack } from '@hypha-platform/epics';
+import { AsteriskIcon } from 'lucide-react';
 
 type Creator = { avatar: string; name: string; surname: string };
 
@@ -80,6 +81,12 @@ export function CreateAgreementBaseFields({
                         placeholder="Type a title..."
                         className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
                         disabled={isLoading}
+                        rightIcon={
+                          <AsteriskIcon
+                            size={12}
+                            className="text-destructive w-4 h-4 left-0 align-super"
+                          />
+                        }
                         {...field}
                       />
                     </FormControl>
@@ -132,6 +139,10 @@ export function CreateAgreementBaseFields({
                 {...field}
               />
             </FormControl>
+            <AsteriskIcon
+              size={12}
+              className="text-destructive absolute w-4 h-4 -right-4 align-super"
+            />
             <FormDescription />
             <FormMessage />
           </FormItem>
