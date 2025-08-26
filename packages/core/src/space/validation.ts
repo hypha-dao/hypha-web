@@ -6,11 +6,11 @@ export const ALLOWED_IMAGE_FILE_SIZE = 4 * 1024 * 1024;
 const createSpaceWeb2Props = {
   title: z
     .string()
-    .min(1, 'Title must contain at least 1 character')
+    .min(1, 'Please enter your space name')
     .max(50, 'Title must contain at most 50 characters'),
   description: z
     .string()
-    .min(1, 'Description must contain at least 1 character')
+    .min(1, 'Please add the purpose of your space')
     .max(300, 'Description must contain at most 300 character'),
   slug: z
     .string()
@@ -45,7 +45,7 @@ const createSpaceWeb2Props = {
     )
     .default([]),
   links: z
-    .array(z.string().url('Links must be a valid URL'))
+    .array(z.string().url('Please enter a valid URL'))
     .max(3)
     .default([]),
   address: z.string().optional(),
@@ -54,8 +54,8 @@ const createSpaceWeb2Props = {
 export const schemaCreateSpaceWeb2 = z.object(createSpaceWeb2Props);
 
 export const createSpaceWeb2FileUrls = {
-  logoUrl: z.string().url('Logo URL must be a valid URL'),
-  leadImage: z.string().url('Lead Image URL must be a valid URL'),
+  logoUrl: z.string().url('A space icon is required'),
+  leadImage: z.string().url('A space banner is required'),
 };
 
 export const schemaCreateSpaceWeb2FileUrls = z.object(createSpaceWeb2FileUrls);

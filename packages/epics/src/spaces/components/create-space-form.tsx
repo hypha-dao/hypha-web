@@ -133,7 +133,7 @@ export const SpaceForm = ({
                               />
                             )
                           }
-                          placeholder="Type a title..."
+                          placeholder="Name your space..."
                           className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
                           disabled={isLoading}
                           {...field}
@@ -198,7 +198,7 @@ export const SpaceForm = ({
               <FormControl>
                 <Textarea
                   disabled={isLoading}
-                  placeholder="Type a brief description here..."
+                  placeholder="Type your space purpose here..."
                   {...field}
                 />
               </FormControl>
