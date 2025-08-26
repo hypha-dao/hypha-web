@@ -68,10 +68,24 @@ export function CreateAgreementBaseFields({
             userName={`${creator?.name} ${creator?.surname}`}
           />
           <div className="flex w-full">
-            <div className="flex flex-col w-full">
-              <Badge className="w-fit" colorVariant="accent">
-                {label}
-              </Badge>
+            <div className="flex flex-col w-full justify-between gap-4">
+              <div className="flex flex-row w-full">
+                <Badge className="w-fit" colorVariant="accent">
+                  {label}
+                </Badge>
+                <div className="flex grow"></div>
+                {backUrl && (
+                  <ButtonBack
+                    label={backLabel}
+                    backUrl={backUrl}
+                    className="px-0 md:px-3 align-top"
+                  />
+                )}
+                <ButtonClose
+                  closeUrl={closeUrl}
+                  className="px-0 md:px-3 align-top"
+                />
+              </div>
               <FormField
                 control={form.control}
                 name="title"
@@ -100,16 +114,6 @@ export function CreateAgreementBaseFields({
               </Text>
             </div>
           </div>
-        </div>
-        <div className="flex justify-between gap-4">
-          {backUrl && (
-            <ButtonBack
-              label={backLabel}
-              backUrl={backUrl}
-              className="px-0 md:px-3"
-            />
-          )}
-          <ButtonClose closeUrl={closeUrl} className="px-0 md:px-3" />
         </div>
       </div>
       <Separator />
