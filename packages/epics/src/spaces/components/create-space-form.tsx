@@ -125,14 +125,16 @@ export const SpaceForm = ({
                     <FormItem>
                       <FormControl>
                         <Input
-                          leftIcon={
-                            <AsteriskIcon
-                              size={12}
-                              className="text-destructive w-4 h-4 left-0 align-super"
-                            />
+                          rightIcon={
+                            !field.value && (
+                              <AsteriskIcon
+                                size={12}
+                                className="text-destructive w-4 h-4 left-0 align-super"
+                              />
+                            )
                           }
                           placeholder="Type a title..."
-                          className="border-0 text-4 p-0 pl-5 placeholder:text-4 bg-inherit"
+                          className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
                           disabled={isLoading}
                           {...field}
                         />
