@@ -44,10 +44,7 @@ const createSpaceWeb2Props = {
       ]),
     )
     .default([]),
-  links: z
-    .array(z.string().url('Please enter a valid URL'))
-    .max(3)
-    .default([]),
+  links: z.array(z.string().url('Please enter a valid URL')).max(3).default([]),
   address: z.string().optional(),
 };
 

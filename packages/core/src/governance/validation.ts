@@ -251,7 +251,8 @@ export const schemaIssueNewToken = z.object({
     .min(2, { message: 'Please enter a token symbol (min. 2 characters)' })
     .max(10, { message: 'Token symbol must be at most 10 characters long' })
     .regex(/^[A-Z]+$/, {
-      message: 'Please enter the Token Symbol using only uppercase letters (A–Z)',
+      message:
+        'Please enter the Token Symbol using only uppercase letters (A–Z)',
     }),
 
   iconUrl: z
