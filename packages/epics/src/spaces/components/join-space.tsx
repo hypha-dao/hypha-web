@@ -177,7 +177,7 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
 
       {isInviteOnly && isInviteError && (
         <ErrorAlert
-          bgColor="bg-neutral-5"
+          bgColor="bg-neutral-9"
           lines={[
             'You’ve already submitted your invite request. Your proposal is now visible for review by the space members.',
           ]}
@@ -185,7 +185,7 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
       )}
       {isTokenBased && joinError && (
         <ErrorAlert
-          bgColor="bg-neutral-5"
+          bgColor="bg-neutral-9"
           lines={[
             'You’re not able to join just yet. Fulfil the token requirements to gain access.',
           ]}
