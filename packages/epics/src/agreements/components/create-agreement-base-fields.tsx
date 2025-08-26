@@ -78,7 +78,7 @@ export function CreateAgreementBaseFields({
                   <FormItem>
                     <FormControl>
                       <Input
-                        placeholder="Type a title..."
+                        placeholder="Proposal title..."
                         className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
                         disabled={isLoading}
                         rightIcon={
