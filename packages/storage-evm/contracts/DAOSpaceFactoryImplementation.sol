@@ -114,8 +114,8 @@ contract DAOSpaceFactoryImplementation is
       require(
         memberActiveInviteProposal[_spaceId][msg.sender] == 0 ||
           block.timestamp >=
-          memberLastInviteTime[_spaceId][msg.sender] + 24 hours,
-        'Active proposal exists or must wait 24h between invites'
+          memberLastInviteTime[_spaceId][msg.sender] + 48 hours,
+        'Active proposal exists or must wait 48h between invites'
       );
 
       // Encode the function call data for addMember
@@ -137,7 +137,7 @@ contract DAOSpaceFactoryImplementation is
       IDAOProposals.ProposalParams memory params = IDAOProposals
         .ProposalParams({
           spaceId: _spaceId,
-          duration: 345600, // 1 day
+          duration: 172800, // 1 day
           transactions: transactions
         });
 
@@ -159,7 +159,7 @@ contract DAOSpaceFactoryImplementation is
           space.joinMethod,
           msg.sender
         ),
-        'Join criteria is not met'
+        'Join criteria not met'
       );
 
       addMemberInternal(_spaceId, msg.sender);
