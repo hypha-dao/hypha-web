@@ -18,6 +18,7 @@ export function TokenIconField() {
     <FormField
       control={control}
       name="iconUrl"
+      rules={{ required: 'Please upload a token icon' }}
       render={({ field }) => (
         <FormItem>
           <div className="flex justify-between items-center">
