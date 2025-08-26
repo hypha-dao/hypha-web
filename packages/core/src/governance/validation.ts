@@ -243,21 +243,21 @@ export const schemaIssueNewToken = z.object({
   ...createAgreementFiles,
   name: z
     .string()
-    .min(2, { message: 'Token name must be at least 2 characters long' })
+    .min(2, { message: 'Please enter a token name (min. 2 characters)' })
     .max(100, { message: 'Token name must be at most 100 characters long' }),
 
   symbol: z
     .string()
-    .min(2, { message: 'Token symbol must be at least 2 characters long' })
+    .min(2, { message: 'Please enter a token symbol (min. 2 characters)' })
     .max(10, { message: 'Token symbol must be at most 10 characters long' })
     .regex(/^[A-Z]+$/, {
-      message: 'Token symbol must contain only uppercase letters',
+      message: 'Please enter the Token Symbol using only uppercase letters (A–Z)',
     }),
 
   iconUrl: z
     .union([
       z
-        .string({ message: 'Uploading a token icon is required' })
+        .string({ message: 'Please upload a token icon' })
         .url('Icon URL must be a valid URL'),
       z.literal(''),
       z
@@ -288,7 +288,7 @@ export const schemaIssueNewToken = z.object({
   // ),
 
   type: z.enum(['utility', 'credits', 'ownership', 'voice'], {
-    required_error: 'Token type is required',
+    required_error: 'Please select a token type',
   }),
 
   maxSupply: z.preprocess(
