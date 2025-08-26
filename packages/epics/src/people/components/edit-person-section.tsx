@@ -123,6 +123,8 @@ export const EditPersonSection = ({
                               <Input
                                 disabled={isLoading}
                                 placeholder="First Name"
+                                required
+                                aria-required="true"
                                 rightIcon={
                                   !field.value && (
                                     <AsteriskIcon
