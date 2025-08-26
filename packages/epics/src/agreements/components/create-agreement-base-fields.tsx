@@ -13,6 +13,7 @@ import {
   Badge,
   AddAttachment,
   RichTextEditor,
+  FormLabel,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { PersonAvatar } from '../../people/components/person-avatar';
@@ -132,17 +133,18 @@ export function CreateAgreementBaseFields({
         name="description"
         render={({ field }) => (
           <FormItem>
+            <FormLabel className="text-foreground">
+              Proposal Content
+              <AsteriskIcon className="text-destructive inline w-4 h-4 align-super" />
+            </FormLabel>
             <FormControl>
               <RichTextEditor
                 editorRef={null}
                 markdown={field.value}
+                placeholder="Type your proposal content here..."
                 {...field}
               />
             </FormControl>
-            <AsteriskIcon
-              size={12}
-              className="text-destructive absolute w-4 h-4 -right-4 align-super"
-            />
             <FormDescription />
             <FormMessage />
           </FormItem>
