@@ -103,7 +103,7 @@ export const SignupPanel = ({
                           <FormControl>
                             <Input
                               disabled={isLoading}
-                              placeholder="Name"
+                              placeholder="First Name"
                               className="text-2 text-neutral-11"
                               rightIcon={
                                 !field.value && (
@@ -128,7 +128,7 @@ export const SignupPanel = ({
                           <FormControl>
                             <Input
                               disabled={isLoading}
-                              placeholder="Surname"
+                              placeholder="Last Name"
                               className="text-2 text-neutral-11"
                               rightIcon={
                                 !field.value && (
@@ -205,7 +205,7 @@ export const SignupPanel = ({
               <FormItem>
                 <FormControl>
                   <Textarea
-                    placeholder="Enter description"
+                    placeholder="Type your life purpose here..."
                     disabled={isLoading}
                     {...field}
                   />

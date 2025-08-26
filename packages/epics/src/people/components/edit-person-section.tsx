@@ -122,7 +122,7 @@ export const EditPersonSection = ({
                             <FormControl>
                               <Input
                                 disabled={isLoading}
-                                placeholder="Name"
+                                placeholder="First Name"
                                 rightIcon={
                                   !field.value && (
                                     <AsteriskIcon
@@ -146,7 +146,7 @@ export const EditPersonSection = ({
                             <FormControl>
                               <Input
                                 disabled={isLoading}
-                                placeholder="Surname"
+                                placeholder="Last Name"
                                 rightIcon={
                                   !field.value && (
                                     <AsteriskIcon
@@ -220,7 +220,7 @@ export const EditPersonSection = ({
                 <FormItem>
                   <FormControl>
                     <Textarea
-                      placeholder="Enter description"
+                      placeholder="Type your life purpose here..."
                       disabled={isLoading}
                       {...field}
                     />
