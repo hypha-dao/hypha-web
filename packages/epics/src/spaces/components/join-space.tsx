@@ -3,7 +3,7 @@
 import { Button, ErrorAlert } from '@hypha-platform/ui';
 import { useJoinSpace } from '../hooks/use-join-space';
 import { PersonIcon } from '@radix-ui/react-icons';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
 import {
   useSpaceDetailsWeb3Rpc,
@@ -30,6 +30,10 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
   const { jwt } = useJwt();
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({ spaceId: web3SpaceId });
   const [joinError, setJoinError] = useState<BaseError | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [inviteRequested, setInviteRequested] = useState(false);
+  const [justJoined, setJustJoined] = useState(false);
+
   const isInviteOnly = spaceDetails?.joinMethod === 2n;
   const isTokenBased = spaceDetails?.joinMethod === 1n;
 
@@ -45,6 +49,7 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
     isCreating,
     isError: isInviteError,
     errors: inviteErrors,
+    agreement,
   } = useAddMemberOrchestrator({
     authToken: jwt,
     config,
@@ -52,56 +57,73 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
     memberAddress: person?.address as `0x${string}`,
   });
 
-  const { hasActiveProposal, revalidateInviteStatus } = useInviteStatus({
-    spaceId: BigInt(web3SpaceId),
-    address: person?.address as `0x${string}`,
-  });
+  const { hasActiveProposal, revalidateInviteStatus, isInviteLoading } =
+    useInviteStatus({
+      spaceId: BigInt(web3SpaceId),
+      address: person?.address as `0x${string}`,
+    });
 
   const profilePageUrl = `/${lang}/profile/${person?.slug}`;
 
-  const handleJoinSpace = React.useCallback(async () => {
+  useEffect(() => {
+    if (isInviteError) {
+      setIsProcessing(false);
+    }
+  }, [isInviteError]);
+
+  useEffect(() => {
+    if (!isJoiningSpace && !isInviteOnly && agreement) {
+      setIsProcessing(false);
+    }
+  }, [isJoiningSpace, isInviteOnly, agreement]);
+
+  const handleJoinSpace = useCallback(async () => {
     setJoinError(null);
-    if (isInviteOnly) {
-      if (!person?.id || !person?.address) {
-        console.error('User data not available for invite request');
-        return;
-      }
-      await requestInvite({
-        spaceId: spaceId,
-        title: 'Invite Member',
-        description: `**${person.name} ${person.surname} has just requested to join as a member!**
-      
-      To move forward with onboarding, we'll need our space's approval on this proposal.
-      
-      You can review ${person.name}'s profile <span className="text-accent-9">[here](${profilePageUrl}).</span>`,
-        creatorId: person.id,
-        memberAddress: person.address as `0x${string}`,
-        slug: `invite-request-${spaceId}-${Date.now()}`,
-        label: 'Invite',
-      });
-      await revalidateInviteStatus();
-    } else {
-      if (!person?.id || !person?.address) {
-        const err = {
-          shortMessage: 'User is not authorized',
-        } as BaseError;
-        console.error(err);
-        setJoinError(err);
-        return;
-      }
-      try {
+    setIsProcessing(true);
+
+    if (!person?.id || !person?.address) {
+      const err = {
+        shortMessage: 'User data not available',
+      } as BaseError;
+      setJoinError(err);
+      setIsProcessing(false);
+      return;
+    }
+
+    try {
+      if (isInviteOnly) {
+        await requestInvite({
+          spaceId: spaceId,
+          title: 'Invite Member',
+          description: `**${person.name} ${person.surname} has just requested to join as a member!**
+        
+        To move forward with onboarding, we'll need our space's approval on this proposal.
+        
+        You can review ${person.name}'s profile <span className="text-accent-9">[here](${profilePageUrl}).</span>`,
+          creatorId: person.id,
+          memberAddress: person.address as `0x${string}`,
+          slug: `invite-request-${spaceId}-${Date.now()}`,
+          label: 'Invite',
+        });
+        setInviteRequested(true);
+        revalidateInviteStatus();
+        setIsProcessing(false);
+      } else {
         await joinSpace();
+        setJustJoined(true);
         await revalidateIsMember();
-      } catch (err) {
-        console.error(err);
-        if (isBaseError(err)) {
-          setJoinError(err as BaseError);
-        } else {
-          setJoinError({
-            shortMessage:
-              'An unexpected error occurred while joining the space',
-          } as BaseError);
-        }
+        setIsProcessing(false);
+      }
+    } catch (err) {
+      console.error('Error joining space:', err);
+      setIsProcessing(false);
+      setJustJoined(false);
+      if (isBaseError(err)) {
+        setJoinError(err as BaseError);
+      } else {
+        setJoinError({
+          shortMessage: 'An unexpected error occurred while joining the space',
+        } as BaseError);
       }
     }
   }, [
@@ -111,46 +133,56 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
     revalidateIsMember,
     spaceId,
     person,
+    profilePageUrl,
+    revalidateInviteStatus,
   ]);
 
   const buttonTitle = useMemo(() => {
-    if (isMember) return 'Already member';
+    if (isMember || justJoined) return 'Already member';
     if (isInviteOnly) {
-      if (hasActiveProposal) return 'Invite pending';
+      if (hasActiveProposal || inviteRequested) return 'Invite pending';
       return 'Request Invite';
     }
     return 'Become member';
-  }, [isMember, isInviteOnly, hasActiveProposal]);
-  const isInvitePending = isInviteOnly && hasActiveProposal;
+  }, [isMember, justJoined, isInviteOnly, hasActiveProposal, inviteRequested]);
+
+  const showLoader = isProcessing || isJoiningSpace || isCreating;
+  const isInvitePending =
+    isInviteOnly && (hasActiveProposal || inviteRequested);
   const isButtonDisabled =
-    isMember || isLoading || isJoiningSpace || isCreating || isInvitePending;
+    isMember ||
+    justJoined ||
+    isLoading ||
+    isInviteLoading ||
+    isInvitePending ||
+    showLoader;
 
   return (
-    <div>
+    <div className="flex flex-col gap-2">
       <Button
         disabled={isButtonDisabled}
         onClick={handleJoinSpace}
-        className="rounded-lg"
-        colorVariant={isMember ? 'neutral' : 'accent'}
-        variant={isMember ? 'outline' : 'default'}
+        className="rounded-lg min-w-[120px]"
+        colorVariant={isMember || justJoined ? 'neutral' : 'accent'}
+        variant={isMember || justJoined ? 'outline' : 'default'}
         title={buttonTitle}
       >
-        {isJoiningSpace || isCreating ? (
+        {showLoader ? (
           <Loader2 className="animate-spin" width={16} height={16} />
         ) : (
           <PersonIcon width={16} height={16} />
         )}
-        <span className="hidden sm:block">{buttonTitle}</span>
+        <span className="hidden sm:block ml-2">{buttonTitle}</span>
       </Button>
-      {isInviteOnly && isInviteError ? (
+
+      {isInviteOnly && isInviteError && (
         <ErrorAlert lines={inviteErrors.map((err) => err.message)} />
-      ) : (
-        isTokenBased &&
-        joinError && (
-          <ErrorAlert
-            lines={[`Token-based entry failed: ${joinError.shortMessage}`]}
-          />
-        )
+      )}
+
+      {isTokenBased && joinError && (
+        <ErrorAlert
+          lines={[`Token-based entry failed: ${joinError.shortMessage}`]}
+        />
       )}
     </div>
   );
