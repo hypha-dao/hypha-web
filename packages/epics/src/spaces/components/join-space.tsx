@@ -176,12 +176,19 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
       </Button>
 
       {isInviteOnly && isInviteError && (
-        <ErrorAlert lines={inviteErrors.map((err) => err.message)} />
+        <ErrorAlert
+          bgColor="bg-neutral-5"
+          lines={[
+            'You’ve already submitted your invite request. Your proposal is now visible for review by the space members.',
+          ]}
+        />
       )}
-
       {isTokenBased && joinError && (
         <ErrorAlert
-          lines={[`Token-based entry failed: ${joinError.shortMessage}`]}
+          bgColor="bg-neutral-5"
+          lines={[
+            'You’re not able to join just yet. Fulfil the token requirements to gain access.',
+          ]}
         />
       )}
     </div>
