@@ -23,7 +23,7 @@ import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/ui-utils';
 import { Links } from '../../common';
 import { ButtonClose } from '@hypha-platform/epics';
-import { AsteriskIcon } from 'lucide-react';
+import { Asterisk as AsteriskIcon } from 'lucide-react';
 
 interface Person {
   avatarUrl?: string;

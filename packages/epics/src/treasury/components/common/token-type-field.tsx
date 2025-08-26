@@ -13,7 +13,7 @@ import {
   SelectContent,
   SelectItem,
 } from '@hypha-platform/ui';
-import { AsteriskIcon } from 'lucide-react';
+import { Asterisk as AsteriskIcon } from 'lucide-react';
 
 const TOKEN_TYPE_OPTIONS = [
   {

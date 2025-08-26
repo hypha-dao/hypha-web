@@ -24,7 +24,7 @@ import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
-import { AsteriskIcon, Loader2 } from 'lucide-react';
+import { Asterisk as AsteriskIcon, Loader2 } from 'lucide-react';
 import { Links } from '../../common';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useEffect } from 'react';

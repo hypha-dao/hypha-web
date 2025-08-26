@@ -25,7 +25,7 @@ import {
 } from '@hypha-platform/core/client';
 
 import { ButtonClose, ButtonBack } from '@hypha-platform/epics';
-import { AsteriskIcon } from 'lucide-react';
+import { Asterisk as AsteriskIcon } from 'lucide-react';
 
 type Creator = { avatar: string; name: string; surname: string };
 

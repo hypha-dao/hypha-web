@@ -9,7 +9,7 @@ import {
   FormMessage,
   Input,
 } from '@hypha-platform/ui';
-import { AsteriskIcon } from 'lucide-react';
+import { Asterisk as AsteriskIcon } from 'lucide-react';
 
 export function TokenNameField() {
   const { control } = useFormContext();

@@ -9,7 +9,7 @@ import {
   FormMessage,
 } from '@hypha-platform/ui';
 import { TokenIconUpload } from './token-icon';
-import { AsteriskIcon } from 'lucide-react';
+import { Asterisk as AsteriskIcon } from 'lucide-react';
 
 export function TokenIconField() {
   const { control } = useFormContext();

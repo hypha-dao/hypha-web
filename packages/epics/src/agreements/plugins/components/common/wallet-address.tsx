@@ -1,5 +1,5 @@
 import { Input } from '@hypha-platform/ui';
-import { AsteriskIcon } from 'lucide-react';
+import { Asterisk as AsteriskIcon } from 'lucide-react';
 
 interface WalletAddressProps {
   address: string;

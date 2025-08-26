@@ -29,7 +29,7 @@ import {
 } from '@hypha-platform/core/client';
 import { Links } from '../../common/links';
 import { ButtonClose, ButtonBack } from '@hypha-platform/epics';
-import { AsteriskIcon } from 'lucide-react';
+import { Asterisk as AsteriskIcon } from 'lucide-react';
 
 const schemaCreateSpaceForm = schemaCreateSpace.extend(createSpaceFiles);
 

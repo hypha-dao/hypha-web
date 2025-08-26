@@ -4,8 +4,7 @@ import { LuImagePlus, LuImageUp } from 'react-icons/lu';
 import clsx from 'clsx';
 import { PreviewOverlay } from './preview-overlay';
 import { PreviewImg } from './preview-img';
-import { Text } from '@radix-ui/themes';
-import { AsteriskIcon } from 'lucide-react';
+import { Asterisk as AsteriskIcon } from 'lucide-react';
 
 export type UploadAvatarProps = {
   EditIcon?: React.ElementType;
