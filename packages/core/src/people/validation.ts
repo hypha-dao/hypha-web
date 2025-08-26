@@ -6,10 +6,11 @@ const ALLOWED_IMAGE_FILE_SIZE = 4 * 1024 * 1024;
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
 const signupPersonWeb2Props = {
-  name: z.string().min(1, { message: 'Please enter your first name' }),
-  surname: z.string().min(1, { message: 'Please enter your last name' }),
+  name: z.string().trim().min(1, { message: 'Please enter your first name' }),
+  surname: z.string().trim().min(1, { message: 'Please enter your last name' }),
   nickname: z
     .string()
+    .trim()
     .min(1, { message: 'Please choose a nickname' })
     .max(12, { message: 'Nickname length should not exceed 12 characters' }),
   description: z

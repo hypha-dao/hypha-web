@@ -106,10 +106,12 @@ export const paymentScheduleSchema = z
 const createAgreementWeb2Props = {
   title: z
     .string()
+    .trim()
     .min(1, { message: 'Please add a title for your proposal' })
     .max(50),
   description: z
     .string()
+    .trim()
     .min(1, { message: 'Please add content to your proposal' })
     .max(4000),
   slug: z
@@ -243,11 +245,13 @@ export const schemaIssueNewToken = z.object({
   ...createAgreementFiles,
   name: z
     .string()
+    .trim()
     .min(2, { message: 'Please enter a token name (min. 2 characters)' })
     .max(100, { message: 'Token name must be at most 100 characters long' }),
 
   symbol: z
     .string()
+    .trim()
     .min(2, { message: 'Please enter a token symbol (min. 2 characters)' })
     .max(10, { message: 'Token symbol must be at most 10 characters long' })
     .regex(/^[A-Z]+$/, {
