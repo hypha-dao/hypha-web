@@ -9,6 +9,7 @@ import {
   FormMessage,
   Input,
 } from '@hypha-platform/ui';
+import { AsteriskIcon } from 'lucide-react';
 
 export function TokenNameField() {
   const { control } = useFormContext();
@@ -22,6 +23,7 @@ export function TokenNameField() {
           <div className="flex justify-between items-center">
             <FormLabel className="text-2 text-neutral-11 w-full">
               Token Name
+              <AsteriskIcon className="text-destructive inline w-4 h-4 align-super" />
             </FormLabel>
             <FormControl>
               <Input placeholder="Type a name" {...field} />

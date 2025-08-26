@@ -13,6 +13,7 @@ import {
   SelectContent,
   SelectItem,
 } from '@hypha-platform/ui';
+import { AsteriskIcon } from 'lucide-react';
 
 const TOKEN_TYPE_OPTIONS = [
   {
@@ -54,6 +55,7 @@ export function TokenTypeField({ onValueChange }: TokenTypeFieldProps) {
           <div className="flex justify-between items-center">
             <FormLabel className="text-2 text-neutral-11 w-full">
               Token Type
+              <AsteriskIcon className="text-destructive inline w-4 h-4 align-super" />
             </FormLabel>
             <FormControl>
               <Select

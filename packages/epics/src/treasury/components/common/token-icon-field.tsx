@@ -9,6 +9,7 @@ import {
   FormMessage,
 } from '@hypha-platform/ui';
 import { TokenIconUpload } from './token-icon';
+import { AsteriskIcon } from 'lucide-react';
 
 export function TokenIconField() {
   const { control } = useFormContext();
@@ -20,7 +21,10 @@ export function TokenIconField() {
       render={({ field }) => (
         <FormItem>
           <div className="flex justify-between items-center">
-            <FormLabel className="text-2 text-neutral-11">Token Icon</FormLabel>
+            <FormLabel className="text-2 text-neutral-11">
+              Token Icon
+              <AsteriskIcon className="text-destructive inline w-4 h-4 align-super" />
+            </FormLabel>
             <FormControl>
               <TokenIconUpload
                 defaultImage={field.value}
