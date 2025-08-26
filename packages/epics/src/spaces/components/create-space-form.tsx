@@ -125,7 +125,12 @@ export const SpaceForm = ({
                     <FormItem>
                       <FormControl>
                         <Input
-                          leftIcon={<AsteriskIcon size={12} className="text-destructive w-4 h-4 left-0 align-super" />}
+                          leftIcon={
+                            <AsteriskIcon
+                              size={12}
+                              className="text-destructive w-4 h-4 left-0 align-super"
+                            />
+                          }
                           placeholder="Type a title..."
                           className="border-0 text-4 p-0 pl-5 placeholder:text-4 bg-inherit"
                           disabled={isLoading}
@@ -169,7 +174,8 @@ export const SpaceForm = ({
                   uploadText={
                     <>
                       <span className="text-accent-11">Upload</span> space
-                      banner<AsteriskIcon className="text-destructive inline w-4 h-4 align-super" />
+                      banner
+                      <AsteriskIcon className="text-destructive inline w-4 h-4 align-super" />
                     </>
                   }
                 />
@@ -183,7 +189,10 @@ export const SpaceForm = ({
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-foreground">Purpose<AsteriskIcon className="text-destructive inline w-4 h-4 align-super" /></FormLabel>
+              <FormLabel className="text-foreground">
+                Purpose
+                <AsteriskIcon className="text-destructive inline w-4 h-4 align-super" />
+              </FormLabel>
               <FormControl>
                 <Textarea
                   disabled={isLoading}
