@@ -120,7 +120,7 @@ export const editPersonFiles = z.object({
 export const personTransfer = z.object({
   recipient: z
     .string()
-    .min(1, { message: 'Recipient is required' })
+    .min(1, { message: 'Please add a recipient or wallet address' })
     .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' }),
 
   payouts: z

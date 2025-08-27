@@ -170,7 +170,7 @@ export const schemaCreateAgreement = z.object({
 export const schemaProposeContribution = z.object({
   recipient: z
     .string()
-    .min(1, { message: 'Recipient is required' })
+    .min(1, { message: 'Please add a recipient or wallet address' })
     .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' })
     .optional(),
 
