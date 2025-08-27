@@ -125,10 +125,9 @@ export const SpaceForm = ({
                     <FormItem>
                       <FormControl>
                         <Input
-                          // rightIcon={!field.value && <RequirementMark />}
-                          leftIcon={!field.value && <RequirementMark />}
+                          rightIcon={!field.value && <RequirementMark />}
                           placeholder="Name your space..."
-                          className="border-0 text-4 p-0 pl-4 placeholder:text-4 bg-inherit"
+                          className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
                           disabled={isLoading}
                           {...field}
                         />

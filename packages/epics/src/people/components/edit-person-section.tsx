@@ -125,12 +125,7 @@ export const EditPersonSection = ({
                                 placeholder="First Name"
                                 required
                                 aria-required="true"
-                                // rightIcon={
-                                //   !field.value && (
-                                //     <RequirementMark className="text-4" />
-                                //   )
-                                // }
-                                leftIcon={
+                                rightIcon={
                                   !field.value && (
                                     <RequirementMark className="text-4" />
                                   )
@@ -151,12 +146,7 @@ export const EditPersonSection = ({
                               <Input
                                 disabled={isLoading}
                                 placeholder="Last Name"
-                                // rightIcon={
-                                //   !field.value && (
-                                //     <RequirementMark className="text-4" />
-                                //   )
-                                // }
-                                leftIcon={
+                                rightIcon={
                                   !field.value && (
                                     <RequirementMark className="text-4" />
                                   )
@@ -177,12 +167,7 @@ export const EditPersonSection = ({
                           <FormControl>
                             <Input
                               placeholder="Nickname"
-                              // rightIcon={
-                              //   !field.value && (
-                              //     <RequirementMark className="text-4" />
-                              //   )
-                              // }
-                              leftIcon={
+                              rightIcon={
                                 !field.value && (
                                   <RequirementMark className="text-4" />
                                 )
