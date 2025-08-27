@@ -82,6 +82,10 @@ export const SpaceForm = ({
   });
 
   React.useEffect(() => {
+    form?.reset(defaultValues);
+  }, [form, defaultValues]);
+
+  React.useEffect(() => {
     if (parentSpaceId) {
       form.setValue('parentId', parentSpaceId);
     }
