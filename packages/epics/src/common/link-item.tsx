@@ -32,7 +32,9 @@ export const LinkItem = ({ link, error, onChange }: LinkItemProps) => {
           value={link}
           onChange={handleChange}
         />
-        {error && <span className="text-sm text-destructive mt-1">{error}</span>}
+        {error && (
+          <span className="text-sm text-destructive mt-1">{error}</span>
+        )}
       </span>
     </div>
   );

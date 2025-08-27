@@ -14,6 +14,7 @@ import {
   AddAttachment,
   RichTextEditor,
   FormLabel,
+  RequirementMark,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { PersonAvatar } from '../../people/components/person-avatar';
@@ -25,7 +26,6 @@ import {
 } from '@hypha-platform/core/client';
 
 import { ButtonClose, ButtonBack } from '@hypha-platform/epics';
-import { Asterisk as AsteriskIcon } from 'lucide-react';
 
 type Creator = { avatar: string; name: string; surname: string };
 
@@ -96,12 +96,7 @@ export function CreateAgreementBaseFields({
                         placeholder="Proposal title..."
                         className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
                         disabled={isLoading}
-                        rightIcon={
-                          <AsteriskIcon
-                            size={12}
-                            className="text-destructive w-4 h-4 left-0 align-super"
-                          />
-                        }
+                        rightIcon={<RequirementMark className="text-4" />}
                         {...field}
                       />
                     </FormControl>
@@ -138,8 +133,7 @@ export function CreateAgreementBaseFields({
         render={({ field }) => (
           <FormItem>
             <FormLabel className="text-foreground">
-              Proposal Content
-              <AsteriskIcon className="text-destructive inline w-4 h-4 align-super" />
+              Proposal Content <RequirementMark />
             </FormLabel>
             <FormControl>
               <RichTextEditor

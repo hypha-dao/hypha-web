@@ -18,12 +18,12 @@ import {
   FormMessage,
   UploadLeadImage,
   UploadAvatar,
+  RequirementMark,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/ui-utils';
 import { Links } from '../../common';
 import { ButtonClose } from '@hypha-platform/epics';
-import { Asterisk as AsteriskIcon } from 'lucide-react';
 
 interface Person {
   avatarUrl?: string;
@@ -127,10 +127,7 @@ export const EditPersonSection = ({
                                 aria-required="true"
                                 rightIcon={
                                   !field.value && (
-                                    <AsteriskIcon
-                                      size={12}
-                                      className="text-destructive w-4 h-4 align-super"
-                                    />
+                                    <RequirementMark className="text-4" />
                                   )
                                 }
                                 {...field}
@@ -151,10 +148,7 @@ export const EditPersonSection = ({
                                 placeholder="Last Name"
                                 rightIcon={
                                   !field.value && (
-                                    <AsteriskIcon
-                                      size={12}
-                                      className="text-destructive w-4 h-4 align-super"
-                                    />
+                                    <RequirementMark className="text-4" />
                                   )
                                 }
                                 {...field}
@@ -175,10 +169,7 @@ export const EditPersonSection = ({
                               placeholder="Nickname"
                               rightIcon={
                                 !field.value && (
-                                  <AsteriskIcon
-                                    size={12}
-                                    className="text-destructive w-4 h-4 align-super"
-                                  />
+                                  <RequirementMark className="text-4" />
                                 )
                               }
                               {...field}

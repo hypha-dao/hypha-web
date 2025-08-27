@@ -15,6 +15,7 @@ import {
   UploadAvatar,
   UploadLeadImage,
   MultiSelect,
+  RequirementMark,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import React from 'react';
@@ -29,7 +30,6 @@ import {
 } from '@hypha-platform/core/client';
 import { Links } from '../../common/links';
 import { ButtonClose, ButtonBack } from '@hypha-platform/epics';
-import { Asterisk as AsteriskIcon } from 'lucide-react';
 
 const schemaCreateSpaceForm = schemaCreateSpace.extend(createSpaceFiles);
 
@@ -125,14 +125,7 @@ export const SpaceForm = ({
                     <FormItem>
                       <FormControl>
                         <Input
-                          rightIcon={
-                            !field.value && (
-                              <AsteriskIcon
-                                size={12}
-                                className="text-destructive w-4 h-4 left-0 align-super"
-                              />
-                            )
-                          }
+                          rightIcon={!field.value && <RequirementMark />}
                           placeholder="Name your space..."
                           className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
                           disabled={isLoading}
@@ -176,8 +169,7 @@ export const SpaceForm = ({
                   uploadText={
                     <>
                       <span className="text-accent-11">Upload</span> space
-                      banner
-                      <AsteriskIcon className="text-destructive inline w-4 h-4 align-super" />
+                      banner <RequirementMark />
                     </>
                   }
                 />
@@ -192,8 +184,7 @@ export const SpaceForm = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-foreground">
-                Purpose
-                <AsteriskIcon className="text-destructive inline w-4 h-4 align-super" />
+                Purpose <RequirementMark />
               </FormLabel>
               <FormControl>
                 <Textarea

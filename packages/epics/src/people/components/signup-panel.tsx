@@ -19,12 +19,13 @@ import {
   FormMessage,
   UploadLeadImage,
   UploadAvatar,
+  RequirementMark,
 } from '@hypha-platform/ui';
 import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
-import { Asterisk as AsteriskIcon, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Links } from '../../common';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useEffect } from 'react';
@@ -107,10 +108,7 @@ export const SignupPanel = ({
                               className="text-2 text-neutral-11"
                               rightIcon={
                                 !field.value && (
-                                  <AsteriskIcon
-                                    size={12}
-                                    className="text-destructive w-4 h-4 left-0 align-super"
-                                  />
+                                  <RequirementMark className="text-2" />
                                 )
                               }
                               {...field}
@@ -132,10 +130,7 @@ export const SignupPanel = ({
                               className="text-2 text-neutral-11"
                               rightIcon={
                                 !field.value && (
-                                  <AsteriskIcon
-                                    size={12}
-                                    className="text-destructive w-4 h-4 align-super"
-                                  />
+                                  <RequirementMark className="text-2" />
                                 )
                               }
                               {...field}
@@ -158,10 +153,7 @@ export const SignupPanel = ({
                             className="text-1 text-neutral-11"
                             rightIcon={
                               !field.value && (
-                                <AsteriskIcon
-                                  size={12}
-                                  className="text-destructive w-4 h-4 left-0 align-super"
-                                />
+                                <RequirementMark className="text-1" />
                               )
                             }
                             {...field}
