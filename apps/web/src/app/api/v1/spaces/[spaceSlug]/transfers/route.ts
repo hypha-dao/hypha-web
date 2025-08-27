@@ -1,22 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getSpaceDetails } from '@hypha-platform/core/client';
-import { publicClient } from '@hypha-platform/core/client';
+import { type NextRequest, NextResponse } from 'next/server';
+import {
+  getSpaceDetails,
+  publicClient,
+  schemaGetTransfersQuery,
+  validTokenTypes,
+  type TokenType,
+} from '@hypha-platform/core/client';
 import {
   findSpaceBySlug,
   getTransfersByAddress,
   findSpaceByAddress,
   getTokenMeta,
-} from '@hypha-platform/core/server';
-import {
-  schemaGetTransfersQuery,
-  validTokenTypes,
-  TokenType,
-} from '@hypha-platform/core/client';
-import {
   findPersonByWeb3Address,
   findAllTokens,
+  getDb,
 } from '@hypha-platform/core/server';
-import { getDb } from '@hypha-platform/core/server';
 import { zeroAddress } from 'viem';
 
 /**
