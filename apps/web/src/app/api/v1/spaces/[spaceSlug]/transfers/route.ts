@@ -1,36 +1,38 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getSpaceDetails } from '@hypha-platform/core/client';
-import { publicClient } from '@hypha-platform/core/client';
+import { type NextRequest, NextResponse } from 'next/server';
+import {
+  getSpaceDetails,
+  schemaGetTransfersQuery,
+  validTokenTypes,
+  type TokenType,
+} from '@hypha-platform/core/client';
 import {
   findSpaceBySlug,
   getTransfersByAddress,
   findSpaceByAddress,
   getTokenMeta,
-} from '@hypha-platform/core/server';
-import {
-  schemaGetTransfersQuery,
-  validTokenTypes,
-  TokenType,
-} from '@hypha-platform/core/client';
-import {
   findPersonByWeb3Address,
   findAllTokens,
+  getDb,
+  web3Client,
 } from '@hypha-platform/core/server';
-import { getDb } from '@hypha-platform/core/server';
 import { zeroAddress } from 'viem';
 
 /**
- * A route to get ERC20 transfers.
+ * @summary Route to get ERC20 transfers of a space
+ * @param request Incoming request
+ * @param context Request's context with URL params
  *
- * Query parameters:
- * - token: addresses of token contracts divided by commas. Optional
- * - fromDate: timestamp of the start date from which to get the transfers. Optional
- * - toDate: timestamp of the end date from which to get the transfers. Optional
- * - fromBlock: the minimum block number from which to get the transfers. Optional
- * - toBlock: the maximum block number from which to get the transfers. Optional
- * - limit: the desired number of the result. Not greater than 50. Defaults to 10
+ * @inner Query parameters
+ * @param token Addresses of token contracts divided by commas. Optional
+ * @param fromDate Timestamp of the start date from which to get transfers.
+ *        Optional
+ * @param toDate Timestamp of the end date from which to get transfers. Optional
+ * @param fromBlock The minimum block number from which to get transfers.
+ *        Optional
+ * @param toBlock The maximum block number from which to get transfers. Optional
+ * @param limit The desired number of the result. Not greater than 50. Defaults
+ *        to 10
  */
-
 export async function GET(
   { nextUrl, headers }: NextRequest,
   { params }: { params: Promise<{ spaceSlug: string }> },
@@ -40,6 +42,7 @@ export async function GET(
   if (!authToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  const db = getDb({ authToken });
 
   const { fromDate, toDate, fromBlock, toBlock, limit, token } =
     schemaGetTransfersQuery.parse(
@@ -47,15 +50,12 @@ export async function GET(
     );
 
   try {
-    const space = await findSpaceBySlug(
-      { slug: spaceSlug },
-      { db: getDb({ authToken }) },
-    );
+    const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
     if (!space) {
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
 
-    const spaceDetails = await publicClient.readContract(
+    const spaceDetails = await web3Client.readContract(
       getSpaceDetails({ spaceId: BigInt(space.web3SpaceId as number) }),
     );
 
@@ -70,10 +70,7 @@ export async function GET(
       limit,
     });
 
-    const rawDbTokens = await findAllTokens(
-      { db: getDb({ authToken }) },
-      { search: undefined },
-    );
+    const rawDbTokens = await findAllTokens({ db }, { search: undefined });
     const dbTokens = rawDbTokens.map((token) => ({
       agreementId: token.agreementId ?? undefined,
       spaceId: token.spaceId ?? undefined,
@@ -92,49 +89,50 @@ export async function GET(
       transfers.map(async (transfer) => {
         const isIncoming =
           transfer.to.toUpperCase() === spaceAddress.toUpperCase();
-        const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
-        const isMint = transfer.from === zeroAddress;
+        const direction = isIncoming ? 'incoming' : 'outgoing';
+        const counterparty = isIncoming ? 'from' : 'to';
 
-        let person = null;
-        let space = null;
-        let tokenIcon = null;
+        const isMint = transfer.from === zeroAddress;
         if (isMint) {
-          const tokenMeta = await getTokenMeta(
+          const { icon } = await getTokenMeta(
             transfer.token as `0x${string}`,
             dbTokens,
           );
-          tokenIcon = tokenMeta.icon;
-        } else {
-          person = await findPersonByWeb3Address(
-            { address: counterpartyAddress },
-            { db: getDb({ authToken }) },
-          );
-          if (!person) {
-            space = await findSpaceByAddress(
-              { address: counterpartyAddress },
-              { db: getDb({ authToken }) },
-            );
-          }
+
+          return {
+            ...transfer,
+            tokenIcon: icon,
+            direction,
+            counterparty,
+          };
         }
+
+        const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
+        const person =
+          (await findPersonByWeb3Address(
+            { address: counterpartyAddress },
+            { db },
+          )) || undefined;
+        const space = person
+          ? undefined
+          : (await findSpaceByAddress(
+              { address: counterpartyAddress },
+              { db },
+            )) || undefined;
 
         return {
           ...transfer,
-          person: person
-            ? {
-                name: person.name,
-                surname: person.surname,
-                avatarUrl: person.avatarUrl,
-              }
-            : undefined,
-          space: space
-            ? {
-                title: space.title,
-                avatarUrl: space.logoUrl,
-              }
-            : undefined,
-          tokenIcon,
-          direction: isIncoming ? 'incoming' : 'outgoing',
-          counterparty: isIncoming ? 'from' : 'to',
+          person: person && {
+            name: person.name,
+            surname: person.surname,
+            avatarUrl: person.avatarUrl,
+          },
+          space: space && {
+            title: space.title,
+            avatarUrl: space.logoUrl,
+          },
+          direction,
+          counterparty,
         };
       }),
     );
