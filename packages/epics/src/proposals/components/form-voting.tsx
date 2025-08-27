@@ -42,6 +42,7 @@ export const FormVoting = ({
   onCheckProposalExpiration,
   isVoting,
   documentSlug,
+  isAuthenticated,
 }: {
   unity: number;
   quorum: number;
@@ -54,6 +55,7 @@ export const FormVoting = ({
   onCheckProposalExpiration: () => void;
   isVoting?: boolean;
   documentSlug: string;
+  isAuthenticated?: boolean;
 }) => {
   const { myVote } = useMyVote(documentSlug);
   return (
@@ -112,11 +114,24 @@ export const FormVoting = ({
                   <Button
                     variant="outline"
                     onClick={onReject}
-                    disabled={isVoting}
+                    disabled={isVoting || !isAuthenticated}
+                    title={
+                      !isAuthenticated
+                        ? 'Please sign in to use this feature.'
+                        : ''
+                    }
                   >
                     Vote no
                   </Button>
-                  <Button onClick={onAccept} disabled={isVoting}>
+                  <Button
+                    title={
+                      !isAuthenticated
+                        ? 'Please sign in to use this feature.'
+                        : ''
+                    }
+                    onClick={onAccept}
+                    disabled={isVoting || !isAuthenticated}
+                  >
                     Vote yes
                   </Button>
                 </>

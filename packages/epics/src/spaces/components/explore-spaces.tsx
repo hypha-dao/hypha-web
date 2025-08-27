@@ -18,6 +18,7 @@ import { categories as categoryOptions } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cva } from 'class-variance-authority';
+import { useAuthentication } from '@hypha-platform/authentication';
 
 interface ExploreSpacesProps {
   lang: Locale;
@@ -220,6 +221,8 @@ export function ExploreSpaces({
     });
   }, [selectedSpaces, order]);
 
+  const { isAuthenticated } = useAuthentication();
+
   return (
     <div className="flex flex-col">
       <Heading
@@ -307,8 +310,13 @@ export function ExploreSpaces({
             allowEmptyChoice={false}
           />
         </div>
-        <Link href={`/${lang}/network/create`} scroll={false}>
-          <Button className="ml-2">
+        <Link
+          className={!isAuthenticated ? 'cursor-not-allowed' : ''}
+          title={!isAuthenticated ? 'Please sign in to use this feature.' : ''}
+          href={isAuthenticated ? `/${lang}/network/create` : {}}
+          scroll={false}
+        >
+          <Button disabled={!isAuthenticated} className="ml-2">
             <PlusIcon />
             Create Space
           </Button>

@@ -6,6 +6,7 @@ import { Locale } from '@hypha-platform/i18n';
 import { Button, Heading } from '@hypha-platform/ui';
 import { PlusIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
+import { useAuthentication } from '@hypha-platform/authentication';
 
 export function NetworkAll({
   lang,
@@ -21,6 +22,7 @@ export function NetworkAll({
   const getHref = (id: string) => {
     return getPathHelper(lang, id);
   };
+  const { isAuthenticated } = useAuthentication();
 
   return (
     <>
@@ -29,8 +31,13 @@ export function NetworkAll({
       </Heading>
       <div className="flex justify-center">
         <SpaceSearch />
-        <Link href={`/${lang}/network/create`} scroll={false}>
-          <Button className="ml-2">
+        <Link
+          className={!isAuthenticated ? 'cursor-not-allowed' : ''}
+          title={!isAuthenticated ? 'Please sign in to use this feature.' : ''}
+          href={isAuthenticated ? `/${lang}/network/create` : {}}
+          scroll={false}
+        >
+          <Button disabled={!isAuthenticated} className="ml-2">
             <PlusIcon />
             Create Space
           </Button>

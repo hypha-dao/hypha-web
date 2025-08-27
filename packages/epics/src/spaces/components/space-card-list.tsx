@@ -9,6 +9,7 @@ import { GlobeIcon, PlusIcon } from '@radix-ui/react-icons';
 import { useSpaceCardList } from '../hooks/use-space-card-list';
 import { SectionLoadMore } from '@hypha-platform/ui/server';
 import { Text } from '@radix-ui/themes';
+import { useAuthentication } from '@hypha-platform/authentication';
 
 type SpaceCardListProps = {
   lang: Locale;
@@ -27,6 +28,7 @@ export function SpaceCardList({
     spaces,
     pageSize,
   });
+  const { isAuthenticated } = useAuthentication();
 
   return (
     <>
@@ -77,8 +79,15 @@ export function SpaceCardList({
                   Explore Spaces
                 </Button>
               </Link>
-              <Link href={`/${lang}/my-spaces/create`} scroll={false}>
-                <Button className="gap-2">
+              <Link
+                className={!isAuthenticated ? 'cursor-not-allowed' : ''}
+                title={
+                  !isAuthenticated ? 'Please sign in to use this feature.' : ''
+                }
+                href={isAuthenticated ? `/${lang}/my-spaces/create` : {}}
+                scroll={false}
+              >
+                <Button disabled={!isAuthenticated} className="gap-2">
                   <PlusIcon />
                   Create Space
                 </Button>

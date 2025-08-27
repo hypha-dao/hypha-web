@@ -9,6 +9,7 @@ import { CopyIcon, RadiobuttonIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
 import { Empty } from '../../../common';
 import { Input } from '@hypha-platform/ui';
+import { useAuthentication } from '@hypha-platform/authentication';
 
 type AssetSectionProps = {
   basePath: string;
@@ -33,6 +34,7 @@ export const AssetsSection: FC<AssetSectionProps> = ({
   const filteredAssets = hideSmallBalances
     ? visibleAssets.filter((asset) => asset.value >= 1)
     : visibleAssets;
+  const { isAuthenticated } = useAuthentication();
 
   const renderFilterAndButtons = () => (
     <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-2">
@@ -48,21 +50,32 @@ export const AssetsSection: FC<AssetSectionProps> = ({
         </label>
       </SectionFilter>
       <div className="flex gap-2 justify-end">
-        <Button asChild>
-          <Link
-            href={`${governancePath}/create/issue-new-token?back=${basePath}`}
-            scroll={false}
-          >
+        <Link
+          className={!isAuthenticated ? 'cursor-not-allowed' : ''}
+          href={
+            isAuthenticated
+              ? `${governancePath}/create/issue-new-token?back=${basePath}`
+              : {}
+          }
+          scroll={false}
+          title={!isAuthenticated ? 'Please sign in to use this feature.' : ''}
+        >
+          <Button disabled={!isAuthenticated}>
             <RadiobuttonIcon />
             New Token
-          </Link>
-        </Button>
-        <Button asChild>
-          <Link href={`${basePath}/deposit`} scroll={false}>
+          </Button>
+        </Link>
+        <Link
+          className={!isAuthenticated ? 'cursor-not-allowed' : ''}
+          title={!isAuthenticated ? 'Please sign in to use this feature.' : ''}
+          href={isAuthenticated ? `${basePath}/deposit` : {}}
+          scroll={false}
+        >
+          <Button disabled={!isAuthenticated}>
             <CopyIcon />
             Deposit funds
-          </Link>
-        </Button>
+          </Button>
+        </Link>
       </div>
     </div>
   );

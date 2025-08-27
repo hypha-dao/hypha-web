@@ -14,6 +14,7 @@ import {
 import { BaseError, useConfig } from 'wagmi';
 import { useParams } from 'next/navigation';
 import { useInviteStatus } from '../hooks';
+import { useAuthentication } from '@hypha-platform/authentication';
 
 type JoinSpaceProps = {
   spaceId: number;
@@ -157,15 +158,19 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
     isInvitePending ||
     showLoader;
 
+  const { isAuthenticated } = useAuthentication();
+
   return (
     <div className="flex flex-col gap-2">
       <Button
-        disabled={isButtonDisabled}
+        disabled={isButtonDisabled || !isAuthenticated}
         onClick={handleJoinSpace}
         className="rounded-lg min-w-[120px]"
         colorVariant={isMember || justJoined ? 'neutral' : 'accent'}
         variant={isMember || justJoined ? 'outline' : 'default'}
-        title={buttonTitle}
+        title={
+          !isAuthenticated ? 'Please sign in to use this feature.' : buttonTitle
+        }
       >
         {showLoader ? (
           <Loader2 className="animate-spin" width={16} height={16} />

@@ -6,13 +6,13 @@ import {
   Carousel,
   CarouselItem,
   CarouselContent,
-  Button,
 } from '@hypha-platform/ui';
 import { Heading } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { getAllSpaces } from '@hypha-platform/core/server';
 import { getDhoPathGovernance } from '../dho/[id]/@tab/governance/constants';
 import { PlusIcon } from '@radix-ui/react-icons';
+import { AuthenticatedLinkButton } from '../dho/[id]/_components/authenticated-link-button';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -45,12 +45,10 @@ export default async function Index(props: PageProps) {
         </Heading>
         <div className="flex justify-center">
           <SpaceSearch />
-          <Link href={`/${lang}/my-spaces/create`} scroll={false}>
-            <Button className="ml-2">
-              <PlusIcon />
-              Create Space
-            </Button>
-          </Link>
+          <AuthenticatedLinkButton href={`/${lang}/my-spaces/create`}>
+            <PlusIcon />
+            Create Space
+          </AuthenticatedLinkButton>
         </div>
         <FilteredSpaces lang={lang} spaces={spaces} showLoadMore={false} />
         <div
