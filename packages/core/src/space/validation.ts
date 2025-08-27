@@ -68,7 +68,7 @@ export const schemaCreateSpaceWeb3 = z.object(createSpaceWeb3Props);
 
 export const createSpaceFiles = {
   logoUrl: z.union([
-    z.string().url('Please upload a Space Icon'),
+    z.string().url('A space icon is required'),
     z
       .instanceof(File)
       .refine(
@@ -81,7 +81,7 @@ export const createSpaceFiles = {
       ),
   ]),
   leadImage: z.union([
-    z.string().url('Please upload a space banner image'),
+    z.string().url('A space banner is required'),
     z
       .instanceof(File)
       .refine(
