@@ -53,7 +53,7 @@ export function TokenTypeField({ onValueChange }: TokenTypeFieldProps) {
       render={({ field }) => (
         <FormItem>
           <div className="flex justify-between items-center">
-            <FormLabel className="text-2 text-neutral-11 w-full">
+            <FormLabel className="text-2 text-neutral-11 w-full gap-1">
               Token Type <RequirementMark className="text-2" />
             </FormLabel>
             <FormControl>

@@ -132,7 +132,7 @@ export function CreateAgreementBaseFields({
         name="description"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-foreground">
+            <FormLabel className="text-foreground gap-1">
               Proposal Content <RequirementMark />
             </FormLabel>
             <FormControl>

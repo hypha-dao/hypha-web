@@ -168,7 +168,7 @@ export const SpaceForm = ({
                   }
                   uploadText={
                     <>
-                      <span className="text-accent-11">Upload</span> space
+                      <span className="text-accent-11 gap-1">Upload</span> space
                       banner <RequirementMark />
                     </>
                   }
@@ -183,7 +183,7 @@ export const SpaceForm = ({
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-foreground">
+              <FormLabel className="text-foreground gap-1">
                 Purpose <RequirementMark />
               </FormLabel>
               <FormControl>

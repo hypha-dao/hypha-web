@@ -22,7 +22,7 @@ export function TokenIconField() {
       render={({ field }) => (
         <FormItem>
           <div className="flex justify-between items-center">
-            <FormLabel className="text-2 text-neutral-11">
+            <FormLabel className="text-2 text-neutral-11 gap-1">
               Token Icon <RequirementMark className="text-2" />
             </FormLabel>
             <FormControl>
