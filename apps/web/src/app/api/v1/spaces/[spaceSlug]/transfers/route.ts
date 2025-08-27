@@ -18,17 +18,21 @@ import {
 import { zeroAddress } from 'viem';
 
 /**
- * A route to get ERC20 transfers.
+ * @summary Route to get ERC20 transfers of a space
+ * @param request Incoming request
+ * @param context Request's context with URL params
  *
- * Query parameters:
- * - token: addresses of token contracts divided by commas. Optional
- * - fromDate: timestamp of the start date from which to get the transfers. Optional
- * - toDate: timestamp of the end date from which to get the transfers. Optional
- * - fromBlock: the minimum block number from which to get the transfers. Optional
- * - toBlock: the maximum block number from which to get the transfers. Optional
- * - limit: the desired number of the result. Not greater than 50. Defaults to 10
+ * @inner Query parameters
+ * @param token Addresses of token contracts divided by commas. Optional
+ * @param fromDate Timestamp of the start date from which to get transfers.
+ *        Optional
+ * @param toDate Timestamp of the end date from which to get transfers. Optional
+ * @param fromBlock The minimum block number from which to get transfers.
+ *        Optional
+ * @param toBlock The maximum block number from which to get transfers. Optional
+ * @param limit The desired number of the result. Not greater than 50. Defaults
+ *        to 10
  */
-
 export async function GET(
   { nextUrl, headers }: NextRequest,
   { params }: { params: Promise<{ spaceSlug: string }> },
