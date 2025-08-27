@@ -42,6 +42,7 @@ export async function GET(
   if (!authToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  const db = getDb({ authToken });
 
   const { fromDate, toDate, fromBlock, toBlock, limit, token } =
     schemaGetTransfersQuery.parse(
@@ -49,10 +50,7 @@ export async function GET(
     );
 
   try {
-    const space = await findSpaceBySlug(
-      { slug: spaceSlug },
-      { db: getDb({ authToken }) },
-    );
+    const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
     if (!space) {
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
@@ -72,10 +70,7 @@ export async function GET(
       limit,
     });
 
-    const rawDbTokens = await findAllTokens(
-      { db: getDb({ authToken }) },
-      { search: undefined },
-    );
+    const rawDbTokens = await findAllTokens({ db }, { search: undefined });
     const dbTokens = rawDbTokens.map((token) => ({
       agreementId: token.agreementId ?? undefined,
       spaceId: token.spaceId ?? undefined,
@@ -109,12 +104,12 @@ export async function GET(
         } else {
           person = await findPersonByWeb3Address(
             { address: counterpartyAddress },
-            { db: getDb({ authToken }) },
+            { db },
           );
           if (!person) {
             space = await findSpaceByAddress(
               { address: counterpartyAddress },
-              { db: getDb({ authToken }) },
+              { db },
             );
           }
         }
