@@ -96,7 +96,8 @@ export function CreateAgreementBaseFields({
                         placeholder="Proposal title..."
                         className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
                         disabled={isLoading}
-                        rightIcon={<RequirementMark className="text-4" />}
+                        // rightIcon={!field.value && <RequirementMark className="text-4" />}
+                        leftIcon={!field.value && <RequirementMark className="text-4" />}
                         {...field}
                       />
                     </FormControl>

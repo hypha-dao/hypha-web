@@ -106,7 +106,12 @@ export const SignupPanel = ({
                               disabled={isLoading}
                               placeholder="First Name"
                               className="text-2 text-neutral-11"
-                              rightIcon={
+                              // rightIcon={
+                              //   !field.value && (
+                              //     <RequirementMark className="text-2" />
+                              //   )
+                              // }
+                              leftIcon={
                                 !field.value && (
                                   <RequirementMark className="text-2" />
                                 )
@@ -128,7 +133,12 @@ export const SignupPanel = ({
                               disabled={isLoading}
                               placeholder="Last Name"
                               className="text-2 text-neutral-11"
-                              rightIcon={
+                              // rightIcon={
+                              //   !field.value && (
+                              //     <RequirementMark className="text-2" />
+                              //   )
+                              // }
+                              leftIcon={
                                 !field.value && (
                                   <RequirementMark className="text-2" />
                                 )
@@ -151,7 +161,12 @@ export const SignupPanel = ({
                             disabled={isLoading}
                             placeholder="Nickname"
                             className="text-1 text-neutral-11"
-                            rightIcon={
+                            // rightIcon={
+                            //   !field.value && (
+                            //     <RequirementMark className="text-1" />
+                            //   )
+                            // }
+                            leftIcon={
                               !field.value && (
                                 <RequirementMark className="text-1" />
                               )
