@@ -38,7 +38,7 @@ const signupPersonWeb2Props = {
     })
     .optional(),
   links: z
-    .array(z.string().url('Links must be a valid URL'))
+    .array(z.string().url('Please enter a valid URL'))
     .max(3)
     .default([])
     .optional(),
@@ -70,7 +70,7 @@ const editPersonWeb2Props = {
     .trim()
     .optional(),
   links: z
-    .array(z.string().url('Links must be a valid URL'))
+    .array(z.string().url('Please enter a valid URL'))
     .max(3)
     .default([])
     .optional(),
