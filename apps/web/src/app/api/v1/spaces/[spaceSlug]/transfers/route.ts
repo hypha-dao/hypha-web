@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import {
   getSpaceDetails,
-  publicClient,
   schemaGetTransfersQuery,
   validTokenTypes,
   type TokenType,
@@ -14,6 +13,7 @@ import {
   findPersonByWeb3Address,
   findAllTokens,
   getDb,
+  web3Client,
 } from '@hypha-platform/core/server';
 import { zeroAddress } from 'viem';
 
@@ -55,7 +55,7 @@ export async function GET(
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
 
-    const spaceDetails = await publicClient.readContract(
+    const spaceDetails = await web3Client.readContract(
       getSpaceDetails({ spaceId: BigInt(space.web3SpaceId as number) }),
     );
 
