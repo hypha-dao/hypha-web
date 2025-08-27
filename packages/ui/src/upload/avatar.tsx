@@ -81,7 +81,9 @@ export const UploadAvatar = ({
             <EditIcon className="h-5 w-5" />
           )}
           {required && (
-            <Text className="text-destructive absolute -right-2 -top-3 z-10">*</Text>
+            <Text className="text-destructive absolute -right-2 -top-3 z-10">
+              *
+            </Text>
           )}
         </div>
       </PreviewOverlay>
