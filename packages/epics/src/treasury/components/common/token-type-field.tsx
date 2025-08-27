@@ -12,6 +12,7 @@ import {
   SelectValue,
   SelectContent,
   SelectItem,
+  RequirementMark,
 } from '@hypha-platform/ui';
 
 const TOKEN_TYPE_OPTIONS = [
@@ -52,8 +53,8 @@ export function TokenTypeField({ onValueChange }: TokenTypeFieldProps) {
       render={({ field }) => (
         <FormItem>
           <div className="flex justify-between items-center">
-            <FormLabel className="text-2 text-neutral-11 w-full">
-              Token Type
+            <FormLabel className="text-2 text-neutral-11 w-full gap-1">
+              Token Type <RequirementMark className="text-2" />
             </FormLabel>
             <FormControl>
               <Select

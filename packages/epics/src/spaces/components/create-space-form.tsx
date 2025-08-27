@@ -15,6 +15,7 @@ import {
   UploadAvatar,
   UploadLeadImage,
   MultiSelect,
+  RequirementMark,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import React from 'react';
@@ -108,6 +109,7 @@ export const SpaceForm = ({
                           ? defaultValues?.logoUrl
                           : undefined
                       }
+                      required={true}
                     />
                   </FormControl>
                   <FormMessage />
@@ -123,7 +125,8 @@ export const SpaceForm = ({
                     <FormItem>
                       <FormControl>
                         <Input
-                          placeholder="Type a title..."
+                          rightIcon={!field.value && <RequirementMark />}
+                          placeholder="Name your space..."
                           className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
                           disabled={isLoading}
                           {...field}
@@ -165,8 +168,8 @@ export const SpaceForm = ({
                   }
                   uploadText={
                     <>
-                      <span className="text-accent-11">Upload</span> space
-                      banner
+                      <span className="text-accent-11 gap-1">Upload</span> space
+                      banner <RequirementMark />
                     </>
                   }
                 />
@@ -180,11 +183,13 @@ export const SpaceForm = ({
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-foreground">Purpose</FormLabel>
+              <FormLabel className="text-foreground gap-1">
+                Purpose <RequirementMark />
+              </FormLabel>
               <FormControl>
                 <Textarea
                   disabled={isLoading}
-                  placeholder="Type a brief description here..."
+                  placeholder="Type your space purpose here..."
                   {...field}
                 />
               </FormControl>

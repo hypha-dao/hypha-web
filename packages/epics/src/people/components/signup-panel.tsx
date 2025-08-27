@@ -19,6 +19,7 @@ import {
   FormMessage,
   UploadLeadImage,
   UploadAvatar,
+  RequirementMark,
 } from '@hypha-platform/ui';
 import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
@@ -86,7 +87,7 @@ export const SignupPanel = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <UploadAvatar onChange={field.onChange} />
+                      <UploadAvatar onChange={field.onChange} required={true} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -103,8 +104,13 @@ export const SignupPanel = ({
                           <FormControl>
                             <Input
                               disabled={isLoading}
-                              placeholder="Name *"
+                              placeholder="First Name"
                               className="text-2 text-neutral-11"
+                              rightIcon={
+                                !field.value && (
+                                  <RequirementMark className="text-2" />
+                                )
+                              }
                               {...field}
                             />
                           </FormControl>
@@ -120,8 +126,13 @@ export const SignupPanel = ({
                           <FormControl>
                             <Input
                               disabled={isLoading}
-                              placeholder="Surname *"
+                              placeholder="Last Name"
                               className="text-2 text-neutral-11"
+                              rightIcon={
+                                !field.value && (
+                                  <RequirementMark className="text-2" />
+                                )
+                              }
                               {...field}
                             />
                           </FormControl>
@@ -138,8 +149,13 @@ export const SignupPanel = ({
                         <FormControl>
                           <Input
                             disabled={isLoading}
-                            placeholder="Nickname *"
+                            placeholder="Nickname"
                             className="text-1 text-neutral-11"
+                            rightIcon={
+                              !field.value && (
+                                <RequirementMark className="text-1" />
+                              )
+                            }
                             {...field}
                           />
                         </FormControl>
@@ -181,7 +197,7 @@ export const SignupPanel = ({
               <FormItem>
                 <FormControl>
                   <Textarea
-                    placeholder="Enter description"
+                    placeholder="Type your life purpose here..."
                     disabled={isLoading}
                     {...field}
                   />

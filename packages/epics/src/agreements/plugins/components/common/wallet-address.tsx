@@ -1,4 +1,4 @@
-import { Input } from '@hypha-platform/ui';
+import { Input, RequirementMark } from '@hypha-platform/ui';
 
 interface WalletAddressProps {
   address: string;
@@ -12,7 +12,10 @@ export const WalletAddress = ({ address, onChange }: WalletAddressProps) => {
 
   return (
     <div className="flex flex-col md:flex-row w-full md:items-center md:justify-between gap-4">
-      <label className="text-2 text-neutral-11">Wallet Address</label>
+      <label className="text-2 text-neutral-11 flex flex-row gap-1">
+        Wallet Address
+        <RequirementMark className="text-2" />
+      </label>
       <div>
         <Input
           value={address}

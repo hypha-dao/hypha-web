@@ -18,6 +18,7 @@ import {
   FormMessage,
   UploadLeadImage,
   UploadAvatar,
+  RequirementMark,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/ui-utils';
@@ -121,7 +122,14 @@ export const EditPersonSection = ({
                             <FormControl>
                               <Input
                                 disabled={isLoading}
-                                placeholder="Name"
+                                placeholder="First Name"
+                                required
+                                aria-required="true"
+                                rightIcon={
+                                  !field.value && (
+                                    <RequirementMark className="text-4" />
+                                  )
+                                }
                                 {...field}
                               />
                             </FormControl>
@@ -137,7 +145,12 @@ export const EditPersonSection = ({
                             <FormControl>
                               <Input
                                 disabled={isLoading}
-                                placeholder="Surname"
+                                placeholder="Last Name"
+                                rightIcon={
+                                  !field.value && (
+                                    <RequirementMark className="text-4" />
+                                  )
+                                }
                                 {...field}
                               />
                             </FormControl>
@@ -152,7 +165,15 @@ export const EditPersonSection = ({
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <Input placeholder="Nickname" {...field} />
+                            <Input
+                              placeholder="Nickname"
+                              rightIcon={
+                                !field.value && (
+                                  <RequirementMark className="text-4" />
+                                )
+                              }
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -192,7 +213,7 @@ export const EditPersonSection = ({
                 <FormItem>
                   <FormControl>
                     <Textarea
-                      placeholder="Enter description"
+                      placeholder="Type your life purpose here..."
                       disabled={isLoading}
                       {...field}
                     />

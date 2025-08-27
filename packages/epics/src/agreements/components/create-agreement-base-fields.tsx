@@ -13,6 +13,8 @@ import {
   Badge,
   AddAttachment,
   RichTextEditor,
+  FormLabel,
+  RequirementMark,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { PersonAvatar } from '../../people/components/person-avatar';
@@ -66,10 +68,24 @@ export function CreateAgreementBaseFields({
             userName={`${creator?.name} ${creator?.surname}`}
           />
           <div className="flex w-full">
-            <div className="flex flex-col w-full">
-              <Badge className="w-fit" colorVariant="accent">
-                {label}
-              </Badge>
+            <div className="flex flex-col w-full justify-between gap-4">
+              <div className="flex flex-row w-full">
+                <Badge className="w-fit" colorVariant="accent">
+                  {label}
+                </Badge>
+                <div className="flex grow"></div>
+                {backUrl && (
+                  <ButtonBack
+                    label={backLabel}
+                    backUrl={backUrl}
+                    className="px-0 md:px-3 align-top"
+                  />
+                )}
+                <ButtonClose
+                  closeUrl={closeUrl}
+                  className="px-0 md:px-3 align-top"
+                />
+              </div>
               <FormField
                 control={form.control}
                 name="title"
@@ -77,9 +93,10 @@ export function CreateAgreementBaseFields({
                   <FormItem>
                     <FormControl>
                       <Input
-                        placeholder="Type a title..."
+                        placeholder="Proposal title..."
                         className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
                         disabled={isLoading}
+                        rightIcon={<RequirementMark className="text-4" />}
                         {...field}
                       />
                     </FormControl>
@@ -92,16 +109,6 @@ export function CreateAgreementBaseFields({
               </Text>
             </div>
           </div>
-        </div>
-        <div className="flex justify-between gap-4">
-          {backUrl && (
-            <ButtonBack
-              label={backLabel}
-              backUrl={backUrl}
-              className="px-0 md:px-3"
-            />
-          )}
-          <ButtonClose closeUrl={closeUrl} className="px-0 md:px-3" />
         </div>
       </div>
       <Separator />
@@ -125,10 +132,14 @@ export function CreateAgreementBaseFields({
         name="description"
         render={({ field }) => (
           <FormItem>
+            <FormLabel className="text-foreground gap-1">
+              Proposal Content <RequirementMark />
+            </FormLabel>
             <FormControl>
               <RichTextEditor
                 editorRef={null}
                 markdown={field.value}
+                placeholder="Type your proposal content here..."
                 {...field}
               />
             </FormControl>

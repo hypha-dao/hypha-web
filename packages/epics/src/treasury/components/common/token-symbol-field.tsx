@@ -8,6 +8,7 @@ import {
   FormLabel,
   FormMessage,
   Input,
+  RequirementMark,
 } from '@hypha-platform/ui';
 
 export function TokenSymbolField() {
@@ -20,8 +21,8 @@ export function TokenSymbolField() {
       render={({ field }) => (
         <FormItem>
           <div className="flex justify-between items-center">
-            <FormLabel className="text-2 text-neutral-11 w-full">
-              Token Symbol
+            <FormLabel className="text-2 text-neutral-11 w-full gap-1">
+              Token Symbol <RequirementMark className="text-2" />
             </FormLabel>
             <FormControl>
               <Input placeholder="Type a symbol" {...field} />
