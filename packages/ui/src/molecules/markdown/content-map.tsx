@@ -4,7 +4,7 @@ import type { MDXComponents } from 'mdx/types';
 export const ComponentMap: MDXComponents = {
   h1: ({ children }: { children: React.ReactNode }) => (
     <h1
-      className="text-4xl font-bold text-neutral-11 mt-6 mb-2"
+      className="text-3xl font-bold text-neutral-11 mt-6 mb-2"
       id={typeof children === 'string' ? slugify(children) : undefined}
     >
       {children}
@@ -12,7 +12,7 @@ export const ComponentMap: MDXComponents = {
   ),
   h2: ({ children }: { children: React.ReactNode }) => (
     <h2
-      className="text-3xl font-bold text-neutral-11 mt-5 mb-2"
+      className="text-2xl font-bold text-neutral-11 mt-5 mb-2"
       id={typeof children === 'string' ? slugify(children) : undefined}
     >
       {children}
@@ -20,7 +20,7 @@ export const ComponentMap: MDXComponents = {
   ),
   h3: ({ children }: { children: React.ReactNode }) => (
     <h3
-      className="text-2xl font-bold text-neutral-11 mt-4 mb-2"
+      className="text-xl font-bold text-neutral-11 mt-4 mb-2"
       id={typeof children === 'string' ? slugify(children) : undefined}
     >
       {children}
@@ -28,27 +28,11 @@ export const ComponentMap: MDXComponents = {
   ),
   h4: ({ children }: { children: React.ReactNode }) => (
     <h4
-      className="text-xl font-bold text-neutral-11 mt-3 mb-2"
-      id={typeof children === 'string' ? slugify(children) : undefined}
-    >
-      {children}
-    </h4>
-  ),
-  h5: ({ children }: { children: React.ReactNode }) => (
-    <h5
       className="text-lg font-bold text-neutral-11 mt-3 mb-2"
       id={typeof children === 'string' ? slugify(children) : undefined}
     >
       {children}
-    </h5>
-  ),
-  h6: ({ children }: { children: React.ReactNode }) => (
-    <h6
-      className="text-base font-bold text-neutral-11 mt-3 mb-2"
-      id={typeof children === 'string' ? slugify(children) : undefined}
-    >
-      {children}
-    </h6>
+    </h4>
   ),
   p: ({ children }: { children: React.ReactNode }) => (
     <p
