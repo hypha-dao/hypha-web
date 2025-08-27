@@ -89,49 +89,50 @@ export async function GET(
       transfers.map(async (transfer) => {
         const isIncoming =
           transfer.to.toUpperCase() === spaceAddress.toUpperCase();
-        const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
-        const isMint = transfer.from === zeroAddress;
+        const direction = isIncoming ? 'incoming' : 'outgoing';
+        const counterparty = isIncoming ? 'from' : 'to';
 
-        let person = null;
-        let space = null;
-        let tokenIcon = null;
+        const isMint = transfer.from === zeroAddress;
         if (isMint) {
-          const tokenMeta = await getTokenMeta(
+          const { icon } = await getTokenMeta(
             transfer.token as `0x${string}`,
             dbTokens,
           );
-          tokenIcon = tokenMeta.icon;
-        } else {
-          person = await findPersonByWeb3Address(
+
+          return {
+            ...transfer,
+            tokenIcon: icon,
+            direction,
+            counterparty,
+          };
+        }
+
+        const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
+        const person =
+          (await findPersonByWeb3Address(
             { address: counterpartyAddress },
             { db },
-          );
-          if (!person) {
-            space = await findSpaceByAddress(
+          )) || undefined;
+        const space = person
+          ? undefined
+          : (await findSpaceByAddress(
               { address: counterpartyAddress },
               { db },
-            );
-          }
-        }
+            )) || undefined;
 
         return {
           ...transfer,
-          person: person
-            ? {
-                name: person.name,
-                surname: person.surname,
-                avatarUrl: person.avatarUrl,
-              }
-            : undefined,
-          space: space
-            ? {
-                title: space.title,
-                avatarUrl: space.logoUrl,
-              }
-            : undefined,
-          tokenIcon,
-          direction: isIncoming ? 'incoming' : 'outgoing',
-          counterparty: isIncoming ? 'from' : 'to',
+          person: person && {
+            name: person.name,
+            surname: person.surname,
+            avatarUrl: person.avatarUrl,
+          },
+          space: space && {
+            title: space.title,
+            avatarUrl: space.logoUrl,
+          },
+          direction,
+          counterparty,
         };
       }),
     );
