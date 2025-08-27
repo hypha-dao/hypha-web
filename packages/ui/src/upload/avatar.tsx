@@ -4,7 +4,7 @@ import { LuImagePlus, LuImageUp } from 'react-icons/lu';
 import clsx from 'clsx';
 import { PreviewOverlay } from './preview-overlay';
 import { PreviewImg } from './preview-img';
-import { Asterisk as AsteriskIcon } from 'lucide-react';
+import { Text } from '@radix-ui/themes';
 
 export type UploadAvatarProps = {
   EditIcon?: React.ElementType;
@@ -81,7 +81,7 @@ export const UploadAvatar = ({
             <EditIcon className="h-5 w-5" />
           )}
           {required && (
-            <AsteriskIcon className="text-destructive absolute -right-3 -top-3 z-10 w-5 h-5" />
+            <Text className="text-destructive absolute -right-2 -top-3 z-10">*</Text>
           )}
         </div>
       </PreviewOverlay>
