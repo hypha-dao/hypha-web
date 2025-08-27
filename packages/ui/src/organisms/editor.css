@@ -4,14 +4,12 @@
   background-color: var(--neutral-1);
   transition: border-color 0.2s ease-in-out;
 
-  /* Focus state for the entire editor */
   &:focus-within {
     border-color: var(--accent-7);
     box-shadow: 0 0 0 1px var(--accent-7);
   }
 
   .mdxeditor-popup-container {
-    /* Ensure popups have proper z-index and theming */
     z-index: 1000;
   }
 
@@ -21,7 +19,6 @@
     border-bottom: 1px solid var(--border);
     padding: 8px;
 
-    /* Toolbar button improvements */
     button {
       transition: all 0.2s ease-in-out;
       border-radius: calc(var(--radius) - 2px);
@@ -48,7 +45,6 @@
       box-shadow: 0 0 0 1px var(--border);
     }
 
-    /* Separator styling */
     .separator {
       background-color: var(--border);
     }
@@ -83,7 +79,6 @@
       color: var(--neutral-11);
     }
 
-    /* Arrow icon styling */
     svg {
       color: var(--neutral-11);
       transition: transform 0.2s ease-in-out;
@@ -100,18 +95,15 @@
     min-height: 120px;
     line-height: 1.6;
 
-    /* Improved text selection */
     ::selection {
       background-color: var(--accent-4);
       color: var(--accent-12);
     }
 
-    /* Focus styles for content */
     &:focus {
       outline: none;
     }
 
-    /* Enhanced list styling */
     ul,
     ol {
       gap: 0.25em;
@@ -138,27 +130,19 @@
       font-weight: bold;
     }
 
-    /* Enhanced heading styles */
     h1 {
-      font-size: 2em !important;
-    }
-    h2 {
       font-size: 1.5em !important;
     }
-    h3 {
+    h2 {
       font-size: 1.25em !important;
     }
-    h4 {
+    h3 {
       font-size: 1.0em !important;
     }
-    h5 {
+    h4 {
       font-size: 0.8em !important;
     }
-    h6 {
-      font-size: 0.75em !important;
-    }
 
-    /* Enhanced blockquote styling */
     blockquote {
       border-left: 3px solid var(--accent-6);
       padding-left: 1em;
@@ -167,7 +151,6 @@
       font-style: italic;
     }
 
-    /* Enhanced code styling */
     code {
       background-color: var(--neutral-3);
       border: 1px solid var(--border);
@@ -177,7 +160,6 @@
       font-size: 0.9em;
     }
 
-    /* Enhanced link styling */
     a {
       color: var(--accent-11);
       text-decoration: underline;
@@ -196,7 +178,6 @@
   }
 }
 
-/* Enhanced dropdown list container styling - rendered outside .mdxeditor */
 [role='listbox'] {
   background-color: var(--neutral-3) !important;
   border: 1px solid var(--border) !important;
@@ -217,7 +198,6 @@
   background-color: var(--accent-4) !important;
 }
 
-/* Enhanced dropdown option styling - rendered outside .mdxeditor */
 ._selectItem_sects_301 {
   background-color: transparent !important;
   color: var(--neutral-12) !important;
@@ -246,7 +226,6 @@
   }
 }
 
-/* Enhanced toolbar icon styling */
 .mdxeditor-toolbar [data-toolbar-item] {
   color: var(--neutral-11);
   transition: color 0.2s ease-in-out;
@@ -274,13 +253,11 @@
   color: var(--neutral-11);
 }
 
-/* Loading state improvements */
 .mdxeditor[data-loading='true'] {
   opacity: 0.7;
   pointer-events: none;
 }
 
-/* Error state styling */
 .mdxeditor[data-error='true'] {
   border-color: var(--error-7);
 
@@ -290,7 +267,6 @@
   }
 }
 
-/* Tooltip styling for MDX editor */
 [role='tooltip'] {
   background-color: var(--neutral-2) !important;
   color: var(--neutral-12) !important;
@@ -306,7 +282,6 @@
   word-wrap: break-word !important;
 }
 
-/* Tooltip content wrapper */
 ._tooltipContent_sects_681,
 [data-state='delayed-open'][class*='tooltipContent'] {
   background-color: var(--neutral-2) !important;
@@ -323,18 +298,15 @@
   word-wrap: break-word !important;
 }
 
-/* Tooltip trigger styling improvements */
 ._tooltipTrigger_sects_677[data-state='delayed-open'] {
   position: relative;
 }
 
-/* Ensure all tooltip-like elements have proper styling */
 [data-tooltip],
 [aria-describedby][data-state='delayed-open'] {
   position: relative;
 }
 
-/* Global tooltip styling for any tooltips rendered outside the editor */
 body [role='tooltip']:not(.mdxeditor [role='tooltip']) {
   background-color: var(--neutral-2) !important;
   color: var(--neutral-12) !important;
@@ -347,7 +319,6 @@ body [role='tooltip']:not(.mdxeditor [role='tooltip']) {
   z-index: 9999 !important;
 }
 
-/* Accessibility improvements */
 @media (prefers-reduced-motion: reduce) {
   .mdxeditor,
   .mdxeditor *,
@@ -357,7 +328,6 @@ body [role='tooltip']:not(.mdxeditor [role='tooltip']) {
   }
 }
 
-/* High contrast mode support */
 @media (prefers-contrast: high) {
   .mdxeditor {
     border-width: 2px;
