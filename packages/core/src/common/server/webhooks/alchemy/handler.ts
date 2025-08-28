@@ -52,7 +52,7 @@ export function newHandler<A extends Abi, E extends ContractEventName<A>>(
       callbacks.map((callback) => callback(events)),
     );
     const rejected = callbacksResult.filter((res) => res.status === 'rejected');
-    rejected.forEach((reason) =>
+    rejected.forEach(({ reason }) =>
       console.error('Webhook callback failed with error:', reason),
     );
 
