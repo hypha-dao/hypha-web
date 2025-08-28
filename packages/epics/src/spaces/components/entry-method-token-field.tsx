@@ -59,6 +59,8 @@ export const EntryMethodTokenField = ({
         <Input
           value={String(value.amount)}
           type="number"
+          step="any"
+          inputMode="decimal"
           placeholder="Type an amount"
           onChange={(e) => handleAmountChange(e.target.value)}
         />
