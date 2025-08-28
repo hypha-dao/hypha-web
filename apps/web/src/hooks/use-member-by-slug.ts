@@ -11,13 +11,12 @@ export const useMemberBySlug = (slug: string) => {
     [personSlug],
   );
 
-  const { data: person, isLoading } = useSWR(endpoint,
-    (endpoint) =>
-      fetch(endpoint, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }).then((res) => res.json()),
+  const { data: person, isLoading } = useSWR(endpoint, (endpoint) =>
+    fetch(endpoint, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }).then((res) => res.json()),
   );
   return { person, isLoading };
 };

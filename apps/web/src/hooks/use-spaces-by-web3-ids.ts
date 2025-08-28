@@ -22,14 +22,12 @@ export const useSpacesByWeb3Ids = (
     [web3SpaceIds],
   );
 
-  const { data: spaces, isLoading } = useSWR(
-    endpoint,
-    (endpoint) =>
-      fetch(endpoint, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }).then((res) => res.json()),
+  const { data: spaces, isLoading } = useSWR(endpoint, (endpoint) =>
+    fetch(endpoint, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }).then((res) => res.json()),
   );
 
   if (spaces && 'error' in spaces) {

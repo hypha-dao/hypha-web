@@ -10,10 +10,7 @@ export async function GET(
   console.debug(`GET /api/v1/people/${personSlug}/`);
 
   try {
-    const response = await findPersonBySlug(
-      { slug: personSlug },
-      { db },
-    );
+    const response = await findPersonBySlug({ slug: personSlug }, { db });
 
     return NextResponse.json(response);
   } catch (error) {
