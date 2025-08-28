@@ -42,9 +42,9 @@ export const TokenPayoutField = ({
       onChange({ amount: '', token: value.token });
       return;
     }
-    const parsed = Number.parseInt(amount, 10);
+    const parsed = Number.parseFloat(amount);
     onChange({
-      amount: String(Number.isNaN(parsed) ? 0 : parsed),
+      amount: Number.isNaN(parsed) ? '' : String(parsed),
       token: value.token,
     });
   };
@@ -56,6 +56,7 @@ export const TokenPayoutField = ({
           value={value.amount}
           type="number"
           step="any"
+          inputMode="decimal"
           placeholder="Amount"
           onChange={(e) => handleAmountChange(e.target.value)}
         />
