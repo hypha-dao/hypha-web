@@ -79,7 +79,9 @@ export const TokenPayoutField = ({
                       alt={selectedToken.symbol}
                       className="mr-2 object-cover rounded-full w-5 h-5"
                     />
-                    <span className="text-2 truncate">{selectedToken.symbol}</span>
+                    <span className="text-2 truncate">
+                      {selectedToken.symbol}
+                    </span>
                   </>
                 ) : (
                   <span className="text-2 text-nowrap">Select a token</span>
