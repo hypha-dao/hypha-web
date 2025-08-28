@@ -39,7 +39,11 @@ export const EntryMethodTokenField = ({
   };
 
   const handleAmountChange = (amount: string) => {
-    const parsed = Number.parseInt(amount, 10);
+    if (amount === '') {
+      onChange({ amount: 0, token: value.token });
+      return;
+    }
+    const parsed = Number.parseFloat(amount);
     onChange({
       amount: Number.isNaN(parsed) ? 0 : parsed,
       token: value.token,
