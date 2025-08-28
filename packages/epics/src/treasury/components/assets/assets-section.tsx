@@ -9,16 +9,22 @@ import { CopyIcon, RadiobuttonIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
 import { Empty } from '../../../common';
 import { Input } from '@hypha-platform/ui';
+import { useAuthentication } from '@hypha-platform/authentication';
+import { useJoinSpace } from '../../../spaces';
 
 type AssetSectionProps = {
   basePath: string;
   governancePath: string;
+  web3SpaceId?: number;
 };
 
 export const AssetsSection: FC<AssetSectionProps> = ({
   basePath,
   governancePath,
+  web3SpaceId,
 }) => {
+  const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
+
   const {
     visibleAssets,
     activeFilter,
@@ -33,6 +39,14 @@ export const AssetsSection: FC<AssetSectionProps> = ({
   const filteredAssets = hideSmallBalances
     ? visibleAssets.filter((asset) => asset.value >= 1)
     : visibleAssets;
+  const { isAuthenticated } = useAuthentication();
+
+  const isDisabled = !isAuthenticated || !isMember;
+  const tooltipMessage = !isAuthenticated
+    ? 'Please sign in to use this feature.'
+    : !isMember
+    ? 'Please join this space to use this feature.'
+    : '';
 
   const renderFilterAndButtons = () => (
     <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-2">
@@ -48,21 +62,32 @@ export const AssetsSection: FC<AssetSectionProps> = ({
         </label>
       </SectionFilter>
       <div className="flex gap-2 justify-end">
-        <Button asChild>
-          <Link
-            href={`${governancePath}/create/issue-new-token?back=${basePath}`}
-            scroll={false}
-          >
+        <Link
+          className={isDisabled ? 'cursor-not-allowed' : ''}
+          href={
+            isAuthenticated && isMember
+              ? `${governancePath}/create/issue-new-token?back=${basePath}`
+              : {}
+          }
+          scroll={false}
+          title={tooltipMessage || ''}
+        >
+          <Button disabled={isDisabled}>
             <RadiobuttonIcon />
             New Token
-          </Link>
-        </Button>
-        <Button asChild>
-          <Link href={`${basePath}/deposit`} scroll={false}>
+          </Button>
+        </Link>
+        <Link
+          className={isDisabled ? 'cursor-not-allowed' : ''}
+          title={tooltipMessage || ''}
+          href={isAuthenticated && isMember ? `${basePath}/deposit` : {}}
+          scroll={false}
+        >
+          <Button disabled={isDisabled}>
             <CopyIcon />
             Deposit funds
-          </Link>
-        </Button>
+          </Button>
+        </Link>
       </div>
     </div>
   );

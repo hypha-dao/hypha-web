@@ -1,10 +1,10 @@
 import { Text } from '@radix-ui/themes';
-import { Button } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { PlusIcon } from '@radix-ui/react-icons';
 import { UseMembers, InnerSpaceCardWrapper } from '@hypha-platform/epics';
 import { DEFAULT_SPACE_LEAD_IMAGE, Space } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
+import { AuthenticatedLinkButton } from '../../../../../apps/web/src/app/[lang]/dho/[id]/_components/authenticated-link-button';
 
 interface SubspaceSectionProps {
   getSpaceDetailLink: (lang: Locale, id: string) => string;
@@ -24,12 +24,10 @@ export const SubspaceSection = ({
       <div className="justify-between items-center flex">
         <Text className="text-4">Sub-Spaces | {spaces.length}</Text>
         <div className="flex items-center">
-          <Link href={`membership/space/create`} scroll={false}>
-            <Button className="ml-2">
-              <PlusIcon />
-              Create Sub-Space
-            </Button>
-          </Link>
+          <AuthenticatedLinkButton href={`membership/space/create`}>
+            <PlusIcon />
+            Create Sub-Space
+          </AuthenticatedLinkButton>
         </div>
       </div>
       {!spaces.length ? (
