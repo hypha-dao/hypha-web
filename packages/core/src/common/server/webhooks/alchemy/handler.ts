@@ -19,7 +19,7 @@ export function newHandler<A extends Abi, E extends ContractEventName<A>>(
   return newHandlerWithMiddleware(middleware, async (request: NextRequest) => {
     const payload = await (async () => {
       try {
-        return request.json();
+        return await request.json();
       } catch (error) {
         console.error('Failed to get request body:', error);
       }
@@ -34,7 +34,7 @@ export function newHandler<A extends Abi, E extends ContractEventName<A>>(
       return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
     }
 
-    const events = await (async () => {
+    const events = (() => {
       try {
         return parseEventLogs({
           abi: abi,
@@ -52,7 +52,7 @@ export function newHandler<A extends Abi, E extends ContractEventName<A>>(
       callbacks.map((callback) => callback(events)),
     );
     const rejected = callbacksResult.filter((res) => res.status === 'rejected');
-    rejected.forEach((reason) =>
+    rejected.forEach(({ reason }) =>
       console.error('Webhook callback failed with error:', reason),
     );
 
