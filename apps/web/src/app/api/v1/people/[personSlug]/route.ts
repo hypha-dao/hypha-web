@@ -1,5 +1,6 @@
-import { findPersonBySlug, getDb } from '@hypha-platform/core/server';
+import { findPersonBySlug } from '@hypha-platform/core/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@hypha-platform/storage-postgres';
 
 export async function GET(
   request: NextRequest,
@@ -8,16 +9,10 @@ export async function GET(
   const { personSlug } = await params;
   console.debug(`GET /api/v1/people/${personSlug}/`);
 
-  const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';
-
-  if (!authToken) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   try {
     const response = await findPersonBySlug(
       { slug: personSlug },
-      { db: getDb({ authToken }) },
+      { db },
     );
 
     return NextResponse.json(response);

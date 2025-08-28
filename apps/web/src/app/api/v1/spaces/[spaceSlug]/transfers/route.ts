@@ -12,10 +12,10 @@ import {
   getTokenMeta,
   findPersonByWeb3Address,
   findAllTokens,
-  getDb,
   web3Client,
 } from '@hypha-platform/core/server';
 import { zeroAddress } from 'viem';
+import { db } from '@hypha-platform/storage-postgres';
 
 /**
  * @summary Route to get ERC20 transfers of a space
@@ -38,11 +38,6 @@ export async function GET(
   { params }: { params: Promise<{ spaceSlug: string }> },
 ) {
   const { spaceSlug } = await params;
-  const authToken = headers.get('Authorization')?.split(' ')[1] || '';
-  if (!authToken) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-  const db = getDb({ authToken });
 
   const { fromDate, toDate, fromBlock, toBlock, limit, token } =
     schemaGetTransfersQuery.parse(
