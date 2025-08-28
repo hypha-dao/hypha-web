@@ -50,16 +50,17 @@ export const TokenPayoutField = ({
   };
 
   return (
-    <div className="flex flex-row gap-2 md:justify-end sm:gap-4 items-end">
-      <span className="flex top-0 w-25 m-0 p-0">
+    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 md:justify-end items-end">
+      <div className="flex top-0 m-0 p-0 flex-1 min-w-0">
         <Input
           value={value.amount}
           type="number"
+          step="any"
           placeholder="Amount"
           onChange={(e) => handleAmountChange(e.target.value)}
         />
-      </span>
-      <span className="flex top-0 w-60 m-0 p-0">
+      </div>
+      <div className="flex top-0 w-full sm:w-60 shrink-0 min-w-0 m-0 p-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -105,7 +106,7 @@ export const TokenPayoutField = ({
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
-      </span>
+      </div>
     </div>
   );
 };
