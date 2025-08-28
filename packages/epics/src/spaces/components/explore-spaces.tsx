@@ -139,11 +139,14 @@ export function ExploreSpaces({
     () =>
       uniqueCategories
         .map((category) =>
-          categoryOptions.find((option) => option.value === category),
+          categoryOptions.find(
+            (option) => !option.archive && option.value === category,
+          ),
         )
         .filter(
           (category): category is NonNullable<typeof category> => !!category,
         )
+        .filter((category) => category.value !== 'sandbox')
         .sort((a, b) => (a.label > b.label ? 1 : -1)),
     [uniqueCategories],
   );
