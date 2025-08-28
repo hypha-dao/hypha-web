@@ -54,7 +54,8 @@ export const EntryMethodTokenField = ({
     setDisplayAmount(next);
     // don't propagate while incomplete (empty or trailing '.')
     if (next === '' || next.endsWith('.') || next.endsWith(',')) return;
-    const parsed = Number.parseFloat(next);
+    const canonical = next.replace(',', '.');
+    const parsed = Number.parseFloat(canonical);
     onChange({
       amount: Number.isFinite(parsed) ? parsed : 0,
       token: value.token,
@@ -81,7 +82,8 @@ export const EntryMethodTokenField = ({
               return;
             }
             if (next.endsWith('.') || next.endsWith(',')) {
-              const parsed = Number.parseFloat(next);
+              const canonical = next.replace(',', '.');
+              const parsed = Number.parseFloat(canonical);
               onChange({
                 amount: Number.isFinite(parsed) ? parsed : 0,
                 token: value.token,
