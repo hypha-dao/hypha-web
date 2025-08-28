@@ -108,7 +108,7 @@ export default async function DhoLayout({
               spaceId={spaceFromDb.id}
             />
           )}
-          <ActionButtons web3SpaceId={spaceFromDb.id} />
+          <ActionButtons web3SpaceId={spaceFromDb.web3SpaceId as number} />
         </div>
 
         <div className="flex flex-col mt-4 gap-2">
