@@ -1,5 +1,7 @@
-import { Alchemy } from '@hypha-platform/core/server';
+import { Alchemy, findPersonByWeb3Address } from '@hypha-platform/core/server';
 import { daoSpaceFactoryImplementationAbi } from '@hypha-platform/core/generated';
+import { sendEmail } from '@hypha-platform/notifications/server';
+import { db } from '@hypha-platform/storage-postgres';
 
 export const POST = Alchemy.newHandler(
   {
@@ -7,5 +9,66 @@ export const POST = Alchemy.newHandler(
     abi: daoSpaceFactoryImplementationAbi,
     event: 'SpaceCreated',
   },
-  async () => {},
+  async (events) => {
+    const creatorsWithTotalOfSpaces = events.reduce((creators, { args }) => {
+      const creator = args.creator.toLowerCase() as `0x${string}`;
+      creators[creator] = (creators[creator] || 0) + 1;
+
+      return creators;
+    }, {} as Record<`0x${string}`, number>);
+
+    const dbRequestForCreators = Object.entries(creatorsWithTotalOfSpaces).map(
+      async ([address, spaces]) => {
+        const person = await findPersonByWeb3Address({ address }, { db });
+        if (!person) throw new Error(`Empty person for address ${address}`);
+
+        return { ...person, createdSpacesCount: spaces };
+      },
+    );
+    const dbResponse = await Promise.allSettled(dbRequestForCreators);
+
+    dbResponse.forEach((res) => {
+      if (res.status === 'rejected')
+        console.error('Failed to fetch person:', res.reason);
+    });
+
+    const creatorsToNotify = dbResponse
+      .filter((res) => res.status === 'fulfilled')
+      .map(({ value }) => value);
+    if (creatorsToNotify.length === 0) {
+      const spaceIds = events.map(({ args }) => args.spaceId);
+      console.warn(
+        'No creators found to notify. Space IDs from logs:',
+        spaceIds,
+      );
+
+      return;
+    }
+
+    const notificationRequest = creatorsToNotify.map(
+      async ({ slug, createdSpacesCount }) => {
+        const emailBody =
+          createdSpacesCount > 1
+            ? `You've successfully created ${createdSpacesCount} spaces.`
+            : "You've successfully created a space.";
+
+        await sendEmail({
+          app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '',
+          target_channel: 'email',
+          email_subject: 'Successful space creation',
+          email_body: emailBody,
+          include_aliases: {
+            external_id: [slug!],
+            onesignal_id: [],
+          },
+        });
+      },
+    );
+    const notifications = await Promise.allSettled(notificationRequest);
+
+    notifications
+      .filter((notification) => notification.status === 'rejected')
+      .map(({ reason }) => reason)
+      .forEach((failure) => console.error(failure));
+  },
 );
