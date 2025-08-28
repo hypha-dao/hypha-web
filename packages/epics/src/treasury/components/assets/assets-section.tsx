@@ -10,16 +10,21 @@ import Link from 'next/link';
 import { Empty } from '../../../common';
 import { Input } from '@hypha-platform/ui';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { useJoinSpace } from '../../../spaces';
 
 type AssetSectionProps = {
   basePath: string;
   governancePath: string;
+  web3SpaceId?: number;
 };
 
 export const AssetsSection: FC<AssetSectionProps> = ({
   basePath,
   governancePath,
+  web3SpaceId,
 }) => {
+  const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
+
   const {
     visibleAssets,
     activeFilter,
@@ -36,6 +41,13 @@ export const AssetsSection: FC<AssetSectionProps> = ({
     : visibleAssets;
   const { isAuthenticated } = useAuthentication();
 
+  const isDisabled = !isAuthenticated || !isMember;
+  const tooltipMessage = !isAuthenticated
+    ? 'Please sign in to use this feature.'
+    : !isMember
+    ? 'Please join this space to use this feature.'
+    : '';
+
   const renderFilterAndButtons = () => (
     <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-2">
       <SectionFilter count={totalBalance || 0} label="Balance">
@@ -51,27 +63,27 @@ export const AssetsSection: FC<AssetSectionProps> = ({
       </SectionFilter>
       <div className="flex gap-2 justify-end">
         <Link
-          className={!isAuthenticated ? 'cursor-not-allowed' : ''}
+          className={isDisabled ? 'cursor-not-allowed' : ''}
           href={
-            isAuthenticated
+            isAuthenticated && isMember
               ? `${governancePath}/create/issue-new-token?back=${basePath}`
               : {}
           }
           scroll={false}
-          title={!isAuthenticated ? 'Please sign in to use this feature.' : ''}
+          title={tooltipMessage || ''}
         >
-          <Button disabled={!isAuthenticated}>
+          <Button disabled={isDisabled}>
             <RadiobuttonIcon />
             New Token
           </Button>
         </Link>
         <Link
-          className={!isAuthenticated ? 'cursor-not-allowed' : ''}
-          title={!isAuthenticated ? 'Please sign in to use this feature.' : ''}
-          href={isAuthenticated ? `${basePath}/deposit` : {}}
+          className={isDisabled ? 'cursor-not-allowed' : ''}
+          title={tooltipMessage || ''}
+          href={isAuthenticated && isMember ? `${basePath}/deposit` : {}}
           scroll={false}
         >
-          <Button disabled={!isAuthenticated}>
+          <Button disabled={isDisabled}>
             <CopyIcon />
             Deposit funds
           </Button>

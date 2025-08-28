@@ -152,6 +152,7 @@ export const ProposalDetail = ({
         isVoting={isVoting}
         documentSlug={documentSlug}
         isAuthenticated={isAuthenticated}
+        web3SpaceId={proposalDetails?.spaceId}
       />
       {/* TODO: uncomment when comments support will be implemented */}
       {/* <Separator />

@@ -3,6 +3,7 @@ import { ProgressLine } from './progress-line';
 import { intervalToDuration, isPast } from 'date-fns';
 import { VoterList } from '../../governance/components/voter-list';
 import { useMyVote } from '@hypha-platform/core/client';
+import { useJoinSpace } from '../../spaces';
 
 function formatTimeRemaining(
   endTime: string,
@@ -43,6 +44,7 @@ export const FormVoting = ({
   isVoting,
   documentSlug,
   isAuthenticated,
+  web3SpaceId,
 }: {
   unity: number;
   quorum: number;
@@ -56,8 +58,18 @@ export const FormVoting = ({
   isVoting?: boolean;
   documentSlug: string;
   isAuthenticated?: boolean;
+  web3SpaceId?: number;
 }) => {
   const { myVote } = useMyVote(documentSlug);
+  const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
+
+  const isDisabled = isVoting || !isAuthenticated || !isMember;
+  const tooltipMessage = !isAuthenticated
+    ? 'Please sign in to use this feature.'
+    : !isMember
+    ? 'Please join this space to use this feature.'
+    : '';
+
   return (
     <div className="flex flex-col gap-5 text-neutral-11">
       <VoterList documentSlug={documentSlug} />
@@ -100,7 +112,13 @@ export const FormVoting = ({
           </div>
           {isPast(new Date(endTime)) && !executed && !expired ? (
             <div className="flex gap-2">
-              <Button onClick={onCheckProposalExpiration}>Expire</Button>
+              <Button
+                onClick={onCheckProposalExpiration}
+                disabled={isDisabled}
+                title={tooltipMessage}
+              >
+                Expire
+              </Button>
             </div>
           ) : null}
           {executed || expired || isPast(new Date(endTime)) ? null : (
@@ -114,23 +132,15 @@ export const FormVoting = ({
                   <Button
                     variant="outline"
                     onClick={onReject}
-                    disabled={isVoting || !isAuthenticated}
-                    title={
-                      !isAuthenticated
-                        ? 'Please sign in to use this feature.'
-                        : ''
-                    }
+                    disabled={isDisabled}
+                    title={tooltipMessage}
                   >
                     Vote no
                   </Button>
                   <Button
-                    title={
-                      !isAuthenticated
-                        ? 'Please sign in to use this feature.'
-                        : ''
-                    }
                     onClick={onAccept}
-                    disabled={isVoting || !isAuthenticated}
+                    disabled={isDisabled}
+                    title={tooltipMessage}
                   >
                     Vote yes
                   </Button>
