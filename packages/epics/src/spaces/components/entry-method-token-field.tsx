@@ -11,6 +11,7 @@ import {
   Button,
 } from '@hypha-platform/ui';
 import { Address } from '@hypha-platform/core/client';
+import { useEffect, useState } from 'react';
 
 interface Token {
   icon: string;
@@ -32,20 +33,30 @@ export const EntryMethodTokenField = ({
   onChange,
   tokens,
 }: EntryMethodTokenFieldProps) => {
+  const [displayAmount, setDisplayAmount] = useState(
+    String(value.amount ?? ''),
+  );
+
+  useEffect(() => {
+    setDisplayAmount(String(value.amount ?? ''));
+  }, [value.amount]);
+
   const selectedToken = tokens.find((t) => t.address === value.token);
 
   const handleTokenChange = (token: Token) => {
     onChange({ amount: value.amount, token: token.address });
   };
 
-  const handleAmountChange = (amount: string) => {
-    if (amount === '') {
-      onChange({ amount: 0, token: value.token });
-      return;
-    }
-    const parsed = Number.parseFloat(amount);
+  const handleAmountChange = (next: string) => {
+    // allow only digits with a single optional decimal point;
+    // support intermediate states
+    if (!/^\d*(?:[\.\,]\d*)?$/.test(next)) return;
+    setDisplayAmount(next);
+    // don't propagate while incomplete (empty or trailing '.')
+    if (next === '' || next.endsWith('.') || next.endsWith(',')) return;
+    const parsed = Number.parseFloat(next);
     onChange({
-      amount: Number.isNaN(parsed) ? 0 : parsed,
+      amount: Number.isFinite(parsed) ? parsed : 0,
       token: value.token,
     });
   };
@@ -57,12 +68,27 @@ export const EntryMethodTokenField = ({
       </label>
       <div className="flex gap-2 items-center">
         <Input
-          value={String(value.amount)}
+          value={displayAmount}
           type="number"
           step="any"
           inputMode="decimal"
           placeholder="Type an amount"
           onChange={(e) => handleAmountChange(e.target.value)}
+          onBlur={() => {
+            const next = displayAmount;
+            if (next === '') {
+              onChange({ amount: 0, token: value.token });
+              return;
+            }
+            if (next.endsWith('.') || next.endsWith(',')) {
+              const parsed = Number.parseFloat(next);
+              onChange({
+                amount: Number.isFinite(parsed) ? parsed : 0,
+                token: value.token,
+              });
+              setDisplayAmount(Number.isFinite(parsed) ? String(parsed) : '');
+            }
+          }}
         />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
