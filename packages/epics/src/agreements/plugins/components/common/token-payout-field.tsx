@@ -69,7 +69,7 @@ export const TokenPayoutField = ({
               role="combobox"
               className="w-full flex-1 text-2 justify-between py-2 font-normal"
             >
-              <div className="flex items-center gap-2 w-24">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
                 {selectedToken ? (
                   <>
                     <Image
@@ -79,7 +79,7 @@ export const TokenPayoutField = ({
                       alt={selectedToken.symbol}
                       className="mr-2 object-cover rounded-full w-5 h-5"
                     />
-                    <span className="text-2">{selectedToken.symbol}</span>
+                    <span className="text-2 truncate">{selectedToken.symbol}</span>
                   </>
                 ) : (
                   <span className="text-2 text-nowrap">Select a token</span>
