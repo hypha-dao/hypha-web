@@ -1,6 +1,8 @@
+type CropRect = { x: number; y: number; width: number; height: number };
+
 export async function getCroppedImg(
   imageSrc: string,
-  crop: any,
+  crop: CropRect,
 ): Promise<string> {
   const image: HTMLImageElement = await new Promise((resolve, reject) => {
     const img = new Image();
