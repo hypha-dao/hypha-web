@@ -238,7 +238,7 @@ export const categories: CategoryOption[] = [
   {
     value: 'sandbox',
     label: 'Sandbox',
-    visibleTag: true,
+    visibleTag: false,
     archive: false,
     additional: true,
   },

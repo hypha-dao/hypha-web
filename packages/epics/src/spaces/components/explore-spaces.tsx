@@ -146,7 +146,7 @@ export function ExploreSpaces({
         .filter(
           (category): category is NonNullable<typeof category> => !!category,
         )
-        .filter((category) => category.value !== 'sandbox')
+        .filter((category) => category.visibleTag)
         .sort((a, b) => (a.label > b.label ? 1 : -1)),
     [uniqueCategories],
   );
