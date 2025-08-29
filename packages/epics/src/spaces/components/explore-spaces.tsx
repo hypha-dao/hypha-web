@@ -140,13 +140,13 @@ export function ExploreSpaces({
       uniqueCategories
         .map((category) =>
           categoryOptions.find(
-            (option) => !option.archive && option.value === category,
+            (option) =>
+              !option.archive && option.value === category && option.visibleTag,
           ),
         )
         .filter(
           (category): category is NonNullable<typeof category> => !!category,
         )
-        .filter((category) => category.visibleTag)
         .sort((a, b) => (a.label > b.label ? 1 : -1)),
     [uniqueCategories],
   );
