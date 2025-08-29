@@ -139,7 +139,10 @@ export function ExploreSpaces({
     () =>
       uniqueCategories
         .map((category) =>
-          categoryOptions.find((option) => option.value === category),
+          categoryOptions.find(
+            (option) =>
+              !option.archive && option.value === category && option.visibleTag,
+          ),
         )
         .filter(
           (category): category is NonNullable<typeof category> => !!category,
