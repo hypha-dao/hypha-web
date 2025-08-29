@@ -26,10 +26,10 @@ export default function SpaceConfiguration() {
     useUpdateSpaceOrchestrator({ authToken: jwt });
 
   React.useEffect(() => {
-    if (progress === 100 && spaceSlug) {
+    if (progress === 100 && !isPending && spaceSlug) {
       router.push(getDhoPathGovernance(lang as Locale, spaceSlug));
     }
-  }, [progress, spaceSlug]);
+  }, [progress, isPending, spaceSlug, lang]);
 
   const isBusy = isLoadingJwt || isLoadingSpace || isPending;
 
@@ -40,7 +40,7 @@ export default function SpaceConfiguration() {
     <SidePanel>
       <LoadingBackdrop
         progress={progress}
-        isLoading={isPending || isLoadingSpace}
+        isLoading={isBusy}
         message={
           isError ? (
             <div className="flex flex-col">
@@ -55,6 +55,7 @@ export default function SpaceConfiguration() {
       >
         {isBusy ? (
           <SpaceForm
+            key="busy"
             submitLabel="Update"
             submitLoadingLabel="Updating..."
             isLoading={isBusy}
@@ -66,6 +67,7 @@ export default function SpaceConfiguration() {
           />
         ) : (
           <SpaceForm
+            key={space?.slug || 'ready'}
             submitLabel="Update"
             submitLoadingLabel="Updating..."
             isLoading={isBusy}
