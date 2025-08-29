@@ -22,15 +22,8 @@ export default function SpaceConfiguration() {
   const { space, isLoading: isLoadingSpace } = useSpaceBySlug(spaceSlug);
   const { jwt, isLoadingJwt } = useJwt();
   const router = useRouter();
-  const {
-    updateSpace,
-    isMutating: isMutatingSpace,
-    currentAction,
-    isError,
-    isPending,
-    progress,
-    reset,
-  } = useUpdateSpaceOrchestrator({ authToken: jwt });
+  const { updateSpace, currentAction, isError, isPending, progress, reset } =
+    useUpdateSpaceOrchestrator({ authToken: jwt });
 
   React.useEffect(() => {
     if (progress === 100 && spaceSlug) {
@@ -38,10 +31,7 @@ export default function SpaceConfiguration() {
     }
   }, [progress, spaceSlug]);
 
-  const isLoaded = React.useMemo(
-    () => isLoadingJwt || isLoadingSpace || isMutatingSpace,
-    [isLoadingJwt, isLoadingSpace, isMutatingSpace],
-  );
+  const isBusy = isLoadingJwt || isLoadingSpace || isPending;
 
   const pathname = usePathname();
   const closeUrl = pathname.replace(/\/space-configuration$/, '');
@@ -63,11 +53,11 @@ export default function SpaceConfiguration() {
         }
         className="-m-4 lg:-m-7"
       >
-        {isLoaded ? (
+        {isBusy ? (
           <SpaceForm
             submitLabel="Update"
             submitLoadingLabel="Updating..."
-            isLoading={isLoaded}
+            isLoading={isBusy}
             closeUrl={closeUrl}
             backUrl={`${closeUrl}${PATH_SELECT_SETTINGS_ACTION}`}
             backLabel="Back to Settings"
@@ -78,7 +68,7 @@ export default function SpaceConfiguration() {
           <SpaceForm
             submitLabel="Update"
             submitLoadingLabel="Updating..."
-            isLoading={isLoaded}
+            isLoading={isBusy}
             closeUrl={closeUrl}
             backUrl={`${closeUrl}${PATH_SELECT_SETTINGS_ACTION}`}
             backLabel="Back to Settings"
