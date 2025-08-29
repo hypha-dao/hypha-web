@@ -19,12 +19,12 @@ import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 export default function SpaceConfiguration() {
   const { person } = useMe();
   const { id: spaceSlug, lang } = useParams<{ id: string; lang: Locale }>();
-  const { space, isLoading } = useSpaceBySlug(spaceSlug);
+  const { space, isLoading: isLoadingSpace } = useSpaceBySlug(spaceSlug);
   const { jwt, isLoadingJwt } = useJwt();
   const router = useRouter();
   const {
     updateSpace,
-    isMutating,
+    isMutating: isMutatingSpace,
     currentAction,
     isError,
     isPending,
@@ -38,6 +38,11 @@ export default function SpaceConfiguration() {
     }
   }, [progress, spaceSlug]);
 
+  const isLoaded = React.useMemo(
+    () => isLoadingJwt || isLoadingSpace || isMutatingSpace,
+    [isLoadingJwt, isLoadingSpace, isMutatingSpace],
+  );
+
   const pathname = usePathname();
   const closeUrl = pathname.replace(/\/space-configuration$/, '');
 
@@ -45,7 +50,7 @@ export default function SpaceConfiguration() {
     <SidePanel>
       <LoadingBackdrop
         progress={progress}
-        isLoading={isPending || isLoading}
+        isLoading={isPending || isLoadingSpace}
         message={
           isError ? (
             <div className="flex flex-col">
@@ -58,11 +63,11 @@ export default function SpaceConfiguration() {
         }
         className="-m-4 lg:-m-7"
       >
-        {isLoadingJwt || isLoading || isMutating ? (
+        {isLoaded ? (
           <SpaceForm
             submitLabel="Update"
             submitLoadingLabel="Updating..."
-            isLoading={true}
+            isLoading={isLoaded}
             closeUrl={closeUrl}
             backUrl={`${closeUrl}${PATH_SELECT_SETTINGS_ACTION}`}
             backLabel="Back to Settings"
@@ -73,7 +78,7 @@ export default function SpaceConfiguration() {
           <SpaceForm
             submitLabel="Update"
             submitLoadingLabel="Updating..."
-            isLoading={false}
+            isLoading={isLoaded}
             closeUrl={closeUrl}
             backUrl={`${closeUrl}${PATH_SELECT_SETTINGS_ACTION}`}
             backLabel="Back to Settings"
