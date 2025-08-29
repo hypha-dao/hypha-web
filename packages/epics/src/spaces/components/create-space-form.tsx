@@ -172,6 +172,7 @@ export const SpaceForm = ({
                       banner <RequirementMark />
                     </>
                   }
+                  enableImageResizer={true}
                 />
               </FormControl>
               <FormMessage />

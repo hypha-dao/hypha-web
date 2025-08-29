@@ -1,4 +1,7 @@
-export async function getCroppedImg(imageSrc: string, crop: any): Promise<string> {
+export async function getCroppedImg(
+  imageSrc: string,
+  crop: any,
+): Promise<string> {
   const image: HTMLImageElement = await new Promise((resolve, reject) => {
     const img = new Image();
     img.src = imageSrc;
@@ -6,11 +9,11 @@ export async function getCroppedImg(imageSrc: string, crop: any): Promise<string
     img.onerror = (err) => reject(err);
   });
 
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
 
   if (!ctx) {
-    throw new Error("No 2d context");
+    throw new Error('No 2d context');
   }
 
   canvas.width = crop.width;
@@ -25,13 +28,13 @@ export async function getCroppedImg(imageSrc: string, crop: any): Promise<string
     0,
     0,
     crop.width,
-    crop.height
+    crop.height,
   );
 
   return new Promise((resolve) => {
     canvas.toBlob((blob) => {
       if (!blob) return;
       resolve(URL.createObjectURL(blob));
-    }, "image/jpeg");
+    }, 'image/jpeg');
   });
 }

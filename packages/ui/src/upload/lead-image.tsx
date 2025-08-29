@@ -1,19 +1,21 @@
 'use client';
 
-import { useDropzone } from "react-dropzone";
-import React from "react";
-import clsx from "clsx";
-import { PreviewOverlay } from "./preview-overlay";
-import { PreviewImg } from "./preview-img";
-import { AspectRatio } from "@radix-ui/react-aspect-ratio";
-import Cropper from "react-easy-crop";
-import { getCroppedImg } from "@hypha-platform/ui-utils";
+import { useDropzone } from 'react-dropzone';
+import React from 'react';
+import clsx from 'clsx';
+import { PreviewOverlay } from './preview-overlay';
+import { PreviewImg } from './preview-img';
+import { AspectRatio } from '@radix-ui/react-aspect-ratio';
+import Cropper from 'react-easy-crop';
+import { getCroppedImg } from '@hypha-platform/ui-utils';
+import { Button } from '../button';
 
 export type UploadLeadImageProps = {
   onChange: (acceptedFile: File | null) => void;
   defaultImage?: string;
   maxFileSize?: number;
   uploadText?: React.ReactNode;
+  enableImageResizer?: boolean;
 };
 
 export const UploadLeadImage = ({
@@ -21,9 +23,10 @@ export const UploadLeadImage = ({
   defaultImage,
   maxFileSize,
   uploadText,
+  enableImageResizer = false,
 }: UploadLeadImageProps) => {
   const [preview, setPreview] = React.useState<string | null>(
-    defaultImage || null
+    defaultImage || null,
   );
 
   const [imageSrc, setImageSrc] = React.useState<string | null>(null);
@@ -38,20 +41,24 @@ export const UploadLeadImage = ({
         onChange(null);
         return;
       }
-  
+
       const file = acceptedFiles[0];
-  
       if (!file) return;
-  
+
       const reader = new FileReader();
       reader.onload = () => {
-        setImageSrc(reader.result as string);
+        const result = reader.result as string;
+        if (enableImageResizer) {
+          setImageSrc(result);
+        } else {
+          setPreview(result);
+          onChange(file);
+        }
       };
       reader.readAsDataURL(file);
     },
-    [onChange, defaultImage]
+    [onChange, defaultImage, enableImageResizer],
   );
-  
 
   const onCropComplete = React.useCallback((_: any, croppedAreaPixels: any) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -64,7 +71,7 @@ export const UploadLeadImage = ({
 
     const res = await fetch(croppedImageUrl);
     const blob = await res.blob();
-    const file = new File([blob], "cropped.jpg", { type: "image/jpeg" });
+    const file = new File([blob], 'cropped.jpg', { type: 'image/jpeg' });
     onChange(file);
 
     setImageSrc(null);
@@ -75,10 +82,10 @@ export const UploadLeadImage = ({
     maxFiles: 1,
     maxSize: maxFileSize,
     accept: {
-      "image/png": [],
-      "image/jpg": [],
-      "image/jpeg": [],
-      "image/webp": [],
+      'image/png': [],
+      'image/jpg': [],
+      'image/jpeg': [],
+      'image/webp': [],
     },
   });
 
@@ -88,10 +95,10 @@ export const UploadLeadImage = ({
         ratio={762 / 270}
         {...getRootProps()}
         className={clsx(
-          "group cursor-pointer relative",
-          "flex justify-center items-center overflow-hidden",
-          "rounded-xl bg-accent-2",
-          !preview && "border border-neutral-11 border-dashed"
+          'group cursor-pointer relative',
+          'flex justify-center items-center overflow-hidden',
+          'rounded-xl bg-accent-2',
+          !preview && 'border border-neutral-11 border-dashed',
         )}
       >
         <input {...getInputProps()} />
@@ -113,7 +120,7 @@ export const UploadLeadImage = ({
         </PreviewOverlay>
       </AspectRatio>
 
-      {imageSrc && (
+      {enableImageResizer && imageSrc && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
           <div className="relative w-[600px] h-[400px] bg-white rounded-xl overflow-hidden">
             <Cropper
@@ -126,18 +133,8 @@ export const UploadLeadImage = ({
               onCropComplete={onCropComplete}
             />
             <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4">
-              <button
-                className="px-4 py-2 rounded-lg bg-neutral-200"
-                onClick={() => setImageSrc(null)}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 rounded-lg bg-accent-11 text-white"
-                onClick={confirmCrop}
-              >
-                Crop & Save
-              </button>
+              <Button onClick={() => setImageSrc(null)}>Cancel</Button>
+              <Button onClick={confirmCrop}>Crop & Save</Button>
             </div>
           </div>
         </div>
