@@ -42,20 +42,19 @@ export const TokenPayoutField = ({
       onChange({ amount: '', token: value.token });
       return;
     }
-    const parsed = Number.parseInt(amount, 10);
-    onChange({
-      amount: String(Number.isNaN(parsed) ? 0 : parsed),
-      token: value.token,
-    });
+    if (/^\d*(?:[\.\,]\d*)?$/.test(amount)) {
+      onChange({ amount, token: value.token });
+    }
   };
 
   return (
     <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 md:justify-end items-end">
       <div className="flex top-0 m-0 p-0 flex-1 min-w-0">
         <Input
-          value={value.amount}
+          value={value.amount ?? ''}
           type="number"
           step="any"
+          inputMode="decimal"
           placeholder="Amount"
           onChange={(e) => handleAmountChange(e.target.value)}
         />
