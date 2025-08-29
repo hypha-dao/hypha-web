@@ -46,7 +46,7 @@ export const MemberWithNumberFieldFieldArray = ({
     <div className="flex flex-col gap-4">
       <div className="flex flex-col md:flex-row gap-4">
         <Text className="pt-1 text-2 text-neutral-11 text-nowrap">
-          Initial voice allocation
+          Initial allocation
         </Text>
         <div className="flex flex-col gap-2">
           {fields.map((field, index) => (
