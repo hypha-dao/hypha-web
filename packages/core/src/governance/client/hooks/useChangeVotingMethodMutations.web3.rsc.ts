@@ -83,6 +83,17 @@ export const useChangeVotingMethodMutationsWeb3Rpc = ({
       });
 
       if (arg.votingMethod === '1t1v') {
+        for (const { member, number } of arg.members) {
+          transactions.push({
+            target: arg.token as `0x${string}`,
+            value: 0,
+            data: encodeFunctionData({
+              abi: decayingSpaceTokenAbi,
+              functionName: 'mint',
+              args: [member as `0x${string}`, BigInt(number) * 10n ** 18n],
+            }),
+          });
+        }
         if (!arg.token || !/^0x[a-fA-F0-9]{40}$/.test(arg.token)) {
           throw new Error('Invalid or missing token address for 1t1v');
         }

@@ -60,10 +60,14 @@ export default function Agreements() {
       setProgress(70);
       setVoteMessage('Getting updated data...');
       await votersMutate();
+      setProgress(100);
+      setVoteMessage('Vote processed!');
     } catch (err) {
-      console.debug(err);
+      console.error('Error during vote process:', err);
       setProgress(0);
-      setVoteMessage('Processing vote...');
+      setVoteMessage('An error occurred while processing your vote.');
+    } finally {
+      setIsVoting(false);
     }
   };
 
