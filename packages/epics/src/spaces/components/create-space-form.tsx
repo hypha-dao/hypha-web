@@ -81,6 +81,34 @@ export const SpaceForm = ({
     defaultValues,
   });
 
+  const actualCategories = categories
+    .filter((category) => !category.archive);
+  const generalCategories = actualCategories
+    .filter((category) => !category.additional)
+    .map((category) => {
+      return {
+        value: category.value as string,
+        label: category.label,
+      }
+    });
+  const additionalCategories = actualCategories
+    .filter((category) => category.additional)
+    .map((category) => {
+      return {
+        value: category.value as string,
+        label: category.label,
+      }
+    });
+  const categoryOptions = ([] as { value: string; label: string }[])
+    .concat(
+      generalCategories,
+      [{
+        label: '---',
+        value: '---',
+      }],
+      additionalCategories,
+    );
+
   React.useEffect(() => {
     if (parentSpaceId) {
       form.setValue('parentId', parentSpaceId);
@@ -207,7 +235,7 @@ export const SpaceForm = ({
               <FormControl>
                 <MultiSelect
                   placeholder={'Select one or more'}
-                  options={categories}
+                  options={categoryOptions}
                   defaultValue={field.value}
                   onValueChange={field.onChange}
                 />

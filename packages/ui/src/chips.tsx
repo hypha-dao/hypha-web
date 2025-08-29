@@ -320,9 +320,12 @@ export const MultiSelect = React.forwardRef<
                   </div>
                   <span>(Select All)</span>
                 </CommandItem>
+                <CommandSeparator />
                 {options.map((option) => {
                   const isSelected = selectedValues.includes(option.value);
-                  return (
+                  return option.value === '---' ? (
+                    <CommandSeparator />
+                  ) : (
                     <CommandItem
                       key={option.value}
                       onSelect={() => toggleOption(option.value)}
