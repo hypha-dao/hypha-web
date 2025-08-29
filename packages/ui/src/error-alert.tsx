@@ -39,6 +39,7 @@ ErrorAlertLabel.displayName = 'ErrorAlertLabel';
 type ErrorAlertElement = HTMLDivElement;
 interface ErrorAlertProps extends React.HTMLAttributes<ErrorAlertElement> {
   lines: string[];
+  bgColor?: string;
 }
 
 function removeLine(lines: string[], index: number) {
@@ -46,7 +47,7 @@ function removeLine(lines: string[], index: number) {
 }
 
 const ErrorAlert = React.forwardRef<ErrorAlertElement, ErrorAlertProps>(
-  ({ className, lines, ...props }, ref) => {
+  ({ className, lines, bgColor, ...props }, ref) => {
     const [errorLines, setErrorLines] = React.useState<string[]>(lines);
 
     React.useEffect(() => {
@@ -63,6 +64,7 @@ const ErrorAlert = React.forwardRef<ErrorAlertElement, ErrorAlertProps>(
           <ErrorAlertLabel
             key={`error-${index}-${line}`}
             text={line}
+            className={bgColor}
             onClose={() => {
               setErrorLines(removeLine(errorLines, index));
             }}

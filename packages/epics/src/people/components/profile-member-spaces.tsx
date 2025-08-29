@@ -9,6 +9,7 @@ import { Locale } from '@hypha-platform/i18n';
 import { useParams } from 'next/navigation';
 import { Empty } from '@hypha-platform/epics';
 import { GlobeIcon, PlusIcon } from '@radix-ui/react-icons';
+import { useAuthentication } from '@hypha-platform/authentication';
 
 export type ProfileMemberSpacesProps = {
   spaces?: Space[];
@@ -24,6 +25,7 @@ export const ProfileMemberSpaces = ({
   const { lang } = useParams();
 
   const iconSize = React.useMemo(() => (profileView ? 64 : 40), [profileView]);
+  const { isAuthenticated } = useAuthentication();
 
   return (
     <div className="flex justify-between items-center mt-4 mb-4">
@@ -41,8 +43,15 @@ export const ProfileMemberSpaces = ({
                   Explore Spaces
                 </Button>
               </Link>
-              <Link href={`/${lang}/my-spaces/create`} scroll={false}>
-                <Button className="gap-2">
+              <Link
+                className={!isAuthenticated ? 'cursor-not-allowed' : ''}
+                title={
+                  !isAuthenticated ? 'Please sign in to use this feature.' : ''
+                }
+                href={isAuthenticated ? `/${lang}/my-spaces/create` : {}}
+                scroll={false}
+              >
+                <Button disabled={!isAuthenticated} className="gap-2">
                   <PlusIcon />
                   Create Space
                 </Button>

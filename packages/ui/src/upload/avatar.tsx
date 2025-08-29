@@ -4,6 +4,7 @@ import { LuImagePlus, LuImageUp } from 'react-icons/lu';
 import clsx from 'clsx';
 import { PreviewOverlay } from './preview-overlay';
 import { PreviewImg } from './preview-img';
+import { Text } from '@radix-ui/themes';
 
 export type UploadAvatarProps = {
   EditIcon?: React.ElementType;
@@ -11,6 +12,7 @@ export type UploadAvatarProps = {
   onChange: (acceptedFile: File | null) => void;
   defaultImage?: string;
   maxFileSize?: number;
+  required?: boolean;
 };
 
 export const UploadAvatar = ({
@@ -19,6 +21,7 @@ export const UploadAvatar = ({
   onChange,
   defaultImage,
   maxFileSize,
+  required = false,
 }: UploadAvatarProps) => {
   const [preview, setPreview] = React.useState<string | null>(
     defaultImage || null,
@@ -71,11 +74,18 @@ export const UploadAvatar = ({
       <input {...getInputProps()} />
       {preview && <PreviewImg src={preview} />}
       <PreviewOverlay isVisible={!preview || isDragActive}>
-        {isDragActive ? (
-          <DropIcon className="h-5 w-5" />
-        ) : (
-          <EditIcon className="h-5 w-5" />
-        )}
+        <div className="inline-block">
+          {isDragActive ? (
+            <DropIcon className="h-5 w-5" />
+          ) : (
+            <EditIcon className="h-5 w-5" />
+          )}
+          {required && (
+            <Text className="text-destructive absolute -right-2 -top-3 z-10">
+              *
+            </Text>
+          )}
+        </div>
       </PreviewOverlay>
     </div>
   );

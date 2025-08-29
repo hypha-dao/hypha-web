@@ -23,6 +23,7 @@ import {
 } from '../../governance';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
 import { ButtonClose } from '@hypha-platform/epics';
+import { useAuthentication } from '@hypha-platform/authentication';
 
 type ProposalDetailProps = ProposalHeadProps & {
   onAccept: () => void;
@@ -63,6 +64,7 @@ export const ProposalDetail = ({
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: proposalId as number,
   });
+  const { isAuthenticated } = useAuthentication();
 
   return (
     <div className="flex flex-col gap-5">
@@ -149,6 +151,8 @@ export const ProposalDetail = ({
         isLoading={isLoading}
         isVoting={isVoting}
         documentSlug={documentSlug}
+        isAuthenticated={isAuthenticated}
+        web3SpaceId={proposalDetails?.spaceId}
       />
       {/* TODO: uncomment when comments support will be implemented */}
       {/* <Separator />

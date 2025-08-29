@@ -30,21 +30,24 @@ const entryMethods: EntryMethodOption[] = [
     title: 'Open Access',
     disabled: false,
     icon: <PlusCircledIcon />,
-    description: 'Join to space immediately',
+    description:
+      'New members can join instantly. Participation is open to everyone and fully transparent.',
   },
   {
     id: EntryMethodType.INVITE_ONLY,
-    title: 'Invite Only',
+    title: 'Invite Request',
     disabled: false,
     icon: <PlusCircledIcon />,
-    description: 'Join to space by invite only',
+    description:
+      'New members can participate by requesting an invitation to join. Existing members vote on invite requests. Participation is only open to invited members but remains fully transparent to everyone.',
   },
   {
     id: EntryMethodType.TOKEN_BASED,
     title: 'Token Based',
     disabled: false,
     icon: <PlusCircledIcon />,
-    description: 'Join to space only when match token requirements',
+    description:
+      'New members can join if they meet token requirements. Participation is only open to eligible members but remains fully transparent to everyone.',
   },
 ];
 

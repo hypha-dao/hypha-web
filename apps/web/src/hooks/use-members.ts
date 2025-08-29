@@ -18,7 +18,7 @@ type MemberItem = {
   isLoading?: boolean;
 };
 
-import { FilterParams, useJwt } from '@hypha-platform/core/client';
+import { FilterParams } from '@hypha-platform/core/client';
 
 export const useMembers: UseMembers = ({
   page = 1,
@@ -36,8 +36,6 @@ export const useMembers: UseMembers = ({
   refreshInterval?: number;
   paginationDisabled?: boolean;
 }): UseMembersReturn => {
-  const { jwt } = useJwt();
-
   const queryParams = React.useMemo(() => {
     const effectiveFilter = paginationDisabled
       ? { ...(searchTerm ? { searchTerm } : {}) }
@@ -56,11 +54,10 @@ export const useMembers: UseMembers = ({
   const keepPreviousData = !!interval;
 
   const { data: response, isLoading } = useSWR(
-    jwt && spaceSlug ? [endpoint] : null,
+    spaceSlug ? [endpoint] : null,
     ([endpoint]) =>
       fetch(endpoint, {
         headers: {
-          Authorization: `Bearer ${jwt}`,
           'Content-Type': 'application/json',
         },
       }).then((res) => res.json()),

@@ -1,6 +1,6 @@
 'use client';
 
-import { Person } from '@hypha-platform/core/client';
+import { Person, useMe } from '@hypha-platform/core/client';
 import {
   UserAssetsSection,
   UserTransactionsSection,
@@ -16,6 +16,10 @@ export const ProfileTabs = ({
   lang: string;
 }) => {
   const [activeTab, setActiveTab] = React.useState('treasury');
+  const { person: authenticatedPerson } = useMe();
+  const isMyProfile =
+    person?.address?.toLowerCase() ===
+    authenticatedPerson?.address?.toLowerCase();
 
   return (
     <Tabs value={activeTab} className="w-full flex flex-col gap-4">
@@ -31,6 +35,7 @@ export const ProfileTabs = ({
       </TabsList>
       <TabsContent value="treasury" className="flex flex-col gap-4">
         <UserAssetsSection
+          isMyProfile={isMyProfile}
           personSlug={person?.slug || ''}
           basePath={`/${lang}/profile/${person?.slug}`}
         />

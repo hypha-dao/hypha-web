@@ -28,9 +28,11 @@ export const updatePerson = async (
   person: Person,
   { db }: CreatePersonConfig,
 ) => {
+  const slug = person.nickname?.toLowerCase().replace(/\s+/g, '-') || '';
   const updateData = {
     ...person,
     email: person.email || null,
+    slug,
   };
   const [dbPerson] = await db
     .update(people)
