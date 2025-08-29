@@ -94,6 +94,13 @@ npx nx run storage-evm:script ./scripts/vote-decay-token-voting-power-proxy.depl
 
 ```bash
 npx nx run storage-evm:script ./scripts/voting-power-directory-proxy.deploy.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/decaying-token-factory.upgrade.ts--network base-mainnet
+
+npx nx run storage-evm:script ./scripts/ownership-token-factory.upgrade.ts--network base-mainnet
+
+npx nx run storage-evm:script ./scripts/ownership-token-voting-power.upgrade.ts --network base-mainnet
+
 ```
 
 ### work-proposal-proxy.deploy
