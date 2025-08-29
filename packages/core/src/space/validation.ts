@@ -1,5 +1,6 @@
 import { DEFAULT_IMAGE_ACCEPT } from '@hypha-platform/core/client';
 import { z } from 'zod';
+import { CATEGORIES } from '../categories/types';
 
 export const ALLOWED_IMAGE_FILE_SIZE = 4 * 1024 * 1024;
 
@@ -23,27 +24,7 @@ const createSpaceWeb2Props = {
     .optional(),
   web3SpaceId: z.number().optional(),
   parentId: z.number().nullable(),
-  categories: z
-    .array(
-      z.enum([
-        'art',
-        'biodiversity',
-        'education',
-        'energy',
-        'events',
-        'finance',
-        'governance',
-        'health',
-        'housing',
-        'land',
-        'mobility',
-        'ocean',
-        'sandbox',
-        'tech',
-        'usecase',
-      ]),
-    )
-    .default([]),
+  categories: z.array(z.enum(CATEGORIES)).default([]),
   links: z
     .array(
       z.string().url('Please enter a valid URL (e.g., https://example.com)'),
