@@ -1,6 +1,6 @@
 import { Category } from './types';
 
-type CategoryOption = {
+export type CategoryOption = {
   value: Category;
   label: string;
   visibleTag: boolean;
@@ -8,8 +8,8 @@ type CategoryOption = {
   additional: boolean;
 };
 
-export const categories: CategoryOption[] = [
-  // archive categories for backword compatibility
+export const categories = [
+  // archived categories for backward compatibility
   {
     value: 'art',
     label: 'Art',
@@ -249,4 +249,4 @@ export const categories: CategoryOption[] = [
     archive: false,
     additional: true,
   },
-];
+] as const satisfies readonly CategoryOption[];
