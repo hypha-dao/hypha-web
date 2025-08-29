@@ -27,12 +27,14 @@ export const LinkItem = ({ link, error, onChange }: LinkItemProps) => {
           placeholder="Add your URL"
           className={cn(
             'text-2',
-            error && 'border-red-500 focus-visible:ring-red-500',
+            error && 'border-destructive focus-visible:ring-destructive',
           )}
           value={link}
           onChange={handleChange}
         />
-        {error && <span className="text-sm text-red-500 mt-1">{error}</span>}
+        {error && (
+          <span className="text-sm text-destructive mt-1">{error}</span>
+        )}
       </span>
     </div>
   );

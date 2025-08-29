@@ -53,11 +53,11 @@ export const TokenPayoutFieldArray = ({
 
   return (
     <div className="flex flex-col gap-2 w-full">
-      <div className="flex flex-col gap-4 md:gap-8 md:flex-row md:items-start w-full">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
         <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
           Payment Request
         </label>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 grow min-w-0">
           {fields.map((field, index) => (
             <div key={field.id} className="flex md:justify-end gap-2">
               <div className="">

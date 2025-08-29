@@ -12,11 +12,13 @@ import { Input } from '@hypha-platform/ui';
 type UserAssetsSectionProps = {
   personSlug: string;
   basePath?: string;
+  isMyProfile?: boolean;
 };
 
 export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
   personSlug,
   basePath,
+  isMyProfile,
 }) => {
   const {
     visibleAssets,
@@ -49,11 +51,9 @@ export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
         </label>
       </SectionFilter>
       <div className="flex gap-2 justify-end">
-        <Button asChild>
-          <Link href={`${basePath}/actions`} scroll={false}>
-            Actions
-          </Link>
-        </Button>
+        <Link href={isMyProfile ? `${basePath}/actions` : {}} scroll={false}>
+          <Button disabled={!isMyProfile}>Actions</Button>
+        </Link>
       </div>
     </div>
   );

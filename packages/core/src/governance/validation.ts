@@ -104,8 +104,16 @@ export const paymentScheduleSchema = z
   });
 
 const createAgreementWeb2Props = {
-  title: z.string().min(1).max(50),
-  description: z.string().min(1).max(4000),
+  title: z
+    .string()
+    .trim()
+    .min(1, { message: 'Please add a title for your proposal' })
+    .max(50),
+  description: z
+    .string()
+    .trim()
+    .min(1, { message: 'Please add content to your proposal' })
+    .max(4000),
   slug: z
     .string()
     .min(1)
@@ -162,7 +170,7 @@ export const schemaCreateAgreement = z.object({
 export const schemaProposeContribution = z.object({
   recipient: z
     .string()
-    .min(1, { message: 'Recipient is required' })
+    .min(1, { message: 'Please add a recipient or wallet address' })
     .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' })
     .optional(),
 
@@ -237,21 +245,24 @@ export const schemaIssueNewToken = z.object({
   ...createAgreementFiles,
   name: z
     .string()
-    .min(2, { message: 'Token name must be at least 2 characters long' })
+    .trim()
+    .min(2, { message: 'Please enter a token name (min. 2 characters)' })
     .max(100, { message: 'Token name must be at most 100 characters long' }),
 
   symbol: z
     .string()
-    .min(2, { message: 'Token symbol must be at least 2 characters long' })
+    .trim()
+    .min(2, { message: 'Please enter a token symbol (min. 2 characters)' })
     .max(10, { message: 'Token symbol must be at most 10 characters long' })
     .regex(/^[A-Z]+$/, {
-      message: 'Token symbol must contain only uppercase letters',
+      message:
+        'Please enter the token symbol using only uppercase letters (A–Z)',
     }),
 
   iconUrl: z
     .union([
       z
-        .string({ message: 'Uploading a token icon is required' })
+        .string({ message: 'Please upload a token icon' })
         .url('Icon URL must be a valid URL'),
       z.literal(''),
       z
@@ -282,7 +293,7 @@ export const schemaIssueNewToken = z.object({
   // ),
 
   type: z.enum(['utility', 'credits', 'ownership', 'voice'], {
-    required_error: 'Token type is required',
+    required_error: 'Please select a token type',
   }),
 
   maxSupply: z.preprocess(

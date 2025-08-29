@@ -1,9 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-
 import { GearIcon, PlusIcon } from '@radix-ui/react-icons';
-
 import { Button } from '@hypha-platform/ui';
 import { usePathname } from 'next/navigation';
 import { cleanPath } from './clean-path';
@@ -11,29 +9,55 @@ import {
   PATH_SELECT_CREATE_ACTION,
   PATH_SELECT_SETTINGS_ACTION,
 } from '@web/app/constants';
+import { useAuthentication } from '@hypha-platform/authentication';
+import { useJoinSpace } from '@hypha-platform/epics';
 
-export const ActionButtons = () => {
+interface ActionButtonsProps {
+  web3SpaceId?: number;
+}
+
+export const ActionButtons = ({ web3SpaceId }: ActionButtonsProps) => {
   const pathname = usePathname();
+  const { isAuthenticated } = useAuthentication();
+  const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
+
+  const isDisabled = !isAuthenticated || !isMember;
+  const tooltipMessage = !isAuthenticated
+    ? 'Please sign in to use this feature.'
+    : !isMember
+    ? 'Please join this space to use this feature.'
+    : '';
 
   return (
     <>
-      <Button
-        asChild
-        colorVariant="accent"
-        variant={'outline'}
-        title="Space Settings"
+      <Link
+        className={isDisabled ? 'cursor-not-allowed' : ''}
+        href={
+          isAuthenticated && isMember
+            ? `${cleanPath(pathname)}${PATH_SELECT_SETTINGS_ACTION}`
+            : {}
+        }
+        title={tooltipMessage || 'Space Settings'}
       >
-        <Link href={`${cleanPath(pathname)}${PATH_SELECT_SETTINGS_ACTION}`}>
+        <Button colorVariant="accent" variant={'outline'} disabled={isDisabled}>
           <GearIcon className="sm:hidden" width={16} height={16} />
           <span className="hidden sm:flex">Space Settings</span>
-        </Link>
-      </Button>
-      <Button asChild colorVariant="accent">
-        <Link href={`${cleanPath(pathname)}${PATH_SELECT_CREATE_ACTION}`}>
+        </Button>
+      </Link>
+      <Link
+        className={isDisabled ? 'cursor-not-allowed' : ''}
+        title={tooltipMessage || ''}
+        href={
+          isAuthenticated && isMember
+            ? `${cleanPath(pathname)}${PATH_SELECT_CREATE_ACTION}`
+            : {}
+        }
+      >
+        <Button disabled={isDisabled} colorVariant="accent">
           <PlusIcon />
           Create
-        </Link>
-      </Button>
+        </Button>
+      </Link>
     </>
   );
 };

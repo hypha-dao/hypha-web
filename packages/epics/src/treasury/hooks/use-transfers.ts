@@ -3,6 +3,7 @@
 import React from 'react';
 import useSWR from 'swr';
 import { TransferWithEntity } from './types';
+import { useJwt } from '@hypha-platform/core/client';
 
 export const useTransfers = ({
   sort,
@@ -13,21 +14,23 @@ export const useTransfers = ({
   refreshInterval?: number;
   spaceSlug?: string;
 }) => {
+  const { jwt } = useJwt();
+
   const endpoint = React.useMemo(() => {
     if (!spaceSlug) return '';
     return `/api/v1/spaces/${spaceSlug}/transfers`;
   }, [spaceSlug]);
 
   const { data, isLoading, error } = useSWR(
-    spaceSlug ? [endpoint, sort] : null,
-    async ([endpoint, sort]) => {
+    spaceSlug && jwt ? [endpoint, sort, jwt] : null,
+    async ([endpoint, sort, jwt]) => {
       const url = new URL(endpoint, window.location.origin);
       if (sort?.sort) {
         url.searchParams.set('sort', sort.sort);
       }
 
       const res = await fetch(url.toString(), {
-        headers: { 'Content-Type': 'application/json' },
+        headers: { Authorization: `Bearer ${jwt}` },
       });
       if (!res.ok) {
         throw new Error(`Failed to fetch transfers: ${res.statusText}`);

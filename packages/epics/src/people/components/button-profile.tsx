@@ -10,34 +10,36 @@ import {
 } from '@hypha-platform/ui';
 import { PersonAvatar } from './person-avatar';
 import { EthAddress } from './eth-address';
-import { TrashIcon, LogOutIcon } from 'lucide-react';
+import { TrashIcon, LogOutIcon, Repeat } from 'lucide-react';
 import { ButtonNavItem, ButtonNavItemProps } from '@hypha-platform/ui';
 import Link from 'next/link';
+import { Person } from '@hypha-platform/core/client';
+import { Text } from '@radix-ui/themes';
 
 export type ButtonProfileProps = {
-  avatarSrc?: string;
-  userName?: string;
   address?: string;
   isConnected: boolean;
   onLogin: () => void;
   onLogout: () => void;
   onDelete?: () => void;
-  onEdit?: () => void;
+  onChangeThemeMode?: () => void;
   profileUrl?: string;
   navItems: ButtonNavItemProps[];
+  person?: Person;
+  resolvedTheme?: string;
 };
 
 export const ButtonProfile = ({
-  avatarSrc,
-  userName,
+  person,
   isConnected,
   address,
   onLogin,
   onLogout,
   onDelete,
-  onEdit,
   profileUrl,
   navItems,
+  onChangeThemeMode,
+  resolvedTheme,
 }: ButtonProfileProps) => {
   return (
     <div>
@@ -47,11 +49,11 @@ export const ButtonProfile = ({
           <div className="flex flex-col justify-center gap-8 md:hidden">
             <div className="flex flex-col items-center gap-2">
               <PersonAvatar
-                avatarSrc={avatarSrc}
-                userName={userName}
+                avatarSrc={person?.avatarUrl}
+                userName={person?.nickname}
                 size="lg"
               />
-              <p>{userName}</p>
+              <p>{person?.nickname}</p>
               {address && (
                 <div>
                   <EthAddress address={address} />
@@ -71,17 +73,23 @@ export const ButtonProfile = ({
               <ButtonNavItem href={profileUrl} label="My Profile" />
             )}
 
-            {onEdit && (
-              <ButtonNavItem onClick={onEdit} label="Edit My Profile" />
-            )}
-
-            {onDelete && (
+            {/* TODO: It is necessary to implement profile deletion as part of a separate task */}
+            {/* {onDelete && (
               <ButtonNavItem
                 onClick={onDelete}
                 classNames="text-error-11"
-                label="Delete Profile"
+                label="Delete"
               />
-            )}
+            )} */}
+
+            <ButtonNavItem
+              onClick={onChangeThemeMode}
+              label={
+                resolvedTheme === 'dark'
+                  ? 'Switch to light mode'
+                  : 'Switch to dark mode'
+              }
+            />
 
             <ButtonNavItem
               onClick={onLogout}
@@ -105,40 +113,53 @@ export const ButtonProfile = ({
               <DropdownMenuTrigger>
                 <PersonAvatar
                   size="md"
-                  avatarSrc={avatarSrc}
-                  userName={userName}
+                  avatarSrc={person?.avatarUrl}
+                  userName={person?.nickname}
                 />
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                {profileUrl && (
-                  <DropdownMenuItem className="text-1">
-                    <Link href={profileUrl}>My Profile</Link>
-                  </DropdownMenuItem>
-                )}
-                {onEdit && (
-                  <DropdownMenuItem onClick={onEdit} className="text-1">
-                    Edit My Profile
-                  </DropdownMenuItem>
-                )}
+              <DropdownMenuContent className="bg-neutral-2 rounded-[6px] min-w-[185px] flex flex-col">
+                <Text className="text-2 font-medium text-foreground">
+                  {person?.name} {person?.surname}
+                </Text>
                 {address && (
-                  <DropdownMenuItem className="text-1 flex justify-between">
+                  <DropdownMenuItem className="px-0 text-1 flex justify-between">
                     <EthAddress address={address} />
+                  </DropdownMenuItem>
+                )}
+                {profileUrl && (
+                  <DropdownMenuItem className="px-0 text-1">
+                    <Link className="text-accent-11" href={profileUrl}>
+                      View profile
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                {onChangeThemeMode && (
+                  <DropdownMenuItem
+                    onClick={onChangeThemeMode}
+                    className="px-0 text-1 flex justify-between"
+                  >
+                    {resolvedTheme === 'dark'
+                      ? 'Switch to light mode'
+                      : 'Switch to dark mode'}
+                    <Repeat className="icon-sm" />
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
                 {onDelete && (
                   <DropdownMenuItem
                     onClick={onDelete}
-                    className="text-1 text-error-11 flex justify-between"
+                    className="px-0 text-1 flex justify-between"
+                    disabled
                   >
-                    Delete Profile
+                    Delete
                     <TrashIcon className="icon-sm" />
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={onLogout}
-                  className="text-1 text-error-11 flex justify-between"
+                  className="px-0 text-1 text-error-11 flex justify-between"
                 >
                   Logout
                   <LogOutIcon className="icon-sm" />

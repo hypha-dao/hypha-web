@@ -6,6 +6,7 @@ import { UseAuthentication } from '@hypha-platform/authentication';
 import { UseMe } from '../hooks/types';
 import { useEffect } from 'react';
 import { ButtonNavItemProps } from '@hypha-platform/ui';
+import { useTheme } from 'next-themes';
 
 type ConnectedButtonProfileProps = {
   useAuthentication: UseAuthentication;
@@ -44,6 +45,7 @@ export const ConnectedButtonProfile = ({
   const router = useRouter();
   const pathname = usePathname();
   const { lang } = useParams();
+  const { resolvedTheme, setTheme } = useTheme();
 
   useEffect(() => {
     if (isAuthLoading || isPersonLoading || !isAuthenticated) {
@@ -77,14 +79,24 @@ export const ConnectedButtonProfile = ({
     setLoggingIn,
   ]);
 
+  const handleThemeChange = () => {
+    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
+  };
+
+  const handleOnDelete = () => {
+    console.log('Delete profile');
+  };
+
   return (
     <ButtonProfile
-      avatarSrc={person?.avatarUrl ?? ''}
-      userName={person?.name ?? ''}
       address={user?.wallet?.address}
+      person={person}
       isConnected={isAuthenticated}
       onLogin={login}
       onLogout={logout}
+      onDelete={handleOnDelete}
+      onChangeThemeMode={handleThemeChange}
+      resolvedTheme={resolvedTheme}
       profileUrl={`/${lang}/profile/${person?.slug ?? ''}`}
       navItems={navItems}
     />

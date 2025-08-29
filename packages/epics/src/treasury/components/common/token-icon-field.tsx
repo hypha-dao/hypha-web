@@ -7,6 +7,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  RequirementMark,
 } from '@hypha-platform/ui';
 import { TokenIconUpload } from './token-icon';
 
@@ -17,10 +18,13 @@ export function TokenIconField() {
     <FormField
       control={control}
       name="iconUrl"
+      rules={{ required: 'Please upload a token icon' }}
       render={({ field }) => (
         <FormItem>
           <div className="flex justify-between items-center">
-            <FormLabel className="text-2 text-neutral-11">Token Icon</FormLabel>
+            <FormLabel className="text-2 text-neutral-11 gap-1">
+              Token Icon <RequirementMark className="text-2" />
+            </FormLabel>
             <FormControl>
               <TokenIconUpload
                 defaultImage={field.value}

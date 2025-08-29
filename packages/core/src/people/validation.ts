@@ -6,11 +6,12 @@ const ALLOWED_IMAGE_FILE_SIZE = 4 * 1024 * 1024;
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
 const signupPersonWeb2Props = {
-  name: z.string().min(1, { message: 'Name must not be empty' }),
-  surname: z.string().min(1, { message: 'Surname must not be empty' }),
+  name: z.string().trim().min(1, { message: 'Please enter your first name' }),
+  surname: z.string().trim().min(1, { message: 'Please enter your last name' }),
   nickname: z
     .string()
-    .min(1)
+    .trim()
+    .min(1, { message: 'Please choose a nickname' })
     .max(12, { message: 'Nickname length should not exceed 12 characters' }),
   description: z
     .string()
@@ -37,7 +38,9 @@ const signupPersonWeb2Props = {
     })
     .optional(),
   links: z
-    .array(z.string().url('Links must be a valid URL'))
+    .array(
+      z.string().url('Please enter a valid URL (e.g., https://example.com)'),
+    )
     .max(3)
     .default([])
     .optional(),
@@ -45,11 +48,12 @@ const signupPersonWeb2Props = {
 
 const editPersonWeb2Props = {
   id: z.number(),
-  name: z.string().min(1, { message: 'Name must not be empty' }),
-  surname: z.string().min(1, { message: 'Surname must not be empty' }),
+  name: z.string().trim().min(1, { message: 'Please enter your first name' }),
+  surname: z.string().trim().min(1, { message: 'Please enter your last name' }),
   nickname: z
     .string()
-    .min(1)
+    .trim()
+    .min(1, { message: 'Please choose a nickname' })
     .max(12, { message: 'Nickname length should not exceed 12 characters' }),
   description: z
     .string()
@@ -69,7 +73,9 @@ const editPersonWeb2Props = {
     .trim()
     .optional(),
   links: z
-    .array(z.string().url('Links must be a valid URL'))
+    .array(
+      z.string().url('Please enter a valid URL (e.g., https://example.com)'),
+    )
     .max(3)
     .default([])
     .optional(),
@@ -119,7 +125,7 @@ export const editPersonFiles = z.object({
 export const personTransfer = z.object({
   recipient: z
     .string()
-    .min(1, { message: 'Recipient is required' })
+    .min(1, { message: 'Please add a recipient or wallet address' })
     .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' }),
 
   payouts: z
