@@ -933,6 +933,9 @@ importers:
       '@hypha-platform/config-typescript':
         specifier: workspace:*
         version: link:../../config/typescript
+      '@hypha-platform/core':
+        specifier: workspace:*
+        version: link:../core
       dotenv:
         specifier: ^16.4.7
         version: 16.5.0
