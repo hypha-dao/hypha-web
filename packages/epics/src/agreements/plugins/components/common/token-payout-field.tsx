@@ -42,7 +42,7 @@ export const TokenPayoutField = ({
       onChange({ amount: '', token: value.token });
       return;
     }
-    if (/^\d*(?:[\.\,]\d*)?$/.test(amount) || amount === '') {
+    if (/^\d*(?:[\.\,]\d*)?$/.test(amount)) {
       onChange({ amount, token: value.token });
     }
   };
