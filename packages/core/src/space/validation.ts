@@ -72,7 +72,7 @@ export const createSpaceFiles = {
       .instanceof(File)
       .refine(
         (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-        'File size must be less than 5MB',
+        'File size must be less than 4MB',
       )
       .refine(
         (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
@@ -86,6 +86,8 @@ export const updateSpaceProps = {
   ...createSpaceWeb2Props,
   title: createSpaceWeb2Props.title.optional(),
   description: createSpaceWeb2Props.description.optional(),
+  categories: createSpaceWeb2Props.categories.optional(),
+  links: createSpaceWeb2Props.links.optional(),
 };
 
 export const schemaUpdateSpace = z.object(updateSpaceProps);
