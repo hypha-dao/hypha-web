@@ -9,7 +9,6 @@ export * from './member-spaces';
 export * from './members-section';
 export * from './person-head';
 export * from './signup-panel';
-export * from './person-deposit-funds';
 export * from './people-transfer-form';
 export * from './people-transfer-funds';
 export * from './profile-member-spaces';
