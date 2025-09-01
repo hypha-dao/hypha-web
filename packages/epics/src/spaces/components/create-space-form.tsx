@@ -92,14 +92,8 @@ export const SpaceForm = ({
 
   React.useEffect(() => {
     if (!values) return;
-    for (const [n, value] of Object.entries(values)) {
-      const name = n as CreateSpaceKeys;
-      if (form.getValues()[name] === value) {
-        continue;
-      }
-      form.setValue(name, value);
-    }
-  }, [values]);
+    form.reset({ ...form.getValues(), ...values }, { keepDirty: true });
+  }, [values, form]);
 
   return (
     <Form {...form}>
