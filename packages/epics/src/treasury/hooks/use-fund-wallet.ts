@@ -13,7 +13,7 @@ export interface UseFundWalletParams {
 
 export function useFundWallet({
   address,
-  title,
+  title = 'Deposit Funds',
   subtitle,
   chain = base,
 }: UseFundWalletParams) {
