@@ -118,7 +118,7 @@ export async function GET(
         symbol: token.symbol || 'UNKNOWN',
         name: token.name || 'Unnamed',
         address: token.tokenAddress as `0x${string}`,
-        icon: token.logo || '/placeholder/token-icon.png',
+        icon: token.logo || '/placeholder/token-icon.svg',
         type: 'utility' as const,
       }));
 
@@ -138,7 +138,7 @@ export async function GET(
           symbol: '',
           name: '',
           address,
-          icon: '/placeholder/token-icon.png',
+          icon: '/placeholder/token-icon.svg',
           type: 'utility',
         });
       } else {
@@ -155,7 +155,7 @@ export async function GET(
           symbol: '',
           name: '',
           address,
-          icon: '/placeholder/token-icon.png',
+          icon: '/placeholder/token-icon.svg',
           type: 'ownership',
         });
       } else {
@@ -172,7 +172,7 @@ export async function GET(
           symbol: '',
           name: '',
           address,
-          icon: '/placeholder/token-icon.png',
+          icon: '/placeholder/token-icon.svg',
           type: 'voice',
         });
       } else {

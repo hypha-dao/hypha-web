@@ -41,7 +41,7 @@ export const TransferCard: React.FC<TransferCardProps> = ({
     <Card className="w-full p-5 mb-2 flex space-x-3">
       {isMint ? (
         <img
-          src={tokenIcon || '/placeholder/token-icon.png'}
+          src={tokenIcon || '/placeholder/token-icon.svg'}
           alt="Token Icon"
           className="w-10 h-10 rounded-full object-cover"
         />

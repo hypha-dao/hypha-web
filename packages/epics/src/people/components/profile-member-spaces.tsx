@@ -112,7 +112,7 @@ export const ProfileMemberSpaces = ({
                         width={iconSize}
                         height={iconSize}
                         src={
-                          space.logoUrl ?? '/placeholder/space-avatar-image.png'
+                          space.logoUrl ?? '/placeholder/space-avatar-image.svg'
                         }
                         alt={space.title ?? ''}
                       />

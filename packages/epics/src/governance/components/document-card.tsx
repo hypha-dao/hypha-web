@@ -44,7 +44,7 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
         >
           <Image
             className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
-            src={leadImage || '/placeholder/document-lead-image.png'}
+            src={leadImage || '/placeholder/document-lead-image.webp'}
             alt={title || ''}
             width={250}
             height={150}

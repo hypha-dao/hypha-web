@@ -34,7 +34,7 @@ export const ProposalTokenItem = ({
           className="rounded-full w-7 h-7"
           width={32}
           height={32}
-          src={tokenIcon || '/placeholder/token-icon.png'}
+          src={tokenIcon || '/placeholder/token-icon.svg'}
           alt={`Token icon for ${symbol}`}
         />
       </div>

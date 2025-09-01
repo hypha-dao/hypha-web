@@ -63,7 +63,7 @@ export const ProposalVotingInfo = ({
           className="rounded-full w-6 h-6"
           width={24}
           height={24}
-          src={parsedTokenData?.icon || '/placeholder/token-icon.png'}
+          src={parsedTokenData?.icon || '/placeholder/token-icon.svg'}
           alt={`Token icon for ${parsedTokenData?.symbol}`}
         />
       </div>

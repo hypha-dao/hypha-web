@@ -62,7 +62,7 @@ export async function GET(
         symbol: token.symbol || 'UNKNOWN',
         name: token.name || 'Unnamed',
         address: token.tokenAddress as `0x${string}`,
-        icon: token.logo || '/placeholder/token-icon.png',
+        icon: token.logo || '/placeholder/token-icon.svg',
         type: 'utility' as const,
       }));
 

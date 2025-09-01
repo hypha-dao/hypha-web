@@ -60,7 +60,7 @@ export async function getTokenMeta(
     const dbToken = dbTokens?.find(
       (t) => t.symbol.toUpperCase() === symbol.toUpperCase(),
     );
-    const icon = dbToken?.iconUrl ?? '/placeholder/token-icon.png';
+    const icon = dbToken?.iconUrl ?? '/placeholder/token-icon.svg';
 
     return {
       symbol,
