@@ -44,3 +44,6 @@ export const SPACE_ORDERS = [
   'mostrecent',
 ] as const;
 export type SpaceOrder = (typeof SPACE_ORDERS)[number];
+
+export const SPACE_FLAGS = ['sandbox', 'demo'] as const;
+export type SpaceFlags = (typeof SPACE_FLAGS)[number];

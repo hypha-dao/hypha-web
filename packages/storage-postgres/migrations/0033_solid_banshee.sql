@@ -1,0 +1,1 @@
+ALTER TABLE "spaces" ADD COLUMN "flags" jsonb DEFAULT '[]'::jsonb NOT NULL;
