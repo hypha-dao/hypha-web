@@ -19,10 +19,14 @@ contract EnergyDistributionImplementation is
     _disableInitializers();
   }
 
-  function initialize(address initialOwner) public initializer {
+  function initialize(
+    address initialOwner,
+    address energyTokenAddress
+  ) public initializer {
     __Ownable_init(initialOwner);
     __UUPSUpgradeable_init();
 
+    energyToken = EnergyToken(energyTokenAddress);
     totalOwnershipPercentage = 0;
     batteryCurrentState = 0;
     batteryConfigured = false;
@@ -130,7 +134,13 @@ contract EnergyDistributionImplementation is
     // Clear member data
     delete members[memberAddress];
     delete allocatedTokens[memberAddress];
-    delete cashCreditBalances[memberAddress];
+    delete negativeCashCreditBalances[memberAddress];
+
+    // Burn any remaining tokens
+    uint256 tokenBalance = energyToken.balanceOf(memberAddress);
+    if (tokenBalance > 0) {
+      energyToken.burn(memberAddress, tokenBalance);
+    }
 
     emit MemberRemoved(memberAddress);
   }
@@ -315,7 +325,7 @@ contract EnergyDistributionImplementation is
           // Self-consumption: credit payment to community address to maintain zero-sum
           address communityAddress = deviceToMember[communityDeviceId];
           require(communityAddress != address(0), 'Community address not set');
-          cashCreditBalances[communityAddress] += cost;
+          _adjustCashCreditBalance(communityAddress, cost);
 
           collectiveConsumption[j].quantity -= canConsume;
           remainingToConsume -= canConsume;
@@ -344,7 +354,7 @@ contract EnergyDistributionImplementation is
           // Pay the token owner
           if (collectiveConsumption[j].owner != address(0)) {
             // Different member owns the token - pay them
-            cashCreditBalances[collectiveConsumption[j].owner] += cost;
+            _adjustCashCreditBalance(collectiveConsumption[j].owner, cost);
           } else {
             // Community-owned tokens (imports): member payment goes to import cash balance
             // This maintains zero-sum accounting: member pays, import balance receives
@@ -359,7 +369,7 @@ contract EnergyDistributionImplementation is
       require(remainingToConsume == 0, 'Insufficient energy tokens available');
 
       // Member pays for consumed tokens
-      cashCreditBalances[memberAddress] -= totalCost;
+      _adjustCashCreditBalance(memberAddress, -totalCost);
 
       emit EnergyConsumed(memberAddress, request.quantity, totalCost);
     }
@@ -403,7 +413,7 @@ contract EnergyDistributionImplementation is
         totalCalculatedExportRevenue += tokenValue;
 
         // Pay the token owner the export price when their tokens are exported
-        cashCreditBalances[collectiveConsumption[j].owner] += tokenValue;
+        _adjustCashCreditBalance(collectiveConsumption[j].owner, tokenValue);
 
         totalExportedTokens += exportAmount;
         collectiveConsumption[j].quantity -= exportAmount;
@@ -450,9 +460,9 @@ contract EnergyDistributionImplementation is
   function verifyZeroSumProperty() public view returns (bool, int256) {
     int256 totalMemberBalances = 0;
 
-    // Sum all member balances
+    // Sum all member balances (using token-aware helper function)
     for (uint256 i = 0; i < memberAddresses.length; i++) {
-      totalMemberBalances += cashCreditBalances[memberAddresses[i]];
+      totalMemberBalances += _getCashCreditBalance(memberAddresses[i]);
     }
 
     // Include community balance ONLY if it's NOT already in memberAddresses array
@@ -469,7 +479,7 @@ contract EnergyDistributionImplementation is
 
       // Only add community balance if not already counted
       if (!communityAlreadyCounted) {
-        totalMemberBalances += cashCreditBalances[communityAddress];
+        totalMemberBalances += _getCashCreditBalance(communityAddress);
       }
     }
 
@@ -503,13 +513,13 @@ contract EnergyDistributionImplementation is
 
     // Reset all member cash balances to zero
     for (uint256 i = 0; i < memberAddresses.length; i++) {
-      cashCreditBalances[memberAddresses[i]] = 0;
+      _setCashCreditBalance(memberAddresses[i], 0);
     }
 
     // Reset community balance if it exists
     address communityAddress = deviceToMember[communityDeviceId];
     if (communityAddress != address(0)) {
-      cashCreditBalances[communityAddress] = 0;
+      _setCashCreditBalance(communityAddress, 0);
     }
 
     // Reset system balances
@@ -556,11 +566,61 @@ contract EnergyDistributionImplementation is
     return string(buffer);
   }
 
+  // Helper functions for token/balance management
+  function _getCashCreditBalance(
+    address member
+  ) internal view returns (int256) {
+    uint256 tokenBalance = energyToken.balanceOf(member);
+    int256 negativeBalance = negativeCashCreditBalances[member];
+
+    if (tokenBalance > 0) {
+      return int256(tokenBalance);
+    } else {
+      return negativeBalance;
+    }
+  }
+
+  function _setCashCreditBalance(address member, int256 amount) internal {
+    uint256 currentTokenBalance = energyToken.balanceOf(member);
+
+    // Clear current state
+    if (currentTokenBalance > 0) {
+      energyToken.burn(member, currentTokenBalance);
+    }
+    negativeCashCreditBalances[member] = 0;
+
+    // Set new state
+    if (amount > 0) {
+      energyToken.mint(member, uint256(amount));
+    } else if (amount < 0) {
+      negativeCashCreditBalances[member] = amount;
+    }
+  }
+
+  function _adjustCashCreditBalance(
+    address member,
+    int256 adjustment
+  ) internal {
+    int256 currentBalance = _getCashCreditBalance(member);
+    int256 newBalance = currentBalance + adjustment;
+    _setCashCreditBalance(member, newBalance);
+  }
+
   // View functions
   function getCashCreditBalance(
     address member
   ) external view override returns (int256) {
-    return cashCreditBalances[member];
+    return _getCashCreditBalance(member);
+  }
+
+  function getTokenBalance(
+    address member
+  ) external view override returns (uint256) {
+    return energyToken.balanceOf(member);
+  }
+
+  function getEnergyTokenAddress() external view override returns (address) {
+    return address(energyToken);
   }
 
   function getCollectiveConsumption()

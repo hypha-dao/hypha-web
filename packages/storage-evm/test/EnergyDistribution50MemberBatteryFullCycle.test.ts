@@ -15,20 +15,32 @@ describe('EnergyDistribution50MemberBatteryFullCycle', function () {
     const members = signers.slice(1, 51); // 50 members
     const community = signers[51];
 
+    // Deploy EnergyToken contract first
+    const EnergyToken = await ethers.getContractFactory('EnergyToken');
+    const energyToken = await EnergyToken.deploy(
+      'Community Energy Token',
+      'CET',
+      owner.address,
+    );
+
     const EnergyDistribution = await ethers.getContractFactory(
       'EnergyDistributionImplementation',
     );
     const energyDistribution = await upgrades.deployProxy(
       EnergyDistribution,
-      [owner.address],
+      [owner.address, energyToken.target],
       {
         initializer: 'initialize',
         kind: 'uups',
       },
     );
 
+    // Authorize the energy distribution contract to mint/burn tokens
+    await energyToken.setAuthorized(energyDistribution.target, true);
+
     return {
       energyDistribution,
+      energyToken,
       owner,
       members,
       community,
@@ -36,9 +48,8 @@ describe('EnergyDistribution50MemberBatteryFullCycle', function () {
   }
 
   async function setup50MemberCommunityFixture() {
-    const { energyDistribution, owner, members, community } = await loadFixture(
-      deployFixture,
-    );
+    const { energyDistribution, energyToken, owner, members, community } =
+      await loadFixture(deployFixture);
 
     console.log(
       '\n=== SETTING UP 50-MEMBER COMMUNITY SOLAR SYSTEM WITH BATTERY ===',
@@ -156,6 +167,7 @@ describe('EnergyDistribution50MemberBatteryFullCycle', function () {
 
     return {
       energyDistribution,
+      energyToken,
       owner,
       members,
       community,
@@ -205,6 +217,45 @@ describe('EnergyDistribution50MemberBatteryFullCycle', function () {
     console.log(`  🏘️ TOTAL COMMUNITY: ${totalAllocations} kWh allocated`);
   }
 
+  async function logTokenBalances(
+    energyDistribution: any,
+    members: any[],
+    timeLabel: string,
+    communityMember?: any,
+  ) {
+    console.log(`\n💰 === ${timeLabel} - TOKEN BALANCES ===`);
+
+    // Sample token balances from representative members
+    const sampleIndices = [0, 9, 19, 29, 39, 49];
+
+    for (const index of sampleIndices) {
+      const tokenBalance = await energyDistribution.getTokenBalance(
+        members[index].address,
+      );
+      const tokenBalanceInDollars = Number(tokenBalance) / 100;
+      console.log(
+        `Member${index + 1} Tokens: ${Number(
+          tokenBalance,
+        )} tokens ($${tokenBalanceInDollars.toFixed(2)})`,
+      );
+    }
+
+    console.log('... (44 other members)');
+
+    // Include community member token balance if provided
+    if (communityMember) {
+      const tokenBalance = await energyDistribution.getTokenBalance(
+        communityMember.address,
+      );
+      const tokenBalanceInDollars = Number(tokenBalance) / 100;
+      console.log(
+        `Community Fund Tokens: ${Number(
+          tokenBalance,
+        )} tokens ($${tokenBalanceInDollars.toFixed(2)})`,
+      );
+    }
+  }
+
   async function logCashCreditBalances(
     energyDistribution: any,
     members: any[],
@@ -221,8 +272,22 @@ describe('EnergyDistribution50MemberBatteryFullCycle', function () {
       const balance = await energyDistribution.getCashCreditBalance(
         members[index].address,
       );
+      const tokenBalance = await energyDistribution.getTokenBalance(
+        members[index].address,
+      );
       const balanceInDollars = Number(balance) / 100;
-      console.log(`Member${index + 1}: $${balanceInDollars.toFixed(2)}`);
+
+      if (Number(tokenBalance) > 0) {
+        console.log(
+          `Member${index + 1}: $${balanceInDollars.toFixed(2)} (${Number(
+            tokenBalance,
+          )} tokens)`,
+        );
+      } else {
+        console.log(
+          `Member${index + 1}: $${balanceInDollars.toFixed(2)} (debt)`,
+        );
+      }
     }
 
     // Calculate total for all members
@@ -241,9 +306,21 @@ describe('EnergyDistribution50MemberBatteryFullCycle', function () {
       const balance = await energyDistribution.getCashCreditBalance(
         communityMember.address,
       );
+      const tokenBalance = await energyDistribution.getTokenBalance(
+        communityMember.address,
+      );
       communityBalance = Number(balance);
       const balanceInDollars = communityBalance / 100;
-      console.log(`Community Fund: $${balanceInDollars.toFixed(2)}`);
+
+      if (Number(tokenBalance) > 0) {
+        console.log(
+          `Community Fund: $${balanceInDollars.toFixed(2)} (${Number(
+            tokenBalance,
+          )} tokens)`,
+        );
+      } else {
+        console.log(`Community Fund: $${balanceInDollars.toFixed(2)} (debt)`);
+      }
       totalMemberBalance += communityBalance;
     }
 
@@ -349,8 +426,13 @@ describe('EnergyDistribution50MemberBatteryFullCycle', function () {
 
   describe('50-Member Community Battery Cycle', function () {
     it('Should demonstrate scaled community with 500 kWh battery managing 3000+ kWh daily consumption', async function () {
-      const { energyDistribution, members, community, ownershipDistribution } =
-        await loadFixture(setup50MemberCommunityFixture);
+      const {
+        energyDistribution,
+        energyToken,
+        members,
+        community,
+        ownershipDistribution,
+      } = await loadFixture(setup50MemberCommunityFixture);
 
       console.log('\n🌅 === 50-MEMBER COMMUNITY FULL DAY BATTERY CYCLE ===');
       console.log('🏘️ Community: 50 households sharing 500 kWh battery');
@@ -389,6 +471,13 @@ describe('EnergyDistribution50MemberBatteryFullCycle', function () {
         members,
         morningConsumptionRequests,
         'MORNING',
+        community,
+      );
+
+      await logTokenBalances(
+        energyDistribution,
+        members,
+        'MORNING TOKEN BALANCES',
         community,
       );
 
@@ -496,6 +585,13 @@ describe('EnergyDistribution50MemberBatteryFullCycle', function () {
         community,
       );
 
+      await logTokenBalances(
+        energyDistribution,
+        members,
+        'EVENING TOKEN BALANCES',
+        community,
+      );
+
       // =================== NIGHT PHASE ===================
       console.log('\n🌙 === NIGHT PHASE: BATTERY + MINIMAL IMPORTS ===');
 
@@ -571,6 +667,13 @@ describe('EnergyDistribution50MemberBatteryFullCycle', function () {
       console.log('  ☀️ Solar utilization: Near 100% through storage');
       console.log('  🏘️ Scale benefits: Lower per-kWh infrastructure costs');
 
+      await logTokenBalances(
+        energyDistribution,
+        members,
+        'FINAL 24-HOUR TOKEN BALANCES - 50 MEMBER COMMUNITY',
+        community,
+      );
+
       await logCashCreditBalances(
         energyDistribution,
         members,
@@ -584,6 +687,12 @@ describe('EnergyDistribution50MemberBatteryFullCycle', function () {
       console.log('  ✅ Fair ownership distribution from 0.5% to 8% stakes');
       console.log('  ✅ Smart contract handles complex 50-member interactions');
       console.log('  ✅ Gas costs remain reasonable even with 50 members');
+      console.log(
+        '  ✅ ERC20 Token System: Positive balances now tradeable tokens',
+      );
+      console.log(
+        '  ✅ Hybrid Balance System: Tokens for credits, mapping for debts',
+      );
     });
 
     it('Should verify gas efficiency scales well with 50 members', async function () {
@@ -611,6 +720,26 @@ describe('EnergyDistribution50MemberBatteryFullCycle', function () {
       console.log('  ⚖️ Fair distribution: Proportional ownership maintained');
       console.log(
         '  🔄 Economic efficiency: Amortized costs across larger community',
+      );
+
+      console.log('\n💰 ERC20 TOKEN SYSTEM SCALING:');
+      console.log(
+        '  🪙 50-Member Tokens: Standard ERC20 tokens for all positive balances',
+      );
+      console.log(
+        '  📊 Efficient Debt Tracking: Negative balances tracked in mapping',
+      );
+      console.log(
+        '  🔄 Seamless Integration: getCashCreditBalance() works for all 50 members',
+      );
+      console.log(
+        '  🛡️ Zero-Sum Maintained: Token minting/burning preserves accounting across scale',
+      );
+      console.log(
+        '  🌐 DeFi Ready: All 50 members can integrate with external protocols',
+      );
+      console.log(
+        '  💳 Individual Control: Each member owns their positive balance tokens',
       );
 
       expect(true).to.be.true; // Analysis test

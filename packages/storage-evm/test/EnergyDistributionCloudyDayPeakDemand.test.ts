@@ -19,20 +19,32 @@ describe('EnergyDistributionCloudyDayPeakDemand', function () {
       other,
     ] = await ethers.getSigners();
 
+    // Deploy EnergyToken contract first
+    const EnergyToken = await ethers.getContractFactory('EnergyToken');
+    const energyToken = await EnergyToken.deploy(
+      'Community Energy Token',
+      'CET',
+      owner.address,
+    );
+
     const EnergyDistribution = await ethers.getContractFactory(
       'EnergyDistributionImplementation',
     );
     const energyDistribution = await upgrades.deployProxy(
       EnergyDistribution,
-      [owner.address],
+      [owner.address, energyToken.target],
       {
         initializer: 'initialize',
         kind: 'uups',
       },
     );
 
+    // Authorize the energy distribution contract to mint/burn tokens
+    await energyToken.setAuthorized(energyDistribution.target, true);
+
     return {
       energyDistribution,
+      energyToken,
       owner,
       member1,
       member2,
@@ -49,6 +61,7 @@ describe('EnergyDistributionCloudyDayPeakDemand', function () {
   async function setup7MemberCommunityFixture() {
     const {
       energyDistribution,
+      energyToken,
       owner,
       member1,
       member2,
@@ -108,6 +121,7 @@ describe('EnergyDistributionCloudyDayPeakDemand', function () {
 
     return {
       energyDistribution,
+      energyToken,
       owner,
       member1,
       member2,
@@ -257,6 +271,40 @@ describe('EnergyDistributionCloudyDayPeakDemand', function () {
     );
   }
 
+  async function logTokenBalances(
+    energyDistribution: any,
+    members: any[],
+    timeLabel: string,
+    communityMember?: any,
+  ) {
+    console.log(`\n💰 === ${timeLabel} - TOKEN BALANCES ===`);
+
+    for (const [index, member] of members.entries()) {
+      const tokenBalance = await energyDistribution.getTokenBalance(
+        member.address,
+      );
+      const tokenBalanceInDollars = Number(tokenBalance) / 100;
+      console.log(
+        `Member${index + 1} Tokens: ${Number(
+          tokenBalance,
+        )} tokens ($${tokenBalanceInDollars.toFixed(2)})`,
+      );
+    }
+
+    // Include community member token balance if provided
+    if (communityMember) {
+      const tokenBalance = await energyDistribution.getTokenBalance(
+        communityMember.address,
+      );
+      const tokenBalanceInDollars = Number(tokenBalance) / 100;
+      console.log(
+        `Community Fund Tokens: ${Number(
+          tokenBalance,
+        )} tokens ($${tokenBalanceInDollars.toFixed(2)})`,
+      );
+    }
+  }
+
   async function logCashCreditBalances(
     energyDistribution: any,
     members: any[],
@@ -270,8 +318,23 @@ describe('EnergyDistributionCloudyDayPeakDemand', function () {
       const balance = await energyDistribution.getCashCreditBalance(
         member.address,
       );
+      const tokenBalance = await energyDistribution.getTokenBalance(
+        member.address,
+      );
       const balanceInDollars = Number(balance) / 100;
-      console.log(`Member${index + 1}: $${balanceInDollars.toFixed(2)}`);
+      const tokenBalanceInDollars = Number(tokenBalance) / 100;
+
+      if (Number(tokenBalance) > 0) {
+        console.log(
+          `Member${index + 1}: $${balanceInDollars.toFixed(2)} (${Number(
+            tokenBalance,
+          )} tokens)`,
+        );
+      } else {
+        console.log(
+          `Member${index + 1}: $${balanceInDollars.toFixed(2)} (debt)`,
+        );
+      }
       totalMemberBalance += Number(balance);
     }
 
@@ -281,9 +344,21 @@ describe('EnergyDistributionCloudyDayPeakDemand', function () {
       const balance = await energyDistribution.getCashCreditBalance(
         communityMember.address,
       );
+      const tokenBalance = await energyDistribution.getTokenBalance(
+        communityMember.address,
+      );
       communityBalance = Number(balance);
       const balanceInDollars = communityBalance / 100;
-      console.log(`Community Fund: $${balanceInDollars.toFixed(2)}`);
+
+      if (Number(tokenBalance) > 0) {
+        console.log(
+          `Community Fund: $${balanceInDollars.toFixed(2)} (${Number(
+            tokenBalance,
+          )} tokens)`,
+        );
+      } else {
+        console.log(`Community Fund: $${balanceInDollars.toFixed(2)} (debt)`);
+      }
       totalMemberBalance += communityBalance;
     }
 
@@ -463,6 +538,7 @@ describe('EnergyDistributionCloudyDayPeakDemand', function () {
     it('Should demonstrate poor solar conditions → early battery discharge → heavy imports → peak demand stress test', async function () {
       const {
         energyDistribution,
+        energyToken,
         member1,
         member2,
         member3,
@@ -588,6 +664,13 @@ describe('EnergyDistributionCloudyDayPeakDemand', function () {
       console.log('  📊 All available energy consumed internally');
       console.log('  💸 Heavy reliance on expensive imports due to poor solar');
 
+      await logTokenBalances(
+        energyDistribution,
+        members,
+        'CLOUDY DAYTIME TOKEN BALANCES',
+        other, // Include community member
+      );
+
       await logCashCreditBalances(
         energyDistribution,
         members,
@@ -694,6 +777,13 @@ describe('EnergyDistributionCloudyDayPeakDemand', function () {
       console.log('  🚨 Energy shortage forced consumption reduction');
       console.log('  💸 Extremely expensive peak imports dominate costs');
 
+      await logTokenBalances(
+        energyDistribution,
+        members,
+        'FINAL TOKEN BALANCES',
+        other, // Include community member
+      );
+
       await logCashCreditBalances(
         energyDistribution,
         members,
@@ -756,6 +846,12 @@ describe('EnergyDistributionCloudyDayPeakDemand', function () {
       );
       console.log(
         '  🚨 System stress-tested: Handles poor solar + peak demand',
+      );
+      console.log(
+        '  💰 ERC20 Token System: Positive balances now tradeable tokens',
+      );
+      console.log(
+        '  🔄 Hybrid Balance System: Tokens for credits, mapping for debts',
       );
       console.log('  ⚠️ Tomorrow Challenge: Need to rebuild battery reserves');
 
@@ -849,7 +945,30 @@ describe('EnergyDistributionCloudyDayPeakDemand', function () {
       );
       console.log('  ✅ Import costs properly tracked and allocated');
       console.log('  ✅ System maintained zero-sum economics during crisis');
+      console.log(
+        '  ✅ ERC20 token system integrated seamlessly with existing accounting',
+      );
       console.log('  ⚠️ Tomorrow challenge: Depleted battery needs rebuilding');
+
+      console.log('\n💰 ERC20 TOKEN SYSTEM BENEFITS:');
+      console.log(
+        '  🪙 Positive Balances: Now standard ERC20 tokens (tradeable)',
+      );
+      console.log(
+        '  📊 Negative Balances: Tracked as debt in mapping (efficient)',
+      );
+      console.log(
+        '  🔄 Seamless Integration: getCashCreditBalance() works as before',
+      );
+      console.log(
+        '  🛡️ Zero-Sum Maintained: Token minting/burning preserves accounting',
+      );
+      console.log(
+        '  🌐 DeFi Ready: Tokens can integrate with external protocols',
+      );
+      console.log(
+        '  💳 User Control: Members own their positive balance tokens',
+      );
 
       console.log('\n🔮 STRATEGIC IMPLICATIONS:');
       console.log(

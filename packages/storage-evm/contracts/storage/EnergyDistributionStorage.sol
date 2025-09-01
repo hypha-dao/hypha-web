@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '../interfaces/IEnergyDistribution.sol';
+import '../EnergyToken.sol';
 
 contract EnergyDistributionStorage is Initializable {
   // Members storage
@@ -18,8 +19,11 @@ contract EnergyDistributionStorage is Initializable {
   // Collective consumption list (sorted by price)
   IEnergyDistribution.CollectiveConsumption[] internal collectiveConsumption;
 
-  // Cash credit balances
-  mapping(address => int256) internal cashCreditBalances;
+  // ERC20 token for positive cash credit balances
+  EnergyToken internal energyToken;
+
+  // Negative cash credit balances (debts) - tokens handle positive balances
+  mapping(address => int256) internal negativeCashCreditBalances;
 
   // Export cash credit balance (when production > consumption)
   int256 internal exportCashCreditBalance;
@@ -49,5 +53,5 @@ contract EnergyDistributionStorage is Initializable {
    * @dev This empty reserved space is put in place to allow future versions to add new
    * variables without shifting down storage in the inheritance chain.
    */
-  uint256[35] private __gap; // Reduced by 8 due to new variables
+  uint256[33] private __gap; // Reduced by 10 due to new variables (EnergyToken + negativeCashCreditBalances)
 }

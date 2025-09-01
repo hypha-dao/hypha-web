@@ -43,7 +43,10 @@ interface IEnergyDistribution {
     bool configured;
   }
 
-  function initialize(address initialOwner) external;
+  function initialize(
+    address initialOwner,
+    address energyTokenAddress
+  ) external;
 
   function addMember(
     address memberAddress,
@@ -71,6 +74,10 @@ interface IEnergyDistribution {
   function setExportPrice(uint256 price) external;
 
   function getCashCreditBalance(address member) external view returns (int256);
+
+  function getTokenBalance(address member) external view returns (uint256);
+
+  function getEnergyTokenAddress() external view returns (address);
 
   function getCollectiveConsumption()
     external
