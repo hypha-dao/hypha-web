@@ -59,6 +59,7 @@ const DEFAULT_VALUES = {
   links: [],
   parentId: null,
   address: '',
+  flags: [],
 };
 
 export const SpaceForm = ({

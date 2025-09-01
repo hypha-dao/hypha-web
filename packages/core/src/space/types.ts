@@ -1,4 +1,4 @@
-import { Category } from '@hypha-platform/core/client';
+import { Category, SpaceFlags } from '@hypha-platform/core/client';
 import { Document } from '@hypha-platform/core/client';
 import { Person } from '@hypha-platform/core/client';
 
@@ -20,6 +20,7 @@ export interface Space {
   documentCount?: number;
   documents?: Document[];
   address?: string | null;
+  flags: SpaceFlags[];
 }
 
 export interface CreateSpaceInput {

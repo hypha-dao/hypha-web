@@ -1,6 +1,6 @@
 import { DEFAULT_IMAGE_ACCEPT } from '@hypha-platform/core/client';
 import { z } from 'zod';
-import { CATEGORIES } from '../categories/types';
+import { CATEGORIES, SPACE_FLAGS } from '../categories/types';
 
 export const ALLOWED_IMAGE_FILE_SIZE = 4 * 1024 * 1024;
 
@@ -32,6 +32,7 @@ const createSpaceWeb2Props = {
     .max(3)
     .default([]),
   address: z.string().optional(),
+  flags: z.array(z.enum(SPACE_FLAGS)).default([]),
 };
 
 export const schemaCreateSpaceWeb2 = z.object(createSpaceWeb2Props);
@@ -88,6 +89,7 @@ export const updateSpaceProps = {
   description: createSpaceWeb2Props.description.optional(),
   categories: createSpaceWeb2Props.categories.optional(),
   links: createSpaceWeb2Props.links.optional(),
+  flags: createSpaceWeb2Props.flags.optional(),
 };
 
 export const schemaUpdateSpace = z.object(updateSpaceProps);
