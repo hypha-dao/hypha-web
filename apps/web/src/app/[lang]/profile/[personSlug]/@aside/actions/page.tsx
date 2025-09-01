@@ -60,7 +60,7 @@ export default function ProfileWallet() {
         'Move your Hypha tokens from the Telos blockchain to the Base network. Initiates the migration experience.',
       href: 'migrate-hypha-tokens',
       icon: <LoopIcon />,
-      disabled: false,
+      disabled: !person?.address,
       target: '_blank',
     },
   ];

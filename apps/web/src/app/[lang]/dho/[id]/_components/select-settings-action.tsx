@@ -131,6 +131,7 @@ export const SelectSettingsAction = ({
       onAction: () => {
         fundWallet();
       },
+      disabled: !space?.address,
     },
     {
       group: 'Extensions & Plug-ins',

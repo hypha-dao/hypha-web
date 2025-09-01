@@ -86,6 +86,7 @@ export const SelectCreateAction = ({
       onAction: () => {
         fundWallet();
       },
+      disabled: !space?.address,
     },
   ];
   return (
