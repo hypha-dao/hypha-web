@@ -53,47 +53,32 @@ export default function SpaceConfiguration() {
         }
         className="-m-4 lg:-m-7"
       >
-        {isBusy ? (
-          <SpaceForm
-            key="busy"
-            submitLabel="Update"
-            submitLoadingLabel="Updating..."
-            isLoading={isBusy}
-            closeUrl={closeUrl}
-            backUrl={`${closeUrl}${PATH_SELECT_SETTINGS_ACTION}`}
-            backLabel="Back to Settings"
-            creator={{}}
-            onSubmit={updateSpace}
-          />
-        ) : (
-          <SpaceForm
-            key={space?.slug || 'ready'}
-            submitLabel="Update"
-            submitLoadingLabel="Updating..."
-            isLoading={isBusy}
-            closeUrl={closeUrl}
-            backUrl={`${closeUrl}${PATH_SELECT_SETTINGS_ACTION}`}
-            backLabel="Back to Settings"
-            creator={{
-              name: person?.name,
-              surname: person?.surname,
-            }}
-            onSubmit={updateSpace}
-            defaultValues={{
-              ...space,
-              title: space?.title || '',
-              description: space?.description || '',
-              slug: space?.slug || '',
-              logoUrl: space?.logoUrl || '',
-              leadImage: space?.leadImage || '',
-              categories: space?.categories || [],
-              links: space?.links || [],
-              web3SpaceId: space?.web3SpaceId || undefined,
-              parentId: space?.parentId || null,
-              address: space?.address || '',
-            }}
-          />
-        )}
+        <SpaceForm
+          submitLabel="Update"
+          submitLoadingLabel="Updating..."
+          isLoading={isBusy}
+          closeUrl={closeUrl}
+          backUrl={`${closeUrl}${PATH_SELECT_SETTINGS_ACTION}`}
+          backLabel="Back to Settings"
+          creator={{
+            name: person?.name,
+            surname: person?.surname,
+          }}
+          onSubmit={updateSpace}
+          values={{
+            ...space,
+            title: space?.title || '',
+            description: space?.description || '',
+            slug: space?.slug || '',
+            logoUrl: space?.logoUrl || '',
+            leadImage: space?.leadImage || '',
+            categories: space?.categories || [],
+            links: space?.links || [],
+            web3SpaceId: space?.web3SpaceId || undefined,
+            parentId: space?.parentId || null,
+            address: space?.address || '',
+          }}
+        />
       </LoadingBackdrop>
     </SidePanel>
   );
