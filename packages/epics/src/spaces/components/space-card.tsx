@@ -47,6 +47,19 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
 }) => {
   return (
     <Card className="w-full h-full flex flex-col">
+      <div className="absolute">
+        <div className="relative ml-4 mt-4">
+          {isSandbox ? (
+            <Badge className="flex" colorVariant="accent">
+              Sandbox
+            </Badge>
+          ) : isDemo ? (
+            <Badge className="flex" colorVariant="accent">
+              Use Case
+            </Badge>
+          ) : null}
+        </div>
+      </div>
       <CardHeader
         style={customCardHeaderStyles}
         className="p-0 rounded-tl-md rounded-tr-md overflow-hidden flex-shrink-0"
@@ -102,19 +115,6 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
                 <div className="text-neutral-11 ml-1 text-1">Agreements</div>
               </Skeleton>
             </div>
-          </div>
-        </div>
-        <div className="absolute">
-          <div className="relative -mt-15 ml-20">
-            {isSandbox ? (
-              <Badge className="flex" colorVariant="accent">
-                Sandbox
-              </Badge>
-            ) : isDemo ? (
-              <Badge className="flex" colorVariant="accent">
-                Use Case
-              </Badge>
-            ) : null}
           </div>
         </div>
       </CardContent>
