@@ -121,6 +121,7 @@ export function CreateAgreementBaseFields({
               <UploadLeadImage
                 onChange={field.onChange}
                 maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
+                enableImageResizer={true}
               />
             </FormControl>
             <FormMessage />

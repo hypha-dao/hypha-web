@@ -18,6 +18,19 @@ export type UploadLeadImageProps = {
   enableImageResizer?: boolean;
 };
 
+function dataURLtoFile(dataUrl: string, filename: string) {
+  if (!dataUrl) throw new Error('dataUrl is undefined');
+  const arr = dataUrl.split(',');
+  const mime = arr[0]?.match(/:(.*?);/)?.[1] || 'image/jpeg';
+  const bstr = atob(arr[1] || '');
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, { type: mime });
+}
+
 export const UploadLeadImage = ({
   onChange,
   defaultImage,
@@ -69,9 +82,7 @@ export const UploadLeadImage = ({
     const croppedImageUrl = await getCroppedImg(imageSrc, croppedAreaPixels);
     setPreview(croppedImageUrl);
 
-    const res = await fetch(croppedImageUrl);
-    const blob = await res.blob();
-    const file = new File([blob], 'cropped.jpg', { type: 'image/jpeg' });
+    const file = dataURLtoFile(croppedImageUrl, 'cropped.jpg');
     onChange(file);
 
     setImageSrc(null);

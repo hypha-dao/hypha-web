@@ -184,7 +184,10 @@ export const SignupPanel = ({
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <UploadLeadImage onChange={field.onChange} />
+                  <UploadLeadImage
+                    onChange={field.onChange}
+                    enableImageResizer={true}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
