@@ -271,6 +271,7 @@ export const SpaceForm = ({
         <FormField
           control={form.control}
           name="categories"
+          disabled={isSandbox}
           render={({ field }) => (
             <FormItem>
               <FormLabel>Tags</FormLabel>
@@ -279,6 +280,7 @@ export const SpaceForm = ({
                   placeholder={'Select one or more'}
                   options={categoryOptions}
                   defaultValue={field.value}
+                  disabled={isSandbox}
                   onValueChange={field.onChange}
                 />
               </FormControl>
@@ -286,7 +288,7 @@ export const SpaceForm = ({
             </FormItem>
           )}
         />
-        <div className="flex flex-col w-full">
+        <div className="flex flex-col w-full" aria-disabled={isSandbox}>
           <label>
             Enable this option if your space is a demo or use case. It will
             appear in the selected categories (tags) above and is for
@@ -297,6 +299,7 @@ export const SpaceForm = ({
               id="demo-trigger"
               className="mr-2"
               type="checkbox"
+              disabled={isSandbox}
               checked={isDemo}
               onChange={toggleDemo}
             />
