@@ -13,8 +13,8 @@ export interface UseFundWalletParams {
 
 export function useFundWallet({
   address,
-  title = 'Deposit Funds',
-  subtitle,
+  title = 'Receive Funds',
+  subtitle = 'Share this QR code or wallet address to receive funds in this wallet.',
   chain = base,
 }: UseFundWalletParams) {
   const { fundWallet: privyFundWallet } = usePrivyFund();
