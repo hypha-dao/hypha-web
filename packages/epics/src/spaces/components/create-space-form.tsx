@@ -143,7 +143,16 @@ export const SpaceForm = ({
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit(onSubmit)}
+        onSubmit={form.handleSubmit((space) => {
+          if (!isSandbox && space.categories.length === 0) {
+            form.setError('categories', {
+              message: 'There should be at least 1 category chosen.',
+              type: 'validate',
+            });
+            return;
+          }
+          onSubmit(space);
+        })}
         className={clsx('flex flex-col gap-5', isLoading && 'opacity-50')}
       >
         <div className="flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-2">
@@ -281,6 +290,7 @@ export const SpaceForm = ({
                   placeholder={'Select one or more'}
                   options={categoryOptions}
                   defaultValue={field.value}
+                  value={field.value}
                   disabled={isSandbox}
                   onValueChange={field.onChange}
                 />
