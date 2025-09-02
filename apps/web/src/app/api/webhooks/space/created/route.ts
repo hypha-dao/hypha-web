@@ -5,7 +5,12 @@ import { db } from '@hypha-platform/storage-postgres';
 
 export const POST = Alchemy.newHandler(
   {
-    signingKey: process.env.WH_SPACE_CREATED_SIGN_KEY ?? '',
+    signingKey: (() => {
+      const key = process.env.WH_SPACE_CREATED_SIGN_KEY;
+      if (!key) throw new Error('Missing key for space created webhook');
+
+      return key;
+    })(),
     abi: daoSpaceFactoryImplementationAbi,
     event: 'SpaceCreated',
   },
