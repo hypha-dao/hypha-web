@@ -33,8 +33,6 @@ export const CATEGORIES = [
   'villages',
   'water',
   'wellbeing',
-  'sandbox',
-  'usecase',
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
 

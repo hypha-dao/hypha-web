@@ -140,8 +140,7 @@ export function ExploreSpaces({
       uniqueCategories
         .map((category) =>
           categoryOptions.find(
-            (option) =>
-              !option.archive && option.value === category && option.visibleTag,
+            (option) => !option.archive && option.value === category,
           ),
         )
         .filter(

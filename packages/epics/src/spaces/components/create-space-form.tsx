@@ -84,17 +84,8 @@ export const SpaceForm = ({
     defaultValues,
   });
 
-  const actualCategories = categories.filter((category) => !category.archive);
-  const generalCategories = actualCategories
-    .filter((category) => !category.additional)
-    .map((category) => {
-      return {
-        value: category.value as string,
-        label: category.label,
-      };
-    });
-  const additionalCategories = actualCategories
-    .filter((category) => category.additional)
+  const actualCategories = categories
+    .filter((category) => !category.archive)
     .map((category) => {
       return {
         value: category.value as string,
@@ -102,14 +93,7 @@ export const SpaceForm = ({
       };
     });
   const categoryOptions = ([] as { value: string; label: string }[]).concat(
-    generalCategories,
-    [
-      {
-        label: '---',
-        value: '---',
-      },
-    ],
-    additionalCategories,
+    actualCategories,
   );
 
   React.useEffect(() => {
