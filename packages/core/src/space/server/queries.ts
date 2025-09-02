@@ -26,6 +26,7 @@ export const findAllSpaces = async (
       createdAt: spaces.createdAt,
       updatedAt: spaces.updatedAt,
       address: spaces.address,
+      flags: spaces.flags,
     })
     .from(spaces)
     .where(

@@ -258,13 +258,14 @@ export const SpaceForm = ({
             page.
           </label>
           <span className="flex flex-row">
-            <input
-              id="sandbox-trigger"
-              className="mr-2"
-              type="checkbox"
-              checked={isSandbox}
-              onChange={toggleSandbox}
-            />
+            <span className="w-4 h-4 mr-2">
+              <Input
+                id="sandbox-trigger"
+                type="checkbox"
+                checked={isSandbox}
+                onChange={toggleSandbox}
+              />
+            </span>
             <label htmlFor="sandbox-trigger">Sandbox Mode</label>
           </span>
         </div>
@@ -295,14 +296,15 @@ export const SpaceForm = ({
             demonstration purposes only.
           </label>
           <span className="flex flex-row">
-            <input
-              id="demo-trigger"
-              className="mr-2"
-              type="checkbox"
-              disabled={isSandbox}
-              checked={isDemo}
-              onChange={toggleDemo}
-            />
+            <span className="w-4 h-4 mr-2">
+              <Input
+                id="demo-trigger"
+                type="checkbox"
+                disabled={isDemo}
+                checked={isDemo}
+                onChange={toggleDemo}
+              />
+            </span>
             <label htmlFor="demo-trigger">Use Case (Demo) Mode</label>
           </span>
         </div>
