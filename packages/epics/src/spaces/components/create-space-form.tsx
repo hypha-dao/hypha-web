@@ -43,6 +43,7 @@ export type CreateSpaceFormProps = {
     surname?: string;
   };
   parentSpaceId?: number | null;
+  values?: z.infer<typeof schemaCreateSpaceForm>;
   defaultValues?: z.infer<typeof schemaCreateSpaceForm>;
   submitLabel?: string;
   submitLoadingLabel?: string;
@@ -68,6 +69,7 @@ export const SpaceForm = ({
   backLabel,
   onSubmit,
   parentSpaceId,
+  values,
   defaultValues = {
     ...DEFAULT_VALUES,
     parentId: parentSpaceId || null,
@@ -86,6 +88,11 @@ export const SpaceForm = ({
       form.setValue('parentId', parentSpaceId);
     }
   }, [parentSpaceId, form]);
+
+  React.useEffect(() => {
+    if (!values) return;
+    form.reset({ ...form.getValues(), ...values }, { keepDirty: true });
+  }, [values, form]);
 
   return (
     <Form {...form}>

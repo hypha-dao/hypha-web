@@ -19,24 +19,19 @@ import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 export default function SpaceConfiguration() {
   const { person } = useMe();
   const { id: spaceSlug, lang } = useParams<{ id: string; lang: Locale }>();
-  const { space, isLoading } = useSpaceBySlug(spaceSlug);
+  const { space, isLoading: isLoadingSpace } = useSpaceBySlug(spaceSlug);
   const { jwt, isLoadingJwt } = useJwt();
   const router = useRouter();
-  const {
-    updateSpace,
-    isMutating,
-    currentAction,
-    isError,
-    isPending,
-    progress,
-    reset,
-  } = useUpdateSpaceOrchestrator({ authToken: jwt });
+  const { updateSpace, currentAction, isError, isPending, progress, reset } =
+    useUpdateSpaceOrchestrator({ authToken: jwt });
 
   React.useEffect(() => {
-    if (progress === 100 && spaceSlug) {
+    if (progress === 100 && !isPending && spaceSlug) {
       router.push(getDhoPathGovernance(lang as Locale, spaceSlug));
     }
-  }, [progress, spaceSlug]);
+  }, [progress, isPending, spaceSlug, lang]);
+
+  const isBusy = isLoadingJwt || isLoadingSpace || isPending;
 
   const pathname = usePathname();
   const closeUrl = pathname.replace(/\/space-configuration$/, '');
@@ -45,7 +40,7 @@ export default function SpaceConfiguration() {
     <SidePanel>
       <LoadingBackdrop
         progress={progress}
-        isLoading={isPending || isLoading}
+        isLoading={isBusy}
         message={
           isError ? (
             <div className="flex flex-col">
@@ -61,7 +56,7 @@ export default function SpaceConfiguration() {
         <SpaceForm
           submitLabel="Update"
           submitLoadingLabel="Updating..."
-          isLoading={isLoadingJwt || isLoading || isMutating}
+          isLoading={isBusy}
           closeUrl={closeUrl}
           backUrl={`${closeUrl}${PATH_SELECT_SETTINGS_ACTION}`}
           backLabel="Back to Settings"
@@ -70,7 +65,7 @@ export default function SpaceConfiguration() {
             surname: person?.surname,
           }}
           onSubmit={updateSpace}
-          defaultValues={{
+          values={{
             ...space,
             title: space?.title || '',
             description: space?.description || '',
