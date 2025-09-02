@@ -1,15 +1,16 @@
-import { asc, eq, inArray, sql, and, isNull } from 'drizzle-orm';
+import { asc, eq, inArray, sql, and, isNull, not } from 'drizzle-orm';
 import { memberships, Space, spaces } from '@hypha-platform/storage-postgres';
 import { DbConfig } from '@hypha-platform/core/server';
 
 type FindAllSpacesProps = {
   search?: string;
   parentOnly?: boolean;
+  omitSandbox?: boolean;
 };
 
 export const findAllSpaces = async (
   { db }: DbConfig,
-  { search, parentOnly = true }: FindAllSpacesProps,
+  { search, parentOnly = true, omitSandbox = false }: FindAllSpacesProps,
 ) => {
   const results = await db
     .select({
@@ -33,6 +34,9 @@ export const findAllSpaces = async (
       and(
         eq(spaces.isArchived, false),
         parentOnly ? isNull(spaces.parentId) : undefined,
+        omitSandbox
+          ? not(sql`${spaces.flags} @> '"sandbox"'::jsonb`)
+          : undefined,
         search
           ? sql`(
               -- Full-text search for exact word matches (highest priority)

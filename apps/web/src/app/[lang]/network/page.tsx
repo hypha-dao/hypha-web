@@ -52,6 +52,7 @@ export default async function Index(props: PageProps) {
   const spaces = await getAllSpaces({
     search: query?.trim() || undefined,
     parentOnly: false,
+    omitSandbox: true,
   });
 
   const uniqueCategories = extractUniqueCategories(spaces);
