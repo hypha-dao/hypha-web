@@ -310,7 +310,7 @@ export const SpaceForm = ({
               <Input
                 id="demo-trigger"
                 type="checkbox"
-                disabled={isDemo}
+                disabled={isSandbox}
                 checked={isDemo}
                 onChange={toggleDemo}
               />

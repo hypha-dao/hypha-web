@@ -6,6 +6,7 @@ import {
   Avatar,
   AvatarImage,
   Separator,
+  Badge,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import Image from 'next/image';
@@ -87,6 +88,19 @@ export default async function DhoLayout({
           <Breadcrumbs spaceId={spaceFromDb.id} />
         </div>
         <Card className="relative">
+          <div className="absolute">
+            <div className="relative ml-4 mt-4">
+              {spaceFromDb.flags.includes('sandbox') ? (
+                <Badge className="flex" colorVariant="accent">
+                  Sandbox
+                </Badge>
+              ) : spaceFromDb.flags.includes('demo') ? (
+                <Badge className="flex" colorVariant="accent">
+                  Use Case
+                </Badge>
+              ) : null}
+            </div>
+          </div>
           <Image
             width={768}
             height={270}
