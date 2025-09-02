@@ -155,6 +155,8 @@ export default async function DhoLayout({
                         members={space.memberCount}
                         agreements={space.documentCount}
                         title={space.title as string}
+                        isSandbox={space.flags?.includes('sandbox') ?? false}
+                        isDemo={space.flags?.includes('demo') ?? false}
                       />
                     </Link>
                   </CarouselItem>

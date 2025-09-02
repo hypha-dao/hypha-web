@@ -19,6 +19,8 @@ type SpaceCardProps = {
   title: string;
   isLoading?: boolean;
   leadImage?: string;
+  isSandbox?: boolean;
+  isDemo?: boolean;
 };
 
 const customCardHeaderStyles: React.CSSProperties = {
@@ -40,6 +42,8 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
   isLoading = false,
   title,
   leadImage,
+  isSandbox = false,
+  isDemo = false,
 }) => {
   return (
     <Card className="w-full h-full flex flex-col">
@@ -98,6 +102,19 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
                 <div className="text-neutral-11 ml-1 text-1">Agreements</div>
               </Skeleton>
             </div>
+          </div>
+        </div>
+        <div className="absolute">
+          <div className="relative -mt-15 ml-20">
+            {isSandbox ? (
+              <Badge className="flex" colorVariant="accent">
+                Sandbox
+              </Badge>
+            ) : isDemo ? (
+              <Badge className="flex" colorVariant="accent">
+                Use Case
+              </Badge>
+            ) : null}
           </div>
         </div>
       </CardContent>

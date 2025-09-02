@@ -36,6 +36,8 @@ export const SpaceCardContainer = ({
               members={space.memberCount}
               agreements={space.documentCount}
               title={space.title || ''}
+              isSandbox={space.flags?.includes('sandbox') ?? false}
+              isDemo={space.flags?.includes('demo') ?? false}
             />
           </Link>
         </div>

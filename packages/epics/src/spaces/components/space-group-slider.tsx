@@ -82,6 +82,8 @@ export const SpaceGroupSlider = ({
                   isLoading={isLoading}
                   members={space.memberCount}
                   agreements={space.documentCount}
+                  isSandbox={space.flags?.includes('sandbox') ?? false}
+                  isDemo={space.flags?.includes('demo') ?? false}
                 />
               </Link>
             </CarouselItem>
