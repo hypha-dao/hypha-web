@@ -25,13 +25,16 @@ import clsx from 'clsx';
 import {
   ALLOWED_IMAGE_FILE_SIZE,
   categories,
+  Category,
   createSpaceFiles,
   schemaCreateSpace,
+  SpaceFlags,
 } from '@hypha-platform/core/client';
 import { Links } from '../../common/links';
 import { ButtonClose, ButtonBack } from '@hypha-platform/epics';
 
 const schemaCreateSpaceForm = schemaCreateSpace.extend(createSpaceFiles);
+type SchemaCreateSpaceForm = z.infer<typeof schemaCreateSpaceForm>;
 
 export type CreateSpaceFormProps = {
   isLoading?: boolean;
@@ -43,11 +46,11 @@ export type CreateSpaceFormProps = {
     surname?: string;
   };
   parentSpaceId?: number | null;
-  values?: z.infer<typeof schemaCreateSpaceForm>;
-  defaultValues?: z.infer<typeof schemaCreateSpaceForm>;
+  values?: SchemaCreateSpaceForm;
+  defaultValues?: SchemaCreateSpaceForm;
   submitLabel?: string;
   submitLoadingLabel?: string;
-  onSubmit: (values: z.infer<typeof schemaCreateSpaceForm>) => void;
+  onSubmit: (values: SchemaCreateSpaceForm) => void;
 };
 
 const DEFAULT_VALUES = {
@@ -55,11 +58,11 @@ const DEFAULT_VALUES = {
   description: '',
   logoUrl: '',
   leadImage: '',
-  categories: [],
-  links: [],
+  categories: [] as Category[],
+  links: [] as string[],
   parentId: null,
   address: '',
-  flags: [],
+  flags: [] as SpaceFlags[],
 };
 
 export const SpaceForm = ({
@@ -79,7 +82,7 @@ export const SpaceForm = ({
   submitLoadingLabel = 'Creating Space...',
 }: CreateSpaceFormProps) => {
   console.debug('SpaceForm', { defaultValues });
-  const form = useForm<z.infer<typeof schemaCreateSpaceForm>>({
+  const form = useForm<SchemaCreateSpaceForm>({
     resolver: zodResolver(schemaCreateSpaceForm),
     defaultValues,
   });
@@ -106,6 +109,36 @@ export const SpaceForm = ({
     if (!values) return;
     form.reset({ ...form.getValues(), ...values }, { keepDirty: true });
   }, [values, form]);
+
+  const flags = form.watch('flags');
+  const isSandbox = React.useMemo(() => flags.includes('sandbox'), [flags]);
+  const isDemo = React.useMemo(() => flags.includes('demo'), [flags]);
+
+  const toggleSandbox = React.useCallback(() => {
+    const flags = form.getValues()['flags'];
+    if (flags.includes('sandbox')) {
+      const index = flags.indexOf('sandbox', 0);
+      if (index > -1) {
+        flags.splice(index, 1);
+      }
+    } else {
+      flags.push('sandbox');
+    }
+    form.setValue('flags', flags);
+  }, [form]);
+
+  const toggleDemo = React.useCallback(() => {
+    const flags = form.getValues()['flags'];
+    if (flags.includes('demo')) {
+      const index = flags.indexOf('demo', 0);
+      if (index > -1) {
+        flags.splice(index, 1);
+      }
+    } else {
+      flags.push('demo');
+    }
+    form.setValue('flags', flags);
+  }, [form]);
 
   return (
     <Form {...form}>
@@ -218,6 +251,23 @@ export const SpaceForm = ({
             </FormItem>
           )}
         />
+        <div className="flex flex-col w-full">
+          <label>
+            Test in Sandbox mode. When ready, turn this option off in space
+            settings and select relevant tags to make it visible on the network
+            page.
+          </label>
+          <span className="flex flex-row">
+            <input
+              id="sandbox-trigger"
+              className="mr-2"
+              type="checkbox"
+              checked={isSandbox}
+              onChange={toggleSandbox}
+            />
+            <label htmlFor="sandbox-trigger">Sandbox Mode</label>
+          </span>
+        </div>
         <FormField
           control={form.control}
           name="categories"
@@ -236,6 +286,23 @@ export const SpaceForm = ({
             </FormItem>
           )}
         />
+        <div className="flex flex-col w-full">
+          <label>
+            Enable this option if your space is a demo or use case. It will
+            appear in the selected categories (tags) above and is for
+            demonstration purposes only.
+          </label>
+          <span className="flex flex-row">
+            <input
+              id="demo-trigger"
+              className="mr-2"
+              type="checkbox"
+              checked={isDemo}
+              onChange={toggleDemo}
+            />
+            <label htmlFor="demo-trigger">Use Case (Demo) Mode</label>
+          </span>
+        </div>
         <FormField
           control={form.control}
           name="links"
