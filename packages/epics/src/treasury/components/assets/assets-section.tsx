@@ -13,6 +13,7 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import { useJoinSpace } from '../../../spaces';
 import { useFundWallet } from '../../hooks';
 import { useSpaceDetailsWeb3Rpc } from '@hypha-platform/core/client';
+import { cn } from '@hypha-platform/ui-utils';
 
 type AssetSectionProps = {
   basePath: string;
@@ -85,7 +86,12 @@ export const AssetsSection: FC<AssetSectionProps> = ({
             New Token
           </Button>
         </Link>
-        <Button onClick={fundWallet} disabled={isDisabled}>
+        <Button
+          className={cn(isDisabled && 'cursor-not-allowed')}
+          title={tooltipMessage || ''}
+          onClick={fundWallet}
+          disabled={isDisabled}
+        >
           <CopyIcon />
           Deposit funds
         </Button>
