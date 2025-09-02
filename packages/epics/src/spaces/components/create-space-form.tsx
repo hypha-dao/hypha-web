@@ -32,7 +32,6 @@ import { Links } from '../../common/links';
 import { ButtonClose, ButtonBack } from '@hypha-platform/epics';
 
 const schemaCreateSpaceForm = schemaCreateSpace.extend(createSpaceFiles);
-type CreateSpaceKeys = keyof z.infer<typeof schemaCreateSpaceForm>;
 
 export type CreateSpaceFormProps = {
   isLoading?: boolean;
