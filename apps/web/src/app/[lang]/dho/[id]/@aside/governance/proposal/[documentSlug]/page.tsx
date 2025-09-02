@@ -20,6 +20,8 @@ import {
 } from '@hypha-platform/core/client';
 import { LoadingBackdrop } from '@hypha-platform/ui';
 import { useEffect, useState } from 'react';
+import { Button } from '@hypha-platform/ui';
+import { extractContractRevertReason } from '@hypha-platform/ui-utils';
 
 export default function Agreements() {
   const { jwt: authToken } = useJwt();
@@ -31,13 +33,20 @@ export default function Agreements() {
       proposalId: document?.web3ProposalId as number,
     });
   const { mutate: votersMutate, myVote } = useMyVote(documentSlug);
-  const { handleAccept, handleReject, handleCheckProposalExpiration } = useVote(
-    {
-      proposalId: document?.web3ProposalId,
-      authToken: authToken,
-      tokenSymbol: proposalDetails?.tokens[0]?.symbol,
-    },
-  );
+  const {
+    handleAccept,
+    handleReject,
+    handleCheckProposalExpiration,
+    error: voteError,
+    clearError,
+    isVoting: isHookVoting,
+    isCheckingExpiration,
+    isDeletingToken,
+  } = useVote({
+    proposalId: document?.web3ProposalId,
+    authToken: authToken,
+    tokenSymbol: proposalDetails?.tokens[0]?.symbol,
+  });
   const { space } = useSpaceBySlug(id as string);
   const { update } = useSpaceDocumentsWithStatuses({
     spaceSlug: space?.slug as string,
@@ -47,6 +56,7 @@ export default function Agreements() {
   const [isVoting, setIsVoting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [voteMessage, setVoteMessage] = useState('Processing vote...');
+  const [generalError, setGeneralError] = useState<string | null>(null);
 
   const voteAndRefresh = async (voteFn: () => Promise<unknown>) => {
     setIsVoting(true);
@@ -62,22 +72,28 @@ export default function Agreements() {
       await votersMutate();
       setProgress(100);
       setVoteMessage('Vote processed!');
+      setIsVoting(false);
     } catch (err) {
       console.error('Error during vote process:', err);
-      setProgress(0);
-      setVoteMessage('An error occurred while processing your vote.');
-    } finally {
+      setGeneralError(
+        (err as Error).message ||
+          'An error occurred while processing your vote.',
+      );
+      setProgress(100);
+      setVoteMessage('Vote failed');
       setIsVoting(false);
     }
   };
 
   useEffect(() => {
+    if (voteError || generalError) return;
+    if (!isVoting) return;
     if (myVote !== null && !isLoadingProposal && !isLoading) {
       setIsVoting(false);
       setProgress(100);
       setVoteMessage('Vote processed!');
     }
-  }, [myVote, votersMutate, isLoading, isLoadingProposal]);
+  }, [isVoting, myVote, isLoading, isLoadingProposal, voteError, generalError]);
 
   const handleOnAccept = async () => voteAndRefresh(handleAccept);
   const handleOnReject = async () => voteAndRefresh(handleReject);
@@ -91,13 +107,45 @@ export default function Agreements() {
     }
   };
 
+  const isBackdropLoading =
+    isLoading ||
+    isVoting ||
+    !!voteError ||
+    !!generalError ||
+    isHookVoting ||
+    isCheckingExpiration ||
+    isDeletingToken;
+
+  const displayError = voteError
+    ? extractContractRevertReason(voteError.message)
+    : generalError;
+
   return (
     <SidePanel>
       <LoadingBackdrop
         progress={progress}
-        isLoading={isLoading || isVoting}
+        isLoading={isBackdropLoading}
         message={
-          isLoading ? <span>Please wait...</span> : <span>{voteMessage}</span>
+          displayError ? (
+            <div className="flex flex-col">
+              <div>{displayError}</div>
+              <Button
+                onClick={() => {
+                  clearError();
+                  setGeneralError(null);
+                  setIsVoting(false);
+                  setProgress(0);
+                  setVoteMessage('Processing vote...');
+                }}
+              >
+                Reset
+              </Button>
+            </div>
+          ) : isLoading ? (
+            <span>Please wait...</span>
+          ) : (
+            <span>{voteMessage}</span>
+          )
         }
         className="-m-4 lg:-m-7"
       >

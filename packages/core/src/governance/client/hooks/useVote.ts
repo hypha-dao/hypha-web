@@ -32,25 +32,37 @@ export const useVote = ({
   const { client } = useSmartWallets();
   const [isVoting, setIsVoting] = useState(false);
   const [isCheckingExpiration, setIsCheckingExpiration] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   const { trigger: fetchTokens } = useSWRMutation<DbToken[]>(
     ['findAllTokens', tokenSymbol],
     async () => {
-      const res = await fetch(
-        `/api/v1/tokens?search=${encodeURIComponent(tokenSymbol ?? '')}`,
-        {
-          headers: { Authorization: `Bearer ${authToken}` },
-        },
-      );
-      if (!res.ok) throw new Error('Failed to fetch tokens');
-      return res.json();
+      try {
+        const res = await fetch(
+          `/api/v1/tokens?search=${encodeURIComponent(tokenSymbol ?? '')}`,
+          {
+            headers: { Authorization: `Bearer ${authToken}` },
+          },
+        );
+        if (!res.ok) throw new Error('Failed to fetch tokens');
+        return res.json();
+      } catch (error) {
+        setError(error as unknown as Error);
+        throw error;
+      }
     },
   );
 
   const { trigger: deleteToken, isMutating: isDeletingToken } = useSWRMutation(
     authToken ? [authToken, 'deleteToken'] : null,
-    async ([authToken], { arg }: { arg: DeleteTokenInput }) =>
-      deleteTokenAction(arg, { authToken }),
+    async ([authToken], { arg }: { arg: DeleteTokenInput }) => {
+      try {
+        return await deleteTokenAction(arg, { authToken });
+      } catch (error) {
+        setError(error as unknown as Error);
+        throw error;
+      }
+    },
   );
 
   const fetchProposalActions = useCallback(async (proposalId: number) => {
@@ -101,6 +113,7 @@ export const useVote = ({
       return actions;
     } catch (error) {
       console.error('Failed to fetch proposal actions:', error);
+      setError(error as unknown as Error);
       return [];
     }
   }, []);
@@ -124,6 +137,7 @@ export const useVote = ({
       if (proposalId == null) throw new Error('Proposal ID is required');
 
       setIsVoting(true);
+      setError(null);
       try {
         return await client.writeContract({
           address: daoProposalsImplementationConfig.address[8453],
@@ -131,6 +145,9 @@ export const useVote = ({
           functionName: 'vote',
           args: [BigInt(proposalId), support],
         });
+      } catch (error) {
+        setError(error as unknown as Error);
+        throw error;
       } finally {
         setIsVoting(false);
       }
@@ -145,6 +162,7 @@ export const useVote = ({
       if (proposalId == null) throw new Error('Proposal ID is required');
 
       setIsCheckingExpiration(true);
+      setError(null);
       try {
         return await client.writeContract({
           address: daoProposalsImplementationConfig.address[8453],
@@ -152,6 +170,9 @@ export const useVote = ({
           functionName: 'checkProposalExpiration',
           args: [BigInt(proposalId)],
         });
+      } catch (error) {
+        setError(error as unknown as Error);
+        throw error;
       } finally {
         setIsCheckingExpiration(false);
       }
@@ -188,11 +209,13 @@ export const useVote = ({
         }
       } catch (error) {
         console.error('Error handling SSE event:', error);
+        setError(error as unknown as Error);
       }
     };
 
     eventSource.onerror = (error) => {
       console.error('EventSource error:', error);
+      setError(error as unknown as Error);
       eventSource.close();
     };
 
@@ -209,33 +232,43 @@ export const useVote = ({
   ]);
 
   const handleAccept = async () => {
+    setError(null);
     try {
       if (proposalId != null) {
         await vote(proposalId, true);
       }
     } catch (error) {
       console.error('Failed to vote yes:', error);
+      setError(error as unknown as Error);
     }
   };
 
   const handleReject = async () => {
+    setError(null);
     try {
       if (proposalId != null) {
         await vote(proposalId, false);
       }
     } catch (error) {
       console.error('Failed to vote no:', error);
+      setError(error as unknown as Error);
     }
   };
 
   const handleCheckProposalExpiration = async () => {
+    setError(null);
     try {
       if (proposalId != null) {
         await checkProposalExpiration(proposalId);
       }
     } catch (error) {
       console.error('Failed to check proposal expiration:', error);
+      setError(error as unknown as Error);
     }
+  };
+
+  const clearError = () => {
+    setError(null);
   };
 
   return {
@@ -245,5 +278,7 @@ export const useVote = ({
     isVoting,
     isCheckingExpiration,
     isDeletingToken,
+    error,
+    clearError,
   };
 };
