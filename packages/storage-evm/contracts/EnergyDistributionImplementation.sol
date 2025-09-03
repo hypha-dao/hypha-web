@@ -69,6 +69,55 @@ contract EnergyDistributionImplementation is
     emit ExportPriceSet(price);
   }
 
+  function setSettlementContract(
+    address _settlementContract
+  ) external override onlyOwner {
+    require(
+      _settlementContract != address(0),
+      'Invalid settlement contract address'
+    );
+
+    address oldContract = settlementContract;
+    settlementContract = _settlementContract;
+
+    emit SettlementContractUpdated(oldContract, _settlementContract);
+  }
+
+  function settleDebt(address debtor, int256 amount) external override {
+    require(
+      msg.sender == settlementContract,
+      'Only settlement contract can settle debt'
+    );
+    require(debtor != address(0), 'Invalid debtor address');
+    require(amount > 0, 'Settlement amount must be positive');
+
+    // Get current balance
+    int256 previousBalance = _getCashCreditBalance(debtor);
+
+    // Only allow settlement if balance is negative (debt exists)
+    require(previousBalance < 0, 'No debt to settle');
+
+    // Calculate new balance after settlement
+    int256 newBalance = previousBalance + amount;
+
+    // If settlement amount exceeds debt, only settle up to the debt amount
+    if (newBalance > 0) {
+      newBalance = 0;
+      amount = -previousBalance; // Adjust amount to exactly clear the debt
+    }
+
+    // Update the balance
+    _setCashCreditBalance(debtor, newBalance);
+
+    // To maintain zero-sum property, the settled amount comes from outside the system
+    // We track this in a separate settled balance (external money brought into system)
+    // This represents external money coming into the system to pay off debt
+    settledBalance -= amount;
+
+    // Emit settlement event
+    emit DebtSettled(debtor, amount, previousBalance, newBalance);
+  }
+
   function addMember(
     address memberAddress,
     uint256[] calldata deviceIds,
@@ -486,7 +535,8 @@ contract EnergyDistributionImplementation is
     // Calculate total system balance (should be zero)
     int256 totalSystemBalance = totalMemberBalances +
       exportCashCreditBalance +
-      importCashCreditBalance;
+      importCashCreditBalance +
+      settledBalance;
 
     return (totalSystemBalance == 0, totalSystemBalance);
   }
@@ -525,6 +575,7 @@ contract EnergyDistributionImplementation is
     // Reset system balances
     exportCashCreditBalance = 0;
     importCashCreditBalance = 0;
+    settledBalance = 0;
 
     // Reset battery state
     batteryCurrentState = 0;
@@ -703,6 +754,14 @@ contract EnergyDistributionImplementation is
 
   function getExportPrice() external view returns (uint256) {
     return exportPrice;
+  }
+
+  function getSettlementContract() external view returns (address) {
+    return settlementContract;
+  }
+
+  function getSettledBalance() external view returns (int256) {
+    return settledBalance;
   }
 
   function _handleOwnedSource(EnergySource memory source) internal {

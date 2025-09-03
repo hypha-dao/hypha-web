@@ -49,9 +49,15 @@ contract EnergyDistributionStorage is Initializable {
   // Export price per kWh (separate from production cost)
   uint256 internal exportPrice;
 
+  // Settlement contract address for debt payments
+  address internal settlementContract;
+
+  // Settled balance tracking (external money brought into the system for debt settlement)
+  int256 internal settledBalance;
+
   /**
    * @dev This empty reserved space is put in place to allow future versions to add new
    * variables without shifting down storage in the inheritance chain.
    */
-  uint256[33] private __gap; // Reduced by 10 due to new variables (EnergyToken + negativeCashCreditBalances)
+  uint256[31] private __gap; // Reduced by 12 due to new variables (EnergyToken + negativeCashCreditBalances + settlementContract + settledBalance)
 }

@@ -106,6 +106,13 @@ interface IEnergyDistribution {
 
   function getExportPrice() external view returns (uint256);
 
+  function getSettledBalance() external view returns (int256);
+
+  // Settlement function for debt payment
+  function settleDebt(address debtor, int256 amount) external;
+
+  function setSettlementContract(address settlementContract) external;
+
   // FIX 3: Zero-sum verification function
   function verifyZeroSumProperty() external view returns (bool, int256);
 
@@ -137,6 +144,18 @@ interface IEnergyDistribution {
   event CommunityDeviceIdSet(uint256 deviceId);
   event ExportPriceSet(uint256 price);
   event EnergyImported(uint256 totalQuantity, int256 importCost);
+
+  event DebtSettled(
+    address indexed debtor,
+    int256 amount,
+    int256 previousBalance,
+    int256 newBalance
+  );
+
+  event SettlementContractUpdated(
+    address indexed oldContract,
+    address indexed newContract
+  );
 
   // FIX 5: Emergency reset event
   event EmergencyReset();
