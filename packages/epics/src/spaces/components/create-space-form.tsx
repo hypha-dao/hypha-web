@@ -123,10 +123,6 @@ export const SpaceForm = ({
       : (['sandbox', ...current.filter((f) => f !== 'demo')] as SpaceFlags[]);
     form.setValue('flags', next, { shouldDirty: true, shouldValidate: true });
     if (next.includes('sandbox')) {
-      form.setValue('categories', [], {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
       form.clearErrors('categories');
     }
   }, [form]);
@@ -259,23 +255,6 @@ export const SpaceForm = ({
             </FormItem>
           )}
         />
-        <Card
-          className={clsx('flex p-6 cursor-pointer space-x-4 items-center', {
-            'border-accent-9': isSandbox,
-          })}
-          onClick={toggleSandbox}
-        >
-          <div className="flex flex-col">
-            <span className="text-2 font-medium">Sandbox (Test) Mode</span>
-            <span className="text-1 text-neutral-11">
-              <span>
-                Test in Sandbox mode. When ready, turn this option off in space
-                settings and select relevant tags to make it visible on the
-                network page.
-              </span>
-            </span>
-          </div>
-        </Card>
         <FormField
           control={form.control}
           name="categories"
@@ -297,6 +276,23 @@ export const SpaceForm = ({
             </FormItem>
           )}
         />
+        <Card
+          className={clsx('flex p-6 cursor-pointer space-x-4 items-center', {
+            'border-accent-9': isSandbox,
+          })}
+          onClick={toggleSandbox}
+        >
+          <div className="flex flex-col">
+            <span className="text-2 font-medium">Sandbox (Test) Mode</span>
+            <span className="text-1 text-neutral-11">
+              <span>
+                Test in Sandbox mode. When ready, turn this option off in space
+                settings and select relevant tags to make it visible on the
+                network page.
+              </span>
+            </span>
+          </div>
+        </Card>
         <Card
           className={clsx('flex p-6 cursor-pointer space-x-4 items-center', {
             'border-accent-9': isDemo,
