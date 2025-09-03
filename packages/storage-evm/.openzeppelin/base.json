@@ -12256,7 +12256,7 @@
             "label": "delegationContract",
             "offset": 0,
             "slot": "3",
-            "type": "t_contract(IVotingPowerDelegation)15690",
+            "type": "t_contract(IVotingPowerDelegation)15800",
             "contract": "RegularTokenVotingPowerStorage",
             "src": "contracts/storage/RegularTokenVotingPowerStorage.sol:20"
           }
@@ -12304,7 +12304,7 @@
             "label": "uint64",
             "numberOfBytes": "8"
           },
-          "t_contract(IVotingPowerDelegation)15690": {
+          "t_contract(IVotingPowerDelegation)15800": {
             "label": "contract IVotingPowerDelegation",
             "numberOfBytes": "20"
           },
@@ -14700,6 +14700,133 @@
               }
             ],
             "numberOfBytes": "64"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.Ownable": [
+            {
+              "contract": "OwnableUpgradeable",
+              "label": "_owner",
+              "type": "t_address",
+              "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:24",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
+    },
+    "0b0fac2ea4c4d7c7e1ac9cc61ae813e7dea5a09d40094b56cf6ed5a8e9532625": {
+      "address": "0xB1EC920f5cE0F01a31658A2f7A26E052E8Ea899E",
+      "txHash": "0xb52e628ff4ecee6b1ce72d833a924aa550b637a7f004a45b44b560ab5847242b",
+      "layout": {
+        "solcVersion": "0.8.28",
+        "storage": [
+          {
+            "label": "spaceTokens",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_mapping(t_uint256,t_address)",
+            "contract": "TokenVotingPowerStorage",
+            "src": "contracts/storage/TokenVotingPowerStorage.sol:14"
+          },
+          {
+            "label": "tokenFactory",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_address",
+            "contract": "RegularTokenVotingPowerStorage",
+            "src": "contracts/storage/RegularTokenVotingPowerStorage.sol:14"
+          },
+          {
+            "label": "spaceFactory",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_address",
+            "contract": "RegularTokenVotingPowerStorage",
+            "src": "contracts/storage/RegularTokenVotingPowerStorage.sol:17"
+          },
+          {
+            "label": "delegationContract",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_contract(IVotingPowerDelegation)15822",
+            "contract": "RegularTokenVotingPowerStorage",
+            "src": "contracts/storage/RegularTokenVotingPowerStorage.sol:20"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)73_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(OwnableStorage)13_storage": {
+            "label": "struct OwnableUpgradeable.OwnableStorage",
+            "members": [
+              {
+                "label": "_owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_contract(IVotingPowerDelegation)15822": {
+            "label": "contract IVotingPowerDelegation",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_uint256,t_address)": {
+            "label": "mapping(uint256 => address)",
+            "numberOfBytes": "32"
           },
           "t_uint256": {
             "label": "uint256",
