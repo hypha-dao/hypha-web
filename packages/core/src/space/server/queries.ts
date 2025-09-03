@@ -35,7 +35,7 @@ export const findAllSpaces = async (
         eq(spaces.isArchived, false),
         parentOnly ? isNull(spaces.parentId) : undefined,
         omitSandbox
-          ? not(sql`${spaces.flags} @> '"sandbox"'::jsonb`)
+          ? not(sql`${spaces.flags} @> '["sandbox"]'::jsonb`)
           : undefined,
         search
           ? sql`(
