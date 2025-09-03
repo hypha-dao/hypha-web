@@ -5,14 +5,14 @@ export type Filter = {
 };
 
 export type Alias = {
-  include_subscription_ids: Array<string>;
-  include_aliases: Record<
-    ('external_id' | 'onesignal_id') & string,
-    Array<string>
-  >;
+  include_aliases: Record<string, Array<string>> & {
+    external_id: Array<string>;
+    onesignal_id?: Array<string>;
+  };
+  include_subscription_ids?: Array<string>;
 } & Filter;
 
 export type Segment = {
-  excluded_segments: Array<string>;
   included_segments: Array<string>;
+  excluded_segments?: Array<string>;
 } & Filter;

@@ -60,10 +60,8 @@ export const POST = Alchemy.newHandler(
         await sendEmailByAlias({
           app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '',
           alias: {
-            include_subscription_ids: [],
             include_aliases: {
               external_id: [slug!],
-              onesignal_id: [],
             },
           },
           content: {

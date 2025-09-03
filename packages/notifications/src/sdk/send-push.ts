@@ -32,7 +32,7 @@ export async function sendPushBySegment({
   return await sendPush(params);
 }
 
-async function sendPush(params: Notification) {
+async function sendPush(params: Partial<Notification>) {
   const notification = new Notification();
 
   Object.assign(notification, params);

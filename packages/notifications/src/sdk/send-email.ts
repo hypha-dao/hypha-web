@@ -32,7 +32,7 @@ export async function sendEmailBySegment({
   return await sendEmail(params);
 }
 
-async function sendEmail(params: Notification) {
+async function sendEmail(params: Partial<Notification>) {
   const notification = new Notification();
 
   Object.assign(notification, params);
