@@ -36,11 +36,8 @@ export const useDbTokens = ({
   const { jwt } = useJwt();
 
   const endpoint = React.useMemo(() => {
-    const url = new URL('/api/v1/tokens', window.location.origin);
-    if (search) {
-      url.searchParams.set('search', search);
-    }
-    return url.toString();
+    const base = '/api/v1/tokens';
+    return search ? `${base}?search=${encodeURIComponent(search)}` : base;
   }, [search]);
 
   const { data: tokens, isLoading } = useSWR(
