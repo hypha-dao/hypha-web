@@ -6,7 +6,6 @@ import {
   Avatar,
   AvatarImage,
   Separator,
-  Button,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import Image from 'next/image';
@@ -28,6 +27,7 @@ import {
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
 import { Breadcrumbs } from './_components/breadcrumbs';
+import { SpaceStateLabel } from './_components/space-state-label';
 
 export default async function DhoLayout({
   aside,
@@ -131,33 +131,14 @@ export default async function DhoLayout({
             </div>
             <div className="text-gray-500 ml-1 text-1">Agreements</div>
           </div>
-          <div className="flex ml-3">
-            {spaceFromDb.flags.includes('sandbox') ? (
-              <Link
-                href={`${getDhoPathGovernance(
-                  lang,
-                  daoSlug,
-                )}/space-configuration`}
-                title="Change Space Configuration"
-              >
-                <Button colorVariant="accent" variant="outline">
-                  <span className="hidden sm:flex">Sandbox</span>
-                </Button>
-              </Link>
-            ) : spaceFromDb.flags.includes('demo') ? (
-              <Link
-                href={`${getDhoPathGovernance(
-                  lang,
-                  daoSlug,
-                )}/space-configuration`}
-                title="Change Space Configuration"
-              >
-                <Button colorVariant="accent" variant="outline">
-                  <span className="hidden sm:flex">Template</span>
-                </Button>
-              </Link>
-            ) : null}
-          </div>
+          <SpaceStateLabel
+            isSandbox={spaceFromDb.flags.includes('sandbox')}
+            isDemo={spaceFromDb.flags.includes('demo')}
+            configPath={`${getDhoPathGovernance(
+              lang,
+              daoSlug,
+            )}/space-configuration`}
+          />
         </div>
         {tab}
         {children}
