@@ -283,12 +283,14 @@ export const SpaceForm = ({
           onClick={toggleSandbox}
         >
           <div className="flex flex-col">
-            <span className="text-2 font-medium">Sandbox (Test) Mode</span>
+            <span className="text-2 font-medium">
+              Sandbox Mode (only visible in My Spaces)
+            </span>
             <span className="text-1 text-neutral-11">
               <span>
-                Test in Sandbox mode. When ready, turn this option off in space
-                settings and select relevant tags to make it visible on the
-                network page.
+                Use this mode to try out your space privately, while also
+                sending the space URL to your team. Turn it off when you’re
+                ready to share it publicly.
               </span>
             </span>
           </div>
@@ -303,12 +305,14 @@ export const SpaceForm = ({
           onClick={toggleDemo}
         >
           <div className="flex flex-col">
-            <span className="text-2 font-medium">Use Case (Demo) Mode</span>
+            <span className="text-2 font-medium">
+              Template Mode (shared with everyone)
+            </span>
             <span className="text-1 text-neutral-11">
               <span>
-                Enable this option if your space is a demo or use case. It will
-                appear in the selected categories (tags) above and is for
-                demonstration purposes only.
+                Mark this space as a template so others can use it as a starting
+                point or reference. Perfect for demos, use cases, model scaling,
+                or prototyping.
               </span>
             </span>
           </div>
