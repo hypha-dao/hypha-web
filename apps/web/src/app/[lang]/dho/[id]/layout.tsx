@@ -6,7 +6,7 @@ import {
   Avatar,
   AvatarImage,
   Separator,
-  Badge,
+  Button,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import Image from 'next/image';
@@ -104,13 +104,29 @@ export default async function DhoLayout({
         </Card>
         <div className="flex justify-end mt-2 gap-2">
           {spaceFromDb.flags.includes('sandbox') ? (
-            <Badge className="flex" colorVariant="accent">
-              Sandbox
-            </Badge>
+            <Link
+              href={`${getDhoPathGovernance(
+                lang,
+                daoSlug,
+              )}/space-configuration`}
+              title="Change Space Configuration"
+            >
+              <Button colorVariant="accent">
+                <span className="hidden sm:flex">Sandbox</span>
+              </Button>
+            </Link>
           ) : spaceFromDb.flags.includes('demo') ? (
-            <Badge className="flex" colorVariant="accent">
-              Template
-            </Badge>
+            <Link
+              href={`${getDhoPathGovernance(
+                lang,
+                daoSlug,
+              )}/space-configuration`}
+              title="Change Space Configuration"
+            >
+              <Button colorVariant="accent">
+                <span className="hidden sm:flex">Template</span>
+              </Button>
+            </Link>
           ) : null}
           {typeof spaceFromDb.web3SpaceId === 'number' && (
             <JoinSpace
