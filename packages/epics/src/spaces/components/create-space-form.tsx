@@ -17,7 +17,6 @@ import {
   MultiSelect,
   RequirementMark,
   Card,
-  TextWithLinks,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import React from 'react';
@@ -319,9 +318,9 @@ export const SpaceForm = ({
             </span>
             <span className="text-1 text-neutral-11">
               <span>
-                Use Sandbox Mode to test and configure your space. It won’t
-                appear on the network page yet, but you can share it with your
-                team via URL until it’s publicly live.
+                Use Sandbox Mode to test and configure your space. Share it via
+                URL with your team while laying the foundation for regenerative
+                purpose.
               </span>
             </span>
           </div>
@@ -335,13 +334,13 @@ export const SpaceForm = ({
         >
           <div className="flex flex-col">
             <span className="text-2 font-medium">
-              Template Mode (Visible on the Network Page)
+              Pilot Mode (Visible on the Network Page)
             </span>
             <span className="text-1 text-neutral-11">
               <span>
-                Use Template Mode to share your space as a starting point or
-                reference. Perfect for demos, use case prototyping, or reusable
-                templates for scaling.
+                Use Pilot Mode to share your space for demos, use case
+                validation, or as a replicable template. Expand your reach,
+                activate member participation, and gather feedback.
               </span>
             </span>
           </div>
@@ -359,9 +358,9 @@ export const SpaceForm = ({
             </span>
             <span className="text-1 text-neutral-11">
               <span>
-                Use Live Mode to make your space fully operational and
-                discoverable on the network page, turning its purpose into
-                sustainable value and regenerative impact.
+                Use Live Mode to make your space fully operational and publicly
+                discoverable, generating sustainable value and turning your
+                purpose into regenerative impact.
               </span>
             </span>
           </div>

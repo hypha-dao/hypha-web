@@ -123,7 +123,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
                 </Badge>
               ) : isDemo ? (
                 <Badge className="flex" colorVariant="accent" variant="outline">
-                  Template
+                  Pilot
                 </Badge>
               ) : null}
             </div>

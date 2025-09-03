@@ -2,7 +2,7 @@
 
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useJoinSpace } from '@hypha-platform/epics';
-import { Badge, Button } from '@hypha-platform/ui';
+import { Button } from '@hypha-platform/ui';
 import Link from 'next/link';
 
 interface SpaceStateLabelProps {
@@ -40,7 +40,7 @@ export const SpaceStateLabel = ({
           title="Change Space Configuration"
         >
           <Button disabled={isDisabled} colorVariant="accent" variant="outline">
-            <span className="hidden sm:flex">Template</span>
+            <span className="hidden sm:flex">Pilot</span>
           </Button>
         </Link>
       ) : null}
