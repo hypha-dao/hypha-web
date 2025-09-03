@@ -64,7 +64,7 @@ const DEFAULT_VALUES = {
   links: [] as string[],
   parentId: null,
   address: '',
-  flags: [] as SpaceFlags[],
+  flags: ['sandbox'] as SpaceFlags[],
 };
 
 export const SpaceForm = ({
