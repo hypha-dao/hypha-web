@@ -115,6 +115,10 @@ export const SpaceForm = ({
   const flags = form.watch('flags');
   const isSandbox = React.useMemo(() => flags.includes('sandbox'), [flags]);
   const isDemo = React.useMemo(() => flags.includes('demo'), [flags]);
+  const isLive = React.useMemo(
+    () => !isDemo && !isSandbox,
+    [isDemo, isSandbox],
+  );
 
   const toggleSandbox = React.useCallback(() => {
     const current = form.getValues().flags ?? [];
@@ -132,6 +136,12 @@ export const SpaceForm = ({
     const next = current.includes('demo')
       ? current.filter((f) => f !== 'demo')
       : (['demo', ...current.filter((f) => f !== 'sandbox')] as SpaceFlags[]);
+    form.setValue('flags', next, { shouldDirty: true, shouldValidate: true });
+  }, [form]);
+
+  const toggleLive = React.useCallback(() => {
+    const current = form.getValues().flags ?? [];
+    const next = current.filter((f) => f !== 'demo' && f !== 'sandbox');
     form.setValue('flags', next, { shouldDirty: true, shouldValidate: true });
   }, [form]);
 
@@ -279,18 +289,19 @@ export const SpaceForm = ({
         <Card
           className={clsx('flex p-6 cursor-pointer space-x-4 items-center', {
             'border-accent-9': isSandbox,
+            'hover:border-accent-5': !isSandbox,
           })}
           onClick={toggleSandbox}
         >
           <div className="flex flex-col">
             <span className="text-2 font-medium">
-              Sandbox Mode (only visible in My Spaces)
+              Sandbox Mode (Private – My Spaces Only)
             </span>
             <span className="text-1 text-neutral-11">
               <span>
-                Use this mode to try out your space privately, while also
-                sending the space URL to your team. Turn it off when you’re
-                ready to share it publicly.
+                Use Sandbox Mode to test your space privately. It won’t appear
+                on the network page, but you can still share the URL with your
+                team. Turn this off when you’re ready to make it public.
               </span>
             </span>
           </div>
@@ -298,21 +309,39 @@ export const SpaceForm = ({
         <Card
           className={clsx('flex p-6 cursor-pointer space-x-4 items-center', {
             'border-accent-9': isDemo,
-            'opacity-50 cursor-not-allowed': isSandbox,
-            'hover:border-accent-5': isSandbox,
+            'hover:border-accent-5': !isDemo,
           })}
-          aria-disabled={isSandbox}
           onClick={toggleDemo}
         >
           <div className="flex flex-col">
             <span className="text-2 font-medium">
-              Template Mode (shared with everyone)
+              Template Mode (Visible on the Network Page)
             </span>
             <span className="text-1 text-neutral-11">
               <span>
-                Mark this space as a template so others can use it as a starting
-                point or reference. Perfect for demos, use cases, model scaling,
-                or prototyping.
+                Use Template Mode to share your space as a starting point or
+                reference. Perfect for demos, use case prototyping, or reusable
+                templates for scaling.
+              </span>
+            </span>
+          </div>
+        </Card>
+        <Card
+          className={clsx('flex p-6 cursor-pointer space-x-4 items-center', {
+            'border-accent-9': isLive,
+            'hover:border-accent-5': !isLive,
+          })}
+          onClick={toggleLive}
+        >
+          <div className="flex flex-col">
+            <span className="text-2 font-medium">
+              Live Mode (Visible on the Network Page)
+            </span>
+            <span className="text-1 text-neutral-11">
+              <span>
+                Use Live Mode to make your space fully operational and
+                discoverable on the network page, turning the purpose of your
+                space into sustainable value and regenerative impact.
               </span>
             </span>
           </div>
