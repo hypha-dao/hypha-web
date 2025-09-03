@@ -16,6 +16,8 @@ import {
   UploadLeadImage,
   MultiSelect,
   RequirementMark,
+  Card,
+  TextWithLinks,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import React from 'react';
@@ -257,24 +259,23 @@ export const SpaceForm = ({
             </FormItem>
           )}
         />
-        <div className="flex flex-col w-full">
-          <label>
-            Test in Sandbox mode. When ready, turn this option off in space
-            settings and select relevant tags to make it visible on the network
-            page.
-          </label>
-          <span className="flex flex-row">
-            <span className="w-4 h-4 mr-2">
-              <Input
-                id="sandbox-trigger"
-                type="checkbox"
-                checked={isSandbox}
-                onChange={toggleSandbox}
-              />
+        <Card
+          className={clsx('flex p-6 cursor-pointer space-x-4 items-center', {
+            'border-accent-9': isSandbox,
+          })}
+          onClick={toggleSandbox}
+        >
+          <div className="flex flex-col">
+            <span className="text-2 font-medium">Sandbox (Test) Mode</span>
+            <span className="text-1 text-neutral-11">
+              <span>
+                Test in Sandbox mode. When ready, turn this option off in space
+                settings and select relevant tags to make it visible on the
+                network page.
+              </span>
             </span>
-            <label htmlFor="sandbox-trigger">Sandbox Mode</label>
-          </span>
-        </div>
+          </div>
+        </Card>
         <FormField
           control={form.control}
           name="categories"
@@ -296,25 +297,26 @@ export const SpaceForm = ({
             </FormItem>
           )}
         />
-        <div className="flex flex-col w-full" aria-disabled={isSandbox}>
-          <label>
-            Enable this option if your space is a demo or use case. It will
-            appear in the selected categories (tags) above and is for
-            demonstration purposes only.
-          </label>
-          <span className="flex flex-row">
-            <span className="w-4 h-4 mr-2">
-              <Input
-                id="demo-trigger"
-                type="checkbox"
-                disabled={isSandbox}
-                checked={isDemo}
-                onChange={toggleDemo}
-              />
+        <Card
+          className={clsx('flex p-6 cursor-pointer space-x-4 items-center', {
+            'border-accent-9': isDemo,
+            'opacity-50 cursor-not-allowed': isSandbox,
+            'hover:border-accent-5': isSandbox,
+          })}
+          aria-disabled={isSandbox}
+          onClick={toggleDemo}
+        >
+          <div className="flex flex-col">
+            <span className="text-2 font-medium">Use Case (Demo) Mode</span>
+            <span className="text-1 text-neutral-11">
+              <span>
+                Enable this option if your space is a demo or use case. It will
+                appear in the selected categories (tags) above and is for
+                demonstration purposes only.
+              </span>
             </span>
-            <label htmlFor="demo-trigger">Use Case (Demo) Mode</label>
-          </span>
-        </div>
+          </div>
+        </Card>
         <FormField
           control={form.control}
           name="links"
