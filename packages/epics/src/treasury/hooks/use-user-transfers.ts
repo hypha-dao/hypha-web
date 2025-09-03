@@ -27,7 +27,6 @@ export const useUserTransfers = ({
       try {
         const res = await fetch(endpoint, {
           headers: {
-            'Content-Type': 'application/json',
             Authorization: `Bearer ${jwt}`,
           },
         });

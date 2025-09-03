@@ -46,7 +46,6 @@ export const useDbTokens = ({
       fetch(endpoint, {
         headers: {
           Authorization: `Bearer ${jwt}`,
-          'Content-Type': 'application/json',
         },
       }).then((res) => {
         if (!res.ok) {
