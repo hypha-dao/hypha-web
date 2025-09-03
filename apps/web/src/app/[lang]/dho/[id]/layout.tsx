@@ -88,18 +88,16 @@ export default async function DhoLayout({
           <Breadcrumbs spaceId={spaceFromDb.id} />
         </div>
         <Card className="relative">
-          <div className="absolute">
-            <div className="relative ml-4 mt-4">
-              {spaceFromDb.flags.includes('sandbox') ? (
-                <Badge className="flex" colorVariant="accent">
-                  Sandbox
-                </Badge>
-              ) : spaceFromDb.flags.includes('demo') ? (
-                <Badge className="flex" colorVariant="accent">
-                  Use Case
-                </Badge>
-              ) : null}
-            </div>
+          <div className="absolute top-4 right-4">
+            {spaceFromDb.flags.includes('sandbox') ? (
+              <Badge className="flex" colorVariant="accent">
+                Sandbox
+              </Badge>
+            ) : spaceFromDb.flags.includes('demo') ? (
+              <Badge className="flex" colorVariant="accent">
+                Use Case
+              </Badge>
+            ) : null}
           </div>
           <Image
             width={768}
