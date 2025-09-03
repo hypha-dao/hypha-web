@@ -154,7 +154,7 @@ export const SpaceForm = ({
         onSubmit={form.handleSubmit((space) => {
           if (!isSandbox && space.categories.length === 0) {
             form.setError('categories', {
-              message: 'There should be at least 1 category chosen.',
+              message: 'Please select at least one tag category.',
               type: 'validate',
             });
             return;
@@ -274,7 +274,7 @@ export const SpaceForm = ({
           disabled={isSandbox}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Tags</FormLabel>
+              <FormLabel className="text-foreground">Tags</FormLabel>
               <FormControl>
                 <MultiSelect
                   placeholder={'Select one or more'}
