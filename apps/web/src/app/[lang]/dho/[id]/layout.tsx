@@ -88,17 +88,6 @@ export default async function DhoLayout({
           <Breadcrumbs spaceId={spaceFromDb.id} />
         </div>
         <Card className="relative">
-          <div className="absolute top-4 right-4">
-            {spaceFromDb.flags.includes('sandbox') ? (
-              <Badge className="flex" colorVariant="accent">
-                Sandbox
-              </Badge>
-            ) : spaceFromDb.flags.includes('demo') ? (
-              <Badge className="flex" colorVariant="accent">
-                Template
-              </Badge>
-            ) : null}
-          </div>
           <Image
             width={768}
             height={270}
@@ -114,6 +103,15 @@ export default async function DhoLayout({
           </Avatar>
         </Card>
         <div className="flex justify-end mt-2 gap-2">
+          {spaceFromDb.flags.includes('sandbox') ? (
+            <Badge className="flex" colorVariant="accent">
+              Sandbox
+            </Badge>
+          ) : spaceFromDb.flags.includes('demo') ? (
+            <Badge className="flex" colorVariant="accent">
+              Template
+            </Badge>
+          ) : null}
           {typeof spaceFromDb.web3SpaceId === 'number' && (
             <JoinSpace
               web3SpaceId={spaceFromDb.web3SpaceId}
