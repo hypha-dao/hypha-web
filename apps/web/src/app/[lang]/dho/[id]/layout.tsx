@@ -132,6 +132,7 @@ export default async function DhoLayout({
             <div className="text-gray-500 ml-1 text-1">Agreements</div>
           </div>
           <SpaceStateLabel
+            web3SpaceId={spaceFromDb.web3SpaceId as number}
             isSandbox={spaceFromDb.flags.includes('sandbox')}
             isDemo={spaceFromDb.flags.includes('demo')}
             configPath={`${getDhoPathGovernance(

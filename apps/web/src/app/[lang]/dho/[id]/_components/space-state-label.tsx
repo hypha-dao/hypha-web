@@ -20,37 +20,30 @@ export const SpaceStateLabel = ({
 }: SpaceStateLabelProps) => {
   const { isAuthenticated } = useAuthentication();
   const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
+  const isDisabled = !isAuthenticated || !isMember;
   return (
     <div className="flex ml-3">
-      {isAuthenticated && isMember ? (
-        <>
-          {isSandbox ? (
-            <Link href={configPath} title="Change Space Configuration">
-              <Button colorVariant="accent" variant="outline">
-                <span className="hidden sm:flex">Sandbox</span>
-              </Button>
-            </Link>
-          ) : isDemo ? (
-            <Link href={configPath} title="Change Space Configuration">
-              <Button colorVariant="accent" variant="outline">
-                <span className="hidden sm:flex">Template</span>
-              </Button>
-            </Link>
-          ) : null}
-        </>
-      ) : (
-        <>
-          {isSandbox ? (
-            <Badge className="flex" colorVariant="accent" variant="outline">
-              Sandbox
-            </Badge>
-          ) : isDemo ? (
-            <Badge className="flex" colorVariant="accent" variant="outline">
-              Template
-            </Badge>
-          ) : null}
-        </>
-      )}
+      {isSandbox ? (
+        <Link
+          className={isDisabled ? 'cursor-not-allowed' : ''}
+          href={isAuthenticated && isMember ? configPath : {}}
+          title="Change Space Configuration"
+        >
+          <Button disabled={isDisabled} colorVariant="accent" variant="outline">
+            <span className="hidden sm:flex">Sandbox</span>
+          </Button>
+        </Link>
+      ) : isDemo ? (
+        <Link
+          className={isDisabled ? 'cursor-not-allowed' : ''}
+          href={isAuthenticated && isMember ? configPath : {}}
+          title="Change Space Configuration"
+        >
+          <Button disabled={isDisabled} colorVariant="accent" variant="outline">
+            <span className="hidden sm:flex">Template</span>
+          </Button>
+        </Link>
+      ) : null}
     </div>
   );
 };
