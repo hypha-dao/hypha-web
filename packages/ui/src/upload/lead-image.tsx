@@ -34,7 +34,7 @@ function dataURLtoFile(dataUrl: string, filename: string) {
 export const UploadLeadImage = ({
   onChange,
   defaultImage,
-  maxFileSize,
+  maxFileSize = 4 * 1024 * 1024,
   uploadText,
   enableImageResizer = false,
 }: UploadLeadImageProps) => {
@@ -46,9 +46,11 @@ export const UploadLeadImage = ({
   const [crop, setCrop] = React.useState({ x: 0, y: 0 });
   const [zoom, setZoom] = React.useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = React.useState<any>(null);
+  const [error, setError] = React.useState<string | null>(null);
 
   const onDrop = React.useCallback(
     (acceptedFiles: File[]) => {
+      setError(null);
       if (!acceptedFiles.length) {
         setPreview(defaultImage || null);
         onChange(null);
@@ -73,6 +75,23 @@ export const UploadLeadImage = ({
     [onChange, defaultImage, enableImageResizer],
   );
 
+  const onDropRejected = React.useCallback(
+    (fileRejections: any[]) => {
+      const tooLarge = fileRejections.some((rej) =>
+        rej.errors.some((e: any) => e.code === 'file-too-large'),
+      );
+      if (tooLarge) {
+        setError(
+          'Your image is too large (max 4 MB) and could not be uploaded. Resize it and try again.',
+        );
+      } else {
+        setError('File could not be uploaded.');
+      }
+      onChange(null);
+    },
+    [onChange],
+  );
+
   const onCropComplete = React.useCallback((_: any, croppedAreaPixels: any) => {
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
@@ -90,6 +109,7 @@ export const UploadLeadImage = ({
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
+    onDropRejected,
     maxFiles: 1,
     maxSize: maxFileSize,
     accept: {
@@ -130,6 +150,8 @@ export const UploadLeadImage = ({
           )}
         </PreviewOverlay>
       </AspectRatio>
+
+      {error && <p className="mt-2 text-2 text-error-11">{error}</p>}
 
       {enableImageResizer && imageSrc && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
