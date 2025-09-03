@@ -315,13 +315,13 @@ export const SpaceForm = ({
         >
           <div className="flex flex-col">
             <span className="text-2 font-medium">
-              Sandbox Mode (Private – My Spaces Only)
+              Sandbox Mode (Visible on My Spaces Only)
             </span>
             <span className="text-1 text-neutral-11">
               <span>
-                Use Sandbox Mode to test your space privately. It won’t appear
-                on the network page, but you can share it via URL with your team
-                until you decide to make it public.
+                Use Sandbox Mode to test and configure your space. It won’t
+                appear on the network page yet, but you can share it with your
+                team via URL until it’s publicly live.
               </span>
             </span>
           </div>
