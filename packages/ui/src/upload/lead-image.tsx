@@ -1,6 +1,6 @@
 'use client';
 
-import { useDropzone } from 'react-dropzone';
+import { useDropzone, FileRejection } from 'react-dropzone';
 import React from 'react';
 import clsx from 'clsx';
 import { PreviewOverlay } from './preview-overlay';
@@ -76,10 +76,11 @@ export const UploadLeadImage = ({
   );
 
   const onDropRejected = React.useCallback(
-    (fileRejections: any[]) => {
+    (fileRejections: FileRejection[]) => {
       const tooLarge = fileRejections.some((rej) =>
-        rej.errors.some((e: any) => e.code === 'file-too-large'),
+        rej.errors.some((e) => e.code === 'file-too-large'),
       );
+
       if (tooLarge) {
         setError(
           'Your image is too large (max 4 MB) and could not be uploaded. Resize it and try again.',
