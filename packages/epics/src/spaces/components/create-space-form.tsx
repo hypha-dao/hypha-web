@@ -115,16 +115,18 @@ export const SpaceForm = ({
   const isDemo = React.useMemo(() => flags.includes('demo'), [flags]);
 
   const toggleSandbox = React.useCallback(() => {
-    const flags = form.getValues()['flags'];
-    if (flags.includes('sandbox')) {
-      const index = flags.indexOf('sandbox', 0);
-      if (index > -1) {
-        flags.splice(index, 1);
-      }
-    } else {
-      flags.push('sandbox');
+    const current = form.getValues().flags ?? [];
+    const next = current.includes('sandbox')
+      ? current.filter((f) => f !== 'sandbox')
+      : (['sandbox', ...current.filter((f) => f !== 'demo')] as SpaceFlags[]);
+    form.setValue('flags', next, { shouldDirty: true, shouldValidate: true });
+    if (next.includes('sandbox')) {
+      form.setValue('categories', [], {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      form.clearErrors('categories');
     }
-    form.setValue('flags', flags);
   }, [form]);
 
   const toggleDemo = React.useCallback(() => {
