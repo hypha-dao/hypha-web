@@ -25,18 +25,6 @@ export const SpaceStateLabel = ({
       {isAuthenticated && isMember ? (
         <>
           {isSandbox ? (
-            <Badge className="flex" colorVariant="accent" variant="outline">
-              Sandbox
-            </Badge>
-          ) : isDemo ? (
-            <Badge className="flex" colorVariant="accent" variant="outline">
-              Template
-            </Badge>
-          ) : null}
-        </>
-      ) : (
-        <>
-          {isSandbox ? (
             <Link href={configPath} title="Change Space Configuration">
               <Button colorVariant="accent" variant="outline">
                 <span className="hidden sm:flex">Sandbox</span>
@@ -48,6 +36,18 @@ export const SpaceStateLabel = ({
                 <span className="hidden sm:flex">Template</span>
               </Button>
             </Link>
+          ) : null}
+        </>
+      ) : (
+        <>
+          {isSandbox ? (
+            <Badge className="flex" colorVariant="accent" variant="outline">
+              Sandbox
+            </Badge>
+          ) : isDemo ? (
+            <Badge className="flex" colorVariant="accent" variant="outline">
+              Template
+            </Badge>
           ) : null}
         </>
       )}
