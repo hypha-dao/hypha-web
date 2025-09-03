@@ -1,25 +1,26 @@
-import type { Audience, Alias } from './audience';
+import type { Alias, Segment } from './audience';
 import type { Template } from './template';
 import type { LanguageStringMap } from '@onesignal/node-onesignal';
 
-export type PushAudience = Audience<
-  Alias & {
-    target_channel: 'push';
-  }
->;
-
-type LangMap = LanguageStringMap & {
+export type LangMap = LanguageStringMap & {
   en: string;
 };
 
-export type PushContent =
-  | Template
-  | {
-      contents: LangMap;
-      headings?: LangMap;
-    };
+export type PlainPush = {
+  contents: LangMap;
+  headings?: LangMap;
+};
 
-export type Push = PushContent &
-  PushAudience & {
-    app_id: string;
-  };
+export type PushContent = Template | PlainPush;
+
+export type PushParamsForAlias = {
+  app_id: string;
+  alias: Alias;
+  content: PushContent;
+};
+
+export type PushParamsForSegment = {
+  app_id: string;
+  segment: Segment;
+  content: PushContent;
+};
