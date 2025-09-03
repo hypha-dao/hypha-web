@@ -95,7 +95,7 @@ export default async function DhoLayout({
               </Badge>
             ) : spaceFromDb.flags.includes('demo') ? (
               <Badge className="flex" colorVariant="accent">
-                Use Case
+                Template
               </Badge>
             ) : null}
           </div>

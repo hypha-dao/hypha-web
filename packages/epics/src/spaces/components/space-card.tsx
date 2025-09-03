@@ -54,7 +54,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
           </Badge>
         ) : isDemo ? (
           <Badge className="flex" colorVariant="accent">
-            Use Case
+            Template
           </Badge>
         ) : null}
       </div>
