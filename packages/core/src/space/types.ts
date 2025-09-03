@@ -32,6 +32,7 @@ export interface CreateSpaceInput {
   parentId?: number | null;
   links?: string[];
   categories?: Category[];
+  flags?: SpaceFlags[];
 }
 
 export interface UpdateSpaceInput {
@@ -43,6 +44,7 @@ export interface UpdateSpaceInput {
   parentId?: number | null;
   web3SpaceId?: number;
   address?: string;
+  flags?: SpaceFlags[];
 }
 
 export type UpdateSpaceBySlugInput = { slug: string } & UpdateSpaceInput;
