@@ -289,6 +289,23 @@ export const SpaceForm = ({
             </FormItem>
           )}
         />
+        <FormField
+          control={form.control}
+          name="links"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Social Links</FormLabel>
+              <FormControl>
+                <Links
+                  links={field.value}
+                  onChange={field.onChange}
+                  errors={form.formState.errors.links}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <Card
           className={clsx('flex p-6 cursor-pointer space-x-4 items-center', {
             'border-accent-9': isSandbox,
@@ -303,8 +320,8 @@ export const SpaceForm = ({
             <span className="text-1 text-neutral-11">
               <span>
                 Use Sandbox Mode to test your space privately. It won’t appear
-                on the network page, but you can still share the URL with your
-                team. Turn this off when you’re ready to make it public.
+                on the network page, but you can share it via URL with your team
+                until you decide to make it public.
               </span>
             </span>
           </div>
@@ -343,28 +360,12 @@ export const SpaceForm = ({
             <span className="text-1 text-neutral-11">
               <span>
                 Use Live Mode to make your space fully operational and
-                discoverable on the network page, turning the purpose of your
-                space into sustainable value and regenerative impact.
+                discoverable on the network page, turning its purpose into
+                sustainable value and regenerative impact.
               </span>
             </span>
           </div>
         </Card>
-        <FormField
-          control={form.control}
-          name="links"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Links
-                  links={field.value}
-                  onChange={field.onChange}
-                  errors={form.formState.errors.links}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
         <div className="flex justify-end w-full">
           <Button
             type="submit"
