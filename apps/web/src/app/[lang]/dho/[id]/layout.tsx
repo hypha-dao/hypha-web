@@ -103,31 +103,6 @@ export default async function DhoLayout({
           </Avatar>
         </Card>
         <div className="flex justify-end mt-2 gap-2">
-          {spaceFromDb.flags.includes('sandbox') ? (
-            <Link
-              href={`${getDhoPathGovernance(
-                lang,
-                daoSlug,
-              )}/space-configuration`}
-              title="Change Space Configuration"
-            >
-              <Button colorVariant="accent">
-                <span className="hidden sm:flex">Sandbox</span>
-              </Button>
-            </Link>
-          ) : spaceFromDb.flags.includes('demo') ? (
-            <Link
-              href={`${getDhoPathGovernance(
-                lang,
-                daoSlug,
-              )}/space-configuration`}
-              title="Change Space Configuration"
-            >
-              <Button colorVariant="accent">
-                <span className="hidden sm:flex">Template</span>
-              </Button>
-            </Link>
-          ) : null}
           {typeof spaceFromDb.web3SpaceId === 'number' && (
             <JoinSpace
               web3SpaceId={spaceFromDb.web3SpaceId}
@@ -155,6 +130,33 @@ export default async function DhoLayout({
               {spaceAgreements}
             </div>
             <div className="text-gray-500 ml-1 text-1">Agreements</div>
+          </div>
+          <div className="flex ml-3">
+            {spaceFromDb.flags.includes('sandbox') ? (
+              <Link
+                href={`${getDhoPathGovernance(
+                  lang,
+                  daoSlug,
+                )}/space-configuration`}
+                title="Change Space Configuration"
+              >
+                <Button colorVariant="accent" variant="outline">
+                  <span className="hidden sm:flex">Sandbox</span>
+                </Button>
+              </Link>
+            ) : spaceFromDb.flags.includes('demo') ? (
+              <Link
+                href={`${getDhoPathGovernance(
+                  lang,
+                  daoSlug,
+                )}/space-configuration`}
+                title="Change Space Configuration"
+              >
+                <Button colorVariant="accent" variant="outline">
+                  <span className="hidden sm:flex">Template</span>
+                </Button>
+              </Link>
+            ) : null}
           </div>
         </div>
         {tab}

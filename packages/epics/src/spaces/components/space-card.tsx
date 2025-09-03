@@ -47,17 +47,17 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
 }) => {
   return (
     <Card className="relative w-full h-full flex flex-col">
-      <div className="absolute top-4 right-4">
+      {/* <div className="absolute top-4 right-4">
         {isSandbox ? (
-          <Badge className="flex" colorVariant="accent">
+          <Badge className="flex" colorVariant="accent" variant="outline">
             Sandbox
           </Badge>
         ) : isDemo ? (
-          <Badge className="flex" colorVariant="accent">
+          <Badge className="flex" colorVariant="accent" variant="outline">
             Template
           </Badge>
         ) : null}
-      </div>
+      </div> */}
       <CardHeader
         style={customCardHeaderStyles}
         className="p-0 rounded-tl-md rounded-tr-md overflow-hidden flex-shrink-0"
@@ -101,17 +101,31 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
             </Skeleton>
           </div>
           <div className="flex gap-2 text-xs items-center">
-            <div className="flex">
-              <Skeleton loading={isLoading} height="16px" width="80px">
-                <div className="font-bold text-1">{members}</div>
-                <div className="text-neutral-11 ml-1 text-1">Members</div>
-              </Skeleton>
+            <div className="flex flex-row gap-y-2 gap-x-4 flex-wrap">
+              <div className="flex flex-row">
+                <Skeleton loading={isLoading} height="16px" width="80px">
+                  <div className="font-bold text-1">{members}</div>
+                  <div className="text-neutral-11 ml-1 text-1">Members</div>
+                </Skeleton>
+              </div>
+              <div className="flex flex-row">
+                <Skeleton loading={isLoading} height="16px" width="80px">
+                  <div className="font-bold text-1">{agreements}</div>
+                  <div className="text-neutral-11 ml-1 text-1">Agreements</div>
+                </Skeleton>
+              </div>
             </div>
-            <div className="flex ml-3">
-              <Skeleton loading={isLoading} height="16px" width="80px">
-                <div className="font-bold text-1">{agreements}</div>
-                <div className="text-neutral-11 ml-1 text-1">Agreements</div>
-              </Skeleton>
+            <div className="flex grow"></div>
+            <div className="flex ml-2">
+              {isSandbox ? (
+                <Badge className="flex" colorVariant="accent" variant="outline">
+                  Sandbox
+                </Badge>
+              ) : isDemo ? (
+                <Badge className="flex" colorVariant="accent" variant="outline">
+                  Template
+                </Badge>
+              ) : null}
             </div>
           </div>
         </div>
