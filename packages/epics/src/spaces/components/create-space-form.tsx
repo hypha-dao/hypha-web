@@ -113,8 +113,11 @@ export const SpaceForm = ({
   }, [values, form]);
 
   const flags = form.watch('flags');
-  const isSandbox = React.useMemo(() => flags.includes('sandbox'), [flags]);
-  const isDemo = React.useMemo(() => flags.includes('demo'), [flags]);
+  const isSandbox = React.useMemo(
+    () => flags?.includes('sandbox') ?? false,
+    [flags],
+  );
+  const isDemo = React.useMemo(() => flags?.includes('demo') ?? false, [flags]);
   const isLive = React.useMemo(
     () => !isDemo && !isSandbox,
     [isDemo, isSandbox],
