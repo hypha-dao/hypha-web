@@ -145,22 +145,35 @@ export const SpaceForm = ({
     form.setValue('flags', next, { shouldDirty: true, shouldValidate: true });
   }, [form]);
 
+  const showCategoriesError = React.useCallback(() => {
+    form.setError('categories', {
+      message: 'Please select at least one tag category.',
+      type: 'validate',
+    });
+  }, [form]);
+
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit((space) => {
-          if (
-            !space.flags?.includes('sandbox') &&
-            space.categories.length === 0
-          ) {
-            form.setError('categories', {
-              message: 'Please select at least one tag category.',
-              type: 'validate',
-            });
-            return;
-          }
-          onSubmit(space);
-        })}
+        onSubmit={form.handleSubmit(
+          (space) => {
+            if (
+              !space.flags?.includes('sandbox') &&
+              space.categories.length === 0
+            ) {
+              showCategoriesError();
+              return;
+            }
+            onSubmit(space);
+          },
+          (e) => {
+            const flags = form.getValues()['flags'];
+            const categories = form.getValues()['categories'];
+            if (!flags?.includes('sandbox') && categories.length === 0) {
+              showCategoriesError();
+            }
+          },
+        )}
         className={clsx('flex flex-col gap-5', isLoading && 'opacity-50')}
       >
         <div className="flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-2">
