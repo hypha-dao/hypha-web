@@ -47,8 +47,8 @@ export type CreateSpaceFormProps = {
     surname?: string;
   };
   parentSpaceId?: number | null;
-  values?: SchemaCreateSpaceForm;
-  defaultValues?: SchemaCreateSpaceForm;
+  values?: Partial<SchemaCreateSpaceForm>;
+  defaultValues?: Partial<SchemaCreateSpaceForm>;
   submitLabel?: string;
   submitLoadingLabel?: string;
   onSubmit: (values: SchemaCreateSpaceForm) => void;
@@ -82,22 +82,20 @@ export const SpaceForm = ({
   submitLabel = 'Create',
   submitLoadingLabel = 'Creating Space...',
 }: CreateSpaceFormProps) => {
-  console.debug('SpaceForm', { defaultValues });
+  if (process.env.NODE_ENV !== 'production') {
+    console.debug('SpaceForm', { defaultValues });
+  }
   const form = useForm<SchemaCreateSpaceForm>({
     resolver: zodResolver(schemaCreateSpaceForm),
     defaultValues,
   });
 
-  const actualCategories = categories
-    .filter((category) => !category.archive)
-    .map((category) => {
-      return {
-        value: category.value as string,
-        label: category.label,
-      };
-    });
-  const categoryOptions = ([] as { value: string; label: string }[]).concat(
-    actualCategories,
+  const categoryOptions = React.useMemo(
+    () =>
+      categories
+        .filter((c) => !c.archive)
+        .map((c) => ({ value: c.value as string, label: c.label })),
+    [],
   );
 
   React.useEffect(() => {
@@ -151,7 +149,10 @@ export const SpaceForm = ({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit((space) => {
-          if (!isSandbox && space.categories.length === 0) {
+          if (
+            !space.flags?.includes('sandbox') &&
+            space.categories.length === 0
+          ) {
             form.setError('categories', {
               message: 'Please select at least one tag category.',
               type: 'validate',
@@ -277,7 +278,6 @@ export const SpaceForm = ({
                 <MultiSelect
                   placeholder={'Select one or more'}
                   options={categoryOptions}
-                  defaultValue={field.value}
                   value={field.value}
                   onValueChange={field.onChange}
                 />
