@@ -43,14 +43,17 @@ export default function SignupPage() {
       isLoading={isLoading || !user?.wallet?.address}
       message={<span>Loading...</span>}
     >
-      <SidePanel>
-        <SignupPanel
-          closeUrl={`/${lang}/profile`}
-          onSave={handleSave}
-          isCreating={isCreating}
-          error={error}
-        />
-      </SidePanel>
+      <>
+        <div className="fixed inset-0 backdrop-blur-md z-40" />
+        <SidePanel className="z-50">
+          <SignupPanel
+            closeUrl={`/${lang}/profile`}
+            onSave={handleSave}
+            isCreating={isCreating}
+            error={error}
+          />
+        </SidePanel>
+      </>
     </LoadingBackdrop>
   );
 }
