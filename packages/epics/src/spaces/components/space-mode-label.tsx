@@ -15,23 +15,40 @@ interface SpaceModeLabelProps {
 }
 
 const LabelButton = ({
-  text,
+  caption,
   configPath,
 }: {
-  text: string;
+  caption: string;
   configPath: string;
 }) => (
   <Link href={configPath} title="Change Space Configuration">
     <Badge className="flex" colorVariant="accent" variant="outline">
-      {text}
+      {caption}
     </Badge>
   </Link>
 );
-const LabelBadge = ({ text }: { text: string }) => (
+const LabelBadge = ({ caption }: { caption: string }) => (
   <Badge className="flex" colorVariant="accent" variant="outline">
-    {text}
+    {caption}
   </Badge>
 );
+
+const MemberLabel = ({
+  caption,
+  web3SpaceId,
+  configPath,
+}: {
+  caption: string;
+  web3SpaceId: number;
+  configPath: string;
+}) => {
+  const { isMember } = useJoinSpace({ spaceId: web3SpaceId });
+  return isMember ? (
+    <LabelButton caption={caption} configPath={configPath} />
+  ) : (
+    <LabelBadge caption={caption} />
+  );
+};
 
 export const SpaceModeLabel = ({
   isSandbox,
@@ -41,26 +58,21 @@ export const SpaceModeLabel = ({
   className,
 }: SpaceModeLabelProps) => {
   const { isAuthenticated } = useAuthentication();
-  const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
-  const isDisabled = !isAuthenticated || !isMember;
+  const isLive = !isSandbox && !isDemo;
+  if (isLive) {
+    return null;
+  }
+  const caption = isSandbox ? 'Sandbox' : isDemo ? 'Pilot' : '';
   return (
     <div className={clsx('flex', className)}>
-      {isDisabled || !configPath ? (
-        <>
-          {isSandbox ? (
-            <LabelBadge text="Sandbox" />
-          ) : isDemo ? (
-            <LabelBadge text="Pilot" />
-          ) : null}
-        </>
+      {isAuthenticated && !!configPath && Number.isFinite(web3SpaceId) ? (
+        <MemberLabel
+          caption={caption}
+          web3SpaceId={web3SpaceId as number}
+          configPath={configPath}
+        />
       ) : (
-        <>
-          {isSandbox ? (
-            <LabelButton text="Sandbox" configPath={configPath} />
-          ) : isDemo ? (
-            <LabelButton text="Pilot" configPath={configPath} />
-          ) : null}
-        </>
+        <LabelBadge caption={caption} />
       )}
     </div>
   );
