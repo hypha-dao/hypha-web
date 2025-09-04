@@ -8,10 +8,10 @@ SET
     -- Start with existing flags
     "flags"
     -- Add sandbox if condition matches
-    || CASE WHEN "categories" @> '[{"key": "sandbox"}]' OR "categories" @> '"sandbox"'
+    || CASE WHEN "categories" @> '[{"key": "sandbox"}]' OR "categories" @> '["sandbox"]'
            THEN '"sandbox"'::jsonb ELSE '[]'::jsonb END
     -- Add demo if condition matches  
-    || CASE WHEN "categories" @> '[{"key": "usecase"}]' OR "categories" @> '"usecase"'
+    || CASE WHEN "categories" @> '[{"key": "usecase"}]' OR "categories" @> '["usecase"]'
            THEN '"demo"'::jsonb ELSE '[]'::jsonb END
   ),
   "categories" = (
@@ -25,5 +25,5 @@ SET
     )
   )
 WHERE
-  "categories" @> '[{"key": "sandbox"}]' OR "categories" @> '"sandbox"' OR
-  "categories" @> '[{"key": "usecase"}]' OR "categories" @> '"usecase"';
+  "categories" @> '[{"key": "sandbox"}]' OR "categories" @> '["sandbox"]' OR
+  "categories" @> '[{"key": "usecase"}]' OR "categories" @> '["usecase"]';
