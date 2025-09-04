@@ -166,16 +166,6 @@ export const SignupPanel = ({
                 </div>
               </div>
             </div>
-            <Link href={closeUrl} scroll={false}>
-              <Button
-                variant="ghost"
-                colorVariant="neutral"
-                className="flex items-center"
-              >
-                Close
-                <RxCross1 className="ml-2" />
-              </Button>
-            </Link>
           </div>
           <Separator />
           <FormField
