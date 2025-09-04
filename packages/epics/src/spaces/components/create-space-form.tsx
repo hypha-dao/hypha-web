@@ -270,7 +270,6 @@ export const SpaceForm = ({
         <FormField
           control={form.control}
           name="categories"
-          disabled={isSandbox}
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-foreground">Tags</FormLabel>
@@ -280,7 +279,6 @@ export const SpaceForm = ({
                   options={categoryOptions}
                   defaultValue={field.value}
                   value={field.value}
-                  disabled={isSandbox}
                   onValueChange={field.onChange}
                 />
               </FormControl>
