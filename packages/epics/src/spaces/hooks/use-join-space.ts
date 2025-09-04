@@ -7,12 +7,20 @@ import {
 } from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
 import useSWR from 'swr';
+import React from 'react';
 
 export const useJoinSpace = ({ spaceId }: { spaceId?: number }) => {
   const { user } = useAuthentication();
   const { joinSpace: joinSpaceWeb3, isJoiningSpace } = useJoinSpaceWeb3Rpc({
     spaceId: spaceId as number,
   });
+
+  const joinSpace = React.useCallback(async () => {
+    if (!Number.isSafeInteger(spaceId) || (spaceId as number) < 0) {
+      throw new Error('spaceId is required to join a space');
+    }
+    return joinSpaceWeb3();
+  }, [joinSpaceWeb3, spaceId]);
 
   const {
     data: isMember,
@@ -34,7 +42,7 @@ export const useJoinSpace = ({ spaceId }: { spaceId?: number }) => {
     isLoading,
     isJoiningSpace,
     error,
-    joinSpace: joinSpaceWeb3,
+    joinSpace,
     revalidateIsMember: mutate,
   };
 };
