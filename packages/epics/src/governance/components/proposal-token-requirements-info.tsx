@@ -1,6 +1,7 @@
 'use client';
 
 import { TokenLabel } from './token-label';
+import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 
 interface ProposalTokenRequirementsInfoPops {
   token: `0x${string}`;
@@ -23,7 +24,7 @@ export const ProposalTokenRequirementsInfo = ({
       </div>
       <div className="flex justify-between items-center">
         <div className="text-1 text-neutral-11 w-full">Amount</div>
-        <div className="text-1">{amount}</div>
+        <div className="text-1">{formatCurrencyValue(Number(amount))}</div>
       </div>
     </div>
   );
