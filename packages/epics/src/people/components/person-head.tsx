@@ -113,7 +113,14 @@ export const PersonHead = ({
             </Button>
           </Skeleton>
           <Skeleton loading={isLoading} width={120} height={35}>
-            <Link href={isMe(personSlug as string) ? `/${lang}/profile/${personSlug}/edit` : {}} scroll={false}>
+            <Link
+              href={
+                isMe(personSlug as string)
+                  ? `/${lang}/profile/${personSlug}/edit`
+                  : {}
+              }
+              scroll={false}
+            >
               <Button
                 colorVariant="accent"
                 disabled={!isMe(personSlug as string)}
