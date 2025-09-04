@@ -44,7 +44,10 @@ export default function SignupPage() {
       message={<span>Loading...</span>}
     >
       <>
-        <div className="fixed inset-0 backdrop-blur-md z-40" />
+        <div
+          style={{ backdropFilter: 'blur(3px)' }}
+          className="fixed inset-0 z-40"
+        />
         <SidePanel className="z-50">
           <SignupPanel
             closeUrl={`/${lang}/profile`}
