@@ -1,5 +1,7 @@
 ALTER TABLE "spaces" ADD COLUMN "flags" jsonb DEFAULT '[]'::jsonb NOT NULL;
 
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_spaces_flags_gin ON public.spaces USING GIN (flags);
+
 UPDATE "spaces"
 SET
   "flags" = (

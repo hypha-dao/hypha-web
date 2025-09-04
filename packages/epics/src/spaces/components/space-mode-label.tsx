@@ -1,10 +1,10 @@
 'use client';
 
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useJoinSpace } from '@hypha-platform/epics';
 import { Badge } from '@hypha-platform/ui';
 import clsx from 'clsx';
 import Link from 'next/link';
+import { useJoinSpace } from '../hooks/use-join-space';
 
 interface SpaceModeLabelProps {
   isSandbox: boolean;

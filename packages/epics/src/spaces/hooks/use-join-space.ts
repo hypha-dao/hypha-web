@@ -8,10 +8,10 @@ import {
 import { useAuthentication } from '@hypha-platform/authentication';
 import useSWR from 'swr';
 
-export const useJoinSpace = ({ spaceId }: { spaceId: number }) => {
+export const useJoinSpace = ({ spaceId }: { spaceId?: number }) => {
   const { user } = useAuthentication();
   const { joinSpace: joinSpaceWeb3, isJoiningSpace } = useJoinSpaceWeb3Rpc({
-    spaceId,
+    spaceId: spaceId as number,
   });
 
   const {
@@ -20,7 +20,9 @@ export const useJoinSpace = ({ spaceId }: { spaceId: number }) => {
     error,
     mutate,
   } = useSWR(
-    user?.wallet?.address ? [user.wallet.address, spaceId, 'isMember'] : null,
+    user?.wallet?.address && typeof spaceId === 'number'
+      ? [user.wallet.address, spaceId, 'isMember']
+      : null,
     async ([address, spaceId]) =>
       await publicClient.readContract(
         isMemberConfig({ spaceId: BigInt(spaceId), memberAddress: address }),
