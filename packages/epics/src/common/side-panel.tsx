@@ -3,7 +3,7 @@ import { cn } from '@hypha-platform/ui-utils';
 
 type SidePanelProps = {
   children: ReactNode;
-  className: string;
+  className?: string;
 };
 
 export const SidePanel = ({ children, className }: SidePanelProps) => {
