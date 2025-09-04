@@ -2,14 +2,14 @@
 
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useJoinSpace } from '@hypha-platform/epics';
-import { Badge, Button } from '@hypha-platform/ui';
+import { Badge } from '@hypha-platform/ui';
 import clsx from 'clsx';
 import Link from 'next/link';
 
 interface SpaceModeLabelProps {
   isSandbox: boolean;
   isDemo: boolean;
-  configPath: string;
+  configPath?: string;
   web3SpaceId?: number;
   className?: string;
 }
@@ -20,22 +20,18 @@ const LabelButton = ({
 }: {
   text: string;
   configPath: string;
-}) => {
-  return (
-    <Link href={configPath} title="Change Space Configuration">
-      <Button colorVariant="accent" variant="outline">
-        <span className="hidden sm:flex">{text}</span>
-      </Button>
-    </Link>
-  );
-};
-const LabelBadge = ({ text }: { text: string }) => {
-  return (
+}) => (
+  <Link href={configPath} title="Change Space Configuration">
     <Badge className="flex" colorVariant="accent" variant="outline">
       {text}
     </Badge>
-  );
-};
+  </Link>
+);
+const LabelBadge = ({ text }: { text: string }) => (
+  <Badge className="flex" colorVariant="accent" variant="outline">
+    {text}
+  </Badge>
+);
 
 export const SpaceModeLabel = ({
   isSandbox,
@@ -49,7 +45,7 @@ export const SpaceModeLabel = ({
   const isDisabled = !isAuthenticated || !isMember;
   return (
     <div className={clsx('flex', className)}>
-      {isDisabled ? (
+      {isDisabled || !configPath ? (
         <>
           {isSandbox ? (
             <LabelBadge text="Sandbox" />

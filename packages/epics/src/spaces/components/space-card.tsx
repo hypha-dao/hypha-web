@@ -10,6 +10,7 @@ import {
   Skeleton,
   Image,
 } from '@hypha-platform/ui';
+import { SpaceModeLabel } from './space-mode-label';
 
 type SpaceCardProps = {
   description: string;
@@ -21,6 +22,8 @@ type SpaceCardProps = {
   leadImage?: string;
   isSandbox?: boolean;
   isDemo?: boolean;
+  configPath?: string;
+  web3SpaceId?: number;
 };
 
 const customCardHeaderStyles: React.CSSProperties = {
@@ -44,6 +47,8 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
   leadImage,
   isSandbox = false,
   isDemo = false,
+  configPath,
+  web3SpaceId,
 }) => {
   return (
     <Card className="relative w-full h-full flex flex-col">
@@ -105,17 +110,13 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
               </div>
             </div>
             <div className="flex grow"></div>
-            <div className="flex ml-2">
-              {isSandbox ? (
-                <Badge className="flex" colorVariant="accent" variant="outline">
-                  Sandbox
-                </Badge>
-              ) : isDemo ? (
-                <Badge className="flex" colorVariant="accent" variant="outline">
-                  Pilot
-                </Badge>
-              ) : null}
-            </div>
+            <SpaceModeLabel
+              web3SpaceId={web3SpaceId}
+              isSandbox={isSandbox}
+              isDemo={isDemo}
+              configPath={configPath}
+              className="ml-2"
+            />
           </div>
         </div>
       </CardContent>

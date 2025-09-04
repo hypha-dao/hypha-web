@@ -84,6 +84,8 @@ export const SpaceGroupSlider = ({
                   agreements={space.documentCount}
                   isSandbox={space.flags?.includes('sandbox') ?? false}
                   isDemo={space.flags?.includes('demo') ?? false}
+                  web3SpaceId={space.web3SpaceId as number}
+                  configPath={`${getHref(space.slug)}/space-configuration`}
                 />
               </Link>
             </CarouselItem>
