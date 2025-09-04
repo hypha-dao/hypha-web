@@ -6,6 +6,7 @@ import { Image } from '@hypha-platform/ui';
 import { EthAddress } from '../../people';
 import { useTokens } from '@hypha-platform/epics';
 import { Token } from '@hypha-platform/core/client';
+import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 
 interface ProposalTransactionItemProps {
   recipient?: string;
@@ -50,7 +51,7 @@ export const ProposalTransactionItem = ({
           className="rounded-full"
         />
         <div className="text-sm font-medium text-neutral-9">
-          {Number(formattedAmount).toFixed(2)} {token.symbol}
+          {formatCurrencyValue(Number(formattedAmount))} {token.symbol}
         </div>
       </div>
       <div className="w-[140px]">
