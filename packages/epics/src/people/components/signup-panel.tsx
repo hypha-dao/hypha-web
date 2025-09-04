@@ -87,7 +87,7 @@ export const SignupPanel = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <UploadAvatar onChange={field.onChange} required={true} />
+                      <UploadAvatar onChange={field.onChange} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
