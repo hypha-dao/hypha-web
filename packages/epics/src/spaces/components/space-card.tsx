@@ -47,17 +47,6 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
 }) => {
   return (
     <Card className="relative w-full h-full flex flex-col">
-      {/* <div className="absolute top-4 right-4">
-        {isSandbox ? (
-          <Badge className="flex" colorVariant="accent" variant="outline">
-            Sandbox
-          </Badge>
-        ) : isDemo ? (
-          <Badge className="flex" colorVariant="accent" variant="outline">
-            Template
-          </Badge>
-        ) : null}
-      </div> */}
       <CardHeader
         style={customCardHeaderStyles}
         className="p-0 rounded-tl-md rounded-tr-md overflow-hidden flex-shrink-0"

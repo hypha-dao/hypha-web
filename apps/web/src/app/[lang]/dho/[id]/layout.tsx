@@ -139,6 +139,7 @@ export default async function DhoLayout({
               lang,
               daoSlug,
             )}/space-configuration`}
+            className="ml-3"
           />
         </div>
         {tab}
