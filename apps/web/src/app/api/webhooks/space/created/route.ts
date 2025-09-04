@@ -1,6 +1,6 @@
 import { Alchemy, findPersonByWeb3Address } from '@hypha-platform/core/server';
 import { daoSpaceFactoryImplementationAbi } from '@hypha-platform/core/generated';
-import { sendEmail } from '@hypha-platform/notifications/server';
+import { sendEmailByAlias } from '@hypha-platform/notifications/server';
 import { db } from '@hypha-platform/storage-postgres';
 
 export const POST = Alchemy.newHandler(
@@ -57,14 +57,16 @@ export const POST = Alchemy.newHandler(
             ? `You've successfully created ${createdSpacesCount} spaces.`
             : "You've successfully created a space.";
 
-        await sendEmail({
+        await sendEmailByAlias({
           app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '',
-          target_channel: 'email',
-          email_subject: 'Successful space creation',
-          email_body: emailBody,
-          include_aliases: {
-            external_id: [slug!],
-            onesignal_id: [],
+          alias: {
+            include_aliases: {
+              external_id: [slug!],
+            },
+          },
+          content: {
+            email_subject: 'Successful space creation',
+            email_body: emailBody,
           },
         });
       },
@@ -73,7 +75,6 @@ export const POST = Alchemy.newHandler(
 
     notifications
       .filter((notification) => notification.status === 'rejected')
-      .map(({ reason }) => reason)
-      .forEach((failure) => console.error(failure));
+      .forEach(({ reason }) => console.error(reason));
   },
 );
