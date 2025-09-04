@@ -6,7 +6,7 @@ import { Badge, Button } from '@hypha-platform/ui';
 import clsx from 'clsx';
 import Link from 'next/link';
 
-interface SpaceStateLabelProps {
+interface SpaceModeLabelProps {
   isSandbox: boolean;
   isDemo: boolean;
   configPath: string;
@@ -37,13 +37,13 @@ const LabelBadge = ({ text }: { text: string }) => {
   );
 };
 
-export const SpaceStateLabel = ({
+export const SpaceModeLabel = ({
   isSandbox,
   isDemo,
   configPath,
   web3SpaceId,
   className,
-}: SpaceStateLabelProps) => {
+}: SpaceModeLabelProps) => {
   const { isAuthenticated } = useAuthentication();
   const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
   const isDisabled = !isAuthenticated || !isMember;

@@ -1,4 +1,9 @@
-import { JoinSpace, SpaceCard, WebLinks } from '@hypha-platform/epics';
+import {
+  JoinSpace,
+  SpaceCard,
+  SpaceModeLabel,
+  WebLinks,
+} from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import {
   Container,
@@ -27,7 +32,6 @@ import {
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
 import { Breadcrumbs } from './_components/breadcrumbs';
-import { SpaceStateLabel } from './_components/space-state-label';
 
 export default async function DhoLayout({
   aside,
@@ -131,7 +135,7 @@ export default async function DhoLayout({
             </div>
             <div className="text-gray-500 ml-1 text-1">Agreements</div>
           </div>
-          <SpaceStateLabel
+          <SpaceModeLabel
             web3SpaceId={spaceFromDb.web3SpaceId as number}
             isSandbox={spaceFromDb.flags.includes('sandbox')}
             isDemo={spaceFromDb.flags.includes('demo')}
