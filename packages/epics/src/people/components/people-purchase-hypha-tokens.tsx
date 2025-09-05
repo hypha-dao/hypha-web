@@ -125,7 +125,7 @@ export const PeoplePurchaseHyphaTokens = ({
       manualUpdate();
     } catch (error) {
       console.error('Purchase failed:', error);
-      let errorMessage =
+      let errorMessage: string =
         'An error occurred while processing your purchase. Please try again.';
 
       if (error instanceof Error) {
@@ -136,6 +136,12 @@ export const PeoplePurchaseHyphaTokens = ({
           error.message.includes('ERC20: transfer amount exceeds balance')
         ) {
           errorMessage = 'insufficient_funds';
+        } else if (error.message.includes('Execution reverted with reason:')) {
+          const match = error.message.match(
+            /Execution reverted with reason: (.*?)\./,
+          );
+          errorMessage =
+            match && match[1] ? match[1] : 'Contract execution failed.';
         } else if (error.message.includes('user rejected')) {
           errorMessage =
             'Transaction was rejected. Please approve the transaction to proceed.';
