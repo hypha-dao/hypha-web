@@ -31,7 +31,7 @@ export default async function PurchaseHyphaTokensProfile(props: PageProps) {
       <div className="flex flex-col gap-5">
         <div className="flex gap-5 justify-between">
           <h2 className="text-4 text-secondary-foreground justify-start items-center">
-            Purchase Hypha Tokens (Rewards)
+            Buy Hypha Tokens (Rewards)
           </h2>
           <div className="flex gap-5 justify-end items-center">
             <ButtonBack
