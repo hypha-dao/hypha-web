@@ -1,7 +1,10 @@
 import { Locale } from '@hypha-platform/i18n';
 import { SubspaceSection } from '@hypha-platform/epics';
 import { Space } from '@hypha-platform/core/client';
-import { getSpaceBySlug } from '@hypha-platform/core/server';
+import {
+  getAllOrganizationSpacesForNodeById,
+  getSpaceBySlug,
+} from '@hypha-platform/core/server';
 import { notFound } from 'next/navigation';
 import { useMembers } from '@web/hooks/use-members';
 
@@ -20,7 +23,10 @@ export default async function OrganisationPage(props: PageProps) {
     return notFound();
   }
 
-  const spaces: Space[] = [spaceFromDb, ...(spaceFromDb.subspaces || [])];
+  const spaces: Space[] = await getAllOrganizationSpacesForNodeById({
+    id: spaceFromDb.id,
+  });
+
   for (const space of spaces) {
     if (space.parentId) {
       space.parent = spaces.find((s) => s.id === space.parentId);
