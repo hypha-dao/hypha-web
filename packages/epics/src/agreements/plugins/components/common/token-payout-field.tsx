@@ -42,8 +42,11 @@ export const TokenPayoutField = ({
       onChange({ amount: '', token: value.token });
       return;
     }
-    if (/^\d*(?:[\.\,]\d*)?$/.test(amount)) {
-      onChange({ amount, token: value.token });
+
+    const normalizedAmount = amount.replace(',', '.');
+
+    if (/^\d*\.?\d*$/.test(normalizedAmount)) {
+      onChange({ amount: normalizedAmount, token: value.token });
     }
   };
 
@@ -52,8 +55,7 @@ export const TokenPayoutField = ({
       <div className="flex top-0 m-0 p-0 flex-1 min-w-0">
         <Input
           value={value.amount ?? ''}
-          type="number"
-          step="any"
+          type="text"
           inputMode="decimal"
           placeholder="Amount"
           onChange={(e) => handleAmountChange(e.target.value)}
