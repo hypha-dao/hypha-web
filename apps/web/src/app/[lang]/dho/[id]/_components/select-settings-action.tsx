@@ -155,7 +155,7 @@ export const SelectSettingsAction = ({
     },
     {
       group: 'Hypha Network Tokenomics',
-      title: 'Buy Hypha Tokens (Rewards) (Coming Soon)',
+      title: 'Purchase Hypha Tokens (Rewards) (Coming Soon)',
       description:
         'Purchase Hypha tokens to participate in the network and earn rewards.',
       href: '#',

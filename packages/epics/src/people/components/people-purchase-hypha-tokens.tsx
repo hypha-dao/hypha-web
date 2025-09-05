@@ -140,9 +140,8 @@ export const PeoplePurchaseHyphaTokens = ({
             </div>
           </div>
           <div className="text-sm text-neutral-500">
-            You will receive approximately{' '}
-            {formatCurrencyValue(calculatedHypha)} HYPHA tokens (1 HYPHA = 0.25
-            USDC)
+            You will receive {formatCurrencyValue(calculatedHypha)} HYPHA tokens
+            (1 HYPHA = 0.25 USDC)
           </div>
           <Separator />
           <div className="flex gap-2 justify-end">

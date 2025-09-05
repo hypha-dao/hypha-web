@@ -39,7 +39,7 @@ export default function ProfileWallet() {
       disabled: true,
     },
     {
-      title: 'Buy Hypha Tokens (Rewards)',
+      title: 'Purchase Hypha Tokens (Rewards)',
       description:
         'Purchase Hypha tokens to participate in the network and earn rewards',
       href: 'purchase-hypha-tokens',
