@@ -15,10 +15,12 @@ import {
   Button,
 } from '@hypha-platform/ui';
 import { Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Space, TOKENS } from '@hypha-platform/core/client';
 import { TokenPayoutField } from '../../agreements/plugins/components/common/token-payout-field';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
+import { useFundWallet } from '@hypha-platform/epics';
+import { useMe } from '../../../../core/src/people';
 
 interface Token {
   icon: string;
@@ -53,6 +55,10 @@ export const PeoplePurchaseHyphaTokens = ({
   personSlug,
   spaces,
 }: PeoplePurchaseHyphaTokensProps) => {
+  const { person } = useMe();
+  const { fundWallet } = useFundWallet({
+    address: person?.address as `0x${string}`,
+  });
   const { manualUpdate } = useUserAssets({
     personSlug,
     refreshInterval: 10000,
@@ -73,9 +79,8 @@ export const PeoplePurchaseHyphaTokens = ({
       ]
     : [];
 
-  const recipientSpace = spaces.filter(
-    (s) => s.address === RECIPIENT_SPACE_ADDRESS,
-  );
+  const recipientSpace =
+    spaces?.filter((s) => s?.address === RECIPIENT_SPACE_ADDRESS) || [];
 
   const form = useForm<FormValues>({
     resolver: zodResolver(purchaseSchema),
@@ -100,8 +105,13 @@ export const PeoplePurchaseHyphaTokens = ({
 
   const handlePurchase = async (data: FormValues) => {
     try {
-      if (data.payout.token !== PAYMENT_TOKEN?.address) {
-        throw new Error('Invalid token.');
+      if (!PAYMENT_TOKEN?.address) {
+        form.setError('root', { message: 'Payment token is not configured.' });
+        return;
+      }
+      if (data.payout.token !== PAYMENT_TOKEN.address) {
+        form.setError('payout.token', { message: 'Invalid token selected.' });
+        return;
       }
 
       const usdcAmount = data.payout.amount;
@@ -115,76 +125,114 @@ export const PeoplePurchaseHyphaTokens = ({
       manualUpdate();
     } catch (error) {
       console.error('Purchase failed:', error);
+      let errorMessage =
+        'An error occurred while processing your purchase. Please try again.';
+
+      if (error instanceof Error) {
+        if (error.message.includes('Smart wallet client not available')) {
+          errorMessage =
+            'Smart wallet is not connected. Please connect your wallet and try again.';
+        } else if (
+          error.message.includes('ERC20: transfer amount exceeds balance')
+        ) {
+          errorMessage = 'insufficient_funds';
+        } else if (error.message.includes('user rejected')) {
+          errorMessage =
+            'Transaction was rejected. Please approve the transaction to proceed.';
+        }
+      }
+      form.setError('root', { message: errorMessage });
     }
   };
 
+  if (!spaces || spaces.length === 0) {
+    return (
+      <div className="text-error text-sm">
+        No valid spaces available. Please try again later.
+      </div>
+    );
+  }
+
   return (
-    <>
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(handlePurchase)}
-          className="flex flex-col gap-5"
-        >
-          <div className="flex flex-col gap-5 w-full">
-            <RecipientField
-              members={[]}
-              spaces={recipientSpace}
-              defaultRecipientType="space"
-              readOnly={true}
-            />
-            <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
-              <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
-                Purchase Amount
-              </label>
-              <div className="flex flex-col gap-2 grow min-w-0">
-                <div className="flex md:justify-end">
-                  <FormField
-                    control={form.control}
-                    name="payout"
-                    render={({ field: { value, onChange } }) => (
-                      <FormItem>
-                        <FormControl>
-                          <TokenPayoutField
-                            value={value}
-                            onChange={onChange}
-                            tokens={tokens}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+    <Form {...form}>
+      <form
+        onSubmit={form.handleSubmit(handlePurchase)}
+        className="flex flex-col gap-5"
+      >
+        <div className="flex flex-col gap-5 w-full">
+          <RecipientField
+            members={[]}
+            spaces={recipientSpace}
+            defaultRecipientType="space"
+            readOnly={true}
+          />
+          <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
+            <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
+              Purchase Amount
+            </label>
+            <div className="flex flex-col gap-2 grow min-w-0">
+              <div className="flex md:justify-end">
+                <FormField
+                  control={form.control}
+                  name="payout"
+                  render={({ field: { value, onChange } }) => (
+                    <FormItem>
+                      <FormControl>
+                        <TokenPayoutField
+                          value={value}
+                          onChange={onChange}
+                          tokens={tokens}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             </div>
           </div>
-          <div className="text-sm text-neutral-500">
-            You will receive {formatCurrencyValue(calculatedHypha)} HYPHA tokens
-            (1 HYPHA = 0.25 USDC)
-          </div>
-          <Separator />
-          <div className="flex gap-2 justify-end">
-            {isInvesting ? (
-              <div className="flex items-center gap-2 text-sm text-neutral-10">
-                <Loader2 className="animate-spin w-4 h-4" />
-                Purchasing
-              </div>
-            ) : showSuccessMessage ? (
-              <div className="text-sm font-medium">
-                You’ve successfully purchased your Hypha tokens. They will
-                appear in your wallet account within a few seconds.
-              </div>
+        </div>
+        <div className="text-sm text-neutral-500">
+          You will receive {formatCurrencyValue(calculatedHypha)} HYPHA tokens
+          (1 HYPHA = 0.25 USDC)
+        </div>
+        <Separator />
+        <div className="flex gap-2 justify-end">
+          {isInvesting ? (
+            <div className="flex items-center gap-2 text-sm text-neutral-10">
+              <Loader2 className="animate-spin w-4 h-4" />
+              Purchasing
+            </div>
+          ) : showSuccessMessage ? (
+            <div className="text-sm font-medium text-success">
+              You’ve successfully purchased your Hypha tokens. They will appear
+              in your wallet account within a few seconds.
+            </div>
+          ) : (
+            <Button type="submit" disabled={isInvesting}>
+              Purchase
+            </Button>
+          )}
+        </div>
+        {form.formState.errors.root && (
+          <div className="text-2">
+            {form.formState.errors.root.message === 'insufficient_funds' ? (
+              <>
+                You have insufficient funds to execute this proposal, please top
+                up your wallet account with USDC:{' '}
+                <span
+                  onClick={fundWallet}
+                  className="text-accent-9 cursor-pointer"
+                >
+                  Privy Fund
+                </span>
+              </>
             ) : (
-              <Button type="submit" disabled={isInvesting}>
-                Purchase
-              </Button>
+              form.formState.errors.root.message
             )}
           </div>
-          {investError ? (
-            <div className="text-error text-2">{investError}</div>
-          ) : null}
-        </form>
-      </Form>
-    </>
+        )}
+      </form>
+    </Form>
   );
 };
