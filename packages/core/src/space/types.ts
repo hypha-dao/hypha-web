@@ -22,6 +22,7 @@ export interface Space {
   address?: string | null;
   flags: SpaceFlags[];
   parent?: Space | null;
+  organisationSpaces?: Space[];
 }
 
 export interface CreateSpaceInput {
