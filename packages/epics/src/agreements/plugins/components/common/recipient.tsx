@@ -14,6 +14,7 @@ type RecipientProps = {
   value?: string;
   defaultRecipientType?: RecipientType;
   onChange?: (selected: Person | Space | { address: string }) => void;
+  readOnly?: boolean;
 };
 
 export const Recipient = ({
@@ -22,6 +23,7 @@ export const Recipient = ({
   onChange,
   value,
   defaultRecipientType = 'member',
+  readOnly,
 }: RecipientProps) => {
   const [recipientType, setRecipientType] =
     useState<RecipientType>(defaultRecipientType);
@@ -70,6 +72,7 @@ export const Recipient = ({
 
   const handleChange = useCallback(
     (value: string) => {
+      if (readOnly) return;
       const found = currentOptions.find((option) => option.value === value);
 
       if (found) {
@@ -85,11 +88,12 @@ export const Recipient = ({
         }
       }
     },
-    [currentOptions, members, spaces, recipientType, onChange],
+    [currentOptions, members, spaces, recipientType, onChange, readOnly],
   );
 
   const handleAddressChange = useCallback(
     (address: string) => {
+      if (readOnly) return;
       setManualAddress(address);
       const foundMember = members.find((r) => r.address === address);
       const foundSpace = spaces.find((s) => s.address === address);
@@ -102,7 +106,7 @@ export const Recipient = ({
         onChange?.({ address });
       }
     },
-    [members, spaces, onChange],
+    [members, spaces, onChange, readOnly],
   );
 
   return (
@@ -113,10 +117,10 @@ export const Recipient = ({
           <Tabs
             value={recipientType}
             onValueChange={(value) =>
-              setRecipientType(value as 'member' | 'space')
+              !readOnly && setRecipientType(value as 'member' | 'space')
             }
+            disabled={readOnly}
           >
-            {/* rounded */}
             <TabsList triggerVariant="switch">
               <TabsTrigger variant="switch" value="member">
                 Member
@@ -132,6 +136,8 @@ export const Recipient = ({
             options={currentOptions}
             placeholder={placeholder}
             onChange={handleChange}
+            initialValue={value}
+            disabled={readOnly}
             renderOption={(option) => (
               <>
                 {option.avatarUrl && (
@@ -171,7 +177,11 @@ export const Recipient = ({
           />
         </div>
       </div>
-      <WalletAddress address={manualAddress} onChange={handleAddressChange} />
+      <WalletAddress
+        address={manualAddress}
+        onChange={handleAddressChange}
+        disabled={readOnly}
+      />
     </div>
   );
 };

@@ -1,8 +1,38 @@
+'use client';
+
 import * as React from 'react';
 import * as TabsPrimitive from '@radix-ui/react-tabs';
 import { cn } from '@hypha-platform/ui-utils';
 
-const Tabs = TabsPrimitive.Root;
+interface TabsProps
+  extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.Root> {
+  disabled?: boolean;
+}
+
+const Tabs = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.Root>,
+  TabsProps
+>(({ className, disabled, onValueChange, ...props }, ref) => {
+  const handleValueChange = (value: string) => {
+    if (!disabled && onValueChange) {
+      onValueChange(value);
+    }
+  };
+
+  return (
+    <TabsPrimitive.Root
+      ref={ref}
+      className={cn(
+        'tabs-root',
+        disabled && 'pointer-events-none opacity-50',
+        className,
+      )}
+      onValueChange={handleValueChange}
+      {...props}
+    />
+  );
+});
+Tabs.displayName = TabsPrimitive.Root.displayName;
 
 const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,

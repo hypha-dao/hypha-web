@@ -31,6 +31,7 @@ type ComboboxProps = {
   initialValue?: string;
   allowEmptyChoice?: boolean;
   className?: string;
+  disabled?: boolean;
 };
 
 export function Combobox({
@@ -42,6 +43,7 @@ export function Combobox({
   initialValue = '',
   allowEmptyChoice = true,
   className,
+  disabled = false,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState(initialValue);
@@ -63,6 +65,7 @@ export function Combobox({
   }, [options, searchTerm]);
 
   const handleSelect = (currentValue: string) => {
+    if (disabled) return;
     const isSameSelection = currentValue === value;
     const newValue = allowEmptyChoice && isSameSelection ? '' : currentValue;
     if (newValue !== value) {
@@ -74,17 +77,22 @@ export function Combobox({
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open && !disabled}
+      onOpenChange={(isOpen) => !disabled && setOpen(isOpen)}
+    >
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           colorVariant="neutral"
           role="combobox"
-          aria-expanded={open}
+          aria-expanded={open && !disabled}
           className={cn(
             'w-full text-2 md:w-72 justify-between py-2 font-normal',
+            disabled && 'pointer-events-none opacity-50',
             className,
           )}
+          disabled={disabled}
         >
           <div className="flex items-center gap-2 truncate">
             {renderValue
@@ -101,6 +109,7 @@ export function Combobox({
             className="h-9"
             value={searchTerm}
             onValueChange={setSearchTerm}
+            disabled={disabled}
           />
           <CommandList className="rounded-lg">
             {filteredOptions.length === 0 ? (
@@ -112,6 +121,7 @@ export function Combobox({
                     key={option.value}
                     value={option.value}
                     onSelect={handleSelect}
+                    disabled={disabled}
                   >
                     <div className="flex items-center gap-2 w-full">
                       {renderOption ? renderOption(option) : option.label}

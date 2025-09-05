@@ -22,6 +22,7 @@ export default defineConfig({
         'TokenVotingPowerImplementation.sol/**',
         'OwnershipTokenVotingPowerImplementation.sol/**',
         'VoteDecayTokenVotingPowerImplementation.sol/**',
+        'HyphaToken.sol/**',
       ],
       deployments: {
         DAOSpaceFactoryImplementation: {
@@ -56,6 +57,9 @@ export default defineConfig({
         },
         VoteDecayTokenVotingPowerImplementation: {
           [base.id]: '0x6dB5E05B21c68550B63a7404a3B68F81c159DAee',
+        },
+        HyphaToken: {
+          [base.id]: '0x8b93862835C36e9689E9bb1Ab21De3982e266CD3',
         },
       },
     }),
