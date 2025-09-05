@@ -8,6 +8,8 @@ export * from './explore-spaces';
 export * from './filtered-spaces';
 export * from './inner-space-card.wrapper';
 export * from './inner-space-card';
+export * from './inner-space-card-list';
+export * from './inner-space-card.container';
 export * from './join-space';
 export * from './network-all';
 export * from './network-selected';

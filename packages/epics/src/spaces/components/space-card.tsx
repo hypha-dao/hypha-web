@@ -11,6 +11,7 @@ import {
   Image,
 } from '@hypha-platform/ui';
 import { SpaceModeLabel } from './space-mode-label';
+import { cn } from '@hypha-platform/ui-utils';
 
 type SpaceCardProps = {
   description: string;
@@ -24,6 +25,7 @@ type SpaceCardProps = {
   isDemo?: boolean;
   configPath?: string;
   web3SpaceId?: number;
+  className?: string;
 };
 
 const customCardHeaderStyles: React.CSSProperties = {
@@ -49,9 +51,10 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
   isDemo = false,
   configPath,
   web3SpaceId,
+  className,
 }) => {
   return (
-    <Card className="relative w-full h-full flex flex-col">
+    <Card className={cn('relative w-full h-full flex flex-col', className)}>
       <CardHeader
         style={customCardHeaderStyles}
         className="p-0 rounded-tl-md rounded-tr-md overflow-hidden flex-shrink-0"

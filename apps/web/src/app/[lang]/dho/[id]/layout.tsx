@@ -16,11 +16,7 @@ import { Text } from '@radix-ui/themes';
 import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem } from '@hypha-platform/ui';
 import Link from 'next/link';
-import {
-  getAllSpaces,
-  findSpaceBySlug,
-  findParentSpaceById,
-} from '@hypha-platform/core/server';
+import { getAllSpaces, findSpaceBySlug } from '@hypha-platform/core/server';
 import { getDhoPathGovernance } from './@tab/governance/constants';
 import { ActionButtons } from './_components/action-buttons';
 import {
