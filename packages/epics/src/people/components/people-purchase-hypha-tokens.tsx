@@ -151,8 +151,9 @@ export const PeoplePurchaseHyphaTokens = ({
                 Purchasing
               </div>
             ) : showSuccessMessage ? (
-              <div className="text-green-600 text-sm font-medium">
-                Purchase completed!
+              <div className="text-sm font-medium">
+                You’ve successfully purchased your Hypha tokens. They will
+                appear in your wallet account within a few seconds.
               </div>
             ) : (
               <Button type="submit" disabled={isInvesting}>
