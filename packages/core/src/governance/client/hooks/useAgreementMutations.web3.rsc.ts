@@ -28,6 +28,7 @@ export const useAgreementMutationsWeb3Rpc = ({
   proposalSlug?: string | null;
 }) => {
   const { client } = useSmartWallets();
+  console.log('client', client);
 
   const {
     trigger: createAgreementMutation,

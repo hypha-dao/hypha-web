@@ -1,4 +1,5 @@
 import { SidePanel, ButtonBack, ButtonClose } from '@hypha-platform/epics';
+import { PeoplePurchaseHyphaTokens } from '@hypha-platform/epics';
 
 type PageProps = {
   params: Promise<{ lang: string; personSlug: string }>;
@@ -6,6 +7,7 @@ type PageProps = {
 
 export default async function PurchaseHyphaTokensProfile(props: PageProps) {
   const { lang, personSlug } = await props.params;
+
   return (
     <SidePanel>
       <div className="flex flex-col gap-5">
@@ -21,6 +23,7 @@ export default async function PurchaseHyphaTokensProfile(props: PageProps) {
             <ButtonClose closeUrl={`/${lang}/profile/${personSlug}`} />
           </div>
         </div>
+        <PeoplePurchaseHyphaTokens personSlug={personSlug} />
       </div>
     </SidePanel>
   );
