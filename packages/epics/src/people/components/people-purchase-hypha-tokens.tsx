@@ -166,12 +166,6 @@ export const PeoplePurchaseHyphaTokens = ({
         className="flex flex-col gap-5"
       >
         <div className="flex flex-col gap-5 w-full">
-          <RecipientField
-            members={[]}
-            spaces={recipientSpace}
-            defaultRecipientType="space"
-            readOnly={true}
-          />
           <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
             <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
               Purchase Amount
@@ -197,6 +191,12 @@ export const PeoplePurchaseHyphaTokens = ({
               </div>
             </div>
           </div>
+          <RecipientField
+            members={[]}
+            spaces={recipientSpace}
+            defaultRecipientType="space"
+            readOnly={true}
+          />
         </div>
         <div className="text-sm text-neutral-500">
           You will receive {formatCurrencyValue(calculatedHypha)} HYPHA tokens
@@ -224,14 +224,12 @@ export const PeoplePurchaseHyphaTokens = ({
           <div className="text-2">
             {form.formState.errors.root.message === 'insufficient_funds' ? (
               <>
-                You have insufficient funds to execute this proposal, please top
-                up your wallet account with USDC:{' '}
-                <span
-                  onClick={fundWallet}
-                  className="text-accent-9 cursor-pointer"
-                >
-                  Privy Fund
-                </span>
+                Your wallet balance is insufficient to complete this
+                transaction. Please{' '}
+                <span onClick={fundWallet} className="font-bold cursor-pointer">
+                  top up your account with USDC
+                </span>{' '}
+                to proceed.
               </>
             ) : (
               form.formState.errors.root.message
