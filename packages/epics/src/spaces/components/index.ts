@@ -16,5 +16,6 @@ export * from './space-card-list';
 export * from './space-card.container';
 export * from './space-card';
 export * from './space-group-slider';
+export * from './space-mode-label';
 export * from './space-search';
 export * from './subspace-section';

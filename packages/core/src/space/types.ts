@@ -1,4 +1,4 @@
-import { Category } from '@hypha-platform/core/client';
+import { Category, SpaceFlags } from '@hypha-platform/core/client';
 import { Document } from '@hypha-platform/core/client';
 import { Person } from '@hypha-platform/core/client';
 
@@ -20,6 +20,7 @@ export interface Space {
   documentCount?: number;
   documents?: Document[];
   address?: string | null;
+  flags: SpaceFlags[];
 }
 
 export interface CreateSpaceInput {
@@ -31,6 +32,7 @@ export interface CreateSpaceInput {
   parentId?: number | null;
   links?: string[];
   categories?: Category[];
+  flags?: SpaceFlags[];
 }
 
 export interface UpdateSpaceInput {
@@ -42,6 +44,7 @@ export interface UpdateSpaceInput {
   parentId?: number | null;
   web3SpaceId?: number;
   address?: string;
+  flags?: SpaceFlags[];
 }
 
 export type UpdateSpaceBySlugInput = { slug: string } & UpdateSpaceInput;

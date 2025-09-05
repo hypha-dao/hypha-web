@@ -1,4 +1,9 @@
-import { JoinSpace, SpaceCard, WebLinks } from '@hypha-platform/epics';
+import {
+  JoinSpace,
+  SpaceCard,
+  SpaceModeLabel,
+  WebLinks,
+} from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import {
   Container,
@@ -130,6 +135,16 @@ export default async function DhoLayout({
             </div>
             <div className="text-gray-500 ml-1 text-1">Agreements</div>
           </div>
+          <SpaceModeLabel
+            web3SpaceId={spaceFromDb.web3SpaceId as number}
+            isSandbox={spaceFromDb.flags.includes('sandbox')}
+            isDemo={spaceFromDb.flags.includes('demo')}
+            configPath={`${getDhoPathGovernance(
+              lang,
+              daoSlug,
+            )}/space-configuration`}
+            className="ml-3"
+          />
         </div>
         {tab}
         {children}
@@ -155,6 +170,13 @@ export default async function DhoLayout({
                         members={space.memberCount}
                         agreements={space.documentCount}
                         title={space.title as string}
+                        isSandbox={space.flags?.includes('sandbox') ?? false}
+                        isDemo={space.flags?.includes('demo') ?? false}
+                        web3SpaceId={space.web3SpaceId as number}
+                        configPath={`${getDhoPathGovernance(
+                          lang,
+                          space.slug,
+                        )}/space-configuration`}
                       />
                     </Link>
                   </CarouselItem>

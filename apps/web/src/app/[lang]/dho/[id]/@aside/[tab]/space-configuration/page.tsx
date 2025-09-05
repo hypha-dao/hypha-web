@@ -77,6 +77,7 @@ export default function SpaceConfiguration() {
             web3SpaceId: space?.web3SpaceId || undefined,
             parentId: space?.parentId || null,
             address: space?.address || '',
+            flags: space?.flags || [],
           }}
         />
       </LoadingBackdrop>

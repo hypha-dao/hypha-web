@@ -1,5 +1,6 @@
 import { DEFAULT_IMAGE_ACCEPT } from '@hypha-platform/core/client';
 import { z } from 'zod';
+import { CATEGORIES, SPACE_FLAGS } from '../categories/types';
 
 export const ALLOWED_IMAGE_FILE_SIZE = 4 * 1024 * 1024;
 
@@ -23,27 +24,7 @@ const createSpaceWeb2Props = {
     .optional(),
   web3SpaceId: z.number().optional(),
   parentId: z.number().nullable(),
-  categories: z
-    .array(
-      z.enum([
-        'art',
-        'biodiversity',
-        'education',
-        'energy',
-        'events',
-        'finance',
-        'governance',
-        'health',
-        'housing',
-        'land',
-        'mobility',
-        'ocean',
-        'sandbox',
-        'tech',
-        'usecase',
-      ]),
-    )
-    .default([]),
+  categories: z.array(z.enum(CATEGORIES)).default([]),
   links: z
     .array(
       z.string().url('Please enter a valid URL (e.g., https://example.com)'),
@@ -51,6 +32,7 @@ const createSpaceWeb2Props = {
     .max(3)
     .default([]),
   address: z.string().optional(),
+  flags: z.array(z.enum(SPACE_FLAGS)).default([]),
 };
 
 export const schemaCreateSpaceWeb2 = z.object(createSpaceWeb2Props);
@@ -91,7 +73,7 @@ export const createSpaceFiles = {
       .instanceof(File)
       .refine(
         (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-        'File size must be less than 5MB',
+        'File size must be less than 4MB',
       )
       .refine(
         (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
@@ -105,6 +87,9 @@ export const updateSpaceProps = {
   ...createSpaceWeb2Props,
   title: createSpaceWeb2Props.title.optional(),
   description: createSpaceWeb2Props.description.optional(),
+  categories: createSpaceWeb2Props.categories.optional(),
+  links: createSpaceWeb2Props.links.optional(),
+  flags: createSpaceWeb2Props.flags.optional(),
 };
 
 export const schemaUpdateSpace = z.object(updateSpaceProps);

@@ -79,6 +79,13 @@ export default async function Index(props: PageProps) {
                       members={space.memberCount}
                       agreements={space.documentCount}
                       title={space.title as string}
+                      isSandbox={space.flags?.includes('sandbox') ?? false}
+                      isDemo={space.flags?.includes('demo') ?? false}
+                      web3SpaceId={space.web3SpaceId as number}
+                      configPath={`${getDhoPathGovernance(
+                        lang,
+                        space.slug,
+                      )}/space-configuration`}
                     />
                   </Link>
                 </CarouselItem>
