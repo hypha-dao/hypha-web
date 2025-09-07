@@ -244,7 +244,7 @@ async function main(): Promise<void> {
   ) as ethers.Contract & USDCInterface;
 
   // Investment parameters
-  const usdcAmount = ethers.parseUnits('11', 6); // 11 USDC with 6 decimals
+  const usdcAmount = ethers.parseUnits('1', 6); // 1 USDC with 6 decimals
 
   console.log('Investment Details:');
   console.log(`HyphaToken Contract: ${hyphaTokenAddress}`);

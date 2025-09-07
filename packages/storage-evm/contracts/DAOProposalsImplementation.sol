@@ -94,7 +94,10 @@ contract DAOProposalsImplementation is
     uint256 _duration,
     Transaction[] calldata _transactions
   ) internal view {
-    require(address(spaceFactory) != address(0), 'Contracts is not initialized');
+    require(
+      address(spaceFactory) != address(0),
+      'Contracts is not initialized'
+    );
 
     // Allow space factory to create proposals regardless of membership
     // This is needed for join requests with join method 2
@@ -301,17 +304,11 @@ contract DAOProposalsImplementation is
     }
 
     // Check if proposal should be executed (Yes votes reach unity threshold)
-    if (
-      proposal.yesVotes * 100 >=
-      unityThreshold * proposal.totalVotingPowerAtSnapshot
-    ) {
+    if (proposal.yesVotes * 100 >= unityThreshold * totalVotesCast) {
       _executeProposal(_proposalId, proposal);
     }
     // Check if proposal should be rejected (No votes reach unity threshold)
-    else if (
-      proposal.noVotes * 100 >=
-      unityThreshold * proposal.totalVotingPowerAtSnapshot
-    ) {
+    else if (proposal.noVotes * 100 >= unityThreshold * totalVotesCast) {
       proposal.expired = true; // Mark as expired to prevent further voting
       spaceRejectedProposals[proposal.spaceId].push(_proposalId);
 
@@ -340,12 +337,10 @@ contract DAOProposalsImplementation is
 
     // Check if even with all remaining voters voting "yes", unity threshold cannot be reached
     uint256 maxPossibleYesVotes = proposal.yesVotes + remainingVotingPower;
+    uint256 maxPossibleTotalVotes = totalVotesCast + remainingVotingPower;
 
-    // Unity is calculated against total voting power at snapshot, not votes cast
-    if (
-      maxPossibleYesVotes * 100 <
-      unityThreshold * proposal.totalVotingPowerAtSnapshot
-    ) {
+    // Unity is calculated against total votes cast, not total voting power at snapshot
+    if (maxPossibleYesVotes * 100 < unityThreshold * maxPossibleTotalVotes) {
       return true;
     }
 
@@ -426,6 +421,12 @@ contract DAOProposalsImplementation is
     }
 
     return proposal.expired;
+  }
+
+  // Public function to trigger execution check - can be called by anyone
+  function triggerExecutionCheck(uint256 _proposalId) external {
+    require(address(spaceFactory) != address(0), 'Contracts not initialized');
+    checkAndExecuteProposal(_proposalId);
   }
 
   function getSpaceProposals(

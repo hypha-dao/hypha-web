@@ -38,8 +38,25 @@ function formatTimestamp(timestamp: bigint): string {
   if (timestamp === 0n) {
     return 'Never set';
   }
-  const date = new Date(Number(timestamp) * 1000);
-  return date.toISOString();
+
+  // Handle corrupted/invalid timestamps
+  const timestampNumber = Number(timestamp);
+
+  // Check if timestamp is reasonable (between 1970 and year 3000)
+  // Normal timestamps should be between ~0 and ~32503680000 (year 3000)
+  if (timestampNumber < 0 || timestampNumber > 32503680000) {
+    return `Invalid timestamp: ${timestamp.toString()}`;
+  }
+
+  try {
+    const date = new Date(timestampNumber * 1000);
+    if (isNaN(date.getTime())) {
+      return `Invalid timestamp: ${timestamp.toString()}`;
+    }
+    return date.toISOString();
+  } catch (error) {
+    return `Invalid timestamp: ${timestamp.toString()}`;
+  }
 }
 
 function getTimeRemaining(expiryTimestamp: bigint): string {
@@ -47,8 +64,14 @@ function getTimeRemaining(expiryTimestamp: bigint): string {
     return 'No expiry set';
   }
 
-  const now = Math.floor(Date.now() / 1000);
   const expiry = Number(expiryTimestamp);
+
+  // Handle corrupted/invalid timestamps
+  if (expiry < 0 || expiry > 32503680000) {
+    return 'Invalid timestamp - cannot calculate';
+  }
+
+  const now = Math.floor(Date.now() / 1000);
 
   if (expiry <= now) {
     return 'Expired';
@@ -99,11 +122,13 @@ async function main(): Promise<void> {
     throw new Error(`Invalid tracker address: ${trackerAddress}`);
   }
 
-    // Use environment RPC_URL if available, otherwise use reliable Base mainnet RPC
+  // Use environment RPC_URL if available, otherwise use reliable Base mainnet RPC
   const rpcUrl = process.env.RPC_URL || 'https://base-rpc.publicnode.com';
-  
+
   if (!process.env.RPC_URL) {
-    console.log(`⚠️  RPC_URL not set in environment, using reliable Base mainnet RPC: ${rpcUrl}`);
+    console.log(
+      `⚠️  RPC_URL not set in environment, using reliable Base mainnet RPC: ${rpcUrl}`,
+    );
     console.log('   To use a custom RPC, set RPC_URL environment variable\n');
   } else {
     console.log(`Using configured RPC URL: ${rpcUrl}\n`);
@@ -166,6 +191,11 @@ async function main(): Promise<void> {
       if (result.expiryTime === 0) {
         console.log(`📅 Expiry: Never set (no payments or trial activated)`);
         console.log(`⏰ Time Status: No active subscription`);
+      } else if (result.expiryDate.startsWith('Invalid timestamp')) {
+        console.log(`📅 Expiry: ${result.expiryDate}`);
+        console.log(`🕐 Raw Expiry Timestamp: ${result.expiryTime}`);
+        console.log(`⏰ Time Status: ${result.timeRemaining}`);
+        console.log(`⚠️  Warning: This space has corrupted timestamp data`);
       } else {
         console.log(`📅 Expiry: ${result.expiryDate}`);
         console.log(`🕐 Expiry Timestamp: ${result.expiryTime}`);

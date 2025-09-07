@@ -170,5 +170,45 @@ npx nx run storage-evm:script ./scripts/votedecay-voting-power.upgrade.ts --netw
 
 ```bash
 npx nx run storage-evm:script ./scripts/agreements-proxy.deploy.ts --network base-mainnet
+npx nx run storage-evm:script ./scripts/hypha-token.upgrade.ts --network base-mainnet
+
 ```
 
+## Token Management Scripts
+
+### Mint Tokens
+
+Mint HYPHA tokens to a specified address (requires mint whitelist):
+
+```bash
+# Dry run to preview the mint operation
+npx ts-node scripts/base-mainnet-contracts-scripts/mint-tokens.ts 0xRecipientAddress 100.5 --dry-run
+
+# Actually mint tokens
+npx ts-node scripts/base-mainnet-contracts-scripts/mint-tokens.ts 0xRecipientAddress 100.5
+
+# Specify custom HyphaToken address
+npx ts-node scripts/base-mainnet-contracts-scripts/mint-tokens.ts 0xRecipientAddress 100.5 0xHyphaTokenAddress
+```
+
+### Burn Tokens
+
+Burn HYPHA tokens from any address (owner only, forfeits unclaimed rewards):
+
+```bash
+# Dry run to preview the burn operation
+npx ts-node scripts/base-mainnet-contracts-scripts/burn-tokens.ts 0xFromAddress 50.0 --dry-run
+
+# Actually burn tokens
+npx ts-node scripts/base-mainnet-contracts-scripts/burn-tokens.ts 0xFromAddress 50.0
+
+# Specify custom HyphaToken address
+npx ts-node scripts/base-mainnet-contracts-scripts/burn-tokens.ts 0xFromAddress 50.0 0xHyphaTokenAddress
+```
+
+**Important Notes:**
+
+- Mint requires the caller to be in the mint transfer whitelist
+- Burn requires the caller to be the contract owner
+- Burning tokens will **forfeit any unclaimed rewards** for the target address
+- Both scripts automatically read the HyphaToken address from `contracts/addresses.txt`

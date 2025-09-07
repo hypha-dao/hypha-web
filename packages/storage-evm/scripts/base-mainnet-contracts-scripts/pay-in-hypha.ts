@@ -166,7 +166,7 @@ async function main(): Promise<void> {
   ) as ethers.Contract & HyphaTokenInterface;
 
   // Payment parameters
-  const spaceId = 241;
+  const spaceId = 240;
   const hyphaAmount = ethers.parseEther('44'); // 44 HYPHA with 18 decimals
 
   console.log('Payment Details:');
@@ -193,11 +193,16 @@ async function main(): Promise<void> {
     // Get HYPHA_PER_DAY to show duration calculation
     try {
       const hyphaPerDay = await hyphaToken.HYPHA_PER_DAY();
-      const durationInDays = hyphaAmount / hyphaPerDay;
+      // Convert to number for proper division, then calculate duration
+      const hyphaAmountNumber = Number(ethers.formatEther(hyphaAmount));
+      const hyphaPerDayNumber = Number(ethers.formatEther(hyphaPerDay));
+      const durationInDays = hyphaAmountNumber / hyphaPerDayNumber;
       console.log(
         `HYPHA per day rate: ${ethers.formatEther(hyphaPerDay)} HYPHA`,
       );
-      console.log(`Duration: ~${durationInDays} days\n`);
+      console.log(
+        `Duration: ~${Math.round(durationInDays * 100) / 100} days\n`,
+      );
     } catch (error) {
       console.log('Could not fetch HYPHA_PER_DAY rate\n');
     }
