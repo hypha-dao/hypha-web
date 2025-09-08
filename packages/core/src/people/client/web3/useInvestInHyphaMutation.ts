@@ -33,7 +33,7 @@ export const useInvestInHyphaMutation = () => {
       const usdcDecimals = await getTokenDecimals(
         PAYMENT_TOKEN?.address as `0x${string}`,
       );
-      const amount = parseUnits(arg.usdcAmount, usdcDecimals);
+      const amount = parseUnits(arg.usdcAmount, usdcDecimals ?? 6);
 
       await client.writeContract({
         address: PAYMENT_TOKEN?.address as `0x${string}`,

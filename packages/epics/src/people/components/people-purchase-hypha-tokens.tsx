@@ -153,6 +153,7 @@ export const PeoplePurchaseHyphaTokens = ({
         className="flex flex-col gap-5"
       >
         <div className="flex flex-col gap-5 w-full">
+          <Separator />
           <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
             <div className="flex gap-1">
               <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
