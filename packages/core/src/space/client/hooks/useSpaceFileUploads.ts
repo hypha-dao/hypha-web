@@ -1,6 +1,6 @@
 'use client';
 
-import { useFileUpload } from '@hypha-platform/core/client';
+import { useImageUpload } from '@hypha-platform/core/client';
 import { schemaCreateSpaceFiles } from '@hypha-platform/core/client';
 import React from 'react';
 import { z } from 'zod';
@@ -26,7 +26,7 @@ export const useSpaceFileUploads = (
     { [K in keyof Files]?: string } | null
   >(null);
   const [error, setError] = React.useState<string | null>(null);
-  const { upload, isUploading } = useFileUpload({
+  const { upload, isUploading } = useImageUpload({
     headers: { Authorization: `Bearer ${authToken}` },
   });
 

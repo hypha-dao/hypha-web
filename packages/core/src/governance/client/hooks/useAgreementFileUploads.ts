@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  useFileUpload,
+  useImageUpload,
   schemaCreateAgreementFiles,
 } from '@hypha-platform/core/client';
 import React from 'react';
@@ -32,7 +32,7 @@ export const useAgreementFileUploads = (
     leadImage?: string;
     attachments?: string[];
   } | null>(null);
-  const { upload, isUploading } = useFileUpload({
+  const { upload, isUploading } = useImageUpload({
     headers: { Authorization: `Bearer ${authToken}` },
   });
 

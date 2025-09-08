@@ -1,6 +1,6 @@
 'use client';
 
-import { useFileUpload } from '@hypha-platform/core/client';
+import { useImageUpload } from '@hypha-platform/core/client';
 import React from 'react';
 import { z } from 'zod';
 
@@ -33,7 +33,7 @@ export const useTokenFileUploads = (
   authToken?: string | null,
 ): UseTokenFileUploadsReturn => {
   const [file, setFile] = React.useState<{ iconUrl?: string } | null>(null);
-  const { upload, isUploading } = useFileUpload({
+  const { upload, isUploading } = useImageUpload({
     headers: { Authorization: `Bearer ${authToken}` },
   });
 
