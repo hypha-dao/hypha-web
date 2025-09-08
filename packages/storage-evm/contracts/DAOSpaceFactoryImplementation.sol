@@ -221,9 +221,11 @@ contract DAOSpaceFactoryImplementation is
 
     // Allow contract owner to remove members regardless of exit method
     bool isOwner = msg.sender == owner();
+    // Allow member to remove themselves
+    bool isSelfRemoval = msg.sender == _memberToRemove;
 
-    // If not owner, check exit method authorization
-    if (!isOwner) {
+    // If not owner and not self-removal, check exit method authorization
+    if (!isOwner && !isSelfRemoval) {
       // If exit method is 1, only executor can remove members
       if (space.exitMethod == 1) {
         require(
@@ -240,7 +242,7 @@ contract DAOSpaceFactoryImplementation is
             space.exitMethod,
             _memberToRemove
           ),
-          'Exit criteria not met'
+          'Exit criteria is not met'
         );
       }
     }

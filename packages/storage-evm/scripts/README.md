@@ -4,6 +4,9 @@
 
 ```bash
 npx nx run storage-evm:script ./scripts/dao-space-factory-proxy.deploy.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/dao-space-factory.upgrade.ts --network base-mainnet
+
 ```
 
 ### dao-proposals-proxy.deploy
