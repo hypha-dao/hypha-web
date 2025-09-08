@@ -12,7 +12,7 @@ import { Locale } from '@hypha-platform/i18n';
 import { useMemberBySlug } from '@web/hooks/use-member-by-slug';
 import { useSpaceDocuments } from '@web/hooks/use-space-documents';
 import { getDhoPathMembership } from '../../../../@tab/membership/constants';
-import { getDhoPathGovernance } from '../../../../@tab/governance/constants';
+import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 import { useSpacesByWeb3Ids } from '@web/hooks/use-spaces-by-web3-ids';
 
 export default function Member() {
@@ -41,7 +41,7 @@ export default function Member() {
         }}
         isLoading={isLoadingPersons || isLoadingSpaces}
         lang={lang as Locale}
-        basePath={`${getDhoPathGovernance(
+        basePath={`${getDhoPathAgreements(
           lang as Locale,
           id as string,
         )}/agreement`}

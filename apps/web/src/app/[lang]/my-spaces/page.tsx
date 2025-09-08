@@ -15,7 +15,7 @@ import {
 import { Heading } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { getAllSpaces } from '@hypha-platform/core/server';
-import { getDhoPathGovernance } from '../dho/[id]/@tab/governance/constants';
+import { getDhoPathAgreements } from '../dho/[id]/@tab/agreements/constants';
 import { PlusIcon } from '@radix-ui/react-icons';
 
 type PageProps = {
@@ -74,7 +74,7 @@ export default async function Index(props: PageProps) {
                 >
                   <Link
                     className="flex flex-col flex-1"
-                    href={getDhoPathGovernance(lang, space.slug as string)}
+                    href={getDhoPathAgreements(lang, space.slug as string)}
                   >
                     <SpaceCard
                       description={space.description as string}
@@ -86,7 +86,7 @@ export default async function Index(props: PageProps) {
                       isSandbox={space.flags?.includes('sandbox') ?? false}
                       isDemo={space.flags?.includes('demo') ?? false}
                       web3SpaceId={space.web3SpaceId as number}
-                      configPath={`${getDhoPathGovernance(
+                      configPath={`${getDhoPathAgreements(
                         lang,
                         space.slug,
                       )}/space-configuration`}

@@ -3,7 +3,7 @@ import {
   SidePanel,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
-import { getDhoPathGovernance } from '../../../../@tab/governance/constants';
+import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 import { Plugin } from '../plugins';
 import { notFound } from 'next/navigation';
 import { PATH_SELECT_CREATE_ACTION } from '@web/app/constants';
@@ -24,7 +24,7 @@ export default async function CreateProposeAContributionPage({
 
   if (!spaceFromDb) notFound();
   const { id: spaceId, web3SpaceId, slug: spaceSlug } = spaceFromDb;
-  const successfulUrl = getDhoPathGovernance(lang as Locale, id);
+  const successfulUrl = getDhoPathAgreements(lang as Locale, id);
 
   const spaces = await getAllSpaces();
 

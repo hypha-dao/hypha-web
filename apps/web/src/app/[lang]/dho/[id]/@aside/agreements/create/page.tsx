@@ -1,6 +1,6 @@
 import { CreateAgreementForm, SidePanel } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
-import { getDhoPathGovernance } from '../../../@tab/governance/constants';
+import { getDhoPathAgreements } from '../../../@tab/agreements/constants';
 import { PATH_SELECT_CREATE_ACTION } from '@web/app/constants';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
@@ -20,7 +20,7 @@ export default async function CreateAgreementPage({ params }: PageProps) {
 
   const spaceId = spaceFromDb.id;
   const web3SpaceId = spaceFromDb.web3SpaceId;
-  const successfulUrl = getDhoPathGovernance(lang as Locale, id);
+  const successfulUrl = getDhoPathAgreements(lang as Locale, id);
 
   return (
     <SidePanel>

@@ -4,7 +4,7 @@ import { Locale } from '@hypha-platform/i18n';
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { getDhoPathGovernance } from '../@tab/governance/constants';
+import { getDhoPathAgreements } from '../@tab/agreements/constants';
 import { getDhoPathMembership } from '../@tab/membership/constants';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
 import { getDhoPathTreasury } from '../@tab/treasury/constants';
@@ -22,9 +22,9 @@ export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
       href: getDhoPathOverview(lang, id),
     },
     {
-      title: 'Governance',
-      name: 'governance',
-      href: getDhoPathGovernance(lang, id),
+      title: 'Agreements',
+      name: 'agreements',
+      href: getDhoPathAgreements(lang, id),
     },
     {
       title: 'Membership',

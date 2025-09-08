@@ -7,7 +7,7 @@ import {
   ProposalHead,
   SidePanel,
   ButtonBack,
-  getDhoPathGovernance,
+  getDhoPathAgreements,
 } from '@hypha-platform/epics';
 import { useDocumentBySlug } from '@web/hooks/use-document-by-slug';
 import { useProposalDetailsWeb3Rpc } from '@hypha-platform/core/client';
@@ -41,13 +41,13 @@ export default function VotersOverlay() {
           <div className="flex justify-center gap-1">
             <ButtonBack
               label="Back"
-              backUrl={`${getDhoPathGovernance(
+              backUrl={`${getDhoPathAgreements(
                 lang as Locale,
                 id as string,
               )}/proposal/${document?.slug}`}
             />
             <ButtonClose
-              closeUrl={getDhoPathGovernance(lang as Locale, id as string)}
+              closeUrl={getDhoPathAgreements(lang as Locale, id as string)}
             />
           </div>
         </div>

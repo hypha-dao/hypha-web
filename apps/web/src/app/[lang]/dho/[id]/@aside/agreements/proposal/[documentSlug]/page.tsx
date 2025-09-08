@@ -9,7 +9,7 @@ import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
 import { useDocumentSlug } from '@web/hooks/use-document-slug';
 import { useDocumentBySlug } from '@web/hooks/use-document-by-slug';
-import { getDhoPathGovernance } from '../../../../@tab/governance/constants';
+import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 import { useDbTokens } from '@web/hooks/use-db-tokens';
 import {
   useVote,
@@ -102,7 +102,7 @@ export default function Agreements() {
         className="-m-4 lg:-m-7"
       >
         <ProposalDetail
-          closeUrl={getDhoPathGovernance(lang as Locale, id as string)}
+          closeUrl={getDhoPathAgreements(lang as Locale, id as string)}
           onAccept={handleOnAccept}
           onReject={handleOnReject}
           onCheckProposalExpiration={handleOnCheckProposalExpiration}

@@ -33,7 +33,7 @@ export const SelectCreateAction = ({
       title: 'Make a Collective Agreement',
       description:
         'Define and formalize a mutual understanding, policy, or decision among members of the space.',
-      href: 'governance/create',
+      href: 'agreements/create',
       icon: <FileIcon />,
     },
     {
@@ -41,7 +41,7 @@ export const SelectCreateAction = ({
       title: 'Propose a Contribution',
       description:
         'Propose a new contribution, such as work, knowledge, capital, or resources, for the space to consider.',
-      href: 'governance/create/propose-contribution',
+      href: 'agreements/create/propose-contribution',
       icon: <RocketIcon />,
     },
     {
@@ -49,7 +49,7 @@ export const SelectCreateAction = ({
       title: 'Pay for Products or Services',
       description:
         'Make payments for products and services by transferring funds from your space treasury to another space, entity, or individual wallet.',
-      href: 'governance/create/pay-for-expenses',
+      href: 'agreements/create/pay-for-expenses',
       icon: <ArrowUpIcon />,
     },
     {
@@ -75,7 +75,7 @@ export const SelectCreateAction = ({
       title: 'Deploy Funds',
       description:
         'Allocate treasury funds for investments in other spaces in the network or for distributing resources across spaces within your organization.',
-      href: 'governance/create/deploy-funds',
+      href: 'agreements/create/deploy-funds',
       icon: <Share1Icon />,
     },
     {

@@ -7,7 +7,7 @@ import {
   type Space,
 } from '@hypha-platform/core/client';
 import type { UseMembers } from '../hooks';
-import { getDhoPathGovernance } from './space-card.container';
+import { getDhoPathAgreements } from './space-card.container';
 import { SpaceCard } from './space-card';
 import { InnerSpaceCardWrapper } from './inner-space-card.wrapper';
 
@@ -34,8 +34,8 @@ export const InnerSpaceCardContainer = ({
       space.slug ? (
         <div key={space.id}>
           <Link
-            href={getDhoPathGovernance(lang, space.slug)}
-            aria-label={`View governance for ${space.title}`}
+            href={getDhoPathAgreements(lang, space.slug)}
+            aria-label={`View agreements for ${space.title}`}
           >
             {index === 0 && differentFirstCard ? (
               <SpaceCard
