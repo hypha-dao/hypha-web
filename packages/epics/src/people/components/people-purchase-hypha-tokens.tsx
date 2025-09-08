@@ -34,7 +34,7 @@ interface PeoplePurchaseHyphaTokensProps {
   spaces: Space[];
 }
 
-const EXCHANGE_RATE = 0.25;
+const HYPHA_PRICE_USD = 0.25;
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
 const RECIPIENT_SPACE_ADDRESS = '0x3dEf11d005F8C85c93e3374B28fcC69B25a650Af';
 
@@ -100,7 +100,7 @@ export const PeoplePurchaseHyphaTokens = ({
 
   const parsedAmount = parseFloat(amount);
   const calculatedHypha = !isNaN(parsedAmount)
-    ? parsedAmount / EXCHANGE_RATE
+    ? parsedAmount / HYPHA_PRICE_USD
     : 0;
 
   const handlePurchase = async (data: FormValues) => {
@@ -200,7 +200,7 @@ export const PeoplePurchaseHyphaTokens = ({
         </div>
         <div className="text-sm text-neutral-500">
           You will receive {formatCurrencyValue(calculatedHypha)} HYPHA tokens
-          (1 HYPHA = 0.25 USDC)
+          (1 HYPHA = {formatCurrencyValue(HYPHA_PRICE_USD)} USDC)
         </div>
         <Separator />
         <div className="flex gap-2 justify-end">
