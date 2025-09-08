@@ -51,7 +51,7 @@ export const SelectSettingsAction = ({
         'Create a new space within your organisation for activities, teams, or projects.',
       href: 'space/create',
       icon: <PlusCircledIcon />,
-      baseTab: 'organisation',
+      baseTab: 'overview',
     },
     {
       group: 'Organisation',

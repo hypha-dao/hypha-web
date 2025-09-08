@@ -8,7 +8,7 @@ import { getDhoPathGovernance } from '../@tab/governance/constants';
 import { getDhoPathMembership } from '../@tab/membership/constants';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
 import { getDhoPathTreasury } from '../@tab/treasury/constants';
-import { getDhoPathOrganisation } from '../@tab/organisation/constants';
+import { getDhoPathOverview } from '../@tab/overview/constants';
 import { ScrollArea, ScrollBar } from '@hypha-platform/ui';
 
 export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
@@ -17,9 +17,9 @@ export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
 
   const tabs = [
     {
-      title: 'Organisation',
-      name: 'organisation',
-      href: getDhoPathOrganisation(lang, id),
+      title: 'Overview',
+      name: 'overview',
+      href: getDhoPathOverview(lang, id),
     },
     {
       title: 'Governance',
