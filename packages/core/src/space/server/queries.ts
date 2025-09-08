@@ -187,39 +187,29 @@ export const findAllOrganizationSpacesForNodeById = async (
   const columnEntires = Object.entries(columns);
   const recordNames = columnEntires.map(([_, v]) => v.name);
 
-  const query = `
+  const columnsSql = sql.raw(recordNames.join(', '));
+  const columnsWithAliasSql = sql.raw(
+    recordNames.map((name) => `i.${name}`).join(', '),
+  );
+  const query = sql`
 WITH RECURSIVE upward_tree AS (
-  -- Start with target item and go upward to root
-  SELECT
-    ${recordNames.join(', ')},
-    0 as level
-  FROM spaces
-  WHERE id = ${id}
-
+  SELECT ${columnsSql}, 0 as level
+  FROM ${spaces}
+  WHERE ${spaces.id} = ${id}
   UNION ALL
-
-  SELECT
-    ${recordNames.map((name) => `i.${name}`).join(', ')},
-    ut.level - 1
-  FROM spaces i
+  SELECT ${columnsWithAliasSql}, ut.level - 1
+  FROM ${spaces} i
   INNER JOIN upward_tree ut
     ON i.id = ut.parent_id
   WHERE ut.parent_id IS NOT NULL
 ),
 downward_tree AS (
-  -- Start from root and get all descendants
-  SELECT
-    ${recordNames.join(', ')},
-    0 as level
+  SELECT ${columnsSql}, 0 as level
   FROM upward_tree
   WHERE parent_id IS NULL
-
   UNION ALL
-
-  SELECT
-    ${recordNames.map((name) => `i.${name}`).join(', ')},
-    dt.level + 1
-  FROM spaces i
+  SELECT ${columnsWithAliasSql}, dt.level + 1
+  FROM ${spaces} i
   INNER JOIN downward_tree dt
     ON i.parent_id = dt.id
 )
