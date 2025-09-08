@@ -46,12 +46,11 @@ export default function ProfileWallet() {
       icon: <ArrowLeftIcon />,
     },
     {
-      title: 'Activate Space(s) (Coming Soon)',
+      title: 'Activate Space(s)',
       description:
-        'Activate your Spaces by simply paying a Hypha Network Contribution with USDC or Hypha Tokens.',
-      href: '#',
+        'Sponsor and activate your favourite space(s) by contributing HYPHA or USDC, supporting the Hypha Network. More details in Hypha Tokenomics.',
+      href: 'activate-spaces',
       icon: <ArrowRightIcon />,
-      disabled: true,
     },
     {
       title: 'Migrate Hypha Tokens (Telos → Base)',
