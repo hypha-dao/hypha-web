@@ -3,7 +3,7 @@
 import {
   Empty,
   InnerSpaceCardContainer,
-  UseMembers,
+  type UseMembers,
 } from '@hypha-platform/epics';
 import type { Locale } from '@hypha-platform/i18n';
 import type { Space } from '@hypha-platform/core/client';
