@@ -5,12 +5,12 @@ import { Locale } from '@hypha-platform/i18n';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
 import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
-import { getDhoPathMembership } from '../../../../@tab/membership/constants';
+import { getDhoPathOrganisation } from '../../../../@tab/organisation/constants';
 
 export default function CreateSubspacePage() {
   const { id: spaceSlug, lang } = useParams<{ id: string; lang: Locale }>();
   const { space } = useSpaceBySlug(spaceSlug);
-  const successfulUrl = getDhoPathMembership(lang as Locale, spaceSlug);
+  const successfulUrl = getDhoPathOrganisation(lang as Locale, spaceSlug);
 
   return (
     <SidePanel>

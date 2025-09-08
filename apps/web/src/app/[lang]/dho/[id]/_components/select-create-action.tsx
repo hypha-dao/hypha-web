@@ -74,7 +74,7 @@ export const SelectCreateAction = ({
       defaultDurationDays: 7,
       title: 'Deploy Funds',
       description:
-        'Allocate treasury funds for investments to other spaces or distributing resources among sub-spaces.',
+        'Allocate treasury funds for investments in other spaces in the network or for distributing resources across spaces within your organization.',
       href: 'governance/create/deploy-funds',
       icon: <Share1Icon />,
     },
