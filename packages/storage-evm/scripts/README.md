@@ -117,6 +117,9 @@ npx nx run storage-evm:test ./test/HyphaToken.test.ts
 npx nx run storage-evm:test ./test/ProposalVotingComprehensive.test.ts
 npx nx run storage-evm:test ./test/ProposalVotingComprehensive.test.ts
 
+npx nx run storage-evm:test ./test/EnergySettlementMultiCycle.test.ts
+
+
 
 ```
 
