@@ -14,6 +14,31 @@ const getAuthenticatedUser = async (req: NextRequest) => {
 };
 
 export const fileRouter: FileRouter = {
+  attachmentUploader: f({
+    pdf: {
+      maxFileSize: '4MB',
+      maxFileCount: 3,
+      contentDisposition: 'attachment',
+    },
+    image: {
+      maxFileSize: '4MB',
+      maxFileCount: 3,
+      contentDisposition: 'attachment',
+    },
+  })
+    .middleware(async ({ req }) => {
+      const isValidAuthToken = await getAuthenticatedUser(req);
+
+      if (!isValidAuthToken) {
+        throw new UploadThingError('Unauthorized');
+      }
+
+      return { isAuthenticated: true };
+    })
+    .onUploadError((error) => console.error('Attachment upload failed:', error))
+    .onUploadComplete(({ file }) =>
+      console.debug(`Attachment "${file.key}" was successfully uploaded`),
+    ),
   imageUploader: f({
     image: {
       maxFileSize: '4MB',
