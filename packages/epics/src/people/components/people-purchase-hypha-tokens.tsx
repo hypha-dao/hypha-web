@@ -1,8 +1,13 @@
 'use client';
 
-import { useUserAssets, RecipientField } from '@hypha-platform/epics';
+import {
+  useUserAssets,
+  RecipientField,
+  type Token,
+  useFundWallet,
+} from '@hypha-platform/epics';
 import { useForm, useWatch } from 'react-hook-form';
-import { useInvestInHyphaMutation } from '../../../../core/src/people';
+import { useInvestInHyphaMutation, useMe } from '../../../../core/src/people';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
@@ -19,15 +24,7 @@ import { useState } from 'react';
 import { Space, TOKENS } from '@hypha-platform/core/client';
 import { TokenPayoutField } from '../../agreements/plugins/components/common/token-payout-field';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
-import { useFundWallet } from '@hypha-platform/epics';
-import { useMe } from '../../../../core/src/people';
-import { isAddress } from 'ethers';
-
-interface Token {
-  icon: string;
-  symbol: string;
-  address: `0x${string}`;
-}
+import { purchaseSchema } from '../hooks/validation';
 
 interface PeoplePurchaseHyphaTokensProps {
   personSlug: string;
@@ -37,17 +34,6 @@ interface PeoplePurchaseHyphaTokensProps {
 const HYPHA_PRICE_USD = 0.25;
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
 const RECIPIENT_SPACE_ADDRESS = '0x3dEf11d005F8C85c93e3374B28fcC69B25a650Af';
-
-const purchaseSchema = z.object({
-  payout: z.object({
-    amount: z.string().min(1, 'Amount is required'),
-    token: z.string(),
-  }),
-  recipient: z
-    .string()
-    .min(1, { message: 'Please add a recipient or wallet address' })
-    .refine(isAddress, { message: 'Invalid Ethereum address' }),
-});
 
 type FormValues = z.infer<typeof purchaseSchema>;
 
