@@ -41,6 +41,10 @@ export default async function PurchaseHyphaTokensProfile(props: PageProps) {
             <ButtonClose closeUrl={`/${lang}/profile/${personSlug}`} />
           </div>
         </div>
+        <span className="text-2 text-neutral-11">
+          Use USDC to buy Hypha, earn rewards, and take part in governance if
+          you choose.
+        </span>
         {error ? (
           <div className="text-error text-sm">
             {error}. Please try again later.

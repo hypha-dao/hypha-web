@@ -1,9 +1,9 @@
-import z from 'zod';
+import { z } from 'zod';
 import { isAddress } from 'ethers';
 
 export const purchaseSchema = z.object({
   payout: z.object({
-    amount: z.string().min(1, 'Amount is required'),
+    amount: z.string().min(1, 'Please enter a purchase amount. '),
     token: z.string(),
   }),
   recipient: z

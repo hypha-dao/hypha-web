@@ -10,6 +10,7 @@ import {
   Image,
   Button,
 } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 
 interface Token {
   icon: string;
@@ -24,12 +25,14 @@ interface TokenPayoutFieldProps {
   };
   onChange: (val: { amount: string; token: string }) => void;
   tokens: Token[];
+  readOnlyDropdown?: boolean;
 }
 
 export const TokenPayoutField = ({
   value,
   onChange,
   tokens,
+  readOnlyDropdown,
 }: TokenPayoutFieldProps) => {
   const selectedToken = tokens.find((t) => t.address === value.token);
 
@@ -63,12 +66,16 @@ export const TokenPayoutField = ({
       </div>
       <div className="flex top-0 w-full sm:w-60 shrink-0 min-w-0 m-0 p-0">
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger
+            asChild
+            className={cn(readOnlyDropdown ? 'pointer-events-none' : '')}
+          >
             <Button
               variant="outline"
               colorVariant="neutral"
               role="combobox"
               className="w-full flex-1 text-2 justify-between py-2 font-normal"
+              disabled={readOnlyDropdown}
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 {selectedToken ? (

@@ -18,6 +18,7 @@ import {
   FormMessage,
   Separator,
   Button,
+  RequirementMark,
 } from '@hypha-platform/ui';
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
@@ -153,21 +154,25 @@ export const PeoplePurchaseHyphaTokens = ({
       >
         <div className="flex flex-col gap-5 w-full">
           <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
-            <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
-              Purchase Amount
-            </label>
+            <div className="flex gap-1">
+              <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
+                Purchase Amount
+              </label>
+              <RequirementMark className="text-2" />
+            </div>
             <div className="flex flex-col gap-2 grow min-w-0">
               <div className="flex md:justify-end">
                 <FormField
                   control={form.control}
-                  name="payout"
-                  render={({ field: { value, onChange } }) => (
+                  name="payout.amount"
+                  render={({ field }) => (
                     <FormItem>
                       <FormControl>
                         <TokenPayoutField
-                          value={value}
-                          onChange={onChange}
+                          value={form.getValues('payout')}
+                          onChange={(val) => form.setValue('payout', val)}
                           tokens={tokens}
+                          readOnlyDropdown={true}
                         />
                       </FormControl>
                       <FormMessage />
@@ -177,16 +182,17 @@ export const PeoplePurchaseHyphaTokens = ({
               </div>
             </div>
           </div>
+          <div className="text-sm text-neutral-500">
+            You will receive {formatCurrencyValue(calculatedHypha)} HYPHA tokens
+            (1 HYPHA = {formatCurrencyValue(HYPHA_PRICE_USD)} USDC)
+          </div>
+          <Separator />
           <RecipientField
             members={[]}
             spaces={recipientSpace}
             defaultRecipientType="space"
             readOnly={true}
           />
-        </div>
-        <div className="text-sm text-neutral-500">
-          You will receive {formatCurrencyValue(calculatedHypha)} HYPHA tokens
-          (1 HYPHA = {formatCurrencyValue(HYPHA_PRICE_USD)} USDC)
         </div>
         <Separator />
         <div className="flex gap-2 justify-end">
@@ -196,23 +202,26 @@ export const PeoplePurchaseHyphaTokens = ({
               Purchasing
             </div>
           ) : showSuccessMessage ? (
-            <div className="text-sm font-medium text-success">
+            <div className="text-2 font-medium text-foreground">
               You’ve successfully purchased your Hypha tokens. They will appear
               in your wallet account within a few seconds.
             </div>
           ) : (
             <Button type="submit" disabled={isInvesting}>
-              Purchase
+              Buy
             </Button>
           )}
         </div>
         {form.formState.errors.root && (
-          <div className="text-2">
+          <div className="text-2 text-foreground">
             {form.formState.errors.root.message === 'insufficient_funds' ? (
               <>
                 Your wallet balance is insufficient to complete this
                 transaction. Please{' '}
-                <span onClick={fundWallet} className="font-bold cursor-pointer">
+                <span
+                  onClick={fundWallet}
+                  className="font-bold cursor-pointer text-accent-9 underline"
+                >
                   top up your account with USDC
                 </span>{' '}
                 to proceed.
