@@ -11,7 +11,7 @@ export default function ErrorBoundary({
 }) {
   return (
     <ErrorComponent
-      message="Oops, something went wrong. Couldn't load membership tab."
+      message="Oops, something went wrong. Couldn't load members tab."
       error={error}
       reset={reset}
     />

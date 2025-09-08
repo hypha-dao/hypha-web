@@ -61,7 +61,7 @@ export const InnerSpaceCardContainer = ({
                 parentTitle={space.parent?.title}
                 parentPath={
                   space.parent?.slug
-                    ? getDhoPathGovernance(lang, space.parent.slug)
+                    ? getDhoPathAgreements(lang, space.parent.slug)
                     : undefined
                 }
                 className={

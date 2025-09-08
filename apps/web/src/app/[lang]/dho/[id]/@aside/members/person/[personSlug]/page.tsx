@@ -11,7 +11,7 @@ import { Locale } from '@hypha-platform/i18n';
 
 import { useMemberBySlug } from '@web/hooks/use-member-by-slug';
 import { useSpaceDocuments } from '@web/hooks/use-space-documents';
-import { getDhoPathMembership } from '../../../../@tab/membership/constants';
+import { getDhoPathMembers } from '../../../../@tab/members/constants';
 import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 import { useSpacesByWeb3Ids } from '@web/hooks/use-spaces-by-web3-ids';
 
@@ -28,7 +28,7 @@ export default function Member() {
   return (
     <SidePanel>
       <MemberDetail
-        closeUrl={getDhoPathMembership(lang as Locale, id as string)}
+        closeUrl={getDhoPathMembers(lang as Locale, id as string)}
         member={{
           avatarUrl: person?.avatarUrl,
           name: person?.name,

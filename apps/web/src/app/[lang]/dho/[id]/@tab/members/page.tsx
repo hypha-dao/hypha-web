@@ -3,7 +3,7 @@ import { MembersSection } from '@hypha-platform/epics';
 
 import { useMembers } from '@web/hooks/use-members';
 
-import { getDhoPathMembership } from './constants';
+import { getDhoPathMembers } from './constants';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -14,7 +14,7 @@ export default async function MembershipPage(props: PageProps) {
 
   const { lang, id } = params;
 
-  const basePath = getDhoPathMembership(lang as Locale, id as string);
+  const basePath = getDhoPathMembers(lang as Locale, id as string);
 
   return (
     <div className="flex flex-col gap-6 py-4">

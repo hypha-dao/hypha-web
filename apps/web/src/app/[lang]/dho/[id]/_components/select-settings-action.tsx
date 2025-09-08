@@ -60,7 +60,7 @@ export const SelectSettingsAction = ({
         'Archive this space to disable activity while preserving its data and history.',
       href: '#',
       icon: <ArchiveIcon />,
-      baseTab: 'membership',
+      baseTab: 'members',
       disabled: true,
     },
     {
