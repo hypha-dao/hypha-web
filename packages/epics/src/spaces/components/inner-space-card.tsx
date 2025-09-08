@@ -11,6 +11,8 @@ import {
 import { Avatar, AvatarImage } from '@radix-ui/react-avatar';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/ui-utils';
+import Link from 'next/link';
+import { getDhoPathGovernance } from './space-card.container';
 
 type Member = {
   avatar: string;
@@ -26,6 +28,7 @@ type InnerSpaceCardProps = {
   isLoading?: boolean;
   spaceId?: number | null | undefined;
   parentTitle?: string;
+  parentPath?: string;
   className?: string;
 };
 
@@ -37,6 +40,7 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
   isLoading,
   spaceId,
   parentTitle,
+  parentPath,
   className,
 }) => {
   return (
@@ -64,10 +68,13 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
             <CardTitle>
               {title}
               {parentTitle ? (
-                <span className="text-accent-11 text-3 text-ellipsis overflow-hidden">
+                <Link
+                  className="text-accent-11 text-3 text-ellipsis overflow-hidden"
+                  href={parentPath || '#'}
+                >
                   {' '}
                   by {parentTitle}
-                </span>
+                </Link>
               ) : null}
             </CardTitle>
           </Skeleton>

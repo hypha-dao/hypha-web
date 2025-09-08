@@ -61,6 +61,10 @@ export const InnerSpaceCardContainer = ({
                 leadImageUrl={space.leadImage || DEFAULT_SPACE_LEAD_IMAGE}
                 useMembers={useMembers}
                 parentTitle={space.parent?.title}
+                parentPath={getDhoPathGovernance(
+                  lang,
+                  space.parent?.slug ?? '',
+                )}
                 className={
                   space.id === currentSpaceId
                     ? 'border-2 border-action-light'
