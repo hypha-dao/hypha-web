@@ -2,7 +2,9 @@
 
 import {
   useImageUpload,
+  useAttachmentUpload,
   schemaCreateAgreementFiles,
+  type UseFileUploadProps,
 } from '@hypha-platform/core/client';
 import React from 'react';
 import { z } from 'zod';
@@ -32,9 +34,14 @@ export const useAgreementFileUploads = (
     leadImage?: string;
     attachments?: string[];
   } | null>(null);
-  const { upload, isUploading } = useImageUpload({
+
+  const uploadProps: UseFileUploadProps = {
     headers: { Authorization: `Bearer ${authToken}` },
-  });
+  };
+  const { upload: uploadImage, isUploading: isUploadingImage } =
+    useImageUpload(uploadProps);
+  const { upload: uploadAttachment, isUploading: isUploadingAttachment } =
+    useAttachmentUpload(uploadProps);
 
   const handleUpload = React.useCallback(
     async (fileInput: Files, slug: string | null | undefined) => {
@@ -49,12 +56,12 @@ export const useAgreementFileUploads = (
 
           try {
             if (key === 'leadImage' && fileOrFiles instanceof File) {
-              const result = await upload([fileOrFiles]);
+              const result = await uploadImage([fileOrFiles]);
               if (result?.[0]?.ufsUrl) {
                 uploadedFiles.leadImage = result[0].ufsUrl;
               }
             } else if (key === 'attachments' && Array.isArray(fileOrFiles)) {
-              const result = await upload(fileOrFiles);
+              const result = await uploadAttachment(fileOrFiles);
               if (result?.every((item) => item.ufsUrl)) {
                 uploadedFiles.attachments = result.map((item) => item.ufsUrl);
               }
@@ -70,11 +77,11 @@ export const useAgreementFileUploads = (
       setFiles(uploadedFiles);
       onSuccess?.(uploadedFiles, slug);
     },
-    [upload, onSuccess],
+    [uploadImage, uploadAttachment, onSuccess],
   );
 
   return {
-    isLoading: isUploading,
+    isLoading: isUploadingImage || isUploadingAttachment,
     files,
     upload: handleUpload,
   };

@@ -1,3 +1,4 @@
+export * from './use-attachment-upload';
 export * from './use-image-upload';
 
 export * from '../constant';
