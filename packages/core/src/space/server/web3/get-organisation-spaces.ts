@@ -22,8 +22,11 @@ export async function getAllOrganizationSpacesForNodeById(
   try {
     const spaces = await findAllOrganizationSpacesForNodeById(props, { db });
 
-    const spacesWithWeb3Id = spaces.filter(({ web3SpaceId }) =>
-      Number.isSafeInteger(web3SpaceId),
+    const spacesWithWeb3Id = spaces.filter(
+      ({ web3SpaceId }) =>
+        typeof web3SpaceId === 'number' &&
+        Number.isSafeInteger(web3SpaceId) &&
+        web3SpaceId > 0,
     );
     const web3SpaceIds = spacesWithWeb3Id.map(({ web3SpaceId }) =>
       BigInt(web3SpaceId!),
@@ -50,9 +53,10 @@ export async function getAllOrganizationSpacesForNodeById(
         ...space,
         memberCount: spaceDetails?.members?.length ?? 0,
         memberAddresses: Array.isArray(spaceDetails?.members)
-          ? (spaceDetails!.members
+          ? spaceDetails!.members
               .filter((m): m is string => typeof m === 'string')
-              .map((m) => m.toLowerCase()) as `0x{string}`[])
+              .map((m) => m.toLowerCase())
+              .filter((m): m is `0x${string}` => /^0x[a-f0-9]{40}$/.test(m))
           : [],
         documentCount: spaceProposals?.accepted.length ?? 0,
       };
