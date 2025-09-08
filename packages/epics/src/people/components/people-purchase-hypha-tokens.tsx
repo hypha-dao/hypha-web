@@ -21,6 +21,7 @@ import { TokenPayoutField } from '../../agreements/plugins/components/common/tok
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { useFundWallet } from '@hypha-platform/epics';
 import { useMe } from '../../../../core/src/people';
+import { isAddress } from 'ethers';
 
 interface Token {
   icon: string;
@@ -33,7 +34,6 @@ interface PeoplePurchaseHyphaTokensProps {
   spaces: Space[];
 }
 
-const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 const EXCHANGE_RATE = 0.25;
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
 const RECIPIENT_SPACE_ADDRESS = '0x3dEf11d005F8C85c93e3374B28fcC69B25a650Af';
@@ -46,7 +46,7 @@ const purchaseSchema = z.object({
   recipient: z
     .string()
     .min(1, { message: 'Please add a recipient or wallet address' })
-    .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' }),
+    .refine(isAddress, { message: 'Invalid Ethereum address' }),
 });
 
 type FormValues = z.infer<typeof purchaseSchema>;
