@@ -1,12 +1,13 @@
 'use client';
 
 import { Text } from '@radix-ui/themes';
-import Link from 'next/link';
 import { PlusIcon } from '@radix-ui/react-icons';
-import type { UseMembers } from '@hypha-platform/epics';
+import {
+  AuthenticatedLinkButton,
+  type UseMembers,
+} from '@hypha-platform/epics';
 import type { Space } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
-import { AuthenticatedLinkButton } from '../../../../../apps/web/src/app/[lang]/dho/[id]/_components/authenticated-link-button';
 import { InnerSpaceCardList } from './inner-space-card-list';
 
 interface SubspaceSectionProps {

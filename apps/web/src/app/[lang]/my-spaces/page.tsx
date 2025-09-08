@@ -1,4 +1,9 @@
-import { SpaceCard, FilteredSpaces, SpaceSearch } from '@hypha-platform/epics';
+import {
+  SpaceCard,
+  FilteredSpaces,
+  SpaceSearch,
+  AuthenticatedLinkButton,
+} from '@hypha-platform/epics';
 import Link from 'next/link';
 import { Locale } from '@hypha-platform/i18n';
 import {
@@ -12,7 +17,6 @@ import { Text } from '@radix-ui/themes';
 import { getAllSpaces } from '@hypha-platform/core/server';
 import { getDhoPathGovernance } from '../dho/[id]/@tab/governance/constants';
 import { PlusIcon } from '@radix-ui/react-icons';
-import { AuthenticatedLinkButton } from '../dho/[id]/_components/authenticated-link-button';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
