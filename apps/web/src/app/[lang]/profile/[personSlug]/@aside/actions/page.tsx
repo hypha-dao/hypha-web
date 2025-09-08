@@ -39,12 +39,11 @@ export default function ProfileWallet() {
       disabled: true,
     },
     {
-      title: 'Buy Hypha Tokens (Rewards) (Coming Soon)',
+      title: 'Buy Hypha Tokens (Rewards)',
       description:
         'Purchase Hypha tokens to participate in the network and earn rewards',
-      href: '#',
+      href: 'purchase-hypha-tokens',
       icon: <ArrowLeftIcon />,
-      disabled: true,
     },
     {
       title: 'Activate Space(s) (Coming Soon)',

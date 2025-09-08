@@ -14,26 +14,30 @@ export function RecipientField({
   members,
   spaces,
   defaultRecipientType = 'member',
+  readOnly,
 }: {
   members: Person[];
   spaces?: Space[];
   defaultRecipientType?: RecipientType;
+  readOnly?: boolean;
 }) {
   const { control } = useFormContext();
   return (
     <FormField
       control={control}
       name="recipient"
-      render={({ field }) => (
+      render={({ field: { value, onChange } }) => (
         <FormItem>
           <FormControl>
             <Recipient
+              value={value}
               onChange={(recipient) => {
-                field.onChange(recipient.address);
+                onChange(recipient.address);
               }}
               members={members}
               spaces={spaces}
               defaultRecipientType={defaultRecipientType}
+              readOnly={readOnly}
             />
           </FormControl>
           <FormMessage />
