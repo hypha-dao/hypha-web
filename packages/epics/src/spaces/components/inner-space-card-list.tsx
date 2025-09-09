@@ -18,17 +18,23 @@ type InnerSpaceCardListProps = {
   useMembers: UseMembers;
 };
 
+const DEFAULT_PAGE_SIZE = 3;
+
 export function InnerSpaceCardList({
   lang,
   spaces,
-  pageSize = 3,
+  pageSize = DEFAULT_PAGE_SIZE,
   showLoadMore = true,
   currentSpaceId,
   useMembers,
 }: InnerSpaceCardListProps) {
+  const effectivePageSize =
+    Number.isFinite(pageSize) && pageSize > 0
+      ? Math.floor(pageSize)
+      : DEFAULT_PAGE_SIZE;
   const { pages, loadMore, pagination } = useSpaceCardList({
     spaces,
-    pageSize,
+    pageSize: effectivePageSize,
   });
 
   return (
@@ -38,8 +44,8 @@ export function InnerSpaceCardList({
           <div className="w-full space-y-2">
             {showLoadMore ? (
               Array.from({ length: pages }).map((_, index) => {
-                const startIndex = index * pageSize;
-                const endIndex = startIndex + pageSize;
+                const startIndex = index * effectivePageSize;
+                const endIndex = startIndex + effectivePageSize;
                 const pageSpaces = spaces.slice(startIndex, endIndex);
                 return (
                   <InnerSpaceCardContainer
