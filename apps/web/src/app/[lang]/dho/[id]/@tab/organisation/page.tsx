@@ -1,12 +1,11 @@
 import { Locale } from '@hypha-platform/i18n';
-import { SubspaceSection } from '@hypha-platform/epics';
 import { Space } from '@hypha-platform/core/client';
 import {
   getAllOrganizationSpacesForNodeById,
   getSpaceBySlug,
 } from '@hypha-platform/core/server';
 import { notFound } from 'next/navigation';
-import { useMembers } from '@web/hooks/use-members';
+import { SubspaceSectionWrapper } from '../../_components/subspace-section-wrapper';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -34,11 +33,10 @@ export default async function OrganisationPage(props: PageProps) {
   }
 
   return (
-    <SubspaceSection
-      spaces={spaces}
+    <SubspaceSectionWrapper
       lang={lang}
+      spaces={spaces}
       currentSpaceId={spaceFromDb.id}
-      useMembers={useMembers}
     />
   );
 }
