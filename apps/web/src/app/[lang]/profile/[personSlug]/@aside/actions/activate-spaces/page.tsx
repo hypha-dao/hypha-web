@@ -1,11 +1,17 @@
 import { getAllSpaces, Space } from '@hypha-platform/core/server';
-import { SidePanel, ButtonBack, ButtonClose } from '@hypha-platform/epics';
+import {
+  SidePanel,
+  ButtonBack,
+  ButtonClose,
+  ActivateSpacesForm,
+} from '@hypha-platform/epics';
+import { Separator } from '@hypha-platform/ui';
 
 type PageProps = {
   params: Promise<{ lang: string; personSlug: string }>;
 };
 
-export default async function PurchaseHyphaTokensProfile(props: PageProps) {
+export default async function ActivateSpacesProfile(props: PageProps) {
   const { lang, personSlug } = await props.params;
 
   let spaces = [] as Space[];
@@ -49,6 +55,8 @@ export default async function PurchaseHyphaTokensProfile(props: PageProps) {
             {error}. Please try again later.
           </div>
         ) : null}
+        <Separator />
+        <ActivateSpacesForm spaces={filteredSpaces} />
       </div>
     </SidePanel>
   );
