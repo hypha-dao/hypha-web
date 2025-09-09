@@ -58,7 +58,7 @@ export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
             ))}
           </TabsList>
         </div>
-        <ScrollBar orientation="horizontal" hidden={true} />
+        <ScrollBar orientation="horizontal" className="hidden" />
       </ScrollArea>
     </Tabs>
   );
