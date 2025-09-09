@@ -2,7 +2,7 @@
 
 import { db } from '@hypha-platform/storage-postgres';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
-import { Space } from '@hypha-platform/core/client';
+import type { Space } from '@hypha-platform/core/client';
 import {
   fetchSpaceDetails,
   fetchSpaceProposalsIds,
@@ -20,12 +20,18 @@ export async function getSpaceBySlug({
 
     if (!space) return null;
 
-    const spacesWithWeb3Id = BigInt(space?.web3SpaceId ?? 0);
-    if (spacesWithWeb3Id === 0n) {
+    const web3SpaceId =
+      typeof space.web3SpaceId === 'number' &&
+      Number.isSafeInteger(space.web3SpaceId) &&
+      space.web3SpaceId > 0
+        ? BigInt(space.web3SpaceId)
+        : 0n;
+    if (web3SpaceId === 0n) {
       return space;
     }
 
-    const web3SpaceIds = [spacesWithWeb3Id];
+    const web3SpaceIds = [web3SpaceId];
+
     const [web3details, web3proposalsIds] = await Promise.all([
       fetchSpaceDetails({ spaceIds: web3SpaceIds }),
       fetchSpaceProposalsIds({ spaceIds: web3SpaceIds }),
