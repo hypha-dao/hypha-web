@@ -44,7 +44,7 @@ export default function VotersOverlay() {
               backUrl={`${getDhoPathAgreements(
                 lang as Locale,
                 id as string,
-              )}/proposal/${document?.slug}`}
+              )}/proposal/${document?.slug ?? (documentSlug as string)}`}
             />
             <ButtonClose
               closeUrl={getDhoPathAgreements(lang as Locale, id as string)}

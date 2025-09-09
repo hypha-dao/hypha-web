@@ -49,7 +49,6 @@ export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
                 key={`tab-${index}`}
                 value={name}
                 variant="ghost"
-                role="group"
               >
                 <Link href={href} className="w-full" passHref>
                   {title}
