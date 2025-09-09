@@ -1,16 +1,14 @@
 'use server';
 
 import { db } from '@hypha-platform/storage-postgres';
-import {
-  findAllOrganizationSpacesForNodeById,
-  findAllSpaces,
-} from '@hypha-platform/core/server';
+import { findAllOrganizationSpacesForNodeById } from '@hypha-platform/core/server';
 import { Space } from '@hypha-platform/core/client';
 import {
   fetchSpaceDetails,
   fetchSpaceProposalsIds,
 } from '@hypha-platform/core/client';
 import { formMap } from './internal';
+import { isAddress } from 'ethers';
 
 interface GetAllOrganizationSpacesForNodeByIdProps {
   id?: number | null;
@@ -56,7 +54,7 @@ export async function getAllOrganizationSpacesForNodeById(
           ? spaceDetails!.members
               .filter((m): m is string => typeof m === 'string')
               .map((m) => m.toLowerCase())
-              .filter((m): m is `0x${string}` => /^0x[a-f0-9]{40}$/.test(m))
+              .filter((m): m is `0x${string}` => isAddress(m))
           : [],
         documentCount: spaceProposals?.accepted.length ?? 0,
       };
