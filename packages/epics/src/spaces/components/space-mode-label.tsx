@@ -29,11 +29,20 @@ const LabelButton = ({
       colorVariant="accent"
       variant="outline"
       role="link"
+      tabIndex={0}
       title="Change Space Configuration"
       onClick={(e) => {
         e.stopPropagation();
         router.push(configPath);
       }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          e.stopPropagation();
+          router.push(configPath);
+        }
+      }}
+      onMouseEnter={() => router.prefetch?.(configPath)}
     >
       {caption}
     </Badge>
