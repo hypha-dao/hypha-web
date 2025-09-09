@@ -3,7 +3,7 @@
 import { Text } from '@radix-ui/themes';
 import { PlusIcon } from '@radix-ui/react-icons';
 import type { Space } from '@hypha-platform/core/client';
-import { Locale } from '@hypha-platform/i18n';
+import type { Locale } from '@hypha-platform/i18n';
 import { InnerSpaceCardList } from './inner-space-card-list';
 import { AuthenticatedLinkButton } from '../../common';
 import type { UseMembers } from '../hooks';
