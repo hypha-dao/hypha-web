@@ -4,7 +4,6 @@ import {
   useImageUpload,
   useAttachmentUpload,
   schemaCreateAgreementFiles,
-  type UseFileUploadProps,
 } from '@hypha-platform/core/client';
 import React from 'react';
 import { z } from 'zod';
@@ -35,13 +34,11 @@ export const useAgreementFileUploads = (
     attachments?: string[];
   } | null>(null);
 
-  const uploadProps: UseFileUploadProps = {
-    headers: { Authorization: `Bearer ${authToken}` },
-  };
-  const { upload: uploadImage, isUploading: isUploadingImage } =
-    useImageUpload(uploadProps);
+  const { upload: uploadImage, isUploading: isUploadingImage } = useImageUpload(
+    { authorizationToken: authToken ?? undefined },
+  );
   const { upload: uploadAttachment, isUploading: isUploadingAttachment } =
-    useAttachmentUpload(uploadProps);
+    useAttachmentUpload({ authorizationToken: authToken ?? undefined });
 
   const handleUpload = React.useCallback(
     async (fileInput: Files, slug: string | null | undefined) => {

@@ -27,7 +27,7 @@ export const useSpaceFileUploads = (
   >(null);
   const [error, setError] = React.useState<string | null>(null);
   const { upload, isUploading } = useImageUpload({
-    headers: { Authorization: `Bearer ${authToken}` },
+    authorizationToken: authToken ?? undefined,
   });
 
   const handleUpload = React.useCallback(

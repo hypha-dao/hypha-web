@@ -16,9 +16,7 @@ export const usePeopleFileUploads = ({
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { upload: uploadImage } = useImageUpload({
-    headers: {
-      Authorization: `Bearer ${authToken || ''}`,
-    },
+    authorizationToken: authToken ?? undefined,
   });
 
   const upload = useCallback(

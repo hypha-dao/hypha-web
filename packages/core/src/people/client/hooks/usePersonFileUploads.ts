@@ -23,7 +23,7 @@ export const usePersonFileUploads = (
     {} as { [K in keyof Files]: string },
   );
   const { upload, isUploading } = useImageUpload({
-    headers: { Authorization: `Bearer ${authToken}` },
+    authorizationToken: authToken ?? undefined,
   });
 
   const handleUpload = React.useCallback(

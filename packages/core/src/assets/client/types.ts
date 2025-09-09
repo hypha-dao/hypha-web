@@ -1,5 +1,3 @@
-export type UseFileUploadProps = {
-  headers: {
-    Authorization: `Bearer ${string}`;
-  };
-};
+export interface FileUploadProps {
+  authorizationToken?: string;
+}

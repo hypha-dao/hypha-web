@@ -34,7 +34,7 @@ export const useTokenFileUploads = (
 ): UseTokenFileUploadsReturn => {
   const [file, setFile] = React.useState<{ iconUrl?: string } | null>(null);
   const { upload, isUploading } = useImageUpload({
-    headers: { Authorization: `Bearer ${authToken}` },
+    authorizationToken: authToken ?? undefined,
   });
 
   const handleUpload = React.useCallback(
