@@ -66,6 +66,7 @@ export default function AsideCreateSpacePage() {
           backLabel="Back"
           onSubmit={createSpace}
           isLoading={isLoadingJwt}
+          label="create"
         />
       </LoadingBackdrop>
     </SidePanel>

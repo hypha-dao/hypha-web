@@ -17,6 +17,7 @@ import {
   MultiSelect,
   RequirementMark,
   Card,
+  Badge,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import React from 'react';
@@ -37,6 +38,8 @@ import { ButtonClose, ButtonBack } from '@hypha-platform/epics';
 const schemaCreateSpaceForm = schemaCreateSpace.extend(createSpaceFiles);
 type SchemaCreateSpaceForm = z.infer<typeof schemaCreateSpaceForm>;
 
+export type SpaceFormLabel = 'create' | 'add' | 'configure';
+
 export type CreateSpaceFormProps = {
   isLoading?: boolean;
   closeUrl: string;
@@ -51,6 +54,7 @@ export type CreateSpaceFormProps = {
   defaultValues?: Partial<SchemaCreateSpaceForm>;
   submitLabel?: string;
   submitLoadingLabel?: string;
+  label?: SpaceFormLabel;
   onSubmit: (values: SchemaCreateSpaceForm) => void;
 };
 
@@ -81,6 +85,7 @@ export const SpaceForm = ({
   },
   submitLabel = 'Create',
   submitLoadingLabel = 'Creating Space...',
+  label = 'create',
 }: CreateSpaceFormProps) => {
   if (process.env.NODE_ENV !== 'production') {
     console.debug('SpaceForm', { defaultValues });
@@ -152,6 +157,17 @@ export const SpaceForm = ({
     });
   }, [form]);
 
+  const labelText = React.useMemo(() => {
+    switch (label) {
+      case 'add':
+        return 'Add Space';
+      case 'create':
+        return 'Create Space';
+      case 'configure':
+        return 'Configure Space';
+    }
+  }, [label]);
+
   return (
     <Form {...form}>
       <form
@@ -201,6 +217,9 @@ export const SpaceForm = ({
             />
             <div className="flex w-full">
               <div className="flex flex-col w-full">
+                <Badge className="w-fit" colorVariant="accent">
+                  {labelText}
+                </Badge>
                 <FormField
                   control={form.control}
                   name="title"

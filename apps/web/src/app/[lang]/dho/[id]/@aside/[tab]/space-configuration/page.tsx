@@ -79,6 +79,7 @@ export default function SpaceConfiguration() {
             address: space?.address || '',
             flags: space?.flags || [],
           }}
+          label="configure"
         />
       </LoadingBackdrop>
     </SidePanel>
