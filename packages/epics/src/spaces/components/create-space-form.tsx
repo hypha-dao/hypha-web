@@ -33,7 +33,11 @@ import {
   SpaceFlags,
 } from '@hypha-platform/core/client';
 import { Links } from '../../common/links';
-import { ButtonClose, ButtonBack } from '@hypha-platform/epics';
+import {
+  ButtonClose,
+  ButtonBack,
+  ParentSpaceSelector,
+} from '@hypha-platform/epics';
 
 const schemaCreateSpaceForm = schemaCreateSpace.extend(createSpaceFiles);
 type SchemaCreateSpaceForm = z.infer<typeof schemaCreateSpaceForm>;
@@ -300,6 +304,7 @@ export const SpaceForm = ({
             </FormItem>
           )}
         />
+        {(label === 'add' || label === 'configure') && <ParentSpaceSelector />}
         <FormField
           control={form.control}
           name="categories"
