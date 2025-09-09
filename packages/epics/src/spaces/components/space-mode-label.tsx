@@ -5,6 +5,7 @@ import { Badge } from '@hypha-platform/ui';
 import clsx from 'clsx';
 import Link from 'next/link';
 import { useJoinSpace } from '../hooks/use-join-space';
+import { useRouter } from 'next/navigation';
 
 interface SpaceModeLabelProps {
   isSandbox: boolean;
@@ -20,13 +21,24 @@ const LabelButton = ({
 }: {
   caption: string;
   configPath: string;
-}) => (
-  <Link href={configPath} title="Change Space Configuration">
-    <Badge className="flex" colorVariant="accent" variant="outline">
+}) => {
+  const router = useRouter();
+  return (
+    <Badge
+      className="flex hover:cursor-pointer"
+      colorVariant="accent"
+      variant="outline"
+      role="link"
+      title="Change Space Configuration"
+      onClick={(e) => {
+        e.stopPropagation();
+        router.push(configPath);
+      }}
+    >
       {caption}
     </Badge>
-  </Link>
-);
+  );
+};
 const LabelBadge = ({ caption }: { caption: string }) => (
   <Badge className="flex" colorVariant="accent" variant="outline">
     {caption}
