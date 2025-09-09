@@ -9,6 +9,10 @@ export const getDhoPathAgreements = (lang: Locale, id: string) => {
   return `/${lang}/dho/${id}/agreements`;
 };
 
+export const getDhoPathOverview = (lang: Locale, id: string) => {
+  return `/${lang}/dho/${id}/overview`;
+};
+
 type SpaceCardContainerProps = {
   lang: Locale;
   spaces: Space[];
