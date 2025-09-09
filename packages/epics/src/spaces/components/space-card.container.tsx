@@ -5,8 +5,12 @@ import Link from 'next/link';
 import { Locale } from '@hypha-platform/i18n';
 import { Space } from '@hypha-platform/core/client';
 
-export const getDhoPathGovernance = (lang: Locale, id: string) => {
-  return `/${lang}/dho/${id}/governance`;
+export const getDhoPathAgreements = (lang: Locale, id: string) => {
+  return `/${lang}/dho/${id}/agreements`;
+};
+
+export const getDhoPathOverview = (lang: Locale, id: string) => {
+  return `/${lang}/dho/${id}/overview`;
 };
 
 type SpaceCardContainerProps = {
@@ -26,8 +30,8 @@ export const SpaceCardContainer = ({
       space.slug ? (
         <div key={space.id}>
           <Link
-            href={getDhoPathGovernance(lang, space.slug)}
-            aria-label={`View governance for ${space.title}`}
+            href={getDhoPathAgreements(lang, space.slug)}
+            aria-label={`View agreements for ${space.title}`}
           >
             <SpaceCard
               description={space.description || ''}
@@ -39,7 +43,7 @@ export const SpaceCardContainer = ({
               isSandbox={space.flags?.includes('sandbox') ?? false}
               isDemo={space.flags?.includes('demo') ?? false}
               web3SpaceId={space.web3SpaceId as number}
-              configPath={`${getDhoPathGovernance(
+              configPath={`${getDhoPathAgreements(
                 lang,
                 space.slug,
               )}/space-configuration`}

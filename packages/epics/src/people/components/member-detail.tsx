@@ -4,7 +4,6 @@ import { RxCross1 } from 'react-icons/rx';
 import Link from 'next/link';
 import { MemberSpaces } from './member-spaces';
 import { Address, Space } from '@hypha-platform/core/client';
-import { UseDocuments } from '../../governance';
 import { Locale } from '@hypha-platform/i18n';
 
 type MemberType = {
@@ -23,9 +22,7 @@ export type MemberDetailProps = {
   closeUrl: string;
   member: MemberType;
   isLoading: boolean;
-  basePath: string;
   spaces: Space[];
-  useDocuments: UseDocuments;
 };
 
 export const MemberDetail = ({
@@ -33,9 +30,7 @@ export const MemberDetail = ({
   lang,
   closeUrl,
   member,
-  basePath,
   spaces,
-  useDocuments,
 }: MemberDetailProps) => {
   return (
     <div className="flex flex-col gap-5">

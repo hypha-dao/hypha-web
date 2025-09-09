@@ -1,0 +1,90 @@
+'use client';
+
+import type { Locale } from '@hypha-platform/i18n';
+import type { Space } from '@hypha-platform/core/client';
+import { useSpaceCardList } from '../hooks/use-space-card-list';
+import { SectionLoadMore } from '@hypha-platform/ui';
+import { Text } from '@radix-ui/themes';
+import type { UseMembers } from '../hooks';
+import { InnerSpaceCardContainer } from './inner-space-card.container';
+import { Empty } from '../../common';
+
+type InnerSpaceCardListProps = {
+  lang: Locale;
+  spaces: Space[];
+  pageSize?: number;
+  showLoadMore?: boolean;
+  currentSpaceId: number;
+  useMembers: UseMembers;
+};
+
+const DEFAULT_PAGE_SIZE = 3;
+
+export function InnerSpaceCardList({
+  lang,
+  spaces,
+  pageSize = DEFAULT_PAGE_SIZE,
+  showLoadMore = true,
+  currentSpaceId,
+  useMembers,
+}: InnerSpaceCardListProps) {
+  const effectivePageSize =
+    Number.isFinite(pageSize) && pageSize > 0
+      ? Math.floor(pageSize)
+      : DEFAULT_PAGE_SIZE;
+  const { pages, loadMore, pagination } = useSpaceCardList({
+    spaces,
+    pageSize: effectivePageSize,
+  });
+
+  return (
+    <>
+      {pagination?.totalPages > 0 ? (
+        <div className="flex flex-col justify-around items-center gap-4 mb-4">
+          <div className="w-full space-y-2">
+            {showLoadMore ? (
+              Array.from({ length: pages }).map((_, index) => {
+                const startIndex = index * effectivePageSize;
+                const endIndex = startIndex + effectivePageSize;
+                const pageSpaces = spaces.slice(startIndex, endIndex);
+                return (
+                  <InnerSpaceCardContainer
+                    key={index}
+                    spaces={pageSpaces}
+                    lang={lang}
+                    useMembers={useMembers}
+                    differentFirstCard={index === 0}
+                    currentSpaceId={currentSpaceId}
+                  />
+                );
+              })
+            ) : (
+              <InnerSpaceCardContainer
+                key={`spaces-${spaces.length}`}
+                spaces={spaces}
+                lang={lang}
+                useMembers={useMembers}
+                differentFirstCard={true}
+                currentSpaceId={currentSpaceId}
+              />
+            )}
+          </div>
+          {showLoadMore && (
+            <SectionLoadMore
+              onClick={loadMore}
+              disabled={!pagination?.hasNextPage}
+            >
+              <Text>{pagination?.hasNextPage ? 'Load more' : 'No more'}</Text>
+            </SectionLoadMore>
+          )}
+        </div>
+      ) : (
+        <Empty>
+          <div className="flex flex-col gap-7">
+            <p>No spaces</p>
+          </div>
+        </Empty>
+      )}
+    </>
+  );
+}

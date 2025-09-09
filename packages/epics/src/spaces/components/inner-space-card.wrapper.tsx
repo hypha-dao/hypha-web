@@ -1,6 +1,6 @@
 'use client';
 
-import { InnerSpaceCard } from '@hypha-platform/epics';
+import { getDhoPathAgreements, InnerSpaceCard } from '@hypha-platform/epics';
 import { Person } from '@hypha-platform/core/client';
 import { useMemo } from 'react';
 
@@ -12,6 +12,9 @@ type InnerSpaceCardWrapperProps = {
   description?: string;
   leadImageUrl?: string;
   useMembers: UseMembers;
+  parentTitle?: string;
+  parentPath?: string;
+  className?: string;
 };
 
 export const InnerSpaceCardWrapper = ({
@@ -20,6 +23,9 @@ export const InnerSpaceCardWrapper = ({
   description,
   leadImageUrl,
   useMembers,
+  parentTitle,
+  parentPath,
+  className,
 }: InnerSpaceCardWrapperProps) => {
   const { members = [], isLoading } = useMembers({ spaceSlug });
 
@@ -40,6 +46,9 @@ export const InnerSpaceCardWrapper = ({
       leadImageUrl={leadImageUrl}
       members={mappedMembers}
       isLoading={isLoading}
+      parentTitle={parentTitle}
+      parentPath={parentPath}
+      className={className}
     />
   );
 };

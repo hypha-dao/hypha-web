@@ -5,13 +5,13 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Button,
   Skeleton,
   Image,
 } from '@hypha-platform/ui';
 import { Avatar, AvatarImage } from '@radix-ui/react-avatar';
 import { Text } from '@radix-ui/themes';
-import { useJoinSpace } from '../hooks/use-join-space';
+import { cn } from '@hypha-platform/ui-utils';
+import Link from 'next/link';
 
 type Member = {
   avatar: string;
@@ -25,7 +25,9 @@ type InnerSpaceCardProps = {
   title?: string;
   description?: string;
   isLoading?: boolean;
-  spaceId?: number | null | undefined;
+  parentTitle?: string;
+  parentPath?: string;
+  className?: string;
 };
 
 export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
@@ -34,11 +36,12 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
   title,
   members,
   isLoading,
-  spaceId,
+  parentTitle,
+  parentPath,
+  className,
 }) => {
-  const { isMember, joinSpace } = useJoinSpace({ spaceId: spaceId as number });
   return (
-    <Card className="h-full w-full">
+    <Card className={cn('h-full w-full', className)}>
       <CardHeader className="p-0 rounded-tl-md rounded-tr-md overflow-hidden h-[150px]">
         <Skeleton
           width="100%"
@@ -59,7 +62,18 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
       <CardContent className="pt-5 relative">
         <div className="flex flex-col items-start mb-5">
           <Skeleton width="150px" height="18px" loading={isLoading}>
-            <CardTitle>{title}</CardTitle>
+            <CardTitle>
+              {title}
+              {parentTitle ? (
+                <Link
+                  className="text-accent-11 text-3 text-ellipsis overflow-hidden"
+                  href={parentPath || '#'}
+                >
+                  {' '}
+                  by {parentTitle}
+                </Link>
+              ) : null}
+            </CardTitle>
           </Skeleton>
         </div>
 
@@ -95,27 +109,6 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
             ) : null}
           </Skeleton>
         </div>
-
-        {/* <Skeleton width="200px" height="32px" loading={isLoading}>
-          <div>
-            {isMember ? (
-              <Button className="rounded-lg w-full" variant="outline">
-                Joined
-              </Button>
-            ) : (
-              <Button
-                className="rounded-lg w-full"
-                variant="outline"
-                onClick={(e) => {
-                  e.preventDefault();
-                  joinSpace();
-                }}
-              >
-                Join
-              </Button>
-            )}
-          </div>
-        </Skeleton> */}
       </CardContent>
     </Card>
   );
