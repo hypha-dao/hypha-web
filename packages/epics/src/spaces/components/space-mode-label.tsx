@@ -25,7 +25,7 @@ const LabelButton = ({
   const router = useRouter();
   return (
     <Badge
-      className="flex hover:cursor-pointer"
+      className="flex cursor-pointer"
       colorVariant="accent"
       variant="outline"
       role="link"
