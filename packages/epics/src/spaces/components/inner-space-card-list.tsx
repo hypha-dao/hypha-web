@@ -1,15 +1,13 @@
 'use client';
 
-import {
-  Empty,
-  InnerSpaceCardContainer,
-  type UseMembers,
-} from '@hypha-platform/epics';
 import type { Locale } from '@hypha-platform/i18n';
 import type { Space } from '@hypha-platform/core/client';
 import { useSpaceCardList } from '../hooks/use-space-card-list';
 import { SectionLoadMore } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
+import type { UseMembers } from '../hooks';
+import { InnerSpaceCardContainer } from './inner-space-card.container';
+import { Empty } from '../../common';
 
 type InnerSpaceCardListProps = {
   lang: Locale;
