@@ -65,6 +65,7 @@ export const CreateSubspaceForm = ({
         backLabel="Back to Settings"
         onSubmit={createSpace}
         parentSpaceId={parentSpaceId as number}
+        label="add"
       />
     </LoadingBackdrop>
   );
