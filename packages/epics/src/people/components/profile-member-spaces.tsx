@@ -2,7 +2,7 @@
 
 import { Skeleton, Image, Button } from '@hypha-platform/ui';
 import { Space } from '@hypha-platform/core/client';
-import { getDhoPathGovernance } from '@hypha-platform/epics';
+import { getDhoPathAgreements } from '@hypha-platform/epics';
 import React from 'react';
 import Link from 'next/link';
 import { Locale } from '@hypha-platform/i18n';
@@ -97,7 +97,7 @@ export const ProfileMemberSpaces = ({
               {spaces?.map((space, index) => (
                 <Link
                   key={space.id || index}
-                  href={getDhoPathGovernance(lang as Locale, space.slug ?? '')}
+                  href={getDhoPathAgreements(lang as Locale, space.slug ?? '')}
                 >
                   <div title={space.title}>
                     <div

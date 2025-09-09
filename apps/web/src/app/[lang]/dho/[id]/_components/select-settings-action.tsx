@@ -51,7 +51,7 @@ export const SelectSettingsAction = ({
         'Create a new space within your organisation for activities, teams, or projects.',
       href: 'space/create',
       icon: <PlusCircledIcon />,
-      baseTab: 'organisation',
+      baseTab: 'overview',
     },
     {
       group: 'Organisation',
@@ -60,7 +60,7 @@ export const SelectSettingsAction = ({
         'Archive this space to disable activity while preserving its data and history.',
       href: '#',
       icon: <ArchiveIcon />,
-      baseTab: 'membership',
+      baseTab: 'members',
       disabled: true,
     },
     {
@@ -71,7 +71,7 @@ export const SelectSettingsAction = ({
         'Select and configure the voting method for decision-making within your space.',
       href: 'create/change-voting-method',
       icon: <MixerVerticalIcon />,
-      baseTab: 'governance',
+      baseTab: 'agreements',
     },
     {
       defaultDurationDays: 4,
@@ -81,7 +81,7 @@ export const SelectSettingsAction = ({
         'Select and configure the process by which new members join your space.',
       href: 'create/change-entry-method',
       icon: <EnterIcon />,
-      baseTab: 'governance',
+      baseTab: 'agreements',
     },
     {
       group: 'Membership',
@@ -109,7 +109,7 @@ export const SelectSettingsAction = ({
         'Create a new token for utility, cash credit, or ownership within your space.',
       href: 'create/issue-new-token',
       icon: <RadiobuttonIcon />,
-      baseTab: 'governance',
+      baseTab: 'agreements',
     },
     {
       group: 'Treasury',
@@ -118,7 +118,7 @@ export const SelectSettingsAction = ({
         'Enable your space to take multisig ownership of your smart contracts, allowing your community to govern value flows (tokenomics) directly from your space.',
       href: 'https://discord.gg/W7Cz7XD3BS',
       icon: <RadiobuttonIcon />,
-      baseTab: 'governance',
+      baseTab: 'agreements',
       target: '_blank',
     },
     {
@@ -140,7 +140,7 @@ export const SelectSettingsAction = ({
         'Discover a growing ecosystem of tools and integrations to extend your space’s capabilities.',
       href: '#',
       icon: <RadiobuttonIcon />,
-      baseTab: 'governance',
+      baseTab: 'agreements',
       disabled: true,
     },
     {
@@ -150,7 +150,7 @@ export const SelectSettingsAction = ({
         'A dedicated platform for your renewable energy community or hub, enabling local energy sharing, energy asset co-ownership, governance, and fair value distribution between members.',
       href: 'https://hypha.energy',
       icon: <RadiobuttonIcon />,
-      baseTab: 'governance',
+      baseTab: 'agreements',
       target: '_blank',
     },
     {
@@ -183,7 +183,7 @@ export const SelectSettingsAction = ({
           action.href
         }`.replaceAll(
           'THIS_PAGE',
-          `/${lang}/dho/${daoSlug}/governance/select-settings-action`,
+          `/${lang}/dho/${daoSlug}/agreements/select-settings-action`,
         );
     return href;
   };

@@ -4,11 +4,11 @@ import { Locale } from '@hypha-platform/i18n';
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { getDhoPathGovernance } from '../@tab/governance/constants';
-import { getDhoPathMembership } from '../@tab/membership/constants';
+import { getDhoPathAgreements } from '../@tab/agreements/constants';
+import { getDhoPathMembers } from '../@tab/members/constants';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
 import { getDhoPathTreasury } from '../@tab/treasury/constants';
-import { getDhoPathOrganisation } from '../@tab/organisation/constants';
+import { getDhoPathOverview } from '../@tab/overview/constants';
 import { ScrollArea, ScrollBar } from '@hypha-platform/ui';
 
 export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
@@ -17,19 +17,19 @@ export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
 
   const tabs = [
     {
-      title: 'Organisation',
-      name: 'organisation',
-      href: getDhoPathOrganisation(lang, id),
+      title: 'Overview',
+      name: 'overview',
+      href: getDhoPathOverview(lang, id),
     },
     {
-      title: 'Governance',
-      name: 'governance',
-      href: getDhoPathGovernance(lang, id),
+      title: 'Agreements',
+      name: 'agreements',
+      href: getDhoPathAgreements(lang, id),
     },
     {
-      title: 'Membership',
-      name: 'membership',
-      href: getDhoPathMembership(lang as Locale, id as string),
+      title: 'Members',
+      name: 'members',
+      href: getDhoPathMembers(lang as Locale, id as string),
     },
     {
       title: 'Treasury',

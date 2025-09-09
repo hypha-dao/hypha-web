@@ -1,6 +1,6 @@
 'use client';
 
-import { getDhoPathGovernance, InnerSpaceCard } from '@hypha-platform/epics';
+import { getDhoPathAgreements, InnerSpaceCard } from '@hypha-platform/epics';
 import { Person } from '@hypha-platform/core/client';
 import { useMemo } from 'react';
 

@@ -12,7 +12,7 @@ import React from 'react';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { Button } from '@hypha-platform/ui';
 import { useRouter } from 'next/navigation';
-import { getDhoPathGovernance } from '../../../@tab/governance/constants';
+import { getDhoPathAgreements } from '../../../@tab/agreements/constants';
 import { Locale } from '@hypha-platform/i18n';
 import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 
@@ -27,7 +27,7 @@ export default function SpaceConfiguration() {
 
   React.useEffect(() => {
     if (progress === 100 && !isPending && spaceSlug) {
-      router.push(getDhoPathGovernance(lang as Locale, spaceSlug));
+      router.push(getDhoPathAgreements(lang as Locale, spaceSlug));
     }
   }, [progress, isPending, spaceSlug, lang]);
 
