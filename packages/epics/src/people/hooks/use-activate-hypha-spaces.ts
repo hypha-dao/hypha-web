@@ -1,0 +1,66 @@
+'use client';
+
+import { ActivateSpacesFormValues } from './validation';
+import { useActivateSpacesMutation } from '@hypha-platform/core/client';
+
+const DAILY_USD_COST = 0.367;
+const HYPHA_PRICE = 0.25;
+
+export const useActivateSpaces = ({
+  spaces,
+  paymentToken,
+}: {
+  spaces: ActivateSpacesFormValues['spaces'];
+  paymentToken: ActivateSpacesFormValues['paymentToken'];
+}) => {
+  const { activateSpaces, isActivating, activationTxHash, activationError } =
+    useActivateSpacesMutation();
+
+  let totalUSDC = 0;
+  let totalHYPHA = 0;
+
+  const breakdown = spaces.map(({ spaceId, months }) => {
+    const days = months * 30;
+    const usdc = +(days * DAILY_USD_COST).toFixed(4);
+    const hypha = +(usdc / HYPHA_PRICE).toFixed(4);
+
+    totalUSDC += usdc;
+    totalHYPHA += hypha;
+
+    return {
+      spaceId,
+      usdc,
+      hypha,
+    };
+  });
+
+  const total = paymentToken === 'HYPHA' ? totalHYPHA : totalUSDC;
+
+  const submitActivation = async () => {
+    const filtered = breakdown.filter((b) => b.spaceId);
+
+    const spaceIds = filtered.map((b) => BigInt(b.spaceId));
+    const amounts =
+      paymentToken === 'USDC'
+        ? filtered.map((b) => b.usdc)
+        : filtered.map((b) => b.hypha);
+
+    return await activateSpaces({
+      spaceIds,
+      amounts,
+      paymentToken,
+    });
+  };
+
+  return {
+    totalUSDC: +totalUSDC.toFixed(4),
+    totalHYPHA: +totalHYPHA.toFixed(4),
+    total,
+    paymentToken,
+    breakdown,
+    submitActivation,
+    isActivating,
+    activationTxHash,
+    activationError,
+  };
+};
