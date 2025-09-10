@@ -21,13 +21,13 @@ export const SpaceWithNumberOfMonthsField = ({
   onChange,
 }: SpaceWithNumberOfMonthsFieldProps) => {
   const [selected, setSelected] = useState<Space | null>(null);
-  const [months, setMonths] = useState<number>(0);
+  const [months, setMonths] = useState<string>('');
 
   useEffect(() => {
     if (value) {
       const found = spaces.find((s) => s.web3SpaceId === value.spaceId) || null;
       setSelected(found);
-      setMonths(value.months ?? 0);
+      setMonths(String(value.months ?? ''));
     }
   }, [value, spaces]);
 
@@ -47,26 +47,35 @@ export const SpaceWithNumberOfMonthsField = ({
       const foundSpace =
         spaces.find((s) => s.web3SpaceId === selectedWeb3Id) || null;
       setSelected(foundSpace);
-      if (foundSpace) {
-        onChange?.({
-          spaceId: foundSpace.web3SpaceId as number,
-          months,
-        });
+
+      if (foundSpace && months !== '') {
+        const numericMonths = Number(months);
+        if (!Number.isNaN(numericMonths)) {
+          onChange?.({
+            spaceId: foundSpace.web3SpaceId as number,
+            months: numericMonths,
+          });
+        }
       }
     },
     [spaces, months, onChange],
   );
 
   const handleMonthsChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const rawValue = Number(e.target.value);
-      const nextMonths = Number.isNaN(rawValue) ? 0 : rawValue;
-      setMonths(nextMonths);
-      if (selected) {
-        onChange?.({
-          spaceId: selected.web3SpaceId as number,
-          months: nextMonths,
-        });
+    (input: string) => {
+      const normalized = input.replace(',', '.');
+
+      if (/^\d*\.?\d*$/.test(normalized)) {
+        setMonths(normalized);
+        if (selected && normalized !== '') {
+          const numeric = Number(normalized);
+          if (!Number.isNaN(numeric)) {
+            onChange?.({
+              spaceId: selected.web3SpaceId as number,
+              months: numeric,
+            });
+          }
+        }
       }
     },
     [selected, onChange],
@@ -116,10 +125,11 @@ export const SpaceWithNumberOfMonthsField = ({
             Number of Months
           </span>
           <Input
-            type="number"
+            type="text"
+            inputMode="decimal"
             placeholder="Type an amount"
             value={months}
-            onChange={handleMonthsChange}
+            onChange={(e) => handleMonthsChange(e.target.value)}
             min={0}
           />
         </div>
