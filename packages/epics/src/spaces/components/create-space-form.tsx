@@ -172,6 +172,25 @@ export const SpaceForm = ({
     }
   }, [label]);
 
+  const parentOptions = [
+    {
+      value: `${parentSpaceId}`,
+      label: 'Initial parent',
+    },
+    {
+      value: '---',
+      label: '---',
+    },
+    {
+      value: '1',
+      label: 'First parent',
+    },
+    {
+      value: '2',
+      label: 'Second parent',
+    },
+  ];
+
   return (
     <Form {...form}>
       <form
@@ -304,7 +323,16 @@ export const SpaceForm = ({
             </FormItem>
           )}
         />
-        {(label === 'add' || label === 'configure') && <ParentSpaceSelector />}
+        {(label === 'add' || label === 'configure') && (
+          <ParentSpaceSelector
+            options={parentOptions}
+            parentSpaceId={parentSpaceId}
+            setParentSpaceId={(parentId) => {
+              console.log('Parent ID:', parentId);
+            }}
+            className="w-full"
+          />
+        )}
         <FormField
           control={form.control}
           name="categories"

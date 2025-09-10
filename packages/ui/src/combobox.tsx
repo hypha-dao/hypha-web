@@ -12,6 +12,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from './command';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 
@@ -116,24 +117,30 @@ export function Combobox({
               <CommandEmpty>No options found.</CommandEmpty>
             ) : (
               <CommandGroup>
-                {filteredOptions.map((option) => (
-                  <CommandItem
-                    key={option.value}
-                    value={option.value}
-                    onSelect={handleSelect}
-                    disabled={disabled}
-                  >
-                    <div className="flex items-center gap-2 w-full">
-                      {renderOption ? renderOption(option) : option.label}
-                      <Check
-                        className={cn(
-                          'ml-auto',
-                          value === option.value ? 'opacity-100' : 'opacity-0',
-                        )}
-                      />
-                    </div>
-                  </CommandItem>
-                ))}
+                {filteredOptions.map((option, index) =>
+                  option.value.length === 0 || option.value === '---' ? (
+                    <CommandSeparator key={`${option.value}-${index}`} />
+                  ) : (
+                    <CommandItem
+                      key={`${option.value}-${index}`}
+                      value={option.value}
+                      onSelect={handleSelect}
+                      disabled={disabled}
+                    >
+                      <div className="flex items-center gap-2 w-full">
+                        {renderOption ? renderOption(option) : option.label}
+                        <Check
+                          className={cn(
+                            'ml-auto',
+                            value === option.value
+                              ? 'opacity-100'
+                              : 'opacity-0',
+                          )}
+                        />
+                      </div>
+                    </CommandItem>
+                  ),
+                )}
               </CommandGroup>
             )}
           </CommandList>
