@@ -80,7 +80,7 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
                 />
               }
               value={totalHYPHA.toLocaleString(undefined, {
-                minimumFractionDigits: 4,
+                minimumFractionDigits: 2,
               })}
               disabled
             />
@@ -94,7 +94,7 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
                 />
               }
               value={totalUSDC.toLocaleString(undefined, {
-                minimumFractionDigits: 4,
+                minimumFractionDigits: 2,
               })}
               disabled
             />
