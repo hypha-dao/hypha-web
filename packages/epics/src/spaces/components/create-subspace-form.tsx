@@ -12,6 +12,7 @@ import { useMe } from '@hypha-platform/core/client';
 
 interface CreateSpaceFormProps {
   parentSpaceId: number | null;
+  parentSpaceSlug: string;
   successfulUrl: string;
   backUrl?: string;
 }
@@ -20,6 +21,7 @@ export const CreateSubspaceForm = ({
   successfulUrl,
   backUrl,
   parentSpaceId,
+  parentSpaceSlug,
 }: CreateSpaceFormProps) => {
   const router = useRouter();
   const config = useConfig();
@@ -65,6 +67,7 @@ export const CreateSubspaceForm = ({
         backLabel="Back to Settings"
         onSubmit={createSpace}
         parentSpaceId={parentSpaceId as number}
+        parentSpaceSlug={parentSpaceSlug}
         label="add"
       />
     </LoadingBackdrop>

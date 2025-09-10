@@ -31,6 +31,7 @@ import {
   createSpaceFiles,
   schemaCreateSpace,
   SpaceFlags,
+  useOrganisationSpacesBySingleSlug,
 } from '@hypha-platform/core/client';
 import { Links } from '../../common/links';
 import {
@@ -54,6 +55,7 @@ export type CreateSpaceFormProps = {
     surname?: string;
   };
   parentSpaceId?: number | null;
+  parentSpaceSlug?: string;
   values?: Partial<SchemaCreateSpaceForm>;
   defaultValues?: Partial<SchemaCreateSpaceForm>;
   submitLabel?: string;
@@ -70,6 +72,7 @@ const DEFAULT_VALUES = {
   categories: [] as Category[],
   links: [] as string[],
   parentId: null,
+  parentSpaceSlug: '',
   address: '',
   flags: ['sandbox'] as SpaceFlags[],
 };
@@ -82,6 +85,7 @@ export const SpaceForm = ({
   backLabel,
   onSubmit,
   parentSpaceId,
+  parentSpaceSlug,
   values,
   defaultValues = {
     ...DEFAULT_VALUES,
@@ -117,6 +121,22 @@ export const SpaceForm = ({
     if (!values) return;
     form.reset({ ...form.getValues(), ...values }, { keepDirty: true });
   }, [values, form]);
+
+  const { spaces: organisationSpaces, isLoading: isOrganisationLoading } =
+    useOrganisationSpacesBySingleSlug(parentSpaceSlug ?? '');
+  const parentOptions = React.useMemo(() => {
+    const organisationOptions = isOrganisationLoading
+      ? []
+      : organisationSpaces?.map((space) => {
+          return {
+            value: `${space.id}`,
+            label: space.title,
+          };
+        }) ?? [];
+    return ([] as { value: string; label: string }[]).concat(
+      ...organisationOptions,
+    );
+  }, [organisationSpaces, isOrganisationLoading]);
 
   const flags = form.watch('flags');
   const isSandbox = React.useMemo(
@@ -171,25 +191,6 @@ export const SpaceForm = ({
         return 'Configure Space';
     }
   }, [label]);
-
-  const parentOptions = [
-    {
-      value: `${parentSpaceId}`,
-      label: 'Initial parent',
-    },
-    {
-      value: '---',
-      label: '---',
-    },
-    {
-      value: '1',
-      label: 'First parent',
-    },
-    {
-      value: '2',
-      label: 'Second parent',
-    },
-  ];
 
   return (
     <Form {...form}>
