@@ -11,7 +11,7 @@ import { Locale } from '@hypha-platform/i18n';
 
 import { useMemberBySlug } from '@web/hooks/use-member-by-slug';
 import { getDhoPathMembers } from '../../../../@tab/members/constants';
-import { useSpacesByWeb3Ids } from '@web/hooks/use-spaces-by-web3-ids';
+import { useSpacesByWeb3Ids } from '@hypha-platform/core/client';
 
 export default function Member() {
   const { id, lang, personSlug } = useParams();

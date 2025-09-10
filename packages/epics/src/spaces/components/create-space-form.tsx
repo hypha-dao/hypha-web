@@ -25,25 +25,31 @@ import React from 'react';
 import { z } from 'zod';
 import clsx from 'clsx';
 import {
+  Address,
   ALLOWED_IMAGE_FILE_SIZE,
   categories,
   Category,
   createSpaceFiles,
   schemaCreateSpace,
   SpaceFlags,
+  useMe,
   useOrganisationSpacesBySingleSlug,
+  useSpacesByWeb3Ids,
 } from '@hypha-platform/core/client';
 import { Links } from '../../common/links';
 import {
   ButtonClose,
   ButtonBack,
   ParentSpaceSelector,
+  useMemberWeb3SpaceIds,
 } from '@hypha-platform/epics';
 
 const schemaCreateSpaceForm = schemaCreateSpace.extend(createSpaceFiles);
 type SchemaCreateSpaceForm = z.infer<typeof schemaCreateSpaceForm>;
 
 export type SpaceFormLabel = 'create' | 'add' | 'configure';
+
+type ParentOption = { value: string; label: string };
 
 export type CreateSpaceFormProps = {
   isLoading?: boolean;
@@ -124,6 +130,13 @@ export const SpaceForm = ({
 
   const { spaces: organisationSpaces, isLoading: isOrganisationLoading } =
     useOrganisationSpacesBySingleSlug(parentSpaceSlug ?? '');
+  const { person } = useMe();
+  const { web3SpaceIds } = useMemberWeb3SpaceIds({
+    personAddress: person?.address as Address | undefined,
+  });
+  const { spaces: mySpaces, isLoading: isMyLoading } = useSpacesByWeb3Ids(
+    web3SpaceIds ?? [],
+  );
   const parentOptions = React.useMemo(() => {
     const organisationOptions = isOrganisationLoading
       ? []
@@ -133,10 +146,34 @@ export const SpaceForm = ({
             label: space.title,
           };
         }) ?? [];
-    return ([] as { value: string; label: string }[]).concat(
+    const mySpacesOptions = isMyLoading
+      ? []
+      : mySpaces
+          .filter(
+            (mySpace) =>
+              !organisationSpaces?.find(
+                (orgSpace) => mySpace.id == orgSpace.id,
+              ),
+          )
+          .map((space) => {
+            return {
+              value: `${space.id}`,
+              label: space.title,
+            };
+          });
+    return ([] as ParentOption[]).concat(
       ...organisationOptions,
+      ...(mySpacesOptions
+        ? ([] as ParentOption[]).concat(
+            {
+              value: '---',
+              label: '---',
+            },
+            ...mySpacesOptions,
+          )
+        : []),
     );
-  }, [organisationSpaces, isOrganisationLoading]);
+  }, [organisationSpaces, isOrganisationLoading, mySpaces, isMyLoading]);
 
   const flags = form.watch('flags');
   const isSandbox = React.useMemo(

@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
           .filter((id) => !Number.isNaN(id))
       : undefined;
     const spaces = web3SpaceIds
-      ? await getSpacesByWeb3Ids(web3SpaceIds)
+      ? await getSpacesByWeb3Ids(web3SpaceIds, { parentOnly: false })
       : await getAllSpaces();
 
     return NextResponse.json(spaces);
