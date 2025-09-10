@@ -81,6 +81,12 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
     <Form {...form}>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
         <SpaceWithNumberOfMonthsFieldArray spaces={spaces} name="spaces" />
+        <span className="text-error-8">
+          {errors?.spaces?.[0]?.spaceId?.message}
+        </span>
+        <span className="text-error-8">
+          {errors?.spaces?.[0]?.months?.message}
+        </span>
         <Separator />
         <span className="text-4 text-foreground">Check out</span>
         <div className="flex w-full justify-between items-center">
