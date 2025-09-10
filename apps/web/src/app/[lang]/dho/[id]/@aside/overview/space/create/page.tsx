@@ -18,6 +18,7 @@ export default function CreateSubspacePage() {
         successfulUrl={successfulUrl}
         backUrl={`${successfulUrl}${PATH_SELECT_SETTINGS_ACTION}`}
         parentSpaceId={space?.id ?? null}
+        parentSpaceSlug={space?.slug ?? ''}
       />
     </SidePanel>
   );

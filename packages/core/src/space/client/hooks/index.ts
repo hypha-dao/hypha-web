@@ -6,3 +6,4 @@ export { useSpaceHasVoiceToken } from './useSpaceHasVoiceToken';
 export { useTokensVotingPower } from './useTokensVotingPower';
 export { useSpaceProposalsWeb3Rpc } from './useSpaceProposals.web3.rpc';
 export { useUpdateSpaceOrchestrator } from './useUpdateSpaceOrchestrator';
+export { useOrganisationSpacesBySingleSlug } from './useOrganisationSpacesBySingleSlug';
