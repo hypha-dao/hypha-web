@@ -3,8 +3,7 @@
 import { ActivateSpacesFormValues } from './validation';
 import { useActivateSpacesMutation } from '@hypha-platform/core/client';
 
-const DAILY_USD_COST = 0.367;
-const HYPHA_PRICE = 0.25;
+export const HYPHA_PRICE_USD = 0.25;
 
 export const useActivateSpaces = ({
   spaces,
@@ -21,7 +20,7 @@ export const useActivateSpaces = ({
 
   const breakdown = spaces.map(({ spaceId, months }) => {
     const hypha = months * 11;
-    const usdc = +(hypha * HYPHA_PRICE).toFixed(4);
+    const usdc = +(hypha * HYPHA_PRICE_USD).toFixed(4);
 
     totalUSDC += usdc;
     totalHYPHA += hypha;

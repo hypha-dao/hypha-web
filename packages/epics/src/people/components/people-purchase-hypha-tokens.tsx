@@ -26,13 +26,13 @@ import { Space, TOKENS } from '@hypha-platform/core/client';
 import { TokenPayoutField } from '../../agreements/plugins/components/common/token-payout-field';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { purchaseSchema } from '../hooks/validation';
+import { HYPHA_PRICE_USD } from '../hooks/use-activate-hypha-spaces';
 
 interface PeoplePurchaseHyphaTokensProps {
   personSlug: string;
   spaces: Space[];
 }
 
-const HYPHA_PRICE_USD = 0.25;
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
 const RECIPIENT_SPACE_ADDRESS = '0x3dEf11d005F8C85c93e3374B28fcC69B25a650Af';
 
