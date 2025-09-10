@@ -52,7 +52,10 @@ export default async function ActivateSpacesProfile(props: PageProps) {
           USDC, supporting the Hypha Network. More details in{' '}
           <Link
             className="text-accent-9 underline"
-            href="https://docs.google.com/document/d/1wT-FHdD5AxXdzL8iuZ45aeLse18DkvHFeeL0HBle4wc/edit?usp=sharing"
+            href={
+              process.env.NEXT_PUBLIC_HYPHA_TOKENOMICS_DOCS_URL ??
+              'https://docs.google.com/document/d/1wT-FHdD5AxXdzL8iuZ45aeLse18DkvHFeeL0HBle4wc/edit?usp=sharing'
+            }
             target="_blank"
           >
             Hypha Tokenomics
