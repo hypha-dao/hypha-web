@@ -161,18 +161,16 @@ export const SpaceForm = ({
               label: space.title,
             };
           });
-    return ([] as ParentOption[]).concat(
-      ...organisationOptions,
-      ...(mySpacesOptions
-        ? ([] as ParentOption[]).concat(
-            {
-              value: '---',
-              label: '---',
-            },
-            ...mySpacesOptions,
-          )
-        : []),
-    );
+    const result: ParentOption[] = [];
+    result.push(...organisationOptions);
+    if (organisationOptions.length > 0 && mySpacesOptions.length > 0) {
+      result.push({
+        value: '---',
+        label: '---',
+      });
+    }
+    result.push(...mySpacesOptions);
+    return result;
   }, [organisationSpaces, isOrganisationLoading, mySpaces, isMyLoading]);
 
   const flags = form.watch('flags');
