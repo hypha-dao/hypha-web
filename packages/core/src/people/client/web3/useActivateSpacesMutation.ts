@@ -65,8 +65,6 @@ export const useActivateSpacesMutation = () => {
       const functionName =
         paymentToken === 'USDC' ? 'payForSpaces' : 'payInHypha';
 
-      console.log(spaceIds, parsedAmounts);
-
       const tx = await client.writeContract({
         address: hyphaTokenAddress[8453] as `0x${string}`,
         abi: hyphaTokenAbi,
