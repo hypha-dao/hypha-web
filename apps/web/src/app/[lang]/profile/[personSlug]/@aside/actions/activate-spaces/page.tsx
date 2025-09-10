@@ -6,6 +6,7 @@ import {
   ActivateSpacesForm,
 } from '@hypha-platform/epics';
 import { Separator } from '@hypha-platform/ui';
+import Link from 'next/link';
 
 type PageProps = {
   params: Promise<{ lang: string; personSlug: string }>;
@@ -47,8 +48,16 @@ export default async function ActivateSpacesProfile(props: PageProps) {
           </div>
         </div>
         <span className="text-2 text-neutral-11">
-          Support and activate your favourite spaces by contributing in HYPHA or
-          USDC for selected months.
+          Sponsor and activate your favourite space(s) by contributing HYPHA or
+          USDC, supporting the Hypha Network. More details in{' '}
+          <Link
+            className="text-accent-9 underline"
+            href="https://docs.google.com/document/d/1wT-FHdD5AxXdzL8iuZ45aeLse18DkvHFeeL0HBle4wc/edit?usp=sharing"
+            target="_blank"
+          >
+            Hypha Tokenomics
+          </Link>
+          .
         </span>
         {error ? (
           <div className="text-error text-sm">
