@@ -20,9 +20,8 @@ export const useActivateSpaces = ({
   let totalHYPHA = 0;
 
   const breakdown = spaces.map(({ spaceId, months }) => {
-    const days = months * 30;
-    const usdc = +(days * DAILY_USD_COST).toFixed(4);
-    const hypha = +(usdc / HYPHA_PRICE).toFixed(4);
+    const hypha = months * 11;
+    const usdc = +(hypha * HYPHA_PRICE).toFixed(4);
 
     totalUSDC += usdc;
     totalHYPHA += hypha;
