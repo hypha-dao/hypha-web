@@ -11,6 +11,7 @@ import {
   Tabs,
   TabsTrigger,
   TabsList,
+  Label,
 } from '@hypha-platform/ui';
 import {
   activateSpacesSchema,
@@ -88,13 +89,13 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
           {errors?.spaces?.[0]?.months?.message}
         </span>
         <Separator />
-        <span className="text-4 text-foreground">Check out</span>
+        <Label>Check out</Label>
         <div className="flex w-full justify-between items-center">
           <span className="text-2 text-neutral-11 w-full">
             Total Contribution:
           </span>
           <span className="text-2 text-neutral-11 text-nowrap">
-            USD {totalUSDC}
+            USDC {totalUSDC}
           </span>
         </div>
         <div className="flex w-full justify-between items-center">
@@ -154,7 +155,7 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
           </span>
         </div>
         <Separator />
-        <span className="text-4 text-foreground">Recipient</span>
+        <Label>Recipient</Label>
         <RecipientField
           members={[]}
           spaces={recipientSpace}

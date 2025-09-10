@@ -63,10 +63,9 @@ export const SpaceWithNumberOfMonthsField = ({
 
   const handleMonthsChange = useCallback(
     (input: string) => {
-      const normalized = input.replace(',', '.');
-      if (/^\d*\.?\d*$/.test(normalized)) {
-        setMonths(normalized);
-        const numeric = normalized === '' ? 0 : Number(normalized);
+      if (/^\d*$/.test(input)) {
+        setMonths(input);
+        const numeric = input === '' ? 0 : Number(input);
 
         if (!Number.isNaN(numeric) && selected) {
           onChange?.({

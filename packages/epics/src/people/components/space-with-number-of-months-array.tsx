@@ -7,6 +7,7 @@ import {
   FormItem,
   FormControl,
   FormMessage,
+  Label,
 } from '@hypha-platform/ui';
 import { PlusIcon, MinusIcon } from '@radix-ui/react-icons';
 import { Space } from '@hypha-platform/core/client';
@@ -43,7 +44,7 @@ export const SpaceWithNumberOfMonthsFieldArray = ({
   };
   return (
     <div className="flex flex-col gap-4">
-      <span className="text-4 text-foreground">Space(s)</span>
+      <Label>Space(s)</Label>
       <div className="flex flex-col gap-4">
         {fields.map((field, index) => (
           <div key={field.id} className="flex items-center gap-2">
