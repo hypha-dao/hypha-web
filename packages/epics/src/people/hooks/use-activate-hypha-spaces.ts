@@ -3,7 +3,7 @@
 import { ActivateSpacesFormValues } from './validation';
 import { useActivateSpacesMutation } from '@hypha-platform/core/client';
 
-export const HYPHA_PRICE_USD = 0.25;
+const HYPHA_PRICE_USD = 0.25;
 
 export const useActivateSpaces = ({
   spaces,
