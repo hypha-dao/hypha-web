@@ -22,6 +22,10 @@ export const activateSpacesSchema = z.object({
     )
     .min(1, 'At least one space must be added'),
   paymentToken: z.enum(['HYPHA', 'USDC']),
+  recipient: z
+    .string()
+    .min(1, { message: 'Please add a recipient or wallet address' })
+    .refine(isAddress, { message: 'Invalid Ethereum address' }),
 });
 
 export type ActivateSpacesFormValues = z.infer<typeof activateSpacesSchema>;

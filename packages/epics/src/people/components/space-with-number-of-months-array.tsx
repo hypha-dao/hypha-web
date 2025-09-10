@@ -43,6 +43,7 @@ export const SpaceWithNumberOfMonthsFieldArray = ({
   };
   return (
     <div className="flex flex-col gap-4">
+      <span className="text-4 text-foreground">Space(s)</span>
       <div className="flex flex-col gap-4">
         {fields.map((field, index) => (
           <div key={field.id} className="flex items-center gap-2">

@@ -131,6 +131,12 @@ export const SpaceWithNumberOfMonthsField = ({
             min={0}
           />
         </div>
+        <div className="flex w-full justify-between items-center">
+          <span className="text-2 text-neutral-11 w-full">Contribution:</span>
+          <span className="text-2 text-neutral-11 text-nowrap">
+            $11 per month per space
+          </span>
+        </div>
       </div>
       <Separator />
     </>

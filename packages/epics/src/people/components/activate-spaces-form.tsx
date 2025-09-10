@@ -2,7 +2,16 @@
 
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Form, Button, Input, Image, Switch } from '@hypha-platform/ui';
+import {
+  Form,
+  Button,
+  Input,
+  Image,
+  Separator,
+  Tabs,
+  TabsTrigger,
+  TabsList,
+} from '@hypha-platform/ui';
 import {
   activateSpacesSchema,
   ActivateSpacesFormValues,
@@ -12,12 +21,17 @@ import { SpaceWithNumberOfMonthsFieldArray } from './space-with-number-of-months
 import { useActivateSpaces } from '../hooks/use-activate-hypha-spaces';
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
+import { RecipientField } from '../../agreements';
 
 interface ActivateSpacesFormProps {
   spaces: Space[];
 }
 
+const RECIPIENT_SPACE_ADDRESS = '0x695f21B04B22609c4ab9e5886EB0F65cDBd464B6';
+
 export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
+  const recipientSpace =
+    spaces?.filter((s) => s?.address === RECIPIENT_SPACE_ADDRESS) || [];
   const form = useForm<ActivateSpacesFormValues>({
     resolver: zodResolver(activateSpacesSchema),
     defaultValues: {
@@ -28,6 +42,7 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
           months: 0,
         },
       ],
+      recipient: RECIPIENT_SPACE_ADDRESS,
     },
   });
 
@@ -66,51 +81,80 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
     <Form {...form}>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
         <SpaceWithNumberOfMonthsFieldArray spaces={spaces} name="spaces" />
-
-        <span className="flex w-full items-center justify-between">
-          <span className="text-2 text-neutral-11">Total Amount</span>
-          <div className="flex gap-2">
-            <Input
-              leftIcon={
-                <Image
-                  src="/placeholder/space-avatar-image.svg"
-                  width={24}
-                  height={24}
-                  alt="Hypha Token Icon"
-                />
-              }
-              value={totalHYPHA.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-              })}
-              disabled
-            />
-            <Input
-              leftIcon={
-                <Image
-                  src="/placeholder/usdc-icon.svg"
-                  width={24}
-                  height={24}
-                  alt="USDC Icon"
-                />
-              }
-              value={totalUSDC.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-              })}
-              disabled
-            />
-          </div>
-        </span>
-
-        <div className="flex items-center justify-between">
-          <span className="text-2 text-neutral-11">Pay in USDC</span>
-          <Switch
-            checked={paymentToken === 'USDC'}
-            onCheckedChange={(checked) =>
-              setValue('paymentToken', checked ? 'USDC' : 'HYPHA')
-            }
-          />
+        <Separator />
+        <span className="text-4 text-foreground">Check out</span>
+        <div className="flex w-full justify-between items-center">
+          <span className="text-2 text-neutral-11 w-full">
+            Total Contribution:
+          </span>
+          <span className="text-2 text-neutral-11 text-nowrap">
+            USD {totalUSDC}
+          </span>
         </div>
-
+        <div className="flex w-full justify-between items-center">
+          <span className="text-2 text-neutral-11">Pay with:</span>
+          <Tabs
+            value={paymentToken}
+            onValueChange={(value) =>
+              setValue('paymentToken', value as 'HYPHA' | 'USDC')
+            }
+          >
+            <TabsList triggerVariant="switch">
+              <TabsTrigger variant="switch" value="HYPHA">
+                HYPHA
+              </TabsTrigger>
+              <TabsTrigger variant="switch" value="USDC">
+                USDC
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+        <div className="flex w-full justify-between items-center">
+          <span className="text-2 text-neutral-11 w-full">
+            Total amount in {paymentToken}:
+          </span>
+          <span className="text-2 text-neutral-11 text-nowrap">
+            {paymentToken === 'USDC' ? (
+              <Input
+                leftIcon={
+                  <Image
+                    src="/placeholder/usdc-icon.svg"
+                    width={24}
+                    height={24}
+                    alt="USDC Icon"
+                  />
+                }
+                value={totalUSDC.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                })}
+                disabled
+              />
+            ) : (
+              <Input
+                leftIcon={
+                  <Image
+                    src="/placeholder/space-avatar-image.svg"
+                    width={24}
+                    height={24}
+                    alt="Hypha Token Icon"
+                  />
+                }
+                value={totalHYPHA.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                })}
+                disabled
+              />
+            )}
+          </span>
+        </div>
+        <Separator />
+        <span className="text-4 text-foreground">Recipient</span>
+        <RecipientField
+          members={[]}
+          spaces={recipientSpace}
+          defaultRecipientType="space"
+          readOnly={true}
+        />
         <div className="flex gap-2 justify-end">
           {isActivating ? (
             <div className="flex items-center gap-2 text-sm text-neutral-10">
