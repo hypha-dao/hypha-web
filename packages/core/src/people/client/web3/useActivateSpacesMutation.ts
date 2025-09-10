@@ -39,6 +39,9 @@ export const useActivateSpacesMutation = () => {
       if (!spaceIds.length || !amounts.length) {
         throw new Error('Empty spaceIds or amounts');
       }
+      if (spaceIds.length !== amounts.length) {
+        throw new Error('spaceIds and amounts length mismatch');
+      }
 
       const decimals = await getTokenDecimals(
         paymentToken === 'USDC'
