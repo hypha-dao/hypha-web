@@ -280,6 +280,8 @@ export const SpaceForm = ({
                       defaultImage={
                         typeof defaultValues?.logoUrl === 'string'
                           ? defaultValues?.logoUrl
+                          : typeof values?.logoUrl === 'string'
+                          ? values?.logoUrl
                           : undefined
                       }
                       required={true}
@@ -340,6 +342,8 @@ export const SpaceForm = ({
                   defaultImage={
                     typeof defaultValues?.leadImage === 'string'
                       ? defaultValues?.leadImage
+                      : typeof values?.leadImage === 'string'
+                      ? values?.leadImage
                       : undefined
                   }
                   uploadText={
