@@ -23,7 +23,8 @@ import { useActivateSpaces } from '../hooks/use-activate-hypha-spaces';
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { RecipientField } from '../../agreements';
-import { useFundWallet } from '../../treasury';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 
 interface ActivateSpacesFormProps {
   spaces: Space[];
@@ -33,9 +34,7 @@ const RECIPIENT_SPACE_ADDRESS = '0x695f21B04B22609c4ab9e5886EB0F65cDBd464B6';
 
 export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
   const { person } = useMe();
-  const { fundWallet } = useFundWallet({
-    address: person?.address as `0x${string}`,
-  });
+  const { lang } = useParams();
   const recipientSpace =
     spaces?.filter((s) => s?.address === RECIPIENT_SPACE_ADDRESS) || [];
   const form = useForm<ActivateSpacesFormValues>({
@@ -219,12 +218,12 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
               <>
                 Your wallet balance is insufficient to complete this
                 transaction. Please{' '}
-                <span
-                  onClick={fundWallet}
+                <Link
+                  href={`/${lang}/profile/${person?.nickname}/actions/purchase-hypha-tokens`}
                   className="font-bold cursor-pointer text-accent-9 underline"
                 >
                   top up your account with {paymentToken}
-                </span>{' '}
+                </Link>{' '}
                 to proceed.
               </>
             ) : (
