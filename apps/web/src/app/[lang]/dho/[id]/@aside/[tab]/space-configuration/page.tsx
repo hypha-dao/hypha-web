@@ -80,8 +80,7 @@ export default function SpaceConfiguration() {
             flags: space?.flags || [],
           }}
           label="configure"
-          initialParentSpaceId={space?.parent?.id ?? space?.parentId ?? null}
-          parentSpaceSlug={space?.parent?.slug}
+          initialParentSpaceId={space?.parentId ?? null}
         />
       </LoadingBackdrop>
     </SidePanel>

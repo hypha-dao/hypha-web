@@ -127,9 +127,7 @@ export const SpaceForm = ({
   );
 
   React.useEffect(() => {
-    if (parentSpaceId) {
-      form.setValue('parentId', parentSpaceId);
-    }
+    form.setValue('parentId', parentSpaceId ?? null);
   }, [parentSpaceId, form]);
 
   React.useEffect(() => {
