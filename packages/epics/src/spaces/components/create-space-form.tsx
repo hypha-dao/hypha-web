@@ -138,7 +138,7 @@ export const SpaceForm = ({
   }, [values, form]);
 
   const { spaces: organisationSpaces, isLoading: isOrganisationLoading } =
-    useOrganisationSpacesBySingleSlug(parentSpaceSlug ?? '');
+    useOrganisationSpacesBySingleSlug(values?.slug ?? parentSpaceSlug ?? '');
   const { person } = useMe();
   const { web3SpaceIds } = useMemberWeb3SpaceIds({
     personAddress: person?.address as Address | undefined,
