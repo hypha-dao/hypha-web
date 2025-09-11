@@ -64,7 +64,37 @@ export default function SpaceConfiguration() {
             name: person?.name,
             surname: person?.surname,
           }}
-          onSubmit={updateSpace}
+          onSubmit={(updatedSpace) => {
+            try {
+              if (space) {
+                if (!space.parentId && updatedSpace.parentId) {
+                  const foundInnerSpace = space.subspaces?.find(
+                    (inner) => inner.id === updatedSpace.parentId,
+                  );
+                  if (foundInnerSpace) {
+                    const {
+                      description,
+                      address,
+                      web3SpaceId,
+                      slug,
+                      ...updates
+                    } = foundInnerSpace;
+                    updateSpace({
+                      ...updates,
+                      slug,
+                      parentId: null,
+                      description: description as string | undefined,
+                      address: address as string | undefined,
+                      web3SpaceId: web3SpaceId as number | undefined,
+                    });
+                  }
+                }
+              }
+              updateSpace(updatedSpace);
+            } catch (e) {
+              console.warn(e);
+            }
+          }}
           values={{
             ...space,
             title: space?.title || '',
