@@ -54,7 +54,7 @@ export default async function ActivateSpacesProfile(props: PageProps) {
             className="text-accent-9 underline"
             href={
               process.env.NEXT_PUBLIC_HYPHA_TOKENOMICS_DOCS_URL ??
-              'https://docs.google.com/document/d/1wT-FHdD5AxXdzL8iuZ45aeLse18DkvHFeeL0HBle4wc/edit?usp=sharing'
+              'https://assets.hypha.earth/files/Tokenomics_Paper.pdf'
             }
             target="_blank"
           >
