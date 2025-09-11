@@ -15,13 +15,27 @@ export const purchaseSchema = z.object({
 export const activateSpacesSchema = z.object({
   spaces: z
     .array(
-      z.object({
-        spaceId: z.number().int().min(1, 'Please select a space to activate.'),
-        months: z
-          .number()
-          .int()
-          .min(1, 'Please enter the number of months to activate.'),
-      }),
+      z
+        .object({
+          spaceId: z.number(),
+          months: z.number(),
+        })
+        .superRefine((val, ctx) => {
+          if (!val.spaceId || val.spaceId < 1) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ['spaceId'],
+              message: 'Please select a space to activate.',
+            });
+          }
+          if (!val.months || val.months < 1) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ['months'],
+              message: 'Please enter the number of months to activate.',
+            });
+          }
+        }),
     )
     .min(1, 'At least one space must be added'),
   paymentToken: z.enum(['HYPHA', 'USDC']),

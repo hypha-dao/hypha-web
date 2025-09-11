@@ -47,7 +47,7 @@ export const SpaceWithNumberOfMonthsField = ({
         setSelected(null);
         onChange?.({
           spaceId: 0,
-          months: 0,
+          months: Number(months),
         });
         return;
       }
