@@ -26,12 +26,15 @@ export const ParentSpaceSelector = ({
 }: ParentSpaceSelectorProps) => {
   const checkboxRef = React.useRef(null);
   const checkboxId = `checkbox-${crypto.randomUUID()}`;
-  const [checked, setChecked] = React.useState(false);
+  const [checked, setChecked] = React.useState(!parentSpaceId);
   React.useEffect(() => {
     if (checked) {
       setParentSpaceId?.(null);
     }
   }, [checked]);
+  React.useEffect(() => {
+    setChecked(!parentSpaceId);
+  }, [parentSpaceId]);
   const parentSpaceIdString = React.useMemo(() => {
     return Number.isSafeInteger(parentSpaceId) ? `${parentSpaceId}` : '';
   }, [parentSpaceId]);
