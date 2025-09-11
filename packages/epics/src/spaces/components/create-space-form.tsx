@@ -18,6 +18,8 @@ import {
   RequirementMark,
   Card,
   Badge,
+  COMBOBOX_TITLE,
+  COMBOBOX_DELIMITER,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import React from 'react';
@@ -144,54 +146,44 @@ export const SpaceForm = ({
   const { spaces: mySpaces, isLoading: isMyLoading } = useSpacesByWeb3Ids(
     web3SpaceIds ?? [],
   );
-  const parentOptions = React.useMemo(() => {
-    const organisationOptions = isOrganisationLoading
-      ? []
-      : organisationSpaces?.map((space) => {
-          return {
-            value: `${space.id}`,
-            label: space.title,
-          };
-        }) ?? [];
-    const mySpacesOptions = isMyLoading
-      ? []
-      : mySpaces
-          .filter(
-            (mySpace) =>
-              !organisationSpaces?.find(
-                (orgSpace) => mySpace.id == orgSpace.id,
-              ),
-          )
-          .map((space) => {
-            return {
-              value: `${space.id}`,
-              label: space.title,
-            };
-          });
+  const parentOptions = React.useMemo((): ParentOption[] => {
+    if (isOrganisationLoading || isMyLoading) {
+      return [];
+    }
+    const organisationOptions =
+      organisationSpaces?.map((space) => {
+        return {
+          value: `${space.id}`,
+          label: space.title,
+        };
+      }) ?? [];
+    const mySpacesOptions = mySpaces
+      .filter(
+        (mySpace) =>
+          !organisationSpaces?.find((orgSpace) => mySpace.id === orgSpace.id),
+      )
+      .map((space) => {
+        return {
+          value: `${space.id}`,
+          label: space.title,
+        };
+      });
     const result: ParentOption[] = [];
     if (organisationOptions.length > 0) {
       result.push(
-        { value: '===', label: 'Organisation Spaces' },
-        {
-          value: '---',
-          label: '---',
-        },
+        { value: COMBOBOX_TITLE, label: 'Organisation Spaces' },
         ...organisationOptions,
       );
     }
     if (organisationOptions.length > 0 && mySpacesOptions.length > 0) {
       result.push({
-        value: '---',
-        label: '---',
+        value: COMBOBOX_DELIMITER,
+        label: '',
       });
     }
     if (mySpacesOptions.length > 0) {
       result.push(
-        { value: '===', label: 'My Other Spaces' },
-        {
-          value: '---',
-          label: '---',
-        },
+        { value: COMBOBOX_TITLE, label: 'My Other Spaces' },
         ...mySpacesOptions,
       );
     }

@@ -36,6 +36,9 @@ type ComboboxProps = {
   disabled?: boolean;
 };
 
+export const COMBOBOX_TITLE = '===';
+export const COMBOBOX_DELIMITER = '---';
+
 export function Combobox({
   options,
   placeholder = '',
@@ -119,11 +122,12 @@ export function Combobox({
             ) : (
               <CommandGroup>
                 {filteredOptions.map((option, index) =>
-                  option.value === '===' ? (
+                  option.value === COMBOBOX_TITLE ? (
                     <Label key={`${option.value}-${index}`}>
                       {option.label}
                     </Label>
-                  ) : option.value.length === 0 || option.value === '---' ? (
+                  ) : option.value.length === 0 ||
+                    option.value === COMBOBOX_DELIMITER ? (
                     <CommandSeparator key={`${option.value}-${index}`} />
                   ) : (
                     <CommandItem
