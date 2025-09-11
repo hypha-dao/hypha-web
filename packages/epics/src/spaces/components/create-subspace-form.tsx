@@ -66,7 +66,7 @@ export const CreateSubspaceForm = ({
         backUrl={backUrl}
         backLabel="Back to Settings"
         onSubmit={createSpace}
-        parentSpaceId={parentSpaceId as number}
+        initialParentSpaceId={parentSpaceId as number}
         parentSpaceSlug={parentSpaceSlug}
         label="add"
       />

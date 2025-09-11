@@ -60,7 +60,7 @@ export type CreateSpaceFormProps = {
     name?: string;
     surname?: string;
   };
-  parentSpaceId?: number | null;
+  initialParentSpaceId?: number | null;
   parentSpaceSlug?: string;
   values?: Partial<SchemaCreateSpaceForm>;
   defaultValues?: Partial<SchemaCreateSpaceForm>;
@@ -90,12 +90,12 @@ export const SpaceForm = ({
   backUrl,
   backLabel,
   onSubmit,
-  parentSpaceId,
+  initialParentSpaceId,
   parentSpaceSlug,
   values,
   defaultValues = {
     ...DEFAULT_VALUES,
-    parentId: parentSpaceId || null,
+    parentId: initialParentSpaceId || null,
   },
   submitLabel = 'Create',
   submitLoadingLabel = 'Creating Space...',
@@ -104,6 +104,13 @@ export const SpaceForm = ({
   if (process.env.NODE_ENV !== 'production') {
     console.debug('SpaceForm', { defaultValues });
   }
+
+  const [parentSpaceId, setParentSpaceId] =
+    React.useState(initialParentSpaceId);
+  React.useEffect(() => {
+    setParentSpaceId(initialParentSpaceId);
+  }, [initialParentSpaceId]);
+
   const form = useForm<SchemaCreateSpaceForm>({
     resolver: zodResolver(schemaCreateSpaceForm),
     defaultValues,
@@ -362,9 +369,11 @@ export const SpaceForm = ({
         {(label === 'add' || label === 'configure') && (
           <ParentSpaceSelector
             options={parentOptions}
+            isLoading={isOrganisationLoading || isMyLoading}
             parentSpaceId={parentSpaceId}
             setParentSpaceId={(parentId) => {
               console.log('Parent ID:', parentId);
+              setParentSpaceId(parentId);
             }}
             className="w-full"
           />
