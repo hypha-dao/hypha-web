@@ -400,7 +400,7 @@ contract DAOSpaceFactoryImplementation is
     );
     require(_newVotingPowerSource > 0, 'Invalid voting power source');
     require(_newQuorum > 0 && _newQuorum <= 100, 'Invalid quorm');
-    require(_newUnity > 0 && _newUnity <= 99, 'Invalid unityy');
+    require(_newUnity > 0 && _newUnity <= 100, 'Invalid unity');
 
     Space storage space = spaces[_spaceId];
     uint256 oldVotingPowerSource = space.votingPowerSource;

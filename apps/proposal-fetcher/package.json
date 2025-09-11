@@ -1,0 +1,15 @@
+{
+  "name": "telos-proposal-fetcher",
+  "version": "1.0.0",
+  "description": "A script to fetch proposal data from the dao.hypha contract on Telos.",
+  "main": "get_proposals.js",
+  "scripts": {
+    "start": "node get_proposals.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "eosjs": "^22.1.0",
+    "node-fetch": "^2.6.7"
+  }
+}
