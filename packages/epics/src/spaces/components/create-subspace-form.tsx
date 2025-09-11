@@ -9,6 +9,8 @@ import React from 'react';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { Button } from '@hypha-platform/ui';
 import { useMe } from '@hypha-platform/core/client';
+import { Locale } from '@hypha-platform/i18n';
+import { getDhoPathOverview } from './space-card.container';
 
 interface CreateSpaceFormProps {
   parentSpaceId: number | null;
@@ -23,6 +25,7 @@ export const CreateSubspaceForm = ({
   parentSpaceId,
   parentSpaceSlug,
 }: CreateSpaceFormProps) => {
+  const { lang } = useParams();
   const router = useRouter();
   const config = useConfig();
   const { person } = useMe();
@@ -39,7 +42,7 @@ export const CreateSubspaceForm = ({
 
   React.useEffect(() => {
     if (progress === 100 && spaceSlug) {
-      router.push(successfulUrl);
+      router.push(getDhoPathOverview(lang as Locale, spaceSlug));
     }
   }, [progress, spaceSlug]);
 
