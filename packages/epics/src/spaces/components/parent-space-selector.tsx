@@ -11,6 +11,7 @@ export interface ParentSpaceSelectorProps {
     value: string;
     label: string;
   }[];
+  isLoading: boolean;
   parentSpaceId?: SpaceId;
   setParentSpaceId?: (parentId: SpaceId) => void;
   className?: string;
@@ -18,6 +19,7 @@ export interface ParentSpaceSelectorProps {
 
 export const ParentSpaceSelector = ({
   options,
+  isLoading,
   parentSpaceId,
   setParentSpaceId,
   className,
@@ -34,7 +36,10 @@ export const ParentSpaceSelector = ({
     return Number.isSafeInteger(parentSpaceId) ? `${parentSpaceId}` : '';
   }, [parentSpaceId]);
   return (
-    <div className={cn('flex flex-row gap-1', className)}>
+    <div
+      className={cn('flex flex-row gap-1', className)}
+      aria-disabled={isLoading}
+    >
       <div className="pt-1 pb-1 align-middle">
         <Label className="text-sm text-neutral-11">Linked to</Label>
       </div>
@@ -43,14 +48,14 @@ export const ParentSpaceSelector = ({
           options={options ?? []}
           initialValue={parentSpaceIdString}
           className="border-0 md:w-40"
-          disabled={checked}
+          disabled={checked || isLoading}
           onChange={(value: string) => {
             const parentId = Number.parseInt(value);
             setParentSpaceId?.(
               Number.isSafeInteger(parentId) ? parentId : null,
             );
           }}
-          allowEmptyChoice={false}
+          allowEmptyChoice={checked}
         />
       </div>
       <div className="flex grow"></div>
