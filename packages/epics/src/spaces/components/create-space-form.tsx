@@ -169,14 +169,32 @@ export const SpaceForm = ({
             };
           });
     const result: ParentOption[] = [];
-    result.push(...organisationOptions);
+    if (organisationOptions.length > 0) {
+      result.push(
+        { value: '===', label: 'Organisation Spaces' },
+        {
+          value: '---',
+          label: '---',
+        },
+        ...organisationOptions,
+      );
+    }
     if (organisationOptions.length > 0 && mySpacesOptions.length > 0) {
       result.push({
         value: '---',
         label: '---',
       });
     }
-    result.push(...mySpacesOptions);
+    if (mySpacesOptions.length > 0) {
+      result.push(
+        { value: '===', label: 'My Other Spaces' },
+        {
+          value: '---',
+          label: '---',
+        },
+        ...mySpacesOptions,
+      );
+    }
     return result;
   }, [organisationSpaces, isOrganisationLoading, mySpaces, isMyLoading]);
 
