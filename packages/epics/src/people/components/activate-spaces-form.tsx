@@ -17,12 +17,13 @@ import {
   activateSpacesSchema,
   ActivateSpacesFormValues,
 } from '../hooks/validation';
-import { Space } from '@hypha-platform/core/client';
+import { Space, useMe } from '@hypha-platform/core/client';
 import { SpaceWithNumberOfMonthsFieldArray } from './space-with-number-of-months-array';
 import { useActivateSpaces } from '../hooks/use-activate-hypha-spaces';
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { RecipientField } from '../../agreements';
+import { useFundWallet } from '../../treasury';
 
 interface ActivateSpacesFormProps {
   spaces: Space[];
@@ -31,6 +32,10 @@ interface ActivateSpacesFormProps {
 const RECIPIENT_SPACE_ADDRESS = '0x695f21B04B22609c4ab9e5886EB0F65cDBd464B6';
 
 export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
+  const { person } = useMe();
+  const { fundWallet } = useFundWallet({
+    address: person?.address as `0x${string}`,
+  });
   const recipientSpace =
     spaces?.filter((s) => s?.address === RECIPIENT_SPACE_ADDRESS) || [];
   const form = useForm<ActivateSpacesFormValues>({
@@ -53,6 +58,7 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
     handleSubmit,
     watch,
     setValue,
+    setError,
     formState: { errors },
   } = form;
 
@@ -73,11 +79,45 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
       const tx = await submitActivation();
       console.log('Activation successful:', tx);
       setShowSuccessMessage(true);
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 3000);
+      form.reset();
     } catch (error) {
       console.error('Activation failed:', error);
-      setShowSuccessMessage(false);
+      let errorMessage: string =
+        'An error occurred while processing your activation. Please try again.';
+
+      if (error instanceof Error) {
+        if (error.message.includes('Smart wallet client not available')) {
+          errorMessage =
+            'Smart wallet is not connected. Please connect your wallet and try again.';
+        } else if (
+          error.message.includes('ERC20: transfer amount exceeds balance')
+        ) {
+          errorMessage = 'insufficient_funds';
+        } else if (error.message.includes('Execution reverted with reason:')) {
+          const match = error.message.match(
+            /Execution reverted with reason: (.*?)\./,
+          );
+          errorMessage =
+            match && match[1] ? match[1] : 'Contract execution failed.';
+        } else if (error.message.includes('user rejected')) {
+          errorMessage =
+            'Transaction was rejected. Please approve the transaction to proceed.';
+        }
+      }
+      setError('root', { message: errorMessage });
     }
   };
+
+  if (!spaces || spaces.length === 0) {
+    return (
+      <div className="text-error text-sm">
+        No valid spaces available. Please try again later.
+      </div>
+    );
+  }
 
   return (
     <Form {...form}>
@@ -164,7 +204,7 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
               Purchasing
             </div>
           ) : showSuccessMessage ? (
-            <div className="text-2 text-foreground">
+            <div className="text-2 font-medium text-foreground">
               The spaces you selected have been successfully activated!
             </div>
           ) : (
@@ -173,6 +213,25 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
             </Button>
           )}
         </div>
+        {errors.root && (
+          <div className="text-2 text-foreground">
+            {errors.root.message === 'insufficient_funds' ? (
+              <>
+                Your wallet balance is insufficient to complete this
+                transaction. Please{' '}
+                <span
+                  onClick={fundWallet}
+                  className="font-bold cursor-pointer text-accent-9 underline"
+                >
+                  top up your account with {paymentToken}
+                </span>{' '}
+                to proceed.
+              </>
+            ) : (
+              errors.root.message
+            )}
+          </div>
+        )}
       </form>
     </Form>
   );
