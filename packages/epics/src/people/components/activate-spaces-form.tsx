@@ -35,6 +35,7 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
     spaces?.filter((s) => s?.address === RECIPIENT_SPACE_ADDRESS) || [];
   const form = useForm<ActivateSpacesFormValues>({
     resolver: zodResolver(activateSpacesSchema),
+    mode: 'onChange',
     defaultValues: {
       paymentToken: 'HYPHA',
       spaces: [
@@ -82,12 +83,6 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
     <Form {...form}>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
         <SpaceWithNumberOfMonthsFieldArray spaces={spaces} name="spaces" />
-        <span className="text-error-8">
-          {errors?.spaces?.[0]?.spaceId?.message}
-        </span>
-        <span className="text-error-8">
-          {errors?.spaces?.[0]?.months?.message}
-        </span>
         <Separator />
         <Label>Check out</Label>
         <div className="flex w-full justify-between items-center">

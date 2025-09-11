@@ -1,12 +1,11 @@
 'use client';
 
-import { useFormContext, useFieldArray } from 'react-hook-form';
+import { useFormContext, useFieldArray, FieldError } from 'react-hook-form';
 import {
   Button,
   FormField,
   FormItem,
   FormControl,
-  FormMessage,
   Label,
 } from '@hypha-platform/ui';
 import { PlusIcon, MinusIcon } from '@radix-ui/react-icons';
@@ -16,6 +15,11 @@ import { SpaceWithNumberOfMonthsField } from './space-with-number-of-months';
 interface SpaceWithNumberOfMonthsFieldArrayProps {
   spaces: Space[];
   name?: string;
+}
+
+interface SpaceFieldError extends FieldError {
+  spaceId?: FieldError;
+  months?: FieldError;
 }
 
 export const SpaceWithNumberOfMonthsFieldArray = ({
@@ -58,18 +62,33 @@ export const SpaceWithNumberOfMonthsFieldArray = ({
               <FormField
                 control={control}
                 name={`${name}.${index}`}
-                render={({ field: { value, onChange } }) => (
-                  <FormItem>
-                    <FormControl>
-                      <SpaceWithNumberOfMonthsField
-                        spaces={spaces}
-                        value={value}
-                        onChange={onChange}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({
+                  field: { value, onChange },
+                  fieldState: { error },
+                }) => {
+                  const spaceError = error as SpaceFieldError;
+                  return (
+                    <FormItem>
+                      <FormControl>
+                        <SpaceWithNumberOfMonthsField
+                          spaces={spaces}
+                          value={value}
+                          onChange={onChange}
+                        />
+                      </FormControl>
+                      {spaceError?.spaceId?.message && (
+                        <span className="text-error-11 text-1 block">
+                          {spaceError.spaceId.message}
+                        </span>
+                      )}
+                      {spaceError?.months?.message && (
+                        <span className="text-error-11 text-1 block">
+                          {spaceError.months.message}
+                        </span>
+                      )}
+                    </FormItem>
+                  );
+                }}
               />
             </div>
           </div>
