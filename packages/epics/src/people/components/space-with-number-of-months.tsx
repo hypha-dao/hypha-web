@@ -42,10 +42,20 @@ export const SpaceWithNumberOfMonthsField = ({
   );
 
   const handleSpaceChange = useCallback(
-    (selectedId: string) => {
+    (selectedId: string | null) => {
+      if (!selectedId) {
+        setSelected(null);
+        onChange?.({
+          spaceId: 0,
+          months: 0,
+        });
+        return;
+      }
+
       const selectedWeb3Id = Number(selectedId);
       const foundSpace =
         spaces.find((s) => s.web3SpaceId === selectedWeb3Id) || null;
+
       setSelected(foundSpace);
 
       if (foundSpace && months !== '') {
