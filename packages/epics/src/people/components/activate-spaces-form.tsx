@@ -95,7 +95,7 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
             Total Contribution:
           </span>
           <span className="text-2 text-neutral-11 text-nowrap">
-            USDC {totalUSDC}
+            $ {totalUSDC}
           </span>
         </div>
         <div className="flex w-full justify-between items-center">

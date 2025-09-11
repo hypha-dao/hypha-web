@@ -82,7 +82,7 @@ export const SpaceWithNumberOfMonthsField = ({
     <>
       <div className="flex flex-col gap-5 w-full">
         <div className="flex w-full justify-between items-center">
-          <span className="text-2 text-neutral-11 w-full">Space Selector</span>
+          <span className="text-2 text-neutral-11 w-full">Select Space</span>
           <Combobox
             options={options}
             placeholder="Select space..."
@@ -129,12 +129,6 @@ export const SpaceWithNumberOfMonthsField = ({
             onChange={(e) => handleMonthsChange(e.target.value)}
             min={0}
           />
-        </div>
-        <div className="flex w-full justify-between items-center">
-          <span className="text-2 text-neutral-11 w-full">Contribution:</span>
-          <span className="text-2 text-neutral-11 text-nowrap">
-            $11 per month per space
-          </span>
         </div>
       </div>
       <Separator />

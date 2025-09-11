@@ -48,7 +48,7 @@ export default function ProfileWallet() {
     {
       title: 'Activate Space(s)',
       description:
-        'Sponsor and activate your favourite space(s) by contributing HYPHA or USDC, supporting the Hypha Network. More details in Hypha Tokenomics.',
+        'Sponsor and activate your favourite space(s) by contributing HYPHA or USDC, supporting the Hypha Network.',
       href: 'activate-spaces',
       icon: <ArrowRightIcon />,
     },

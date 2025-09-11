@@ -45,6 +45,12 @@ export const SpaceWithNumberOfMonthsFieldArray = ({
   return (
     <div className="flex flex-col gap-4">
       <Label>Space(s)</Label>
+      <div className="flex w-full justify-between items-center">
+        <span className="text-2 text-neutral-11 w-full">Contribution:</span>
+        <span className="text-2 text-neutral-11 text-nowrap">
+          $11 per month per space
+        </span>
+      </div>
       <div className="flex flex-col gap-4">
         {fields.map((field, index) => (
           <div key={field.id} className="flex items-center gap-2">
