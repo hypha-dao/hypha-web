@@ -185,7 +185,7 @@ export const PeoplePurchaseHyphaTokens = ({
           </div>
           <div className="text-sm text-neutral-500">
             You will receive {formatCurrencyValue(calculatedHypha)} HYPHA tokens
-            (1 HYPHA = {formatCurrencyValue(HYPHA_PRICE_USD)} USDC)
+            (1 HYPHA = {formatCurrencyValue(HYPHA_PRICE_USD)} USD)
           </div>
           <Separator />
           <RecipientField
