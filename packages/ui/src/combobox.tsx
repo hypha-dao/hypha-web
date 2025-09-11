@@ -15,6 +15,7 @@ import {
   CommandSeparator,
 } from './command';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
+import { Label } from './label';
 
 type Option = {
   value: string;
@@ -118,7 +119,11 @@ export function Combobox({
             ) : (
               <CommandGroup>
                 {filteredOptions.map((option, index) =>
-                  option.value.length === 0 || option.value === '---' ? (
+                  option.value === '===' ? (
+                    <Label key={`${option.value}-${index}`}>
+                      {option.label}
+                    </Label>
+                  ) : option.value.length === 0 || option.value === '---' ? (
                     <CommandSeparator key={`${option.value}-${index}`} />
                   ) : (
                     <CommandItem
