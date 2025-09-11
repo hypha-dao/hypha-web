@@ -91,7 +91,7 @@
 
   .mdxeditor-root-contenteditable {
     font-family: var(--font-text);
-    padding: 12px;
+    padding: 0 12px;
     min-height: 120px;
     line-height: 1.6;
 
