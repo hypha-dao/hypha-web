@@ -25,6 +25,7 @@ import { useState } from 'react';
 import { RecipientField } from '../../agreements';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { useFundWallet } from '../../treasury';
 
 interface ActivateSpacesFormProps {
   spaces: Space[];
@@ -35,6 +36,9 @@ const RECIPIENT_SPACE_ADDRESS = '0x695f21B04B22609c4ab9e5886EB0F65cDBd464B6';
 export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
   const { person } = useMe();
   const { lang } = useParams();
+  const { fundWallet } = useFundWallet({
+    address: person?.address as `0x${string}`,
+  });
   const recipientSpace =
     spaces?.filter((s) => s?.address === RECIPIENT_SPACE_ADDRESS) || [];
   const form = useForm<ActivateSpacesFormValues>({
@@ -92,7 +96,8 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
           errorMessage =
             'Smart wallet is not connected. Please connect your wallet and try again.';
         } else if (
-          error.message.includes('ERC20: transfer amount exceeds balance')
+          error.message.includes('ERC20: transfer amount exceeds balance') ||
+          error.message.includes('Insufficient HYPHA balance')
         ) {
           errorMessage = 'insufficient_funds';
         } else if (error.message.includes('Execution reverted with reason:')) {
@@ -218,12 +223,21 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
               <>
                 Your wallet balance is insufficient to complete this
                 transaction. Please{' '}
-                <Link
-                  href={`/${lang}/profile/${person?.nickname}/actions/purchase-hypha-tokens`}
-                  className="font-bold cursor-pointer text-accent-9 underline"
-                >
-                  top up your account with {paymentToken}
-                </Link>{' '}
+                {paymentToken === 'HYPHA' ? (
+                  <Link
+                    href={`/${lang}/profile/${person?.nickname}/actions/purchase-hypha-tokens`}
+                    className="font-bold cursor-pointer text-accent-9 underline"
+                  >
+                    top up your account with {paymentToken}
+                  </Link>
+                ) : (
+                  <span
+                    onClick={fundWallet}
+                    className="font-bold cursor-pointer text-accent-9 underline"
+                  >
+                    top up your account with {paymentToken}
+                  </span>
+                )}{' '}
                 to proceed.
               </>
             ) : (
