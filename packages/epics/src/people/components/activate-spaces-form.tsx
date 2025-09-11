@@ -204,7 +204,7 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
               Purchasing
             </div>
           ) : showSuccessMessage ? (
-            <div className="text-2 font-medium text-foreground">
+            <div className="text-2 font-bold text-foreground">
               The spaces you selected have been successfully activated!
             </div>
           ) : (

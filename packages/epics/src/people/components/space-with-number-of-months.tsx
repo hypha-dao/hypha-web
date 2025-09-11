@@ -122,7 +122,7 @@ export const SpaceWithNumberOfMonthsField = ({
                   <span className="truncate">{option.label}</span>
                 </div>
               ) : (
-                'Search spaces...'
+                'Find Space'
               )
             }
           />
