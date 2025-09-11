@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Combobox, Input, Image, Separator } from '@hypha-platform/ui';
 import { DEFAULT_SPACE_AVATAR_IMAGE, Space } from '@hypha-platform/core/client';
+import { useFormContext } from 'react-hook-form';
 
 type SpaceWithMonthsValue = {
   spaceId: number;
@@ -13,15 +14,19 @@ type SpaceWithNumberOfMonthsFieldProps = {
   spaces?: Space[];
   value?: SpaceWithMonthsValue;
   onChange?: (value: SpaceWithMonthsValue) => void;
+  name?: string;
 };
 
 export const SpaceWithNumberOfMonthsField = ({
   spaces = [],
   value,
   onChange,
+  name,
 }: SpaceWithNumberOfMonthsFieldProps) => {
   const [selected, setSelected] = useState<Space | null>(null);
   const [months, setMonths] = useState<string>('');
+
+  const { setValue, trigger } = useFormContext();
 
   useEffect(() => {
     if (value) {
@@ -43,12 +48,23 @@ export const SpaceWithNumberOfMonthsField = ({
 
   const handleSpaceChange = useCallback(
     (selectedId: string | null) => {
+      const currentMonths = months === '' ? 0 : Number(months);
+
       if (!selectedId) {
         setSelected(null);
-        onChange?.({
-          spaceId: 0,
-          months: Number(months),
-        });
+        if (name) {
+          setValue(`${name}.spaceId`, 0, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+          setValue(`${name}.months`, currentMonths, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+          trigger(`${name}.spaceId`);
+        } else {
+          onChange?.({ spaceId: 0, months: currentMonths });
+        }
         return;
       }
 
@@ -58,9 +74,20 @@ export const SpaceWithNumberOfMonthsField = ({
 
       setSelected(foundSpace);
 
-      if (foundSpace && months !== '') {
-        const numericMonths = Number(months);
-        if (!Number.isNaN(numericMonths)) {
+      if (name) {
+        setValue(`${name}.spaceId`, selectedWeb3Id, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+        setValue(`${name}.months`, currentMonths, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+        trigger(`${name}.months`);
+        trigger(`${name}.spaceId`);
+      } else {
+        if (foundSpace) {
+          const numericMonths = Number(months || 0);
           onChange?.({
             spaceId: foundSpace.web3SpaceId as number,
             months: numericMonths,
@@ -68,7 +95,7 @@ export const SpaceWithNumberOfMonthsField = ({
         }
       }
     },
-    [spaces, months, onChange],
+    [spaces, months, onChange, name, setValue, trigger],
   );
 
   const handleMonthsChange = useCallback(
@@ -77,15 +104,28 @@ export const SpaceWithNumberOfMonthsField = ({
         setMonths(input);
         const numeric = input === '' ? 0 : Number(input);
 
-        if (!Number.isNaN(numeric) && selected) {
-          onChange?.({
-            spaceId: selected.web3SpaceId as number,
-            months: numeric,
+        if (name) {
+          setValue(`${name}.months`, numeric, {
+            shouldDirty: true,
+            shouldValidate: true,
           });
+          trigger(`${name}.spaceId`);
+        } else {
+          if (!Number.isNaN(numeric) && selected) {
+            onChange?.({
+              spaceId: selected.web3SpaceId as number,
+              months: numeric,
+            });
+          } else {
+            onChange?.({
+              spaceId: selected?.web3SpaceId ?? 0,
+              months: numeric,
+            });
+          }
         }
       }
     },
-    [selected, onChange],
+    [selected, onChange, name, setValue, trigger],
   );
 
   return (

@@ -74,6 +74,7 @@ export const SpaceWithNumberOfMonthsFieldArray = ({
                           spaces={spaces}
                           value={value}
                           onChange={onChange}
+                          name={`${name}.${index}`}
                         />
                       </FormControl>
                       {spaceError?.spaceId?.message && (
