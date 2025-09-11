@@ -149,12 +149,14 @@ export const SpaceForm = ({
       return [];
     }
     const organisationOptions =
-      organisationSpaces?.map((space) => {
-        return {
-          value: `${space.id}`,
-          label: space.title,
-        };
-      }) ?? [];
+      organisationSpaces
+        ?.filter((orgSpace) => (values ? orgSpace.slug !== values.slug : true))
+        .map((space) => {
+          return {
+            value: `${space.id}`,
+            label: space.title,
+          };
+        }) ?? [];
     const mySpacesOptions = mySpaces
       .filter(
         (mySpace) =>
