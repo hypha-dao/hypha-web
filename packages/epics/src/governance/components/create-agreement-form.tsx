@@ -81,7 +81,9 @@ export const CreateAgreementForm = ({
     });
   };
 
-  console.log('form errors:', form.formState.errors);
+  const handleInvalid = async (err?: any) => {
+    console.log('form errors:', err);
+  };
 
   return (
     <LoadingBackdrop
@@ -101,7 +103,7 @@ export const CreateAgreementForm = ({
     >
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit(handleCreate)}
+          onSubmit={form.handleSubmit(handleCreate, handleInvalid)}
           className="flex flex-col gap-5"
         >
           <CreateAgreementBaseFields
