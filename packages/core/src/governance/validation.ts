@@ -155,11 +155,11 @@ export const createAgreementFiles = {
     .instanceof(File)
     .refine(
       (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-      'Your file is too large and exceeds the 4MB limit. Please upload a smaller file',
+      'Your file is too large and exceeds the 4MB limit. Please upload a smaller file.',
     )
     .refine(
       (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
-      'File must be an image (JPEG, PNG, GIF, WEBP)',
+      'File must be an image (JPEG, PNG, GIF, WEBP).',
     )
     .optional(),
   attachments: z
@@ -169,13 +169,13 @@ export const createAgreementFiles = {
         .refine(
           (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
           (file) => ({
-            message: `Your file "${file.name}" is too large and exceeds the 4MB limit. Please upload a smaller file`,
+            message: `Your file "${file.name}" is too large and exceeds the 4MB limit. Please upload a smaller file.`,
           }),
         )
         .refine(
           (file) => DEFAULT_FILE_ACCEPT.includes(file.type),
           (file) => ({
-            message: `This file (${file.name}) format (${file.type}) isn’t supported. Please upload a JPEG, PNG, WebP, or PDF (up to 4MB)`,
+            message: `This file (${file.name}) format (${file.type}) isn’t supported. Please upload a JPEG, PNG, WebP, or PDF (up to 4MB).`,
           }),
         ),
     )
