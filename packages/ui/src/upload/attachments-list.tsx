@@ -3,6 +3,7 @@ import React from 'react';
 import Link from 'next/link';
 import { FileText, File as FileIcon } from 'lucide-react';
 import { Separator } from '../separator';
+import { Label } from '../label';
 
 interface AttachmentListProps {
   attachments: string[];
@@ -34,6 +35,7 @@ export const AttachmentList: React.FC<AttachmentListProps> = ({
 
   return (
     <div className="flex flex-col w-full">
+      {attachments.length > 0 && <Label>Attachments</Label>}
       <div className="space-y-2 mt-2 w-full">
         {attachments.map((url, idx) => {
           const fileName = url.split('/').pop() || `Document ${idx + 1}`;
