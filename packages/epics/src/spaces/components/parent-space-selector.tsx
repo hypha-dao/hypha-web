@@ -39,43 +39,54 @@ export const ParentSpaceSelector = ({
     return Number.isSafeInteger(parentSpaceId) ? `${parentSpaceId}` : '';
   }, [parentSpaceId]);
   return (
-    <div
-      className={cn('flex flex-row gap-1', className)}
-      aria-disabled={isLoading}
-    >
-      <div className="pt-1 pb-1 align-middle">
-        <Label className="text-sm text-neutral-11">Linked to</Label>
+    <div className="flex flex-col gap-1">
+      <div
+        className={cn('flex flex-row gap-1', className)}
+        aria-disabled={isLoading}
+      >
+        <div className="pt-1 pb-1 align-middle">
+          <Label className="text-sm text-neutral-11">Linked to</Label>
+        </div>
+        <div className="flex flex-col grow-0">
+          <Combobox
+            options={options ?? []}
+            initialValue={parentSpaceIdString}
+            className="border-0 md:w-40"
+            disabled={checked || isLoading}
+            onChange={(value: string) => {
+              const parentId = Number.parseInt(value);
+              setParentSpaceId?.(
+                Number.isSafeInteger(parentId) ? parentId : null,
+              );
+            }}
+            allowEmptyChoice={checked}
+          />
+        </div>
+        <div className="flex grow"></div>
+        <div className="h-4 w-4">
+          <Input
+            id={checkboxId}
+            ref={checkboxRef}
+            type="checkbox"
+            checked={checked}
+            onChange={(e) => setChecked(e.target.checked)}
+          />
+        </div>
+        <div className="pt-1 pb-1 align-middle">
+          <Label htmlFor={checkboxId} className="text-sm text-neutral-11">
+            Root Space
+          </Label>
+        </div>
       </div>
-      <div className="flex flex-col grow-0">
-        <Combobox
-          options={options ?? []}
-          initialValue={parentSpaceIdString}
-          className="border-0 md:w-40"
-          disabled={checked || isLoading}
-          onChange={(value: string) => {
-            const parentId = Number.parseInt(value);
-            setParentSpaceId?.(
-              Number.isSafeInteger(parentId) ? parentId : null,
-            );
-          }}
-          allowEmptyChoice={checked}
-        />
-      </div>
-      <div className="flex grow"></div>
-      <div className="h-4 w-4">
-        <Input
-          id={checkboxId}
-          ref={checkboxRef}
-          type="checkbox"
-          checked={checked}
-          onChange={(e) => setChecked(e.target.checked)}
-        />
-      </div>
-      <div className="pt-1 pb-1 align-middle">
-        <Label htmlFor={checkboxId} className="text-sm text-neutral-11">
-          Root Space
-        </Label>
-      </div>
+      {checked && (
+        <span className="text-1 text-neutral-11">
+          <span>
+            Marking this space as a Root Space will make it independent. It will
+            no longer be linked to the current organisation, and all of its
+            linked spaces will move with it.
+          </span>
+        </span>
+      )}
     </div>
   );
 };

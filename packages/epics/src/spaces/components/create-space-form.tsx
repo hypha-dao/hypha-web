@@ -380,17 +380,22 @@ export const SpaceForm = ({
             </FormItem>
           )}
         />
-        {(label === 'add' || label === 'configure') && (
-          <ParentSpaceSelector
-            options={parentOptions}
-            isLoading={isOrganisationLoading || isMyLoading}
-            parentSpaceId={parentSpaceId}
-            setParentSpaceId={(parentId) => {
-              console.log('Parent ID:', parentId);
-              setParentSpaceId(parentId);
-            }}
-            className="w-full"
-          />
+        {label === 'configure' && (
+          <>
+            <FormLabel className="text-foreground">
+              Organisation Level
+            </FormLabel>
+            <ParentSpaceSelector
+              options={parentOptions}
+              isLoading={isOrganisationLoading || isMyLoading}
+              parentSpaceId={parentSpaceId}
+              setParentSpaceId={(parentId) => {
+                console.log('Parent ID:', parentId);
+                setParentSpaceId(parentId);
+              }}
+              className="w-full"
+            />
+          </>
         )}
         <FormField
           control={form.control}
