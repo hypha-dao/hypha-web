@@ -179,6 +179,9 @@ export const createAgreementFiles = {
           }),
         ),
     )
+    .max(3, {
+      message: 'Number of attachments exceeds the limit. Maximum number is 3.',
+    })
     .optional(),
 };
 
