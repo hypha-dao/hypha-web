@@ -30,6 +30,8 @@ export const ParentSpaceSelector = ({
   React.useEffect(() => {
     if (checked) {
       setParentSpaceId?.(null);
+    } else {
+      setParentSpaceId?.(-1);
     }
   }, [checked]);
   React.useEffect(() => {

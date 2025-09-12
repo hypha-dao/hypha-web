@@ -237,6 +237,13 @@ export const SpaceForm = ({
     });
   }, [form]);
 
+  const showUnsetParentIdError = React.useCallback(() => {
+    form.setError('parentId', {
+      message: 'Please choose parent.',
+      type: 'validate',
+    });
+  }, [form]);
+
   const labelText = React.useMemo(() => {
     switch (label) {
       case 'add':
@@ -260,6 +267,10 @@ export const SpaceForm = ({
               showCategoriesError();
               return;
             }
+            if (parentSpaceId === -1) {
+              showUnsetParentIdError();
+              return;
+            }
             onSubmit(space, organisationSpaces);
           },
           (e) => {
@@ -267,6 +278,9 @@ export const SpaceForm = ({
             const categories = form.getValues()['categories'];
             if (!flags?.includes('sandbox') && categories.length === 0) {
               showCategoriesError();
+            }
+            if (parentSpaceId === -1) {
+              showUnsetParentIdError();
             }
           },
         )}
@@ -385,21 +399,30 @@ export const SpaceForm = ({
           )}
         />
         {label === 'configure' && (
-          <>
-            <FormLabel className="text-foreground">
-              Organisation Level
-            </FormLabel>
-            <ParentSpaceSelector
-              options={parentOptions}
-              isLoading={isOrganisationLoading || isMyLoading}
-              parentSpaceId={parentSpaceId}
-              setParentSpaceId={(parentId) => {
-                console.log('Parent ID:', parentId);
-                setParentSpaceId(parentId);
-              }}
-              className="w-full"
-            />
-          </>
+          <FormField
+            control={form.control}
+            name="parentId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-foreground">
+                  Organisation Level
+                </FormLabel>
+                <FormControl>
+                  <ParentSpaceSelector
+                    options={parentOptions}
+                    isLoading={isOrganisationLoading || isMyLoading}
+                    parentSpaceId={field.value}
+                    setParentSpaceId={(parentId) => {
+                      console.log('Parent ID:', parentId);
+                      setParentSpaceId(parentId);
+                    }}
+                    className="w-full"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         )}
         <FormField
           control={form.control}
