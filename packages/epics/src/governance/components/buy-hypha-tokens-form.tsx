@@ -9,9 +9,10 @@ import {
 import { z } from 'zod';
 import { LoadingBackdrop, Form, Separator, Button } from '@hypha-platform/ui';
 import { CreateAgreementBaseFields } from '../../agreements';
-import { useMe } from '@hypha-platform/core/client';
+import { useMe, TOKENS } from '@hypha-platform/core/client';
 
-const RECIPIENT_SPACE_ADDRESS = '0x695f21B04B22609c4ab9e5886EB0F65cDBd464B6';
+const RECIPIENT_SPACE_ADDRESS = '0x3dEf11d005F8C85c93e3374B28fcC69B25a650Af';
+const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
 
 const conbinedSchemaBuyHyphaTokens =
   schemaBuyHyphaTokens.extend(createAgreementFiles);
@@ -20,27 +21,33 @@ type FormValues = z.infer<typeof conbinedSchemaBuyHyphaTokens>;
 interface BuyHyphaTokensFormProps {
   successfulUrl: string;
   backUrl?: string;
+  children: React.ReactNode;
+  spaceId: number | undefined | null;
+  web3SpaceId?: number | null;
 }
 
 export const BuyHyphaTokensForm = ({
   successfulUrl,
   backUrl,
+  children,
+  spaceId,
+  web3SpaceId,
 }: BuyHyphaTokensFormProps) => {
   const { person } = useMe();
   const form = useForm<FormValues>({
     resolver: zodResolver(conbinedSchemaBuyHyphaTokens),
+    mode: 'onChange',
     defaultValues: {
       title: '',
       description: '',
       leadImage: undefined,
       attachments: undefined,
-      paymentToken: 'HYPHA',
-      spaces: [
-        {
-          spaceId: 0,
-          months: 0,
-        },
-      ],
+      creatorId: person?.id,
+      spaceId: spaceId ?? undefined,
+      payout: {
+        amount: '',
+        token: PAYMENT_TOKEN?.address ?? '',
+      },
       recipient: RECIPIENT_SPACE_ADDRESS,
     },
   });
@@ -81,7 +88,7 @@ export const BuyHyphaTokensForm = ({
           isLoading={false}
           label="Buy Hypha Tokens (Rewards)"
         />
-        {/* {plugin} */}
+        {children}
         <Separator />
         <div className="flex justify-end w-full">
           <Button type="submit">Publish</Button>
