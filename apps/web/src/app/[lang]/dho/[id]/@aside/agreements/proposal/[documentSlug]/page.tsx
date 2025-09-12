@@ -18,7 +18,7 @@ import {
   useSpaceBySlug,
   useMyVote,
 } from '@hypha-platform/core/client';
-import { LoadingBackdrop } from '@hypha-platform/ui';
+import { LoadingBackdrop, Button } from '@hypha-platform/ui';
 import { useEffect, useState } from 'react';
 
 export default function Agreements() {
@@ -47,11 +47,34 @@ export default function Agreements() {
   const [isVoting, setIsVoting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [voteMessage, setVoteMessage] = useState('Processing vote...');
+  const [voteError, setVoteError] = useState<string | null>(null);
+  const [canRetry, setCanRetry] = useState(false);
+
+  function parseRevertReason(error: unknown): string {
+    const message =
+      typeof error === 'string' ? error : (error as any)?.message || '';
+
+    const start = message.indexOf('Execution reverted with reason:');
+    const end = message.indexOf('Request Arguments');
+
+    if (start !== -1) {
+      const reasonStart = start + 'Execution reverted with reason:'.length;
+      const reason =
+        end !== -1
+          ? message.substring(reasonStart, end).trim()
+          : message.substring(reasonStart).trim();
+      return reason || 'Transaction reverted for unknown reason.';
+    }
+    return message || 'An unknown error occurred.';
+  }
 
   const voteAndRefresh = async (voteFn: () => Promise<unknown>) => {
     setIsVoting(true);
     setProgress(0);
     setVoteMessage('Processing vote...');
+    setVoteError(null);
+    setCanRetry(false);
+
     try {
       const txHash = await voteFn();
       setProgress(25);
@@ -62,10 +85,13 @@ export default function Agreements() {
       await votersMutate();
       setProgress(100);
       setVoteMessage('Vote processed!');
-    } catch (err) {
-      console.error('Error during vote process:', err);
-      setProgress(0);
-      setVoteMessage('An error occurred while processing your vote.');
+    } catch (err: any) {
+      const parsedMessage = parseRevertReason(err);
+      console.error('Error during vote process:', parsedMessage);
+      setProgress(70);
+      setVoteMessage('Something went wrong.');
+      setVoteError(parsedMessage);
+      setCanRetry(true);
     } finally {
       setIsVoting(false);
     }
@@ -95,9 +121,29 @@ export default function Agreements() {
     <SidePanel>
       <LoadingBackdrop
         progress={progress}
-        isLoading={isLoading || isVoting}
+        isLoading={isLoading || isVoting || !!voteError}
         message={
-          isLoading ? <span>Please wait...</span> : <span>{voteMessage}</span>
+          voteError ? (
+            <div className="text-center space-y-2">
+              <div className="text-error-9 font-medium">{voteError}</div>
+              {canRetry && (
+                <Button
+                  onClick={() => {
+                    setVoteError(null);
+                    setProgress(0);
+                    setVoteMessage('');
+                  }}
+                  className="rounded-lg justify-start text-white w-fit"
+                >
+                  Retry
+                </Button>
+              )}
+            </div>
+          ) : isLoading ? (
+            <span>Please wait...</span>
+          ) : (
+            <span>{voteMessage}</span>
+          )
         }
         className="-m-4 lg:-m-7"
       >

@@ -87,8 +87,8 @@ export const BuyHyphaTokensPlugin = ({ spaces }: BuyHyphaTokensPluginProps) => {
         </div>
       </div>
       <div className="text-sm text-neutral-11">
-        You will receive {formatCurrencyValue(calculatedHypha)} HYPHA tokens (1
-        HYPHA = {formatCurrencyValue(HYPHA_PRICE_USD)} USD)
+        Space will receive {formatCurrencyValue(calculatedHypha)} HYPHA tokens
+        (1 HYPHA = {formatCurrencyValue(HYPHA_PRICE_USD)} USD)
       </div>
       <Separator />
       <RecipientField
