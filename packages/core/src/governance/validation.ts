@@ -175,7 +175,7 @@ export const createAgreementFiles = {
         .refine(
           (file) => DEFAULT_FILE_ACCEPT.includes(file.type),
           (file) => ({
-            message: `This file (${file.name}) format (${file.type}) isn’t supported. Please upload a JPEG, PNG, WebP, or PDF (up to 4MB).`,
+            message: `This file "${file.name}" format isn’t supported. Please upload a JPEG, PNG, WebP, or PDF (up to 4MB).`,
           }),
         ),
     )
