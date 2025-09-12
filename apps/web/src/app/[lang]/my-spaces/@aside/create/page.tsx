@@ -64,7 +64,7 @@ export default function AsideCreateSpacePage() {
           closeUrl={closeUrl}
           backUrl={closeUrl}
           backLabel="Back"
-          onSubmit={createSpace}
+          onSubmit={(values) => createSpace(values)}
           isLoading={isLoadingJwt}
           label="create"
         />
