@@ -147,9 +147,13 @@ const FormDescription = React.forwardRef<
 });
 FormDescription.displayName = 'FormDescription';
 
-const FormMessageError = ({ message, ...props }: { message?: string }) => (
-  <p {...props}>{message ?? ''}</p>
-);
+const FormMessageError = ({
+  message,
+  ...props
+}: React.HTMLAttributes<HTMLParagraphElement> & { message?: string }) => {
+  if (!message) return null;
+  return <p {...props}>{message}</p>;
+};
 
 const FormMessage = React.forwardRef<
   HTMLDivElement,
@@ -183,6 +187,7 @@ const FormMessage = React.forwardRef<
     <div
       ref={ref}
       id={formMessageId}
+      aria-live="polite"
       className={cn('text-sm font-medium text-destructive', className)}
       {...props}
     >
