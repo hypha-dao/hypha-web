@@ -208,34 +208,19 @@ export const useVote = ({
     deleteToken,
   ]);
 
-  const handleAccept = async () => {
-    try {
-      if (proposalId != null) {
-        await vote(proposalId, true);
-      }
-    } catch (error) {
-      console.error('Failed to vote yes:', error);
-    }
+  const handleAccept = () => {
+    if (proposalId == null) throw new Error('Proposal ID is missing');
+    return vote(proposalId, true);
   };
 
-  const handleReject = async () => {
-    try {
-      if (proposalId != null) {
-        await vote(proposalId, false);
-      }
-    } catch (error) {
-      console.error('Failed to vote no:', error);
-    }
+  const handleReject = () => {
+    if (proposalId == null) throw new Error('Proposal ID is missing');
+    return vote(proposalId, false);
   };
 
-  const handleCheckProposalExpiration = async () => {
-    try {
-      if (proposalId != null) {
-        await checkProposalExpiration(proposalId);
-      }
-    } catch (error) {
-      console.error('Failed to check proposal expiration:', error);
-    }
+  const handleCheckProposalExpiration = () => {
+    if (proposalId == null) throw new Error('Proposal ID is missing');
+    return checkProposalExpiration(proposalId);
   };
 
   return {

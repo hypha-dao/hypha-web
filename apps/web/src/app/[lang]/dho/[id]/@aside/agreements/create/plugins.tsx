@@ -7,6 +7,7 @@ import {
   ChangeVotingMethodPlugin,
   ChangeEntryMethodPlugin,
   IssueNewTokenPlugin,
+  BuyHyphaTokensPlugin,
 } from '@hypha-platform/epics';
 import { useMembers } from '@web/hooks/use-members';
 import { Space } from '@hypha-platform/core/client';
@@ -18,6 +19,7 @@ export const PLUGINS = {
   'change-voting-method': ChangeVotingMethodPlugin,
   'change-entry-method': ChangeEntryMethodPlugin,
   'issue-new-token': IssueNewTokenPlugin,
+  'buy-hypha-tokens': BuyHyphaTokensPlugin,
 };
 
 type PluginProps = {

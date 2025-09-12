@@ -4,17 +4,7 @@ import { publicClient } from '@hypha-platform/core/client';
 import useSWR from 'swr';
 import { getProposalDetails } from '../web3';
 import React from 'react';
-import { decodeFunctionData, erc20Abi } from 'viem';
-import {
-  regularTokenFactoryAbi,
-  ownershipTokenFactoryAbi,
-  decayingTokenFactoryAbi,
-  daoSpaceFactoryImplementationAbi,
-  decayingSpaceTokenAbi,
-  tokenBalanceJoinImplementationAbi,
-  tokenVotingPowerImplementationAbi,
-  voteDecayTokenVotingPowerImplementationAbi,
-} from '@hypha-platform/core/generated';
+import { decodeTransaction } from './decoders';
 
 export const useProposalDetailsWeb3Rpc = ({
   proposalId,
@@ -111,263 +101,51 @@ export const useProposalDetailsWeb3Rpc = ({
       token: '',
     };
 
+    let buyHyphaTokensData: {
+      amount: bigint | undefined;
+    } = {
+      amount: undefined,
+    };
+
     (transactions as any[]).forEach((tx) => {
-      try {
-        const decoded = decodeFunctionData({
-          abi: erc20Abi,
-          data: tx.data,
-        });
+      const decoded = decodeTransaction(tx);
 
-        if (decoded.functionName === 'transfer') {
-          transfers.push({
-            recipient: decoded.args?.[0] as string,
-            rawAmount: decoded.args?.[1] as bigint,
-            token: tx.target,
-            value: tx.value,
-          });
-          return;
-        }
-      } catch (error) {
-        console.error('Failed to decode function data:', error);
-      }
+      if (!decoded) return;
 
-      try {
-        const decoded = decodeFunctionData({
-          abi: regularTokenFactoryAbi,
-          data: tx.data,
-        });
+      switch (decoded.type) {
+        case 'transfer':
+          transfers.push(decoded.data);
+          break;
 
-        if (decoded.functionName === 'deployToken') {
-          const [
-            spaceId,
-            name,
-            symbol,
-            initialSupply,
-            transferable,
-            isVotingToken,
-          ] = decoded.args as unknown as [
-            bigint,
-            string,
-            string,
-            bigint,
-            boolean,
-            boolean,
-          ];
+        case 'token':
+          tokens.push(decoded.data);
+          break;
 
-          tokens.push({
-            tokenType: 'regular',
-            spaceId,
-            name,
-            symbol,
-            maxSupply: initialSupply,
-            isVotingToken,
-            transferable,
-          });
-          return;
-        }
-      } catch (error) {
-        console.error('Failed to decode function data:', error);
-      }
+        case 'votingMethod':
+          votingMethods.push(decoded.data);
+          break;
 
-      try {
-        const decoded = decodeFunctionData({
-          abi: ownershipTokenFactoryAbi,
-          data: tx.data,
-        });
+        case 'entryMethod':
+          entryMethods.push(decoded.data);
+          break;
 
-        if (decoded.functionName === 'deployOwnershipToken') {
-          const [spaceId, name, symbol, maxSupply, isVotingToken] =
-            decoded.args as unknown as [
-              bigint,
-              string,
-              string,
-              bigint,
-              boolean,
-            ];
+        case 'mint':
+          mintings.push(decoded.data);
+          break;
 
-          tokens.push({
-            tokenType: 'ownership',
-            spaceId,
-            name,
-            symbol,
-            maxSupply,
-            isVotingToken,
-          });
-          return;
-        }
-      } catch (error) {
-        console.error('Failed to decode function data:', error);
-      }
+        case 'tokenRequirement':
+          tokenRequirements.push(decoded.data);
+          break;
 
-      try {
-        const decoded = decodeFunctionData({
-          abi: decayingTokenFactoryAbi,
-          data: tx.data,
-        });
+        case 'votingToken':
+          votingMethodsToken = decoded.data;
+          break;
 
-        if (decoded.functionName === 'deployDecayingToken') {
-          const [
-            spaceId,
-            name,
-            symbol,
-            maxSupply,
-            transferable,
-            isVotingToken,
-            decayPercentage,
-            decayInterval,
-          ] = decoded.args as unknown as [
-            bigint,
-            string,
-            string,
-            bigint,
-            boolean,
-            boolean,
-            bigint,
-            bigint,
-          ];
-
-          tokens.push({
-            tokenType: 'voice',
-            spaceId,
-            name,
-            symbol,
-            maxSupply,
-            isVotingToken,
-            transferable,
-            decayPercentage,
-            decayInterval,
-          });
-        }
-      } catch (error) {
-        console.error('Failed to decode function data:', error);
-      }
-
-      try {
-        const decoded = decodeFunctionData({
-          abi: daoSpaceFactoryImplementationAbi,
-          data: tx.data,
-        });
-
-        if (decoded.functionName === 'changeVotingMethod') {
-          const [spaceId, votingPowerSource, unity, quorum] =
-            decoded.args as unknown as [bigint, bigint, bigint, bigint];
-
-          votingMethods.push({
-            spaceId,
-            votingPowerSource,
-            unity,
-            quorum,
-          });
-        }
-      } catch (error) {
-        console.error('Failed to decode function data:', error);
-      }
-
-      try {
-        const decoded = decodeFunctionData({
-          abi: decayingSpaceTokenAbi,
-          data: tx.data,
-        });
-
-        if (decoded.functionName === 'mint') {
-          const [member, number] = decoded.args as unknown as [
-            `0x${string}`,
-            bigint,
-          ];
-
-          mintings.push({
-            member,
-            number,
-          });
-        }
-      } catch (error) {
-        console.error('Failed to decode function data:', error);
-      }
-
-      try {
-        const decoded = decodeFunctionData({
-          abi: daoSpaceFactoryImplementationAbi,
-          data: tx.data,
-        });
-
-        if (decoded.functionName === 'changeEntryMethod') {
-          const [spaceId, joinMethod] = decoded.args as unknown as [
-            bigint,
-            bigint,
-          ];
-
-          entryMethods.push({
-            spaceId,
-            joinMethod,
-          });
-        }
-      } catch (error) {
-        console.error('Failed to decode function data:', error);
-      }
-
-      try {
-        const decoded = decodeFunctionData({
-          abi: tokenBalanceJoinImplementationAbi,
-          data: tx.data,
-        });
-
-        if (decoded.functionName === 'setTokenRequirement') {
-          const [spaceId, token, amount] = decoded.args as unknown as [
-            bigint,
-            `0x${string}`,
-            bigint,
-          ];
-
-          tokenRequirements.push({
-            spaceId,
-            token,
-            amount,
-          });
-        }
-      } catch (error) {
-        console.error('Failed to decode function data:', error);
-      }
-
-      try {
-        const decoded = decodeFunctionData({
-          abi: tokenVotingPowerImplementationAbi,
-          data: tx.data,
-        });
-
-        if (decoded.functionName === 'setSpaceToken') {
-          const [spaceId, token] = decoded.args as unknown as [
-            bigint,
-            `0x${string}`,
-          ];
-
-          votingMethodsToken = {
-            spaceId,
-            token,
-          };
-        }
-      } catch (error) {
-        console.error('Failed to decode function data:', error);
-      }
-
-      try {
-        const decoded = decodeFunctionData({
-          abi: voteDecayTokenVotingPowerImplementationAbi,
-          data: tx.data,
-        });
-
-        if (decoded.functionName === 'setSpaceToken') {
-          const [spaceId, token] = decoded.args as unknown as [
-            bigint,
-            `0x${string}`,
-          ];
-
-          votingMethodsToken = {
-            spaceId,
-            token,
-          };
-        }
-      } catch (error) {
-        console.error('Failed to decode function data:', error);
+        case 'investInHypha':
+          buyHyphaTokensData = decoded.data;
+          break;
+        default:
+          break;
       }
     });
 
@@ -390,6 +168,7 @@ export const useProposalDetailsWeb3Rpc = ({
       entryMethods,
       tokenRequirements,
       votingMethodsToken,
+      buyHyphaTokensData,
     };
   }, [data]);
 
