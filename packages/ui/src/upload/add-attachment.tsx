@@ -68,7 +68,7 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({ onChange }) => {
     <div className="flex flex-col items-end w-full">
       <Button variant="ghost" onClick={handleClick} type="button">
         <Link2Icon />
-        Add Attachment
+        Add Attachment (JPEG, PNG, WebP, or PDF — max 4MB)
         <input
           ref={inputRef}
           type="file"
