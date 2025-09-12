@@ -147,7 +147,7 @@ const FormDescription = React.forwardRef<
 });
 FormDescription.displayName = 'FormDescription';
 
-const ErrorMessageField = ({ message, ...props }: { message?: string }) => (
+const FormMessageError = ({ message, ...props }: { message?: string }) => (
   <p {...props}>{message ?? ''}</p>
 );
 
@@ -164,14 +164,14 @@ const FormMessage = React.forwardRef<
   const body = Array.isArray(error) ? (
     <>
       {error.map((err, index) => (
-        <ErrorMessageField
+        <FormMessageError
           key={`${formMessageId}-${index}`}
           message={err?.message ?? ''}
         />
       ))}
     </>
   ) : error ? (
-    <ErrorMessageField
+    <FormMessageError
       key={`${formMessageId}-message`}
       message={error?.message ?? ''}
     />
