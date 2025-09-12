@@ -147,13 +147,9 @@ const FormDescription = React.forwardRef<
 });
 FormDescription.displayName = 'FormDescription';
 
-const ErrorMessageField = ({
-  key,
-  message,
-}: {
-  key: string;
-  message?: string;
-}) => <p key={key}>{message ?? ''}</p>;
+const ErrorMessageField = ({ message, ...props }: { message?: string }) => (
+  <p {...props}>{message ?? ''}</p>
+);
 
 const FormMessage = React.forwardRef<
   HTMLParagraphElement,
