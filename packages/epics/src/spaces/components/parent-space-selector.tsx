@@ -39,7 +39,7 @@ export const ParentSpaceSelector = ({
     return Number.isSafeInteger(parentSpaceId) ? `${parentSpaceId}` : '';
   }, [parentSpaceId]);
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-4">
       <div
         className={cn('flex flex-row gap-1', className)}
         aria-disabled={isLoading}
