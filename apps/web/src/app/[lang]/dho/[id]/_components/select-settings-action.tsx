@@ -40,7 +40,7 @@ export const SelectSettingsAction = ({
       group: 'Organisation',
       title: 'Space Configuration',
       description:
-        'Customize your space by setting its purpose, adding branding elements, and linking social media.',
+        'Customise your space by setting its purpose, adding branding elements, and linking social media.',
       href: 'space-configuration',
       icon: <GearIcon />,
     },
