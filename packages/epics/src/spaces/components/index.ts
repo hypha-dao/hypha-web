@@ -14,6 +14,7 @@ export * from './join-space';
 export * from './network-all';
 export * from './network-selected';
 export * from './breadcrumbs';
+export * from './parent-space-selector';
 export * from './space-card-list';
 export * from './space-card.container';
 export * from './space-card';
