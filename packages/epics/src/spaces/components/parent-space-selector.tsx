@@ -27,6 +27,7 @@ export const ParentSpaceSelector = ({
   const checkboxRef = React.useRef(null);
   const checkboxId = `checkbox-${crypto.randomUUID()}`;
   const [checked, setChecked] = React.useState(!parentSpaceId);
+  const [dirty, setDirty] = React.useState(false);
   React.useEffect(() => {
     if (checked) {
       setParentSpaceId?.(null);
@@ -71,7 +72,10 @@ export const ParentSpaceSelector = ({
               ref={checkboxRef}
               type="checkbox"
               checked={checked}
-              onChange={(e) => setChecked(e.target.checked)}
+              onChange={(e) => {
+                setChecked(e.target.checked);
+                setDirty(true);
+              }}
             />
           </div>
           <div className="pt-1 pb-1 align-middle">
@@ -81,7 +85,7 @@ export const ParentSpaceSelector = ({
           </div>
         </span>
       </div>
-      {checked && (
+      {dirty && checked && (
         <span className="text-1 text-neutral-11">
           <span>
             Marking this space as a Root Space will make it independent. It will
