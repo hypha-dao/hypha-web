@@ -144,31 +144,24 @@ contract HyphaToken is
   }
 
   /**
-   * @dev Set mint transfer whitelist status for an address
+   * @dev Set whitelist status for both mint and normal transfers for an address
    * @param account Address to update
-   * @param status Whether the address should be whitelisted for mint transfers
+   * @param mintTransferStatus Whether the address should be whitelisted for mint transfers
+   * @param normalTransferStatus Whether the address should be whitelisted for normal transfers
    */
-  function setMintTransferWhitelist(
+  function setWhitelistStatus(
     address account,
-    bool status
+    bool mintTransferStatus,
+    bool normalTransferStatus
   ) external onlyOwner {
     require(account != address(0), 'Cannot whitelist zero address');
-    mintTransferWhitelist[account] = status;
-    emit MintTransferWhitelistUpdated(account, status);
-  }
-
-  /**
-   * @dev Set normal transfer whitelist status for an address
-   * @param account Address to update
-   * @param status Whether the address should be whitelisted for normal transfers
-   */
-  function setNormalTransferWhitelist(
-    address account,
-    bool status
-  ) external onlyOwner {
-    require(account != address(0), 'Cannot whitelist zero address');
-    normalTransferWhitelist[account] = status;
-    emit NormalTransferWhitelistUpdated(account, status);
+    mintTransferWhitelist[account] = mintTransferStatus;
+    normalTransferWhitelist[account] = normalTransferStatus;
+    emit WhitelistStatusUpdated(
+      account,
+      mintTransferStatus,
+      normalTransferStatus
+    );
   }
 
   /**
@@ -468,6 +461,7 @@ contract HyphaToken is
    * @param spaceIds Array of space IDs to pay for
    * @param hyphaAmounts Array of HYPHA amounts for each space
    */
+  
   function payInHypha(
     uint256[] calldata spaceIds,
     uint256[] calldata hyphaAmounts
@@ -476,8 +470,8 @@ contract HyphaToken is
       spaceIds.length == hyphaAmounts.length,
       'Input arrays length mismatch'
     );
-    require(spaceIds.length > 0, 'No spaces specified');
-    require(iexAddress != address(0), 'IEX address not set');
+    require(spaceIds.length > 0, 'No spaces spec');
+    require(iexAddress != address(0), 'IEX address n set');
 
     // Calculate total HYPHA required and durations
     uint256 totalHyphaRequired = 0;
@@ -536,27 +530,21 @@ contract HyphaToken is
   }
 
   /**
-   * @dev Update HYPHA price in USD (governance function)
+   * @dev Update all pricing parameters in one transaction (governance function)
+   * @param newHyphaPrice New HYPHA price in USD
+   * @param newUsdcPerDay New USDC cost per day
+   * @param newHyphaPerDay New HYPHA cost per day
    */
-  function setHyphaPrice(uint256 newPrice) external onlyOwner {
-    HYPHA_PRICE_USD = newPrice;
-    emit HyphaPriceUpdated(newPrice);
-  }
+  function setPricingParameters(
+    uint256 newHyphaPrice,
+    uint256 newUsdcPerDay,
+    uint256 newHyphaPerDay
+  ) external onlyOwner {
+    HYPHA_PRICE_USD = newHyphaPrice;
+    USDC_PER_DAY = newUsdcPerDay;
+    HYPHA_PER_DAY = newHyphaPerDay;
 
-  /**
-   * @dev Update USDC per day cost (governance function)
-   */
-  function setUsdcPerDay(uint256 newAmount) external onlyOwner {
-    USDC_PER_DAY = newAmount;
-    emit UsdcPerDayUpdated(newAmount);
-  }
-
-  /**
-   * @dev Update HYPHA per day cost (governance function)
-   */
-  function setHyphaPerDay(uint256 newAmount) external onlyOwner {
-    HYPHA_PER_DAY = newAmount;
-    emit HyphaPerDayUpdated(newAmount);
+    emit PricingParametersUpdated(newHyphaPrice, newUsdcPerDay, newHyphaPerDay);
   }
 
   /**
@@ -567,7 +555,7 @@ contract HyphaToken is
   function mint(address to, uint256 amount) external {
     require(
       mintTransferWhitelist[msg.sender],
-      'Only whitelisted addresses can mint'
+      'Only whitelisted addresses can mintt'
     );
     require(to != address(0), 'Cannot mint to zero address');
     require(amount > 0, 'Amount must be greater than zero');
@@ -580,6 +568,32 @@ contract HyphaToken is
     _mint(to, amount);
 
     emit TokensMinted(to, amount);
+  }
+
+  /**
+   * @dev Burn HYPHA tokens from any address (owner only)
+   * @param from Address to burn tokens from
+   * @param amount Amount of HYPHA tokens to burn
+   */
+  function burnFrom(address from, uint256 amount) external override onlyOwner {
+    require(amount > 0, 'Amount must be greater than zero');
+    require(from != address(0), 'Cannot burn from zero address');
+    require(balanceOf(from) >= amount, 'Insufficient balance to burn');
+
+    // Update distribution state before burning
+    updateDistributionState();
+
+    // Reset user's reward tracking without giving them pending rewards
+    // This forfeits any unclaimed rewards for the burned tokens
+    if (from != iexAddress) {
+      unclaimedRewards[from] = 0; // Forfeit any existing unclaimed rewards
+      userRewardDebt[from] = accumulatedRewardPerToken; // Reset debt to current state
+    }
+
+    // Burn tokens - removes them from circulation entirely
+    _burn(from, amount);
+
+    emit TokensBurned(from, amount);
   }
 
   /**
