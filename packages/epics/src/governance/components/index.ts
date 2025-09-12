@@ -13,3 +13,4 @@ export * from './proposal-token-requirements-info';
 export * from './proposal-transaction-item';
 export * from './proposal-voting-info';
 export * from './full-voter-list';
+export * from './buy-hypha-tokens-form';

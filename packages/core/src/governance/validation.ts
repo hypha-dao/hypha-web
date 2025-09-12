@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { DEFAULT_IMAGE_ACCEPT } from '@hypha-platform/core/client';
 import { isBefore } from 'date-fns';
 import { EntryMethodType } from './types';
+import { isAddress } from 'ethers';
 
 const ALLOWED_IMAGE_FILE_SIZE = 4 * 1024 * 1024;
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
@@ -359,4 +360,39 @@ export const schemaChangeEntryMethod = z.object({
         .min(1, { message: 'Token address is required' }),
     })
     .optional(),
+});
+
+export const schemaBuyHyphaTokens = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  spaces: z
+    .array(
+      z
+        .object({
+          spaceId: z.number(),
+          months: z.number(),
+        })
+        .superRefine((val, ctx) => {
+          if (!val.spaceId || val.spaceId < 1) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ['spaceId'],
+              message: 'Please select a space to activate.',
+            });
+          }
+          if (!val.months || val.months < 1) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ['months'],
+              message: 'Please enter the number of months to activate.',
+            });
+          }
+        }),
+    )
+    .min(1, 'At least one space must be added'),
+  paymentToken: z.enum(['HYPHA', 'USDC']),
+  recipient: z
+    .string()
+    .min(1, { message: 'Please add a recipient or wallet address' })
+    .refine(isAddress, { message: 'Invalid Ethereum address' }),
 });
