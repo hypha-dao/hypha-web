@@ -9,12 +9,14 @@ import {
   TOKENS,
   useBuyHyphaTokensOrchestrator,
   useJwt,
+  useSpaceDetailsWeb3Rpc,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { LoadingBackdrop, Form, Separator, Button } from '@hypha-platform/ui';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useConfig } from 'wagmi';
 import { useRouter } from 'next/navigation';
+import { useAssets, useFundWallet } from '../../treasury';
 import React from 'react';
 
 const RECIPIENT_SPACE_ADDRESS = '0x3dEf11d005F8C85c93e3374B28fcC69B25a650Af';
@@ -43,6 +45,16 @@ export const BuyHyphaTokensForm = ({
   const { jwt } = useJwt();
   const config = useConfig();
   const router = useRouter();
+  const { spaceDetails } = useSpaceDetailsWeb3Rpc({
+    spaceId: web3SpaceId as number,
+  });
+  const { assets } = useAssets({ filter: { type: 'all' } });
+  const paymentAsset = assets.find((a) => a.symbol === 'USDC');
+  const [insufficientFunds, setInsufficientFunds] = React.useState(false);
+
+  const { fundWallet } = useFundWallet({
+    address: spaceDetails?.executor as `0x${string}`,
+  });
 
   const {
     buyHyphaTokens,
@@ -82,6 +94,14 @@ export const BuyHyphaTokensForm = ({
   const handleCreate = async (data: FormValues) => {
     if (!web3SpaceId || spaceId === undefined) return;
 
+    const formAmount = parseFloat(data.payout.amount);
+    const walletBalance = parseFloat((paymentAsset?.value ?? 0).toString());
+
+    if (formAmount > walletBalance) {
+      setInsufficientFunds(true);
+      return;
+    }
+
     try {
       await buyHyphaTokens({
         ...data,
@@ -101,10 +121,36 @@ export const BuyHyphaTokensForm = ({
   return (
     <LoadingBackdrop
       progress={progress}
-      isLoading={isPending}
+      isLoading={isPending || insufficientFunds}
       className="-m-4 lg:-m-7"
       message={
-        isError ? (
+        insufficientFunds ? (
+          <div className="flex flex-col text-center gap-2 justify-center items-center">
+            <span>
+              Your wallet balance is insufficient to complete this transaction.
+              <br /> Please{' '}
+              <span
+                onClick={() => {
+                  setInsufficientFunds(false);
+                  fundWallet();
+                }}
+                className="font-bold cursor-pointer text-accent-9 underline"
+              >
+                top up your account with {paymentAsset?.symbol ?? 'USDC'}
+              </span>{' '}
+              to proceed.
+            </span>
+            <Button
+              className="w-fit"
+              onClick={() => {
+                setInsufficientFunds(false);
+                reset();
+              }}
+            >
+              Reset
+            </Button>
+          </div>
+        ) : isError ? (
           <div className="flex flex-col">
             <div>Ouh Snap. There was an error</div>
             <Button onClick={reset}>Reset</Button>
