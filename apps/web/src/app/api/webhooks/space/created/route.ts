@@ -1,6 +1,9 @@
 import { Alchemy, findPersonByWeb3Address } from '@hypha-platform/core/server';
 import { daoSpaceFactoryImplementationAbi } from '@hypha-platform/core/generated';
-import { sendEmailByAlias } from '@hypha-platform/notifications/server';
+import {
+  sendEmailByAlias,
+  sendPushByAlias,
+} from '@hypha-platform/notifications/server';
 import { db } from '@hypha-platform/storage-postgres';
 
 export const POST = Alchemy.newHandler(
@@ -50,30 +53,43 @@ export const POST = Alchemy.newHandler(
       return;
     }
 
-    const notificationRequest = creatorsToNotify.map(
+    const notifying = creatorsToNotify.map(
       async ({ slug, createdSpacesCount }) => {
-        const emailBody =
+        const header = 'Successful space creation';
+        const body =
           createdSpacesCount > 1
             ? `You've successfully created ${createdSpacesCount} spaces.`
             : "You've successfully created a space.";
 
-        await sendEmailByAlias({
-          app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '',
-          alias: {
-            include_aliases: {
-              external_id: [slug!],
+        return [
+          await sendEmailByAlias({
+            app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '',
+            alias: {
+              include_aliases: {
+                external_id: [slug!],
+              },
             },
-          },
-          content: {
-            email_subject: 'Successful space creation',
-            email_body: emailBody,
-          },
-        });
+            content: {
+              email_subject: header,
+              email_body: body,
+            },
+          }),
+          await sendPushByAlias({
+            app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '',
+            alias: {
+              include_aliases: {
+                external_id: [slug!],
+              },
+            },
+            content: {
+              contents: { en: body },
+              headings: { en: header },
+            },
+          }),
+        ];
       },
     );
-    const notifications = await Promise.allSettled(notificationRequest);
-
-    notifications
+    (await Promise.allSettled(notifying.flat()))
       .filter((notification) => notification.status === 'rejected')
       .forEach(({ reason }) => console.error(reason));
   },
