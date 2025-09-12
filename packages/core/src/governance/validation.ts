@@ -1,10 +1,13 @@
 import { z } from 'zod';
-import { DEFAULT_IMAGE_ACCEPT } from '@hypha-platform/core/client';
+import {
+  ALLOWED_IMAGE_FILE_SIZE,
+  DEFAULT_FILE_ACCEPT,
+  DEFAULT_IMAGE_ACCEPT,
+} from '@hypha-platform/core/client';
 import { isBefore } from 'date-fns';
 import { EntryMethodType } from './types';
 import { isAddress } from 'ethers';
 
-const ALLOWED_IMAGE_FILE_SIZE = 4 * 1024 * 1024;
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
 export const paymentScheduleOptions = [
@@ -152,14 +155,23 @@ export const createAgreementFiles = {
     .instanceof(File)
     .refine(
       (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-      'File size must be less than 4MB',
+      'Your file is too large and exceeds the 4MB limit. Please upload a smaller file',
     )
     .refine(
       (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
       'File must be an image (JPEG, PNG, GIF, WEBP)',
     )
     .optional(),
-  attachments: z.array(z.instanceof(File)).optional(),
+  attachments: z
+    .array(
+      z
+        .instanceof(File)
+        .refine(
+          (file) => DEFAULT_FILE_ACCEPT.includes(file.type),
+          'This file format isn’t supported. Please upload a JPEG, PNG, WebP, or PDF (up to 4MB)',
+        ),
+    )
+    .optional(),
 };
 
 export const schemaCreateAgreementFiles = z.object(createAgreementFiles);
@@ -270,7 +282,7 @@ export const schemaIssueNewToken = z.object({
         .instanceof(File)
         .refine(
           (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-          'File size must be less than 4MB',
+          'Your file is too large and exceeds the 4MB limit. Please upload a smaller file',
         )
         .refine(
           (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
