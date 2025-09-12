@@ -1,8 +1,7 @@
-import { DEFAULT_IMAGE_ACCEPT } from '../assets';
+import { ALLOWED_IMAGE_FILE_SIZE, DEFAULT_IMAGE_ACCEPT } from '../assets';
 
 import { z } from 'zod';
 
-const ALLOWED_IMAGE_FILE_SIZE = 4 * 1024 * 1024;
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
 const signupPersonWeb2Props = {
@@ -92,7 +91,7 @@ export const editPersonFiles = z.object({
         .instanceof(File)
         .refine(
           (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-          'File size must be less than 4MB',
+          'Your file is too large and exceeds the 4MB limit. Please upload a smaller file',
         )
         .refine(
           (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),

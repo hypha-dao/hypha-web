@@ -25,8 +25,8 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({ onChange }) => {
     onChange?.(updated);
   };
 
-  const handleRemove = (fileName: string) => {
-    const updated = attachments.filter((file) => file.name !== fileName);
+  const handleRemove = (index: number) => {
+    const updated = attachments.filter((_, i) => i !== index);
     setAttachments(updated);
     onChange?.(updated);
   };
@@ -68,7 +68,7 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({ onChange }) => {
     <div className="flex flex-col items-end w-full">
       <Button variant="ghost" onClick={handleClick} type="button">
         <Link2Icon />
-        Add Attachment
+        Add Attachment (JPEG, PNG, WebP, or PDF — max 4MB)
         <input
           ref={inputRef}
           type="file"
@@ -92,7 +92,7 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({ onChange }) => {
               {renderFileIcon(file)}
               <span className="text-neutral-11 truncate">{file.name}</span>
             </div>
-            <Button variant="ghost" onClick={() => handleRemove(file.name)}>
+            <Button variant="ghost" onClick={() => handleRemove(idx)}>
               <X className="text-neutral-11" size={16} />
             </Button>
           </div>
