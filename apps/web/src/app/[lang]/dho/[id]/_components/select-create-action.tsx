@@ -32,7 +32,7 @@ export const SelectCreateAction = ({
       defaultDurationDays: 3,
       title: 'Make a Collective Agreement',
       description:
-        'Define and formalize a mutual understanding, policy, or decision among members of the space.',
+        'Define and formalise a mutual understanding, policy, or decision among members of the space.',
       href: 'agreements/create',
       icon: <FileIcon />,
     },
