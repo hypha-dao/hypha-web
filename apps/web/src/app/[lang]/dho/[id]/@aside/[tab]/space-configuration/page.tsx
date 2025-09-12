@@ -64,11 +64,11 @@ export default function SpaceConfiguration() {
             name: person?.name,
             surname: person?.surname,
           }}
-          onSubmit={(updatedSpace) => {
+          onSubmit={(updatedSpace, organisationSpaces) => {
             try {
               if (space) {
                 if (!space.parentId && updatedSpace.parentId) {
-                  const foundInnerSpace = space.subspaces?.find(
+                  const foundInnerSpace = organisationSpaces?.find(
                     (inner) => inner.id === updatedSpace.parentId,
                   );
                   if (foundInnerSpace) {

@@ -33,6 +33,7 @@ import {
   Category,
   createSpaceFiles,
   schemaCreateSpace,
+  Space,
   SpaceFlags,
   useMe,
   useOrganisationSpacesBySingleSlug,
@@ -69,7 +70,10 @@ export type CreateSpaceFormProps = {
   submitLabel?: string;
   submitLoadingLabel?: string;
   label?: SpaceFormLabel;
-  onSubmit: (values: SchemaCreateSpaceForm) => void;
+  onSubmit: (
+    values: SchemaCreateSpaceForm,
+    organisationSpaces?: Space[],
+  ) => void;
 };
 
 const DEFAULT_VALUES = {
@@ -256,7 +260,7 @@ export const SpaceForm = ({
               showCategoriesError();
               return;
             }
-            onSubmit(space);
+            onSubmit(space, organisationSpaces);
           },
           (e) => {
             const flags = form.getValues()['flags'];
