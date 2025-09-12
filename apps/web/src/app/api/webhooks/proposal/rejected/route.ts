@@ -4,8 +4,14 @@ import {
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { daoProposalsImplementationAbi } from '@hypha-platform/core/generated';
-import { sendEmailByAlias } from '@hypha-platform/notifications/server';
-import { emailProposalRejectionForCreator } from '@hypha-platform/notifications/template';
+import {
+  sendEmailByAlias,
+  sendPushByAlias,
+} from '@hypha-platform/notifications/server';
+import {
+  emailProposalRejectionForCreator,
+  pushProposalRejectionForCreator,
+} from '@hypha-platform/notifications/template';
 
 export const POST = Alchemy.newHandler(
   {
@@ -41,21 +47,30 @@ export const POST = Alchemy.newHandler(
       return;
     }
 
-    const sendingEmails = creatorsToNotify.map(async (creator) => {
-      const { body, subject } = emailProposalRejectionForCreator({
+    const notifying = creatorsToNotify.map(async (creator) => {
+      const params = {
         proposalState: creator.proposalState ?? undefined,
         proposalLabel: creator.proposalLabel ?? undefined,
         proposalTitle: creator.proposalTitle ?? undefined,
         spaceTitle: creator.spaceTitle,
-      });
+      };
+      const { body, subject } = emailProposalRejectionForCreator(params);
+      const { contents, headings } = pushProposalRejectionForCreator(params);
 
-      return await sendEmailByAlias({
-        app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '',
-        alias: { include_aliases: { external_id: [creator.slug!] } },
-        content: { email_body: body, email_subject: subject },
-      });
+      return [
+        await sendEmailByAlias({
+          app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '',
+          alias: { include_aliases: { external_id: [creator.slug!] } },
+          content: { email_body: body, email_subject: subject },
+        }),
+        await sendPushByAlias({
+          app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '',
+          alias: { include_aliases: { external_id: [creator.slug!] } },
+          content: { contents, headings },
+        }),
+      ];
     });
-    (await Promise.allSettled(sendingEmails))
+    (await Promise.allSettled(notifying.flat()))
       .filter((res) => res.status === 'rejected')
       .forEach(({ reason }) =>
         console.error(
