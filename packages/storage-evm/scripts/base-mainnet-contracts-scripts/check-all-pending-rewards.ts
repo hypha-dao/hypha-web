@@ -6,10 +6,10 @@ dotenv.config();
 async function main(): Promise<void> {
   const hyphaTokenAddress = '0x8b93862835C36e9689E9bb1Ab21De3982e266CD3';
   const rpcUrl = 'https://mainnet.base.org';
-  
+
   console.log(`Using RPC: ${rpcUrl}`);
   console.log(`HyphaToken Contract: ${hyphaTokenAddress}\n`);
-  
+
   const provider = new ethers.JsonRpcProvider(rpcUrl);
 
   const abi = [
@@ -17,7 +17,7 @@ async function main(): Promise<void> {
     'function unclaimedRewards(address user) view returns (uint256)',
     'function userRewardDebt(address user) view returns (uint256)',
   ];
-  
+
   const contract = new ethers.Contract(hyphaTokenAddress, abi, provider);
 
   // All addresses from your image
@@ -50,7 +50,9 @@ async function main(): Promise<void> {
     '0x2687fe290b54d824c136ceff2d5bd362bc62019a', // Your address
   ];
 
-  console.log(`🔍 Checking pending rewards for ${addressesToCheck.length} addresses...\n`);
+  console.log(
+    `🔍 Checking pending rewards for ${addressesToCheck.length} addresses...\n`,
+  );
 
   let totalPendingRewards = 0n;
   let totalUnclaimedRewards = 0n;
@@ -60,48 +62,84 @@ async function main(): Promise<void> {
 
   for (let i = 0; i < addressesToCheck.length; i++) {
     const address = addressesToCheck[i];
-    const shortAddress = `${address.substring(0, 6)}...${address.substring(38)}`;
-    
+    const shortAddress = `${address.substring(0, 6)}...${address.substring(
+      38,
+    )}`;
+
     try {
       const pendingRewards = await contract.pendingRewards(address);
       const unclaimedRewards = await contract.unclaimedRewards(address);
       const userRewardDebt = await contract.userRewardDebt(address);
-      
+
       const hasPendingRewards = pendingRewards > 0n;
       const hasUnclaimedRewards = unclaimedRewards > 0n;
       const hasAnyRewards = hasPendingRewards || hasUnclaimedRewards;
-      
+
       totalPendingRewards += pendingRewards;
       totalUnclaimedRewards += unclaimedRewards;
-      
+
       if (hasAnyRewards) {
         addressesWithRewards++;
-        console.log(`❌ ${i + 1:2}. ${shortAddress}: Pending: ${ethers.formatEther(pendingRewards)}, Unclaimed: ${ethers.formatEther(unclaimedRewards)}`);
+        console.log(
+          `❌ ${(i + 1)
+            .toString()
+            .padStart(2)}. ${shortAddress}: Pending: ${ethers.formatEther(
+            pendingRewards,
+          )}, Unclaimed: ${ethers.formatEther(unclaimedRewards)}`,
+        );
       } else {
         addressesCleared++;
-        console.log(`✅ ${i + 1:2}. ${shortAddress}: All rewards cleared (debt: ${ethers.formatEther(userRewardDebt)})`);
+        console.log(
+          `✅ ${(i + 1)
+            .toString()
+            .padStart(
+              2,
+            )}. ${shortAddress}: All rewards cleared (debt: ${ethers.formatEther(
+            userRewardDebt,
+          )})`,
+        );
       }
-      
     } catch (error: any) {
       errorCount++;
-      console.log(`🔄 ${i + 1:2}. ${shortAddress}: Error checking - ${error.message.substring(0, 50)}...`);
+      console.log(
+        `🔄 ${(i + 1)
+          .toString()
+          .padStart(
+            2,
+          )}. ${shortAddress}: Error checking - ${error.message.substring(
+          0,
+          50,
+        )}...`,
+      );
     }
   }
 
   console.log('\n' + '='.repeat(80));
   console.log('📊 PENDING REWARDS SUMMARY');
   console.log('='.repeat(80));
-  
+
   console.log(`🔍 Total addresses checked: ${addressesToCheck.length}`);
   console.log(`✅ Addresses with cleared rewards: ${addressesCleared}`);
   console.log(`❌ Addresses with remaining rewards: ${addressesWithRewards}`);
   console.log(`🔄 Addresses with check errors: ${errorCount}`);
-  
+
   console.log(`\n💰 Aggregate Rewards:`);
-  console.log(`   Total pending rewards: ${ethers.formatEther(totalPendingRewards)} HYPHA`);
-  console.log(`   Total unclaimed rewards: ${ethers.formatEther(totalUnclaimedRewards)} HYPHA`);
-  console.log(`   Combined total: ${ethers.formatEther(totalPendingRewards + totalUnclaimedRewards)} HYPHA`);
-  
+  console.log(
+    `   Total pending rewards: ${ethers.formatEther(
+      totalPendingRewards,
+    )} HYPHA`,
+  );
+  console.log(
+    `   Total unclaimed rewards: ${ethers.formatEther(
+      totalUnclaimedRewards,
+    )} HYPHA`,
+  );
+  console.log(
+    `   Combined total: ${ethers.formatEther(
+      totalPendingRewards + totalUnclaimedRewards,
+    )} HYPHA`,
+  );
+
   if (addressesWithRewards === 0 && errorCount === 0) {
     console.log('\n🎉 PERFECT! All addresses have zero pending rewards!');
     console.log('   ✅ Emergency reset is 100% complete');
@@ -109,17 +147,23 @@ async function main(): Promise<void> {
     console.log('   ✅ Ready for normal operation');
   } else if (addressesWithRewards === 0) {
     console.log('\n✅ GOOD! No addresses have pending rewards');
-    console.log(`   ⚠️  ${errorCount} addresses had check errors (likely network issues)`);
+    console.log(
+      `   ⚠️  ${errorCount} addresses had check errors (likely network issues)`,
+    );
     console.log('   ✅ Emergency reset appears complete');
   } else {
     console.log('\n⚠️  INCOMPLETE: Some addresses still have pending rewards');
-    console.log(`   ${addressesWithRewards} addresses need additional clearing`);
+    console.log(
+      `   ${addressesWithRewards} addresses need additional clearing`,
+    );
     console.log('   These may need manual clearing or retry');
   }
-  
+
   console.log('\n🎯 Investment Status:');
   console.log('   The main contract fixes are complete regardless');
-  console.log('   Investments should work even if some individual rewards remain');
+  console.log(
+    '   Investments should work even if some individual rewards remain',
+  );
   console.log('   Individual rewards can be cleared later if needed');
 }
 
