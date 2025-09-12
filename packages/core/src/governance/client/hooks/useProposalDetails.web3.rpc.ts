@@ -143,7 +143,7 @@ export const useProposalDetailsWeb3Rpc = ({
 
         case 'investInHypha':
           buyHyphaTokensData = decoded.data;
-
+          break;
         default:
           break;
       }
