@@ -3,7 +3,7 @@ import {
   ALLOWED_IMAGE_FILE_SIZE,
   DEFAULT_FILE_ACCEPT,
   DEFAULT_IMAGE_ACCEPT,
-} from '@hypha-platform/core/client';
+} from '../assets/constant';
 import { isBefore } from 'date-fns';
 import { EntryMethodType } from './types';
 import { isAddress } from 'ethers';

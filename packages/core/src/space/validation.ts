@@ -1,7 +1,7 @@
 import {
   ALLOWED_IMAGE_FILE_SIZE,
   DEFAULT_IMAGE_ACCEPT,
-} from '@hypha-platform/core/client';
+} from '../assets/constant';
 import { z } from 'zod';
 import { CATEGORIES, SPACE_FLAGS } from '../categories/types';
 
