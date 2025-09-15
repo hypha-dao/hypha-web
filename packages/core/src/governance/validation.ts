@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { DEFAULT_IMAGE_ACCEPT } from '@hypha-platform/core/client';
 import { isBefore } from 'date-fns';
 import { EntryMethodType } from './types';
+import { isAddress } from 'ethers';
 
 const ALLOWED_IMAGE_FILE_SIZE = 4 * 1024 * 1024;
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
@@ -359,4 +360,17 @@ export const schemaChangeEntryMethod = z.object({
         .min(1, { message: 'Token address is required' }),
     })
     .optional(),
+});
+
+export const schemaBuyHyphaTokens = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  payout: z.object({
+    amount: z.string().min(1, 'Please enter a purchase amount. '),
+    token: z.string(),
+  }),
+  recipient: z
+    .string()
+    .min(1, { message: 'Please add a recipient or wallet address' })
+    .refine(isAddress, { message: 'Invalid Ethereum address' }),
 });
