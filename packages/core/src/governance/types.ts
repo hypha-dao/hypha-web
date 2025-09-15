@@ -22,7 +22,7 @@ interface Transaction {
   data: string | Uint8Array;
 }
 
-export interface Attachement {
+export interface Attachment {
   name: string;
   url: string;
 }
@@ -38,7 +38,7 @@ export type Document = {
   updatedAt: Date;
   creator?: Creator;
   leadImage?: string;
-  attachments?: (string | Attachement)[];
+  attachments?: (string | Attachment)[];
   web3ProposalId: number | null;
   label?: string;
   status?: 'accepted' | 'rejected' | 'onVoting';
@@ -48,7 +48,7 @@ export interface CreateAgreementInput {
   title: string;
   description: string;
   leadImage?: string;
-  attachments?: (string | Attachement)[];
+  attachments?: (string | Attachment)[];
   slug?: string;
   spaceId: number;
   creatorId: number;
@@ -58,7 +58,7 @@ export interface CreateAgreementInput {
 export interface UpdateAgreementInput {
   leadImage?: string;
   slug?: string;
-  attachments?: (string | Attachement)[];
+  attachments?: (string | Attachment)[];
   web3ProposalId?: number | null;
 }
 
@@ -70,7 +70,7 @@ export interface CreateChangeEntryMethodInput {
   title: string;
   description: string;
   image?: string;
-  attachments?: (string | Attachement)[];
+  attachments?: (string | Attachment)[];
   slug?: string;
   spaceId: number;
   creatorId: number;
@@ -79,7 +79,7 @@ export interface CreateChangeEntryMethodInput {
 export interface UpdateChangeEntryMethodInput {
   image?: string;
   slug?: string;
-  attachments?: (string | Attachement)[];
+  attachments?: (string | Attachment)[];
   web3ProposalId?: number | null;
 }
 

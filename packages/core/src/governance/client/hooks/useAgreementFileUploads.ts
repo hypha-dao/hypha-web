@@ -4,7 +4,7 @@ import {
   useImageUpload,
   useAttachmentUpload,
   schemaCreateAgreementFiles,
-  Attachement,
+  Attachment,
 } from '@hypha-platform/core/client';
 import React from 'react';
 import { z } from 'zod';
@@ -15,7 +15,7 @@ export type UseAgreementFileUploadsReturn = {
   isLoading: boolean;
   files: {
     leadImage?: string;
-    attachments?: (string | Attachement)[];
+    attachments?: (string | Attachment)[];
   } | null;
   upload: (fileInput: Files, slug: string | null | undefined) => Promise<void>;
 };
@@ -25,14 +25,14 @@ export const useAgreementFileUploads = (
   onSuccess?: (
     uploadedFiles: {
       leadImage?: string;
-      attachments?: (string | Attachement)[];
+      attachments?: (string | Attachment)[];
     },
     slug?: string | null | undefined,
   ) => Promise<void> | void,
 ): UseAgreementFileUploadsReturn => {
   const [files, setFiles] = React.useState<{
     leadImage?: string;
-    attachments?: (string | Attachement)[];
+    attachments?: (string | Attachment)[];
   } | null>(null);
 
   const { upload: uploadImage, isUploading: isUploadingImage } = useImageUpload(
@@ -45,7 +45,7 @@ export const useAgreementFileUploads = (
     async (fileInput: Files, slug: string | null | undefined) => {
       const uploadedFiles: {
         leadImage?: string;
-        attachments?: (string | Attachement)[];
+        attachments?: (string | Attachment)[];
       } = {};
 
       const uploadPromises = Object.entries(fileInput).map(
