@@ -163,12 +163,11 @@ export const SelectSettingsAction = ({
     },
     {
       group: 'Hypha Network Tokenomics',
-      title: 'Activate Space(s) (Coming Soon)',
+      title: 'Activate Space(s)',
       description:
         'Activate your Spaces by simply paying a Hypha Network Contribution with USDC or Hypha Tokens.',
-      href: '#',
+      href: 'create/activate-spaces',
       icon: <ArrowRightIcon />,
-      disabled: true,
     },
   ];
 

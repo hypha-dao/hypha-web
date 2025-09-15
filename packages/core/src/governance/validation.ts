@@ -401,3 +401,23 @@ export const schemaBuyHyphaTokens = z.object({
     .min(1, { message: 'Please add a recipient or wallet address' })
     .refine(isAddress, { message: 'Invalid Ethereum address' }),
 });
+
+export const schemaActivateSpaces = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  label: z.literal('Activate Spaces'),
+  recipient: z.string(),
+  paymentToken: z.enum(['HYPHA', 'USDC']),
+  spaces: z
+    .array(
+      z.object({
+        spaceId: z
+          .number()
+          .min(1, { message: 'Please select a space to activate.' }),
+        months: z.number().min(1, {
+          message: 'Please enter the number of months to activate.',
+        }),
+      }),
+    )
+    .min(1),
+});
