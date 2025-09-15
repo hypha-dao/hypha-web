@@ -416,6 +416,7 @@ export const SpaceForm = ({
                     setParentSpaceId={(parentId) => {
                       console.log('Parent ID:', parentId);
                       setParentSpaceId(parentId);
+                      form.clearErrors('parentId');
                     }}
                     className="w-full"
                   />
