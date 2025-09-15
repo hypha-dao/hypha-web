@@ -6,3 +6,4 @@ export * from './change-entry-method/plugin';
 export * from './buy-hypha-tokens/plugin';
 export * from './components/common/recipient-field';
 export * from './components/common/token-payout-field-array';
+export * from './activate-spaces/plugin';
