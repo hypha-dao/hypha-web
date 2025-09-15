@@ -6,13 +6,13 @@ import { Separator } from '../separator';
 import { Label } from '../label';
 import { validate } from 'uuid';
 
-interface AttachmentListProps {
-  attachments: (string | { name: string; url: string })[];
-}
-
 interface Attachment {
   name: string;
   url: string;
+}
+
+interface AttachmentListProps {
+  attachments: (string | Attachment)[];
 }
 
 function isString(variable: any): variable is string {
