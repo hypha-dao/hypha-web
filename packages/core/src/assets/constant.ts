@@ -6,12 +6,7 @@ export const DEFAULT_IMAGE_ACCEPT = [
   'image/webp',
 ];
 
-export const DEFAULT_DOCUMENT_ACCEPT = [
-  'application/pdf',
-  'text/plain',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-];
+export const DEFAULT_DOCUMENT_ACCEPT = ['application/pdf'];
 
 export const ALLOWED_IMAGE_FILE_SIZE = 4 * 1024 * 1024;
 
