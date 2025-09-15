@@ -150,9 +150,12 @@ export const schemaCreateAgreementWeb2FileUrls = z.object(
   createAgreementWeb2FileUrls,
 );
 
+const isBrowserFile = (v: unknown): v is File =>
+  typeof File !== 'undefined' && v instanceof File;
+
 export const createAgreementFiles = {
   leadImage: z
-    .instanceof(File)
+    .custom<File>(isBrowserFile, { message: 'Please upload a valid file' })
     .refine(
       (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
       'Your file is too large and exceeds the 4MB limit. Please upload a smaller file.',
