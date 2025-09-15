@@ -12,6 +12,7 @@ import {
   useProposalDetailsWeb3Rpc,
   DbToken,
   DEFAULT_SPACE_LEAD_IMAGE,
+  Attachement,
 } from '@hypha-platform/core/client';
 import {
   ProposalTransactionItem,
@@ -34,7 +35,7 @@ type ProposalDetailProps = ProposalHeadProps & {
   content?: string;
   closeUrl: string;
   leadImage?: string;
-  attachments?: string[];
+  attachments?: (string | Attachement)[];
   proposalId?: number | null | undefined;
   spaceSlug: string;
   label?: string;

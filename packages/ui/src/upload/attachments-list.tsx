@@ -1,12 +1,29 @@
 'use client';
 import React from 'react';
 import Link from 'next/link';
-import { FileText, File as FileIcon } from 'lucide-react';
+import { FileText, File as FileIcon, Variable } from 'lucide-react';
 import { Separator } from '../separator';
 import { Label } from '../label';
+import { validate } from 'uuid';
 
 interface AttachmentListProps {
-  attachments: string[];
+  attachments: (string | { name: string; url: string })[];
+}
+
+interface Attachment {
+  name: string;
+  url: string;
+}
+
+function isString(variable: any): variable is string {
+  return typeof variable === 'string';
+}
+
+function isAttachment(variable: any): variable is Attachment {
+  return (
+    (variable as Attachment).name !== undefined &&
+    (variable as Attachment).url !== undefined
+  );
 }
 
 export const AttachmentList: React.FC<AttachmentListProps> = ({
@@ -37,8 +54,17 @@ export const AttachmentList: React.FC<AttachmentListProps> = ({
     <div className="flex flex-col w-full">
       {attachments.length > 0 && <Label>Attachments</Label>}
       <div className="space-y-2 mt-2 w-full">
-        {attachments.map((url, idx) => {
-          const fileName = url.split('/').pop() || `Document ${idx + 1}`;
+        {attachments.map((attachment, idx) => {
+          const fileName = isString(attachment)
+            ? attachment.split('/').pop() || `Document ${idx + 1}`
+            : isAttachment(attachment)
+            ? attachment.name
+            : 'unnamed';
+          const url = isString(attachment)
+            ? attachment
+            : isAttachment(attachment)
+            ? attachment.url
+            : '';
           return (
             <div
               key={`${fileName}-${idx}`}

@@ -4,6 +4,7 @@ import {
   useImageUpload,
   useAttachmentUpload,
   schemaCreateAgreementFiles,
+  Attachement,
 } from '@hypha-platform/core/client';
 import React from 'react';
 import { z } from 'zod';
@@ -14,7 +15,7 @@ export type UseAgreementFileUploadsReturn = {
   isLoading: boolean;
   files: {
     leadImage?: string;
-    attachments?: string[];
+    attachments?: (string | Attachement)[];
   } | null;
   upload: (fileInput: Files, slug: string | null | undefined) => Promise<void>;
 };
@@ -24,14 +25,14 @@ export const useAgreementFileUploads = (
   onSuccess?: (
     uploadedFiles: {
       leadImage?: string;
-      attachments?: string[];
+      attachments?: (string | Attachement)[];
     },
     slug?: string | null | undefined,
   ) => Promise<void> | void,
 ): UseAgreementFileUploadsReturn => {
   const [files, setFiles] = React.useState<{
     leadImage?: string;
-    attachments?: string[];
+    attachments?: (string | Attachement)[];
   } | null>(null);
 
   const { upload: uploadImage, isUploading: isUploadingImage } = useImageUpload(
@@ -44,7 +45,7 @@ export const useAgreementFileUploads = (
     async (fileInput: Files, slug: string | null | undefined) => {
       const uploadedFiles: {
         leadImage?: string;
-        attachments?: string[];
+        attachments?: (string | Attachement)[];
       } = {};
 
       const uploadPromises = Object.entries(fileInput).map(
@@ -60,7 +61,10 @@ export const useAgreementFileUploads = (
             } else if (key === 'attachments' && Array.isArray(fileOrFiles)) {
               const result = await uploadAttachment(fileOrFiles);
               if (result?.every((item) => item.ufsUrl)) {
-                uploadedFiles.attachments = result.map((item) => item.ufsUrl);
+                uploadedFiles.attachments = result.map((item) => ({
+                  name: item.name,
+                  url: item.ufsUrl,
+                }));
               }
             }
           } catch (error) {
