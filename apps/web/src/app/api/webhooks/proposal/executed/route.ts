@@ -4,8 +4,14 @@ import {
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { daoProposalsImplementationAbi } from '@hypha-platform/core/generated';
-import { sendEmailByAlias } from '@hypha-platform/notifications/server';
-import { emailProposalExecutionForCreator } from '@hypha-platform/notifications/template';
+import {
+  sendEmailByAlias,
+  sendPushByAlias,
+} from '@hypha-platform/notifications/server';
+import {
+  emailProposalExecutionForCreator,
+  pushProposalExecutionForCreator,
+} from '@hypha-platform/notifications/template';
 
 export const POST = Alchemy.newHandler(
   {
@@ -41,21 +47,38 @@ export const POST = Alchemy.newHandler(
       return;
     }
 
-    const sendingEmails = creatorsToNotify.map(async (creator) => {
-      const { body, subject } = emailProposalExecutionForCreator({
-        proposalState: creator.proposalState ?? undefined,
-        proposalLabel: creator.proposalLabel ?? undefined,
-        proposalTitle: creator.proposalTitle ?? undefined,
-        spaceTitle: creator.spaceTitle,
-      });
+    const notificationParams = creatorsToNotify.map((creator) => ({
+      proposalCreatorSlug: creator.slug,
+      proposalState: creator.proposalState ?? undefined,
+      proposalLabel: creator.proposalLabel ?? undefined,
+      proposalTitle: creator.proposalTitle ?? undefined,
+      spaceTitle: creator.spaceTitle,
+    }));
+    const sendingEmails = notificationParams.map(async (params) => {
+      const { body, subject } = emailProposalExecutionForCreator(params);
 
       return await sendEmailByAlias({
         app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '',
-        alias: { include_aliases: { external_id: [creator.slug!] } },
+        alias: {
+          include_aliases: { external_id: [params.proposalCreatorSlug!] },
+        },
         content: { email_body: body, email_subject: subject },
       });
     });
-    (await Promise.allSettled(sendingEmails))
+    const sendingPushes = notificationParams.map(async (params) => {
+      const { contents, headings } = pushProposalExecutionForCreator(params);
+
+      return await sendPushByAlias({
+        app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '',
+        alias: {
+          include_aliases: { external_id: [params.proposalCreatorSlug!] },
+        },
+        content: { contents, headings },
+      });
+    });
+
+    const notifying = Promise.allSettled(sendingEmails.concat(sendingPushes));
+    (await notifying)
       .filter((res) => res.status === 'rejected')
       .forEach(({ reason }) =>
         console.error(
