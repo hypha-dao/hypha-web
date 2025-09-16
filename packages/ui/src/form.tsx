@@ -147,26 +147,52 @@ const FormDescription = React.forwardRef<
 });
 FormDescription.displayName = 'FormDescription';
 
+const FormMessageError = ({
+  message,
+  ...props
+}: React.HTMLAttributes<HTMLParagraphElement> & { message?: string }) => {
+  if (!message) return null;
+  return <p {...props}>{message}</p>;
+};
+
 const FormMessage = React.forwardRef<
-  HTMLParagraphElement,
-  React.HTMLAttributes<HTMLParagraphElement>
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
 >(({ className, children, ...props }, ref) => {
   const { error, formMessageId } = useFormField();
-  const body = error ? String(error?.message ?? '') : children;
 
-  if (!body) {
+  if (!error && !children) {
     return null;
   }
 
+  const body = Array.isArray(error) ? (
+    <>
+      {error.map((err, index) => (
+        <FormMessageError
+          key={`${formMessageId}-${index}`}
+          message={err?.message ?? ''}
+        />
+      ))}
+    </>
+  ) : error ? (
+    <FormMessageError
+      key={`${formMessageId}-message`}
+      message={error?.message ?? ''}
+    />
+  ) : (
+    children
+  );
+
   return (
-    <p
+    <div
       ref={ref}
       id={formMessageId}
+      aria-live="polite"
       className={cn('text-sm font-medium text-destructive', className)}
       {...props}
     >
       {body}
-    </p>
+    </div>
   );
 });
 FormMessage.displayName = 'FormMessage';

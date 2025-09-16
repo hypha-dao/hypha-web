@@ -1,12 +1,10 @@
 'use client';
 
-import {
-  useImageUpload,
-  useAttachmentUpload,
-  schemaCreateAgreementFiles,
-} from '@hypha-platform/core/client';
 import React from 'react';
 import { z } from 'zod';
+import { schemaCreateAgreementFiles } from '../../validation';
+import { Attachment } from '../../types';
+import { useAttachmentUpload, useImageUpload } from '../../../assets/client';
 
 type Files = z.infer<typeof schemaCreateAgreementFiles>;
 
@@ -14,7 +12,7 @@ export type UseAgreementFileUploadsReturn = {
   isLoading: boolean;
   files: {
     leadImage?: string;
-    attachments?: string[];
+    attachments?: (string | Attachment)[];
   } | null;
   upload: (fileInput: Files, slug: string | null | undefined) => Promise<void>;
 };
@@ -24,14 +22,14 @@ export const useAgreementFileUploads = (
   onSuccess?: (
     uploadedFiles: {
       leadImage?: string;
-      attachments?: string[];
+      attachments?: (string | Attachment)[];
     },
     slug?: string | null | undefined,
   ) => Promise<void> | void,
 ): UseAgreementFileUploadsReturn => {
   const [files, setFiles] = React.useState<{
     leadImage?: string;
-    attachments?: string[];
+    attachments?: (string | Attachment)[];
   } | null>(null);
 
   const { upload: uploadImage, isUploading: isUploadingImage } = useImageUpload(
@@ -44,7 +42,7 @@ export const useAgreementFileUploads = (
     async (fileInput: Files, slug: string | null | undefined) => {
       const uploadedFiles: {
         leadImage?: string;
-        attachments?: string[];
+        attachments?: (string | Attachment)[];
       } = {};
 
       const uploadPromises = Object.entries(fileInput).map(
@@ -60,7 +58,10 @@ export const useAgreementFileUploads = (
             } else if (key === 'attachments' && Array.isArray(fileOrFiles)) {
               const result = await uploadAttachment(fileOrFiles);
               if (result?.every((item) => item.ufsUrl)) {
-                uploadedFiles.attachments = result.map((item) => item.ufsUrl);
+                uploadedFiles.attachments = result.map((item) => ({
+                  name: item.name,
+                  url: item.ufsUrl,
+                }));
               }
             }
           } catch (error) {

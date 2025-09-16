@@ -1,8 +1,9 @@
-import { DEFAULT_IMAGE_ACCEPT } from '@hypha-platform/core/client';
+import {
+  ALLOWED_IMAGE_FILE_SIZE,
+  DEFAULT_IMAGE_ACCEPT,
+} from '../assets/constant';
 import { z } from 'zod';
 import { CATEGORIES, SPACE_FLAGS } from '../categories/types';
-
-export const ALLOWED_IMAGE_FILE_SIZE = 4 * 1024 * 1024;
 
 const createSpaceWeb2Props = {
   title: z
