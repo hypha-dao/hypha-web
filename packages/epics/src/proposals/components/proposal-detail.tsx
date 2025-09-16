@@ -22,6 +22,7 @@ import {
   ProposalMintItem,
   ProposalEntryInfo,
   ProposalBuyHyphaTokensData,
+  ProposalActivateSpacesData,
 } from '../../governance';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
 import { ButtonClose } from '@hypha-platform/epics';
@@ -66,7 +67,6 @@ export const ProposalDetail = ({
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: proposalId as number,
   });
-  console.log(proposalDetails);
   const { isAuthenticated } = useAuthentication();
 
   return (
@@ -145,6 +145,13 @@ export const ProposalDetail = ({
       {proposalDetails?.buyHyphaTokensData.amount ? (
         <ProposalBuyHyphaTokensData
           amount={proposalDetails?.buyHyphaTokensData.amount}
+        />
+      ) : null}
+      {proposalDetails?.activateSpacesData.spaceIds.length ? (
+        <ProposalActivateSpacesData
+          spaceIds={proposalDetails?.activateSpacesData?.spaceIds}
+          paymentAmounts={proposalDetails?.activateSpacesData?.paymentAmounts}
+          tokenSymbol={proposalDetails?.activateSpacesData?.tokenSymbol}
         />
       ) : null}
       <FormVoting
