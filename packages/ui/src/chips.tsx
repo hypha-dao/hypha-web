@@ -321,13 +321,15 @@ export const MultiSelect = React.forwardRef<
                   <span>(Select All)</span>
                 </CommandItem>
                 <CommandSeparator />
-                {options.map((option) => {
+                {options.map((option, index) => {
                   const isSelected = selectedValues.includes(option.value);
-                  return option.value === '---' ? (
-                    <CommandSeparator />
+                  const isDelimiter =
+                    option.value.length === 0 || option.value === '---';
+                  return isDelimiter ? (
+                    <CommandSeparator key={`sep-${index}`} />
                   ) : (
                     <CommandItem
-                      key={option.value}
+                      key={`${option.value}-${index}`}
                       onSelect={() => toggleOption(option.value)}
                       className="cursor-pointer"
                     >

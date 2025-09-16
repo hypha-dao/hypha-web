@@ -17,6 +17,9 @@ import {
   MultiSelect,
   RequirementMark,
   Card,
+  Badge,
+  COMBOBOX_TITLE,
+  COMBOBOX_DELIMITER,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import React from 'react';
@@ -24,18 +27,32 @@ import React from 'react';
 import { z } from 'zod';
 import clsx from 'clsx';
 import {
+  Address,
   ALLOWED_IMAGE_FILE_SIZE,
   categories,
   Category,
   createSpaceFiles,
   schemaCreateSpace,
+  Space,
   SpaceFlags,
+  useMe,
+  useOrganisationSpacesBySingleSlug,
+  useSpacesByWeb3Ids,
 } from '@hypha-platform/core/client';
 import { Links } from '../../common/links';
-import { ButtonClose, ButtonBack } from '@hypha-platform/epics';
+import {
+  ButtonClose,
+  ButtonBack,
+  ParentSpaceSelector,
+  useMemberWeb3SpaceIds,
+} from '@hypha-platform/epics';
 
 const schemaCreateSpaceForm = schemaCreateSpace.extend(createSpaceFiles);
-type SchemaCreateSpaceForm = z.infer<typeof schemaCreateSpaceForm>;
+export type SchemaCreateSpaceForm = z.infer<typeof schemaCreateSpaceForm>;
+
+export type SpaceFormLabel = 'create' | 'add' | 'configure';
+
+type ParentOption = { avatarUrl?: string | null; value: string; label: string };
 
 export type CreateSpaceFormProps = {
   isLoading?: boolean;
@@ -46,12 +63,17 @@ export type CreateSpaceFormProps = {
     name?: string;
     surname?: string;
   };
-  parentSpaceId?: number | null;
+  initialParentSpaceId?: number | null;
+  parentSpaceSlug?: string;
   values?: Partial<SchemaCreateSpaceForm>;
   defaultValues?: Partial<SchemaCreateSpaceForm>;
   submitLabel?: string;
   submitLoadingLabel?: string;
-  onSubmit: (values: SchemaCreateSpaceForm) => void;
+  label?: SpaceFormLabel;
+  onSubmit: (
+    values: SchemaCreateSpaceForm,
+    organisationSpaces?: Space[],
+  ) => void;
 };
 
 const DEFAULT_VALUES = {
@@ -62,6 +84,7 @@ const DEFAULT_VALUES = {
   categories: [] as Category[],
   links: [] as string[],
   parentId: null,
+  parentSpaceSlug: '',
   address: '',
   flags: ['sandbox'] as SpaceFlags[],
 };
@@ -73,22 +96,27 @@ export const SpaceForm = ({
   backUrl,
   backLabel,
   onSubmit,
-  parentSpaceId,
+  initialParentSpaceId,
+  parentSpaceSlug,
   values,
   defaultValues = {
     ...DEFAULT_VALUES,
-    parentId: parentSpaceId || null,
+    parentId: initialParentSpaceId || null,
   },
   submitLabel = 'Create',
   submitLoadingLabel = 'Creating Space...',
+  label = 'create',
 }: CreateSpaceFormProps) => {
   if (process.env.NODE_ENV !== 'production') {
     console.debug('SpaceForm', { defaultValues });
   }
+
   const form = useForm<SchemaCreateSpaceForm>({
     resolver: zodResolver(schemaCreateSpaceForm),
     defaultValues,
   });
+
+  const parentSpaceId = form.watch('parentId');
 
   const categoryOptions = React.useMemo(
     () =>
@@ -99,15 +127,70 @@ export const SpaceForm = ({
   );
 
   React.useEffect(() => {
-    if (parentSpaceId) {
-      form.setValue('parentId', parentSpaceId);
-    }
+    form.setValue('parentId', parentSpaceId ?? null);
   }, [parentSpaceId, form]);
 
   React.useEffect(() => {
     if (!values) return;
     form.reset({ ...form.getValues(), ...values }, { keepDirty: true });
   }, [values, form]);
+
+  const { spaces: organisationSpaces, isLoading: isOrganisationLoading } =
+    useOrganisationSpacesBySingleSlug(values?.slug ?? parentSpaceSlug ?? '');
+  const { person } = useMe();
+  const { web3SpaceIds } = useMemberWeb3SpaceIds({
+    personAddress: person?.address as Address | undefined,
+  });
+  const { spaces: mySpaces, isLoading: isMyLoading } = useSpacesByWeb3Ids(
+    web3SpaceIds ?? [],
+  );
+  const parentOptions = React.useMemo((): ParentOption[] => {
+    if (isOrganisationLoading || isMyLoading) {
+      return [];
+    }
+    const organisationOptions =
+      organisationSpaces
+        ?.filter((orgSpace) => (values ? orgSpace.slug !== values.slug : true))
+        .map((space) => {
+          return {
+            avatarUrl: space.logoUrl,
+            value: `${space.id}`,
+            label: space.title,
+          };
+        }) ?? [];
+    const mySpacesOptions = mySpaces
+      .filter(
+        (mySpace) =>
+          !organisationSpaces?.find((orgSpace) => mySpace.id === orgSpace.id),
+      )
+      .map((space) => {
+        return {
+          avatarUrl: space.logoUrl,
+          value: `${space.id}`,
+          label: space.title,
+        };
+      });
+    const result: ParentOption[] = [];
+    if (organisationOptions.length > 0) {
+      result.push(
+        { value: COMBOBOX_TITLE, label: 'Organisation Spaces' },
+        ...organisationOptions,
+      );
+    }
+    if (organisationOptions.length > 0 && mySpacesOptions.length > 0) {
+      result.push({
+        value: COMBOBOX_DELIMITER,
+        label: '',
+      });
+    }
+    if (mySpacesOptions.length > 0) {
+      result.push(
+        { value: COMBOBOX_TITLE, label: 'My Other Spaces' },
+        ...mySpacesOptions,
+      );
+    }
+    return result;
+  }, [organisationSpaces, isOrganisationLoading, mySpaces, isMyLoading]);
 
   const flags = form.watch('flags');
   const isSandbox = React.useMemo(
@@ -152,6 +235,24 @@ export const SpaceForm = ({
     });
   }, [form]);
 
+  const showUnsetParentIdError = React.useCallback(() => {
+    form.setError('parentId', {
+      message: 'Please select a linked space or enable "Root Space"',
+      type: 'validate',
+    });
+  }, [form]);
+
+  const labelText = React.useMemo(() => {
+    switch (label) {
+      case 'add':
+        return 'Add Space';
+      case 'create':
+        return 'Create Space';
+      case 'configure':
+        return 'Configure Space';
+    }
+  }, [label]);
+
   return (
     <Form {...form}>
       <form
@@ -164,13 +265,20 @@ export const SpaceForm = ({
               showCategoriesError();
               return;
             }
-            onSubmit(space);
+            if (parentSpaceId === -1) {
+              showUnsetParentIdError();
+              return;
+            }
+            onSubmit(space, organisationSpaces);
           },
           (e) => {
             const flags = form.getValues()['flags'];
             const categories = form.getValues()['categories'];
             if (!flags?.includes('sandbox') && categories.length === 0) {
               showCategoriesError();
+            }
+            if (parentSpaceId === -1) {
+              showUnsetParentIdError();
             }
           },
         )}
@@ -190,6 +298,8 @@ export const SpaceForm = ({
                       defaultImage={
                         typeof defaultValues?.logoUrl === 'string'
                           ? defaultValues?.logoUrl
+                          : typeof values?.logoUrl === 'string'
+                          ? values?.logoUrl
                           : undefined
                       }
                       required={true}
@@ -201,6 +311,9 @@ export const SpaceForm = ({
             />
             <div className="flex w-full">
               <div className="flex flex-col w-full">
+                <Badge className="w-fit" colorVariant="accent">
+                  {labelText}
+                </Badge>
                 <FormField
                   control={form.control}
                   name="title"
@@ -247,6 +360,8 @@ export const SpaceForm = ({
                   defaultImage={
                     typeof defaultValues?.leadImage === 'string'
                       ? defaultValues?.leadImage
+                      : typeof values?.leadImage === 'string'
+                      ? values?.leadImage
                       : undefined
                   }
                   uploadText={
@@ -281,6 +396,34 @@ export const SpaceForm = ({
             </FormItem>
           )}
         />
+        {label === 'configure' && (
+          <FormField
+            control={form.control}
+            name="parentId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-foreground">
+                  Organisation Level
+                </FormLabel>
+                <FormControl>
+                  <ParentSpaceSelector
+                    options={parentOptions}
+                    isLoading={isOrganisationLoading || isMyLoading}
+                    parentSpaceId={field.value}
+                    setParentSpaceId={(parentId) => {
+                      form.setValue('parentId', parentId ?? null, {
+                        shouldDirty: true,
+                      });
+                      form.clearErrors('parentId');
+                    }}
+                    className="w-full"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
         <FormField
           control={form.control}
           name="categories"
