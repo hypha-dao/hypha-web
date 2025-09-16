@@ -1,13 +1,10 @@
 'use client';
 
-import {
-  useImageUpload,
-  useAttachmentUpload,
-  schemaCreateAgreementFiles,
-  Attachment,
-} from '@hypha-platform/core/client';
 import React from 'react';
 import { z } from 'zod';
+import { schemaCreateAgreementFiles } from '../../validation';
+import { Attachment } from '../../types';
+import { useAttachmentUpload, useImageUpload } from '../../../assets/client';
 
 type Files = z.infer<typeof schemaCreateAgreementFiles>;
 

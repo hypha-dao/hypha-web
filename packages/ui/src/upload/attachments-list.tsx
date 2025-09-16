@@ -18,11 +18,10 @@ function isString(variable: any): variable is string {
   return typeof variable === 'string';
 }
 
-function isAttachment(variable: any): variable is Attachment {
-  return (
-    (variable as Attachment).name !== undefined &&
-    (variable as Attachment).url !== undefined
-  );
+function isAttachment(variable: unknown): variable is Attachment {
+  if (typeof variable !== 'object' || variable === null) return false;
+  const v = variable as Record<string, unknown>;
+  return typeof v.name === 'string' && typeof v.url === 'string';
 }
 
 export const AttachmentList: React.FC<AttachmentListProps> = ({
@@ -55,7 +54,9 @@ export const AttachmentList: React.FC<AttachmentListProps> = ({
       <div className="space-y-2 mt-2 w-full">
         {attachments.map((attachment, idx) => {
           const fileName = isString(attachment)
-            ? attachment.split('/').pop() || `Document ${idx + 1}`
+            ? (attachment.split('/').pop() || `Document ${idx + 1}`).split(
+                /[?#]/,
+              )[0]
             : isAttachment(attachment)
             ? attachment.name
             : 'unnamed';
