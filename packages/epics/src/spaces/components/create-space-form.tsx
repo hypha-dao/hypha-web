@@ -237,8 +237,7 @@ export const SpaceForm = ({
 
   const showUnsetParentIdError = React.useCallback(() => {
     form.setError('parentId', {
-      message:
-        'Please select a linked space or enable "Root Space" before saving.',
+      message: 'Please select a linked space or enable "Root Space"',
       type: 'validate',
     });
   }, [form]);
