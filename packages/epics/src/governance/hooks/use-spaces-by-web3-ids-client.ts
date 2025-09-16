@@ -28,7 +28,7 @@ export const useSpacesByWeb3Ids = (
   const { data: spaces, isLoading } = useSWR(endpoint, (endpoint) =>
     fetch(endpoint, {
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
       },
     }).then((res) => res.json()),
   );
