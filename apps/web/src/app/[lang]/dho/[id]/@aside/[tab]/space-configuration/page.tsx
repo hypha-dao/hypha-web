@@ -64,7 +64,7 @@ export default function SpaceConfiguration() {
             name: person?.name,
             surname: person?.surname,
           }}
-          onSubmit={(updatedSpace, organisationSpaces) => {
+          onSubmit={async (updatedSpace, organisationSpaces) => {
             try {
               if (space) {
                 if (!space.parentId && updatedSpace.parentId) {
@@ -79,7 +79,7 @@ export default function SpaceConfiguration() {
                       slug,
                       ...updates
                     } = foundInnerSpace;
-                    updateSpace({
+                    await updateSpace({
                       ...updates,
                       slug,
                       parentId: null,
@@ -90,7 +90,7 @@ export default function SpaceConfiguration() {
                   }
                 }
               }
-              updateSpace(updatedSpace);
+              await updateSpace(updatedSpace);
             } catch (e) {
               console.warn(e);
             }
