@@ -1,7 +1,7 @@
 'use client';
 
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
-import { useSpacesByWeb3Ids } from '../hooks';
+import { useSpacesByWeb3IdsClient } from '../hooks';
 import { Image, Separator, Input } from '@hypha-platform/ui';
 
 interface ProposalActivateSpacesDataProps {
@@ -19,7 +19,7 @@ export const ProposalActivateSpacesData = ({
   paymentAmounts,
   tokenSymbol,
 }: ProposalActivateSpacesDataProps) => {
-  const { spaces } = useSpacesByWeb3Ids(spaceIds ?? [], false);
+  const { spaces } = useSpacesByWeb3IdsClient(spaceIds ?? [], false);
 
   const getMonthsCount = (
     amount: bigint | undefined,
