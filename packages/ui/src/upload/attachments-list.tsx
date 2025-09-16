@@ -1,10 +1,9 @@
 'use client';
 import React from 'react';
 import Link from 'next/link';
-import { FileText, File as FileIcon, Variable } from 'lucide-react';
+import { FileText, File as FileIcon } from 'lucide-react';
 import { Separator } from '../separator';
 import { Label } from '../label';
-import { validate } from 'uuid';
 
 interface Attachment {
   name: string;
