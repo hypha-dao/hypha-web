@@ -15,16 +15,16 @@ export async function GET(request: NextRequest) {
 
     const parentOnlyParam = queryParams.get('parentOnly');
     const parentOnly =
-      parentOnlyParam !== null ? parentOnlyParam === 'true' : undefined;
+      parentOnlyParam === 'true'
+        ? true
+        : parentOnlyParam === 'false'
+        ? false
+        : undefined;
+    const options = parentOnly !== undefined ? { parentOnly } : {};
 
-    let spaces;
-
-    if (web3SpaceIds) {
-      const options = parentOnly !== undefined ? { parentOnly } : undefined;
-      spaces = await getSpacesByWeb3Ids(web3SpaceIds, options);
-    } else {
-      spaces = await getAllSpaces();
-    }
+    let spaces = web3SpaceIds
+      ? await getSpacesByWeb3Ids(web3SpaceIds, options)
+      : await getAllSpaces();
 
     return NextResponse.json(spaces);
   } catch (error) {
