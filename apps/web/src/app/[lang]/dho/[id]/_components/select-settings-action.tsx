@@ -167,6 +167,7 @@ export const SelectSettingsAction = ({
       description:
         'Contribute HYPHA or USDC to activate your space(s) and support the Hypha Network.',
       href: 'create/activate-spaces',
+      baseTab: 'agreements',
       icon: <ArrowRightIcon />,
     },
   ];
