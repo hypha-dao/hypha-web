@@ -176,16 +176,7 @@ export const createAgreementFiles = {
           }),
         )
         .refine(
-          (file) => {
-            console.log(
-              `check file "${file.name} with type "${
-                file.type
-              } to be included in ${JSON.stringify(
-                DEFAULT_FILE_ACCEPT,
-              )}": ${DEFAULT_FILE_ACCEPT.includes(file.type)}`,
-            );
-            return DEFAULT_FILE_ACCEPT.includes(file.type);
-          },
+          (file) => DEFAULT_FILE_ACCEPT.includes(file.type),
           (file) => ({
             message: `This file "${file.name}" format isn’t supported. Please upload a JPEG, PNG, WebP, or PDF (up to 4MB).`,
           }),
