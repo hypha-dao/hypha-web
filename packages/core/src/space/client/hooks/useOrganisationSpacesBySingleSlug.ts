@@ -20,14 +20,22 @@ export const useOrganisationSpacesBySingleSlug = (
   const { jwt } = useJwt();
 
   const { data: spaces, isLoading } = useSWR(
-    spaceSlug ? [endpoint] : null,
-    ([endpoint]) =>
-      fetch(endpoint, {
+    spaceSlug && jwt ? [endpoint, jwt] : null,
+    async ([url, token]) => {
+      const res = await fetch(url, {
         headers: {
-          Authorization: `Bearer ${jwt}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
         },
-      }).then((res) => res.json()),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(
+          `GET ${url} failed: ${res.status} ${res.statusText} ${text}`,
+        );
+      }
+      return res.json();
+    },
   );
   return {
     spaces: spaces ?? [],

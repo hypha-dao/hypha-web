@@ -323,8 +323,10 @@ export const MultiSelect = React.forwardRef<
                 <CommandSeparator />
                 {options.map((option, index) => {
                   const isSelected = selectedValues.includes(option.value);
-                  return option.value.length === 0 || option.value === '---' ? (
-                    <CommandSeparator key={`${option.value}-${index}`} />
+                  const isDelimiter =
+                    option.value.length === 0 || option.value === '---';
+                  return isDelimiter ? (
+                    <CommandSeparator key={`sep-${index}`} />
                   ) : (
                     <CommandItem
                       key={`${option.value}-${index}`}
