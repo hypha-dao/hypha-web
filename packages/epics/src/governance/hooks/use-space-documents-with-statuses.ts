@@ -83,6 +83,14 @@ const getDocumentBadges = (document: Document) => {
         colorVariant: 'accent',
       });
       break;
+    case 'Activate Spaces':
+      badges.push({
+        label: 'Activate Spaces',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
     default:
       break;
   }
