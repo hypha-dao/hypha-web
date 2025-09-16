@@ -111,16 +111,12 @@ export const SpaceForm = ({
     console.debug('SpaceForm', { defaultValues });
   }
 
-  const [parentSpaceId, setParentSpaceId] =
-    React.useState(initialParentSpaceId);
-  React.useEffect(() => {
-    setParentSpaceId(initialParentSpaceId);
-  }, [initialParentSpaceId]);
-
   const form = useForm<SchemaCreateSpaceForm>({
     resolver: zodResolver(schemaCreateSpaceForm),
     defaultValues,
   });
+
+  const parentSpaceId = form.watch('parentId');
 
   const categoryOptions = React.useMemo(
     () =>
@@ -416,7 +412,9 @@ export const SpaceForm = ({
                     isLoading={isOrganisationLoading || isMyLoading}
                     parentSpaceId={field.value}
                     setParentSpaceId={(parentId) => {
-                      setParentSpaceId(parentId);
+                      form.setValue('parentId', parentId ?? null, {
+                        shouldDirty: true,
+                      });
                       form.clearErrors('parentId');
                     }}
                     className="w-full"
