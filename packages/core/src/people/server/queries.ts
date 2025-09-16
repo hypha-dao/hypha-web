@@ -8,6 +8,7 @@ import {
   Person as DbPerson,
   memberships,
   spaces,
+  documents,
 } from '@hypha-platform/storage-postgres';
 import { sql, eq, inArray, and } from 'drizzle-orm';
 import invariant from 'tiny-invariant';
@@ -376,4 +377,28 @@ export const findPersonByAddresses = async (
       hasPreviousPage,
     },
   };
+};
+
+export const findDocumentsCreatorsForNotifications = async (
+  {
+    proposalIds,
+  }: {
+    proposalIds: number[];
+  },
+  { db }: DbConfig,
+) => {
+  return await db
+    .select({
+      slug: people.slug,
+      spaceTitle: spaces.title,
+      spaceSlug: spaces.slug,
+      proposalTitle: documents.title,
+      proposalLabel: documents.label,
+      proposalState: documents.state,
+    })
+    .from(documents)
+    .innerJoin(people, eq(documents.creatorId, people.id))
+    .innerJoin(spaces, eq(documents.spaceId, spaces.id))
+    .where(inArray(documents.web3ProposalId, proposalIds))
+    .groupBy(documents.id, people.slug, spaces.slug, spaces.title);
 };
