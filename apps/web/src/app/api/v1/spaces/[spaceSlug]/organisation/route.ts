@@ -26,7 +26,7 @@ export async function GET(
       id: space.id,
     });
 
-    return NextResponse.json([...spaces]);
+    return NextResponse.json(spaces);
   } catch (err: any) {
     const error = err instanceof Error ? err : new Error(String(err));
     return NextResponse.json(

@@ -48,7 +48,7 @@ import {
 } from '@hypha-platform/epics';
 
 const schemaCreateSpaceForm = schemaCreateSpace.extend(createSpaceFiles);
-type SchemaCreateSpaceForm = z.infer<typeof schemaCreateSpaceForm>;
+export type SchemaCreateSpaceForm = z.infer<typeof schemaCreateSpaceForm>;
 
 export type SpaceFormLabel = 'create' | 'add' | 'configure';
 
