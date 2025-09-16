@@ -168,7 +168,7 @@ export const createAgreementFiles = {
   attachments: z
     .array(
       z
-        .instanceof(File)
+        .custom<File>(isBrowserFile, { message: 'Please upload a valid file' })
         .refine(
           (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
           (file) => ({
@@ -294,7 +294,7 @@ export const schemaIssueNewToken = z.object({
         .url('Icon URL must be a valid URL'),
       z.literal(''),
       z
-        .instanceof(File)
+        .custom<File>(isBrowserFile, { message: 'Please upload a valid file' })
         .refine(
           (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
           'Your file is too large and exceeds the 4MB limit. Please upload a smaller file',
