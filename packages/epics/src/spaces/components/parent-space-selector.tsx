@@ -1,6 +1,7 @@
 'use client';
 
-import { Combobox, Input, Label } from '@hypha-platform/ui';
+import { DEFAULT_SPACE_AVATAR_IMAGE } from '@hypha-platform/core/client';
+import { Combobox, Input, Image, Label } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import React from 'react';
 
@@ -64,6 +65,34 @@ export const ParentSpaceSelector = ({
                 Number.isSafeInteger(parentId) ? parentId : null,
               );
             }}
+            renderOption={(option) => (
+              <>
+                <Image
+                  src={option.avatarUrl || DEFAULT_SPACE_AVATAR_IMAGE}
+                  alt={option.label}
+                  width={24}
+                  height={24}
+                  className="rounded-full"
+                />
+                <span>{option.label}</span>
+              </>
+            )}
+            renderValue={(option) =>
+              option ? (
+                <div className="flex items-center gap-2 truncate">
+                  <Image
+                    src={option.avatarUrl || DEFAULT_SPACE_AVATAR_IMAGE}
+                    alt={option.label}
+                    width={24}
+                    height={24}
+                    className="rounded-full"
+                  />
+                  <span className="truncate">{option.label}</span>
+                </div>
+              ) : (
+                ''
+              )
+            }
             allowEmptyChoice={checked}
           />
           <div className="h-4 w-4">

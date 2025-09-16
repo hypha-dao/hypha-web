@@ -52,7 +52,7 @@ type SchemaCreateSpaceForm = z.infer<typeof schemaCreateSpaceForm>;
 
 export type SpaceFormLabel = 'create' | 'add' | 'configure';
 
-type ParentOption = { value: string; label: string };
+type ParentOption = { avatarUrl?: string | null; value: string; label: string };
 
 export type CreateSpaceFormProps = {
   isLoading?: boolean;
@@ -157,6 +157,7 @@ export const SpaceForm = ({
         ?.filter((orgSpace) => (values ? orgSpace.slug !== values.slug : true))
         .map((space) => {
           return {
+            avatarUrl: space.logoUrl,
             value: `${space.id}`,
             label: space.title,
           };
@@ -168,6 +169,7 @@ export const SpaceForm = ({
       )
       .map((space) => {
         return {
+          avatarUrl: space.logoUrl,
           value: `${space.id}`,
           label: space.title,
         };
@@ -414,7 +416,6 @@ export const SpaceForm = ({
                     isLoading={isOrganisationLoading || isMyLoading}
                     parentSpaceId={field.value}
                     setParentSpaceId={(parentId) => {
-                      console.log('Parent ID:', parentId);
                       setParentSpaceId(parentId);
                       form.clearErrors('parentId');
                     }}
