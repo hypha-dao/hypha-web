@@ -4,7 +4,7 @@ import { ButtonProfile } from './button-profile';
 import { useRouter, useParams, usePathname } from 'next/navigation';
 import { UseAuthentication } from '@hypha-platform/authentication';
 import { UseMe } from '../hooks/types';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { ButtonNavItemProps } from '@hypha-platform/ui';
 import { useTheme } from 'next-themes';
 
@@ -46,6 +46,14 @@ export const ConnectedButtonProfile = ({
   const pathname = usePathname();
   const { lang } = useParams();
   const { resolvedTheme, setTheme } = useTheme();
+
+  const notificationCentrePath = useMemo(() => {
+    if (person?.slug) {
+      return `/profile/${person.slug}/notification-centre`;
+    } else {
+      return undefined;
+    }
+  }, []);
 
   useEffect(() => {
     if (isAuthLoading || isPersonLoading || !isAuthenticated) {
@@ -104,6 +112,7 @@ export const ConnectedButtonProfile = ({
           ? `/${lang}/profile/${person?.slug ?? ''}`
           : newUserRedirectPath
       }
+      notificationCentrePath={notificationCentrePath}
       navItems={navItems}
     />
   );
