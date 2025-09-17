@@ -22,11 +22,11 @@ import {
   ProposalMintItem,
   ProposalEntryInfo,
   ProposalBuyHyphaTokensData,
-  ProposalActivateSpacesData,
 } from '../../governance';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
 import { ButtonClose } from '@hypha-platform/epics';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { ProposalActivateSpacesData } from '../../governance/components/proposal-activate-spaces-data';
 
 type ProposalDetailProps = ProposalHeadProps & {
   onAccept: () => void;
