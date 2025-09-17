@@ -1,6 +1,11 @@
+'use client';
+
 import { Card, Button } from '@hypha-platform/ui';
 import { useSalesBanner } from '../hooks';
 import { Cross1Icon } from '@radix-ui/react-icons';
+import { usePathname } from 'next/navigation';
+import { cleanPath } from '../utils/cleanPath';
+import Link from 'next/link';
 
 interface BannerState {
   title: string;
@@ -10,7 +15,11 @@ interface BannerState {
 
 interface SalesBannerProps {}
 
+const PATH_SELECT_ACTIVATE_ACTION = '/select-activate-action';
+
 export const SalesBanner = ({}: SalesBannerProps) => {
+  const pathname = usePathname();
+
   const { status, daysLeft, onClose } = useSalesBanner();
 
   const bannerStates: Record<
@@ -59,7 +68,10 @@ export const SalesBanner = ({}: SalesBannerProps) => {
           </Button>
         </div>
         <span className="text-2 text-neutral-11">{subtitle}</span>
-        <Button className="w-fit">{actionText}</Button>
+
+        <Link href={`${cleanPath(pathname)}${PATH_SELECT_ACTIVATE_ACTION}`}>
+          <Button className="w-fit">{actionText}</Button>
+        </Link>
       </div>
     </Card>
   );
