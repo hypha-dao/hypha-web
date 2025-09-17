@@ -131,6 +131,8 @@ export const FormVoting = ({
                 <>
                   <Button
                     variant="outline"
+                    colorVariant="accent"
+                    className="active:bg-accent-9"
                     onClick={onReject}
                     disabled={isDisabled}
                     title={tooltipMessage}
@@ -138,6 +140,9 @@ export const FormVoting = ({
                     Vote no
                   </Button>
                   <Button
+                    variant="outline"
+                    colorVariant="accent"
+                    className="active:bg-accent-9"
                     onClick={onAccept}
                     disabled={isDisabled}
                     title={tooltipMessage}
