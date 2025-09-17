@@ -27,6 +27,10 @@ export const UploadAvatar = ({
     defaultImage || null,
   );
 
+  React.useEffect(() => {
+    setPreview(defaultImage || null);
+  }, [defaultImage, setPreview]);
+
   const onDrop = React.useCallback(
     (acceptedFiles: File[]) => {
       if (!acceptedFiles.length) {
