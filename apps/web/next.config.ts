@@ -1,10 +1,9 @@
-//@ts-check
+import type { NextConfig } from 'next';
 
 const IMAGE_HOSTS = process.env.NEXT_PUBLIC_IMAGE_HOSTS?.split(', ') ?? [];
 const ROOT_URL = process.env.NEXT_PUBLIC_ROOT_URL ?? 'https://hypha.earth';
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+const nextConfig: NextConfig = {
   headers: async () => {
     return [
       {
