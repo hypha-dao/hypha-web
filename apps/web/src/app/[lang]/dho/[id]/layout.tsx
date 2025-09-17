@@ -1,5 +1,6 @@
 import {
   JoinSpace,
+  SalesBanner,
   SpaceCard,
   SpaceModeLabel,
   WebLinks,
@@ -141,6 +142,9 @@ export default async function DhoLayout({
             )}/space-configuration`}
             className="ml-3"
           />
+        </div>
+        <div className="mt-8">
+          <SalesBanner />
         </div>
         {tab}
         {children}
