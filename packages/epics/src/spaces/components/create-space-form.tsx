@@ -358,10 +358,10 @@ export const SpaceForm = ({
                   {...field}
                   maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
                   defaultImage={
-                    typeof defaultValues?.leadImage === 'string'
-                      ? defaultValues?.leadImage
-                      : typeof values?.leadImage === 'string'
+                    typeof values?.leadImage === 'string'
                       ? values?.leadImage
+                      : typeof defaultValues?.leadImage === 'string'
+                      ? defaultValues?.leadImage
                       : undefined
                   }
                   uploadText={
