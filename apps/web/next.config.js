@@ -34,7 +34,7 @@ const nextConfig = {
     })),
   },
   redirects: async () => {
-    if (process.env.NODE_ENV === 'development') {
+    if (/*process.env.NODE_ENV === 'development'*/ false) {
       return [];
     } else {
       return [
@@ -47,6 +47,7 @@ const nextConfig = {
           source: '/:lang',
           destination: ROOT_URL,
           permanent: true,
+          locale: undefined,
         },
       ];
     }
