@@ -296,10 +296,10 @@ export const SpaceForm = ({
                       {...field}
                       maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
                       defaultImage={
-                        typeof defaultValues?.logoUrl === 'string'
-                          ? defaultValues?.logoUrl
-                          : typeof values?.logoUrl === 'string'
+                        typeof values?.logoUrl === 'string'
                           ? values?.logoUrl
+                          : typeof defaultValues?.logoUrl === 'string'
+                          ? defaultValues?.logoUrl
                           : undefined
                       }
                       required={true}
@@ -358,10 +358,10 @@ export const SpaceForm = ({
                   {...field}
                   maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
                   defaultImage={
-                    typeof defaultValues?.leadImage === 'string'
-                      ? defaultValues?.leadImage
-                      : typeof values?.leadImage === 'string'
+                    typeof values?.leadImage === 'string'
                       ? values?.leadImage
+                      : typeof defaultValues?.leadImage === 'string'
+                      ? defaultValues?.leadImage
                       : undefined
                   }
                   uploadText={

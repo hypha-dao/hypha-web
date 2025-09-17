@@ -42,6 +42,10 @@ export const UploadLeadImage = ({
     defaultImage || null,
   );
 
+  React.useEffect(() => {
+    setPreview(defaultImage || null);
+  }, [defaultImage, setPreview]);
+
   const [imageSrc, setImageSrc] = React.useState<string | null>(null);
   const [crop, setCrop] = React.useState({ x: 0, y: 0 });
   const [zoom, setZoom] = React.useState(1);
