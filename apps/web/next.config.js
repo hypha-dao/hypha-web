@@ -43,9 +43,14 @@ const nextConfig = {
           destination: ROOT_URL,
           permanent: true,
         },
+        {
+          source: '/:lang',
+          destination: ROOT_URL,
+          permanent: true,
+        },
       ];
     }
-  }
+  },
 };
 
 export default nextConfig;
