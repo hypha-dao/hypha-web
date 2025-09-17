@@ -22,3 +22,4 @@ export * from './space-group-slider';
 export * from './space-mode-label';
 export * from './space-search';
 export * from './subspace-section';
+export * from './sales-banner';
