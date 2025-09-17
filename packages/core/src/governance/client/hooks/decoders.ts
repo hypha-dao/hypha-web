@@ -180,6 +180,32 @@ export function decodeTransaction(tx: Tx) {
             }
           : null,
     },
+    {
+      abi: hyphaTokenAbi,
+      handler: (decoded) =>
+        decoded.functionName === 'payForSpaces'
+          ? {
+              type: 'payForSpaces',
+              data: {
+                spaceIds: decoded.args[0],
+                paymentAmounts: decoded.args[1],
+              },
+            }
+          : null,
+    },
+    {
+      abi: hyphaTokenAbi,
+      handler: (decoded) =>
+        decoded.functionName === 'payInHypha'
+          ? {
+              type: 'payInHypha',
+              data: {
+                spaceIds: decoded.args[0],
+                paymentAmounts: decoded.args[1],
+              },
+            }
+          : null,
+    },
   ];
 
   for (const { abi, handler } of decoders) {

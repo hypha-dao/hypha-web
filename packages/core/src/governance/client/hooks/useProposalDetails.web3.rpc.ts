@@ -107,6 +107,16 @@ export const useProposalDetailsWeb3Rpc = ({
       amount: undefined,
     };
 
+    let activateSpacesData: {
+      spaceIds: bigint[];
+      paymentAmounts: bigint[];
+      tokenSymbol: string;
+    } = {
+      spaceIds: [],
+      paymentAmounts: [],
+      tokenSymbol: '',
+    };
+
     (transactions as any[]).forEach((tx) => {
       const decoded = decodeTransaction(tx);
 
@@ -144,6 +154,20 @@ export const useProposalDetailsWeb3Rpc = ({
         case 'investInHypha':
           buyHyphaTokensData = decoded.data;
           break;
+
+        case 'payForSpaces':
+          activateSpacesData = {
+            ...decoded.data,
+            tokenSymbol: 'USDC',
+          };
+          break;
+
+        case 'payInHypha':
+          activateSpacesData = {
+            ...decoded.data,
+            tokenSymbol: 'HYPHA',
+          };
+          break;
         default:
           break;
       }
@@ -169,6 +193,7 @@ export const useProposalDetailsWeb3Rpc = ({
       tokenRequirements,
       votingMethodsToken,
       buyHyphaTokensData,
+      activateSpacesData,
     };
   }, [data]);
 
