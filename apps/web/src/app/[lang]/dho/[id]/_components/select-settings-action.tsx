@@ -113,16 +113,6 @@ export const SelectSettingsAction = ({
     },
     {
       group: 'Treasury',
-      title: 'Integrate Smart Contract in Space (Advanced)',
-      description:
-        'Enable your space to take multisig ownership of your smart contracts, allowing your community to govern value flows (tokenomics) directly from your space.',
-      href: 'https://discord.gg/W7Cz7XD3BS',
-      icon: <RadiobuttonIcon />,
-      baseTab: 'agreements',
-      target: '_blank',
-    },
-    {
-      group: 'Treasury',
       title: 'Deposit Funds',
       description:
         'Deposit funds into your treasury by copying the treasury address or scanning the QR code.',
@@ -132,6 +122,16 @@ export const SelectSettingsAction = ({
         fundWallet();
       },
       disabled: !space?.address,
+    },
+    {
+      group: 'Extensions & Plug-ins',
+      title: 'Integrate Smart Contract in Space (Advanced)',
+      description:
+        'Enable your space to take multisig ownership of your smart contracts, allowing your community to govern value flows (tokenomics) directly from your space.',
+      href: 'https://discord.gg/W7Cz7XD3BS',
+      icon: <RadiobuttonIcon />,
+      baseTab: 'agreements',
+      target: '_blank',
     },
     {
       group: 'Extensions & Plug-ins',
