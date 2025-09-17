@@ -24,6 +24,7 @@ export type ButtonProfileProps = {
   onDelete?: () => void;
   onChangeThemeMode?: () => void;
   profileUrl?: string;
+  notificationCentrePath?: string;
   navItems: ButtonNavItemProps[];
   person?: Person;
   resolvedTheme?: string;
@@ -37,6 +38,7 @@ export const ButtonProfile = ({
   onLogout,
   onDelete,
   profileUrl,
+  notificationCentrePath,
   navItems,
   onChangeThemeMode,
   resolvedTheme,
@@ -71,6 +73,13 @@ export const ButtonProfile = ({
 
             {profileUrl && (
               <ButtonNavItem href={profileUrl} label="My Profile" />
+            )}
+
+            {notificationCentrePath && (
+              <ButtonNavItem
+                label="Notification Centre"
+                href={notificationCentrePath}
+              />
             )}
 
             {/* TODO: It is necessary to implement profile deletion as part of a separate task */}
@@ -130,6 +139,17 @@ export const ButtonProfile = ({
                   <DropdownMenuItem className="px-0 text-1">
                     <Link className="text-accent-11" href={profileUrl}>
                       View profile
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                {notificationCentrePath && (
+                  <DropdownMenuItem className="px-0 text-1">
+                    <Link
+                      className="text-accent-11"
+                      href={notificationCentrePath}
+                    >
+                      Notification Centre
                     </Link>
                   </DropdownMenuItem>
                 )}
