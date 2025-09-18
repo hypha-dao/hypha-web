@@ -1,6 +1,6 @@
 'use client';
 
-import { useFileUpload, editPersonFiles } from '@hypha-platform/core/client';
+import { useImageUpload, editPersonFiles } from '@hypha-platform/core/client';
 import { useCallback, useState } from 'react';
 import { z } from 'zod';
 
@@ -15,10 +15,8 @@ export const usePeopleFileUploads = ({
 }: UsePeopleFileUploadsParams) => {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { upload: uploadFile } = useFileUpload({
-    headers: {
-      Authorization: `Bearer ${authToken || ''}`,
-    },
+  const { upload: uploadImage } = useImageUpload({
+    authorizationToken: authToken ?? undefined,
   });
 
   const upload = useCallback(
@@ -34,7 +32,7 @@ export const usePeopleFileUploads = ({
             if (!file) return;
 
             if (file instanceof File) {
-              const result = await uploadFile([file]);
+              const result = await uploadImage([file]);
               if (result?.[0]?.ufsUrl) {
                 uploadedFiles[key as keyof PersonFiles] = result[0].ufsUrl;
               }
@@ -54,7 +52,7 @@ export const usePeopleFileUploads = ({
         setIsUploading(false);
       }
     },
-    [uploadFile],
+    [uploadImage],
   );
 
   return {

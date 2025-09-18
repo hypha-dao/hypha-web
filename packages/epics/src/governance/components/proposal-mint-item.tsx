@@ -3,6 +3,7 @@
 import { usePersonByWeb3Address } from '../hooks';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { Skeleton } from '@hypha-platform/ui';
+import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 
 interface ProposalMintItemProps {
   member: `0x${string}`;
@@ -22,7 +23,9 @@ export const ProposalMintItem = ({ member, number }: ProposalMintItemProps) => {
               {person?.name} {person?.surname}
             </div>
           </div>
-          <div className="text-1">{Number(originalNumber).toFixed(2)}</div>
+          <div className="text-1">
+            {formatCurrencyValue(Number(originalNumber))}
+          </div>
         </div>
       </Skeleton>
     </div>

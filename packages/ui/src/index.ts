@@ -28,6 +28,7 @@ export * from './label';
 export * from './popover';
 export * from './progress';
 export * from './requirement-mark';
+export * from './scroll-area';
 export * from './select';
 export * from './separator';
 export * from './skeleton';

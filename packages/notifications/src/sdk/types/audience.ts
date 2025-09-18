@@ -1,20 +1,18 @@
-import type {
-  NotificationTargetChannelEnum,
-  Filter as OneSignalFilter,
-  Notification,
-} from '@onesignal/node-onesignal';
-
-export type Alias = Pick<Notification, 'include_subscription_ids'> & {
-  target_channel: NotificationTargetChannelEnum;
-  include_aliases: Record<('external_id' | 'onesignal_id') & string, string[]>;
-};
-
-export type Segment = Pick<Notification, 'excluded_segments'> & {
-  included_segments: Array<string>;
-};
+import type { Filter as OneSignalFilter } from '@onesignal/node-onesignal';
 
 export type Filter = {
-  filters: OneSignalFilter[];
+  filters?: OneSignalFilter[];
 };
 
-export type Audience<T extends Alias> = T | Segment | Filter;
+export type Alias = {
+  include_aliases: Record<string, Array<string>> & {
+    external_id: Array<string>;
+    onesignal_id?: Array<string>;
+  };
+  include_subscription_ids?: Array<string>;
+} & Filter;
+
+export type Segment = {
+  included_segments: Array<string>;
+  excluded_segments?: Array<string>;
+} & Filter;

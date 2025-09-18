@@ -200,6 +200,7 @@ export const EditPersonSection = ({
                           : undefined
                       }
                       onChange={field.onChange}
+                      enableImageResizer={true}
                     />
                   </FormControl>
                   <FormMessage />

@@ -1,3 +1,4 @@
+export * from './authenticated-link-button';
 export * from './button-back';
 export * from './button-close';
 export * from './empty';

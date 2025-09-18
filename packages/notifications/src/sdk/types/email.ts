@@ -1,22 +1,26 @@
-import type { Audience, Alias } from './audience';
+import type { Alias, Segment } from './audience';
 import type { Template } from './template';
 
-export type EmailAudience = Audience<
-  Alias & {
-    target_channel: 'email';
-    email_to?: string[];
-  }
->;
+export type EmailAlias = Alias & {
+  email_to?: string[];
+};
 
-export type EmailContent =
-  | Template
-  | {
-      email_subject: string;
-      email_body: string;
-      email_preheader?: string;
-    };
+export type PlainEmail = {
+  email_subject: string;
+  email_body: string;
+  email_preheader?: string;
+};
 
-export type Email = EmailContent &
-  EmailAudience & {
-    app_id: string;
-  };
+export type EmailContent = Template | PlainEmail;
+
+export type EmailParamsForAlias = {
+  app_id: string;
+  alias: EmailAlias;
+  content: EmailContent;
+};
+
+export type EmailParamsForSegment = {
+  app_id: string;
+  segment: Segment;
+  content: EmailContent;
+};

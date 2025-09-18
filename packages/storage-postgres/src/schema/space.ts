@@ -15,6 +15,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { commonDateFields } from './shared';
 import { categories } from './categories';
+import { spaceFlags } from './flags';
 import { AnyPgColumn } from 'drizzle-orm/pg-core';
 
 export const spaces = pgTable(
@@ -35,6 +36,10 @@ export const spaces = pgTable(
     parentId: integer('parent_id').references((): AnyPgColumn => spaces.id),
     address: text('web3_address'),
     isArchived: boolean('is_archived').notNull().default(false),
+    flags: jsonb('flags')
+      .$type<Array<(typeof spaceFlags.enumValues)[number]>>()
+      .notNull()
+      .default([]),
     ...commonDateFields,
   },
   (table) => [

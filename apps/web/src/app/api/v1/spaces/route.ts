@@ -6,14 +6,25 @@ type Web3SpaceIds = number[] | undefined;
 export async function GET(request: NextRequest) {
   try {
     const queryParams = request.nextUrl.searchParams;
+
     const web3SpaceIds: Web3SpaceIds = queryParams.has('web3SpaceIds')
       ? (queryParams.get('web3SpaceIds')?.split(',') ?? [])
           .map(Number)
           .filter((id) => !Number.isNaN(id))
       : undefined;
-    const spaces = web3SpaceIds
-      ? await getSpacesByWeb3Ids(web3SpaceIds)
-      : await getAllSpaces();
+
+    const parentOnlyParam = queryParams.get('parentOnly');
+    const parentOnly =
+      parentOnlyParam !== null ? parentOnlyParam === 'true' : undefined;
+
+    let spaces;
+
+    if (web3SpaceIds) {
+      const options = parentOnly !== undefined ? { parentOnly } : undefined;
+      spaces = await getSpacesByWeb3Ids(web3SpaceIds, options);
+    } else {
+      spaces = await getAllSpaces();
+    }
 
     return NextResponse.json(spaces);
   } catch (error) {

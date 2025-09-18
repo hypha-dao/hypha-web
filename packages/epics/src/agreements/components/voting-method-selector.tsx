@@ -76,7 +76,7 @@ export const VotingMethodSelector = ({
               To select this voting method you first need to issue your Voice
               Token.{' '}
               <Link
-                href={`/${lang}/dho/${id}/governance/create/issue-new-token`}
+                href={`/${lang}/dho/${id}/agreements/create/issue-new-token`}
                 className="text-accent-9 underline"
                 onClick={(e) => e.stopPropagation()}
               >
@@ -96,7 +96,7 @@ export const VotingMethodSelector = ({
             <div className="p-2">
               To select this voting method, you first need to issue a token.{' '}
               <Link
-                href={`/${lang}/dho/${id}/governance/create/issue-new-token`}
+                href={`/${lang}/dho/${id}/agreements/create/issue-new-token`}
                 className="text-accent-9 underline"
                 onClick={(e) => e.stopPropagation()}
               >

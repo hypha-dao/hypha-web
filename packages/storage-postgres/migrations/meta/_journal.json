@@ -232,6 +232,13 @@
       "when": 1754293048284,
       "tag": "0032_medical_master_mold",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1756740756256,
+      "tag": "0033_solid_banshee",
+      "breakpoints": true
     }
   ]
 }

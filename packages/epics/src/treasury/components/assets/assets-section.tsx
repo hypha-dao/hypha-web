@@ -11,6 +11,9 @@ import { Empty } from '../../../common';
 import { Input } from '@hypha-platform/ui';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useJoinSpace } from '../../../spaces';
+import { useFundWallet } from '../../hooks';
+import { useSpaceDetailsWeb3Rpc } from '@hypha-platform/core/client';
+import { cn } from '@hypha-platform/ui-utils';
 
 type AssetSectionProps = {
   basePath: string;
@@ -23,6 +26,12 @@ export const AssetsSection: FC<AssetSectionProps> = ({
   governancePath,
   web3SpaceId,
 }) => {
+  const { spaceDetails } = useSpaceDetailsWeb3Rpc({
+    spaceId: web3SpaceId as number,
+  });
+  const { fundWallet } = useFundWallet({
+    address: spaceDetails?.executor as `0x${string}`,
+  });
   const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
 
   const {
@@ -77,17 +86,15 @@ export const AssetsSection: FC<AssetSectionProps> = ({
             New Token
           </Button>
         </Link>
-        <Link
-          className={isDisabled ? 'cursor-not-allowed' : ''}
+        <Button
+          className={cn(isDisabled && 'cursor-not-allowed')}
           title={tooltipMessage || ''}
-          href={isAuthenticated && isMember ? `${basePath}/deposit` : {}}
-          scroll={false}
+          onClick={fundWallet}
+          disabled={isDisabled}
         >
-          <Button disabled={isDisabled}>
-            <CopyIcon />
-            Deposit funds
-          </Button>
-        </Link>
+          <CopyIcon />
+          Deposit funds
+        </Button>
       </div>
     </div>
   );

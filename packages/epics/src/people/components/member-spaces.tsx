@@ -8,7 +8,7 @@ import {
 } from '@hypha-platform/core/client';
 import {
   filterSpaces,
-  getDhoPathGovernance,
+  getDhoPathAgreements,
   useMemberWeb3SpaceIds,
 } from '@hypha-platform/epics';
 import React from 'react';
@@ -122,7 +122,7 @@ export const MemberSpaces = ({
               {filteredSpaces?.map((space, index) => (
                 <Link
                   key={index}
-                  href={getDhoPathGovernance(lang as Locale, space.slug ?? '')}
+                  href={getDhoPathAgreements(lang as Locale, space.slug ?? '')}
                 >
                   <div title={space.title}>
                     <div

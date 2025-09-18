@@ -19,7 +19,7 @@ import { MenuTop } from '@hypha-platform/ui';
 import '@hypha-platform/ui-utils/global.css';
 import 'react-tooltip/dist/react-tooltip.css';
 
-import { NETWORK_HYPHA_EARTH_URL } from './constants';
+import { PATH_ROOT } from '../constants';
 
 const lato = Lato({
   subsets: ['latin'],
@@ -64,7 +64,7 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <EvmProvider>
-            <MenuTop logoHref={NETWORK_HYPHA_EARTH_URL} hrefTarget="_blank">
+            <MenuTop logoHref={PATH_ROOT}>
               <ConnectedButtonProfile
                 useAuthentication={useAuthentication}
                 useMe={useMe}

@@ -1,2 +1,5 @@
-export * from './use-file-uploads';
+export * from './use-attachment-upload';
+export * from './use-image-upload';
+
 export * from '../constant';
+export * from './types';

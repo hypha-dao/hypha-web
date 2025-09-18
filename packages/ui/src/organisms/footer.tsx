@@ -62,7 +62,10 @@ export const Footer = () => {
                 rel="noopener noreferrer"
                 style={customLinkStyles}
                 target="_blank"
-                href="https://docs.google.com/document/d/1wT-FHdD5AxXdzL8iuZ45aeLse18DkvHFeeL0HBle4wc/edit?tab=t.0"
+                href={
+                  process.env.NEXT_PUBLIC_HYPHA_TOKENOMICS_DOCS_URL ||
+                  'https://assets.hypha.earth/files/Tokenomics_Paper.pdf'
+                }
               >
                 Hypha Tokenomics
               </Link>
@@ -80,9 +83,12 @@ export const Footer = () => {
                 rel="noopener noreferrer"
                 style={customLinkStyles}
                 target="_blank"
-                href="https://www.gnu.org/licenses/gpl-3.0.html"
+                href={
+                  process.env.NEXT_PUBLIC_LICENCE_URL ||
+                  'https://assets.hypha.earth/files/Hypha_Licensing_Policy.pdf'
+                }
               >
-                AGPLv3 License
+                Licensing policy
               </Link>
             </Button>
             <Button
@@ -94,7 +100,10 @@ export const Footer = () => {
                 rel="noopener noreferrer"
                 style={customLinkStyles}
                 target="_blank"
-                href="https://hypha.earth/terms-conditions/"
+                href={
+                  process.env.NEXT_PUBLIC_TERMS_URL ||
+                  'https://assets.hypha.earth/files/Hypha_Terms_And_Conditions.pdf'
+                }
               >
                 Terms & Conditions
               </Link>
@@ -108,7 +117,10 @@ export const Footer = () => {
                 rel="noopener noreferrer"
                 style={customLinkStyles}
                 target="_blank"
-                href="https://hypha.earth/privacy-policy/"
+                href={
+                  process.env.NEXT_PUBLIC_PRIVACY_URL ||
+                  'https://assets.hypha.earth/files/Hypha_Privacy_Policy.pdf'
+                }
               >
                 Privacy Policy
               </Link>

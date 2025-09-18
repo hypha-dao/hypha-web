@@ -168,7 +168,7 @@ export const useCreateSpaceOrchestrator = ({
         quorum: 50,
         unity: 80,
         votingPowerSource: 2,
-        joinMethod: 0,
+        joinMethod: 2,
         exitMethod: 0,
       });
       await web3.createSpace(inputCreateSpaceWeb3);

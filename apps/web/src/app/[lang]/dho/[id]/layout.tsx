@@ -1,4 +1,9 @@
-import { JoinSpace, SpaceCard, WebLinks } from '@hypha-platform/epics';
+import {
+  JoinSpace,
+  SpaceCard,
+  SpaceModeLabel,
+  WebLinks,
+} from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import {
   Container,
@@ -11,12 +16,8 @@ import { Text } from '@radix-ui/themes';
 import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem } from '@hypha-platform/ui';
 import Link from 'next/link';
-import {
-  getAllSpaces,
-  findSpaceBySlug,
-  findParentSpaceById,
-} from '@hypha-platform/core/server';
-import { getDhoPathGovernance } from './@tab/governance/constants';
+import { getAllSpaces, findSpaceBySlug } from '@hypha-platform/core/server';
+import { getDhoPathAgreements } from './@tab/agreements/constants';
 import { ActionButtons } from './_components/action-buttons';
 import {
   DEFAULT_SPACE_AVATAR_IMAGE,
@@ -130,6 +131,16 @@ export default async function DhoLayout({
             </div>
             <div className="text-gray-500 ml-1 text-1">Agreements</div>
           </div>
+          <SpaceModeLabel
+            web3SpaceId={spaceFromDb.web3SpaceId as number}
+            isSandbox={spaceFromDb.flags.includes('sandbox')}
+            isDemo={spaceFromDb.flags.includes('demo')}
+            configPath={`${getDhoPathAgreements(
+              lang,
+              daoSlug,
+            )}/space-configuration`}
+            className="ml-3"
+          />
         </div>
         {tab}
         {children}
@@ -146,7 +157,7 @@ export default async function DhoLayout({
                   >
                     <Link
                       className="flex flex-col flex-1"
-                      href={getDhoPathGovernance(lang, space.slug as string)}
+                      href={getDhoPathAgreements(lang, space.slug as string)}
                     >
                       <SpaceCard
                         description={space.description as string}
@@ -155,6 +166,13 @@ export default async function DhoLayout({
                         members={space.memberCount}
                         agreements={space.documentCount}
                         title={space.title as string}
+                        isSandbox={space.flags?.includes('sandbox') ?? false}
+                        isDemo={space.flags?.includes('demo') ?? false}
+                        web3SpaceId={space.web3SpaceId as number}
+                        configPath={`${getDhoPathAgreements(
+                          lang,
+                          space.slug,
+                        )}/space-configuration`}
                       />
                     </Link>
                   </CarouselItem>
