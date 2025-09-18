@@ -74,9 +74,7 @@ export const TokenPayoutFieldArray = ({
                           tokens={tokens}
                         />
                       </FormControl>
-                      <FormMessage>
-                        Please enter an amount and select a token.
-                      </FormMessage>
+                      <FormMessage custom="Please enter an amount and select a token." />
                     </FormItem>
                   )}
                 />

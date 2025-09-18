@@ -158,69 +158,53 @@ const FormMessageError = ({
 
 const FormMessage = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(
-  (
-    {
-      className,
-      children,
-      detailed = false,
-      ...props
-    }: React.HTMLAttributes<HTMLDivElement> & { detailed?: boolean },
-    ref,
-  ) => {
-    const { invalid, error, formMessageId } = useFormField();
+  React.HTMLAttributes<HTMLDivElement> & { custom?: string }
+>(({ className, children, custom, ...props }, ref) => {
+  const { error, formMessageId } = useFormField();
 
-    if (!invalid) {
-      return null;
-    }
+  if (!error && !children) {
+    return null;
+  }
 
-    if (!error && !children) {
-      return null;
-    }
-
-    const body = Array.isArray(error) ? (
-      error.map((err, index) => (
+  const body = custom ? (
+    custom
+  ) : Array.isArray(error) ? (
+    error.map((err, index) => (
+      <FormMessageError
+        key={`${formMessageId}-${index}`}
+        message={err?.message ?? ''}
+      />
+    ))
+  ) : error?.message ? (
+    <FormMessageError
+      key={`${formMessageId}-message`}
+      message={error?.message ?? ''}
+    />
+  ) : error ? (
+    Object.entries(error)
+      .filter(([_, value]) => (value as FieldError)?.message)
+      .map(([key, value], index) => (
         <FormMessageError
-          key={`${formMessageId}-${index}`}
-          message={err?.message ?? ''}
+          key={`${formMessageId}-${key}-${index}`}
+          message={`"${key}": ${(value as FieldError).message}`}
         />
       ))
-    ) : error?.message ? (
-      <FormMessageError
-        key={`${formMessageId}-message`}
-        message={error?.message ?? ''}
-      />
-    ) : error ? (
-      detailed ? (
-        Object.entries(error)
-          .filter(([_, value]) => (value as FieldError)?.message)
-          .map(([key, value], index) => (
-            <FormMessageError
-              key={`${formMessageId}-${key}-${index}`}
-              message={`"${key}": ${(value as FieldError).message}`}
-            />
-          ))
-      ) : (
-        children
-      )
-    ) : (
-      children
-    );
+  ) : (
+    children
+  );
 
-    return (
-      <div
-        ref={ref}
-        id={formMessageId}
-        aria-live="polite"
-        className={cn('text-sm font-medium text-destructive', className)}
-        {...props}
-      >
-        {body}
-      </div>
-    );
-  },
-);
+  return (
+    <div
+      ref={ref}
+      id={formMessageId}
+      aria-live="polite"
+      className={cn('text-sm font-medium text-destructive', className)}
+      {...props}
+    >
+      {body}
+    </div>
+  );
+});
 FormMessage.displayName = 'FormMessage';
 
 export {
