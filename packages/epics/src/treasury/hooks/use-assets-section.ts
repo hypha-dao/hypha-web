@@ -12,7 +12,7 @@ export interface UseAssetsSectionProps {
 }
 
 export const useAssetsSection = ({
-  pageSize = 3,
+  pageSize = 9,
   filterOptions = FILTER_OPTIONS_ASSETS,
 }: UseAssetsSectionProps = {}) => {
   const [activeFilter, setActiveFilter] = React.useState('all');

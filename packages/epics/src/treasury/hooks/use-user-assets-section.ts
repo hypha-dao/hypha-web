@@ -16,7 +16,7 @@ export interface UseUserAssetsSectionProps {
 
 export const useUserAssetsSection = ({
   personSlug,
-  pageSize = 3,
+  pageSize = 9,
   filterOptions = FILTER_OPTIONS_ASSETS,
 }: UseUserAssetsSectionProps = {}) => {
   const [activeFilter, setActiveFilter] = React.useState('all');
