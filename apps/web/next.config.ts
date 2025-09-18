@@ -37,12 +37,12 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/',
-        destination: '/network',
+        destination: `/${i18nConfig.defaultLocale}/network`,
         permanent: true,
       },
       {
         source: `/:lang(${LOCALES.join('|')})`,
-        destination: '/network',
+        destination: '/:lang/network',
         permanent: true,
       },
     ];
