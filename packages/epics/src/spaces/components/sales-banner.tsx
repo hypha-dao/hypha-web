@@ -1,10 +1,11 @@
 'use client';
 
 import { Card, Button } from '@hypha-platform/ui';
-import { useSalesBanner } from '../hooks';
+import { useSalesBanner, useJoinSpace } from '../hooks';
 import { Cross1Icon } from '@radix-ui/react-icons';
 import { usePathname } from 'next/navigation';
 import { cleanPath } from '../utils/cleanPath';
+import { useAuthentication } from '@hypha-platform/authentication';
 import Link from 'next/link';
 
 interface BannerState {
@@ -13,14 +14,30 @@ interface BannerState {
   actionText: string;
 }
 
-interface SalesBannerProps {}
+interface SalesBannerProps {
+  web3SpaceId?: number;
+}
 
 const PATH_SELECT_ACTIVATE_ACTION = '/select-activate-action';
 
-export const SalesBanner = ({}: SalesBannerProps) => {
+export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
   const pathname = usePathname();
+  const { status, daysLeft, onClose, isLoading } = useSalesBanner({
+    spaceId: web3SpaceId,
+  });
+  const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
+  const { isAuthenticated } = useAuthentication();
 
-  const { status, daysLeft, onClose } = useSalesBanner();
+  if (isLoading || !status) {
+    return null;
+  }
+
+  const isDisabled = !isAuthenticated || !isMember;
+  const tooltipMessage = !isAuthenticated
+    ? 'Please sign in to use this feature.'
+    : !isMember
+    ? 'Please join this space to use this feature.'
+    : '';
 
   const bannerStates: Record<
     'trial' | 'beforeExpiry' | 'expired',
@@ -37,19 +54,13 @@ export const SalesBanner = ({}: SalesBannerProps) => {
       actionText: 'Renew Now',
     },
     expired: {
-      title: `Your Space has been expired for ${daysLeft} days!`,
+      title: `Your Space has been expired for ${Math.abs(daysLeft)} days!`,
       subtitle: 'Reactivate now to regain access to your Space features',
       actionText: 'Reactivate Now',
     },
   };
 
-  const currentState = bannerStates[status] || {
-    title: 'Unknown status',
-    subtitle: 'Please check your subscription status',
-    actionText: 'Check Now',
-  };
-
-  const { title, subtitle, actionText } = currentState;
+  const { title, subtitle, actionText } = bannerStates[status];
 
   return (
     <Card
@@ -69,8 +80,14 @@ export const SalesBanner = ({}: SalesBannerProps) => {
         </div>
         <span className="text-2 text-neutral-11">{subtitle}</span>
 
-        <Link href={`${cleanPath(pathname)}${PATH_SELECT_ACTIVATE_ACTION}`}>
-          <Button className="w-fit">{actionText}</Button>
+        <Link
+          title={tooltipMessage || ''}
+          className={isDisabled ? 'cursor-not-allowed' : ''}
+          href={`${cleanPath(pathname)}${PATH_SELECT_ACTIVATE_ACTION}`}
+        >
+          <Button disabled={isDisabled} className="w-fit">
+            {actionText}
+          </Button>
         </Link>
       </div>
     </Card>
