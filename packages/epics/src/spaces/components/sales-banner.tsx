@@ -69,7 +69,7 @@ export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
     >
       <div className="p-5 flex flex-col gap-4">
         <div className="flex justify-between items-center">
-          <span className="text-6 font-medium">{title}</span>
+          <span className="text-6 font-medium text-white">{title}</span>
           <Button
             onClick={onClose}
             variant="ghost"
