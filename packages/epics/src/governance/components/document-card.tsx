@@ -24,6 +24,19 @@ interface DocumentCardProps {
   interactions?: React.ReactNode;
 }
 
+function stripDescription(description: string) {
+  if (!description) {
+    return '';
+  }
+  return description
+    .replace(/\\\[/gm, '[')
+    .replace(/\\\]/gm, ']')
+    .replace(/\\\(/gm, '(')
+    .replace(/\\\)/gm, ')')
+    .replace(/\\\{/gm, '{')
+    .replace(/\\\}/gm, '}');
+}
+
 export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
   title,
   description,
@@ -72,10 +85,12 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
             loading={isLoading}
           >
             <div className="line-clamp-3 w-full">
-              {stripMarkdown(description, {
-                orderedListMarkers: false,
-                unorderedListMarkers: false,
-              })}
+              {stripDescription(
+                stripMarkdown(description, {
+                  orderedListMarkers: false,
+                  unorderedListMarkers: false,
+                }),
+              )}
             </div>
           </Skeleton>
         </div>
