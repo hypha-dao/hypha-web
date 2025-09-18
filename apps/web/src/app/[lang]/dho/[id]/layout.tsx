@@ -4,6 +4,7 @@ import {
   SpaceCard,
   SpaceModeLabel,
   WebLinks,
+  SubscriptionBadge,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import {
@@ -59,7 +60,6 @@ export default async function DhoLayout({
         `Failed to get space details for a space ${spaceFromDb.web3SpaceId}:`,
         error,
       );
-
       return 0;
     }
   })();
@@ -75,7 +75,6 @@ export default async function DhoLayout({
         `Failed to get space details for a space ${spaceFromDb.web3SpaceId}:`,
         error,
       );
-
       return 0;
     }
   })();
@@ -142,9 +141,10 @@ export default async function DhoLayout({
             )}/space-configuration`}
             className="ml-3"
           />
+          <SubscriptionBadge web3SpaceId={spaceFromDb.web3SpaceId as number} />
         </div>
         <div className="mt-8">
-          <SalesBanner />
+          <SalesBanner web3SpaceId={spaceFromDb.web3SpaceId as number} />
         </div>
         {tab}
         {children}
