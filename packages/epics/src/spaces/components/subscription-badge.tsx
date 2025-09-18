@@ -3,17 +3,22 @@
 import * as React from 'react';
 import { Badge, type BadgeProps } from '@hypha-platform/ui';
 import { useSpacePayments } from '../hooks/use-space-payments';
-import { cn } from '@hypha-platform/ui-utils';
+import { cleanPath } from '../utils/cleanPath';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 
 interface SubscriptionBadgeProps extends Omit<BadgeProps, 'isLoading'> {
   web3SpaceId: number;
 }
+
+const PATH_SELECT_ACTIVATE_ACTION = '/select-activate-action';
 
 export function SubscriptionBadge({
   web3SpaceId,
   className,
   ...props
 }: SubscriptionBadgeProps) {
+  const pathname = usePathname();
   const { payments, isLoading } = useSpacePayments({
     spaceId: BigInt(web3SpaceId),
   });
@@ -79,14 +84,16 @@ export function SubscriptionBadge({
   };
 
   return (
-    <Badge
-      variant="outline"
-      size={1}
-      colorVariant={variantMap[status].colorVariant}
-      className={cn('ml-3', className)}
-      {...props}
-    >
-      {label}
-    </Badge>
+    <Link href={`${cleanPath(pathname)}${PATH_SELECT_ACTIVATE_ACTION}`}>
+      <Badge
+        variant="outline"
+        size={1}
+        colorVariant={variantMap[status].colorVariant}
+        className={className}
+        {...props}
+      >
+        {label}
+      </Badge>
+    </Link>
   );
 }
