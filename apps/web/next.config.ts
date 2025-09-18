@@ -2,7 +2,6 @@ import type { NextConfig } from 'next';
 import { i18nConfig } from '../../packages/i18n/src/i18n-config';
 
 const IMAGE_HOSTS = process.env.NEXT_PUBLIC_IMAGE_HOSTS?.split(', ') ?? [];
-const ROOT_URL = process.env.NEXT_PUBLIC_ROOT_URL ?? 'https://hypha.earth';
 const LOCALES = i18nConfig.locales;
 
 const nextConfig: NextConfig = {
@@ -41,12 +40,12 @@ const nextConfig: NextConfig = {
       return [
         {
           source: '/',
-          destination: ROOT_URL,
+          destination: '/network',
           permanent: true,
         },
         {
           source: `/:lang(${LOCALES.join('|')})`,
-          destination: ROOT_URL,
+          destination: '/network',
           permanent: true,
         },
       ];
