@@ -45,28 +45,26 @@ export function SubscriptionBadge({
     });
   };
 
-  let status: 'active' | 'activate' | 'renew' | 'expired' | null = null;
+  let status: 'active' | 'activeFreeTrial' | 'activate' | 'expired' | null =
+    null;
   let label: string = '';
 
-  if (isLoading || !payments || !freeTrialUsed) {
+  if (isLoading || !payments) {
     return null;
   }
 
-  if (freeTrialUsed && daysLeft > 0 && daysLeft <= 30) {
-    status = daysLeft <= 14 ? 'activate' : 'active';
-    label =
-      status === 'active'
-        ? `Active until ${formatDate(expiryTime)}`
-        : `Activate before ${formatDate(expiryTime)}`;
-  } else if (daysLeft > 0 && daysLeft <= 14) {
-    status = 'renew';
-    label = `Renew before ${formatDate(expiryTime)}`;
-  } else if (daysLeft < 0) {
-    status = 'expired';
-    label = `Expired since ${formatDate(expiryTime)}`;
-  } else if (daysLeft > 14) {
+  if (freeTrialUsed && daysLeft > 15 && daysLeft <= 30) {
+    status = 'activeFreeTrial';
+    label = `Active on free trial until ${formatDate(expiryTime)}`;
+  } else if (freeTrialUsed && daysLeft > 0 && daysLeft <= 15) {
+    status = 'activate';
+    label = `Activate before ${formatDate(expiryTime)}`;
+  } else if (daysLeft > 0) {
     status = 'active';
     label = `Active until ${formatDate(expiryTime)}`;
+  } else if (!freeTrialUsed && daysLeft <= 0 && expiryTime > 0) {
+    status = 'expired';
+    label = `Expired since ${formatDate(expiryTime)}`;
   }
 
   if (!status) {
@@ -78,8 +76,8 @@ export function SubscriptionBadge({
     { colorVariant: BadgeProps['colorVariant'] }
   > = {
     active: { colorVariant: 'success' },
+    activeFreeTrial: { colorVariant: 'success' },
     activate: { colorVariant: 'warn' },
-    renew: { colorVariant: 'warn' },
     expired: { colorVariant: 'error' },
   };
 
