@@ -24,20 +24,21 @@ interface DocumentCardProps {
   interactions?: React.ReactNode;
 }
 
-function stripDescription(description: string) {
-  if (!description) {
-    return '';
-  }
+function stripDescription(description: string): string {
+  if (!description) return '';
   return description
-    .replace(/\\\[/gm, '[')
-    .replace(/\\\]/gm, ']')
-    .replace(/\\\(/gm, '(')
-    .replace(/\\\)/gm, ')')
-    .replace(/\\\{/gm, '{')
-    .replace(/\\\}/gm, '}')
-    .replace(/\&\#x(\d+)\;/gm, (_, digits) => {
-      const code = Number.parseInt(digits, 16);
-      return String.fromCharCode(code);
+    .replace(/\\([\[\]\(\)\{\}])/g, '$1')
+    .replace(/&#x([0-9A-Fa-f]+);/gi, (full, hex) => {
+      const codePoint = Number.parseInt(hex, 16);
+      if (!Number.isFinite(codePoint) || codePoint < 0 || codePoint > 0x10ffff)
+        return full;
+      return String.fromCodePoint(codePoint);
+    })
+    .replace(/&#(\d+);/g, (full, dec) => {
+      const codePoint = Number.parseInt(dec, 10);
+      if (!Number.isFinite(codePoint) || codePoint < 0 || codePoint > 0x10ffff)
+        return full;
+      return String.fromCodePoint(codePoint);
     });
 }
 
