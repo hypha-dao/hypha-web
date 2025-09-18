@@ -34,7 +34,11 @@ function stripDescription(description: string) {
     .replace(/\\\(/gm, '(')
     .replace(/\\\)/gm, ')')
     .replace(/\\\{/gm, '{')
-    .replace(/\\\}/gm, '}');
+    .replace(/\\\}/gm, '}')
+    .replace(/\&\#x(\d+)\;/gm, (_, digits) => {
+      const code = Number.parseInt(digits, 16);
+      return String.fromCharCode(code);
+    });
 }
 
 export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
