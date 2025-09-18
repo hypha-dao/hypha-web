@@ -44,6 +44,7 @@ export const SelectActivateAction = ({
       description:
         'Purchase Hypha tokens to participate in the network and earn rewards.',
       href: 'create/buy-hypha-tokens',
+      baseTab: 'agreements',
       icon: <ArrowLeftIcon />,
     },
     {
