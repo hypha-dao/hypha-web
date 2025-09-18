@@ -131,6 +131,10 @@ export const SpaceForm = ({
   }, [parentSpaceId, form]);
 
   React.useEffect(() => {
+    form.setValue('parentId', initialParentSpaceId ?? null);
+  }, [initialParentSpaceId, form]);
+
+  React.useEffect(() => {
     if (!values) return;
     form.reset({ ...form.getValues(), ...values }, { keepDirty: true });
   }, [values, form]);
