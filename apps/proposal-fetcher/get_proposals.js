@@ -43,10 +43,16 @@ async function getProposalsForDao(daoId) {
         key_type: 'i64',
         lower_bound: daoId,
         upper_bound: daoId,
-        limit: 1000, // Adjust limit as needed, max 1000 is a reasonable guess for proposals per DAO
+        limit: 5000, // Increased to handle large DAOs like Hypha
     });
 
-    const proposalEdges = result.rows.filter(edge => edge.edge_name === 'proposal');
+    const proposalEdges = result.rows.filter(edge => 
+        edge.edge_name === 'stagingprop' || 
+        edge.edge_name === 'closedprops' || 
+        edge.edge_name === 'passedprops' ||
+        edge.edge_name === 'failedprops' ||
+        edge.edge_name === 'votable' // Active proposals being voted on
+    );
     
     const proposals = [];
     for (const edge of proposalEdges) {

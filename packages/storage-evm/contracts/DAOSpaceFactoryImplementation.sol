@@ -427,7 +427,7 @@ contract DAOSpaceFactoryImplementation is
     uint256 _spaceId,
     uint256 _newJoinMethod
   ) external onlySpaceExecutor(_spaceId) {
-    require(_newJoinMethod > 0, 'Invalid join method');
+    require(_newJoinMethod >= 0, 'Invalid join method');
 
     Space storage space = spaces[_spaceId];
     uint256 oldJoinMethod = space.joinMethod;
