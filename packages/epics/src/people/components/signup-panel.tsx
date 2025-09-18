@@ -87,7 +87,7 @@ export const SignupPanel = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <UploadAvatar onChange={field.onChange} required={true} />
+                      <UploadAvatar onChange={field.onChange} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -166,16 +166,6 @@ export const SignupPanel = ({
                 </div>
               </div>
             </div>
-            <Link href={closeUrl} scroll={false}>
-              <Button
-                variant="ghost"
-                colorVariant="neutral"
-                className="flex items-center"
-              >
-                Close
-                <RxCross1 className="ml-2" />
-              </Button>
-            </Link>
           </div>
           <Separator />
           <FormField
@@ -184,7 +174,10 @@ export const SignupPanel = ({
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <UploadLeadImage onChange={field.onChange} />
+                  <UploadLeadImage
+                    onChange={field.onChange}
+                    enableImageResizer={true}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

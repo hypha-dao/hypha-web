@@ -1,51 +1,84 @@
 'use client';
 
 import {
+  Space,
   useJwt,
   useMe,
   useSpaceBySlug,
   useUpdateSpaceOrchestrator,
 } from '@hypha-platform/core/client';
-import { SidePanel, SpaceForm } from '@hypha-platform/epics';
+import {
+  SchemaCreateSpaceForm,
+  SidePanel,
+  SpaceForm,
+} from '@hypha-platform/epics';
 import { useParams, usePathname } from 'next/navigation';
 import React from 'react';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { Button } from '@hypha-platform/ui';
 import { useRouter } from 'next/navigation';
-import { getDhoPathGovernance } from '../../../@tab/governance/constants';
 import { Locale } from '@hypha-platform/i18n';
 import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
+import { getDhoPathOverview } from '../../../@tab/overview/constants';
 
 export default function SpaceConfiguration() {
   const { person } = useMe();
   const { id: spaceSlug, lang } = useParams<{ id: string; lang: Locale }>();
-  const { space, isLoading } = useSpaceBySlug(spaceSlug);
+  const { space, isLoading: isLoadingSpace } = useSpaceBySlug(spaceSlug);
   const { jwt, isLoadingJwt } = useJwt();
   const router = useRouter();
-  const {
-    updateSpace,
-    isMutating,
-    currentAction,
-    isError,
-    isPending,
-    progress,
-    reset,
-  } = useUpdateSpaceOrchestrator({ authToken: jwt });
+  const { updateSpace, currentAction, isError, isPending, progress, reset } =
+    useUpdateSpaceOrchestrator({ authToken: jwt });
 
   React.useEffect(() => {
-    if (progress === 100 && spaceSlug) {
-      router.push(getDhoPathGovernance(lang as Locale, spaceSlug));
+    if (progress === 100 && !isPending && spaceSlug) {
+      router.push(getDhoPathOverview(lang as Locale, spaceSlug));
     }
-  }, [progress, spaceSlug]);
+  }, [progress, isPending, spaceSlug, lang]);
+
+  const isBusy = isLoadingJwt || isLoadingSpace || isPending;
 
   const pathname = usePathname();
   const closeUrl = pathname.replace(/\/space-configuration$/, '');
+
+  const submitForm = React.useCallback(
+    async (
+      updatedSpace: SchemaCreateSpaceForm,
+      organisationSpaces?: Space[],
+    ) => {
+      try {
+        if (space) {
+          if (!space.parentId && updatedSpace.parentId) {
+            const foundInnerSpace = organisationSpaces?.find(
+              (inner) => inner.id === updatedSpace.parentId,
+            );
+            if (foundInnerSpace) {
+              const { description, address, web3SpaceId, slug, ...updates } =
+                foundInnerSpace;
+              await updateSpace({
+                ...updates,
+                slug,
+                parentId: null,
+                description: description as string | undefined,
+                address: address as string | undefined,
+                web3SpaceId: web3SpaceId as number | undefined,
+              });
+            }
+          }
+        }
+        await updateSpace(updatedSpace);
+      } catch (e) {
+        console.warn(e);
+      }
+    },
+    [space, updateSpace],
+  );
 
   return (
     <SidePanel>
       <LoadingBackdrop
         progress={progress}
-        isLoading={isPending || isLoading}
+        isLoading={isBusy}
         message={
           isError ? (
             <div className="flex flex-col">
@@ -61,7 +94,7 @@ export default function SpaceConfiguration() {
         <SpaceForm
           submitLabel="Update"
           submitLoadingLabel="Updating..."
-          isLoading={isLoadingJwt || isLoading || isMutating}
+          isLoading={isBusy}
           closeUrl={closeUrl}
           backUrl={`${closeUrl}${PATH_SELECT_SETTINGS_ACTION}`}
           backLabel="Back to Settings"
@@ -69,8 +102,8 @@ export default function SpaceConfiguration() {
             name: person?.name,
             surname: person?.surname,
           }}
-          onSubmit={updateSpace}
-          defaultValues={{
+          onSubmit={submitForm}
+          values={{
             ...space,
             title: space?.title || '',
             description: space?.description || '',
@@ -82,7 +115,10 @@ export default function SpaceConfiguration() {
             web3SpaceId: space?.web3SpaceId || undefined,
             parentId: space?.parentId || null,
             address: space?.address || '',
+            flags: space?.flags || [],
           }}
+          label="configure"
+          initialParentSpaceId={space?.parentId ?? null}
         />
       </LoadingBackdrop>
     </SidePanel>

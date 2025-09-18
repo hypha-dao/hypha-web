@@ -18,9 +18,9 @@ import {
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { PersonAvatar } from '../../people/components/person-avatar';
-import { ALLOWED_IMAGE_FILE_SIZE } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import {
+  ALLOWED_IMAGE_FILE_SIZE,
   createAgreementFiles,
   schemaCreateAgreement,
 } from '@hypha-platform/core/client';
@@ -121,6 +121,7 @@ export function CreateAgreementBaseFields({
               <UploadLeadImage
                 onChange={field.onChange}
                 maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
+                enableImageResizer={true}
               />
             </FormControl>
             <FormMessage />

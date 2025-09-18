@@ -75,6 +75,22 @@ const getDocumentBadges = (document: Document) => {
         colorVariant: 'accent',
       });
       break;
+    case 'Buy Hypha Tokens':
+      badges.push({
+        label: 'Buy Hypha Tokens',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
+    case 'Activate Spaces':
+      badges.push({
+        label: 'Activate Spaces',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
     default:
       break;
   }

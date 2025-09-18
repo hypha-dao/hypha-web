@@ -1,15 +1,25 @@
-import { asc, eq, inArray, sql, and, isNull } from 'drizzle-orm';
+import {
+  asc,
+  eq,
+  inArray,
+  sql,
+  and,
+  isNull,
+  not,
+  getTableColumns,
+} from 'drizzle-orm';
 import { memberships, Space, spaces } from '@hypha-platform/storage-postgres';
 import { DbConfig } from '@hypha-platform/core/server';
 
 type FindAllSpacesProps = {
   search?: string;
   parentOnly?: boolean;
+  omitSandbox?: boolean;
 };
 
 export const findAllSpaces = async (
   { db }: DbConfig,
-  { search, parentOnly = true }: FindAllSpacesProps,
+  { search, parentOnly = true, omitSandbox = false }: FindAllSpacesProps,
 ) => {
   const results = await db
     .select({
@@ -26,12 +36,16 @@ export const findAllSpaces = async (
       createdAt: spaces.createdAt,
       updatedAt: spaces.updatedAt,
       address: spaces.address,
+      flags: spaces.flags,
     })
     .from(spaces)
     .where(
       and(
         eq(spaces.isArchived, false),
         parentOnly ? isNull(spaces.parentId) : undefined,
+        omitSandbox
+          ? not(sql`${spaces.flags} @> '["sandbox"]'::jsonb`)
+          : undefined,
         search
           ? sql`(
               -- Full-text search for exact word matches (highest priority)
@@ -158,4 +172,57 @@ export const findAllSpacesByWeb3SpaceIds = async (
     .orderBy(asc(spaces.title));
 
   return results;
+};
+
+type FindAllOrganizationSpacesForNodeByIdInput = {
+  id?: number | null;
+};
+export const findAllOrganizationSpacesForNodeById = async (
+  { id }: FindAllOrganizationSpacesForNodeByIdInput,
+  { db }: DbConfig,
+) => {
+  if (!id) return [];
+
+  const columns = getTableColumns(spaces);
+  const columnEntires = Object.entries(columns);
+  const recordNames = columnEntires.map(([_, v]) => v.name);
+
+  const columnsSql = sql.raw(recordNames.join(', '));
+  const columnsWithAliasSql = sql.raw(
+    recordNames.map((name) => `i.${name}`).join(', '),
+  );
+  const query = sql`
+WITH RECURSIVE upward_tree AS (
+  SELECT ${columnsSql}, 0 as level
+  FROM ${spaces}
+  WHERE ${spaces.id} = ${id}
+  UNION ALL
+  SELECT ${columnsWithAliasSql}, ut.level - 1
+  FROM ${spaces} i
+  INNER JOIN upward_tree ut
+    ON i.id = ut.parent_id
+  WHERE ut.parent_id IS NOT NULL
+),
+downward_tree AS (
+  SELECT ${columnsSql}, 0 as level
+  FROM upward_tree
+  WHERE parent_id IS NULL
+  UNION ALL
+  SELECT ${columnsWithAliasSql}, dt.level + 1
+  FROM ${spaces} i
+  INNER JOIN downward_tree dt
+    ON i.parent_id = dt.id
+)
+SELECT * FROM downward_tree
+ORDER BY level, id;
+`;
+  const results = await db.execute(query);
+
+  return results.rows.map((record) => {
+    const space: Partial<Space> = {};
+    for (const [name, column] of columnEntires) {
+      space[name as keyof Space] = record[column.name] as any;
+    }
+    return space as Space;
+  });
 };

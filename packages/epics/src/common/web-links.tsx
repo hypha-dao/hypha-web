@@ -9,7 +9,7 @@ export const WebLinks = ({ links }: WebLinksProps) => {
   if (!links || links.length === 0) return null;
 
   return (
-    <div className="flex gap-5">
+    <div className="flex gap-5 flex-wrap">
       {links.map((link, index) => (
         <a
           key={`${link}_${index}`}

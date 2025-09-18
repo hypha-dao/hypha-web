@@ -12,7 +12,7 @@ import {
 } from '@hypha-platform/core/client';
 import { useConfig } from 'wagmi';
 import { Button } from '@hypha-platform/ui';
-import { getDhoPathGovernance } from '@web/app/[lang]/dho/[id]/@tab/governance/constants';
+import { getDhoPathOverview } from '@web/app/[lang]/dho/[id]/@tab/overview/constants';
 
 export default function AsideCreateSpacePage() {
   const { lang } = useParams();
@@ -33,7 +33,7 @@ export default function AsideCreateSpacePage() {
 
   React.useEffect(() => {
     if (progress === 100 && spaceSlug) {
-      router.push(getDhoPathGovernance(lang as Locale, spaceSlug));
+      router.push(getDhoPathOverview(lang as Locale, spaceSlug));
     }
   }, [progress, spaceSlug]);
 
@@ -64,8 +64,9 @@ export default function AsideCreateSpacePage() {
           closeUrl={closeUrl}
           backUrl={closeUrl}
           backLabel="Back"
-          onSubmit={createSpace}
+          onSubmit={(values) => createSpace(values)}
           isLoading={isLoadingJwt}
+          label="create"
         />
       </LoadingBackdrop>
     </SidePanel>

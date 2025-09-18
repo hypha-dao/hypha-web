@@ -97,7 +97,11 @@ export const ConnectedButtonProfile = ({
       onDelete={handleOnDelete}
       onChangeThemeMode={handleThemeChange}
       resolvedTheme={resolvedTheme}
-      profileUrl={`/${lang}/profile/${person?.slug ?? ''}`}
+      profileUrl={
+        person?.slug
+          ? `/${lang}/profile/${person?.slug ?? ''}`
+          : newUserRedirectPath
+      }
       navItems={navItems}
     />
   );

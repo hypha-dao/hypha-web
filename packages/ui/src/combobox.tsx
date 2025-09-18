@@ -12,8 +12,10 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from './command';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
+import { Label } from './label';
 
 type Option = {
   value: string;
@@ -31,7 +33,11 @@ type ComboboxProps = {
   initialValue?: string;
   allowEmptyChoice?: boolean;
   className?: string;
+  disabled?: boolean;
 };
+
+export const COMBOBOX_TITLE = '===';
+export const COMBOBOX_DELIMITER = '---';
 
 export function Combobox({
   options,
@@ -42,6 +48,7 @@ export function Combobox({
   initialValue = '',
   allowEmptyChoice = true,
   className,
+  disabled = false,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState(initialValue);
@@ -63,6 +70,7 @@ export function Combobox({
   }, [options, searchTerm]);
 
   const handleSelect = (currentValue: string) => {
+    if (disabled) return;
     const isSameSelection = currentValue === value;
     const newValue = allowEmptyChoice && isSameSelection ? '' : currentValue;
     if (newValue !== value) {
@@ -74,17 +82,22 @@ export function Combobox({
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open && !disabled}
+      onOpenChange={(isOpen) => !disabled && setOpen(isOpen)}
+    >
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           colorVariant="neutral"
           role="combobox"
-          aria-expanded={open}
+          aria-expanded={open && !disabled}
           className={cn(
             'w-full text-2 md:w-72 justify-between py-2 font-normal',
+            disabled && 'pointer-events-none opacity-50',
             className,
           )}
+          disabled={disabled}
         >
           <div className="flex items-center gap-2 truncate">
             {renderValue
@@ -101,29 +114,42 @@ export function Combobox({
             className="h-9"
             value={searchTerm}
             onValueChange={setSearchTerm}
+            disabled={disabled}
           />
           <CommandList className="rounded-lg">
             {filteredOptions.length === 0 ? (
               <CommandEmpty>No options found.</CommandEmpty>
             ) : (
               <CommandGroup>
-                {filteredOptions.map((option) => (
-                  <CommandItem
-                    key={option.value}
-                    value={option.value}
-                    onSelect={handleSelect}
-                  >
-                    <div className="flex items-center gap-2 w-full">
-                      {renderOption ? renderOption(option) : option.label}
-                      <Check
-                        className={cn(
-                          'ml-auto',
-                          value === option.value ? 'opacity-100' : 'opacity-0',
-                        )}
-                      />
-                    </div>
-                  </CommandItem>
-                ))}
+                {filteredOptions.map((option, index) =>
+                  option.value === COMBOBOX_TITLE ? (
+                    <Label key={`${option.value}-${index}`}>
+                      {option.label}
+                    </Label>
+                  ) : option.value.length === 0 ||
+                    option.value === COMBOBOX_DELIMITER ? (
+                    <CommandSeparator key={`${option.value}-${index}`} />
+                  ) : (
+                    <CommandItem
+                      key={`${option.value}-${index}`}
+                      value={option.value}
+                      onSelect={handleSelect}
+                      disabled={disabled}
+                    >
+                      <div className="flex items-center gap-2 w-full">
+                        {renderOption ? renderOption(option) : option.label}
+                        <Check
+                          className={cn(
+                            'ml-auto',
+                            value === option.value
+                              ? 'opacity-100'
+                              : 'opacity-0',
+                          )}
+                        />
+                      </div>
+                    </CommandItem>
+                  ),
+                )}
               </CommandGroup>
             )}
           </CommandList>

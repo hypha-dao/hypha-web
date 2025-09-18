@@ -113,12 +113,22 @@ export const PersonHead = ({
             </Button>
           </Skeleton>
           <Skeleton loading={isLoading} width={120} height={35}>
-            <Button asChild colorVariant="accent">
-              <Link href={`/${lang}/profile/${personSlug}/edit`} scroll={false}>
+            <Link
+              href={
+                isMe(personSlug as string)
+                  ? `/${lang}/profile/${personSlug}/edit`
+                  : {}
+              }
+              scroll={false}
+            >
+              <Button
+                colorVariant="accent"
+                disabled={!isMe(personSlug as string)}
+              >
                 <RxPencil2 />
                 Edit profile
-              </Link>
-            </Button>
+              </Button>
+            </Link>
           </Skeleton>
         </div>
         <Skeleton loading={isLoading} width={180} height={32}>

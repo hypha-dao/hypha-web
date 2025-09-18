@@ -16,3 +16,6 @@ export * from './useProposeAContributionMutations.web3.rsc';
 export * from './useVote';
 export * from './useTokenMutationWeb2.rsc';
 export * from './useMyVote';
+export * from './useBuyHyphaTokensOrchestrator';
+export * from './useActivateSpacesOrchestrator';
+export * from './useActivateSpacesMutations.web3.rsc';

@@ -1,4 +1,9 @@
-import { SpaceCard, FilteredSpaces, SpaceSearch } from '@hypha-platform/epics';
+import {
+  SpaceCard,
+  FilteredSpaces,
+  SpaceSearch,
+  AuthenticatedLinkButton,
+} from '@hypha-platform/epics';
 import Link from 'next/link';
 import { Locale } from '@hypha-platform/i18n';
 import {
@@ -10,9 +15,8 @@ import {
 import { Heading } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { getAllSpaces } from '@hypha-platform/core/server';
-import { getDhoPathGovernance } from '../dho/[id]/@tab/governance/constants';
+import { getDhoPathAgreements } from '../dho/[id]/@tab/agreements/constants';
 import { PlusIcon } from '@radix-ui/react-icons';
-import { AuthenticatedLinkButton } from '../dho/[id]/_components/authenticated-link-button';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -70,7 +74,7 @@ export default async function Index(props: PageProps) {
                 >
                   <Link
                     className="flex flex-col flex-1"
-                    href={getDhoPathGovernance(lang, space.slug as string)}
+                    href={getDhoPathAgreements(lang, space.slug as string)}
                   >
                     <SpaceCard
                       description={space.description as string}
@@ -79,6 +83,13 @@ export default async function Index(props: PageProps) {
                       members={space.memberCount}
                       agreements={space.documentCount}
                       title={space.title as string}
+                      isSandbox={space.flags?.includes('sandbox') ?? false}
+                      isDemo={space.flags?.includes('demo') ?? false}
+                      web3SpaceId={space.web3SpaceId as number}
+                      configPath={`${getDhoPathAgreements(
+                        lang,
+                        space.slug,
+                      )}/space-configuration`}
                     />
                   </Link>
                 </CarouselItem>

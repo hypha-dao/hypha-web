@@ -23,7 +23,7 @@ export function DocumentsSections({
     order,
   });
 
-  const basePath = `/${lang}/dho/${spaceSlug}/governance`;
+  const basePath = `/${lang}/dho/${spaceSlug}/agreements`;
 
   return (
     <div className="flex flex-col gap-6 py-4">

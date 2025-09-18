@@ -1,7 +1,7 @@
 import { Text } from '@radix-ui/themes';
 import { Card, Skeleton, Image } from '@hypha-platform/ui';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
-import { getDhoPathGovernance } from '@hypha-platform/epics';
+import { getDhoPathAgreements } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import Link from 'next/link';
 
@@ -70,7 +70,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
               <Text className="text-1 text-gray-500">{symbol}</Text>
               {space?.title ? (
                 <Link
-                  href={getDhoPathGovernance(lang as Locale, space.slug)}
+                  href={getDhoPathAgreements(lang as Locale, space.slug)}
                   className="text-accent-11 text-1 text-ellipsis overflow-hidden text-nowrap hover:underline"
                 >
                   by {space.title}

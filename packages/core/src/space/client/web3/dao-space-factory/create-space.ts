@@ -34,7 +34,7 @@ export const createSpaceWeb3 = (
     quorum = 0n,
     votingPowerSource = 0n,
     exitMethod = 0n,
-    joinMethod = 0n,
+    joinMethod = 2n,
   }: CreateSpaceWeb3Input,
   { chain = base.id }: CreateSpaceWeb3Config = {},
 ) => {

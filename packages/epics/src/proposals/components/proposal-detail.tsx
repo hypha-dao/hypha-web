@@ -12,6 +12,7 @@ import {
   useProposalDetailsWeb3Rpc,
   DbToken,
   DEFAULT_SPACE_LEAD_IMAGE,
+  Attachment,
 } from '@hypha-platform/core/client';
 import {
   ProposalTransactionItem,
@@ -20,10 +21,12 @@ import {
   ProposalVotingInfo,
   ProposalMintItem,
   ProposalEntryInfo,
+  ProposalBuyHyphaTokensData,
 } from '../../governance';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
 import { ButtonClose } from '@hypha-platform/epics';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { ProposalActivateSpacesData } from '../../governance/components/proposal-activate-spaces-data';
 
 type ProposalDetailProps = ProposalHeadProps & {
   onAccept: () => void;
@@ -33,7 +36,7 @@ type ProposalDetailProps = ProposalHeadProps & {
   content?: string;
   closeUrl: string;
   leadImage?: string;
-  attachments?: string[];
+  attachments?: (string | Attachment)[];
   proposalId?: number | null | undefined;
   spaceSlug: string;
   label?: string;
@@ -139,6 +142,18 @@ export const ProposalDetail = ({
       {proposalDetails?.mintings.map((mint, idx) => (
         <ProposalMintItem key={idx} member={mint.member} number={mint.number} />
       ))}
+      {proposalDetails?.buyHyphaTokensData.amount ? (
+        <ProposalBuyHyphaTokensData
+          amount={proposalDetails?.buyHyphaTokensData.amount}
+        />
+      ) : null}
+      {proposalDetails?.activateSpacesData.spaceIds.length ? (
+        <ProposalActivateSpacesData
+          spaceIds={proposalDetails?.activateSpacesData?.spaceIds}
+          paymentAmounts={proposalDetails?.activateSpacesData?.paymentAmounts}
+          tokenSymbol={proposalDetails?.activateSpacesData?.tokenSymbol}
+        />
+      ) : null}
       <FormVoting
         unity={proposalDetails?.unityPercentage || 0}
         quorum={proposalDetails?.quorumPercentage || 0}

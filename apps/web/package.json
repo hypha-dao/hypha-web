@@ -22,6 +22,7 @@
     "@hypha-platform/storage-postgres": "workspace:*",
     "@hypha-platform/ui": "workspace:*",
     "@hypha-platform/ui-utils": "workspace:*",
+    "@hypha-platform/notifications": "workspace:*",
     "next": "^15.4.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"

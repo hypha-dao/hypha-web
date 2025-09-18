@@ -3,10 +3,16 @@ import { Input, RequirementMark } from '@hypha-platform/ui';
 interface WalletAddressProps {
   address: string;
   onChange?: (address: string) => void;
+  disabled?: boolean;
 }
 
-export const WalletAddress = ({ address, onChange }: WalletAddressProps) => {
+export const WalletAddress = ({
+  address,
+  onChange,
+  disabled = false,
+}: WalletAddressProps) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (disabled) return;
     onChange?.(e.target.value);
   };
 
@@ -22,6 +28,7 @@ export const WalletAddress = ({ address, onChange }: WalletAddressProps) => {
           onChange={handleChange}
           className="md:w-72"
           placeholder="Enter wallet address"
+          disabled={disabled}
         />
       </div>
     </div>

@@ -49,17 +49,12 @@ export function newHandler<A extends Abi, E extends ContractEventName<A>>(
       return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
 
     const callbacksResult = await Promise.allSettled(
-      callbacks.map((callback) => callback(events)),
+      callbacks.map(async (callback) => await callback(events)),
     );
-    const rejected = callbacksResult.filter((res) => res.status === 'rejected');
-    rejected.forEach(({ reason }) =>
-      console.error('Webhook callback failed with error:', reason),
-    );
-
-    if (rejected.length > 0)
-      return NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 },
+    callbacksResult
+      .filter((res) => res.status === 'rejected')
+      .forEach(({ reason }) =>
+        console.error('Webhook callback failed with error:', reason),
       );
 
     return NextResponse.json(null, { status: 200 });

@@ -1,7 +1,7 @@
 import { Locale } from '@hypha-platform/i18n';
 import { AssetsSection, TransactionsSection } from '@hypha-platform/epics';
 import { getDhoPathTreasury } from './constants';
-import { getDhoPathGovernance } from '../governance/constants';
+import { getDhoPathAgreements } from '../agreements/constants';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 
@@ -15,7 +15,7 @@ export default async function TreasuryPage(props: PageProps) {
   const { lang, id } = params;
 
   const basePath = getDhoPathTreasury(lang as Locale, id as string);
-  const governancePath = getDhoPathGovernance(lang as Locale, id as string);
+  const governancePath = getDhoPathAgreements(lang as Locale, id as string);
   const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
 
   return (
