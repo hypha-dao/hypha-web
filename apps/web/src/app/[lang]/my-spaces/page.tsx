@@ -32,7 +32,11 @@ export default async function Index(props: PageProps) {
 
   const { lang } = params;
 
-  const spaces = await getAllSpaces({ search: query, parentOnly: false });
+  const spaces = await getAllSpaces({
+    search: query,
+    parentOnly: false,
+    omitSandbox: true,
+  });
 
   return (
     <div className="w-full overflow-auto">
