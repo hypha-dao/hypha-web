@@ -5,6 +5,7 @@ import * as LabelPrimitive from '@radix-ui/react-label';
 import { Slot } from '@radix-ui/react-slot';
 import {
   Controller,
+  FieldError,
   FormProvider,
   useFormContext,
   type ControllerProps,
@@ -158,43 +159,68 @@ const FormMessageError = ({
 const FormMessage = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
->(({ className, children, ...props }, ref) => {
-  const { error, formMessageId } = useFormField();
+>(
+  (
+    {
+      className,
+      children,
+      detailed = false,
+      ...props
+    }: React.HTMLAttributes<HTMLDivElement> & { detailed?: boolean },
+    ref,
+  ) => {
+    const { invalid, error, formMessageId } = useFormField();
 
-  if (!error && !children) {
-    return null;
-  }
+    if (!invalid) {
+      return null;
+    }
 
-  const body = Array.isArray(error) ? (
-    <>
-      {error.map((err, index) => (
+    if (!error && !children) {
+      return null;
+    }
+
+    const body = Array.isArray(error) ? (
+      error.map((err, index) => (
         <FormMessageError
           key={`${formMessageId}-${index}`}
           message={err?.message ?? ''}
         />
-      ))}
-    </>
-  ) : error ? (
-    <FormMessageError
-      key={`${formMessageId}-message`}
-      message={error?.message ?? ''}
-    />
-  ) : (
-    children
-  );
+      ))
+    ) : error?.message ? (
+      <FormMessageError
+        key={`${formMessageId}-message`}
+        message={error?.message ?? ''}
+      />
+    ) : error ? (
+      detailed ? (
+        Object.entries(error)
+          .filter(([_, value]) => (value as FieldError)?.message)
+          .map(([key, value], index) => (
+            <FormMessageError
+              key={`${formMessageId}-${key}-${index}`}
+              message={`"${key}": ${(value as FieldError).message}`}
+            />
+          ))
+      ) : (
+        children
+      )
+    ) : (
+      children
+    );
 
-  return (
-    <div
-      ref={ref}
-      id={formMessageId}
-      aria-live="polite"
-      className={cn('text-sm font-medium text-destructive', className)}
-      {...props}
-    >
-      {body}
-    </div>
-  );
-});
+    return (
+      <div
+        ref={ref}
+        id={formMessageId}
+        aria-live="polite"
+        className={cn('text-sm font-medium text-destructive', className)}
+        {...props}
+      >
+        {body}
+      </div>
+    );
+  },
+);
 FormMessage.displayName = 'FormMessage';
 
 export {
