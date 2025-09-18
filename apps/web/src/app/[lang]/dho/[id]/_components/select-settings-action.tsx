@@ -37,7 +37,7 @@ export const SelectSettingsAction = ({
 
   const SETTINGS_ACTIONS = [
     {
-      group: 'Organisation',
+      group: 'Overview',
       title: 'Space Configuration',
       description:
         'Customise your space by setting its purpose, adding branding elements, and linking social media.',
@@ -45,7 +45,7 @@ export const SelectSettingsAction = ({
       icon: <GearIcon />,
     },
     {
-      group: 'Organisation',
+      group: 'Overview',
       title: 'Add Space',
       description:
         'Create a new space within your organisation for activities, teams, or projects.',
@@ -54,7 +54,7 @@ export const SelectSettingsAction = ({
       baseTab: 'overview',
     },
     {
-      group: 'Organisation',
+      group: 'Overview',
       title: 'Archive Space (Coming Soon)',
       description:
         'Archive this space to disable activity while preserving its data and history.',
@@ -65,7 +65,7 @@ export const SelectSettingsAction = ({
     },
     {
       defaultDurationDays: 4,
-      group: 'Governance',
+      group: 'Agreements',
       title: 'Voting Method',
       description:
         'Select and configure the voting method for decision-making within your space.',
@@ -75,7 +75,7 @@ export const SelectSettingsAction = ({
     },
     {
       defaultDurationDays: 4,
-      group: 'Membership',
+      group: 'Members',
       title: 'Entry Method',
       description:
         'Select and configure the process by which new members join your space.',
@@ -84,7 +84,7 @@ export const SelectSettingsAction = ({
       baseTab: 'agreements',
     },
     {
-      group: 'Membership',
+      group: 'Members',
       title: 'Exit Method (Coming Soon)',
       description:
         'Select and configure how members can exit or leave your space.',
@@ -93,7 +93,7 @@ export const SelectSettingsAction = ({
       disabled: true,
     },
     {
-      group: 'Membership',
+      group: 'Members',
       title: 'Membership Removal (Coming Soon)',
       description:
         'Remove a member from your space if they infringe upon agreed rules and policies.',
