@@ -461,7 +461,7 @@ contract HyphaToken is
    * @param spaceIds Array of space IDs to pay for
    * @param hyphaAmounts Array of HYPHA amounts for each space
    */
-  
+
   function payInHypha(
     uint256[] calldata spaceIds,
     uint256[] calldata hyphaAmounts
@@ -582,16 +582,13 @@ contract HyphaToken is
 
     // Update distribution state before burning
     updateDistributionState();
-
-    // Reset user's reward tracking without giving them pending rewards
-    // This forfeits any unclaimed rewards for the burned tokens
-    if (from != iexAddress) {
-      unclaimedRewards[from] = 0; // Forfeit any existing unclaimed rewards
-      userRewardDebt[from] = accumulatedRewardPerToken; // Reset debt to current state
-    }
-
     // Burn tokens - removes them from circulation entirely
     _burn(from, amount);
+    // Forfeit any unclaimed rewards for the burned address (except IEX)
+    if (from != iexAddress) {
+      unclaimedRewards[from] = 0;
+      userRewardDebt[from] = accumulatedRewardPerToken;
+    }
 
     emit TokensBurned(from, amount);
   }
