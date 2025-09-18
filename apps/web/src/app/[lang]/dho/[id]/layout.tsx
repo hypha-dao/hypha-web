@@ -131,6 +131,7 @@ export default async function DhoLayout({
             </div>
             <div className="text-gray-500 ml-1 text-1">Agreements</div>
           </div>
+          <SubscriptionBadge web3SpaceId={spaceFromDb.web3SpaceId as number} />
           <SpaceModeLabel
             web3SpaceId={spaceFromDb.web3SpaceId as number}
             isSandbox={spaceFromDb.flags.includes('sandbox')}
@@ -140,7 +141,6 @@ export default async function DhoLayout({
               daoSlug,
             )}/space-configuration`}
           />
-          <SubscriptionBadge web3SpaceId={spaceFromDb.web3SpaceId as number} />
         </div>
         <div className="mt-8">
           <SalesBanner web3SpaceId={spaceFromDb.web3SpaceId as number} />
