@@ -57,7 +57,9 @@ export const SelectActivateAction = ({
     },
   ];
 
-  const computeHref = (action: any) => {
+  const computeHref = (
+    action: { href?: string; baseTab?: string } | undefined,
+  ) => {
     if (!action?.href) {
       return '';
     }
