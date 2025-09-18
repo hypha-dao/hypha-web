@@ -34,22 +34,18 @@ const nextConfig: NextConfig = {
     })),
   },
   redirects: async () => {
-    if (process.env.NODE_ENV === 'development') {
-      return [];
-    } else {
-      return [
-        {
-          source: '/',
-          destination: '/network',
-          permanent: true,
-        },
-        {
-          source: `/:lang(${LOCALES.join('|')})`,
-          destination: '/network',
-          permanent: true,
-        },
-      ];
-    }
+    return [
+      {
+        source: '/',
+        destination: '/network',
+        permanent: true,
+      },
+      {
+        source: `/:lang(${LOCALES.join('|')})`,
+        destination: '/network',
+        permanent: true,
+      },
+    ];
   },
 };
 
