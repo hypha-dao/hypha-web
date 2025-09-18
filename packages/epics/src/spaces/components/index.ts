@@ -23,3 +23,4 @@ export * from './space-mode-label';
 export * from './space-search';
 export * from './subspace-section';
 export * from './sales-banner';
+export * from './subscription-badge';
