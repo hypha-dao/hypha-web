@@ -8,7 +8,6 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 
 import { cn } from '@hypha-platform/ui-utils';
 import { Button } from './button';
-import { ScrollArea, ScrollBar } from './scroll-area';
 
 type CarouselApi = UseEmblaCarouselType[1];
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>;
@@ -153,13 +152,19 @@ Carousel.displayName = 'Carousel';
 
 const CarouselContent = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => {
+  React.HTMLAttributes<HTMLDivElement> & { showScrollbar?: boolean }
+>(({ className, showScrollbar = false, ...props }, ref) => {
   const { carouselRef, orientation } = useCarousel();
 
   return (
-    <div ref={carouselRef} className="overflow-hidden">
-      {/* <ScrollArea> */}
+    <div
+      ref={carouselRef}
+      className={cn(
+        showScrollbar
+          ? 'overflow-x-scroll narrow-scrollbar'
+          : 'overflow-hidden',
+      )}
+    >
       <div
         ref={ref}
         className={cn(
@@ -169,8 +174,6 @@ const CarouselContent = React.forwardRef<
         )}
         {...props}
       />
-      {/* <ScrollBar orientation="horizontal" /> */}
-      {/* </ScrollArea> */}
     </div>
   );
 });

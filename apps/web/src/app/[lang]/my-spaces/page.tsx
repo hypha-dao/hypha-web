@@ -76,7 +76,7 @@ export default async function Index(props: PageProps) {
             Spaces you might like
           </Text>
           <Carousel className="mt-6">
-            <CarouselContent className="overflow-x-scroll pb-5 narrow-scrollbar">
+            <CarouselContent className="pb-5" showScrollbar>
               {allSpaces.map((space) => (
                 <CarouselItem
                   key={space.id}
