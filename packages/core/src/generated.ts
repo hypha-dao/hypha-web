@@ -208,14 +208,14 @@ export const agreementsImplementationAbi = [
     outputs: [],
     stateMutability: 'payable',
   },
-] as const;
+] as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x83B5d4F555A68126bB302685e67767Bb7a2985F0)
  */
 export const agreementsImplementationAddress = {
   8453: '0x83B5d4F555A68126bB302685e67767Bb7a2985F0',
-} as const;
+} as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x83B5d4F555A68126bB302685e67767Bb7a2985F0)
@@ -223,7 +223,7 @@ export const agreementsImplementationAddress = {
 export const agreementsImplementationConfig = {
   address: agreementsImplementationAddress,
   abi: agreementsImplementationAbi,
-} as const;
+} as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // DAOProposalsImplementation
@@ -791,14 +791,14 @@ export const daoProposalsImplementationAbi = [
     outputs: [],
     stateMutability: 'nonpayable',
   },
-] as const;
+] as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x001bA7a00a259Fb12d7936455e292a60FC2bef14)
  */
 export const daoProposalsImplementationAddress = {
   8453: '0x001bA7a00a259Fb12d7936455e292a60FC2bef14',
-} as const;
+} as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x001bA7a00a259Fb12d7936455e292a60FC2bef14)
@@ -806,7 +806,7 @@ export const daoProposalsImplementationAddress = {
 export const daoProposalsImplementationConfig = {
   address: daoProposalsImplementationAddress,
   abi: daoProposalsImplementationAbi,
-} as const;
+} as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // DAOSpaceFactoryImplementation
@@ -1402,14 +1402,14 @@ export const daoSpaceFactoryImplementationAbi = [
     outputs: [],
     stateMutability: 'payable',
   },
-] as const;
+] as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0xc8B8454D2F9192FeCAbc2C6F5d88F6434A2a9cd9)
  */
 export const daoSpaceFactoryImplementationAddress = {
   8453: '0xc8B8454D2F9192FeCAbc2C6F5d88F6434A2a9cd9',
-} as const;
+} as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0xc8B8454D2F9192FeCAbc2C6F5d88F6434A2a9cd9)
@@ -1417,7 +1417,7 @@ export const daoSpaceFactoryImplementationAddress = {
 export const daoSpaceFactoryImplementationConfig = {
   address: daoSpaceFactoryImplementationAddress,
   abi: daoSpaceFactoryImplementationAbi,
-} as const;
+} as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // DecayingSpaceToken
@@ -1768,14 +1768,14 @@ export const decayingSpaceTokenAbi = [
     outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
     stateMutability: 'view',
   },
-] as const;
+] as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0xc8995514f8c76b9d9a509b4fdba0d06eb732907e)
  */
 export const decayingSpaceTokenAddress = {
   8453: '0xC8995514f8C76b9D9A509b4fDbA0D06eB732907e',
-} as const;
+} as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0xc8995514f8c76b9d9a509b4fdba0d06eb732907e)
@@ -1783,7 +1783,7 @@ export const decayingSpaceTokenAddress = {
 export const decayingSpaceTokenConfig = {
   address: decayingSpaceTokenAddress,
   abi: decayingSpaceTokenAbi,
-} as const;
+} as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // DecayingTokenFactory
@@ -2104,14 +2104,14 @@ export const decayingTokenFactoryAbi = [
     outputs: [],
     stateMutability: 'payable',
   },
-] as const;
+] as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x299f4D2327933c1f363301dbd2a28379ccD5539b)
  */
 export const decayingTokenFactoryAddress = {
   8453: '0x299f4D2327933c1f363301dbd2a28379ccD5539b',
-} as const;
+} as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x299f4D2327933c1f363301dbd2a28379ccD5539b)
@@ -2119,7 +2119,7 @@ export const decayingTokenFactoryAddress = {
 export const decayingTokenFactoryConfig = {
   address: decayingTokenFactoryAddress,
   abi: decayingTokenFactoryAbi,
-} as const;
+} as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // HyphaToken
@@ -2951,14 +2951,14 @@ export const hyphaTokenAbi = [
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
-] as const;
+] as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x8b93862835C36e9689E9bb1Ab21De3982e266CD3)
  */
 export const hyphaTokenAddress = {
   8453: '0x8b93862835C36e9689E9bb1Ab21De3982e266CD3',
-} as const;
+} as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x8b93862835C36e9689E9bb1Ab21De3982e266CD3)
@@ -2966,7 +2966,7 @@ export const hyphaTokenAddress = {
 export const hyphaTokenConfig = {
   address: hyphaTokenAddress,
   abi: hyphaTokenAbi,
-} as const;
+} as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // OwnershipTokenFactory
@@ -3279,14 +3279,14 @@ export const ownershipTokenFactoryAbi = [
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
     stateMutability: 'view',
   },
-] as const;
+] as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0xA1eDf096B72226ae2f7BDEb12E9c9C82152BccB6)
  */
 export const ownershipTokenFactoryAddress = {
   8453: '0xA1eDf096B72226ae2f7BDEb12E9c9C82152BccB6',
-} as const;
+} as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0xA1eDf096B72226ae2f7BDEb12E9c9C82152BccB6)
@@ -3294,7 +3294,7 @@ export const ownershipTokenFactoryAddress = {
 export const ownershipTokenFactoryConfig = {
   address: ownershipTokenFactoryAddress,
   abi: ownershipTokenFactoryAbi,
-} as const;
+} as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // OwnershipTokenVotingPowerImplementation
@@ -3549,14 +3549,14 @@ export const ownershipTokenVotingPowerImplementationAbi = [
     outputs: [],
     stateMutability: 'payable',
   },
-] as const;
+] as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x255c7b5DaC3696199fEF7A8CC6Cc87190bc36eFd)
  */
 export const ownershipTokenVotingPowerImplementationAddress = {
   8453: '0x255c7b5DaC3696199fEF7A8CC6Cc87190bc36eFd',
-} as const;
+} as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x255c7b5DaC3696199fEF7A8CC6Cc87190bc36eFd)
@@ -3564,7 +3564,7 @@ export const ownershipTokenVotingPowerImplementationAddress = {
 export const ownershipTokenVotingPowerImplementationConfig = {
   address: ownershipTokenVotingPowerImplementationAddress,
   abi: ownershipTokenVotingPowerImplementationAbi,
-} as const;
+} as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // RegularTokenFactory
@@ -3858,14 +3858,14 @@ export const regularTokenFactoryAbi = [
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
     stateMutability: 'view',
   },
-] as const;
+] as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x95A33EC94de2189893884DaD63eAa19f7390144a)
  */
 export const regularTokenFactoryAddress = {
   8453: '0x95A33EC94de2189893884DaD63eAa19f7390144a',
-} as const;
+} as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x95A33EC94de2189893884DaD63eAa19f7390144a)
@@ -3873,7 +3873,7 @@ export const regularTokenFactoryAddress = {
 export const regularTokenFactoryConfig = {
   address: regularTokenFactoryAddress,
   abi: regularTokenFactoryAbi,
-} as const;
+} as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // SpacePaymentTracker
@@ -4419,14 +4419,14 @@ export const tokenBalanceJoinImplementationAbi = [
     outputs: [],
     stateMutability: 'payable',
   },
-] as const;
+] as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x41cD69A3a3715B16598415df336a8Cc533CCAF76)
  */
 export const tokenBalanceJoinImplementationAddress = {
   8453: '0x41cD69A3a3715B16598415df336a8Cc533CCAF76',
-} as const;
+} as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x41cD69A3a3715B16598415df336a8Cc533CCAF76)
@@ -4434,7 +4434,7 @@ export const tokenBalanceJoinImplementationAddress = {
 export const tokenBalanceJoinImplementationConfig = {
   address: tokenBalanceJoinImplementationAddress,
   abi: tokenBalanceJoinImplementationAbi,
-} as const;
+} as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // TokenVotingPowerImplementation
@@ -4734,14 +4734,14 @@ export const tokenVotingPowerImplementationAbi = [
     outputs: [],
     stateMutability: 'payable',
   },
-] as const;
+] as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x3214DE1Eb858799Db626Bd9699e78c2E6E33D2BE)
  */
 export const tokenVotingPowerImplementationAddress = {
   8453: '0x3214DE1Eb858799Db626Bd9699e78c2E6E33D2BE',
-} as const;
+} as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x3214DE1Eb858799Db626Bd9699e78c2E6E33D2BE)
@@ -4749,7 +4749,7 @@ export const tokenVotingPowerImplementationAddress = {
 export const tokenVotingPowerImplementationConfig = {
   address: tokenVotingPowerImplementationAddress,
   abi: tokenVotingPowerImplementationAbi,
-} as const;
+} as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // VoteDecayTokenVotingPowerImplementation
@@ -5060,14 +5060,14 @@ export const voteDecayTokenVotingPowerImplementationAbi = [
     outputs: [],
     stateMutability: 'payable',
   },
-] as const;
+] as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x6dB5E05B21c68550B63a7404a3B68F81c159DAee)
  */
 export const voteDecayTokenVotingPowerImplementationAddress = {
   8453: '0x6dB5E05B21c68550B63a7404a3B68F81c159DAee',
-} as const;
+} as const
 
 /**
  * [__View Contract on Base Basescan__](https://basescan.org/address/0x6dB5E05B21c68550B63a7404a3B68F81c159DAee)
@@ -5075,4 +5075,312 @@ export const voteDecayTokenVotingPowerImplementationAddress = {
 export const voteDecayTokenVotingPowerImplementationConfig = {
   address: voteDecayTokenVotingPowerImplementationAddress,
   abi: voteDecayTokenVotingPowerImplementationAbi,
-} as const;
+} as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// VotingPowerDelegationImplementation
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0xc87546357EeFF8653cF058Be2BA850813e39cda0)
+ */
+export const votingPowerDelegationImplementationAbi = [
+  { type: 'constructor', inputs: [], stateMutability: 'nonpayable' },
+  {
+    type: 'error',
+    inputs: [{ name: 'target', internalType: 'address', type: 'address' }],
+    name: 'AddressEmptyCode',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'implementation', internalType: 'address', type: 'address' },
+    ],
+    name: 'ERC1967InvalidImplementation',
+  },
+  { type: 'error', inputs: [], name: 'ERC1967NonPayable' },
+  { type: 'error', inputs: [], name: 'FailedCall' },
+  { type: 'error', inputs: [], name: 'InvalidInitialization' },
+  { type: 'error', inputs: [], name: 'NotInitializing' },
+  {
+    type: 'error',
+    inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
+    name: 'OwnableInvalidOwner',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'OwnableUnauthorizedAccount',
+  },
+  { type: 'error', inputs: [], name: 'UUPSUnauthorizedCallContext' },
+  {
+    type: 'error',
+    inputs: [{ name: 'slot', internalType: 'bytes32', type: 'bytes32' }],
+    name: 'UUPSUnsupportedProxiableUUID',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'version',
+        internalType: 'uint64',
+        type: 'uint64',
+        indexed: false,
+      },
+    ],
+    name: 'Initialized',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previousOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'newOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'OwnershipTransferred',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'implementation',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'Upgraded',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'delegator',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'delegate',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+    ],
+    name: 'VotingPowerDelegated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'delegator',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'previousDelegate',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+    ],
+    name: 'VotingPowerUndelegated',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'UPGRADE_INTERFACE_VERSION',
+    outputs: [{ name: '', internalType: 'string', type: 'string' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_delegate', internalType: 'address', type: 'address' },
+      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'delegate',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '', internalType: 'address', type: 'address' },
+      { name: '', internalType: 'uint256', type: 'uint256' },
+      { name: '', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'delegateToDelegators',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_user', internalType: 'address', type: 'address' },
+      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'getDelegate',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_user', internalType: 'address', type: 'address' },
+      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'getDelegationInfo',
+    outputs: [
+      { name: 'delegateAddress', internalType: 'address', type: 'address' },
+      { name: 'hasDelegatedStatus', internalType: 'bool', type: 'bool' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_delegate', internalType: 'address', type: 'address' },
+      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'getDelegators',
+    outputs: [{ name: '', internalType: 'address[]', type: 'address[]' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_user', internalType: 'address', type: 'address' },
+      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'hasDelegated',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'initialOwner', internalType: 'address', type: 'address' },
+    ],
+    name: 'initialize',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_user', internalType: 'address', type: 'address' },
+      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'isDelegated',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'owner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'proxiableUUID',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'renounceOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address' }],
+    name: 'transferOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_spaceId', internalType: 'uint256', type: 'uint256' }],
+    name: 'undelegate',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'newImplementation', internalType: 'address', type: 'address' },
+      { name: 'data', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'upgradeToAndCall',
+    outputs: [],
+    stateMutability: 'payable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '', internalType: 'address', type: 'address' },
+      { name: '', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'userDelegates',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '', internalType: 'address', type: 'address' },
+      { name: '', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'userHasDelegated',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+] as const
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0xc87546357EeFF8653cF058Be2BA850813e39cda0)
+ */
+export const votingPowerDelegationImplementationAddress = {
+  8453: '0xc87546357EeFF8653cF058Be2BA850813e39cda0',
+} as const
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0xc87546357EeFF8653cF058Be2BA850813e39cda0)
+ */
+export const votingPowerDelegationImplementationConfig = {
+  address: votingPowerDelegationImplementationAddress,
+  abi: votingPowerDelegationImplementationAbi,
+} as const
