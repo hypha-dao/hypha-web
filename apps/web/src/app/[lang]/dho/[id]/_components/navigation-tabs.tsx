@@ -1,7 +1,7 @@
 'use client';
 
 import { Locale } from '@hypha-platform/i18n';
-import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
+import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { getDhoPathAgreements } from '../@tab/agreements/constants';
