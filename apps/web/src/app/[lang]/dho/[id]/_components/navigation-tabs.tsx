@@ -1,7 +1,7 @@
 'use client';
 
 import { Locale } from '@hypha-platform/i18n';
-import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
+import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { getDhoPathAgreements } from '../@tab/agreements/constants';
@@ -9,6 +9,7 @@ import { getDhoPathMembers } from '../@tab/members/constants';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
 import { getDhoPathTreasury } from '../@tab/treasury/constants';
 import { getDhoPathOverview } from '../@tab/overview/constants';
+import { ScrollArea, ScrollBar } from '@hypha-platform/ui';
 
 export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
   const pathname = usePathname();
@@ -38,23 +39,26 @@ export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
   ];
 
   return (
-    <Tabs value={activeTab} className="w-full mt-16">
-      <div className="w-full overflow-x-auto">
-        <TabsList>
-          {tabs.map(({ name, href, title }, index) => (
-            <TabsTrigger
-              asChild
-              key={`tab-${index}`}
-              value={name}
-              variant="ghost"
-            >
-              <Link href={href} passHref>
-                {title}
-              </Link>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </div>
+    <Tabs value={activeTab} className="w-full mt-16 overflow-hidden">
+      <ScrollArea>
+        <div className="w-full relative h-10 mb-4">
+          <TabsList className="flex absolute h-10 md:w-full">
+            {tabs.map(({ name, href, title }, index) => (
+              <TabsTrigger
+                asChild
+                key={`tab-${index}`}
+                value={name}
+                variant="ghost"
+              >
+                <Link href={href} className="w-full" passHref>
+                  {title}
+                </Link>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
+        <ScrollBar orientation="horizontal" className="hidden" />
+      </ScrollArea>
     </Tabs>
   );
 }

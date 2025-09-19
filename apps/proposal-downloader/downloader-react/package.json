@@ -13,7 +13,6 @@
   "dependencies": {
     "eosjs": "^22.1.0",
     "jspdf": "^3.0.2",
-    "jspdf-autotable": "^3.8.4",
     "node-fetch": "^3.3.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
