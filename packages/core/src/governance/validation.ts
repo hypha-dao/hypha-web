@@ -421,3 +421,17 @@ export const schemaActivateSpaces = z.object({
     )
     .min(1),
 });
+
+export const schemaSpaceToSpaceMembership = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  label: z.literal('Space To Space'),
+  space: z
+    .string()
+    .min(1, { message: 'Please choose a space' })
+    .refine(isAddress, { message: 'Invalid Ethereum address' }),
+  member: z
+    .string()
+    .min(1, { message: 'Please choose a member' })
+    .refine(isAddress, { message: 'Invalid Ethereum address' }),
+});
