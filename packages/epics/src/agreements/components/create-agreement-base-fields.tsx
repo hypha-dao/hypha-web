@@ -91,6 +91,7 @@ export function CreateAgreementBaseFields({
                 name="title"
                 render={({ field }) => (
                   <FormItem>
+                    {/* @ts-expect-error Server Component */}
                     <FormControl>
                       <Input
                         placeholder="Proposal title..."
