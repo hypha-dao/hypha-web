@@ -32,10 +32,14 @@ export default async function Index(props: PageProps) {
 
   const { lang } = params;
 
-  const spaces = await getAllSpaces({
-    search: query,
+  const allSpaces = await getAllSpaces({
     parentOnly: false,
     omitSandbox: true,
+  });
+
+  const mySpaces = await getAllSpaces({
+    search: query,
+    parentOnly: false,
   });
 
   return (
@@ -53,7 +57,7 @@ export default async function Index(props: PageProps) {
         </Heading>
         <div className="flex justify-center">
           <SpaceSearch />
-          {spaces?.length > 0 ? (
+          {mySpaces?.length > 0 ? (
             <AuthenticatedLinkButton
               hideInsteadDisabled
               href={`/${lang}/my-spaces/create`}
@@ -63,7 +67,7 @@ export default async function Index(props: PageProps) {
             </AuthenticatedLinkButton>
           ) : null}
         </div>
-        <FilteredSpaces lang={lang} spaces={spaces} showLoadMore={false} />
+        <FilteredSpaces lang={lang} spaces={mySpaces} showLoadMore={false} />
         <div
           data-testid="recommended-spaces-container"
           className="w-full space-y-6"
@@ -71,7 +75,7 @@ export default async function Index(props: PageProps) {
           <Text className="text-4 font-medium">Spaces you might like</Text>
           <Carousel>
             <CarouselContent>
-              {spaces.map((space) => (
+              {allSpaces.map((space) => (
                 <CarouselItem
                   key={space.id}
                   className="w-full sm:w-[454px] max-w-[454px] flex-shrink-0"
