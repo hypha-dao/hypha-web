@@ -29,6 +29,7 @@ export function TokenSelectorField({ name, tokens }: TokenSelectorFieldProps) {
       name={name}
       render={({ field }) => (
         <FormItem>
+          {/* @ts-expect-error Server Component */}
           <FormControl>
             <TokenSelector
               value={field.value}

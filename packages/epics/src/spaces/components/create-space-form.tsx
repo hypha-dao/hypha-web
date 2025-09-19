@@ -302,6 +302,7 @@ export const SpaceForm = ({
               name="logoUrl"
               render={({ field }) => (
                 <FormItem>
+                  {/* @ts-expect-error Server Component */}
                   <FormControl>
                     <UploadAvatar
                       {...field}
@@ -330,6 +331,7 @@ export const SpaceForm = ({
                   name="title"
                   render={({ field }) => (
                     <FormItem>
+                      {/* @ts-expect-error Server Component */}
                       <FormControl>
                         <Input
                           rightIcon={!field.value && <RequirementMark />}
@@ -364,6 +366,7 @@ export const SpaceForm = ({
           name="leadImage"
           render={({ field }) => (
             <FormItem>
+              {/* @ts-expect-error Server Component */}
               <FormControl>
                 <UploadLeadImage
                   {...field}
@@ -396,6 +399,7 @@ export const SpaceForm = ({
               <FormLabel className="text-foreground gap-1">
                 Purpose <RequirementMark />
               </FormLabel>
+              {/* @ts-expect-error Server Component */}
               <FormControl>
                 <Textarea
                   disabled={isLoading}
@@ -416,6 +420,7 @@ export const SpaceForm = ({
                 <FormLabel className="text-foreground">
                   Organisation Level
                 </FormLabel>
+                {/* @ts-expect-error Server Component */}
                 <FormControl>
                   <ParentSpaceSelector
                     options={parentOptions}
@@ -441,6 +446,7 @@ export const SpaceForm = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-foreground">Tags</FormLabel>
+              {/* @ts-expect-error Server Component */}
               <FormControl>
                 <MultiSelect
                   placeholder={'Select one or more'}
@@ -459,6 +465,7 @@ export const SpaceForm = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Channels</FormLabel>
+              {/* @ts-expect-error Server Component */}
               <FormControl>
                 <Links
                   links={field.value}

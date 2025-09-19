@@ -18,6 +18,7 @@ export const DecaySettingsField = ({ name }: { name: string }) => {
       name={name}
       render={({ field: { value, onChange } }) => (
         <FormItem>
+          {/* @ts-expect-error Server Component */}
           <FormControl>
             <DecaySettings value={value} onChange={onChange} />
           </FormControl>

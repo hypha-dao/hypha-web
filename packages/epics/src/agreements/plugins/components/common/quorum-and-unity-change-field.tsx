@@ -25,6 +25,7 @@ export function QuorumAndUnityChangerField({
       name={name}
       render={() => (
         <FormItem>
+          {/* @ts-expect-error Server Component */}
           <FormControl>
             <QuorumAndUnityChanger
               quorum={fieldValue.quorum}

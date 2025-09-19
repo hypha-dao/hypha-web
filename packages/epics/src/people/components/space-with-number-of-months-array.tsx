@@ -69,6 +69,7 @@ export const SpaceWithNumberOfMonthsFieldArray = ({
                   const spaceError = error as SpaceFieldError;
                   return (
                     <FormItem>
+                      {/* @ts-expect-error Server Component */}
                       <FormControl>
                         <SpaceWithNumberOfMonthsField
                           spaces={spaces}
