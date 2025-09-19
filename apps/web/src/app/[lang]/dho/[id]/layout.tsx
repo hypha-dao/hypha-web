@@ -147,8 +147,10 @@ export default async function DhoLayout({
         <div className="space-y-9">
           <Separator />
           <div className="border-primary-foreground">
-            <Text className="text-4 font-medium">Spaces you might like</Text>
-            <Carousel className="my-6">
+            <Text className="text-4 font-medium pb-4 pt-4">
+              Spaces you might like
+            </Text>
+            <Carousel className="my-6 mt-6">
               <CarouselContent>
                 {spaces.map((space) => (
                   <CarouselItem
