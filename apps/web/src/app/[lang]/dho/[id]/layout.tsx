@@ -79,7 +79,7 @@ export default async function DhoLayout({
     }
   })();
 
-  const spaces = await getAllSpaces();
+  const spaces = await getAllSpaces({ parentOnly: false, omitSandbox: true });
 
   return (
     <div className="flex max-w-container-2xl mx-auto">
@@ -147,9 +147,11 @@ export default async function DhoLayout({
         <div className="space-y-9">
           <Separator />
           <div className="border-primary-foreground">
-            <Text className="text-4 font-medium">Spaces you might like</Text>
-            <Carousel className="my-6">
-              <CarouselContent>
+            <Text className="text-4 font-medium pb-4 pt-4">
+              Spaces you might like
+            </Text>
+            <Carousel className="my-6 mt-6">
+              <CarouselContent className="pb-5" showScrollbar>
                 {spaces.map((space) => (
                   <CarouselItem
                     key={space.id}
