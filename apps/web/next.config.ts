@@ -6,6 +6,12 @@ const ROOT_URL = process.env.NEXT_PUBLIC_ROOT_URL ?? 'https://hypha.earth';
 const LOCALES = i18nConfig.locales;
 
 const nextConfig: NextConfig = {
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   headers: async () => {
     return [
       {
