@@ -14,7 +14,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 interface SpaceToSpaceMembershipFormProps {
   successfulUrl: string;
   backUrl?: string;
-  plugin?: React.ReactNode;
+  children?: React.ReactNode;
   spaceId: number | undefined | null;
   web3SpaceId?: number | null;
 }
@@ -26,7 +26,7 @@ type FormValues = z.infer<typeof combinedSchemaSpaceToSpaceMembership>;
 export const SpaceToSpaceMembershipForm = ({
   successfulUrl,
   backUrl,
-  plugin,
+  children,
   spaceId,
   web3SpaceId,
 }: SpaceToSpaceMembershipFormProps) => {
@@ -42,8 +42,8 @@ export const SpaceToSpaceMembershipForm = ({
       attachments: undefined,
       creatorId: person?.id,
       spaceId: spaceId ?? undefined,
-      space: '',
-      member: '',
+      space: undefined,
+      member: undefined,
       label: 'Space To Space',
     },
   });
@@ -84,7 +84,7 @@ export const SpaceToSpaceMembershipForm = ({
           isLoading={false}
           label="Space To Space"
         />
-        {plugin}
+        {children}
         <Separator />
         <div className="flex justify-end w-full">
           <Button type="submit">Publish</Button>
