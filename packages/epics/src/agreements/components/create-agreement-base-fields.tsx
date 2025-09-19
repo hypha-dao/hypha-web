@@ -118,6 +118,7 @@ export function CreateAgreementBaseFields({
         name="leadImage"
         render={({ field }) => (
           <FormItem>
+            {/* @ts-expect-error Server Component */}
             <FormControl>
               <UploadLeadImage
                 onChange={field.onChange}
