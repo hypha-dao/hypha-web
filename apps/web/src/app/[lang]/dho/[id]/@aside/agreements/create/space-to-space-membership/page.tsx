@@ -55,7 +55,13 @@ export default async function SpaceToSpaceMembershipPage({
           backUrl={`${successfulUrl}${PATH_SELECT_SETTINGS_ACTION}`}
           spaceId={spaceId}
           web3SpaceId={web3SpaceId}
-        ></SpaceToSpaceMembershipForm>
+        >
+          <Plugin
+            name="space-to-space-membership"
+            spaceSlug={id}
+            spaces={filteredSpaces}
+          />
+        </SpaceToSpaceMembershipForm>
       )}
     </SidePanel>
   );

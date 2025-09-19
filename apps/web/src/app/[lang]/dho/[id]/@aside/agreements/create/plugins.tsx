@@ -9,6 +9,7 @@ import {
   IssueNewTokenPlugin,
   BuyHyphaTokensPlugin,
   ActivateSpacesPlugin,
+  SpaceToSpaceMembershipPlugin,
 } from '@hypha-platform/epics';
 import { useMembers } from '@web/hooks/use-members';
 import { Space } from '@hypha-platform/core/client';
@@ -22,6 +23,7 @@ export const PLUGINS = {
   'issue-new-token': IssueNewTokenPlugin,
   'buy-hypha-tokens': BuyHyphaTokensPlugin,
   'activate-spaces': ActivateSpacesPlugin,
+  'space-to-space-membership': SpaceToSpaceMembershipPlugin,
 };
 
 type PluginProps = {
