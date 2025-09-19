@@ -168,6 +168,7 @@ export const PeoplePurchaseHyphaTokens = ({
                   name="payout.amount"
                   render={({ field }) => (
                     <FormItem>
+                      {/* @ts-expect-error Server Component */}
                       <FormControl>
                         <TokenPayoutField
                           value={form.getValues('payout')}

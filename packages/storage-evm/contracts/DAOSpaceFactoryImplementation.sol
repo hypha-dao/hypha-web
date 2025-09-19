@@ -221,9 +221,11 @@ contract DAOSpaceFactoryImplementation is
 
     // Allow contract owner to remove members regardless of exit method
     bool isOwner = msg.sender == owner();
+    // Allow member to remove themselves
+    bool isSelfRemoval = msg.sender == _memberToRemove;
 
-    // If not owner, check exit method authorization
-    if (!isOwner) {
+    // If not owner and not self-removal, check exit method authorization
+    if (!isOwner && !isSelfRemoval) {
       // If exit method is 1, only executor can remove members
       if (space.exitMethod == 1) {
         require(
@@ -240,7 +242,7 @@ contract DAOSpaceFactoryImplementation is
             space.exitMethod,
             _memberToRemove
           ),
-          'Exit criteria not met'
+          'Exit criteria is not met'
         );
       }
     }
@@ -398,7 +400,7 @@ contract DAOSpaceFactoryImplementation is
     );
     require(_newVotingPowerSource > 0, 'Invalid voting power source');
     require(_newQuorum > 0 && _newQuorum <= 100, 'Invalid quorm');
-    require(_newUnity > 0 && _newUnity <= 99, 'Invalid unityy');
+    require(_newUnity > 0 && _newUnity <= 100, 'Invalid unity');
 
     Space storage space = spaces[_spaceId];
     uint256 oldVotingPowerSource = space.votingPowerSource;
@@ -425,7 +427,7 @@ contract DAOSpaceFactoryImplementation is
     uint256 _spaceId,
     uint256 _newJoinMethod
   ) external onlySpaceExecutor(_spaceId) {
-    require(_newJoinMethod > 0, 'Invalid join method');
+    require(_newJoinMethod >= 0, 'Invalid join method');
 
     Space storage space = spaces[_spaceId];
     uint256 oldJoinMethod = space.joinMethod;

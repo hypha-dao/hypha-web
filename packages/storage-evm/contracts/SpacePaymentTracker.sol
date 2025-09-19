@@ -68,12 +68,11 @@ contract SpacePaymentTracker is
 
   /**
    * @dev Update payment for a space - only callable by HyphaToken
-   * @param user User making the payment (for event only)
    * @param spaceId ID of the space being paid for
    * @param durationInDays Duration in days to add to subscription
    */
   function updateSpacePayment(
-    address user,
+    address /* user */,
     uint256 spaceId,
     uint256 durationInDays
   ) external override {
@@ -154,5 +153,32 @@ contract SpacePaymentTracker is
     uint256 spaceId
   ) external view override returns (bool) {
     return spacePayments[spaceId].freeTrialUsed;
+  }
+
+  /**
+   * @dev Extend free trial for a space - only callable by owner
+   * @param spaceId ID of the space to extend
+   * @param durationInDays Duration in days to extend the subscription
+   */
+  function extendFreeTrial(
+    uint256 spaceId,
+    uint256 durationInDays
+  ) external override onlyOwner {
+    require(durationInDays > 0, 'Duration must be greater than 0');
+
+    SpacePayment storage payment = spacePayments[spaceId];
+    require(payment.freeTrialUsed, 'Space has not used free trial');
+
+    uint256 currentTime = block.timestamp;
+
+    // If payment expired, start from current time
+    if (payment.expiryTime < currentTime) {
+      payment.expiryTime = currentTime + (durationInDays * 1 days);
+    } else {
+      // Add to existing expiry time
+      payment.expiryTime += (durationInDays * 1 days);
+    }
+
+    emit SpacePaymentUpdated(spaceId, payment.expiryTime);
   }
 }

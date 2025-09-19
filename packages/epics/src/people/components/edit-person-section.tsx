@@ -97,6 +97,7 @@ export const EditPersonSection = ({
                   name="avatarUrl"
                   render={({ field }) => (
                     <FormItem>
+                      {/* @ts-expect-error Server Component */}
                       <FormControl>
                         <UploadAvatar
                           defaultImage={
@@ -119,6 +120,7 @@ export const EditPersonSection = ({
                         name="name"
                         render={({ field }) => (
                           <FormItem>
+                            {/* @ts-expect-error Server Component */}
                             <FormControl>
                               <Input
                                 disabled={isLoading}
@@ -142,6 +144,7 @@ export const EditPersonSection = ({
                         name="surname"
                         render={({ field }) => (
                           <FormItem>
+                            {/* @ts-expect-error Server Component */}
                             <FormControl>
                               <Input
                                 disabled={isLoading}
@@ -164,6 +167,7 @@ export const EditPersonSection = ({
                       name="nickname"
                       render={({ field }) => (
                         <FormItem>
+                          {/* @ts-expect-error Server Component */}
                           <FormControl>
                             <Input
                               placeholder="Nickname"
@@ -192,6 +196,7 @@ export const EditPersonSection = ({
               name="leadImageUrl"
               render={({ field }) => (
                 <FormItem>
+                  {/* @ts-expect-error Server Component */}
                   <FormControl>
                     <UploadLeadImage
                       defaultImage={
@@ -212,6 +217,7 @@ export const EditPersonSection = ({
               name="description"
               render={({ field }) => (
                 <FormItem>
+                  {/* @ts-expect-error Server Component */}
                   <FormControl>
                     <Textarea
                       placeholder="Type your life purpose here..."
@@ -232,6 +238,7 @@ export const EditPersonSection = ({
                     name="email"
                     render={({ field }) => (
                       <FormItem>
+                        {/* @ts-expect-error Server Component */}
                         <FormControl>
                           <Input
                             disabled={isLoading}
@@ -256,6 +263,7 @@ export const EditPersonSection = ({
                     name="location"
                     render={({ field }) => (
                       <FormItem>
+                        {/* @ts-expect-error Server Component */}
                         <FormControl>
                           <Input
                             disabled={isLoading}
@@ -276,6 +284,7 @@ export const EditPersonSection = ({
                   name="links"
                   render={({ field }) => (
                     <FormItem>
+                      {/* @ts-expect-error Server Component */}
                       <FormControl>
                         <Links
                           links={field.value || []}
