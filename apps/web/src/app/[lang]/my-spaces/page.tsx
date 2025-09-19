@@ -17,6 +17,7 @@ import { Text } from '@radix-ui/themes';
 import { getAllSpaces } from '@hypha-platform/core/server';
 import { getDhoPathAgreements } from '../dho/[id]/@tab/agreements/constants';
 import { PlusIcon } from '@radix-ui/react-icons';
+import { DEFAULT_SPACE_LEAD_IMAGE } from '@hypha-platform/core/client';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -84,7 +85,7 @@ export default async function Index(props: PageProps) {
                     <SpaceCard
                       description={space.description as string}
                       icon={space.logoUrl || ''}
-                      leadImage={space.leadImage || ''}
+                      leadImage={space.leadImage || DEFAULT_SPACE_LEAD_IMAGE}
                       members={space.memberCount}
                       agreements={space.documentCount}
                       title={space.title as string}
