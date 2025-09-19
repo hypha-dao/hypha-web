@@ -2,13 +2,16 @@
 
 import { NotificationCentreForm, SidePanel } from '@hypha-platform/epics';
 import { Button, LoadingBackdrop } from '@hypha-platform/ui';
+import { useParams } from 'next/navigation';
 
 export default function NotificationCentre() {
+  const { lang, personSlug } = useParams();
   const progress = 0;
   const isBusy = false;
   const isError = undefined;
   const reset = () => {};
   const currentAction = undefined;
+  const error = '';
   return (
     <SidePanel>
       <LoadingBackdrop
@@ -26,7 +29,11 @@ export default function NotificationCentre() {
         }
         className="-m-4 lg:-m-7"
       >
-        <NotificationCentreForm />
+        <NotificationCentreForm
+          closeUrl={`/${lang}/profile/${personSlug}`}
+          isLoading={isBusy}
+          error={error}
+        />
       </LoadingBackdrop>
     </SidePanel>
   );
