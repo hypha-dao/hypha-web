@@ -9,6 +9,6 @@ export const middleware = middlewareChain;
 export const config = {
   // Matcher ignoring `/_next/` and `/api/`
   matcher: [
-    '/((?!api|signin|placeholder|onesignal|.well-known|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api|signin|placeholder|icon|onesignal|.well-known|_next/static|_next/image|favicon.ico).*)',
   ],
 };
