@@ -151,7 +151,7 @@ export default async function DhoLayout({
               Spaces you might like
             </Text>
             <Carousel className="my-6 mt-6">
-              <CarouselContent>
+              <CarouselContent className="overflow-x-scroll pb-5">
                 {spaces.map((space) => (
                   <CarouselItem
                     key={space.id}

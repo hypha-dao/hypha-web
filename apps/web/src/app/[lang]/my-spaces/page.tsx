@@ -72,11 +72,11 @@ export default async function Index(props: PageProps) {
           data-testid="recommended-spaces-container"
           className="w-full space-y-6"
         >
-            <CarouselContent>
           <Text className="text-4 font-medium pb-4 pt-4">
             Spaces you might like
           </Text>
           <Carousel className="mt-6">
+            <CarouselContent className="overflow-x-scroll pb-5">
               {allSpaces.map((space) => (
                 <CarouselItem
                   key={space.id}
