@@ -2,10 +2,11 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Badge, Button, Form, Separator, Skeleton } from '@hypha-platform/ui';
-import { Text } from '@radix-ui/themes';
+import { Checkbox, Radio, Text } from '@radix-ui/themes';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { ButtonClose } from '../../common/button-close';
+import { Label, RadioGroup } from '@radix-ui/react-dropdown-menu';
 
 const schemaNotificationCentreForm = z.object({});
 
@@ -50,26 +51,77 @@ export const NotificationCentreForm = ({
               </div>
             </div>
             <div className="flex gap-5 justify-between">
-              <Skeleton width="100px" height="24px" loading={isLoading}>
-                <span className="text-4 text-secondary-foreground">
-                  Notification Centre
-                </span>
-              </Skeleton>
-            </div>
-            <Skeleton
-              width="100%"
-              height="72px"
-              loading={isLoading}
-              className="rounded-lg"
-            >
-              <span className="text-2 text-neutral-11">
-                On this page, choose how you’d like to be notified about
-                proposals and other Network activity.
+              <span className="text-4 text-secondary-foreground">
+                Notification Centre
               </span>
-            </Skeleton>
+            </div>
+            <span className="text-2 text-neutral-11">
+              On this page, choose how you’d like to be notified about proposals
+              and other Network activity.
+            </span>
             <Separator />
+            <div className="flex gap-5 justify-between">
+              <span className="text-4 text-secondary-foreground">
+                Subscribe to Notifications
+              </span>
+            </div>
+            <span className="text-2 text-neutral-11">
+              <Button>Subscript/Unsubscribe</Button>
+            </span>
             <Separator />
-            {/* TODO: fields */}
+            <div className="flex gap-5 justify-between">
+              <span className="text-4 text-secondary-foreground">
+                Notification Channels
+              </span>
+            </div>
+            <span className="text-2 text-neutral-11">
+              Choose how you’d like to receive notifications:
+            </span>
+            <span className="text-2 text-neutral-11 flex flex-row justify-between">
+              Email Notifications{' '}
+              <RadioGroup className="flex flex-row justify-end">
+                <Label>
+                  Yes <Radio value="yes" />
+                </Label>{' '}
+                <Label>
+                  No <Radio value="no" />
+                </Label>
+              </RadioGroup>
+            </span>
+            <span className="text-2 text-neutral-11 flex flex-row justify-between">
+              Browser Notifications (formerly "Desktop Pop-up Notifications")
+              <RadioGroup className="flex flex-row justify-end">
+                <Label>
+                  Yes <Radio value="yes" />
+                </Label>{' '}
+                <Label>
+                  No <Radio value="no" />
+                </Label>
+              </RadioGroup>
+            </span>
+            <span className="text-2 text-neutral-11">
+              Receive real-time alerts directly in your browser while you’re
+              online. You may be prompted to allow browser permissions.
+            </span>
+            <Separator />
+            <div className="flex gap-5 justify-between">
+              <span className="text-4 text-secondary-foreground">
+                Get Notified When...
+              </span>
+            </div>
+            <span className="text-2 text-neutral-11 justify-between">
+              <Checkbox size="1" /> A new proposal is open for vote
+            </span>
+            <span className="text-2 text-neutral-11">
+              In any of the spaces you're a member of.
+            </span>
+            <span className="text-2 text-neutral-11 justify-between">
+              <Checkbox size="1" /> A proposal is approved or rejected
+            </span>
+            <span className="text-2 text-neutral-11">
+              In any of the spaces you're a member of.
+            </span>
+            <Separator />
             <div className="flex justify-end w-full">
               <div className="flex flex-col items-end gap-2">
                 {error && (
@@ -82,7 +134,7 @@ export const NotificationCentreForm = ({
                     className="rounded-lg justify-start text-white w-fit"
                     disabled={isLoading}
                   >
-                    {error ? 'Retry' : 'Save'}
+                    {error ? 'Retry' : 'Save Preferences'}
                   </Button>
                 </div>
               </div>
