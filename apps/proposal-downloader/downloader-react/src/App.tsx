@@ -132,7 +132,8 @@ function App() {
 
         const decodedTitle = decodeHtmlEntities(title);
         const decodedDescription = decodeHtmlEntities(description);
-        const payoutInfo = payout !== 'N/A' ? `\nPayout: ${payout}\nAsset: ${asset}` : '';
+        const payoutInfo =
+          payout !== 'N/A' ? `\nPayout: ${payout}\nAsset: ${asset}` : '';
 
         return [
           proposal.id,
@@ -230,8 +231,8 @@ function App() {
             marginBottom: 'var(--spacing-8)',
           }}
         >
-          Select a DAO to download its proposals in PDF format, and display any proposal attachments on the
-          screen.
+          Select a DAO to download its proposals in PDF format, and display any
+          proposal attachments on the screen.
         </p>
 
         <div style={{ marginBottom: 'var(--spacing-5)', width: '100%' }}>
@@ -371,7 +372,13 @@ function App() {
         )}
         {downloading && (
           <>
-            <p className="text-3" style={{ marginTop: 'var(--spacing-4)', color: 'hsl(var(--neutral-9))' }}>
+            <p
+              className="text-3"
+              style={{
+                marginTop: 'var(--spacing-4)',
+                color: 'hsl(var(--neutral-9))',
+              }}
+            >
               It will take aprox. 2 minutes, you can come back later.
             </p>
             <div
@@ -391,10 +398,16 @@ function App() {
                   flex: 1,
                 }}
               >
-                <p className="text-3" style={{ margin: 0, color: 'hsl(var(--neutral-9))' }}>
+                <p
+                  className="text-3"
+                  style={{ margin: 0, color: 'hsl(var(--neutral-9))' }}
+                >
                   Proposals found
                 </p>
-                <p className="text-5 font-bold" style={{ margin: 'var(--spacing-1) 0 0' }}>
+                <p
+                  className="text-5 font-bold"
+                  style={{ margin: 'var(--spacing-1) 0 0' }}
+                >
                   {proposalCount}
                 </p>
               </div>
@@ -407,10 +420,16 @@ function App() {
                   flex: 1,
                 }}
               >
-                <p className="text-3" style={{ margin: 0, color: 'hsl(var(--neutral-9))' }}>
+                <p
+                  className="text-3"
+                  style={{ margin: 0, color: 'hsl(var(--neutral-9))' }}
+                >
                   Batches processed
                 </p>
-                <p className="text-5 font-bold" style={{ margin: 'var(--spacing-1) 0 0' }}>
+                <p
+                  className="text-5 font-bold"
+                  style={{ margin: 'var(--spacing-1) 0 0' }}
+                >
                   {batchCount} / {totalBatches}
                 </p>
               </div>
