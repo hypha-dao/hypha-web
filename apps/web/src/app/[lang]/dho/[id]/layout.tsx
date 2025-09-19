@@ -1,8 +1,10 @@
 import {
   JoinSpace,
+  SalesBanner,
   SpaceCard,
   SpaceModeLabel,
   WebLinks,
+  SubscriptionBadge,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import {
@@ -58,7 +60,6 @@ export default async function DhoLayout({
         `Failed to get space details for a space ${spaceFromDb.web3SpaceId}:`,
         error,
       );
-
       return 0;
     }
   })();
@@ -74,7 +75,6 @@ export default async function DhoLayout({
         `Failed to get space details for a space ${spaceFromDb.web3SpaceId}:`,
         error,
       );
-
       return 0;
     }
   })();
@@ -119,18 +119,19 @@ export default async function DhoLayout({
         <div className="mt-6">
           <Text className="text-2">{spaceFromDb.description}</Text>
         </div>
-        <div className="flex gap-2 items-center mt-6">
+        <div className="flex gap-4 items-center mt-6 flex-wrap">
           <div className="flex">
             <div className="font-bold text-1">{spaceMembers}</div>
             <div className="text-gray-500 ml-1 text-1">Members</div>
           </div>
-          <div className="flex ml-3">
+          <div className="flex">
             <div className="font-bold text-1">
               {/* @ts-ignore: TODO: infer types from relations */}
               {spaceAgreements}
             </div>
             <div className="text-gray-500 ml-1 text-1">Agreements</div>
           </div>
+          <SubscriptionBadge web3SpaceId={spaceFromDb.web3SpaceId as number} />
           <SpaceModeLabel
             web3SpaceId={spaceFromDb.web3SpaceId as number}
             isSandbox={spaceFromDb.flags.includes('sandbox')}
@@ -139,8 +140,10 @@ export default async function DhoLayout({
               lang,
               daoSlug,
             )}/space-configuration`}
-            className="ml-3"
           />
+        </div>
+        <div className="mt-8">
+          <SalesBanner web3SpaceId={spaceFromDb.web3SpaceId as number} />
         </div>
         {tab}
         {children}
