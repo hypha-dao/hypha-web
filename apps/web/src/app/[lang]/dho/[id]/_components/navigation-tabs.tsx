@@ -9,7 +9,7 @@ import { getDhoPathMembers } from '../@tab/members/constants';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
 import { getDhoPathTreasury } from '../@tab/treasury/constants';
 import { getDhoPathOverview } from '../@tab/overview/constants';
-import { ScrollArea, ScrollBar } from '@hypha-platform/ui';
+import { ScrollArea } from '@hypha-platform/ui';
 
 export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
   const pathname = usePathname();

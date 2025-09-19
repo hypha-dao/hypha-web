@@ -5,11 +5,15 @@ import * as ScrollAreaPrimitive from '@radix-ui/react-scroll-area';
 
 import { cn } from '@hypha-platform/ui-utils';
 
+type ScrollAreaProps = React.ComponentPropsWithoutRef<
+  typeof ScrollAreaPrimitive.Root
+> & {
+  orientation?: 'vertical' | 'horizontal';
+};
+
 const ScrollArea = React.forwardRef<
   React.ComponentRef<typeof ScrollAreaPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root> & {
-    orientation?: 'vertical' | 'horizontal';
-  }
+  ScrollAreaProps
 >(({ className, children, orientation, ...props }, ref) => (
   <ScrollAreaPrimitive.Root
     ref={ref}
