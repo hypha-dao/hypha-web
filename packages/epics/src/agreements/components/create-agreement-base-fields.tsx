@@ -157,6 +157,7 @@ export function CreateAgreementBaseFields({
         name="attachments"
         render={({ field }) => (
           <FormItem>
+            {/* @ts-expect-error Server Component */}
             <FormControl>
               <AddAttachment onChange={field.onChange} />
             </FormControl>
