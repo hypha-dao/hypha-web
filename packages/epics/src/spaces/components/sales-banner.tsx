@@ -6,6 +6,8 @@ import { Cross1Icon } from '@radix-ui/react-icons';
 import { usePathname } from 'next/navigation';
 import { cleanPath } from '../utils/cleanPath';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { useTheme } from 'next-themes';
+import { cn } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
 
 interface BannerState {
@@ -22,6 +24,7 @@ const PATH_SELECT_ACTIVATE_ACTION = '/select-activate-action';
 
 export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
   const pathname = usePathname();
+  const { resolvedTheme } = useTheme();
   const { status, daysLeft, onClose, isLoading } = useSalesBanner({
     spaceId: web3SpaceId,
   });
@@ -78,7 +81,14 @@ export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
             <Cross1Icon width={16} height={16} />
           </Button>
         </div>
-        <span className="text-2 text-neutral-11">{subtitle}</span>
+        <span
+          className={cn(
+            'text-2',
+            resolvedTheme === 'dark' ? 'text-neutral-11' : 'text-white',
+          )}
+        >
+          {subtitle}
+        </span>
 
         <Link
           title={tooltipMessage || ''}
