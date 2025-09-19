@@ -53,7 +53,7 @@ export const ConnectedButtonProfile = ({
     } else {
       return undefined;
     }
-  }, []);
+  }, [person]);
 
   useEffect(() => {
     if (isAuthLoading || isPersonLoading || !isAuthenticated) {
