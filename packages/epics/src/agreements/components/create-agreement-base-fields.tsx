@@ -138,6 +138,7 @@ export function CreateAgreementBaseFields({
             <FormLabel className="text-foreground gap-1">
               Proposal Content <RequirementMark />
             </FormLabel>
+            {/* @ts-expect-error Server Component */}
             <FormControl>
               <RichTextEditor
                 editorRef={null}
