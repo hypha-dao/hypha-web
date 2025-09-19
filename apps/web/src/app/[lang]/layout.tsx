@@ -4,6 +4,7 @@ import { extractRouterConfig } from 'uploadthing/server';
 import { cookies } from 'next/headers';
 import { Lato, Source_Sans_3 } from 'next/font/google';
 import clsx from 'clsx';
+import type { Metadata } from 'next';
 
 import { Footer, Html, ThemeProvider } from '@hypha-platform/ui/server';
 import { AuthProvider } from '@hypha-platform/authentication';
@@ -19,7 +20,7 @@ import { MenuTop } from '@hypha-platform/ui';
 import '@hypha-platform/ui-utils/global.css';
 import 'react-tooltip/dist/react-tooltip.css';
 
-import { PATH_ROOT } from '../constants';
+import { ROOT_URL } from '../constants';
 
 const lato = Lato({
   subsets: ['latin'],
@@ -35,10 +36,42 @@ const sourceSans = Source_Sans_3({
   variable: '--font-body',
 });
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Hypha',
   description:
     "Hypha's complete DAO toolkit helps individuals, projects, and organizations achieve more together",
+  icons: {
+    icon: [
+      {
+        url: '/icon/favicon.ico',
+        type: 'image/x-icon',
+      },
+      {
+        url: '/icon/favicon-16x16.png',
+        type: 'image/png',
+        sizes: '16x16',
+      },
+      {
+        url: '/icon/favicon-32x32.png',
+        type: 'image/png',
+        sizes: '32x32',
+      },
+      {
+        url: '/icon/android-chrome-192x192.png',
+        sizes: '192x192',
+        type: 'image/png',
+      },
+      {
+        url: '/icon/android-chrome-512x512.png',
+        sizes: '512x512',
+        type: 'image/png',
+      },
+    ],
+    apple: {
+      url: '/icon/apple-touch-icon.png',
+      type: 'image/png',
+    },
+  },
 };
 
 export default async function RootLayout({
@@ -64,7 +97,7 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <EvmProvider>
-            <MenuTop logoHref={PATH_ROOT}>
+            <MenuTop logoHref={ROOT_URL}>
               <ConnectedButtonProfile
                 useAuthentication={useAuthentication}
                 useMe={useMe}
