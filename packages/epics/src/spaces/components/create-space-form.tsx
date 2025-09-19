@@ -131,6 +131,17 @@ export const SpaceForm = ({
   }, [parentSpaceId, form]);
 
   React.useEffect(() => {
+    const { isDirty } = form.getFieldState('parentId');
+    if (!isDirty) {
+      form.setValue('parentId', initialParentSpaceId ?? null, {
+        shouldDirty: false,
+        shouldTouch: false,
+        shouldValidate: true,
+      });
+    }
+  }, [initialParentSpaceId, form]);
+
+  React.useEffect(() => {
     if (!values) return;
     form.reset({ ...form.getValues(), ...values }, { keepDirty: true });
   }, [values, form]);

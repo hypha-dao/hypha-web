@@ -5,6 +5,7 @@ import * as LabelPrimitive from '@radix-ui/react-label';
 import { Slot } from '@radix-ui/react-slot';
 import {
   Controller,
+  FieldError,
   FormProvider,
   useFormContext,
   type ControllerProps,
@@ -157,28 +158,37 @@ const FormMessageError = ({
 
 const FormMessage = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, children, ...props }, ref) => {
+  React.HTMLAttributes<HTMLDivElement> & { custom?: string }
+>(({ className, children, custom, ...props }, ref) => {
   const { error, formMessageId } = useFormField();
 
   if (!error && !children) {
     return null;
   }
 
-  const body = Array.isArray(error) ? (
-    <>
-      {error.map((err, index) => (
-        <FormMessageError
-          key={`${formMessageId}-${index}`}
-          message={err?.message ?? ''}
-        />
-      ))}
-    </>
-  ) : error ? (
+  const body = custom ? (
+    custom
+  ) : Array.isArray(error) ? (
+    error.map((err, index) => (
+      <FormMessageError
+        key={`${formMessageId}-${index}`}
+        message={err?.message ?? ''}
+      />
+    ))
+  ) : error?.message ? (
     <FormMessageError
       key={`${formMessageId}-message`}
       message={error?.message ?? ''}
     />
+  ) : error ? (
+    Object.entries(error)
+      .filter(([_, value]) => (value as FieldError)?.message)
+      .map(([key, value], index) => (
+        <FormMessageError
+          key={`${formMessageId}-${key}-${index}`}
+          message={`"${key}": ${(value as FieldError).message}`}
+        />
+      ))
   ) : (
     children
   );
