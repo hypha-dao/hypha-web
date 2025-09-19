@@ -9,7 +9,7 @@ import { getDhoPathMembers } from '../@tab/members/constants';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
 import { getDhoPathTreasury } from '../@tab/treasury/constants';
 import { getDhoPathOverview } from '../@tab/overview/constants';
-import { ScrollArea } from '@hypha-platform/ui';
+import { ScrollArea, ScrollBar } from '@hypha-platform/ui';
 
 export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
   const pathname = usePathname();
@@ -40,7 +40,7 @@ export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
 
   return (
     <Tabs value={activeTab} className="w-full mt-16 overflow-hidden">
-      <ScrollArea orientation="horizontal">
+      <ScrollArea>
         <div className="w-full relative h-10 mb-4">
           <TabsList className="flex absolute h-10 md:w-full">
             {tabs.map(({ name, href, title }, index) => (
@@ -57,6 +57,7 @@ export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
             ))}
           </TabsList>
         </div>
+        <ScrollBar orientation="horizontal" className="hidden" />
       </ScrollArea>
     </Tabs>
   );
