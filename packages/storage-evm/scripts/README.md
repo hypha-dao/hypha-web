@@ -13,6 +13,8 @@ npx nx run storage-evm:script ./scripts/dao-space-factory.upgrade.ts --network b
 
 ```bash
 npx nx run storage-evm:script ./scripts/dao-proposals-proxy.deploy.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/space-payment-tracker.upgrade.ts --network base-mainnet
 ```
 
 ### decaying-token-factory-proxy.deploy

@@ -17,4 +17,6 @@ interface ISpacePaymentTracker {
   function hasUsedFreeTrial(uint256 spaceId) external view returns (bool);
 
   function extendFreeTrial(uint256 spaceId, uint256 durationInDays) external;
+
+  function setCustomExpiryTime(uint256 spaceId, uint256 newExpiryTime) external;
 }

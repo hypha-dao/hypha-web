@@ -181,4 +181,19 @@ contract SpacePaymentTracker is
 
     emit SpacePaymentUpdated(spaceId, payment.expiryTime);
   }
+
+  /**
+   * @dev Set a custom expiry time for a space - only callable by owner
+   * @param spaceId ID of the space to update
+   * @param newExpiryTime The new expiry timestamp
+   */
+  function setCustomExpiryTime(
+    uint256 spaceId,
+    uint256 newExpiryTime
+  ) external override onlyOwner {
+    SpacePayment storage payment = spacePayments[spaceId];
+    payment.expiryTime = newExpiryTime;
+
+    emit SpacePaymentUpdated(spaceId, payment.expiryTime);
+  }
 }
