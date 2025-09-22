@@ -91,6 +91,14 @@ const getDocumentBadges = (document: Document) => {
         colorVariant: 'accent',
       });
       break;
+    case 'Space To Space':
+      badges.push({
+        label: 'Space To Space',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
     default:
       break;
   }

@@ -67,8 +67,8 @@ export default defineConfig({
           [base.id]: '0x4B61250c8F19BA96C473c65022453E95176b0139',
         },
         VotingPowerDelegationImplementation: {
-          [base.id]: '0xc87546357EeFF8653cF058Be2BA850813e39cda0'
-        }
+          [base.id]: '0xc87546357EeFF8653cF058Be2BA850813e39cda0',
+        },
       },
     }),
   ],

@@ -55,6 +55,7 @@ export default async function SpaceToSpaceMembershipPage({
           backUrl={`${successfulUrl}${PATH_SELECT_SETTINGS_ACTION}`}
           spaceId={spaceId}
           web3SpaceId={web3SpaceId}
+          spaces={filteredSpaces}
         >
           <Plugin
             name="space-to-space-membership"
