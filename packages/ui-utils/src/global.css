@@ -19,6 +19,8 @@
 
 @import './theme/typography/variables.css';
 
+@import './theme/scrollbar/narrow.css';
+
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 @theme {

@@ -1,0 +1,24 @@
+@import '../colors/neutral.css';
+
+.narrow-scrollbar::-webkit-scrollbar {
+  @apply w-1 h-1
+}
+
+.narrow-scrollbar::-webkit-scrollbar-track {
+  @apply bg-neutral-3 rounded-full;
+}
+
+.narrow-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-neutral-8 rounded-full;
+}
+
+.narrow-scrollbar::-webkit-scrollbar-thumb:hover {
+  @apply bg-neutral-9;
+}
+
+@-moz-document url-prefix() {
+  .narrow-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-neutral-8) var(--color-neutral-3);
+  }
+}
