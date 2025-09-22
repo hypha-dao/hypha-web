@@ -34,8 +34,7 @@ export const useSalesBanner = ({ spaceId }: UseSalesBannerProps) => {
     : 0;
 
   let status: 'trial' | 'beforeExpiry' | 'expired' | null = null;
-
-  if (isLoading || !payments) {
+  if (isLoading || !payments || !freeTrialUsed) {
     status = null;
   } else if (!hasSpacePaid && freeTrialUsed && daysLeft > 0) {
     status = 'trial';
