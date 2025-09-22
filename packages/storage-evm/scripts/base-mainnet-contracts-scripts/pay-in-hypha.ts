@@ -377,8 +377,8 @@ async function main(): Promise<void> {
   ) as ethers.Contract & HyphaTokenInterface;
 
   // Payment parameters
-  const spaceId = 240;
-  const hyphaAmount = ethers.parseEther('4'); // 4 HYPHA with 18 decimals
+  const spaceId = 241;
+  const hyphaAmount = ethers.parseEther('2'); // 4 HYPHA with 18 decimals
 
   try {
     // STEP 1: Get initial state

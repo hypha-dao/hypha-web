@@ -19142,6 +19142,441 @@
           ]
         }
       }
+    },
+    "4b5c3155fbf6460195603055400db180b18c73a78b56be6f5e2250f65f12a688": {
+      "address": "0xA2be4745656c1aA086422a4CCB18F79340074440",
+      "txHash": "0x80a75c3143f582fb0e09511b140ea93a21d7909776f73c721c7a49451211abed",
+      "layout": {
+        "solcVersion": "0.8.28",
+        "storage": [
+          {
+            "label": "spacePayments",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_mapping(t_uint256,t_struct(SpacePayment)5110_storage)",
+            "contract": "SpacePaymentTracker",
+            "src": "contracts/SpacePaymentTracker.sol:22"
+          },
+          {
+            "label": "_spaceHasPaid",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_mapping(t_uint256,t_bool)",
+            "contract": "SpacePaymentTracker",
+            "src": "contracts/SpacePaymentTracker.sol:25"
+          },
+          {
+            "label": "hyphaTokenContract",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_address",
+            "contract": "SpacePaymentTracker",
+            "src": "contracts/SpacePaymentTracker.sol:31"
+          },
+          {
+            "label": "proposalsContract",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_address",
+            "contract": "SpacePaymentTracker",
+            "src": "contracts/SpacePaymentTracker.sol:32"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)73_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(OwnableStorage)13_storage": {
+            "label": "struct OwnableUpgradeable.OwnableStorage",
+            "members": [
+              {
+                "label": "_owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_mapping(t_uint256,t_bool)": {
+            "label": "mapping(uint256 => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(SpacePayment)5110_storage)": {
+            "label": "mapping(uint256 => struct SpacePaymentTracker.SpacePayment)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(SpacePayment)5110_storage": {
+            "label": "struct SpacePaymentTracker.SpacePayment",
+            "members": [
+              {
+                "label": "expiryTime",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "freeTrialUsed",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.Ownable": [
+            {
+              "contract": "OwnableUpgradeable",
+              "label": "_owner",
+              "type": "t_address",
+              "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:24",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
+    },
+    "ffe3c9e5d4c65e6b9b944f285189fe716fb715b740059b325f8dc0f2639c0ca1": {
+      "address": "0xD682AD4d72267561F33d078056873011A88aE585",
+      "txHash": "0xd7b45567b2f60a0c24f63fb2938f07da47045ecf75107c86916d7905e2ca8505",
+      "layout": {
+        "solcVersion": "0.8.28",
+        "storage": [
+          {
+            "label": "spacePayments",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_mapping(t_uint256,t_struct(SpacePayment)1450_storage)",
+            "contract": "SpacePaymentTracker",
+            "src": "contracts/SpacePaymentTracker.sol:22"
+          },
+          {
+            "label": "hyphaTokenContract",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_address",
+            "contract": "SpacePaymentTracker",
+            "src": "contracts/SpacePaymentTracker.sol:28"
+          },
+          {
+            "label": "proposalsContract",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_address",
+            "contract": "SpacePaymentTracker",
+            "src": "contracts/SpacePaymentTracker.sol:29"
+          },
+          {
+            "label": "_spaceHasPaid",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_mapping(t_uint256,t_bool)",
+            "contract": "SpacePaymentTracker",
+            "src": "contracts/SpacePaymentTracker.sol:32"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)73_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(OwnableStorage)13_storage": {
+            "label": "struct OwnableUpgradeable.OwnableStorage",
+            "members": [
+              {
+                "label": "_owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_mapping(t_uint256,t_bool)": {
+            "label": "mapping(uint256 => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(SpacePayment)1450_storage)": {
+            "label": "mapping(uint256 => struct SpacePaymentTracker.SpacePayment)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(SpacePayment)1450_storage": {
+            "label": "struct SpacePaymentTracker.SpacePayment",
+            "members": [
+              {
+                "label": "expiryTime",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "freeTrialUsed",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.Ownable": [
+            {
+              "contract": "OwnableUpgradeable",
+              "label": "_owner",
+              "type": "t_address",
+              "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:24",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
+    },
+    "9795abfb7dfa820ca5c0a9bf370b17ced0025c48ec76f13841fe6048281e63e7": {
+      "address": "0x64819A31dAf1e5880Da70162A8ab66C29d7c0324",
+      "txHash": "0xb4caca257063b2480b5dabca493d06f5615c3d37a377ea10d7040e8a617faa59",
+      "layout": {
+        "solcVersion": "0.8.28",
+        "storage": [
+          {
+            "label": "spacePayments",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_mapping(t_uint256,t_struct(SpacePayment)1450_storage)",
+            "contract": "SpacePaymentTracker",
+            "src": "contracts/SpacePaymentTracker.sol:22"
+          },
+          {
+            "label": "hyphaTokenContract",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_address",
+            "contract": "SpacePaymentTracker",
+            "src": "contracts/SpacePaymentTracker.sol:28"
+          },
+          {
+            "label": "proposalsContract",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_address",
+            "contract": "SpacePaymentTracker",
+            "src": "contracts/SpacePaymentTracker.sol:29"
+          },
+          {
+            "label": "_spaceHasPaid",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_mapping(t_uint256,t_bool)",
+            "contract": "SpacePaymentTracker",
+            "src": "contracts/SpacePaymentTracker.sol:32"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)73_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(OwnableStorage)13_storage": {
+            "label": "struct OwnableUpgradeable.OwnableStorage",
+            "members": [
+              {
+                "label": "_owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_mapping(t_uint256,t_bool)": {
+            "label": "mapping(uint256 => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(SpacePayment)1450_storage)": {
+            "label": "mapping(uint256 => struct SpacePaymentTracker.SpacePayment)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(SpacePayment)1450_storage": {
+            "label": "struct SpacePaymentTracker.SpacePayment",
+            "members": [
+              {
+                "label": "expiryTime",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "freeTrialUsed",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.Ownable": [
+            {
+              "contract": "OwnableUpgradeable",
+              "label": "_owner",
+              "type": "t_address",
+              "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:24",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
     }
   }
 }

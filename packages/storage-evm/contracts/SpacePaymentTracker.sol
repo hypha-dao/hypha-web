@@ -28,6 +28,9 @@ contract SpacePaymentTracker is
   address public hyphaTokenContract;
   address public proposalsContract;
 
+  // Mapping from space ID to payment status
+  mapping(uint256 => bool) private _spaceHasPaid;
+
   // Events
   event SpacePaymentUpdated(uint256 indexed spaceId, uint256 expiryTime);
   event FreeTrialActivated(uint256 indexed spaceId);
@@ -79,7 +82,7 @@ contract SpacePaymentTracker is
     // Only allow calls from the HyphaToken contract
     require(
       msg.sender == hyphaTokenContract,
-      'Only HyphaToken can update payments'
+      'Only HyphaToken can update payment'
     );
 
     SpacePayment storage payment = spacePayments[spaceId];
@@ -91,6 +94,10 @@ contract SpacePaymentTracker is
     } else {
       // Add to existing expiry time
       payment.expiryTime += (durationInDays * 1 days);
+    }
+
+    if (!_spaceHasPaid[spaceId]) {
+      _spaceHasPaid[spaceId] = true;
     }
 
     emit SpacePaymentUpdated(spaceId, payment.expiryTime);
@@ -153,6 +160,23 @@ contract SpacePaymentTracker is
     uint256 spaceId
   ) external view override returns (bool) {
     return spacePayments[spaceId].freeTrialUsed;
+  }
+
+  /**
+   * @dev Check if a space has ever been paid for
+   * @param spaceId ID of the space to check
+   * @return bool Whether the space has been paid for
+   */
+  function hasSpacePaid(uint256 spaceId) external view override returns (bool) {
+    return _spaceHasPaid[spaceId];
+  }
+
+  /**
+   * @dev Manually set a space as paid - only callable by owner
+   * @param spaceId ID of the space to update
+   */
+  function setSpaceAsPaid(uint256 spaceId) external override onlyOwner {
+    _spaceHasPaid[spaceId] = true;
   }
 
   /**
