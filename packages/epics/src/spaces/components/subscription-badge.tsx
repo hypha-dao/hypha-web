@@ -5,6 +5,8 @@ import { Badge, type BadgeProps } from '@hypha-platform/ui';
 import { useSpacePayments } from '../hooks/use-space-payments';
 import { cleanPath } from '../utils/cleanPath';
 import { usePathname } from 'next/navigation';
+import { useJoinSpace } from '../hooks';
+import { useAuthentication } from '@hypha-platform/authentication';
 import Link from 'next/link';
 
 interface SubscriptionBadgeProps extends Omit<BadgeProps, 'isLoading'> {
@@ -22,6 +24,15 @@ export function SubscriptionBadge({
   const { payments, isLoading } = useSpacePayments({
     spaceId: BigInt(web3SpaceId),
   });
+  const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
+  const { isAuthenticated } = useAuthentication();
+
+  const isDisabled = !isAuthenticated || !isMember;
+  const tooltipMessage = !isAuthenticated
+    ? 'Please sign in to use this feature.'
+    : !isMember
+    ? 'Please join this space to use this feature.'
+    : '';
 
   let expiryTime: bigint = BigInt(0);
   let freeTrialUsed: boolean = false;
@@ -82,7 +93,13 @@ export function SubscriptionBadge({
   };
 
   return (
-    <Link href={`${cleanPath(pathname)}${PATH_SELECT_ACTIVATE_ACTION}`}>
+    <Link
+      className={isDisabled ? 'cursor-not-allowed' : ''}
+      title={tooltipMessage || ''}
+      href={
+        isDisabled ? {} : `${cleanPath(pathname)}${PATH_SELECT_ACTIVATE_ACTION}`
+      }
+    >
       <Badge
         variant="outline"
         size={1}
