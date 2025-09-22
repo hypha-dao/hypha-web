@@ -48,17 +48,22 @@ export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
   > = {
     trial: {
       title: `Only ${daysLeft} days left in your free trial!`,
-      subtitle: 'Unlock full access and keep your progress going',
+      subtitle:
+        'Contribute $11 per month in USDC or Hypha tokens to the Hypha Network to unlock full access for your Space and keep your progress going!',
       actionText: 'Activate Now',
     },
     beforeExpiry: {
-      title: `Only ${daysLeft} days left on your Hypha Network Contribution!`,
-      subtitle: 'Don’t lose access to your Space features',
+      title: `Only ${daysLeft} days left before your Hypha Network contribution expires!`,
+      subtitle:
+        'Don’t lose access to your Space features! Renew now by contributing $11 per month in USDC or Hypha tokens to the Hypha Network.',
       actionText: 'Renew Now',
     },
     expired: {
-      title: `Your Space has been expired for ${Math.abs(daysLeft)} days!`,
-      subtitle: 'Reactivate now to regain access to your Space features',
+      title: `Your Hypha Network contribution expired ${Math.abs(
+        daysLeft,
+      )} days ago!`,
+      subtitle:
+        'Reactivate now by contributing $11 per month in USDC or Hypha tokens to the Hypha Network and regain access to all your Space features.',
       actionText: 'Reactivate Now',
     },
   };
