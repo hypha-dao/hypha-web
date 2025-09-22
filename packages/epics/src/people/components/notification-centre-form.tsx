@@ -1,8 +1,8 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Badge, Button, Form, Separator, Skeleton } from '@hypha-platform/ui';
-import { Checkbox, Radio, Text } from '@radix-ui/themes';
+import { Button, Form, Input, Separator } from '@hypha-platform/ui';
+import { Text } from '@radix-ui/themes';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { ButtonClose } from '../../common/button-close';
@@ -61,18 +61,18 @@ export const NotificationCentreForm = ({
             </span>
             <Separator />
             <div className="flex gap-5 justify-between">
-              <span className="text-4 text-secondary-foreground">
+              <h3 className="text-3 font-medium text-neutral-11">
                 Subscribe to Notifications
-              </span>
+              </h3>
             </div>
             <span className="text-2 text-neutral-11">
               <Button>Subscript/Unsubscribe</Button>
             </span>
             <Separator />
             <div className="flex gap-5 justify-between">
-              <span className="text-4 text-secondary-foreground">
+              <h3 className="text-3 font-medium text-neutral-11">
                 Notification Channels
-              </span>
+              </h3>
             </div>
             <span className="text-2 text-neutral-11">
               Choose how you’d like to receive notifications:
@@ -80,22 +80,34 @@ export const NotificationCentreForm = ({
             <span className="text-2 text-neutral-11 flex flex-row justify-between">
               Email Notifications{' '}
               <RadioGroup className="flex flex-row justify-end">
-                <Label>
-                  Yes <Radio value="yes" />
+                <Label className="flex flex-row">
+                  Yes
+                  <div className="w-4 h-4">
+                    <Input type="radio" value="yes" />
+                  </div>
                 </Label>{' '}
-                <Label>
-                  No <Radio value="no" />
+                <Label className="flex flex-row">
+                  No
+                  <div className="w-4 h-4">
+                    <Input type="radio" value="no" />
+                  </div>
                 </Label>
               </RadioGroup>
             </span>
             <span className="text-2 text-neutral-11 flex flex-row justify-between">
               Browser Notifications (formerly "Desktop Pop-up Notifications")
               <RadioGroup className="flex flex-row justify-end">
-                <Label>
-                  Yes <Radio value="yes" />
+                <Label className="flex flex-row">
+                  Yes
+                  <div className="w-4 h-4">
+                    <Input type="radio" value="yes" />
+                  </div>
                 </Label>{' '}
-                <Label>
-                  No <Radio value="no" />
+                <Label className="flex flex-row">
+                  No
+                  <div className="w-4 h-4">
+                    <Input type="radio" value="no" />
+                  </div>
                 </Label>
               </RadioGroup>
             </span>
@@ -105,18 +117,28 @@ export const NotificationCentreForm = ({
             </span>
             <Separator />
             <div className="flex gap-5 justify-between">
-              <span className="text-4 text-secondary-foreground">
+              <h3 className="text-3 font-medium text-neutral-11">
                 Get Notified When...
-              </span>
+              </h3>
             </div>
             <span className="text-2 text-neutral-11 justify-between">
-              <Checkbox size="1" /> A new proposal is open for vote
+              <div className="flex flex-row">
+                <div className="w-4 h-4">
+                  <Input type="checkbox" />
+                </div>
+                A new proposal is open for vote
+              </div>
             </span>
             <span className="text-2 text-neutral-11">
               In any of the spaces you're a member of.
             </span>
             <span className="text-2 text-neutral-11 justify-between">
-              <Checkbox size="1" /> A proposal is approved or rejected
+              <div className="flex flex-row">
+                <div className="w-4 h-4">
+                  <Input type="checkbox" />
+                </div>
+                A proposal is approved or rejected
+              </div>
             </span>
             <span className="text-2 text-neutral-11">
               In any of the spaces you're a member of.
