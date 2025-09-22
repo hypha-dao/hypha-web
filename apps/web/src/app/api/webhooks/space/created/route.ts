@@ -1,6 +1,9 @@
 import { Alchemy, findPersonByWeb3Address } from '@hypha-platform/core/server';
 import { daoSpaceFactoryImplementationAbi } from '@hypha-platform/core/generated';
-import { sendEmailByAlias } from '@hypha-platform/notifications/server';
+import {
+  sendEmailByAlias,
+  sendPushByAlias,
+} from '@hypha-platform/notifications/server';
 import { db } from '@hypha-platform/storage-postgres';
 
 export const POST = Alchemy.newHandler(
@@ -50,13 +53,18 @@ export const POST = Alchemy.newHandler(
       return;
     }
 
-    const notificationRequest = creatorsToNotify.map(
-      async ({ slug, createdSpacesCount }) => {
-        const emailBody =
+    const notifyParams = creatorsToNotify.map(
+      ({ slug, createdSpacesCount }) => ({
+        slug,
+        header: 'Successful space creation',
+        body:
           createdSpacesCount > 1
             ? `You've successfully created ${createdSpacesCount} spaces.`
-            : "You've successfully created a space.";
-
+            : "You've successfully created a space.",
+      }),
+    );
+    const sendingEmails = notifyParams.map(
+      async ({ slug, header, body }) =>
         await sendEmailByAlias({
           app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '',
           alias: {
@@ -65,15 +73,29 @@ export const POST = Alchemy.newHandler(
             },
           },
           content: {
-            email_subject: 'Successful space creation',
-            email_body: emailBody,
+            email_subject: header,
+            email_body: body,
           },
-        });
-      },
+        }),
     );
-    const notifications = await Promise.allSettled(notificationRequest);
+    const sendingPushes = notifyParams.map(
+      async ({ slug, header, body }) =>
+        await sendPushByAlias({
+          app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '',
+          alias: {
+            include_aliases: {
+              external_id: [slug!],
+            },
+          },
+          content: {
+            contents: { en: body },
+            headings: { en: header },
+          },
+        }),
+    );
 
-    notifications
+    const notifying = Promise.allSettled(sendingEmails.concat(sendingPushes));
+    (await notifying)
       .filter((notification) => notification.status === 'rejected')
       .forEach(({ reason }) => console.error(reason));
   },
