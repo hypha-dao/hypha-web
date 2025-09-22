@@ -1,6 +1,7 @@
 'use client';
 
 import { useSpacePayments } from './use-space-payments';
+import { useHasSpacePaid } from './use-has-space-paid';
 import { useState, useEffect } from 'react';
 
 interface UseSalesBannerProps {
@@ -9,6 +10,11 @@ interface UseSalesBannerProps {
 
 export const useSalesBanner = ({ spaceId }: UseSalesBannerProps) => {
   const { payments, isLoading } = useSpacePayments(
+    spaceId !== undefined
+      ? { spaceId: BigInt(spaceId) }
+      : { spaceId: undefined as never },
+  );
+  const { hasSpacePaid } = useHasSpacePaid(
     spaceId !== undefined
       ? { spaceId: BigInt(spaceId) }
       : { spaceId: undefined as never },
@@ -31,29 +37,27 @@ export const useSalesBanner = ({ spaceId }: UseSalesBannerProps) => {
 
   if (isLoading || !payments) {
     status = null;
-  } else if (!freeTrialUsed) {
-    status = null;
-  } else if (freeTrialUsed && daysLeft > 0 && daysLeft <= 30) {
+  } else if (!hasSpacePaid && freeTrialUsed && daysLeft > 0) {
     status = 'trial';
-  } else if (daysLeft > 0 && daysLeft <= 14) {
+  } else if (hasSpacePaid && daysLeft > 0 && daysLeft <= 14) {
     status = 'beforeExpiry';
-  } else if (daysLeft < 0) {
+  } else if (daysLeft <= 0) {
     status = 'expired';
   }
 
   const storageKey = spaceId ? `salesBannerDismissedUntil_${spaceId}` : null;
   const [dismissedUntil, setDismissedUntil] = useState(() => {
     if (!storageKey) return 0;
-    const saved = localStorage.getItem(storageKey);
+    const saved = localStorage?.getItem(storageKey);
     return saved ? parseInt(saved, 10) : 0;
   });
 
   useEffect(() => {
     if (!storageKey) return;
     if (dismissedUntil > 0) {
-      localStorage.setItem(storageKey, dismissedUntil.toString());
+      localStorage?.setItem(storageKey, dismissedUntil.toString());
     } else {
-      localStorage.removeItem(storageKey);
+      localStorage?.removeItem(storageKey);
     }
   }, [dismissedUntil, storageKey]);
 

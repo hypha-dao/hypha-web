@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { Badge, type BadgeProps } from '@hypha-platform/ui';
+import { useHasSpacePaid } from '../hooks';
 import { useSpacePayments } from '../hooks/use-space-payments';
 import { cleanPath } from '../utils/cleanPath';
 import { usePathname } from 'next/navigation';
@@ -22,6 +23,9 @@ export function SubscriptionBadge({
 }: SubscriptionBadgeProps) {
   const pathname = usePathname();
   const { payments, isLoading } = useSpacePayments({
+    spaceId: BigInt(web3SpaceId),
+  });
+  const { hasSpacePaid } = useHasSpacePaid({
     spaceId: BigInt(web3SpaceId),
   });
   const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
@@ -64,16 +68,16 @@ export function SubscriptionBadge({
     return null;
   }
 
-  if (freeTrialUsed && daysLeft > 15 && daysLeft <= 30) {
+  if (!hasSpacePaid && freeTrialUsed && daysLeft > 0) {
     status = 'activeFreeTrial';
     label = `Active on free trial until ${formatDate(expiryTime)}`;
-  } else if (freeTrialUsed && daysLeft > 0 && daysLeft <= 15) {
+  } else if (hasSpacePaid && daysLeft > 0 && daysLeft <= 14) {
     status = 'activate';
     label = `Activate before ${formatDate(expiryTime)}`;
-  } else if (daysLeft > 0) {
+  } else if (hasSpacePaid && daysLeft > 0) {
     status = 'active';
     label = `Active until ${formatDate(expiryTime)}`;
-  } else if (!freeTrialUsed && daysLeft <= 0 && expiryTime > 0) {
+  } else if (daysLeft <= 0 && expiryTime > 0) {
     status = 'expired';
     label = `Expired since ${formatDate(expiryTime)}`;
   }

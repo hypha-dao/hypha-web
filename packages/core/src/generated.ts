@@ -766,6 +766,13 @@ export const daoProposalsImplementationAbi = [
   },
   {
     type: 'function',
+    inputs: [{ name: '_proposalId', internalType: 'uint256', type: 'uint256' }],
+    name: 'triggerExecutionCheck',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     inputs: [
       { name: 'newImplementation', internalType: 'address', type: 'address' },
       { name: 'data', internalType: 'bytes', type: 'bytes' },
@@ -2280,32 +2287,6 @@ export const hyphaTokenAbi = [
     anonymous: false,
     inputs: [
       {
-        name: 'newAmount',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'HyphaPerDayUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'newPrice',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'HyphaPriceUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
         name: 'version',
         internalType: 'uint64',
         type: 'uint64',
@@ -2313,34 +2294,6 @@ export const hyphaTokenAbi = [
       },
     ],
     name: 'Initialized',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'account',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      { name: 'status', internalType: 'bool', type: 'bool', indexed: true },
-    ],
-    name: 'MintTransferWhitelistUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'account',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      { name: 'status', internalType: 'bool', type: 'bool', indexed: true },
-    ],
-    name: 'NormalTransferWhitelistUpdated',
   },
   {
     type: 'event',
@@ -2360,6 +2313,31 @@ export const hyphaTokenAbi = [
       },
     ],
     name: 'OwnershipTransferred',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'newHyphaPrice',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'newUsdcPerDay',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'newHyphaPerDay',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'PricingParametersUpdated',
   },
   {
     type: 'event',
@@ -2494,6 +2472,20 @@ export const hyphaTokenAbi = [
     type: 'event',
     anonymous: false,
     inputs: [
+      { name: 'from', internalType: 'address', type: 'address', indexed: true },
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'TokensBurned',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
       { name: 'to', internalType: 'address', type: 'address', indexed: true },
       {
         name: 'amount',
@@ -2537,13 +2529,25 @@ export const hyphaTokenAbi = [
     anonymous: false,
     inputs: [
       {
-        name: 'newAmount',
-        internalType: 'uint256',
-        type: 'uint256',
+        name: 'account',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'mintTransferStatus',
+        internalType: 'bool',
+        type: 'bool',
+        indexed: false,
+      },
+      {
+        name: 'normalTransferStatus',
+        internalType: 'bool',
+        type: 'bool',
         indexed: false,
       },
     ],
-    name: 'UsdcPerDayUpdated',
+    name: 'WhitelistStatusUpdated',
   },
   {
     type: 'function',
@@ -2613,6 +2617,16 @@ export const hyphaTokenAbi = [
     name: 'balanceOf',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'from', internalType: 'address', type: 'address' },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'burnFrom',
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -2821,40 +2835,6 @@ export const hyphaTokenAbi = [
   },
   {
     type: 'function',
-    inputs: [{ name: 'newAmount', internalType: 'uint256', type: 'uint256' }],
-    name: 'setHyphaPerDay',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'newPrice', internalType: 'uint256', type: 'uint256' }],
-    name: 'setHyphaPrice',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'account', internalType: 'address', type: 'address' },
-      { name: 'status', internalType: 'bool', type: 'bool' },
-    ],
-    name: 'setMintTransferWhitelist',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'account', internalType: 'address', type: 'address' },
-      { name: 'status', internalType: 'bool', type: 'bool' },
-    ],
-    name: 'setNormalTransferWhitelist',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
     inputs: [
       { name: '_paymentTracker', internalType: 'address', type: 'address' },
     ],
@@ -2864,8 +2844,23 @@ export const hyphaTokenAbi = [
   },
   {
     type: 'function',
-    inputs: [{ name: 'newAmount', internalType: 'uint256', type: 'uint256' }],
-    name: 'setUsdcPerDay',
+    inputs: [
+      { name: 'newHyphaPrice', internalType: 'uint256', type: 'uint256' },
+      { name: 'newUsdcPerDay', internalType: 'uint256', type: 'uint256' },
+      { name: 'newHyphaPerDay', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'setPricingParameters',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'account', internalType: 'address', type: 'address' },
+      { name: 'mintTransferStatus', internalType: 'bool', type: 'bool' },
+      { name: 'normalTransferStatus', internalType: 'bool', type: 'bool' },
+    ],
+    name: 'setWhitelistStatus',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -4035,9 +4030,26 @@ export const spacePaymentTrackerAbi = [
   },
   {
     type: 'function',
+    inputs: [
+      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: 'durationInDays', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'extendFreeTrial',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     inputs: [{ name: 'spaceId', internalType: 'uint256', type: 'uint256' }],
     name: 'getSpaceExpiryTime',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'spaceId', internalType: 'uint256', type: 'uint256' }],
+    name: 'hasSpacePaid',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
     stateMutability: 'view',
   },
   {
@@ -4110,6 +4122,23 @@ export const spacePaymentTrackerAbi = [
   },
   {
     type: 'function',
+    inputs: [
+      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: 'newExpiryTime', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'setCustomExpiryTime',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'spaceId', internalType: 'uint256', type: 'uint256' }],
+    name: 'setSpaceAsPaid',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     name: 'spacePayments',
     outputs: [
@@ -4128,7 +4157,7 @@ export const spacePaymentTrackerAbi = [
   {
     type: 'function',
     inputs: [
-      { name: 'user', internalType: 'address', type: 'address' },
+      { name: '', internalType: 'address', type: 'address' },
       { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
       { name: 'durationInDays', internalType: 'uint256', type: 'uint256' },
     ],

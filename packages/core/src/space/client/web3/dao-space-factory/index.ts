@@ -14,3 +14,4 @@ export * from './is-member';
 export * from './join-space';
 export * from './get-invite-status';
 export * from './get-space-payments';
+export * from './get-has-space-paid';
