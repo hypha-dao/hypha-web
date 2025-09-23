@@ -20,7 +20,7 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
   const { initialized, setInitialized } =
     React.useContext(NotificationsContext);
   const [subscribed, setSubscribed] = React.useState<boolean>(
-    Boolean(/*OneSignal.User?.onesignalId ?? */ false),
+    Boolean(OneSignal?.User?.onesignalId ?? false),
   );
   const [error, setError] = React.useState<string | null>(null);
 
@@ -39,17 +39,15 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
           return Promise.reject('Declined');
         }
       })
-      .then(
-        () => {
-          // return OneSignal.login(personSlug);
-        },
-        (err: any) => {
-          console.warn('Error:', err);
-          setError('Notification permissions declined.');
-        },
-      )
+      .then(() => {
+        // return OneSignal.login(personSlug);
+      })
       .then(() => {
         setSubscribed(true);
+      })
+      .catch((err: any) => {
+        console.warn('Error:', err);
+        setError('Notification permissions declined.');
       });
   }, [personSlug, setSubscribed, setError]);
   const unsubscribe = React.useCallback(() => {
