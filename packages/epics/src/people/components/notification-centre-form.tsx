@@ -1,12 +1,19 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button, Form, Input, Separator } from '@hypha-platform/ui';
+import {
+  Button,
+  Form,
+  FormMessage,
+  Input,
+  Separator,
+} from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { ButtonClose } from '../../common/button-close';
 import { Label, RadioGroup } from '@radix-ui/react-dropdown-menu';
+import React from 'react';
 
 const schemaNotificationCentreForm = z.object({});
 
@@ -16,12 +23,18 @@ export type NotificationCentreFormProps = {
   closeUrl: string;
   isLoading?: boolean;
   error?: string | null;
+  subscribed: boolean;
+  subscribe: () => void;
+  unsubscribe: () => void;
 };
 
 export const NotificationCentreForm = ({
   closeUrl,
   isLoading,
   error,
+  subscribed,
+  subscribe,
+  unsubscribe,
 }: NotificationCentreFormProps) => {
   const form = useForm<FormData>({
     resolver: zodResolver(schemaNotificationCentreForm),
@@ -29,7 +42,9 @@ export const NotificationCentreForm = ({
     mode: 'onChange',
   });
 
-  const handleSubmit = async (values: FormData) => {};
+  const handleSubmit = async (values: FormData) => {
+    //TODO
+  };
 
   return (
     <div className="relative">
@@ -66,7 +81,12 @@ export const NotificationCentreForm = ({
               </h3>
             </div>
             <span className="text-2 text-neutral-11">
-              <Button>Subscript/Unsubscribe</Button>
+              {subscribed ? (
+                <Button onClick={unsubscribe}>Unsubscribe</Button>
+              ) : (
+                <Button onClick={subscribe}>Subscribe</Button>
+              )}
+              {error && <FormMessage>{error}</FormMessage>}
             </span>
             <Separator />
             <div className="flex gap-5 justify-between">
@@ -146,9 +166,9 @@ export const NotificationCentreForm = ({
             <Separator />
             <div className="flex justify-end w-full">
               <div className="flex flex-col items-end gap-2">
-                {error && (
+                {/* {error && (
                   <Text className="text-error-11 text-sm">{error}</Text>
-                )}
+                )} */}
                 <div className="flex gap-2">
                   <Button
                     type="submit"
