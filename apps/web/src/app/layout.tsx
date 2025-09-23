@@ -17,6 +17,7 @@ import { HYPHA_LOCALE } from '@hypha-platform/cookie';
 import { i18nConfig } from '@hypha-platform/i18n';
 import { MenuTop } from '@hypha-platform/ui';
 import { ROOT_URL } from './constants';
+import { NotificationSubscriber } from '@hypha-platform/notifications/client';
 
 import '@hypha-platform/ui-utils/global.css';
 import 'react-tooltip/dist/react-tooltip.css';
@@ -84,6 +85,8 @@ export default async function RootLayout({
   const shouldInjectToolbar = process.env.NODE_ENV === 'development';
   const cookieStore = await cookies();
   const lang = cookieStore.get(HYPHA_LOCALE)?.value || i18nConfig.defaultLocale;
+  const notificationAppId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '';
+  const serviceWorkerPath = '/onesignal/OneSignalSDKWorker.js';
 
   return (
     <Html className={clsx(lato.variable, sourceSans.variable)}>
@@ -101,31 +104,36 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <EvmProvider>
-            <MenuTop logoHref={ROOT_URL}>
-              <ConnectedButtonProfile
-                useAuthentication={useAuthentication}
-                useMe={useMe}
-                newUserRedirectPath="/profile/signup"
-                baseRedirectPath="/my-spaces"
-                navItems={[
-                  {
-                    label: 'Network',
-                    href: `/${lang}/network`,
-                  },
-                  {
-                    label: 'My Spaces',
-                    href: `/${lang}/my-spaces`,
-                  },
-                ]}
-              />
-            </MenuTop>
-            <NextSSRPlugin routerConfig={extractRouterConfig(fileRouter)} />
-            <div className="mb-auto pb-8">
-              <div className="pt-9 h-full flex justify-normal">
-                <div className="w-full h-full">{children}</div>
+            <NotificationSubscriber
+              appId={notificationAppId}
+              serviceWorkerPath={serviceWorkerPath}
+            >
+              <MenuTop logoHref={ROOT_URL}>
+                <ConnectedButtonProfile
+                  useAuthentication={useAuthentication}
+                  useMe={useMe}
+                  newUserRedirectPath="/profile/signup"
+                  baseRedirectPath="/my-spaces"
+                  navItems={[
+                    {
+                      label: 'Network',
+                      href: `/${lang}/network`,
+                    },
+                    {
+                      label: 'My Spaces',
+                      href: `/${lang}/my-spaces`,
+                    },
+                  ]}
+                />
+              </MenuTop>
+              <NextSSRPlugin routerConfig={extractRouterConfig(fileRouter)} />
+              <div className="mb-auto pb-8">
+                <div className="pt-9 h-full flex justify-normal">
+                  <div className="w-full h-full">{children}</div>
+                </div>
               </div>
-            </div>
-            <Footer />
+              <Footer />
+            </NotificationSubscriber>
           </EvmProvider>
         </ThemeProvider>
       </AuthProvider>
