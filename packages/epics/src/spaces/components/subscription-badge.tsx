@@ -60,8 +60,13 @@ export function SubscriptionBadge({
     });
   };
 
-  let status: 'active' | 'activeFreeTrial' | 'activate' | 'expired' | null =
-    null;
+  let status:
+    | 'active'
+    | 'activeFreeTrial'
+    | 'activate'
+    | 'expired'
+    | 'activeFreeTrialExpiring'
+    | null = null;
   let label: string = '';
 
   if (isLoading || !payments) {
@@ -69,11 +74,11 @@ export function SubscriptionBadge({
   }
 
   if (!hasSpacePaid && freeTrialUsed && daysLeft > 0) {
-    status = 'activeFreeTrial';
+    status = daysLeft <= 14 ? 'activeFreeTrialExpiring' : 'activeFreeTrial';
     label = `Active on free trial until ${formatDate(expiryTime)}`;
   } else if (hasSpacePaid && daysLeft > 0 && daysLeft <= 14) {
     status = 'activate';
-    label = `Activate before ${formatDate(expiryTime)}`;
+    label = `Renew before ${formatDate(expiryTime)}`;
   } else if (hasSpacePaid && daysLeft > 0) {
     status = 'active';
     label = `Active until ${formatDate(expiryTime)}`;
@@ -92,6 +97,7 @@ export function SubscriptionBadge({
   > = {
     active: { colorVariant: 'success' },
     activeFreeTrial: { colorVariant: 'success' },
+    activeFreeTrialExpiring: { colorVariant: 'warn' },
     activate: { colorVariant: 'warn' },
     expired: { colorVariant: 'error' },
   };
