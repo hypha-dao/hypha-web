@@ -28,6 +28,7 @@ export * from './input';
 export * from './label';
 export * from './popover';
 export * from './progress';
+export * from './radio-group';
 export * from './requirement-mark';
 export * from './scroll-area';
 export * from './select';
