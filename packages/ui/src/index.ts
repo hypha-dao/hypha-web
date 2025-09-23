@@ -15,6 +15,7 @@ export * from './button';
 export * from './button-nav-item';
 export * from './card';
 export * from './carousel';
+export * from './checkbox';
 export * from './chips';
 export * from './combobox';
 export * from './container';
