@@ -17,19 +17,27 @@ export interface NotificationsProps {
 }
 
 export const useNotifications = ({ personSlug }: NotificationsProps) => {
-  const { initialized, setInitialized } =
-    React.useContext(NotificationsContext);
+  const { initialized } = React.useContext(NotificationsContext);
   const [subscribed, setSubscribed] = React.useState<boolean>(
-    Boolean(OneSignal?.User?.onesignalId ?? false),
+    initialized ? Boolean(OneSignal?.User?.externalId) ?? false : false,
   );
   const [error, setError] = React.useState<string | null>(null);
+  const externalId = React.useMemo(() => {
+    return initialized ? OneSignal?.User?.externalId : undefined;
+  }, [initialized, OneSignal, subscribed]);
 
   React.useEffect(() => {
-    setSubscribed(Boolean(OneSignal.User?.onesignalId ?? false));
-  }, [OneSignal]);
+    setSubscribed(Boolean(externalId));
+  }, [externalId]);
+  React.useEffect(() => {
+    console.log('Updated OneSignal.User.externalId:', externalId);
+  }, [externalId]);
 
   const subscribe = React.useCallback(() => {
     console.log('Initialized on subscribe:', initialized);
+    if (!initialized) {
+      return;
+    }
     setError(null);
     OneSignal.Notifications.requestPermission()
       .then(() => {
@@ -40,9 +48,10 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
         }
       })
       .then(() => {
-        // return OneSignal.login(personSlug);
+        return OneSignal.login(personSlug);
       })
       .then(() => {
+        console.log('subscribe');
         setSubscribed(true);
       })
       .catch((err: any) => {
@@ -52,10 +61,14 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
   }, [personSlug, setSubscribed, setError]);
   const unsubscribe = React.useCallback(() => {
     console.log('Initialized on unsubscribe:', initialized);
+    if (!initialized) {
+      return;
+    }
     setError(null);
-    // OneSignal.logout().then(() => {
-    setSubscribed(false);
-    // });
+    OneSignal.logout().then(() => {
+      console.log('unsubscribe');
+      setSubscribed(false);
+    });
   }, [personSlug, setSubscribed, setError]);
 
   return {
