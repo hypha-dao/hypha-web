@@ -1,13 +1,18 @@
 'use client';
 
+import { useMe } from '@hypha-platform/core/client';
 import { NotificationCentreForm, SidePanel } from '@hypha-platform/epics';
 import { Button, LoadingBackdrop } from '@hypha-platform/ui';
-import { useParams } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 
 export default function NotificationCentre() {
   const { lang, personSlug } = useParams();
+  const { person, isLoading } = useMe();
+  if (!isLoading && !person) {
+    return notFound();
+  }
   const progress = 0;
-  const isBusy = false;
+  const isBusy = isLoading;
   const isError = undefined;
   const reset = () => {};
   const currentAction = undefined;
