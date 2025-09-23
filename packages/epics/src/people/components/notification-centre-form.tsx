@@ -4,18 +4,24 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Button,
   Form,
+  FormField,
+  FormLabel,
   FormMessage,
   Input,
+  RadioGroup,
+  RadioGroupItem,
   Separator,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { ButtonClose } from '../../common/button-close';
-import { Label, RadioGroup } from '@radix-ui/react-dropdown-menu';
 import React from 'react';
 
-const schemaNotificationCentreForm = z.object({});
+const schemaNotificationCentreForm = z.object({
+  emailNotifications: z.enum(['yes', 'no']).default('no'),
+  browserNotifications: z.enum(['yes', 'no']).default('no'),
+});
 
 type FormData = z.infer<typeof schemaNotificationCentreForm>;
 
@@ -38,12 +44,16 @@ export const NotificationCentreForm = ({
 }: NotificationCentreFormProps) => {
   const form = useForm<FormData>({
     resolver: zodResolver(schemaNotificationCentreForm),
-    defaultValues: {},
+    defaultValues: {
+      emailNotifications: 'no',
+      browserNotifications: 'no',
+    },
     mode: 'onChange',
   });
 
   const handleSubmit = async (values: FormData) => {
     //TODO
+    console.log('Save notification settings:', values);
   };
 
   return (
@@ -98,38 +108,46 @@ export const NotificationCentreForm = ({
               Choose how you’d like to receive notifications:
             </span>
             <span className="text-2 text-neutral-11 flex flex-row justify-between">
-              Email Notifications{' '}
-              <RadioGroup className="flex flex-row justify-end">
-                <Label className="flex flex-row">
-                  Yes
-                  <div className="w-4 h-4">
-                    <Input type="radio" value="yes" />
-                  </div>
-                </Label>{' '}
-                <Label className="flex flex-row">
-                  No
-                  <div className="w-4 h-4">
-                    <Input type="radio" value="no" />
-                  </div>
-                </Label>
-              </RadioGroup>
+              Email Notifications
+              <FormField
+                control={form.control}
+                name="emailNotifications"
+                render={({ field }) => (
+                  <RadioGroup
+                    className="flex flex-row justify-end"
+                    name="emailNotifications"
+                    orientation="horizontal"
+                    defaultValue={field.value}
+                    onChange={field.onChange}
+                  >
+                    <FormLabel htmlFor="emailNotificationsYes">Yes</FormLabel>
+                    <RadioGroupItem id="emailNotificationsYes" value="yes" />
+                    <FormLabel htmlFor="emailNotificationsNo">No</FormLabel>
+                    <RadioGroupItem id="emailNotificationsNo" value="no" />
+                  </RadioGroup>
+                )}
+              />
             </span>
             <span className="text-2 text-neutral-11 flex flex-row justify-between">
               Browser Notifications (formerly "Desktop Pop-up Notifications")
-              <RadioGroup className="flex flex-row justify-end">
-                <Label className="flex flex-row">
-                  Yes
-                  <div className="w-4 h-4">
-                    <Input type="radio" value="yes" />
-                  </div>
-                </Label>{' '}
-                <Label className="flex flex-row">
-                  No
-                  <div className="w-4 h-4">
-                    <Input type="radio" value="no" />
-                  </div>
-                </Label>
-              </RadioGroup>
+              <FormField
+                control={form.control}
+                name="browserNotifications"
+                render={({ field }) => (
+                  <RadioGroup
+                    className="flex flex-row justify-end"
+                    name="browserNotifications"
+                    orientation="horizontal"
+                    defaultValue={field.value}
+                    onChange={field.onChange}
+                  >
+                    <FormLabel htmlFor="browserNotificationYes">Yes</FormLabel>
+                    <RadioGroupItem id="browserNotificationYes" value="yes" />
+                    <FormLabel htmlFor="browserNotificationNo">No</FormLabel>
+                    <RadioGroupItem id="browserNotificationNo" value="no" />
+                  </RadioGroup>
+                )}
+              />
             </span>
             <span className="text-2 text-neutral-11">
               Receive real-time alerts directly in your browser while you’re
