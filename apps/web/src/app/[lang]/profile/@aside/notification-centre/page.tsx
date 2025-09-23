@@ -2,12 +2,16 @@
 
 import { useMe } from '@hypha-platform/core/client';
 import { NotificationCentreForm, SidePanel } from '@hypha-platform/epics';
+import { useNotifications } from '@hypha-platform/notifications/client';
 import { Button, LoadingBackdrop } from '@hypha-platform/ui';
 import { notFound, useParams } from 'next/navigation';
 
 export default function NotificationCentre() {
   const { lang, personSlug } = useParams();
   const { person, isLoading } = useMe();
+  const { subscribed, subscribe, unsubscribe, error } = useNotifications({
+    personSlug: person?.slug ?? '',
+  });
   if (!isLoading && !person) {
     return notFound();
   }
@@ -16,7 +20,6 @@ export default function NotificationCentre() {
   const isError = undefined;
   const reset = () => {};
   const currentAction = undefined;
-  const error = '';
   return (
     <SidePanel>
       <LoadingBackdrop
@@ -38,6 +41,9 @@ export default function NotificationCentre() {
           closeUrl={`/${lang}/profile/${personSlug}`}
           isLoading={isBusy}
           error={error}
+          subscribed={subscribed}
+          subscribe={subscribe}
+          unsubscribe={unsubscribe}
         />
       </LoadingBackdrop>
     </SidePanel>
