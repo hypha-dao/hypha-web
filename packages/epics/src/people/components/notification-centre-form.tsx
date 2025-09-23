@@ -3,6 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Button,
+  Checkbox,
   Form,
   FormField,
   FormLabel,
@@ -21,6 +22,8 @@ import React from 'react';
 const schemaNotificationCentreForm = z.object({
   emailNotifications: z.enum(['yes', 'no']).default('no'),
   browserNotifications: z.enum(['yes', 'no']).default('no'),
+  newProposalOpen: z.boolean().default(false),
+  proposalApprovedOrRejected: z.boolean().default(false),
 });
 
 type FormData = z.infer<typeof schemaNotificationCentreForm>;
@@ -47,6 +50,8 @@ export const NotificationCentreForm = ({
     defaultValues: {
       emailNotifications: 'no',
       browserNotifications: 'no',
+      newProposalOpen: false,
+      proposalApprovedOrRejected: false,
     },
     mode: 'onChange',
   });
@@ -160,23 +165,43 @@ export const NotificationCentreForm = ({
               </h3>
             </div>
             <span className="text-2 text-neutral-11 justify-between">
-              <div className="flex flex-row">
-                <div className="w-4 h-4">
-                  <Input type="checkbox" />
-                </div>
-                A new proposal is open for vote
-              </div>
+              <FormField
+                control={form.control}
+                name="newProposalOpen"
+                render={({ field }) => (
+                  <div className="flex flex-row gap-2">
+                    <Checkbox
+                      id="newProposalOpenChecked"
+                      defaultChecked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                    <FormLabel htmlFor="newProposalOpenChecked">
+                      A new proposal is open for vote
+                    </FormLabel>
+                  </div>
+                )}
+              />
             </span>
             <span className="text-2 text-neutral-11">
               In any of the spaces you're a member of.
             </span>
             <span className="text-2 text-neutral-11 justify-between">
-              <div className="flex flex-row">
-                <div className="w-4 h-4">
-                  <Input type="checkbox" />
-                </div>
-                A proposal is approved or rejected
-              </div>
+              <FormField
+                control={form.control}
+                name="proposalApprovedOrRejected"
+                render={({ field }) => (
+                  <div className="flex flex-row gap-2">
+                    <Checkbox
+                      id="proposalApprovedOrRejectedChecked"
+                      defaultChecked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                    <FormLabel htmlFor="proposalApprovedOrRejectedChecked">
+                      A proposal is approved or rejected
+                    </FormLabel>
+                  </div>
+                )}
+              />
             </span>
             <span className="text-2 text-neutral-11">
               In any of the spaces you're a member of.
