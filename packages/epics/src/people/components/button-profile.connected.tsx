@@ -48,8 +48,8 @@ export const ConnectedButtonProfile = ({
   const { resolvedTheme, setTheme } = useTheme();
 
   const notificationCentrePath = useMemo(() => {
-    if (!isPersonLoading && person) {
-      return `/profile/notification-centre`;
+    if (!isPersonLoading && person?.slug) {
+      return `/profile/${person.slug}/notification-centre`;
     } else {
       return undefined;
     }
