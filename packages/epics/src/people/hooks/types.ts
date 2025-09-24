@@ -2,6 +2,7 @@ import {
   Person,
   FilterParams,
   PaginationMetadata,
+  Space,
 } from '@hypha-platform/core/client';
 
 export type UseMeReturn = {
@@ -11,8 +12,14 @@ export type UseMeReturn = {
 export type UseMe = () => UseMeReturn;
 
 export type UseMembersReturn = {
-  members: Person[];
-  pagination?: PaginationMetadata;
+  persons: {
+    data: Person[];
+    pagination?: PaginationMetadata;
+  };
+  spaces: {
+    data: Space[];
+    pagination?: PaginationMetadata;
+  };
   isLoading: boolean;
 };
 

@@ -3,11 +3,18 @@ import {
   PaginationMetadata,
   // TODO: #594 declare UI interface separately
   Person,
+  Space,
 } from '@hypha-platform/core/client';
 
 export type UseMembersReturn = {
-  members: Person[];
-  pagination?: PaginationMetadata;
+  persons: {
+    data: Person[];
+    pagination?: PaginationMetadata;
+  };
+  spaces: {
+    data: Space[];
+    pagination?: PaginationMetadata;
+  };
   isLoading: boolean;
 };
 

@@ -22,7 +22,7 @@ export const MembersList: FC<MembersListProps> = ({
   searchTerm,
   refreshInterval,
 }) => {
-  const { members, isLoading } = useMembers({
+  const { persons, isLoading } = useMembers({
     page,
     spaceSlug,
     searchTerm,
@@ -30,7 +30,7 @@ export const MembersList: FC<MembersListProps> = ({
   });
   return (
     <div className="member-list w-full">
-      {members.map((member) => (
+      {persons?.data?.map((member) => (
         <Link
           href={`${basePath}/${member.slug}`}
           key={member.slug}

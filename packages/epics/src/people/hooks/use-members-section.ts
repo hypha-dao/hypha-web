@@ -27,12 +27,14 @@ export const useMembersSection = ({
     setSearchTerm(term);
   }, 300);
 
-  const { isLoading, pagination } = useMembers({
+  const { isLoading, persons } = useMembers({
     ...(activeFilter !== undefined && { filter: activeFilter }),
     spaceSlug: spaceSlug,
     searchTerm,
     refreshInterval,
   });
+
+  const pagination = persons?.pagination;
 
   React.useEffect(() => {
     setPages(1);
