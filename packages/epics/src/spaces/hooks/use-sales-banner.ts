@@ -45,18 +45,28 @@ export const useSalesBanner = ({ spaceId }: UseSalesBannerProps) => {
   }
 
   const storageKey = spaceId ? `salesBannerDismissedUntil_${spaceId}` : null;
-  const [dismissedUntil, setDismissedUntil] = useState(() => {
-    if (!storageKey) return 0;
-    const saved = localStorage?.getItem(storageKey);
-    return saved ? parseInt(saved, 10) : 0;
+
+  const [dismissedUntil, setDismissedUntil] = useState<number>(() => {
+    if (typeof window === 'undefined' || !storageKey) return 0;
+    try {
+      const saved = window.localStorage.getItem(storageKey);
+      return saved ? parseInt(saved, 10) : 0;
+    } catch (err) {
+      console.error('Error reading from localStorage:', err);
+      return 0;
+    }
   });
 
   useEffect(() => {
-    if (!storageKey) return;
-    if (dismissedUntil > 0) {
-      localStorage?.setItem(storageKey, dismissedUntil.toString());
-    } else {
-      localStorage?.removeItem(storageKey);
+    if (typeof window === 'undefined' || !storageKey) return;
+    try {
+      if (dismissedUntil > 0) {
+        window.localStorage.setItem(storageKey, dismissedUntil.toString());
+      } else {
+        window.localStorage.removeItem(storageKey);
+      }
+    } catch (err) {
+      console.error('Error writing to localStorage:', err);
     }
   }, [dismissedUntil, storageKey]);
 

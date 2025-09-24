@@ -117,6 +117,14 @@ export const useProposalDetailsWeb3Rpc = ({
       tokenSymbol: '',
     };
 
+    let delegatesData: {
+      member?: string;
+      space?: bigint;
+    } = {
+      member: undefined,
+      space: undefined,
+    };
+
     (transactions as any[]).forEach((tx) => {
       const decoded = decodeTransaction(tx);
 
@@ -168,6 +176,11 @@ export const useProposalDetailsWeb3Rpc = ({
             tokenSymbol: 'HYPHA',
           };
           break;
+
+        case 'delegate':
+          delegatesData = decoded.data;
+          break;
+
         default:
           break;
       }
@@ -194,6 +207,7 @@ export const useProposalDetailsWeb3Rpc = ({
       votingMethodsToken,
       buyHyphaTokensData,
       activateSpacesData,
+      delegatesData,
     };
   }, [data]);
 

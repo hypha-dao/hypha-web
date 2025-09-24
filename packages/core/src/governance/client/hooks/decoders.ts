@@ -9,6 +9,7 @@ import {
   tokenVotingPowerImplementationAbi,
   voteDecayTokenVotingPowerImplementationAbi,
   hyphaTokenAbi,
+  votingPowerDelegationImplementationAbi,
 } from '@hypha-platform/core/generated';
 
 type Tx = {
@@ -205,6 +206,20 @@ export function decodeTransaction(tx: Tx) {
               },
             }
           : null,
+    },
+    {
+      abi: votingPowerDelegationImplementationAbi,
+      handler: (decoded) => {
+        return decoded.functionName === 'delegate'
+          ? {
+              type: 'delegate',
+              data: {
+                member: decoded.args[0],
+                space: decoded.args[1],
+              },
+            }
+          : null;
+      },
     },
   ];
 
