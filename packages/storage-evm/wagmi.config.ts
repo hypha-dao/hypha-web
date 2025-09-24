@@ -24,7 +24,7 @@ export default defineConfig({
         'VoteDecayTokenVotingPowerImplementation.sol/**',
         'HyphaToken.sol/**',
         'SpacePaymentTracker.sol/**',
-        'VotingPowerDelegationImplementation.sol/**'
+        'VotingPowerDelegationImplementation.sol/**',
       ],
       deployments: {
         DAOSpaceFactoryImplementation: {
