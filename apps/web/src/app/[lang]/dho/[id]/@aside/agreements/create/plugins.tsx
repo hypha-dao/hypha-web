@@ -39,7 +39,7 @@ export const Plugin = ({
   web3SpaceId,
   spaces,
 }: PluginProps) => {
-  const { members } = useMembers({ spaceSlug, paginationDisabled: true });
+  const { persons } = useMembers({ spaceSlug, paginationDisabled: true });
 
   const PluginCmp = PLUGINS[name];
 
@@ -47,7 +47,7 @@ export const Plugin = ({
     <PluginCmp
       spaceSlug={spaceSlug || ''}
       web3SpaceId={web3SpaceId}
-      members={members}
+      members={persons?.data}
       spaces={spaces}
     />
   );
