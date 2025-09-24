@@ -9,6 +9,7 @@ import {
   IssueNewTokenPlugin,
   BuyHyphaTokensPlugin,
   ActivateSpacesPlugin,
+  SpaceToSpaceMembershipPlugin,
 } from '@hypha-platform/epics';
 import { useMembers } from '@web/hooks/use-members';
 import { Space } from '@hypha-platform/core/client';
@@ -22,6 +23,7 @@ export const PLUGINS = {
   'issue-new-token': IssueNewTokenPlugin,
   'buy-hypha-tokens': BuyHyphaTokensPlugin,
   'activate-spaces': ActivateSpacesPlugin,
+  'space-to-space-membership': SpaceToSpaceMembershipPlugin,
 };
 
 type PluginProps = {
@@ -37,7 +39,7 @@ export const Plugin = ({
   web3SpaceId,
   spaces,
 }: PluginProps) => {
-  const { members } = useMembers({ spaceSlug, paginationDisabled: true });
+  const { persons } = useMembers({ spaceSlug, paginationDisabled: true });
 
   const PluginCmp = PLUGINS[name];
 
@@ -45,7 +47,7 @@ export const Plugin = ({
     <PluginCmp
       spaceSlug={spaceSlug || ''}
       web3SpaceId={web3SpaceId}
-      members={members}
+      members={persons?.data}
       spaces={spaces}
     />
   );

@@ -22,6 +22,7 @@ import {
   ProposalMintItem,
   ProposalEntryInfo,
   ProposalBuyHyphaTokensData,
+  ProposalDelegatesData,
 } from '../../governance';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
 import { ButtonClose } from '@hypha-platform/epics';
@@ -152,6 +153,12 @@ export const ProposalDetail = ({
           spaceIds={proposalDetails?.activateSpacesData?.spaceIds}
           paymentAmounts={proposalDetails?.activateSpacesData?.paymentAmounts}
           tokenSymbol={proposalDetails?.activateSpacesData?.tokenSymbol}
+        />
+      ) : null}
+      {proposalDetails?.delegatesData?.member ? (
+        <ProposalDelegatesData
+          member={proposalDetails?.delegatesData.member}
+          space={proposalDetails?.delegatesData.space}
         />
       ) : null}
       <FormVoting

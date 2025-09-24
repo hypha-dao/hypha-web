@@ -27,16 +27,16 @@ export const InnerSpaceCardWrapper = ({
   parentPath,
   className,
 }: InnerSpaceCardWrapperProps) => {
-  const { members = [], isLoading } = useMembers({ spaceSlug });
+  const { persons, isLoading } = useMembers({ spaceSlug });
 
   const mappedMembers = useMemo(
     () =>
-      members.map((member: Person) => ({
+      persons?.data?.map((member: Person) => ({
         name: member.name || '',
         surname: member.surname || '',
         avatar: member.avatarUrl || '/placeholder/avatar.png',
       })),
-    [members],
+    [persons.data],
   );
 
   return (

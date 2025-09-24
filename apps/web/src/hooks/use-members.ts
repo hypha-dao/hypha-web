@@ -68,8 +68,8 @@ export const useMembers: UseMembers = ({
   );
 
   return {
-    members: response?.data || [],
-    pagination: response?.pagination,
+    persons: response?.persons || { data: [], pagination: undefined },
+    spaces: response?.spaces || { data: [], pagination: undefined },
     isLoading,
   };
 };
