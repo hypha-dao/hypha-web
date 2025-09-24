@@ -9,6 +9,7 @@ import {
   FormControl,
   FormMessage,
   Label,
+  RequirementMark,
 } from '@hypha-platform/ui';
 import { SpaceToSpaceMembershipSelector } from '../components/common/space-to-space-membership-selector';
 
@@ -25,7 +26,10 @@ export const SpaceToSpaceMembershipPlugin = ({
 
   return (
     <div className="flex flex-col gap-5 w-full">
-      <Label>Space</Label>
+      <div className="flex gap-1">
+        <Label>Space</Label>
+        <RequirementMark />
+      </div>
       <FormField
         control={control}
         name="space"
@@ -45,7 +49,10 @@ export const SpaceToSpaceMembershipPlugin = ({
         )}
       />
       <Separator />
-      <Label>Delegation Rules</Label>
+      <div className="flex gap-1">
+        <Label>Delegation Rules</Label>
+        <RequirementMark />
+      </div>
       <FormField
         control={control}
         name="member"
