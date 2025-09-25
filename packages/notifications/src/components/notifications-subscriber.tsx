@@ -24,12 +24,16 @@ export function NotificationSubscriber({
 }: NotificationSubscriberProps) {
   const { person, isLoading } = useMe();
   const [initialized, setInitialized] = React.useState(false);
+  const [subscribed, setSubscribed] = React.useState(false);
 
   const login = React.useCallback(() => {
     if (!OneSignal || isLoading || !person?.slug) {
       return;
     }
-    OneSignal.login(person.slug);
+    OneSignal.login(person.slug).then(() => {
+      console.log('subscribe');
+      setSubscribed(true);
+    });
   }, [OneSignal, person, isLoading]);
 
   const handleUserPushSubscriptionChange = React.useCallback(
@@ -63,7 +67,7 @@ export function NotificationSubscriber({
         handleUserPushSubscriptionChange,
       );
     };
-  }, [initialized, OneSignal]);
+  }, [initialized, OneSignal, handleUserPushSubscriptionChange]);
 
   React.useEffect(() => {
     OneSignal.init({
@@ -90,6 +94,9 @@ export function NotificationSubscriber({
     }).then(() => {
       console.log('OneSignal initialized');
       setInitialized(true);
+      const externalId = initialized ? OneSignal?.User?.externalId : undefined;
+      setSubscribed(Boolean(externalId));
+      console.log('OneSignal.User.externalId:', externalId);
       OneSignal.Notifications.addEventListener(
         'click',
         (event: NotificationClickEvent) => {
@@ -157,7 +164,9 @@ export function NotificationSubscriber({
   }, [appId, serviceWorkerPath]);
 
   return (
-    <NotificationsContext.Provider value={{ initialized, setInitialized }}>
+    <NotificationsContext.Provider
+      value={{ initialized, setInitialized, subscribed, setSubscribed }}
+    >
       {children}
     </NotificationsContext.Provider>
   );
