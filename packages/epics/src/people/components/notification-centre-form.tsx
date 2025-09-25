@@ -32,7 +32,7 @@ export type NotificationCentreFormProps = {
   closeUrl: string;
   isLoading?: boolean;
   error?: string | null;
-  subscribed: boolean;
+  subscribed?: boolean;
   subscribe: () => void;
   unsubscribe: () => void;
 };
