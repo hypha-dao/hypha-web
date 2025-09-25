@@ -49,11 +49,11 @@ export const ConnectedButtonProfile = ({
 
   const notificationCentrePath = useMemo(() => {
     if (!isPersonLoading && person?.slug) {
-      return `/profile/${person.slug}/notification-centre`;
+      return `/${lang}/profile/${person.slug}/notification-centre`;
     } else {
       return undefined;
     }
-  }, [person, isPersonLoading]);
+  }, [lang, person, isPersonLoading]);
 
   useEffect(() => {
     if (isAuthLoading || isPersonLoading || !isAuthenticated) {
