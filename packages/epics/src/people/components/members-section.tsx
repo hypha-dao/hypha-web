@@ -8,6 +8,7 @@ import { MembersList } from './members-list';
 import { useMembersSection } from '../hooks/use-members-section';
 import { UseMembers } from '../hooks/types';
 import { Empty } from '../../common';
+import { Button } from '@hypha-platform/ui';
 
 type MemberSectionProps = {
   basePath: string;
@@ -32,14 +33,16 @@ export const MembersSection: FC<MemberSectionProps> = ({
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-4">
-      <SectionFilter
-        count={pagination?.total || 0}
-        label="Members"
-        hasSearch
-        searchPlaceholder="Search members"
-        onChangeSearch={onUpdateSearch}
-      />
-
+      <span className="w-full flex">
+        <SectionFilter
+          count={pagination?.total || 0}
+          label="Members"
+          hasSearch
+          searchPlaceholder="Search members"
+          onChangeSearch={onUpdateSearch}
+        />
+        <Button>Delegate Voting</Button>
+      </span>
       {pagination?.total === 0 ? (
         <Empty>
           <p>List is empty</p>
