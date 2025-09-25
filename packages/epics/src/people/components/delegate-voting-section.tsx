@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useJoinSpace } from '../../spaces';
+import { useEffect, useState } from 'react';
 import { Separator, Label, Button } from '@hypha-platform/ui';
 import { DelegatedMemberSelector } from './delegated-member-selector';
 import { DelegatedSpaceSelector } from './delegated-space-selector';
@@ -10,6 +9,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormField, FormMessage, FormItem } from '@hypha-platform/ui';
 import { z } from 'zod';
+import {
+  useSpaceBySlug,
+  useDelegateWeb3Rpc,
+  useMe,
+} from '@hypha-platform/core/client';
+import { useParams } from 'next/navigation';
 
 interface DelegateVotingSectionProps {
   spaceSlug?: string;
@@ -18,9 +23,12 @@ interface DelegateVotingSectionProps {
 }
 
 const delegateToMemberSchema = z.object({
+  delegatedSpace: z.number({
+    required_error: 'Please select a space',
+    invalid_type_error: 'Please select a space',
+  }),
   delegatedMember: z.string().min(1, 'Please select a member'),
 });
-
 type DelegateToMemberForm = z.infer<typeof delegateToMemberSchema>;
 
 const passOnDelegatedVoiceSchema = z.object({
@@ -30,7 +38,6 @@ const passOnDelegatedVoiceSchema = z.object({
   }),
   delegatedMember: z.string().min(1, 'Please select a member'),
 });
-
 type PassOnDelegatedVoiceForm = z.infer<typeof passOnDelegatedVoiceSchema>;
 
 export const DelegateVotingSection = ({
@@ -38,19 +45,64 @@ export const DelegateVotingSection = ({
   spaceSlug,
   useMembers,
 }: DelegateVotingSectionProps) => {
-  const { isMember } = useJoinSpace({
-    spaceId: web3SpaceId as number,
-  });
+  const { personSlug } = useParams();
+  const { person } = useMe();
+  const { space } = useSpaceBySlug(spaceSlug as string);
   const { persons, spaces } = useMembers({
     spaceSlug,
     paginationDisabled: true,
   });
+  const isMember = person?.slug === personSlug;
+
+  const {
+    delegate: delegateToMember,
+    isDelegating: isDelegatingToMember,
+    delegateHash: delegateHashMember,
+    errorDelegate: errorDelegateMember,
+    resetDelegateMutation: resetDelegateMember,
+  } = useDelegateWeb3Rpc();
+
+  const {
+    delegate: delegateToSpace,
+    isDelegating: isDelegatingToSpace,
+    delegateHash: delegateHashSpace,
+    errorDelegate: errorDelegateSpace,
+    resetDelegateMutation: resetDelegateSpace,
+  } = useDelegateWeb3Rpc();
+
+  const [successMember, setSuccessMember] = useState(false);
+  const [successSpace, setSuccessSpace] = useState(false);
+
+  useEffect(() => {
+    if (delegateHashMember) {
+      setSuccessMember(true);
+      const t = setTimeout(() => {
+        setSuccessMember(false);
+        resetDelegateMember();
+      }, 3000);
+      return () => clearTimeout(t);
+    }
+  }, [delegateHashMember, resetDelegateMember]);
+
+  useEffect(() => {
+    if (delegateHashSpace) {
+      setSuccessSpace(true);
+      const t = setTimeout(() => {
+        setSuccessSpace(false);
+        resetDelegateSpace();
+      }, 3000);
+      return () => clearTimeout(t);
+    }
+  }, [delegateHashSpace, resetDelegateSpace]);
 
   if (!isMember) return null;
 
   const delegateToMemberForm = useForm<DelegateToMemberForm>({
     resolver: zodResolver(delegateToMemberSchema),
-    defaultValues: { delegatedMember: '' },
+    defaultValues: {
+      delegatedMember: '',
+      delegatedSpace: space?.web3SpaceId as number,
+    },
   });
 
   const passOnDelegatedVoiceForm = useForm<PassOnDelegatedVoiceForm>({
@@ -60,11 +112,9 @@ export const DelegateVotingSection = ({
 
   const selectedSpaceWeb3SpaceId =
     passOnDelegatedVoiceForm.watch('delegatedSpace');
-
   const selectedSpace = spaces?.data?.find(
     (s) => s.web3SpaceId === selectedSpaceWeb3SpaceId,
   );
-
   const { persons: passOnDelegatedVoiceFormMembers } = useMembers({
     spaceSlug: selectedSpace?.slug,
     paginationDisabled: true,
@@ -76,15 +126,17 @@ export const DelegateVotingSection = ({
   }, [selectedSpaceWeb3SpaceId, selectedSpace?.slug, setValue]);
 
   const handleDelegateToMember = async (data: DelegateToMemberForm) => {
-    console.log('Delegating to member:', data.delegatedMember);
+    await delegateToMember({
+      address: data.delegatedMember as `0x${string}`,
+      spaceId: data.delegatedSpace,
+    });
   };
 
   const handleDelegateSpace = async (data: PassOnDelegatedVoiceForm) => {
-    console.log(
-      'Delegating to space:',
-      data.delegatedMember,
-      data.delegatedSpace,
-    );
+    await delegateToSpace({
+      address: data.delegatedMember as `0x${string}`,
+      spaceId: data.delegatedSpace,
+    });
   };
 
   return (
@@ -120,8 +172,20 @@ export const DelegateVotingSection = ({
             )}
           />
           <span className="flex items-center justify-end w-full">
-            <Button type="submit">Save</Button>
+            <Button type="submit" disabled={isDelegatingToMember}>
+              {isDelegatingToMember ? 'Delegating...' : 'Save'}
+            </Button>
           </span>
+          {successMember && (
+            <span className="text-foreground text-sm">
+              Delegation completed successfully!
+            </span>
+          )}
+          {errorDelegateMember && (
+            <span className="text-red-600 text-sm">
+              {errorDelegateMember.message}
+            </span>
+          )}
         </form>
       </Form>
       <Separator />
@@ -183,8 +247,20 @@ export const DelegateVotingSection = ({
               )}
             />
             <span className="flex items-center justify-end w-full">
-              <Button type="submit">Save</Button>
+              <Button type="submit" disabled={isDelegatingToSpace}>
+                {isDelegatingToSpace ? 'Delegating...' : 'Save'}
+              </Button>
             </span>
+            {successSpace && (
+              <span className="text-foreground text-sm">
+                Delegation completed successfully!
+              </span>
+            )}
+            {errorDelegateSpace && (
+              <span className="text-red-600 text-sm">
+                {errorDelegateSpace.message}
+              </span>
+            )}
           </form>
         </Form>
       ) : null}

@@ -8,3 +8,4 @@ export { useSpaceProposalsWeb3Rpc } from './useSpaceProposals.web3.rpc';
 export { useUpdateSpaceOrchestrator } from './useUpdateSpaceOrchestrator';
 export { useOrganisationSpacesBySingleSlug } from './useOrganisationSpacesBySingleSlug';
 export { useSpacesByWeb3Ids } from './useSpacesByWeb3Ids';
+export { useDelegateWeb3Rpc } from './useDelegate.web3.rpc';
