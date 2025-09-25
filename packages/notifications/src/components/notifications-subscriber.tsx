@@ -11,6 +11,8 @@ import OneSignal, {
 import { NotificationsContext } from '../hooks';
 import { useMe } from '@hypha-platform/core/client';
 
+const DEV_ENV = process.env.NODE_ENV === 'development';
+
 export interface NotificationSubscriberProps {
   appId: string;
   serviceWorkerPath?: string;
@@ -73,6 +75,7 @@ export function NotificationSubscriber({
     OneSignal.init({
       appId,
       serviceWorkerPath,
+      allowLocalhostAsSecureOrigin: DEV_ENV,
       promptOptions: {
         slidedown: {
           prompts: [
@@ -94,7 +97,7 @@ export function NotificationSubscriber({
     }).then(() => {
       console.log('OneSignal initialized');
       setInitialized(true);
-      const externalId = initialized ? OneSignal?.User?.externalId : undefined;
+      const externalId = OneSignal?.User?.externalId;
       setSubscribed(Boolean(externalId));
       console.log('OneSignal.User.externalId:', externalId);
       OneSignal.Notifications.addEventListener(
