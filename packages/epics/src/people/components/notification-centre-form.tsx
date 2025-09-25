@@ -48,10 +48,10 @@ export const NotificationCentreForm = ({
   const form = useForm<FormData>({
     resolver: zodResolver(schemaNotificationCentreForm),
     defaultValues: {
-      emailNotifications: 'no',
-      browserNotifications: 'no',
-      newProposalOpen: false,
-      proposalApprovedOrRejected: false,
+      emailNotifications: 'yes',
+      browserNotifications: 'yes',
+      newProposalOpen: true,
+      proposalApprovedOrRejected: true,
     },
     mode: 'onChange',
   });
