@@ -55,8 +55,12 @@ contract DAOSpaceFactoryImplementation is
     SpaceCreationParams memory params
   ) external returns (uint256) {
     // Common parameter validation
-    require(params.quorum > 0 && params.quorum <= 100, 'quorum');
-    require(params.unity > 0 && params.unity <= 100, 'unity');
+    require(params.quorum >= 0 && params.quorum <= 100, 'Invalid quorum range');
+    require(params.unity >= 0 && params.unity <= 100, 'Invalid unity range');
+    require(
+      !(params.quorum == 0 && params.unity == 0),
+      'Both quorum and unity cannot be zero'
+    );
 
     spaceCounter++;
 
@@ -399,8 +403,12 @@ contract DAOSpaceFactoryImplementation is
       'Not authorized: only executor or owner'
     );
     require(_newVotingPowerSource > 0, 'Invalid voting power source');
-    require(_newQuorum > 0 && _newQuorum <= 100, 'Invalid quorm');
-    require(_newUnity > 0 && _newUnity <= 100, 'Invalid unity');
+    require(_newQuorum >= 0 && _newQuorum <= 100, 'Invalid quorum range');
+    require(_newUnity >= 0 && _newUnity <= 100, 'Invalid unity range');
+    require(
+      !(_newQuorum == 0 && _newUnity == 0),
+      'Both quorum and unity cannot be zero'
+    );
 
     Space storage space = spaces[_spaceId];
     uint256 oldVotingPowerSource = space.votingPowerSource;

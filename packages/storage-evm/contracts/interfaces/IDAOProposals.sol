@@ -119,4 +119,6 @@ interface IDAOProposals {
 
   // Add new event for value tracking
   event ProposalValueSet(uint256 indexed proposalId, uint256 value);
+
+  event MinimumProposalDurationSet(uint256 indexed spaceId, uint256 duration);
 }

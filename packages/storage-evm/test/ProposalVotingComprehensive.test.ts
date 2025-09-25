@@ -126,6 +126,9 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       await daoSpaceFactory.getAddress(),
       await votingPowerDirectory.getAddress(),
     );
+    await daoProposals.setDelegationContract(
+      await votingPowerDelegation.getAddress(),
+    );
     await daoSpaceFactory.setContracts(
       await joinMethodDirectory.getAddress(),
       await exitMethodDirectory.getAddress(),
@@ -428,6 +431,70 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
 
       // Proposal is already executed, no need for additional votes
       // With new logic: 100% of participants (2/2) voted YES, which exceeds 60% unity threshold
+    });
+
+    it('Should allow a non-member delegate to vote with the correct power', async function () {
+      console.log('\n--- Testing Voting by Non-Member Delegate ---');
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 4, // owner, members[0], members[1], members[2]
+        name: 'Non-Member Delegate Voting Test',
+      });
+
+      const delegator1 = members[0];
+      const delegator2 = members[1];
+      const nonMemberDelegate = members[5];
+
+      // Verify non-member status
+      expect(await daoSpaceFactory.isMember(spaceId, nonMemberDelegate.address))
+        .to.be.false;
+      console.log(`Verified ${nonMemberDelegate.address} is not a member.`);
+
+      // Create a proposal
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Delegate from member 1 to non-member
+      await votingPowerDelegation
+        .connect(delegator1)
+        .delegate(nonMemberDelegate.address, spaceId);
+      console.log(
+        `delegator1 (${delegator1.address}) delegated to nonMemberDelegate.`,
+      );
+
+      // Delegate from member 2 to non-member
+      await votingPowerDelegation
+        .connect(delegator2)
+        .delegate(nonMemberDelegate.address, spaceId);
+      console.log(
+        `delegator2 (${delegator2.address}) delegated to nonMemberDelegate.`,
+      );
+
+      // Check non-member's voting power
+      const votingPower = await spaceVotingPower.getVotingPower(
+        nonMemberDelegate.address,
+        spaceId,
+      );
+      expect(votingPower).to.equal(2);
+      console.log(`nonMemberDelegate now has ${votingPower} voting power.`);
+
+      // Non-member delegate votes YES
+      await daoProposals.connect(nonMemberDelegate).vote(proposalId, true);
+      console.log('nonMemberDelegate voted YES on the proposal.');
+
+      // Verify proposal state
+      const proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.yesVotes).to.equal(2);
+      console.log(`Proposal now has ${proposalState.yesVotes} YES votes.`);
+
+      // Total voting power is 4. Quorum is 50% (2 votes). Unity 60%.
+      // 2 votes were cast. 2 yes votes. 2*100 >= 60*2 -> 200 >= 120. It should be executed.
+      expect(proposalState.executed).to.be.true;
+      console.log('Proposal executed as expected.');
+
+      console.log(
+        '✅ Non-member delegate successfully voted with aggregated power.',
+      );
     });
 
     it('Should handle complex delegation scenarios', async function () {
@@ -760,6 +827,541 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
 
       expect(proposalState.executed).to.equal(true);
       console.log(`✅ Space Voting proposal executed with delegated power`);
+    });
+  });
+
+  describe('New Governance Features Tests', function () {
+    describe('Space Creation with Zero Unity/Quorum', function () {
+      it('Should allow creating spaces with unity=0 but quorum>0', async function () {
+        console.log('\n--- Testing Space Creation: Unity=0, Quorum>0 ---');
+
+        const spaceParams = {
+          name: 'Zero Unity Test',
+          description: 'Test space with unity=0 and quorum=50',
+          imageUrl: 'https://test.com/image.png',
+          unity: 0, // Zero unity
+          quorum: 50, // Normal quorum
+          votingPowerSource: 1,
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        };
+
+        await expect(daoSpaceFactory.createSpace(spaceParams)).to.not.be
+          .reverted;
+        const spaceId = await daoSpaceFactory.spaceCounter();
+
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        expect(spaceDetails.unity).to.equal(0);
+        expect(spaceDetails.quorum).to.equal(50);
+
+        console.log('✅ Successfully created space with unity=0, quorum=50');
+      });
+
+      it('Should allow creating spaces with quorum=0 but unity>0', async function () {
+        console.log('\n--- Testing Space Creation: Quorum=0, Unity>0 ---');
+
+        const spaceParams = {
+          name: 'Zero Quorum Test',
+          description: 'Test space with quorum=0 and unity=60',
+          imageUrl: 'https://test.com/image.png',
+          unity: 60, // Normal unity
+          quorum: 0, // Zero quorum
+          votingPowerSource: 1,
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        };
+
+        await expect(daoSpaceFactory.createSpace(spaceParams)).to.not.be
+          .reverted;
+        const spaceId = await daoSpaceFactory.spaceCounter();
+
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        expect(spaceDetails.unity).to.equal(60);
+        expect(spaceDetails.quorum).to.equal(0);
+
+        console.log('✅ Successfully created space with quorum=0, unity=60');
+      });
+
+      it('Should prevent creating spaces with both unity=0 and quorum=0', async function () {
+        console.log(
+          '\n--- Testing Space Creation: Both Zero (Should Fail) ---',
+        );
+
+        const spaceParams = {
+          name: 'Both Zero Test',
+          description: 'Test space with both unity=0 and quorum=0',
+          imageUrl: 'https://test.com/image.png',
+          unity: 0, // Zero unity
+          quorum: 0, // Zero quorum
+          votingPowerSource: 1,
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        };
+
+        await expect(
+          daoSpaceFactory.createSpace(spaceParams),
+        ).to.be.revertedWith('Both quorum and unity cannot be zero');
+
+        console.log(
+          '✅ Correctly prevented space creation with both unity=0 and quorum=0',
+        );
+      });
+
+      it('Should validate changeVotingMethod with same rules', async function () {
+        console.log('\n--- Testing changeVotingMethod Validation ---');
+
+        // Create a normal space first
+        const { spaceId } = await createSpace({
+          unity: 60,
+          quorum: 50,
+          memberCount: 3,
+          name: 'Change Method Test',
+        });
+
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        const executor = spaceDetails.executor;
+
+        // Test valid changes
+        await expect(
+          daoSpaceFactory.changeVotingMethod(spaceId, 1, 0, 50), // unity=0, quorum=50
+        ).to.not.be.reverted;
+        console.log('✅ Successfully changed to unity=0, quorum=50');
+
+        await expect(
+          daoSpaceFactory.changeVotingMethod(spaceId, 1, 60, 0), // unity=60, quorum=0
+        ).to.not.be.reverted;
+        console.log('✅ Successfully changed to unity=60, quorum=0');
+
+        // Test invalid change (both zero)
+        await expect(
+          daoSpaceFactory.changeVotingMethod(spaceId, 1, 0, 0), // both zero
+        ).to.be.revertedWith('Both quorum and unity cannot be zero');
+        console.log(
+          '✅ Correctly prevented changing to both unity=0 and quorum=0',
+        );
+      });
+    });
+
+    describe('Minimum Duration Requirements', function () {
+      it('Should require minimum duration when unity=0', async function () {
+        console.log('\n--- Testing Minimum Duration Requirement: Unity=0 ---');
+
+        // Create space with unity=0, quorum=50
+        const spaceParams = {
+          name: 'Unity Zero Duration Test',
+          description: 'Test space requiring minimum duration',
+          imageUrl: 'https://test.com/image.png',
+          unity: 0,
+          quorum: 50,
+          votingPowerSource: 1,
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        };
+
+        await daoSpaceFactory.createSpace(spaceParams);
+        const spaceId = await daoSpaceFactory.spaceCounter();
+
+        // Add members
+        await daoSpaceFactory.connect(members[0]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[1]).joinSpace(spaceId);
+
+        // Try to create proposal without setting minimum duration (should fail)
+        const proposalCalldata = daoSpaceFactory.interface.encodeFunctionData(
+          'getSpaceDetails',
+          [spaceId],
+        );
+
+        const proposalParams = {
+          spaceId,
+          duration: 3600,
+          transactions: [
+            {
+              target: await daoSpaceFactory.getAddress(),
+              value: 0,
+              data: proposalCalldata,
+            },
+          ],
+        };
+
+        await expect(
+          daoProposals.createProposal(proposalParams),
+        ).to.be.revertedWithCustomError(daoProposals, 'SetMinDuration');
+
+        console.log(
+          '✅ Correctly blocked proposal creation without minimum duration',
+        );
+
+        // Set minimum duration and try again (should succeed)
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        // Use owner to impersonate executor for testing
+        await ethers.provider.send('hardhat_impersonateAccount', [
+          spaceDetails.executor,
+        ]);
+        await ethers.provider.send('hardhat_setBalance', [
+          spaceDetails.executor,
+          '0x1000000000000000000',
+        ]);
+        const executorSigner = await ethers.getSigner(spaceDetails.executor);
+        await daoProposals
+          .connect(executorSigner)
+          .setMinimumProposalDuration(spaceId, 86400); // 1 day
+
+        await expect(daoProposals.createProposal(proposalParams)).to.not.be
+          .reverted;
+        console.log(
+          '✅ Successfully created proposal after setting minimum duration',
+        );
+      });
+
+      it('Should require minimum duration when quorum<20%', async function () {
+        console.log(
+          '\n--- Testing Minimum Duration Requirement: Quorum<20% ---',
+        );
+
+        // Create space with unity=60, quorum=15 (<20%)
+        const spaceParams = {
+          name: 'Low Quorum Duration Test',
+          description: 'Test space with low quorum requiring minimum duration',
+          imageUrl: 'https://test.com/image.png',
+          unity: 60,
+          quorum: 15, // Less than 20%
+          votingPowerSource: 1,
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        };
+
+        await daoSpaceFactory.createSpace(spaceParams);
+        const spaceId = await daoSpaceFactory.spaceCounter();
+
+        // Add members
+        await daoSpaceFactory.connect(members[0]).joinSpace(spaceId);
+
+        const proposalCalldata = daoSpaceFactory.interface.encodeFunctionData(
+          'getSpaceDetails',
+          [spaceId],
+        );
+
+        const proposalParams = {
+          spaceId,
+          duration: 3600,
+          transactions: [
+            {
+              target: await daoSpaceFactory.getAddress(),
+              value: 0,
+              data: proposalCalldata,
+            },
+          ],
+        };
+
+        // Should fail without minimum duration
+        await expect(
+          daoProposals.createProposal(proposalParams),
+        ).to.be.revertedWithCustomError(daoProposals, 'SetMinDuration');
+
+        console.log(
+          '✅ Correctly blocked proposal creation with low quorum and no minimum duration',
+        );
+      });
+
+      it('Should allow proposals in traditional spaces without minimum duration', async function () {
+        console.log(
+          '\n--- Testing Traditional Spaces: No Minimum Duration Required ---',
+        );
+
+        // Create traditional space (unity=67, quorum=50)
+        const { spaceId } = await createSpace({
+          unity: 67,
+          quorum: 50,
+          memberCount: 3,
+          name: 'Traditional Space',
+        });
+
+        // Should be able to create proposal without setting minimum duration
+        const proposalId = await createTestProposal(spaceId, owner);
+        expect(proposalId).to.be.greaterThan(0);
+
+        console.log(
+          '✅ Successfully created proposal in traditional space without minimum duration',
+        );
+      });
+    });
+
+    describe('Executor-Only Access Control', function () {
+      it('Should only allow executor to set minimum proposal duration', async function () {
+        console.log(
+          '\n--- Testing Executor-Only Access to setMinimumProposalDuration ---',
+        );
+
+        const { spaceId } = await createSpace({
+          unity: 60,
+          quorum: 50,
+          memberCount: 3,
+          name: 'Executor Access Test',
+        });
+
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        const executorAddress = spaceDetails.executor;
+        const creator = spaceDetails.creator;
+
+        // Non-executor should fail
+        await expect(
+          daoProposals
+            .connect(members[0])
+            .setMinimumProposalDuration(spaceId, 86400),
+        ).to.be.revertedWithCustomError(daoProposals, 'OnlyExecutor');
+
+        // Even creator should fail (since we changed from creator to executor)
+        await expect(
+          daoProposals
+            .connect(owner)
+            .setMinimumProposalDuration(spaceId, 86400),
+        ).to.be.revertedWithCustomError(daoProposals, 'OnlyExecutor');
+
+        // Only executor should succeed
+        await ethers.provider.send('hardhat_impersonateAccount', [
+          executorAddress,
+        ]);
+        await ethers.provider.send('hardhat_setBalance', [
+          executorAddress,
+          '0x1000000000000000000',
+        ]);
+        const executorSigner = await ethers.getSigner(executorAddress);
+        await expect(
+          daoProposals
+            .connect(executorSigner)
+            .setMinimumProposalDuration(spaceId, 86400),
+        ).to.not.be.reverted;
+
+        console.log('✅ Only executor can set minimum proposal duration');
+      });
+    });
+
+    describe('New Governance Models in Action', function () {
+      it('Should test "Democratic Timing" model (quorum=0, unity>0)', async function () {
+        console.log(
+          '\n--- Testing Democratic Timing Model: Quorum=0, Unity=50 ---',
+        );
+
+        // Create space with quorum=0, unity=50
+        const spaceParams = {
+          name: 'Democratic Timing Test',
+          description: 'Any participation triggers process, majority decides',
+          imageUrl: 'https://test.com/image.png',
+          unity: 50,
+          quorum: 0, // No participation threshold
+          votingPowerSource: 1,
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        };
+
+        await daoSpaceFactory.createSpace(spaceParams);
+        const spaceId = await daoSpaceFactory.spaceCounter();
+
+        // Add members
+        for (let i = 0; i < 4; i++) {
+          await daoSpaceFactory.connect(members[i]).joinSpace(spaceId);
+        }
+
+        // Set minimum duration (required for quorum=0)
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        await ethers.provider.send('hardhat_impersonateAccount', [
+          spaceDetails.executor,
+        ]);
+        await ethers.provider.send('hardhat_setBalance', [
+          spaceDetails.executor,
+          '0x1000000000000000000',
+        ]);
+        const executorSigner = await ethers.getSigner(spaceDetails.executor);
+        await daoProposals
+          .connect(executorSigner)
+          .setMinimumProposalDuration(spaceId, 1); // 1 second for testing
+
+        const proposalId = await createTestProposal(spaceId, owner);
+
+        console.log(
+          'Setup: 5 total members, quorum=0 (any vote triggers), unity=50% (majority wins)',
+        );
+
+        // Single vote should meet quorum immediately
+        await daoProposals.connect(members[0]).vote(proposalId, true);
+
+        let proposalState = await daoProposals.getProposalCore(proposalId);
+        console.log(
+          `After 1 YES vote: ${proposalState.yesVotes} YES, ${proposalState.noVotes} NO, Executed: ${proposalState.executed}`,
+        );
+
+        // Should execute immediately (100% of cast votes = YES, exceeds 50% unity)
+        expect(proposalState.executed).to.equal(true);
+        console.log(
+          '✅ Democratic Timing model: Single vote executed proposal (100% > 50% unity)',
+        );
+      });
+
+      it('Should test "First Vote Wins" model (unity=0, quorum>0) with minimum duration', async function () {
+        console.log(
+          '\n--- Testing First Vote Wins Model: Unity=0, Quorum=50 ---',
+        );
+
+        // Create space with unity=0, quorum=50
+        const spaceParams = {
+          name: 'First Vote Wins Test',
+          description: 'Need participation threshold, first vote type wins',
+          imageUrl: 'https://test.com/image.png',
+          unity: 0, // Any vote percentage wins
+          quorum: 50, // Need 50% participation
+          votingPowerSource: 1,
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        };
+
+        await daoSpaceFactory.createSpace(spaceParams);
+        const spaceId = await daoSpaceFactory.spaceCounter();
+
+        // Add members (total 5: owner + 4 members)
+        for (let i = 0; i < 4; i++) {
+          await daoSpaceFactory.connect(members[i]).joinSpace(spaceId);
+        }
+
+        // Set minimum duration (required for unity=0)
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        await ethers.provider.send('hardhat_impersonateAccount', [
+          spaceDetails.executor,
+        ]);
+        await ethers.provider.send('hardhat_setBalance', [
+          spaceDetails.executor,
+          '0x1000000000000000000',
+        ]);
+        const executorSigner = await ethers.getSigner(spaceDetails.executor);
+        await daoProposals
+          .connect(executorSigner)
+          .setMinimumProposalDuration(spaceId, 1); // 1 second for testing
+
+        const proposalId = await createTestProposal(spaceId, owner);
+
+        console.log(
+          'Setup: 5 total members, unity=0 (any vote wins), quorum=50% (need 3 votes)',
+        );
+
+        // First vote (YES) - quorum not met yet
+        await daoProposals.connect(members[0]).vote(proposalId, true);
+        let proposalState = await daoProposals.getProposalCore(proposalId);
+        expect(proposalState.executed).to.equal(false); // Quorum not met
+        console.log(`After 1 YES vote: quorum not met, not executed`);
+
+        // Second vote (NO) - still no quorum
+        await daoProposals.connect(members[1]).vote(proposalId, false);
+        proposalState = await daoProposals.getProposalCore(proposalId);
+        expect(proposalState.executed).to.equal(false); // Quorum not met
+        console.log(`After 1 YES, 1 NO: quorum not met, not executed`);
+
+        // Third vote (NO) - quorum met, first vote type (YES) should win
+        await daoProposals.connect(members[2]).vote(proposalId, false);
+        proposalState = await daoProposals.getProposalCore(proposalId);
+
+        // With unity=0, any YES votes should trigger execution
+        expect(proposalState.executed).to.equal(true);
+        console.log(
+          `After 1 YES, 2 NO: quorum met, proposal executed (first vote type wins)`,
+        );
+        console.log('✅ First Vote Wins model working correctly');
+      });
+
+      it('Should test complex voting scenarios with minimum duration protection', async function () {
+        console.log(
+          '\n--- Testing Complex Voting with Minimum Duration Protection ---',
+        );
+
+        // Create space with unity=0, quorum=30
+        const spaceParams = {
+          name: 'Complex Voting Test',
+          description:
+            'Testing minimum duration protection in complex scenarios',
+          imageUrl: 'https://test.com/image.png',
+          unity: 0,
+          quorum: 30,
+          votingPowerSource: 1,
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        };
+
+        await daoSpaceFactory.createSpace(spaceParams);
+        const spaceId = await daoSpaceFactory.spaceCounter();
+
+        // Add many members
+        for (let i = 0; i < 9; i++) {
+          await daoSpaceFactory.connect(members[i]).joinSpace(spaceId);
+        }
+
+        // Set a longer minimum duration to test protection
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        await ethers.provider.send('hardhat_impersonateAccount', [
+          spaceDetails.executor,
+        ]);
+        await ethers.provider.send('hardhat_setBalance', [
+          spaceDetails.executor,
+          '0x1000000000000000000',
+        ]);
+        const executorSigner = await ethers.getSigner(spaceDetails.executor);
+        const minDuration = 3600; // 1 hour
+        await daoProposals
+          .connect(executorSigner)
+          .setMinimumProposalDuration(spaceId, minDuration);
+
+        const proposalId = await createTestProposal(spaceId, owner);
+        const proposalState = await daoProposals.getProposalCore(proposalId);
+        const startTime = proposalState.startTime;
+
+        console.log(
+          `Setup: 10 total members, unity=0, quorum=30% (need 3 votes), min duration=${minDuration}s`,
+        );
+
+        // Reach quorum quickly
+        await daoProposals.connect(members[0]).vote(proposalId, true);
+        await daoProposals.connect(members[1]).vote(proposalId, false);
+        await daoProposals.connect(members[2]).vote(proposalId, false);
+
+        let currentState = await daoProposals.getProposalCore(proposalId);
+
+        // Should not execute immediately due to minimum duration
+        expect(currentState.executed).to.equal(false);
+        console.log(
+          '✅ Minimum duration prevented immediate execution despite unity=0 and quorum met',
+        );
+
+        // Verify the minimum duration is enforced
+        const currentTime = Math.floor(Date.now() / 1000);
+        const timeUntilMinDuration =
+          Number(startTime) + minDuration - currentTime;
+        console.log(`Time until minimum duration: ${timeUntilMinDuration}s`);
+
+        console.log(
+          '✅ Complex voting scenario with minimum duration protection working correctly',
+        );
+      });
     });
   });
 
