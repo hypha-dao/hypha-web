@@ -165,7 +165,7 @@ export function NotificationSubscriber({
 
   return (
     <NotificationsContext.Provider
-      value={{ initialized, setInitialized, subscribed, setSubscribed }}
+      value={{ initialized, setInitialized, subscribed, setSubscribed, login }}
     >
       {children}
     </NotificationsContext.Provider>
