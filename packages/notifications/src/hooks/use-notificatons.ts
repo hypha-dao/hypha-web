@@ -3,6 +3,8 @@
 import React from 'react';
 import OneSignal from 'react-onesignal';
 
+const DEV_ENV = process.env.NODE_ENV === 'development';
+
 export interface INotificationsContext {
   initialized?: boolean;
   setInitialized?: React.Dispatch<React.SetStateAction<boolean>>;
@@ -39,21 +41,20 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
       return;
     }
     setError(null);
-    OneSignal.Notifications.requestPermission()
-      .then(() => {
-        const permission = OneSignal.Notifications.permission;
-        console.log('permission:', permission);
-        if (!permission) {
-          return Promise.reject('Declined');
-        }
-      })
-      .then(() => {
-        return OneSignal.login(personSlug);
-      })
-      .then(() => {
-        console.log('subscribe');
-        setSubscribed(true);
-      })
+    OneSignal.Slidedown.promptPush({ force: DEV_ENV })
+      // .then(() => OneSignal.Notifications.requestPermission())
+      // .then(() => {
+      //   const permission = OneSignal.Notifications.permission;
+      //   console.log('permission:', permission);
+      //   if (!permission) {
+      //     return Promise.reject('Declined');
+      //   }
+      // })
+      // .then(() => OneSignal.login(personSlug))
+      // .then(() => {
+      //   console.log('subscribe');
+      //   setSubscribed(true);
+      // })
       .catch((err: any) => {
         console.warn('Error:', err);
         setError('Notification permissions declined.');
@@ -65,10 +66,10 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
       return;
     }
     setError(null);
-    OneSignal.logout().then(() => {
-      console.log('unsubscribe');
-      setSubscribed(false);
-    });
+    // OneSignal.logout().then(() => {
+    //   console.log('unsubscribe');
+    //   setSubscribed(false);
+    // });
   }, [personSlug, setSubscribed, setError]);
 
   return {
