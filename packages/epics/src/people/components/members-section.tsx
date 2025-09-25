@@ -9,6 +9,8 @@ import { useMembersSection } from '../hooks/use-members-section';
 import { UseMembers } from '../hooks/types';
 import { Empty } from '../../common';
 import { Button } from '@hypha-platform/ui';
+import { useSpaceBySlug } from '@hypha-platform/core/client';
+import { useJoinSpace } from '../../spaces';
 
 type MemberSectionProps = {
   basePath: string;
@@ -30,6 +32,8 @@ export const MembersSection: FC<MemberSectionProps> = ({
       refreshInterval,
     });
   console.debug('MembersSection', { searchTerm });
+  const { space } = useSpaceBySlug(spaceSlug as string);
+  const { isMember } = useJoinSpace({ spaceId: space?.web3SpaceId as number });
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-4">
@@ -41,7 +45,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
           searchPlaceholder="Search members"
           onChangeSearch={onUpdateSearch}
         />
-        <Button>Delegate Voting</Button>
+        {isMember ? <Button>Delegate Voting</Button> : null}
       </span>
       {pagination?.total === 0 ? (
         <Empty>
