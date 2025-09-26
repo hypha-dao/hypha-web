@@ -29,7 +29,7 @@ export interface NotificationsProps {
   personSlug: string;
 }
 
-function checkTag(
+export function checkTag(
   tags: {
     [key: string]: string;
   },
