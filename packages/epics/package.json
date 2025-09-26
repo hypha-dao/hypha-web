@@ -15,7 +15,8 @@
     "@hypha-platform/ui": "workspace:*",
     "@hypha-platform/ui-utils": "workspace:*",
     "@hypha-platform/core": "workspace:*",
-    "@hypha-platform/i18n": "workspace:*"
+    "@hypha-platform/i18n": "workspace:*",
+    "@hypha-platform/notifications": "workspace:*"
   },
   "exports": {
     ".": "./src/index.ts"

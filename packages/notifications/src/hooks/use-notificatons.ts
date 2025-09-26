@@ -1,5 +1,6 @@
 'use client';
 
+import { useMe } from '@hypha-platform/core/client';
 import React from 'react';
 import OneSignal from 'react-onesignal';
 
@@ -10,7 +11,7 @@ export interface INotificationsContext {
   setInitialized?: React.Dispatch<React.SetStateAction<boolean>>;
   subscribed?: boolean;
   setSubscribed?: React.Dispatch<React.SetStateAction<boolean>>;
-  login?: () => void;
+  loggedIn?: boolean;
 }
 
 export interface NotificationCofiguration {
@@ -28,10 +29,44 @@ export interface NotificationsProps {
   personSlug: string;
 }
 
+function checkTag(
+  tags: {
+    [key: string]: string;
+  },
+  tagName: string,
+  defaultValue: boolean,
+) {
+  return Object.hasOwn(tags, tagName) ? tags[tagName] === 'true' : defaultValue;
+}
+
 export const useNotifications = ({ personSlug }: NotificationsProps) => {
-  const { initialized, subscribed, setSubscribed, login } =
+  const { initialized, subscribed, setSubscribed, loggedIn } =
     React.useContext(NotificationsContext);
   const [error, setError] = React.useState<string | null>(null);
+  const [configuration, setConfiguration] =
+    React.useState<NotificationCofiguration>();
+  const { person, isLoading } = useMe();
+
+  const initializeConfiguration = React.useCallback(async () => {
+    if (!initialized || !OneSignal || !loggedIn) {
+      return;
+    }
+    const tags = await OneSignal.User.getTags();
+    const browserNotifications = checkTag(tags, 'push', true);
+    const emailNotifications = checkTag(tags, 'email', true);
+    const newProposalOpen = true;
+    const proposalApprovedOrRejected = true;
+    setConfiguration({
+      browserNotifications,
+      emailNotifications,
+      newProposalOpen,
+      proposalApprovedOrRejected,
+    });
+  }, [initialized, OneSignal, loggedIn]);
+
+  React.useEffect(() => {
+    initializeConfiguration();
+  }, [initializeConfiguration]);
 
   const subscribe = React.useCallback(async () => {
     console.log('Initialized on subscribe:', initialized);
@@ -39,17 +74,16 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
       return;
     }
     setError(null);
-    if (OneSignal.Notifications.permission) {
-      login?.();
-      return;
-    }
     try {
       await OneSignal.Slidedown.promptPush({ force: DEV_ENV });
+      await OneSignal.User.addTag('subscribed', 'true');
+      setSubscribed?.(true);
+      await initializeConfiguration();
     } catch (err) {
       console.warn('Error:', err);
       setError('Notification permissions declined.');
     }
-  }, [OneSignal, initialized, setError, login]);
+  }, [OneSignal, initialized, setError, initializeConfiguration]);
   const unsubscribe = React.useCallback(async () => {
     console.log('Initialized on unsubscribe:', initialized);
     if (!initialized) {
@@ -57,8 +91,8 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
     }
     setError(null);
     try {
-      await OneSignal.logout();
       console.log('unsubscribe');
+      await OneSignal.User.removeTag('subscribed');
       setSubscribed?.(false);
     } catch (err) {
       console.warn('Error:', err);
@@ -70,16 +104,27 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
       if (!initialized) {
         return;
       }
-      //TODO
       if (configuration.browserNotifications) {
-        //TODO: subscribe push notifications
+        if (!OneSignal.User.PushSubscription.optedIn) {
+          await OneSignal.User.PushSubscription.optIn();
+        }
+        await OneSignal.User.addTag('push', 'true');
       } else {
-        //TODO: unsubscribe push notifications
+        if (OneSignal.User.PushSubscription.optedIn) {
+          await OneSignal.User.PushSubscription.optOut();
+        }
+        await OneSignal.User.addTag('push', 'false');
       }
       if (configuration.emailNotifications) {
-        //TODO: subscribe email notifications
+        if (!isLoading && person?.email) {
+          await OneSignal.User.addEmail(person.email);
+          await OneSignal.User.addTag('email', 'true');
+        }
       } else {
-        //TODO: unsubscribe email notifications
+        if (!isLoading && person?.email) {
+          await OneSignal.User.removeEmail(person.email);
+          await OneSignal.User.addTag('email', 'false');
+        }
       }
       if (configuration.newProposalOpen) {
         //TODO: subscribe to a new proposal is open for vote
@@ -91,14 +136,17 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
       } else {
         //TODO: unsubscribe to a proposal is approved or rejected
       }
+      setConfiguration(configuration);
     },
-    [OneSignal, initialized],
+    [OneSignal, initialized, person, isLoading],
   );
 
   return {
     subscribed,
     subscribe,
     unsubscribe,
+    configuration,
+    setConfiguration,
     saveConfigurations,
     error,
   };

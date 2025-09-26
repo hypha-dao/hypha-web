@@ -16,26 +16,12 @@ import {
 import { Text } from '@radix-ui/themes';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { ButtonClose } from '../../common/button-close';
 import React from 'react';
-
-const yesNoEnum = z.enum(['yes', 'no']);
-
-const schemaNotificationCentreForm = z.object({
-  emailNotifications: yesNoEnum.default('no'),
-  browserNotifications: yesNoEnum.default('no'),
-  newProposalOpen: z.boolean().default(false),
-  proposalApprovedOrRejected: z.boolean().default(false),
-});
+import { NotificationCofiguration } from '@hypha-platform/notifications/client';
+import { ButtonClose } from '../../common/button-close';
+import { schemaNotificationCentreForm, yesNoEnum } from '../hooks/validation';
 
 type FormData = z.infer<typeof schemaNotificationCentreForm>;
-
-interface NotificationCofiguration {
-  emailNotifications: boolean;
-  browserNotifications: boolean;
-  newProposalOpen: boolean;
-  proposalApprovedOrRejected: boolean;
-}
 
 export type NotificationCentreFormProps = {
   closeUrl: string;
@@ -44,8 +30,19 @@ export type NotificationCentreFormProps = {
   subscribed?: boolean;
   subscribe: () => void;
   unsubscribe: () => void;
+  configuration?: NotificationCofiguration;
   saveConfigurations: (configuration: NotificationCofiguration) => void;
 };
+
+type YesNo = z.infer<typeof yesNoEnum>;
+
+function getSwitch(value: boolean): YesNo {
+  return value ? 'yes' : 'no';
+}
+
+function parseSwitch(value: YesNo): boolean {
+  return value === 'yes';
+}
 
 export const NotificationCentreForm = ({
   closeUrl,
@@ -54,24 +51,44 @@ export const NotificationCentreForm = ({
   subscribed,
   subscribe,
   unsubscribe,
+  configuration,
   saveConfigurations,
 }: NotificationCentreFormProps) => {
   const form = useForm<FormData>({
     resolver: zodResolver(schemaNotificationCentreForm),
     defaultValues: {
-      emailNotifications: 'yes',
-      browserNotifications: 'yes',
-      newProposalOpen: true,
-      proposalApprovedOrRejected: true,
+      emailNotifications: configuration
+        ? getSwitch(configuration.emailNotifications)
+        : 'yes',
+      browserNotifications: configuration
+        ? getSwitch(configuration.browserNotifications)
+        : 'yes',
+      newProposalOpen: configuration ? configuration.newProposalOpen : true,
+      proposalApprovedOrRejected: configuration
+        ? configuration.proposalApprovedOrRejected
+        : true,
     },
     mode: 'onChange',
   });
 
+  React.useEffect(() => {
+    if (!configuration) {
+      return;
+    }
+    const modified = {
+      browserNotifications: getSwitch(configuration.browserNotifications),
+      emailNotifications: getSwitch(configuration.emailNotifications),
+      newProposalOpen: configuration.newProposalOpen,
+      proposalApprovedOrRejected: configuration.newProposalOpen,
+    };
+    form.reset(modified, { keepDirty: false });
+  }, [form, configuration]);
+
   const handleSubmit = async (values: FormData) => {
     console.log('Save notification settings:', values);
     saveConfigurations({
-      browserNotifications: values.browserNotifications === 'yes',
-      emailNotifications: values.emailNotifications === 'yes',
+      browserNotifications: parseSwitch(values.browserNotifications),
+      emailNotifications: parseSwitch(values.emailNotifications),
       newProposalOpen: values.newProposalOpen,
       proposalApprovedOrRejected: values.proposalApprovedOrRejected,
     });
@@ -138,7 +155,7 @@ export const NotificationCentreForm = ({
                     className="flex flex-row justify-end"
                     name="emailNotifications"
                     orientation="horizontal"
-                    defaultValue={field.value}
+                    value={field.value}
                     onChange={field.onChange}
                   >
                     <FormLabel htmlFor="emailNotificationsYes">Yes</FormLabel>
@@ -159,7 +176,7 @@ export const NotificationCentreForm = ({
                     className="flex flex-row justify-end"
                     name="browserNotifications"
                     orientation="horizontal"
-                    defaultValue={field.value}
+                    value={field.value}
                     onChange={field.onChange}
                   >
                     <FormLabel htmlFor="browserNotificationYes">Yes</FormLabel>
@@ -188,7 +205,7 @@ export const NotificationCentreForm = ({
                   <div className="flex flex-row gap-2">
                     <Checkbox
                       id="newProposalOpenChecked"
-                      defaultChecked={field.value}
+                      checked={field.value}
                       onCheckedChange={field.onChange}
                     />
                     <FormLabel htmlFor="newProposalOpenChecked">
@@ -209,7 +226,7 @@ export const NotificationCentreForm = ({
                   <div className="flex flex-row gap-2">
                     <Checkbox
                       id="proposalApprovedOrRejectedChecked"
-                      defaultChecked={field.value}
+                      checked={field.value}
                       onCheckedChange={field.onChange}
                     />
                     <FormLabel htmlFor="proposalApprovedOrRejectedChecked">

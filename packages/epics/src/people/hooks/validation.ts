@@ -46,3 +46,12 @@ export const activateSpacesSchema = z.object({
 });
 
 export type ActivateSpacesFormValues = z.infer<typeof activateSpacesSchema>;
+
+export const yesNoEnum = z.enum(['yes', 'no']);
+
+export const schemaNotificationCentreForm = z.object({
+  emailNotifications: yesNoEnum.default('no'),
+  browserNotifications: yesNoEnum.default('no'),
+  newProposalOpen: z.boolean().default(false),
+  proposalApprovedOrRejected: z.boolean().default(false),
+});
