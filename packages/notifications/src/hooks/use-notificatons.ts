@@ -54,8 +54,12 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
     const tags = await OneSignal.User.getTags();
     const browserNotifications = checkTag(tags, 'push', true);
     const emailNotifications = checkTag(tags, 'email', true);
-    const newProposalOpen = true;
-    const proposalApprovedOrRejected = true;
+    const newProposalOpen = checkTag(tags, 'opt_newProposalOpen', true);
+    const proposalApprovedOrRejected = checkTag(
+      tags,
+      'opt_proposalApprovedOrRejected',
+      true,
+    );
     setConfiguration({
       browserNotifications,
       emailNotifications,
@@ -127,14 +131,14 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
         }
       }
       if (configuration.newProposalOpen) {
-        //TODO: subscribe to a new proposal is open for vote
+        await OneSignal.User.addTag('opt_newProposalOpen', 'true');
       } else {
-        //TODO: unsubscribe to a new proposal is open for vote
+        await OneSignal.User.addTag('opt_newProposalOpen', 'false');
       }
       if (configuration.proposalApprovedOrRejected) {
-        //TODO: subscribe to a proposal is approved or rejected
+        await OneSignal.User.addTag('opt_proposalApprovedOrRejected', 'true');
       } else {
-        //TODO: unsubscribe to a proposal is approved or rejected
+        await OneSignal.User.addTag('opt_proposalApprovedOrRejected', 'false');
       }
       setConfiguration(configuration);
     },
