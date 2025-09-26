@@ -8,6 +8,7 @@ import {
 } from '@hypha-platform/core/server';
 import {
   getProposalDetails,
+  getSpaceDetails,
   decodeTransaction,
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
@@ -149,7 +150,15 @@ export const POST = Alchemy.newHandler(
         join: transactions.at(0)!,
         ...restOfProposal,
       }))
-      .map(async ({ creator: address, join, ...rest }) => {
+      .map(async ({ creator: address, join, spaceId, ...rest }) => {
+        const [_unity, _quorum, _votingPowerSource, _tokenAdresses, members] =
+          await web3Client.readContract(getSpaceDetails({ spaceId }));
+        const isMemberAlready = members.some(
+          (memberAddress) =>
+            memberAddress.toLowerCase() === address.toLowerCase(),
+        );
+        if (isMemberAlready) throw Error(`${address} is a member already`);
+
         const space = await findSpaceByWeb3Id(
           { id: Number(join.data.spaceId) },
           { db },
