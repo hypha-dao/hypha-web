@@ -89,9 +89,9 @@ export const FormVoting = ({
           className="rounded-lg"
         >
           <ProgressLine
-            label="Unity"
-            value={unity}
-            indicatorColor="bg-accent-9"
+            label="Quorum (Min. Participation)"
+            value={quorum}
+            indicatorColor="bg-accent-12"
           />
         </Skeleton>
         <Skeleton
@@ -101,9 +101,9 @@ export const FormVoting = ({
           className="rounded-lg"
         >
           <ProgressLine
-            label="Quorum"
-            value={quorum}
-            indicatorColor="bg-accent-12"
+            label="Unity (Min. Alignment)"
+            value={unity}
+            indicatorColor="bg-accent-9"
           />
         </Skeleton>
       </div>
@@ -124,7 +124,7 @@ export const FormVoting = ({
                 disabled={isDisabled}
                 title={tooltipMessage}
               >
-                Expire
+                Execute
               </Button>
             </div>
           ) : null}
