@@ -13,6 +13,8 @@ import {
   DbToken,
   DEFAULT_SPACE_LEAD_IMAGE,
   Attachment,
+  useSpaceDetailsWeb3Rpc,
+  SpaceDetails,
 } from '@hypha-platform/core/client';
 import {
   ProposalTransactionItem,
@@ -69,6 +71,9 @@ export const ProposalDetail = ({
 }: ProposalDetailProps) => {
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: proposalId as number,
+  });
+  const { spaceDetails } = useSpaceDetailsWeb3Rpc({
+    spaceId: Number(proposalDetails?.spaceId),
   });
   const { isAuthenticated } = useAuthentication();
 
@@ -179,6 +184,7 @@ export const ProposalDetail = ({
         documentSlug={documentSlug}
         isAuthenticated={isAuthenticated}
         web3SpaceId={proposalDetails?.spaceId}
+        spaceDetails={spaceDetails as unknown as SpaceDetails}
       />
       {/* TODO: uncomment when comments support will be implemented */}
       {/* <Separator />
