@@ -12,7 +12,10 @@ import { Input } from '@hypha-platform/ui';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useJoinSpace } from '../../../spaces';
 import { useFundWallet } from '../../hooks';
-import { useSpaceDetailsWeb3Rpc } from '@hypha-platform/core/client';
+import {
+  useSpaceDetailsWeb3Rpc,
+  useIsDelegate,
+} from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 
 type AssetSectionProps = {
@@ -33,6 +36,7 @@ export const AssetsSection: FC<AssetSectionProps> = ({
     address: spaceDetails?.executor as `0x${string}`,
   });
   const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
+  const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
 
   const {
     visibleAssets,
@@ -50,10 +54,10 @@ export const AssetsSection: FC<AssetSectionProps> = ({
     : visibleAssets;
   const { isAuthenticated } = useAuthentication();
 
-  const isDisabled = !isAuthenticated || !isMember;
+  const isDisabled = !isAuthenticated || !isMember || !isDelegate;
   const tooltipMessage = !isAuthenticated
     ? 'Please sign in to use this feature.'
-    : !isMember
+    : !isMember || !isDelegate
     ? 'Please join this space to use this feature.'
     : '';
 

@@ -9,7 +9,11 @@ import { useMembersSection } from '../hooks/use-members-section';
 import { UseMembers } from '../hooks/types';
 import { Empty } from '../../common';
 import { Button } from '@hypha-platform/ui';
-import { useSpaceBySlug, useMe } from '@hypha-platform/core/client';
+import {
+  useSpaceBySlug,
+  useMe,
+  useIsDelegate,
+} from '@hypha-platform/core/client';
 import { useJoinSpace } from '../../spaces';
 import { useAuthentication } from '@hypha-platform/authentication';
 import Link from 'next/link';
@@ -40,11 +44,14 @@ export const MembersSection: FC<MemberSectionProps> = ({
   });
   const { person } = useMe();
   const { isAuthenticated } = useAuthentication();
+  const { isDelegate } = useIsDelegate({
+    spaceId: space?.web3SpaceId as number,
+  });
 
-  const isDisabled = !isAuthenticated || !isMember;
+  const isDisabled = !isAuthenticated || !isMember || !isDelegate;
   const tooltipMessage = !isAuthenticated
     ? 'Please sign in to use this feature.'
-    : !isMember
+    : !isMember || !isDelegate
     ? 'Please join this space to use this feature.'
     : '';
 

@@ -9,6 +9,7 @@ import { usePathname } from 'next/navigation';
 import { useJoinSpace } from '../hooks';
 import { useAuthentication } from '@hypha-platform/authentication';
 import Link from 'next/link';
+import { useIsDelegate } from '@hypha-platform/core/client';
 
 interface SubscriptionBadgeProps extends Omit<BadgeProps, 'isLoading'> {
   web3SpaceId: number;
@@ -29,12 +30,13 @@ export function SubscriptionBadge({
     spaceId: BigInt(web3SpaceId),
   });
   const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
+  const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
   const { isAuthenticated } = useAuthentication();
 
-  const isDisabled = !isAuthenticated || !isMember;
+  const isDisabled = !isAuthenticated || !isMember || !isDelegate;
   const tooltipMessage = !isAuthenticated
     ? 'Please sign in to use this feature.'
-    : !isMember
+    : !isMember || !isDelegate
     ? 'Please join this space to use this feature.'
     : '';
 

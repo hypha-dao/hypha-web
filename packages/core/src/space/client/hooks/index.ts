@@ -10,3 +10,4 @@ export { useOrganisationSpacesBySingleSlug } from './useOrganisationSpacesBySing
 export { useSpacesByWeb3Ids } from './useSpacesByWeb3Ids';
 export { useDelegateWeb3Rpc } from './useDelegate.web3.rpc';
 export { useUndelegateWeb3Rpc } from './useUndelegate.web3.rpc';
+export { useIsDelegate } from './useIsDelegate';
