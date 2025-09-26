@@ -6,7 +6,7 @@ import { TokenSelectorField } from '../components/common/token-selector-field';
 import { useTokens } from '@hypha-platform/epics';
 import { QuorumAndUnityChangerField } from '../components/common/quorum-and-unity-change-field';
 import { useFormContext, useWatch } from 'react-hook-form';
-import { Skeleton, Separator } from '@hypha-platform/ui';
+import { Skeleton, Separator, Label } from '@hypha-platform/ui';
 import { VotingMethodSelector } from '../../components/voting-method-selector';
 import { VotingMethodType } from '@hypha-platform/core/client';
 import React from 'react';
@@ -67,31 +67,42 @@ export const ChangeVotingMethodPlugin = ({
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <Skeleton loading={isLoading} width={'100%'} height={280}>
-        <h4 className="text-2 font-medium text-neutral-11">Voting Method</h4>
-        <VotingMethodSelector
-          value={votingMethod}
-          onChange={handleMethodChange}
-          web3SpaceId={web3SpaceId}
-          hasVotingTokens={filteredTokensFor1t1v.length > 0}
-        />
-      </Skeleton>
-      <Separator />
-      <h4 className="text-2 font-medium text-neutral-11">Voting Rules</h4>
-      {votingMethod === '1v1v' && (
-        <>
-          <TokenSelectorField name="token" tokens={filteredTokensFor1v1v} />
-          <MemberWithNumberFieldFieldArray name="members" members={members} />
-        </>
-      )}
-      {votingMethod === '1t1v' && (
-        <Skeleton loading={isLoading} width={'100%'} height={24}>
-          <TokenSelectorField name="token" tokens={filteredTokensFor1t1v} />
-          <MemberWithNumberFieldFieldArray name="members" members={members} />
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-5">
+        <Label>Voting Method</Label>
+        <span className="text-2 text-neutral-11">
+          Select a voting method template to apply default Quorum (min.
+          participation) and Unity (min. alignment) values.
+        </span>
+        <QuorumAndUnityChangerField name="quorumAndUnity" />
+      </div>
+      <div className="flex flex-col gap-5">
+        <Skeleton loading={isLoading} width={'100%'} height={280}>
+          <Label>Voting Power</Label>
+          <VotingMethodSelector
+            value={votingMethod}
+            onChange={handleMethodChange}
+            web3SpaceId={web3SpaceId}
+            hasVotingTokens={filteredTokensFor1t1v.length > 0}
+          />
         </Skeleton>
-      )}
-      <QuorumAndUnityChangerField name="quorumAndUnity" />
+      </div>
+      <div className="flex flex-col gap-5">
+        {votingMethod === '1v1v' && (
+          <>
+            <Label>Voting Rules</Label>
+            <TokenSelectorField name="token" tokens={filteredTokensFor1v1v} />
+            <MemberWithNumberFieldFieldArray name="members" members={members} />
+          </>
+        )}
+        {votingMethod === '1t1v' && (
+          <Skeleton loading={isLoading} width={'100%'} height={24}>
+            <Label>Voting Rules</Label>
+            <TokenSelectorField name="token" tokens={filteredTokensFor1t1v} />
+            <MemberWithNumberFieldFieldArray name="members" members={members} />
+          </Skeleton>
+        )}
+      </div>
     </div>
   );
 };

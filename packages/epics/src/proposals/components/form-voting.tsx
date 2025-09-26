@@ -2,7 +2,7 @@ import { Button, Skeleton, Separator } from '@hypha-platform/ui';
 import { ProgressLine } from './progress-line';
 import { intervalToDuration, isPast } from 'date-fns';
 import { VoterList } from '../../governance/components/voter-list';
-import { useMyVote } from '@hypha-platform/core/client';
+import { useMyVote, SpaceDetails } from '@hypha-platform/core/client';
 import { useJoinSpace } from '../../spaces';
 
 function formatTimeRemaining(
@@ -45,6 +45,7 @@ export const FormVoting = ({
   documentSlug,
   isAuthenticated,
   web3SpaceId,
+  spaceDetails,
 }: {
   unity: number;
   quorum: number;
@@ -59,6 +60,7 @@ export const FormVoting = ({
   documentSlug: string;
   isAuthenticated?: boolean;
   web3SpaceId?: number;
+  spaceDetails?: SpaceDetails;
 }) => {
   const { myVote } = useMyVote(documentSlug);
   const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
@@ -69,6 +71,31 @@ export const FormVoting = ({
     : !isMember
     ? 'Please join this space to use this feature.'
     : '';
+
+  function getVoteLabels(spaceDetails?: SpaceDetails) {
+    if (!spaceDetails) {
+      return { reject: 'Vote no', accept: 'Vote yes' };
+    }
+
+    const quorum = Number(spaceDetails.quorum);
+    const unity = Number(spaceDetails.unity);
+
+    if (quorum === 0 && unity === 100) {
+      return { reject: 'Object', accept: 'Consent' };
+    }
+
+    if (quorum === 100 && unity === 100) {
+      return { reject: 'No', accept: 'Hell yeah' };
+    }
+
+    if (quorum === 100 && unity === 0) {
+      return { reject: 'Not sure', accept: 'Look good' };
+    }
+
+    return { reject: 'Vote no', accept: 'Vote yes' };
+  }
+
+  const labels = getVoteLabels(spaceDetails);
 
   return (
     <div className="flex flex-col gap-5 text-neutral-11">
@@ -82,9 +109,12 @@ export const FormVoting = ({
           className="rounded-lg"
         >
           <ProgressLine
-            label="Unity"
-            value={unity}
-            indicatorColor="bg-accent-9"
+            label="Quorum (Min. Participation)"
+            value={quorum}
+            target={
+              spaceDetails?.quorum ? Number(spaceDetails.quorum) : undefined
+            }
+            indicatorColor="bg-accent-12"
           />
         </Skeleton>
         <Skeleton
@@ -94,9 +124,12 @@ export const FormVoting = ({
           className="rounded-lg"
         >
           <ProgressLine
-            label="Quorum"
-            value={quorum}
-            indicatorColor="bg-accent-12"
+            label="Unity (Min. Alignment)"
+            value={unity}
+            target={
+              spaceDetails?.unity ? Number(spaceDetails.unity) : undefined
+            }
+            indicatorColor="bg-accent-9"
           />
         </Skeleton>
       </div>
@@ -117,7 +150,7 @@ export const FormVoting = ({
                 disabled={isDisabled}
                 title={tooltipMessage}
               >
-                Expire
+                Execute
               </Button>
             </div>
           ) : null}
@@ -137,7 +170,7 @@ export const FormVoting = ({
                     disabled={isDisabled}
                     title={tooltipMessage}
                   >
-                    Vote no
+                    {labels.reject}
                   </Button>
                   <Button
                     variant="outline"
@@ -147,7 +180,7 @@ export const FormVoting = ({
                     disabled={isDisabled}
                     title={tooltipMessage}
                   >
-                    Vote yes
+                    {labels.accept}
                   </Button>
                 </>
               )}
