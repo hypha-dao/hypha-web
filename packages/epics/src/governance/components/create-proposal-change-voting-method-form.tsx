@@ -74,6 +74,7 @@ export const CreateProposalChangeVotingMethodForm = ({
       votingMethod: undefined,
       label: 'Voting Method',
     },
+    mode: 'onChange',
   });
 
   const getVotingMethod = (
