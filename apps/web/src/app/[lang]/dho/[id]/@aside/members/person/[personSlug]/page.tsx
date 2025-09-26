@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation';
 
 import {
+  DelegateVotingSection,
   MemberDetail,
   SidePanel,
   useMemberWeb3SpaceIds,
@@ -11,7 +12,11 @@ import { Locale } from '@hypha-platform/i18n';
 
 import { useMemberBySlug } from '@web/hooks/use-member-by-slug';
 import { getDhoPathMembers } from '../../../../@tab/members/constants';
-import { useSpacesByWeb3Ids } from '@hypha-platform/core/client';
+import {
+  useSpacesByWeb3Ids,
+  useSpaceBySlug,
+} from '@hypha-platform/core/client';
+import { useMembers } from '@web/hooks/use-members';
 
 export default function Member() {
   const { id, lang, personSlug } = useParams();
@@ -22,25 +27,33 @@ export default function Member() {
     personAddress: person?.address,
   });
   const { spaces } = useSpacesByWeb3Ids(web3SpaceIds ?? []);
+  const { space } = useSpaceBySlug(id as string);
 
   return (
     <SidePanel>
-      <MemberDetail
-        closeUrl={getDhoPathMembers(lang as Locale, id as string)}
-        member={{
-          avatarUrl: person?.avatarUrl,
-          name: person?.name,
-          surname: person?.surname,
-          nickname: person?.nickname,
-          status: 'active', // TODO: get status
-          about: person?.description,
-          slug: person?.slug,
-          address: person?.address,
-        }}
-        isLoading={isLoadingPersons || isLoadingSpaces}
-        lang={lang as Locale}
-        spaces={spaces}
-      />
+      <div className="flex flex-col gap-5">
+        <MemberDetail
+          closeUrl={getDhoPathMembers(lang as Locale, id as string)}
+          member={{
+            avatarUrl: person?.avatarUrl,
+            name: person?.name,
+            surname: person?.surname,
+            nickname: person?.nickname,
+            status: 'active', // TODO: get status
+            about: person?.description,
+            slug: person?.slug,
+            address: person?.address,
+          }}
+          isLoading={isLoadingPersons || isLoadingSpaces}
+          lang={lang as Locale}
+          spaces={spaces}
+        />
+        <DelegateVotingSection
+          web3SpaceId={space?.web3SpaceId as number}
+          useMembers={useMembers}
+          spaceSlug={id as string}
+        />
+      </div>
     </SidePanel>
   );
 }

@@ -26,7 +26,7 @@ export const SpaceToSpaceMembershipPlugin = ({
 
   return (
     <div className="flex flex-col gap-5 w-full">
-      <div className="flex gap-1">
+      <div className="flex gap-1 items-start">
         <Label>Space</Label>
         <RequirementMark />
       </div>
@@ -49,7 +49,7 @@ export const SpaceToSpaceMembershipPlugin = ({
         )}
       />
       <Separator />
-      <div className="flex gap-1">
+      <div className="flex gap-1 items-start">
         <Label>Delegation Rules</Label>
         <RequirementMark />
       </div>

@@ -4,7 +4,10 @@ import {
   findSpaceBySlug,
   findSpaceByAddresses,
 } from '@hypha-platform/core/server';
-import { getSpaceDetails } from '@hypha-platform/core/client';
+import {
+  getSpaceDetails,
+  getDelegatesForSpace,
+} from '@hypha-platform/core/client';
 import { publicClient } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 
@@ -15,16 +18,17 @@ export async function GET(
   const { spaceSlug } = await params;
 
   try {
-    // TODO: implement authorization
     const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
     if (!space) {
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
 
+    const spaceId = BigInt(space.web3SpaceId as number);
+
     let spaceDetails;
     try {
       spaceDetails = await publicClient.readContract(
-        getSpaceDetails({ spaceId: BigInt(space.web3SpaceId as number) }),
+        getSpaceDetails({ spaceId }),
       );
     } catch (err: any) {
       const errorMessage =
@@ -51,6 +55,39 @@ export async function GET(
 
     const [, , , , members] = spaceDetails;
 
+    let delegates: `0x${string}`[] = [];
+    try {
+      delegates = (await publicClient.readContract(
+        getDelegatesForSpace({ spaceId }),
+      )) as `0x${string}`[];
+      console.log('Delegates from contract:', delegates);
+    } catch (err: any) {
+      const errorMessage =
+        err?.message || err?.shortMessage || JSON.stringify(err);
+      if (errorMessage.includes('rate limit') || errorMessage.includes('429')) {
+        console.warn(
+          'Rate limit exceeded when calling readContract for delegates:',
+          errorMessage,
+        );
+        return NextResponse.json(
+          {
+            error: 'External API rate limit exceeded. Please try again later.',
+          },
+          { status: 503 },
+        );
+      }
+
+      console.error('Error while calling readContract for delegates:', err);
+      return NextResponse.json(
+        { error: 'Failed to fetch delegates data.' },
+        { status: 500 },
+      );
+    }
+
+    const allAddresses = Array.from(
+      new Set([...(members as `0x${string}`[]), ...delegates]),
+    );
+
     const url = new URL(request.url);
     const pageRaw = url.searchParams.get('page');
     const pageSizeRaw = url.searchParams.get('pageSize');
@@ -68,20 +105,37 @@ export async function GET(
       ? { pagination: { page: page!, pageSize: pageSize! } }
       : {};
 
-    const persons = await findPersonByAddresses(
-      members as `0x${string}`[],
+    const personsResponse = await findPersonByAddresses(
+      allAddresses,
       { ...paginationOptions, searchTerm },
       { db },
     );
 
+    const delegatesSet = new Set(
+      delegates.map((addr) => addr.toLowerCase() as `0x${string}`),
+    );
+
+    const enhancedData = personsResponse.data.map((person: any) => {
+      const isDelegate =
+        delegatesSet.has(
+          (person.address?.toLowerCase() ?? '') as `0x${string}`,
+        ) || false;
+      return {
+        ...person,
+        isDelegate,
+      };
+    });
+
+    const enhancedPersons = { ...personsResponse, data: enhancedData };
+
     const spaces = await findSpaceByAddresses(
-      members as `0x${string}`[],
+      allAddresses,
       { ...paginationOptions, searchTerm },
       { db },
     );
 
     return NextResponse.json({
-      persons,
+      persons: enhancedPersons,
       spaces,
     });
   } catch (error) {
