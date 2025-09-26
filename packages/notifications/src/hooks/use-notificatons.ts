@@ -13,6 +13,13 @@ export interface INotificationsContext {
   login?: () => void;
 }
 
+export interface NotificationCofiguration {
+  emailNotifications: boolean;
+  browserNotifications: boolean;
+  newProposalOpen: boolean;
+  proposalApprovedOrRejected: boolean;
+}
+
 export const NotificationsContext = React.createContext<INotificationsContext>(
   {},
 );
@@ -52,11 +59,35 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
       setSubscribed?.(false);
     });
   }, [OneSignal, initialized, setError, setSubscribed]);
+  const saveConfigurations = (configuration: NotificationCofiguration) => {
+    //TODO
+    if (configuration.browserNotifications) {
+      //TODO: subscribe push notifications
+    } else {
+      //TODO: unsubscribe push notifications
+    }
+    if (configuration.emailNotifications) {
+      //TODO: subscribe email notifications
+    } else {
+      //TODO: unsubscribe email notifications
+    }
+    if (configuration.newProposalOpen) {
+      //TODO: subscribe to a new proposal is open for vote
+    } else {
+      //TODO: unsubscribe to a new proposal is open for vote
+    }
+    if (configuration.proposalApprovedOrRejected) {
+      //TODO: subscribe to a proposal is approved or rejected
+    } else {
+      //TODO: unsubscribe to a proposal is approved or rejected
+    }
+  };
 
   return {
     subscribed,
     subscribe,
     unsubscribe,
+    saveConfigurations,
     error,
   };
 };
