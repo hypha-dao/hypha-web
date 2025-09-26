@@ -50,7 +50,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
     : '';
 
   return (
-    <Card className="w-full h-full p-5 mb-2 flex">
+    <Card className="w-full h-full p-5 mb-2 flex items-center">
       <Skeleton
         width={minimize ? '40px' : '64px'}
         height={minimize ? '40px' : '64px'}
@@ -58,7 +58,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
         className="rounded-lg mr-3"
       >
         <Image
-          className="rounded-lg mr-3"
+          className="rounded-lg mr-3 h-[64px]"
           src={avatarUrl || '/placeholder/default-profile.svg'}
           height={minimize ? 40 : 64}
           width={minimize ? 40 : 64}

@@ -23,10 +23,10 @@ export const ActionButtons = ({ web3SpaceId }: ActionButtonsProps) => {
   const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
   const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
 
-  const isDisabled = !isAuthenticated || !isMember || !isDelegate;
+  const isDisabled = !isAuthenticated || (!isMember && !isDelegate);
   const tooltipMessage = !isAuthenticated
     ? 'Please sign in to use this feature.'
-    : !isMember || !isDelegate
+    : !isMember && !isDelegate
     ? 'Please join this space to use this feature.'
     : '';
 

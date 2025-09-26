@@ -47,11 +47,10 @@ export const MembersSection: FC<MemberSectionProps> = ({
   const { isDelegate } = useIsDelegate({
     spaceId: space?.web3SpaceId as number,
   });
-
-  const isDisabled = !isAuthenticated || !isMember || !isDelegate;
+  const isDisabled = !isAuthenticated || (!isMember && !isDelegate);
   const tooltipMessage = !isAuthenticated
     ? 'Please sign in to use this feature.'
-    : !isMember || !isDelegate
+    : !isMember && !isDelegate
     ? 'Please join this space to use this feature.'
     : '';
 

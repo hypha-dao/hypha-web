@@ -6,9 +6,9 @@ import {
 } from '@hypha-platform/core/client';
 import useSWR from 'swr';
 
-export const useDelegatesForSpaces = ({ spaceId }: { spaceId: bigint }) => {
+export const useDelegatesForSpaces = ({ spaceId }: { spaceId?: bigint }) => {
   const { data, isLoading, error } = useSWR(
-    [spaceId, 'delegates'],
+    spaceId ? [spaceId, 'delegates'] : null,
     async ([spaceId]) =>
       publicClient.readContract(getDelegatesForSpace({ spaceId })),
     { revalidateOnFocus: true },

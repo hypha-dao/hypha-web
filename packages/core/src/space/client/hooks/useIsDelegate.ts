@@ -3,13 +3,24 @@
 import { useDelegatesForSpaces } from './useDelegatesForSpaces';
 import { useAuthentication } from '@hypha-platform/authentication';
 
-export const useIsDelegate = ({ spaceId }: { spaceId: number }) => {
+export const useIsDelegate = ({ spaceId }: { spaceId?: number }) => {
   const { user } = useAuthentication();
+
   const {
     data: delegates,
     isLoading,
     error,
-  } = useDelegatesForSpaces({ spaceId: BigInt(spaceId) });
+  } = useDelegatesForSpaces({
+    spaceId: spaceId ? BigInt(spaceId) : undefined,
+  });
+
+  if (!spaceId) {
+    return {
+      isDelegate: false,
+      isLoading: false,
+      error: null,
+    };
+  }
 
   const isDelegate = delegates
     ? delegates.some(
