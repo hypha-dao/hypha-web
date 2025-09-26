@@ -2,7 +2,7 @@ import { Button, Skeleton, Separator } from '@hypha-platform/ui';
 import { ProgressLine } from './progress-line';
 import { intervalToDuration, isPast } from 'date-fns';
 import { VoterList } from '../../governance/components/voter-list';
-import { useMyVote, useIsDelegate } from '@hypha-platform/core/client';
+import { useMyVote, useIsDelegate, type SpaceDetails } from '@hypha-platform/core/client';
 import { useJoinSpace } from '../../spaces';
 
 function formatTimeRemaining(
@@ -46,6 +46,7 @@ export const FormVoting = ({
   documentSlug,
   isAuthenticated,
   web3SpaceId,
+  spaceDetails,
 }: {
   unity: number;
   quorum: number;
@@ -61,6 +62,7 @@ export const FormVoting = ({
   documentSlug: string;
   isAuthenticated?: boolean;
   web3SpaceId?: number;
+  spaceDetails?: SpaceDetails;
 }) => {
   const { myVote } = useMyVote(documentSlug);
   const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
@@ -91,6 +93,9 @@ export const FormVoting = ({
           <ProgressLine
             label="Quorum (Min. Participation)"
             value={quorum}
+            target={
+              spaceDetails?.quorum ? Number(spaceDetails.quorum) : undefined
+            }
             indicatorColor="bg-accent-12"
           />
         </Skeleton>
@@ -103,6 +108,9 @@ export const FormVoting = ({
           <ProgressLine
             label="Unity (Min. Alignment)"
             value={unity}
+            target={
+              spaceDetails?.unity ? Number(spaceDetails.unity) : undefined
+            }
             indicatorColor="bg-accent-9"
           />
         </Skeleton>
