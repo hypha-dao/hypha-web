@@ -28,18 +28,22 @@ export function NotificationSubscriber({
   const [initialized, setInitialized] = React.useState(false);
   const [subscribed, setSubscribed] = React.useState(false);
 
-  const login = React.useCallback(() => {
+  const login = React.useCallback(async () => {
     if (!OneSignal || isLoading || !person?.slug) {
       return;
     }
-    OneSignal.login(person.slug).then(() => {
+    try {
+      await OneSignal.login(person.slug);
       console.log('subscribe');
       setSubscribed(true);
-    });
+      OneSignal.User.addTag('subscribed', 'true');
+    } catch (err) {
+      console.error('Error on login:', err);
+    }
   }, [OneSignal, person, isLoading]);
 
   const handleUserPushSubscriptionChange = React.useCallback(
-    (event: SubscriptionChangeEvent) => {
+    async (event: SubscriptionChangeEvent) => {
       console.log('User PushSubscription change:', event);
       console.log('event.previous.id', event.previous.id);
       console.log('event.current.id', event.current.id);
@@ -49,7 +53,7 @@ export function NotificationSubscriber({
       console.log('event.current.optedIn', event.current.optedIn);
       if (event.current.token) {
         console.log(`The push subscription has received a token!`);
-        login();
+        await login();
       }
     },
     [login],
@@ -72,98 +76,111 @@ export function NotificationSubscriber({
   }, [initialized, OneSignal, handleUserPushSubscriptionChange]);
 
   React.useEffect(() => {
-    OneSignal.init({
-      appId,
-      serviceWorkerPath,
-      allowLocalhostAsSecureOrigin: DEV_ENV,
-      promptOptions: {
-        slidedown: {
-          prompts: [
-            {
-              autoPrompt: false,
-              categories: [],
-              delay: {},
-              text: {
-                actionMessage:
-                  'TEST: Subscribe if you’d like to be notified about proposals and other Network activity.',
-                acceptButton: 'Subscribe',
-                cancelMessage: 'Later',
-              },
-              type: 'push',
+    const initialize = async () => {
+      try {
+        await OneSignal.init({
+          appId,
+          serviceWorkerPath,
+          allowLocalhostAsSecureOrigin: DEV_ENV,
+          /*promptOptions: {
+            slidedown: {
+              prompts: [
+                {
+                  autoPrompt: false,
+                  categories: [],
+                  delay: {},
+                  text: {
+                    actionMessage:
+                      'TEST: Subscribe if you’d like to be notified about proposals and other Network activity.',
+                    acceptButton: 'Subscribe',
+                    cancelMessage: 'Later',
+                  },
+                  type: 'push',
+                },
+                {
+                  autoPrompt: false,
+                  categories: [],
+                  delay: {},
+                  text: {},
+                  type: 'email',
+                },
+              ],
             },
-          ],
-        },
-      },
-    }).then(() => {
-      console.log('OneSignal initialized');
-      setInitialized(true);
-      const externalId = OneSignal?.User?.externalId;
-      setSubscribed(Boolean(externalId));
-      console.log('OneSignal.User.externalId:', externalId);
-      OneSignal.Notifications.addEventListener(
-        'click',
-        (event: NotificationClickEvent) => {
-          console.log('The notification was clicked!', event);
-        },
-      );
-      OneSignal.Notifications.addEventListener(
-        'foregroundWillDisplay',
-        (event: NotificationForegroundWillDisplayEvent) => {
-          console.log('The notification foreground will display:', event);
-        },
-      );
-      OneSignal.Notifications.addEventListener(
-        'dismiss',
-        (event: NotificationDismissEvent) => {
-          console.log('The notification dismiss:', event);
-        },
-      );
-      OneSignal.Notifications.addEventListener(
-        'permissionChange',
-        (permission: boolean) => {
-          console.log('The notification permission change:', permission);
-        },
-      );
-      OneSignal.Notifications.addEventListener(
-        'permissionPromptDisplay',
-        () => {
-          console.log('The notification permission prompt display!');
-        },
-      );
-      OneSignal.Slidedown.addEventListener(
-        'slidedownAllowClick',
-        (wasShown: boolean) => {
-          console.log('Slidedown Allow Click:', wasShown);
-        },
-      );
-      OneSignal.Slidedown.addEventListener(
-        'slidedownCancelClick',
-        (wasShown: boolean) => {
-          console.log('Slidedown Cancel Click:', wasShown);
-        },
-      );
-      OneSignal.Slidedown.addEventListener(
-        'slidedownClosed',
-        (wasShown: boolean) => {
-          console.log('Slidedown Closed:', wasShown);
-        },
-      );
-      OneSignal.Slidedown.addEventListener(
-        'slidedownQueued',
-        (wasShown: boolean) => {
-          console.log('Slidedown Queued:', wasShown);
-        },
-      );
-      OneSignal.Slidedown.addEventListener(
-        'slidedownShown',
-        (wasShown: boolean) => {
-          console.log('Slidedown Shown:', wasShown);
-        },
-      );
-      OneSignal.User.addEventListener('change', (change: UserChangeEvent) => {
-        console.log('User change:', change);
-      });
-    });
+          },*/
+        });
+        console.log('OneSignal initialized');
+        setInitialized(true);
+        const externalId = OneSignal?.User?.externalId;
+        setSubscribed(Boolean(externalId));
+        console.log('OneSignal.User.externalId:', externalId);
+        OneSignal.Notifications.addEventListener(
+          'click',
+          (event: NotificationClickEvent) => {
+            console.log('The notification was clicked!', event);
+          },
+        );
+        OneSignal.Notifications.addEventListener(
+          'foregroundWillDisplay',
+          (event: NotificationForegroundWillDisplayEvent) => {
+            console.log('The notification foreground will display:', event);
+          },
+        );
+        OneSignal.Notifications.addEventListener(
+          'dismiss',
+          (event: NotificationDismissEvent) => {
+            console.log('The notification dismiss:', event);
+          },
+        );
+        OneSignal.Notifications.addEventListener(
+          'permissionChange',
+          (permission: boolean) => {
+            console.log('The notification permission change:', permission);
+          },
+        );
+        OneSignal.Notifications.addEventListener(
+          'permissionPromptDisplay',
+          () => {
+            console.log('The notification permission prompt display!');
+          },
+        );
+        OneSignal.Slidedown.addEventListener(
+          'slidedownAllowClick',
+          (wasShown: boolean) => {
+            console.log('Slidedown Allow Click:', wasShown);
+          },
+        );
+        OneSignal.Slidedown.addEventListener(
+          'slidedownCancelClick',
+          (wasShown: boolean) => {
+            console.log('Slidedown Cancel Click:', wasShown);
+          },
+        );
+        OneSignal.Slidedown.addEventListener(
+          'slidedownClosed',
+          (wasShown: boolean) => {
+            console.log('Slidedown Closed:', wasShown);
+          },
+        );
+        OneSignal.Slidedown.addEventListener(
+          'slidedownQueued',
+          (wasShown: boolean) => {
+            console.log('Slidedown Queued:', wasShown);
+          },
+        );
+        OneSignal.Slidedown.addEventListener(
+          'slidedownShown',
+          (wasShown: boolean) => {
+            console.log('Slidedown Shown:', wasShown);
+          },
+        );
+        OneSignal.User.addEventListener('change', (change: UserChangeEvent) => {
+          console.log('User change:', change);
+        });
+      } catch (err) {
+        console.log('Initialize error:', err);
+      }
+    };
+    initialize();
   }, [appId, serviceWorkerPath]);
 
   return (
