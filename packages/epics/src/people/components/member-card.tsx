@@ -1,6 +1,16 @@
+'use client';
+
 import { Text } from '@radix-ui/themes';
-import { Card, StatusBadge, Skeleton, Image } from '@hypha-platform/ui';
+import { Card, StatusBadge, Skeleton, Image, Button } from '@hypha-platform/ui';
 import { SewingPinFilledIcon } from '@radix-ui/react-icons';
+import { useParams } from 'next/navigation';
+import {
+  useSpaceBySlug,
+  useUndelegateWeb3Rpc,
+} from '@hypha-platform/core/client';
+import { useState } from 'react';
+import { useJoinSpace } from '../../spaces';
+import { useAuthentication } from '@hypha-platform/authentication';
 
 export type MemberCardProps = {
   name?: string;
@@ -11,6 +21,7 @@ export type MemberCardProps = {
   status?: string;
   isLoading?: boolean;
   minimize?: boolean;
+  isDelegate?: boolean;
 };
 
 export const MemberCard: React.FC<MemberCardProps> = ({
@@ -22,7 +33,22 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   status,
   isLoading,
   minimize,
+  isDelegate,
 }) => {
+  const { id: spaceSlug } = useParams();
+  const { space } = useSpaceBySlug(spaceSlug as string);
+  const { undelegate, isUndelegating } = useUndelegateWeb3Rpc();
+  const [localIsDelegate, setLocalIsDelegate] = useState(isDelegate);
+  const { isMember } = useJoinSpace({ spaceId: space?.web3SpaceId as number });
+  const { isAuthenticated } = useAuthentication();
+
+  const isDisabled = isUndelegating || !isAuthenticated || !isMember;
+  const tooltipMessage = !isAuthenticated
+    ? 'Please sign in to use this feature.'
+    : !isMember
+    ? 'Please join this space to use this feature.'
+    : '';
+
   return (
     <Card className="w-full h-full p-5 mb-2 flex">
       <Skeleton
@@ -64,12 +90,41 @@ export const MemberCard: React.FC<MemberCardProps> = ({
           </Skeleton>
         </div>
 
-        <Skeleton width="96px" height="16px" loading={isLoading}>
-          <div className="flex h-full justify-end items-end text-gray-500">
-            <SewingPinFilledIcon className="mr-1" />
-            <Text className="text-1">{location}</Text>
-          </div>
-        </Skeleton>
+        <div className="flex justify-between flex-col gap-6 items-end">
+          {localIsDelegate ? (
+            <Skeleton width="96px" height="32px" loading={isLoading}>
+              <Button
+                disabled={isDisabled}
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  try {
+                    await undelegate({ spaceId: space?.web3SpaceId as number });
+                    setLocalIsDelegate(false);
+                  } catch (error) {
+                    console.error('Undelegate failed:', error);
+                  }
+                }}
+                title={tooltipMessage}
+              >
+                {isUndelegating ? 'Undelegating...' : 'Undelegate'}
+              </Button>
+            </Skeleton>
+          ) : (
+            <div className="w-[130px] h-[40px]" />
+          )}
+          <Skeleton
+            width="96px"
+            height="16px"
+            loading={isLoading}
+            className={localIsDelegate ? 'mt-2' : ''}
+          >
+            <div className="flex items-center text-gray-500">
+              <SewingPinFilledIcon className="mr-1" />
+              <Text className="text-1">{location}</Text>
+            </div>
+          </Skeleton>
+        </div>
       </div>
     </Card>
   );
