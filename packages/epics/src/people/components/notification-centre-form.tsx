@@ -19,14 +19,23 @@ import { z } from 'zod';
 import { ButtonClose } from '../../common/button-close';
 import React from 'react';
 
+const yesNoEnum = z.enum(['yes', 'no']);
+
 const schemaNotificationCentreForm = z.object({
-  emailNotifications: z.enum(['yes', 'no']).default('no'),
-  browserNotifications: z.enum(['yes', 'no']).default('no'),
+  emailNotifications: yesNoEnum.default('no'),
+  browserNotifications: yesNoEnum.default('no'),
   newProposalOpen: z.boolean().default(false),
   proposalApprovedOrRejected: z.boolean().default(false),
 });
 
 type FormData = z.infer<typeof schemaNotificationCentreForm>;
+
+interface NotificationCofiguration {
+  emailNotifications: boolean;
+  browserNotifications: boolean;
+  newProposalOpen: boolean;
+  proposalApprovedOrRejected: boolean;
+}
 
 export type NotificationCentreFormProps = {
   closeUrl: string;
@@ -35,6 +44,7 @@ export type NotificationCentreFormProps = {
   subscribed?: boolean;
   subscribe: () => void;
   unsubscribe: () => void;
+  saveConfigurations: (configuration: NotificationCofiguration) => void;
 };
 
 export const NotificationCentreForm = ({
@@ -44,6 +54,7 @@ export const NotificationCentreForm = ({
   subscribed,
   subscribe,
   unsubscribe,
+  saveConfigurations,
 }: NotificationCentreFormProps) => {
   const form = useForm<FormData>({
     resolver: zodResolver(schemaNotificationCentreForm),
@@ -57,8 +68,13 @@ export const NotificationCentreForm = ({
   });
 
   const handleSubmit = async (values: FormData) => {
-    //TODO
     console.log('Save notification settings:', values);
+    saveConfigurations({
+      browserNotifications: values.browserNotifications === 'yes',
+      emailNotifications: values.emailNotifications === 'yes',
+      newProposalOpen: values.newProposalOpen,
+      proposalApprovedOrRejected: values.proposalApprovedOrRejected,
+    });
   };
 
   return (
