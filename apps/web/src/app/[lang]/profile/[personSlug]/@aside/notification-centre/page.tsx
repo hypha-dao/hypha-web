@@ -9,10 +9,16 @@ import { useParams } from 'next/navigation';
 export default function NotificationCentre() {
   const { lang, personSlug } = useParams();
   const { person, isLoading } = useMe();
-  const { subscribed, subscribe, unsubscribe, error, saveConfigurations } =
-    useNotifications({
-      personSlug: person?.slug ?? '',
-    });
+  const {
+    subscribed,
+    subscribe,
+    unsubscribe,
+    error,
+    configuration,
+    saveConfigurations,
+  } = useNotifications({
+    personSlug: person?.slug ?? '',
+  });
   const progress = 0;
   const isBusy = isLoading;
   const isError = undefined;
@@ -42,6 +48,7 @@ export default function NotificationCentre() {
           subscribed={subscribed}
           subscribe={subscribe}
           unsubscribe={unsubscribe}
+          configuration={configuration}
           saveConfigurations={saveConfigurations}
         />
       </LoadingBackdrop>
