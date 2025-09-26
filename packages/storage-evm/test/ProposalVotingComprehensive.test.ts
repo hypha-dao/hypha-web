@@ -313,6 +313,69 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
 
       console.log('✅ Invalid delegation operations correctly prevented');
     });
+
+    it('Should correctly return all delegates for a given space', async function () {
+      const spaceId = 1;
+      const delegator1 = members[0];
+      const delegator2 = members[1];
+      const delegator3 = members[2];
+      const delegate1 = members[3];
+      const delegate2 = members[4];
+
+      console.log('\n--- Testing getDelegatesForSpace ---');
+
+      // Initial state: no delegates
+      let delegates = await votingPowerDelegation.getDelegatesForSpace(spaceId);
+      expect(delegates.length).to.equal(0);
+      console.log('✅ Initially no delegates');
+
+      // 1. Delegate to delegate1
+      await votingPowerDelegation
+        .connect(delegator1)
+        .delegate(delegate1.address, spaceId);
+      delegates = await votingPowerDelegation.getDelegatesForSpace(spaceId);
+      expect(delegates.length).to.equal(1);
+      expect(delegates).to.include(delegate1.address);
+      console.log('✅ Delegate added on first delegation');
+
+      // 2. Delegate to delegate2
+      await votingPowerDelegation
+        .connect(delegator2)
+        .delegate(delegate2.address, spaceId);
+      delegates = await votingPowerDelegation.getDelegatesForSpace(spaceId);
+      expect(delegates.length).to.equal(2);
+      expect(delegates).to.include(delegate1.address);
+      expect(delegates).to.include(delegate2.address);
+      console.log('✅ Second delegate added');
+
+      // 3. Delegate to an existing delegate (should not change the list)
+      await votingPowerDelegation
+        .connect(delegator3)
+        .delegate(delegate1.address, spaceId);
+      delegates = await votingPowerDelegation.getDelegatesForSpace(spaceId);
+      expect(delegates.length).to.equal(2);
+      console.log('✅ Delegating to existing delegate does not add duplicates');
+
+      // 4. Undelegate from delegate1 (one delegator remains)
+      await votingPowerDelegation.connect(delegator1).undelegate(spaceId);
+      delegates = await votingPowerDelegation.getDelegatesForSpace(spaceId);
+      expect(delegates.length).to.equal(2); // delegate1 still has delegator3
+      console.log('✅ Delegate remains after partial undelegation');
+
+      // 5. Undelegate from delegate1 completely
+      await votingPowerDelegation.connect(delegator3).undelegate(spaceId);
+      delegates = await votingPowerDelegation.getDelegatesForSpace(spaceId);
+      expect(delegates.length).to.equal(1);
+      expect(delegates).to.not.include(delegate1.address);
+      expect(delegates).to.include(delegate2.address);
+      console.log('✅ Delegate removed when no delegators remain');
+
+      // 6. Undelegate from delegate2
+      await votingPowerDelegation.connect(delegator2).undelegate(spaceId);
+      delegates = await votingPowerDelegation.getDelegatesForSpace(spaceId);
+      expect(delegates.length).to.equal(0);
+      console.log('✅ Final delegate removed, list is empty');
+    });
   });
 
   describe('Space Voting Power with Delegation - Comprehensive Tests', function () {
