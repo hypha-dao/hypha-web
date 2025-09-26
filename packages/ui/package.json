@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@hypha-platform/ui-utils": "workspace:*",
+    "@radix-ui/react-checkbox": "^1.3.3",
+    "@radix-ui/react-radio-group": "^1.3.8",
     "@radix-ui/react-scroll-area": "^1.2.2",
     "@radix-ui/react-slot": "^1.2.3"
   },
