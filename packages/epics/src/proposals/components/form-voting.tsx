@@ -72,6 +72,31 @@ export const FormVoting = ({
     ? 'Please join this space to use this feature.'
     : '';
 
+  function getVoteLabels(spaceDetails?: SpaceDetails) {
+    if (!spaceDetails) {
+      return { reject: 'Vote no', accept: 'Vote yes' };
+    }
+
+    const quorum = Number(spaceDetails.quorum);
+    const unity = Number(spaceDetails.unity);
+
+    if (quorum === 0 && unity === 100) {
+      return { reject: 'Object', accept: 'Consent' };
+    }
+
+    if (quorum === 100 && unity === 100) {
+      return { reject: 'No', accept: 'Hell yeah' };
+    }
+
+    if (quorum === 100 && unity === 0) {
+      return { reject: 'Not sure', accept: 'Look good' };
+    }
+
+    return { reject: 'Vote no', accept: 'Vote yes' };
+  }
+
+  const labels = getVoteLabels(spaceDetails);
+
   return (
     <div className="flex flex-col gap-5 text-neutral-11">
       <VoterList documentSlug={documentSlug} />
@@ -145,7 +170,7 @@ export const FormVoting = ({
                     disabled={isDisabled}
                     title={tooltipMessage}
                   >
-                    Vote no
+                    {labels.reject}
                   </Button>
                   <Button
                     variant="outline"
@@ -155,7 +180,7 @@ export const FormVoting = ({
                     disabled={isDisabled}
                     title={tooltipMessage}
                   >
-                    Vote yes
+                    {labels.accept}
                   </Button>
                 </>
               )}
