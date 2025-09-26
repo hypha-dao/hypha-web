@@ -177,6 +177,9 @@ npx nx run storage-evm:script ./scripts/votedecay-voting-power.upgrade.ts --netw
 npx nx run storage-evm:script ./scripts/agreements-proxy.deploy.ts --network base-mainnet
 npx nx run storage-evm:script ./scripts/hypha-token.upgrade.ts --network base-mainnet
 
+npx nx run storage-evm:script ./scripts/voting-power-delegation.upgrade.ts --network base-mainnet
+
+
 ```
 
 ## Token Management Scripts
