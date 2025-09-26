@@ -16,3 +16,4 @@ export * from './get-invite-status';
 export * from './get-space-payments';
 export * from './get-has-space-paid';
 export * from './delegate';
+export * from './get-delegates-for-space';
