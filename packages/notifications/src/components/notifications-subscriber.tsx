@@ -27,53 +27,39 @@ export function NotificationSubscriber({
   const { person, isLoading } = useMe();
   const [initialized, setInitialized] = React.useState(false);
   const [subscribed, setSubscribed] = React.useState(false);
-
-  const login = React.useCallback(async () => {
-    if (!OneSignal || isLoading || !person?.slug) {
-      return;
-    }
-    try {
-      await OneSignal.login(person.slug);
-      console.log('subscribe');
-      setSubscribed(true);
-      OneSignal.User.addTag('subscribed', 'true');
-    } catch (err) {
-      console.error('Error on login:', err);
-    }
-  }, [OneSignal, person, isLoading]);
-
-  const handleUserPushSubscriptionChange = React.useCallback(
-    async (event: SubscriptionChangeEvent) => {
-      console.log('User PushSubscription change:', event);
-      console.log('event.previous.id', event.previous.id);
-      console.log('event.current.id', event.current.id);
-      console.log('event.previous.token', event.previous.token);
-      console.log('event.current.token', event.current.token);
-      console.log('event.previous.optedIn', event.previous.optedIn);
-      console.log('event.current.optedIn', event.current.optedIn);
-      if (event.current.token) {
-        console.log(`The push subscription has received a token!`);
-        await login();
-      }
-    },
-    [login],
-  );
+  const [loggedIn, setLoggedIn] = React.useState(false);
 
   React.useEffect(() => {
-    if (!initialized || !OneSignal) {
+    if (!initialized || !OneSignal || isLoading) {
       return;
     }
-    OneSignal.User.PushSubscription.addEventListener(
-      'change',
-      handleUserPushSubscriptionChange,
-    );
-    return () => {
-      OneSignal.User.PushSubscription.removeEventListener(
-        'change',
-        handleUserPushSubscriptionChange,
-      );
-    };
-  }, [initialized, OneSignal, handleUserPushSubscriptionChange]);
+    if (person?.slug) {
+      const loginNotifications = async (personSlug: string) => {
+        try {
+          if (!OneSignal.User.externalId) {
+            await OneSignal.login(personSlug);
+            setLoggedIn(true);
+            const tags = await OneSignal.User.getTags();
+            const isSubscribed =
+              Object.hasOwn(tags, 'subscribed') &&
+              tags['subscribed'] === 'true';
+            setSubscribed(isSubscribed);
+          }
+        } catch (err) {
+          console.error('Error on login:', err);
+        }
+      };
+      loginNotifications(person.slug);
+    } else {
+      const logoutNotifications = async () => {
+        if (OneSignal.User.externalId) {
+          await OneSignal.logout();
+          setLoggedIn(false);
+        }
+      };
+      logoutNotifications();
+    }
+  }, [initialized, OneSignal, isLoading, person]);
 
   React.useEffect(() => {
     const initialize = async () => {
@@ -110,9 +96,11 @@ export function NotificationSubscriber({
         });
         console.log('OneSignal initialized');
         setInitialized(true);
-        const externalId = OneSignal?.User?.externalId;
-        setSubscribed(Boolean(externalId));
-        console.log('OneSignal.User.externalId:', externalId);
+        const tags = await OneSignal.User.getTags();
+        const isSubscribed =
+          Object.hasOwn(tags, 'subscribed') && tags['subscribed'] === 'true';
+        const externalId = OneSignal.User.externalId;
+        setSubscribed(isSubscribed && Boolean(externalId));
         OneSignal.Notifications.addEventListener(
           'click',
           (event: NotificationClickEvent) => {
@@ -176,6 +164,18 @@ export function NotificationSubscriber({
         OneSignal.User.addEventListener('change', (change: UserChangeEvent) => {
           console.log('User change:', change);
         });
+        OneSignal.User.PushSubscription.addEventListener(
+          'change',
+          (event: SubscriptionChangeEvent) => {
+            console.log('User PushSubscription change:', event);
+            console.log('event.previous.id', event.previous.id);
+            console.log('event.current.id', event.current.id);
+            console.log('event.previous.token', event.previous.token);
+            console.log('event.current.token', event.current.token);
+            console.log('event.previous.optedIn', event.previous.optedIn);
+            console.log('event.current.optedIn', event.current.optedIn);
+          },
+        );
       } catch (err) {
         console.log('Initialize error:', err);
       }
@@ -185,7 +185,13 @@ export function NotificationSubscriber({
 
   return (
     <NotificationsContext.Provider
-      value={{ initialized, setInitialized, subscribed, setSubscribed, login }}
+      value={{
+        initialized,
+        setInitialized,
+        subscribed,
+        setSubscribed,
+        loggedIn,
+      }}
     >
       {children}
     </NotificationsContext.Provider>

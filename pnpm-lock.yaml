@@ -851,6 +851,9 @@ importers:
       '@hypha-platform/i18n':
         specifier: workspace:*
         version: link:../i18n
+      '@hypha-platform/notifications':
+        specifier: workspace:*
+        version: link:../notifications
       '@hypha-platform/ui':
         specifier: workspace:*
         version: link:../ui
@@ -27648,7 +27651,7 @@ snapshots:
   '@scure/bip32@1.6.2':
     dependencies:
       '@noble/curves': 1.8.1
-      '@noble/hashes': 1.7.1
+      '@noble/hashes': 1.7.2
       '@scure/base': 1.2.6
 
   '@scure/bip32@1.7.0':
@@ -27669,7 +27672,7 @@ snapshots:
 
   '@scure/bip39@1.5.4':
     dependencies:
-      '@noble/hashes': 1.7.1
+      '@noble/hashes': 1.7.2
       '@scure/base': 1.2.6
 
   '@scure/bip39@1.6.0':
@@ -39465,7 +39468,7 @@ snapshots:
     dependencies:
       '@adraffy/ens-normalize': 1.11.0
       '@noble/curves': 1.8.1
-      '@noble/hashes': 1.7.1
+      '@noble/hashes': 1.8.0
       '@scure/bip32': 1.6.2
       '@scure/bip39': 1.5.4
       abitype: 1.0.8(typescript@5.8.3)(zod@3.24.3)
