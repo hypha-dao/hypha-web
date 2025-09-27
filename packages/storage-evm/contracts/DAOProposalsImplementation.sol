@@ -106,7 +106,19 @@ contract DAOProposalsImplementation is
     if (address(spaceFactory) == address(0)) revert NotInitialized();
 
     if (msg.sender != address(spaceFactory)) {
-      if (!spaceFactory.isMember(_spaceId, msg.sender)) revert NotMember();
+      if (!spaceFactory.isMember(_spaceId, msg.sender)) {
+        bool isDelegate = false;
+        if (address(delegationContract) != address(0)) {
+          if (
+            delegationContract.getDelegators(msg.sender, _spaceId).length > 0
+          ) {
+            isDelegate = true;
+          }
+        }
+        if (!isDelegate) {
+          revert NotMember();
+        }
+      }
     }
 
     if (_duration > MAX_VOTING_DURATION) revert DurationTooLong();
@@ -135,8 +147,9 @@ contract DAOProposalsImplementation is
     );
 
     if (u == 0 || q < 20) {
-      if (spaceMinProposalDuration[params.spaceId] == 0)
-        revert SetMinDuration();
+      if (spaceMinProposalDuration[params.spaceId] == 0) {
+        spaceMinProposalDuration[params.spaceId] = 24 hours;
+      }
     }
 
     if (address(paymentTracker) != address(0)) {
