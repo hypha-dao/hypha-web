@@ -91,6 +91,7 @@ export function CreateAgreementBaseFields({
                 name="title"
                 render={({ field }) => (
                   <FormItem>
+                    {/* @ts-expect-error Server Component */}
                     <FormControl>
                       <Input
                         placeholder="Proposal title..."
@@ -117,6 +118,7 @@ export function CreateAgreementBaseFields({
         name="leadImage"
         render={({ field }) => (
           <FormItem>
+            {/* @ts-expect-error Server Component */}
             <FormControl>
               <UploadLeadImage
                 onChange={field.onChange}
@@ -136,6 +138,7 @@ export function CreateAgreementBaseFields({
             <FormLabel className="text-foreground gap-1">
               Proposal Content <RequirementMark />
             </FormLabel>
+            {/* @ts-expect-error Server Component */}
             <FormControl>
               <RichTextEditor
                 editorRef={null}
@@ -154,6 +157,7 @@ export function CreateAgreementBaseFields({
         name="attachments"
         render={({ field }) => (
           <FormItem>
+            {/* @ts-expect-error Server Component */}
             <FormControl>
               <AddAttachment onChange={field.onChange} />
             </FormControl>

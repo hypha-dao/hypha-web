@@ -31,6 +31,7 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '../interfaces/IDAOProposals.sol';
 import '../interfaces/IExecutor.sol';
 import '../interfaces/ISpacePaymentTracker.sol';
+import '../interfaces/IVotingPowerDelegation.sol';
 
 interface IDAOSpaceFactory {
   function isMember(
@@ -143,4 +144,8 @@ contract DAOProposalsStorage is Initializable {
   // New storage variables to track voter addresses
   mapping(uint256 => address[]) public proposalYesVoters;
   mapping(uint256 => address[]) public proposalNoVoters;
+
+  // Minimum proposal duration for a space
+  mapping(uint256 => uint256) public spaceMinProposalDuration;
+  IVotingPowerDelegation internal delegationContract;
 }

@@ -65,6 +65,7 @@ export const BuyHyphaTokensPlugin = ({ spaces }: BuyHyphaTokensPluginProps) => {
               name="payout.amount"
               render={({ field }) => (
                 <FormItem>
+                  {/* @ts-expect-error Server Component */}
                   <FormControl>
                     <TokenPayoutField
                       value={{

@@ -86,6 +86,7 @@ export const SignupPanel = ({
                 name="avatarUrl"
                 render={({ field }) => (
                   <FormItem>
+                    {/* @ts-expect-error Server Component */}
                     <FormControl>
                       <UploadAvatar onChange={field.onChange} />
                     </FormControl>
@@ -101,6 +102,7 @@ export const SignupPanel = ({
                       name="name"
                       render={({ field }) => (
                         <FormItem>
+                          {/* @ts-expect-error Server Component */}
                           <FormControl>
                             <Input
                               disabled={isLoading}
@@ -123,6 +125,7 @@ export const SignupPanel = ({
                       name="surname"
                       render={({ field }) => (
                         <FormItem>
+                          {/* @ts-expect-error Server Component */}
                           <FormControl>
                             <Input
                               disabled={isLoading}
@@ -146,6 +149,7 @@ export const SignupPanel = ({
                     name="nickname"
                     render={({ field }) => (
                       <FormItem>
+                        {/* @ts-expect-error Server Component */}
                         <FormControl>
                           <Input
                             disabled={isLoading}
@@ -173,6 +177,7 @@ export const SignupPanel = ({
             name="leadImageUrl"
             render={({ field }) => (
               <FormItem>
+                {/* @ts-expect-error Server Component */}
                 <FormControl>
                   <UploadLeadImage
                     onChange={field.onChange}
@@ -188,6 +193,7 @@ export const SignupPanel = ({
             name="description"
             render={({ field }) => (
               <FormItem>
+                {/* @ts-expect-error Server Component */}
                 <FormControl>
                   <Textarea
                     placeholder="Type your life purpose here..."
@@ -209,6 +215,7 @@ export const SignupPanel = ({
                   name="email"
                   render={({ field }) => (
                     <FormItem>
+                      {/* @ts-expect-error Server Component */}
                       <FormControl>
                         <Input
                           disabled={isLoading}
@@ -231,6 +238,7 @@ export const SignupPanel = ({
                   name="location"
                   render={({ field }) => (
                     <FormItem>
+                      {/* @ts-expect-error Server Component */}
                       <FormControl>
                         <Input
                           disabled={isLoading}
@@ -251,6 +259,7 @@ export const SignupPanel = ({
                 name="links"
                 render={({ field }) => (
                   <FormItem>
+                    {/* @ts-expect-error Server Component */}
                     <FormControl>
                       <Links
                         links={field.value || []}

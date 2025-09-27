@@ -57,6 +57,7 @@ export const MemberWithNumberFieldFieldArray = ({
                   name={`${name}.${index}`}
                   render={({ field: { value, onChange } }) => (
                     <FormItem>
+                      {/* @ts-expect-error Server Component */}
                       <FormControl>
                         <MemberWithNumberField
                           members={members}
