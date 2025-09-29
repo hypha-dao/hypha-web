@@ -61,6 +61,10 @@ export function NotificationSubscriber({
 
   React.useEffect(() => {
     const initialize = async () => {
+      if (initialized) {
+        console.warn('OneSignal should be initialized only once!');
+        return;
+      }
       try {
         await OneSignal.init({
           appId,
