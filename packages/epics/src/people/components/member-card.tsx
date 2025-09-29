@@ -3,6 +3,7 @@
 import { Text } from '@radix-ui/themes';
 import { Card, StatusBadge, Skeleton, Image, Button } from '@hypha-platform/ui';
 import { SewingPinFilledIcon } from '@radix-ui/react-icons';
+// TODO: need for #1309
 // import { useParams } from 'next/navigation';
 // import {
 // useSpaceBySlug,

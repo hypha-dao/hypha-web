@@ -8,6 +8,7 @@ import { MembersList } from './members-list';
 import { useMembersSection } from '../hooks/use-members-section';
 import { UseMembers } from '../hooks/types';
 import { Empty } from '../../common';
+// TODO: need for #1309
 // import { Button } from '@hypha-platform/ui';
 // import {
 //   useSpaceBySlug,
@@ -38,6 +39,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
       refreshInterval,
     });
   console.debug('MembersSection', { searchTerm });
+  // TODO: need for #1309
   // const { space } = useSpaceBySlug(spaceSlug as string);
   // const { isMember, isLoading: useJoinSpaceLoading } = useJoinSpace({
   //   spaceId: space?.web3SpaceId as number,
