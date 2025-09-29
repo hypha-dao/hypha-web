@@ -157,7 +157,7 @@ export const DelegateVotingSection = ({
               <FormItem>
                 <span className="flex w-full items-center">
                   <div className="text-2 text-neutral-11 w-full">
-                    Delegated Member
+                    Delegated Voting Member
                   </div>
                   <DelegatedMemberSelector
                     members={persons?.data}
@@ -232,7 +232,7 @@ export const DelegateVotingSection = ({
                 <FormItem>
                   <span className="flex w-full items-center">
                     <div className="text-2 text-neutral-11 w-full">
-                      Delegated Member
+                      Delegated Voting Member
                     </div>
                     <DelegatedMemberSelector
                       members={passOnDelegatedVoiceFormMembers?.data}
