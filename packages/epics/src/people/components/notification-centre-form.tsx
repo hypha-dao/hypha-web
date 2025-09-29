@@ -9,6 +9,7 @@ import {
   FormLabel,
   FormMessage,
   Input,
+  Label,
   RadioGroup,
   RadioGroupItem,
   Separator,
@@ -42,6 +43,15 @@ function getSwitch(value: boolean): YesNo {
 
 function parseSwitch(value: YesNo): boolean {
   return value === 'yes';
+}
+
+function parseYesNoValue(value: string, defaultValue: YesNo): YesNo {
+  try {
+    const val = yesNoEnum.parse(value);
+    return val;
+  } catch (_) {
+    return defaultValue;
+  }
 }
 
 export const NotificationCentreForm = ({
@@ -146,7 +156,7 @@ export const NotificationCentreForm = ({
               Choose how you’d like to receive notifications:
             </span>
             <span className="text-2 text-neutral-11 flex flex-row justify-between">
-              Email Notifications
+              <FormLabel>Email Notifications</FormLabel>
               <FormField
                 control={form.control}
                 name="emailNotifications"
@@ -156,18 +166,22 @@ export const NotificationCentreForm = ({
                     name="emailNotifications"
                     orientation="horizontal"
                     value={field.value}
-                    onChange={field.onChange}
+                    onValueChange={(value: string) => {
+                      form.setValue(field.name, parseYesNoValue(value, 'yes'));
+                    }}
                   >
-                    <FormLabel htmlFor="emailNotificationsYes">Yes</FormLabel>
+                    <Label htmlFor="emailNotificationsYes">Yes</Label>
                     <RadioGroupItem id="emailNotificationsYes" value="yes" />
-                    <FormLabel htmlFor="emailNotificationsNo">No</FormLabel>
+                    <Label htmlFor="emailNotificationsNo">No</Label>
                     <RadioGroupItem id="emailNotificationsNo" value="no" />
                   </RadioGroup>
                 )}
               />
             </span>
             <span className="text-2 text-neutral-11 flex flex-row justify-between">
-              Browser Notifications (formerly "Desktop Pop-up Notifications")
+              <FormLabel>
+                Browser Notifications (formerly "Desktop Pop-up Notifications")
+              </FormLabel>
               <FormField
                 control={form.control}
                 name="browserNotifications"
@@ -177,11 +191,13 @@ export const NotificationCentreForm = ({
                     name="browserNotifications"
                     orientation="horizontal"
                     value={field.value}
-                    onChange={field.onChange}
+                    onValueChange={(value: string) => {
+                      form.setValue(field.name, parseYesNoValue(value, 'yes'));
+                    }}
                   >
-                    <FormLabel htmlFor="browserNotificationYes">Yes</FormLabel>
+                    <Label htmlFor="browserNotificationYes">Yes</Label>
                     <RadioGroupItem id="browserNotificationYes" value="yes" />
-                    <FormLabel htmlFor="browserNotificationNo">No</FormLabel>
+                    <Label htmlFor="browserNotificationNo">No</Label>
                     <RadioGroupItem id="browserNotificationNo" value="no" />
                   </RadioGroup>
                 )}
