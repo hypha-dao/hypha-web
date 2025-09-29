@@ -5309,6 +5309,26 @@ export const votingPowerDelegationImplementationAbi = [
   {
     type: 'function',
     inputs: [
+      { name: '', internalType: 'address', type: 'address' },
+      { name: '', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'delegateToSpaceIndex',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '', internalType: 'address', type: 'address' },
+      { name: '', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'delegateToSpaces',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
       { name: '_user', internalType: 'address', type: 'address' },
       { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
     ],
@@ -5344,6 +5364,13 @@ export const votingPowerDelegationImplementationAbi = [
     ],
     name: 'getDelegators',
     outputs: [{ name: '', internalType: 'address[]', type: 'address[]' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_delegate', internalType: 'address', type: 'address' }],
+    name: 'getSpacesForDelegate',
+    outputs: [{ name: '', internalType: 'uint256[]', type: 'uint256[]' }],
     stateMutability: 'view',
   },
   {
