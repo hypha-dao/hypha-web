@@ -79,6 +79,7 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
     }
     setError(null);
     try {
+      console.log('subscribe');
       await OneSignal.Slidedown.promptPush({ force: DEV_ENV });
       await OneSignal.User.addTag('subscribed', 'true');
       setSubscribed?.(true);
