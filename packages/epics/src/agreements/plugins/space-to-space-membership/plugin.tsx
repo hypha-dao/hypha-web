@@ -71,6 +71,7 @@ export const SpaceToSpaceMembershipPlugin = ({
           </FormItem>
         )}
       />
+      <span className="text-neutral-11 text-2">The Delegated Voting Member is the individual from your space who is formally authorised to cast votes on behalf of your space within the joining space.</span>
     </div>
   );
 };

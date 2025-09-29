@@ -28,7 +28,7 @@ export const SpaceToSpaceMembershipSelector = ({
   }, [value, memberOptions, spaceOptions]);
   const isSpace = spaceOptions.length > 0 && memberOptions.length === 0;
   const placeholder = isSpace ? 'Find Space' : 'Find Member';
-  const title = isSpace ? 'Space to join' : 'Delegated Member';
+  const title = isSpace ? 'Space to join' : 'Delegated Voting Member';
 
   const options = useMemo(() => {
     const memberItems = memberOptions.map((member) => ({
