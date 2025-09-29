@@ -71,8 +71,9 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
       return;
     }
     const tags = await OneSignal.User.getTags();
-    const browserNotifications =
-      OneSignal.User.PushSubscription.optedIn ?? true;
+    const browserNotifications = DEV_ENV
+      ? OneSignal.User.PushSubscription.optedIn ?? true
+      : checkTag(tags, TAG_PUSH, true);
     const emailNotifications = checkTag(tags, TAG_EMAIL, true);
     const newProposalOpen = checkTag(tags, TAG_NEW_PROPOSAL_OPEN, true);
     const proposalApprovedOrRejected = checkTag(
@@ -133,9 +134,15 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
         if (!OneSignal.User.PushSubscription.optedIn) {
           await OneSignal.User.PushSubscription.optIn();
         }
+        if (!DEV_ENV) {
+          await OneSignal.User.addTag(TAG_PUSH, TRUE);
+        }
       } else {
         if (OneSignal.User.PushSubscription.optedIn) {
           await OneSignal.User.PushSubscription.optOut();
+        }
+        if (!DEV_ENV) {
+          await OneSignal.User.addTag(TAG_PUSH, FALSE);
         }
       }
       if (configuration.emailNotifications) {
@@ -149,15 +156,17 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
           await OneSignal.User.addTag(TAG_EMAIL, FALSE);
         }
       }
-      if (configuration.newProposalOpen) {
-        await OneSignal.User.addTag(TAG_NEW_PROPOSAL_OPEN, TRUE);
-      } else {
-        await OneSignal.User.addTag(TAG_NEW_PROPOSAL_OPEN, FALSE);
-      }
-      if (configuration.proposalApprovedOrRejected) {
-        await OneSignal.User.addTag(TAG_PROPOSAL_APPROVED_OR_REJECTED, TRUE);
-      } else {
-        await OneSignal.User.addTag(TAG_PROPOSAL_APPROVED_OR_REJECTED, FALSE);
+      if (!DEV_ENV) {
+        if (configuration.newProposalOpen) {
+          await OneSignal.User.addTag(TAG_NEW_PROPOSAL_OPEN, TRUE);
+        } else {
+          await OneSignal.User.addTag(TAG_NEW_PROPOSAL_OPEN, FALSE);
+        }
+        if (configuration.proposalApprovedOrRejected) {
+          await OneSignal.User.addTag(TAG_PROPOSAL_APPROVED_OR_REJECTED, TRUE);
+        } else {
+          await OneSignal.User.addTag(TAG_PROPOSAL_APPROVED_OR_REJECTED, FALSE);
+        }
       }
       setConfiguration(configuration);
     },
