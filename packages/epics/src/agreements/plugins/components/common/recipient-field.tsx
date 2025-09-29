@@ -28,6 +28,7 @@ export function RecipientField({
       name="recipient"
       render={({ field: { value, onChange } }) => (
         <FormItem>
+          {/* @ts-expect-error Server Component */}
           <FormControl>
             <Recipient
               value={value}

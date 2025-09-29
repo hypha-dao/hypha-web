@@ -65,6 +65,18 @@ contract VotingPowerDelegationImplementation is
     ][_spaceId].length;
     delegateToDelegators[_delegate][_spaceId].push(msg.sender);
 
+    if (!isDelegateInSpace[_spaceId][_delegate]) {
+      isDelegateInSpace[_spaceId][_delegate] = true;
+      spaceDelegates[_spaceId].push(_delegate);
+      spaceDelegateIndex[_spaceId][_delegate] =
+        spaceDelegates[_spaceId].length -
+        1;
+      delegateToSpaces[_delegate].push(_spaceId);
+      delegateToSpaceIndex[_delegate][_spaceId] =
+        delegateToSpaces[_delegate].length -
+        1;
+    }
+
     emit VotingPowerDelegated(msg.sender, _delegate, _spaceId);
   }
 
@@ -103,6 +115,36 @@ contract VotingPowerDelegationImplementation is
 
     delegators.pop();
     delete delegatorIndex[_user][_spaceId][delegateAddress];
+
+    if (delegators.length == 0) {
+      uint256 indexToRemove = spaceDelegateIndex[_spaceId][delegateAddress];
+      uint256 lastIndexDelegates = spaceDelegates[_spaceId].length - 1;
+
+      if (indexToRemove != lastIndexDelegates) {
+        address lastDelegate = spaceDelegates[_spaceId][lastIndexDelegates];
+        spaceDelegates[_spaceId][indexToRemove] = lastDelegate;
+        spaceDelegateIndex[_spaceId][lastDelegate] = indexToRemove;
+      }
+
+      spaceDelegates[_spaceId].pop();
+      delete isDelegateInSpace[_spaceId][delegateAddress];
+      delete spaceDelegateIndex[_spaceId][delegateAddress];
+
+      // Remove from delegateToSpaces
+      uint256 spaceIndexToRemove = delegateToSpaceIndex[delegateAddress][
+        _spaceId
+      ];
+      uint256 lastSpaceIndex = delegateToSpaces[delegateAddress].length - 1;
+
+      if (spaceIndexToRemove != lastSpaceIndex) {
+        uint256 lastSpaceId = delegateToSpaces[delegateAddress][lastSpaceIndex];
+        delegateToSpaces[delegateAddress][spaceIndexToRemove] = lastSpaceId;
+        delegateToSpaceIndex[delegateAddress][lastSpaceId] = spaceIndexToRemove;
+      }
+
+      delegateToSpaces[delegateAddress].pop();
+      delete delegateToSpaceIndex[delegateAddress][_spaceId];
+    }
 
     // Clean up user delegation
     delete userDelegates[_user][_spaceId];
@@ -184,5 +226,27 @@ contract VotingPowerDelegationImplementation is
     delegateAddress = hasDelegatedStatus
       ? userDelegates[_user][_spaceId]
       : _user;
+  }
+
+  /**
+   * @dev Get all delegate addresses for a specific space
+   * @param _spaceId The space ID
+   * @return Array of delegate addresses
+   */
+  function getDelegatesForSpace(
+    uint256 _spaceId
+  ) external view override returns (address[] memory) {
+    return spaceDelegates[_spaceId];
+  }
+
+  /**
+   * @dev Get all space IDs for which a user is a delegate
+   * @param _delegate The delegate address
+   * @return Array of space IDs
+   */
+  function getSpacesForDelegate(
+    address _delegate
+  ) external view returns (uint256[] memory) {
+    return delegateToSpaces[_delegate];
   }
 }
