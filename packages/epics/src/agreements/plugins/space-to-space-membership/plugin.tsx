@@ -26,7 +26,7 @@ export const SpaceToSpaceMembershipPlugin = ({
 
   return (
     <div className="flex flex-col gap-5 w-full">
-      <div className="flex gap-1">
+      <div className="flex gap-1 items-start">
         <Label>Space</Label>
         <RequirementMark />
       </div>
@@ -49,7 +49,7 @@ export const SpaceToSpaceMembershipPlugin = ({
         )}
       />
       <Separator />
-      <div className="flex gap-1">
+      <div className="flex gap-1 items-start">
         <Label>Delegation Rules</Label>
         <RequirementMark />
       </div>
@@ -71,6 +71,11 @@ export const SpaceToSpaceMembershipPlugin = ({
           </FormItem>
         )}
       />
+      <span className="text-neutral-11 text-2">
+        The Delegated Voting Member is the individual from your space who is
+        formally authorised to cast votes on behalf of your space within the
+        joining space.
+      </span>
     </div>
   );
 };

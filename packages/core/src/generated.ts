@@ -239,6 +239,7 @@ export const daoProposalsImplementationAbi = [
     inputs: [{ name: 'target', internalType: 'address', type: 'address' }],
     name: 'AddressEmptyCode',
   },
+  { type: 'error', inputs: [], name: 'DurationTooLong' },
   {
     type: 'error',
     inputs: [
@@ -247,9 +248,25 @@ export const daoProposalsImplementationAbi = [
     name: 'ERC1967InvalidImplementation',
   },
   { type: 'error', inputs: [], name: 'ERC1967NonPayable' },
+  { type: 'error', inputs: [], name: 'EmptyData' },
+  { type: 'error', inputs: [], name: 'Executed' },
+  { type: 'error', inputs: [], name: 'ExecutionFailed' },
+  { type: 'error', inputs: [], name: 'Expired' },
   { type: 'error', inputs: [], name: 'FailedCall' },
+  { type: 'error', inputs: [], name: 'InvalidDelegation' },
+  { type: 'error', inputs: [], name: 'InvalidDirectory' },
+  { type: 'error', inputs: [], name: 'InvalidFactory' },
   { type: 'error', inputs: [], name: 'InvalidInitialization' },
+  { type: 'error', inputs: [], name: 'InvalidTarget' },
+  { type: 'error', inputs: [], name: 'InvalidTracker' },
+  { type: 'error', inputs: [], name: 'NoExecutor' },
+  { type: 'error', inputs: [], name: 'NoPower' },
+  { type: 'error', inputs: [], name: 'NoTransactions' },
+  { type: 'error', inputs: [], name: 'NotInitialized' },
   { type: 'error', inputs: [], name: 'NotInitializing' },
+  { type: 'error', inputs: [], name: 'NotMember' },
+  { type: 'error', inputs: [], name: 'NotStarted' },
+  { type: 'error', inputs: [], name: 'OnlyExecutor' },
   {
     type: 'error',
     inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
@@ -260,12 +277,15 @@ export const daoProposalsImplementationAbi = [
     inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
     name: 'OwnableUnauthorizedAccount',
   },
+  { type: 'error', inputs: [], name: 'SetMinDuration' },
+  { type: 'error', inputs: [], name: 'SubscriptionInactive' },
   { type: 'error', inputs: [], name: 'UUPSUnauthorizedCallContext' },
   {
     type: 'error',
     inputs: [{ name: 'slot', internalType: 'bytes32', type: 'bytes32' }],
     name: 'UUPSUnsupportedProxiableUUID',
   },
+  { type: 'error', inputs: [], name: 'Voted' },
   {
     type: 'event',
     anonymous: false,
@@ -297,6 +317,25 @@ export const daoProposalsImplementationAbi = [
       },
     ],
     name: 'Initialized',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'duration',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'MinimumProposalDurationSet',
   },
   {
     type: 'event',
@@ -737,6 +776,25 @@ export const daoProposalsImplementationAbi = [
   {
     type: 'function',
     inputs: [
+      { name: '_delegationContract', internalType: 'address', type: 'address' },
+    ],
+    name: 'setDelegationContract',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: '_minDuration', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'setMinimumProposalDuration',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
       { name: '_paymentTracker', internalType: 'address', type: 'address' },
     ],
     name: 'setPaymentTracker',
@@ -748,6 +806,13 @@ export const daoProposalsImplementationAbi = [
     inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     name: 'spaceAddresses',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    name: 'spaceMinProposalDuration',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
   {
@@ -5244,11 +5309,38 @@ export const votingPowerDelegationImplementationAbi = [
   {
     type: 'function',
     inputs: [
+      { name: '', internalType: 'address', type: 'address' },
+      { name: '', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'delegateToSpaceIndex',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '', internalType: 'address', type: 'address' },
+      { name: '', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'delegateToSpaces',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
       { name: '_user', internalType: 'address', type: 'address' },
       { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
     ],
     name: 'getDelegate',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_spaceId', internalType: 'uint256', type: 'uint256' }],
+    name: 'getDelegatesForSpace',
+    outputs: [{ name: '', internalType: 'address[]', type: 'address[]' }],
     stateMutability: 'view',
   },
   {
@@ -5276,6 +5368,13 @@ export const votingPowerDelegationImplementationAbi = [
   },
   {
     type: 'function',
+    inputs: [{ name: '_delegate', internalType: 'address', type: 'address' }],
+    name: 'getSpacesForDelegate',
+    outputs: [{ name: '', internalType: 'uint256[]', type: 'uint256[]' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     inputs: [
       { name: '_user', internalType: 'address', type: 'address' },
       { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
@@ -5292,6 +5391,16 @@ export const votingPowerDelegationImplementationAbi = [
     name: 'initialize',
     outputs: [],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '', internalType: 'uint256', type: 'uint256' },
+      { name: '', internalType: 'address', type: 'address' },
+    ],
+    name: 'isDelegateInSpace',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -5323,6 +5432,16 @@ export const votingPowerDelegationImplementationAbi = [
     name: 'renounceOwnership',
     outputs: [],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '', internalType: 'uint256', type: 'uint256' },
+      { name: '', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'spaceDelegates',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
   },
   {
     type: 'function',

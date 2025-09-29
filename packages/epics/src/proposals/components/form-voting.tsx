@@ -2,7 +2,7 @@ import { Button, Skeleton, Separator } from '@hypha-platform/ui';
 import { ProgressLine } from './progress-line';
 import { intervalToDuration, isPast } from 'date-fns';
 import { VoterList } from '../../governance/components/voter-list';
-import { useMyVote } from '@hypha-platform/core/client';
+import { useMyVote, useIsDelegate } from '@hypha-platform/core/client';
 import { useJoinSpace } from '../../spaces';
 
 function formatTimeRemaining(
@@ -62,11 +62,12 @@ export const FormVoting = ({
 }) => {
   const { myVote } = useMyVote(documentSlug);
   const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
+  const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
 
-  const isDisabled = isVoting || !isAuthenticated || !isMember;
+  const isDisabled = isVoting || !isAuthenticated || (!isMember && !isDelegate);
   const tooltipMessage = !isAuthenticated
     ? 'Please sign in to use this feature.'
-    : !isMember
+    : !isMember && !isDelegate
     ? 'Please join this space to use this feature.'
     : '';
 

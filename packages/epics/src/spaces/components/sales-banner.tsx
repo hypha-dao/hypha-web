@@ -9,6 +9,7 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import { useTheme } from 'next-themes';
 import { cn } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
+import { useIsDelegate } from '@hypha-platform/core/client';
 
 interface BannerState {
   title: string;
@@ -29,16 +30,17 @@ export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
     spaceId: web3SpaceId,
   });
   const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
+  const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
   const { isAuthenticated } = useAuthentication();
 
   if (isLoading || !status) {
     return null;
   }
 
-  const isDisabled = !isAuthenticated || !isMember;
+  const isDisabled = !isAuthenticated || (!isMember && !isDelegate);
   const tooltipMessage = !isAuthenticated
     ? 'Please sign in to use this feature.'
-    : !isMember
+    : !isMember && !isDelegate
     ? 'Please join this space to use this feature.'
     : '';
 
