@@ -9,7 +9,6 @@ const DEV_ENV = process.env.NODE_ENV === 'development';
 const TRUE = 'true';
 const FALSE = 'false';
 
-const TAG_PUSH = 'push';
 const TAG_EMAIL = 'email';
 
 export interface INotificationsContext {
@@ -58,7 +57,8 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
       return;
     }
     const tags = await OneSignal.User.getTags();
-    const browserNotifications = checkTag(tags, TAG_PUSH, true);
+    const browserNotifications =
+      OneSignal.User.PushSubscription.optedIn ?? true;
     const emailNotifications = checkTag(tags, TAG_EMAIL, true);
     const newProposalOpen = checkTag(tags, 'opt_newProposalOpen', true);
     const proposalApprovedOrRejected = checkTag(
@@ -119,12 +119,10 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
         if (!OneSignal.User.PushSubscription.optedIn) {
           await OneSignal.User.PushSubscription.optIn();
         }
-        await OneSignal.User.addTag(TAG_PUSH, TRUE);
       } else {
         if (OneSignal.User.PushSubscription.optedIn) {
           await OneSignal.User.PushSubscription.optOut();
         }
-        await OneSignal.User.addTag(TAG_PUSH, FALSE);
       }
       if (configuration.emailNotifications) {
         if (!isLoading && person?.email) {
