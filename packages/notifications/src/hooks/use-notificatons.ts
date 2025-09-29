@@ -6,6 +6,12 @@ import OneSignal from 'react-onesignal';
 
 const DEV_ENV = process.env.NODE_ENV === 'development';
 
+const TRUE = 'true';
+const FALSE = 'false';
+
+const TAG_PUSH = 'push';
+const TAG_EMAIL = 'email';
+
 export interface INotificationsContext {
   initialized?: boolean;
   setInitialized?: React.Dispatch<React.SetStateAction<boolean>>;
@@ -36,7 +42,7 @@ export function checkTag(
   tagName: string,
   defaultValue: boolean,
 ) {
-  return Object.hasOwn(tags, tagName) ? tags[tagName] === 'true' : defaultValue;
+  return Object.hasOwn(tags, tagName) ? tags[tagName] === TRUE : defaultValue;
 }
 
 export const useNotifications = ({ personSlug }: NotificationsProps) => {
@@ -52,8 +58,8 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
       return;
     }
     const tags = await OneSignal.User.getTags();
-    const browserNotifications = checkTag(tags, 'push', true);
-    const emailNotifications = checkTag(tags, 'email', true);
+    const browserNotifications = checkTag(tags, TAG_PUSH, true);
+    const emailNotifications = checkTag(tags, TAG_EMAIL, true);
     const newProposalOpen = checkTag(tags, 'opt_newProposalOpen', true);
     const proposalApprovedOrRejected = checkTag(
       tags,
@@ -81,7 +87,7 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
     try {
       console.log('subscribe');
       await OneSignal.Slidedown.promptPush({ force: DEV_ENV });
-      await OneSignal.User.addTag('subscribed', 'true');
+      await OneSignal.User.addTag('subscribed', TRUE);
       setSubscribed?.(true);
       await initializeConfiguration();
     } catch (err) {
@@ -113,33 +119,33 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
         if (!OneSignal.User.PushSubscription.optedIn) {
           await OneSignal.User.PushSubscription.optIn();
         }
-        await OneSignal.User.addTag('push', 'true');
+        await OneSignal.User.addTag(TAG_PUSH, TRUE);
       } else {
         if (OneSignal.User.PushSubscription.optedIn) {
           await OneSignal.User.PushSubscription.optOut();
         }
-        await OneSignal.User.addTag('push', 'false');
+        await OneSignal.User.addTag(TAG_PUSH, FALSE);
       }
       if (configuration.emailNotifications) {
         if (!isLoading && person?.email) {
           await OneSignal.User.addEmail(person.email);
-          await OneSignal.User.addTag('email', 'true');
+          await OneSignal.User.addTag(TAG_EMAIL, TRUE);
         }
       } else {
         if (!isLoading && person?.email) {
           await OneSignal.User.removeEmail(person.email);
-          await OneSignal.User.addTag('email', 'false');
+          await OneSignal.User.addTag(TAG_EMAIL, FALSE);
         }
       }
       if (configuration.newProposalOpen) {
-        await OneSignal.User.addTag('opt_newProposalOpen', 'true');
+        await OneSignal.User.addTag('opt_newProposalOpen', TRUE);
       } else {
-        await OneSignal.User.addTag('opt_newProposalOpen', 'false');
+        await OneSignal.User.addTag('opt_newProposalOpen', FALSE);
       }
       if (configuration.proposalApprovedOrRejected) {
-        await OneSignal.User.addTag('opt_proposalApprovedOrRejected', 'true');
+        await OneSignal.User.addTag('opt_proposalApprovedOrRejected', TRUE);
       } else {
-        await OneSignal.User.addTag('opt_proposalApprovedOrRejected', 'false');
+        await OneSignal.User.addTag('opt_proposalApprovedOrRejected', FALSE);
       }
       setConfiguration(configuration);
     },
