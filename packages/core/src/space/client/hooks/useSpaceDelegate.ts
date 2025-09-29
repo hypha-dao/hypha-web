@@ -5,7 +5,13 @@ import React from 'react';
 import useSWR from 'swr';
 import { useJwt } from '@hypha-platform/core/client';
 
-export const useSpaceDelegate = ({ user, spaceId }: { user: `0x${string}`, spaceId?: number }) => {
+export const useSpaceDelegate = ({
+  user,
+  spaceId,
+}: {
+  user: `0x${string}`;
+  spaceId?: number;
+}) => {
   const { jwt } = useJwt();
 
   const {
@@ -17,9 +23,11 @@ export const useSpaceDelegate = ({ user, spaceId }: { user: `0x${string}`, space
     spaceId: spaceId ? BigInt(spaceId as number) : undefined,
   });
 
-
   const endpoint = React.useMemo(
-    () => (delegatorAddress ? `/api/v1/people/by-web3-address/${delegatorAddress}` : null),
+    () =>
+      delegatorAddress
+        ? `/api/v1/people/by-web3-address/${delegatorAddress}`
+        : null,
     [delegatorAddress],
   );
 

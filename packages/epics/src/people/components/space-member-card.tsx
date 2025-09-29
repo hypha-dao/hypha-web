@@ -13,7 +13,10 @@ export const SpaceMemberCard: React.FC<{
 }> = ({ space, isLoading }) => {
   const { id: spaceSlug } = useParams();
   const { space: currentSpace } = useSpaceBySlug(spaceSlug as string);
-  const { person: delegator } = useSpaceDelegate({user: space?.address as `0x${string}`, spaceId: currentSpace?.web3SpaceId as number})
+  const { person: delegator } = useSpaceDelegate({
+    user: space?.address as `0x${string}`,
+    spaceId: currentSpace?.web3SpaceId as number,
+  });
 
   return (
     <Card className="w-full h-full p-5 mb-2 flex gap-5 flex-wrap">
@@ -39,22 +42,28 @@ export const SpaceMemberCard: React.FC<{
           <Text className="text-1 text-neutral-11">{space.description}</Text>
         </Skeleton>
       </div>
-      {delegator ? <div className='flex flex-col gap-2'>
-        <span className='text-1 text-neutral-11 font-bold'>Delegate</span>
-        <div className='flex gap-3 items-center'>
-          <Image
-            className="h-[32px] w-[32px] rounded-lg"
-            src={delegator?.avatarUrl || '/placeholder/default-space.svg'}
-            height={32}
-            width={32}
-            alt={delegator?.nickname}
-          />
-          <div className='flex gap-1 flex-col'>
-            <span className='text-1 font-bold text-bg-foreground'>{delegator?.name} {delegator?.surname}</span>
-            <span className='text-1 text-neutral-11'>@{delegator?.nickname}</span>
+      {delegator ? (
+        <div className="flex flex-col gap-2">
+          <span className="text-1 text-neutral-11 font-bold">Delegate</span>
+          <div className="flex gap-3 items-center">
+            <Image
+              className="h-[32px] w-[32px] rounded-lg"
+              src={delegator?.avatarUrl || '/placeholder/default-space.svg'}
+              height={32}
+              width={32}
+              alt={delegator?.nickname}
+            />
+            <div className="flex gap-1 flex-col">
+              <span className="text-1 font-bold text-bg-foreground">
+                {delegator?.name} {delegator?.surname}
+              </span>
+              <span className="text-1 text-neutral-11">
+                @{delegator?.nickname}
+              </span>
+            </div>
           </div>
         </div>
-      </div> : null}
+      ) : null}
     </Card>
   );
 };

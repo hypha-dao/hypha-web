@@ -5,8 +5,8 @@ import { Card, StatusBadge, Skeleton, Image, Button } from '@hypha-platform/ui';
 import { SewingPinFilledIcon } from '@radix-ui/react-icons';
 // import { useParams } from 'next/navigation';
 // import {
-  // useSpaceBySlug,
-  // useUndelegateWeb3Rpc,
+// useSpaceBySlug,
+// useUndelegateWeb3Rpc,
 // } from '@hypha-platform/core/client';
 // import { useState } from 'react';
 // import { useJoinSpace } from '../../spaces';
