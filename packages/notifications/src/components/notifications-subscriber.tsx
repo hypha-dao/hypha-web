@@ -8,7 +8,7 @@ import OneSignal, {
   SubscriptionChangeEvent,
   UserChangeEvent,
 } from 'react-onesignal';
-import { checkTag, NotificationsContext } from '../hooks';
+import { checkTag, NotificationsContext, TAG_SUBSCRIBED } from '../hooks';
 import { useMe } from '@hypha-platform/core/client';
 
 const DEV_ENV = process.env.NODE_ENV === 'development';
@@ -40,7 +40,7 @@ export function NotificationSubscriber({
             await OneSignal.login(personSlug);
             setLoggedIn(true);
             const tags = await OneSignal.User.getTags();
-            const isSubscribed = checkTag(tags, 'subscribed', false);
+            const isSubscribed = checkTag(tags, TAG_SUBSCRIBED, false);
             setSubscribed(isSubscribed);
           }
         } catch (err) {
@@ -99,7 +99,7 @@ export function NotificationSubscriber({
         console.log('OneSignal initialized');
         setInitialized(true);
         const tags = await OneSignal.User.getTags();
-        const isSubscribed = checkTag(tags, 'subscribed', false);
+        const isSubscribed = checkTag(tags, TAG_SUBSCRIBED, false);
         const externalId = OneSignal.User.externalId;
         setSubscribed(isSubscribed && Boolean(externalId));
         OneSignal.Notifications.addEventListener(
