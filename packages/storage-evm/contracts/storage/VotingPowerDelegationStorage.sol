@@ -30,6 +30,10 @@ contract VotingPowerDelegationStorage is Initializable {
   // Mapping from spaceId => delegate => bool (to check for existence)
   mapping(uint256 => mapping(address => bool)) public isDelegateInSpace;
 
+  // New state variables
+  mapping(address => uint256[]) public delegateToSpaces;
+  mapping(address => mapping(uint256 => uint256)) public delegateToSpaceIndex;
+
   /**
    * @dev This empty reserved space is put in place to allow future versions to add new
    * variables without shifting down storage in the inheritance chain.

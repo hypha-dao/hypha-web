@@ -376,6 +376,83 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       expect(delegates.length).to.equal(0);
       console.log('✅ Final delegate removed, list is empty');
     });
+
+    it('Should correctly return all spaces a member is a delegate in', async function () {
+      const delegate = members[0];
+      const delegator1 = members[1];
+      const delegator2 = members[2];
+      const delegator3 = members[3];
+      const spaceId1 = 1;
+      const spaceId2 = 2;
+
+      console.log('\\n--- Testing getSpacesForDelegate ---');
+
+      // Initial state: no spaces
+      let spaces = await votingPowerDelegation.getSpacesForDelegate(
+        delegate.address,
+      );
+      expect(spaces.length).to.equal(0);
+      console.log('✅ Initially no spaces for delegate');
+
+      // 1. delegator1 delegates to delegate in space 1
+      await votingPowerDelegation
+        .connect(delegator1)
+        .delegate(delegate.address, spaceId1);
+      spaces = await votingPowerDelegation.getSpacesForDelegate(
+        delegate.address,
+      );
+      expect(spaces.length).to.equal(1);
+      expect(spaces).to.deep.include(BigInt(spaceId1));
+      console.log('✅ Space added on first delegation');
+
+      // 2. delegator2 delegates to delegate in space 1 (should not change list)
+      await votingPowerDelegation
+        .connect(delegator2)
+        .delegate(delegate.address, spaceId1);
+      spaces = await votingPowerDelegation.getSpacesForDelegate(
+        delegate.address,
+      );
+      expect(spaces.length).to.equal(1);
+      console.log('✅ Delegating to same space does not add duplicates');
+
+      // 3. delegator3 delegates to delegate in space 2
+      await votingPowerDelegation
+        .connect(delegator3)
+        .delegate(delegate.address, spaceId2);
+      spaces = await votingPowerDelegation.getSpacesForDelegate(
+        delegate.address,
+      );
+      expect(spaces.length).to.equal(2);
+      expect(spaces).to.deep.include(BigInt(spaceId1));
+      expect(spaces).to.deep.include(BigInt(spaceId2));
+      console.log('✅ Second space added');
+
+      // 4. delegator1 undelegates from space 1 (delegate still has delegator2)
+      await votingPowerDelegation.connect(delegator1).undelegate(spaceId1);
+      spaces = await votingPowerDelegation.getSpacesForDelegate(
+        delegate.address,
+      );
+      expect(spaces.length).to.equal(2);
+      console.log('✅ Space remains after partial undelegation');
+
+      // 5. delegator2 undelegates from space 1 (last one for space 1)
+      await votingPowerDelegation.connect(delegator2).undelegate(spaceId1);
+      spaces = await votingPowerDelegation.getSpacesForDelegate(
+        delegate.address,
+      );
+      expect(spaces.length).to.equal(1);
+      expect(spaces).to.not.deep.include(BigInt(spaceId1));
+      expect(spaces).to.deep.include(BigInt(spaceId2));
+      console.log('✅ Space removed when no delegators remain');
+
+      // 6. delegator3 undelegates from space 2
+      await votingPowerDelegation.connect(delegator3).undelegate(spaceId2);
+      spaces = await votingPowerDelegation.getSpacesForDelegate(
+        delegate.address,
+      );
+      expect(spaces.length).to.equal(0);
+      console.log('✅ Final space removed, list is empty');
+    });
   });
 
   describe('Space Voting Power with Delegation - Comprehensive Tests', function () {
@@ -631,6 +708,82 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       console.log('✅ Step 4: undelegation working (user1 has own vote back)');
 
       console.log('✅ Complex delegation scenarios handled correctly');
+    });
+
+    it('Should handle re-delegation and correctly transfer voting rights during a vote', async function () {
+      console.log('\n--- Testing Re-delegation Voting Rights ---');
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5, // owner, members[0]..members[3]
+        name: 'Re-delegation Test',
+      });
+
+      const delegator = members[0]; // X
+      const firstDelegate = members[1]; // Y
+      const secondDelegate = members[2]; // Z
+
+      // Step 1: Create a proposal
+      const proposalId = await createTestProposal(spaceId, owner);
+      console.log(`Proposal ${proposalId} created.`);
+
+      // Step 2: X delegates to Y
+      await votingPowerDelegation
+        .connect(delegator)
+        .delegate(firstDelegate.address, spaceId);
+      console.log(
+        `Delegator (${delegator.address}) delegated to firstDelegate (${firstDelegate.address}).`,
+      );
+
+      let firstDelegatePower = await spaceVotingPower.getVotingPower(
+        firstDelegate.address,
+        spaceId,
+      );
+      expect(firstDelegatePower).to.equal(2); // Own + delegated
+
+      // Step 3: X re-delegates to Z
+      await votingPowerDelegation
+        .connect(delegator)
+        .delegate(secondDelegate.address, spaceId);
+      console.log(
+        `Delegator (${delegator.address}) re-delegated to secondDelegate (${secondDelegate.address}).`,
+      );
+
+      // Verify power has moved
+      firstDelegatePower = await spaceVotingPower.getVotingPower(
+        firstDelegate.address,
+        spaceId,
+      );
+      expect(firstDelegatePower).to.equal(1); // Back to own power
+
+      const secondDelegatePower = await spaceVotingPower.getVotingPower(
+        secondDelegate.address,
+        spaceId,
+      );
+      expect(secondDelegatePower).to.equal(2); // Own + delegated power
+      console.log('Verified voting power was transferred.');
+
+      // Step 4: Y votes. Y is a member, so they can still vote with their own power (1).
+      // Their vote should not include X's power anymore.
+      await daoProposals.connect(firstDelegate).vote(proposalId, true);
+      console.log(
+        'firstDelegate voted. As a member, their vote should count as 1.',
+      );
+
+      let proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.yesVotes).to.equal(1);
+
+      // Step 5: Z votes. Z should have their own power + X's delegated power (2).
+      await daoProposals.connect(secondDelegate).vote(proposalId, true);
+      console.log('secondDelegate voted. Should count as 2 votes.');
+
+      proposalState = await daoProposals.getProposalCore(proposalId);
+      // Total yes votes should be 1 (from firstDelegate) + 2 (from secondDelegate) = 3
+      expect(proposalState.yesVotes).to.equal(3);
+
+      console.log(
+        '✅ Re-delegation correctly transferred voting rights during a vote.',
+      );
     });
 
     it('Should handle gas-efficient delegation queries with many delegators', async function () {
@@ -1040,7 +1193,7 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         await daoSpaceFactory.connect(members[0]).joinSpace(spaceId);
         await daoSpaceFactory.connect(members[1]).joinSpace(spaceId);
 
-        // Try to create proposal without setting minimum duration (should fail)
+        // Create proposal without setting minimum duration
         const proposalCalldata = daoSpaceFactory.interface.encodeFunctionData(
           'getSpaceDetails',
           [spaceId],
@@ -1058,34 +1211,21 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
           ],
         };
 
-        await expect(
-          daoProposals.createProposal(proposalParams),
-        ).to.be.revertedWithCustomError(daoProposals, 'SetMinDuration');
-
-        console.log(
-          '✅ Correctly blocked proposal creation without minimum duration',
-        );
-
-        // Set minimum duration and try again (should succeed)
-        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
-        // Use owner to impersonate executor for testing
-        await ethers.provider.send('hardhat_impersonateAccount', [
-          spaceDetails.executor,
-        ]);
-        await ethers.provider.send('hardhat_setBalance', [
-          spaceDetails.executor,
-          '0x1000000000000000000',
-        ]);
-        const executorSigner = await ethers.getSigner(spaceDetails.executor);
-        await daoProposals
-          .connect(executorSigner)
-          .setMinimumProposalDuration(spaceId, 86400); // 1 day
-
+        // The contract should not revert, but set a default minimum duration
         await expect(daoProposals.createProposal(proposalParams)).to.not.be
           .reverted;
+
         console.log(
-          '✅ Successfully created proposal after setting minimum duration',
+          '✅ Proposal created successfully with default minimum duration',
         );
+
+        // Verify that the default duration was set to 24 hours
+        const minDuration = await daoProposals.spaceMinProposalDuration(
+          spaceId,
+        );
+        expect(minDuration).to.equal(86400); // 24 hours in seconds
+
+        console.log('✅ Default minimum duration correctly set to 24 hours');
       });
 
       it('Should require minimum duration when quorum<20%', async function () {
@@ -1131,13 +1271,22 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
           ],
         };
 
-        // Should fail without minimum duration
-        await expect(
-          daoProposals.createProposal(proposalParams),
-        ).to.be.revertedWithCustomError(daoProposals, 'SetMinDuration');
+        // The contract should not revert, but set a default minimum duration
+        await expect(daoProposals.createProposal(proposalParams)).to.not.be
+          .reverted;
 
         console.log(
-          '✅ Correctly blocked proposal creation with low quorum and no minimum duration',
+          '✅ Proposal created successfully with default minimum duration for low quorum',
+        );
+
+        // Verify that the default duration was set to 24 hours
+        const minDuration = await daoProposals.spaceMinProposalDuration(
+          spaceId,
+        );
+        expect(minDuration).to.equal(86400); // 24 hours in seconds
+
+        console.log(
+          '✅ Default minimum duration correctly set for low quorum space',
         );
       });
 
@@ -1884,6 +2033,130 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
           '✅ Precision test passed - early rejection working correctly',
         );
       }
+    });
+  });
+
+  describe('Re-delegation Tests', function () {
+    it('Should handle re-delegation where the previous delegate cannot vote', async function () {
+      console.log(
+        '\n--- Testing Re-delegation: Previous Delegate Cannot Vote ---',
+      );
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 4, // owner, members[0], members[1], members[2]
+        name: 'Re-delegation Non-Member Test',
+      });
+
+      const delegator = members[0]; // X (member)
+      const secondDelegate = members[1]; // Z (member)
+      const nonMemberFirstDelegate = members[4]; // Y (non-member)
+
+      // Verify non-member status
+      expect(
+        await daoSpaceFactory.isMember(spaceId, nonMemberFirstDelegate.address),
+      ).to.be.false;
+
+      // Step 1: Create a proposal
+      const proposalId = await createTestProposal(spaceId, owner);
+      console.log(`Proposal ${proposalId} created.`);
+
+      // Step 2: X (member) delegates to Y (non-member)
+      await votingPowerDelegation
+        .connect(delegator)
+        .delegate(nonMemberFirstDelegate.address, spaceId);
+      console.log(
+        `Delegator (${delegator.address}) delegated to nonMemberFirstDelegate (${nonMemberFirstDelegate.address}).`,
+      );
+
+      let nonMemberDelegatePower = await spaceVotingPower.getVotingPower(
+        nonMemberFirstDelegate.address,
+        spaceId,
+      );
+      expect(nonMemberDelegatePower).to.equal(1); // Has delegated power
+
+      // Step 3: X re-delegates to Z (member)
+      await votingPowerDelegation
+        .connect(delegator)
+        .delegate(secondDelegate.address, spaceId);
+      console.log(
+        `Delegator (${delegator.address}) re-delegated to secondDelegate (${secondDelegate.address}).`,
+      );
+
+      // Verify power has moved from Y to Z
+      nonMemberDelegatePower = await spaceVotingPower.getVotingPower(
+        nonMemberFirstDelegate.address,
+        spaceId,
+      );
+      expect(nonMemberDelegatePower).to.equal(0); // Power is now 0
+
+      const secondDelegatePower = await spaceVotingPower.getVotingPower(
+        secondDelegate.address,
+        spaceId,
+      );
+      expect(secondDelegatePower).to.equal(2); // Own power + delegated power from X
+      console.log('Verified voting power was transferred correctly.');
+
+      // Step 4: Y (non-member) tries to vote. Should fail with 'NotMember' because they are no longer a delegate.
+      await expect(
+        daoProposals.connect(nonMemberFirstDelegate).vote(proposalId, true),
+      ).to.be.revertedWithCustomError(daoProposals, 'NotMember');
+      console.log(
+        'nonMemberFirstDelegate (Y) correctly prevented from voting.',
+      );
+
+      // Step 5: Z votes. Z should have their own power + X's delegated power (2).
+      await daoProposals.connect(secondDelegate).vote(proposalId, true);
+      console.log('secondDelegate (Z) voted successfully with 2 voting power.');
+
+      const proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.yesVotes).to.equal(2);
+
+      console.log(
+        '✅ Re-delegation correctly revoked voting rights from the previous delegate.',
+      );
+    });
+
+    it('Should handle gas-efficient delegation queries with many delegators', async function () {
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 10, // Many members
+        name: 'Gas Efficiency Test',
+      });
+
+      const delegate = members[0];
+      console.log('\n--- Testing Gas Efficiency with Many Delegators ---');
+
+      // Set up many delegations (members[1] through members[8] delegate to members[0])
+      // Note: space has owner + members[0] through members[8] = 10 total members
+      for (let i = 1; i < 9; i++) {
+        await votingPowerDelegation
+          .connect(members[i])
+          .delegate(delegate.address, spaceId);
+      }
+
+      // Check that we can still efficiently query voting power
+      const startTime = Date.now();
+      const votingPower = await spaceVotingPower.getVotingPower(
+        delegate.address,
+        spaceId,
+      );
+      const endTime = Date.now();
+
+      expect(votingPower).to.equal(9); // Own + 8 delegated from space members
+      console.log(`Voting power with 8 delegations: ${votingPower}`);
+      console.log(`Query time: ${endTime - startTime}ms`);
+
+      // Test getting delegators list
+      const delegators = await votingPowerDelegation.getDelegators(
+        delegate.address,
+        spaceId,
+      );
+      expect(delegators.length).to.equal(8);
+      console.log(`Delegators count: ${delegators.length}`);
+
+      console.log('✅ Efficient handling of multiple delegations');
     });
   });
 });

@@ -37,6 +37,10 @@ interface IVotingPowerDelegation {
     uint256 _spaceId
   ) external view returns (address[] memory);
 
+  function getSpacesForDelegate(
+    address _delegate
+  ) external view returns (uint256[] memory);
+
   // Events
   event VotingPowerDelegated(
     address indexed delegator,
