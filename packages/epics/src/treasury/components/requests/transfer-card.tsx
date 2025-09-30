@@ -105,7 +105,9 @@ export const TransferCard: React.FC<TransferCardProps> = ({
         <Skeleton width="96px" height="16px" loading={isLoading}>
           <div className="flex h-full justify-end items-end text-neutral-11">
             <CalendarIcon className="mr-1" />
-            <Text className="text-1">{date ? formatDate(date) : null}</Text>
+            <Text className="text-1">
+              {date ? formatDate(date, true) : null}
+            </Text>
           </div>
         </Skeleton>
       </div>
