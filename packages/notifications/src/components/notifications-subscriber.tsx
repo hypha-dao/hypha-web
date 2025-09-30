@@ -8,8 +8,9 @@ import OneSignal, {
   SubscriptionChangeEvent,
   UserChangeEvent,
 } from 'react-onesignal';
-import { checkTag, NotificationsContext, TAG_SUBSCRIBED } from '../hooks';
 import { useMe } from '@hypha-platform/core/client';
+import { checkTag, NotificationsContext } from '../hooks';
+import { TAG_SUBSCRIBED } from '../constants';
 
 const DEV_ENV = process.env.NODE_ENV === 'development';
 
