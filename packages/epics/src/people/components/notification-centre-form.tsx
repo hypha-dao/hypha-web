@@ -19,9 +19,8 @@ import { Text } from '@radix-ui/themes';
 import { useFieldArray, useForm } from 'react-hook-form';
 import React from 'react';
 import {
+  NOTIFICATION_OPTIONS,
   NotificationCofiguration,
-  TAG_NEW_PROPOSAL_OPEN,
-  TAG_PROPOSAL_APPROVED_OR_REJECTED,
 } from '@hypha-platform/notifications/client';
 import { ButtonClose } from '../../common/button-close';
 import {
@@ -60,20 +59,13 @@ function parseYesNoValue(value: string, defaultValue: YesNo): YesNo {
   }
 }
 
-const notificationOptions: NotificationOption[] = [
-  {
-    title: 'A new proposal is open for vote',
-    description: "In any of the spaces you're a member of.",
-    tagName: TAG_NEW_PROPOSAL_OPEN,
-    tagValue: true,
+const notificationOptions: NotificationOption[] = NOTIFICATION_OPTIONS.map(
+  (option) => {
+    return {
+      ...option,
+    };
   },
-  {
-    title: 'A proposal is approved or rejected',
-    description: "In any of the spaces you're a member of.",
-    tagName: TAG_PROPOSAL_APPROVED_OR_REJECTED,
-    tagValue: true,
-  },
-];
+);
 
 export const NotificationCentreForm = ({
   closeUrl,
