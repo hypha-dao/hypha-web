@@ -7,7 +7,7 @@ import { API_PREFIX, API_VERSION } from '../constants';
 
 export async function registerSwagger(app: FastifyInstance) {
   const openApiSpec = YAML.load(
-    path.resolve(process.cwd(), 'docs', API_VERSION, 'openapi.yaml'),
+    path.resolve(__dirname, '..', '..', 'docs', API_VERSION, 'openapi.yaml'),
   );
 
   // Dynamically prefix all paths with /api/v1
