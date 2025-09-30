@@ -16,14 +16,15 @@ export const TAG_NEW_PROPOSAL_OPEN = 'opt_newProposalOpen';
 export const TAG_PROPOSAL_APPROVED_OR_REJECTED =
   'opt_proposalApprovedOrRejected';
 
-export const TAGS = [
-  TAG_SUBSCRIBED,
-  TAG_PUSH,
-  TAG_EMAIL,
+export const MAIN_TAGS = [TAG_SUBSCRIBED, TAG_PUSH, TAG_EMAIL] as const;
+export const OPTION_TAGS = [
   TAG_NEW_PROPOSAL_OPEN,
   TAG_PROPOSAL_APPROVED_OR_REJECTED,
 ] as const;
+export const TAGS = [...MAIN_TAGS, ...OPTION_TAGS] as const;
 export type Tag = (typeof TAGS)[number];
+export type MainTag = (typeof MAIN_TAGS)[number];
+export type OptionTag = (typeof OPTION_TAGS)[number];
 
 export interface INotificationsContext {
   initialized: boolean;
@@ -36,8 +37,10 @@ export interface INotificationsContext {
 export interface NotificationCofiguration {
   emailNotifications: boolean;
   browserNotifications: boolean;
-  newProposalOpen: boolean;
-  proposalApprovedOrRejected: boolean;
+  options: {
+    name: OptionTag;
+    value: boolean;
+  }[];
 }
 
 export const NotificationsContext = React.createContext<INotificationsContext>({
@@ -88,8 +91,16 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
     setConfiguration({
       browserNotifications,
       emailNotifications,
-      newProposalOpen,
-      proposalApprovedOrRejected,
+      options: [
+        {
+          name: TAG_NEW_PROPOSAL_OPEN,
+          value: newProposalOpen,
+        },
+        {
+          name: TAG_PROPOSAL_APPROVED_OR_REJECTED,
+          value: proposalApprovedOrRejected,
+        },
+      ],
     });
   }, [initialized, OneSignal, loggedIn]);
 
@@ -161,15 +172,10 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
         }
       }
       if (!DEV_ENV) {
-        if (configuration.newProposalOpen) {
-          await OneSignal.User.addTag(TAG_NEW_PROPOSAL_OPEN, TRUE);
-        } else {
-          await OneSignal.User.addTag(TAG_NEW_PROPOSAL_OPEN, FALSE);
-        }
-        if (configuration.proposalApprovedOrRejected) {
-          await OneSignal.User.addTag(TAG_PROPOSAL_APPROVED_OR_REJECTED, TRUE);
-        } else {
-          await OneSignal.User.addTag(TAG_PROPOSAL_APPROVED_OR_REJECTED, FALSE);
+        for (const option of configuration.options) {
+          const tagName = option.name;
+          const tagValue = option.value ? TRUE : FALSE;
+          await OneSignal.User.addTag(tagName, tagValue);
         }
       }
       setConfiguration(configuration);

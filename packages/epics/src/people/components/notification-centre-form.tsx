@@ -5,7 +5,9 @@ import {
   Button,
   Checkbox,
   Form,
+  FormControl,
   FormField,
+  FormItem,
   FormLabel,
   FormMessage,
   Label,
@@ -14,12 +16,17 @@ import {
   Separator,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
-import { useForm } from 'react-hook-form';
+import { useFieldArray, useForm } from 'react-hook-form';
 import React from 'react';
-import { NotificationCofiguration } from '@hypha-platform/notifications/client';
+import {
+  NotificationCofiguration,
+  TAG_NEW_PROPOSAL_OPEN,
+  TAG_PROPOSAL_APPROVED_OR_REJECTED,
+} from '@hypha-platform/notifications/client';
 import { ButtonClose } from '../../common/button-close';
 import {
   NotificationCentreFormValues,
+  NotificationOption,
   schemaNotificationCentreForm,
   YesNo,
   yesNoEnum,
@@ -53,6 +60,21 @@ function parseYesNoValue(value: string, defaultValue: YesNo): YesNo {
   }
 }
 
+const notificationOptions: NotificationOption[] = [
+  {
+    title: 'A new proposal is open for vote',
+    description: "In any of the spaces you're a member of.",
+    tagName: TAG_NEW_PROPOSAL_OPEN,
+    tagValue: true,
+  },
+  {
+    title: 'A proposal is approved or rejected',
+    description: "In any of the spaces you're a member of.",
+    tagName: TAG_PROPOSAL_APPROVED_OR_REJECTED,
+    tagValue: true,
+  },
+];
+
 export const NotificationCentreForm = ({
   closeUrl,
   isLoading,
@@ -72,10 +94,7 @@ export const NotificationCentreForm = ({
       browserNotifications: configuration
         ? getSwitch(configuration.browserNotifications)
         : 'yes',
-      newProposalOpen: configuration ? configuration.newProposalOpen : true,
-      proposalApprovedOrRejected: configuration
-        ? configuration.proposalApprovedOrRejected
-        : true,
+      options: notificationOptions,
     },
     mode: 'onChange',
   });
@@ -87,8 +106,16 @@ export const NotificationCentreForm = ({
     const modified = {
       browserNotifications: getSwitch(configuration.browserNotifications),
       emailNotifications: getSwitch(configuration.emailNotifications),
-      newProposalOpen: configuration.newProposalOpen,
-      proposalApprovedOrRejected: configuration.newProposalOpen,
+      options: notificationOptions.map((option, index) => {
+        const opt = configuration.options?.[index];
+        const tagName = opt?.name ?? option.tagName;
+        const tagValue = opt?.value ?? option.tagValue;
+        return {
+          ...option,
+          tagName,
+          tagValue,
+        };
+      }),
     };
     form.reset(modified, { keepDirty: false });
   }, [form, configuration]);
@@ -98,15 +125,31 @@ export const NotificationCentreForm = ({
     saveConfigurations({
       browserNotifications: parseSwitch(values.browserNotifications),
       emailNotifications: parseSwitch(values.emailNotifications),
-      newProposalOpen: values.newProposalOpen,
-      proposalApprovedOrRejected: values.proposalApprovedOrRejected,
+      options: values.options.map((option) => {
+        return {
+          name: option.tagName,
+          value: option.tagValue,
+        };
+      }),
     });
   };
+
+  const handleInvalid = async (err?: any) => {
+    console.log('Notification settings errors:', err);
+  };
+
+  const { fields: options } = useFieldArray({
+    control: form.control,
+    name: 'options',
+  });
 
   return (
     <div className="relative">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+        <form
+          onSubmit={form.handleSubmit(handleSubmit, handleInvalid)}
+          className="space-y-8"
+        >
           <div className="flex flex-col gap-5">
             <div className="flex flex-col-reverse md:flex-row gap-5 justify-between">
               <div className="flex items-center space-x-2">
@@ -212,48 +255,46 @@ export const NotificationCentreForm = ({
                 Get Notified When...
               </h3>
             </div>
-            <span className="text-2 text-neutral-11 justify-between">
-              <FormField
-                control={form.control}
-                name="newProposalOpen"
-                render={({ field }) => (
-                  <div className="flex flex-row gap-2">
-                    <Checkbox
-                      id="newProposalOpenChecked"
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                    <FormLabel htmlFor="newProposalOpenChecked">
-                      A new proposal is open for vote
-                    </FormLabel>
-                  </div>
-                )}
-              />
-            </span>
-            <span className="text-2 text-neutral-11">
-              In any of the spaces you're a member of.
-            </span>
-            <span className="text-2 text-neutral-11 justify-between">
-              <FormField
-                control={form.control}
-                name="proposalApprovedOrRejected"
-                render={({ field }) => (
-                  <div className="flex flex-row gap-2">
-                    <Checkbox
-                      id="proposalApprovedOrRejectedChecked"
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                    <FormLabel htmlFor="proposalApprovedOrRejectedChecked">
-                      A proposal is approved or rejected
-                    </FormLabel>
-                  </div>
-                )}
-              />
-            </span>
-            <span className="text-2 text-neutral-11">
-              In any of the spaces you're a member of.
-            </span>
+            {options.map((field, index) => (
+              <div key={field.id}>
+                <FormField
+                  control={form.control}
+                  name={`options.${index}`}
+                  render={({ field: { name, value: option, onChange } }) => {
+                    const checkboxId = `${name.replace('.', '_')}_checked`;
+                    return (
+                      <FormItem>
+                        <FormControl>
+                          <div className="flex flex-col gap-2">
+                            <span className="text-2 text-neutral-11 justify-between">
+                              <div className="flex flex-row gap-2">
+                                <Checkbox
+                                  id={checkboxId}
+                                  checked={option.tagValue}
+                                  onCheckedChange={(value) => {
+                                    onChange({
+                                      ...option,
+                                      tagValue: value === true,
+                                    });
+                                  }}
+                                />
+                                <FormLabel htmlFor={checkboxId}>
+                                  {option.title}
+                                </FormLabel>
+                              </div>
+                            </span>
+                            <span className="text-2 text-neutral-11">
+                              {option.description}
+                            </span>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
+                />
+              </div>
+            ))}
             <Separator />
             <div className="flex justify-end w-full">
               <div className="flex flex-col items-end gap-2">
