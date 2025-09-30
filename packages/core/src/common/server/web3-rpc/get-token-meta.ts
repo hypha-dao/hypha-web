@@ -72,7 +72,7 @@ export async function getTokenMeta(
     const dbToken = dbTokens?.find(
       (t) => t.address?.toUpperCase() === tokenAddress.toUpperCase(),
     );
-    const icon = dbToken?.iconUrl ?? '/placeholder/token-icon.svg';
+    const icon = dbToken?.iconUrl ?? '/placeholder/neutral-token-icon.svg';
 
     let space = null;
     if (dbToken?.spaceId) {
