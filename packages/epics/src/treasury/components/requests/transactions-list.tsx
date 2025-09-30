@@ -30,6 +30,8 @@ export const TransactionsList: FC<TransactionsListProps> = ({
           isLoading={isLoading}
           direction={transfer.direction}
           counterparty={transfer.counterparty}
+          from={transfer.from}
+          to={transfer.to}
           isMint={transfer.from === ZeroAddress}
         />
       ))}

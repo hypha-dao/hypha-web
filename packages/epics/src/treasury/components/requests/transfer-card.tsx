@@ -18,6 +18,8 @@ type TransferCardProps = {
   direction?: 'incoming' | 'outgoing';
   counterparty?: 'from' | 'to';
   isMint?: boolean;
+  from?: string;
+  to?: string;
 };
 
 export const TransferCard: React.FC<TransferCardProps> = ({
@@ -33,17 +35,23 @@ export const TransferCard: React.FC<TransferCardProps> = ({
   direction,
   counterparty,
   isMint,
+  from,
+  to,
 }) => {
   const displayName = isMint
     ? ''
-    : title || `${name || ''} ${surname || ''}`.trim() || 'Unknown';
+    : title || name
+    ? `${name || ''} ${surname || ''}`.trim()
+    : counterparty === 'from'
+    ? from
+    : to;
   return (
     <Card className="w-full p-5 mb-2 flex space-x-3">
       {isMint ? (
         <img
           src={tokenIcon || '/placeholder/token-icon.svg'}
           alt="Token Icon"
-          className="w-10 h-10 rounded-full object-cover"
+          className="w-[64px] h-[64px] rounded-full object-cover"
         />
       ) : (
         <PersonAvatar
@@ -51,18 +59,21 @@ export const TransferCard: React.FC<TransferCardProps> = ({
           isLoading={isLoading}
           avatarSrc={avatar}
           userName={displayName}
+          className="rounded-full"
         />
       )}
       <div className="flex justify-between items-center w-full">
         <div className="flex flex-col">
           <div className="flex gap-x-1">
-            <Badge
-              isLoading={isLoading}
-              variant="surface"
-              colorVariant="accent"
-            >
-              {symbol}
-            </Badge>
+            {symbol ? (
+              <Badge
+                isLoading={isLoading}
+                variant="surface"
+                colorVariant="accent"
+              >
+                {symbol}
+              </Badge>
+            ) : null}
             <Badge
               isLoading={isLoading}
               variant="surface"
