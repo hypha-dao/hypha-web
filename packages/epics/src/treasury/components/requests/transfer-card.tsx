@@ -88,13 +88,17 @@ export const TransferCard: React.FC<TransferCardProps> = ({
                 isMint || direction === 'incoming' ? 'success' : 'error'
               }
             >
-              {counterparty === 'from' ? 'From' : 'To'}
+              {counterparty === 'from' ? 'In' : 'Out'}
             </Badge>
           </div>
           <Amount isLoading={isLoading} value={value} />
           {!isMint && (
             <Skeleton loading={isLoading} width="80px" height="16px">
-              <Text className="text-1 text-neutral-11">{displayName}</Text>
+              <Text className="text-1 text-neutral-11">
+                {displayName
+                  ? `${counterparty === 'from' ? 'From' : 'To'} ${displayName}`
+                  : null}
+              </Text>
             </Skeleton>
           )}
         </div>
