@@ -93,30 +93,25 @@ export async function GET(
       transfers.map(async (transfer) => {
         const isIncoming = transfer.to.toUpperCase() === address.toUpperCase();
         const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
-        const isMint = transfer.from === zeroAddress;
-
+        console.log(transfer);
         let person = null;
         let space = null;
         let tokenIcon = null;
-        if (isMint) {
-          const tokenMeta = await getTokenMeta(
-            transfer.token as `0x${string}`,
-            dbTokens,
-          );
-          tokenIcon = tokenMeta.icon;
-        } else {
-          person = await findPersonByWeb3Address(
+        const tokenMeta = await getTokenMeta(
+          transfer.token as `0x${string}`,
+          dbTokens,
+        );
+        tokenIcon = tokenMeta.icon;
+        person = await findPersonByWeb3Address(
+          { address: counterpartyAddress },
+          { db: getDb({ authToken }) },
+        );
+        if (!person) {
+          space = await findSpaceByAddress(
             { address: counterpartyAddress },
             { db: getDb({ authToken }) },
           );
-          if (!person) {
-            space = await findSpaceByAddress(
-              { address: counterpartyAddress },
-              { db: getDb({ authToken }) },
-            );
-          }
         }
-
         return {
           ...transfer,
           person: person

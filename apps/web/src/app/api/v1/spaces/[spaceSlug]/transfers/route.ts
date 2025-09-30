@@ -88,20 +88,10 @@ export async function GET(
         const direction = isIncoming ? 'incoming' : 'outgoing';
         const counterparty = isIncoming ? 'from' : 'to';
 
-        const isMint = transfer.from === zeroAddress;
-        if (isMint) {
-          const { icon } = await getTokenMeta(
-            transfer.token as `0x${string}`,
-            dbTokens,
-          );
-
-          return {
-            ...transfer,
-            tokenIcon: icon,
-            direction,
-            counterparty,
-          };
-        }
+        const { icon } = await getTokenMeta(
+          transfer.token as `0x${string}`,
+          dbTokens,
+        );
 
         const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
         const person =
@@ -118,6 +108,7 @@ export async function GET(
 
         return {
           ...transfer,
+          tokenIcon: icon,
           person: person && {
             name: person.name,
             surname: person.surname,
