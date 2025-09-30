@@ -55,3 +55,9 @@ export const schemaNotificationCentreForm = z.object({
   newProposalOpen: z.boolean().default(false),
   proposalApprovedOrRejected: z.boolean().default(false),
 });
+
+export type YesNo = z.infer<typeof yesNoEnum>;
+
+export type NotificationCentreFormValues = z.infer<
+  typeof schemaNotificationCentreForm
+>;
