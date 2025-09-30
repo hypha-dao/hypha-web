@@ -15,13 +15,15 @@ import {
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import React from 'react';
 import { NotificationCofiguration } from '@hypha-platform/notifications/client';
 import { ButtonClose } from '../../common/button-close';
-import { schemaNotificationCentreForm, yesNoEnum } from '../hooks/validation';
-
-type FormData = z.infer<typeof schemaNotificationCentreForm>;
+import {
+  NotificationCentreFormValues,
+  schemaNotificationCentreForm,
+  YesNo,
+  yesNoEnum,
+} from '../hooks/validation';
 
 export type NotificationCentreFormProps = {
   closeUrl: string;
@@ -33,8 +35,6 @@ export type NotificationCentreFormProps = {
   configuration?: NotificationCofiguration;
   saveConfigurations: (configuration: NotificationCofiguration) => void;
 };
-
-type YesNo = z.infer<typeof yesNoEnum>;
 
 function getSwitch(value: boolean): YesNo {
   return value ? 'yes' : 'no';
@@ -63,7 +63,7 @@ export const NotificationCentreForm = ({
   configuration,
   saveConfigurations,
 }: NotificationCentreFormProps) => {
-  const form = useForm<FormData>({
+  const form = useForm<NotificationCentreFormValues>({
     resolver: zodResolver(schemaNotificationCentreForm),
     defaultValues: {
       emailNotifications: configuration
@@ -93,7 +93,7 @@ export const NotificationCentreForm = ({
     form.reset(modified, { keepDirty: false });
   }, [form, configuration]);
 
-  const handleSubmit = async (values: FormData) => {
+  const handleSubmit = async (values: NotificationCentreFormValues) => {
     console.log('Save notification settings:', values);
     saveConfigurations({
       browserNotifications: parseSwitch(values.browserNotifications),
