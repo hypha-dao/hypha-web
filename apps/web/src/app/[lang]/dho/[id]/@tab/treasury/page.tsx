@@ -25,7 +25,8 @@ export default async function TreasuryPage(props: PageProps) {
         governancePath={governancePath}
         web3SpaceId={spaceFromDb?.web3SpaceId as number}
       />
-      <TransactionsSection spaceSlug={id} />
+      {/* TODO: Temporarily hidden for #1331 */}
+      {/* <TransactionsSection spaceSlug={id} /> */}
     </div>
   );
 }

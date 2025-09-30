@@ -39,7 +39,8 @@ export const ProfileTabs = ({
           personSlug={person?.slug || ''}
           basePath={`/${lang}/profile/${person?.slug}`}
         />
-        <UserTransactionsSection personSlug={person?.slug || ''} />
+        {/* TODO: Temporarily hidden for #1331 */}
+        {/* <UserTransactionsSection personSlug={person?.slug || ''} /> */}
       </TabsContent>
     </Tabs>
   );
