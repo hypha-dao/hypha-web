@@ -4,6 +4,7 @@ import { CalendarIcon } from '@radix-ui/react-icons';
 import { formatDate } from '@hypha-platform/ui-utils';
 import { Amount } from '@hypha-platform/ui/server';
 import { PersonAvatar } from '../../../people/components/person-avatar';
+import { isAddress } from 'ethers';
 
 type TransferCardProps = {
   name?: string;
@@ -38,30 +39,21 @@ export const TransferCard: React.FC<TransferCardProps> = ({
   from,
   to,
 }) => {
-  const displayName = isMint
-    ? ''
-    : title || name
+  const displayName = name
     ? `${name || ''} ${surname || ''}`.trim()
     : counterparty === 'from'
     ? from
     : to;
+
   return (
     <Card className="w-full p-5 mb-2 flex space-x-3">
-      {isMint ? (
+      <Skeleton loading={isLoading} className="w-[64px] h-[64px] rounded-full">
         <img
           src={tokenIcon || '/placeholder/token-icon.svg'}
           alt="Token Icon"
           className="w-[64px] h-[64px] rounded-full object-cover"
         />
-      ) : (
-        <PersonAvatar
-          size="lg"
-          isLoading={isLoading}
-          avatarSrc={avatar}
-          userName={displayName}
-          className="rounded-full"
-        />
-      )}
+      </Skeleton>
       <div className="flex justify-between items-center w-full">
         <div className="flex flex-col">
           <div className="flex gap-x-1">
