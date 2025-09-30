@@ -26,11 +26,11 @@ export const TAGS = [
 export type Tag = (typeof TAGS)[number];
 
 export interface INotificationsContext {
-  initialized?: boolean;
-  setInitialized?: React.Dispatch<React.SetStateAction<boolean>>;
-  subscribed?: boolean;
-  setSubscribed?: React.Dispatch<React.SetStateAction<boolean>>;
-  loggedIn?: boolean;
+  initialized: boolean;
+  setInitialized: React.Dispatch<React.SetStateAction<boolean>>;
+  subscribed: boolean;
+  setSubscribed: React.Dispatch<React.SetStateAction<boolean>>;
+  loggedIn: boolean;
 }
 
 export interface NotificationCofiguration {
@@ -40,9 +40,13 @@ export interface NotificationCofiguration {
   proposalApprovedOrRejected: boolean;
 }
 
-export const NotificationsContext = React.createContext<INotificationsContext>(
-  {},
-);
+export const NotificationsContext = React.createContext<INotificationsContext>({
+  initialized: false,
+  setInitialized: (_: React.SetStateAction<boolean>) => {},
+  subscribed: false,
+  setSubscribed: (_: React.SetStateAction<boolean>) => {},
+  loggedIn: false,
+});
 
 export interface NotificationsProps {
   personSlug: string;
@@ -103,7 +107,7 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
       console.log('subscribe');
       await OneSignal.Slidedown.promptPush({ force: DEV_ENV });
       await OneSignal.User.addTag(TAG_SUBSCRIBED, TRUE);
-      setSubscribed?.(true);
+      setSubscribed(true);
       await initializeConfiguration();
     } catch (err) {
       console.warn('Error:', err);
@@ -119,7 +123,7 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
     try {
       console.log('unsubscribe');
       await OneSignal.User.removeTag(TAG_SUBSCRIBED);
-      setSubscribed?.(false);
+      setSubscribed(false);
     } catch (err) {
       console.warn('Error:', err);
     }
