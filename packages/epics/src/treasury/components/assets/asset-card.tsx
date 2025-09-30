@@ -72,7 +72,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
                   href={getDhoPathAgreements(lang as Locale, space.slug)}
                   className="text-accent-11 text-1 text-ellipsis overflow-hidden text-nowrap hover:underline"
                 >
-                  by {space.title}
+                  from {space.title}
                 </Link>
               ) : null}
             </span>
