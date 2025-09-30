@@ -15,8 +15,6 @@ COPY migrations.json ./
 COPY nx.json ./
 COPY tsconfig.base.json ./
 COPY vitest.workspace.ts ./
-COPY .env ./
-COPY .env.template ./
 COPY .prettierrc ./
 COPY .prettierignore ./
 COPY components.json ./
