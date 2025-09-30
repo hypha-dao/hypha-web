@@ -166,11 +166,9 @@ export async function GET(
           const meta = await getTokenMeta(token.address, dbTokens);
           const { amount } = await getBalance(token.address, spaceAddress);
           let totalSupply: bigint | undefined;
-          let maxSupply: bigint | undefined;
           try {
             const supply = await getSupply(token.address);
             totalSupply = supply.totalSupply;
-            maxSupply = supply.maxSupply;
           } catch (err) {
             console.warn(
               `Failed to fetch supply for token ${token.address}: ${err}`,
