@@ -44,7 +44,7 @@ export const MFABanner = () => {
         </span>
 
         <Button onClick={showMfaEnrollmentModal} className="w-fit">
-          Setup
+          Activate MFA
         </Button>
       </div>
     </Card>
