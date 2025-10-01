@@ -93,7 +93,6 @@ export async function GET(
       transfers.map(async (transfer) => {
         const isIncoming = transfer.to.toUpperCase() === address.toUpperCase();
         const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
-        console.log(transfer);
         let person = null;
         let space = null;
         let tokenIcon = null;
