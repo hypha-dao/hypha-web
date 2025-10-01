@@ -2,8 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useMfaEnrollment, usePrivy } from '@privy-io/react-auth';
+import { useMe } from '@hypha-platform/core/client';
+import { useParams } from 'next/navigation';
 
 export const useMFABanner = () => {
+  const { personSlug } = useParams();
+  const { isMe } = useMe();
   const { user } = usePrivy();
   const { showMfaEnrollmentModal } = useMfaEnrollment();
   const storageKey = 'mfaBannerDismissedUntil';
@@ -34,7 +38,8 @@ export const useMFABanner = () => {
 
   const shouldHideDueToDismiss = dismissedUntil > Date.now();
   const hasMfaMethods = user && user.mfaMethods && user.mfaMethods.length > 0;
-  const isVisible = !shouldHideDueToDismiss && !hasMfaMethods;
+  const isVisible =
+    !shouldHideDueToDismiss && !hasMfaMethods && isMe(personSlug as string);
 
   const onClose = () => {
     setDismissedUntil(Date.now() + 12 * 60 * 60 * 1000);
