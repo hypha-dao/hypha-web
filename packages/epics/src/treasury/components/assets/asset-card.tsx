@@ -45,7 +45,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
             className="rounded-full"
           >
             <Image
-              className="rounded-full w-7 h-7"
+              className="border-2 rounded-full w-7 h-7"
               src={icon ? icon : ''}
               height={32}
               width={32}
