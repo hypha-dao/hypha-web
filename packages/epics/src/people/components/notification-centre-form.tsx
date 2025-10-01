@@ -129,7 +129,7 @@ export const NotificationCentreForm = ({
     console.log('Notification settings errors:', err);
   };
 
-  const { fields: subscription } = useFieldArray({
+  const { fields: subscriptions } = useFieldArray({
     control: form.control,
     name: 'subscriptions',
   });
@@ -246,7 +246,7 @@ export const NotificationCentreForm = ({
                 Get Notified When...
               </h3>
             </div>
-            {subscription.map((field, index) => (
+            {subscriptions.map((field, index) => (
               <div key={field.id}>
                 <FormField
                   control={form.control}
