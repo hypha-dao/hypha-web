@@ -64,7 +64,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
       </CardHeader>
       <CardContent className="flex flex-col flex-1 pt-5 relative">
         <div>
-          <Avatar className="border-4 w-[64px] h-[64px] absolute top-[-54px]">
+          <Avatar className="w-[64px] h-[64px] absolute top-[-54px]">
             <Skeleton width="64px" height="64px" loading={isLoading}>
               <AvatarImage src={icon} alt="logo" />
             </Skeleton>
