@@ -1,8 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useMfaEnrollment, usePrivy } from '@privy-io/react-auth';
 
 export const useMFABanner = () => {
+  const { user } = usePrivy();
+  const { showMfaEnrollmentModal } = useMfaEnrollment();
   const storageKey = 'mfaBannerDismissedUntil';
 
   const [dismissedUntil, setDismissedUntil] = useState<number>(() => {
@@ -29,11 +32,13 @@ export const useMFABanner = () => {
     }
   }, [dismissedUntil]);
 
-  const shouldHide = dismissedUntil > Date.now();
+  const shouldHideDueToDismiss = dismissedUntil > Date.now();
+  const hasMfaMethods = user && user.mfaMethods && user.mfaMethods.length > 0;
+  const isVisible = !shouldHideDueToDismiss && !hasMfaMethods;
 
   const onClose = () => {
-    setDismissedUntil(Date.now() + 24 * 60 * 60 * 1000);
+    setDismissedUntil(Date.now() + 12 * 60 * 60 * 1000);
   };
 
-  return { onClose, isVisible: !shouldHide };
+  return { onClose, isVisible, showMfaEnrollmentModal };
 };

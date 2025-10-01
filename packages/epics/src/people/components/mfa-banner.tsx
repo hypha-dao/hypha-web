@@ -8,7 +8,7 @@ import { useMFABanner } from '../hooks/useMFABanner';
 
 export const MFABanner = () => {
   const { resolvedTheme } = useTheme();
-  const { onClose, isVisible } = useMFABanner();
+  const { onClose, isVisible, showMfaEnrollmentModal } = useMFABanner();
 
   if (!isVisible) {
     return null;
@@ -43,7 +43,9 @@ export const MFABanner = () => {
           {description}
         </span>
 
-        <Button className="w-fit">Setup</Button>
+        <Button onClick={showMfaEnrollmentModal} className="w-fit">
+          Setup
+        </Button>
       </div>
     </Card>
   );
