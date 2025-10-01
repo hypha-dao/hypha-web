@@ -15,7 +15,11 @@
     "setup-community:check": "npx ts-node scripts/base-mainnet-contracts-scripts/setup-community-address.ts check",
     "energy-simulation": "npx ts-node scripts/base-mainnet-contracts-scripts/energy-simulation.ts",
     "energy-simulation:consumption": "npx ts-node scripts/base-mainnet-contracts-scripts/energy-simulation.ts consumption",
-    "debug-energy-tokens": "npx ts-node scripts/base-mainnet-contracts-scripts/debug-energy-tokens.ts"
+    "debug-energy-tokens": "npx ts-node scripts/base-mainnet-contracts-scripts/debug-energy-tokens.ts",
+    "manage-whitelist": "npx ts-node scripts/base-mainnet-contracts-scripts/manage-whitelist.ts",
+    "set-energy-token": "npx ts-node scripts/base-mainnet-contracts-scripts/set-energy-token.ts",
+    "deploy-energy-token": "npx hardhat run scripts/energy-token.deploy.ts",
+    "set-token-auth": "npx ts-node scripts/base-mainnet-contracts-scripts/set-token-authorization.ts"
   },
   "devDependencies": {
     "@hypha-platform/config-eslint": "workspace:*",

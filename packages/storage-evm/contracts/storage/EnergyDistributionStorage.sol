@@ -19,11 +19,8 @@ contract EnergyDistributionStorage is Initializable {
   // Collective consumption list (sorted by price)
   IEnergyDistribution.CollectiveConsumption[] internal collectiveConsumption;
 
-  // ERC20 token for positive cash credit balances
-  EnergyToken internal energyToken;
-
   // Negative cash credit balances (debts) - tokens handle positive balances
-  mapping(address => int256) internal negativeCashCreditBalances;
+  mapping(address => int256) internal cashCreditBalances;
 
   // Export cash credit balance (when production > consumption)
   int256 internal exportCashCreditBalance;
@@ -55,9 +52,18 @@ contract EnergyDistributionStorage is Initializable {
   // Settled balance tracking (external money brought into the system for debt settlement)
   int256 internal settledBalance;
 
+  // Whitelist for permissioned functions
+  mapping(address => bool) internal isWhitelisted;
+
+  // ERC20 token for positive cash credit balances
+  EnergyToken internal energyToken;
+
+  // NEW: Community cash credit balance for self-consumption payments
+  int256 internal communityCashCreditBalance;
+
   /**
    * @dev This empty reserved space is put in place to allow future versions to add new
    * variables without shifting down storage in the inheritance chain.
    */
-  uint256[31] private __gap; // Reduced by 12 due to new variables (EnergyToken + negativeCashCreditBalances + settlementContract + settledBalance)
+  uint256[31] private __gap;
 }

@@ -86,4 +86,9 @@ Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying EnergyDistribution...
 EnergyDistribution deployed to: 0x02d88b0C4CC3A4AE86482056c25d65916Dd6DD95
 
-
+Deploying EnergyToken with account: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying with:
+  - Name: Energy Credit
+  - Symbol: NRG
+  - Initial Owner: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+EnergyToken deployed to: 0xE7E8DaE0c4541fCDc563B1bD9A6a85d9aB762080

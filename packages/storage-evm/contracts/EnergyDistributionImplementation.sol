@@ -33,16 +33,38 @@ contract EnergyDistributionImplementation is
     exportDeviceId = 0;
     communityDeviceId = 0;
     importCashCreditBalance = 0;
+    communityCashCreditBalance = 0;
   }
 
   function _authorizeUpgrade(
     address newImplementation
   ) internal override onlyOwner {}
 
+  modifier onlyWhitelist() {
+    require(isWhitelisted[msg.sender], 'Caller is not whitelisted');
+    _;
+  }
+
+  function updateWhitelist(
+    address account,
+    bool _isWhitelisted
+  ) external override onlyOwner {
+    require(account != address(0), 'Invalid address');
+    isWhitelisted[account] = _isWhitelisted;
+    emit WhitelistUpdated(account, _isWhitelisted);
+  }
+
+  function setEnergyToken(
+    address tokenAddress
+  ) external override onlyWhitelist {
+    require(tokenAddress != address(0), 'Invalid token address');
+    energyToken = EnergyToken(tokenAddress);
+  }
+
   function configureBattery(
     uint256 price,
     uint256 maxCapacity
-  ) external override onlyOwner {
+  ) external override onlyWhitelist {
     require(price > 0, 'Battery price must be greater than 0');
     require(maxCapacity > 0, 'Battery max capacity must be greater than 0');
 
@@ -53,17 +75,19 @@ contract EnergyDistributionImplementation is
     emit BatteryConfigured(price, maxCapacity);
   }
 
-  function setExportDeviceId(uint256 deviceId) external override onlyOwner {
+  function setExportDeviceId(uint256 deviceId) external override onlyWhitelist {
     exportDeviceId = deviceId;
     emit ExportDeviceIdSet(deviceId);
   }
 
-  function setCommunityDeviceId(uint256 deviceId) external override onlyOwner {
+  function setCommunityDeviceId(
+    uint256 deviceId
+  ) external override onlyWhitelist {
     communityDeviceId = deviceId;
     emit CommunityDeviceIdSet(deviceId);
   }
 
-  function setExportPrice(uint256 price) external onlyOwner {
+  function setExportPrice(uint256 price) external onlyWhitelist {
     require(price > 0, 'Export price must be greater than 0');
     exportPrice = price;
     emit ExportPriceSet(price);
@@ -71,7 +95,7 @@ contract EnergyDistributionImplementation is
 
   function setSettlementContract(
     address _settlementContract
-  ) external override onlyOwner {
+  ) external override onlyWhitelist {
     require(
       _settlementContract != address(0),
       'Invalid settlement contract address'
@@ -122,7 +146,7 @@ contract EnergyDistributionImplementation is
     address memberAddress,
     uint256[] calldata deviceIds,
     uint256 ownershipPercentage
-  ) external override onlyOwner {
+  ) external override onlyWhitelist {
     require(memberAddress != address(0), 'Invalid member address');
     require(deviceIds.length > 0, 'No device IDs provided');
     require(!members[memberAddress].isActive, 'Member already exists');
@@ -158,7 +182,7 @@ contract EnergyDistributionImplementation is
     emit MemberAdded(memberAddress, deviceIds, ownershipPercentage);
   }
 
-  function removeMember(address memberAddress) external override onlyOwner {
+  function removeMember(address memberAddress) external override onlyWhitelist {
     require(members[memberAddress].isActive, 'Member does not exist');
 
     Member memory member = members[memberAddress];
@@ -183,7 +207,7 @@ contract EnergyDistributionImplementation is
     // Clear member data
     delete members[memberAddress];
     delete allocatedTokens[memberAddress];
-    delete negativeCashCreditBalances[memberAddress];
+    delete cashCreditBalances[memberAddress];
 
     // Burn any remaining tokens
     uint256 tokenBalance = energyToken.balanceOf(memberAddress);
@@ -197,7 +221,7 @@ contract EnergyDistributionImplementation is
   function distributeEnergyTokens(
     EnergySource[] calldata sources,
     uint256 batteryState
-  ) external override onlyOwner ensureZeroSum {
+  ) external override onlyWhitelist ensureZeroSum {
     require(sources.length > 0, 'No sources provided');
     require(totalOwnershipPercentage == 10000, 'Total ownership must be 100%');
 
@@ -206,6 +230,14 @@ contract EnergyDistributionImplementation is
       _getTotalAvailableEnergy() == 0,
       'Previous energy distribution must be fully consumed before new distribution'
     );
+
+    // Clear previous distribution by popping each element
+    while (collectiveConsumption.length > 0) {
+      collectiveConsumption.pop();
+    }
+    for (uint256 i = 0; i < memberAddresses.length; i++) {
+      allocatedTokens[memberAddresses[i]] = 0;
+    }
 
     // Handle battery state changes
     int256 batteryEnergyChange = 0;
@@ -226,12 +258,6 @@ contract EnergyDistributionImplementation is
         batteryState,
         batteryEnergyChange
       );
-    }
-
-    // Clear previous distribution
-    delete collectiveConsumption;
-    for (uint256 i = 0; i < memberAddresses.length; i++) {
-      allocatedTokens[memberAddresses[i]] = 0;
     }
 
     uint256 totalQuantity = 0;
@@ -298,7 +324,7 @@ contract EnergyDistributionImplementation is
 
   function consumeEnergyTokens(
     ConsumptionRequest[] calldata consumptionRequests
-  ) external override onlyOwner ensureZeroSum {
+  ) external override onlyWhitelist ensureZeroSum {
     require(consumptionRequests.length > 0, 'No consumption requests provided');
 
     // Sort collective consumption by price (cheapest first)
@@ -327,7 +353,7 @@ contract EnergyDistributionImplementation is
 
     // Process export requests FIRST (prioritize exports)
     if (exportCount > 0) {
-      _processExportRequests(exportRequests);
+      _processExportRequests(exportRequests, exportCount);
     }
 
     // Process member consumption requests (buy from remaining collective pool)
@@ -372,9 +398,10 @@ contract EnergyDistributionImplementation is
           totalCost += cost;
 
           // Self-consumption: credit payment to community address to maintain zero-sum
-          address communityAddress = deviceToMember[communityDeviceId];
-          require(communityAddress != address(0), 'Community address not set');
-          _adjustCashCreditBalance(communityAddress, cost);
+          // address communityAddress = deviceToMember[communityDeviceId];
+          // require(communityAddress != address(0), 'Community address not set');
+          // _adjustCashCreditBalance(communityAddress, cost);
+          communityCashCreditBalance += cost;
 
           collectiveConsumption[j].quantity -= canConsume;
           remainingToConsume -= canConsume;
@@ -425,7 +452,8 @@ contract EnergyDistributionImplementation is
   }
 
   function _processExportRequests(
-    ConsumptionRequest[] memory exportRequests
+    ConsumptionRequest[] memory exportRequests,
+    uint256 requestCount
   ) internal {
     require(
       exportPrice > 0,
@@ -436,7 +464,7 @@ contract EnergyDistributionImplementation is
     uint256 totalExportRequested = 0;
     int256 totalCalculatedExportRevenue = 0;
 
-    for (uint256 i = 0; i < exportRequests.length; i++) {
+    for (uint256 i = 0; i < requestCount; i++) {
       totalExportRequested += exportRequests[i].quantity;
     }
 
@@ -446,34 +474,39 @@ contract EnergyDistributionImplementation is
         totalExportedTokens < totalExportRequested;
       j++
     ) {
-      // FIXED: Only export member-owned tokens, skip import tokens (owner == address(0))
       if (
         collectiveConsumption[j].quantity > 0 &&
         collectiveConsumption[j].owner != address(0)
       ) {
-        uint256 canExport = totalExportRequested - totalExportedTokens;
-        uint256 exportAmount = canExport > collectiveConsumption[j].quantity
-          ? collectiveConsumption[j].quantity
-          : canExport;
+        uint256 remainingToExport = totalExportRequested - totalExportedTokens;
+        uint256 amountToProcess = 0;
 
-        // Use configurable export price instead of token's original price
-        int256 tokenValue = int256(exportAmount * exportPrice);
+        if (collectiveConsumption[j].quantity >= remainingToExport) {
+          amountToProcess = remainingToExport;
+        } else {
+          amountToProcess = collectiveConsumption[j].quantity;
+        }
 
-        totalCalculatedExportRevenue += tokenValue;
+        if (amountToProcess > 0) {
+          int256 revenue = int256(amountToProcess * exportPrice);
+          int256 cost = int256(
+            amountToProcess * collectiveConsumption[j].price
+          );
+          int256 profit = revenue - cost;
 
-        // Pay the token owner the export price when their tokens are exported
-        _adjustCashCreditBalance(collectiveConsumption[j].owner, tokenValue);
+          // Atomically credit member with profit, community with cost, and debit export balance
+          if (profit != 0) {
+            _adjustCashCreditBalance(collectiveConsumption[j].owner, profit);
+          }
+          communityCashCreditBalance += cost;
+          exportCashCreditBalance -= revenue;
 
-        totalExportedTokens += exportAmount;
-        collectiveConsumption[j].quantity -= exportAmount;
+          totalCalculatedExportRevenue += revenue; // Still track for event emitting
+
+          totalExportedTokens += amountToProcess;
+          collectiveConsumption[j].quantity -= amountToProcess;
+        }
       }
-    }
-
-    if (totalCalculatedExportRevenue > 0) {
-      // Grid owes community for exported energy at export price
-      exportCashCreditBalance -= totalCalculatedExportRevenue;
-
-      // NO ADDITIONAL DISTRIBUTION - token owners already got paid above
     }
 
     if (totalExportedTokens > 0) {
@@ -514,29 +547,12 @@ contract EnergyDistributionImplementation is
       totalMemberBalances += _getCashCreditBalance(memberAddresses[i]);
     }
 
-    // Include community balance ONLY if it's NOT already in memberAddresses array
-    address communityAddress = deviceToMember[communityDeviceId];
-    if (communityAddress != address(0)) {
-      // Check if community address is already counted in memberAddresses
-      bool communityAlreadyCounted = false;
-      for (uint256 i = 0; i < memberAddresses.length; i++) {
-        if (memberAddresses[i] == communityAddress) {
-          communityAlreadyCounted = true;
-          break;
-        }
-      }
-
-      // Only add community balance if not already counted
-      if (!communityAlreadyCounted) {
-        totalMemberBalances += _getCashCreditBalance(communityAddress);
-      }
-    }
-
     // Calculate total system balance (should be zero)
     int256 totalSystemBalance = totalMemberBalances +
       exportCashCreditBalance +
       importCashCreditBalance +
-      settledBalance;
+      settledBalance +
+      communityCashCreditBalance;
 
     return (totalSystemBalance == 0, totalSystemBalance);
   }
@@ -552,9 +568,11 @@ contract EnergyDistributionImplementation is
   }
 
   // FIX 5: Emergency reset function
-  function emergencyReset() external onlyOwner {
-    // Clear all collective consumption
-    delete collectiveConsumption;
+  function emergencyReset() external onlyWhitelist {
+    // Clear all collective consumption by popping each element
+    while (collectiveConsumption.length > 0) {
+      collectiveConsumption.pop();
+    }
 
     // Reset all allocated tokens
     for (uint256 i = 0; i < memberAddresses.length; i++) {
@@ -576,6 +594,7 @@ contract EnergyDistributionImplementation is
     exportCashCreditBalance = 0;
     importCashCreditBalance = 0;
     settledBalance = 0;
+    communityCashCreditBalance = 0;
 
     // Reset battery state
     batteryCurrentState = 0;
@@ -622,7 +641,7 @@ contract EnergyDistributionImplementation is
     address member
   ) internal view returns (int256) {
     uint256 tokenBalance = energyToken.balanceOf(member);
-    int256 negativeBalance = negativeCashCreditBalances[member];
+    int256 negativeBalance = cashCreditBalances[member];
 
     if (tokenBalance > 0) {
       return int256(tokenBalance);
@@ -638,13 +657,13 @@ contract EnergyDistributionImplementation is
     if (currentTokenBalance > 0) {
       energyToken.burn(member, currentTokenBalance);
     }
-    negativeCashCreditBalances[member] = 0;
+    cashCreditBalances[member] = 0;
 
     // Set new state
     if (amount > 0) {
       energyToken.mint(member, uint256(amount));
     } else if (amount < 0) {
-      negativeCashCreditBalances[member] = amount;
+      cashCreditBalances[member] = amount;
     }
   }
 
@@ -743,6 +762,10 @@ contract EnergyDistributionImplementation is
     return communityDeviceId;
   }
 
+  function getCommunityCashCreditBalance() external view returns (int256) {
+    return communityCashCreditBalance;
+  }
+
   function getImportCashCreditBalance()
     external
     view
@@ -764,8 +787,15 @@ contract EnergyDistributionImplementation is
     return settledBalance;
   }
 
+  function isAddressWhitelisted(
+    address account
+  ) external view override returns (bool) {
+    return isWhitelisted[account];
+  }
+
   function _handleOwnedSource(EnergySource memory source) internal {
     uint256 totalDistributed = 0;
+    uint256 lastMemberIndex = memberAddresses.length - 1;
 
     // Distribute to each member based on ownership percentage
     for (uint256 j = 0; j < memberAddresses.length; j++) {
@@ -774,13 +804,12 @@ contract EnergyDistributionImplementation is
 
       uint256 memberShare;
 
-      // For the last member, give them exactly what's left to ensure no rounding errors
-      if (j == memberAddresses.length - 1) {
+      if (j == lastMemberIndex) {
         memberShare = source.quantity - totalDistributed;
       } else {
         memberShare = (source.quantity * member.ownershipPercentage) / 10000;
-        totalDistributed += memberShare;
       }
+      totalDistributed += memberShare;
 
       if (memberShare > 0) {
         allocatedTokens[memberAddr] += memberShare;

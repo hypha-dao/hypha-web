@@ -119,6 +119,12 @@ interface IEnergyDistribution {
   // FIX 5: Emergency reset function
   function emergencyReset() external;
 
+  function updateWhitelist(address account, bool isWhitelisted) external;
+
+  function setEnergyToken(address tokenAddress) external;
+
+  function isAddressWhitelisted(address account) external view returns (bool);
+
   // Events
   event MemberAdded(
     address indexed memberAddress,
@@ -156,6 +162,8 @@ interface IEnergyDistribution {
     address indexed oldContract,
     address indexed newContract
   );
+
+  event WhitelistUpdated(address indexed account, bool isWhitelisted);
 
   // FIX 5: Emergency reset event
   event EmergencyReset();

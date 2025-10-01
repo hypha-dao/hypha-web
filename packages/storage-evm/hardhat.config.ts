@@ -12,6 +12,9 @@ import './tasks';
 import '@openzeppelin/hardhat-upgrades';
 import '@nomicfoundation/hardhat-ignition';
 
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 const config: HardhatUserConfig = {
   solidity: {
     version: '0.8.28',
@@ -22,12 +25,14 @@ const config: HardhatUserConfig = {
       },
     },
   },
-  networks: {
-    'base-mainnet': {
-      url: 'https://mainnet.base.org',
-      accounts: [process.env.PRIVATE_KEY || ''],
-    },
-  },
+  networks: {},
 };
+
+if (process.env.PRIVATE_KEY) {
+  config.networks!['base-mainnet'] = {
+    url: 'https://mainnet.base.org',
+    accounts: [process.env.PRIVATE_KEY],
+  };
+}
 
 export default config;

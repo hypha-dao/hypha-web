@@ -16,6 +16,10 @@ npx nx run storage-evm:script ./scripts/dao-proposals-proxy.deploy.ts --network 
 
 ```bash
 npx nx run storage-evm:script ./scripts/decaying-token-factory-proxy.deploy.ts --network base-mainnet
+npx nx run storage-evm:script ./scripts/energy-distribution.upgrade.ts --network base-mainnet
+npx nx run storage-evm:script ./scripts/energy-token.deploy.ts --network base-mainnet
+
+
 ```
 
 ### exit-method-directory-proxy.deploy
