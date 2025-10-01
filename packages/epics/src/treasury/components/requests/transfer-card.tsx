@@ -51,7 +51,7 @@ export const TransferCard: React.FC<TransferCardProps> = ({
         <img
           src={tokenIcon || '/placeholder/token-icon.svg'}
           alt="Token Icon"
-          className="w-[64px] h-[64px] rounded-full object-cover"
+          className="border-4 w-[64px] h-[64px] rounded-full object-cover"
         />
       </Skeleton>
       <div className="flex justify-between items-center w-full">
