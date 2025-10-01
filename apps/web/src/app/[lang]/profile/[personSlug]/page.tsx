@@ -1,4 +1,8 @@
-import { PersonHead, ProfileMemberSpaces } from '@hypha-platform/epics';
+import {
+  MFABanner,
+  PersonHead,
+  ProfileMemberSpaces,
+} from '@hypha-platform/epics';
 import Link from 'next/link';
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Text } from '@radix-ui/themes';
@@ -72,6 +76,7 @@ export default async function ProfilePage(props: PageProps) {
             exportEmbeddedWallet={true}
           />
           <Separator />
+          <MFABanner />
           <ProfileMemberSpaces spaces={spaces} profileView={true} />
           <ProfileTabs person={person} lang={lang} />
         </div>
