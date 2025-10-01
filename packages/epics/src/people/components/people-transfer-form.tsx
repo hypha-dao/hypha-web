@@ -99,7 +99,7 @@ export const PeopleTransferForm = ({
               </div>
             ) : showSuccessMessage ? (
               <div className="text-green-600 text-sm font-medium">
-                Transfers completed!
+                Our transfer has been successfully completed!
               </div>
             ) : (
               <Button type="submit" disabled={isTransferring}>
