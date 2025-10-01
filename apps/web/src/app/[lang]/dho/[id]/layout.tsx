@@ -95,7 +95,7 @@ export default async function DhoLayout({
             src={spaceFromDb.leadImage || DEFAULT_SPACE_LEAD_IMAGE}
             alt={spaceFromDb.title}
           ></Image>
-          <Avatar className="border-4 w-[128px] h-[128px] absolute bottom-[-35px] left-[15px]">
+          <Avatar className="w-[128px] h-[128px] absolute bottom-[-35px] left-[15px]">
             <AvatarImage
               src={spaceFromDb.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
               alt="logo"
