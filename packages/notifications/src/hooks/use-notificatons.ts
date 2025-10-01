@@ -4,11 +4,10 @@ import { useMe } from '@hypha-platform/core/client';
 import React from 'react';
 import OneSignal from 'react-onesignal';
 import {
+  OPTION_TAGS,
   OptionTag,
   Tag,
   TAG_EMAIL,
-  TAG_NEW_PROPOSAL_OPEN,
-  TAG_PROPOSAL_APPROVED_OR_REJECTED,
   TAG_PUSH,
   TAG_SUBSCRIBED,
 } from '../constants';
@@ -74,25 +73,17 @@ export const useNotifications = ({ personSlug }: NotificationsProps) => {
       ? OneSignal.User.PushSubscription.optedIn ?? true
       : checkTag(tags, TAG_PUSH, true);
     const emailNotifications = checkTag(tags, TAG_EMAIL, true);
-    const newProposalOpen = checkTag(tags, TAG_NEW_PROPOSAL_OPEN, true);
-    const proposalApprovedOrRejected = checkTag(
-      tags,
-      TAG_PROPOSAL_APPROVED_OR_REJECTED,
-      true,
-    );
+    const options = OPTION_TAGS.map((tagName) => {
+      const tagValue = checkTag(tags, tagName, true);
+      return {
+        name: tagName,
+        value: tagValue,
+      };
+    });
     setConfiguration({
       browserNotifications,
       emailNotifications,
-      options: [
-        {
-          name: TAG_NEW_PROPOSAL_OPEN,
-          value: newProposalOpen,
-        },
-        {
-          name: TAG_PROPOSAL_APPROVED_OR_REJECTED,
-          value: proposalApprovedOrRejected,
-        },
-      ],
+      options,
     });
   }, [initialized, OneSignal, loggedIn]);
 
