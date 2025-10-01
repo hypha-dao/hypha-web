@@ -47,20 +47,6 @@ export const TOKENS: Token[] = [
     name: 'Hypha',
     type: 'utility',
   },
-  {
-    symbol: 'HVOICE',
-    icon: '/placeholder/voice-token-icon.webp',
-    address: '0x24E0b2bfee025D57A19f9daE4C3849a4A6bf9626',
-    name: 'Hypha Voice',
-    type: 'voice',
-  },
-  {
-    symbol: 'HCREDITS',
-    icon: '/placeholder/credits-token-icon.webp',
-    address: '0xb8591aDE4ceDA2dd14B1924dC81D23B765C2820d',
-    name: 'Hypha Cash Credits',
-    type: 'credits',
-  },
 ];
 
 export const validTokenTypes = [
