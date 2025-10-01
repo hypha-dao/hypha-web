@@ -3,7 +3,7 @@
 import { useMe } from '@hypha-platform/core/client';
 import { NotificationCentreForm, SidePanel } from '@hypha-platform/epics';
 import { useNotifications } from '@hypha-platform/notifications/client';
-import { Button, LoadingBackdrop } from '@hypha-platform/ui';
+import { LoadingBackdrop } from '@hypha-platform/ui';
 import { useParams } from 'next/navigation';
 
 export default function NotificationCentre() {
@@ -19,24 +19,12 @@ export default function NotificationCentre() {
   } = useNotifications();
   const progress = 0;
   const isBusy = isPersonLoading;
-  const isError = undefined;
-  const reset = () => {};
-  const currentAction = undefined;
   return (
     <SidePanel>
       <LoadingBackdrop
         progress={progress}
         isLoading={isBusy}
-        message={
-          isError ? (
-            <div className="flex flex-col">
-              <div>Ouh Snap. There was an error</div>
-              <Button onClick={reset}>Reset</Button>
-            </div>
-          ) : (
-            <div>{currentAction}</div>
-          )
-        }
+        message={<></>}
         className="-m-4 lg:-m-7"
       >
         <NotificationCentreForm
