@@ -39,7 +39,9 @@ export const TransferCard: React.FC<TransferCardProps> = ({
   from,
   to,
 }) => {
-  const displayName = name
+  const displayName = title
+    ? title
+    : name
     ? `${name || ''} ${surname || ''}`.trim()
     : counterparty === 'from'
     ? from
