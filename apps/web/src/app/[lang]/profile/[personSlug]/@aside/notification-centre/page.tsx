@@ -8,7 +8,7 @@ import { useParams } from 'next/navigation';
 
 export default function NotificationCentre() {
   const { lang, personSlug } = useParams();
-  const { person, isLoading } = useMe();
+  const { isLoading: isPersonLoading } = useMe();
   const {
     subscribed,
     subscribe,
@@ -16,11 +16,9 @@ export default function NotificationCentre() {
     error,
     configuration,
     saveConfigurations,
-  } = useNotifications({
-    personSlug: person?.slug ?? '',
-  });
+  } = useNotifications();
   const progress = 0;
-  const isBusy = isLoading;
+  const isBusy = isPersonLoading;
   const isError = undefined;
   const reset = () => {};
   const currentAction = undefined;
