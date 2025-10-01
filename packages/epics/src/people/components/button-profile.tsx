@@ -100,7 +100,12 @@ export const ButtonProfile = ({
                 onClick={showMfaEnrollmentModal}
                 label={'Update funds protection (MFA)'}
               />
-            ) : null}
+            ) : (
+              <ButtonNavItem
+                onClick={showMfaEnrollmentModal}
+                label={'Protect funds (MFA)'}
+              />
+            )}
 
             <ButtonNavItem
               onClick={onLogout}
@@ -167,7 +172,18 @@ export const ButtonProfile = ({
                       <Shield className="icon-sm" />
                     </DropdownMenuItem>
                   </>
-                ) : null}
+                ) : (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={showMfaEnrollmentModal}
+                      className="px-0 text-1 flex justify-between"
+                    >
+                      Protect funds (MFA)
+                      <Shield className="icon-sm" />
+                    </DropdownMenuItem>
+                  </>
+                )}
                 <DropdownMenuSeparator />
                 {onDelete && (
                   <DropdownMenuItem

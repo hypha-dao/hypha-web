@@ -89,7 +89,11 @@ export const PeopleTransferForm = ({
         >
           <RecipientField members={peoples} spaces={spaces} />
           <Separator />
-          <TokenPayoutFieldArray tokens={tokens} name="payouts" />
+          <TokenPayoutFieldArray
+            label="Amount"
+            tokens={tokens}
+            name="payouts"
+          />
           <Separator />
           <div className="flex gap-2 justify-end">
             {isTransferring ? (
