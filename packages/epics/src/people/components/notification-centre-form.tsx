@@ -19,13 +19,13 @@ import { Text } from '@radix-ui/themes';
 import { useFieldArray, useForm } from 'react-hook-form';
 import React from 'react';
 import {
-  NOTIFICATION_OPTIONS,
+  NOTIFICATION_SUBSCRIPTIONS,
   NotificationCofiguration,
 } from '@hypha-platform/notifications/client';
 import { ButtonClose } from '../../common/button-close';
 import {
   NotificationCentreFormValues,
-  NotificationOption,
+  NotificationSubscription,
   schemaNotificationCentreForm,
   YesNo,
   yesNoEnum,
@@ -59,13 +59,12 @@ function parseYesNoValue(value: string, defaultValue: YesNo): YesNo {
   }
 }
 
-const notificationOptions: NotificationOption[] = NOTIFICATION_OPTIONS.map(
-  (option) => {
+const notificationSubscriptions: NotificationSubscription[] =
+  NOTIFICATION_SUBSCRIPTIONS.map((subscription) => {
     return {
-      ...option,
+      ...subscription,
     };
-  },
-);
+  });
 
 export const NotificationCentreForm = ({
   closeUrl,
@@ -86,7 +85,7 @@ export const NotificationCentreForm = ({
       browserNotifications: configuration
         ? getSwitch(configuration.browserNotifications)
         : 'yes',
-      options: notificationOptions,
+      subscriptions: notificationSubscriptions,
     },
     mode: 'onChange',
   });
@@ -98,12 +97,12 @@ export const NotificationCentreForm = ({
     const modified = {
       browserNotifications: getSwitch(configuration.browserNotifications),
       emailNotifications: getSwitch(configuration.emailNotifications),
-      options: notificationOptions.map((option, index) => {
-        const opt = configuration.options?.[index];
-        const tagName = opt?.name ?? option.tagName;
-        const tagValue = opt?.value ?? option.tagValue;
+      subscriptions: notificationSubscriptions.map((subscription, index) => {
+        const sub = configuration.subscriptions?.[index];
+        const tagName = sub?.name ?? subscription.tagName;
+        const tagValue = sub?.value ?? subscription.tagValue;
         return {
-          ...option,
+          ...subscription,
           tagName,
           tagValue,
         };
@@ -117,10 +116,10 @@ export const NotificationCentreForm = ({
     saveConfigurations({
       browserNotifications: parseSwitch(values.browserNotifications),
       emailNotifications: parseSwitch(values.emailNotifications),
-      options: values.options.map((option) => {
+      subscriptions: values.subscriptions.map((subscription) => {
         return {
-          name: option.tagName,
-          value: option.tagValue,
+          name: subscription.tagName,
+          value: subscription.tagValue,
         };
       }),
     });
@@ -130,9 +129,9 @@ export const NotificationCentreForm = ({
     console.log('Notification settings errors:', err);
   };
 
-  const { fields: options } = useFieldArray({
+  const { fields: subscription } = useFieldArray({
     control: form.control,
-    name: 'options',
+    name: 'subscriptions',
   });
 
   return (
@@ -247,12 +246,14 @@ export const NotificationCentreForm = ({
                 Get Notified When...
               </h3>
             </div>
-            {options.map((field, index) => (
+            {subscription.map((field, index) => (
               <div key={field.id}>
                 <FormField
                   control={form.control}
-                  name={`options.${index}`}
-                  render={({ field: { name, value: option, onChange } }) => {
+                  name={`subscriptions.${index}`}
+                  render={({
+                    field: { name, value: subscription, onChange },
+                  }) => {
                     const checkboxId = `${name.replace('.', '_')}_checked`;
                     return (
                       <FormItem>
@@ -262,21 +263,21 @@ export const NotificationCentreForm = ({
                               <div className="flex flex-row gap-2">
                                 <Checkbox
                                   id={checkboxId}
-                                  checked={option.tagValue}
+                                  checked={subscription.tagValue}
                                   onCheckedChange={(value) => {
                                     onChange({
-                                      ...option,
+                                      ...subscription,
                                       tagValue: value === true,
                                     });
                                   }}
                                 />
                                 <FormLabel htmlFor={checkboxId}>
-                                  {option.title}
+                                  {subscription.title}
                                 </FormLabel>
                               </div>
                             </span>
                             <span className="text-2 text-neutral-11">
-                              {option.description}
+                              {subscription.description}
                             </span>
                           </div>
                         </FormControl>
