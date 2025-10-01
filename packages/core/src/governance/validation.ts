@@ -275,7 +275,10 @@ export const schemaIssueNewToken = z.object({
     .string()
     .trim()
     .min(2, { message: 'Please enter a token name (min. 2 characters)' })
-    .max(100, { message: 'Token name must be at most 100 characters long' }),
+    .max(100, { message: 'Token name must be at most 100 characters long' })
+    .refine((val) => !/[\p{Emoji}]|(https?:\/\/|www\.|t\.me\/)/iu.test(val), {
+      message: 'Token name cannot contain emojis or links',
+    }),
 
   symbol: z
     .string()
@@ -285,6 +288,9 @@ export const schemaIssueNewToken = z.object({
     .regex(/^[A-Z]+$/, {
       message:
         'Please enter the token symbol using only uppercase letters (A–Z)',
+    })
+    .refine((val) => !/[\p{Emoji}]|(https?:\/\/|www\.|t\.me\/)/iu.test(val), {
+      message: 'Token symbol cannot contain emojis or links',
     }),
 
   iconUrl: z

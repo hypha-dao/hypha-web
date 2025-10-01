@@ -81,6 +81,12 @@ export async function GET(
       address: token.address ?? undefined,
     }));
 
+    const hasEmojiOrLink = (str: string) => {
+      const emojiRegex = /[\p{Emoji}]/u;
+      const linkRegex = /(https?:\/\/|www\.|t\.me\/)/i;
+      return emojiRegex.test(str) || linkRegex.test(str);
+    };
+
     const transfersWithEntityInfo = await Promise.all(
       transfers.map(async (transfer) => {
         const isIncoming =
@@ -88,10 +94,15 @@ export async function GET(
         const direction = isIncoming ? 'incoming' : 'outgoing';
         const counterparty = isIncoming ? 'from' : 'to';
 
-        const { icon } = await getTokenMeta(
+        const meta = await getTokenMeta(
           transfer.token as `0x${string}`,
           dbTokens,
         );
+        const name = meta.name || 'Unnamed';
+        const symbol = meta.symbol || 'UNKNOWN';
+        if (hasEmojiOrLink(name) || hasEmojiOrLink(symbol)) {
+          return null;
+        }
 
         const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
         const person =
@@ -108,7 +119,7 @@ export async function GET(
 
         return {
           ...transfer,
-          tokenIcon: icon,
+          tokenIcon: meta.icon,
           person: person && {
             name: person.name,
             surname: person.surname,
@@ -124,7 +135,9 @@ export async function GET(
       }),
     );
 
-    return NextResponse.json(transfersWithEntityInfo);
+    const validTransfers = transfersWithEntityInfo.filter((t) => t !== null);
+
+    return NextResponse.json(validTransfers);
   } catch (error: any) {
     const errorMessage =
       error?.message || error?.shortMessage || JSON.stringify(error);

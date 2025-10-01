@@ -66,11 +66,20 @@ export async function GET(
         type: 'utility' as const,
       }));
 
+    const filteredExternalTokens = parsedExternalTokens.filter((token) => {
+      const hasEmojiOrLink = (str: string) => {
+        const emojiRegex = /[\p{Emoji}]/u;
+        const linkRegex = /(https?:\/\/|www\.|t\.me\/)/i;
+        return emojiRegex.test(str) || linkRegex.test(str);
+      };
+      return !hasEmojiOrLink(token.symbol) && !hasEmojiOrLink(token.name);
+    });
+
     const addressMap = new Map<string, Token>();
     TOKENS.forEach((token) =>
       addressMap.set(token.address.toLowerCase(), token),
     );
-    parsedExternalTokens.forEach((token) => {
+    filteredExternalTokens.forEach((token) => {
       if (!addressMap.has(token.address.toLowerCase())) {
         addressMap.set(token.address.toLowerCase(), token);
       }

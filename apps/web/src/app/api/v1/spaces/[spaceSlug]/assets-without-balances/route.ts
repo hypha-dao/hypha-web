@@ -192,10 +192,19 @@ export async function GET(
 
     const allTokens: Token[] = Array.from(addressMap.values());
 
+    const hasEmojiOrLink = (str: string) => {
+      const emojiRegex = /[\p{Emoji}]/u;
+      const linkRegex = /(https?:\/\/|www\.|t\.me\/)/i;
+      return emojiRegex.test(str) || linkRegex.test(str);
+    };
+
     const assets = await Promise.all(
       allTokens.map(async (token) => {
         try {
           const meta = await getTokenMeta(token.address, dbTokens);
+          if (hasEmojiOrLink(meta.name) || hasEmojiOrLink(meta.symbol)) {
+            return null;
+          }
           return {
             ...meta,
             address: token.address,

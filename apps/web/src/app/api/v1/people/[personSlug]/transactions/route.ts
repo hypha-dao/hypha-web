@@ -89,18 +89,29 @@ export async function GET(
       address: token.address ?? undefined,
     }));
 
+    const hasEmojiOrLink = (str: string) => {
+      const emojiRegex = /[\p{Emoji}]/u;
+      const linkRegex = /(https?:\/\/|www\.|t\.me\/)/i;
+      return emojiRegex.test(str) || linkRegex.test(str);
+    };
+
     const transfersWithEntityInfo = await Promise.all(
       transfers.map(async (transfer) => {
-        const isIncoming = transfer.to.toUpperCase() === address.toUpperCase();
-        const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
-        let person = null;
-        let space = null;
-        let tokenIcon = null;
         const tokenMeta = await getTokenMeta(
           transfer.token as `0x${string}`,
           dbTokens,
         );
-        tokenIcon = tokenMeta.icon;
+        const name = tokenMeta.name || 'Unnamed';
+        const symbol = tokenMeta.symbol || 'UNKNOWN';
+        if (hasEmojiOrLink(name) || hasEmojiOrLink(symbol)) {
+          return null;
+        }
+
+        const isIncoming = transfer.to.toUpperCase() === address.toUpperCase();
+        const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
+        let person = null;
+        let space = null;
+        let tokenIcon = tokenMeta.icon;
         person = await findPersonByWeb3Address(
           { address: counterpartyAddress },
           { db: getDb({ authToken }) },
@@ -133,7 +144,9 @@ export async function GET(
       }),
     );
 
-    return NextResponse.json(transfersWithEntityInfo);
+    const validTransfers = transfersWithEntityInfo.filter((t) => t !== null);
+
+    return NextResponse.json(validTransfers);
   } catch (error: any) {
     const errorMessage =
       error?.message || error?.shortMessage || JSON.stringify(error);
