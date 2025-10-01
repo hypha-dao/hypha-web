@@ -15,7 +15,6 @@ type AssetCardProps = {
   isLoading?: boolean;
   supply?: {
     total: number;
-    max: number;
   };
   space?: {
     title: string;
@@ -73,7 +72,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
                   href={getDhoPathAgreements(lang as Locale, space.slug)}
                   className="text-accent-11 text-1 text-ellipsis overflow-hidden text-nowrap hover:underline"
                 >
-                  by {space.title}
+                  from {space.title}
                 </Link>
               ) : null}
             </span>
@@ -82,10 +81,9 @@ export const AssetCard: React.FC<AssetCardProps> = ({
       </div>
       <div className="w-full flex flex-row gap-1">
         <Text className="text-1">{name}</Text>
-        {supply?.total !== undefined && supply?.max !== undefined && (
+        {supply?.total !== undefined && (
           <Text className="text-1 text-neutral-11">
-            {formatCurrencyValue(supply.total)} Issued /{' '}
-            {formatCurrencyValue(supply.max)} Max supply
+            {`Total Issuance: ${formatCurrencyValue(supply.total)}`}
           </Text>
         )}
       </div>

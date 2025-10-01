@@ -88,34 +88,39 @@ export async function GET(
       isVotingToken: token.isVotingToken,
     }));
 
+    const hasEmojiOrLink = (str: string) => {
+      const emojiRegex = /[\p{Emoji}]/u;
+      const linkRegex = /(https?:\/\/|www\.|t\.me\/)/i;
+      return emojiRegex.test(str) || linkRegex.test(str);
+    };
+
     const transfersWithEntityInfo = await Promise.all(
       transfers.map(async (transfer) => {
+        const tokenMeta = await getTokenMeta(
+          transfer.token as `0x${string}`,
+          dbTokens,
+        );
+        const name = tokenMeta.name || 'Unnamed';
+        const symbol = tokenMeta.symbol || 'UNKNOWN';
+        if (hasEmojiOrLink(name) || hasEmojiOrLink(symbol)) {
+          return null;
+        }
+
         const isIncoming = transfer.to.toUpperCase() === address.toUpperCase();
         const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
-        const isMint = transfer.from === zeroAddress;
-
         let person = null;
         let space = null;
-        let tokenIcon = null;
-        if (isMint) {
-          const tokenMeta = await getTokenMeta(
-            transfer.token as `0x${string}`,
-            dbTokens,
-          );
-          tokenIcon = tokenMeta.icon;
-        } else {
-          person = await findPersonByWeb3Address(
+        let tokenIcon = tokenMeta.icon;
+        person = await findPersonByWeb3Address(
+          { address: counterpartyAddress },
+          { db: getDb({ authToken }) },
+        );
+        if (!person) {
+          space = await findSpaceByAddress(
             { address: counterpartyAddress },
             { db: getDb({ authToken }) },
           );
-          if (!person) {
-            space = await findSpaceByAddress(
-              { address: counterpartyAddress },
-              { db: getDb({ authToken }) },
-            );
-          }
         }
-
         return {
           ...transfer,
           person: person
@@ -138,7 +143,9 @@ export async function GET(
       }),
     );
 
-    return NextResponse.json(transfersWithEntityInfo);
+    const validTransfers = transfersWithEntityInfo.filter((t) => t !== null);
+
+    return NextResponse.json(validTransfers);
   } catch (error: any) {
     const errorMessage =
       error?.message || error?.shortMessage || JSON.stringify(error);

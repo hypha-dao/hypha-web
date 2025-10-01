@@ -66,11 +66,20 @@ export async function GET(
         type: 'utility' as const,
       }));
 
+    const filteredExternalTokens = parsedExternalTokens.filter((token) => {
+      const hasEmojiOrLink = (str: string) => {
+        const emojiRegex = /[\p{Emoji}]/u;
+        const linkRegex = /(https?:\/\/|www\.|t\.me\/)/i;
+        return emojiRegex.test(str) || linkRegex.test(str);
+      };
+      return !hasEmojiOrLink(token.symbol) && !hasEmojiOrLink(token.name);
+    });
+
     const addressMap = new Map<string, Token>();
     TOKENS.forEach((token) =>
       addressMap.set(token.address.toLowerCase(), token),
     );
-    parsedExternalTokens.forEach((token) => {
+    filteredExternalTokens.forEach((token) => {
       if (!addressMap.has(token.address.toLowerCase())) {
         addressMap.set(token.address.toLowerCase(), token);
       }
@@ -108,11 +117,9 @@ export async function GET(
           const meta = await getTokenMeta(token.address, dbTokens);
           const { amount } = await getBalance(token.address, address);
           let totalSupply: bigint | undefined;
-          let maxSupply: bigint | undefined;
           try {
             const supply = await getSupply(token.address);
             totalSupply = supply.totalSupply;
-            maxSupply = supply.maxSupply;
           } catch (err) {
             console.warn(
               `Failed to fetch supply for token ${token.address}: ${err}`,
@@ -128,13 +135,11 @@ export async function GET(
             transactions: [],
             closeUrl: [],
             slug: '',
-            supply:
-              totalSupply && maxSupply
-                ? {
-                    total: Number(totalSupply / 10n ** 18n),
-                    max: Number(maxSupply / 10n ** 18n),
-                  }
-                : undefined,
+            supply: totalSupply
+              ? {
+                  total: Number(totalSupply / 10n ** 18n),
+                }
+              : undefined,
             space: meta.space
               ? {
                   slug: meta.space.slug,

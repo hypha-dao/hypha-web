@@ -165,7 +165,7 @@ const badgeVariants = cva(
         variant: 'surface',
         colorVariant: 'success',
         className:
-          'border-success-7 bg-success-2 text-success-11 hover:bg-success-3',
+          'border-success-11 bg-success-2 text-success-11 hover:bg-success-3',
       },
       {
         variant: 'surface',

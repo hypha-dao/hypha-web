@@ -159,17 +159,24 @@ export async function GET(
       console.error('Failed to fetch token prices:', error);
     }
 
+    const hasEmojiOrLink = (str: string) => {
+      const emojiRegex = /[\p{Emoji}]/u;
+      const linkRegex = /(https?:\/\/|www\.|t\.me\/)/i;
+      return emojiRegex.test(str) || linkRegex.test(str);
+    };
+
     const assets = await Promise.all(
       allTokens.map(async (token) => {
         try {
           const meta = await getTokenMeta(token.address, dbTokens);
+          if (hasEmojiOrLink(meta.name) || hasEmojiOrLink(meta.symbol)) {
+            return null;
+          }
           const { amount } = await getBalance(token.address, spaceAddress);
           let totalSupply: bigint | undefined;
-          let maxSupply: bigint | undefined;
           try {
             const supply = await getSupply(token.address);
             totalSupply = supply.totalSupply;
-            maxSupply = supply.maxSupply;
           } catch (err) {
             console.warn(
               `Failed to fetch supply for token ${token.address}: ${err}`,
@@ -185,13 +192,11 @@ export async function GET(
             transactions: [],
             closeUrl: [],
             slug: '',
-            supply:
-              totalSupply && maxSupply
-                ? {
-                    total: Number(totalSupply / 10n ** 18n),
-                    max: Number(maxSupply / 10n ** 18n),
-                  }
-                : undefined,
+            supply: totalSupply
+              ? {
+                  total: Number(totalSupply / 10n ** 18n),
+                }
+              : undefined,
             space: meta.space
               ? {
                   slug: meta.space.slug,

@@ -84,8 +84,7 @@ export default function Profile() {
             personSlug={person?.slug || ''}
             basePath={`/${lang}/profile`}
           />
-          {/* TODO: Temporarily hidden for #1331 */}
-          {/* <UserTransactionsSection personSlug={person?.slug || ''} /> */}
+          <UserTransactionsSection personSlug={person?.slug || ''} />
         </TabsContent>
       </Tabs>
     </Container>
