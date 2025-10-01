@@ -65,11 +65,7 @@ export const useNotifications = () => {
       return;
     }
     const tags = await OneSignal.User.getTags();
-    const browserNotifications = checkTag(
-      tags,
-      TAG_PUSH,
-      OneSignal.User.PushSubscription.optedIn ?? true,
-    );
+    const browserNotifications = checkTag(tags, TAG_PUSH, true);
     const emailNotifications = checkTag(tags, TAG_EMAIL, true);
     const subscriptions = SUBSCRIPTION_TAGS.map((tagName) => {
       const tagValue = checkTag(tags, tagName, true);
@@ -114,7 +110,7 @@ export const useNotifications = () => {
     setError(null);
     try {
       console.log('unsubscribe');
-      await OneSignal.User.removeTag(TAG_SUBSCRIBED);
+      await OneSignal.User.addTag(TAG_SUBSCRIBED, FALSE);
       setSubscribed(false);
     } catch (err) {
       console.warn('Error:', err);
@@ -130,16 +126,12 @@ export const useNotifications = () => {
         if (!OneSignal.User.PushSubscription.optedIn) {
           await OneSignal.User.PushSubscription.optIn();
         }
-        if (!DEV_ENV) {
-          await OneSignal.User.addTag(TAG_PUSH, TRUE);
-        }
+        await OneSignal.User.addTag(TAG_PUSH, TRUE);
       } else {
         if (OneSignal.User.PushSubscription.optedIn) {
           await OneSignal.User.PushSubscription.optOut();
         }
-        if (!DEV_ENV) {
-          await OneSignal.User.addTag(TAG_PUSH, FALSE);
-        }
+        await OneSignal.User.addTag(TAG_PUSH, FALSE);
       }
       if (configuration.emailNotifications) {
         if (!isLoading && person?.email) {
@@ -152,12 +144,10 @@ export const useNotifications = () => {
           await OneSignal.User.addTag(TAG_EMAIL, FALSE);
         }
       }
-      if (!DEV_ENV) {
-        for (const subscription of configuration.subscriptions) {
-          const tagName = subscription.name;
-          const tagValue = subscription.value ? TRUE : FALSE;
-          await OneSignal.User.addTag(tagName, tagValue);
-        }
+      for (const subscription of configuration.subscriptions) {
+        const tagName = subscription.name;
+        const tagValue = subscription.value ? TRUE : FALSE;
+        await OneSignal.User.addTag(tagName, tagValue);
       }
       setConfiguration(configuration);
     },
