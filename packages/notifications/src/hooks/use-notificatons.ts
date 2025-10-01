@@ -42,10 +42,6 @@ export const NotificationsContext = React.createContext<INotificationsContext>({
   loggedIn: false,
 });
 
-export interface NotificationsProps {
-  personSlug: string;
-}
-
 export function checkTag(
   tags: {
     [key: string]: string;
@@ -56,7 +52,7 @@ export function checkTag(
   return Object.hasOwn(tags, tagName) ? tags[tagName] === TRUE : defaultValue;
 }
 
-export const useNotifications = ({ personSlug }: NotificationsProps) => {
+export const useNotifications = () => {
   const { initialized, subscribed, setSubscribed, loggedIn } =
     React.useContext(NotificationsContext);
   const [error, setError] = React.useState<string | null>(null);
