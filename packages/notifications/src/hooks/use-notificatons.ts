@@ -4,8 +4,8 @@ import { useMe } from '@hypha-platform/core/client';
 import React from 'react';
 import OneSignal from 'react-onesignal';
 import {
-  OPTION_TAGS,
-  OptionTag,
+  SUBSCRIPTION_TAGS,
+  SubscriptionTag,
   Tag,
   TAG_EMAIL,
   TAG_PUSH,
@@ -28,8 +28,8 @@ export interface INotificationsContext {
 export interface NotificationCofiguration {
   emailNotifications: boolean;
   browserNotifications: boolean;
-  options: {
-    name: OptionTag;
+  subscriptions: {
+    name: SubscriptionTag;
     value: boolean;
   }[];
 }
@@ -65,11 +65,13 @@ export const useNotifications = () => {
       return;
     }
     const tags = await OneSignal.User.getTags();
-    const browserNotifications = DEV_ENV
-      ? OneSignal.User.PushSubscription.optedIn ?? true
-      : checkTag(tags, TAG_PUSH, true);
+    const browserNotifications = checkTag(
+      tags,
+      TAG_PUSH,
+      OneSignal.User.PushSubscription.optedIn ?? true,
+    );
     const emailNotifications = checkTag(tags, TAG_EMAIL, true);
-    const options = OPTION_TAGS.map((tagName) => {
+    const subscriptions = SUBSCRIPTION_TAGS.map((tagName) => {
       const tagValue = checkTag(tags, tagName, true);
       return {
         name: tagName,
@@ -79,7 +81,7 @@ export const useNotifications = () => {
     setConfiguration({
       browserNotifications,
       emailNotifications,
-      options,
+      subscriptions,
     });
   }, [initialized, OneSignal, loggedIn]);
 
@@ -151,9 +153,9 @@ export const useNotifications = () => {
         }
       }
       if (!DEV_ENV) {
-        for (const option of configuration.options) {
-          const tagName = option.name;
-          const tagValue = option.value ? TRUE : FALSE;
+        for (const subscription of configuration.subscriptions) {
+          const tagName = subscription.name;
+          const tagValue = subscription.value ? TRUE : FALSE;
           await OneSignal.User.addTag(tagName, tagValue);
         }
       }

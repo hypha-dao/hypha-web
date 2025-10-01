@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { isAddress } from 'ethers';
-import { OPTION_TAGS } from '@hypha-platform/notifications/client';
+import { SUBSCRIPTION_TAGS } from '@hypha-platform/notifications/client';
 
 export const purchaseSchema = z.object({
   payout: z.object({
@@ -50,21 +50,23 @@ export type ActivateSpacesFormValues = z.infer<typeof activateSpacesSchema>;
 
 export const yesNoEnum = z.enum(['yes', 'no']);
 
-export const notificationOptionSchema = z.object({
+export const notificationSubscriptionSchema = z.object({
   title: z.string(),
   description: z.string(),
-  tagName: z.enum(OPTION_TAGS),
+  tagName: z.enum(SUBSCRIPTION_TAGS),
   tagValue: z.boolean().default(false),
 });
 
 export const schemaNotificationCentreForm = z.object({
   emailNotifications: yesNoEnum.default('no'),
   browserNotifications: yesNoEnum.default('no'),
-  options: z.array(notificationOptionSchema),
+  subscriptions: z.array(notificationSubscriptionSchema),
 });
 
 export type YesNo = z.infer<typeof yesNoEnum>;
-export type NotificationOption = z.infer<typeof notificationOptionSchema>;
+export type NotificationSubscription = z.infer<
+  typeof notificationSubscriptionSchema
+>;
 
 export type NotificationCentreFormValues = z.infer<
   typeof schemaNotificationCentreForm
