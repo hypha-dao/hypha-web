@@ -8,14 +8,14 @@ export interface ButtonCopyUserIdProps {
   title: string;
   successMessage?: string;
   slug: string;
-  isLoading: boolean;
+  isLoading?: boolean;
 }
 
 export const ButtonCopyUserId = ({
   title,
   successMessage = 'Copied!',
   slug,
-  isLoading,
+  isLoading = false,
 }: ButtonCopyUserIdProps) => {
   const [isCopied, setIsCopied] = useState(false);
 
@@ -36,6 +36,8 @@ export const ButtonCopyUserId = ({
         variant="outline"
         colorVariant="accent"
         title={title}
+        aria-live="polite"
+        aria-label={isCopied ? successMessage : title}
         onClick={handleCopy}
       >
         <CopyIcon />
