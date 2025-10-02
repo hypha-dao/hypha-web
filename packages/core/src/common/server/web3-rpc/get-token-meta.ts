@@ -71,7 +71,7 @@ export async function getTokenMeta(
     const name = nameResult || 'MISSING NAME';
 
     const dbToken = dbTokens?.find(
-      (t) => t.symbol.toUpperCase() === symbol.toUpperCase(),
+      (t) => t.symbol.toUpperCase() === symbol.toUpperCase() && t.name === name,
     );
     const icon = dbToken?.iconUrl ?? '/placeholder/token-icon.svg';
 
