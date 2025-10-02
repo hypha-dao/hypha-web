@@ -4,38 +4,8 @@ export type Token = {
   address: `0x${string}`;
   name: string;
   type: 'liquid' | 'voice' | 'ownership' | 'utility' | 'credits';
+  transferable?: boolean;
 };
-
-export const TRANSFERABLE_TOKENS: Token[] = [
-  {
-    symbol: 'USDC',
-    icon: '/placeholder/usdc-icon.svg',
-    address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
-    name: 'USDC',
-    type: 'utility',
-  },
-  {
-    symbol: 'EURC',
-    icon: '/placeholder/eurc-icon.svg',
-    address: '0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42',
-    name: 'EURC',
-    type: 'utility',
-  },
-  {
-    symbol: 'WETH',
-    icon: '/placeholder/eth.svg',
-    address: '0x4200000000000000000000000000000000000006',
-    name: 'Ethereum',
-    type: 'utility',
-  },
-  {
-    symbol: 'cbBTC',
-    icon: '/placeholder/btc.svg',
-    address: '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf',
-    name: 'Bitcoin',
-    type: 'utility',
-  },
-];
 
 export const TOKENS: Token[] = [
   {
@@ -44,6 +14,7 @@ export const TOKENS: Token[] = [
     address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
     name: 'USDC',
     type: 'utility',
+    transferable: true,
   },
   {
     symbol: 'EURC',
@@ -51,6 +22,7 @@ export const TOKENS: Token[] = [
     address: '0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42',
     name: 'EURC',
     type: 'utility',
+    transferable: true,
   },
   {
     symbol: 'WETH',
@@ -58,6 +30,7 @@ export const TOKENS: Token[] = [
     address: '0x4200000000000000000000000000000000000006',
     name: 'Ethereum',
     type: 'utility',
+    transferable: true,
   },
   {
     symbol: 'cbBTC',
@@ -65,6 +38,7 @@ export const TOKENS: Token[] = [
     address: '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf',
     name: 'Bitcoin',
     type: 'utility',
+    transferable: true,
   },
   {
     symbol: 'HYPHA',

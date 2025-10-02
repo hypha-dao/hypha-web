@@ -10,7 +10,7 @@ import {
 import { PeopleTransferForm } from '@hypha-platform/epics';
 import { Person } from '../../../../core/src/people';
 import { Space } from '../../../../core/src/space';
-import { TRANSFERABLE_TOKENS } from '@hypha-platform/core/client';
+import { TOKENS } from '@hypha-platform/core/client';
 
 interface Token {
   icon: string;
@@ -45,6 +45,8 @@ export const ProfileTransferFunds = ({
   //     address: asset.address as `0x${string}`,
   //   }));
 
+  const transferableTokens = TOKENS.filter(({ transferable }) => transferable);
+
   return (
     <SidePanel>
       <div className="flex flex-col gap-5">
@@ -63,7 +65,7 @@ export const ProfileTransferFunds = ({
         <PeopleTransferForm
           peoples={peoples}
           spaces={spaces}
-          tokens={TRANSFERABLE_TOKENS}
+          tokens={transferableTokens}
           updateAssets={manualUpdate}
         />
       </div>
