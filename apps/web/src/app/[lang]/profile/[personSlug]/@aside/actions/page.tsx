@@ -31,12 +31,11 @@ export default function ProfileWallet() {
       },
     },
     {
-      title: 'Transfer Funds (Coming soon)',
+      title: 'Transfer Funds',
       description:
         'Send tokens from your personal wallet to a member, space, or custom address.',
       href: 'transfer-funds',
       icon: <Share1Icon />,
-      disabled: true,
     },
     {
       title: 'Buy Hypha Tokens (Rewards)',

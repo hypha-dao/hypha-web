@@ -12,7 +12,10 @@ type PageProps = {
 export default async function ProfileTransferFundsWrapper(props: PageProps) {
   const { lang, personSlug } = await props.params;
 
-  const spaces = await getAllSpaces();
+  const spaces = await getAllSpaces({
+    parentOnly: false,
+    omitSandbox: false,
+  });
   const peoples = await findAllPeopleWithoutPagination({ db });
 
   const filteredSpaces = spaces.filter(

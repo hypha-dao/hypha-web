@@ -14,6 +14,8 @@ import { Separator, Button } from '@hypha-platform/ui';
 import { Space } from '../../../../core/src/space';
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
+import { useMe } from '../../../../core/src/people';
+import { useFundWallet } from '@hypha-platform/epics';
 
 interface Token {
   icon: string;
@@ -36,6 +38,10 @@ export const PeopleTransferForm = ({
   tokens,
   updateAssets,
 }: PeopleTransferFormType) => {
+  const { person } = useMe();
+  const { fundWallet } = useFundWallet({
+    address: person?.address as `0x${string}`,
+  });
   const { transferTokens, isTransferring } = useTransferTokensMutation();
 
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -77,6 +83,29 @@ export const PeopleTransferForm = ({
       updateAssets();
     } catch (error) {
       console.error('Transfer failed:', error);
+      let errorMessage: string =
+        'An error occurred while processing your transfer. Please try again.';
+
+      if (error instanceof Error) {
+        if (error.message.includes('Smart wallet client not available')) {
+          errorMessage =
+            'Smart wallet is not connected. Please connect your wallet and try again.';
+        } else if (
+          error.message.includes('ERC20: transfer amount exceeds balance')
+        ) {
+          errorMessage = 'insufficient_funds';
+        } else if (error.message.includes('Execution reverted with reason:')) {
+          const match = error.message.match(
+            /Execution reverted with reason: (.*?)\./,
+          );
+          errorMessage =
+            match && match[1] ? match[1] : 'Contract execution failed.';
+        } else if (error.message.includes('user rejected')) {
+          errorMessage =
+            'Transaction was rejected. Please approve the transaction to proceed.';
+        }
+      }
+      form.setError('root', { message: errorMessage });
     }
   };
 
@@ -89,7 +118,11 @@ export const PeopleTransferForm = ({
         >
           <RecipientField members={peoples} spaces={spaces} />
           <Separator />
-          <TokenPayoutFieldArray tokens={tokens} name="payouts" />
+          <TokenPayoutFieldArray
+            label="Amount"
+            tokens={tokens}
+            name="payouts"
+          />
           <Separator />
           <div className="flex gap-2 justify-end">
             {isTransferring ? (
@@ -99,7 +132,7 @@ export const PeopleTransferForm = ({
               </div>
             ) : showSuccessMessage ? (
               <div className="text-green-600 text-sm font-medium">
-                Transfers completed!
+                Your transfer has been successfully completed!
               </div>
             ) : (
               <Button type="submit" disabled={isTransferring}>
@@ -107,6 +140,25 @@ export const PeopleTransferForm = ({
               </Button>
             )}
           </div>
+          {form.formState.errors.root && (
+            <div className="text-2 text-foreground">
+              {form.formState.errors.root.message === 'insufficient_funds' ? (
+                <>
+                  Your wallet balance is insufficient to complete this
+                  transaction. Please{' '}
+                  <span
+                    onClick={fundWallet}
+                    className="font-bold cursor-pointer text-accent-9 underline"
+                  >
+                    top up your account
+                  </span>{' '}
+                  to proceed.
+                </>
+              ) : (
+                form.formState.errors.root.message
+              )}
+            </div>
+          )}
         </form>
       </Form>
     </>
