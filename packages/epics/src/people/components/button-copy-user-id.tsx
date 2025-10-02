@@ -20,11 +20,11 @@ export const ButtonCopyUserId = ({
   const [isCopied, setIsCopied] = useState(false);
 
   const handleCopy = async () => {
-    console.log('Copy user ID:', slug);
     try {
       await navigator.clipboard.writeText(slug);
       setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
+      const timeoutId = setTimeout(() => setIsCopied(false), 2000);
+      return () => clearTimeout(timeoutId);
     } catch (err) {
       console.error('Failed to copy text: ', err);
     }
