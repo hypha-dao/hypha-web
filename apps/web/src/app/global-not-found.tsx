@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: 'The page you are looking for does not exist.',
 };
 
-export default function NotFound() {
+export default function GlobalNotFound() {
   return (
     <RootLayout>
       <div className="w-full h-96 relative">
