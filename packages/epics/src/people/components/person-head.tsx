@@ -9,14 +9,16 @@ import {
   Button,
   Skeleton,
 } from '@hypha-platform/ui';
-import { CopyIcon } from '@radix-ui/react-icons';
 import { WebLinks } from '../../common';
 import { RxPencil2 } from 'react-icons/rx';
 import { MailIcon, MapPinIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthentication } from '@hypha-platform/authentication';
 import React from 'react';
-import { ExportEmbeddedWalletButton } from '@hypha-platform/epics';
+import {
+  ButtonCopyUserId,
+  ExportEmbeddedWalletButton,
+} from '@hypha-platform/epics';
 import {
   DEFAULT_SPACE_AVATAR_IMAGE,
   DEFAULT_SPACE_LEAD_IMAGE,
@@ -102,16 +104,11 @@ export const PersonHead = ({
               }
             />
           )}
-          <Skeleton loading={isLoading} width={120} height={35}>
-            <Button
-              variant="outline"
-              colorVariant="accent"
-              title="Copy user ID"
-            >
-              <CopyIcon />
-              <span className="hidden md:flex">Copy user ID</span>
-            </Button>
-          </Skeleton>
+          <ButtonCopyUserId
+            title="Copy user ID"
+            slug={slug}
+            isLoading={isLoading}
+          />
           <Skeleton loading={isLoading} width={120} height={35}>
             <Link
               href={

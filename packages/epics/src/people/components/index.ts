@@ -1,3 +1,4 @@
+export * from './button-copy-user-id';
 export * from './button-profile.connected';
 export * from './button-profile';
 export * from './button-signin-mobile';
