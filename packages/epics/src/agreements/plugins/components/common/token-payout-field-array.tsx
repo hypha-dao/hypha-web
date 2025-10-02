@@ -31,7 +31,7 @@ interface TokenPayoutFieldArrayProps {
 export const TokenPayoutFieldArray = ({
   tokens,
   name = 'payouts',
-  label,
+  label = 'Payment Request',
 }: TokenPayoutFieldArrayProps) => {
   const { control } = useFormContext();
   const { fields, append, remove } = useFieldArray({
@@ -58,7 +58,7 @@ export const TokenPayoutFieldArray = ({
     <div className="flex flex-col gap-2 w-full">
       <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
         <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
-          {label ? label : 'Payment Request'} <RequirementMark />
+          {label} <RequirementMark />
         </label>
         <div className="flex flex-col gap-2 grow min-w-0">
           {fields.map((field, index) => (
