@@ -16,12 +16,14 @@ const DEV_ENV = process.env.NODE_ENV === 'development';
 
 export interface NotificationSubscriberProps {
   appId: string;
+  safariWebId: string;
   serviceWorkerPath?: string;
   children: React.ReactNode;
 }
 
 export function NotificationSubscriber({
   appId,
+  safariWebId,
   serviceWorkerPath,
   children,
 }: NotificationSubscriberProps) {
@@ -67,11 +69,17 @@ export function NotificationSubscriber({
         return;
       }
       try {
+        const scope = `/${
+          serviceWorkerPath?.split('/').filter(Boolean)[0] ?? ''
+        }/`;
+        console.log('scope:', scope);
         await OneSignal.init({
           appId,
+          safari_web_id: safariWebId,
           serviceWorkerPath,
+          serviceWorkerParam: { scope },
           allowLocalhostAsSecureOrigin: DEV_ENV,
-          /*promptOptions: {
+          promptOptions: {
             slidedown: {
               prompts: [
                 {
@@ -80,22 +88,19 @@ export function NotificationSubscriber({
                   delay: {},
                   text: {
                     actionMessage:
-                      'TEST: Subscribe if you’d like to be notified about proposals and other Network activity.',
+                      'Subscribe if you’d like to be notified about proposals and other Network activity.',
                     acceptButton: 'Subscribe',
                     cancelMessage: 'Later',
                   },
                   type: 'push',
                 },
-                {
-                  autoPrompt: false,
-                  categories: [],
-                  delay: {},
-                  text: {},
-                  type: 'email',
-                },
               ],
             },
-          },*/
+          },
+          welcomeNotification: {
+            disable: true,
+            message: '',
+          },
         });
         console.log('OneSignal initialized');
         setInitialized(true);

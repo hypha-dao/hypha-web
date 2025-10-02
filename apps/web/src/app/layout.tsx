@@ -86,7 +86,8 @@ export default async function RootLayout({
   const cookieStore = await cookies();
   const lang = cookieStore.get(HYPHA_LOCALE)?.value || i18nConfig.defaultLocale;
   const notificationAppId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '';
-  const serviceWorkerPath = '/onesignal/OneSignalSDKWorker.js';
+  const safariWebId = process.env.NEXT_PUBLIC_ONESIGNAL_SAFARI_WEB_ID ?? '';
+  const serviceWorkerPath = 'onesignal/OneSignalSDKWorker.js';
 
   return (
     <Html className={clsx(lato.variable, sourceSans.variable)}>
@@ -106,6 +107,7 @@ export default async function RootLayout({
           <EvmProvider>
             <NotificationSubscriber
               appId={notificationAppId}
+              safariWebId={safariWebId}
               serviceWorkerPath={serviceWorkerPath}
             >
               <MenuTop logoHref={ROOT_URL}>
