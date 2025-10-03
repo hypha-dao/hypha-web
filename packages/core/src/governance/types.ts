@@ -109,6 +109,14 @@ export type CreateTokenInput = {
     decayPercentage: number;
   };
   web3SpaceId: number;
+  agreementWeb3Id?: number;
+};
+
+export type UpdateTokenInput = {
+  agreementId?: number;
+  agreementWeb3Id?: number;
+  address?: string;
+  agreementWeb3IdUpdate?: number;
 };
 
 export type DeleteTokenInput = {
