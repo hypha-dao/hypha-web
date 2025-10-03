@@ -19,6 +19,7 @@ type Token = {
   decayPercentage?: number;
   createdAt: string;
   documentCount: number;
+  address?: string;
 };
 
 type UseDbTokensReturn = {
