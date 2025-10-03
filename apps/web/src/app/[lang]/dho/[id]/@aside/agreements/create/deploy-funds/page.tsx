@@ -18,11 +18,13 @@ export default async function CreateDeployFundsPage({ params }: PageProps) {
   const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
 
   if (!spaceFromDb) notFound();
+
   const { id: spaceId, web3SpaceId, slug: spaceSlug } = spaceFromDb;
 
   const successfulUrl = getDhoPathAgreements(lang as Locale, id);
 
-  const spaces = await getAllSpaces();
+  const spaces = await getAllSpaces({ parentOnly: false });
+
   const filteredSpaces = spaces.filter(
     (space) => space.address && space.address.trim() !== '',
   );
