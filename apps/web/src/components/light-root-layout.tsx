@@ -10,7 +10,7 @@ import { ThemeProvider } from '@hypha-platform/ui';
 import { ConnectedButtonProfile } from '@hypha-platform/epics';
 import { VercelToolbar } from '@vercel/toolbar/next';
 import { useParams } from 'next/navigation';
-import { i18nConfig } from '@hypha-platform/i18n';
+import { i18nConfig } from '@hypha-platform/i18n/client';
 import { useMe } from '@hypha-platform/core/client';
 import clsx from 'clsx';
 import { Lato, Source_Sans_3 } from 'next/font/google';

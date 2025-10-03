@@ -13,6 +13,7 @@
     "@hypha-platform/cookie": "workspace:*"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts"
   }
 }
