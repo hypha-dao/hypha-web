@@ -45,7 +45,8 @@ export const Recipient = ({
     }
   }, [value, members, spaces]);
 
-  const placeholder = 'Select recipient...';
+  const placeholder =
+    recipientType === 'member' ? 'Select member...' : 'Select space...';
 
   const memberOptions = useMemo(
     () =>
