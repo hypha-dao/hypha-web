@@ -46,7 +46,7 @@ export const SelectCreateAction = ({
     },
     {
       defaultDurationDays: 7,
-      title: 'Pay for Products or Services',
+      title: 'Pay Expenses for Products or Services',
       description:
         'Make payments for products and services by transferring funds from your space treasury to another space, entity, or individual wallet.',
       href: 'agreements/create/pay-for-expenses',
