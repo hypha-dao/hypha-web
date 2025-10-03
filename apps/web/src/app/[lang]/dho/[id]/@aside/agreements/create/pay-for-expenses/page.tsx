@@ -23,7 +23,7 @@ export default async function CreatePayForExpensesPage({ params }: PageProps) {
 
   const successfulUrl = getDhoPathAgreements(lang as Locale, id);
 
-  const spaces = await getAllSpaces();
+  const spaces = await getAllSpaces({ parentOnly: false });
 
   const filteredSpaces = spaces.filter(
     (space) => space.address && space.address.trim() !== '',
