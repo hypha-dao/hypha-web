@@ -26,6 +26,7 @@ export const tokens = pgTable('tokens', {
   decayInterval: integer('decay_interval'),
   decayPercentage: integer('decay_percentage'),
   createdAt: timestamp('created_at').defaultNow(),
+  address: text('address'),
 });
 
 export const tokenRelations = relations(tokens, ({ one }) => ({
