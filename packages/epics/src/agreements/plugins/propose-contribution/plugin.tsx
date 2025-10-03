@@ -23,6 +23,7 @@ export const ProposeContributionPlugin = ({
         members={members}
         spaces={spaces}
         defaultRecipientType="member"
+        emptySpacesMessage="No member spaces found."
       />
       <Separator />
       <PaymentSchedule />

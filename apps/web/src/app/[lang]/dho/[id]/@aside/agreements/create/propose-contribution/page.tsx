@@ -26,12 +26,6 @@ export default async function CreateProposeAContributionPage({
   const { id: spaceId, web3SpaceId, slug: spaceSlug } = spaceFromDb;
   const successfulUrl = getDhoPathAgreements(lang as Locale, id);
 
-  const spaces = await getAllSpaces();
-
-  const filteredSpaces = spaces.filter(
-    (space) => space.address && space.address.trim() !== '',
-  );
-
   return (
     <SidePanel>
       <CreateProposeAContributionForm
@@ -39,13 +33,7 @@ export default async function CreateProposeAContributionPage({
         backUrl={`${successfulUrl}${PATH_SELECT_CREATE_ACTION}`}
         spaceId={spaceId}
         web3SpaceId={web3SpaceId}
-        plugin={
-          <Plugin
-            name="propose-contribution"
-            spaceSlug={spaceSlug}
-            spaces={filteredSpaces}
-          />
-        }
+        plugin={<Plugin name="propose-contribution" spaceSlug={spaceSlug} />}
       />
     </SidePanel>
   );
