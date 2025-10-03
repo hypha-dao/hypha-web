@@ -4,7 +4,11 @@ import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 import { Plugin } from '../plugins';
 import { notFound } from 'next/navigation';
 import { PATH_SELECT_CREATE_ACTION } from '@web/app/constants';
-import { findSpaceBySlug, getAllSpaces } from '@hypha-platform/core/server';
+import {
+  findAllPeopleWithoutPagination,
+  findSpaceBySlug,
+  getAllSpaces,
+} from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 
 type PageProps = {
@@ -29,6 +33,12 @@ export default async function CreatePayForExpensesPage({ params }: PageProps) {
     (space) => space.address && space.address.trim() !== '',
   );
 
+  const members = await findAllPeopleWithoutPagination({ db });
+
+  const filteredMembers = members.filter(
+    (member) => member.address && member.address.trim() !== '',
+  );
+
   return (
     <SidePanel>
       <CreatePayForExpensesForm
@@ -41,6 +51,7 @@ export default async function CreatePayForExpensesPage({ params }: PageProps) {
             name="pay-for-expenses"
             spaceSlug={spaceSlug}
             spaces={filteredSpaces}
+            members={filteredMembers}
           />
         }
       />
