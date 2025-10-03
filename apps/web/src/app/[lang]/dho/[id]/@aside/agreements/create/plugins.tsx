@@ -53,7 +53,7 @@ export const Plugin = ({
       spaceSlug={spaceSlug || ''}
       web3SpaceId={web3SpaceId}
       members={members ?? persons?.data}
-      spaces={spaces ?? memberSpaces.data}
+      spaces={spaces ?? memberSpaces?.data}
     />
   );
 };
