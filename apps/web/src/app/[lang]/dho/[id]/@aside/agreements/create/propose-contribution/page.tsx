@@ -39,13 +39,7 @@ export default async function CreateProposeAContributionPage({
         backUrl={`${successfulUrl}${PATH_SELECT_CREATE_ACTION}`}
         spaceId={spaceId}
         web3SpaceId={web3SpaceId}
-        plugin={
-          <Plugin
-            name="propose-contribution"
-            spaceSlug={spaceSlug}
-            spaces={filteredSpaces}
-          />
-        }
+        plugin={<Plugin name="propose-contribution" spaceSlug={spaceSlug} />}
       />
     </SidePanel>
   );
