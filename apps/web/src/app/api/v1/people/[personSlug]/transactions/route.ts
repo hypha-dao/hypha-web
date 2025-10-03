@@ -86,6 +86,7 @@ export async function GET(
       iconUrl: token.iconUrl ?? undefined,
       transferable: token.transferable,
       isVotingToken: token.isVotingToken,
+      address: token.address ?? undefined,
     }));
 
     const transfersWithEntityInfo = await Promise.all(

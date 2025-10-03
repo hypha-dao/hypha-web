@@ -46,4 +46,6 @@ export type DbToken = {
   iconUrl?: string;
   transferable: boolean;
   isVotingToken: boolean;
+  address?: string;
+  agreementWeb3Id?: number;
 };
