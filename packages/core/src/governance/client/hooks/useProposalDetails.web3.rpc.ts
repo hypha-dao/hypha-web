@@ -68,6 +68,7 @@ export const useProposalDetailsWeb3Rpc = ({
       transferable?: boolean;
       decayPercentage?: bigint;
       decayInterval?: bigint;
+      address?: string;
     }> = [];
 
     const votingMethods: Array<{
