@@ -6,6 +6,13 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "scripts": {
+    "codegen": "openapi --input docs/v1/openapi.yaml --output src/types/v1/generated --client fetch",
+    "dev": "tsx src/server.ts",
+    "prebuild": "pnpm codegen",
+    "build": "tsc",
+    "postbuild": "esbuild src/server.ts --bundle --minify --platform=node --external:yamljs --external:fs --outfile=dist/server.js --external:@fastify/swagger --external:@fastify/swagger-ui"
+  },
   "dependencies": {
     "fastify": "^5.4.0",
     "@fastify/cors": "^11.0.1",
