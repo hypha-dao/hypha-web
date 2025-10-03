@@ -10,6 +10,7 @@ import { ThemeProvider } from '@hypha-platform/ui/server';
 import { ConnectedButtonProfile } from '@hypha-platform/epics';
 import { VercelToolbar } from '@vercel/toolbar/next';
 import { useParams } from 'next/navigation';
+import { i18nConfig } from '@hypha-platform/i18n';
 import { useMe } from '@hypha-platform/core/client';
 import clsx from 'clsx';
 import { Lato, Source_Sans_3 } from 'next/font/google';
@@ -33,7 +34,8 @@ const sourceSans = Source_Sans_3({
 });
 
 export function LightRootLayout({ children }: { children: React.ReactNode }) {
-  const { lang } = useParams();
+  const params = useParams();
+  const lang = params?.lang ?? i18nConfig.defaultLocale;
   const shouldInjectToolbar = process.env.NODE_ENV === 'development';
 
   return (
