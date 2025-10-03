@@ -131,6 +131,19 @@ export const findSpaceBySlug = async (
   };
 };
 
+type CheckSpaceSlugExistsInput = { slug: string };
+
+export const checkSpaceSlugExists = async (
+  { slug }: CheckSpaceSlugExistsInput,
+  { db }: DbConfig,
+): Promise<boolean> => {
+  const response = await db.query.spaces.findFirst({
+    where: (spaces, { eq }) => eq(spaces.slug, slug),
+  });
+
+  return !!response;
+};
+
 type FindAllSpacesByMemberIdInput = {
   memberId: number;
   parentOnly?: boolean;
