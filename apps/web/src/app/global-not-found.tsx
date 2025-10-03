@@ -1,9 +1,9 @@
 import React from 'react';
-import RootLayout from './[lang]/layout';
 import Link from 'next/link';
 import { Button } from '@hypha-platform/ui';
 import { GlobeIcon } from '@radix-ui/react-icons';
 import { Metadata } from 'next';
+import RootLayout from './layout';
 
 export const metadata: Metadata = {
   title: 'Hypha: Page Not Found',
