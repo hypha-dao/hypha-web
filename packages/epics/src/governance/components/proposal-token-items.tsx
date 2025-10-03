@@ -8,6 +8,7 @@ interface ProposalTokenItemProps {
   symbol?: string;
   initialSupply?: bigint;
   dbTokens?: DbToken[];
+  address?: string;
 }
 
 export const ProposalTokenItem = ({
@@ -15,9 +16,12 @@ export const ProposalTokenItem = ({
   symbol,
   initialSupply,
   dbTokens,
+  address,
 }: ProposalTokenItemProps) => {
   const originalSupply = initialSupply ? Number(initialSupply / 10n ** 18n) : 0;
-  const tokenIcon = dbTokens?.find((t) => t.symbol === symbol)?.iconUrl;
+  const tokenIcon = dbTokens?.find(
+    (t) => t.address?.toUpperCase() === address?.toUpperCase(),
+  )?.iconUrl;
   return (
     <div className="flex flex-col gap-5">
       <div className="flex justify-between items-center">
