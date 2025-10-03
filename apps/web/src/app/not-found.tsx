@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
   return (
-    <div className="w-full h-96 relative">
+    <div className="w-full min-h-[24rem] relative">
       <div className="flex flex-col items-center justify-center p-0 gap-6 absolute top-0 left-0 right-0 bottom-0">
         <div className="flex flex-row items-start p-0 gap-9">
           <h1 className="flex-none order-none self-stretch grow-0 text-9 font-medium">
