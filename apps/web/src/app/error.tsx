@@ -5,7 +5,7 @@ import { Button } from '@hypha-platform/ui';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { LightRootLayout } from '@web/components/light-root-layout';
 
-export default function Error({
+export default function AppError({
   error,
   reset,
 }: {
