@@ -6,7 +6,7 @@ import {
   AuthProvider,
   useAuthentication,
 } from '@hypha-platform/authentication';
-import { ThemeProvider } from '@hypha-platform/ui/server';
+import { ThemeProvider } from '@hypha-platform/ui';
 import { ConnectedButtonProfile } from '@hypha-platform/epics';
 import { VercelToolbar } from '@vercel/toolbar/next';
 import { useParams } from 'next/navigation';
