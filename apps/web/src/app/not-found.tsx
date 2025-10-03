@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description: 'The page you are looking for does not exist.',
 };
 
-export default function GlobalNotFound() {
+export default function NotFound() {
   return (
     <div className="w-full h-96 relative">
       <div className="flex flex-col items-center justify-center p-0 gap-6 absolute top-0 left-0 right-0 bottom-0">
