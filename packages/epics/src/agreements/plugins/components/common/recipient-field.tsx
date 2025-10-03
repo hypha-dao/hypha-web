@@ -15,11 +15,15 @@ export function RecipientField({
   spaces,
   defaultRecipientType = 'member',
   readOnly,
+  emptyMembersMessage,
+  emptySpacesMessage,
 }: {
   members: Person[];
   spaces?: Space[];
   defaultRecipientType?: RecipientType;
   readOnly?: boolean;
+  emptyMembersMessage?: string;
+  emptySpacesMessage?: string;
 }) {
   const { control } = useFormContext();
   return (
@@ -38,6 +42,8 @@ export function RecipientField({
               spaces={spaces}
               defaultRecipientType={defaultRecipientType}
               readOnly={readOnly}
+              emptyMembersMessage={emptyMembersMessage}
+              emptySpacesMessage={emptySpacesMessage}
             />
           </FormControl>
           <FormMessage />

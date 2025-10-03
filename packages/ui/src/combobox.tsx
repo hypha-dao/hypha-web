@@ -34,6 +34,7 @@ type ComboboxProps = {
   allowEmptyChoice?: boolean;
   className?: string;
   disabled?: boolean;
+  emptyListMessage?: string;
 };
 
 export const COMBOBOX_TITLE = '===';
@@ -49,6 +50,7 @@ export function Combobox({
   allowEmptyChoice = true,
   className,
   disabled = false,
+  emptyListMessage = 'No options found.',
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState(initialValue);
@@ -118,7 +120,7 @@ export function Combobox({
           />
           <CommandList className="rounded-lg">
             {filteredOptions.length === 0 ? (
-              <CommandEmpty>No options found.</CommandEmpty>
+              <CommandEmpty>{emptyListMessage}</CommandEmpty>
             ) : (
               <CommandGroup>
                 {filteredOptions.map((option, index) =>
