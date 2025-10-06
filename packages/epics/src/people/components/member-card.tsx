@@ -1,7 +1,14 @@
 'use client';
 
 import { Text } from '@radix-ui/themes';
-import { Card, StatusBadge, Skeleton, Image, Button } from '@hypha-platform/ui';
+import {
+  Card,
+  StatusBadge,
+  Skeleton,
+  Image,
+  Button,
+  Badge,
+} from '@hypha-platform/ui';
 import { SewingPinFilledIcon } from '@radix-ui/react-icons';
 // TODO: need for #1309
 // import { useParams } from 'next/navigation';
@@ -70,6 +77,9 @@ export const MemberCard: React.FC<MemberCardProps> = ({
 
       <div className="flex justify-between items-center w-full">
         <div className="flex flex-col">
+          <Badge className="w-fit" colorVariant="accent">
+            Member
+          </Badge>
           {!minimize ? (
             <div className="flex gap-x-1">
               <StatusBadge isLoading={isLoading} status={status} />

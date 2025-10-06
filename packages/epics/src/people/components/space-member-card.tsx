@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, Skeleton, Image } from '@hypha-platform/ui';
+import { Card, Skeleton, Image, Badge } from '@hypha-platform/ui';
 import { Space } from '@hypha-platform/core/server';
 import { Text } from '@radix-ui/themes';
 import { useSpaceDelegate } from '@hypha-platform/core/client';
@@ -36,6 +36,9 @@ export const SpaceMemberCard: React.FC<{
           />
         </Skeleton>
         <div className="flex flex-col justify-center">
+          <Badge className="w-fit" colorVariant="accent">
+            Space
+          </Badge>
           <Skeleton height="26px" width="160px" loading={isLoading}>
             <Text className="text-4">{space.title}</Text>
           </Skeleton>
