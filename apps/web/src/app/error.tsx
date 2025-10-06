@@ -18,13 +18,13 @@ export default function AppError({
   return (
     <div className="w-full h-96 relative">
       <div className="flex flex-col items-center justify-center p-0 gap-6 absolute top-0 left-0 right-0 bottom-0">
-        <div className="flex flex-row items-start p-0 gap-9">
-          <h1 className="flex-none order-none self-stretch grow-0 text-9 font-medium">
+        <div className="flex flex-row items-center justify-center text-center p-2 md:p-0 gap-9">
+          <h1 className="md:flex-none flex-wrap order-none self-stretch grow-0 text-9 font-medium">
             We’ll Be Back Shortly!
           </h1>
         </div>
-        <div className="flex flex-col items-start p-0 gap-9">
-          <div className="flex-none order-none self-stretch grow-0 text-4 text-neutral-11">
+        <div className="flex flex-col items-center justify-center text-center p-2 md:p-0 gap-9">
+          <div className="md:flex-none flex-wrap order-none self-stretch grow-0 text-4 text-neutral-11">
             Hypha is taking a short break while we roll out updates. We’ll be
             back soon with exciting improvements on the way!
           </div>
