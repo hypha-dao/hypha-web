@@ -11,7 +11,7 @@ export const proposalsListMock: ProposalsListResponse = {
     {
       id: 1,
       title: 'DAO Funding Proposal',
-      type: ProposalSummary.type.ONE_TIME_PAYMENT,
+      type: ProposalSummary.type.AGREEMENT,
       image_url: 'https://example.com/proposal1.png',
       status: ProposalSummary.status.ACTIVE,
       unity: 80,
@@ -27,7 +27,7 @@ export const proposalsListMock: ProposalsListResponse = {
     {
       id: 2,
       title: 'Recurring Payment Proposal',
-      type: ProposalSummary.type.RECURRING_PAYMENT,
+      type: ProposalSummary.type.CONTRIBUTION,
       image_url: 'https://example.com/proposal2.png',
       status: ProposalSummary.status.PAST,
       unity: 70,

@@ -255,27 +255,27 @@ paths:
       parameters:
         - name: dao_id
           in: query
-          required: true
           schema:
             type: integer
         - name: status
           in: query
-          required: false
           schema:
             type: string
-            enum: ["active", "past"]
+            nullable: true
+            enum: ["active", "past", null]
         - name: limit
           in: query
-          required: false
           schema:
             type: integer
             default: 20
+            minimum: 0
+            maximum: 100
         - name: offset
           in: query
-          required: false
           schema:
             type: integer
             default: 0
+            minimum: 0
       responses:
         '200':
           description: List of proposals
@@ -626,6 +626,8 @@ components:
               type: integer
             offset:
               type: integer
+          required: [total, limit, offset]
+      required: [data, meta]
     ProposalSummary:
       type: object
       properties:
@@ -635,7 +637,7 @@ components:
           type: string
         type:
           type: string
-          enum: ["one_time_payment", "recurring_payment", "agreement"]
+          enum: ["contribution", "payment", "funding", "agreement"]
         image_url:
           type: string
           format: uri
@@ -663,6 +665,8 @@ components:
             avatar_url:
               type: string
               format: uri
+          required: [username, reference, avatar_url]
+      required: [id, title, type, image_url, status, unity, quorum, user_vote, voting_deadline, author]
     ProposalDetailsResponse:
       type: object
       properties:
