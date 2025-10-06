@@ -22,7 +22,7 @@ import { FilterParams } from '@hypha-platform/core/client';
 
 export const useMembers: UseMembers = ({
   page = 1,
-  pageSize = 4,
+  pageSize = 0,
   spaceSlug,
   searchTerm,
   refreshInterval,
