@@ -255,7 +255,7 @@ paths:
       parameters:
         - name: dao_id
           in: query
-          required: true
+          required: false
           schema:
             type: integer
         - name: status
@@ -263,19 +263,23 @@ paths:
           required: false
           schema:
             type: string
-            enum: ["active", "past"]
+            enum: ["active", "past", "all"]
+            default: "all"
         - name: limit
           in: query
           required: false
           schema:
             type: integer
             default: 20
+            minimum: 0
+            maximum: 100
         - name: offset
           in: query
           required: false
           schema:
             type: integer
             default: 0
+            minimum: 0
       responses:
         '200':
           description: List of proposals
@@ -635,13 +639,13 @@ components:
           type: string
         type:
           type: string
-          enum: ["one_time_payment", "recurring_payment", "agreement"]
+          enum: ["contribuition", "payment", "funding", "agreement"]
         image_url:
           type: string
           format: uri
         status:
           type: string
-          enum: ["active", "past"]
+          enum: ["active", "past", "all"]
         unity:
           type: integer
         quorum:
