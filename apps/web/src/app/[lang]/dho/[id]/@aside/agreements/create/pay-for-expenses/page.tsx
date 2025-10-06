@@ -4,11 +4,7 @@ import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 import { Plugin } from '../plugins';
 import { notFound } from 'next/navigation';
 import { PATH_SELECT_CREATE_ACTION } from '@web/app/constants';
-import {
-  findAllPeopleWithoutPagination,
-  findSpaceBySlug,
-  getAllSpaces,
-} from '@hypha-platform/core/server';
+import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { fetchMembersAndSpaces } from '@web/utils/fetch-users-members';
 
