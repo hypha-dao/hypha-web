@@ -32,14 +32,8 @@ export const useSpaceDelegate = ({
   );
 
   const { data: person, isLoading: isPersonLoading } = useSWR(
-    spaceId && jwt && endpoint ? [endpoint, jwt] : null,
-    ([endpoint]) =>
-      fetch(endpoint, {
-        headers: {
-          Authorization: `Bearer ${jwt}`,
-          'Content-Type': 'application/json',
-        },
-      }).then((res) => res.json()),
+    spaceId && endpoint ? [endpoint] : null,
+    ([endpoint]) => fetch(endpoint).then((res) => res.json()),
   );
 
   const isLoading = isDelegatesLoading || (endpoint ? isPersonLoading : false);
