@@ -10,6 +10,7 @@ import {
   getAllSpaces,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
+import { fetchMembersAndSpaces } from '@web/utils/fetch-users-members';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -27,17 +28,7 @@ export default async function CreateDeployFundsPage({ params }: PageProps) {
 
   const successfulUrl = getDhoPathAgreements(lang as Locale, id);
 
-  const spaces = await getAllSpaces({ parentOnly: false });
-
-  const filteredSpaces = spaces.filter(
-    (space) => space.address && space.address.trim() !== '',
-  );
-
-  const members = await findAllPeopleWithoutPagination({ db });
-
-  const filteredMembers = members.filter(
-    (member) => member.address && member.address.trim() !== '',
-  );
+  const { spaces, members } = await fetchMembersAndSpaces();
 
   return (
     <SidePanel>
@@ -50,8 +41,8 @@ export default async function CreateDeployFundsPage({ params }: PageProps) {
           <Plugin
             name="deploy-funds"
             spaceSlug={spaceSlug}
-            spaces={filteredSpaces}
-            members={filteredMembers}
+            spaces={spaces}
+            members={members}
           />
         }
       />
