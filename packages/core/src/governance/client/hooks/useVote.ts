@@ -153,7 +153,7 @@ export const useVote = ({
           args: [BigInt(proposalId)],
         });
       } catch (err) {
-        console.log('Error:', err);
+        console.error('Error:', err);
       } finally {
         setIsCheckingExpiration(false);
       }
