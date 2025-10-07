@@ -174,13 +174,13 @@ export const SpaceForm = ({
     if (slugIsChecking) {
       return;
     }
-    if (!preparedSlug && !slug) {
+    if (!slug) {
       return;
     }
-    const { isDirty, isTouched } = form.getFieldState('slug');
-    if (!isDirty && preparedSlug !== slug) {
-      form.setValue('slug', preparedSlug);
-    }
+    const { isDirty: isSlugDirty, isTouched: isSlugTouched } =
+      form.getFieldState('slug');
+    const { isDirty: isTitleDirty, isTouched: isTitleTouched } =
+      form.getFieldState('title');
     if (slugExists && spaceId !== foundSpaceId) {
       form.setError('slug', {
         message: DUBLICATE_SLUG_MESSAGE,
@@ -191,15 +191,23 @@ export const SpaceForm = ({
       form.clearErrors('slug');
       setSlugDublicated(false);
     }
-  }, [
-    spaceId,
-    form,
-    slug,
-    preparedSlug,
-    slugExists,
-    foundSpaceId,
-    slugIsChecking,
-  ]);
+  }, [spaceId, form, slug, slugExists, foundSpaceId, slugIsChecking]);
+
+  React.useEffect(() => {
+    if (slugIsChecking) {
+      return;
+    }
+    if (!preparedSlug) {
+      return;
+    }
+    const { isDirty: isSlugDirty, isTouched: isSlugTouched } =
+      form.getFieldState('slug');
+    const { isDirty: isTitleDirty, isTouched: isTitleTouched } =
+      form.getFieldState('title');
+    if (!isSlugDirty && isTitleDirty && preparedSlug !== slug) {
+      form.setValue('slug', preparedSlug);
+    }
+  }, [form, preparedSlug]);
 
   React.useEffect(() => {
     const { isDirty } = form.getFieldState('parentId');
