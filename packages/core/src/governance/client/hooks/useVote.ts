@@ -15,9 +15,9 @@ import {
   publicClient,
 } from '@hypha-platform/core/client';
 import useSWRMutation from 'swr/mutation';
-import { decodeFunctionData } from 'viem';
-import { deleteTokenAction } from '../../server/actions';
-import { DeleteTokenInput } from '../../types';
+import { decodeFunctionData, parseEventLogs } from 'viem';
+import { deleteTokenAction, updateTokenAction } from '../../server/actions';
+import { DeleteTokenInput, UpdateTokenInput } from '../../types';
 
 export const useVote = ({
   proposalId,
@@ -51,6 +51,12 @@ export const useVote = ({
     authToken ? [authToken, 'deleteToken'] : null,
     async ([authToken], { arg }: { arg: DeleteTokenInput }) =>
       deleteTokenAction(arg, { authToken }),
+  );
+
+  const { trigger: updateToken, isMutating: isUpdatingToken } = useSWRMutation(
+    authToken ? [authToken, 'updateToken'] : null,
+    async ([authToken], { arg }: { arg: UpdateTokenInput }) =>
+      updateTokenAction(arg, { authToken }),
   );
 
   const fetchProposalActions = useCallback(async (proposalId: number) => {
@@ -117,6 +123,35 @@ export const useVote = ({
     );
   };
 
+  const extractTokenAddressFromReceipt = async (txHash: `0x${string}`) => {
+    try {
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: txHash,
+      });
+
+      const logs = parseEventLogs({
+        abi: [
+          ...regularTokenFactoryAbi,
+          ...ownershipTokenFactoryAbi,
+          ...decayingTokenFactoryAbi,
+        ],
+        logs: receipt.logs,
+        strict: false,
+      });
+
+      const deployLog = logs.find((log) => log.eventName === 'TokenDeployed');
+
+      if (deployLog) {
+        return deployLog.args.tokenAddress as string;
+      } else {
+        throw new Error('TokenDeployed event not found in logs');
+      }
+    } catch (error) {
+      console.error('Failed to extract token address:', error);
+      throw error;
+    }
+  };
+
   const vote = useCallback(
     async (proposalId: number, support: boolean) => {
       if (!client) throw new Error('Smart wallet not connected');
@@ -164,12 +199,11 @@ export const useVote = ({
   useEffect(() => {
     if (!proposalId || !tokenSymbol || !authToken) return;
 
-    const eventSource = new EventSource(
+    const rejectedEventSource = new EventSource(
       `/api/v1/proposal-events/proposal-rejected?proposalId=${proposalId}`,
     );
 
-    eventSource.onmessage = async (event) => {
-      console.log('SSE event received:', event.data);
+    rejectedEventSource.onmessage = async (event) => {
       try {
         const data = JSON.parse(event.data);
         if (
@@ -189,17 +223,54 @@ export const useVote = ({
           }
         }
       } catch (error) {
-        console.error('Error handling SSE event:', error);
+        console.error('Error handling SSE event (rejected):', error);
       }
     };
 
-    eventSource.onerror = (error) => {
-      console.error('EventSource error:', error);
-      eventSource.close();
+    rejectedEventSource.onerror = (error) => {
+      console.error('EventSource error (rejected):', error);
+      rejectedEventSource.close();
+    };
+
+    const executedEventSource = new EventSource(
+      `/api/v1/proposal-events/proposal-executed?proposalId=${proposalId}`,
+    );
+
+    executedEventSource.onmessage = async (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (
+          data.event === 'ProposalExecuted' &&
+          data.proposalId === String(proposalId)
+        ) {
+          const actions = await fetchProposalActions(Number(proposalId));
+          if (!isValidProposalAction(actions)) return;
+
+          if (!data.txHash) {
+            throw new Error('txHash not found in event data');
+          }
+          const tokenAddress = await extractTokenAddressFromReceipt(
+            data.txHash as `0x${string}`,
+          );
+
+          await updateToken({
+            agreementWeb3Id: Number(proposalId),
+            address: tokenAddress,
+          });
+        }
+      } catch (error) {
+        console.error('Error handling SSE event (executed):', error);
+      }
+    };
+
+    executedEventSource.onerror = (error) => {
+      console.error('EventSource error (executed):', error);
+      executedEventSource.close();
     };
 
     return () => {
-      eventSource.close();
+      rejectedEventSource.close();
+      executedEventSource.close();
     };
   }, [
     proposalId,
@@ -208,6 +279,7 @@ export const useVote = ({
     fetchProposalActions,
     fetchTokens,
     deleteToken,
+    updateToken,
   ]);
 
   const handleAccept = () => {
@@ -232,5 +304,6 @@ export const useVote = ({
     isVoting,
     isCheckingExpiration,
     isDeletingToken,
+    isUpdatingToken,
   };
 };

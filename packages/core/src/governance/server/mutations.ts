@@ -3,7 +3,11 @@ import { documents, tokens } from '@hypha-platform/storage-postgres';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
-import { CreateAgreementInput, UpdateAgreementInput } from '../types';
+import {
+  CreateAgreementInput,
+  UpdateAgreementInput,
+  UpdateTokenInput,
+} from '../types';
 import { DatabaseInstance } from '../../server';
 import { CreateTokenInput, DeleteTokenInput } from '../types';
 
@@ -88,6 +92,70 @@ export const createToken = async (
     })
     .returning();
   return token;
+};
+
+export const updateToken = async (
+  { agreementId, agreementWeb3Id, ...rest }: UpdateTokenInput,
+  { db }: { db: DatabaseInstance },
+) => {
+  console.log('Updating token with input:', {
+    agreementId,
+    agreementWeb3Id,
+    ...rest,
+  });
+
+  let existingToken;
+  if (agreementId !== undefined) {
+    existingToken = await db
+      .select()
+      .from(tokens)
+      .where(eq(tokens.agreementId, agreementId))
+      .execute();
+  } else if (agreementWeb3Id !== undefined) {
+    existingToken = await db
+      .select()
+      .from(tokens)
+      .where(eq(tokens.agreementWeb3Id, agreementWeb3Id))
+      .execute();
+  } else {
+    throw new Error('Either agreementId or agreementWeb3Id must be provided');
+  }
+
+  console.log('Existing token check:', existingToken);
+
+  if (existingToken.length === 0) {
+    throw new Error(
+      `No token found with ${
+        agreementId !== undefined
+          ? `agreementId: ${agreementId}`
+          : `agreementWeb3Id: ${agreementWeb3Id}`
+      }`,
+    );
+  }
+  const updateData = {
+    ...rest,
+    ...(rest.agreementWeb3IdUpdate !== undefined && {
+      agreementWeb3Id: rest.agreementWeb3IdUpdate,
+    }),
+  };
+
+  const [updated] = await db
+    .update(tokens)
+    .set(updateData)
+    .where(
+      agreementId !== undefined
+        ? eq(tokens.agreementId, agreementId)
+        : eq(tokens.agreementWeb3Id, agreementWeb3Id!),
+    )
+    .returning();
+
+  console.log('Update result:', updated);
+
+  if (!updated) {
+    throw new Error('Failed to update token');
+  }
+
+  return updated;
 };
 
 export const deleteToken = async (

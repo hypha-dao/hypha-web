@@ -129,6 +129,7 @@ export const ProposalDetail = ({
           key={idx}
           name={token.name}
           symbol={token.symbol}
+          address={token.address}
           initialSupply={token.maxSupply}
           dbTokens={dbTokens}
         />

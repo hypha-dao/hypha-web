@@ -7,6 +7,7 @@ import {
   updateAgreementBySlug,
   deleteAgreementBySlug,
   createToken,
+  updateToken,
   deleteToken,
 } from './mutations';
 import {
@@ -15,6 +16,7 @@ import {
   UpdateAgreementBySlugInput,
   UpdateChangeEntryMethodBySlugInput,
   CreateTokenInput,
+  UpdateTokenInput,
   DeleteTokenInput,
 } from '../types';
 // TODO: #602 Define RLS Policies for Agreement Table
@@ -78,6 +80,14 @@ export async function createTokenAction(
 ) {
   if (!authToken) throw new Error('authToken is required to create token');
   return createToken(input, { db });
+}
+
+export async function updateTokenAction(
+  input: UpdateTokenInput,
+  { authToken }: { authToken: string },
+) {
+  if (!authToken) throw new Error('authToken is required to update token');
+  return updateToken(input, { db });
 }
 
 export async function deleteTokenAction(

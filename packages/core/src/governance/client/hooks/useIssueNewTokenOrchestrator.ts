@@ -16,6 +16,7 @@ import {
 } from '../../validation';
 import { useTokenMutationsWeb2Rsc } from './useTokenMutationWeb2.rsc';
 import { Config } from '@wagmi/core';
+import { updateTokenAction } from '../../server/actions';
 
 type TaskName =
   | 'CREATE_WEB2_AGREEMENT'
@@ -204,7 +205,7 @@ export const useCreateIssueTokenOrchestrator = ({
       try {
         if (config) {
           startTask('CREATE_WEB3_AGREEMENT');
-          await web3.createIssueToken({
+          const web3Result = await web3.createIssueToken({
             spaceId: arg.web3SpaceId,
             name: arg.name,
             symbol: arg.symbol,
@@ -259,6 +260,15 @@ export const useCreateIssueTokenOrchestrator = ({
           slug,
           web3ProposalId: Number(web3ProposalId),
         });
+
+        const updatedToken = await updateTokenAction(
+          {
+            agreementId: web2.createdAgreement!.id,
+            agreementWeb3IdUpdate: Number(web3ProposalId),
+          },
+          { authToken: authToken! },
+        );
+
         completeTask('LINK_WEB2_AND_WEB3_AGREEMENT');
         return result;
       } catch (error) {
