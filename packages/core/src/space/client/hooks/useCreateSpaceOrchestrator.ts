@@ -110,9 +110,9 @@ export const useCreateSpaceOrchestrator = ({
 }: UseCreateSpaceOrchestratorInput) => {
   const web2 = useSpaceMutationsWeb2Rsc(authToken);
   const web3 = useSpaceMutationsWeb3Rpc();
-  const spaceFiles = useSpaceFileUploads(authToken, (uploadedFiles, slug) => {
-    web2.updateSpaceBySlug({
-      slug: slug ?? '',
+  const spaceFiles = useSpaceFileUploads(authToken, (uploadedFiles, id) => {
+    web2.updateSpaceById({
+      id,
       ...uploadedFiles,
     });
   });
@@ -177,7 +177,7 @@ export const useCreateSpaceOrchestrator = ({
       const files = schemaCreateSpaceFiles.parse(arg);
       if (Object.values(files).some((file) => file)) {
         startTask('UPLOAD_FILES');
-        await spaceFiles.upload(files, createdSpace?.slug);
+        await spaceFiles.upload(files, createdSpace?.id);
         completeTask('UPLOAD_FILES');
       } else {
         startTask('UPLOAD_FILES');
