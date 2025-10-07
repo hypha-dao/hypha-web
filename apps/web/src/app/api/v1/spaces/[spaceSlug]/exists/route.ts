@@ -10,8 +10,11 @@ export async function GET(
 
   try {
     // TODO: implement authorization
-    const exists = await checkSpaceSlugExists({ slug: spaceSlug }, { db });
-    return NextResponse.json({ exists });
+    const { exists, spaceId } = await checkSpaceSlugExists(
+      { slug: spaceSlug },
+      { db },
+    );
+    return NextResponse.json({ exists, spaceId });
   } catch (error) {
     console.error('Failed to check existed space:', error);
     return NextResponse.json(

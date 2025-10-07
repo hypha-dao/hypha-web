@@ -37,6 +37,7 @@ import {
   SpaceFlags,
   useMe,
   useOrganisationSpacesBySingleSlug,
+  useSpaceBySlugExists,
   useSpacesByWeb3Ids,
 } from '@hypha-platform/core/client';
 import { Links } from '../../common/links';
@@ -46,6 +47,7 @@ import {
   ParentSpaceSelector,
   useMemberWeb3SpaceIds,
 } from '@hypha-platform/epics';
+import slugify from 'slugify';
 
 const schemaCreateSpaceForm = schemaCreateSpace.extend(createSpaceFiles);
 export type SchemaCreateSpaceForm = z.infer<typeof schemaCreateSpaceForm>;
@@ -70,10 +72,11 @@ export type CreateSpaceFormProps = {
   submitLabel?: string;
   submitLoadingLabel?: string;
   label?: SpaceFormLabel;
+  spaceId?: number;
   onSubmit: (
     values: SchemaCreateSpaceForm,
     organisationSpaces?: Space[],
-  ) => void;
+  ) => Promise<void> | void;
 };
 
 const DEFAULT_VALUES = {
@@ -107,6 +110,7 @@ export const SpaceForm = ({
   submitLabel = 'Create',
   submitLoadingLabel = 'Creating Space...',
   label = 'create',
+  spaceId = -1,
 }: CreateSpaceFormProps) => {
   if (process.env.NODE_ENV !== 'production') {
     console.debug('SpaceForm', { defaultValues });
@@ -118,6 +122,19 @@ export const SpaceForm = ({
   });
 
   const parentSpaceId = form.watch('parentId');
+  const title = form.watch('title');
+  const slug = form.watch('slug');
+
+  const preparedSlug = React.useMemo(
+    () => slugify(title, { lower: true }),
+    [title],
+  );
+
+  const {
+    exists: slugExists,
+    spaceId: foundSpaceId,
+    isLoading: slugIsChecking,
+  } = useSpaceBySlugExists(slug ?? '');
 
   const categoryOptions = React.useMemo(
     () =>
@@ -132,6 +149,35 @@ export const SpaceForm = ({
   }, [parentSpaceId, form]);
 
   React.useEffect(() => {
+    if (slugIsChecking) {
+      return;
+    }
+    if (!preparedSlug && !slug) {
+      return;
+    }
+    const { isDirty, isTouched } = form.getFieldState('slug');
+    if (!isDirty && preparedSlug !== slug) {
+      form.setValue('slug', preparedSlug);
+    }
+    if (slugExists && spaceId !== foundSpaceId) {
+      form.setError('slug', {
+        message: 'Space ID already exists',
+        type: 'validate',
+      });
+    } else {
+      form.clearErrors('slug');
+    }
+  }, [
+    spaceId,
+    form,
+    slug,
+    preparedSlug,
+    slugExists,
+    foundSpaceId,
+    slugIsChecking,
+  ]);
+
+  React.useEffect(() => {
     const { isDirty } = form.getFieldState('parentId');
     if (!isDirty) {
       form.setValue('parentId', initialParentSpaceId ?? null, {
@@ -144,7 +190,10 @@ export const SpaceForm = ({
 
   React.useEffect(() => {
     if (!values) return;
-    form.reset({ ...form.getValues(), ...values }, { keepDirty: true });
+    form.reset(
+      { ...form.getValues(), ...values },
+      { keepDirty: false, keepTouched: false },
+    );
   }, [values, form]);
 
   const { spaces: organisationSpaces, isLoading: isOrganisationLoading } =
@@ -341,6 +390,24 @@ export const SpaceForm = ({
                         />
                       </FormControl>
                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="slug"
+                  render={({ field }) => (
+                    <FormItem className="gap-0">
+                      <FormControl>
+                        <Input
+                          rightIcon={!field.value && <RequirementMark />}
+                          placeholder="Unique space ID"
+                          className="border-0 text-2 p-0 placeholder:text-2 bg-inherit"
+                          disabled={isLoading}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage className="text-1 mb-1" />
                     </FormItem>
                   )}
                 />
