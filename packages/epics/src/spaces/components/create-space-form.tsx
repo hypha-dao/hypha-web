@@ -93,6 +93,8 @@ const DEFAULT_VALUES = {
   flags: ['sandbox'] as SpaceFlags[],
 };
 
+const DUBLICATE_SLUG_MESSAGE = 'Space ID already exists';
+
 export const SpaceForm = ({
   creator,
   isLoading,
@@ -116,8 +118,28 @@ export const SpaceForm = ({
     console.debug('SpaceForm', { defaultValues });
   }
 
+  const [slugDublicated, setSlugDublicated] = React.useState(false);
+
+  const resolveSlug = React.useCallback(
+    () => !slugDublicated,
+    [slugDublicated],
+  );
+
+  const schema = schemaCreateSpaceForm.extend({
+    slug: z
+      .string()
+      .min(1)
+      .max(50)
+      .regex(
+        /^[a-z0-9'-]+$/,
+        'Slug must contain only lowercase letters, numbers, hyphens, and apostrophes',
+      )
+      .optional()
+      .refine(resolveSlug, { message: DUBLICATE_SLUG_MESSAGE }),
+  });
+
   const form = useForm<SchemaCreateSpaceForm>({
-    resolver: zodResolver(schemaCreateSpaceForm),
+    resolver: zodResolver(schema),
     defaultValues,
   });
 
@@ -161,11 +183,13 @@ export const SpaceForm = ({
     }
     if (slugExists && spaceId !== foundSpaceId) {
       form.setError('slug', {
-        message: 'Space ID already exists',
+        message: DUBLICATE_SLUG_MESSAGE,
         type: 'validate',
       });
+      setSlugDublicated(true);
     } else {
       form.clearErrors('slug');
+      setSlugDublicated(false);
     }
   }, [
     spaceId,
