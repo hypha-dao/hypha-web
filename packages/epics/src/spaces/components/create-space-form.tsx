@@ -417,24 +417,6 @@ export const SpaceForm = ({
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="slug"
-                  render={({ field }) => (
-                    <FormItem className="gap-0">
-                      <FormControl>
-                        <Input
-                          rightIcon={!field.value && <RequirementMark />}
-                          placeholder="Unique space ID"
-                          className="border-0 text-2 p-0 placeholder:text-2 bg-inherit"
-                          disabled={isLoading}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage className="text-1 mb-1" />
-                    </FormItem>
-                  )}
-                />
                 <span className="flex items-center">
                   <Text className="text-1 text-foreground mr-1">
                     Created by
@@ -446,9 +428,29 @@ export const SpaceForm = ({
               </div>
             </div>
           </div>
-          <div className="flex justify-between gap-4">
-            {backUrl && <ButtonBack label={backLabel} backUrl={backUrl} />}
-            <ButtonClose closeUrl={closeUrl} />
+          <div className="flex flex-col">
+            <div className="flex justify-between gap-4">
+              {backUrl && <ButtonBack label={backLabel} backUrl={backUrl} />}
+              <ButtonClose closeUrl={closeUrl} />
+            </div>
+            <FormField
+              control={form.control}
+              name="slug"
+              render={({ field }) => (
+                <FormItem className="gap-0">
+                  <FormControl>
+                    <Input
+                      rightIcon={!field.value && <RequirementMark />}
+                      placeholder="Unique space ID"
+                      className="border-0 text-2 p-0 placeholder:text-2 bg-inherit"
+                      disabled={isLoading}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-1 mb-1" />
+                </FormItem>
+              )}
+            />
           </div>
         </div>
         <FormField
