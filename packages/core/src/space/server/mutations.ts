@@ -45,6 +45,23 @@ export const updateSpaceBySlug = async (
   return updatedSpace;
 };
 
+export const updateSpaceById = async (
+  { id, ...rest }: { id: number } & UpdateSpaceInput,
+  { db }: { db: DatabaseInstance },
+) => {
+  const [updatedSpace] = await db
+    .update(spaces)
+    .set(rest)
+    .where(eq(spaces.id, id))
+    .returning();
+
+  if (!updatedSpace) {
+    throw new Error('Failed to update space');
+  }
+
+  return updatedSpace;
+};
+
 /**
  * Delete a space by slug
  *

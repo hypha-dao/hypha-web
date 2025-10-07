@@ -5,11 +5,13 @@ import useSWRMutation from 'swr/mutation';
 import {
   CreateSpaceInput,
   DeleteSpaceBySlugInput,
+  UpdateSpaceByIdInput,
   UpdateSpaceBySlugInput,
 } from '../../types';
 import {
   createSpaceAction,
   deleteSpaceBySlugAction,
+  updateSpaceByIdAction,
   updateSpaceBySlugAction,
 } from '@hypha-platform/core/space/server/actions';
 
@@ -29,13 +31,25 @@ export const useSpaceMutationsWeb2Rsc = (authToken?: string | null) => {
   const {
     trigger: updateBySlugMutation,
     reset: resetUpdateSpaceBySlugMutation,
-    isMutating: isUpdatingSpace,
+    isMutating: isUpdatingSpaceBySlug,
     error: errorUpdateSpaceBySlugMutation,
-    data: updatedSpace,
+    data: updatedSpaceBySlug,
   } = useSWRMutation(
     authToken ? [authToken, 'updateSpace'] : null,
     async ([authToken], { arg }: { arg: UpdateSpaceBySlugInput }) =>
       updateSpaceBySlugAction(arg, { authToken }),
+  );
+
+  const {
+    trigger: updateByIdMutation,
+    reset: resetUpdateSpaceByIdMutation,
+    isMutating: isUpdatingSpaceById,
+    error: errorUpdateSpaceByIdMutation,
+    data: updatedSpaceById,
+  } = useSWRMutation(
+    authToken ? [authToken, 'updateSpace'] : null,
+    async ([authToken], { arg }: { arg: UpdateSpaceByIdInput }) =>
+      updateSpaceByIdAction(arg, { authToken }),
   );
 
   const {
@@ -59,9 +73,15 @@ export const useSpaceMutationsWeb2Rsc = (authToken?: string | null) => {
 
     updateSpaceBySlug: updateBySlugMutation,
     resetUpdateSpaceBySlugMutation,
-    isUpdatingSpace,
+    isUpdatingSpaceBySlug,
     errorUpdateSpaceBySlugMutation,
-    updatedSpace,
+    updatedSpaceBySlug,
+
+    updateSpaceById: updateByIdMutation,
+    resetUpdateSpaceByIdMutation,
+    isUpdatingSpaceById,
+    errorUpdateSpaceByIdMutation,
+    updatedSpaceById,
 
     deleteSpaceBySlug: deleteSpaceBySlugMutation,
     resetDeleteSpaceBySlugMutation,

@@ -80,6 +80,7 @@ const DEFAULT_VALUES = {
   title: '',
   description: '',
   logoUrl: '',
+  slug: '',
   leadImage: '',
   categories: [] as Category[],
   links: [] as string[],
@@ -268,7 +269,7 @@ export const SpaceForm = ({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(
-          (space) => {
+          async (space) => {
             if (
               !space.flags?.includes('sandbox') &&
               space.categories.length === 0
@@ -280,7 +281,7 @@ export const SpaceForm = ({
               showUnsetParentIdError();
               return;
             }
-            onSubmit(space, organisationSpaces);
+            await onSubmit(space, organisationSpaces);
           },
           (e) => {
             const flags = form.getValues()['flags'];
