@@ -136,12 +136,14 @@ type CheckSpaceSlugExistsInput = { slug: string };
 export const checkSpaceSlugExists = async (
   { slug }: CheckSpaceSlugExistsInput,
   { db }: DbConfig,
-): Promise<boolean> => {
+): Promise<{ exists: boolean; spaceId: number }> => {
   const response = await db.query.spaces.findFirst({
     where: (spaces, { eq }) => eq(spaces.slug, slug),
   });
 
-  return !!response;
+  const exists = !!response;
+  const spaceId = exists ? response.id : -1;
+  return { exists, spaceId };
 };
 
 type FindAllSpacesByMemberIdInput = {

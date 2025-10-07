@@ -130,6 +130,7 @@ export default function SpaceConfiguration() {
           }}
           label="configure"
           initialParentSpaceId={space?.parentId ?? null}
+          spaceId={space?.id}
         />
       </LoadingBackdrop>
     </SidePanel>

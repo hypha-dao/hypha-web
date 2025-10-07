@@ -5,8 +5,14 @@ import useSWR from 'swr';
 
 type UseSpaceBySlugExistsReturn = {
   exists?: boolean;
+  spaceId?: number;
   isLoading: boolean;
 };
+
+interface FetchResult {
+  exists: boolean;
+  spaceId: number;
+}
 
 export const useSpaceBySlugExists = (
   spaceSlug: string,
@@ -19,6 +25,7 @@ export const useSpaceBySlugExists = (
     spaceSlug ? [endpoint] : null,
     ([endpoint]) => fetch(endpoint).then((res) => res.json()),
   );
-  const exists = data ? (data as { exists: boolean }).exists : undefined;
-  return { exists, isLoading };
+  const exists = data ? (data as FetchResult).exists : undefined;
+  const spaceId = data ? (data as FetchResult).spaceId : undefined;
+  return { exists, spaceId, isLoading };
 };

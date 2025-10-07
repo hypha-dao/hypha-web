@@ -25,7 +25,7 @@ export const useSpaceMutationsWeb2Rsc = (authToken?: string | null) => {
   } = useSWRMutation(
     authToken ? [authToken, 'createSpace'] : null,
     async ([authToken], { arg }: { arg: CreateSpaceInput }) =>
-      createSpaceAction(arg, { authToken }),
+      await createSpaceAction(arg, { authToken }),
   );
 
   const {
@@ -37,7 +37,7 @@ export const useSpaceMutationsWeb2Rsc = (authToken?: string | null) => {
   } = useSWRMutation(
     authToken ? [authToken, 'updateSpace'] : null,
     async ([authToken], { arg }: { arg: UpdateSpaceBySlugInput }) =>
-      updateSpaceBySlugAction(arg, { authToken }),
+      await updateSpaceBySlugAction(arg, { authToken }),
   );
 
   const {
@@ -49,7 +49,7 @@ export const useSpaceMutationsWeb2Rsc = (authToken?: string | null) => {
   } = useSWRMutation(
     authToken ? [authToken, 'updateSpace'] : null,
     async ([authToken], { arg }: { arg: UpdateSpaceByIdInput }) =>
-      updateSpaceByIdAction(arg, { authToken }),
+      await updateSpaceByIdAction(arg, { authToken }),
   );
 
   const {
@@ -61,7 +61,7 @@ export const useSpaceMutationsWeb2Rsc = (authToken?: string | null) => {
   } = useSWRMutation(
     authToken ? [authToken, 'deleteSpace'] : null,
     async ([authToken], { arg }: { arg: DeleteSpaceBySlugInput }) =>
-      deleteSpaceBySlugAction(arg, { authToken }),
+      await deleteSpaceBySlugAction(arg, { authToken }),
   );
 
   return {
