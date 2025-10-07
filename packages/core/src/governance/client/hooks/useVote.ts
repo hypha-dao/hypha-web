@@ -149,9 +149,11 @@ export const useVote = ({
         return await client.writeContract({
           address: daoProposalsImplementationConfig.address[8453],
           abi: daoProposalsImplementationConfig.abi,
-          functionName: 'checkProposalExpiration',
+          functionName: 'triggerExecutionCheck',
           args: [BigInt(proposalId)],
         });
+      } catch (err) {
+        console.error('Error:', err);
       } finally {
         setIsCheckingExpiration(false);
       }

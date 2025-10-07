@@ -41,6 +41,7 @@ export const FormVoting = ({
   onAccept,
   onReject,
   onCheckProposalExpiration,
+  isCheckingExpiration,
   isVoting,
   documentSlug,
   isAuthenticated,
@@ -55,6 +56,7 @@ export const FormVoting = ({
   onAccept: () => void;
   onReject: () => void;
   onCheckProposalExpiration: () => void;
+  isCheckingExpiration: boolean;
   isVoting?: boolean;
   documentSlug: string;
   isAuthenticated?: boolean;
@@ -64,7 +66,11 @@ export const FormVoting = ({
   const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
   const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
 
-  const isDisabled = isVoting || !isAuthenticated || (!isMember && !isDelegate);
+  const isDisabled =
+    isVoting ||
+    !isAuthenticated ||
+    isCheckingExpiration ||
+    (!isMember && !isDelegate);
   const tooltipMessage = !isAuthenticated
     ? 'Please sign in to use this feature.'
     : !isMember && !isDelegate
