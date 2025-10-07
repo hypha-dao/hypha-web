@@ -102,7 +102,7 @@ export const updateToken = async (
     agreementId,
     agreementWeb3Id,
     ...rest,
-  }); // Лог входных данных
+  });
 
   let existingToken;
   if (agreementId !== undefined) {
