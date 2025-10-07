@@ -304,7 +304,9 @@ export const findSelf = async ({ db }: DbConfig) => {
     return mapToDomainPerson(dbPerson);
   } catch (error) {
     console.error('Error finding authenticated user:', error);
-    return null;
+    throw error instanceof Error
+      ? new Error('Error finding authenticated user', { cause: error })
+      : new Error(String(error));
   }
 };
 
