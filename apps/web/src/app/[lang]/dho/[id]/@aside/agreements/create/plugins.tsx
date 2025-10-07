@@ -12,7 +12,7 @@ import {
   SpaceToSpaceMembershipPlugin,
 } from '@hypha-platform/epics';
 import { useMembers } from '@web/hooks/use-members';
-import { Space } from '@hypha-platform/core/client';
+import { Person, Space } from '@hypha-platform/core/client';
 
 export const PLUGINS = {
   'propose-contribution': ProposeContributionPlugin,
@@ -31,6 +31,7 @@ type PluginProps = {
   spaceSlug?: string;
   web3SpaceId?: number | null;
   spaces?: Space[];
+  members?: Person[];
 };
 
 export const Plugin = ({
@@ -38,8 +39,12 @@ export const Plugin = ({
   spaceSlug,
   web3SpaceId,
   spaces,
+  members,
 }: PluginProps) => {
-  const { persons } = useMembers({ spaceSlug, paginationDisabled: true });
+  const { persons, spaces: memberSpaces } = useMembers({
+    spaceSlug,
+    paginationDisabled: true,
+  });
 
   const PluginCmp = PLUGINS[name];
 
@@ -47,8 +52,8 @@ export const Plugin = ({
     <PluginCmp
       spaceSlug={spaceSlug || ''}
       web3SpaceId={web3SpaceId}
-      members={persons?.data}
-      spaces={spaces}
+      members={members ?? persons?.data}
+      spaces={spaces ?? memberSpaces?.data}
     />
   );
 };

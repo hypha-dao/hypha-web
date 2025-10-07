@@ -15,6 +15,8 @@ type RecipientProps = {
   defaultRecipientType?: RecipientType;
   onChange?: (selected: Person | Space | { address: string }) => void;
   readOnly?: boolean;
+  emptyMembersMessage?: string;
+  emptySpacesMessage?: string;
 };
 
 export const Recipient = ({
@@ -24,6 +26,8 @@ export const Recipient = ({
   value,
   defaultRecipientType = 'member',
   readOnly,
+  emptyMembersMessage,
+  emptySpacesMessage,
 }: RecipientProps) => {
   const [recipientType, setRecipientType] =
     useState<RecipientType>(defaultRecipientType);
@@ -41,7 +45,8 @@ export const Recipient = ({
     }
   }, [value, members, spaces]);
 
-  const placeholder = 'Select recipient...';
+  const placeholder =
+    recipientType === 'member' ? 'Select member...' : 'Select space...';
 
   const memberOptions = useMemo(
     () =>
@@ -138,6 +143,11 @@ export const Recipient = ({
             onChange={handleChange}
             initialValue={value}
             disabled={readOnly}
+            emptyListMessage={
+              recipientType === 'member'
+                ? emptyMembersMessage
+                : emptySpacesMessage
+            }
             renderOption={(option) => (
               <>
                 {option.avatarUrl && (
