@@ -152,6 +152,8 @@ export const useVote = ({
           functionName: 'triggerExecutionCheck',
           args: [BigInt(proposalId)],
         });
+      } catch (err) {
+        console.log('Error:', err);
       } finally {
         setIsCheckingExpiration(false);
       }

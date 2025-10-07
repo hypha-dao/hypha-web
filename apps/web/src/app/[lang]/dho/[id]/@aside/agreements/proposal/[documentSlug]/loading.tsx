@@ -12,6 +12,7 @@ export default function Loading() {
         onCheckProposalExpiration={() =>
           console.log('handleCheckProposalExpiration')
         }
+        isCheckingExpiration={false}
         content={''}
         creator={{
           avatar: '',

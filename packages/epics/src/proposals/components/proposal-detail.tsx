@@ -33,6 +33,7 @@ type ProposalDetailProps = ProposalHeadProps & {
   onAccept: () => void;
   onReject: () => void;
   onCheckProposalExpiration: () => void;
+  isCheckingExpiration: boolean;
   isVoting?: boolean;
   content?: string;
   closeUrl: string;
@@ -54,6 +55,7 @@ export const ProposalDetail = ({
   onAccept,
   onReject,
   onCheckProposalExpiration,
+  isCheckingExpiration,
   content,
   closeUrl,
   leadImage,
@@ -170,6 +172,7 @@ export const ProposalDetail = ({
         onAccept={onAccept}
         onReject={onReject}
         onCheckProposalExpiration={onCheckProposalExpiration}
+        isCheckingExpiration={isCheckingExpiration}
         isLoading={isLoading}
         isVoting={isVoting}
         documentSlug={documentSlug}
