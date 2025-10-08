@@ -24,7 +24,7 @@ export type Callback<A extends Abi, E extends ContractEventName<A>> = (
 export const schemaWebhookBody = z.object({
   webhookId: z.string(),
   id: z.string(),
-  createdAt: z.string().datetime(),
+  createdAt: z.iso.datetime(),
   type: z.union([z.literal('GRAPHQL'), z.string()]),
   event: z.object({
     data: z.object({

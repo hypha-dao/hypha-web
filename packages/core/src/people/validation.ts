@@ -19,7 +19,6 @@ const signupPersonWeb2Props = {
     })
     .optional(),
   email: z
-    .string()
     .email({ message: 'Please enter a valid email address' })
     .max(100, { message: 'Email must be at most 100 characters long' })
     .or(z.literal(''))
@@ -37,9 +36,7 @@ const signupPersonWeb2Props = {
     })
     .optional(),
   links: z
-    .array(
-      z.string().url('Please enter a valid URL (e.g., https://example.com)'),
-    )
+    .array(z.url('Please enter a valid URL (e.g., https://example.com)'))
     .max(3)
     .default([])
     .optional(),
@@ -61,7 +58,6 @@ const editPersonWeb2Props = {
     })
     .optional(),
   email: z
-    .string()
     .email({ message: 'Please enter a valid email address' })
     .max(100, { message: 'Email must be at most 100 characters long' })
     .or(z.literal(''))
@@ -72,9 +68,7 @@ const editPersonWeb2Props = {
     .trim()
     .optional(),
   links: z
-    .array(
-      z.string().url('Please enter a valid URL (e.g., https://example.com)'),
-    )
+    .array(z.url('Please enter a valid URL (e.g., https://example.com)'))
     .max(3)
     .default([])
     .optional(),
@@ -83,7 +77,7 @@ const editPersonWeb2Props = {
 export const editPersonFiles = z.object({
   avatarUrl: z
     .union([
-      z.string().url('Avatar URL must be a valid URL'),
+      z.url('Avatar URL must be a valid URL'),
       z.literal(''),
       z.null(),
       z.undefined(),
@@ -102,7 +96,7 @@ export const editPersonFiles = z.object({
     .transform((val) => (val === '' || val === null ? undefined : val)),
   leadImageUrl: z
     .union([
-      z.string().url('Lead Image URL must be a valid URL'),
+      z.url('Lead Image URL must be a valid URL'),
       z.literal(''),
       z.null(),
       z.undefined(),
@@ -144,8 +138,8 @@ export type PersonFiles = z.infer<typeof editPersonFiles>;
 export const schemaEditPersonWeb2 = z.object(editPersonWeb2Props);
 
 export const schemaEditPersonWeb2FileUrls = z.object({
-  avatarUrl: z.string().url('Avatar URL must be a valid URL').optional(),
-  leadImageUrl: z.string().url('Lead Image URL must be a valid URL').optional(),
+  avatarUrl: z.url('Avatar URL must be a valid URL').optional(),
+  leadImageUrl: z.url('Lead Image URL must be a valid URL').optional(),
 });
 
 export const schemaEditPerson = z.object({

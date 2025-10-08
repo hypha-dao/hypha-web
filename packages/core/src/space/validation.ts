@@ -27,9 +27,7 @@ const createSpaceWeb2Props = {
   parentId: z.number().nullable(),
   categories: z.array(z.enum(CATEGORIES)).default([]),
   links: z
-    .array(
-      z.string().url('Please enter a valid URL (e.g., https://example.com)'),
-    )
+    .array(z.url('Please enter a valid URL (e.g., https://example.com)'))
     .max(3)
     .default([]),
   address: z.string().optional(),
@@ -39,8 +37,8 @@ const createSpaceWeb2Props = {
 export const schemaCreateSpaceWeb2 = z.object(createSpaceWeb2Props);
 
 export const createSpaceWeb2FileUrls = {
-  logoUrl: z.string().url('A space icon is required'),
-  leadImage: z.string().url('A space banner is required'),
+  logoUrl: z.url('A space icon is required'),
+  leadImage: z.url('A space banner is required'),
 };
 
 export const schemaCreateSpaceWeb2FileUrls = z.object(createSpaceWeb2FileUrls);
@@ -56,7 +54,7 @@ export const schemaCreateSpaceWeb3 = z.object(createSpaceWeb3Props);
 
 export const createSpaceFiles = {
   logoUrl: z.union([
-    z.string().url('A space icon is required'),
+    z.url('A space icon is required'),
     z
       .instanceof(File)
       .refine(
@@ -69,7 +67,7 @@ export const createSpaceFiles = {
       ),
   ]),
   leadImage: z.union([
-    z.string().url('A space banner is required'),
+    z.url('A space banner is required'),
     z
       .instanceof(File)
       .refine(
