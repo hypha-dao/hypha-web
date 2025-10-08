@@ -423,7 +423,7 @@ export const SpaceForm = ({
                   control={form.control}
                   name="title"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="gap-0">
                       <FormControl>
                         <Input
                           rightIcon={!field.value && <RequirementMark />}
@@ -432,6 +432,26 @@ export const SpaceForm = ({
                           disabled={isLoading}
                           {...field}
                         />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="slug"
+                  render={({ field }) => (
+                    <FormItem className="gap-0">
+                      <FormControl>
+                        {spaceId !== -1 && (
+                          <Input
+                            rightIcon={!field.value && <RequirementMark />}
+                            placeholder="Unique space ID"
+                            className="border-0 text-2 p-0 placeholder:text-2 bg-inherit"
+                            disabled={isLoading}
+                            {...field}
+                          />
+                        )}
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -453,24 +473,6 @@ export const SpaceForm = ({
               {backUrl && <ButtonBack label={backLabel} backUrl={backUrl} />}
               <ButtonClose closeUrl={closeUrl} />
             </div>
-            <FormField
-              control={form.control}
-              name="slug"
-              render={({ field }) => (
-                <FormItem className="gap-0">
-                  <FormControl>
-                    <Input
-                      rightIcon={!field.value && <RequirementMark />}
-                      placeholder="Unique space ID"
-                      className="border-0 text-2 p-0 placeholder:text-2 bg-inherit"
-                      disabled={isLoading}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className="text-1 mb-1" />
-                </FormItem>
-              )}
-            />
           </div>
         </div>
         <FormField
