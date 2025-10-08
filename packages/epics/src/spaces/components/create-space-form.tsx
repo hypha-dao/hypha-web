@@ -74,6 +74,7 @@ export type CreateSpaceFormProps = {
   submitLoadingLabel?: string;
   label?: SpaceFormLabel;
   spaceId?: number;
+  slugIncorrectMessage?: string;
   onSubmit: (
     values: SchemaCreateSpaceForm,
     organisationSpaces?: Space[],
@@ -94,7 +95,8 @@ const DEFAULT_VALUES = {
   flags: ['sandbox'] as SpaceFlags[],
 };
 
-const DUBLICATE_SLUG_MESSAGE = 'Space ID already exists';
+const REGEX_MISMATCH_MESSAGE =
+  'Slug must contain only lowercase letters, numbers, hyphens, and apostrophes';
 
 export const SpaceForm = ({
   creator,
@@ -114,6 +116,7 @@ export const SpaceForm = ({
   submitLoadingLabel = 'Creating Space...',
   label = 'create',
   spaceId = -1,
+  slugIncorrectMessage = 'Space ID already exists',
 }: CreateSpaceFormProps) => {
   if (process.env.NODE_ENV !== 'production') {
     console.debug('SpaceForm', { defaultValues });
@@ -131,12 +134,9 @@ export const SpaceForm = ({
       .string()
       .min(1)
       .max(50)
-      .regex(
-        /^[a-z0-9'-]+$/,
-        'Slug must contain only lowercase letters, numbers, hyphens, and apostrophes',
-      )
+      .regex(/^[a-z0-9'-]+$/, REGEX_MISMATCH_MESSAGE)
       .optional()
-      .refine(resolveSlug, { message: DUBLICATE_SLUG_MESSAGE }),
+      .refine(resolveSlug, { message: slugIncorrectMessage }),
   });
 
   const form = useForm<SchemaCreateSpaceForm>({
@@ -184,7 +184,7 @@ export const SpaceForm = ({
     ({ form, spaceId, slugExists, foundSpaceId }: DebounceParams) => {
       if (slugExists && spaceId !== foundSpaceId) {
         form.setError('slug', {
-          message: DUBLICATE_SLUG_MESSAGE,
+          message: slugIncorrectMessage,
           type: 'validate',
         });
         setSlugDublicated(true);
