@@ -9,11 +9,11 @@ import { db } from '@hypha-platform/storage-postgres';
 function getIconForHyphaTokens(symbol: string, fallback: string): string {
   switch (symbol.toUpperCase()) {
     case 'HYPHA':
-      return '/placeholder/hypha-token-icon.webp';
+      return '/placeholder/hypha-token-icon.svg';
     case 'HVOICE':
-      return '/placeholder/voice-token-icon.webp';
+      return '/placeholder/voice-token-icon.svg';
     case 'HCREDITS':
-      return '/placeholder/credits-token-icon.webp';
+      return '/placeholder/credits-token-icon.svg';
     default:
       return fallback;
   }
