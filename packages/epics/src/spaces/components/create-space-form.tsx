@@ -95,9 +95,6 @@ const DEFAULT_VALUES = {
   flags: ['sandbox'] as SpaceFlags[],
 };
 
-const REGEX_MISMATCH_MESSAGE =
-  'Slug must contain only lowercase letters, numbers, hyphens, and apostrophes';
-
 export const SpaceForm = ({
   creator,
   isLoading,
@@ -134,7 +131,10 @@ export const SpaceForm = ({
       .string()
       .min(1)
       .max(50)
-      .regex(/^[a-z0-9'-]+$/, REGEX_MISMATCH_MESSAGE)
+      .regex(
+        /^[a-z0-9'-]+$/,
+        'This field can only contain lowercase letters, numbers, hyphens, and apostrophes.',
+      )
       .optional()
       .refine(resolveSlug, { message: slugIncorrectMessage }),
   });
@@ -443,15 +443,24 @@ export const SpaceForm = ({
                   render={({ field }) => (
                     <FormItem className="gap-0">
                       <FormControl>
-                        {spaceId !== -1 && (
-                          <Input
-                            rightIcon={!field.value && <RequirementMark />}
-                            placeholder="Unique space ID"
-                            className="border-0 text-2 p-0 placeholder:text-2 bg-inherit"
-                            disabled={isLoading}
-                            {...field}
-                          />
-                        )}
+                        {spaceId !== -1 ? (
+                          <div key={`${field.ref}-slug`}>
+                            <Input
+                              rightIcon={!field.value && <RequirementMark />}
+                              placeholder="Space URL"
+                              className="border-0 text-2 p-0 placeholder:text-2 bg-inherit"
+                              disabled={isLoading}
+                              {...field}
+                            />
+                            <span className="text-1 text-neutral-11">
+                              <span>
+                                Your space name is automatically added to the
+                                end of your URL. You can edit it if needed, but
+                                it must remain unique.
+                              </span>
+                            </span>
+                          </div>
+                        ) : null}
                       </FormControl>
                       <FormMessage />
                     </FormItem>
