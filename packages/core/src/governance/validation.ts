@@ -143,7 +143,7 @@ export const schemaRequestInvite = schemaCreateAgreementWeb2.extend({
 });
 
 export const createAgreementWeb2FileUrls = {
-  leadImage: z.string().url('Lead Image URL must be a valid URL').optional(),
+  leadImage: z.url('Lead Image URL must be a valid URL').optional(),
 };
 
 export const schemaCreateAgreementWeb2FileUrls = z.object(
@@ -289,9 +289,7 @@ export const schemaIssueNewToken = z.object({
 
   iconUrl: z
     .union([
-      z
-        .string({ message: 'Please upload a token icon' })
-        .url('Icon URL must be a valid URL'),
+      z.url('Icon URL must be a valid URL'),
       z.literal(''),
       z
         .custom<File>(isBrowserFile, { message: 'Please upload a valid file' })
