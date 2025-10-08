@@ -190,9 +190,14 @@ export const SpaceForm = ({
     if (slugIsChecking || !preparedSlug) {
       return;
     }
-    const { isTouched: isTitleTouched } = form.getFieldState('title');
+    const { isDirty: isTitleDirty, isTouched: isTitleTouched } =
+      form.getFieldState('title');
     const { isDirty: isSlugDirty } = form.getFieldState('slug');
-    if (!isSlugDirty && isTitleTouched && preparedSlug !== slug) {
+    if (
+      !isSlugDirty &&
+      (isTitleTouched || isTitleDirty) &&
+      preparedSlug !== slug
+    ) {
       form.setValue('slug', preparedSlug);
     }
   }, [form, preparedSlug]);
