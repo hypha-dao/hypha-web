@@ -10,7 +10,7 @@ export const stringifiedDate = z.string().transform((val, ctx) => {
   const date = new Date(isNaN(timestamp) ? val : timestamp);
 
   if (isNaN(date.getTime())) {
-    ctx.addIssue({ code: z.ZodIssueCode.invalid_date });
+    ctx.addIssue({ code: 'invalid_type', expected: 'date' });
 
     return z.NEVER;
   }
