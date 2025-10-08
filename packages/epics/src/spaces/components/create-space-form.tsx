@@ -48,6 +48,7 @@ import {
   useMemberWeb3SpaceIds,
 } from '@hypha-platform/epics';
 import slugify from 'slugify';
+import { useDebouncedCallback } from 'use-debounce';
 
 const schemaCreateSpaceForm = schemaCreateSpace.extend(createSpaceFiles);
 export type SchemaCreateSpaceForm = z.infer<typeof schemaCreateSpaceForm>;
@@ -170,20 +171,46 @@ export const SpaceForm = ({
     form.setValue('parentId', parentSpaceId ?? null);
   }, [parentSpaceId, form]);
 
+  type FormType = typeof form;
+
+  interface DebounceParams {
+    form: FormType;
+    spaceId: number;
+    slugExists: boolean;
+    foundSpaceId: number;
+  }
+
+  const handleSlugUpdatedDebounced = useDebouncedCallback(
+    ({ form, spaceId, slugExists, foundSpaceId }: DebounceParams) => {
+      if (slugExists && spaceId !== foundSpaceId) {
+        form.setError('slug', {
+          message: DUBLICATE_SLUG_MESSAGE,
+          type: 'validate',
+        });
+        setSlugDublicated(true);
+      } else {
+        form.clearErrors('slug');
+        setSlugDublicated(false);
+      }
+    },
+    300,
+  );
+
+  const handleSlugUpdated = React.useCallback(
+    (params: DebounceParams) => handleSlugUpdatedDebounced(params),
+    [handleSlugUpdatedDebounced],
+  );
+
   React.useEffect(() => {
     if (slugIsChecking || !slug) {
       return;
     }
-    if (slugExists && spaceId !== foundSpaceId) {
-      form.setError('slug', {
-        message: DUBLICATE_SLUG_MESSAGE,
-        type: 'validate',
-      });
-      setSlugDublicated(true);
-    } else {
-      form.clearErrors('slug');
-      setSlugDublicated(false);
-    }
+    handleSlugUpdated({
+      form,
+      spaceId,
+      slugExists: slugExists ?? false,
+      foundSpaceId: foundSpaceId ?? -1,
+    });
   }, [spaceId, form, slug, slugExists, foundSpaceId, slugIsChecking]);
 
   React.useEffect(() => {
@@ -212,7 +239,7 @@ export const SpaceForm = ({
     if (!values) return;
     form.reset(
       { ...form.getValues(), ...values },
-      { keepDirty: false, keepTouched: false },
+      { keepDirty: true, keepTouched: false },
     );
   }, [values, form]);
 
