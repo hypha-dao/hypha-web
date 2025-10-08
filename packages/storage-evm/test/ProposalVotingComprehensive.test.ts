@@ -2324,13 +2324,13 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       const recipient = members[0];
       const transferAmount = ethers.parseEther('100');
 
-      const initialExecutorBalance = await spaceToken.balanceOf(
+      const initialExecutorBalance = await (spaceToken as any).balanceOf(
         executorAddress,
       );
       expect(initialExecutorBalance).to.equal(0);
       console.log(`Initial executor balance: ${initialExecutorBalance}`);
 
-      const initialRecipientBalance = await spaceToken.balanceOf(
+      const initialRecipientBalance = await (spaceToken as any).balanceOf(
         recipient.address,
       );
       expect(initialRecipientBalance).to.equal(0);
@@ -2342,15 +2342,17 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
           transferAmount,
         )} tokens to ${recipient.address}`,
       );
-      await spaceToken
+      await (spaceToken as any)
         .connect(executorSigner)
         .transfer(recipient.address, transferAmount);
 
-      const finalExecutorBalance = await spaceToken.balanceOf(executorAddress);
+      const finalExecutorBalance = await (spaceToken as any).balanceOf(
+        executorAddress,
+      );
       expect(finalExecutorBalance).to.equal(0);
       console.log(`Final executor balance: ${finalExecutorBalance}`);
 
-      const finalRecipientBalance = await spaceToken.balanceOf(
+      const finalRecipientBalance = await (spaceToken as any).balanceOf(
         recipient.address,
       );
       expect(finalRecipientBalance).to.equal(transferAmount);
@@ -2491,6 +2493,102 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
             .connect(executorSigner)
             .transfer(nonMember.address, amount),
         ).to.be.revertedWith('Can only transfer to space members');
+      });
+
+      it('should allow executor to use transferFrom for their own tokens, minting if needed', async function () {
+        const recipient = members[0];
+        const amount = ethers.parseEther('150');
+
+        // Executor starts with 0 balance
+        const initialExecutorBalance = await ownershipToken.balanceOf(
+          executorSigner.address,
+        );
+        expect(initialExecutorBalance).to.equal(0);
+
+        // Executor uses transferFrom to send tokens from their own account
+        await ownershipToken
+          .connect(executorSigner)
+          .transferFrom(executorSigner.address, recipient.address, amount);
+
+        // Executor balance should remain 0, as tokens were minted to them and then sent
+        const finalExecutorBalance = await ownershipToken.balanceOf(
+          executorSigner.address,
+        );
+        expect(finalExecutorBalance).to.equal(0);
+
+        // Recipient should have the tokens
+        const recipientBalance = await ownershipToken.balanceOf(
+          recipient.address,
+        );
+        expect(recipientBalance).to.equal(amount);
+      });
+
+      it('should allow executor to use transferFrom to move tokens between members', async function () {
+        const sender = members[0];
+        const recipient = members[1];
+        const amount = ethers.parseEther('75');
+
+        // First, mint some tokens to the sender member
+        await ownershipToken
+          .connect(executorSigner)
+          .mint(sender.address, amount);
+        const initialSenderBalance = await ownershipToken.balanceOf(
+          sender.address,
+        );
+        expect(initialSenderBalance).to.equal(amount);
+
+        // Executor uses transferFrom to move tokens from sender to recipient
+        await ownershipToken
+          .connect(executorSigner)
+          .transferFrom(sender.address, recipient.address, amount);
+
+        // Check final balances
+        const finalSenderBalance = await ownershipToken.balanceOf(
+          sender.address,
+        );
+        expect(finalSenderBalance).to.equal(0);
+
+        const finalRecipientBalance = await ownershipToken.balanceOf(
+          recipient.address,
+        );
+        expect(finalRecipientBalance).to.equal(amount);
+      });
+
+      it('should prevent executor from using transferFrom to a non-member', async function () {
+        const sender = members[0];
+        const nonMember = members[5];
+        const amount = ethers.parseEther('50');
+
+        // Mint tokens to sender
+        await ownershipToken
+          .connect(executorSigner)
+          .mint(sender.address, amount);
+
+        // Expect revert
+        await expect(
+          ownershipToken
+            .connect(executorSigner)
+            .transferFrom(sender.address, nonMember.address, amount),
+        ).to.be.revertedWith('Can only transfer to space members');
+      });
+
+      it('should prevent a non-executor from calling transferFrom', async function () {
+        const sender = members[0];
+        const recipient = members[1];
+        const amount = ethers.parseEther('50');
+
+        // Mint tokens to sender
+        await ownershipToken
+          .connect(executorSigner)
+          .mint(sender.address, amount);
+
+        // A member (non-executor) tries to call transferFrom
+        // This should fail even if they are the 'from' address
+        await expect(
+          ownershipToken
+            .connect(sender)
+            .transferFrom(sender.address, recipient.address, amount),
+        ).to.be.revertedWith('Only executor can transfer tokens');
       });
     });
 
