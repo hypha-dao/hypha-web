@@ -171,29 +171,6 @@ export const SpaceForm = ({
     form.setValue('parentId', parentSpaceId ?? null);
   }, [parentSpaceId, form]);
 
-  type FormType = typeof form;
-
-  interface DebounceParams {
-    form: FormType;
-    preparedSlug: string;
-    slug: string;
-  }
-
-  const handleDebounced = useDebouncedCallback(
-    ({ form, preparedSlug, slug }: DebounceParams) => {
-      const { isDirty: isSlugDirty } = form.getFieldState('slug');
-      if (!isSlugDirty && preparedSlug !== slug) {
-        form.setValue('slug', preparedSlug);
-      }
-    },
-    300,
-  );
-
-  const handleUpdated = React.useCallback(
-    (params: DebounceParams) => handleDebounced(params),
-    [handleDebounced],
-  );
-
   React.useEffect(() => {
     if (slugIsChecking || !slug) {
       return;
@@ -214,11 +191,10 @@ export const SpaceForm = ({
     if (slugIsChecking || !preparedSlug) {
       return;
     }
-    handleUpdated({
-      form,
-      preparedSlug,
-      slug: slug ?? '',
-    });
+    const { isDirty: isSlugDirty } = form.getFieldState('slug');
+    if (!isSlugDirty && preparedSlug !== slug) {
+      form.setValue('slug', preparedSlug);
+    }
   }, [form, preparedSlug]);
 
   React.useEffect(() => {
@@ -414,73 +390,78 @@ export const SpaceForm = ({
                 </FormItem>
               )}
             />
-            <div className="flex w-full">
-              <div className="flex flex-col w-full">
+            <div className="flex flex-col w-full">
+              <div className="flex flex-row w-full">
                 <Badge className="w-fit" colorVariant="accent">
                   {labelText}
                 </Badge>
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem className="gap-0">
-                      <FormControl>
-                        <Input
-                          rightIcon={!field.value && <RequirementMark />}
-                          placeholder="Name your space..."
-                          className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
-                          disabled={isLoading}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                <div className="flex grow"></div>
+                <div className="flex justify-between gap-4">
+                  {backUrl && (
+                    <ButtonBack label={backLabel} backUrl={backUrl} />
                   )}
-                />
-                <FormField
-                  control={form.control}
-                  name="slug"
-                  render={({ field }) => (
-                    <FormItem className="gap-0">
-                      <FormControl>
-                        {spaceId !== -1 ? (
-                          <div key={`${field.ref}-slug`}>
-                            <Input
-                              rightIcon={!field.value && <RequirementMark />}
-                              placeholder="Space URL"
-                              className="border-0 text-2 p-0 placeholder:text-2 bg-inherit"
-                              disabled={isLoading}
-                              {...field}
-                            />
-                            <span className="text-1 text-neutral-11">
-                              <span>
-                                Your space name is automatically added to the
-                                end of your URL. You can edit it if needed, but
-                                it must remain unique.
-                              </span>
-                            </span>
-                          </div>
-                        ) : null}
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <span className="flex items-center">
-                  <Text className="text-1 text-foreground mr-1">
-                    Created by
-                  </Text>
-                  <Text className="text-1 text-neutral-11">
-                    {creator?.name} {creator?.surname}
-                  </Text>
-                </span>
+                  <ButtonClose closeUrl={closeUrl} />
+                </div>
               </div>
-            </div>
-          </div>
-          <div className="flex flex-col">
-            <div className="flex justify-between gap-4">
-              {backUrl && <ButtonBack label={backLabel} backUrl={backUrl} />}
-              <ButtonClose closeUrl={closeUrl} />
+              <div className="flex flex-row w-full">
+                <div className="flex flex-col w-full">
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem className="gap-0">
+                        <FormControl>
+                          <Input
+                            rightIcon={!field.value && <RequirementMark />}
+                            placeholder="Name your space..."
+                            className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
+                            disabled={isLoading}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="slug"
+                    render={({ field }) => (
+                      <FormItem className="gap-0">
+                        <FormControl>
+                          {spaceId !== -1 ? (
+                            <div key={`${field.ref}-slug`}>
+                              <Input
+                                rightIcon={!field.value && <RequirementMark />}
+                                placeholder="Space URL"
+                                className="border-0 text-2 p-0 placeholder:text-2 bg-inherit"
+                                disabled={isLoading}
+                                {...field}
+                              />
+                              <span className="text-1 text-neutral-11">
+                                <span>
+                                  Your space name is automatically added to the
+                                  end of your URL. You can edit it if needed,
+                                  but it must remain unique.
+                                </span>
+                              </span>
+                            </div>
+                          ) : null}
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <span className="flex items-center">
+                    <Text className="text-1 text-foreground mr-1">
+                      Created by
+                    </Text>
+                    <Text className="text-1 text-neutral-11">
+                      {creator?.name} {creator?.surname}
+                    </Text>
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
