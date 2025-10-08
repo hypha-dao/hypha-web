@@ -6,6 +6,19 @@ import { erc20Abi } from 'viem';
 import { web3Client } from './client';
 import { db } from '@hypha-platform/storage-postgres';
 
+function getIconForHyphaTokens(symbol: string, fallback: string): string {
+  switch (symbol.toUpperCase()) {
+    case 'HYPHA':
+      return '/placeholder/hypha-token-icon.svg';
+    case 'HVOICE':
+      return '/placeholder/voice-token-icon.svg';
+    case 'HCREDITS':
+      return '/placeholder/credits-token-icon.svg';
+    default:
+      return fallback;
+  }
+}
+
 export async function getTokenMeta(
   tokenAddress: `0x${string}`,
   dbTokens?: DbToken[],
@@ -16,7 +29,7 @@ export async function getTokenMeta(
     (token) => token.address.toLowerCase() === tokenAddress.toLowerCase(),
   );
   if (stable) {
-    const { symbol, icon, name, type } = stable;
+    const { symbol, name, type } = stable;
     const dbToken = dbTokens?.find(
       (t) => t.symbol.toUpperCase() === symbol.toUpperCase(),
     );
@@ -26,11 +39,13 @@ export async function getTokenMeta(
       space = await findSpaceById({ id: dbToken.spaceId }, { db });
     }
 
+    const icon = getIconForHyphaTokens(symbol, dbToken?.iconUrl ?? stable.icon);
+
     return {
       symbol,
       name,
       type,
-      icon: dbToken?.iconUrl ?? icon,
+      icon,
       ...(space && { space: { slug: space.slug, title: space.title } }),
     };
   }
@@ -72,7 +87,11 @@ export async function getTokenMeta(
     const dbToken = dbTokens?.find(
       (t) => t.address?.toUpperCase() === tokenAddress.toUpperCase(),
     );
-    const icon = dbToken?.iconUrl ?? '/placeholder/token-icon.svg';
+
+    const icon = getIconForHyphaTokens(
+      symbol,
+      dbToken?.iconUrl ?? '/placeholder/neutral-token-icon.svg',
+    );
 
     let space = null;
     if (dbToken?.spaceId) {

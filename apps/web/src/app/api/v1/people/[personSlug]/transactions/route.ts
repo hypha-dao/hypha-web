@@ -15,6 +15,7 @@ import {
 } from '@hypha-platform/core/server';
 import { findPersonBySlug, getDb } from '@hypha-platform/core/server';
 import { zeroAddress } from 'viem';
+import { hasEmojiOrLink } from '@hypha-platform/ui-utils';
 
 /**
  * A route to get ERC20 transfers for a user.
@@ -91,32 +92,31 @@ export async function GET(
 
     const transfersWithEntityInfo = await Promise.all(
       transfers.map(async (transfer) => {
+        const tokenMeta = await getTokenMeta(
+          transfer.token as `0x${string}`,
+          dbTokens,
+        );
+        const name = tokenMeta.name || 'Unnamed';
+        const symbol = tokenMeta.symbol || 'UNKNOWN';
+        if (hasEmojiOrLink(name) || hasEmojiOrLink(symbol)) {
+          return null;
+        }
+
         const isIncoming = transfer.to.toUpperCase() === address.toUpperCase();
         const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
-        const isMint = transfer.from === zeroAddress;
-
         let person = null;
         let space = null;
-        let tokenIcon = null;
-        if (isMint) {
-          const tokenMeta = await getTokenMeta(
-            transfer.token as `0x${string}`,
-            dbTokens,
-          );
-          tokenIcon = tokenMeta.icon;
-        } else {
-          person = await findPersonByWeb3Address(
+        let tokenIcon = tokenMeta.icon;
+        person = await findPersonByWeb3Address(
+          { address: counterpartyAddress },
+          { db: getDb({ authToken }) },
+        );
+        if (!person) {
+          space = await findSpaceByAddress(
             { address: counterpartyAddress },
             { db: getDb({ authToken }) },
           );
-          if (!person) {
-            space = await findSpaceByAddress(
-              { address: counterpartyAddress },
-              { db: getDb({ authToken }) },
-            );
-          }
         }
-
         return {
           ...transfer,
           person: person
@@ -139,7 +139,9 @@ export async function GET(
       }),
     );
 
-    return NextResponse.json(transfersWithEntityInfo);
+    const validTransfers = transfersWithEntityInfo.filter((t) => t !== null);
+
+    return NextResponse.json(validTransfers);
   } catch (error: any) {
     const errorMessage =
       error?.message || error?.shortMessage || JSON.stringify(error);
