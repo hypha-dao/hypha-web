@@ -175,53 +175,50 @@ export const SpaceForm = ({
 
   interface DebounceParams {
     form: FormType;
-    spaceId: number;
-    slugExists: boolean;
-    foundSpaceId: number;
+    preparedSlug: string;
+    slug: string;
   }
 
-  const handleSlugUpdatedDebounced = useDebouncedCallback(
-    ({ form, spaceId, slugExists, foundSpaceId }: DebounceParams) => {
-      if (slugExists && spaceId !== foundSpaceId) {
-        form.setError('slug', {
-          message: slugIncorrectMessage,
-          type: 'validate',
-        });
-        setSlugDublicated(true);
-      } else {
-        form.clearErrors('slug');
-        setSlugDublicated(false);
+  const handleDebounced = useDebouncedCallback(
+    ({ form, preparedSlug, slug }: DebounceParams) => {
+      const { isDirty: isSlugDirty } = form.getFieldState('slug');
+      if (!isSlugDirty && preparedSlug !== slug) {
+        form.setValue('slug', preparedSlug);
       }
     },
     300,
   );
 
-  const handleSlugUpdated = React.useCallback(
-    (params: DebounceParams) => handleSlugUpdatedDebounced(params),
-    [handleSlugUpdatedDebounced],
+  const handleUpdated = React.useCallback(
+    (params: DebounceParams) => handleDebounced(params),
+    [handleDebounced],
   );
 
   React.useEffect(() => {
     if (slugIsChecking || !slug) {
       return;
     }
-    handleSlugUpdated({
-      form,
-      spaceId,
-      slugExists: slugExists ?? false,
-      foundSpaceId: foundSpaceId ?? -1,
-    });
+    if (slugExists && spaceId !== foundSpaceId) {
+      form.setError('slug', {
+        message: slugIncorrectMessage,
+        type: 'validate',
+      });
+      setSlugDublicated(true);
+    } else {
+      form.clearErrors('slug');
+      setSlugDublicated(false);
+    }
   }, [spaceId, form, slug, slugExists, foundSpaceId, slugIsChecking]);
 
   React.useEffect(() => {
     if (slugIsChecking || !preparedSlug) {
       return;
     }
-    const { isDirty: isSlugDirty } = form.getFieldState('slug');
-    const { isDirty: isTitleDirty } = form.getFieldState('title');
-    if (!isSlugDirty && isTitleDirty && preparedSlug !== slug) {
-      form.setValue('slug', preparedSlug);
-    }
+    handleUpdated({
+      form,
+      preparedSlug,
+      slug: slug ?? '',
+    });
   }, [form, preparedSlug]);
 
   React.useEffect(() => {
