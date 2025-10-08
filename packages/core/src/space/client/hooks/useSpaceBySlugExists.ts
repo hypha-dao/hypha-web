@@ -2,6 +2,7 @@
 
 import React from 'react';
 import useSWR from 'swr';
+import { useDebounce } from 'use-debounce';
 
 type UseSpaceBySlugExistsReturn = {
   exists?: boolean;
@@ -17,15 +18,16 @@ interface FetchResult {
 export const useSpaceBySlugExists = (
   spaceSlug: string,
 ): UseSpaceBySlugExistsReturn => {
+  const [debouncedSpaceSlug] = useDebounce(spaceSlug, 500);
   const endpoint = React.useMemo(
-    () => `/api/v1/spaces/${spaceSlug}/exists`,
-    [spaceSlug],
+    () => `/api/v1/spaces/${debouncedSpaceSlug}/exists`,
+    [debouncedSpaceSlug],
   );
   const { data, isLoading } = useSWR(
-    spaceSlug ? [endpoint] : null,
+    debouncedSpaceSlug ? [endpoint] : null,
     ([endpoint]) => fetch(endpoint).then((res) => res.json()),
   );
-  const exists = data ? (data as FetchResult).exists : undefined;
-  const spaceId = data ? (data as FetchResult).spaceId : undefined;
+  const exists = data ? (data as FetchResult).exists : false;
+  const spaceId = data ? (data as FetchResult).spaceId : -1;
   return { exists, spaceId, isLoading };
 };
