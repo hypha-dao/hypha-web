@@ -14,6 +14,7 @@ import {
   Token,
   validTokenTypes,
   TokenType,
+  getTokenDecimals,
 } from '@hypha-platform/core/client';
 import { headers } from 'next/headers';
 import { hasEmojiOrLink } from '@hypha-platform/ui-utils';
@@ -123,6 +124,7 @@ export async function GET(
             );
           }
           const rate = prices[token.address] || 0;
+          const decimals = await getTokenDecimals(token.address);
           return {
             ...meta,
             address: token.address,
@@ -134,7 +136,7 @@ export async function GET(
             slug: '',
             supply: totalSupply
               ? {
-                  total: Number(totalSupply / 10n ** 18n),
+                  total: Number(totalSupply / 10n ** BigInt(decimals)),
                 }
               : undefined,
             space: meta.space
