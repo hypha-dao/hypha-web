@@ -169,18 +169,14 @@ export const createAgreementFiles = {
     .array(
       z
         .custom<File>(isBrowserFile, { message: 'Please upload a valid file' })
-        .refine(
-          (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-          (file) => ({
-            message: `Your file "${file.name}" is too large and exceeds the 4MB limit. Please upload a smaller file.`,
-          }),
-        )
-        .refine(
-          (file) => DEFAULT_FILE_ACCEPT.includes(file.type),
-          (file) => ({
-            message: `This file "${file.name}" format isn’t supported. Please upload a JPEG, PNG, WebP, or PDF (up to 4MB).`,
-          }),
-        ),
+        .refine((file) => file.size <= ALLOWED_IMAGE_FILE_SIZE, {
+          message:
+            'Your file is too large and exceeds the 4MB limit. Please upload a smaller file.',
+        })
+        .refine((file) => DEFAULT_FILE_ACCEPT.includes(file.type), {
+          message:
+            'This file format isn’t supported. Please upload a JPEG, PNG, WebP, or PDF (up to 4MB).',
+        }),
     )
     .max(3, {
       message:
