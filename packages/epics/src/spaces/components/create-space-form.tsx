@@ -48,6 +48,7 @@ import {
   useMemberWeb3SpaceIds,
 } from '@hypha-platform/epics';
 import slugify from 'slugify';
+import { cn } from '@hypha-platform/ui-utils';
 
 const schemaCreateSpaceForm = schemaCreateSpace.extend(createSpaceFiles);
 export type SchemaCreateSpaceForm = z.infer<typeof schemaCreateSpaceForm>;
@@ -424,39 +425,21 @@ export const SpaceForm = ({
                             {...field}
                           />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="mt-1" />
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="slug"
-                    render={({ field }) => (
-                      <FormItem className="gap-0">
-                        <FormControl>
-                          {spaceId !== -1 ? (
-                            <div key={`${field.ref}-slug`}>
-                              <Input
-                                rightIcon={!field.value && <RequirementMark />}
-                                placeholder="Space URL"
-                                className="border-0 text-2 p-0 placeholder:text-2 bg-inherit"
-                                disabled={isLoading}
-                                {...field}
-                              />
-                              <span className="text-1 text-neutral-11">
-                                <span>
-                                  Your space name is automatically added to the
-                                  end of your URL. You can edit it if needed,
-                                  but it must remain unique.
-                                </span>
-                              </span>
-                            </div>
-                          ) : null}
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {spaceId === -1 && (
+                    <FormField
+                      control={form.control}
+                      name="slug"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormMessage className="mt-1" />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                   <span className="flex items-center">
                     <Text className="text-1 text-foreground mr-1">
                       Created by
@@ -565,6 +548,37 @@ export const SpaceForm = ({
             </FormItem>
           )}
         />
+        {spaceId !== -1 && (
+          <FormField
+            control={form.control}
+            name="slug"
+            render={({ field, fieldState: { error } }) => (
+              <FormItem>
+                <FormLabel className="text-foreground">Space URL</FormLabel>
+                <FormControl>
+                  <Input
+                    rightIcon={!field.value && <RequirementMark />}
+                    placeholder="Space URL"
+                    className={cn(
+                      'text-2',
+                      error &&
+                        'border-destructive focus-visible:ring-destructive',
+                    )}
+                    disabled={isLoading}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage className="mt-1" />
+                <span className="text-1 text-neutral-11">
+                  <span>
+                    Your space name is automatically added to the end of your
+                    URL. You can edit it if needed, but it must remain unique.
+                  </span>
+                </span>
+              </FormItem>
+            )}
+          />
+        )}
         <FormField
           control={form.control}
           name="links"
