@@ -250,15 +250,19 @@ export const schemaQuorumAndUnity = z.object({
 const decaySettingsSchema = z.object({
   decayInterval: z
     .number({
-      required_error: 'Decay interval is required',
-      invalid_type_error: 'Decay interval must be a number',
+      error: ({ input }) =>
+        input == null
+          ? 'Decay interval is required'
+          : 'Decay interval must be a number',
     })
     .min(0, 'Decay interval must be greater or equal to 0'),
 
   decayPercentage: z
     .number({
-      required_error: 'Decay percentage is required',
-      invalid_type_error: 'Decay percentage must be a number',
+      error: ({ input }) =>
+        input == null
+          ? 'Decay percentage is required'
+          : 'Decay percentage must be a number',
     })
     .min(0, 'Decay percentage must be at least 0%')
     .max(100, 'Decay percentage must not exceed 100%'),
@@ -320,9 +324,10 @@ export const schemaIssueNewToken = z.object({
   //     .max(18, { message: 'Digits must not exceed 18' }),
   // ),
 
-  type: z.enum(['utility', 'credits', 'ownership', 'voice'], {
-    required_error: 'Please select a token type',
-  }),
+  type: z.enum(
+    ['utility', 'credits', 'ownership', 'voice'],
+    'Please select a token type',
+  ),
 
   maxSupply: z.preprocess(
     (val) => Number(val),
@@ -335,9 +340,7 @@ export const schemaIssueNewToken = z.object({
   ),
   decaySettings: decaySettingsSchema,
   isVotingToken: z.boolean(),
-  transferable: z
-    .boolean({ required_error: 'Transferable flag is required' })
-    .optional(),
+  transferable: z.boolean('Transferable flag is required').optional(),
 });
 
 export const schemaChangeVotingMethod = z.object({

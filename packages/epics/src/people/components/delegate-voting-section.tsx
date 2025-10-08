@@ -25,19 +25,13 @@ interface DelegateVotingSectionProps {
 }
 
 const delegateToMemberSchema = z.object({
-  delegatedSpace: z.number({
-    required_error: 'Please select a space',
-    invalid_type_error: 'Please select a space',
-  }),
+  delegatedSpace: z.number('Please select a space'),
   delegatedMember: z.string().min(1, 'Please select a member'),
 });
 type DelegateToMemberForm = z.infer<typeof delegateToMemberSchema>;
 
 const passOnDelegatedVoiceSchema = z.object({
-  delegatedSpace: z.number({
-    required_error: 'Please select a space',
-    invalid_type_error: 'Please select a space',
-  }),
+  delegatedSpace: z.number('Please select a space'),
   delegatedMember: z.string().min(1, 'Please select a member'),
 });
 type PassOnDelegatedVoiceForm = z.infer<typeof passOnDelegatedVoiceSchema>;
