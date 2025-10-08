@@ -39,7 +39,7 @@ export const paymentScheduleSchema = z
     if (data.option === 'Future Payment' && data.futureDate) {
       if (isBefore(data.futureDate, new Date())) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: 'custom',
           message:
             'The future payment date must be later than the current date',
           path: ['futureDate'],
@@ -50,7 +50,7 @@ export const paymentScheduleSchema = z
     if (data.option === 'Milestones' && data.milestones) {
       if (!data.milestones || data.milestones.length === 0) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: 'custom',
           message: 'Milestones cannot be empty',
           path: ['milestones'],
         });
@@ -67,7 +67,7 @@ export const paymentScheduleSchema = z
 
         if (!dateRange?.from) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: 'custom',
             message: 'Each milestone must have a start date',
             path: ['milestones', i, 'dateRange', 'from'],
           });
@@ -75,7 +75,7 @@ export const paymentScheduleSchema = z
 
         if (i === 0 && dateRange?.from && isBefore(dateRange.from, now)) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: 'custom',
             message: 'First milestone must be in the future',
             path: ['milestones', i, 'dateRange', 'from'],
           });
@@ -90,7 +90,7 @@ export const paymentScheduleSchema = z
           isBefore(dateRange.from, previousFrom)
         ) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: 'custom',
             message: `Milestone ${i + 1} must be after milestone ${i}`,
             path: ['milestones', i, 'dateRange', 'from'],
           });
@@ -99,7 +99,7 @@ export const paymentScheduleSchema = z
 
       if (total > 100) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: 'custom',
           message: 'Total percentage cannot exceed 100%',
           path: ['milestones'],
         });
