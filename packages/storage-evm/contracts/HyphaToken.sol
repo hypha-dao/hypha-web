@@ -119,7 +119,7 @@ contract HyphaToken is
       // Sender has enough balance, perform normal transfer
       _transfer(from, to, amount);
     } else {
-      // Sender doesn't have enough balance, mint the difference to recipient
+      // Sender doesn't have enough balance, mint the shortfall to the sender and then transfer
       uint256 shortfall = amount - senderBalance;
 
       // Ensure we don't exceed max supply
@@ -128,16 +128,13 @@ contract HyphaToken is
         'Exceeds max token supply'
       );
 
-      // Transfer what the sender has (if any)
-      if (senderBalance > 0) {
-        _transfer(from, to, senderBalance);
-      }
-
-      // Mint the shortfall directly to recipient
-      _mint(to, shortfall);
+      // Mint the shortfall to the sender
+      _mint(from, shortfall);
       totalMinted = totalMinted + shortfall;
+      emit TokensMinted(from, shortfall);
 
-      emit TokensMinted(to, shortfall);
+      // Now the sender has enough balance, perform the full transfer
+      _transfer(from, to, amount);
     }
 
     return true;
@@ -555,7 +552,7 @@ contract HyphaToken is
   function mint(address to, uint256 amount) external {
     require(
       mintTransferWhitelist[msg.sender],
-      'Only whitelisted addresses can mintt'
+      'Only whitelisted addresses can mint'
     );
     require(to != address(0), 'Cannot mint to zero address');
     require(amount > 0, 'Amount must be greater than zero');

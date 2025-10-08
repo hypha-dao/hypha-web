@@ -2826,7 +2826,7 @@ describe('HyphaToken Comprehensive Tests', function () {
           .transfer(await user2.getAddress(), transferAmount),
       )
         .to.emit(hyphaToken, 'TokensMinted')
-        .withArgs(await user2.getAddress(), shortfall);
+        .withArgs(await user1.getAddress(), shortfall);
 
       // Verify balances - user1 should have 0, user2 should have full transferAmount
       const user1FinalBalance = await hyphaToken.balanceOf(
@@ -2866,7 +2866,7 @@ describe('HyphaToken Comprehensive Tests', function () {
           .transfer(await user2.getAddress(), transferAmount),
       )
         .to.emit(hyphaToken, 'TokensMinted')
-        .withArgs(await user2.getAddress(), transferAmount);
+        .withArgs(await user1.getAddress(), transferAmount);
 
       // Verify balances
       const user1FinalBalance = await hyphaToken.balanceOf(
@@ -2921,7 +2921,7 @@ describe('HyphaToken Comprehensive Tests', function () {
           ),
       )
         .to.emit(hyphaToken, 'TokensMinted')
-        .withArgs(await user3.getAddress(), shortfall);
+        .withArgs(await user1.getAddress(), shortfall);
 
       // Verify balances
       const user1FinalBalance = await hyphaToken.balanceOf(
@@ -3085,7 +3085,7 @@ describe('HyphaToken Comprehensive Tests', function () {
           .transfer(await user2.getAddress(), transferAmount),
       )
         .to.emit(hyphaToken, 'TokensMinted')
-        .withArgs(await user2.getAddress(), ethers.parseUnits('50', 18));
+        .withArgs(await user1.getAddress(), ethers.parseUnits('50', 18));
 
       // Verify mint transfer whitelist took precedence
       const user2Balance = await hyphaToken.balanceOf(await user2.getAddress());
