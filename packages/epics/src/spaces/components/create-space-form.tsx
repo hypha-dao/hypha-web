@@ -48,7 +48,6 @@ import {
   useMemberWeb3SpaceIds,
 } from '@hypha-platform/epics';
 import slugify from 'slugify';
-import { useDebouncedCallback } from 'use-debounce';
 
 const schemaCreateSpaceForm = schemaCreateSpace.extend(createSpaceFiles);
 export type SchemaCreateSpaceForm = z.infer<typeof schemaCreateSpaceForm>;
@@ -191,8 +190,9 @@ export const SpaceForm = ({
     if (slugIsChecking || !preparedSlug) {
       return;
     }
+    const { isTouched: isTitleTouched } = form.getFieldState('title');
     const { isDirty: isSlugDirty } = form.getFieldState('slug');
-    if (!isSlugDirty && preparedSlug !== slug) {
+    if (!isSlugDirty && isTitleTouched && preparedSlug !== slug) {
       form.setValue('slug', preparedSlug);
     }
   }, [form, preparedSlug]);
