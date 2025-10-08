@@ -1,20 +1,33 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { CreateProposalRequest, VoteRequest } from '../../types/v1/generated';
+import {
+  CreateProposalRequest,
+  VoteRequest,
+} from '../../../types/v1/generated';
 import {
   proposalsListMock,
   proposalDetailsMock,
   proposalVotesMock,
   voteMock,
-} from '../../mocks';
+} from '../../../mocks';
+import { response, Response, query, Query } from './schema/get-proposals/';
 
 export default async function proposalsRoutes(app: FastifyInstance) {
   /**
    * GET /proposals
    */
-  app.get('/', async (_, reply) => {
-    return reply.send(proposalsListMock);
-  });
+  app.get<{ Reply: Response; Querystring: Query }>(
+    '/',
+    {
+      schema: {
+        querystring: query,
+        response: { '2xx': response },
+      },
+    },
+    async (request, reply) => {
+      return reply.send(proposalsListMock);
+    },
+  );
 
   /**
    * POST /proposals
