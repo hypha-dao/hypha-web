@@ -51,11 +51,13 @@ contract OwnershipSpaceToken is SpaceToken {
    * Only the executor can initiate other transfers between space members
    */
   function transfer(address to, uint256 amount) public override returns (bool) {
-    // If executor is transferring, mint to recipient instead
     if (msg.sender == executor) {
-      mint(to, amount);
-      return true;
+      if (balanceOf(msg.sender) < amount) {
+        uint256 amountToMint = amount - balanceOf(msg.sender);
+        mint(msg.sender, amountToMint);
+      }
     }
+    // If executor is transferring, mint to recipient instead
 
     // Allow space members to transfer to escrow contract if it was created by the executor
     if (to == escrowContract && _isSpaceMember(msg.sender)) {
@@ -71,7 +73,8 @@ contract OwnershipSpaceToken is SpaceToken {
     require(_isSpaceMember(to), 'Can only transfer to space members');
 
     // Execute the transfer using the parent implementation
-    return super.transfer(to, amount);
+    _transfer(msg.sender, to, amount);
+    return true;
   }
 
   /**
@@ -113,6 +116,12 @@ contract OwnershipSpaceToken is SpaceToken {
     address to,
     uint256 amount
   ) public override returns (bool) {
+    if (from == executor) {
+      if (balanceOf(from) < amount) {
+        uint256 amountToMint = amount - balanceOf(from);
+        mint(from, amountToMint);
+      }
+    }
     // If executor is the one being transferred from, mint to recipient instead
     if (from == executor) {
       // Only executor can initiate this type of transfer

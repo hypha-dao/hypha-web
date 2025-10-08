@@ -265,7 +265,7 @@ contract DAOSpaceFactoryImplementation is
     }
 
     require(found, 'Member not found');
-    require(_memberToRemove != space.creator, 'Cannot remove space creator');
+    //require(_memberToRemove != space.creator, 'Cannot remove space creator');
 
     // Remove from regular members array
     space.members[memberIndex] = space.members[space.members.length - 1];

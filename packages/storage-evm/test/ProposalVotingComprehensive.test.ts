@@ -13,6 +13,7 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
   let votingPowerDelegation: any;
   let regularTokenFactory: any;
   let decayingTokenFactory: any;
+  let ownershipTokenFactory: any;
   let owner: SignerWithAddress;
   let members: SignerWithAddress[];
 
@@ -101,6 +102,55 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       { initializer: 'initialize', kind: 'uups' },
     );
 
+    // Deploy RegularTokenFactory
+    const RegularTokenFactory = await ethers.getContractFactory(
+      'RegularTokenFactory',
+    );
+    const regularTokenFactory = await upgrades.deployProxy(
+      RegularTokenFactory,
+      [owner.address],
+      {
+        initializer: 'initialize',
+        kind: 'uups',
+      },
+    );
+
+    // Deploy DecayingTokenFactory
+    const DecayingTokenFactory = await ethers.getContractFactory(
+      'DecayingTokenFactory',
+    );
+    const decayingTokenFactory = await upgrades.deployProxy(
+      DecayingTokenFactory,
+      [owner.address],
+      {
+        initializer: 'initialize',
+        kind: 'uups',
+      },
+    );
+
+    // Deploy OwnershipTokenFactory
+    const OwnershipTokenFactory = await ethers.getContractFactory(
+      'OwnershipTokenFactory',
+    );
+    const ownershipTokenFactory = await upgrades.deployProxy(
+      OwnershipTokenFactory,
+      [owner.address],
+      {
+        initializer: 'initialize',
+        kind: 'uups',
+      },
+    );
+
+    // Deploy TokenVotingPower for token-based voting
+    const TokenVotingPower = await ethers.getContractFactory(
+      'TokenVotingPowerImplementation',
+    );
+    const tokenVotingPower = await upgrades.deployProxy(
+      TokenVotingPower,
+      [owner.address],
+      { initializer: 'initialize', kind: 'uups' },
+    );
+
     // Deploy VotingPowerDirectory
     const VotingPowerDirectory = await ethers.getContractFactory(
       'VotingPowerDirectoryImplementation',
@@ -117,10 +167,44 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       await votingPowerDelegation.getAddress(),
     );
 
+    await tokenVotingPower.setTokenFactory(
+      await regularTokenFactory.getAddress(),
+    );
+    await regularTokenFactory.setSpacesContract(
+      await daoSpaceFactory.getAddress(),
+    );
+    await regularTokenFactory.setVotingPowerContract(
+      await tokenVotingPower.getAddress(),
+    );
+
+    await decayingTokenFactory.setSpacesContract(
+      await daoSpaceFactory.getAddress(),
+    );
+    await decayingTokenFactory.setDecayVotingPowerContract(
+      await tokenVotingPower.getAddress(),
+    );
+
+    await ownershipTokenFactory.setSpacesContract(
+      await daoSpaceFactory.getAddress(),
+    );
+    await ownershipTokenFactory.setVotingPowerContract(
+      await tokenVotingPower.getAddress(),
+    );
+
+    await tokenVotingPower.setSpaceFactory(await daoSpaceFactory.getAddress());
+    await (tokenVotingPower as any).setDelegationContract(
+      await votingPowerDelegation.getAddress(),
+    );
+
     // Add space voting power source to directory (ID: 1)
     await votingPowerDirectory.addVotingPowerSource(
       await spaceVotingPower.getAddress(),
     ); // ID: 1
+
+    // Add token voting power source to directory (ID: 2)
+    await votingPowerDirectory.addVotingPowerSource(
+      await tokenVotingPower.getAddress(),
+    );
 
     await daoProposals.setContracts(
       await daoSpaceFactory.getAddress(),
@@ -145,10 +229,14 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       daoSpaceFactory,
       daoProposals,
       spaceVotingPower,
+      tokenVotingPower,
       votingPowerDirectory,
       votingPowerDelegation,
       joinMethodDirectory,
       exitMethodDirectory,
+      regularTokenFactory,
+      decayingTokenFactory,
+      ownershipTokenFactory,
       owner,
       members,
     };
@@ -224,8 +312,12 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
     daoSpaceFactory = fixture.daoSpaceFactory;
     daoProposals = fixture.daoProposals;
     spaceVotingPower = fixture.spaceVotingPower;
+    tokenVotingPower = fixture.tokenVotingPower;
     votingPowerDirectory = fixture.votingPowerDirectory;
     votingPowerDelegation = fixture.votingPowerDelegation;
+    regularTokenFactory = fixture.regularTokenFactory;
+    decayingTokenFactory = fixture.decayingTokenFactory;
+    ownershipTokenFactory = fixture.ownershipTokenFactory;
     owner = fixture.owner;
     members = fixture.members;
   });
@@ -2157,6 +2249,393 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       console.log(`Delegators count: ${delegators.length}`);
 
       console.log('✅ Efficient handling of multiple delegations');
+    });
+  });
+
+  describe('Executor Token Transfer Logic', function () {
+    it('should allow executor to transfer more tokens than they have by minting the difference', async function () {
+      console.log('\n--- Testing Executor Token Transfer ---');
+
+      // 1. Create a space (without a token initially)
+      const spaceParams = {
+        name: 'Executor Transfer Test Space',
+        description: 'A space for testing executor token transfer logic',
+        imageUrl: 'https://test.com/image.png',
+        unity: 60,
+        quorum: 50,
+        votingPowerSource: 1, // Does not matter for this test
+        exitMethod: 1,
+        joinMethod: 1,
+        createToken: false, // Token will be created manually
+        tokenName: '',
+        tokenSymbol: '',
+      };
+
+      await daoSpaceFactory.createSpace(spaceParams);
+      const spaceId = await daoSpaceFactory.spaceCounter();
+
+      // 2. Get space executor and impersonate
+      const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+      const executorAddress = spaceDetails.executor;
+
+      await ethers.provider.send('hardhat_impersonateAccount', [
+        executorAddress,
+      ]);
+      await ethers.provider.send('hardhat_setBalance', [
+        executorAddress,
+        '0x1000000000000000000', // 1 ETH for gas
+      ]);
+      const executorSigner = await ethers.getSigner(executorAddress);
+      console.log(`Impersonating executor: ${executorAddress}`);
+
+      // 3. Deploy a token for the space as the executor
+      const tx = await regularTokenFactory.connect(executorSigner).deployToken(
+        spaceId,
+        'Test Token',
+        'TTT',
+        0, // maxSupply (0 = unlimited)
+        true, // transferable
+        true, // isVotingToken
+      );
+      const receipt = await tx.wait();
+
+      const tokenDeployedEvent = receipt?.logs
+        .map((log: any) => {
+          try {
+            return regularTokenFactory.interface.parseLog(log);
+          } catch {
+            return null;
+          }
+        })
+        .find((event: any) => event && event.name === 'TokenDeployed');
+
+      if (!tokenDeployedEvent) {
+        throw new Error('TokenDeployed event not found');
+      }
+
+      const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+      const spaceToken = await ethers.getContractAt(
+        'contracts/RegularSpaceToken.sol:SpaceToken',
+        tokenAddress,
+      );
+      console.log(`Space token created at: ${tokenAddress}`);
+
+      // 4. Perform transfer and assert
+      const recipient = members[0];
+      const transferAmount = ethers.parseEther('100');
+
+      const initialExecutorBalance = await spaceToken.balanceOf(
+        executorAddress,
+      );
+      expect(initialExecutorBalance).to.equal(0);
+      console.log(`Initial executor balance: ${initialExecutorBalance}`);
+
+      const initialRecipientBalance = await spaceToken.balanceOf(
+        recipient.address,
+      );
+      expect(initialRecipientBalance).to.equal(0);
+      console.log(`Initial recipient balance: ${initialRecipientBalance}`);
+
+      // Executor transfers tokens it doesn't have
+      console.log(
+        `Executor transferring ${ethers.formatEther(
+          transferAmount,
+        )} tokens to ${recipient.address}`,
+      );
+      await spaceToken
+        .connect(executorSigner)
+        .transfer(recipient.address, transferAmount);
+
+      const finalExecutorBalance = await spaceToken.balanceOf(executorAddress);
+      expect(finalExecutorBalance).to.equal(0);
+      console.log(`Final executor balance: ${finalExecutorBalance}`);
+
+      const finalRecipientBalance = await spaceToken.balanceOf(
+        recipient.address,
+      );
+      expect(finalRecipientBalance).to.equal(transferAmount);
+      console.log(
+        `Final recipient balance: ${ethers.formatEther(finalRecipientBalance)}`,
+      );
+
+      console.log(
+        '✅ Executor successfully transferred tokens by minting them first.',
+      );
+    });
+  });
+
+  describe('Ownership and Decaying Token Transfer Logic', function () {
+    describe('OwnershipSpaceToken Transfers', function () {
+      let spaceId: any;
+      let ownershipToken: any;
+      let executorSigner: SignerWithAddress;
+
+      beforeEach(async function () {
+        // 1. Create a space
+        await daoSpaceFactory.createSpace({
+          name: 'Ownership Token Test Space',
+          description: 'A space for testing OwnershipSpaceToken',
+          imageUrl: '',
+          unity: 60,
+          quorum: 50,
+          votingPowerSource: 1,
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        });
+        spaceId = await daoSpaceFactory.spaceCounter();
+
+        // Add members
+        await daoSpaceFactory.connect(members[0]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[1]).joinSpace(spaceId);
+
+        // 2. Get space executor and impersonate
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        const executorAddress = spaceDetails.executor;
+        await ethers.provider.send('hardhat_impersonateAccount', [
+          executorAddress,
+        ]);
+        await ethers.provider.send('hardhat_setBalance', [
+          executorAddress,
+          '0x1000000000000000000',
+        ]);
+        executorSigner = await ethers.getSigner(executorAddress);
+
+        // Join the space as the executor to allow minting to the executor
+        await daoSpaceFactory.connect(executorSigner).joinSpace(spaceId);
+
+        // 3. Deploy an OwnershipSpaceToken
+        const tx = await ownershipTokenFactory
+          .connect(executorSigner)
+          .deployOwnershipToken(
+            spaceId,
+            'Ownership Test Token',
+            'OTT',
+            0, // maxSupply (0 = unlimited)
+            false, // isVotingToken
+          );
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return ownershipTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+        ownershipToken = await ethers.getContractAt(
+          'OwnershipSpaceToken',
+          tokenAddress,
+        );
+      });
+
+      it('should allow executor to transfer tokens to a space member', async function () {
+        const recipient = members[0];
+        const amount = ethers.parseEther('100');
+        await ownershipToken
+          .connect(executorSigner)
+          .transfer(recipient.address, amount);
+        const recipientBalance = await ownershipToken.balanceOf(
+          recipient.address,
+        );
+        expect(recipientBalance).to.equal(amount);
+      });
+
+      it('should mint tokens if executor transfers more than they have', async function () {
+        const recipient = members[0];
+        const amount = ethers.parseEther('200');
+        const initialExecutorBalance = await ownershipToken.balanceOf(
+          executorSigner.address,
+        );
+        expect(initialExecutorBalance).to.equal(0);
+
+        await ownershipToken
+          .connect(executorSigner)
+          .transfer(recipient.address, amount);
+
+        const finalRecipientBalance = await ownershipToken.balanceOf(
+          recipient.address,
+        );
+        expect(finalRecipientBalance).to.equal(amount);
+        const finalExecutorBalance = await ownershipToken.balanceOf(
+          executorSigner.address,
+        );
+        expect(finalExecutorBalance).to.equal(0);
+      });
+
+      it('should prevent non-executor from transferring tokens', async function () {
+        // Mint some tokens to a member first so they have a balance
+        const member = members[0];
+        const recipient = members[1];
+        const amount = ethers.parseEther('50');
+        await ownershipToken
+          .connect(executorSigner)
+          .transfer(member.address, amount);
+        expect(await ownershipToken.balanceOf(member.address)).to.equal(amount);
+
+        // Try to transfer as the member
+        await expect(
+          ownershipToken.connect(member).transfer(recipient.address, amount),
+        ).to.be.revertedWith('Only executor can transfer tokens');
+      });
+
+      it('should prevent executor from transferring to a non-member', async function () {
+        const nonMember = members[5];
+        const amount = ethers.parseEther('100');
+        await expect(
+          ownershipToken
+            .connect(executorSigner)
+            .transfer(nonMember.address, amount),
+        ).to.be.revertedWith('Can only transfer to space members');
+      });
+    });
+
+    describe('DecayingSpaceToken Transfers', function () {
+      let spaceId: any;
+      let executorSigner: SignerWithAddress;
+
+      beforeEach(async function () {
+        // 1. Create a space
+        await daoSpaceFactory.createSpace({
+          name: 'Decaying Token Test Space',
+          description: 'A space for testing DecayingSpaceToken',
+          imageUrl: '',
+          unity: 60,
+          quorum: 50,
+          votingPowerSource: 1,
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        });
+        spaceId = await daoSpaceFactory.spaceCounter();
+
+        // Add members
+        await daoSpaceFactory.connect(members[0]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[1]).joinSpace(spaceId);
+
+        // 2. Get space executor and impersonate
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        const executorAddress = spaceDetails.executor;
+        await ethers.provider.send('hardhat_impersonateAccount', [
+          executorAddress,
+        ]);
+        await ethers.provider.send('hardhat_setBalance', [
+          executorAddress,
+          '0x1000000000000000000',
+        ]);
+        executorSigner = await ethers.getSigner(executorAddress);
+      });
+
+      async function deployDecayingToken(transferable: boolean) {
+        const tx = await decayingTokenFactory
+          .connect(executorSigner)
+          .deployDecayingToken(
+            spaceId,
+            'Decaying Test Token',
+            'DTT',
+            0, // maxSupply
+            transferable,
+            false, // isVotingToken
+            100, // 1% decay
+            60 * 60, // per hour
+          );
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return decayingTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+        return ethers.getContractAt('DecayingSpaceToken', tokenAddress);
+      }
+
+      it('should allow executor to transfer tokens when transfers are disabled', async function () {
+        const decayingToken = await deployDecayingToken(false);
+        const recipient = members[0];
+        const amount = ethers.parseEther('100');
+
+        await decayingToken
+          .connect(executorSigner)
+          .transfer(recipient.address, amount);
+        expect(await decayingToken.balanceOf(recipient.address)).to.equal(
+          amount,
+        );
+      });
+
+      it('should prevent non-executor from transferring when disabled', async function () {
+        const decayingToken = await deployDecayingToken(false);
+        const sender = members[0];
+        const recipient = members[1];
+        const amount = ethers.parseEther('50');
+
+        // Mint tokens to sender first
+        await decayingToken
+          .connect(executorSigner)
+          .transfer(sender.address, amount);
+
+        await expect(
+          decayingToken.connect(sender).transfer(recipient.address, amount),
+        ).to.be.revertedWith('Token transfers are disabled');
+      });
+
+      it('should allow non-executor to transfer when enabled', async function () {
+        const decayingToken = await deployDecayingToken(true);
+        const sender = members[0];
+        const recipient = members[1];
+        const amount = ethers.parseEther('50');
+
+        await decayingToken
+          .connect(executorSigner)
+          .transfer(sender.address, amount);
+        await decayingToken.connect(sender).transfer(recipient.address, amount);
+        expect(await decayingToken.balanceOf(recipient.address)).to.equal(
+          amount,
+        );
+        expect(await decayingToken.balanceOf(sender.address)).to.equal(0);
+      });
+
+      it('should apply decay during transfer', async function () {
+        const decayingToken = await deployDecayingToken(true);
+        const member = members[0];
+        const amount = ethers.parseEther('1000');
+        await decayingToken
+          .connect(executorSigner)
+          .mint(member.address, amount);
+
+        // Advance time by one decay interval (1 hour)
+        await ethers.provider.send('evm_increaseTime', [3600]);
+        await ethers.provider.send('evm_mine', []);
+
+        // Balance should have decayed by 1%
+        const decayedBalance = await decayingToken.balanceOf(member.address);
+        const expectedBalance = (amount * BigInt(9900)) / BigInt(10000); // 99%
+        expect(decayedBalance).to.be.closeTo(expectedBalance, 1); // CloseTo for potential rounding
+
+        // Now transfer half of the decayed balance
+        const transferAmount = decayedBalance / BigInt(2);
+        await decayingToken
+          .connect(member)
+          .transfer(members[1].address, transferAmount);
+
+        const finalSenderBalance = await decayingToken.balanceOf(
+          member.address,
+        );
+        // After applying decay, the balance becomes `decayedBalance`. Then `transferAmount` is subtracted.
+        expect(finalSenderBalance).to.be.closeTo(
+          decayedBalance - transferAmount,
+          1,
+        );
+      });
     });
   });
 });

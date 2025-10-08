@@ -148,20 +148,26 @@ contract DecayingSpaceToken is SpaceToken {
    * @dev Apply decay before transfers
    */
   function transfer(address to, uint256 amount) public override returns (bool) {
-    // If executor is transferring, mint to recipient instead
+    require(
+      transferable || msg.sender == executor,
+      'Token transfers are disabled'
+    );
+    applyDecay(msg.sender);
     if (msg.sender == executor) {
-      mint(to, amount);
-      return true;
+      if (super.balanceOf(msg.sender) < amount) {
+        uint256 amountToMint = amount - super.balanceOf(msg.sender);
+        mint(msg.sender, amountToMint);
+      }
     }
 
-    applyDecay(msg.sender);
     if (lastDecayTimestamp[to] == 0) {
       lastDecayTimestamp[to] = block.timestamp;
     } else {
       applyDecay(to);
     }
     _addTokenHolder(to);
-    return super.transfer(to, amount);
+    _transfer(msg.sender, to, amount);
+    return true;
   }
 
   /**
@@ -172,25 +178,29 @@ contract DecayingSpaceToken is SpaceToken {
     address to,
     uint256 amount
   ) public override returns (bool) {
-    // If executor is the one being transferred from, mint to recipient instead
-    if (from == executor) {
-      // Only executor can initiate this type of transfer
-      require(
-        msg.sender == executor,
-        'Only executor can transfer from executor account'
-      );
-      mint(to, amount);
-      return true;
-    }
+    require(
+      transferable || msg.sender == executor,
+      'Token transfers are disabled'
+    );
 
     applyDecay(from);
+    if (from == executor) {
+      if (super.balanceOf(from) < amount) {
+        uint256 amountToMint = amount - super.balanceOf(from);
+        mint(from, amountToMint);
+      }
+    }
+
     if (lastDecayTimestamp[to] == 0) {
       lastDecayTimestamp[to] = block.timestamp;
     } else {
       applyDecay(to);
     }
     _addTokenHolder(to);
-    return super.transferFrom(from, to, amount);
+
+    _spendAllowance(from, msg.sender, amount);
+    _transfer(from, to, amount);
+    return true;
   }
 
   /**

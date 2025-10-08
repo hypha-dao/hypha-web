@@ -392,6 +392,11 @@ contract DAOProposalsImplementation is
   function triggerExecutionCheck(uint256 _proposalId) external {
     if (address(spaceFactory) == address(0)) revert NotInitialized();
     checkAndExecuteProposal(_proposalId);
+
+    ProposalCore storage proposal = proposalsCoreData[_proposalId];
+    if (!proposal.executed && !proposal.expired) {
+      checkProposalExpiration(_proposalId);
+    }
   }
 
   function getSpaceProposals(

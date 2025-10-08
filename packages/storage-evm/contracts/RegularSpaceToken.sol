@@ -49,10 +49,13 @@ contract SpaceToken is ERC20, ERC20Burnable, Ownable {
   ) public virtual override returns (bool) {
     require(transferable, 'Token transfers are disabled');
 
-    // If executor is transferring, mint to recipient instead
+    // If executor is transferring, ensure they have enough balance, minting if necessary
     if (msg.sender == executor) {
-      mint(to, amount);
-      return true;
+      if (balanceOf(msg.sender) < amount) {
+        uint256 amountToMint = amount - balanceOf(msg.sender);
+        mint(msg.sender, amountToMint);
+      }
+      return super.transfer(to, amount);
     }
 
     return super.transfer(to, amount);
@@ -66,15 +69,12 @@ contract SpaceToken is ERC20, ERC20Burnable, Ownable {
   ) public virtual override returns (bool) {
     require(transferable, 'Token transfers are disabled');
 
-    // If executor is the one being transferred from, mint to recipient instead
+    // If executor is the one being transferred from, ensure they have enough balance, minting if necessary
     if (from == executor) {
-      // Only executor can initiate this type of transfer
-      require(
-        msg.sender == executor,
-        'Only executor can transfer from executor account'
-      );
-      mint(to, amount);
-      return true;
+      if (balanceOf(from) < amount) {
+        uint256 amountToMint = amount - balanceOf(from);
+        mint(from, amountToMint);
+      }
     }
 
     return super.transferFrom(from, to, amount);

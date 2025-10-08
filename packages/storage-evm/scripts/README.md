@@ -21,6 +21,11 @@ npx nx run storage-evm:script ./scripts/space-payment-tracker.upgrade.ts --netwo
 
 ```bash
 npx nx run storage-evm:script ./scripts/decaying-token-factory-proxy.deploy.ts --network base-mainnet
+npx nx run storage-evm:script ./scripts/decaying-token-factory.upgrade.ts --network base-mainnet
+npx nx run storage-evm:script ./scripts/ownership-token-factory.upgrade.ts --network base-mainnet
+
+decaying-token-factory.upgrade.ts
+
 ```
 
 ### exit-method-directory-proxy.deploy
@@ -57,6 +62,8 @@ npx nx run storage-evm:script ./scripts/no-exit.deploy.ts --network base-mainnet
 
 ```bash
 npx nx run storage-evm:script ./scripts/regular-token-factory-proxy.deploy.ts --network base-mainnet
+npx nx run storage-evm:script ./scripts/regular-token-factory.upgrade.ts --network base-mainnet
+
 ```
 
 ### space-voting-power-proxy.deploy
