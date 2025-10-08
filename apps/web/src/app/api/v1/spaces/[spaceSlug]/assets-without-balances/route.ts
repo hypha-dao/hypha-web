@@ -15,6 +15,7 @@ import {
   ALLOWED_SPACES,
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
+import { hasEmojiOrLink } from '@hypha-platform/ui-utils';
 
 export async function GET(
   request: NextRequest,
@@ -191,12 +192,6 @@ export async function GET(
     });
 
     const allTokens: Token[] = Array.from(addressMap.values());
-
-    const hasEmojiOrLink = (str: string) => {
-      const emojiRegex = /[\p{Emoji}]/u;
-      const linkRegex = /(https?:\/\/|www\.|t\.me\/)/i;
-      return emojiRegex.test(str) || linkRegex.test(str);
-    };
 
     const assets = await Promise.all(
       allTokens.map(async (token) => {

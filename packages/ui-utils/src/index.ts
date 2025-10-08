@@ -7,3 +7,4 @@ export * from './formatDate';
 export * from './set-number-value';
 export * from './get-duration';
 export * from './get-cropped-img';
+export * from './hasEmojiOrLink';

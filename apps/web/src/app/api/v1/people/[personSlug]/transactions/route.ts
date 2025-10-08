@@ -15,6 +15,7 @@ import {
 } from '@hypha-platform/core/server';
 import { findPersonBySlug, getDb } from '@hypha-platform/core/server';
 import { zeroAddress } from 'viem';
+import { hasEmojiOrLink } from '@hypha-platform/ui-utils';
 
 /**
  * A route to get ERC20 transfers for a user.
@@ -88,12 +89,6 @@ export async function GET(
       isVotingToken: token.isVotingToken,
       address: token.address ?? undefined,
     }));
-
-    const hasEmojiOrLink = (str: string) => {
-      const emojiRegex = /[\p{Emoji}]/u;
-      const linkRegex = /(https?:\/\/|www\.|t\.me\/)/i;
-      return emojiRegex.test(str) || linkRegex.test(str);
-    };
 
     const transfersWithEntityInfo = await Promise.all(
       transfers.map(async (transfer) => {
