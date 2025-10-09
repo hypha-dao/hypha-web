@@ -51,7 +51,7 @@ export async function updateSpaceByIdAction(
   // const db = getDb({ authToken });
   const result = await updateSpaceById(data, { db });
 
-  const { slug } = data;
+  const { slug } = result;
   revalidatePath(`/[lang]/dho/${slug}`, 'layout');
 
   return result;

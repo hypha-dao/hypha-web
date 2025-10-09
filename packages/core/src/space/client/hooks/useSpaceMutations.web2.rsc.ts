@@ -35,7 +35,7 @@ export const useSpaceMutationsWeb2Rsc = (authToken?: string | null) => {
     error: errorUpdateSpaceBySlugMutation,
     data: updatedSpaceBySlug,
   } = useSWRMutation(
-    authToken ? [authToken, 'updateSpace'] : null,
+    authToken ? [authToken, 'updateSpaceBySlug'] : null,
     async ([authToken], { arg }: { arg: UpdateSpaceBySlugInput }) =>
       await updateSpaceBySlugAction(arg, { authToken }),
   );
@@ -47,7 +47,7 @@ export const useSpaceMutationsWeb2Rsc = (authToken?: string | null) => {
     error: errorUpdateSpaceByIdMutation,
     data: updatedSpaceById,
   } = useSWRMutation(
-    authToken ? [authToken, 'updateSpace'] : null,
+    authToken ? [authToken, 'updateSpaceById'] : null,
     async ([authToken], { arg }: { arg: UpdateSpaceByIdInput }) =>
       await updateSpaceByIdAction(arg, { authToken }),
   );

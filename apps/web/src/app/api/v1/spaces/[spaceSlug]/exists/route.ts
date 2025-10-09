@@ -16,7 +16,7 @@ export async function GET(
     );
     return NextResponse.json({ exists, spaceId });
   } catch (error) {
-    console.error('Failed to check existed space:', error);
+    console.error('Failed to check space existence:', error);
     return NextResponse.json(
       { error: 'Failed to check space' },
       { status: 500 },
