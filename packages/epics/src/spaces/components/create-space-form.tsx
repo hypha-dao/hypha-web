@@ -549,11 +549,13 @@ export const SpaceForm = ({
             name="slug"
             render={({ field, fieldState: { error } }) => (
               <FormItem>
-                <FormLabel className="text-foreground">Space URL</FormLabel>
+                <FormLabel className="text-foreground">
+                  Space Unique Link
+                </FormLabel>
                 <FormControl>
                   <Input
                     rightIcon={!field.value && <RequirementMark />}
-                    placeholder="Space URL"
+                    placeholder="Space Unique Link"
                     className={cn(
                       'text-2',
                       error &&
@@ -567,7 +569,8 @@ export const SpaceForm = ({
                 <span className="text-1 text-neutral-11">
                   <span>
                     Your space name is automatically added to the end of your
-                    URL. You can edit it if needed, but it must remain unique.
+                    space link. You can edit it if needed, but it must remain
+                    unique.
                   </span>
                 </span>
               </FormItem>
