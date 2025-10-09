@@ -554,10 +554,11 @@ export const SpaceForm = ({
                 </FormLabel>
                 <FormControl>
                   <Input
+                    leftIcon={<>/</>}
                     rightIcon={!field.value && <RequirementMark />}
                     placeholder="Space Unique Link"
                     className={cn(
-                      'text-2',
+                      'text-2 pl-4',
                       error &&
                         'border-destructive focus-visible:ring-destructive',
                     )}
