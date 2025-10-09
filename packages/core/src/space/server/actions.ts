@@ -49,12 +49,16 @@ export async function updateSpaceByIdAction(
 ) {
   // TODO: #602 Define RLS Policies for Spaces Table
   // const db = getDb({ authToken });
-  const result = await updateSpaceById(data, { db });
+  const { originalSpace, updatedSpace } = await updateSpaceById(data, { db });
 
-  const { slug } = result;
-  revalidatePath(`/[lang]/dho/${slug}`, 'layout');
+  const { slug: originalSlug } = originalSpace;
+  revalidatePath(`/[lang]/dho/${originalSlug}`, 'layout');
+  const { slug: updatedSlug } = updatedSpace;
+  if (originalSlug !== updatedSlug) {
+    revalidatePath(`/[lang]/dho/${updatedSlug}`, 'layout');
+  }
 
-  return result;
+  return updatedSpace;
 }
 
 export async function deleteSpaceBySlugAction(
