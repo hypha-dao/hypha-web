@@ -172,6 +172,7 @@ export const SpaceForm = ({
   }, [parentSpaceId, form]);
 
   React.useEffect(() => {
+    form.trigger('slug');
     if (slugIsChecking || !slug) {
       return;
     }
@@ -554,7 +555,7 @@ export const SpaceForm = ({
                 </FormLabel>
                 <FormControl>
                   <Input
-                    leftIcon={<>/</>}
+                    leftIcon={<div className="text-2">/</div>}
                     rightIcon={!field.value && <RequirementMark />}
                     placeholder="Space Unique Link"
                     className={cn(
