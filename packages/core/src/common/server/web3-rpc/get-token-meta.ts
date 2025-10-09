@@ -1,6 +1,6 @@
 'use server';
 
-import { TOKENS, Token, DbToken } from '@hypha-platform/core/client';
+import { TOKENS, Token, DbToken, TokenType } from '@hypha-platform/core/client';
 import { findSpaceById } from '../../../server';
 import { erc20Abi } from 'viem';
 import { web3Client } from './client';
@@ -16,6 +16,19 @@ function getIconForHyphaTokens(symbol: string, fallback: string): string {
       return '/placeholder/credits-token-icon.svg';
     default:
       return fallback;
+  }
+}
+
+function getHyphaTokensType(symbol: string): TokenType | null {
+  switch (symbol.toUpperCase()) {
+    case 'HYPHA':
+      return 'utility';
+    case 'HVOICE':
+      return 'voice';
+    case 'HCREDITS':
+      return 'credits';
+    default:
+      return null;
   }
 }
 
@@ -93,6 +106,8 @@ export async function getTokenMeta(
       dbToken?.iconUrl ?? '/placeholder/neutral-token-icon.svg',
     );
 
+    const hyphaTokenType = getHyphaTokensType(symbol);
+
     let space = null;
     if (dbToken?.spaceId) {
       space = await findSpaceById({ id: dbToken.spaceId }, { db });
@@ -102,7 +117,7 @@ export async function getTokenMeta(
       symbol,
       name,
       icon,
-      type: 'utility',
+      type: hyphaTokenType || dbToken?.type || null,
       ...(space && { space: { slug: space.slug, title: space.title } }),
     };
   } catch (error: any) {

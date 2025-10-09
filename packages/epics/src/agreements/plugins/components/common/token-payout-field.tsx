@@ -11,11 +11,17 @@ import {
   Button,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { TokenType } from '@hypha-platform/core/client';
 
 interface Token {
   icon: string;
   symbol: string;
   address: `0x${string}`;
+  space?: {
+    title: string;
+    slug: string;
+  };
+  type?: TokenType | null;
 }
 
 interface TokenPayoutFieldProps {
@@ -66,18 +72,14 @@ export const TokenPayoutField = ({
       </div>
       <div className="flex top-0 w-full sm:w-60 shrink-0 min-w-0 m-0 p-0">
         <DropdownMenu>
-          <DropdownMenuTrigger
-            asChild
-            className={cn(readOnlyDropdown ? 'pointer-events-none' : '')}
-          >
+          <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
               colorVariant="neutral"
               role="combobox"
-              className="w-full flex-1 text-2 justify-between py-2 font-normal"
-              disabled={readOnlyDropdown}
+              className="w-full text-2 md:w-72 justify-between py-2 font-normal"
             >
-              <div className="flex items-center gap-2 min-w-0 flex-1">
+              <div className="flex items-center gap-2">
                 {selectedToken ? (
                   <>
                     <Image
@@ -85,23 +87,25 @@ export const TokenPayoutField = ({
                       width={20}
                       height={20}
                       alt={selectedToken.symbol}
-                      className="mr-2 object-cover rounded-full w-5 h-5"
+                      className="mr-2 rounded-full h-4 w-4"
                     />
-                    <span className="text-2 truncate">
+                    <span className="text-2 text-neutral-11">
                       {selectedToken.symbol}
                     </span>
                   </>
                 ) : (
-                  <span className="text-2 text-nowrap">Select a token</span>
+                  <span className="text-2 text-neutral-11 whitespace-nowrap">
+                    Select a token
+                  </span>
                 )}
               </div>
               <ChevronDownIcon className="size-2" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent>
+          <DropdownMenuContent className="w-full max-h-[200px] overflow-y-scroll">
             {tokens.map((token) => (
               <DropdownMenuItem
-                key={`${token.address}_${token.symbol}`}
+                key={token.address}
                 onSelect={() => handleTokenChange(token)}
               >
                 <Image
@@ -109,9 +113,25 @@ export const TokenPayoutField = ({
                   width={24}
                   height={24}
                   alt={token.symbol}
-                  className="mr-2 object-cover rounded-full w-5 h-5"
+                  className="mr-2 rounded-full h-5 w-5"
                 />
-                <span className="text-2 text-neutral-11">{token.symbol}</span>
+                <div className="flex flex-col">
+                  <span className="flex gap-2 items-center">
+                    <span className="text-2 text-neutral-11">
+                      {token.symbol}
+                    </span>
+                    {token?.type && (
+                      <div className="rounded-lg capitalize text-[10px] text-accent-11 border-1 border-accent-11 px-2 py-0.75">
+                        {token.type}
+                      </div>
+                    )}
+                  </span>
+                  {token?.space?.title ? (
+                    <span className="text-1 text-accent-11">
+                      by {token?.space?.title}
+                    </span>
+                  ) : null}
+                </div>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>

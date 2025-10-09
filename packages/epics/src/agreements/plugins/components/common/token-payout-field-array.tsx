@@ -11,6 +11,7 @@ import {
   RequirementMark,
 } from '@hypha-platform/ui';
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
+import { TokenType } from '@hypha-platform/core/client';
 
 export interface Token {
   icon: string;
@@ -20,6 +21,7 @@ export interface Token {
     title: string;
     slug: string;
   };
+  type?: TokenType | null;
 }
 
 interface TokenPayoutFieldArrayProps {
