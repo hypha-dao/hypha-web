@@ -49,17 +49,30 @@ export const updateSpaceById = async (
   { id, ...rest }: { id: number } & UpdateSpaceInput,
   { db }: { db: DatabaseInstance },
 ) => {
-  const [updatedSpace] = await db
-    .update(spaces)
-    .set(rest)
-    .where(eq(spaces.id, id))
-    .returning();
+  return await db.transaction(async (tx) => {
+    const [originalSpace] = await db
+      .select()
+      .from(spaces)
+      .where(eq(spaces.id, id))
+      .offset(0)
+      .limit(1);
 
-  if (!updatedSpace) {
-    throw new Error('Failed to update space');
-  }
+    if (!originalSpace) {
+      throw new Error('Failed to update space: not found');
+    }
 
-  return updatedSpace;
+    const [updatedSpace] = await db
+      .update(spaces)
+      .set(rest)
+      .where(eq(spaces.id, id))
+      .returning();
+
+    if (!updatedSpace) {
+      throw new Error('Failed to update space');
+    }
+
+    return { originalSpace, updatedSpace };
+  });
 };
 
 /**
