@@ -31,6 +31,7 @@ export type Order<T> = Array<OrderField<T>>;
 export type PaginationParams<T> = {
   page?: number;
   pageSize?: number;
+  offset?: number;
   filter?: FilterParams<T>;
   order?: Order<T>;
 };
