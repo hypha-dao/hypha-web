@@ -114,7 +114,7 @@ export default function SpaceConfiguration() {
             surname: person?.surname,
           }}
           onSubmit={submitForm}
-          slugIncorrectMessage="This space URL matches an existing space. Please update your space name or choose a different URL."
+          slugIncorrectMessage="A space with this link already exists. Please choose a different space name or unique link."
           values={{
             ...space,
             title: space?.title || '',
