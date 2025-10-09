@@ -120,7 +120,7 @@ export const TokenPayoutField = ({
                       {token.symbol}
                     </span>
                     {token?.type && (
-                      <div className="rounded-lg capitalize text-[10px] text-white bg-accent-9 px-2 py-0.75">
+                      <div className="rounded-lg capitalize text-[10px] text-accent-11 border-1 border-accent-11 px-2 py-0.75">
                         {token.type}
                       </div>
                     )}

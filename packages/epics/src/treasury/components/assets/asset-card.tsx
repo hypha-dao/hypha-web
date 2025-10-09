@@ -72,6 +72,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
                 {type && (
                   <Badge
                     colorVariant="accent"
+                    variant="outline"
                     className="w-fit capitalize h-fit"
                   >
                     {type}
