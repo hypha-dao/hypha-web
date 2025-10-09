@@ -172,9 +172,12 @@ export const SpaceForm = ({
   }, [parentSpaceId, form]);
 
   React.useEffect(() => {
-    form.trigger('slug');
     if (slugIsChecking || !slug) {
       return;
+    }
+    const { isDirty, isTouched } = form.getFieldState('slug');
+    if (isDirty || isTouched) {
+      form.trigger('slug');
     }
     if (slugExists && spaceId !== foundSpaceId) {
       form.setError('slug', {
@@ -189,12 +192,10 @@ export const SpaceForm = ({
   }, [spaceId, form, slug, slugExists, foundSpaceId, slugIsChecking]);
 
   React.useEffect(() => {
-    if (slugIsChecking || !preparedSlug) {
+    if (!preparedSlug) {
       return;
     }
-    const { isDirty: isTitleDirty, isTouched: isTitleTouched } =
-      form.getFieldState('title');
-    if ((isTitleTouched || isTitleDirty) && preparedSlug !== slug) {
+    if (preparedSlug !== slug) {
       form.setValue('slug', preparedSlug);
     }
   }, [form, preparedSlug]);
@@ -212,10 +213,15 @@ export const SpaceForm = ({
 
   React.useEffect(() => {
     if (!values) return;
+    const { slug } = values;
     form.reset(
       { ...form.getValues(), ...values },
-      { keepDirty: true, keepTouched: false },
+      { keepDirty: false, keepTouched: false },
     );
+    const timerId = setTimeout(() => {
+      form.setValue('slug', slug, { shouldDirty: false, shouldTouch: false });
+    }, 500);
+    return () => clearTimeout(timerId);
   }, [values, form]);
 
   const { spaces: organisationSpaces, isLoading: isOrganisationLoading } =
