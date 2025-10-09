@@ -102,7 +102,7 @@ export async function getTokenMeta(
       symbol,
       name,
       icon,
-      type: 'utility',
+      type: dbToken?.type || null,
       ...(space && { space: { slug: space.slug, title: space.title } }),
     };
   } catch (error: any) {

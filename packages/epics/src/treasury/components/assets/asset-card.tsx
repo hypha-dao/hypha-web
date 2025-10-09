@@ -1,5 +1,5 @@
 import { Text } from '@radix-ui/themes';
-import { Card, Skeleton, Image } from '@hypha-platform/ui';
+import { Card, Skeleton, Image, Badge } from '@hypha-platform/ui';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { getDhoPathAgreements } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
@@ -33,6 +33,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   supply,
   space,
   lang,
+  type,
 }) => {
   return (
     <Card className="w-full h-full p-5 mb-2 flex flex-col justify-between">
@@ -65,8 +66,19 @@ export const AssetCard: React.FC<AssetCardProps> = ({
             </Text>
           </Skeleton>
           <Skeleton width="80px" height="16px" loading={isLoading}>
-            <span className="flex gap-1">
-              <Text className="text-1 text-gray-500">{symbol}</Text>
+            <span className="flex gap-2 items-center">
+              <span className="flex gap-2 items-center">
+                <Text className="text-1 text-gray-500">{symbol}</Text>
+                {type && (
+                  <Badge
+                    size={0}
+                    colorVariant="accent"
+                    className="w-fit capitalize h-fit"
+                  >
+                    {type}
+                  </Badge>
+                )}
+              </span>
               {space?.title ? (
                 <Link
                   href={getDhoPathAgreements(lang as Locale, space.slug)}
