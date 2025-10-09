@@ -11,6 +11,7 @@ import {
   Button,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { TokenType } from '@hypha-platform/core/client';
 
 interface Token {
   icon: string;
@@ -20,7 +21,7 @@ interface Token {
     title: string;
     slug: string;
   };
-  type?: 'utility' | 'credits' | 'ownership' | 'voice' | null;
+  type?: TokenType | null;
 }
 
 interface TokenPayoutFieldProps {
