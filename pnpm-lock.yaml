@@ -699,6 +699,12 @@ importers:
       '@fastify/swagger-ui':
         specifier: ^5.2.3
         version: 5.2.3
+      '@hypha-platform/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@hypha-platform/storage-postgres':
+        specifier: workspace:*
+        version: link:../../packages/storage-postgres
       '@sinclair/typebox':
         specifier: ^0.34.41
         version: 0.34.41
