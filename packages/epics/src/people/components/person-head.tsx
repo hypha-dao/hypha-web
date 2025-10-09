@@ -137,7 +137,7 @@ export const PersonHead = ({
           <div className="flex flex-col gap-4">
             <WebLinks links={links} />
             <div className="flex gap-5 text-1">
-              {email ? (
+              {email && isMe(personSlug as string) ? (
                 <span className="flex gap-3">
                   <MailIcon width={16} height={16} />
                   {email}
