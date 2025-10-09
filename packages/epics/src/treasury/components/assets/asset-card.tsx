@@ -71,7 +71,6 @@ export const AssetCard: React.FC<AssetCardProps> = ({
                 <Text className="text-1 text-gray-500">{symbol}</Text>
                 {type && (
                   <Badge
-                    size={0}
                     colorVariant="accent"
                     className="w-fit capitalize h-fit"
                   >
