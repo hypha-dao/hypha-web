@@ -19,6 +19,21 @@ function getIconForHyphaTokens(symbol: string, fallback: string): string {
   }
 }
 
+function getHyphaTokensType(
+  symbol: string,
+): 'utility' | 'voice' | 'credits' | null {
+  switch (symbol.toUpperCase()) {
+    case 'HYPHA':
+      return 'utility';
+    case 'HVOICE':
+      return 'voice';
+    case 'HCREDITS':
+      return 'credits';
+    default:
+      return null;
+  }
+}
+
 export async function getTokenMeta(
   tokenAddress: `0x${string}`,
   dbTokens?: DbToken[],
@@ -93,6 +108,8 @@ export async function getTokenMeta(
       dbToken?.iconUrl ?? '/placeholder/neutral-token-icon.svg',
     );
 
+    const hyphaTokenType = getHyphaTokensType(symbol);
+
     let space = null;
     if (dbToken?.spaceId) {
       space = await findSpaceById({ id: dbToken.spaceId }, { db });
@@ -102,7 +119,7 @@ export async function getTokenMeta(
       symbol,
       name,
       icon,
-      type: dbToken?.type || null,
+      type: hyphaTokenType || dbToken?.type || null,
       ...(space && { space: { slug: space.slug, title: space.title } }),
     };
   } catch (error: any) {
