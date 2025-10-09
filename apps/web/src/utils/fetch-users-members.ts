@@ -6,7 +6,13 @@ import {
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 
-export async function fetchMembersAndSpaces(): Promise<{
+interface FetchMembersAndSpacesParams {
+  activeSpaceId?: number;
+}
+
+export async function fetchMembersAndSpaces({
+  activeSpaceId,
+}: FetchMembersAndSpacesParams): Promise<{
   spaces: Space[];
   members: Person[];
 }> {
@@ -14,7 +20,10 @@ export async function fetchMembersAndSpaces(): Promise<{
     const spaces = await getAllSpaces({ parentOnly: false });
 
     const filteredSpaces = spaces.filter(
-      (space) => space.address && space.address.trim() !== '',
+      (space) =>
+        space.address &&
+        space.address.trim() !== '' &&
+        space.id !== activeSpaceId,
     );
 
     const members = await findAllPeopleWithoutPagination({ db });

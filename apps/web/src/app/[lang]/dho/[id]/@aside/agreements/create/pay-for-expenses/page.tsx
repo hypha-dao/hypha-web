@@ -24,7 +24,9 @@ export default async function CreatePayForExpensesPage({ params }: PageProps) {
 
   const successfulUrl = getDhoPathAgreements(lang as Locale, id);
 
-  const { spaces, members } = await fetchMembersAndSpaces();
+  const { spaces, members } = await fetchMembersAndSpaces({
+    activeSpaceId: spaceId,
+  });
 
   return (
     <SidePanel>
