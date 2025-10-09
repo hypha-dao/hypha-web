@@ -1,6 +1,6 @@
 'use server';
 
-import { TOKENS, Token, DbToken } from '@hypha-platform/core/client';
+import { TOKENS, Token, DbToken, TokenType } from '@hypha-platform/core/client';
 import { findSpaceById } from '../../../server';
 import { erc20Abi } from 'viem';
 import { web3Client } from './client';
@@ -19,9 +19,7 @@ function getIconForHyphaTokens(symbol: string, fallback: string): string {
   }
 }
 
-function getHyphaTokensType(
-  symbol: string,
-): 'utility' | 'voice' | 'credits' | null {
+function getHyphaTokensType(symbol: string): TokenType | null {
   switch (symbol.toUpperCase()) {
     case 'HYPHA':
       return 'utility';
