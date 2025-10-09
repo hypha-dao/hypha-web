@@ -20,6 +20,7 @@ export interface Token {
     title: string;
     slug: string;
   };
+  type?: 'utility' | 'credits' | 'ownership' | 'voice' | null;
 }
 
 interface TokenPayoutFieldArrayProps {

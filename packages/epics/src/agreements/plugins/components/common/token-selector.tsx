@@ -64,7 +64,7 @@ export const TokenSelector = ({
               <ChevronDownIcon className="size-2" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-full">
+          <DropdownMenuContent className="w-full max-h-[200px] overflow-y-scroll">
             {tokens.map((token) => (
               <DropdownMenuItem
                 key={token.address}
@@ -78,7 +78,16 @@ export const TokenSelector = ({
                   className="mr-2 rounded-full h-5 w-5"
                 />
                 <div className="flex flex-col">
-                  <span className="text-2 text-neutral-11">{token.symbol}</span>
+                  <span className="flex gap-2 items-center">
+                    <span className="text-2 text-neutral-11">
+                      {token.symbol}
+                    </span>
+                    {token?.type && (
+                      <div className="rounded-lg capitalize text-[10px] text-white bg-accent-9 px-2 py-0.75">
+                        {token.type}
+                      </div>
+                    )}
+                  </span>
                   {token.space?.title ? (
                     <span className="text-1 text-accent-11">
                       by {token.space?.title}
