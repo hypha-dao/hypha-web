@@ -23,7 +23,7 @@ export async function fetchMembersAndSpaces({
       (space) =>
         space.address &&
         space.address.trim() !== '' &&
-        space.id != activeSpaceId,
+        space.id !== activeSpaceId,
     );
 
     const members = await findAllPeopleWithoutPagination({ db });
