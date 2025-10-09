@@ -50,7 +50,7 @@ export const updateSpaceById = async (
   { db }: { db: DatabaseInstance },
 ) => {
   return await db.transaction(async (tx) => {
-    const [originalSpace] = await db
+    const [originalSpace] = await tx
       .select()
       .from(spaces)
       .where(eq(spaces.id, id))
@@ -61,7 +61,7 @@ export const updateSpaceById = async (
       throw new Error('Failed to update space: not found');
     }
 
-    const [updatedSpace] = await db
+    const [updatedSpace] = await tx
       .update(spaces)
       .set(rest)
       .where(eq(spaces.id, id))
