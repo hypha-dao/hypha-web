@@ -15,6 +15,8 @@ type DocumentSectionProps = {
   headSectionButton?: React.ReactNode;
   hasSearch?: boolean;
   isLoading: boolean;
+  firstPageSize?: number;
+  pageSize?: number;
 };
 
 export const DocumentSection: FC<DocumentSectionProps> = ({
@@ -24,6 +26,8 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
   headSectionButton,
   hasSearch = false,
   isLoading,
+  firstPageSize = 3,
+  pageSize = 3,
 }) => {
   const {
     pages,
@@ -35,6 +39,8 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
     filteredDocuments,
   } = useDocumentsSection({
     documents,
+    firstPageSize,
+    pageSize,
   });
 
   return (
@@ -61,7 +67,8 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
               basePath={basePath}
               pagination={{
                 page: index + 1,
-                pageSize: 3,
+                firstPageSize,
+                pageSize,
                 searchTerm,
                 order: [
                   {
