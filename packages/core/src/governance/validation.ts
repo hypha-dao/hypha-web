@@ -39,7 +39,7 @@ export const paymentScheduleSchema = z
     if (data.option === 'Future Payment' && data.futureDate) {
       if (isBefore(data.futureDate, new Date())) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: 'custom',
           message:
             'The future payment date must be later than the current date',
           path: ['futureDate'],
@@ -50,7 +50,7 @@ export const paymentScheduleSchema = z
     if (data.option === 'Milestones' && data.milestones) {
       if (!data.milestones || data.milestones.length === 0) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: 'custom',
           message: 'Milestones cannot be empty',
           path: ['milestones'],
         });
@@ -67,7 +67,7 @@ export const paymentScheduleSchema = z
 
         if (!dateRange?.from) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: 'custom',
             message: 'Each milestone must have a start date',
             path: ['milestones', i, 'dateRange', 'from'],
           });
@@ -75,7 +75,7 @@ export const paymentScheduleSchema = z
 
         if (i === 0 && dateRange?.from && isBefore(dateRange.from, now)) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: 'custom',
             message: 'First milestone must be in the future',
             path: ['milestones', i, 'dateRange', 'from'],
           });
@@ -90,7 +90,7 @@ export const paymentScheduleSchema = z
           isBefore(dateRange.from, previousFrom)
         ) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: 'custom',
             message: `Milestone ${i + 1} must be after milestone ${i}`,
             path: ['milestones', i, 'dateRange', 'from'],
           });
@@ -99,7 +99,7 @@ export const paymentScheduleSchema = z
 
       if (total > 100) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: 'custom',
           message: 'Total percentage cannot exceed 100%',
           path: ['milestones'],
         });
@@ -143,7 +143,7 @@ export const schemaRequestInvite = schemaCreateAgreementWeb2.extend({
 });
 
 export const createAgreementWeb2FileUrls = {
-  leadImage: z.string().url('Lead Image URL must be a valid URL').optional(),
+  leadImage: z.url('Lead Image URL must be a valid URL').optional(),
 };
 
 export const schemaCreateAgreementWeb2FileUrls = z.object(
@@ -169,18 +169,14 @@ export const createAgreementFiles = {
     .array(
       z
         .custom<File>(isBrowserFile, { message: 'Please upload a valid file' })
-        .refine(
-          (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-          (file) => ({
-            message: `Your file "${file.name}" is too large and exceeds the 4MB limit. Please upload a smaller file.`,
-          }),
-        )
-        .refine(
-          (file) => DEFAULT_FILE_ACCEPT.includes(file.type),
-          (file) => ({
-            message: `This file "${file.name}" format isn’t supported. Please upload a JPEG, PNG, WebP, or PDF (up to 4MB).`,
-          }),
-        ),
+        .refine((file) => file.size <= ALLOWED_IMAGE_FILE_SIZE, {
+          message:
+            'Your file is too large and exceeds the 4MB limit. Please upload a smaller file.',
+        })
+        .refine((file) => DEFAULT_FILE_ACCEPT.includes(file.type), {
+          message:
+            'This file format isn’t supported. Please upload a JPEG, PNG, WebP, or PDF (up to 4MB).',
+        }),
     )
     .max(3, {
       message:
@@ -254,15 +250,19 @@ export const schemaQuorumAndUnity = z.object({
 const decaySettingsSchema = z.object({
   decayInterval: z
     .number({
-      required_error: 'Decay interval is required',
-      invalid_type_error: 'Decay interval must be a number',
+      error: ({ input }) =>
+        input == null
+          ? 'Decay interval is required'
+          : 'Decay interval must be a number',
     })
     .min(0, 'Decay interval must be greater or equal to 0'),
 
   decayPercentage: z
     .number({
-      required_error: 'Decay percentage is required',
-      invalid_type_error: 'Decay percentage must be a number',
+      error: ({ input }) =>
+        input == null
+          ? 'Decay percentage is required'
+          : 'Decay percentage must be a number',
     })
     .min(0, 'Decay percentage must be at least 0%')
     .max(100, 'Decay percentage must not exceed 100%'),
@@ -295,9 +295,7 @@ export const schemaIssueNewToken = z.object({
 
   iconUrl: z
     .union([
-      z
-        .string({ message: 'Please upload a token icon' })
-        .url('Icon URL must be a valid URL'),
+      z.url('Icon URL must be a valid URL'),
       z.literal(''),
       z
         .custom<File>(isBrowserFile, { message: 'Please upload a valid file' })
@@ -326,9 +324,10 @@ export const schemaIssueNewToken = z.object({
   //     .max(18, { message: 'Digits must not exceed 18' }),
   // ),
 
-  type: z.enum(['utility', 'credits', 'ownership', 'voice'], {
-    required_error: 'Please select a token type',
-  }),
+  type: z.enum(
+    ['utility', 'credits', 'ownership', 'voice'],
+    'Please select a token type',
+  ),
 
   maxSupply: z.preprocess(
     (val) => Number(val),
@@ -341,9 +340,7 @@ export const schemaIssueNewToken = z.object({
   ),
   decaySettings: decaySettingsSchema,
   isVotingToken: z.boolean(),
-  transferable: z
-    .boolean({ required_error: 'Transferable flag is required' })
-    .optional(),
+  transferable: z.boolean('Transferable flag is required').optional(),
 });
 
 export const schemaChangeVotingMethod = z.object({
