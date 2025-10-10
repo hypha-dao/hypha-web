@@ -86,3 +86,15 @@ Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying VotingPowerDelegation...
 VotingPowerDelegation deployed to: 0xc87546357EeFF8653cF058Be2BA850813e39cda0
 
+
+
+FOR TESTING
+Compiled 1 Solidity file successfully (evm target: paris).
+Deploying RegularTokenFactory with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying RegularTokenFactory...
+RegularTokenFactory proxy deployed to: 0x9425c91c19066f6CAC6C25bF934F8861914Ccf2e
+
+
+Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying SpaceToken...
+SpaceToken deployed to: 0xDAdFbF2D33A8aB74f86752f2afF25F6323d73B87

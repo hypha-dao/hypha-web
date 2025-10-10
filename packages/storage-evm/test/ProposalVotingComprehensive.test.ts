@@ -184,6 +184,14 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       await tokenVotingPower.getAddress(),
     );
 
+    const OwnershipSpaceToken = await ethers.getContractFactory(
+      'OwnershipSpaceToken',
+    );
+    const ownershipSpaceTokenImpl = await OwnershipSpaceToken.deploy();
+    await ownershipTokenFactory.setOwnershipTokenImplementation(
+      await ownershipSpaceTokenImpl.getAddress(),
+    );
+
     await ownershipTokenFactory.setSpacesContract(
       await daoSpaceFactory.getAddress(),
     );

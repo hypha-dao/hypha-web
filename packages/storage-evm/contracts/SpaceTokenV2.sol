@@ -7,7 +7,7 @@ import '@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20Burnable
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
-contract SpaceToken is
+contract SpaceTokenV2 is
   Initializable,
   ERC20Upgradeable,
   ERC20BurnableUpgradeable,
@@ -17,6 +17,7 @@ contract SpaceToken is
   uint256 public spaceId;
   uint256 public maxSupply;
   bool public transferable;
+  uint256 public extraFeature; // New V2 state variable
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -43,6 +44,15 @@ contract SpaceToken is
     transferable = _transferable;
   }
 
+  // V2 initializer
+  function initializeV2(uint256 _extraFeature) public reinitializer(2) {
+    extraFeature = _extraFeature;
+  }
+
+  function version() public pure returns (string memory) {
+    return 'V2';
+  }
+
   function _authorizeUpgrade(
     address newImplementation
   ) internal override onlyOwner {}
@@ -63,8 +73,6 @@ contract SpaceToken is
     uint256 amount
   ) public virtual override returns (bool) {
     address sender = _msgSender();
-    require(!transferable || sender == owner(), 'works');
-
     require(transferable || sender == owner(), 'Token transfers are disabled');
 
     // If executor is transferring, ensure they have enough balance, minting if necessary

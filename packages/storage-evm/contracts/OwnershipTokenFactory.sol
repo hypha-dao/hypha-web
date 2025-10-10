@@ -10,6 +10,7 @@ import './interfaces/IOwnershipTokenFactory.sol';
 import './interfaces/IOwnershipTokenVotingPower.sol';
 import './interfaces/IDAOSpaceFactory.sol';
 import './interfaces/IExecutor.sol';
+import '@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol';
 
 contract OwnershipTokenFactory is
   Initializable,
@@ -18,6 +19,10 @@ contract OwnershipTokenFactory is
   OwnershipTokenFactoryStorage,
   IOwnershipTokenFactory
 {
+  address public ownershipTokenImplementation;
+
+  event OwnershipTokenImplementationUpdated(address indexed implementation);
+
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
     _disableInitializers();
@@ -31,6 +36,17 @@ contract OwnershipTokenFactory is
   function _authorizeUpgrade(
     address newImplementation
   ) internal override onlyOwner {}
+
+  function setOwnershipTokenImplementation(
+    address _implementation
+  ) external onlyOwner {
+    require(
+      _implementation != address(0),
+      'Implementation cannot be zero address'
+    );
+    ownershipTokenImplementation = _implementation;
+    emit OwnershipTokenImplementationUpdated(_implementation);
+  }
 
   function setSpacesContract(address _spacesContract) external onlyOwner {
     require(
@@ -69,6 +85,10 @@ contract OwnershipTokenFactory is
     bool isVotingToken
   ) public override returns (address) {
     require(spacesContract != address(0), 'Spaces contract not set');
+    require(
+      ownershipTokenImplementation != address(0),
+      'Ownership token implementation not set'
+    );
 
     // Strict authorization: only allow the space's executor to call this function
     address spaceExecutor = IDAOSpaceFactory(spacesContract).getSpaceExecutor(
@@ -83,7 +103,8 @@ contract OwnershipTokenFactory is
     emit DeployingToken(spaceId, name, symbol);
 
     // Deploy an ownership token
-    OwnershipSpaceToken newToken = new OwnershipSpaceToken(
+    bytes memory initializeData = abi.encodeWithSelector(
+      OwnershipSpaceToken.initialize.selector,
       name,
       symbol,
       spaceExecutor,
@@ -91,7 +112,11 @@ contract OwnershipTokenFactory is
       maxSupply,
       spacesContract
     );
-    address tokenAddress = address(newToken);
+    ERC1967Proxy proxy = new ERC1967Proxy(
+      ownershipTokenImplementation,
+      initializeData
+    );
+    address tokenAddress = address(proxy);
     isTokenDeployedByFactory[tokenAddress] = true;
 
     // Store the token in the array of all tokens for this space

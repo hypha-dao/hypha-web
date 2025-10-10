@@ -1,8 +1,7 @@
 import { ethers, upgrades } from 'hardhat';
 
 // Replace this with your actual proxy address when upgrading
-//const PROXY_ADDRESS = '0x95A33EC94de2189893884DaD63eAa19f7390144a'; // RegularTokenFactory from addresses.txt
-const PROXY_ADDRESS = '0x1873F40FA830F91e66321BbD4acB2f2A12c04E2e'; // RegularTokenFactory from addresses.txt
+const PROXY_ADDRESS = '0x3314715D70364ecD5F1665d291285f1d691860cC'; // TODO: REPLACE WITH YOUR PROXY ADDRESS
 
 async function main(): Promise<void> {
   // Get the deployer's address
@@ -18,27 +17,24 @@ async function main(): Promise<void> {
   );
   console.log('Current implementation address:', currentImpl);
 
-  const RegularTokenFactory = await ethers.getContractFactory(
-    'RegularTokenFactory',
+  // This should be the new implementation contract
+  const SpaceToken = await ethers.getContractFactory(
+    'contracts/RegularSpaceToken.sol:SpaceToken', // Or 'SpaceTokenV2' if you have a new version
   );
 
   console.log('Contract factory created successfully');
-  console.log('Contract bytecode length:', RegularTokenFactory.bytecode.length);
+  console.log('Contract bytecode length:', SpaceToken.bytecode.length);
 
   let upgradedContract;
 
   try {
-    console.log('Upgrading RegularTokenFactory...');
+    console.log('Upgrading SpaceToken...');
 
     // Try with options to get more detailed error info
-    upgradedContract = await upgrades.upgradeProxy(
-      PROXY_ADDRESS,
-      RegularTokenFactory,
-      {
-        // Force the upgrade even if validation fails
-        unsafeSkipStorageCheck: true,
-      },
-    );
+    upgradedContract = await upgrades.upgradeProxy(PROXY_ADDRESS, SpaceToken, {
+      // Force the upgrade even if validation fails
+      unsafeSkipStorageCheck: true,
+    });
 
     await upgradedContract.waitForDeployment();
 
@@ -58,7 +54,7 @@ async function main(): Promise<void> {
       console.log('Attempting to prepare upgrade to see deployment details...');
       const preparedImpl = await upgrades.prepareUpgrade(
         PROXY_ADDRESS,
-        RegularTokenFactory,
+        SpaceToken,
       );
       console.log(
         'Prepared implementation would be deployed at:',
@@ -76,13 +72,13 @@ async function main(): Promise<void> {
 
       try {
         // Force import the existing proxy
-        await upgrades.forceImport(PROXY_ADDRESS, RegularTokenFactory);
+        await upgrades.forceImport(PROXY_ADDRESS, SpaceToken);
         console.log('✅ Proxy successfully imported. Retrying upgrade...');
 
         // Now try the upgrade again
         upgradedContract = await upgrades.upgradeProxy(
           PROXY_ADDRESS,
-          RegularTokenFactory,
+          SpaceToken,
           {
             unsafeSkipStorageCheck: true,
           },
@@ -115,7 +111,7 @@ async function main(): Promise<void> {
   }
 
   console.log(
-    'RegularTokenFactory proxy address (unchanged):',
+    'SpaceToken proxy address (unchanged):',
     await upgradedContract.getAddress(),
   );
 

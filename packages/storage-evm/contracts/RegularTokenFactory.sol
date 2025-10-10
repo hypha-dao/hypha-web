@@ -10,6 +10,7 @@ import './interfaces/IRegularTokenFactory.sol';
 import './interfaces/IRegularTokenVotingPower.sol';
 import './interfaces/IDAOSpaceFactory.sol';
 import './interfaces/IExecutor.sol';
+import '@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol';
 
 contract RegularTokenFactory is
   Initializable,
@@ -18,6 +19,10 @@ contract RegularTokenFactory is
   RegularTokenFactoryStorage,
   IRegularTokenFactory
 {
+  address public spaceTokenImplementation;
+
+  event SpaceTokenImplementationUpdated(address indexed implementation);
+
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
     _disableInitializers();
@@ -32,11 +37,19 @@ contract RegularTokenFactory is
     address newImplementation
   ) internal override onlyOwner {}
 
-  function setSpacesContract(address _spacesContract) external onlyOwner {
+  function setSpaceTokenImplementation(
+    address _implementation
+  ) external onlyOwner {
     require(
-      _spacesContract != address(0),
-      'Spaces contract cannot be zero address'
+      _implementation != address(0),
+      'Implementation cannot be zero address'
     );
+    spaceTokenImplementation = _implementation;
+    emit SpaceTokenImplementationUpdated(_implementation);
+  }
+
+  function setSpacesContract(address _spacesContract) external onlyOwner {
+    require(_spacesContract != address(0), 'Spaces contract cannot be zero');
     spacesContract = _spacesContract;
     emit SpacesContractUpdated(_spacesContract);
   }
@@ -70,27 +83,25 @@ contract RegularTokenFactory is
     bool transferable,
     bool isVotingToken
   ) public override returns (address) {
-    require(spacesContract != address(0), 'Spaces contract not set');
-
-    // Strict authorization: only allow the space's executor to call this function
-    address spaceExecutor = IDAOSpaceFactory(spacesContract).getSpaceExecutor(
-      spaceId
-    );
     require(
-      msg.sender == spaceExecutor,
-      'Only space executor can deploy tokens'
+      spaceTokenImplementation != address(0),
+      'Token implementation not set'
     );
 
-    // Deploy a regular token
-    SpaceToken newToken = new SpaceToken(
+    bytes memory callData = abi.encodeWithSelector(
+      SpaceToken.initialize.selector,
       name,
       symbol,
-      spaceExecutor,
+      msg.sender, // Executor is the deployer
       spaceId,
       maxSupply,
       transferable
     );
-    address tokenAddress = address(newToken);
+
+    address tokenAddress = address(
+      new ERC1967Proxy(spaceTokenImplementation, callData)
+    );
+
     isTokenDeployedByFactory[tokenAddress] = true;
 
     // Store the token in the array of all tokens for this space

@@ -100,7 +100,7 @@ contract DAOSpaceFactoryImplementation is
     return spaceCounter;
   }
 
-  function joinSpace(uint256 _spaceId) public {
+  function joinSpace(uint256 _spaceId) public returns (uint256) {
     require(_spaceId > 0 && _spaceId <= spaceCounter, 'isp');
     //require(joinMethodDirectoryAddress != address(0), 'Dir not set');
 
@@ -155,7 +155,7 @@ contract DAOSpaceFactoryImplementation is
       memberActiveInviteProposal[_spaceId][msg.sender] = proposalId;
 
       //emit JoinRequestedWithProposal(_spaceId, msg.sender, proposalId);
-      return;
+      return proposalId;
     } else {
       require(
         IDirectory(joinMethodDirectoryAddress).joincheck(
@@ -167,6 +167,7 @@ contract DAOSpaceFactoryImplementation is
       );
 
       addMemberInternal(_spaceId, msg.sender);
+      return type(uint256).max;
     }
   }
 

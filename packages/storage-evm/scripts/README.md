@@ -64,6 +64,11 @@ npx nx run storage-evm:script ./scripts/no-exit.deploy.ts --network base-mainnet
 npx nx run storage-evm:script ./scripts/regular-token-factory-proxy.deploy.ts --network base-mainnet
 npx nx run storage-evm:script ./scripts/regular-token-factory.upgrade.ts --network base-mainnet
 
+npx nx run storage-evm:script ./scripts/regular-space-token-proxy.deploy.ts --network base-mainnet
+npx nx run storage-evm:script ./scripts/regular-space-token.upgrade.ts --network base-mainnet
+
+
+
 ```
 
 ### space-voting-power-proxy.deploy
@@ -119,6 +124,9 @@ npx nx run storage-evm:script ./scripts/ownership-token-voting-power.upgrade.ts 
 
 ```bash
 npx nx run storage-evm:script ./scripts/work-proposal-proxy.deploy.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/work-proposal-proxy.deploy.ts --network base-mainnet
+
 ```
 
 ### Compile
@@ -135,6 +143,10 @@ npx nx run storage-evm:test ./test/DAOProposalsImplementation.test.ts
 npx nx run storage-evm:test ./test/HyphaToken.test.ts
 npx nx run storage-evm:test ./test/ProposalVotingComprehensive.test.ts
 npx nx run storage-evm:test ./test/DAOSpaceFactoryImplementation.inviteSystem.test.ts
+npx nx run storage-evm:test ./test/HyphaToken.test.ts
+npx nx run storage-evm:test ./TokenUpgradeability.test.ts
+
+npx nx run storage-evm:test ./test/TokenUpgradeability.test.ts
 
 
 

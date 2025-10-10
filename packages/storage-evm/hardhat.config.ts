@@ -15,10 +15,12 @@ import '@nomicfoundation/hardhat-ignition';
 const config: HardhatUserConfig = {
   solidity: '0.8.28',
   networks: {
-    'base-mainnet': {
-      url: 'https://mainnet.base.org',
-      accounts: [process.env.PRIVATE_KEY || ''],
-    },
+    ...(process.env.PRIVATE_KEY && {
+      'base-mainnet': {
+        url: 'https://mainnet.base.org',
+        accounts: [process.env.PRIVATE_KEY],
+      },
+    }),
   },
 };
 

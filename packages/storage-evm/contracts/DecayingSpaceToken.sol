@@ -2,12 +2,13 @@
 pragma solidity ^0.8.0;
 
 import './RegularSpaceToken.sol';
+import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 
 /**
  * @title DecayingSpaceToken
  * @dev A space token with configurable vote decay
  */
-contract DecayingSpaceToken is SpaceToken {
+contract DecayingSpaceToken is Initializable, SpaceToken {
   // Decay configuration
   uint256 public decayPercentage; // in basis points (e.g., 100 = 1%)
   uint256 public decayInterval; // in seconds
@@ -29,7 +30,12 @@ contract DecayingSpaceToken is SpaceToken {
     uint256 decayAmount
   );
 
-  constructor(
+  /// @custom:oz-upgrades-unsafe-allow constructor
+  constructor() {
+    _disableInitializers();
+  }
+
+  function initialize(
     string memory name,
     string memory symbol,
     address _executor,
@@ -38,7 +44,15 @@ contract DecayingSpaceToken is SpaceToken {
     bool _transferable,
     uint256 _decayPercentage,
     uint256 _decayInterval
-  ) SpaceToken(name, symbol, _executor, _spaceId, _maxSupply, _transferable) {
+  ) public initializer {
+    SpaceToken.initialize(
+      name,
+      symbol,
+      _executor,
+      _spaceId,
+      _maxSupply,
+      _transferable
+    );
     require(
       _decayPercentage <= 10000,
       'DecayingSpaceToken: decay percentage cannot exceed 100%'
@@ -134,7 +148,7 @@ contract DecayingSpaceToken is SpaceToken {
   /**
    * @dev Override mint to track lastDecayTimestamp and token holders
    */
-  function mint(address to, uint256 amount) public override onlyExecutor {
+  function mint(address to, uint256 amount) public override onlyOwner {
     if (lastDecayTimestamp[to] == 0) {
       lastDecayTimestamp[to] = block.timestamp;
     } else {
@@ -148,15 +162,13 @@ contract DecayingSpaceToken is SpaceToken {
    * @dev Apply decay before transfers
    */
   function transfer(address to, uint256 amount) public override returns (bool) {
-    require(
-      transferable || msg.sender == executor,
-      'Token transfers are disabled'
-    );
-    applyDecay(msg.sender);
-    if (msg.sender == executor) {
-      if (super.balanceOf(msg.sender) < amount) {
-        uint256 amountToMint = amount - super.balanceOf(msg.sender);
-        mint(msg.sender, amountToMint);
+    address sender = _msgSender();
+    require(transferable || sender == owner(), 'Token transfers are disabled');
+    applyDecay(sender);
+    if (sender == owner()) {
+      if (super.balanceOf(sender) < amount) {
+        uint256 amountToMint = amount - super.balanceOf(sender);
+        mint(sender, amountToMint);
       }
     }
 
@@ -166,7 +178,7 @@ contract DecayingSpaceToken is SpaceToken {
       applyDecay(to);
     }
     _addTokenHolder(to);
-    _transfer(msg.sender, to, amount);
+    _transfer(sender, to, amount);
     return true;
   }
 
@@ -178,13 +190,11 @@ contract DecayingSpaceToken is SpaceToken {
     address to,
     uint256 amount
   ) public override returns (bool) {
-    require(
-      transferable || msg.sender == executor,
-      'Token transfers are disabled'
-    );
+    address spender = _msgSender();
+    require(transferable || spender == owner(), 'Token transfers are disabled');
 
     applyDecay(from);
-    if (from == executor) {
+    if (from == owner()) {
       if (super.balanceOf(from) < amount) {
         uint256 amountToMint = amount - super.balanceOf(from);
         mint(from, amountToMint);
@@ -198,7 +208,7 @@ contract DecayingSpaceToken is SpaceToken {
     }
     _addTokenHolder(to);
 
-    _spendAllowance(from, msg.sender, amount);
+    _spendAllowance(from, spender, amount);
     _transfer(from, to, amount);
     return true;
   }
