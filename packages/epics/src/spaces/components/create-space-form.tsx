@@ -187,16 +187,17 @@ export const SpaceForm = ({
     form.trigger('slug');
   }, [form, slugDuplicated]);
 
-  React.useEffect(() => {
-    if (!preparedSlug) {
-      return;
-    }
-    if (justInitialized) {
-      setJustInitialized(false);
-    } else if (preparedSlug !== slug) {
-      form.setValue('slug', preparedSlug);
-    }
-  }, [form, preparedSlug]);
+  const updateSlug = React.useCallback(
+    (title: string) => {
+      const preparedSlug = slugify(title, { lower: true });
+      if (justInitialized) {
+        setJustInitialized(false);
+      } else if (preparedSlug !== slug) {
+        form.setValue('slug', preparedSlug);
+      }
+    },
+    [form, justInitialized],
+  );
 
   React.useEffect(() => {
     const { isDirty } = form.getFieldState('parentId');
@@ -419,6 +420,12 @@ export const SpaceForm = ({
                             className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
                             disabled={isLoading}
                             {...field}
+                            onChange={(
+                              event: React.ChangeEvent<HTMLInputElement>,
+                            ) => {
+                              field.onChange(event);
+                              updateSlug(event.target.value);
+                            }}
                           />
                         </FormControl>
                         <FormMessage className="mt-1" />
