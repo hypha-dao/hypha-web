@@ -20,7 +20,7 @@ export const useSpaceBySlugExists = (
 ): UseSpaceBySlugExistsReturn => {
   const [debouncedSpaceSlug] = useDebounce(spaceSlug, 500);
   const endpoint = React.useMemo(
-    () => `/api/v1/spaces/${debouncedSpaceSlug}/exists`,
+    () => `/api/v1/spaces/${encodeURIComponent(debouncedSpaceSlug)}/exists`,
     [debouncedSpaceSlug],
   );
   const { data, isLoading } = useSWR(
