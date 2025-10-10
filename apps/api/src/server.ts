@@ -1,9 +1,11 @@
 // apps/api/src/server.ts
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import { fastifyEnv } from '@fastify/env';
 import { registerSwagger } from './plugins/swagger';
 import v1Routes from './routes/v1';
 import { API_PREFIX } from './constants';
+import { envSchema } from './schemas/';
 
 const app = Fastify();
 app.register(cors);
@@ -21,6 +23,11 @@ const start = async () => {
 
     console.log('Adding swagger...');
     await registerSwagger(app);
+
+    await app.register(fastifyEnv, {
+      schema: envSchema,
+      dotenv: true,
+    });
 
     // Register v1 API
     app.register(v1Routes, { prefix: API_PREFIX });
