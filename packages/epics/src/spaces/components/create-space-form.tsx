@@ -149,11 +149,6 @@ export const SpaceForm = ({
   const title = form.watch('title');
   const slug = form.watch('slug');
 
-  const preparedSlug = React.useMemo(
-    () => slugify(title, { lower: true }),
-    [title],
-  );
-
   const {
     exists: slugExists,
     spaceId: foundSpaceId,
@@ -196,7 +191,7 @@ export const SpaceForm = ({
         form.setValue('slug', preparedSlug);
       }
     },
-    [form, justInitialized],
+    [form, justInitialized, slug],
   );
 
   React.useEffect(() => {
