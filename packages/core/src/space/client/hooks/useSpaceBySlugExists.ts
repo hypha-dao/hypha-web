@@ -6,7 +6,7 @@ import { useDebounce } from 'use-debounce';
 
 type UseSpaceBySlugExistsReturn = {
   exists: boolean;
-  spaceId: number;
+  spaceId: number | -1;
   isLoading: boolean;
   error?: Error;
 };
