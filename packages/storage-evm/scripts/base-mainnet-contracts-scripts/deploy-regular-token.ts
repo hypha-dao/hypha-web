@@ -4,6 +4,7 @@ import {
   EventLog,
   ContractTransactionResponse,
   BaseContract,
+  TransactionRequest,
 } from 'ethers';
 
 dotenv.config();
@@ -16,17 +17,32 @@ interface RegularTokenFactoryInterface extends BaseContract {
     maxSupply: ethers.BigNumberish,
     transferable: boolean,
     isVotingToken: boolean,
+    overrides?: TransactionRequest,
   ): Promise<ContractTransactionResponse>;
   owner(): Promise<string>;
+  spaceTokenImplementation(): Promise<string>;
 }
 
 const REGULAR_TOKEN_FACTORY_ADDRESS =
-  '0x9425c91c19066f6CAC6C25bF934F8861914Ccf2e'; // Mainnet Factory
+  '0xD932f1A250db1b15D943967F3Ae2e07c23AC8E36'; // Mainnet Factory
 
 const regularTokenFactoryAbi = [
   {
     inputs: [],
     name: 'owner',
+    outputs: [
+      {
+        internalType: 'address',
+        name: '',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'spaceTokenImplementation',
     outputs: [
       {
         internalType: 'address',
@@ -148,6 +164,8 @@ async function main(): Promise<void> {
   // Create a wallet instance
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY || '', provider);
 
+  console.log(`Using wallet address: ${wallet.address}`);
+
   const regularTokenFactoryAddress = REGULAR_TOKEN_FACTORY_ADDRESS;
   console.log('Using RegularTokenFactory address:', regularTokenFactoryAddress);
 
@@ -157,6 +175,28 @@ async function main(): Promise<void> {
     regularTokenFactoryAbi,
     wallet,
   ) as unknown as RegularTokenFactoryInterface;
+
+  const implementationAddress =
+    await regularTokenFactory.spaceTokenImplementation();
+  console.log(
+    'Using SpaceToken implementation address:',
+    implementationAddress,
+  );
+
+  if (implementationAddress === ethers.ZeroAddress) {
+    console.error(
+      'Error: SpaceToken implementation address is not set on the factory.',
+    );
+    process.exit(1);
+  }
+
+  const implementationCode = await provider.getCode(implementationAddress);
+  if (implementationCode === '0x') {
+    console.error(
+      'Error: SpaceToken implementation address has no code. It might not have been deployed correctly.',
+    );
+    process.exit(1);
+  }
 
   console.log('Deploying new regular space token with parameters:');
   console.log('Space ID:', spaceId);
@@ -174,6 +214,9 @@ async function main(): Promise<void> {
       maxSupply,
       transferable,
       isVotingToken,
+      {
+        gasLimit: 1000000, // Manually set gas limit
+      },
     );
 
     console.log('Transaction sent, waiting for confirmation...');

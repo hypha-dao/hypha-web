@@ -1,5 +1,7 @@
 import dotenv from 'dotenv';
-import { ethers } from 'ethers';
+import { ethers, Contract, BaseContractMethod } from 'ethers';
+import * as fs from 'fs';
+import * as path from 'path';
 
 dotenv.config();
 
@@ -18,15 +20,29 @@ interface ContractTransactionWithWait extends ethers.ContractTransaction {
   wait(): Promise<TransactionReceipt>;
 }
 
-interface RegularTokenFactoryInterface {
-  setSpaceTokenImplementation: (
-    implementation: string,
-  ) => Promise<ContractTransactionWithWait>;
-  owner(): Promise<string>;
+interface RegularTokenFactoryInterface extends Contract {
+  setSpaceTokenImplementation: BaseContractMethod<
+    [string],
+    any,
+    ethers.ContractTransactionResponse
+  >;
+  setSpacesContract: BaseContractMethod<
+    [string],
+    any,
+    ethers.ContractTransactionResponse
+  >;
+  setVotingPowerContract: BaseContractMethod<
+    [string],
+    any,
+    ethers.ContractTransactionResponse
+  >;
+  spaceTokenImplementation: BaseContractMethod<[], string, string>;
 }
 
 const REGULAR_TOKEN_FACTORY_ADDRESS =
-  '0x9425c91c19066f6CAC6C25bF934F8861914Ccf2e'; // TODO: REPLACE WITH YOUR FACTORY ADDRESS
+  '0xD932f1A250db1b15D943967F3Ae2e07c23AC8E36'; // Mainnet Factory
+
+const NEW_IMPLEMENTATION_ADDRESS = '0xe04F6ce97437d6a7eC35160Ba227faB505017E14';
 
 const regularTokenFactoryAbi = [
   {
@@ -55,69 +71,83 @@ const regularTokenFactoryAbi = [
     stateMutability: 'view',
     type: 'function',
   },
+  {
+    inputs: [],
+    name: 'spaceTokenImplementation',
+    outputs: [
+      {
+        internalType: 'address',
+        name: '',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: '_spacesContract',
+        type: 'address',
+      },
+    ],
+    name: 'setSpacesContract',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: '_votingPowerContract',
+        type: 'address',
+      },
+    ],
+    name: 'setVotingPowerContract',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
 ];
 
 async function main(): Promise<void> {
-  const implementationAddress = '0xDAdFbF2D33A8aB74f86752f2afF25F6323d73B87';
-
-  // Validate address
-  if (!ethers.isAddress(implementationAddress)) {
-    throw new Error(`Invalid implementation address: ${implementationAddress}`);
-  }
-
-  if (
-    !REGULAR_TOKEN_FACTORY_ADDRESS ||
-    !ethers.isAddress(REGULAR_TOKEN_FACTORY_ADDRESS)
-  ) {
-    throw new Error(
-      `Invalid RegularTokenFactory address: ${REGULAR_TOKEN_FACTORY_ADDRESS}`,
-    );
-  }
-
-  // Connect to the network
   const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
-
-  // Create a wallet instance
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY || '', provider);
 
-  const regularTokenFactoryAddress = REGULAR_TOKEN_FACTORY_ADDRESS;
-  console.log('Using RegularTokenFactory address:', regularTokenFactoryAddress);
-
-  // Get the RegularTokenFactory contract instance
   const regularTokenFactory = new ethers.Contract(
-    regularTokenFactoryAddress,
+    REGULAR_TOKEN_FACTORY_ADDRESS,
     regularTokenFactoryAbi,
     wallet,
-  ) as ethers.Contract & RegularTokenFactoryInterface;
+  ) as unknown as RegularTokenFactoryInterface;
 
-  // Check if the wallet is the owner
-  const contractOwner = await regularTokenFactory.owner();
-  if (contractOwner.toLowerCase() !== wallet.address.toLowerCase()) {
-    console.error(
-      `Your wallet (${wallet.address}) is not the owner of the RegularTokenFactory contract.`,
-    );
-    console.error(`The owner is: ${contractOwner}`);
-    throw new Error(
-      'Permission denied: only the contract owner can call setSpaceTokenImplementation',
-    );
-  }
+  const currentImplementationAddress =
+    await regularTokenFactory.spaceTokenImplementation();
 
   console.log(
-    'Setting space token implementation with the following parameters:',
+    'Current implementation address from factory:',
+    currentImplementationAddress,
   );
-  console.log('Implementation Address:', implementationAddress);
+  console.log(
+    'New implementation address to set:',
+    NEW_IMPLEMENTATION_ADDRESS,
+  );
 
-  try {
-    const tx = await regularTokenFactory.setSpaceTokenImplementation(
-      implementationAddress,
+  if (
+    currentImplementationAddress.toLowerCase() ===
+    NEW_IMPLEMENTATION_ADDRESS.toLowerCase()
+  ) {
+    console.log(
+      '✅ Factory is already configured with the space token implementation.',
     );
-
-    console.log('Transaction sent, waiting for confirmation...');
+  } else {
+    console.log('Updating space token implementation...');
+    const tx = await regularTokenFactory.setSpaceTokenImplementation(
+      NEW_IMPLEMENTATION_ADDRESS,
+    );
     await tx.wait();
-    console.log('Space token implementation set successfully!');
-  } catch (error: any) {
-    console.error('Error setting space token implementation:', error.message);
-    throw error;
+    console.log('✅ Space token implementation updated successfully.');
   }
 }
 

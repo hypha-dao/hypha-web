@@ -19,7 +19,7 @@ interface IEscrowCreatorQuery {
  * @dev A space token that can only be transferred between space members and only by the executor
  * Special exceptions are made for escrow contract interactions
  */
-contract OwnershipSpaceToken is Initializable, SpaceToken {
+contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
   address public spacesContract;
 
   // Hardcoded escrow contract address
@@ -44,7 +44,7 @@ contract OwnershipSpaceToken is Initializable, SpaceToken {
     uint256 _maxSupply,
     address _spacesContract
   ) public initializer {
-    SpaceToken.initialize(name, symbol, _executor, _spaceId, _maxSupply, true);
+    RegularSpaceToken.initialize(name, symbol, _executor, _spaceId, _maxSupply, true);
     require(
       _spacesContract != address(0),
       'Spaces contract cannot be zero address'

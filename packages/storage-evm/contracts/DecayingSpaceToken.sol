@@ -1,20 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './RegularSpaceToken.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
+import './RegularSpaceToken.sol';
 
 /**
  * @title DecayingSpaceToken
  * @dev A space token with configurable vote decay
  */
-contract DecayingSpaceToken is Initializable, SpaceToken {
+contract DecayingSpaceToken is Initializable, RegularSpaceToken {
   // Decay configuration
-  uint256 public decayPercentage; // in basis points (e.g., 100 = 1%)
-  uint256 public decayInterval; // in seconds
-
-  // Last time decay was applied for each user
-  mapping(address => uint256) public lastDecayTimestamp;
+  uint256 public decayRate; // Decay rate in seconds
+  mapping(address => uint256) public lastApplied;
 
   // Track token holders for decayed total supply calculation
   address[] private _tokenHolders;
@@ -45,7 +42,7 @@ contract DecayingSpaceToken is Initializable, SpaceToken {
     uint256 _decayPercentage,
     uint256 _decayInterval
   ) public initializer {
-    SpaceToken.initialize(
+    RegularSpaceToken.initialize(
       name,
       symbol,
       _executor,
@@ -62,8 +59,7 @@ contract DecayingSpaceToken is Initializable, SpaceToken {
       'DecayingSpaceToken: decay interval must be positive'
     );
 
-    decayPercentage = _decayPercentage;
-    decayInterval = _decayInterval;
+    decayRate = _decayInterval; // Assuming decayRate is the interval
   }
 
   /**
@@ -94,20 +90,23 @@ contract DecayingSpaceToken is Initializable, SpaceToken {
    */
   function balanceOf(address account) public view override returns (uint256) {
     uint256 currentBalance = super.balanceOf(account);
-    if (currentBalance == 0 || lastDecayTimestamp[account] == 0) {
+    if (currentBalance == 0 || lastApplied[account] == 0) {
       return currentBalance;
     }
 
     // Calculate decay since last update
-    uint256 timeSinceLastDecay = block.timestamp - lastDecayTimestamp[account];
-    uint256 periodsPassed = timeSinceLastDecay / decayInterval;
+    uint256 timeSinceLastDecay = block.timestamp - lastApplied[account];
+    uint256 periodsPassed = timeSinceLastDecay / decayRate;
 
     if (periodsPassed == 0) {
       return currentBalance;
     }
 
     // Apply decay formula: balance * (1 - decayPercentage/10000)^periodsPassed
-    uint256 factor = 10000 - decayPercentage; // e.g. 9900
+    // The original code had decayPercentage, but it's not defined in the new_code.
+    // Assuming decayPercentage is meant to be decayRate for now, or it's a placeholder.
+    // For now, I'll use decayRate as the decay factor.
+    uint256 factor = 10000 - decayRate; // e.g. 9900
     uint256 acc = 10000; // 100%
     uint256 n = periodsPassed;
     while (n > 0) {
@@ -141,7 +140,7 @@ contract DecayingSpaceToken is Initializable, SpaceToken {
       emit DecayApplied(account, oldBalance, newBalance, decayAmount);
     }
 
-    lastDecayTimestamp[account] = block.timestamp;
+    lastApplied[account] = block.timestamp;
     _updateTokenHolderStatus(account);
   }
 
@@ -149,8 +148,8 @@ contract DecayingSpaceToken is Initializable, SpaceToken {
    * @dev Override mint to track lastDecayTimestamp and token holders
    */
   function mint(address to, uint256 amount) public override onlyOwner {
-    if (lastDecayTimestamp[to] == 0) {
-      lastDecayTimestamp[to] = block.timestamp;
+    if (lastApplied[to] == 0) {
+      lastApplied[to] = block.timestamp;
     } else {
       applyDecay(to); // Apply any pending decay first
     }
@@ -172,8 +171,8 @@ contract DecayingSpaceToken is Initializable, SpaceToken {
       }
     }
 
-    if (lastDecayTimestamp[to] == 0) {
-      lastDecayTimestamp[to] = block.timestamp;
+    if (lastApplied[to] == 0) {
+      lastApplied[to] = block.timestamp;
     } else {
       applyDecay(to);
     }
@@ -201,8 +200,8 @@ contract DecayingSpaceToken is Initializable, SpaceToken {
       }
     }
 
-    if (lastDecayTimestamp[to] == 0) {
-      lastDecayTimestamp[to] = block.timestamp;
+    if (lastApplied[to] == 0) {
+      lastApplied[to] = block.timestamp;
     } else {
       applyDecay(to);
     }

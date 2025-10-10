@@ -1,7 +1,7 @@
 import { ethers, upgrades } from 'hardhat';
 
 // Replace this with your actual proxy address when upgrading
-const PROXY_ADDRESS = '0x3314715D70364ecD5F1665d291285f1d691860cC'; // TODO: REPLACE WITH YOUR PROXY ADDRESS
+const PROXY_ADDRESS = '0x63D602418D9974Ffa25515A5F95754BABC50D50B'; // TODO: REPLACE WITH YOUR PROXY ADDRESS
 
 async function main(): Promise<void> {
   // Get the deployer's address
@@ -19,7 +19,7 @@ async function main(): Promise<void> {
 
   // This should be the new implementation contract
   const SpaceToken = await ethers.getContractFactory(
-    'contracts/RegularSpaceToken.sol:SpaceToken', // Or 'SpaceTokenV2' if you have a new version
+    'RegularSpaceToken', // Or 'SpaceTokenV2' if you have a new version
   );
 
   console.log('Contract factory created successfully');

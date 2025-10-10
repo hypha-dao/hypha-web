@@ -7,7 +7,7 @@ import '@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20Burnable
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
-contract SpaceToken is
+contract RegularSpaceToken is
   Initializable,
   ERC20Upgradeable,
   ERC20BurnableUpgradeable,
@@ -36,8 +36,6 @@ contract SpaceToken is
     __Ownable_init(_executor);
     __UUPSUpgradeable_init();
 
-    require(_executor != address(0), 'Executor cannot be zero address');
-
     spaceId = _spaceId;
     maxSupply = _maxSupply;
     transferable = _transferable;
@@ -51,7 +49,7 @@ contract SpaceToken is
     // Check against maximum supply
     require(
       maxSupply == 0 || totalSupply() + amount <= maxSupply,
-      'Mint would exceed maximum supply'
+      'Mint max supply problemchik blet'
     );
 
     _mint(to, amount);
@@ -63,10 +61,7 @@ contract SpaceToken is
     uint256 amount
   ) public virtual override returns (bool) {
     address sender = _msgSender();
-    require(!transferable || sender == owner(), 'works');
-
     require(transferable || sender == owner(), 'Token transfers are disabled');
-
     // If executor is transferring, ensure they have enough balance, minting if necessary
     if (sender == owner()) {
       if (balanceOf(sender) < amount) {

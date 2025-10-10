@@ -1,36 +1,22 @@
 import { ethers, upgrades } from 'hardhat';
 
 async function main(): Promise<void> {
-  // Get the deployer's address (first account from the connected provider)
-  const [deployer] = await ethers.getSigners();
-  const adminAddress = await deployer.getAddress();
-
-  console.log('Deploying with admin address:', adminAddress);
-
-  const SpaceToken = await ethers.getContractFactory(
-    'contracts/RegularSpaceToken.sol:SpaceToken',
+  const RegularSpaceToken = await ethers.getContractFactory(
+    'RegularSpaceToken',
   );
-  console.log('Deploying SpaceToken...');
+  console.log('Deploying RegularSpaceToken implementation...');
 
-  // Set the arguments for the initializer function
-  const name = 'My Space Token';
-  const symbol = 'MST';
-  const executor = adminAddress;
-  const spaceId = 1;
-  const maxSupply = 1000000; // Example max supply
-  const transferable = true;
-
-  const spaceToken = await upgrades.deployProxy(
-    SpaceToken,
-    [name, symbol, executor, spaceId, maxSupply, transferable],
+  const implementationAddress = await upgrades.deployImplementation(
+    RegularSpaceToken,
     {
-      initializer: 'initialize',
       kind: 'uups',
     },
   );
 
-  await spaceToken.waitForDeployment();
-  console.log('SpaceToken deployed to:', await spaceToken.getAddress());
+  console.log(
+    'RegularSpaceToken implementation deployed to:',
+    implementationAddress,
+  );
 }
 
 main()

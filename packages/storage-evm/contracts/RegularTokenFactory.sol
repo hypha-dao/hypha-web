@@ -89,7 +89,7 @@ contract RegularTokenFactory is
     );
 
     bytes memory callData = abi.encodeWithSelector(
-      SpaceToken.initialize.selector,
+      RegularSpaceToken.initialize.selector,
       name,
       symbol,
       msg.sender, // Executor is the deployer

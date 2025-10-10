@@ -31,31 +31,19 @@ const spaceTokenAbi = [
   },
 ];
 
-function parseArgs(argv: string[]) {
-  const result: { tokenAddress?: string; to?: string; amount?: string } = {};
-  for (let i = 2; i < argv.length; i++) {
-    const arg = argv[i];
-    if (arg === '--token-address' && i + 1 < argv.length) {
-      result.tokenAddress = argv[++i];
-    } else if (arg === '--to' && i + 1 < argv.length) {
-      result.to = argv[++i];
-    } else if (arg === '--amount' && i + 1 < argv.length) {
-      result.amount = argv[++i];
-    }
-  }
-  return result;
-}
-
 function usage() {
   console.log('Usage:');
   console.log(
-    '  npx ts-node scripts/base-mainnet-contracts-scripts/transfer-token.ts --token-address <addr> --to <addr> --amount <amount>',
+    '  npx ts-node scripts/base-mainnet-contracts-scripts/transfer-token.ts <tokenAddress> <toAddress> <amount>',
   );
   console.log('\nEnvironment variables: RPC_URL, PRIVATE_KEY');
 }
 
 async function main() {
-  const { tokenAddress, to, amount } = parseArgs(process.argv);
+  const args = process.argv.slice(2);
+  const tokenAddress = args[0];
+  const to = args[1];
+  const amount = args[2];
 
   const rpcUrl = process.env.RPC_URL;
   const privateKey = process.env.PRIVATE_KEY;
@@ -68,14 +56,14 @@ async function main() {
 
   if (!tokenAddress || !to || !amount) {
     console.error(
-      'Missing or invalid arguments. --token-address, --to, and --amount are required.',
+      'Missing or invalid arguments. <tokenAddress>, <toAddress>, and <amount> are required.',
     );
     usage();
     process.exit(1);
   }
 
   if (!ethers.isAddress(tokenAddress) || !ethers.isAddress(to)) {
-    console.error('Invalid address provided for --token-address or --to.');
+    console.error('Invalid address provided for tokenAddress or toAddress.');
     process.exit(1);
   }
 

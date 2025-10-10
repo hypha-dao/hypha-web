@@ -98,3 +98,16 @@ RegularTokenFactory proxy deployed to: 0x9425c91c19066f6CAC6C25bF934F8861914Ccf2
 Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying SpaceToken...
 SpaceToken deployed to: 0xDAdFbF2D33A8aB74f86752f2afF25F6323d73B87
+
+Deploying RegularTokenFactory with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying RegularTokenFactory...
+RegularTokenFactory proxy deployed to: 0x475C1306CB572Af6f22F9ab6F9E9a7403c360ea5
+
+Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying RegularSpaceToken...
+RegularSpaceToken deployed to: 0xd20C8ef38F213D3907B22a2bD128D32869676dad
+
+Compiled 6 Solidity files successfully (evm target: paris).
+Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying RegularSpaceToken...
+RegularSpaceToken deployed to: 0x9962c152D8F79e0d8E12512457fa12bCd41F8Cba
