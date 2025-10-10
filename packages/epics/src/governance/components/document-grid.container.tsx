@@ -20,8 +20,7 @@ export const DocumentGridContainer = ({
   documents,
 }: DocumentGridContainerProps) => {
   const { page, firstPageSize, pageSize } = pagination;
-  const startIndex =
-    page <= 1 ? 0 : firstPageSize + (page - 2) * pageSize;
+  const startIndex = page <= 1 ? 0 : firstPageSize + (page - 2) * pageSize;
   const endIndex = Math.min(
     documents.length,
     page < 1 ? 0 : page === 1 ? firstPageSize : startIndex + pageSize,
