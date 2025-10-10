@@ -153,7 +153,9 @@ export const useVote = ({
     }
   };
 
-  const { handleJoinSpaceExecutedProposal } = useJoinSpaceProposalHandler({ authToken });
+  const { handleJoinSpaceExecutedProposal } = useJoinSpaceProposalHandler({
+    authToken,
+  });
 
   useEffect(() => {
     if (!proposalId || !authToken) return;
