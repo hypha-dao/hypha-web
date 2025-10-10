@@ -23,7 +23,7 @@ export const DocumentGridContainer = ({
   const startIndex =
     page < 1 ? 0 : page === 1 ? 0 : firstPageSize + (page - 2) * pageSize;
   const endIndex = Math.min(
-    documents.length - 1,
+    documents.length,
     page < 1 ? 0 : page === 1 ? firstPageSize : startIndex + pageSize,
   );
   const paginatedDocuments = documents.slice(startIndex, endIndex);
