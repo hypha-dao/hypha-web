@@ -1,7 +1,7 @@
 import {
   Alchemy,
   findDocumentsCreatorsForNotifications,
-  findDocumentWithSpaceById,
+  findDocumentWithSpaceByIdRaw,
   findPeopleByWeb3Addresses,
   web3Client,
 } from '@hypha-platform/core/server';
@@ -97,7 +97,7 @@ export const POST = Alchemy.newHandler(
     const fetchingProposals = events
       .map(({ args }) => args.proposalId)
       .map(async (id) => {
-        return await findDocumentWithSpaceById({ id: Number(id) }, { db });
+        return await findDocumentWithSpaceByIdRaw({ id: Number(id) }, { db });
       });
     const proposalsWithSpaces = (await Promise.allSettled(fetchingProposals))
       .filter((res) => res.status === 'fulfilled')
