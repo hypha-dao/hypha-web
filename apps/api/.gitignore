@@ -1,2 +1,6 @@
+# Build
 **/generated
 tsconfig.tsbuildinfo
+
+# Environment
+!.env.template
