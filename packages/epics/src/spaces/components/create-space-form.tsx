@@ -120,6 +120,7 @@ export const SpaceForm = ({
   }
 
   const [slugDublicated, setSlugDublicated] = React.useState(false);
+  const [justInitialized, setJustInitialized] = React.useState(false);
 
   const resolveSlug = React.useCallback(
     () => !slugDublicated,
@@ -195,7 +196,9 @@ export const SpaceForm = ({
     if (!preparedSlug) {
       return;
     }
-    if (preparedSlug !== slug) {
+    if (justInitialized) {
+      setJustInitialized(false);
+    } else if (preparedSlug !== slug) {
       form.setValue('slug', preparedSlug);
     }
   }, [form, preparedSlug]);
@@ -213,15 +216,11 @@ export const SpaceForm = ({
 
   React.useEffect(() => {
     if (!values) return;
-    const { slug } = values;
+    setJustInitialized(true);
     form.reset(
       { ...form.getValues(), ...values },
-      { keepDirty: false, keepTouched: false },
+      { keepDirty: true, keepTouched: false },
     );
-    const timerId = setTimeout(() => {
-      form.setValue('slug', slug, { shouldDirty: false, shouldTouch: false });
-    }, 500);
-    return () => clearTimeout(timerId);
   }, [values, form]);
 
   const { spaces: organisationSpaces, isLoading: isOrganisationLoading } =
