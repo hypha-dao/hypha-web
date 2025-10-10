@@ -13,6 +13,7 @@ import {
   getProposalDetails,
   DbToken,
   publicClient,
+  useJoinSpaceProposalHandler,
 } from '@hypha-platform/core/client';
 import useSWRMutation from 'swr/mutation';
 import { decodeFunctionData, parseEventLogs } from 'viem';
@@ -152,6 +153,105 @@ export const useVote = ({
     }
   };
 
+  const { handleJoinSpaceExecutedProposal } = useJoinSpaceProposalHandler({
+    authToken,
+  });
+
+  useEffect(() => {
+    if (!proposalId || !authToken) return;
+
+    const unwatchExecuted = publicClient.watchContractEvent({
+      address: daoProposalsImplementationConfig.address[8453],
+      abi: daoProposalsImplementationConfig.abi,
+      eventName: 'ProposalExecuted',
+      onLogs: async (logs) => {
+        for (const log of logs) {
+          try {
+            const eventProposalId = log.args.proposalId;
+
+            if (eventProposalId === BigInt(proposalId)) {
+              console.log('ProposalExecuted event received:', proposalId);
+
+              await handleJoinSpaceExecutedProposal(
+                Number(proposalId),
+                log.transactionHash,
+              );
+
+              const actions = await fetchProposalActions(Number(proposalId));
+              if (!isValidProposalAction(actions)) return;
+
+              const tokenAddress = await extractTokenAddressFromReceipt(
+                log.transactionHash,
+              );
+
+              await updateToken({
+                agreementWeb3Id: Number(proposalId),
+                address: tokenAddress,
+              });
+
+              console.log('Token updated after execution');
+            }
+          } catch (error) {
+            console.error('Error handling ProposalExecuted event:', error);
+          }
+        }
+      },
+      onError: (error) => {
+        console.error('Error watching ProposalExecuted events:', error);
+      },
+    });
+
+    const unwatchRejected = publicClient.watchContractEvent({
+      address: daoProposalsImplementationConfig.address[8453],
+      abi: daoProposalsImplementationConfig.abi,
+      eventName: 'ProposalRejected',
+      onLogs: async (logs) => {
+        for (const log of logs) {
+          try {
+            const eventProposalId = log.args.proposalId;
+
+            if (eventProposalId === BigInt(proposalId)) {
+              console.log('ProposalRejected event received:', proposalId);
+
+              const actions = await fetchProposalActions(Number(proposalId));
+              if (!isValidProposalAction(actions)) return;
+
+              const tokens = await fetchTokens();
+              const token = tokens?.find((t) => t.symbol === tokenSymbol);
+
+              if (token?.id != null) {
+                await deleteToken({ id: BigInt(token.id) });
+                console.log(
+                  `Token ${tokenSymbol} (ID: ${token.id}) deleted after rejection`,
+                );
+              } else {
+                console.error('Token not found for deletion');
+              }
+            }
+          } catch (error) {
+            console.error('Error handling ProposalRejected event:', error);
+          }
+        }
+      },
+      onError: (error) => {
+        console.error('Error watching ProposalRejected events:', error);
+      },
+    });
+    return () => {
+      unwatchExecuted();
+      unwatchRejected();
+    };
+  }, [
+    proposalId,
+    tokenSymbol,
+    authToken,
+    fetchProposalActions,
+    fetchTokens,
+    deleteToken,
+    updateToken,
+    handleJoinSpaceExecutedProposal,
+  ]);
+
   const vote = useCallback(
     async (proposalId: number, support: boolean) => {
       if (!client) throw new Error('Smart wallet not connected');
@@ -195,92 +295,6 @@ export const useVote = ({
     },
     [address, client],
   );
-
-  useEffect(() => {
-    if (!proposalId || !tokenSymbol || !authToken) return;
-
-    const rejectedEventSource = new EventSource(
-      `/api/v1/proposal-events/proposal-rejected?proposalId=${proposalId}`,
-    );
-
-    rejectedEventSource.onmessage = async (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (
-          data.event === 'ProposalRejected' &&
-          data.proposalId === String(proposalId)
-        ) {
-          const actions = await fetchProposalActions(Number(proposalId));
-          if (!isValidProposalAction(actions)) return;
-
-          const tokens = await fetchTokens();
-          const token = tokens?.find((t) => t.symbol === tokenSymbol);
-          if (token?.id != null) {
-            await deleteToken({ id: BigInt(token.id) });
-            console.log(`Token ${tokenSymbol} (ID: ${token.id}) deleted`);
-          } else {
-            console.error('Token not found');
-          }
-        }
-      } catch (error) {
-        console.error('Error handling SSE event (rejected):', error);
-      }
-    };
-
-    rejectedEventSource.onerror = (error) => {
-      console.error('EventSource error (rejected):', error);
-      rejectedEventSource.close();
-    };
-
-    const executedEventSource = new EventSource(
-      `/api/v1/proposal-events/proposal-executed?proposalId=${proposalId}`,
-    );
-
-    executedEventSource.onmessage = async (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (
-          data.event === 'ProposalExecuted' &&
-          data.proposalId === String(proposalId)
-        ) {
-          const actions = await fetchProposalActions(Number(proposalId));
-          if (!isValidProposalAction(actions)) return;
-
-          if (!data.txHash) {
-            throw new Error('txHash not found in event data');
-          }
-          const tokenAddress = await extractTokenAddressFromReceipt(
-            data.txHash as `0x${string}`,
-          );
-
-          await updateToken({
-            agreementWeb3Id: Number(proposalId),
-            address: tokenAddress,
-          });
-        }
-      } catch (error) {
-        console.error('Error handling SSE event (executed):', error);
-      }
-    };
-
-    executedEventSource.onerror = (error) => {
-      console.error('EventSource error (executed):', error);
-      executedEventSource.close();
-    };
-
-    return () => {
-      rejectedEventSource.close();
-      executedEventSource.close();
-    };
-  }, [
-    proposalId,
-    tokenSymbol,
-    authToken,
-    fetchProposalActions,
-    fetchTokens,
-    deleteToken,
-    updateToken,
-  ]);
 
   const handleAccept = () => {
     if (proposalId == null) throw new Error('Proposal ID is missing');

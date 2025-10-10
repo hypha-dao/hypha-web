@@ -6,6 +6,7 @@ export interface Creator {
   name?: string;
   surname?: string;
   avatarUrl?: string;
+  type?: 'person' | 'space';
 }
 
 interface PersonLabelProps {

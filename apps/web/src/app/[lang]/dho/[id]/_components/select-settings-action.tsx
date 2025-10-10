@@ -104,13 +104,12 @@ export const SelectSettingsAction = ({
     },
     {
       group: 'Members',
-      title: 'Space-to-Space Membership (Coming Soon)',
+      title: 'Space-to-Space Membership',
       description:
         'Allow your space to join another space as a member, gaining the ability to participate in governance and vote on proposals.',
       href: 'create/space-to-space-membership',
       icon: <Link2Icon />,
       baseTab: 'agreements',
-      disabled: true,
     },
     {
       defaultDurationDays: 4,
