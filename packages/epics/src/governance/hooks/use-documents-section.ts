@@ -29,6 +29,9 @@ export const useDocumentsSection = ({
   firstPageSize?: number;
   pageSize?: number;
 }) => {
+  if (firstPageSize <= 0 || pageSize <= 0) {
+    throw new Error('firstPageSize and pageSize must be positive numbers');
+  }
   const [activeFilter, setActiveFilter] = React.useState('most-recent');
   const [pages, setPages] = React.useState(1);
   const [activeTab, setActiveTab] = React.useState('all');
