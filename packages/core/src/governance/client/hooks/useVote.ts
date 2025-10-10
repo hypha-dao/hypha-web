@@ -13,6 +13,7 @@ import {
   getProposalDetails,
   DbToken,
   publicClient,
+  useJoinSpaceProposalHandler,
 } from '@hypha-platform/core/client';
 import useSWRMutation from 'swr/mutation';
 import { decodeFunctionData, parseEventLogs } from 'viem';
@@ -152,8 +153,10 @@ export const useVote = ({
     }
   };
 
+  const { handleJoinSpaceExecutedProposal } = useJoinSpaceProposalHandler({ authToken });
+
   useEffect(() => {
-    if (!proposalId || !tokenSymbol || !authToken) return;
+    if (!proposalId || !authToken) return;
 
     const unwatchExecuted = publicClient.watchContractEvent({
       address: daoProposalsImplementationConfig.address[8453],
@@ -166,6 +169,11 @@ export const useVote = ({
 
             if (eventProposalId === BigInt(proposalId)) {
               console.log('ProposalExecuted event received:', proposalId);
+
+              await handleJoinSpaceExecutedProposal(
+                Number(proposalId),
+                log.transactionHash,
+              );
 
               const actions = await fetchProposalActions(Number(proposalId));
               if (!isValidProposalAction(actions)) return;
@@ -239,6 +247,7 @@ export const useVote = ({
     fetchTokens,
     deleteToken,
     updateToken,
+    handleJoinSpaceExecutedProposal,
   ]);
 
   const vote = useCallback(
