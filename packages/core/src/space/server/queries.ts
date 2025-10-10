@@ -141,8 +141,8 @@ export const checkSpaceSlugExists = async (
     where: (spaces, { eq }) => eq(spaces.slug, slug),
   });
 
-  const exists = !!response;
-  const spaceId = exists ? response.id : -1;
+  const spaceId = response?.id ?? -1;
+  const exists = spaceId !== -1;
   return { exists, spaceId };
 };
 

@@ -10,11 +10,6 @@ type UseSpaceBySlugExistsReturn = {
   isLoading: boolean;
 };
 
-interface FetchResult {
-  exists: boolean;
-  spaceId: number;
-}
-
 export const useSpaceBySlugExists = (
   spaceSlug: string,
 ): UseSpaceBySlugExistsReturn => {
@@ -27,7 +22,7 @@ export const useSpaceBySlugExists = (
     debouncedSpaceSlug ? [endpoint] : null,
     ([endpoint]) => fetch(endpoint).then((res) => res.json()),
   );
-  const exists = data ? (data as FetchResult).exists : false;
-  const spaceId = data ? (data as FetchResult).spaceId : -1;
+  const exists = data?.exists ?? false;
+  const spaceId = data?.spaceId ?? -1;
   return { exists, spaceId, isLoading };
 };
