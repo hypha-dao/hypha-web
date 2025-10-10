@@ -146,7 +146,6 @@ export const SpaceForm = ({
   });
 
   const parentSpaceId = form.watch('parentId');
-  const title = form.watch('title');
   const slug = form.watch('slug');
 
   const {
@@ -185,13 +184,14 @@ export const SpaceForm = ({
   const updateSlug = React.useCallback(
     (title: string) => {
       const preparedSlug = slugify(title, { lower: true });
+      const currentSlug = form.getValues('slug');
       if (justInitialized) {
         setJustInitialized(false);
-      } else if (preparedSlug !== slug) {
+      } else if (preparedSlug !== currentSlug) {
         form.setValue('slug', preparedSlug);
       }
     },
-    [form, justInitialized, slug],
+    [form, justInitialized],
   );
 
   React.useEffect(() => {

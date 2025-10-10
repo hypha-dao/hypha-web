@@ -162,7 +162,7 @@ export const useUpdateSpaceOrchestrator = ({
           id,
         });
 
-        console.debug('updateSpaceBySlug result:', result);
+        console.debug('updateSpaceById result:', result);
         completeTask('UPDATE_WEB2_SPACE');
 
         return result;
