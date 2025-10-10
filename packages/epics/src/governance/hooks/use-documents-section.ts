@@ -64,9 +64,11 @@ export const useDocumentsSection = ({
   const pagination = React.useMemo(() => {
     const total = filteredDocuments.length;
     const totalPages =
-      total > firstPageSize
-        ? Math.ceil(1 + (total - firstPageSize) / pageSize)
-        : 1;
+      total === 0
+        ? 0
+        : total <= firstPageSize
+        ? 1
+        : 1 + Math.ceil((total - firstPageSize) / pageSize);
     const hasNextPage = pages < totalPages;
 
     return {
