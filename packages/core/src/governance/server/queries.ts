@@ -138,6 +138,23 @@ export const findDocumentWithSpaceById = async (
     : null;
 };
 
+export const findDocumentWithSpaceByIdRaw = async (
+  { id }: FindDocumentWithSpaceByIdInput,
+  { db }: DbConfig,
+) => {
+  const result = await db
+    .select({
+      document: documents,
+      space: spaces,
+    })
+    .from(documents)
+    .innerJoin(spaces, eq(documents.spaceId, spaces.id))
+    .where(eq(documents.web3ProposalId, id))
+    .limit(1);
+
+  return result[0] ?? null;
+};
+
 export type FindDocumentBySlugInput = {
   slug: string;
 };
