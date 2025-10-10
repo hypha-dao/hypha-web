@@ -182,12 +182,12 @@ export const useUpdateSpaceOrchestrator = ({
   );
 
   const errors = useMemo(() => {
-    return [web2.errorUpdateSpaceBySlugMutation, files.error].filter(Boolean);
-  }, [web2.errorUpdateSpaceBySlugMutation, files.error]);
+    return [web2.errorUpdateSpaceByIdMutation, files.error].filter(Boolean);
+  }, [web2.errorUpdateSpaceByIdMutation, files.error]);
 
   const reset = useCallback(() => {
     resetTasks();
-    web2.resetUpdateSpaceBySlugMutation();
+    web2.resetUpdateSpaceByIdMutation();
     files.reset();
   }, [resetTasks, web2, files]);
 
