@@ -20,7 +20,18 @@ export const tabs = [
   },
 ];
 
-export const useDocumentsSection = ({ documents }: { documents: any[] }) => {
+export const useDocumentsSection = ({
+  documents,
+  firstPageSize = 3,
+  pageSize = 3,
+}: {
+  documents: any[];
+  firstPageSize?: number;
+  pageSize?: number;
+}) => {
+  if (firstPageSize <= 0 || pageSize <= 0) {
+    throw new Error('firstPageSize and pageSize must be positive numbers');
+  }
   const [activeFilter, setActiveFilter] = React.useState('most-recent');
   const [pages, setPages] = React.useState(1);
   const [activeTab, setActiveTab] = React.useState('all');
@@ -51,9 +62,13 @@ export const useDocumentsSection = ({ documents }: { documents: any[] }) => {
   }, [documents, searchTerm, activeTab]);
 
   const pagination = React.useMemo(() => {
-    const pageSize = 3;
     const total = filteredDocuments.length;
-    const totalPages = Math.ceil(total / pageSize);
+    const totalPages =
+      total === 0
+        ? 0
+        : total <= firstPageSize
+        ? 1
+        : 1 + Math.ceil((total - firstPageSize) / pageSize);
     const hasNextPage = pages < totalPages;
 
     return {
@@ -63,7 +78,7 @@ export const useDocumentsSection = ({ documents }: { documents: any[] }) => {
       totalPages,
       hasNextPage,
     };
-  }, [filteredDocuments, pages]);
+  }, [filteredDocuments, pages, firstPageSize, pageSize]);
 
   React.useEffect(() => {
     setPages(1);

@@ -33,6 +33,8 @@ export function DocumentsSections({
         label="On Voting"
         hasSearch={true}
         isLoading={isLoading}
+        firstPageSize={9}
+        pageSize={15}
       />
       <DocumentSection
         basePath={`${basePath}/proposal`}
@@ -40,6 +42,8 @@ export function DocumentsSections({
         label="Accepted"
         hasSearch={true}
         isLoading={isLoading}
+        firstPageSize={3}
+        pageSize={15}
       />
       <DocumentSection
         basePath={`${basePath}/proposal`}
@@ -47,6 +51,8 @@ export function DocumentsSections({
         label="Rejected"
         hasSearch={true}
         isLoading={isLoading}
+        firstPageSize={3}
+        pageSize={15}
       />
     </div>
   );
