@@ -1,0 +1,38 @@
+'use client';
+
+import React from 'react';
+import useSWR from 'swr';
+import { useDebounce } from 'use-debounce';
+
+type UseSpaceBySlugExistsReturn = {
+  exists: boolean;
+  spaceId: number | -1;
+  isLoading: boolean;
+  error?: Error;
+};
+
+export const useSpaceBySlugExists = (
+  spaceSlug: string,
+): UseSpaceBySlugExistsReturn => {
+  const [debouncedSpaceSlug] = useDebounce(spaceSlug, 500);
+  const endpoint = React.useMemo(
+    () => `/api/v1/spaces/${encodeURIComponent(debouncedSpaceSlug)}/exists`,
+    [debouncedSpaceSlug],
+  );
+
+  type FetchResult = { exists: boolean; spaceId: number };
+
+  const { data, isLoading, error } = useSWR(
+    debouncedSpaceSlug ? [endpoint] : null,
+    async ([endpoint]) => {
+      const res = await fetch(endpoint);
+      if (!res.ok) {
+        throw new Error(`Failed to check slug existence: ${res.statusText}`);
+      }
+      return (await res.json()) as FetchResult;
+    },
+  );
+  const exists = data?.exists ?? false;
+  const spaceId = data?.spaceId ?? -1;
+  return { exists, spaceId, isLoading, error };
+};
