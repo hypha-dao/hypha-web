@@ -173,24 +173,19 @@ export const SpaceForm = ({
   }, [parentSpaceId, form]);
 
   React.useEffect(() => {
-    if (slugIsChecking || !slug) {
+    if (slugIsChecking) {
       return;
     }
-    const { isDirty, isTouched } = form.getFieldState('slug');
-    if (isDirty || isTouched) {
-      form.trigger('slug');
-    }
     if (slugExists && spaceId !== foundSpaceId) {
-      form.setError('slug', {
-        message: slugIncorrectMessage,
-        type: 'validate',
-      });
       setSlugDuplicated(true);
     } else {
-      form.clearErrors('slug');
       setSlugDuplicated(false);
     }
-  }, [spaceId, form, slug, slugExists, foundSpaceId, slugIsChecking]);
+  }, [spaceId, slugExists, foundSpaceId, slugIsChecking]);
+
+  React.useEffect(() => {
+    form.trigger('slug');
+  }, [form, slugDuplicated]);
 
   React.useEffect(() => {
     if (!preparedSlug) {
