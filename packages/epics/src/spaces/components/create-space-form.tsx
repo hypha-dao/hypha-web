@@ -119,12 +119,12 @@ export const SpaceForm = ({
     console.debug('SpaceForm', { defaultValues });
   }
 
-  const [slugDublicated, setSlugDublicated] = React.useState(false);
+  const [slugDuplicated, setSlugDuplicated] = React.useState(false);
   const [justInitialized, setJustInitialized] = React.useState(false);
 
   const resolveSlug = React.useCallback(
-    () => !slugDublicated,
-    [slugDublicated],
+    () => !slugDuplicated,
+    [slugDuplicated],
   );
 
   const schema = schemaCreateSpaceForm.extend({
@@ -185,10 +185,10 @@ export const SpaceForm = ({
         message: slugIncorrectMessage,
         type: 'validate',
       });
-      setSlugDublicated(true);
+      setSlugDuplicated(true);
     } else {
       form.clearErrors('slug');
-      setSlugDublicated(false);
+      setSlugDuplicated(false);
     }
   }, [spaceId, form, slug, slugExists, foundSpaceId, slugIsChecking]);
 
