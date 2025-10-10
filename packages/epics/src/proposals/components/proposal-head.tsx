@@ -6,6 +6,7 @@ export type CreatorType = {
   avatar?: string;
   name?: string;
   surname?: string;
+  type?: 'person' | 'space';
 };
 
 export type ProposalHeadProps = {
@@ -27,13 +28,18 @@ export const ProposalHead = ({
   label,
   createDate,
 }: ProposalHeadProps) => {
+  const displayName =
+    creator?.type === 'space'
+      ? creator.name
+      : `${creator?.name} ${creator?.surname}`.trim();
+
   return (
     <div className="flex items-center space-x-3">
       <PersonAvatar
         size="lg"
         isLoading={isLoading}
         avatarSrc={creator?.avatar}
-        userName={`${creator?.name} ${creator?.surname}`}
+        userName={displayName}
       />
       <div className="flex justify-between items-center w-full">
         <div className="grid">
@@ -41,7 +47,11 @@ export const ProposalHead = ({
             <Badge variant="solid" colorVariant="accent" isLoading={isLoading}>
               {label}
             </Badge>
-            {/* <StatusBadge isLoading={isLoading} status={status} /> */}
+            {creator?.type === 'space' && (
+              <Badge variant="outline" colorVariant="neutral">
+                Space
+              </Badge>
+            )}
           </div>
 
           <Skeleton
@@ -57,7 +67,7 @@ export const ProposalHead = ({
 
           <Skeleton height="16px" width="80px" loading={isLoading}>
             <Text className="text-1 text-gray-500">
-              {creator?.name} {creator?.surname} · {createDate}
+              {displayName} · {createDate}
             </Text>
           </Skeleton>
         </div>
