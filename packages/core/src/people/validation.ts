@@ -5,35 +5,34 @@ import { z } from 'zod';
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
 const signupPersonWeb2Props = {
-  name: z.string().trim().min(1, { message: 'Please enter your first name' }),
-  surname: z.string().trim().min(1, { message: 'Please enter your last name' }),
+  name: z.string().trim().min(1, 'Please enter your first name'),
+  surname: z.string().trim().min(1, 'Please enter your last name'),
   nickname: z
     .string()
     .trim()
-    .min(1, { message: 'Please choose a nickname' })
-    .max(12, { message: 'Nickname length should not exceed 12 characters' }),
+    .min(1, 'Please choose a nickname')
+    .max(12, 'Nickname length should not exceed 12 characters'),
   description: z
     .string()
-    .max(300, {
-      message: 'Description length should not exceed 300 characters',
-    })
+    .max(300, 'Description length should not exceed 300 characters')
     .optional(),
   email: z
-    .email({ message: 'Please enter a valid email address' })
-    .max(100, { message: 'Email must be at most 100 characters long' })
+    .email('Please enter a valid email address')
+    .max(100, 'Email must be at most 100 characters long')
     .or(z.literal(''))
     .optional(),
   location: z
     .string()
-    .max(100, { message: 'Location must be at most 100 characters long' })
+    .max(100, 'Location must be at most 100 characters long')
     .trim()
     .optional(),
   address: z
     .string()
     .trim()
-    .refine((value) => /^(0x)?[0-9a-fA-F]{40}$/.test(value), {
-      message: 'Invalid Ethereum address',
-    })
+    .refine(
+      (value) => /^(0x)?[0-9a-fA-F]{40}$/.test(value),
+      'Invalid Ethereum address',
+    )
     .optional(),
   links: z
     .array(z.url('Please enter a valid URL (e.g., https://example.com)'))
@@ -44,27 +43,25 @@ const signupPersonWeb2Props = {
 
 const editPersonWeb2Props = {
   id: z.number(),
-  name: z.string().trim().min(1, { message: 'Please enter your first name' }),
-  surname: z.string().trim().min(1, { message: 'Please enter your last name' }),
+  name: z.string().trim().min(1, 'Please enter your first name'),
+  surname: z.string().trim().min(1, 'Please enter your last name'),
   nickname: z
     .string()
     .trim()
-    .min(1, { message: 'Please choose a nickname' })
-    .max(12, { message: 'Nickname length should not exceed 12 characters' }),
+    .min(1, 'Please choose a nickname')
+    .max(12, 'Nickname length should not exceed 12 characters'),
   description: z
     .string()
-    .max(300, {
-      message: 'Description length should not exceed 300 characters',
-    })
+    .max(300, 'Description length should not exceed 300 characters')
     .optional(),
   email: z
-    .email({ message: 'Please enter a valid email address' })
-    .max(100, { message: 'Email must be at most 100 characters long' })
+    .email('Please enter a valid email address')
+    .max(100, 'Email must be at most 100 characters long')
     .or(z.literal(''))
     .optional(),
   location: z
     .string()
-    .max(100, { message: 'Location must be at most 100 characters long' })
+    .max(100, 'Location must be at most 100 characters long')
     .trim()
     .optional(),
   links: z
@@ -118,19 +115,22 @@ export const editPersonFiles = z.object({
 export const personTransfer = z.object({
   recipient: z
     .string()
-    .min(1, { message: 'Please add a recipient or wallet address' })
-    .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' }),
+    .min(1, 'Please add a recipient or wallet address')
+    .regex(ETH_ADDRESS_REGEX, 'Invalid Ethereum address'),
 
   payouts: z
     .array(
       z.object({
-        amount: z.string().refine((value) => parseFloat(value) > 0, {
-          message: 'Amount must be greater than 0',
-        }),
+        amount: z
+          .string()
+          .refine(
+            (value) => parseFloat(value) > 0,
+            'Amount must be greater than 0',
+          ),
         token: z.string(),
       }),
     )
-    .min(1, { message: 'At least one payout is required' }),
+    .min(1, 'At least one payout is required'),
 });
 
 export type PersonFiles = z.infer<typeof editPersonFiles>;

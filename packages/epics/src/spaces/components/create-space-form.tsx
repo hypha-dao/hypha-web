@@ -136,7 +136,7 @@ export const SpaceForm = ({
         'This field can only contain lowercase letters, numbers, hyphens, and apostrophes.',
       )
       .optional()
-      .refine(resolveSlug, { message: slugIncorrectMessage }),
+      .refine(resolveSlug, slugIncorrectMessage),
   });
 
   const form = useForm<SchemaCreateSpaceForm>({
