@@ -34,7 +34,7 @@ export const InnerSpaceCardWrapper = ({
       persons?.data?.map((member: Person) => ({
         name: member.name || '',
         surname: member.surname || '',
-        avatar: member.avatarUrl || '/placeholder/avatar.png',
+        avatar: member.avatarUrl || '/placeholder/default-profile.svg',
       })),
     [persons.data],
   );
