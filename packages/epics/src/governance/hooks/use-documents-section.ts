@@ -28,14 +28,14 @@ export const useDocumentsSection = ({
     let result = documents;
 
     if (searchTerm) {
-      result = result.filter(
-        (doc) =>
-          doc.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          doc.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          doc.creator?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          doc.creator?.surname
-            ?.toLowerCase()
-            .includes(searchTerm.toLowerCase()),
+      const query = searchTerm.trim().toLowerCase();
+      result = result.filter((doc) =>
+        [
+          doc.title,
+          doc.description,
+          doc.creator?.name,
+          doc.creator?.surname,
+        ].some((value) => value?.toLowerCase()?.includes(query) ?? false),
       );
     }
 
