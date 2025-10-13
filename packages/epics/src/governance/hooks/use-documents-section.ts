@@ -1,13 +1,13 @@
 import React from 'react';
 import { useDebouncedCallback } from 'use-debounce';
-
+import { Document } from '@hypha-platform/core/client';
 
 export const useDocumentsSection = ({
   documents,
   firstPageSize = 3,
   pageSize = 3,
 }: {
-  documents: any[];
+  documents: Document[];
   firstPageSize?: number;
   pageSize?: number;
 }) => {
@@ -31,7 +31,11 @@ export const useDocumentsSection = ({
       result = result.filter(
         (doc) =>
           doc.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          doc.description?.toLowerCase().includes(searchTerm.toLowerCase()),
+          doc.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          doc.creator?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          doc.creator?.surname
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()),
       );
     }
 
