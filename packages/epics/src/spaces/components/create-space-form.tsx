@@ -446,6 +446,7 @@ export const SpaceForm = ({
                   placeholder={'Select one or more'}
                   options={categoryOptions}
                   value={field.value}
+                  allowToggleAll={false}
                   onValueChange={field.onChange}
                 />
               </FormControl>
