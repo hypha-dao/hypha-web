@@ -1,6 +1,9 @@
 'use client';
 
 import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
   Card,
   CardContent,
   CardHeader,
@@ -8,7 +11,6 @@ import {
   Skeleton,
   Image,
 } from '@hypha-platform/ui';
-import { Avatar, AvatarFallback, AvatarImage } from '@radix-ui/react-avatar';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
@@ -29,6 +31,8 @@ type InnerSpaceCardProps = {
   parentPath?: string;
   className?: string;
 };
+
+const DEFAULT_AVATAR_PATH = '/placeholder/default-profile.svg';
 
 export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
   description,
@@ -100,7 +104,7 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
                           width={24}
                           height={24}
                           className="rounded-lg"
-                          src={'/placeholder/default-profile.svg'}
+                          src={DEFAULT_AVATAR_PATH}
                           alt={`${member.name} ${member.surname}`}
                         />
                       </AvatarFallback>
