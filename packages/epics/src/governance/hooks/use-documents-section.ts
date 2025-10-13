@@ -34,7 +34,6 @@ export const useDocumentsSection = ({
   }
   const [activeFilter, setActiveFilter] = React.useState('most-recent');
   const [pages, setPages] = React.useState(1);
-  const [activeTab, setActiveTab] = React.useState('all');
   const [searchTerm, setSearchTerm] = React.useState<string | undefined>(
     undefined,
   );
@@ -54,12 +53,8 @@ export const useDocumentsSection = ({
       );
     }
 
-    if (activeTab !== 'all') {
-      result = result.filter((doc) => doc.space === activeTab);
-    }
-
     return result;
-  }, [documents, searchTerm, activeTab]);
+  }, [documents, searchTerm]);
 
   const pagination = React.useMemo(() => {
     const total = filteredDocuments.length;
@@ -82,7 +77,7 @@ export const useDocumentsSection = ({
 
   React.useEffect(() => {
     setPages(1);
-  }, [activeFilter, activeTab, searchTerm]);
+  }, [activeFilter, searchTerm]);
 
   const loadMore = React.useCallback(() => {
     if (!pagination?.hasNextPage) return;
@@ -98,8 +93,6 @@ export const useDocumentsSection = ({
     activeFilter,
     setActiveFilter,
     tabs,
-    activeTab,
-    setActiveTab,
     onUpdateSearch,
     searchTerm,
     filteredDocuments,
