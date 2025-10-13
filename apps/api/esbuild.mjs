@@ -18,4 +18,5 @@ await esbuild.build({
       },
     }),
   ],
+  alias: { 'server-only': 'server-only' },
 });
