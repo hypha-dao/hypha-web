@@ -104,6 +104,10 @@ interface MultiSelectProps
    */
   value?: string[];
 
+  /**
+   * Controls whether the "Select All" option is displayed in the dropdown.
+   * Optional, defaults to true.
+   */
   allowToggleAll?: boolean;
 
   /**
