@@ -130,16 +130,16 @@ export const useJoinSpaceProposalHandler = ({
           throw new Error(`Space with web3Id ${targetSpaceId} not found`);
         }
 
-        const spaceUrl = `/en/dho/${targetSpace.slug}/agreements/`;
+        const spaceUrl = `/en/dho/${currentSpace?.slug}/agreements/`;
 
         const inviteProposalData: CreateAgreementInput = {
           title: 'Invite Space',
-          description: `**${targetSpace.title} has just requested to join as a member!**
+          description: `**${currentSpace?.title} has just requested to join as a member!**
     
         To move forward with onboarding, we'll need our space's approval on this proposal.
         
-        You can review ${targetSpace.title} <span className="text-accent-9">[here](${spaceUrl}).</span>`,
-          slug: `invite-request-${targetSpaceId}-${Date.now()}`,
+        You can review ${currentSpace?.title} <span className="text-accent-9">[here](${spaceUrl}).</span>`,
+          slug: `invite-request-${currentSpace?.id}-${Date.now()}`,
           creatorId: currentSpace?.id as number,
           spaceId: targetSpace.id,
           web3ProposalId: createdProposalId,
