@@ -1,24 +1,6 @@
 import React from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 
-export const tabs = [
-  {
-    label: 'All',
-    value: 'all',
-  },
-  {
-    label: 'Hypha Space',
-    value: 'hypha-space',
-  },
-  {
-    label: 'EOS Space',
-    value: 'eos-space',
-  },
-  {
-    label: 'Hypha Energy',
-    value: 'hypha-energy',
-  },
-];
 
 export const useDocumentsSection = ({
   documents,
@@ -92,7 +74,6 @@ export const useDocumentsSection = ({
     setPages,
     activeFilter,
     setActiveFilter,
-    tabs,
     onUpdateSearch,
     searchTerm,
     filteredDocuments,
