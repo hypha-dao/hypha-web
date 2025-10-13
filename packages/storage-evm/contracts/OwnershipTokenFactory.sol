@@ -99,11 +99,7 @@ contract OwnershipTokenFactory is
       'Only space executor can deploy tokens'
     );
 
-    // Add a specific debugging event
-    emit DeployingToken(spaceId, name, symbol);
-
-    // Deploy an ownership token
-    bytes memory initializeData = abi.encodeWithSelector(
+    bytes memory callData = abi.encodeWithSelector(
       OwnershipSpaceToken.initialize.selector,
       name,
       symbol,
@@ -112,23 +108,20 @@ contract OwnershipTokenFactory is
       maxSupply,
       spacesContract
     );
-    ERC1967Proxy proxy = new ERC1967Proxy(
-      ownershipTokenImplementation,
-      initializeData
+
+    address tokenAddress = address(
+      new ERC1967Proxy(ownershipTokenImplementation, callData)
     );
-    address tokenAddress = address(proxy);
+
     isTokenDeployedByFactory[tokenAddress] = true;
 
     // Store the token in the array of all tokens for this space
     allSpaceTokens[spaceId].push(tokenAddress);
 
-    // Make sure the event is using the right event signature
     emit TokenDeployed(spaceId, tokenAddress, name, symbol);
 
     return tokenAddress;
   }
-
-  event DeployingToken(uint256 indexed spaceId, string name, string symbol);
 
   /**
    * @dev Get the token address for a given space ID

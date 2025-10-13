@@ -110,8 +110,7 @@ contract DecayingTokenFactory is
       'Only space executor can deploy tokens'
     );
 
-    // Deploy a decaying token
-    bytes memory initializeData = abi.encodeWithSelector(
+    bytes memory callData = abi.encodeWithSelector(
       DecayingSpaceToken.initialize.selector,
       name,
       symbol,
@@ -122,11 +121,11 @@ contract DecayingTokenFactory is
       decayPercentage,
       decayInterval
     );
-    ERC1967Proxy proxy = new ERC1967Proxy(
-      decayingTokenImplementation,
-      initializeData
+
+    address tokenAddress = address(
+      new ERC1967Proxy(decayingTokenImplementation, callData)
     );
-    address tokenAddress = address(proxy);
+
     isTokenDeployedByFactory[tokenAddress] = true;
 
     // Store the token in the array of all tokens for this space
@@ -134,9 +133,6 @@ contract DecayingTokenFactory is
 
     emit TokenDeployed(spaceId, tokenAddress, name, symbol);
     emit DecayingTokenParameters(tokenAddress, decayPercentage, decayInterval);
-
-    // No need to explicitly add token to space anymore
-    // SpaceFactory.hasToken() now checks the token's spaceId directly
 
     return tokenAddress;
   }

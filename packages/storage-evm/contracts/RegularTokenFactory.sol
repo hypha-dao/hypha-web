@@ -83,6 +83,8 @@ contract RegularTokenFactory is
     bool transferable,
     bool isVotingToken
   ) public override returns (address) {
+
+    require(spacesContract != address(0), 'Spaces contract not set');
     require(
       spaceTokenImplementation != address(0),
       'Token implementation not set'

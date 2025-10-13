@@ -1,6 +1,6 @@
 import { ethers, upgrades } from 'hardhat';
 
-const PROXY_ADDRESS = '0x9425c91c19066f6CAC6C25bF934F8861914Ccf2e'; // RegularTokenFactory mainnet proxy
+const PROXY_ADDRESS = '0x95A33EC94de2189893884DaD63eAa19f7390144a'; // RegularTokenFactory mainnet proxy
 
 async function main(): Promise<void> {
   const [deployer] = await ethers.getSigners();

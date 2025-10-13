@@ -24,6 +24,22 @@ npx nx run storage-evm:script ./scripts/decaying-token-factory-proxy.deploy.ts -
 npx nx run storage-evm:script ./scripts/decaying-token-factory.upgrade.ts --network base-mainnet
 npx nx run storage-evm:script ./scripts/ownership-token-factory.upgrade.ts --network base-mainnet
 
+npx ts-node scripts/base-mainnet-contracts-scripts/configure-ownership-token-factory.ts
+npx ts-node scripts/base-mainnet-contracts-scripts/configure-decaying-token-factory.ts
+npx ts-node scripts/base-mainnet-contracts-scripts/ownership-space-token-proxy.deploy.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/ownership-space-token-proxy.deploy.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/configure-ownership-token-factory.ts --network base-mainnet
+npx nx run storage-evm:script ./scripts/ownership-space-token-proxy.deploy.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/regular-space-token-proxy.deploy.ts --network base-mainnet
+
+
+regular-space-token-proxy.deploy.ts
+
+decaying-space-token-proxy.deploy.ts
+
 decaying-token-factory.upgrade.ts
 
 ```
@@ -115,6 +131,10 @@ npx nx run storage-evm:script ./scripts/voting-power-directory-proxy.deploy.ts -
 npx nx run storage-evm:script ./scripts/decaying-token-factory.upgrade.ts--network base-mainnet
 
 npx nx run storage-evm:script ./scripts/ownership-token-factory.upgrade.ts--network base-mainnet
+
+npx nx run storage-evm:script ./scripts/ownership-token-factory-proxy.deploy.ts --network base-mainnet
+npx nx run storage-evm:script ./scripts/decaying-space-token-proxy.deploy.ts --network base-mainnet
+
 
 npx nx run storage-evm:script ./scripts/ownership-token-voting-power.upgrade.ts --network base-mainnet
 

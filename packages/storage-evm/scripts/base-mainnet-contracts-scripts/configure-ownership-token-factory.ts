@@ -20,8 +20,8 @@ interface ContractTransactionWithWait extends ethers.ContractTransaction {
   wait(): Promise<TransactionReceipt>;
 }
 
-interface RegularTokenFactoryInterface extends Contract {
-  setSpaceTokenImplementation: BaseContractMethod<
+interface OwnershipTokenFactoryInterface extends Contract {
+  setOwnershipTokenImplementation: BaseContractMethod<
     [string],
     any,
     ethers.ContractTransactionResponse
@@ -36,15 +36,18 @@ interface RegularTokenFactoryInterface extends Contract {
     any,
     ethers.ContractTransactionResponse
   >;
-  spaceTokenImplementation: BaseContractMethod<[], string, string>;
+  ownershipTokenImplementation: BaseContractMethod<[], string, string>;
+  spacesContract: BaseContractMethod<[], string, string>;
 }
 
-const REGULAR_TOKEN_FACTORY_ADDRESS =
-  '0xD932f1A250db1b15D943967F3Ae2e07c23AC8E36'; // Mainnet Factory
+const OWNERSHIP_TOKEN_FACTORY_ADDRESS =
+  '0xc69cB3D966e0Eb5306035e9a27979507D1F334Ee'; // OwnershipTokenFactory Proxy
 
-const NEW_IMPLEMENTATION_ADDRESS = '0xe04F6ce97437d6a7eC35160Ba227faB505017E14';
+const NEW_IMPLEMENTATION_ADDRESS = '0xB06f27e16648F36C529839413f307a87b80d6ca1'; // OwnershipSpaceToken Implementation
 
-const regularTokenFactoryAbi = [
+const SPACES_CONTRACT_ADDRESS = '0xc8B8454D2F9192FeCAbc2C6F5d88F6434A2a9cd9';
+
+const ownershipTokenFactoryAbi = [
   {
     inputs: [
       {
@@ -53,7 +56,7 @@ const regularTokenFactoryAbi = [
         type: 'address',
       },
     ],
-    name: 'setSpaceTokenImplementation',
+    name: 'setOwnershipTokenImplementation',
     outputs: [],
     stateMutability: 'nonpayable',
     type: 'function',
@@ -73,7 +76,7 @@ const regularTokenFactoryAbi = [
   },
   {
     inputs: [],
-    name: 'spaceTokenImplementation',
+    name: 'ownershipTokenImplementation',
     outputs: [
       {
         internalType: 'address',
@@ -110,41 +113,76 @@ const regularTokenFactoryAbi = [
     stateMutability: 'nonpayable',
     type: 'function',
   },
+  {
+    inputs: [],
+    name: 'spacesContract',
+    outputs: [
+      {
+        internalType: 'address',
+        name: '',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
 ];
 
 async function main(): Promise<void> {
   const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY || '', provider);
 
-  const regularTokenFactory = new ethers.Contract(
-    REGULAR_TOKEN_FACTORY_ADDRESS,
-    regularTokenFactoryAbi,
+  const ownershipTokenFactory = new ethers.Contract(
+    OWNERSHIP_TOKEN_FACTORY_ADDRESS,
+    ownershipTokenFactoryAbi,
     wallet,
-  ) as unknown as RegularTokenFactoryInterface;
+  ) as unknown as OwnershipTokenFactoryInterface;
 
   const currentImplementationAddress =
-    await regularTokenFactory.spaceTokenImplementation();
+    await ownershipTokenFactory.ownershipTokenImplementation();
+  const currentSpacesContract = await ownershipTokenFactory.spacesContract();
 
   console.log(
     'Current implementation address from factory:',
     currentImplementationAddress,
   );
   console.log('New implementation address to set:', NEW_IMPLEMENTATION_ADDRESS);
+  console.log(
+    'Current spaces contract address from factory:',
+    currentSpacesContract,
+  );
+  console.log('Spaces contract address to set:', SPACES_CONTRACT_ADDRESS);
 
+  // Check and update implementation address
   if (
     currentImplementationAddress.toLowerCase() ===
     NEW_IMPLEMENTATION_ADDRESS.toLowerCase()
   ) {
     console.log(
-      '✅ Factory is already configured with the space token implementation.',
+      '✅ Factory is already configured with the ownership token implementation.',
     );
   } else {
-    console.log('Updating space token implementation...');
-    const tx = await regularTokenFactory.setSpaceTokenImplementation(
+    console.log('Updating ownership token implementation...');
+    const tx = await ownershipTokenFactory.setOwnershipTokenImplementation(
       NEW_IMPLEMENTATION_ADDRESS,
     );
     await tx.wait();
-    console.log('✅ Space token implementation updated successfully.');
+    console.log('✅ Ownership token implementation updated successfully.');
+  }
+
+  // Check and update spaces contract address
+  if (
+    currentSpacesContract.toLowerCase() ===
+    SPACES_CONTRACT_ADDRESS.toLowerCase()
+  ) {
+    console.log('✅ Factory is already configured with the spaces contract.');
+  } else {
+    console.log('Updating spaces contract...');
+    const tx = await ownershipTokenFactory.setSpacesContract(
+      SPACES_CONTRACT_ADDRESS,
+    );
+    await tx.wait();
+    console.log('✅ Spaces contract updated successfully.');
   }
 }
 
