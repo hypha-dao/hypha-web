@@ -8,7 +8,7 @@ import {
   Skeleton,
   Image,
 } from '@hypha-platform/ui';
-import { Avatar, AvatarImage } from '@radix-ui/react-avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@radix-ui/react-avatar';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
@@ -95,6 +95,15 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
                         width={24}
                         height={24}
                       />
+                      <AvatarFallback className="w-5 h-5">
+                        <Image
+                          width={24}
+                          height={24}
+                          className="rounded-lg"
+                          src={'/placeholder/default-profile.svg'}
+                          alt={`${member.name} ${member.surname}`}
+                        />
+                      </AvatarFallback>
                     </Avatar>
                   ))
                 : null}
