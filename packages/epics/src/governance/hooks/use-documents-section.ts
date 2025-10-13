@@ -27,8 +27,8 @@ export const useDocumentsSection = ({
   const filteredDocuments = React.useMemo(() => {
     let result = documents;
 
-    if (searchTerm) {
-      const query = searchTerm.trim().toLowerCase();
+    const query = searchTerm?.trim()?.toLowerCase();
+    if (query) {
       result = result.filter((doc) =>
         [
           doc.title,
