@@ -95,7 +95,7 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
                         width={24}
                         height={24}
                       />
-                      <AvatarFallback className="w-5 h-5">
+                      <AvatarFallback className="w-6 h-6">
                         <Image
                           width={24}
                           height={24}
