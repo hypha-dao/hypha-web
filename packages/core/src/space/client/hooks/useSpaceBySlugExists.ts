@@ -5,8 +5,8 @@ import useSWR from 'swr';
 import { useDebounce } from 'use-debounce';
 
 type UseSpaceBySlugExistsReturn = {
-  exists: boolean;
-  spaceId: number | -1;
+  exists?: boolean;
+  spaceId?: number;
   isLoading: boolean;
   error?: Error;
 };
@@ -32,7 +32,7 @@ export const useSpaceBySlugExists = (
       return (await res.json()) as FetchResult;
     },
   );
-  const exists = data?.exists ?? false;
-  const spaceId = data?.spaceId ?? -1;
+  const exists = data?.exists;
+  const spaceId = data?.spaceId;
   return { exists, spaceId, isLoading, error };
 };
