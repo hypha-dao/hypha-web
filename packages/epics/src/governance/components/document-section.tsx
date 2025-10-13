@@ -33,7 +33,6 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
     pages,
     loadMore,
     pagination,
-    activeTab,
     onUpdateSearch,
     searchTerm,
     filteredDocuments,
@@ -78,7 +77,6 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
                 ],
               }}
               documents={filteredDocuments}
-              activeTab={activeTab}
             />
           ))}
         </div>

@@ -11,7 +11,6 @@ type DocumentGridContainerProps = {
     order?: Order<Document>;
   };
   documents: any[];
-  activeTab: string;
 };
 
 export const DocumentGridContainer = ({

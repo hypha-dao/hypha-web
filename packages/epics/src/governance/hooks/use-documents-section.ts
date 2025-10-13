@@ -1,31 +1,13 @@
 import React from 'react';
 import { useDebouncedCallback } from 'use-debounce';
-
-export const tabs = [
-  {
-    label: 'All',
-    value: 'all',
-  },
-  {
-    label: 'Hypha Space',
-    value: 'hypha-space',
-  },
-  {
-    label: 'EOS Space',
-    value: 'eos-space',
-  },
-  {
-    label: 'Hypha Energy',
-    value: 'hypha-energy',
-  },
-];
+import { Document } from '@hypha-platform/core/client';
 
 export const useDocumentsSection = ({
   documents,
   firstPageSize = 3,
   pageSize = 3,
 }: {
-  documents: any[];
+  documents: Document[];
   firstPageSize?: number;
   pageSize?: number;
 }) => {
@@ -34,7 +16,6 @@ export const useDocumentsSection = ({
   }
   const [activeFilter, setActiveFilter] = React.useState('most-recent');
   const [pages, setPages] = React.useState(1);
-  const [activeTab, setActiveTab] = React.useState('all');
   const [searchTerm, setSearchTerm] = React.useState<string | undefined>(
     undefined,
   );
@@ -46,20 +27,20 @@ export const useDocumentsSection = ({
   const filteredDocuments = React.useMemo(() => {
     let result = documents;
 
-    if (searchTerm) {
-      result = result.filter(
-        (doc) =>
-          doc.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          doc.description?.toLowerCase().includes(searchTerm.toLowerCase()),
+    const query = searchTerm?.trim()?.toLowerCase();
+    if (query) {
+      result = result.filter((doc) =>
+        [
+          doc.title,
+          doc.description,
+          doc.creator?.name,
+          doc.creator?.surname,
+        ].some((value) => value?.toLowerCase()?.includes(query) ?? false),
       );
     }
 
-    if (activeTab !== 'all') {
-      result = result.filter((doc) => doc.space === activeTab);
-    }
-
     return result;
-  }, [documents, searchTerm, activeTab]);
+  }, [documents, searchTerm]);
 
   const pagination = React.useMemo(() => {
     const total = filteredDocuments.length;
@@ -82,7 +63,7 @@ export const useDocumentsSection = ({
 
   React.useEffect(() => {
     setPages(1);
-  }, [activeFilter, activeTab, searchTerm]);
+  }, [activeFilter, searchTerm]);
 
   const loadMore = React.useCallback(() => {
     if (!pagination?.hasNextPage) return;
@@ -97,9 +78,6 @@ export const useDocumentsSection = ({
     setPages,
     activeFilter,
     setActiveFilter,
-    tabs,
-    activeTab,
-    setActiveTab,
     onUpdateSearch,
     searchTerm,
     filteredDocuments,
