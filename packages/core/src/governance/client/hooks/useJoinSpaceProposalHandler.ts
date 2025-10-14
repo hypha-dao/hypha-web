@@ -60,31 +60,34 @@ export const useJoinSpaceProposalHandler = ({
     [allSpaces],
   );
 
-  const getSpaceJoinMethod = useCallback(async (spaceId: number) => {
-    try {
-      const spaceDetails = await publicClient.readContract(
-        getSpaceDetails({ spaceId: BigInt(spaceId) }),
-      );
+  const getSpaceJoinMethod = useCallback(
+    async (spaceId: number) => {
+      try {
+        const spaceDetails = await publicClient.readContract(
+          getSpaceDetails({ spaceId: BigInt(spaceId) }),
+        );
 
-      const [
-        unity,
-        quorum,
-        votingPowerSource,
-        tokenAdresses,
-        members,
-        exitMethod,
-        joinMethod,
-        createdAt,
-        creator,
-        executor,
-      ] = spaceDetails;
+        const [
+          unity,
+          quorum,
+          votingPowerSource,
+          tokenAdresses,
+          members,
+          exitMethod,
+          joinMethod,
+          createdAt,
+          creator,
+          executor,
+        ] = spaceDetails;
 
-      return joinMethod;
-    } catch (error) {
-      console.error('Error fetching space join method:', error);
-      return null;
-    }
-  }, []);
+        return joinMethod;
+      } catch (error) {
+        console.error('Error fetching space join method:', error);
+        return null;
+      }
+    },
+    [publicClient, getSpaceDetails],
+  );
 
   const getCreatedProposalIdFromReceipt = useCallback(
     async (txHash: `0x${string}`): Promise<number | null> => {

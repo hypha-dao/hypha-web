@@ -6,6 +6,7 @@ import { useSpaceTokenRequirements } from '../../spaces';
 import { Space } from '@hypha-platform/core/client';
 import { zeroAddress } from 'viem';
 import { useAssets } from '../../treasury';
+import { JoinMethods } from './types';
 
 interface Props {
   spaceAddress?: string | null;
@@ -56,7 +57,7 @@ export const useSpaceTokenRequirementsByAddress = ({
   const requiredAmount = requiredAmountRaw ? Number(requiredAmountRaw) : 0;
 
   const isTokenBased = useMemo(() => {
-    return spaceDetails?.joinMethod === 1n;
+    return Number(spaceDetails?.joinMethod) === JoinMethods['TOKEN_BASED'];
   }, [spaceDetails]);
 
   const hasTokenRequirements = useMemo(() => {
