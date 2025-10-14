@@ -15,6 +15,8 @@ import {
   Attachment,
   useSpaceDetailsWeb3Rpc,
   SpaceDetails,
+  DirectionType,
+  Document,
 } from '@hypha-platform/core/client';
 import {
   ProposalTransactionItem,
@@ -30,6 +32,7 @@ import { MarkdownSuspense } from '@hypha-platform/ui/server';
 import { ButtonClose } from '@hypha-platform/epics';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { ProposalActivateSpacesData } from '../../governance/components/proposal-activate-spaces-data';
+import { useSpaceDocumentsWithStatuses } from '../../governance';
 
 type ProposalDetailProps = ProposalHeadProps & {
   onAccept: () => void;
@@ -46,6 +49,12 @@ type ProposalDetailProps = ProposalHeadProps & {
   label?: string;
   documentSlug: string;
   dbTokens?: DbToken[];
+};
+
+type DocumentsArrays = {
+  accepted: Document[];
+  rejected: Document[];
+  onVoting: Document[];
 };
 
 export const ProposalDetail = ({
@@ -76,6 +85,47 @@ export const ProposalDetail = ({
     spaceId: Number(proposalDetails?.spaceId),
   });
   const { isAuthenticated } = useAuthentication();
+  const { documents: documentsArrays } = useSpaceDocumentsWithStatuses({
+    spaceId: Number(proposalDetails?.spaceId),
+    spaceSlug,
+    order: [
+      {
+        name: 'createdAt',
+        dir: DirectionType.DESC,
+      },
+    ],
+  });
+
+  const findDocumentStatus = (
+    documentsArrays: DocumentsArrays,
+    proposalId: number | null | undefined,
+  ): string | null => {
+    if (!documentsArrays || proposalId == null) return null;
+    if (
+      documentsArrays.accepted?.some(
+        (doc: Document) => doc.web3ProposalId === proposalId,
+      )
+    ) {
+      return 'accepted';
+    }
+    if (
+      documentsArrays.rejected?.some(
+        (doc: Document) => doc.web3ProposalId === proposalId,
+      )
+    ) {
+      return 'rejected';
+    }
+    if (
+      documentsArrays.onVoting?.some(
+        (doc: Document) => doc.web3ProposalId === proposalId,
+      )
+    ) {
+      return 'onVoting';
+    }
+    return null;
+  };
+
+  const proposalStatus = findDocumentStatus(documentsArrays, proposalId);
 
   return (
     <div className="flex flex-col gap-5">
@@ -88,6 +138,7 @@ export const ProposalDetail = ({
           isLoading={isLoading}
           label={label}
           createDate={formatDate(proposalDetails?.startTime ?? new Date())}
+          proposalStatus={proposalStatus}
         />
         <ButtonClose closeUrl={closeUrl} />
       </div>

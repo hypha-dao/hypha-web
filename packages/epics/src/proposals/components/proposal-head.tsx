@@ -1,5 +1,5 @@
 import { Text } from '@radix-ui/themes';
-import { Badge, StatusBadge, Skeleton } from '@hypha-platform/ui';
+import { Badge, Skeleton } from '@hypha-platform/ui';
 import { PersonAvatar } from '../../people/components/person-avatar';
 
 export type CreatorType = {
@@ -17,6 +17,7 @@ export type ProposalHeadProps = {
   isLoading?: boolean;
   label?: string;
   createDate?: string;
+  proposalStatus?: string | null;
 };
 
 export const ProposalHead = ({
@@ -24,14 +25,40 @@ export const ProposalHead = ({
   title,
   commitment,
   status,
-  isLoading,
+  isLoading = false,
   label,
   createDate,
+  proposalStatus,
 }: ProposalHeadProps) => {
   const displayName =
     creator?.type === 'space'
       ? creator.name
       : `${creator?.name} ${creator?.surname}`.trim();
+
+  const getStatusBadgeProps = (): {
+    text: string;
+    colorVariant:
+      | 'success'
+      | 'error'
+      | 'warn'
+      | 'neutral'
+      | 'accent'
+      | null
+      | undefined;
+  } => {
+    switch (proposalStatus) {
+      case 'accepted':
+        return { text: 'Accepted', colorVariant: 'success' };
+      case 'rejected':
+        return { text: 'Rejected', colorVariant: 'error' };
+      case 'onVoting':
+        return { text: 'On Voting', colorVariant: 'warn' };
+      default:
+        return { text: '', colorVariant: 'neutral' };
+    }
+  };
+
+  const { text: statusText, colorVariant: statusColor } = getStatusBadgeProps();
 
   return (
     <div className="flex items-center space-x-3">
@@ -48,8 +75,21 @@ export const ProposalHead = ({
               {label}
             </Badge>
             {creator?.type === 'space' && (
-              <Badge variant="outline" colorVariant="neutral">
+              <Badge
+                variant="outline"
+                colorVariant="neutral"
+                isLoading={isLoading}
+              >
                 Space
+              </Badge>
+            )}
+            {proposalStatus && (
+              <Badge
+                variant="outline"
+                colorVariant={statusColor}
+                isLoading={isLoading}
+              >
+                {statusText}
               </Badge>
             )}
           </div>
