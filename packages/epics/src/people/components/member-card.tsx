@@ -10,6 +10,7 @@ import {
   Badge,
 } from '@hypha-platform/ui';
 import { SewingPinFilledIcon } from '@radix-ui/react-icons';
+import { formatDate } from '@hypha-platform/ui-utils';
 // TODO: need for #1309
 // import { useParams } from 'next/navigation';
 // import {
@@ -31,6 +32,7 @@ export type MemberCardProps = {
   isLoading?: boolean;
   minimize?: boolean;
   // isDelegate?: boolean;
+  createdAt?: Date;
 };
 
 export const MemberCard: React.FC<MemberCardProps> = ({
@@ -43,6 +45,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   isLoading,
   minimize,
   // isDelegate,
+  createdAt,
 }) => {
   // const { id: spaceSlug } = useParams();
   // const { space } = useSpaceBySlug(spaceSlug as string);
@@ -134,6 +137,18 @@ export const MemberCard: React.FC<MemberCardProps> = ({
             <div className="flex items-center text-gray-500">
               <SewingPinFilledIcon className="mr-1" />
               <Text className="text-1">{location}</Text>
+            </div>
+          </Skeleton>
+          <Skeleton
+            width="96px"
+            height="16px"
+            loading={isLoading}
+            // className={localIsDelegate ? 'mt-2' : ''}
+          >
+            <div className="flex items-center text-gray-500">
+              <Text className="text-1">
+                {formatDate(createdAt ?? new Date(), true)}
+              </Text>
             </div>
           </Skeleton>
         </div>
