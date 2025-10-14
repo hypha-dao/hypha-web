@@ -188,10 +188,7 @@ export const SpaceForm = ({
   const updateSlug = React.useCallback(
     (title: string) => {
       const preparedSlug = slugify(title, { lower: true });
-      const currentSlug = form.getValues('slug');
-      if (preparedSlug !== currentSlug) {
-        form.setValue('slug', preparedSlug);
-      }
+      form.setValue('slug', preparedSlug);
     },
     [form],
   );
