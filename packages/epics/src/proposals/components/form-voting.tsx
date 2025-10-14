@@ -2,7 +2,11 @@ import { Button, Skeleton, Separator } from '@hypha-platform/ui';
 import { ProgressLine } from './progress-line';
 import { intervalToDuration, isPast } from 'date-fns';
 import { VoterList } from '../../governance/components/voter-list';
-import { useMyVote, useIsDelegate, type SpaceDetails } from '@hypha-platform/core/client';
+import {
+  useMyVote,
+  useIsDelegate,
+  type SpaceDetails,
+} from '@hypha-platform/core/client';
 import { useJoinSpace } from '../../spaces';
 
 function formatTimeRemaining(
