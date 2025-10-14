@@ -172,6 +172,13 @@ const energyDistributionAbi = [
     stateMutability: 'view',
     type: 'function',
   },
+  {
+    inputs: [],
+    name: 'getContractVersion',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'pure',
+    type: 'function',
+  },
   // Events
   {
     anonymous: false,
@@ -316,6 +323,19 @@ async function runEnergySimulation(
   );
 
   try {
+    // Check contract version
+    try {
+      const version = await (energyDistribution as any).getContractVersion();
+      console.log(`🔢 Contract Version: ${version}`);
+      if (version.toString() === '2') {
+        console.log('✅ Running UPGRADED contract with batched payment fix!\n');
+      } else {
+        console.log('⚠️  Running OLD contract version (pre-fix)\n');
+      }
+    } catch (error) {
+      console.log('⚠️  Contract version check failed - running OLD contract (pre-fix)\n');
+    }
+
     // Step 1: Display initial state
     console.log('📊 STEP 1: Current Contract State');
     console.log('-'.repeat(50));
@@ -385,19 +405,24 @@ async function runEnergySimulation(
     console.log('-'.repeat(50));
     console.log('💡 Simulating household energy usage...');
 
-    // Define consumption requests - BALANCED to avoid zero-sum violations
-    // ✅ Strategy: Households mostly consume LESS than they own (self-consumption)
+    // Define consumption requests - BALANCED to consume ALL distributed energy
+    // Distributed: 120 kWh total (200 solar - 80 battery charge)
+    // Breakdown by ownership:
+    //   H1 (30%): 36 kWh
+    //   H2 (25%): 30 kWh
+    //   H3 (20%): 24 kWh
+    //   H4 (15%): 18 kWh
+    //   H5 (10%): 12 kWh
+    // ✅ Strategy: Each household consumes exactly what they own (100% self-consumption)
     // ✅ This creates self-consumption payments: Member → Community (maintains zero-sum)
-    // ✅ Export uses leftover member tokens: Token owner gets paid, Export balance decreases
-    // ✅ No complex cross-member trading that could create accounting discrepancies
+    // ✅ All distributed energy is consumed, allowing next distribution cycle
     const consumptionRequests = [
-      { deviceId: 1, quantity: 25 }, // Household 1: 25 kWh (has 36, pure self-consumption)
-      { deviceId: 2, quantity: 20 }, // Household 2: 20 kWh (has 30, pure self-consumption)
-      { deviceId: 3, quantity: 15 }, // Household 3: 15 kWh (has 24, pure self-consumption)
-      { deviceId: 4, quantity: 10 }, // Household 4: 10 kWh (has 18, pure self-consumption)
-      { deviceId: 5, quantity: 8 }, // Household 5: 8 kWh (has 12, pure self-consumption)
-      // NOTE: Exports temporarily disabled - they create zero-sum violations when combined with imports
-      // TODO: Future enhancement needed for proper export+import accounting
+      { deviceId: 1, quantity: 36 }, // Household 1: consumes all 36 kWh
+      { deviceId: 2, quantity: 30 }, // Household 2: consumes all 30 kWh
+      { deviceId: 3, quantity: 24 }, // Household 3: consumes all 24 kWh
+      { deviceId: 4, quantity: 18 }, // Household 4: consumes all 18 kWh
+      { deviceId: 5, quantity: 12 }, // Household 5: consumes all 12 kWh
+      // Total: 120 kWh - matches distributed amount exactly
     ];
 
     console.log('📋 Consumption Requests:');
@@ -448,15 +473,17 @@ async function runEnergySimulation(
     }
   } catch (error) {
     console.error('\n❌ Simulation failed:', error);
-    if (error.message.includes('revert')) {
-      console.log(
-        '💡 This might be due to insufficient energy tokens or other business logic constraints.',
-      );
-    }
-    if (error.message.includes('Community address not set')) {
-      console.log(
-        '💡 Run: npm run setup-community to fix the community address issue.',
-      );
+    if (error instanceof Error) {
+      if (error.message.includes('revert')) {
+        console.log(
+          '💡 This might be due to insufficient energy tokens or other business logic constraints.',
+        );
+      }
+      if (error.message.includes('Community address not set')) {
+        console.log(
+          '💡 Run: npm run setup-community to fix the community address issue.',
+        );
+      }
     }
   }
 }
@@ -637,7 +664,7 @@ async function displayContractState(
         `\n🌊 Collective Pool: ${collectiveConsumption.length} energy batches available`,
       );
       let totalPoolEnergy = 0;
-      collectiveConsumption.forEach((item, index) => {
+      collectiveConsumption.forEach((item: any, index: number) => {
         const quantity = Number(item.quantity);
         totalPoolEnergy += quantity;
         if (quantity > 0) {
@@ -654,7 +681,11 @@ async function displayContractState(
       console.log(`🌊 Collective Pool: Unable to fetch data`);
     }
   } catch (error) {
-    console.log(`❌ Error displaying state: ${error.message}`);
+    console.log(
+      `❌ Error displaying state: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
   }
 
   console.log(''); // Empty line
@@ -716,7 +747,11 @@ async function analyzeTransactionEvents(
       }
     });
   } catch (error) {
-    console.log(`❌ Error analyzing events: ${error.message}`);
+    console.log(
+      `❌ Error analyzing events: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
   }
 }
 

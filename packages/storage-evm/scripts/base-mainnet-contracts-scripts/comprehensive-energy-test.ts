@@ -627,8 +627,8 @@ async function runComprehensiveTest() {
     );
   } catch (error) {
     console.error('❌ Test failed:', error);
-    if (error.reason) {
-      console.error('Reason:', error.reason);
+    if (error instanceof Error && 'reason' in error) {
+      console.error('Reason:', (error as any).reason);
     }
   }
 }

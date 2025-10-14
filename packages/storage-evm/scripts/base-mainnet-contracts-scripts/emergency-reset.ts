@@ -354,10 +354,11 @@ async function executeEmergencyReset(): Promise<void> {
   } catch (error) {
     console.error('\n❌ Emergency reset failed:', error);
 
-    if (error.message.includes('Ownable: caller is not the owner')) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('Ownable: caller is not the owner')) {
       console.log('💡 Only the contract owner can execute emergency reset');
       console.log('💡 Make sure you are using the correct admin wallet');
-    } else if (error.message.includes('Zero-sum violation')) {
+    } else if (errorMessage.includes('Zero-sum violation')) {
       console.log(
         '💡 The reset itself may have succeeded, but the zero-sum check failed',
       );
