@@ -709,6 +709,9 @@ importers:
         specifier: ^0.3.0
         version: 0.3.0
     devDependencies:
+      '@hypha-platform/config-typescript':
+        specifier: workspace:*
+        version: link:../../config/typescript
       '@types/yamljs':
         specifier: ^0.2.34
         version: 0.2.34
