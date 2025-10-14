@@ -10,7 +10,7 @@ type Files = z.infer<typeof schemaCreateSpaceFiles>;
 export type UseSpaceFileUploadsReturn = {
   isLoading: boolean;
   files: { [K in keyof Files]?: string } | null;
-  upload: (fileInput: Files, id: number) => Promise<void>;
+  upload: (fileInput: Files, slug: string | null | undefined) => Promise<void>;
   error: string | null;
   reset: () => void;
 };
@@ -19,7 +19,7 @@ export const useSpaceFileUploads = (
   authToken?: string | null,
   onSuccess?: (
     uploadedFiles: { [K in keyof Files]?: string },
-    id: number,
+    slug?: string | null | undefined,
   ) => Promise<void> | void,
 ): UseSpaceFileUploadsReturn => {
   const [files, setFiles] = React.useState<
@@ -31,7 +31,7 @@ export const useSpaceFileUploads = (
   });
 
   const handleUpload = React.useCallback(
-    async (fileInput: Files, id: number) => {
+    async (fileInput: Files, slug: string | null | undefined) => {
       const uploadedFiles: { [K in keyof Files]?: string } = {};
 
       const uploadPromises = Object.entries(fileInput).map(
@@ -55,7 +55,7 @@ export const useSpaceFileUploads = (
 
       await Promise.all(uploadPromises);
       setFiles(uploadedFiles);
-      await onSuccess?.(uploadedFiles, id);
+      await onSuccess?.(uploadedFiles, slug);
     },
     [upload, onSuccess],
   );

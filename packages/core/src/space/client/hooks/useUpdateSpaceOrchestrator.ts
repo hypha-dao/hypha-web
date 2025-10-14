@@ -90,12 +90,9 @@ export const useUpdateSpaceOrchestrator = ({
   authToken,
 }: UseUpdateSpaceInput) => {
   const web2 = useSpaceMutationsWeb2Rsc(authToken);
-  const files = useSpaceFileUploads(authToken, async (uploadedFiles, id) => {
-    if (!uploadedFiles.leadImage && !uploadedFiles.logoUrl) {
-      return;
-    }
-    await web2.updateSpaceById({
-      id,
+  const files = useSpaceFileUploads(authToken, (uploadedFiles, slug) => {
+    web2.updateSpaceBySlug({
+      slug: slug ?? '',
       ...uploadedFiles,
     });
   });
@@ -136,19 +133,16 @@ export const useUpdateSpaceOrchestrator = ({
 
   const { trigger: updateSpace, isMutating } = useSWRMutation(
     'updateSpaceMutation',
-    async (
-      _,
-      { arg }: { arg: { id: number; data: z.infer<typeof schemaUpdateSpace> } },
-    ) => {
+    async (_, { arg }: { arg: z.infer<typeof schemaUpdateSpace> }) => {
       try {
         console.debug('updateSpaceMutation called with arg:', arg);
-        const { id, data } = arg;
-        invariant(id, 'id is required');
+        const { slug } = arg;
+        invariant(slug, 'slug is required');
 
-        const filesInput = schemaCreateSpaceFiles.parse(data);
+        const filesInput = schemaCreateSpaceFiles.parse(arg);
         if (Object.values(filesInput).some((file) => file)) {
           startTask('UPLOAD_FILES');
-          await files.upload(filesInput, id);
+          await files.upload(filesInput, slug);
           completeTask('UPLOAD_FILES');
         } else {
           startTask('UPLOAD_FILES');
@@ -156,13 +150,13 @@ export const useUpdateSpaceOrchestrator = ({
         }
 
         startTask('UPDATE_WEB2_SPACE');
-        const updateInput = schemaUpdateSpace.parse(data);
-        const result = await web2.updateSpaceById({
+        const updateInput = schemaUpdateSpace.parse(arg);
+        const result = await web2.updateSpaceBySlug({
           ...updateInput,
-          id,
+          slug,
         });
 
-        console.debug('updateSpaceById result:', result);
+        console.debug('updateSpaceBySlug result:', result);
         completeTask('UPDATE_WEB2_SPACE');
 
         return result;
@@ -182,12 +176,12 @@ export const useUpdateSpaceOrchestrator = ({
   );
 
   const errors = useMemo(() => {
-    return [web2.errorUpdateSpaceByIdMutation, files.error].filter(Boolean);
-  }, [web2.errorUpdateSpaceByIdMutation, files.error]);
+    return [web2.errorUpdateSpaceBySlugMutation, files.error].filter(Boolean);
+  }, [web2.errorUpdateSpaceBySlugMutation, files.error]);
 
   const reset = useCallback(() => {
     resetTasks();
-    web2.resetUpdateSpaceByIdMutation();
+    web2.resetUpdateSpaceBySlugMutation();
     files.reset();
   }, [resetTasks, web2, files]);
 
