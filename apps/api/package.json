@@ -12,7 +12,7 @@
     "dev": "tsx src/server.ts",
     "prebuild": "pnpm codegen",
     "build": "tsc",
-    "postbuild": "esbuild src/server.ts --bundle --minify --platform=node --external:yamljs --external:fs --outfile=dist/server.js --external:@fastify/swagger --external:@fastify/swagger-ui",
+    "postbuild": "node esbuild.mjs",
     "start": "node dist/server.js"
   },
   "dependencies": {
