@@ -247,7 +247,10 @@ export const ProposalDetail = ({
           status={status}
           isLoading={isLoading}
           label={label}
-          createDate={formatDate(proposalDetails?.startTime ?? new Date())}
+          createDate={formatDate(
+            proposalDetails?.startTime ?? new Date(),
+            true,
+          )}
           proposalStatus={proposalStatus}
         />
         <ButtonClose closeUrl={closeUrl} />
