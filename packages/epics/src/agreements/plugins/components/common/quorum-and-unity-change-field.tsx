@@ -123,7 +123,7 @@ export function QuorumAndUnityChangerField({
           </FormControl>
           <FormMessage />
           {fieldValue.quorum === 0 && fieldValue.unity === 0 && (
-            <span className="text-2 text-foreground mt-2">
+            <span className="text-2 text-error-11 mt-2">
               Quorum and unity cannot both be set to 0%
             </span>
           )}
