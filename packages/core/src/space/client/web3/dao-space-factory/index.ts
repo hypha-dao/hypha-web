@@ -20,3 +20,4 @@ export * from './get-delegates-for-space';
 export * from './undelegate';
 export * from './get-delegate';
 export * from './get-spaces-for-delegate';
+export * from './get-space-token-requirements';

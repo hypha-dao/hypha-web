@@ -49,6 +49,8 @@ export interface CreateAgreementInput {
   description: string;
   leadImage?: string;
   attachments?: (string | Attachment)[];
+  web3ProposalId?: number;
+  state?: DocumentState;
   slug?: string;
   spaceId: number;
   creatorId: number;

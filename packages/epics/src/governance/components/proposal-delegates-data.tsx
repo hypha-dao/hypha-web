@@ -18,7 +18,7 @@ export const ProposalDelegatesData = ({
   return (
     <div className="flex flex-col gap-5">
       <div className="flex w-full justify-between items-center">
-        <span className="text-2 text-neutral-11">Space to Join</span>
+        <span className="text-2 text-neutral-11">Joining Space</span>
         <span className="flex gap-2 text-2 text-neutral-11">
           <Image
             className="w-[24px] h-[24px] rounded-lg"

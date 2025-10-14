@@ -221,6 +221,19 @@ export function decodeTransaction(tx: Tx) {
           : null;
       },
     },
+    {
+      abi: daoSpaceFactoryImplementationAbi,
+      handler: (decoded) => {
+        return decoded.functionName === 'joinSpace'
+          ? {
+              type: 'joinSpace',
+              data: {
+                spaceId: decoded.args[0],
+              },
+            }
+          : null;
+      },
+    },
   ];
 
   for (const { abi, handler } of decoders) {

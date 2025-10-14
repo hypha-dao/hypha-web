@@ -40,6 +40,7 @@ type AssetItem = {
   transactions: TransactionCardProps[];
   closeUrl: string;
   slug: string;
+  address: string;
 };
 
 type UseAssetsReturn = {

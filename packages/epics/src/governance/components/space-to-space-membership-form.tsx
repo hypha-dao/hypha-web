@@ -16,6 +16,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useConfig } from 'wagmi';
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import { useSpaceTokenRequirementsByAddress } from '../hooks';
 
 interface SpaceToSpaceMembershipFormProps {
   successfulUrl: string;
@@ -75,8 +76,21 @@ export const SpaceToSpaceMembershipForm = ({
     }
   }, [progress, agreementSlug]);
 
+  const spaceAddress = form.watch('space');
+
+  const { hasTokenRequirements, hasEnoughTokens, missingTokenMessage } =
+    useSpaceTokenRequirementsByAddress({
+      spaceAddress,
+      spaces,
+    });
+
   const handleCreate = async (data: FormValues) => {
     if (!data.space || !data.member) return;
+
+    if (hasTokenRequirements && !hasEnoughTokens) {
+      console.warn('Cannot submit proposal: not enough tokens.');
+      return;
+    }
 
     try {
       await spaceToSpaceAction({
@@ -127,10 +141,21 @@ export const SpaceToSpaceMembershipForm = ({
             label="Space To Space"
           />
           {children}
+
           <Separator />
+
           <div className="flex justify-end w-full">
-            <Button type="submit">Publish</Button>
+            <Button
+              disabled={hasTokenRequirements && !hasEnoughTokens}
+              type="submit"
+            >
+              Publish
+            </Button>
           </div>
+
+          {hasTokenRequirements && !hasEnoughTokens && (
+            <div className="text-error-11 text-2">{missingTokenMessage}</div>
+          )}
         </form>
       </Form>
     </LoadingBackdrop>

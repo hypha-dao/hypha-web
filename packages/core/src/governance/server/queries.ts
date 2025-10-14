@@ -7,6 +7,7 @@ import {
   spaces,
   people,
   Person as DbPerson,
+  Space as DbSpace,
 } from '@hypha-platform/storage-postgres';
 
 import { DocumentState } from '../types';
@@ -16,12 +17,48 @@ import {
   Order,
   PaginationParams,
 } from '@hypha-platform/core/client';
-import { Document, Creator } from '../types';
+import { Document } from '../types';
+import { alias } from 'drizzle-orm/pg-core';
+
+type CreatorType = {
+  avatarUrl?: string;
+  name?: string;
+  surname?: string;
+  type?: 'person' | 'space';
+};
 
 export const mapToDocument = (
   dbDocument: DbDocument,
-  creator?: DbPerson,
-): Document & { creator?: Creator } => {
+  personCreator?: DbPerson | null,
+  spaceCreator?: DbSpace | null,
+): Document & { creator?: CreatorType } => {
+  let actualCreator: CreatorType | undefined;
+
+  const isInviteSpace = dbDocument.title === 'Invite Space';
+
+  if (isInviteSpace && spaceCreator) {
+    actualCreator = {
+      avatarUrl: spaceCreator.logoUrl || '',
+      name: spaceCreator.title || '',
+      surname: '',
+      type: 'space',
+    };
+  } else if (personCreator) {
+    actualCreator = {
+      avatarUrl: personCreator.avatarUrl || '',
+      name: personCreator.name || '',
+      surname: personCreator.surname || '',
+      type: 'person',
+    };
+  } else if (spaceCreator) {
+    actualCreator = {
+      avatarUrl: spaceCreator.logoUrl || '',
+      name: spaceCreator.title || '',
+      surname: '',
+      type: 'space',
+    };
+  }
+
   return {
     id: dbDocument.id,
     creatorId: dbDocument.creatorId,
@@ -34,11 +71,7 @@ export const mapToDocument = (
     createdAt: dbDocument.createdAt,
     updatedAt: dbDocument.updatedAt,
     web3ProposalId: dbDocument.web3ProposalId,
-    creator: {
-      avatarUrl: creator?.avatarUrl || '',
-      name: creator?.name || '',
-      surname: creator?.surname || '',
-    },
+    creator: actualCreator,
     label: dbDocument.label || '',
   };
 };
@@ -51,18 +84,26 @@ export const findDocumentById = async (
   { id }: FindDocumentByIdInput,
   { db }: DbConfig,
 ) => {
+  const spaceCreator = alias(spaces, 'space_creator');
+
   const result = await db
     .select({
       document: documents,
-      creator: people,
+      personCreator: people,
+      spaceCreator: spaceCreator,
     })
     .from(documents)
-    .innerJoin(people, eq(documents.creatorId, people.id))
+    .leftJoin(people, eq(documents.creatorId, people.id))
+    .leftJoin(spaceCreator, eq(documents.creatorId, spaceCreator.id))
     .where(eq(documents.id, id))
     .limit(1);
 
   return result[0]
-    ? mapToDocument(result[0].document, result[0].creator)
+    ? mapToDocument(
+        result[0].document,
+        result[0].personCreator ?? undefined,
+        result[0].spaceCreator ?? undefined,
+      )
     : null;
 };
 
@@ -74,13 +115,48 @@ export const findDocumentWithSpaceById = async (
   { id }: FindDocumentWithSpaceByIdInput,
   { db }: DbConfig,
 ) => {
+  const spaceCreator = alias(spaces, 'space_creator');
+
   const result = await db
     .select({
       document: documents,
       space: spaces,
+      personCreator: people,
+      spaceCreator: spaceCreator,
     })
     .from(documents)
     .innerJoin(spaces, eq(documents.spaceId, spaces.id))
+    .leftJoin(people, eq(documents.creatorId, people.id))
+    .leftJoin(spaceCreator, eq(documents.creatorId, spaceCreator.id))
+    .where(eq(documents.web3ProposalId, id))
+    .limit(1);
+
+  return result[0]
+    ? mapToDocument(
+        result[0].document,
+        result[0].personCreator ?? undefined,
+        result[0].spaceCreator ?? undefined,
+      )
+    : null;
+};
+
+export const findDocumentWithSpaceByIdRaw = async (
+  { id }: FindDocumentWithSpaceByIdInput,
+  { db }: DbConfig,
+) => {
+  const spaceCreator = alias(spaces, 'space_creator');
+
+  const result = await db
+    .select({
+      document: documents,
+      space: spaces,
+      personCreator: people,
+      spaceCreator: spaceCreator,
+    })
+    .from(documents)
+    .innerJoin(spaces, eq(documents.spaceId, spaces.id))
+    .leftJoin(people, eq(documents.creatorId, people.id))
+    .leftJoin(spaceCreator, eq(documents.creatorId, spaceCreator.id))
     .where(eq(documents.web3ProposalId, id))
     .limit(1);
 
@@ -95,31 +171,49 @@ export const findDocumentBySlug = async (
   { slug }: FindDocumentBySlugInput,
   { db }: DbConfig,
 ) => {
+  const spaceCreator = alias(spaces, 'space_creator');
+
   const result = await db
     .select({
       document: documents,
-      creator: people,
+      personCreator: people,
+      spaceCreator: spaceCreator,
     })
     .from(documents)
-    .innerJoin(people, eq(documents.creatorId, people.id))
+    .leftJoin(people, eq(documents.creatorId, people.id))
+    .leftJoin(spaceCreator, eq(documents.creatorId, spaceCreator.id))
     .where(eq(documents.slug, slug))
     .limit(1);
 
   return result[0]
-    ? mapToDocument(result[0].document, result[0].creator)
+    ? mapToDocument(
+        result[0].document,
+        result[0].personCreator ?? undefined,
+        result[0].spaceCreator ?? undefined,
+      )
     : null;
 };
 
 export const findAllDocuments = async ({ db }: DbConfig) => {
+  const spaceCreator = alias(spaces, 'space_creator');
+
   const results = await db
     .select({
       document: documents,
-      creator: people,
+      personCreator: people,
+      spaceCreator: spaceCreator,
     })
     .from(documents)
-    .innerJoin(people, eq(documents.creatorId, people.id));
+    .leftJoin(people, eq(documents.creatorId, people.id))
+    .leftJoin(spaceCreator, eq(documents.creatorId, spaceCreator.id));
 
-  return results.map((row) => mapToDocument(row.document, row.creator));
+  return results.map((row) =>
+    mapToDocument(
+      row.document,
+      row.personCreator ?? undefined,
+      row.spaceCreator ?? undefined,
+    ),
+  );
 };
 
 export type FindAllDocumentsBySpaceSlugConfig = {
@@ -166,6 +260,8 @@ export const findAllDocumentsBySpaceSlug = async (
   { spaceSlug }: FindAllDocumentsBySpaceSlugInput,
   { db, searchTerm, ...config }: FindAllDocumentsBySpaceSlugConfig,
 ) => {
+  const spaceCreator = alias(spaces, 'space_creator');
+
   const {
     pagination: { page = 1, pageSize = 10, order = [] },
     filter = {},
@@ -197,24 +293,29 @@ export const findAllDocumentsBySpaceSlug = async (
   const results = await db
     .select({
       document: documents,
-      creator: people,
+      personCreator: people,
+      spaceCreator: spaceCreator,
       total: sql<number>`cast(count(*) over() as integer)`,
     })
     .from(documents)
     .innerJoin(spaces, eq(documents.spaceId, spaces.id))
-    .innerJoin(people, eq(documents.creatorId, people.id))
+    .leftJoin(people, eq(documents.creatorId, people.id))
+    .leftJoin(spaceCreator, eq(documents.creatorId, spaceCreator.id))
     .where(and(...conditions))
     .orderBy(...orderBy)
     .limit(pageSize)
     .offset(offset);
 
-  // @ts-ignore TODO: fix types
-  const total = results.length > 0 ? results[0].total : 0;
+  const total = results.length > 0 ? results[0]?.total ?? 0 : 0;
   const totalPages = Math.ceil(total / pageSize);
 
   return {
     data: results.map((result) =>
-      mapToDocument(result.document, result.creator),
+      mapToDocument(
+        result.document,
+        result.personCreator ?? undefined,
+        result.spaceCreator ?? undefined,
+      ),
     ),
     pagination: {
       total,
@@ -228,19 +329,27 @@ export const findAllDocumentsBySpaceSlug = async (
 };
 
 export const findMostRecentDocuments = async ({ db }: DbConfig) => {
+  const spaceCreator = alias(spaces, 'space_creator');
+
   const results = await db
     .select({
       document: documents,
-      creator: people,
+      personCreator: people,
+      spaceCreator: spaceCreator,
     })
     .from(documents)
-    .innerJoin(people, eq(documents.creatorId, people.id))
-    .orderBy(documents.createdAt)
+    .leftJoin(people, eq(documents.creatorId, people.id))
+    .leftJoin(spaceCreator, eq(documents.creatorId, spaceCreator.id))
+    .orderBy(desc(documents.createdAt))
     .limit(1);
 
-  return results.length > 0
-    ? // @ts-ignore TODO: fix types
-      mapToDocument(results[0].document, results[0].creator)
+  const firstResult = results[0];
+  return firstResult
+    ? mapToDocument(
+        firstResult.document,
+        firstResult.personCreator ?? undefined,
+        firstResult.spaceCreator ?? undefined,
+      )
     : null;
 };
 
@@ -260,6 +369,8 @@ export const findAllDocumentsBySpaceSlugWithoutPagination = async (
   }: FindAllDocumentsBySpaceSlugWithoutPaginationInput,
   { db }: DbConfig,
 ) => {
+  const spaceCreator = alias(spaces, 'space_creator');
+
   const conditions = [eq(spaces.slug, spaceSlug)];
 
   if (filter.state) {
@@ -285,15 +396,21 @@ export const findAllDocumentsBySpaceSlugWithoutPagination = async (
   const results = await db
     .select({
       document: documents,
-      creator: people,
+      personCreator: people,
+      spaceCreator: spaceCreator,
     })
     .from(documents)
     .innerJoin(spaces, eq(documents.spaceId, spaces.id))
-    .innerJoin(people, eq(documents.creatorId, people.id))
+    .leftJoin(people, eq(documents.creatorId, people.id))
+    .leftJoin(spaceCreator, eq(documents.creatorId, spaceCreator.id))
     .where(and(...conditions))
     .orderBy(...orderBy);
 
   return results.map((result) =>
-    mapToDocument(result.document, result.creator),
+    mapToDocument(
+      result.document,
+      result.personCreator ?? undefined,
+      result.spaceCreator ?? undefined,
+    ),
   );
 };

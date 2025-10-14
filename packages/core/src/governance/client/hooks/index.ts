@@ -21,3 +21,4 @@ export * from './useActivateSpacesOrchestrator';
 export * from './useActivateSpacesMutations.web3.rsc';
 export * from './useSpaceToSpaceMembershipOrchestrator';
 export * from './useSpaceToSpaceMembershipMutations.web3.rsc';
+export * from './useJoinSpaceProposalHandler';
