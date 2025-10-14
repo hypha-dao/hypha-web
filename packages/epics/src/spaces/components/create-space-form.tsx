@@ -178,8 +178,8 @@ export const SpaceForm = ({
 
   React.useEffect(() => {
     const { title } = form.getValues();
-    const { isDirty } = form.getFieldState('title');
-    if (!values && !title && !isDirty) {
+    const { isTouched } = form.getFieldState('title');
+    if ((!values || values.title) && !title && !isTouched) {
       return;
     }
     form.trigger('slug');
