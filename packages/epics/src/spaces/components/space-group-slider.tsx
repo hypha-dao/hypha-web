@@ -89,6 +89,7 @@ export const SpaceGroupSlider = ({
                     /\/*$/,
                     '',
                   )}/space-configuration`}
+                  createdAt={space.createdAt}
                 />
               </Link>
             </CarouselItem>

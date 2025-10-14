@@ -30,6 +30,7 @@ import {
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
 import { Breadcrumbs } from './_components/breadcrumbs';
+import { formatDate } from '@hypha-platform/ui-utils';
 
 export default async function DhoLayout({
   aside,
@@ -131,6 +132,11 @@ export default async function DhoLayout({
             </div>
             <div className="text-gray-500 ml-1 text-1">Agreements</div>
           </div>
+          <div className="flex">
+            <div className="text-gray-500 ml-1 text-1">
+              {formatDate(spaceFromDb.createdAt, true)}
+            </div>
+          </div>
           <SubscriptionBadge web3SpaceId={spaceFromDb.web3SpaceId as number} />
           <SpaceModeLabel
             web3SpaceId={spaceFromDb.web3SpaceId as number}
@@ -178,6 +184,7 @@ export default async function DhoLayout({
                           lang,
                           space.slug,
                         )}/space-configuration`}
+                        createdAt={space.createdAt}
                       />
                     </Link>
                   </CarouselItem>

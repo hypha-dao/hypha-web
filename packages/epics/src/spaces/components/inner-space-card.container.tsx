@@ -50,6 +50,7 @@ export const InnerSpaceCardContainer = ({
                     ? 'border-2 border-action-light'
                     : undefined
                 }
+                createdAt={space.createdAt}
               />
             ) : (
               <InnerSpaceCardWrapper

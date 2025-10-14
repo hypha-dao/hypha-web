@@ -92,6 +92,7 @@ export default async function Index(props: PageProps) {
                       isSandbox={space.flags?.includes('sandbox') ?? false}
                       isDemo={space.flags?.includes('demo') ?? false}
                       web3SpaceId={space.web3SpaceId as number}
+                      createdAt={space.createdAt}
                       configPath={`${getDhoPathAgreements(
                         lang,
                         space.slug,
