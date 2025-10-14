@@ -120,7 +120,6 @@ export const SpaceForm = ({
   }
 
   const [slugDuplicated, setSlugDuplicated] = React.useState(false);
-  const [justInitialized, setJustInitialized] = React.useState(false);
 
   const resolveSlug = React.useCallback(
     () => !slugDuplicated,
@@ -178,6 +177,11 @@ export const SpaceForm = ({
   }, [spaceId, slugExists, foundSpaceId, slugIsChecking]);
 
   React.useEffect(() => {
+    const { title } = form.getValues();
+    const { isDirty } = form.getFieldState('title');
+    if (!values && !title && !isDirty) {
+      return;
+    }
     form.trigger('slug');
   }, [form, slugDuplicated]);
 
@@ -185,13 +189,11 @@ export const SpaceForm = ({
     (title: string) => {
       const preparedSlug = slugify(title, { lower: true });
       const currentSlug = form.getValues('slug');
-      if (justInitialized) {
-        setJustInitialized(false);
-      } else if (preparedSlug !== currentSlug) {
+      if (preparedSlug !== currentSlug) {
         form.setValue('slug', preparedSlug);
       }
     },
-    [form, justInitialized],
+    [form],
   );
 
   React.useEffect(() => {
@@ -207,7 +209,6 @@ export const SpaceForm = ({
 
   React.useEffect(() => {
     if (!values) return;
-    setJustInitialized(true);
     form.reset(
       { ...form.getValues(), ...values },
       { keepDirty: true, keepTouched: false },
