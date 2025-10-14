@@ -36,7 +36,7 @@ export const SpaceMemberCard: React.FC<{
             alt={space.title}
           />
         </Skeleton>
-        <div className="flex flex-col justify-center">
+        <div className="flex flex-col justify-center grow">
           <Badge className="w-fit" colorVariant="accent">
             Space
           </Badge>
@@ -46,8 +46,10 @@ export const SpaceMemberCard: React.FC<{
           <Skeleton height="16px" width="120px" loading={isLoading}>
             <Text className="text-1 text-neutral-11">{space.description}</Text>
           </Skeleton>
+        </div>
+        <div className="flex justify-between flex-col gap-6 items-end">
           <Skeleton height="16px" width="120px" loading={isLoading}>
-            <Text className="text-1 text-neutral-11">
+            <Text className="text-1 text-gray-500">
               {formatDate(space.createdAt, true)}
             </Text>
           </Skeleton>
