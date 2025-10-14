@@ -9,11 +9,12 @@ import { Image } from '@hypha-platform/ui';
 import { PersonLabel } from '../../people/components/person-label';
 import { type Creator } from '../../people/components/person-label';
 import { type BadgeItem, BadgesList } from '@hypha-platform/ui';
-import { stripMarkdown } from '@hypha-platform/ui-utils';
+import { formatDate, stripMarkdown } from '@hypha-platform/ui-utils';
 
 interface Document {
   title?: string;
   description?: string;
+  createdAt?: Date;
 }
 
 interface DocumentCardProps {
@@ -50,6 +51,7 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
   creator,
   badges,
   interactions,
+  createdAt,
 }) => {
   return (
     <Card className="h-full w-full space-y-5">
@@ -97,6 +99,16 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
                 }),
               )}
             </div>
+          </Skeleton>
+        </div>
+        <div className="flex flex-grow text-1 text-neutral-11">
+          <Skeleton
+            className="min-w-full"
+            width="200px"
+            height="48px"
+            loading={isLoading}
+          >
+            {createdAt && formatDate(createdAt, true)}
           </Skeleton>
         </div>
         {interactions}
