@@ -145,7 +145,12 @@ export const SpaceToSpaceMembershipForm = ({
           <Separator />
 
           <div className="flex justify-end w-full">
-            <Button type="submit">Publish</Button>
+            <Button
+              disabled={hasTokenRequirements && !hasEnoughTokens}
+              type="submit"
+            >
+              Publish
+            </Button>
           </div>
 
           {hasTokenRequirements && !hasEnoughTokens && (

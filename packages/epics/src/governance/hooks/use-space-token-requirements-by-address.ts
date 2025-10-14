@@ -12,10 +12,21 @@ interface Props {
   spaces?: Space[];
 }
 
+interface UseSpaceTokenRequirementsResult {
+  isTokenBased: boolean;
+  hasTokenRequirements: boolean;
+  hasEnoughTokens: boolean;
+  missingTokenMessage: string | null;
+  spaceTokenRequirements: any;
+  selectedSpace: Space | undefined;
+  loading: boolean;
+  error: boolean;
+}
+
 export const useSpaceTokenRequirementsByAddress = ({
   spaceAddress,
   spaces,
-}: Props) => {
+}: Props): UseSpaceTokenRequirementsResult => {
   const { assets } = useAssets({ filter: { type: 'all' } });
 
   const normalizedAddress = spaceAddress?.toUpperCase();
@@ -28,13 +39,15 @@ export const useSpaceTokenRequirementsByAddress = ({
   const hasValidWeb3Id = web3SpaceId !== undefined && web3SpaceId !== null;
 
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({
-    spaceId: hasValidWeb3Id ? Number(web3SpaceId) : 0,
+    spaceId: Number(web3SpaceId as number),
   });
 
-  const isTokenBased = spaceDetails?.joinMethod === 1n;
+  const web3SpaceIdBigInt = useMemo(() => {
+    return web3SpaceId != null ? BigInt(web3SpaceId) : undefined;
+  }, [web3SpaceId]);
 
   const spaceTokenRequirements = useSpaceTokenRequirements({
-    spaceId: hasValidWeb3Id ? BigInt(web3SpaceId) : 0n,
+    spaceId: web3SpaceIdBigInt,
   });
 
   const [tokenAddress, requiredAmountRaw] =
@@ -42,18 +55,23 @@ export const useSpaceTokenRequirementsByAddress = ({
 
   const requiredAmount = requiredAmountRaw ? Number(requiredAmountRaw) : 0;
 
+  const isTokenBased = useMemo(() => {
+    return spaceDetails?.joinMethod === 1n;
+  }, [spaceDetails]);
+
   const hasTokenRequirements = useMemo(() => {
     return (
       isTokenBased &&
-      typeof tokenAddress === 'string' &&
-      tokenAddress.toLowerCase() !== zeroAddress.toLowerCase() &&
+      tokenAddress?.toLowerCase() !== zeroAddress.toLowerCase() &&
       requiredAmount > 0
     );
   }, [isTokenBased, tokenAddress, requiredAmount]);
 
-  const asset = assets?.find(
-    (a) => a.address?.toLowerCase() === tokenAddress?.toLowerCase(),
-  );
+  const asset = useMemo(() => {
+    return assets?.find(
+      (a) => a.address?.toLowerCase() === tokenAddress?.toLowerCase(),
+    );
+  }, [assets, tokenAddress]);
 
   const hasEnoughTokens = useMemo(() => {
     if (!hasTokenRequirements || !asset || asset.value === undefined)
@@ -62,13 +80,10 @@ export const useSpaceTokenRequirementsByAddress = ({
   }, [hasTokenRequirements, asset, requiredAmount]);
 
   const missingTokenMessage = useMemo(() => {
-    if (!hasTokenRequirements || hasEnoughTokens || !asset) return null;
+    if (!hasTokenRequirements || hasEnoughTokens) return null;
 
-    const formattedRequired = requiredAmount.toFixed(2);
-    const formattedCurrent = asset.value.toFixed(2);
-
-    return `Not enough tokens to join this space. Required: ${formattedRequired}, available: ${formattedCurrent}`;
-  }, [hasTokenRequirements, hasEnoughTokens, asset, requiredAmount]);
+    return `Your Space cannot join ${selectedSpace?.title} yet. This space requires specific tokens in your treasury. Fulfil the token requirements to gain access. Please contact ${selectedSpace?.title} for more details.`;
+  }, [hasTokenRequirements, hasEnoughTokens, selectedSpace?.title]);
 
   const loading = !selectedSpace || spaceDetails === undefined;
   const error = !hasValidWeb3Id && !!selectedSpace;

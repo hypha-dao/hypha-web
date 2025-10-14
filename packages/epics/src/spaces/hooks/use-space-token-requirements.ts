@@ -6,7 +6,7 @@ import {
   publicClient,
 } from '@hypha-platform/core/client';
 
-export function useSpaceTokenRequirements({ spaceId }: { spaceId: bigint }) {
+export function useSpaceTokenRequirements({ spaceId }: { spaceId?: bigint }) {
   const {
     data: requirements,
     isLoading,
