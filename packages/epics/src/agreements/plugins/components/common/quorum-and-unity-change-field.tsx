@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
+import { useTheme } from 'next-themes';
 import {
   FormField,
   FormItem,
@@ -29,6 +30,8 @@ export function QuorumAndUnityChangerField({
 }: QuorumAndUnityChangerFieldProps) {
   const { control, setValue } = useFormContext();
   const fieldValue = useWatch({ control, name }) || { quorum: 0, unity: 0 };
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
 
@@ -55,6 +58,16 @@ export function QuorumAndUnityChangerField({
     );
   };
 
+  const getTextColor = (value: number) => {
+    if (value >= 50) {
+      return 'text-white';
+    }
+    if (value === 0) {
+      return isDark ? 'text-white' : 'text-accent-9';
+    }
+    return isDark ? 'text-white' : 'text-accent-9';
+  };
+
   return (
     <FormField
       control={control}
@@ -79,30 +92,37 @@ export function QuorumAndUnityChangerField({
                   <div className="font-bold mb-2">{preset.title}</div>
                   <div className="space-y-3 text-sm text-neutral-11 w-full">
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 bg-neutral-3 h-5 rounded-2xl">
+                      <div className="flex-1 bg-neutral-3 h-5 rounded-2xl relative">
                         <div
-                          className="bg-accent-9 h-5 flex items-center justify-center rounded-2xl"
+                          className="bg-accent-9 h-5 rounded-2xl"
                           style={{
                             width: `${preset.quorum}%`,
-                            marginLeft:
-                              preset.quorum === 0 ? '24px' : undefined,
                           }}
+                        />
+                        <span
+                          className={`absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-xs ${getTextColor(
+                            preset.quorum,
+                          )}`}
                         >
-                          <span className="text-white">{preset.quorum}%</span>
-                        </div>
+                          {preset.quorum}%
+                        </span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 bg-neutral-3 h-5 rounded-2xl">
+                      <div className="flex-1 bg-neutral-3 h-5 rounded-2xl relative">
                         <div
-                          className="bg-accent-9 h-5 flex items-center justify-center rounded-2xl"
+                          className="bg-accent-9 h-5 rounded-2xl"
                           style={{
                             width: `${preset.unity}%`,
-                            marginLeft: preset.unity === 0 ? '24px' : undefined,
                           }}
+                        />
+                        <span
+                          className={`absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-xs ${getTextColor(
+                            preset.unity,
+                          )}`}
                         >
-                          <span className="text-white">{preset.unity}%</span>
-                        </div>
+                          {preset.unity}%
+                        </span>
                       </div>
                     </div>
                   </div>
