@@ -22,19 +22,22 @@ const votingMethods: VotingMethod[] = [
   {
     id: '1m1v',
     title: '1 Member 1 Vote',
-    description: 'Each member has an equal say, regardless of token holdings.',
+    description:
+      'Each member has an equal say in decisions, with no weighting by role, tokens, or stake, ensuring equality and shared power. Commonly used in community or ecosystem spaces.',
     icon: <PlusCircledIcon />,
   },
   {
     id: '1v1v',
     title: '1 Voice 1 Vote',
-    description: 'Votes are distributed based on membership or reputation.',
+    description:
+      'Each vote is tied to earned voice tokens, reflecting contributions, reputation, and commitment, but decays with inactivity to encourage engagement. Commonly used in core teams or contributor groups.',
     icon: <PlusCircledIcon />,
   },
   {
     id: '1t1v',
     title: '1 Token 1 Vote',
-    description: 'Voting power is proportional to the number of tokens held.',
+    description:
+      'Voting power is proportional to the number of tokens held, aligning influence with stake. Commonly used in value flows, treasury, or investment spaces.',
     icon: <PlusCircledIcon />,
   },
 ];
