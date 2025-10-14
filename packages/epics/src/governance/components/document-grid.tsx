@@ -11,6 +11,7 @@ interface Document {
   badges?: BadgeItem[];
   slug?: string;
   interactions?: React.ReactNode;
+  createdAt?: Date;
 }
 
 interface DocumentGridProps {
