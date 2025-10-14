@@ -77,6 +77,8 @@ export const CreateProposalChangeVotingMethodForm = ({
     mode: 'onChange',
   });
 
+  const { quorum = 0, unity = 0 } = form.watch('quorumAndUnity') ?? {};
+
   const getVotingMethod = (
     votingPowerSource: number | undefined,
   ): FormValues['votingMethod'] => {
@@ -131,6 +133,8 @@ export const CreateProposalChangeVotingMethodForm = ({
     }
   }, [progress, agreementSlug, router, successfulUrl]);
 
+  const isButtonDisabled = quorum === 0 && unity === 0;
+
   return (
     <LoadingBackdrop
       progress={progress}
@@ -166,7 +170,9 @@ export const CreateProposalChangeVotingMethodForm = ({
           {plugin}
           <Separator />
           <div className="flex justify-end w-full">
-            <Button type="submit">Publish</Button>
+            <Button type="submit" disabled={isButtonDisabled}>
+              Publish
+            </Button>
           </div>
         </form>
       </Form>
