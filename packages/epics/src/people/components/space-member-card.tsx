@@ -6,6 +6,7 @@ import { Text } from '@radix-ui/themes';
 import { useSpaceDelegate } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
+import { formatDate } from '@hypha-platform/ui-utils';
 
 export const SpaceMemberCard: React.FC<{
   space: Space;
@@ -44,6 +45,11 @@ export const SpaceMemberCard: React.FC<{
           </Skeleton>
           <Skeleton height="16px" width="120px" loading={isLoading}>
             <Text className="text-1 text-neutral-11">{space.description}</Text>
+          </Skeleton>
+          <Skeleton height="16px" width="120px" loading={isLoading}>
+            <Text className="text-1 text-neutral-11">
+              {formatDate(space.createdAt, true)}
+            </Text>
           </Skeleton>
         </div>
       </div>
