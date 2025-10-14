@@ -143,7 +143,7 @@ export const useUpdateSpaceOrchestrator = ({
       try {
         console.debug('updateSpaceMutation called with arg:', arg);
         const { id, data } = arg;
-        invariant(id, 'id is required');
+        invariant(Number.isFinite(id) && id > 0, 'valid id is required');
 
         const filesInput = schemaCreateSpaceFiles.parse(data);
         if (Object.values(filesInput).some((file) => file)) {

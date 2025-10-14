@@ -20,11 +20,11 @@ export const useSpaceBySlugExists = (
     [debouncedSpaceSlug],
   );
 
-  type FetchResult = { exists: boolean; spaceId: number };
+  type FetchResult = { exists: boolean; spaceId?: number };
 
   const { data, isLoading, error } = useSWR(
-    debouncedSpaceSlug ? [endpoint] : null,
-    async ([endpoint]) => {
+    debouncedSpaceSlug ? endpoint : null,
+    async (endpoint: string) => {
       const res = await fetch(endpoint);
       if (!res.ok) {
         throw new Error(`Failed to check slug existence: ${res.statusText}`);
