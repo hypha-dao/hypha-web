@@ -67,7 +67,6 @@ export default function AsideCreateSpacePage() {
           onSubmit={(values) => createSpace(values)}
           isLoading={isLoadingJwt}
           label="create"
-          slugIncorrectMessage="A space with this name already exists. Please choose a different name for your space."
         />
       </LoadingBackdrop>
     </SidePanel>

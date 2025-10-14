@@ -5,13 +5,11 @@ import useSWRMutation from 'swr/mutation';
 import {
   CreateSpaceInput,
   DeleteSpaceBySlugInput,
-  UpdateSpaceByIdInput,
   UpdateSpaceBySlugInput,
 } from '../../types';
 import {
   createSpaceAction,
   deleteSpaceBySlugAction,
-  updateSpaceByIdAction,
   updateSpaceBySlugAction,
 } from '@hypha-platform/core/space/server/actions';
 
@@ -25,31 +23,19 @@ export const useSpaceMutationsWeb2Rsc = (authToken?: string | null) => {
   } = useSWRMutation(
     authToken ? [authToken, 'createSpace'] : null,
     async ([authToken], { arg }: { arg: CreateSpaceInput }) =>
-      await createSpaceAction(arg, { authToken }),
+      createSpaceAction(arg, { authToken }),
   );
 
   const {
     trigger: updateBySlugMutation,
     reset: resetUpdateSpaceBySlugMutation,
-    isMutating: isUpdatingSpaceBySlug,
+    isMutating: isUpdatingSpace,
     error: errorUpdateSpaceBySlugMutation,
-    data: updatedSpaceBySlug,
+    data: updatedSpace,
   } = useSWRMutation(
-    authToken ? [authToken, 'updateSpaceBySlug'] : null,
+    authToken ? [authToken, 'updateSpace'] : null,
     async ([authToken], { arg }: { arg: UpdateSpaceBySlugInput }) =>
-      await updateSpaceBySlugAction(arg, { authToken }),
-  );
-
-  const {
-    trigger: updateByIdMutation,
-    reset: resetUpdateSpaceByIdMutation,
-    isMutating: isUpdatingSpaceById,
-    error: errorUpdateSpaceByIdMutation,
-    data: updatedSpaceById,
-  } = useSWRMutation(
-    authToken ? [authToken, 'updateSpaceById'] : null,
-    async ([authToken], { arg }: { arg: UpdateSpaceByIdInput }) =>
-      await updateSpaceByIdAction(arg, { authToken }),
+      updateSpaceBySlugAction(arg, { authToken }),
   );
 
   const {
@@ -61,7 +47,7 @@ export const useSpaceMutationsWeb2Rsc = (authToken?: string | null) => {
   } = useSWRMutation(
     authToken ? [authToken, 'deleteSpace'] : null,
     async ([authToken], { arg }: { arg: DeleteSpaceBySlugInput }) =>
-      await deleteSpaceBySlugAction(arg, { authToken }),
+      deleteSpaceBySlugAction(arg, { authToken }),
   );
 
   return {
@@ -73,15 +59,9 @@ export const useSpaceMutationsWeb2Rsc = (authToken?: string | null) => {
 
     updateSpaceBySlug: updateBySlugMutation,
     resetUpdateSpaceBySlugMutation,
-    isUpdatingSpaceBySlug,
+    isUpdatingSpace,
     errorUpdateSpaceBySlugMutation,
-    updatedSpaceBySlug,
-
-    updateSpaceById: updateByIdMutation,
-    resetUpdateSpaceByIdMutation,
-    isUpdatingSpaceById,
-    errorUpdateSpaceByIdMutation,
-    updatedSpaceById,
+    updatedSpace,
 
     deleteSpaceBySlug: deleteSpaceBySlugMutation,
     resetDeleteSpaceBySlugMutation,

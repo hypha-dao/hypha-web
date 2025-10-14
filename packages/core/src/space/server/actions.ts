@@ -2,16 +2,10 @@
 
 // TODO: #602 Define RLS Policies for Spaces Table
 // import { getDb } from '@hypha-platform/core/server';
-import {
-  createSpace,
-  deleteSpaceBySlug,
-  updateSpaceById,
-  updateSpaceBySlug,
-} from './mutations';
+import { createSpace, deleteSpaceBySlug, updateSpaceBySlug } from './mutations';
 import {
   CreateSpaceInput,
   DeleteSpaceBySlugInput,
-  UpdateSpaceByIdInput,
   UpdateSpaceBySlugInput,
 } from '../types';
 // TODO: #602 Define RLS Policies for Spaces Table
@@ -41,24 +35,6 @@ export async function updateSpaceBySlugAction(
   revalidatePath(`/[lang]/dho/${slug}`, 'layout');
 
   return result;
-}
-
-export async function updateSpaceByIdAction(
-  data: UpdateSpaceByIdInput,
-  { authToken }: { authToken?: string },
-) {
-  // TODO: #602 Define RLS Policies for Spaces Table
-  // const db = getDb({ authToken });
-  const { originalSpace, updatedSpace } = await updateSpaceById(data, { db });
-
-  const { slug: originalSlug } = originalSpace;
-  revalidatePath(`/[lang]/dho/${originalSlug}`, 'layout');
-  const { slug: updatedSlug } = updatedSpace;
-  if (originalSlug !== updatedSlug) {
-    revalidatePath(`/[lang]/dho/${updatedSlug}`, 'layout');
-  }
-
-  return updatedSpace;
 }
 
 export async function deleteSpaceBySlugAction(

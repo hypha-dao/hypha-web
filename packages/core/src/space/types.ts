@@ -51,8 +51,6 @@ export interface UpdateSpaceInput {
 
 export type UpdateSpaceBySlugInput = { slug: string } & UpdateSpaceInput;
 
-export type UpdateSpaceByIdInput = { id: number } & UpdateSpaceInput;
-
 export interface SpaceListOptions {
   page?: number;
   pageSize?: number;

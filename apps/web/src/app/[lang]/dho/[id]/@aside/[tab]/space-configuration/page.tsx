@@ -29,13 +29,12 @@ export default function SpaceConfiguration() {
   const router = useRouter();
   const { updateSpace, currentAction, isError, isPending, progress, reset } =
     useUpdateSpaceOrchestrator({ authToken: jwt });
-  const [newSpaceSlug, setNewSpaceSlug] = React.useState(spaceSlug);
 
   React.useEffect(() => {
-    if (progress === 100 && !isPending && newSpaceSlug) {
-      router.push(getDhoPathOverview(lang as Locale, newSpaceSlug));
+    if (progress === 100 && !isPending && spaceSlug) {
+      router.push(getDhoPathOverview(lang as Locale, spaceSlug));
     }
-  }, [progress, isPending, newSpaceSlug, lang]);
+  }, [progress, isPending, spaceSlug, lang]);
 
   const isBusy = isLoadingJwt || isLoadingSpace || isPending;
 
@@ -54,30 +53,20 @@ export default function SpaceConfiguration() {
               (inner) => inner.id === updatedSpace.parentId,
             );
             if (foundInnerSpace) {
-              const {
-                id,
-                description,
-                address,
-                web3SpaceId,
-                slug,
-                ...updates
-              } = foundInnerSpace;
+              const { description, address, web3SpaceId, slug, ...updates } =
+                foundInnerSpace;
               await updateSpace({
-                id,
-                data: {
-                  ...updates,
-                  slug,
-                  parentId: null,
-                  description: description as string | undefined,
-                  address: address as string | undefined,
-                  web3SpaceId: web3SpaceId as number | undefined,
-                },
+                ...updates,
+                slug,
+                parentId: null,
+                description: description as string | undefined,
+                address: address as string | undefined,
+                web3SpaceId: web3SpaceId as number | undefined,
               });
             }
           }
-          setNewSpaceSlug(updatedSpace.slug || '');
-          await updateSpace({ id: space.id, data: updatedSpace });
         }
+        await updateSpace(updatedSpace);
       } catch (e) {
         console.warn(e);
       }
@@ -114,7 +103,6 @@ export default function SpaceConfiguration() {
             surname: person?.surname,
           }}
           onSubmit={submitForm}
-          slugIncorrectMessage="A space with this link already exists. Please choose a different space name or unique link."
           values={{
             ...space,
             title: space?.title || '',
@@ -131,7 +119,6 @@ export default function SpaceConfiguration() {
           }}
           label="configure"
           initialParentSpaceId={space?.parentId ?? null}
-          spaceId={space?.id}
         />
       </LoadingBackdrop>
     </SidePanel>
