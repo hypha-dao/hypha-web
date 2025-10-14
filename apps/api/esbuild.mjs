@@ -1,4 +1,5 @@
 import * as esbuild from 'esbuild';
+import { copy } from 'esbuild-plugin-copy';
 
 await esbuild.build({
   entryPoints: ['src/server.ts'],
@@ -9,4 +10,12 @@ await esbuild.build({
   treeShaking: true,
   bundle: true,
   packages: 'external',
+  plugins: [
+    copy({
+      assets: {
+        from: ['./docs/v1/*'],
+        to: ['.'],
+      },
+    }),
+  ],
 });

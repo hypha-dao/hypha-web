@@ -26,6 +26,7 @@
   "devDependencies": {
     "@hypha-platform/config-typescript": "workspace:*",
     "@types/yamljs": "^0.2.34",
+    "esbuild-plugin-copy": "^2.1.1",
     "openapi-typescript-codegen": "^0.29.0"
   }
 }
