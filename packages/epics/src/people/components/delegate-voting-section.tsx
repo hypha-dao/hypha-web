@@ -15,6 +15,7 @@ import {
   useMe,
 } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
+import { ProfileComponentParams } from './types';
 
 interface DelegateVotingSectionProps {
   spaceSlug?: string;
@@ -45,7 +46,8 @@ export const DelegateVotingSection = ({
   spaceSlug,
   useMembers,
 }: DelegateVotingSectionProps) => {
-  const { personSlug } = useParams();
+  const { personSlug: personSlugRaw } = useParams<ProfileComponentParams>();
+  const personSlug = decodeURIComponent(personSlugRaw);
   const { person } = useMe();
   const { space } = useSpaceBySlug(spaceSlug as string);
   const { persons, spaces } = useMembers({

@@ -1,7 +1,12 @@
 'use client';
 
 import React from 'react';
-import { ButtonClose, SelectAction, SidePanel } from '@hypha-platform/epics';
+import {
+  ButtonClose,
+  ProfilePageParams,
+  SelectAction,
+  SidePanel,
+} from '@hypha-platform/epics';
 import { useParams } from 'next/navigation';
 import {
   PlusCircledIcon,
@@ -16,8 +21,9 @@ import { useFundWallet } from '@hypha-platform/epics';
 const MIGRATE_HYPHA_TOKENS_URL = 'https://hypha-react-demo.vercel.app';
 
 export default function ProfileWallet() {
-  const { lang, personSlug } = useParams();
-  const { person } = useMemberBySlug(personSlug as string);
+  const { lang, personSlug: personSlugRaw } = useParams<ProfilePageParams>();
+  const personSlug = decodeURIComponent(personSlugRaw);
+  const { person } = useMemberBySlug(personSlug);
   const { fundWallet } = useFundWallet({ address: person?.address });
 
   const WALLET_ACTIONS = [

@@ -5,10 +5,10 @@ import { useParams } from 'next/navigation';
 import {
   DelegateVotingSection,
   MemberDetail,
+  MemberPageParams,
   SidePanel,
   useMemberWeb3SpaceIds,
 } from '@hypha-platform/epics';
-import { Locale } from '@hypha-platform/i18n';
 
 import { useMemberBySlug } from '@web/hooks/use-member-by-slug';
 import { getDhoPathMembers } from '../../../../@tab/members/constants';
@@ -19,21 +19,20 @@ import {
 import { useMembers } from '@web/hooks/use-members';
 
 export default function Member() {
-  const { id, lang, personSlug } = useParams();
-  const { person, isLoading: isLoadingPersons } = useMemberBySlug(
-    personSlug as string,
-  );
+  const { id, lang, personSlug: personSlugRaw } = useParams<MemberPageParams>();
+  const personSlug = decodeURIComponent(personSlugRaw);
+  const { person, isLoading: isLoadingPersons } = useMemberBySlug(personSlug);
   const { web3SpaceIds, isLoading: isLoadingSpaces } = useMemberWeb3SpaceIds({
     personAddress: person?.address,
   });
   const { spaces } = useSpacesByWeb3Ids(web3SpaceIds ?? []);
-  const { space } = useSpaceBySlug(id as string);
+  const { space } = useSpaceBySlug(id);
 
   return (
     <SidePanel>
       <div className="flex flex-col gap-5">
         <MemberDetail
-          closeUrl={getDhoPathMembers(lang as Locale, id as string)}
+          closeUrl={getDhoPathMembers(lang, id)}
           member={{
             avatarUrl: person?.avatarUrl,
             name: person?.name,
@@ -45,13 +44,13 @@ export default function Member() {
             address: person?.address,
           }}
           isLoading={isLoadingPersons || isLoadingSpaces}
-          lang={lang as Locale}
+          lang={lang}
           spaces={spaces}
         />
         <DelegateVotingSection
           web3SpaceId={space?.web3SpaceId as number}
           useMembers={useMembers}
-          spaceSlug={id as string}
+          spaceSlug={id}
         />
       </div>
     </SidePanel>

@@ -18,6 +18,7 @@ import React from 'react';
 import {
   ButtonCopyUserId,
   ExportEmbeddedWalletButton,
+  ProfileComponentParams,
 } from '@hypha-platform/epics';
 import {
   DEFAULT_SPACE_AVATAR_IMAGE,
@@ -60,7 +61,9 @@ export const PersonHead = ({
 }: PersonHeadProps & MemberType) => {
   const { exportWallet, isEmbeddedWallet } = useAuthentication();
   const { isMe } = useMe();
-  const { lang, personSlug } = useParams();
+  const { lang, personSlug: personSlugRaw } =
+    useParams<ProfileComponentParams>();
+  const personSlug = decodeURIComponent(personSlugRaw);
 
   const customLogoStyles: React.CSSProperties = {
     width: '128px',
@@ -112,16 +115,11 @@ export const PersonHead = ({
           <Skeleton loading={isLoading} width={120} height={35}>
             <Link
               href={
-                isMe(personSlug as string)
-                  ? `/${lang}/profile/${personSlug}/edit`
-                  : {}
+                isMe(personSlug) ? `/${lang}/profile/${personSlug}/edit` : {}
               }
               scroll={false}
             >
-              <Button
-                colorVariant="accent"
-                disabled={!isMe(personSlug as string)}
-              >
+              <Button colorVariant="accent" disabled={!isMe(personSlug)}>
                 <RxPencil2 />
                 Edit profile
               </Button>
@@ -137,7 +135,7 @@ export const PersonHead = ({
           <div className="flex flex-col gap-4">
             <WebLinks links={links} />
             <div className="flex gap-5 text-1">
-              {email && isMe(personSlug as string) ? (
+              {email && isMe(personSlug) ? (
                 <span className="flex gap-3">
                   <MailIcon width={16} height={16} />
                   {email}

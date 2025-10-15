@@ -1,6 +1,10 @@
 'use client';
 
-import { SidePanel, EditPersonSection } from '@hypha-platform/epics';
+import {
+  SidePanel,
+  EditPersonSection,
+  ProfilePageParams,
+} from '@hypha-platform/epics';
 import { useMe } from '@hypha-platform/core/client';
 import React from 'react';
 import { useParams } from 'next/navigation';
@@ -14,7 +18,8 @@ import {
 import { z } from 'zod';
 
 export default function EditProfilePage() {
-  const { lang, personSlug } = useParams();
+  const { lang, personSlug: personSlugRaw } = useParams<ProfilePageParams>();
+  const personSlug = decodeURIComponent(personSlugRaw);
   const { person, isLoading, revalidate } = useMe();
   const {
     editProfile,

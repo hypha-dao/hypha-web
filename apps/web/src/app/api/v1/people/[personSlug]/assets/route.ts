@@ -18,12 +18,14 @@ import {
 } from '@hypha-platform/core/client';
 import { headers } from 'next/headers';
 import { hasEmojiOrLink } from '@hypha-platform/ui-utils';
+import { ProfileRouteParams } from '@hypha-platform/epics';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ personSlug: string }> },
+  { params }: { params: Promise<ProfileRouteParams> },
 ) {
-  const { personSlug } = await params;
+  const { personSlug: personSlugRaw } = await params;
+  const personSlug = decodeURIComponent(personSlugRaw);
   const headersList = await headers();
   const authToken = headersList.get('Authorization')?.split(' ')[1] || '';
   if (!authToken) {

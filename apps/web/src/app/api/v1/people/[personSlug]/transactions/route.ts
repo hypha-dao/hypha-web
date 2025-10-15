@@ -16,6 +16,7 @@ import {
 import { findPersonBySlug, getDb } from '@hypha-platform/core/server';
 import { zeroAddress } from 'viem';
 import { hasEmojiOrLink } from '@hypha-platform/ui-utils';
+import { ProfileRouteParams } from '@hypha-platform/epics';
 
 /**
  * A route to get ERC20 transfers for a user.
@@ -31,9 +32,10 @@ import { hasEmojiOrLink } from '@hypha-platform/ui-utils';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ personSlug: string }> },
+  { params }: { params: Promise<ProfileRouteParams> },
 ) {
-  const { personSlug } = await params;
+  const { personSlug: personSlugRaw } = await params;
+  const personSlug = decodeURIComponent(personSlugRaw);
   const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';
   if (!authToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

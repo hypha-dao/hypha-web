@@ -2,12 +2,12 @@ import {
   MFABanner,
   PersonHead,
   ProfileMemberSpaces,
+  ProfilePageParams,
 } from '@hypha-platform/epics';
 import Link from 'next/link';
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Text } from '@radix-ui/themes';
 import { Container, Separator } from '@hypha-platform/ui';
-import { Locale } from '@hypha-platform/i18n';
 import React from 'react';
 import {
   findPersonBySlug,
@@ -20,7 +20,7 @@ import { web3Client } from '@hypha-platform/core/server';
 import { Hex, zeroAddress } from 'viem';
 
 type PageProps = {
-  params: Promise<{ lang: Locale; personSlug: string }>;
+  params: Promise<ProfilePageParams>;
 };
 
 export async function generateMetadata(props: PageProps) {
@@ -33,12 +33,10 @@ export async function generateMetadata(props: PageProps) {
 export default async function ProfilePage(props: PageProps) {
   const params = await props.params;
 
-  const { lang, personSlug } = params;
+  const { lang, personSlug: personSlugRaw } = params;
+  const personSlug = decodeURIComponent(personSlugRaw);
 
-  const person = await findPersonBySlug(
-    { slug: decodeURIComponent(personSlug) },
-    { db },
-  );
+  const person = await findPersonBySlug({ slug: personSlug }, { db });
   const personAddress = (person?.address as Hex) || zeroAddress;
   let spaces: Space[] = [];
   try {
