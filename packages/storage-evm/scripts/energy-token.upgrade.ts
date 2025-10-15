@@ -2,7 +2,7 @@ import { ethers, upgrades } from 'hardhat';
 
 // Replace this with your actual proxy address when upgrading
 // This should be the address of your deployed EnergyToken proxy
-const PROXY_ADDRESS = '0x8010b9d8CB8a630f4380efC2eAB0caaeE681D3e0';
+const PROXY_ADDRESS = '0xAe47243cfa71f4B95BCf6E2BB1D4F59599B963F0';
 
 async function main(): Promise<void> {
   // Get the deployer's address
