@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Progress } from '@hypha-platform/ui';
-import { TriangleDownIcon } from '@radix-ui/react-icons';
+import { TriangleUpIcon } from '@radix-ui/react-icons';
 
 interface ProgressLineProps {
   label: string;
@@ -34,10 +34,10 @@ export function ProgressLine({
             className="absolute top-0 left-0 flex flex-col items-center pointer-events-none"
             style={{ left: `${target}%`, transform: 'translateX(-50%)' }}
           >
-            <span className="absolute -top-6 text-1 whitespace-nowrap text-xs">
+            <span className="absolute top-4 text-1 whitespace-nowrap text-xs">
               {target}%
             </span>
-            <TriangleDownIcon className="w-[24px] h-[29px] -mt-[12px] text-accent-6" />
+            <TriangleUpIcon className="w-[28px] h-[31px] -mt-[10px] text-accent-6" />
           </div>
         )}
       </div>
