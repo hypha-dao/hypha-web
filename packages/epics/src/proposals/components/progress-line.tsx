@@ -37,7 +37,7 @@ export function ProgressLine({
             <span className="absolute -top-6 text-1 whitespace-nowrap text-xs">
               {target}%
             </span>
-            <TriangleDownIcon className="w-[30px] h-[30px] -mt-[12px] text-accent-6" />
+            <TriangleDownIcon className="w-[24px] h-[29px] -mt-[12px] text-accent-6" />
           </div>
         )}
       </div>
