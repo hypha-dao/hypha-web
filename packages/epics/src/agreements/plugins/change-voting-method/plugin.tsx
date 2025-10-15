@@ -176,20 +176,16 @@ export const ChangeVotingMethodPlugin = ({
                 </div>
               </FormControl>
               <FormMessage />
+              <span className="text-2 text-neutral-11">
+                Auto-execution is disabled when quorum is below 20% to protect
+                treasury assets.
+              </span>
             </FormItem>
           )}
         />
 
-        {autoExecution ? (
-          <span className="text-2 text-neutral-11">
-            Auto-execution is enabled. Voting duration is set to 0.
-          </span>
-        ) : (
+        {autoExecution ? null : (
           <>
-            <span className="text-2 text-neutral-11">
-              Auto-execution is disabled. Please set a minimum voting duration.
-            </span>
-
             <FormField
               control={control}
               name="votingDuration"
@@ -221,6 +217,10 @@ export const ChangeVotingMethodPlugin = ({
                       </Select>
                     </FormControl>
                     <FormMessage />
+                  </span>
+                  <span className="text-2 text-neutral-11">
+                    Auto-execution is disabled. Please set a minimum voting
+                    duration.
                   </span>
                 </FormItem>
               )}
