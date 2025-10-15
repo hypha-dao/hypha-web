@@ -4,7 +4,10 @@ import React from 'react';
 import useSWR from 'swr';
 
 export const useMemberBySlug = (slug: string) => {
-  const endpoint = React.useMemo(() => `/api/v1/people/${slug}`, [slug]);
+  const endpoint = React.useMemo(
+    () => `/api/v1/people/${encodeURIComponent(slug)}`,
+    [slug],
+  );
 
   const { data: person, isLoading } = useSWR(endpoint, (endpoint) =>
     fetch(endpoint, {
