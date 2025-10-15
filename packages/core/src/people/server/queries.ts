@@ -53,6 +53,8 @@ export const mapToDomainPerson = (dbPerson: Partial<DbPerson>): Person => {
     nickname: nullToUndefined(dbPerson.nickname ?? null),
     address: nullToUndefined(dbPerson.address ?? null),
     links: nullToUndefined(dbPerson.links ?? null),
+    createdAt: dbPerson.createdAt!,
+    updatedAt: dbPerson.updatedAt!,
   };
 };
 
