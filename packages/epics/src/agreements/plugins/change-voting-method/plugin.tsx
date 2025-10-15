@@ -26,6 +26,7 @@ import {
   FormControl,
   FormMessage,
   RequirementMark,
+  Separator,
 } from '@hypha-platform/ui';
 import { VotingMethodSelector } from '../../components/voting-method-selector';
 import React from 'react';
@@ -150,6 +151,8 @@ export const ChangeVotingMethodPlugin = ({
         <QuorumAndUnityChangerField name="quorumAndUnity" />
       </div>
 
+      <Separator />
+
       <div className="flex flex-col gap-5">
         <Label>Voting Period</Label>
 
@@ -185,7 +188,7 @@ export const ChangeVotingMethodPlugin = ({
             </FormItem>
           )}
         />
-
+        <Separator />
         {autoExecution ? null : (
           <>
             <FormField
@@ -227,10 +230,11 @@ export const ChangeVotingMethodPlugin = ({
                 </FormItem>
               )}
             />
+
+            <Separator />
           </>
         )}
       </div>
-
       <div className="flex flex-col gap-5">
         <Skeleton loading={isLoading} width={'100%'} height={280}>
           <Label>Voting Power</Label>
