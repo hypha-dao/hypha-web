@@ -5,14 +5,13 @@ import useSWR from 'swr';
 import { encodeFunctionData } from 'viem';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 import {
-  transactionSchema,
-  schemaCreateProposalWeb3,
-} from '@hypha-platform/core/client';
-import {
   publicClient,
   getProposalFromLogs,
   createProposal,
   mapToCreateProposalWeb3Input,
+  getSpaceMinProposalDuration,
+  transactionSchema,
+  schemaCreateProposalWeb3,
 } from '@hypha-platform/core/client';
 import {
   votingPowerDelegationImplementationAbi,
@@ -51,6 +50,10 @@ export const useSpaceToSpaceMembershipWeb3Rpc = ({
         throw new Error('Smart wallet client not available');
       }
 
+      const duration = await publicClient.readContract(
+        getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
+      );
+
       const transactions: z.infer<typeof transactionSchema>[] = [
         {
           target: daoSpaceFactoryImplementationAddress[
@@ -78,7 +81,7 @@ export const useSpaceToSpaceMembershipWeb3Rpc = ({
 
       const input = {
         spaceId: BigInt(arg.spaceId),
-        duration: getDuration(4),
+        duration: duration && duration > 0 ? duration : getDuration(4),
         transactions,
       };
 

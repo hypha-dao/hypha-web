@@ -93,6 +93,7 @@ type CreateChangeVotingMethodArg = z.infer<typeof schemaCreateAgreementWeb2> & {
   token: `0x${string}` | undefined;
   quorumAndUnity: { quorum: bigint; unity: bigint };
   votingMethod: VotingMethodType;
+  votingDuration?: number;
 };
 
 export const useCreateChangeVotingMethodOrchestrator = ({
@@ -174,6 +175,7 @@ export const useCreateChangeVotingMethodOrchestrator = ({
             token: arg.token,
             quorumAndUnity: arg.quorumAndUnity,
             votingMethod: arg.votingMethod,
+            votingDuration: arg.votingDuration,
           });
           completeTask('CREATE_WEB3_AGREEMENT');
         }

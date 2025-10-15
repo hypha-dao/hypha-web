@@ -73,6 +73,7 @@ export const CreateProposalChangeVotingMethodForm = ({
       },
       votingMethod: undefined,
       label: 'Voting Method',
+      votingDuration: undefined,
     },
     mode: 'onChange',
   });
@@ -121,11 +122,14 @@ export const CreateProposalChangeVotingMethodForm = ({
           unity: BigInt(data.quorumAndUnity?.unity ?? 0),
         },
         votingMethod: data.votingMethod,
+        votingDuration: data.votingDuration,
       });
     } catch (error) {
       console.error('Error creating change voting method proposal:', error);
     }
   };
+
+  console.log(form);
 
   React.useEffect(() => {
     if (progress === 100 && agreementSlug) {
