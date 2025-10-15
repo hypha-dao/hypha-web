@@ -11,6 +11,9 @@ import {
   voteMock,
 } from '../../../mocks';
 import { response, Response, query, Query } from './schema/get-proposals/';
+import type { Summary } from './schema';
+import { db } from '@hypha-platform/storage-postgres';
+import { findAllDocumentsBySpaceId } from '@hypha-platform/core/server';
 
 export default async function proposalsRoutes(app: FastifyInstance) {
   /**
@@ -25,7 +28,46 @@ export default async function proposalsRoutes(app: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      return reply.send(proposalsListMock);
+      const { dao_id, limit, offset } = request.query;
+      const status = request.query.status ?? 'all';
+
+      if (dao_id === undefined) {
+        return reply.send({ data: [], meta: { total: 0, limit, offset } });
+      }
+
+      const res = await findAllDocumentsBySpaceId(
+        { id: dao_id },
+        {
+          db,
+          pagination: {
+            pageSize: limit,
+            offset,
+          },
+          filter: { status },
+        },
+      );
+
+      const data: Summary[] = res.data.map((doc) => ({
+        id: doc.id,
+        title: doc.title,
+        type: 'agreement',
+        image_url: doc.leadImage || '',
+        status,
+        unity: 0,
+        quorum: 0,
+        user_vote: null,
+        voting_deadline: new Date(doc.updatedAt ?? doc.createdAt).toISOString(),
+        author: {
+          username: doc.creator?.name || 'unknown',
+          reference: String(doc.creatorId ?? doc.id),
+          avatar_url: doc.creator?.avatarUrl || '',
+        },
+      }));
+
+      return reply.send({
+        data,
+        meta: { total: res.pagination.total, limit, offset },
+      });
     },
   );
 
