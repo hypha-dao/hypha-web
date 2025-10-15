@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "dist/server.js",
+  "type": "module",
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -11,19 +12,22 @@
     "dev": "tsx src/server.ts",
     "prebuild": "pnpm codegen",
     "build": "tsc",
-    "postbuild": "esbuild src/server.ts --bundle --minify --platform=node --external:yamljs --external:fs --outfile=dist/server.js --external:@fastify/swagger --external:@fastify/swagger-ui",
+    "postbuild": "node esbuild.mjs",
     "start": "node dist/server.js"
   },
   "dependencies": {
-    "fastify": "^5.4.0",
-    "@fastify/env": "^5.0.3",
     "@fastify/cors": "^11.0.1",
+    "@fastify/env": "^5.0.3",
     "@fastify/swagger": "^9.5.1",
     "@fastify/swagger-ui": "^5.2.3",
+    "fastify": "^5.4.0",
+    "server-only": "^0.0.1",
     "yamljs": "^0.3.0"
   },
   "devDependencies": {
+    "@hypha-platform/config-typescript": "workspace:*",
     "@types/yamljs": "^0.2.34",
+    "esbuild-plugin-copy": "^2.1.1",
     "openapi-typescript-codegen": "^0.29.0"
   }
 }
