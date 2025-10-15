@@ -176,10 +176,12 @@ export const ChangeVotingMethodPlugin = ({
                 </div>
               </FormControl>
               <FormMessage />
-              <span className="text-2 text-neutral-11">
-                Auto-execution is disabled when quorum is below 20% to protect
-                treasury assets.
-              </span>
+              {isQuorumTooLow && (
+                <span className="text-2 text-neutral-11">
+                  Auto-execution is disabled when quorum is below 20% to protect
+                  treasury assets.
+                </span>
+              )}
             </FormItem>
           )}
         />
