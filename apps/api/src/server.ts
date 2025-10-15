@@ -5,7 +5,7 @@ import { fastifyEnv } from '@fastify/env';
 import { registerSwagger } from './plugins/swagger';
 import v1Routes from './routes/v1';
 import { API_PREFIX } from './constants';
-import { envSchema } from './schemas/';
+import { environment, type Environment } from './schemas/';
 
 const app = Fastify();
 app.register(cors);
@@ -25,14 +25,14 @@ const start = async () => {
     await registerSwagger(app);
 
     await app.register(fastifyEnv, {
-      schema: envSchema,
+      schema: environment,
       dotenv: true,
     });
 
     // Register v1 API
     app.register(v1Routes, { prefix: API_PREFIX });
 
-    const port = parseInt(process.env.PORT || '3001', 10);
+    const port = parseInt(app.getEnvs<Environment>().PORT, 10);
     await app.listen({ port, host: '0.0.0.0' });
 
     console.log(`🚀 API ready at http://localhost:${port}${API_PREFIX}`);
