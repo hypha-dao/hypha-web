@@ -46,7 +46,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
             className="rounded-full"
           >
             <Image
-              className="rounded-full w-7 h-7"
+              className="rounded-full min-w-7 min-h-7"
               src={icon ? icon : ''}
               height={32}
               width={32}
@@ -82,7 +82,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
               {space?.title ? (
                 <Link
                   href={getDhoPathAgreements(lang as Locale, space.slug)}
-                  className="text-accent-11 text-1 text-ellipsis overflow-hidden text-nowrap hover:underline"
+                  className="text-accent-11 text-1 text-ellipsis overflow-hidden hover:underline"
                 >
                   from {space.title}
                 </Link>
