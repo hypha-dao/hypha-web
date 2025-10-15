@@ -92,7 +92,7 @@ export function QuorumAndUnityChangerField({
                   <div className="font-bold mb-2">{preset.title}</div>
                   <div className="space-y-3 text-sm text-neutral-11 w-full">
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 bg-neutral-3 h-5 rounded-2xl relative">
+                      <div className="flex-1 bg-neutral-6 h-5 rounded-2xl relative">
                         <div
                           className="bg-accent-9 h-5 rounded-2xl"
                           style={{
@@ -109,7 +109,7 @@ export function QuorumAndUnityChangerField({
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 bg-neutral-3 h-5 rounded-2xl relative">
+                      <div className="flex-1 bg-neutral-6 h-5 rounded-2xl relative">
                         <div
                           className="bg-accent-9 h-5 rounded-2xl"
                           style={{
