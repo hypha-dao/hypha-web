@@ -49,24 +49,29 @@ export const ProposalVotingInfo = ({
           {getVotingMethodLabel(votingPowerSource)}
         </div>
       </div>
-      <div className="flex justify-between items-center">
-        <div className="text-1 text-neutral-11 w-full">Token Name</div>
-        <div className="text-1 text-nowrap">{parsedTokenData?.name}</div>
-      </div>
-      <div className="flex justify-between items-center">
-        <div className="text-1 text-neutral-11 w-full">Token Symbol</div>
-        <div className="text-1">{parsedTokenData?.symbol}</div>
-      </div>
-      <div className="flex justify-between items-center">
-        <div className="text-1 text-neutral-11 w-full">Token Icon</div>
-        <Image
-          className="rounded-full w-6 h-6"
-          width={24}
-          height={24}
-          src={parsedTokenData?.icon || '/placeholder/token-icon.svg'}
-          alt={`Token icon for ${parsedTokenData?.symbol}`}
-        />
-      </div>
+      {parsedTokenData?.name && (
+        <>
+          <div className="flex justify-between items-center">
+            <div className="text-1 text-neutral-11 w-full">Token Name</div>
+            <div className="text-1 text-nowrap">{parsedTokenData?.name}</div>
+          </div>
+          <div className="flex justify-between items-center">
+            <div className="text-1 text-neutral-11 w-full">Token Symbol</div>
+            <div className="text-1">{parsedTokenData?.symbol}</div>
+          </div>
+          <div className="flex justify-between items-center">
+            <div className="text-1 text-neutral-11 w-full">Token Icon</div>
+            <Image
+              className="rounded-full w-6 h-6"
+              width={24}
+              height={24}
+              src={parsedTokenData?.icon || '/placeholder/token-icon.svg'}
+              alt={`Token icon for ${parsedTokenData?.symbol}`}
+            />
+          </div>
+        </>
+      )}
+
       <div className="flex justify-between items-center text-1 text-neutral-11">
         <div className="w-full">Unity</div>
         <div>{unity.toString()}%</div>
