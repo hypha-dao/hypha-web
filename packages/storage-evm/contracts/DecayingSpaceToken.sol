@@ -147,7 +147,8 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
   /**
    * @dev Override mint to track lastDecayTimestamp and token holders
    */
-  function mint(address to, uint256 amount) public override onlyOwner {
+  function mint(address to, uint256 amount) public override {
+    require(msg.sender == executor, 'Only executor can mint');
     if (lastApplied[to] == 0) {
       lastApplied[to] = block.timestamp;
     } else {
@@ -162,9 +163,9 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
    */
   function transfer(address to, uint256 amount) public override returns (bool) {
     address sender = _msgSender();
-    require(transferable || sender == owner(), 'Token transfers are disabled');
+    require(transferable || sender == executor, 'Token transfers are disabled');
     applyDecay(sender);
-    if (sender == owner()) {
+    if (sender == executor) {
       if (super.balanceOf(sender) < amount) {
         uint256 amountToMint = amount - super.balanceOf(sender);
         mint(sender, amountToMint);
@@ -190,10 +191,13 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
     uint256 amount
   ) public override returns (bool) {
     address spender = _msgSender();
-    require(transferable || spender == owner(), 'Token transfers are disabled');
+    require(
+      transferable || spender == executor,
+      'Token transfers are disabled'
+    );
 
     applyDecay(from);
-    if (from == owner()) {
+    if (from == executor) {
       if (super.balanceOf(from) < amount) {
         uint256 amountToMint = amount - super.balanceOf(from);
         mint(from, amountToMint);

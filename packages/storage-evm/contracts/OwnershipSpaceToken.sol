@@ -44,7 +44,14 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
     uint256 _maxSupply,
     address _spacesContract
   ) public initializer {
-    RegularSpaceToken.initialize(name, symbol, _executor, _spaceId, _maxSupply, true);
+    RegularSpaceToken.initialize(
+      name,
+      symbol,
+      _executor,
+      _spaceId,
+      _maxSupply,
+      true
+    );
     require(
       _spacesContract != address(0),
       'Spaces contract cannot be zero address'
@@ -59,7 +66,7 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
    */
   function transfer(address to, uint256 amount) public override returns (bool) {
     address sender = _msgSender();
-    if (sender == owner()) {
+    if (sender == executor) {
       if (balanceOf(sender) < amount) {
         uint256 amountToMint = amount - balanceOf(sender);
         mint(sender, amountToMint);
@@ -75,7 +82,7 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
     }
 
     // Only executor can initiate other transfers
-    require(sender == owner(), 'Only executor can transfer tokens');
+    require(sender == executor, 'Only executor can transfer tokens');
 
     // Check that recipient is a member of the space
     require(_isSpaceMember(to), 'Can only transfer to space members');
@@ -106,7 +113,7 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
     // Check if escrow was created by the space executor
     address escrowCreator = escrowQuery.getEscrowCreator(escrowId);
     require(
-      escrowCreator == owner(),
+      escrowCreator == executor,
       'Escrow must be created by space executor'
     );
 
@@ -126,7 +133,7 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
     uint256 amount
   ) public override returns (bool) {
     address spender = _msgSender();
-    if (from == owner()) {
+    if (from == executor) {
       if (balanceOf(from) < amount) {
         uint256 amountToMint = amount - balanceOf(from);
         mint(from, amountToMint);
@@ -139,7 +146,7 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
     }
 
     // Only executor can initiate other transfers
-    require(spender == owner(), 'Only executor can transfer tokens');
+    require(spender == executor, 'Only executor can transfer tokens');
 
     // Check that recipient is a member of the space
     require(_isSpaceMember(to), 'Can only transfer to space members');
@@ -159,9 +166,10 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
   /**
    * @dev Override mint to ensure tokens can only be minted to space members or the executor
    */
-  function mint(address to, uint256 amount) public override onlyOwner {
+  function mint(address to, uint256 amount) public override {
+    require(msg.sender == executor, 'Only executor can mint');
     require(
-      _isSpaceMember(to) || to == owner(),
+      _isSpaceMember(to) || to == executor,
       'Can only mint to space members or executor'
     );
     super.mint(to, amount);

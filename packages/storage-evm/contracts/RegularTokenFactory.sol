@@ -83,18 +83,26 @@ contract RegularTokenFactory is
     bool transferable,
     bool isVotingToken
   ) public override returns (address) {
-
     require(spacesContract != address(0), 'Spaces contract not set');
     require(
       spaceTokenImplementation != address(0),
       'Token implementation not set'
     );
 
+    // Strict authorization: only allow the space's executor to call this function
+    address spaceExecutor = IDAOSpaceFactory(spacesContract).getSpaceExecutor(
+      spaceId
+    );
+    require(
+      msg.sender == spaceExecutor,
+      'Only space executor can deploy tokens'
+    );
+
     bytes memory callData = abi.encodeWithSelector(
       RegularSpaceToken.initialize.selector,
       name,
       symbol,
-      msg.sender, // Executor is the deployer
+      spaceExecutor,
       spaceId,
       maxSupply,
       transferable

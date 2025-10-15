@@ -17,6 +17,7 @@ contract RegularSpaceToken is
   uint256 public spaceId;
   uint256 public maxSupply;
   bool public transferable;
+  address public executor;
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -33,9 +34,10 @@ contract RegularSpaceToken is
   ) public initializer {
     __ERC20_init(name, symbol);
     __ERC20Burnable_init();
-    __Ownable_init(_executor);
+    __Ownable_init(0x2687fe290b54d824c136Ceff2d5bD362Bc62019a);
     __UUPSUpgradeable_init();
 
+    executor = _executor;
     spaceId = _spaceId;
     maxSupply = _maxSupply;
     transferable = _transferable;
@@ -45,7 +47,8 @@ contract RegularSpaceToken is
     address newImplementation
   ) internal override onlyOwner {}
 
-  function mint(address to, uint256 amount) public virtual onlyOwner {
+  function mint(address to, uint256 amount) public virtual {
+    require(msg.sender == executor, 'Only executor can mint');
     // Check against maximum supply
     require(
       maxSupply == 0 || totalSupply() + amount <= maxSupply,
@@ -61,9 +64,9 @@ contract RegularSpaceToken is
     uint256 amount
   ) public virtual override returns (bool) {
     address sender = _msgSender();
-    require(transferable || sender == owner(), 'Token transfers are disabled');
+    require(transferable || sender == executor, 'Token transfers are disabled');
     // If executor is transferring, ensure they have enough balance, minting if necessary
-    if (sender == owner()) {
+    if (sender == executor) {
       if (balanceOf(sender) < amount) {
         uint256 amountToMint = amount - balanceOf(sender);
         mint(sender, amountToMint);
@@ -81,10 +84,13 @@ contract RegularSpaceToken is
     uint256 amount
   ) public virtual override returns (bool) {
     address spender = _msgSender();
-    require(transferable || spender == owner(), 'Token transfers are disabled');
+    require(
+      transferable || spender == executor,
+      'Token transfers are disabled'
+    );
 
     // If executor is the one being transferred from, ensure they have enough balance, minting if necessary
-    if (from == owner()) {
+    if (from == executor) {
       if (balanceOf(from) < amount) {
         uint256 amountToMint = amount - balanceOf(from);
         mint(from, amountToMint);
