@@ -28,11 +28,32 @@ async function main(): Promise<void> {
   let upgradedContract;
 
   try {
-    console.log('Upgrading EnergyToken...');
+    // First, try to import the proxy if it's not registered
+    try {
+      await upgrades.forceImport(PROXY_ADDRESS, EnergyToken);
+      console.log('✅ Proxy imported successfully');
+    } catch (e) {
+      // If already imported, that's fine
+      console.log('Proxy already imported or import not needed');
+    }
 
-    // Try with options to get more detailed error info
+    console.log('Deploying new implementation...');
+
+    // Force deploy a new implementation by using prepareUpgrade with redeployImplementation option
+    const newImplAddress = await upgrades.prepareUpgrade(
+      PROXY_ADDRESS,
+      EnergyToken,
+      {
+        unsafeSkipStorageCheck: true,
+        redeployImplementation: 'always', // Force redeploy
+      },
+    );
+
+    console.log('New implementation deployed at:', newImplAddress);
+
+    // Now upgrade to the new implementation
+    console.log('Upgrading proxy to new implementation...');
     upgradedContract = await upgrades.upgradeProxy(PROXY_ADDRESS, EnergyToken, {
-      // Force the upgrade even if validation fails
       unsafeSkipStorageCheck: true,
     });
 
@@ -42,72 +63,21 @@ async function main(): Promise<void> {
     const newImpl = await upgrades.erc1967.getImplementationAddress(
       PROXY_ADDRESS,
     );
-    console.log('New implementation address:', newImpl);
+    console.log('Proxy now points to implementation:', newImpl);
 
     // Verify the upgrade actually happened
     if (currentImpl.toLowerCase() === newImpl.toLowerCase()) {
       console.log(
         '⚠️  WARNING: Implementation address did not change! Upgrade may have failed.',
       );
-
-      // Let's try to prepare the upgrade manually to see what happens
-      console.log('Attempting to prepare upgrade to see deployment details...');
-      const preparedImpl = await upgrades.prepareUpgrade(
-        PROXY_ADDRESS,
-        EnergyToken,
-      );
-      console.log(
-        'Prepared implementation would be deployed at:',
-        preparedImpl,
-      );
     } else {
       console.log('✅ Implementation address changed successfully!');
+      console.log(`  Old: ${currentImpl}`);
+      console.log(`  New: ${newImpl}`);
     }
   } catch (error) {
-    // Check if the error is about unregistered deployment
-    if (error instanceof Error && error.message.includes('is not registered')) {
-      console.log(
-        '⚠️  Proxy not registered with upgrades plugin. Attempting to import...',
-      );
-
-      try {
-        // Force import the existing proxy
-        await upgrades.forceImport(PROXY_ADDRESS, EnergyToken);
-        console.log('✅ Proxy successfully imported. Retrying upgrade...');
-
-        // Now try the upgrade again
-        upgradedContract = await upgrades.upgradeProxy(
-          PROXY_ADDRESS,
-          EnergyToken,
-          {
-            unsafeSkipStorageCheck: true,
-          },
-        );
-
-        await upgradedContract.waitForDeployment();
-
-        // Get the new implementation address after upgrade
-        const newImpl = await upgrades.erc1967.getImplementationAddress(
-          PROXY_ADDRESS,
-        );
-        console.log('New implementation address:', newImpl);
-
-        // Verify the upgrade actually happened
-        if (currentImpl.toLowerCase() === newImpl.toLowerCase()) {
-          console.log(
-            '⚠️  WARNING: Implementation address did not change! Upgrade may have failed.',
-          );
-        } else {
-          console.log('✅ Implementation address changed successfully!');
-        }
-      } catch (importError) {
-        console.error('Failed to import proxy:', importError);
-        throw importError;
-      }
-    } else {
-      console.error('Upgrade failed with error:', error);
-      throw error;
-    }
+    console.error('Upgrade failed with error:', error);
+    throw error;
   }
 
   console.log(
