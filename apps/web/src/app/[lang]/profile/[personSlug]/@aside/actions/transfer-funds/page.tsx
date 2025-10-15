@@ -4,6 +4,7 @@ import {
   getAllSpaces,
 } from '@hypha-platform/core/server';
 import { ProfilePageParams, ProfileTransferFunds } from '@hypha-platform/epics';
+import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
 
 type PageProps = {
   params: Promise<ProfilePageParams>;
@@ -11,7 +12,7 @@ type PageProps = {
 
 export default async function ProfileTransferFundsWrapper(props: PageProps) {
   const { lang, personSlug: personSlugRaw } = await props.params;
-  const personSlug = decodeURIComponent(personSlugRaw);
+  const personSlug = tryDecodeUriPart(personSlugRaw);
 
   const spaces = await getAllSpaces({
     parentOnly: false,

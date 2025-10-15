@@ -7,6 +7,7 @@ import {
   ProfilePageParams,
 } from '@hypha-platform/epics';
 import { Separator } from '@hypha-platform/ui';
+import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
 
 type PageProps = {
@@ -15,7 +16,7 @@ type PageProps = {
 
 export default async function ActivateSpacesProfile(props: PageProps) {
   const { lang, personSlug: personSlugRaw } = await props.params;
-  const personSlug = decodeURIComponent(personSlugRaw);
+  const personSlug = tryDecodeUriPart(personSlugRaw);
 
   let spaces = [] as Space[];
   let error = null;

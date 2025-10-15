@@ -15,7 +15,7 @@ import {
 } from '@hypha-platform/core/server';
 import { findPersonBySlug, getDb } from '@hypha-platform/core/server';
 import { zeroAddress } from 'viem';
-import { hasEmojiOrLink } from '@hypha-platform/ui-utils';
+import { hasEmojiOrLink, tryDecodeUriPart } from '@hypha-platform/ui-utils';
 import { ProfileRouteParams } from '@hypha-platform/epics';
 
 /**
@@ -35,7 +35,7 @@ export async function GET(
   { params }: { params: Promise<ProfileRouteParams> },
 ) {
   const { personSlug: personSlugRaw } = await params;
-  const personSlug = decodeURIComponent(personSlugRaw);
+  const personSlug = tryDecodeUriPart(personSlugRaw);
   const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';
   if (!authToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

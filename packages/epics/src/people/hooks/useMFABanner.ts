@@ -5,10 +5,11 @@ import { useMfaEnrollment, usePrivy } from '@privy-io/react-auth';
 import { useMe } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
 import { ProfileComponentParams } from '../components/types';
+import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
 
 export const useMFABanner = () => {
   const { personSlug: personSlugRaw } = useParams<ProfileComponentParams>();
-  const personSlug = decodeURIComponent(personSlugRaw);
+  const personSlug = tryDecodeUriPart(personSlugRaw);
   const { isMe } = useMe();
   const { user } = usePrivy();
   const { showMfaEnrollmentModal } = useMfaEnrollment();

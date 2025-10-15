@@ -17,12 +17,13 @@ import {
 } from '@radix-ui/react-icons';
 import { useMemberBySlug } from '@web/hooks/use-member-by-slug';
 import { useFundWallet } from '@hypha-platform/epics';
+import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
 
 const MIGRATE_HYPHA_TOKENS_URL = 'https://hypha-react-demo.vercel.app';
 
 export default function ProfileWallet() {
   const { lang, personSlug: personSlugRaw } = useParams<ProfilePageParams>();
-  const personSlug = decodeURIComponent(personSlugRaw);
+  const personSlug = tryDecodeUriPart(personSlugRaw);
   const { person } = useMemberBySlug(personSlug);
   const { fundWallet } = useFundWallet({ address: person?.address });
 

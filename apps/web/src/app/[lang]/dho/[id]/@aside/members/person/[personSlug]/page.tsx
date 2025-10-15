@@ -17,10 +17,11 @@ import {
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import { useMembers } from '@web/hooks/use-members';
+import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
 
 export default function Member() {
   const { id, lang, personSlug: personSlugRaw } = useParams<MemberPageParams>();
-  const personSlug = decodeURIComponent(personSlugRaw);
+  const personSlug = tryDecodeUriPart(personSlugRaw);
   const { person, isLoading: isLoadingPersons } = useMemberBySlug(personSlug);
   const { web3SpaceIds, isLoading: isLoadingSpaces } = useMemberWeb3SpaceIds({
     personAddress: person?.address,

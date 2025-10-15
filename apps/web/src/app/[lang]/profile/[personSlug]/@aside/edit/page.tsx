@@ -16,10 +16,11 @@ import {
   editPersonFiles,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
+import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
 
 export default function EditProfilePage() {
   const { lang, personSlug: personSlugRaw } = useParams<ProfilePageParams>();
-  const personSlug = decodeURIComponent(personSlugRaw);
+  const personSlug = tryDecodeUriPart(personSlugRaw);
   const { person, isLoading, revalidate } = useMe();
   const {
     editProfile,

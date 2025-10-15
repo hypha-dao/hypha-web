@@ -6,6 +6,7 @@ import {
   ProfilePageParams,
 } from '@hypha-platform/epics';
 import { PeoplePurchaseHyphaTokens } from '@hypha-platform/epics';
+import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
 
 type PageProps = {
   params: Promise<ProfilePageParams>;
@@ -13,7 +14,7 @@ type PageProps = {
 
 export default async function PurchaseHyphaTokensProfile(props: PageProps) {
   const { lang, personSlug: personSlugRaw } = await props.params;
-  const personSlug = decodeURIComponent(personSlugRaw);
+  const personSlug = tryDecodeUriPart(personSlugRaw);
 
   let spaces = [] as Space[];
   let error = null;

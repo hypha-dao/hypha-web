@@ -5,6 +5,7 @@ import {
 } from '@hypha-platform/core/server';
 import { ProfileRouteParams } from '@hypha-platform/epics';
 import { db } from '@hypha-platform/storage-postgres';
+import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
@@ -12,7 +13,7 @@ export async function GET(
   { params }: { params: Promise<ProfileRouteParams> },
 ) {
   const { personSlug: personSlugRaw } = await params;
-  const personSlug = decodeURIComponent(personSlugRaw);
+  const personSlug = tryDecodeUriPart(personSlugRaw);
   console.debug(`GET /api/v1/people/${personSlug}/spaces`);
 
   const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';

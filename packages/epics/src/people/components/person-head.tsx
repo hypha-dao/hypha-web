@@ -26,6 +26,7 @@ import {
   useMe,
 } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
+import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
 
 export type MemberType = {
   avatar: string;
@@ -63,7 +64,7 @@ export const PersonHead = ({
   const { isMe } = useMe();
   const { lang, personSlug: personSlugRaw } =
     useParams<ProfileComponentParams>();
-  const personSlug = decodeURIComponent(personSlugRaw);
+  const personSlug = tryDecodeUriPart(personSlugRaw);
 
   const customLogoStyles: React.CSSProperties = {
     width: '128px',

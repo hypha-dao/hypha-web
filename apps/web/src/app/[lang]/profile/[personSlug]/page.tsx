@@ -18,6 +18,7 @@ import { getMemberSpaces, Space } from '@hypha-platform/core/client';
 import { ProfileTabs } from './_components/profile-tabs';
 import { web3Client } from '@hypha-platform/core/server';
 import { Hex, zeroAddress } from 'viem';
+import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
 
 type PageProps = {
   params: Promise<ProfilePageParams>;
@@ -34,7 +35,7 @@ export default async function ProfilePage(props: PageProps) {
   const params = await props.params;
 
   const { lang, personSlug: personSlugRaw } = params;
-  const personSlug = decodeURIComponent(personSlugRaw);
+  const personSlug = tryDecodeUriPart(personSlugRaw);
 
   const person = await findPersonBySlug({ slug: personSlug }, { db });
   const personAddress = (person?.address as Hex) || zeroAddress;
