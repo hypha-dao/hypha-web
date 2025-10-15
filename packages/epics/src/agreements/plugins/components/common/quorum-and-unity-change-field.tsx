@@ -74,7 +74,7 @@ export function QuorumAndUnityChangerField({
       name={name}
       render={() => (
         <FormItem>
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 mb-2">
             {TEMPLATES.map((preset) => {
               const isSelected = selectedPreset === preset.title;
               return (
