@@ -10,6 +10,7 @@ import {
   voteDecayTokenVotingPowerImplementationAbi,
   hyphaTokenAbi,
   votingPowerDelegationImplementationAbi,
+  daoProposalsImplementationAbi,
 } from '@hypha-platform/core/generated';
 
 type Tx = {
@@ -229,6 +230,20 @@ export function decodeTransaction(tx: Tx) {
               type: 'joinSpace',
               data: {
                 spaceId: decoded.args[0],
+              },
+            }
+          : null;
+      },
+    },
+    {
+      abi: daoProposalsImplementationAbi,
+      handler: (decoded) => {
+        return decoded.functionName === 'setMinimumProposalDuration'
+          ? {
+              type: 'setMinimumProposalDuration',
+              data: {
+                spaceId: decoded.args[0],
+                duration: decoded.args[1],
               },
             }
           : null;

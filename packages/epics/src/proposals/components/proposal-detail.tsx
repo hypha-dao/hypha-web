@@ -167,6 +167,9 @@ export const ProposalDetail = ({
           quorum={method.quorum}
           token={proposalDetails?.votingMethodsToken}
           spaceSlug={spaceSlug}
+          minimumProposalVotingDuration={
+            proposalDetails?.minimumProposalDurationData?.duration
+          }
         />
       ))}
       {proposalDetails?.entryMethods.map((method, idx) => (
