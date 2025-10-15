@@ -109,7 +109,7 @@ export const FormVoting = ({
   const labels = getVoteLabels(spaceDetails);
 
   return (
-    <div className="flex flex-col gap-5 text-neutral-11">
+    <div className="flex flex-col gap-7 text-neutral-11">
       <VoterList documentSlug={documentSlug} />
       <Separator />
       <div className="flex flex-col gap-6">
