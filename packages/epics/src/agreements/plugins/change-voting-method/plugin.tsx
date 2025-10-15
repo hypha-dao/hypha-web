@@ -25,6 +25,7 @@ import {
   FormItem,
   FormControl,
   FormMessage,
+  RequirementMark,
 } from '@hypha-platform/ui';
 import { VotingMethodSelector } from '../../components/voting-method-selector';
 import React from 'react';
@@ -197,6 +198,7 @@ export const ChangeVotingMethodPlugin = ({
                   <span className="flex justify-between w-full">
                     <Label className="w-full flex items-center">
                       Minimum Voting Duration
+                      <RequirementMark className="text-2 ml-1" />
                     </Label>
                     <FormControl>
                       <Select
