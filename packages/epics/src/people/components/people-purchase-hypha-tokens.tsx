@@ -189,10 +189,12 @@ export const PeoplePurchaseHyphaTokens = ({
           </div>
           <Separator />
           <RecipientField
+            label="Paid to"
             members={[]}
             spaces={recipientSpace}
             defaultRecipientType="space"
             readOnly={true}
+            showTabs={false}
           />
         </div>
         <Separator />
