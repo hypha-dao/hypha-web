@@ -126,6 +126,14 @@ export const useProposalDetailsWeb3Rpc = ({
       space: undefined,
     };
 
+    let minimumProposalDurationData: {
+      spaceId?: string;
+      duration?: bigint;
+    } = {
+      spaceId: undefined,
+      duration: undefined,
+    };
+
     (transactions as any[]).forEach((tx) => {
       const decoded = decodeTransaction(tx);
 
@@ -182,6 +190,10 @@ export const useProposalDetailsWeb3Rpc = ({
           delegatesData = decoded.data;
           break;
 
+        case 'setMinimumProposalDuration':
+          minimumProposalDurationData = decoded.data;
+          break;
+
         default:
           break;
       }
@@ -209,6 +221,7 @@ export const useProposalDetailsWeb3Rpc = ({
       buyHyphaTokensData,
       activateSpacesData,
       delegatesData,
+      minimumProposalDurationData,
     };
   }, [data]);
 
