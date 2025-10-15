@@ -55,6 +55,14 @@ contract EnergyToken is ERC20, Ownable {
   }
 
   /**
+   * @dev Override decimals to match USDC (6 decimals)
+   * Since this token represents USDC balances, it should use the same decimals
+   */
+  function decimals() public pure override returns (uint8) {
+    return 6;
+  }
+
+  /**
    * @dev Get the token balance of an address
    * @param account Address to check balance for
    * @return Token balance
@@ -63,4 +71,3 @@ contract EnergyToken is ERC20, Ownable {
     return balanceOf(account);
   }
 }
-

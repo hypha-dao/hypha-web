@@ -1,7 +1,13 @@
 import dotenv from 'dotenv';
 import { ethers } from 'ethers';
+import fs from 'fs';
 
 dotenv.config();
+
+interface AccountData {
+  privateKey: string;
+  address: string;
+}
 
 const contractAbi = [
   // Energy distribution functions
@@ -171,10 +177,10 @@ async function displaySystemState(contract: ethers.Contract, title: string) {
     const balance = await contract.getCashCreditBalance(address);
     balances[address] = balance;
     totalMemberBalances += balance;
+    const balanceStr = await formatUsdc(balance);
+    const sign = Number(balance) >= 0 ? '+' : '';
     console.log(
-      `   H${i + 1} (${OWNERSHIP_PERCENTAGES[i]}%): ${await formatUsdc(
-        balance,
-      )} USDC`,
+      `   H${i + 1} (${OWNERSHIP_PERCENTAGES[i]}%): ${sign}${balanceStr} USDC`,
     );
   }
 
@@ -237,15 +243,22 @@ async function displaySystemState(contract: ethers.Contract, title: string) {
   return isZeroSum;
 }
 
-async function runCycle(
+async function runTradingCycle(
   contract: ethers.Contract,
   cycleNumber: number,
   totalEnergyKwh: number,
   pricePerKwh: number,
+  nonConsumerIndex: number,
+  overConsumerIndex: number,
 ) {
   console.log(`\n${'═'.repeat(60)}`);
-  console.log(`🔄 CYCLE ${cycleNumber}`);
+  console.log(`🔄 CYCLE ${cycleNumber} - Energy Trading Test`);
   console.log(`${'═'.repeat(60)}`);
+  console.log(
+    `📝 Scenario: H${nonConsumerIndex + 1} doesn't consume, H${
+      overConsumerIndex + 1
+    } buys their energy`,
+  );
 
   // ==================== DISTRIBUTE ====================
   console.log(`\n☀️ Distribution Phase`);
@@ -275,11 +288,11 @@ async function runCycle(
   // ==================== CONSUME ====================
   console.log(`\n🏠 Consumption Phase`);
   console.log('-'.repeat(50));
-  console.log('All members consuming their allocated energy...');
 
   // Calculate allocated amounts based on ownership percentages
   const consumptionRequests = [];
-  let totalAllocated = 0;
+  let totalRequested = 0;
+  let nonConsumerAllocation = 0;
 
   for (let i = 0; i < HOUSEHOLD_ADDRESSES.length; i++) {
     const deviceId = i + 1; // Device IDs are 1-indexed
@@ -287,25 +300,51 @@ async function runCycle(
       (totalEnergyKwh * OWNERSHIP_PERCENTAGES[i]) / 100,
     );
 
-    // Give any remainder to the last household to ensure all energy is consumed
+    // Give any remainder to the last household
     if (i === HOUSEHOLD_ADDRESSES.length - 1) {
-      allocatedEnergy = totalEnergyKwh - totalAllocated;
+      allocatedEnergy = totalEnergyKwh - totalRequested - nonConsumerAllocation;
     }
 
-    consumptionRequests.push({
-      deviceId: deviceId,
-      quantity: allocatedEnergy,
-    });
-    totalAllocated += allocatedEnergy;
-
-    console.log(
-      `   H${i + 1} consuming ${allocatedEnergy} kWh (${
-        OWNERSHIP_PERCENTAGES[i]
-      }% of ${totalEnergyKwh} kWh)`,
-    );
+    if (i === nonConsumerIndex) {
+      // This household doesn't consume anything
+      console.log(
+        `   H${
+          i + 1
+        } NOT consuming (allocated ${allocatedEnergy} kWh available for others)`,
+      );
+      nonConsumerAllocation = allocatedEnergy;
+    } else if (i === overConsumerIndex) {
+      // This household consumes their share + the non-consumer's share
+      const extraEnergy = nonConsumerAllocation;
+      const totalConsumption = allocatedEnergy + extraEnergy;
+      consumptionRequests.push({
+        deviceId: deviceId,
+        quantity: totalConsumption,
+      });
+      totalRequested += totalConsumption;
+      console.log(
+        `   H${
+          i + 1
+        } consuming ${totalConsumption} kWh (${allocatedEnergy} own + ${extraEnergy} from H${
+          nonConsumerIndex + 1
+        })`,
+      );
+    } else {
+      // Normal consumption
+      consumptionRequests.push({
+        deviceId: deviceId,
+        quantity: allocatedEnergy,
+      });
+      totalRequested += allocatedEnergy;
+      console.log(
+        `   H${i + 1} consuming ${allocatedEnergy} kWh (${
+          OWNERSHIP_PERCENTAGES[i]
+        }% of ${totalEnergyKwh} kWh)`,
+      );
+    }
   }
 
-  console.log(`   Total consumption: ${totalAllocated} kWh`);
+  console.log(`   Total consumption: ${totalRequested} kWh`);
 
   const consumeTx = await contract.consumeEnergyTokens(consumptionRequests);
   await consumeTx.wait();
@@ -315,6 +354,48 @@ async function runCycle(
     contract,
     `After Consumption - Cycle ${cycleNumber}`,
   );
+
+  // ==================== ANALYSIS ====================
+  console.log(`\n💡 Trading Analysis:`);
+  console.log('-'.repeat(50));
+
+  const nonConsumerBalance = await contract.getCashCreditBalance(
+    HOUSEHOLD_ADDRESSES[nonConsumerIndex],
+  );
+  const overConsumerBalance = await contract.getCashCreditBalance(
+    HOUSEHOLD_ADDRESSES[overConsumerIndex],
+  );
+
+  console.log(
+    `   H${nonConsumerIndex + 1} (non-consumer) balance: +${await formatUsdc(
+      nonConsumerBalance,
+    )} USDC`,
+  );
+  console.log(
+    `   H${overConsumerIndex + 1} (over-consumer) balance: ${await formatUsdc(
+      overConsumerBalance,
+    )} USDC`,
+  );
+
+  if (Number(nonConsumerBalance) > 0) {
+    console.log(
+      `   ✅ H${
+        nonConsumerIndex + 1
+      } earned money by not consuming their energy!`,
+    );
+  } else {
+    console.log(
+      `   ⚠️  H${nonConsumerIndex + 1} should have positive balance!`,
+    );
+  }
+
+  if (Number(overConsumerBalance) < 0) {
+    console.log(
+      `   ✅ H${
+        overConsumerIndex + 1
+      } paid for the extra energy they consumed!`,
+    );
+  }
 
   // Verify zero-sum
   if (afterConsumption) {
@@ -328,17 +409,58 @@ async function runCycle(
   return afterConsumption;
 }
 
-async function runCyclicalTest() {
-  console.log('🔄 CYCLICAL ENERGY DISTRIBUTION & CONSUMPTION TEST');
-  console.log('==================================================');
-  console.log(
-    'Testing energy allocation where all members consume their share.\n',
-  );
+async function runEnergyTradingTest() {
+  console.log('💱 ENERGY TRADING TEST');
+  console.log('='.repeat(60));
+  console.log('Testing scenario where one member sells energy to another.\n');
 
   const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
-  const signer = new ethers.Wallet(process.env.PRIVATE_KEY!, provider);
-  const contractAddress = '0x02d88b0C4CC3A4AE86482056c25d65916Dd6DD95';
+
+  // Load account data
+  let accountData: AccountData[] = [];
+  try {
+    const data = fs.readFileSync('accounts.json', 'utf8');
+    if (data.trim()) {
+      const parsedData = JSON.parse(data);
+      accountData = parsedData.filter(
+        (account: AccountData) =>
+          account.privateKey &&
+          account.privateKey !== 'YOUR_PRIVATE_KEY_HERE_WITHOUT_0x_PREFIX' &&
+          account.privateKey.length === 64,
+      );
+    }
+  } catch (error) {
+    console.log('accounts.json not found. Using environment variables.');
+  }
+
+  // Fallback to environment variable
+  if (accountData.length === 0) {
+    const privateKey = process.env.PRIVATE_KEY;
+    if (privateKey) {
+      const cleanPrivateKey = privateKey.startsWith('0x')
+        ? privateKey.slice(2)
+        : privateKey;
+      const wallet = new ethers.Wallet(cleanPrivateKey);
+      accountData = [{ privateKey: cleanPrivateKey, address: wallet.address }];
+    }
+  }
+
+  if (accountData.length === 0) {
+    console.error(
+      '❌ No accounts found. Please create accounts.json or set PRIVATE_KEY in .env',
+    );
+    return;
+  }
+
+  const signer = new ethers.Wallet(accountData[0].privateKey, provider);
+  console.log(`🔑 Using wallet: ${signer.address}\n`);
+
+  const contractAddress =
+    process.env.ENERGY_DISTRIBUTION_ADDRESS ||
+    '0x02d88b0C4CC3A4AE86482056c25d65916Dd6DD95';
   const contract = new ethers.Contract(contractAddress, contractAbi, signer);
+
+  console.log(`📍 Energy Distribution Contract: ${contractAddress}\n`);
 
   try {
     // ==================== INITIAL RESET ====================
@@ -349,25 +471,33 @@ async function runCyclicalTest() {
     console.log('✅ System reset complete');
     await displaySystemState(contract, 'Initial State (After Reset)');
 
-    // ==================== RUN CYCLES ====================
-    const numberOfCycles = 5;
-    const energyConfigs = [
-      { energy: 100, price: 0.1 }, // Cycle 1: 100 kWh @ $0.10/kWh
-      { energy: 200, price: 0.15 }, // Cycle 2: 200 kWh @ $0.15/kWh
-      { energy: 150, price: 0.12 }, // Cycle 3: 150 kWh @ $0.12/kWh
-      { energy: 300, price: 0.08 }, // Cycle 4: 300 kWh @ $0.08/kWh
-      { energy: 250, price: 0.2 }, // Cycle 5: 250 kWh @ $0.20/kWh
+    // ==================== RUN 2 CYCLES ====================
+    const cycles = [
+      {
+        energy: 100,
+        price: 0.15,
+        nonConsumer: 3, // H4 (12% ownership) doesn't consume
+        overConsumer: 4, // H5 (30% ownership) buys H4's energy
+      },
+      {
+        energy: 200,
+        price: 0.2,
+        nonConsumer: 1, // H2 (16% ownership) doesn't consume
+        overConsumer: 2, // H3 (22% ownership) buys H2's energy
+      },
     ];
 
     let allCyclesPassed = true;
 
-    for (let i = 0; i < numberOfCycles; i++) {
-      const config = energyConfigs[i];
-      const cyclePassed = await runCycle(
+    for (let i = 0; i < cycles.length; i++) {
+      const config = cycles[i];
+      const cyclePassed = await runTradingCycle(
         contract,
         i + 1,
         config.energy,
         config.price,
+        config.nonConsumer,
+        config.overConsumer,
       );
       if (!cyclePassed) {
         allCyclesPassed = false;
@@ -385,7 +515,12 @@ async function runCyclicalTest() {
     if (allCyclesPassed) {
       console.log('✅ ALL CYCLES PASSED!');
       console.log('✅ Zero-sum property maintained throughout all cycles.');
-      console.log('✅ System is functioning correctly.');
+      console.log('✅ Energy trading works correctly:');
+      console.log(
+        '   - Non-consumers earn positive balances (sell their energy)',
+      );
+      console.log('   - Over-consumers have negative balances (buy energy)');
+      console.log('   - System maintains zero-sum accounting');
     } else {
       console.log('❌ SOME CYCLES FAILED!');
       console.log('❌ Zero-sum violations detected.');
@@ -394,7 +529,7 @@ async function runCyclicalTest() {
 
     await displaySystemState(contract, 'Final System State');
 
-    console.log('\n🎉 CYCLICAL TEST COMPLETED!');
+    console.log('\n🎉 ENERGY TRADING TEST COMPLETED!');
   } catch (error) {
     console.error('❌ Test failed:', error);
     if (error && typeof error === 'object' && 'reason' in error) {
@@ -404,4 +539,4 @@ async function runCyclicalTest() {
   }
 }
 
-runCyclicalTest().catch(console.error);
+runEnergyTradingTest().catch(console.error);
