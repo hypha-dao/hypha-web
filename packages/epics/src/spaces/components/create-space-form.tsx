@@ -37,6 +37,7 @@ import {
   SpaceFlags,
   useMe,
   useOrganisationSpacesBySingleSlug,
+  useSpaceBySlugExists,
   useSpacesByWeb3Ids,
 } from '@hypha-platform/core/client';
 import { Links } from '../../common/links';
@@ -46,6 +47,8 @@ import {
   ParentSpaceSelector,
   useMemberWeb3SpaceIds,
 } from '@hypha-platform/epics';
+import slugify from 'slugify';
+import { cn } from '@hypha-platform/ui-utils';
 
 const schemaCreateSpaceForm = schemaCreateSpace.extend(createSpaceFiles);
 export type SchemaCreateSpaceForm = z.infer<typeof schemaCreateSpaceForm>;
@@ -70,16 +73,19 @@ export type CreateSpaceFormProps = {
   submitLabel?: string;
   submitLoadingLabel?: string;
   label?: SpaceFormLabel;
+  spaceId?: number;
+  slugIncorrectMessage?: string;
   onSubmit: (
     values: SchemaCreateSpaceForm,
     organisationSpaces?: Space[],
-  ) => void;
+  ) => Promise<void> | void;
 };
 
 const DEFAULT_VALUES = {
   title: '',
   description: '',
   logoUrl: '',
+  slug: '',
   leadImage: '',
   categories: [] as Category[],
   links: [] as string[],
@@ -106,17 +112,46 @@ export const SpaceForm = ({
   submitLabel = 'Create',
   submitLoadingLabel = 'Creating Space...',
   label = 'create',
+  spaceId = -1,
+  slugIncorrectMessage = 'Space ID already exists',
 }: CreateSpaceFormProps) => {
   if (process.env.NODE_ENV !== 'production') {
     console.debug('SpaceForm', { defaultValues });
   }
 
+  const [slugDuplicated, setSlugDuplicated] = React.useState(false);
+
+  const resolveSlug = React.useCallback(
+    () => !slugDuplicated,
+    [slugDuplicated],
+  );
+
+  const schema = schemaCreateSpaceForm.extend({
+    slug: z
+      .string()
+      .min(1)
+      .max(50)
+      .regex(
+        /^[a-z0-9'-]+$/,
+        'This field can only contain lowercase letters, numbers, hyphens, and apostrophes.',
+      )
+      .optional()
+      .refine(resolveSlug, { message: slugIncorrectMessage }),
+  });
+
   const form = useForm<SchemaCreateSpaceForm>({
-    resolver: zodResolver(schemaCreateSpaceForm),
+    resolver: zodResolver(schema),
     defaultValues,
   });
 
   const parentSpaceId = form.watch('parentId');
+  const slug = form.watch('slug');
+
+  const {
+    exists: slugExists,
+    spaceId: foundSpaceId,
+    isLoading: slugIsChecking,
+  } = useSpaceBySlugExists(slug ?? '');
 
   const categoryOptions = React.useMemo(
     () =>
@@ -131,6 +166,34 @@ export const SpaceForm = ({
   }, [parentSpaceId, form]);
 
   React.useEffect(() => {
+    if (slugIsChecking) {
+      return;
+    }
+    if (slugExists && spaceId !== foundSpaceId) {
+      setSlugDuplicated(true);
+    } else {
+      setSlugDuplicated(false);
+    }
+  }, [spaceId, slugExists, foundSpaceId, slugIsChecking]);
+
+  React.useEffect(() => {
+    const { title } = form.getValues();
+    const { isTouched } = form.getFieldState('title');
+    if ((!values || values.title) && !title && !isTouched) {
+      return;
+    }
+    form.trigger('slug');
+  }, [form, slugDuplicated]);
+
+  const updateSlug = React.useCallback(
+    (title: string) => {
+      const preparedSlug = slugify(title, { lower: true });
+      form.setValue('slug', preparedSlug);
+    },
+    [form],
+  );
+
+  React.useEffect(() => {
     const { isDirty } = form.getFieldState('parentId');
     if (!isDirty) {
       form.setValue('parentId', initialParentSpaceId ?? null, {
@@ -143,7 +206,10 @@ export const SpaceForm = ({
 
   React.useEffect(() => {
     if (!values) return;
-    form.reset({ ...form.getValues(), ...values }, { keepDirty: true });
+    form.reset(
+      { ...form.getValues(), ...values },
+      { keepDirty: true, keepTouched: false },
+    );
   }, [values, form]);
 
   const { spaces: organisationSpaces, isLoading: isOrganisationLoading } =
@@ -268,7 +334,7 @@ export const SpaceForm = ({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(
-          (space) => {
+          async (space) => {
             if (
               !space.flags?.includes('sandbox') &&
               space.categories.length === 0
@@ -280,7 +346,7 @@ export const SpaceForm = ({
               showUnsetParentIdError();
               return;
             }
-            onSubmit(space, organisationSpaces);
+            await onSubmit(space, organisationSpaces);
           },
           (e) => {
             const flags = form.getValues()['flags'];
@@ -320,43 +386,67 @@ export const SpaceForm = ({
                 </FormItem>
               )}
             />
-            <div className="flex w-full">
-              <div className="flex flex-col w-full">
+            <div className="flex flex-col w-full">
+              <div className="flex flex-row w-full">
                 <Badge className="w-fit" colorVariant="accent">
                   {labelText}
                 </Badge>
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Input
-                          rightIcon={!field.value && <RequirementMark />}
-                          placeholder="Name your space..."
-                          className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
-                          disabled={isLoading}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                <div className="flex grow"></div>
+                <div className="flex justify-between gap-4">
+                  {backUrl && (
+                    <ButtonBack label={backLabel} backUrl={backUrl} />
                   )}
-                />
-                <span className="flex items-center">
-                  <Text className="text-1 text-foreground mr-1">
-                    Created by
-                  </Text>
-                  <Text className="text-1 text-neutral-11">
-                    {creator?.name} {creator?.surname}
-                  </Text>
-                </span>
+                  <ButtonClose closeUrl={closeUrl} />
+                </div>
+              </div>
+              <div className="flex flex-row w-full">
+                <div className="flex flex-col w-full">
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem className="gap-0">
+                        <FormControl>
+                          <Input
+                            rightIcon={!field.value && <RequirementMark />}
+                            placeholder="Name your space..."
+                            className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
+                            disabled={isLoading}
+                            {...field}
+                            onChange={(
+                              event: React.ChangeEvent<HTMLInputElement>,
+                            ) => {
+                              field.onChange(event);
+                              updateSlug(event.target.value);
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage className="mt-1" />
+                      </FormItem>
+                    )}
+                  />
+                  {spaceId === -1 && (
+                    <FormField
+                      control={form.control}
+                      name="slug"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormMessage className="mt-1" />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                  <span className="flex items-center">
+                    <Text className="text-1 text-foreground mr-1">
+                      Created by
+                    </Text>
+                    <Text className="text-1 text-neutral-11">
+                      {creator?.name} {creator?.surname}
+                    </Text>
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="flex justify-between gap-4">
-            {backUrl && <ButtonBack label={backLabel} backUrl={backUrl} />}
-            <ButtonClose closeUrl={closeUrl} />
           </div>
         </div>
         <FormField
@@ -454,6 +544,41 @@ export const SpaceForm = ({
             </FormItem>
           )}
         />
+        {spaceId !== -1 && (
+          <FormField
+            control={form.control}
+            name="slug"
+            render={({ field, fieldState: { error } }) => (
+              <FormItem>
+                <FormLabel className="text-foreground">
+                  Space Unique Link
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    leftIcon={<div className="text-2">/</div>}
+                    rightIcon={!field.value && <RequirementMark />}
+                    placeholder="Space Unique Link"
+                    className={cn(
+                      'text-2 pl-4',
+                      error &&
+                        'border-destructive focus-visible:ring-destructive',
+                    )}
+                    disabled={isLoading}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage className="mt-1" />
+                <span className="text-1 text-neutral-11">
+                  <span>
+                    Your space name is automatically added to the end of your
+                    space link. You can edit it if needed, but it must remain
+                    unique.
+                  </span>
+                </span>
+              </FormItem>
+            )}
+          />
+        )}
         <FormField
           control={form.control}
           name="links"
