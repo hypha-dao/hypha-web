@@ -35,7 +35,10 @@ export default async function ProfilePage(props: PageProps) {
 
   const { lang, personSlug } = params;
 
-  const person = await findPersonBySlug({ slug: personSlug }, { db });
+  const person = await findPersonBySlug(
+    { slug: decodeURIComponent(personSlug) },
+    { db },
+  );
   const personAddress = (person?.address as Hex) || zeroAddress;
   let spaces: Space[] = [];
   try {
