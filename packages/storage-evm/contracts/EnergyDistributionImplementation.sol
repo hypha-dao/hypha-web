@@ -212,7 +212,7 @@ contract EnergyDistributionImplementation is
     // Burn any remaining tokens
     uint256 tokenBalance = energyToken.balanceOf(memberAddress);
     if (tokenBalance > 0) {
-      energyToken.burn(memberAddress, tokenBalance);
+      energyToken.burnFrom(memberAddress, tokenBalance);
     }
 
     emit MemberRemoved(memberAddress);
@@ -655,13 +655,13 @@ contract EnergyDistributionImplementation is
 
     // Clear current state
     if (currentTokenBalance > 0) {
-      energyToken.burn(member, currentTokenBalance);
+      energyToken.burnFrom(member, currentTokenBalance);
     }
     cashCreditBalances[member] = 0;
 
     // Set new state
     if (amount > 0) {
-      energyToken.mint(member, uint256(amount));
+      energyToken.transfer(member, uint256(amount));
     } else if (amount < 0) {
       cashCreditBalances[member] = amount;
     }

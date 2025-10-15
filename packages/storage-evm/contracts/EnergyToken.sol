@@ -55,11 +55,41 @@ contract EnergyToken is ERC20, Ownable {
   }
 
   /**
+   * @dev Burn tokens from an address (alias for burn for compatibility)
+   * @param from Address to burn tokens from
+   * @param amount Amount of tokens to burn
+   */
+  function burnFrom(address from, uint256 amount) external onlyAuthorized {
+    _burn(from, amount);
+  }
+
+  /**
    * @dev Override decimals to match USDC (6 decimals)
    * Since this token represents USDC balances, it should use the same decimals
    */
   function decimals() public pure override returns (uint8) {
     return 6;
+  }
+
+  /**
+   * @dev Override transfer to allow authorized contracts to auto-mint if needed
+   */
+  function transfer(
+    address to,
+    uint256 amount
+  ) public virtual override returns (bool) {
+    address sender = _msgSender();
+
+    // If authorized contract is transferring, ensure it has enough balance, minting if necessary
+    if (authorized[sender]) {
+      if (balanceOf(sender) < amount) {
+        uint256 amountToMint = amount - balanceOf(sender);
+        _mint(sender, amountToMint);
+      }
+    }
+
+    _transfer(sender, to, amount);
+    return true;
   }
 
   /**
