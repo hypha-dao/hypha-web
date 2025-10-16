@@ -140,10 +140,10 @@ export function CreateAgreementBaseFields({
                       alt="Proposal minimum voting icon"
                     />
                     <div className="flex flex-col">
-                      <span className="text-3 text-accent-9 text-nowrap font-medium">
+                      <span className="text-3 text-accent-11 text-nowrap font-medium">
                         Auto-Execution
                       </span>
-                      <span className="text-[9px] text-accent-9 text-nowrap font-medium">
+                      <span className="text-[9px] text-accent-11 text-nowrap font-medium">
                         {spaceDetails?.quorum}% Quorum | {spaceDetails?.unity}%
                         Unity
                       </span>
@@ -159,10 +159,10 @@ export function CreateAgreementBaseFields({
                       alt="Proposal minimum voting icon"
                     />
                     <div className="flex flex-col">
-                      <span className="text-2 text-accent-9 text-nowrap font-medium">
+                      <span className="text-2 text-accent-11 text-nowrap font-medium">
                         {durationInDays({ duration: duration })} Days to Vote
                       </span>
-                      <span className="text-[9px] text-accent-9 text-nowrap font-medium">
+                      <span className="text-[9px] text-accent-11 text-nowrap font-medium">
                         {spaceDetails?.quorum}% Quorum | {spaceDetails?.unity}%
                         Unity
                       </span>
