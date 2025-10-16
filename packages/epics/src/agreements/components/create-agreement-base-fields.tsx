@@ -29,6 +29,7 @@ import {
   useSpaceDetailsWeb3Rpc,
 } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
+import { durationInDays } from '@hypha-platform/ui-utils';
 
 import { ButtonClose, ButtonBack } from '@hypha-platform/epics';
 
@@ -75,8 +76,6 @@ export function CreateAgreementBaseFields({
   const { duration } = useSpaceMinProposalDuration({
     spaceId: spaceIdBigInt as bigint,
   });
-
-  const durationInDays = Number(duration) / (60 * 60 * 24);
 
   return (
     <>
@@ -161,7 +160,7 @@ export function CreateAgreementBaseFields({
                     />
                     <div className="flex flex-col">
                       <span className="text-2 text-accent-9 text-nowrap font-medium">
-                        {durationInDays} Days to Vote
+                        {durationInDays({ duration: duration })} Days to Vote
                       </span>
                       <span className="text-[9px] text-accent-9 text-nowrap font-medium">
                         {spaceDetails?.quorum}% Quorum | {spaceDetails?.unity}%

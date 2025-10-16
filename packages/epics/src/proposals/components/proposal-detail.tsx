@@ -127,9 +127,13 @@ export const ProposalDetail = ({
 
   const proposalStatus = findDocumentStatus(documentsArrays, proposalId);
 
+  const hideDurationData = () => {
+    return proposalStatus === 'accepted' || proposalStatus === 'rejected';
+  };
+
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex gap-5 justify-between">
+      <div className="flex gap-2 justify-between">
         <ProposalHead
           creator={creator}
           title={title}
@@ -240,6 +244,7 @@ export const ProposalDetail = ({
         web3SpaceId={proposalDetails?.spaceId}
         spaceDetails={spaceDetails as unknown as SpaceDetails}
         proposalStatus={proposalStatus}
+        hideDurationData={hideDurationData()}
       />
       {/* TODO: uncomment when comments support will be implemented */}
       {/* <Separator />
