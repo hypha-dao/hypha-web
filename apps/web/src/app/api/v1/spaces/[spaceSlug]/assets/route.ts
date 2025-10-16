@@ -22,6 +22,8 @@ import {
 import { db } from '@hypha-platform/storage-postgres';
 import { hasEmojiOrLink } from '@hypha-platform/ui-utils';
 
+const EVT_TOKEN_ADDRESS = '0xd8724e6609838a54f7e505679bf6818f1a3f2d40';
+
 export async function GET(
   _: NextRequest,
   { params }: { params: Promise<{ spaceSlug: string }> },
@@ -179,7 +181,10 @@ export async function GET(
               `Failed to fetch supply for token ${token.address}: ${err}`,
             );
           }
-          const rate = prices[token.address] || 0;
+          let rate = prices[token.address] || 0;
+          if (token.address.toLowerCase() === EVT_TOKEN_ADDRESS) {
+            rate = 1;
+          }
           const decimals = await getTokenDecimals(token.address);
           return {
             ...meta,
