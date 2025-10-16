@@ -21,7 +21,7 @@ import {
   RequirementMark,
 } from '@hypha-platform/ui';
 import { Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Space, TOKENS } from '@hypha-platform/core/client';
 import { TokenPayoutField } from '../../agreements/plugins/components/common/token-payout-field';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
@@ -36,13 +36,14 @@ const HYPHA_PRICE_USD = 0.25;
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
 const RECIPIENT_SPACE_ADDRESS = '0x3dEf11d005F8C85c93e3374B28fcC69B25a650Af';
 
-type FormValues = z.infer<typeof purchaseSchema>;
+const schema = purchaseSchema.extend({ buyer: z.string() });
+type FormValues = z.infer<typeof schema>;
 
 export const PeoplePurchaseHyphaTokens = ({
   personSlug,
   spaces,
 }: PeoplePurchaseHyphaTokensProps) => {
-  const { person } = useMe();
+  const { person, isLoading: isPersonLoading } = useMe();
   const { fundWallet } = useFundWallet({
     address: person?.address as `0x${string}`,
   });
@@ -66,19 +67,29 @@ export const PeoplePurchaseHyphaTokens = ({
       ]
     : [];
 
+  const recipientMember = useMemo(() => {
+    return !isPersonLoading && person ? [person] : [];
+  }, [isPersonLoading, person]);
   const recipientSpace =
     spaces?.filter((s) => s?.address === RECIPIENT_SPACE_ADDRESS) || [];
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(purchaseSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
       payout: {
         amount: '',
         token: PAYMENT_TOKEN?.address ?? '',
       },
       recipient: RECIPIENT_SPACE_ADDRESS,
+      buyer: person && person.address ? person.address : '',
     },
   });
+
+  useEffect(() => {
+    if (person?.address) {
+      form.setValue('buyer', person?.address);
+    }
+  }, [form, person]);
 
   const amount = useWatch({
     control: form.control,
@@ -189,7 +200,16 @@ export const PeoplePurchaseHyphaTokens = ({
           </div>
           <Separator />
           <RecipientField
-            label="Paid to"
+            label="HYPHA sent to"
+            members={recipientMember}
+            defaultRecipientType="member"
+            readOnly={true}
+            showTabs={false}
+            name="buyer"
+          />
+          <Separator />
+          <RecipientField
+            label="USDC paid to"
             members={[]}
             spaces={recipientSpace}
             defaultRecipientType="space"

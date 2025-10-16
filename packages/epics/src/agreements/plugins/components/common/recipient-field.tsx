@@ -19,6 +19,7 @@ export function RecipientField({
   emptySpacesMessage,
   label,
   showTabs,
+  name = 'recipient',
 }: {
   members: Person[];
   spaces?: Space[];
@@ -28,12 +29,13 @@ export function RecipientField({
   emptySpacesMessage?: string;
   label?: string;
   showTabs?: boolean;
+  name?: string;
 }) {
   const { control } = useFormContext();
   return (
     <FormField
       control={control}
-      name="recipient"
+      name={name}
       render={({ field: { value, onChange } }) => (
         <FormItem>
           <FormControl>
