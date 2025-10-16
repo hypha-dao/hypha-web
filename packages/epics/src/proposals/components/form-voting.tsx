@@ -51,6 +51,7 @@ export const FormVoting = ({
   isAuthenticated,
   web3SpaceId,
   spaceDetails,
+  proposalStatus,
 }: {
   unity: number;
   quorum: number;
@@ -67,6 +68,7 @@ export const FormVoting = ({
   isAuthenticated?: boolean;
   web3SpaceId?: number;
   spaceDetails?: SpaceDetails;
+  proposalStatus?: string | null;
 }) => {
   const { myVote } = useMyVote(documentSlug);
   const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
@@ -108,6 +110,10 @@ export const FormVoting = ({
 
   const labels = getVoteLabels(spaceDetails);
 
+  const hideTargets = () => {
+    return proposalStatus === 'accepted' || proposalStatus === 'rejected';
+  };
+
   return (
     <div className="flex flex-col gap-7 text-neutral-11">
       <VoterList documentSlug={documentSlug} />
@@ -126,6 +132,7 @@ export const FormVoting = ({
               spaceDetails?.quorum ? Number(spaceDetails.quorum) : undefined
             }
             indicatorColor="bg-accent-12"
+            hideTargets={hideTargets()}
           />
         </Skeleton>
         <Skeleton
@@ -141,6 +148,7 @@ export const FormVoting = ({
               spaceDetails?.unity ? Number(spaceDetails.unity) : undefined
             }
             indicatorColor="bg-accent-9"
+            hideTargets={hideTargets()}
           />
         </Skeleton>
       </div>
