@@ -69,7 +69,7 @@ contract EnergySettlement is Ownable, ReentrancyGuard {
     require(eurcAmount > 0, 'Amount must be greater than 0');
 
     // Get current balance of the debtor
-    int256 currentBalance = energyDistribution.getCashCreditBalance(debtor);
+    (int256 currentBalance, ) = energyDistribution.getCashCreditBalance(debtor);
 
     // Only allow settlement if balance is negative (debt exists)
     require(currentBalance < 0, 'No debt to settle');
@@ -102,7 +102,7 @@ contract EnergySettlement is Ownable, ReentrancyGuard {
     // Settle the debt in the energy distribution system
     int256 previousBalance = currentBalance;
     energyDistribution.settleDebt(debtor, int256(settlementAmount));
-    int256 newBalance = energyDistribution.getCashCreditBalance(debtor);
+    (int256 newBalance, ) = energyDistribution.getCashCreditBalance(debtor);
 
     emit DebtSettled(
       msg.sender,
@@ -121,7 +121,7 @@ contract EnergySettlement is Ownable, ReentrancyGuard {
     require(eurcAmount > 0, 'Amount must be greater than 0');
 
     // Get current balance of the caller
-    int256 currentBalance = energyDistribution.getCashCreditBalance(msg.sender);
+    (int256 currentBalance, ) = energyDistribution.getCashCreditBalance(msg.sender);
 
     // Only allow settlement if balance is negative (debt exists)
     require(currentBalance < 0, 'No debt to settle');
@@ -152,7 +152,7 @@ contract EnergySettlement is Ownable, ReentrancyGuard {
     // Settle the debt in the energy distribution system
     int256 previousBalance = currentBalance;
     energyDistribution.settleDebt(msg.sender, int256(settlementAmount));
-    int256 newBalance = energyDistribution.getCashCreditBalance(msg.sender);
+    (int256 newBalance, ) = energyDistribution.getCashCreditBalance(msg.sender);
 
     emit DebtSettled(
       msg.sender,
@@ -184,7 +184,7 @@ contract EnergySettlement is Ownable, ReentrancyGuard {
   function getDebtInEurc(
     address debtor
   ) external view returns (uint256 eurcDebt) {
-    int256 balance = energyDistribution.getCashCreditBalance(debtor);
+    (int256 balance, ) = energyDistribution.getCashCreditBalance(debtor);
 
     if (balance >= 0) {
       return 0; // No debt

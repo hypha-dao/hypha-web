@@ -131,7 +131,7 @@ async function checkSystemStatus(energyDistribution: any): Promise<{
       communityDeviceId,
     );
     if (communityAddress !== '0x0000000000000000000000000000000000000000') {
-      communityBalance = await energyDistribution.getCashCreditBalance(
+      [communityBalance] = await energyDistribution.getCashCreditBalance(
         communityAddress,
       );
     }

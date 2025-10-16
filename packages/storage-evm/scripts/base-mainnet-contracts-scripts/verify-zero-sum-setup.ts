@@ -149,7 +149,7 @@ async function verifyZeroSumSetup(): Promise<void> {
     for (let i = 0; i < householdAddresses.length; i++) {
       try {
         const balance = Number(
-          await energyDistribution.getCashCreditBalance(householdAddresses[i]),
+          (await energyDistribution.getCashCreditBalance(householdAddresses[i]))[0],
         );
         totalHouseholdBalance += balance;
         validBalances++;
@@ -164,7 +164,7 @@ async function verifyZeroSumSetup(): Promise<void> {
     // Community balance
     try {
       communityBalance = Number(
-        await energyDistribution.getCashCreditBalance(communityAddress),
+        (await energyDistribution.getCashCreditBalance(communityAddress))[0],
       );
       console.log(
         `Community Fund: ${

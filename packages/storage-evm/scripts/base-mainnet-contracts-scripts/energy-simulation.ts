@@ -536,7 +536,7 @@ async function displayContractState(
         const member = await contract.getMember(address);
         const allocatedTokens = await contract.getAllocatedTokens(address);
         const cashBalance = Number(
-          await contract.getCashCreditBalance(address),
+          (await contract.getCashCreditBalance(address))[0],
         );
         totalHouseholdBalance += cashBalance;
 
@@ -564,7 +564,7 @@ async function displayContractState(
         communityAddress !== '0x0000000000000000000000000000000000000000'
       ) {
         const communityBalance = Number(
-          await contract.getCashCreditBalance(communityAddress),
+          (await contract.getCashCreditBalance(communityAddress))[0],
         );
         totalHouseholdBalance += communityBalance;
 

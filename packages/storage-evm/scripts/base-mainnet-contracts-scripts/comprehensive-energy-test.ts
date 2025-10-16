@@ -189,7 +189,7 @@ async function displaySystemState(contract: ethers.Contract, title: string) {
   console.log('🏠 Household Balances:');
   for (let i = 0; i < HOUSEHOLD_ADDRESSES.length; i++) {
     const balance = Number(
-      await contract.getCashCreditBalance(HOUSEHOLD_ADDRESSES[i]),
+      (await contract.getCashCreditBalance(HOUSEHOLD_ADDRESSES[i]))[0],
     );
     totalHouseholds += balance;
     console.log(
@@ -203,7 +203,7 @@ async function displaySystemState(contract: ethers.Contract, title: string) {
   const communityDeviceId = await contract.getCommunityDeviceId();
   const communityAddress = await contract.getDeviceOwner(communityDeviceId);
   const communityBalance = Number(
-    await contract.getCashCreditBalance(communityAddress),
+    (await contract.getCashCreditBalance(communityAddress))[0],
   );
 
   // External balances

@@ -711,8 +711,11 @@ contract EnergyDistributionImplementation is
   // View functions
   function getCashCreditBalance(
     address member
-  ) external view override returns (int256) {
-    return _getCashCreditBalance(member);
+  ) external view override returns (int256, address) {
+    return (
+      _getCashCreditBalance(member),
+      0xd8724e6609838a54F7e505679BF6818f1A3F2D40
+    );
   }
 
   function getTokenBalance(

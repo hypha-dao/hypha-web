@@ -138,7 +138,7 @@ async function debugVerification() {
     console.log('Household balances:');
     for (let i = 0; i < HOUSEHOLD_ADDRESSES.length; i++) {
       const balance = Number(
-        await contract.getCashCreditBalance(HOUSEHOLD_ADDRESSES[i]),
+        (await contract.getCashCreditBalance(HOUSEHOLD_ADDRESSES[i]))[0],
       );
       totalHouseholds += balance;
       console.log(
@@ -153,7 +153,7 @@ async function debugVerification() {
 
     // Community balance
     const communityBalance = Number(
-      await contract.getCashCreditBalance(communityAddress),
+      (await contract.getCashCreditBalance(communityAddress))[0],
     );
     console.log(
       `Community balance: ${

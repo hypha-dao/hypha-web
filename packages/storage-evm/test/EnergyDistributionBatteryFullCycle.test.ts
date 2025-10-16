@@ -336,7 +336,7 @@ describe('EnergyDistributionBatteryFullCycle', function () {
     let totalMemberBalance = 0;
 
     for (const [index, member] of members.entries()) {
-      const balance = await energyDistribution.getCashCreditBalance(
+      const [balance] = await energyDistribution.getCashCreditBalance(
         member.address,
       );
       const tokenBalance = await energyDistribution.getTokenBalance(
@@ -361,7 +361,7 @@ describe('EnergyDistributionBatteryFullCycle', function () {
     // Include community member balance if provided
     let communityBalance = 0;
     if (communityMember) {
-      const balance = await energyDistribution.getCashCreditBalance(
+      const [balance] = await energyDistribution.getCashCreditBalance(
         communityMember.address,
       );
       const tokenBalance = await energyDistribution.getTokenBalance(
@@ -418,7 +418,7 @@ describe('EnergyDistributionBatteryFullCycle', function () {
     // Store balances before consumption
     const beforeBalances: { [key: string]: number } = {};
     for (const member of members) {
-      const balance = await energyDistribution.getCashCreditBalance(
+      const [balance] = await energyDistribution.getCashCreditBalance(
         member.address,
       );
       beforeBalances[member.address] = Number(balance);
@@ -431,7 +431,7 @@ describe('EnergyDistributionBatteryFullCycle', function () {
     );
     let totalChange = 0;
     for (const [index, member] of members.entries()) {
-      const currentBalance = await energyDistribution.getCashCreditBalance(
+      const [currentBalance] = await energyDistribution.getCashCreditBalance(
         member.address,
       );
       const beforeBalance = beforeBalances[member.address] || 0;

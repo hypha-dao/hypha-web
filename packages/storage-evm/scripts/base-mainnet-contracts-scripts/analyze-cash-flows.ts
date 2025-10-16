@@ -170,7 +170,7 @@ async function analyzeCashFlows(): Promise<void> {
     let totalHouseholdBalance = 0;
     for (let i = 0; i < householdAddresses.length; i++) {
       const balance = Number(
-        await energyDistribution.getCashCreditBalance(householdAddresses[i]),
+        (await energyDistribution.getCashCreditBalance(householdAddresses[i]))[0],
       );
       totalHouseholdBalance += balance;
       console.log(
@@ -183,7 +183,7 @@ async function analyzeCashFlows(): Promise<void> {
       communityDeviceId,
     );
     const communityBalance = Number(
-      await energyDistribution.getCashCreditBalance(communityAddress),
+      (await energyDistribution.getCashCreditBalance(communityAddress))[0],
     );
 
     const importBalance = Number(
@@ -425,7 +425,7 @@ async function analyzeCashFlows(): Promise<void> {
       const addr = householdAddresses[i];
       const totalPaid = memberConsumptionTotals[addr] || 0;
       const currentBalance = Number(
-        await energyDistribution.getCashCreditBalance(addr),
+        (await energyDistribution.getCashCreditBalance(addr))[0],
       );
       console.log(
         `  Household ${i + 1}: Paid ${(totalPaid / 100).toFixed(

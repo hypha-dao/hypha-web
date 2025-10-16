@@ -315,7 +315,7 @@ describe('EnergyDistributionCloudyDayPeakDemand', function () {
     let totalMemberBalance = 0;
 
     for (const [index, member] of members.entries()) {
-      const balance = await energyDistribution.getCashCreditBalance(
+      const [balance] = await energyDistribution.getCashCreditBalance(
         member.address,
       );
       const tokenBalance = await energyDistribution.getTokenBalance(
@@ -341,7 +341,7 @@ describe('EnergyDistributionCloudyDayPeakDemand', function () {
     // Include community member balance if provided
     let communityBalance = 0;
     if (communityMember) {
-      const balance = await energyDistribution.getCashCreditBalance(
+      const [balance] = await energyDistribution.getCashCreditBalance(
         communityMember.address,
       );
       const tokenBalance = await energyDistribution.getTokenBalance(
@@ -505,7 +505,7 @@ describe('EnergyDistributionCloudyDayPeakDemand', function () {
 
     let totalChange = 0;
     for (const [index, member] of members.entries()) {
-      const currentBalance = await energyDistribution.getCashCreditBalance(
+      const [currentBalance] = await energyDistribution.getCashCreditBalance(
         member.address,
       );
       const beforeBalance = beforeBalances[member.address] || 0;
@@ -636,7 +636,7 @@ describe('EnergyDistributionCloudyDayPeakDemand', function () {
       // Store balances before consumption
       const daytimeBeforeBalances: { [key: string]: number } = {};
       for (const member of members) {
-        const balance = await energyDistribution.getCashCreditBalance(
+        const [balance] = await energyDistribution.getCashCreditBalance(
           member.address,
         );
         daytimeBeforeBalances[member.address] = Number(balance);
@@ -745,7 +745,7 @@ describe('EnergyDistributionCloudyDayPeakDemand', function () {
       // Store balances before consumption
       const eveningBeforeBalances: { [key: string]: number } = {};
       for (const member of members) {
-        const balance = await energyDistribution.getCashCreditBalance(
+        const [balance] = await energyDistribution.getCashCreditBalance(
           member.address,
         );
         eveningBeforeBalances[member.address] = Number(balance);

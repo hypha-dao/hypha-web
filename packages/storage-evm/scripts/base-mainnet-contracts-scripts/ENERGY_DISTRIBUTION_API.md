@@ -109,7 +109,7 @@ Returns the cash credit balance for a specific member.
 #### Example
 
 ```javascript
-const balance = await contract.getCashCreditBalance('0x123...');
+const [balance] = await contract.getCashCreditBalance('0x123...');
 const balanceUSDC = Number(balance) / 1000000; // Convert to USDC
 console.log(`Balance: $${balanceUSDC.toFixed(2)}`);
 ```
@@ -151,7 +151,7 @@ const consumption = [
 await contract.consumeEnergyTokens(consumption);
 
 // 3. Check results
-const h1Balance = await contract.getCashCreditBalance(household1Address);
+const [h1Balance] = await contract.getCashCreditBalance(household1Address);
 console.log(`Household 1 balance: $${Number(h1Balance) / 1000000}`);
 ```
 

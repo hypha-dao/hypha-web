@@ -132,7 +132,7 @@ async function runEnergyExample() {
         ];
 
         for (let i = 0; i < households.length; i++) {
-            const balance = await contract.getCashCreditBalance(households[i]);
+            const [balance] = await contract.getCashCreditBalance(households[i]);
             const status = Number(balance) >= 0 ? "Credit" : "Owes";
             console.log(`  Household ${i+1}: $${formatUSDC(Math.abs(Number(balance)))} ${status}`);
         }

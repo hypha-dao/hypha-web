@@ -689,7 +689,7 @@ async function viewContractState(): Promise<void> {
         communityAddress !== '0x0000000000000000000000000000000000000000'
       ) {
         communityBalance = Number(
-          await energyDistribution.getCashCreditBalance(communityAddress),
+          (await energyDistribution.getCashCreditBalance(communityAddress))[0],
         );
         console.log(`\n🏘️ Community Address (${communityAddress}):`);
         console.log(
@@ -982,7 +982,7 @@ async function viewContractState(): Promise<void> {
           // Try to get cash credit balance (with error handling)
           try {
             const balance = Number(
-              await energyDistribution.getCashCreditBalance(address),
+              (await energyDistribution.getCashCreditBalance(address))[0],
             );
             totalHouseholdBalance += balance;
             console.log(
@@ -1014,7 +1014,7 @@ async function viewContractState(): Promise<void> {
           communityAddress !== '0x0000000000000000000000000000000000000000'
         ) {
           const communityBalanceFallback = Number(
-            await energyDistribution.getCashCreditBalance(communityAddress),
+            (await energyDistribution.getCashCreditBalance(communityAddress))[0],
           );
           totalHouseholdBalance += communityBalanceFallback;
 

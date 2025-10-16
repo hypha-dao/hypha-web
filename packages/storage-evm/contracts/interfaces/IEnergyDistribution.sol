@@ -73,7 +73,9 @@ interface IEnergyDistribution {
 
   function setExportPrice(uint256 price) external;
 
-  function getCashCreditBalance(address member) external view returns (int256);
+  function getCashCreditBalance(
+    address member
+  ) external view returns (int256, address);
 
   function getTokenBalance(address member) external view returns (uint256);
 

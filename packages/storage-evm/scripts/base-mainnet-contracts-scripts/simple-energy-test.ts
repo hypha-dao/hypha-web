@@ -168,7 +168,7 @@ async function displaySystemState(contract: ethers.Contract, title: string) {
   console.log('🏠 Member Balances:');
   for (let i = 0; i < HOUSEHOLD_ADDRESSES.length; i++) {
     const address = HOUSEHOLD_ADDRESSES[i];
-    const balance = await contract.getCashCreditBalance(address);
+    const [balance] = await contract.getCashCreditBalance(address);
     balances[address] = balance;
     totalMemberBalances += balance;
     console.log(

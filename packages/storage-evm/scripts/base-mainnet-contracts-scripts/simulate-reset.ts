@@ -66,7 +66,7 @@ async function main() {
   // Check balances before
   console.log('\n📊 Balances before reset:');
   for (let i = 0; i < HOUSEHOLD_ADDRESSES.length; i++) {
-    const balance = await energyDistribution.getCashCreditBalance(
+    const [balance] = await energyDistribution.getCashCreditBalance(
       HOUSEHOLD_ADDRESSES[i],
     );
     console.log(`  H${i + 1}: ${balance.toString()}`);

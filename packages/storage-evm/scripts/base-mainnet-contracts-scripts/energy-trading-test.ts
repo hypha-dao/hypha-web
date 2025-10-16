@@ -174,7 +174,7 @@ async function displaySystemState(contract: ethers.Contract, title: string) {
   console.log('🏠 Member Balances:');
   for (let i = 0; i < HOUSEHOLD_ADDRESSES.length; i++) {
     const address = HOUSEHOLD_ADDRESSES[i];
-    const balance = await contract.getCashCreditBalance(address);
+    const [balance] = await contract.getCashCreditBalance(address);
     balances[address] = balance;
     totalMemberBalances += balance;
     const balanceStr = await formatUsdc(balance);
@@ -372,10 +372,10 @@ async function runTradingCycle(
   console.log(`\n💡 Trading Analysis:`);
   console.log('-'.repeat(50));
 
-  const nonConsumerBalance = await contract.getCashCreditBalance(
+  const [nonConsumerBalance] = await contract.getCashCreditBalance(
     HOUSEHOLD_ADDRESSES[nonConsumerIndex],
   );
-  const overConsumerBalance = await contract.getCashCreditBalance(
+  const [overConsumerBalance] = await contract.getCashCreditBalance(
     HOUSEHOLD_ADDRESSES[overConsumerIndex],
   );
 

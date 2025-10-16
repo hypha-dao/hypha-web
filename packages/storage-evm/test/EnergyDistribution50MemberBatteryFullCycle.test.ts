@@ -269,7 +269,7 @@ describe('EnergyDistribution50MemberBatteryFullCycle', function () {
     const sampleIndices = [0, 9, 19, 29, 39, 49];
 
     for (const index of sampleIndices) {
-      const balance = await energyDistribution.getCashCreditBalance(
+      const [balance] = await energyDistribution.getCashCreditBalance(
         members[index].address,
       );
       const tokenBalance = await energyDistribution.getTokenBalance(
@@ -292,7 +292,7 @@ describe('EnergyDistribution50MemberBatteryFullCycle', function () {
 
     // Calculate total for all members
     for (let i = 0; i < members.length; i++) {
-      const balance = await energyDistribution.getCashCreditBalance(
+      const [balance] = await energyDistribution.getCashCreditBalance(
         members[i].address,
       );
       totalMemberBalance += Number(balance);
@@ -303,7 +303,7 @@ describe('EnergyDistribution50MemberBatteryFullCycle', function () {
     // Include community member balance if provided
     let communityBalance = 0;
     if (communityMember) {
-      const balance = await energyDistribution.getCashCreditBalance(
+      const [balance] = await energyDistribution.getCashCreditBalance(
         communityMember.address,
       );
       const tokenBalance = await energyDistribution.getTokenBalance(

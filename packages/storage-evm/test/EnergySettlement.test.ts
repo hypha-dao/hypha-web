@@ -181,7 +181,7 @@ describe('EnergySettlement', function () {
       } = await loadFixture(setupWithDebtFixture);
 
       // Check initial debt
-      const initialBalance = await energyDistribution.getCashCreditBalance(
+      const [initialBalance] = await energyDistribution.getCashCreditBalance(
         member1.address,
       );
       expect(initialBalance).to.be.lt(0); // Should have debt
@@ -211,7 +211,7 @@ describe('EnergySettlement', function () {
         .to.emit(energyDistribution, 'DebtSettled');
 
       // Check final balance
-      const finalBalance = await energyDistribution.getCashCreditBalance(
+      const [finalBalance] = await energyDistribution.getCashCreditBalance(
         member1.address,
       );
       expect(finalBalance).to.equal(0); // Debt should be cleared
@@ -232,7 +232,7 @@ describe('EnergySettlement', function () {
       const { energySettlement, energyDistribution, eurcToken, member1 } =
         await loadFixture(setupWithDebtFixture);
 
-      const initialBalance = await energyDistribution.getCashCreditBalance(
+      const [initialBalance] = await energyDistribution.getCashCreditBalance(
         member1.address,
       );
       const debtAmount = -initialBalance;
@@ -247,7 +247,7 @@ describe('EnergySettlement', function () {
         .connect(member1)
         .settleDebt(member1.address, partialAmount);
 
-      const finalBalance = await energyDistribution.getCashCreditBalance(
+      const [finalBalance] = await energyDistribution.getCashCreditBalance(
         member1.address,
       );
 
@@ -265,7 +265,7 @@ describe('EnergySettlement', function () {
         member2,
       } = await loadFixture(setupWithDebtFixture);
 
-      const initialBalance = await energyDistribution.getCashCreditBalance(
+      const [initialBalance] = await energyDistribution.getCashCreditBalance(
         member1.address,
       );
       const debtInEurc = await energySettlement.getDebtInEurc(member1.address);
@@ -281,7 +281,7 @@ describe('EnergySettlement', function () {
           .settleDebt(member1.address, debtInEurc),
       ).to.emit(energySettlement, 'DebtSettled');
 
-      const finalBalance = await energyDistribution.getCashCreditBalance(
+      const [finalBalance] = await energyDistribution.getCashCreditBalance(
         member1.address,
       );
       expect(finalBalance).to.equal(0);
@@ -300,7 +300,7 @@ describe('EnergySettlement', function () {
         energySettlement.connect(member1).settleOwnDebt(debtInEurc),
       ).to.emit(energySettlement, 'DebtSettled');
 
-      const finalBalance = await energyDistribution.getCashCreditBalance(
+      const [finalBalance] = await energyDistribution.getCashCreditBalance(
         member1.address,
       );
       expect(finalBalance).to.equal(0);
@@ -391,7 +391,7 @@ describe('EnergySettlement', function () {
       const { energySettlement, energyDistribution, member1 } =
         await loadFixture(setupWithDebtFixture);
 
-      const balance = await energyDistribution.getCashCreditBalance(
+      const [balance] = await energyDistribution.getCashCreditBalance(
         member1.address,
       );
       const debtInEurc = await energySettlement.getDebtInEurc(member1.address);

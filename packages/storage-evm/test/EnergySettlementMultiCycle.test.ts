@@ -116,7 +116,7 @@ describe('EnergySettlementMultiCycle', function () {
 
     // Log member balances and token status
     for (const [index, member] of members.entries()) {
-      const balance = await energyDistribution.getCashCreditBalance(
+      const [balance] = await energyDistribution.getCashCreditBalance(
         member.address,
       );
       const tokenBalance = await energyDistribution.getTokenBalance(
@@ -144,7 +144,7 @@ describe('EnergySettlementMultiCycle', function () {
 
     // Log community balance
     if (communityMember) {
-      const balance = await energyDistribution.getCashCreditBalance(
+      const [balance] = await energyDistribution.getCashCreditBalance(
         communityMember.address,
       );
       const tokenBalance = await energyDistribution.getTokenBalance(
@@ -254,7 +254,7 @@ describe('EnergySettlementMultiCycle', function () {
     let settlementsCount = 0;
 
     for (const [index, member] of members.entries()) {
-      const balance = await energyDistribution.getCashCreditBalance(
+      const [balance] = await energyDistribution.getCashCreditBalance(
         member.address,
       );
 

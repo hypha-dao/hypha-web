@@ -105,7 +105,7 @@ async function getAllBalances(contract: ethers.Contract): Promise<{
   // Get all household balances
   for (const address of HOUSEHOLD_ADDRESSES) {
     try {
-      const balance = Number(await contract.getCashCreditBalance(address));
+      const balance = Number((await contract.getCashCreditBalance(address))[0]);
       householdTotal += balance;
     } catch (error) {
       console.log(`   Warning: Could not get balance for ${address}`);
@@ -122,7 +122,7 @@ async function getAllBalances(contract: ethers.Contract): Promise<{
       communityAddress !== '0x0000000000000000000000000000000000000000'
     ) {
       communityBalance = Number(
-        await contract.getCashCreditBalance(communityAddress),
+        (await contract.getCashCreditBalance(communityAddress))[0],
       );
       householdTotal += communityBalance;
     }
