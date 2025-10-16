@@ -4,7 +4,7 @@ import { useReadContract } from 'wagmi';
 import { erc20Abi } from 'viem';
 import { Image } from '@hypha-platform/ui';
 import { EthAddress } from '../../people';
-import { useTokens } from '@hypha-platform/epics';
+import { useTokens, usePersonByWeb3Address } from '@hypha-platform/epics';
 import { Token } from '@hypha-platform/core/client';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 
@@ -40,6 +40,8 @@ export const ProposalTransactionItem = ({
   const parsedAmount = Number(amount) / 10 ** decimals;
   const formattedAmount = parsedAmount.toFixed(decimals);
 
+  const { person } = usePersonByWeb3Address(recipient as `0x${string}`);
+
   return (
     <div className="w-full flex items-center justify-between gap-4">
       <div className="flex items-center gap-3">
@@ -55,7 +57,22 @@ export const ProposalTransactionItem = ({
         </div>
       </div>
       <div className="w-[140px]">
-        <EthAddress address={recipient || ''} />
+        {!person ? (
+          <EthAddress address={recipient || ''} />
+        ) : (
+          <span className="flex gap-2 text-2 text-neutral-11 justify-end">
+            <Image
+              className="rounded-lg w-[24px] h-[24px]"
+              src={person?.avatarUrl ?? '/placeholder/default-profile.svg'}
+              width={24}
+              height={24}
+              alt={`${person?.nickname} avatar`}
+            />
+            <span>
+              {person?.name} {person?.surname}
+            </span>
+          </span>
+        )}
       </div>
     </div>
   );
