@@ -15,10 +15,12 @@ import {
   validTokenTypes,
   TokenType,
   getTokenDecimals,
+  getEnergyBalances,
 } from '@hypha-platform/core/client';
 import { headers } from 'next/headers';
 import { hasEmojiOrLink, tryDecodeUriPart } from '@hypha-platform/ui-utils';
 import { ProfileRouteParams } from '@hypha-platform/epics';
+import { web3Client } from '@hypha-platform/core/server';
 
 export async function GET(
   request: NextRequest,
@@ -47,6 +49,18 @@ export async function GET(
         { error: 'Invalid or missing address' },
         { status: 400 },
       );
+    }
+
+    let energyBalanceRaw: bigint = 0n;
+    let energyTokenAddress: `0x${string}` | undefined = undefined;
+
+    try {
+      const config = getEnergyBalances({ member: address });
+      const result = await web3Client.readContract(config);
+      energyBalanceRaw = BigInt(result[0]);
+      energyTokenAddress = result[1] as `0x${string}`;
+    } catch (error) {
+      console.warn('Failed to fetch energy balance:', error);
     }
 
     let externalTokens: any[] = [];
@@ -83,6 +97,53 @@ export async function GET(
         addressMap.set(token.address.toLowerCase(), token);
       }
     });
+
+    if (energyTokenAddress) {
+      const lower = energyTokenAddress.toLowerCase();
+      if (!addressMap.has(lower)) {
+        let name = 'Unnamed';
+        let symbol = 'UNKNOWN';
+        try {
+          name = await web3Client.readContract({
+            address: energyTokenAddress,
+            abi: [
+              {
+                type: 'function',
+                inputs: [],
+                name: 'name',
+                outputs: [{ internalType: 'string', type: 'string' }],
+                stateMutability: 'view',
+              },
+            ],
+            functionName: 'name',
+          });
+          symbol = await web3Client.readContract({
+            address: energyTokenAddress,
+            abi: [
+              {
+                type: 'function',
+                inputs: [],
+                name: 'symbol',
+                outputs: [{ internalType: 'string', type: 'string' }],
+                stateMutability: 'view',
+              },
+            ],
+            functionName: 'symbol',
+          });
+        } catch (error) {
+          console.warn('Failed to fetch energy token metadata:', error);
+        }
+        const token: Token = {
+          name,
+          symbol,
+          address: energyTokenAddress,
+          icon: '/placeholder/token-icon.svg',
+          type: 'utility' as const,
+        };
+        addressMap.set(lower, token);
+      }
+    }
+
     const allTokens: Token[] = Array.from(addressMap.values());
 
     let prices: Record<string, number | undefined> = {};
@@ -115,7 +176,22 @@ export async function GET(
       allTokens.map(async (token) => {
         try {
           const meta = await getTokenMeta(token.address, dbTokens);
-          const { amount } = await getBalance(token.address, address);
+          const isEnergyToken =
+            token.address.toLowerCase() === energyTokenAddress?.toLowerCase();
+          let amount: number;
+          const decimals = await getTokenDecimals(token.address);
+          if (isEnergyToken) {
+            amount =
+              Number(energyBalanceRaw / 10n ** BigInt(decimals)) +
+              Number(energyBalanceRaw % 10n ** BigInt(decimals)) /
+                10 ** decimals;
+          } else {
+            const { amount: rawAmount } = await getBalance(
+              token.address,
+              address,
+            );
+            amount = rawAmount;
+          }
           let totalSupply: bigint | undefined;
           try {
             const supply = await getSupply(token.address);
@@ -126,7 +202,6 @@ export async function GET(
             );
           }
           const rate = prices[token.address] || 0;
-          const decimals = await getTokenDecimals(token.address);
           return {
             ...meta,
             address: token.address,
