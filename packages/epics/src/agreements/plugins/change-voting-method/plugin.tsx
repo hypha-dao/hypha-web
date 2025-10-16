@@ -220,12 +220,8 @@ export const ChangeVotingMethodPlugin = ({
                         </SelectContent>
                       </Select>
                     </FormControl>
-                    <FormMessage />
                   </span>
-                  <span className="text-2 text-neutral-11">
-                    Auto-execution is disabled. Please set a minimum voting
-                    duration.
-                  </span>
+                  <FormMessage />
                 </FormItem>
               )}
             />

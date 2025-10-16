@@ -353,7 +353,12 @@ export const schemaChangeVotingMethod = z.object({
   token: z.string().optional(),
   quorumAndUnity: schemaQuorumAndUnity.optional(),
   votingMethod: z.enum(['1m1v', '1v1v', '1t1v']).nullable().optional(),
-  votingDuration: z.number().optional(),
+  votingDuration: z
+    .number({
+      message:
+        'Auto-execution is disabled. Please set a minimum voting duration.',
+    })
+    .optional(),
 });
 
 export const schemaCreateAgreementForm = z.object({
