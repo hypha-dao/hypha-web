@@ -100,7 +100,7 @@ export const FormVoting = ({
     }
 
     if (quorum === 100 && unity === 0) {
-      return { reject: 'Not sure', accept: 'Look good' };
+      return { reject: 'Not sure', accept: 'Looks good' };
     }
 
     return { reject: 'Vote no', accept: 'Vote yes' };
