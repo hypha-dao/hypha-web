@@ -3,6 +3,7 @@
 import { useTokens } from '../../treasury';
 import { Token } from '@hypha-platform/core/client';
 import { Image } from '@hypha-platform/ui';
+import { durationInDays } from '@hypha-platform/ui-utils';
 
 interface ProposalVotingInfoProps {
   votingPowerSource: bigint;
@@ -52,8 +53,6 @@ export const ProposalVotingInfo = ({
   );
 
   if (!token) return null;
-
-  const durationInDays = Number(minimumProposalVotingDuration) / (60 * 60 * 24);
 
   const getVotingMethod = (quorum: bigint, unity: bigint): string => {
     const q = Number(quorum);
@@ -119,7 +118,8 @@ export const ProposalVotingInfo = ({
                 src="/placeholder/non-auto-execution-icon.png"
                 alt="Proposal minimum voting icon"
               />{' '}
-              {durationInDays} Days to Vote
+              {durationInDays({ duration: minimumProposalVotingDuration })} Days
+              to Vote
             </span>
           ) : (
             <span className="flex items-center gap-2">

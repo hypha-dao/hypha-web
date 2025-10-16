@@ -23,8 +23,6 @@ export type ProposalHeadProps = {
 export const ProposalHead = ({
   creator,
   title,
-  commitment,
-  status,
   isLoading = false,
   label,
   createDate,
@@ -61,55 +59,61 @@ export const ProposalHead = ({
   const { text: statusText, colorVariant: statusColor } = getStatusBadgeProps();
 
   return (
-    <div className="flex items-center space-x-3">
-      <PersonAvatar
-        size="lg"
-        isLoading={isLoading}
-        avatarSrc={creator?.avatar}
-        userName={displayName}
-      />
-      <div className="flex justify-between items-center w-full">
-        <div className="grid">
-          <div className="flex gap-x-1">
-            <Badge variant="solid" colorVariant="accent" isLoading={isLoading}>
-              {label}
-            </Badge>
-            {creator?.type === 'space' && (
+    <div className="flex gap-3 w-full">
+      <div className="flex items-center space-x-3">
+        <PersonAvatar
+          size="lg"
+          isLoading={isLoading}
+          avatarSrc={creator?.avatar}
+          userName={displayName}
+        />
+        <div className="flex justify-between items-center w-full">
+          <div className="grid">
+            <div className="flex gap-x-1">
               <Badge
-                variant="outline"
-                colorVariant="neutral"
+                variant="solid"
+                colorVariant="accent"
                 isLoading={isLoading}
               >
-                Space
+                {label}
               </Badge>
-            )}
-            {proposalStatus && (
-              <Badge
-                variant="outline"
-                colorVariant={statusColor}
-                isLoading={isLoading}
-              >
-                {statusText}
-              </Badge>
-            )}
+              {creator?.type === 'space' && (
+                <Badge
+                  variant="outline"
+                  colorVariant="neutral"
+                  isLoading={isLoading}
+                >
+                  Space
+                </Badge>
+              )}
+              {proposalStatus && (
+                <Badge
+                  variant="outline"
+                  colorVariant={statusColor}
+                  isLoading={isLoading}
+                >
+                  {statusText}
+                </Badge>
+              )}
+            </div>
+
+            <Skeleton
+              height="26px"
+              width="160px"
+              loading={isLoading}
+              className="my-1"
+            >
+              <Text className="text-4 text-ellipsis overflow-hidden text-nowrap mr-3">
+                {title}
+              </Text>
+            </Skeleton>
+
+            <Skeleton height="16px" width="80px" loading={isLoading}>
+              <Text className="text-1 text-gray-500">
+                {displayName} · {createDate}
+              </Text>
+            </Skeleton>
           </div>
-
-          <Skeleton
-            height="26px"
-            width="160px"
-            loading={isLoading}
-            className="my-1"
-          >
-            <Text className="text-4 text-ellipsis overflow-hidden text-nowrap mr-3">
-              {title}
-            </Text>
-          </Skeleton>
-
-          <Skeleton height="16px" width="80px" loading={isLoading}>
-            <Text className="text-1 text-gray-500">
-              {displayName} · {createDate}
-            </Text>
-          </Skeleton>
         </div>
       </div>
     </div>

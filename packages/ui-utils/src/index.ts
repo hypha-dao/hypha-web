@@ -9,3 +9,4 @@ export * from './get-duration';
 export * from './get-cropped-img';
 export * from './hasEmojiOrLink';
 export * from './try-decode-uri-part';
+export * from './durationInDays';

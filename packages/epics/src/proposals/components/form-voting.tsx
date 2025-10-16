@@ -1,4 +1,6 @@
-import { Button, Skeleton, Separator } from '@hypha-platform/ui';
+'use client';
+
+import { Button, Skeleton, Separator, Image } from '@hypha-platform/ui';
 import { ProgressLine } from './progress-line';
 import { intervalToDuration, isPast } from 'date-fns';
 import { VoterList } from '../../governance/components/voter-list';
@@ -8,6 +10,8 @@ import {
   type SpaceDetails,
 } from '@hypha-platform/core/client';
 import { useJoinSpace } from '../../spaces';
+import { useSpaceMinProposalDuration } from '@hypha-platform/core/client';
+import { durationInDays } from '@hypha-platform/ui-utils';
 
 function formatTimeRemaining(
   endTime: string,
@@ -52,6 +56,7 @@ export const FormVoting = ({
   web3SpaceId,
   spaceDetails,
   proposalStatus,
+  hideDurationData,
 }: {
   unity: number;
   quorum: number;
@@ -69,6 +74,7 @@ export const FormVoting = ({
   web3SpaceId?: number;
   spaceDetails?: SpaceDetails;
   proposalStatus?: string | null;
+  hideDurationData?: boolean;
 }) => {
   const { myVote } = useMyVote(documentSlug);
   const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
@@ -114,6 +120,12 @@ export const FormVoting = ({
     return proposalStatus === 'accepted' || proposalStatus === 'rejected';
   };
 
+  const spaceIdBigInt = web3SpaceId ? BigInt(web3SpaceId) : undefined;
+
+  const { duration } = useSpaceMinProposalDuration({
+    spaceId: spaceIdBigInt as bigint,
+  });
+
   return (
     <div className="flex flex-col gap-7 text-neutral-11">
       <VoterList documentSlug={documentSlug} />
@@ -152,27 +164,75 @@ export const FormVoting = ({
           />
         </Skeleton>
       </div>
-      <div className="flex items-center justify-between">
+      <div className="flex items-end justify-between">
         <Skeleton
           width="100%"
           height="28px"
           loading={isLoading}
           className="rounded-lg"
         >
-          <div className="text-1">
-            {formatTimeRemaining(endTime, executed, expired)}
-          </div>
-          {isPast(new Date(endTime)) && !executed && !expired ? (
-            <div className="flex gap-2">
-              <Button
-                onClick={onCheckProposalExpiration}
-                disabled={isDisabled}
-                title={tooltipMessage}
-              >
-                Execute
-              </Button>
+          <div className="flex flex-col gap-3">
+            <Skeleton
+              loading={isLoading}
+              width={120}
+              height={40}
+              className="rounded-lg"
+            >
+              {hideDurationData ? null : Number(duration) === 0 ? (
+                <div className="flex gap-2 h-fit items-center">
+                  <Image
+                    className="max-w-[24px] max-h-[24px] min-w-[24px] min-h-[24px]"
+                    width={24}
+                    height={24}
+                    src="/placeholder/auto-execution-icon.png"
+                    alt="Proposal minimum voting icon"
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-1 text-accent-9 text-nowrap font-medium">
+                      Auto-Execution
+                    </span>
+                    <span className="text-[9px] text-accent-9 text-nowrap font-medium">
+                      {spaceDetails?.quorum}% Quorum | {spaceDetails?.unity}%
+                      Unity
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex gap-2 h-fit items-center">
+                  <Image
+                    className="max-w-[24px] max-h-[24px] min-w-[24px] min-h-[24px]"
+                    width={24}
+                    height={24}
+                    src="/placeholder/non-auto-execution-icon.png"
+                    alt="Proposal minimum voting icon"
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-1 text-accent-9 text-nowrap font-medium">
+                      {durationInDays({ duration: duration })} Days to Vote
+                    </span>
+                    <span className="text-[9px] text-accent-9 text-nowrap font-medium">
+                      {spaceDetails?.quorum}% Quorum | {spaceDetails?.unity}%
+                      Unity
+                    </span>
+                  </div>
+                </div>
+              )}
+            </Skeleton>
+            <div className="text-1">
+              {formatTimeRemaining(endTime, executed, expired)}
             </div>
-          ) : null}
+            {isPast(new Date(endTime)) && !executed && !expired ? (
+              <div className="flex gap-2">
+                <Button
+                  onClick={onCheckProposalExpiration}
+                  disabled={isDisabled}
+                  title={tooltipMessage}
+                >
+                  Execute
+                </Button>
+              </div>
+            ) : null}
+          </div>
           {executed || expired || isPast(new Date(endTime)) ? null : (
             <div className="flex gap-2">
               {myVote ? (
