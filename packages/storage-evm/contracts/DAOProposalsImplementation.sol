@@ -146,7 +146,7 @@ contract DAOProposalsImplementation is
       params.spaceId
     );
 
-    if (u == 0 || q < 20) {
+    if (q < 20) {
       if (spaceMinProposalDuration[params.spaceId] == 0) {
         spaceMinProposalDuration[params.spaceId] = 72 hours;
       }
