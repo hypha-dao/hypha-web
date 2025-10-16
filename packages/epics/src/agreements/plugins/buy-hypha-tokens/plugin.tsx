@@ -39,7 +39,7 @@ export const BuyHyphaTokensPlugin = ({ spaces }: BuyHyphaTokensPluginProps) => {
   const {
     spaces: [space],
     isLoading: isSpacesLoading,
-  } = useSpacesByWeb3Ids([spaceWeb3Id]);
+  } = useSpacesByWeb3Ids(spaceWeb3Id ? [spaceWeb3Id] : [], false);
 
   const parsedAmount = parseFloat(payout?.amount ?? '');
   const calculatedHypha = !isNaN(parsedAmount)
