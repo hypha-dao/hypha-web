@@ -145,8 +145,8 @@ export const ChangeVotingMethodPlugin = ({
       <div className="flex flex-col gap-5">
         <Label>Voting Method</Label>
         <span className="text-2 text-neutral-11">
-          Select a voting method template to apply default Quorum (min.
-          participation) and Unity (min. alignment) values.
+          Select a voting method template, or adjust Quorum and Unity values
+          with the sliders.
         </span>
         <QuorumAndUnityChangerField name="quorumAndUnity" />
       </div>
