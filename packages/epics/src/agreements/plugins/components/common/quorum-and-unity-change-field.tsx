@@ -130,10 +130,6 @@ export function QuorumAndUnityChangerField({
               );
             })}
           </div>
-          <span className="text-neutral-11 text-2">
-            Optional: Adjust the Quorum and Unity sliders to refine the selected
-            voting method template.
-          </span>
           <FormControl>
             <QuorumAndUnityChanger
               quorum={fieldValue.quorum}
