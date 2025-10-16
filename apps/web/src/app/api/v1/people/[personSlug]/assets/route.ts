@@ -201,7 +201,7 @@ export async function GET(
               `Failed to fetch supply for token ${token.address}: ${err}`,
             );
           }
-          const rate = prices[token.address] || 0;
+          const rate = isEnergyToken ? 1 : prices[token.address] || 0;
           return {
             ...meta,
             address: token.address,
