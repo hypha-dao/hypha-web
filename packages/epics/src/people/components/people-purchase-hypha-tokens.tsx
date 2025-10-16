@@ -67,7 +67,7 @@ export const PeoplePurchaseHyphaTokens = ({
       ]
     : [];
 
-  const recipientMember = useMemo(() => {
+  const buyerMember = useMemo(() => {
     return !isPersonLoading && person ? [person] : [];
   }, [isPersonLoading, person]);
   const recipientSpace =
@@ -87,7 +87,7 @@ export const PeoplePurchaseHyphaTokens = ({
 
   useEffect(() => {
     if (person?.address) {
-      form.setValue('buyer', person?.address);
+      form.setValue('buyer', person.address);
     }
   }, [form, person]);
 
@@ -201,7 +201,7 @@ export const PeoplePurchaseHyphaTokens = ({
           <Separator />
           <RecipientField
             label="HYPHA sent to"
-            members={recipientMember}
+            members={buyerMember}
             defaultRecipientType="member"
             readOnly={true}
             showTabs={false}
