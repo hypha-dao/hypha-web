@@ -30,7 +30,9 @@ export const useAssetsSection = ({
     setVisibleCount((prev) => prev + pageSize);
   }, [pageSize]);
 
-  const totalBalance = `$ ${formatCurrencyValue(balance)}`;
+  const totalBalance = `${balance < 0 ? '-' : ''}$ ${formatCurrencyValue(
+    Math.abs(balance),
+  )}`;
   const visibleAssets = assets.slice(0, visibleCount);
   const hasMore = visibleCount < assets.length;
 
