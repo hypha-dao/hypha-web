@@ -121,7 +121,9 @@ contract EnergySettlement is Ownable, ReentrancyGuard {
     require(eurcAmount > 0, 'Amount must be greater than 0');
 
     // Get current balance of the caller
-    (int256 currentBalance, ) = energyDistribution.getCashCreditBalance(msg.sender);
+    (int256 currentBalance, ) = energyDistribution.getCashCreditBalance(
+      msg.sender
+    );
 
     // Only allow settlement if balance is negative (debt exists)
     require(currentBalance < 0, 'No debt to settle');

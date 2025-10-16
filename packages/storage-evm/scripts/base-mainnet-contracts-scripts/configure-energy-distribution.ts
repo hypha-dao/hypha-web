@@ -1014,7 +1014,9 @@ async function viewContractState(): Promise<void> {
           communityAddress !== '0x0000000000000000000000000000000000000000'
         ) {
           const communityBalanceFallback = Number(
-            (await energyDistribution.getCashCreditBalance(communityAddress))[0],
+            (
+              await energyDistribution.getCashCreditBalance(communityAddress)
+            )[0],
           );
           totalHouseholdBalance += communityBalanceFallback;
 

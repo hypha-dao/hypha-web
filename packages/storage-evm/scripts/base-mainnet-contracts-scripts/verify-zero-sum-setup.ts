@@ -149,7 +149,9 @@ async function verifyZeroSumSetup(): Promise<void> {
     for (let i = 0; i < householdAddresses.length; i++) {
       try {
         const balance = Number(
-          (await energyDistribution.getCashCreditBalance(householdAddresses[i]))[0],
+          (
+            await energyDistribution.getCashCreditBalance(householdAddresses[i])
+          )[0],
         );
         totalHouseholdBalance += balance;
         validBalances++;

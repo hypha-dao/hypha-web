@@ -333,7 +333,9 @@ async function runEnergySimulation(
         console.log('⚠️  Running OLD contract version (pre-fix)\n');
       }
     } catch (error) {
-      console.log('⚠️  Contract version check failed - running OLD contract (pre-fix)\n');
+      console.log(
+        '⚠️  Contract version check failed - running OLD contract (pre-fix)\n',
+      );
     }
 
     // Step 1: Display initial state
