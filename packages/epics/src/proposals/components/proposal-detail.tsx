@@ -239,6 +239,7 @@ export const ProposalDetail = ({
         isAuthenticated={isAuthenticated}
         web3SpaceId={proposalDetails?.spaceId}
         spaceDetails={spaceDetails as unknown as SpaceDetails}
+        proposalStatus={proposalStatus}
       />
       {/* TODO: uncomment when comments support will be implemented */}
       {/* <Separator />
