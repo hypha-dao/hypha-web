@@ -15,6 +15,13 @@ export function ProgressLine({
   indicatorColor,
   target = 0,
 }: ProgressLineProps) {
+  let transformStyle = 'translateX(-50%)';
+  if (target === 0) {
+    transformStyle = 'translateX(-15%)';
+  } else if (target === 100) {
+    transformStyle = 'translateX(-85%)';
+  }
+
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between text-1">
@@ -29,17 +36,15 @@ export function ProgressLine({
           className="h-2"
         />
 
-        {typeof target === 'number' && (
-          <div
-            className="absolute top-0 left-0 flex flex-col items-center pointer-events-none"
-            style={{ left: `${target}%`, transform: 'translateX(-50%)' }}
-          >
-            <span className="absolute top-4 text-1 whitespace-nowrap text-xs">
-              {target}%
-            </span>
-            <TriangleUpIcon className="w-[28px] h-[31px] -mt-[10px] text-accent-6" />
-          </div>
-        )}
+        <div
+          className="absolute top-0 left-0 flex flex-col items-center pointer-events-none"
+          style={{ left: `${target}%`, transform: transformStyle }}
+        >
+          <span className="absolute top-4 text-1 whitespace-nowrap text-xs">
+            {target}%
+          </span>
+          <TriangleUpIcon className="w-[25px] h-[25px] -mt-[7px] text-accent-6" />
+        </div>
       </div>
     </div>
   );
