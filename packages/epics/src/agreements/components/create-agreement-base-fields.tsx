@@ -132,7 +132,7 @@ export function CreateAgreementBaseFields({
                   </Text>
                 </div>
                 {Number(duration) === 0 ? (
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 h-fit items-center">
                     <Image
                       className="max-w-[32px] max-h-[32px] min-w-[32px] min-h-[32px]"
                       width={32}
@@ -144,14 +144,14 @@ export function CreateAgreementBaseFields({
                       <span className="text-3 text-accent-9 text-nowrap font-medium">
                         Auto-Execution
                       </span>
-                      <span className="text-1 text-accent-9 text-nowrap font-medium">
+                      <span className="text-[9px] text-accent-9 text-nowrap font-medium">
                         {spaceDetails?.quorum}% Quorum | {spaceDetails?.unity}%
                         Unity
                       </span>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 h-fit items-center">
                     <Image
                       className="max-w-[32px] max-h-[32px] min-w-[32px] min-h-[32px]"
                       width={32}
@@ -160,10 +160,10 @@ export function CreateAgreementBaseFields({
                       alt="Proposal minimum voting icon"
                     />
                     <div className="flex flex-col">
-                      <span className="text-3 text-accent-9 text-nowrap font-medium">
+                      <span className="text-2 text-accent-9 text-nowrap font-medium">
                         {durationInDays} Days to Vote
                       </span>
-                      <span className="text-1 text-accent-9 text-nowrap font-medium">
+                      <span className="text-[9px] text-accent-9 text-nowrap font-medium">
                         {spaceDetails?.quorum}% Quorum | {spaceDetails?.unity}%
                         Unity
                       </span>
