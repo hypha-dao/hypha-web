@@ -302,7 +302,7 @@ async function runTradingCycle(
 
     // Give any remainder to the last household
     if (i === HOUSEHOLD_ADDRESSES.length - 1) {
-      allocatedEnergy = totalEnergyKwh - totalRequested - nonConsumerAllocation;
+      allocatedEnergy = totalEnergyKwh - totalRequested;
     }
 
     if (i === nonConsumerIndex) {
@@ -315,20 +315,33 @@ async function runTradingCycle(
       nonConsumerAllocation = allocatedEnergy;
     } else if (i === overConsumerIndex) {
       // This household consumes their share + the non-consumer's share
-      const extraEnergy = nonConsumerAllocation;
+      // BUT if this is the last household, allocatedEnergy already includes everything
+      const isLastHousehold = i === HOUSEHOLD_ADDRESSES.length - 1;
+      const extraEnergy = isLastHousehold ? 0 : nonConsumerAllocation;
       const totalConsumption = allocatedEnergy + extraEnergy;
       consumptionRequests.push({
         deviceId: deviceId,
         quantity: totalConsumption,
       });
       totalRequested += totalConsumption;
-      console.log(
-        `   H${
-          i + 1
-        } consuming ${totalConsumption} kWh (${allocatedEnergy} own + ${extraEnergy} from H${
-          nonConsumerIndex + 1
-        })`,
-      );
+
+      if (isLastHousehold) {
+        console.log(
+          `   H${
+            i + 1
+          } consuming ${totalConsumption} kWh (includes ${nonConsumerAllocation} from H${
+            nonConsumerIndex + 1
+          })`,
+        );
+      } else {
+        console.log(
+          `   H${
+            i + 1
+          } consuming ${totalConsumption} kWh (${allocatedEnergy} own + ${extraEnergy} from H${
+            nonConsumerIndex + 1
+          })`,
+        );
+      }
     } else {
       // Normal consumption
       consumptionRequests.push({

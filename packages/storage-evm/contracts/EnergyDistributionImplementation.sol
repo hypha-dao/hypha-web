@@ -212,7 +212,7 @@ contract EnergyDistributionImplementation is
     // Burn any remaining tokens
     uint256 tokenBalance = energyToken.balanceOf(memberAddress);
     if (tokenBalance > 0) {
-      energyToken.burnFrom(memberAddress, tokenBalance);
+      energyToken.burn(memberAddress, tokenBalance);
     }
 
     emit MemberRemoved(memberAddress);
@@ -401,7 +401,7 @@ contract EnergyDistributionImplementation is
           // address communityAddress = deviceToMember[communityDeviceId];
           // require(communityAddress != address(0), 'Community address not set');
           // _adjustCashCreditBalance(communityAddress, cost);
-          communityCashCreditBalance += cost;
+          _adjustCommunityBalance(cost);
 
           collectiveConsumption[j].quantity -= canConsume;
           remainingToConsume -= canConsume;
@@ -498,7 +498,7 @@ contract EnergyDistributionImplementation is
           if (profit != 0) {
             _adjustCashCreditBalance(collectiveConsumption[j].owner, profit);
           }
-          communityCashCreditBalance += cost;
+          _adjustCommunityBalance(cost);
           exportCashCreditBalance -= revenue;
 
           totalCalculatedExportRevenue += revenue; // Still track for event emitting
@@ -569,6 +569,8 @@ contract EnergyDistributionImplementation is
 
   // FIX 5: Emergency reset function
   function emergencyReset() external onlyWhitelist {
+    address treasury = 0xD86e25d230D1dB17BC573399FB7f14c8d8c685Ae;
+
     // Clear all collective consumption by popping each element
     while (collectiveConsumption.length > 0) {
       collectiveConsumption.pop();
@@ -588,6 +590,14 @@ contract EnergyDistributionImplementation is
     address communityAddress = deviceToMember[communityDeviceId];
     if (communityAddress != address(0)) {
       _setCashCreditBalance(communityAddress, 0);
+    }
+
+    // Burn tokens from treasury if community balance is positive
+    if (communityCashCreditBalance > 0) {
+      uint256 treasuryBalance = energyToken.balanceOf(treasury);
+      if (treasuryBalance > 0) {
+        energyToken.burn(treasury, treasuryBalance);
+      }
     }
 
     // Reset system balances
@@ -655,7 +665,7 @@ contract EnergyDistributionImplementation is
 
     // Clear current state
     if (currentTokenBalance > 0) {
-      energyToken.burnFrom(member, currentTokenBalance);
+      energyToken.burn(member, currentTokenBalance);
     }
     cashCreditBalances[member] = 0;
 
@@ -665,6 +675,28 @@ contract EnergyDistributionImplementation is
     } else if (amount < 0) {
       cashCreditBalances[member] = amount;
     }
+  }
+
+  // Helper function to update community balance with treasury integration
+  function _adjustCommunityBalance(int256 adjustment) internal {
+    address treasury = 0xD86e25d230D1dB17BC573399FB7f14c8d8c685Ae;
+    int256 newBalance = communityCashCreditBalance + adjustment;
+
+    // If balance goes from non-positive to positive, transfer tokens to treasury
+    if (communityCashCreditBalance <= 0 && newBalance > 0) {
+      // Transfer the positive amount to treasury
+      energyToken.transfer(treasury, uint256(newBalance));
+    } else if (
+      communityCashCreditBalance > 0 && newBalance > communityCashCreditBalance
+    ) {
+      // Balance is already positive and increasing, transfer the additional amount
+      uint256 additionalAmount = uint256(
+        newBalance - communityCashCreditBalance
+      );
+      energyToken.transfer(treasury, additionalAmount);
+    }
+
+    communityCashCreditBalance = newBalance;
   }
 
   function _adjustCashCreditBalance(

@@ -1,6 +1,6 @@
 import { ethers, upgrades } from 'hardhat';
 
-const PROXY_ADDRESS = '0xAe47243cfa71f4B95BCf6E2BB1D4F59599B963F0';
+const PROXY_ADDRESS = '0xd8724e6609838a54F7e505679BF6818f1A3F2D40';
 
 async function main(): Promise<void> {
   const [deployer] = await ethers.getSigners();

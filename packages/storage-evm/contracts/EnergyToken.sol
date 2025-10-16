@@ -47,6 +47,7 @@ contract EnergyToken is ERC20, Ownable {
 
   /**
    * @dev Burn tokens from an address (only authorized contracts)
+   * Primary burn function used by EnergyDistribution
    * @param from Address to burn tokens from
    * @param amount Amount of tokens to burn
    */
