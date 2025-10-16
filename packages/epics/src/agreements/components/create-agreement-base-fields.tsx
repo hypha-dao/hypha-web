@@ -131,7 +131,7 @@ export function CreateAgreementBaseFields({
                   </Text>
                 </div>
                 {Number(duration) === 0 ? (
-                  <div className="flex gap-2 h-fit items-center">
+                  <div className="flex gap-2 h-fit items-center pr-3">
                     <Image
                       className="max-w-[32px] max-h-[32px] min-w-[32px] min-h-[32px]"
                       width={32}
@@ -150,7 +150,7 @@ export function CreateAgreementBaseFields({
                     </div>
                   </div>
                 ) : (
-                  <div className="flex gap-2 h-fit items-center">
+                  <div className="flex gap-2 h-fit items-center pr-3">
                     <Image
                       className="max-w-[32px] max-h-[32px] min-w-[32px] min-h-[32px]"
                       width={32}
