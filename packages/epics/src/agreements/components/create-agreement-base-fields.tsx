@@ -29,7 +29,7 @@ import {
   useSpaceDetailsWeb3Rpc,
 } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
-import { durationInDays } from '@hypha-platform/ui-utils';
+import { formatDuration } from '@hypha-platform/ui-utils';
 
 import { ButtonClose, ButtonBack } from '@hypha-platform/epics';
 import { useTheme } from 'next-themes';
@@ -173,7 +173,7 @@ export function CreateAgreementBaseFields({
                     />
                     <div className="flex flex-col">
                       <span className="text-2 text-accent-11 text-nowrap font-medium">
-                        {durationInDays({ duration: duration })} Days to Vote
+                        {formatDuration(Number(duration))} to Vote
                       </span>
                       <span className="text-[9px] text-accent-11 text-nowrap font-medium">
                         {spaceDetails?.quorum}% Quorum | {spaceDetails?.unity}%

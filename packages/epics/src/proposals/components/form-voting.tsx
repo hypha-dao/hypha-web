@@ -11,7 +11,7 @@ import {
 } from '@hypha-platform/core/client';
 import { useJoinSpace } from '../../spaces';
 import { useSpaceMinProposalDuration } from '@hypha-platform/core/client';
-import { durationInDays } from '@hypha-platform/ui-utils';
+import { formatDuration } from '@hypha-platform/ui-utils';
 import { useTheme } from 'next-themes';
 
 function formatTimeRemaining(
@@ -218,7 +218,7 @@ export const FormVoting = ({
                   />
                   <div className="flex flex-col">
                     <span className="text-1 text-accent-11 text-nowrap font-medium">
-                      {durationInDays({ duration: duration })} Days to Vote
+                      {formatDuration(Number(duration))} to Vote
                     </span>
                     <span className="text-[9px] text-accent-11 text-nowrap font-medium">
                       {spaceDetails?.quorum}% Quorum | {spaceDetails?.unity}%
