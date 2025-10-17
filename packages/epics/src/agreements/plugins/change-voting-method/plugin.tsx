@@ -81,7 +81,7 @@ export const ChangeVotingMethodPlugin = ({
     return rawTokens.filter((token) => token.type === 'voice');
   }, [rawTokens]);
 
-  const { control, setValue } = useFormContext();
+  const { control, setValue, getValues } = useFormContext();
 
   const quorumAndUnity = useWatch({
     control,
@@ -103,26 +103,35 @@ export const ChangeVotingMethodPlugin = ({
     name: 'votingDuration',
   });
 
-  React.useEffect(() => {
-    if (
-      !autoExecution &&
-      votingDuration === undefined &&
-      duration !== undefined
-    ) {
-      setValue('votingDuration', duration);
-    }
-  }, [autoExecution, votingDuration, duration, setValue]);
-
   const isQuorumTooLow = (quorumAndUnity?.quorum ?? 0) < 20;
 
   React.useEffect(() => {
-    if (isQuorumTooLow) {
-      setValue('autoExecution', false);
-    } else {
-      setValue('autoExecution', true);
-      setValue('votingDuration', 0);
+    if (duration !== undefined && votingDuration === undefined) {
+      setValue('votingDuration', duration);
     }
-  }, [isQuorumTooLow, setValue]);
+  }, [duration, votingDuration, setValue]);
+
+  React.useEffect(() => {
+    const currentQuorum = quorumAndUnity?.quorum ?? 0;
+    const currentAutoExecution = getValues('autoExecution');
+    const currentVotingDuration = getValues('votingDuration');
+
+    if (currentQuorum < 20) {
+      if (currentAutoExecution !== false) {
+        setValue('autoExecution', false);
+      }
+      if (currentVotingDuration === undefined && duration !== undefined) {
+        setValue('votingDuration', duration);
+      }
+    } else {
+      if (currentAutoExecution !== true) {
+        setValue('autoExecution', true);
+      }
+      if (currentVotingDuration !== 0) {
+        setValue('votingDuration', 0);
+      }
+    }
+  }, [quorumAndUnity?.quorum, duration, setValue, getValues]);
 
   const handleMethodChange = (method: VotingMethodType | null) => {
     setValue('votingMethod', method);
@@ -138,6 +147,18 @@ export const ChangeVotingMethodPlugin = ({
         : [],
     );
     setValue('token', undefined);
+  };
+
+  const handleAutoExecutionChange = (val: boolean) => {
+    setValue('autoExecution', val);
+
+    if (val) {
+      setValue('votingDuration', 0);
+    } else {
+      if (duration !== undefined) {
+        setValue('votingDuration', duration);
+      }
+    }
   };
 
   return (
@@ -166,15 +187,9 @@ export const ChangeVotingMethodPlugin = ({
                   <span>Auto-execution (when conditions are met)</span>
                   <Switch
                     checked={field.value}
-                    onCheckedChange={(val) => {
-                      field.onChange(val);
-                      if (val) {
-                        setValue('votingDuration', 0);
-                      } else if (duration !== undefined) {
-                        setValue('votingDuration', duration);
-                      }
-                    }}
+                    onCheckedChange={handleAutoExecutionChange}
                     className="ml-2"
+                    disabled={isQuorumTooLow}
                   />
                 </div>
               </FormControl>
@@ -188,7 +203,8 @@ export const ChangeVotingMethodPlugin = ({
             </FormItem>
           )}
         />
-        {autoExecution ? null : (
+
+        {!autoExecution && (
           <>
             <FormField
               control={control}

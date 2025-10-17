@@ -4,8 +4,7 @@ import { CreateAgreementBaseFields } from '../../agreements/components';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  schemaChangeVotingMethod,
-  createAgreementFiles,
+  schemaCreateProposalChangeVotingMethod,
   useMe,
   useCreateChangeVotingMethodOrchestrator,
 } from '@hypha-platform/core/client';
@@ -17,9 +16,6 @@ import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter } from 'next/navigation';
 import { useSpaceDetailsWeb3Rpc } from '@hypha-platform/core/client';
-
-const schemaCreateProposalChangeVotingMethod =
-  schemaChangeVotingMethod.extend(createAgreementFiles);
 
 type FormValues = z.infer<typeof schemaCreateProposalChangeVotingMethod>;
 
