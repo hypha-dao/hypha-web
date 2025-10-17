@@ -8,8 +8,8 @@ export const purchaseSchema = z.object({
   }),
   recipient: z
     .string()
-    .min(1, { message: 'Please add a recipient or wallet address' })
-    .refine(isAddress, { message: 'Invalid Ethereum address' }),
+    .min(1, 'Please add a recipient or wallet address')
+    .refine(isAddress, 'Invalid Ethereum address'),
 });
 
 export const activateSpacesSchema = z.object({
@@ -23,14 +23,14 @@ export const activateSpacesSchema = z.object({
         .superRefine((val, ctx) => {
           if (!val.spaceId || val.spaceId < 1) {
             ctx.addIssue({
-              code: z.ZodIssueCode.custom,
+              code: 'custom',
               path: ['spaceId'],
               message: 'Please select a space to activate.',
             });
           }
           if (!val.months || val.months < 1) {
             ctx.addIssue({
-              code: z.ZodIssueCode.custom,
+              code: 'custom',
               path: ['months'],
               message: 'Please enter the number of months to activate.',
             });
@@ -41,8 +41,8 @@ export const activateSpacesSchema = z.object({
   paymentToken: z.enum(['HYPHA', 'USDC']),
   recipient: z
     .string()
-    .min(1, { message: 'Please add a recipient or wallet address' })
-    .refine(isAddress, { message: 'Invalid Ethereum address' }),
+    .min(1, 'Please add a recipient or wallet address')
+    .refine(isAddress, 'Invalid Ethereum address'),
 });
 
 export type ActivateSpacesFormValues = z.infer<typeof activateSpacesSchema>;

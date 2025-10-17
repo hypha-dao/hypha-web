@@ -39,7 +39,7 @@ export const paymentScheduleSchema = z
     if (data.option === 'Future Payment' && data.futureDate) {
       if (isBefore(data.futureDate, new Date())) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: 'custom',
           message:
             'The future payment date must be later than the current date',
           path: ['futureDate'],
@@ -50,7 +50,7 @@ export const paymentScheduleSchema = z
     if (data.option === 'Milestones' && data.milestones) {
       if (!data.milestones || data.milestones.length === 0) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: 'custom',
           message: 'Milestones cannot be empty',
           path: ['milestones'],
         });
@@ -67,7 +67,7 @@ export const paymentScheduleSchema = z
 
         if (!dateRange?.from) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: 'custom',
             message: 'Each milestone must have a start date',
             path: ['milestones', i, 'dateRange', 'from'],
           });
@@ -75,7 +75,7 @@ export const paymentScheduleSchema = z
 
         if (i === 0 && dateRange?.from && isBefore(dateRange.from, now)) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: 'custom',
             message: 'First milestone must be in the future',
             path: ['milestones', i, 'dateRange', 'from'],
           });
@@ -90,7 +90,7 @@ export const paymentScheduleSchema = z
           isBefore(dateRange.from, previousFrom)
         ) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: 'custom',
             message: `Milestone ${i + 1} must be after milestone ${i}`,
             path: ['milestones', i, 'dateRange', 'from'],
           });
@@ -99,7 +99,7 @@ export const paymentScheduleSchema = z
 
       if (total > 100) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: 'custom',
           message: 'Total percentage cannot exceed 100%',
           path: ['milestones'],
         });
@@ -111,12 +111,12 @@ const createAgreementWeb2Props = {
   title: z
     .string()
     .trim()
-    .min(1, { message: 'Please add a title for your proposal' })
+    .min(1, 'Please add a title for your proposal')
     .max(50),
   description: z
     .string()
     .trim()
-    .min(1, { message: 'Please add content to your proposal' })
+    .min(1, 'Please add content to your proposal')
     .max(4000),
   slug: z
     .string()
@@ -138,12 +138,12 @@ export const schemaCreateAgreementWeb2 = z.object(createAgreementWeb2Props);
 export const schemaRequestInvite = schemaCreateAgreementWeb2.extend({
   memberAddress: z
     .string()
-    .regex(/^0x[a-fA-F0-9]{40}$/, { message: 'Invalid Ethereum address' })
-    .min(1, { message: 'Member address is required' }),
+    .regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid Ethereum address')
+    .min(1, 'Member address is required'),
 });
 
 export const createAgreementWeb2FileUrls = {
-  leadImage: z.string().url('Lead Image URL must be a valid URL').optional(),
+  leadImage: z.url('Lead Image URL must be a valid URL').optional(),
 };
 
 export const schemaCreateAgreementWeb2FileUrls = z.object(
@@ -155,7 +155,7 @@ const isBrowserFile = (v: unknown): v is File =>
 
 export const createAgreementFiles = {
   leadImage: z
-    .custom<File>(isBrowserFile, { message: 'Please upload a valid file' })
+    .custom<File>(isBrowserFile, 'Please upload a valid file')
     .refine(
       (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
       'Your file is too large and exceeds the 4MB limit. Please upload a smaller file.',
@@ -168,24 +168,21 @@ export const createAgreementFiles = {
   attachments: z
     .array(
       z
-        .custom<File>(isBrowserFile, { message: 'Please upload a valid file' })
+        .custom<File>(isBrowserFile, 'Please upload a valid file')
         .refine(
           (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-          (file) => ({
-            message: `Your file "${file.name}" is too large and exceeds the 4MB limit. Please upload a smaller file.`,
-          }),
+
+          'Your file is too large and exceeds the 4MB limit. Please upload a smaller file.',
         )
         .refine(
           (file) => DEFAULT_FILE_ACCEPT.includes(file.type),
-          (file) => ({
-            message: `This file "${file.name}" format isn’t supported. Please upload a JPEG, PNG, WebP, or PDF (up to 4MB).`,
-          }),
+          'This file format isn’t supported. Please upload a JPEG, PNG, WebP, or PDF (up to 4MB).',
         ),
     )
-    .max(3, {
-      message:
-        'You can attach up to 3 files. Please remove the extra attachments.',
-    })
+    .max(
+      3,
+      'You can attach up to 3 files. Please remove the extra attachments.',
+    )
     .optional(),
 };
 
@@ -198,20 +195,23 @@ export const schemaCreateAgreement = z.object({
 export const schemaProposeContribution = z.object({
   recipient: z
     .string()
-    .min(1, { message: 'Please add a recipient or wallet address' })
-    .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' })
+    .min(1, 'Please add a recipient or wallet address')
+    .regex(ETH_ADDRESS_REGEX, 'Invalid Ethereum address')
     .optional(),
 
   payouts: z
     .array(
       z.object({
-        amount: z.string().refine((value) => parseFloat(value) > 0, {
-          message: 'Amount must be greater than 0',
-        }),
+        amount: z
+          .string()
+          .refine(
+            (value) => parseFloat(value) > 0,
+            'Amount must be greater than 0',
+          ),
         token: z.string(),
       }),
     )
-    .min(1, { message: 'At least one payout is required' })
+    .min(1, 'At least one payout is required')
     .optional(),
 
   paymentSchedule: paymentScheduleSchema.optional(),
@@ -220,11 +220,11 @@ export const schemaProposeContribution = z.object({
 export const transactionSchema = z.object({
   target: z
     .string()
-    .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' })
-    .min(1, { message: 'Target address is required' }),
+    .regex(ETH_ADDRESS_REGEX, 'Invalid Ethereum address')
+    .min(1, 'Target address is required'),
   value: z.preprocess(
     (val) => Number(val),
-    z.number().min(0, { message: 'Value must be greater than or equal to 0' }),
+    z.number().min(0, 'Value must be greater than or equal to 0'),
   ),
   data: z.string().optional(),
 });
@@ -232,8 +232,8 @@ export const transactionSchema = z.object({
 export const schemaMemberWithNumber = z.object({
   member: z
     .string()
-    .min(1, { message: 'Recipient is required' })
-    .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' }),
+    .min(1, 'Recipient is required')
+    .regex(ETH_ADDRESS_REGEX, 'Invalid Ethereum address'),
   number: z.number().min(0, 'Number must be non-negative'),
 });
 
@@ -254,15 +254,19 @@ export const schemaQuorumAndUnity = z.object({
 const decaySettingsSchema = z.object({
   decayInterval: z
     .number({
-      required_error: 'Decay interval is required',
-      invalid_type_error: 'Decay interval must be a number',
+      error: ({ input }) =>
+        input == null
+          ? 'Decay interval is required'
+          : 'Decay interval must be a number',
     })
     .min(0, 'Decay interval must be greater or equal to 0'),
 
   decayPercentage: z
     .number({
-      required_error: 'Decay percentage is required',
-      invalid_type_error: 'Decay percentage must be a number',
+      error: ({ input }) =>
+        input == null
+          ? 'Decay percentage is required'
+          : 'Decay percentage must be a number',
     })
     .min(0, 'Decay percentage must be at least 0%')
     .max(100, 'Decay percentage must not exceed 100%'),
@@ -274,33 +278,34 @@ export const schemaIssueNewToken = z.object({
   name: z
     .string()
     .trim()
-    .min(2, { message: 'Please enter a token name (min. 2 characters)' })
-    .max(100, { message: 'Token name must be at most 100 characters long' })
-    .refine((val) => !/[\p{Emoji}]|(https?:\/\/|www\.|t\.me\/)/iu.test(val), {
-      message: 'Token name cannot contain emojis or links',
-    }),
+    .min(2, 'Please enter a token name (min. 2 characters)')
+    .max(100, 'Token name must be at most 100 characters long')
+    .refine(
+      (val) => !/[\p{Emoji}]|(https?:\/\/|www\.|t\.me\/)/iu.test(val),
+      'Token name cannot contain emojis or links',
+    ),
 
   symbol: z
     .string()
     .trim()
-    .min(2, { message: 'Please enter a token symbol (min. 2 characters)' })
-    .max(10, { message: 'Token symbol must be at most 10 characters long' })
-    .regex(/^[A-Z]+$/, {
-      message:
-        'Please enter the token symbol using only uppercase letters (A–Z)',
-    })
-    .refine((val) => !/[\p{Emoji}]|(https?:\/\/|www\.|t\.me\/)/iu.test(val), {
-      message: 'Token symbol cannot contain emojis or links',
-    }),
+    .min(2, 'Please enter a token symbol (min. 2 characters)')
+    .max(10, 'Token symbol must be at most 10 characters long')
+    .regex(
+      /^[A-Z]+$/,
+
+      'Please enter the token symbol using only uppercase letters (A–Z)',
+    )
+    .refine(
+      (val) => !/[\p{Emoji}]|(https?:\/\/|www\.|t\.me\/)/iu.test(val),
+      'Token symbol cannot contain emojis or links',
+    ),
 
   iconUrl: z
     .union([
-      z
-        .string({ message: 'Please upload a token icon' })
-        .url('Icon URL must be a valid URL'),
+      z.url('Icon URL must be a valid URL'),
       z.literal(''),
       z
-        .custom<File>(isBrowserFile, { message: 'Please upload a valid file' })
+        .custom<File>(isBrowserFile, 'Please upload a valid file')
         .refine(
           (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
           'Your file is too large and exceeds the 4MB limit. Please upload a smaller file',
@@ -326,24 +331,24 @@ export const schemaIssueNewToken = z.object({
   //     .max(18, { message: 'Digits must not exceed 18' }),
   // ),
 
-  type: z.enum(['utility', 'credits', 'ownership', 'voice'], {
-    required_error: 'Please select a token type',
-  }),
+  type: z.enum(
+    ['utility', 'credits', 'ownership', 'voice'],
+    'Please select a token type',
+  ),
 
   maxSupply: z.preprocess(
     (val) => Number(val),
     z
       .number()
-      .min(0, { message: 'Max supply must be 0 or greater' })
-      .refine((value) => value >= 0, {
-        message: 'Max supply must be a non-negative number',
-      }),
+      .min(0, 'Max supply must be 0 or greater')
+      .refine(
+        (value) => value >= 0,
+        'Max supply must be a non-negative number',
+      ),
   ),
   decaySettings: decaySettingsSchema,
   isVotingToken: z.boolean(),
-  transferable: z
-    .boolean({ required_error: 'Transferable flag is required' })
-    .optional(),
+  transferable: z.boolean('Transferable flag is required').optional(),
 });
 
 export const schemaChangeVotingMethod = z.object({
@@ -364,13 +369,11 @@ export const schemaCreateAgreementForm = z.object({
 });
 
 export const schemaCreateProposalWeb3 = z.object({
-  spaceId: z
-    .bigint()
-    .min(1n, { message: 'Space ID must be a positive number' }),
-  duration: z.bigint().min(1n, { message: 'Duration must be greater than 0' }),
+  spaceId: z.bigint().min(1n, 'Space ID must be a positive number'),
+  duration: z.bigint().min(1n, 'Duration must be greater than 0'),
   transactions: z
     .array(transactionSchema)
-    .min(1, { message: 'At least one transaction is required' }),
+    .min(1, 'At least one transaction is required'),
 });
 
 export const schemaChangeEntryMethod = z.object({
@@ -389,8 +392,8 @@ export const schemaChangeEntryMethod = z.object({
         .positive('Amount must be greater than 0'),
       token: z
         .string()
-        .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' })
-        .min(1, { message: 'Token address is required' }),
+        .regex(ETH_ADDRESS_REGEX, 'Invalid Ethereum address')
+        .min(1, 'Token address is required'),
     })
     .optional(),
 });
@@ -404,8 +407,8 @@ export const schemaBuyHyphaTokens = z.object({
   }),
   recipient: z
     .string()
-    .min(1, { message: 'Please add a recipient or wallet address' })
-    .refine(isAddress, { message: 'Invalid Ethereum address' }),
+    .min(1, 'Please add a recipient or wallet address')
+    .refine(isAddress, 'Invalid Ethereum address'),
 });
 
 export const schemaActivateSpaces = z.object({
@@ -417,12 +420,10 @@ export const schemaActivateSpaces = z.object({
   spaces: z
     .array(
       z.object({
-        spaceId: z
+        spaceId: z.number().min(1, 'Please select a space to activate.'),
+        months: z
           .number()
-          .min(1, { message: 'Please select a space to activate.' }),
-        months: z.number().min(1, {
-          message: 'Please enter the number of months to activate.',
-        }),
+          .min(1, 'Please enter the number of months to activate.'),
       }),
     )
     .min(1),
@@ -434,10 +435,10 @@ export const schemaSpaceToSpaceMembership = z.object({
   label: z.literal('Space To Space'),
   space: z
     .string()
-    .min(1, { message: 'Please choose a space' })
-    .refine(isAddress, { message: 'Invalid Ethereum address' }),
+    .min(1, 'Please choose a space')
+    .refine(isAddress, 'Invalid Ethereum address'),
   member: z
     .string()
-    .min(1, { message: 'Please choose a member' })
-    .refine(isAddress, { message: 'Invalid Ethereum address' }),
+    .min(1, 'Please choose a member')
+    .refine(isAddress, 'Invalid Ethereum address'),
 });
