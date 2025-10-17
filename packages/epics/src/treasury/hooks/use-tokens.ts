@@ -29,7 +29,7 @@ export function useTokens({ spaceSlug }: { spaceSlug: string }) {
       icon: asset.icon,
       name: asset.name,
       type: asset.type,
-      symbol: asset.name,
+      symbol: asset.symbol,
       space: asset.space,
     }));
     return formattedAssets;

@@ -8,7 +8,7 @@ import {
   createAgreementFiles,
   useMe,
   useCreateIssueTokenOrchestrator,
-  Token,
+  DbToken,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
@@ -90,11 +90,13 @@ export const IssueNewTokenForm = ({
   const handleCreate = async (data: FormValues) => {
     setFormError(null);
 
-    const duplicateToken = tokens?.some(
-      (token: Token) =>
-        token.name?.toLowerCase() === data.name?.toLowerCase() &&
-        token.symbol?.toLowerCase() === data.symbol?.toLowerCase(),
-    );
+    const duplicateToken = tokens?.some((token: DbToken) => {
+      const isNameEqual =
+        token.name?.toLowerCase() === data.name?.toLowerCase();
+      const isSymbolEqual =
+        token.symbol?.toLowerCase() === data.symbol?.toLowerCase();
+      return isNameEqual && isSymbolEqual;
+    });
 
     if (duplicateToken) {
       setFormError(
