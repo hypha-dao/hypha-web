@@ -11,6 +11,7 @@ import { PeopleTransferForm } from '@hypha-platform/epics';
 import { Person } from '../../../../core/src/people';
 import { Space } from '../../../../core/src/space';
 import { TOKENS } from '@hypha-platform/core/client';
+import { Separator } from '@hypha-platform/ui';
 
 interface Token {
   icon: string;
@@ -62,6 +63,10 @@ export const ProfileTransferFunds = ({
             <ButtonClose closeUrl={`/${lang}/profile/${personSlug}`} />
           </div>
         </div>
+        <span className="text-2 text-neutral-11">
+          Easily send funds from your wallet to a member or a space.
+        </span>
+        <Separator />
         <PeopleTransferForm
           peoples={peoples}
           spaces={spaces}
