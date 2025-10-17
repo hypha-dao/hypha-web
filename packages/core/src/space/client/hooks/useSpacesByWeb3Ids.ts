@@ -24,7 +24,7 @@ export const useSpacesByWeb3Ids = (
             ',',
           )}${parentOnlyParam}`
         : null,
-    [web3SpaceIds],
+    [web3SpaceIds, parentOnlyParam],
   );
 
   const { data: spaces, isLoading } = useSWR(endpoint, (endpoint) =>
