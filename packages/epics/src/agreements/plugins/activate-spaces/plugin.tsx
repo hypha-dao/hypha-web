@@ -16,17 +16,24 @@ import {
 } from '@hypha-platform/ui';
 import { RecipientField } from '../components/common/recipient-field';
 import { useFormContext, useWatch } from 'react-hook-form';
-import { type Space } from '@hypha-platform/core/client';
+import {
+  useOrganisationSpacesBySingleSlug,
+  type Space,
+} from '@hypha-platform/core/client';
 import { useActivateSpaces } from '../../../people/hooks/use-activate-hypha-spaces';
 import { SpaceWithNumberOfMonthsFieldArray } from '../../../people';
 
 type ActivateSpacesPluginProps = {
+  spaceSlug?: string;
   spaces?: Space[];
 };
 
 const RECIPIENT_SPACE_ADDRESS = '0x695f21B04B22609c4ab9e5886EB0F65cDBd464B6';
 
-export const ActivateSpacesPlugin = ({ spaces }: ActivateSpacesPluginProps) => {
+export const ActivateSpacesPlugin = ({
+  spaceSlug,
+  spaces,
+}: ActivateSpacesPluginProps) => {
   const { control, setValue } = useFormContext();
 
   const watchedSpaces = useWatch({ control, name: 'spaces' });
@@ -40,9 +47,18 @@ export const ActivateSpacesPlugin = ({ spaces }: ActivateSpacesPluginProps) => {
   const recipientSpace =
     spaces?.filter((s) => s?.address === RECIPIENT_SPACE_ADDRESS) || [];
 
+  const { spaces: organisationSpaces, isLoading: isOrganisationLoading } =
+    useOrganisationSpacesBySingleSlug(spaceSlug ?? '');
+
   return (
     <div className="flex flex-col gap-5 w-full">
-      <SpaceWithNumberOfMonthsFieldArray spaces={spaces ?? []} name="spaces" />
+      <SpaceWithNumberOfMonthsFieldArray
+        spaces={spaces ?? []}
+        organisationSpaces={
+          !isOrganisationLoading ? organisationSpaces ?? [] : []
+        }
+        name="spaces"
+      />
       <Separator />
       <Label>Check out</Label>
       <div className="flex w-full justify-between items-center">

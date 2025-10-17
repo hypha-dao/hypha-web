@@ -1,7 +1,14 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Combobox, Input, Image, Separator } from '@hypha-platform/ui';
+import {
+  Combobox,
+  Input,
+  Image,
+  Separator,
+  COMBOBOX_TITLE,
+  COMBOBOX_DELIMITER,
+} from '@hypha-platform/ui';
 import { DEFAULT_SPACE_AVATAR_IMAGE, Space } from '@hypha-platform/core/client';
 import { useFormContext } from 'react-hook-form';
 
@@ -12,13 +19,17 @@ type SpaceWithMonthsValue = {
 
 type SpaceWithNumberOfMonthsFieldProps = {
   spaces?: Space[];
+  organisationSpaces: Space[];
   value?: SpaceWithMonthsValue;
   onChange?: (value: SpaceWithMonthsValue) => void;
   name?: string;
 };
 
+type SpaceOption = { avatarUrl?: string | null; value: string; label: string };
+
 export const SpaceWithNumberOfMonthsField = ({
   spaces = [],
+  organisationSpaces = [],
   value,
   onChange,
   name,
@@ -30,13 +41,59 @@ export const SpaceWithNumberOfMonthsField = ({
 
   useEffect(() => {
     if (value) {
-      const found = spaces.find((s) => s.web3SpaceId === value.spaceId) || null;
+      const found =
+        organisationSpaces.find((s) => s.web3SpaceId === value.spaceId) ||
+        spaces.find((s) => s.web3SpaceId === value.spaceId) ||
+        null;
       setSelected(found);
       setMonths(String(value.months ?? ''));
     }
   }, [value, spaces]);
 
-  const options = useMemo(
+  const options = useMemo(() => {
+    const organisationOptions =
+      organisationSpaces?.map((space) => {
+        return {
+          avatarUrl: space.logoUrl,
+          value: String(space.web3SpaceId),
+          label: space.title,
+        };
+      }) ?? [];
+    const mySpacesOptions = spaces
+      .filter(
+        (space) =>
+          !organisationSpaces?.find((orgSpace) => space.id === orgSpace.id),
+      )
+      .map((space) => {
+        return {
+          avatarUrl: space.logoUrl,
+          value: String(space.web3SpaceId),
+          label: space.title,
+        };
+      });
+    const result: SpaceOption[] = [];
+    if (organisationOptions.length > 0) {
+      result.push(
+        { value: COMBOBOX_TITLE, label: 'Organisation Spaces' },
+        ...organisationOptions,
+      );
+    }
+    if (organisationOptions.length > 0 && mySpacesOptions.length > 0) {
+      result.push({
+        value: COMBOBOX_DELIMITER,
+        label: '',
+      });
+    }
+    if (mySpacesOptions.length > 0) {
+      result.push(
+        { value: COMBOBOX_TITLE, label: 'Other Spaces' },
+        ...mySpacesOptions,
+      );
+    }
+    return result;
+  }, [value, spaces]);
+
+  const options2 = useMemo(
     () =>
       spaces.map((space) => ({
         value: String(space.web3SpaceId),
