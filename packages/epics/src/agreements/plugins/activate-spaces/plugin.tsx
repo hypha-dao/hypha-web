@@ -2,11 +2,6 @@
 
 import {
   Separator,
-  RequirementMark,
-  FormField,
-  FormItem,
-  FormControl,
-  FormMessage,
   Tabs,
   TabsTrigger,
   TabsList,
@@ -22,6 +17,7 @@ import {
 } from '@hypha-platform/core/client';
 import { useActivateSpaces } from '../../../people/hooks/use-activate-hypha-spaces';
 import { SpaceWithNumberOfMonthsFieldArray } from '../../../people';
+import React from 'react';
 
 type ActivateSpacesPluginProps = {
   spaceSlug?: string;
@@ -49,14 +45,16 @@ export const ActivateSpacesPlugin = ({
 
   const { spaces: organisationSpaces, isLoading: isOrganisationLoading } =
     useOrganisationSpacesBySingleSlug(spaceSlug ?? '');
+  const orgSpaces = React.useMemo(
+    () => (!isOrganisationLoading ? organisationSpaces ?? [] : []),
+    [organisationSpaces, isOrganisationLoading],
+  );
 
   return (
     <div className="flex flex-col gap-5 w-full">
       <SpaceWithNumberOfMonthsFieldArray
         spaces={spaces ?? []}
-        organisationSpaces={
-          !isOrganisationLoading ? organisationSpaces ?? [] : []
-        }
+        organisationSpaces={orgSpaces}
         name="spaces"
       />
       <Separator />

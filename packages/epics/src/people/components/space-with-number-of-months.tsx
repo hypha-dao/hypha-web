@@ -29,7 +29,7 @@ type SpaceOption = { avatarUrl?: string | null; value: string; label: string };
 
 export const SpaceWithNumberOfMonthsField = ({
   spaces = [],
-  organisationSpaces = [],
+  organisationSpaces,
   value,
   onChange,
   name,
@@ -52,7 +52,7 @@ export const SpaceWithNumberOfMonthsField = ({
 
   const options = useMemo(() => {
     const organisationOptions =
-      organisationSpaces?.map((space) => {
+      organisationSpaces.map((space) => {
         return {
           avatarUrl: space.logoUrl,
           value: String(space.web3SpaceId),
@@ -62,7 +62,7 @@ export const SpaceWithNumberOfMonthsField = ({
     const mySpacesOptions = spaces
       .filter(
         (space) =>
-          !organisationSpaces?.find((orgSpace) => space.id === orgSpace.id),
+          !organisationSpaces.find((orgSpace) => space.id === orgSpace.id),
       )
       .map((space) => {
         return {
@@ -91,7 +91,7 @@ export const SpaceWithNumberOfMonthsField = ({
       );
     }
     return result;
-  }, [value, spaces]);
+  }, [spaces, organisationSpaces]);
 
   const handleSpaceChange = useCallback(
     (selectedId: string | null) => {
