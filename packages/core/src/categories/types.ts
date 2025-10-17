@@ -1,3 +1,6 @@
+/**
+ * @todo fix duplication. Origin at `packages/storage-postgres/src/schema/categories.ts`
+ */
 export const CATEGORIES = [
   // outdated
   'art',
@@ -43,5 +46,8 @@ export const SPACE_ORDERS = [
 ] as const;
 export type SpaceOrder = (typeof SPACE_ORDERS)[number];
 
+/**
+ * @todo fix duplication. Origin at `packages/storage-postgres/src/schema/flags.ts`
+ */
 export const SPACE_FLAGS = ['sandbox', 'demo'] as const;
 export type SpaceFlags = (typeof SPACE_FLAGS)[number];

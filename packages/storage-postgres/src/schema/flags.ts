@@ -1,4 +1,4 @@
 import { pgEnum } from 'drizzle-orm/pg-core';
-import { SPACE_FLAGS } from '../../../core/src/categories';
 
+export const SPACE_FLAGS = ['sandbox', 'demo'] as const;
 export const spaceFlags = pgEnum('space_flags', SPACE_FLAGS);
