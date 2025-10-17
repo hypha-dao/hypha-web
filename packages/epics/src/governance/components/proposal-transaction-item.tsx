@@ -21,6 +21,8 @@ export const ProposalTransactionItem = ({
   tokenAddress,
   spaceSlug,
 }: ProposalTransactionItemProps) => {
+  if (!recipient) return null;
+  const { person } = usePersonByWeb3Address(recipient as `0x${string}`);
   const { tokens } = useTokens({ spaceSlug });
   const token = tokens.find(
     (t: Token) => t.address.toLowerCase() === tokenAddress?.toLowerCase(),
@@ -39,8 +41,6 @@ export const ProposalTransactionItem = ({
 
   const parsedAmount = Number(amount) / 10 ** decimals;
   const formattedAmount = parsedAmount.toFixed(decimals);
-
-  const { person } = usePersonByWeb3Address(recipient as `0x${string}`);
 
   return (
     <div className="w-full flex items-center justify-between gap-4">
@@ -68,7 +68,7 @@ export const ProposalTransactionItem = ({
               height={24}
               alt={`${person?.nickname} avatar`}
             />
-            <span>
+            <span className="text-nowrap">
               {person?.name} {person?.surname}
             </span>
           </span>
