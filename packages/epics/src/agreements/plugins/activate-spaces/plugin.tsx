@@ -18,7 +18,7 @@ import {
 } from '@hypha-platform/core/client';
 import { useActivateSpaces } from '../../../people/hooks/use-activate-hypha-spaces';
 import { SpaceWithNumberOfMonthsFieldArray } from '../../../people';
-import React, { useMemo } from 'react';
+import React from 'react';
 
 type ActivateSpacesPluginProps = {
   spaceSlug?: string;
@@ -46,7 +46,7 @@ export const ActivateSpacesPlugin = ({
     paymentToken: watchedPaymentToken,
   });
 
-  const buyerSpace: Space[] = useMemo(() => {
+  const buyerSpace: Space[] = React.useMemo(() => {
     return !isSpacesLoading && space ? [space] : [];
   }, [isSpacesLoading, space]);
   const recipientSpace =
