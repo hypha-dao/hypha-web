@@ -58,13 +58,11 @@ export const SpaceWithNumberOfMonthsField = ({
         avatarUrl: space.logoUrl,
       }));
     }
-    const organisationOptions = organisationSpaces.map((space) => {
-      return {
-        avatarUrl: space.logoUrl,
-        value: String(space.web3SpaceId),
-        label: space.title,
-      };
-    });
+    const organisationOptions = organisationSpaces.map((space) => ({
+      avatarUrl: space.logoUrl,
+      value: String(space.web3SpaceId),
+      label: space.title,
+    }));
     const mySpacesOptions = spaces
       .filter(
         (space) =>
