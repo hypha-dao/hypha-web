@@ -4,7 +4,7 @@ import { CalendarIcon } from '@radix-ui/react-icons';
 import { formatDate } from '@hypha-platform/ui-utils';
 import { Amount } from '@hypha-platform/ui/server';
 import { PersonAvatar } from '../../../people/components/person-avatar';
-import { isAddress } from 'ethers';
+import { isAddress, ZeroAddress } from 'ethers';
 
 type TransferCardProps = {
   name?: string;
@@ -47,6 +47,10 @@ export const TransferCard: React.FC<TransferCardProps> = ({
     ? from
     : to;
 
+  const isBurn = () => {
+    return to === ZeroAddress && counterparty === 'to';
+  };
+
   return (
     <Card className="w-full p-5 mb-2 flex space-x-3">
       <Skeleton loading={isLoading} className="w-[64px] h-[64px] rounded-full">
@@ -73,7 +77,7 @@ export const TransferCard: React.FC<TransferCardProps> = ({
               variant="surface"
               colorVariant="accent"
             >
-              {isMint ? 'Mint' : 'Transfer'}
+              {isMint ? 'Mint' : isBurn() ? 'Burn' : 'Transfer'}
             </Badge>
             <Badge
               isLoading={isLoading}
@@ -86,7 +90,7 @@ export const TransferCard: React.FC<TransferCardProps> = ({
             </Badge>
           </div>
           <Amount isLoading={isLoading} value={value} />
-          {!isMint && (
+          {!isMint && !isBurn() && (
             <Skeleton loading={isLoading} width="80px" height="16px">
               <Text className="text-1 text-neutral-11">
                 {displayName

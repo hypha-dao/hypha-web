@@ -8,7 +8,7 @@ import {
   createAgreementFiles,
   useMe,
   useCreateIssueTokenOrchestrator,
-  Token,
+  DbToken,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
@@ -90,13 +90,16 @@ export const IssueNewTokenForm = ({
   const handleCreate = async (data: FormValues) => {
     setFormError(null);
 
-    const duplicateToken = tokens?.some(
-      (token: Token) =>
-        token.name?.toLowerCase() === data.name?.toLowerCase() &&
-        token.symbol?.toLowerCase() === data.symbol?.toLowerCase(),
-    );
+    const duplicateToken = tokens?.find((token: DbToken) => {
+      const isNameEqual =
+        token.name?.toLowerCase() === data.name?.toLowerCase();
+      const isSymbolEqual =
+        token.symbol?.toLowerCase() === data.symbol?.toLowerCase();
+      console.log(token, data);
+      return isNameEqual && isSymbolEqual;
+    });
 
-    if (duplicateToken) {
+    if (tokens.length && duplicateToken) {
       setFormError(
         'A token with the same name and symbol already exists in your space. Please modify either the name or symbol to proceed.',
       );
