@@ -93,16 +93,6 @@ export const SpaceWithNumberOfMonthsField = ({
     return result;
   }, [value, spaces]);
 
-  const options2 = useMemo(
-    () =>
-      spaces.map((space) => ({
-        value: String(space.web3SpaceId),
-        label: space.title,
-        avatarUrl: space.logoUrl,
-      })),
-    [spaces],
-  );
-
   const handleSpaceChange = useCallback(
     (selectedId: string | null) => {
       const currentMonths = months === '' ? 0 : Number(months);
