@@ -12,6 +12,7 @@ import {
 import { useJoinSpace } from '../../spaces';
 import { useSpaceMinProposalDuration } from '@hypha-platform/core/client';
 import { durationInDays } from '@hypha-platform/ui-utils';
+import { useTheme } from 'next-themes';
 
 function formatTimeRemaining(
   endTime: string,
@@ -79,6 +80,7 @@ export const FormVoting = ({
   const { myVote } = useMyVote(documentSlug);
   const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
   const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
+  const { theme } = useTheme();
 
   const isDisabled =
     isVoting ||
@@ -184,7 +186,11 @@ export const FormVoting = ({
                     className="max-w-[24px] max-h-[24px] min-w-[24px] min-h-[24px]"
                     width={24}
                     height={24}
-                    src="/placeholder/auto-execution-icon.png"
+                    src={
+                      theme === 'light'
+                        ? '/placeholder/auto-execution-icon-light.png'
+                        : '/placeholder/auto-execution-icon.png'
+                    }
                     alt="Proposal minimum voting icon"
                   />
                   <div className="flex flex-col">
@@ -203,7 +209,11 @@ export const FormVoting = ({
                     className="max-w-[24px] max-h-[24px] min-w-[24px] min-h-[24px]"
                     width={24}
                     height={24}
-                    src="/placeholder/non-auto-execution-icon.png"
+                    src={
+                      theme === 'light'
+                        ? '/placeholder/non-auto-execution-icon-light.png'
+                        : '/placeholder/non-auto-execution-icon.png'
+                    }
                     alt="Proposal minimum voting icon"
                   />
                   <div className="flex flex-col">

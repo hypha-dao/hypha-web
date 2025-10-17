@@ -4,6 +4,7 @@ import { useTokens } from '../../treasury';
 import { Token } from '@hypha-platform/core/client';
 import { Image } from '@hypha-platform/ui';
 import { durationInDays } from '@hypha-platform/ui-utils';
+import { useTheme } from 'next-themes';
 
 interface ProposalVotingInfoProps {
   votingPowerSource: bigint;
@@ -65,6 +66,8 @@ export const ProposalVotingInfo = ({
     return found?.title || 'Custom';
   };
 
+  const { theme } = useTheme();
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex justify-between items-center">
@@ -115,7 +118,11 @@ export const ProposalVotingInfo = ({
                 className="max-w-[24px] max-h-[24px] min-w-[24px] min-h-[24px]"
                 width={24}
                 height={24}
-                src="/placeholder/non-auto-execution-icon.png"
+                src={
+                  theme === 'light'
+                    ? '/placeholder/non-auto-execution-icon-light.png'
+                    : '/placeholder/non-auto-execution-icon.png'
+                }
                 alt="Proposal minimum voting icon"
               />{' '}
               {durationInDays({ duration: minimumProposalVotingDuration })} Days
@@ -127,7 +134,11 @@ export const ProposalVotingInfo = ({
                 className="max-w-[24px] max-h-[24px] min-w-[24px] min-h-[24px]"
                 width={24}
                 height={32}
-                src="/placeholder/auto-execution-icon.png"
+                src={
+                  theme === 'light'
+                    ? '/placeholder/auto-execution-icon-light.png'
+                    : '/placeholder/auto-execution-icon.png'
+                }
                 alt="Proposal minimum voting icon"
               />
               Auto-Execution
