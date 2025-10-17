@@ -24,8 +24,9 @@ import { useActivateSpaces } from '../../people/hooks/use-activate-hypha-spaces'
 const RECIPIENT_SPACE_ADDRESS = '0x695f21B04B22609c4ab9e5886EB0F65cDBd464B6';
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
 
-const combinedSchemaActivateSpaces =
-  schemaActivateSpaces.extend(createAgreementFiles);
+const combinedSchemaActivateSpaces = schemaActivateSpaces
+  .extend(createAgreementFiles)
+  .extend({ buyerWeb3Id: z.number(), buyerWallet: z.string() });
 type FormValues = z.infer<typeof combinedSchemaActivateSpaces>;
 
 interface ActivateSpacesFormProps {
@@ -88,6 +89,13 @@ export const ActivateSpacesFormSpace = ({
       label: 'Activate Spaces',
     },
   });
+
+  React.useEffect(() => {
+    if (spaceDetails?.executor && web3SpaceId) {
+      form.setValue('buyerWeb3Id', web3SpaceId as number);
+      form.setValue('buyerWallet', spaceDetails.executor as `0x${string}`);
+    }
+  }, [form, web3SpaceId, spaceDetails]);
 
   const { totalUSDC, totalHYPHA } = useActivateSpaces({
     spaces: form.watch('spaces'),

@@ -13,11 +13,12 @@ import { RecipientField } from '../components/common/recipient-field';
 import { useFormContext, useWatch } from 'react-hook-form';
 import {
   useOrganisationSpacesBySingleSlug,
+  useSpacesByWeb3Ids,
   type Space,
 } from '@hypha-platform/core/client';
 import { useActivateSpaces } from '../../../people/hooks/use-activate-hypha-spaces';
 import { SpaceWithNumberOfMonthsFieldArray } from '../../../people';
-import React from 'react';
+import React, { useMemo } from 'react';
 
 type ActivateSpacesPluginProps = {
   spaceSlug?: string;
@@ -34,12 +35,20 @@ export const ActivateSpacesPlugin = ({
 
   const watchedSpaces = useWatch({ control, name: 'spaces' });
   const watchedPaymentToken = useWatch({ control, name: 'paymentToken' });
+  const spaceWeb3Id = useWatch({ control, name: 'buyerWeb3Id' });
+  const {
+    spaces: [space],
+    isLoading: isSpacesLoading,
+  } = useSpacesByWeb3Ids(spaceWeb3Id ? [spaceWeb3Id] : [], false);
 
   const { totalUSDC, totalHYPHA } = useActivateSpaces({
     spaces: watchedSpaces,
     paymentToken: watchedPaymentToken,
   });
 
+  const buyerSpace: Space[] = useMemo(() => {
+    return !isSpacesLoading && space ? [space] : [];
+  }, [isSpacesLoading, space]);
   const recipientSpace =
     spaces?.filter((s) => s?.address === RECIPIENT_SPACE_ADDRESS) || [];
 
@@ -125,10 +134,22 @@ export const ActivateSpacesPlugin = ({
       </div>
       <Separator />
       <RecipientField
+        label="Recipient"
+        members={[]}
+        spaces={buyerSpace}
+        defaultRecipientType="space"
+        readOnly={true}
+        showTabs={false}
+        name="buyerWallet"
+      />
+      <Separator />
+      <RecipientField
+        label="Paid to"
         members={[]}
         spaces={recipientSpace}
         defaultRecipientType="space"
         readOnly={true}
+        showTabs={false}
       />
     </div>
   );
