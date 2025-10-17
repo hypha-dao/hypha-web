@@ -66,7 +66,9 @@ export const SpaceWithNumberOfMonthsField = ({
     const mySpacesOptions = spaces
       .filter(
         (space) =>
-          !organisationSpaces.find((orgSpace) => space.id === orgSpace.id),
+          !organisationSpaces.find(
+            (orgSpace) => space.web3SpaceId === orgSpace.web3SpaceId,
+          ),
       )
       .map((space) => {
         return {
