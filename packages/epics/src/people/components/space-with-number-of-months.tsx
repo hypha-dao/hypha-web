@@ -48,7 +48,7 @@ export const SpaceWithNumberOfMonthsField = ({
       setSelected(found);
       setMonths(String(value.months ?? ''));
     }
-  }, [value, spaces]);
+  }, [value, spaces, organisationSpaces]);
 
   const options = useMemo(() => {
     if (organisationSpaces.length === 0) {
