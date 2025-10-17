@@ -3,7 +3,7 @@
 import { useTokens } from '../../treasury';
 import { Token } from '@hypha-platform/core/client';
 import { Image } from '@hypha-platform/ui';
-import { durationInDays } from '@hypha-platform/ui-utils';
+import { formatDuration } from '@hypha-platform/ui-utils';
 import { useTheme } from 'next-themes';
 
 interface ProposalVotingInfoProps {
@@ -125,8 +125,7 @@ export const ProposalVotingInfo = ({
                 }
                 alt="Proposal minimum voting icon"
               />{' '}
-              {durationInDays({ duration: minimumProposalVotingDuration })} Days
-              to Vote
+              {formatDuration(Number(minimumProposalVotingDuration))} to Vote
             </span>
           ) : (
             <span className="flex items-center gap-2">
