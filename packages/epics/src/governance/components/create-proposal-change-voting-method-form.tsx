@@ -4,8 +4,7 @@ import { CreateAgreementBaseFields } from '../../agreements/components';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  schemaChangeVotingMethod,
-  createAgreementFiles,
+  schemaCreateProposalChangeVotingMethod,
   useMe,
   useCreateChangeVotingMethodOrchestrator,
 } from '@hypha-platform/core/client';
@@ -17,9 +16,6 @@ import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter } from 'next/navigation';
 import { useSpaceDetailsWeb3Rpc } from '@hypha-platform/core/client';
-
-const schemaCreateProposalChangeVotingMethod =
-  schemaChangeVotingMethod.extend(createAgreementFiles);
 
 type FormValues = z.infer<typeof schemaCreateProposalChangeVotingMethod>;
 
@@ -73,8 +69,12 @@ export const CreateProposalChangeVotingMethodForm = ({
       },
       votingMethod: undefined,
       label: 'Voting Method',
+      votingDuration: undefined,
     },
+    mode: 'onChange',
   });
+
+  const { quorum = 0, unity = 0 } = form.watch('quorumAndUnity') ?? {};
 
   const getVotingMethod = (
     votingPowerSource: number | undefined,
@@ -118,17 +118,22 @@ export const CreateProposalChangeVotingMethodForm = ({
           unity: BigInt(data.quorumAndUnity?.unity ?? 0),
         },
         votingMethod: data.votingMethod,
+        votingDuration: data.votingDuration,
       });
     } catch (error) {
       console.error('Error creating change voting method proposal:', error);
     }
   };
 
+  console.log(form);
+
   React.useEffect(() => {
     if (progress === 100 && agreementSlug) {
       router.push(successfulUrl);
     }
   }, [progress, agreementSlug, router, successfulUrl]);
+
+  const isButtonDisabled = quorum === 0 && unity === 0;
 
   return (
     <LoadingBackdrop
@@ -165,7 +170,9 @@ export const CreateProposalChangeVotingMethodForm = ({
           {plugin}
           <Separator />
           <div className="flex justify-end w-full">
-            <Button type="submit">Publish</Button>
+            <Button type="submit" disabled={isButtonDisabled}>
+              Publish
+            </Button>
           </div>
         </form>
       </Form>

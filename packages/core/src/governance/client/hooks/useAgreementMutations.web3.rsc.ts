@@ -11,8 +11,11 @@ import {
   mapToCreateProposalWeb3Input,
 } from '../web3';
 
-import { schemaCreateProposalWeb3 } from '@hypha-platform/core/client';
-import { publicClient } from '@hypha-platform/core/client';
+import {
+  schemaCreateProposalWeb3,
+  publicClient,
+  getSpaceMinProposalDuration,
+} from '@hypha-platform/core/client';
 
 import {
   agreementsImplementationAbi,
@@ -42,6 +45,10 @@ export const useAgreementMutationsWeb3Rpc = ({
         throw new Error('Smart wallet not connected');
       }
 
+      const duration = await publicClient.readContract(
+        getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
+      );
+
       const proposalCounter = await publicClient.readContract({
         address: daoProposalsImplementationAddress[8453],
         abi: daoProposalsImplementationAbi,
@@ -60,7 +67,7 @@ export const useAgreementMutationsWeb3Rpc = ({
 
       const input = {
         spaceId: BigInt(arg.spaceId),
-        duration: getDuration(3),
+        duration: duration && duration > 0 ? duration : getDuration(3),
         transactions: [acceptAgreementTx],
       };
 
