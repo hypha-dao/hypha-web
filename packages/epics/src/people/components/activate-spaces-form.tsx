@@ -208,15 +208,15 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
           </span>
         </div>
         <Separator />
-        <Label>Recipient</Label>
         <RecipientField
-          label="Recipient"
+          label="Paid by"
           members={buyerMember}
           defaultRecipientType="member"
           readOnly={true}
           showTabs={false}
           name="buyer"
         />
+        <Separator />
         <RecipientField
           label="Paid to"
           members={[]}
@@ -225,6 +225,7 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
           readOnly={true}
           showTabs={false}
         />
+        <Separator />
         <div className="flex gap-2 justify-end">
           {isActivating ? (
             <div className="flex items-center gap-2 text-sm text-neutral-10">

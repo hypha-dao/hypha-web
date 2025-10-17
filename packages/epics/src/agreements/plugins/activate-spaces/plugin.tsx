@@ -134,7 +134,7 @@ export const ActivateSpacesPlugin = ({
       </div>
       <Separator />
       <RecipientField
-        label="Recipient"
+        label="Paid by"
         members={[]}
         spaces={buyerSpace}
         defaultRecipientType="space"
