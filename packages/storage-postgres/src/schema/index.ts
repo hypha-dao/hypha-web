@@ -8,6 +8,9 @@ import { peopleRelations } from './people.relations';
 import { documentRelation } from './document.relations';
 import { tokenRelations, tokens } from './tokens';
 
+export { SPACE_FLAGS } from './flags';
+export { CATEGORIES } from './categories';
+
 export * from './document';
 export * from './membership';
 export * from './people';
