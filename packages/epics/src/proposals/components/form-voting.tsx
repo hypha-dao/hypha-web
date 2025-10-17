@@ -131,7 +131,6 @@ export const FormVoting = ({
   return (
     <div className="flex flex-col gap-7 text-neutral-11">
       <VoterList documentSlug={documentSlug} />
-      <Separator />
       <div className="flex flex-col gap-6">
         <Skeleton
           width="100%"
