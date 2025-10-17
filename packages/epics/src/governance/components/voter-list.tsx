@@ -9,6 +9,7 @@ import {
   TooltipTrigger,
   Button,
   Label,
+  Separator,
 } from '@hypha-platform/ui';
 import Link from 'next/link';
 
@@ -18,7 +19,8 @@ export const VoterList = ({ documentSlug }: { documentSlug: string }) => {
   const pathname = usePathname();
 
   return voters && voters.length > 0 ? (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-3">
+      <Separator />
       <Label>Votes</Label>
       <div className="flex gap-2 overflow-x-auto items-center">
         {voters.slice(0, maxVisibleVoters).map((voter) => (
