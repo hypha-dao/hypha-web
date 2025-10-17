@@ -14,7 +14,7 @@ import { SpaceWithNumberOfMonthsField } from './space-with-number-of-months';
 
 interface SpaceWithNumberOfMonthsFieldArrayProps {
   spaces: Space[];
-  organisationSpaces: Space[];
+  organisationSpaces?: Space[];
   name?: string;
 }
 
@@ -25,7 +25,7 @@ interface SpaceFieldError extends FieldError {
 
 export const SpaceWithNumberOfMonthsFieldArray = ({
   spaces,
-  organisationSpaces,
+  organisationSpaces = [],
   name = 'spaces',
 }: SpaceWithNumberOfMonthsFieldArrayProps) => {
   const {

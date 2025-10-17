@@ -51,6 +51,13 @@ export const SpaceWithNumberOfMonthsField = ({
   }, [value, spaces]);
 
   const options = useMemo(() => {
+    if (organisationSpaces.length === 0) {
+      return spaces.map((space) => ({
+        value: String(space.web3SpaceId),
+        label: space.title,
+        avatarUrl: space.logoUrl,
+      }));
+    }
     const organisationOptions =
       organisationSpaces.map((space) => {
         return {
