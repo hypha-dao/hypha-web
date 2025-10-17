@@ -32,6 +32,7 @@ import { useParams } from 'next/navigation';
 import { durationInDays } from '@hypha-platform/ui-utils';
 
 import { ButtonClose, ButtonBack } from '@hypha-platform/epics';
+import { useTheme } from 'next-themes';
 
 type Creator = { avatar: string; name: string; surname: string };
 
@@ -76,6 +77,10 @@ export function CreateAgreementBaseFields({
   const { duration } = useSpaceMinProposalDuration({
     spaceId: spaceIdBigInt as bigint,
   });
+
+  const { theme } = useTheme();
+
+  console.log(theme);
 
   return (
     <>
@@ -136,7 +141,11 @@ export function CreateAgreementBaseFields({
                       className="max-w-[32px] max-h-[32px] min-w-[32px] min-h-[32px]"
                       width={32}
                       height={32}
-                      src="/placeholder/auto-execution-icon.png"
+                      src={
+                        theme === 'light'
+                          ? '/placeholder/auto-execution-icon-light.png'
+                          : '/placeholder/auto-execution-icon.png'
+                      }
                       alt="Proposal minimum voting icon"
                     />
                     <div className="flex flex-col">
@@ -155,7 +164,11 @@ export function CreateAgreementBaseFields({
                       className="max-w-[32px] max-h-[32px] min-w-[32px] min-h-[32px]"
                       width={32}
                       height={32}
-                      src="/placeholder/non-auto-execution-icon.png"
+                      src={
+                        theme === 'light'
+                          ? '/placeholder/non-auto-execution-icon-light.png'
+                          : '/placeholder/non-auto-execution-icon.png'
+                      }
                       alt="Proposal minimum voting icon"
                     />
                     <div className="flex flex-col">
