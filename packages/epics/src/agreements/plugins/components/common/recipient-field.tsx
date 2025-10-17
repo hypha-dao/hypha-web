@@ -17,6 +17,9 @@ export function RecipientField({
   readOnly,
   emptyMembersMessage,
   emptySpacesMessage,
+  label,
+  showTabs,
+  name = 'recipient',
 }: {
   members: Person[];
   spaces?: Space[];
@@ -24,12 +27,15 @@ export function RecipientField({
   readOnly?: boolean;
   emptyMembersMessage?: string;
   emptySpacesMessage?: string;
+  label?: string;
+  showTabs?: boolean;
+  name?: string;
 }) {
   const { control } = useFormContext();
   return (
     <FormField
       control={control}
-      name="recipient"
+      name={name}
       render={({ field: { value, onChange } }) => (
         <FormItem>
           <FormControl>
@@ -44,6 +50,8 @@ export function RecipientField({
               readOnly={readOnly}
               emptyMembersMessage={emptyMembersMessage}
               emptySpacesMessage={emptySpacesMessage}
+              label={label}
+              showTabs={showTabs}
             />
           </FormControl>
           <FormMessage />

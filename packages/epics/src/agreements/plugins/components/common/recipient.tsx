@@ -17,6 +17,8 @@ type RecipientProps = {
   readOnly?: boolean;
   emptyMembersMessage?: string;
   emptySpacesMessage?: string;
+  label?: string;
+  showTabs?: boolean;
 };
 
 export const Recipient = ({
@@ -28,6 +30,8 @@ export const Recipient = ({
   readOnly,
   emptyMembersMessage,
   emptySpacesMessage,
+  label = 'Recipient',
+  showTabs = true,
 }: RecipientProps) => {
   const [recipientType, setRecipientType] =
     useState<RecipientType>(defaultRecipientType);
@@ -118,23 +122,25 @@ export const Recipient = ({
     <div className="flex flex-col gap-4">
       <div className="flex flex-col md:flex-row md:items-center w-full gap-2">
         <div className="flex items-center justify-between gap-2 w-full">
-          <label className="text-sm text-neutral-11">Recipient</label>
-          <Tabs
-            value={recipientType}
-            onValueChange={(value) =>
-              !readOnly && setRecipientType(value as 'member' | 'space')
-            }
-            disabled={readOnly}
-          >
-            <TabsList triggerVariant="switch">
-              <TabsTrigger variant="switch" value="member">
-                Member
-              </TabsTrigger>
-              <TabsTrigger variant="switch" value="space">
-                Space
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <label className="text-sm text-neutral-11">{label}</label>
+          {showTabs && (
+            <Tabs
+              value={recipientType}
+              onValueChange={(value) =>
+                !readOnly && setRecipientType(value as 'member' | 'space')
+              }
+              disabled={readOnly}
+            >
+              <TabsList triggerVariant="switch">
+                <TabsTrigger variant="switch" value="member">
+                  Member
+                </TabsTrigger>
+                <TabsTrigger variant="switch" value="space">
+                  Space
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
         </div>
         <div className="min-w-72 w-full md:w-auto">
           <Combobox

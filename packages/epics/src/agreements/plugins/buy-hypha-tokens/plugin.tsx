@@ -11,9 +11,14 @@ import {
 import { TokenPayoutField } from '../components/common/token-payout-field';
 import { RecipientField } from '../components/common/recipient-field';
 import { useFormContext, useWatch } from 'react-hook-form';
-import { TOKENS, type Space } from '@hypha-platform/core/client';
+import {
+  TOKENS,
+  useSpacesByWeb3Ids,
+  type Space,
+} from '@hypha-platform/core/client';
 import { Token } from '../components/common/token-payout-field-array';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
+import { useMemo } from 'react';
 
 type BuyHyphaTokensPluginProps = {
   spaces?: Space[];
@@ -30,6 +35,11 @@ export const BuyHyphaTokensPlugin = ({ spaces }: BuyHyphaTokensPluginProps) => {
     control,
     name: 'payout',
   });
+  const spaceWeb3Id = useWatch({ control, name: 'buyerWeb3Id' });
+  const {
+    spaces: [space],
+    isLoading: isSpacesLoading,
+  } = useSpacesByWeb3Ids(spaceWeb3Id ? [spaceWeb3Id] : [], false);
 
   const parsedAmount = parseFloat(payout?.amount ?? '');
   const calculatedHypha = !isNaN(parsedAmount)
@@ -46,6 +56,9 @@ export const BuyHyphaTokensPlugin = ({ spaces }: BuyHyphaTokensPluginProps) => {
       ]
     : [];
 
+  const buyerSpace: Space[] = useMemo(() => {
+    return !isSpacesLoading && space ? [space] : [];
+  }, [isSpacesLoading, space]);
   const recipientSpace =
     spaces?.filter((s) => s?.address === RECIPIENT_SPACE_ADDRESS) || [];
 
@@ -87,15 +100,27 @@ export const BuyHyphaTokensPlugin = ({ spaces }: BuyHyphaTokensPluginProps) => {
         </div>
       </div>
       <div className="text-sm text-neutral-11">
-        Space will receive {formatCurrencyValue(calculatedHypha)} HYPHA tokens
-        (1 HYPHA = {formatCurrencyValue(HYPHA_PRICE_USD)} USD)
+        Our space will receive {formatCurrencyValue(calculatedHypha)} HYPHA
+        tokens (1 HYPHA = {formatCurrencyValue(HYPHA_PRICE_USD)} USD)
       </div>
       <Separator />
       <RecipientField
+        label="HYPHA sent to"
+        members={[]}
+        spaces={buyerSpace}
+        defaultRecipientType="space"
+        readOnly={true}
+        showTabs={false}
+        name="buyerWallet"
+      />
+      <Separator />
+      <RecipientField
+        label="USDC paid to"
         members={[]}
         spaces={recipientSpace}
         defaultRecipientType="space"
         readOnly={true}
+        showTabs={false}
       />
     </div>
   );
