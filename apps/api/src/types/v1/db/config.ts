@@ -1,6 +1,6 @@
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { NeonHttpDatabase } from 'drizzle-orm/neon-http';
-import { schema } from '../../../plugins/db/';
+import { schema } from '../../../plugins/db-schema';
 
 export type DatabaseInstance =
   | NodePgDatabase<typeof schema>

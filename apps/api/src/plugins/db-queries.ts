@@ -7,7 +7,7 @@ import {
   people,
   type Person as DbPerson,
   type Space as DbSpace,
-} from './db';
+} from './db-schema';
 import type {
   DbConfig,
   CreatorType,
