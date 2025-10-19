@@ -10,10 +10,7 @@
     "studio": "drizzle-kit studio"
   },
   "devDependencies": {
-    "@hypha-platform/config-typescript": "workspace:*",
-    "dotenv": "^16.4.7"
-  },
-  "dependencies": {
+    "@hypha-platform/config-typescript": "workspace:*"
   },
   "exports": {
     ".": "./src/index.ts"

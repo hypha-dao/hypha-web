@@ -970,9 +970,6 @@ importers:
       '@hypha-platform/config-typescript':
         specifier: workspace:*
         version: link:../../config/typescript
-      dotenv:
-        specifier: ^16.4.7
-        version: 16.5.0
 
   packages/ui:
     dependencies:
