@@ -1,7 +1,6 @@
 {
   "name": "@hypha-platform/storage-postgres",
   "version": "0.0.0",
-  "type": "module",
   "private": true,
   "scripts": {
     "generate": "drizzle-kit generate",
