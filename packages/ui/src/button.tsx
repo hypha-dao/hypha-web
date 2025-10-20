@@ -75,7 +75,7 @@ const buttonVariants = cva(
         variant: 'outline',
         colorVariant: 'success',
         className:
-          'border-success-11 text-success-11 hover:bg-success-2 hover:text-success-12',
+          'border-success-10 text-success-11 hover:bg-success-2 hover:text-success-12',
       },
       {
         variant: 'link',
