@@ -125,8 +125,6 @@ export const CreateProposalChangeVotingMethodForm = ({
     }
   };
 
-  console.log(form);
-
   React.useEffect(() => {
     if (progress === 100 && agreementSlug) {
       router.push(successfulUrl);
