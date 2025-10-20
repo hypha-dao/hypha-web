@@ -1,5 +1,6 @@
 import { Order, Document } from '@hypha-platform/core/client';
 import { DocumentGrid } from './document-grid';
+import { Button } from '@hypha-platform/ui';
 
 type DocumentGridContainerProps = {
   basePath: string;
@@ -11,12 +12,14 @@ type DocumentGridContainerProps = {
     order?: Order<Document>;
   };
   documents: any[];
+  showVoteButton?: boolean;
 };
 
 export const DocumentGridContainer = ({
   basePath,
   pagination,
   documents,
+  showVoteButton = false,
 }: DocumentGridContainerProps) => {
   const { page, firstPageSize, pageSize } = pagination;
   const startIndex = page <= 1 ? 0 : firstPageSize + (page - 2) * pageSize;
@@ -28,7 +31,24 @@ export const DocumentGridContainer = ({
 
   return (
     <DocumentGrid
-      documents={paginatedDocuments}
+      documents={paginatedDocuments.map((doc) =>
+        showVoteButton
+          ? {
+              ...doc,
+              interactions: (
+                <>
+                  <Button
+                    className="w-full"
+                    variant="outline"
+                    colorVariant="accent"
+                  >
+                    Vote Now
+                  </Button>
+                </>
+              ),
+            }
+          : doc,
+      )}
       isLoading={false}
       basePath={basePath}
     />

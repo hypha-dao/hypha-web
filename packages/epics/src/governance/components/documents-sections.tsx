@@ -35,6 +35,7 @@ export function DocumentsSections({
         isLoading={isLoading}
         firstPageSize={9}
         pageSize={15}
+        showVoteButton={true}
       />
       <DocumentSection
         basePath={`${basePath}/proposal`}
