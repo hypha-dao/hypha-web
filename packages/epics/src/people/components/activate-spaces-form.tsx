@@ -27,12 +27,15 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useFundWallet } from '../../treasury';
 import { z } from 'zod';
+import { isAddress } from 'ethers';
 
 interface ActivateSpacesFormProps {
   spaces: Space[];
 }
 
-const schema = activateSpacesSchema.extend({ buyer: z.string() });
+const schema = activateSpacesSchema.extend({
+  buyer: z.string().refine(isAddress, { message: 'Invalid wallet address' }),
+});
 type FormValues = z.infer<typeof schema>;
 
 const RECIPIENT_SPACE_ADDRESS = '0x695f21B04B22609c4ab9e5886EB0F65cDBd464B6';
