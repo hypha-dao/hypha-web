@@ -366,7 +366,7 @@ export const schemaCreateProposalChangeVotingMethod = z
           member: z
             .string()
             .min(1)
-            .regex(/^0x[a-fA-F0-9]{40}$/),
+            .refine(isAddress, { message: 'Invalid Ethereum address' }),
           number: z.number().min(0),
         }),
       )
