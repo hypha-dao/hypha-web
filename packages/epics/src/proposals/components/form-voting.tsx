@@ -187,8 +187,8 @@ export const FormVoting = ({
                     height={24}
                     src={
                       theme === 'light'
-                        ? '/placeholder/auto-execution-icon-light.png'
-                        : '/placeholder/auto-execution-icon.png'
+                        ? '/placeholder/auto-execution-icon-light.svg'
+                        : '/placeholder/auto-execution-icon.svg'
                     }
                     alt="Proposal minimum voting icon"
                   />
@@ -210,8 +210,8 @@ export const FormVoting = ({
                     height={24}
                     src={
                       theme === 'light'
-                        ? '/placeholder/non-auto-execution-icon-light.png'
-                        : '/placeholder/non-auto-execution-icon.png'
+                        ? '/placeholder/non-auto-execution-icon-light.svg'
+                        : '/placeholder/non-auto-execution-icon.svg'
                     }
                     alt="Proposal minimum voting icon"
                   />
