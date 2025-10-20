@@ -20,12 +20,20 @@ import { useAssets, useFundWallet } from '../../treasury';
 import React from 'react';
 import Link from 'next/link';
 import { useActivateSpaces } from '../../people/hooks/use-activate-hypha-spaces';
+import { isAddress } from 'ethers';
 
 const RECIPIENT_SPACE_ADDRESS = '0x695f21B04B22609c4ab9e5886EB0F65cDBd464B6';
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
 
-const combinedSchemaActivateSpaces =
-  schemaActivateSpaces.extend(createAgreementFiles);
+const combinedSchemaActivateSpaces = schemaActivateSpaces
+  .extend(createAgreementFiles)
+  .extend({
+    buyerWeb3Id: z.number().optional(),
+    buyerWallet: z
+      .string()
+      .refine(isAddress, { message: 'Invalid wallet address' })
+      .optional(),
+  });
 type FormValues = z.infer<typeof combinedSchemaActivateSpaces>;
 
 interface ActivateSpacesFormProps {
@@ -88,6 +96,20 @@ export const ActivateSpacesFormSpace = ({
       label: 'Activate Spaces',
     },
   });
+
+  React.useEffect(() => {
+    if (spaceDetails?.executor && web3SpaceId) {
+      const currentBuyerWeb3Id = form.getValues('buyerWeb3Id');
+      const currentBuyerWallet = form.getValues('buyerWallet');
+
+      if (currentBuyerWeb3Id !== web3SpaceId) {
+        form.setValue('buyerWeb3Id', web3SpaceId);
+      }
+      if (currentBuyerWallet !== spaceDetails.executor) {
+        form.setValue('buyerWallet', spaceDetails.executor);
+      }
+    }
+  }, [web3SpaceId, spaceDetails?.executor]);
 
   const { totalUSDC, totalHYPHA } = useActivateSpaces({
     spaces: form.watch('spaces'),
