@@ -70,7 +70,7 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
         form.setValue('buyer', person.address);
       }
     }
-  }, [form, person]);
+  }, [person?.address]);
 
   const {
     control,
