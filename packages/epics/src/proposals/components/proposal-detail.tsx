@@ -197,15 +197,20 @@ export const ProposalDetail = ({
           dbTokens={dbTokens}
         />
       ))}
-      {proposalDetails?.transfers.map((tx, idx) => (
-        <ProposalTransactionItem
-          key={idx}
-          recipient={tx?.recipient}
-          amount={tx?.rawAmount}
-          tokenAddress={tx?.token}
-          spaceSlug={spaceSlug}
-        />
-      ))}
+      {Boolean(proposalDetails?.transfers?.length) && (
+        <div className="flex flex-col gap-4">
+          <span className="text-neutral-11 text-2 font-medium">Payment</span>
+          {proposalDetails?.transfers.map((tx, idx) => (
+            <ProposalTransactionItem
+              key={idx}
+              recipient={tx?.recipient}
+              amount={tx?.rawAmount}
+              tokenAddress={tx?.token}
+              spaceSlug={spaceSlug}
+            />
+          ))}
+        </div>
+      )}
       {proposalDetails?.mintings.map((mint, idx) => (
         <ProposalMintItem key={idx} member={mint.member} number={mint.number} />
       ))}

@@ -21,6 +21,7 @@ export const VoterList = ({ documentSlug }: { documentSlug: string }) => {
   return voters && voters.length > 0 ? (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-4">
+        <Separator />
         <Label>Votes</Label>
         <div className="flex gap-2 overflow-x-auto items-center">
           {voters.slice(0, maxVisibleVoters).map((voter) => (
