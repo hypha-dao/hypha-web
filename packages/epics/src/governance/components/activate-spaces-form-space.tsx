@@ -92,8 +92,15 @@ export const ActivateSpacesFormSpace = ({
 
   React.useEffect(() => {
     if (spaceDetails?.executor && web3SpaceId) {
-      form.setValue('buyerWeb3Id', web3SpaceId as number);
-      form.setValue('buyerWallet', spaceDetails.executor as `0x${string}`);
+      const currentBuyerWeb3Id = form.getValues('buyerWeb3Id');
+      const currentBuyerWallet = form.getValues('buyerWallet');
+
+      if (currentBuyerWeb3Id !== web3SpaceId) {
+        form.setValue('buyerWeb3Id', web3SpaceId);
+      }
+      if (currentBuyerWallet !== spaceDetails.executor) {
+        form.setValue('buyerWallet', spaceDetails.executor);
+      }
     }
   }, [form, web3SpaceId, spaceDetails]);
 

@@ -65,7 +65,10 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
 
   useEffect(() => {
     if (person?.address) {
-      form.setValue('buyer', person.address);
+      const currentBuyer = form.getValues('buyer');
+      if (currentBuyer !== person.address) {
+        form.setValue('buyer', person.address);
+      }
     }
   }, [form, person]);
 
