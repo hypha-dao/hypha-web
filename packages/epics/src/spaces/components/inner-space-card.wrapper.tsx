@@ -1,10 +1,9 @@
 'use client';
 
-import { getDhoPathAgreements, InnerSpaceCard } from '@hypha-platform/epics';
 import { Person } from '@hypha-platform/core/client';
 import { useMemo } from 'react';
-
-import { UseMembers } from '@hypha-platform/epics';
+import { InnerSpaceCard } from './inner-space-card';
+import { UseMembers } from '../hooks';
 
 type InnerSpaceCardWrapperProps = {
   spaceSlug: string;
