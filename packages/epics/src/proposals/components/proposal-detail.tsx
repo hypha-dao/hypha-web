@@ -13,6 +13,10 @@ import {
   DbToken,
   DEFAULT_SPACE_LEAD_IMAGE,
   Attachment,
+  useSpaceDetailsWeb3Rpc,
+  SpaceDetails,
+  DirectionType,
+  Document,
 } from '@hypha-platform/core/client';
 import {
   ProposalTransactionItem,
@@ -28,6 +32,7 @@ import { MarkdownSuspense } from '@hypha-platform/ui/server';
 import { ButtonClose } from '@hypha-platform/epics';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { ProposalActivateSpacesData } from '../../governance/components/proposal-activate-spaces-data';
+import { useSpaceDocumentsWithStatuses } from '../../governance';
 
 type ProposalDetailProps = ProposalHeadProps & {
   onAccept: () => void;
@@ -44,6 +49,12 @@ type ProposalDetailProps = ProposalHeadProps & {
   label?: string;
   documentSlug: string;
   dbTokens?: DbToken[];
+};
+
+type DocumentsArrays = {
+  accepted: Document[];
+  rejected: Document[];
+  onVoting: Document[];
 };
 
 export const ProposalDetail = ({
@@ -70,11 +81,59 @@ export const ProposalDetail = ({
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: proposalId as number,
   });
+  const { spaceDetails } = useSpaceDetailsWeb3Rpc({
+    spaceId: Number(proposalDetails?.spaceId),
+  });
   const { isAuthenticated } = useAuthentication();
+  const { documents: documentsArrays } = useSpaceDocumentsWithStatuses({
+    spaceId: Number(proposalDetails?.spaceId),
+    spaceSlug,
+    order: [
+      {
+        name: 'createdAt',
+        dir: DirectionType.DESC,
+      },
+    ],
+  });
+
+  const findDocumentStatus = (
+    documentsArrays: DocumentsArrays,
+    proposalId: number | null | undefined,
+  ): string | null => {
+    if (!documentsArrays || proposalId == null) return null;
+    if (
+      documentsArrays.accepted?.some(
+        (doc: Document) => doc.web3ProposalId === proposalId,
+      )
+    ) {
+      return 'accepted';
+    }
+    if (
+      documentsArrays.rejected?.some(
+        (doc: Document) => doc.web3ProposalId === proposalId,
+      )
+    ) {
+      return 'rejected';
+    }
+    if (
+      documentsArrays.onVoting?.some(
+        (doc: Document) => doc.web3ProposalId === proposalId,
+      )
+    ) {
+      return 'onVoting';
+    }
+    return null;
+  };
+
+  const proposalStatus = findDocumentStatus(documentsArrays, proposalId);
+
+  const hideDurationData = () => {
+    return proposalStatus === 'accepted' || proposalStatus === 'rejected';
+  };
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex gap-5 justify-between">
+      <div className="flex gap-2 justify-between">
         <ProposalHead
           creator={creator}
           title={title}
@@ -83,6 +142,7 @@ export const ProposalDetail = ({
           isLoading={isLoading}
           label={label}
           createDate={formatDate(proposalDetails?.startTime ?? new Date())}
+          proposalStatus={proposalStatus}
         />
         <ButtonClose closeUrl={closeUrl} />
       </div>
@@ -111,6 +171,9 @@ export const ProposalDetail = ({
           quorum={method.quorum}
           token={proposalDetails?.votingMethodsToken}
           spaceSlug={spaceSlug}
+          minimumProposalVotingDuration={
+            proposalDetails?.minimumProposalDurationData?.duration
+          }
         />
       ))}
       {proposalDetails?.entryMethods.map((method, idx) => (
@@ -134,15 +197,20 @@ export const ProposalDetail = ({
           dbTokens={dbTokens}
         />
       ))}
-      {proposalDetails?.transfers.map((tx, idx) => (
-        <ProposalTransactionItem
-          key={idx}
-          recipient={tx?.recipient}
-          amount={tx?.rawAmount}
-          tokenAddress={tx?.token}
-          spaceSlug={spaceSlug}
-        />
-      ))}
+      {Boolean(proposalDetails?.transfers?.length) && (
+        <div className="flex flex-col gap-4">
+          <span className="text-neutral-11 text-2 font-medium">Payment</span>
+          {proposalDetails?.transfers.map((tx, idx) => (
+            <ProposalTransactionItem
+              key={idx}
+              recipient={tx?.recipient}
+              amount={tx?.rawAmount}
+              tokenAddress={tx?.token}
+              spaceSlug={spaceSlug}
+            />
+          ))}
+        </div>
+      )}
       {proposalDetails?.mintings.map((mint, idx) => (
         <ProposalMintItem key={idx} member={mint.member} number={mint.number} />
       ))}
@@ -179,6 +247,9 @@ export const ProposalDetail = ({
         documentSlug={documentSlug}
         isAuthenticated={isAuthenticated}
         web3SpaceId={proposalDetails?.spaceId}
+        spaceDetails={spaceDetails as unknown as SpaceDetails}
+        proposalStatus={proposalStatus}
+        hideDurationData={hideDurationData()}
       />
       {/* TODO: uncomment when comments support will be implemented */}
       {/* <Separator />

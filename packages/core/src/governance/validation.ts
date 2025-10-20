@@ -346,14 +346,57 @@ export const schemaIssueNewToken = z.object({
     .optional(),
 });
 
-export const schemaChangeVotingMethod = z.object({
-  ...createAgreementWeb2Props,
-  ...createAgreementFiles,
-  members: z.array(schemaMemberWithNumber).optional(),
-  token: z.string().optional(),
-  quorumAndUnity: schemaQuorumAndUnity.optional(),
-  votingMethod: z.enum(['1m1v', '1v1v', '1t1v']).nullable().optional(),
-});
+export const schemaCreateProposalChangeVotingMethod = z
+  .object({
+    title: z.string().trim().min(1).max(50),
+    description: z.string().trim().min(1).max(4000),
+    slug: z
+      .string()
+      .min(1)
+      .max(50)
+      .regex(/^[a-z0-9-]+$/)
+      .optional(),
+    creatorId: z.number().min(1),
+    spaceId: z.number().min(1),
+    web3ProposalId: z.number().optional(),
+    label: z.string().optional(),
+    members: z
+      .array(
+        z.object({
+          member: z
+            .string()
+            .min(1)
+            .refine(isAddress, { message: 'Invalid Ethereum address' }),
+          number: z.number().min(0),
+        }),
+      )
+      .optional(),
+    token: z.string().optional(),
+    quorumAndUnity: z
+      .object({
+        quorum: z.number().min(0).max(100),
+        unity: z.number().min(0).max(100),
+      })
+      .optional(),
+    votingMethod: z.enum(['1m1v', '1v1v', '1t1v']).nullable().optional(),
+    autoExecution: z.boolean().optional(),
+    votingDuration: z.number().optional(),
+    leadImage: z.custom<File>().optional(),
+    attachments: z.array(z.custom<File>()).max(3).optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.autoExecution === false) {
+        return data.votingDuration !== undefined && data.votingDuration > 0;
+      }
+      return true;
+    },
+    {
+      message:
+        'Auto-execution is disabled. Please set a minimum voting duration.',
+      path: ['votingDuration'],
+    },
+  );
 
 export const schemaCreateAgreementForm = z.object({
   ...createAgreementWeb2Props,

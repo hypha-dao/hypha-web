@@ -15,6 +15,7 @@ import {
   getProposalFromLogs,
   createProposal,
   mapToCreateProposalWeb3Input,
+  getSpaceMinProposalDuration,
 } from '@hypha-platform/core/client';
 import { hyphaTokenAbi, hyphaTokenAddress } from '../../../generated';
 import { erc20Abi } from 'viem';
@@ -52,6 +53,10 @@ export const useActivateSpacesMutationsWeb3Rpc = ({
       if (!client) {
         throw new Error('Smart wallet client not available');
       }
+
+      const duration = await publicClient.readContract(
+        getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
+      );
 
       const transactions: z.infer<typeof transactionSchema>[] = [];
 
@@ -94,7 +99,7 @@ export const useActivateSpacesMutationsWeb3Rpc = ({
 
       const input = {
         spaceId: BigInt(arg.spaceId),
-        duration: getDuration(4),
+        duration: duration && duration > 0 ? duration : getDuration(4),
         transactions,
       };
 
