@@ -1,14 +1,14 @@
-import { Document, useMyVote } from '@hypha-platform/core/client';
+import { useMyVote } from '@hypha-platform/core/client';
 import { Button } from '@hypha-platform/ui';
 
 export const VoteProposalButton = ({
-  document,
+  documentSlug,
   className,
 }: {
-  document: Document;
+  documentSlug?: string;
   className?: string;
 }) => {
-  const { myVote } = useMyVote(document.slug);
+  const { myVote } = useMyVote(documentSlug);
   switch (myVote) {
     case 'yes':
       return (

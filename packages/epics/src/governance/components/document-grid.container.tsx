@@ -11,7 +11,7 @@ type DocumentGridContainerProps = {
     searchTerm?: string;
     order?: Order<Document>;
   };
-  documents: any[];
+  documents: Document[];
   showVoteButton?: boolean;
 };
 
@@ -36,7 +36,10 @@ export const DocumentGridContainer = ({
           ? {
               ...doc,
               interactions: (
-                <VoteProposalButton className="w-full" document={doc} />
+                <VoteProposalButton
+                  className="w-full"
+                  documentSlug={doc?.slug}
+                />
               ),
             }
           : doc,
