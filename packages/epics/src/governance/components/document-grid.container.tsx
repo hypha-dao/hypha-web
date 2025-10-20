@@ -1,6 +1,36 @@
-import { Order, Document } from '@hypha-platform/core/client';
+import { Order, Document, useMyVote } from '@hypha-platform/core/client';
 import { DocumentGrid } from './document-grid';
 import { Button } from '@hypha-platform/ui';
+
+const VoteProposalButton = ({
+  document,
+  className,
+}: {
+  document: Document;
+  className?: string;
+}) => {
+  const { myVote } = useMyVote(document.slug);
+  switch (myVote) {
+    case 'yes':
+      return (
+        <Button className={className} variant="outline" colorVariant="success">
+          You voted yes
+        </Button>
+      );
+    case 'no':
+      return (
+        <Button className={className} variant="outline" colorVariant="error">
+          You voted No
+        </Button>
+      );
+    default:
+      return (
+        <Button className={className} variant="outline" colorVariant="accent">
+          Vote Now
+        </Button>
+      );
+  }
+};
 
 type DocumentGridContainerProps = {
   basePath: string;
@@ -36,15 +66,7 @@ export const DocumentGridContainer = ({
           ? {
               ...doc,
               interactions: (
-                <>
-                  <Button
-                    className="w-full"
-                    variant="outline"
-                    colorVariant="accent"
-                  >
-                    Vote Now
-                  </Button>
-                </>
+                <VoteProposalButton className="w-full" document={doc} />
               ),
             }
           : doc,
