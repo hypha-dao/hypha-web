@@ -11,15 +11,7 @@ import {
 } from '@hypha-platform/ui';
 import { QuorumAndUnityChanger } from './quorum-and-unity-changer';
 import { Button } from '@hypha-platform/ui';
-
-const TEMPLATES = [
-  { title: '80-20 Pareto', quorum: 20, unity: 80 },
-  { title: 'Majority Vote', quorum: 51, unity: 51 },
-  { title: 'Minority Vote', quorum: 10, unity: 90 },
-  { title: 'Consensus', quorum: 100, unity: 100 },
-  { title: 'Consent', quorum: 0, unity: 100 },
-  { title: 'Hearing', quorum: 100, unity: 0 },
-];
+import { VOTING_METHOD_TEMPLATES } from '../../../../governance';
 
 interface QuorumAndUnityChangerFieldProps {
   name: string;
@@ -37,7 +29,7 @@ export function QuorumAndUnityChangerField({
 
   const handleChange = (values: { quorum: number; unity: number }) => {
     setValue(name, values, { shouldValidate: true });
-    const preset = TEMPLATES.find(
+    const preset = VOTING_METHOD_TEMPLATES.find(
       (p) => p.quorum === values.quorum && p.unity === values.unity,
     );
     if (!preset) {
@@ -75,7 +67,7 @@ export function QuorumAndUnityChangerField({
       render={() => (
         <FormItem>
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 mb-2">
-            {TEMPLATES.map((preset) => {
+            {VOTING_METHOD_TEMPLATES.map((preset) => {
               const isSelected = selectedPreset === preset.title;
               return (
                 <Button
