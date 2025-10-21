@@ -98,7 +98,7 @@ export const updateToken = async (
   { agreementId, agreementWeb3Id, ...rest }: UpdateTokenInput,
   { db }: { db: DatabaseInstance },
 ) => {
-  console.log('Updating token with input:', {
+  console.log('🔄 updateToken mutation called with:', {
     agreementId,
     agreementWeb3Id,
     ...rest,
@@ -106,24 +106,29 @@ export const updateToken = async (
 
   let existingToken;
   if (agreementId !== undefined) {
+    console.log('Searching token by agreementId:', agreementId);
     existingToken = await db
       .select()
       .from(tokens)
       .where(eq(tokens.agreementId, agreementId))
       .execute();
   } else if (agreementWeb3Id !== undefined) {
+    console.log('Searching token by agreementWeb3Id:', agreementWeb3Id);
     existingToken = await db
       .select()
       .from(tokens)
       .where(eq(tokens.agreementWeb3Id, agreementWeb3Id))
       .execute();
   } else {
+    console.error('Neither agreementId nor agreementWeb3Id provided');
     throw new Error('Either agreementId or agreementWeb3Id must be provided');
   }
 
-  console.log('Existing token check:', existingToken);
+  console.log('Existing tokens found:', existingToken.length);
+  console.log('Existing token details:', existingToken);
 
   if (existingToken.length === 0) {
+    console.error('No token found with provided criteria');
     throw new Error(
       `No token found with ${
         agreementId !== undefined
@@ -132,6 +137,7 @@ export const updateToken = async (
       }`,
     );
   }
+
   const updateData = {
     ...rest,
     ...(rest.agreementWeb3IdUpdate !== undefined && {
@@ -139,22 +145,29 @@ export const updateToken = async (
     }),
   };
 
+  console.log('Update data prepared:', updateData);
+
+  const whereCondition =
+    agreementId !== undefined
+      ? eq(tokens.agreementId, agreementId)
+      : eq(tokens.agreementWeb3Id, agreementWeb3Id!);
+
+  console.log('Where condition:', whereCondition);
+
   const [updated] = await db
     .update(tokens)
     .set(updateData)
-    .where(
-      agreementId !== undefined
-        ? eq(tokens.agreementId, agreementId)
-        : eq(tokens.agreementWeb3Id, agreementWeb3Id!),
-    )
+    .where(whereCondition)
     .returning();
 
-  console.log('Update result:', updated);
+  console.log('Database update result:', updated);
 
   if (!updated) {
+    console.error('Database update returned no results');
     throw new Error('Failed to update token');
   }
 
+  console.log('✅ Token updated successfully:', updated);
   return updated;
 };
 

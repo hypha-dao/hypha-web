@@ -86,8 +86,24 @@ export async function updateTokenAction(
   input: UpdateTokenInput,
   { authToken }: { authToken: string },
 ) {
-  if (!authToken) throw new Error('authToken is required to update token');
-  return updateToken(input, { db });
+  console.log('updateTokenAction called with:', {
+    input,
+    hasAuthToken: !!authToken,
+  });
+
+  if (!authToken) {
+    console.error('authToken is required to update token');
+    throw new Error('authToken is required to update token');
+  }
+
+  try {
+    const result = await updateToken(input, { db });
+    console.log('updateTokenAction completed successfully:', result);
+    return result;
+  } catch (error) {
+    console.error('updateTokenAction failed:', error);
+    throw error;
+  }
 }
 
 export async function deleteTokenAction(
