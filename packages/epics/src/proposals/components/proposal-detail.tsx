@@ -18,6 +18,7 @@ import {
   DirectionType,
   Document,
   useSpaceMinProposalDuration,
+  useProposalEvents,
 } from '@hypha-platform/core/client';
 import {
   ProposalTransactionItem,
@@ -52,6 +53,7 @@ type ProposalDetailProps = ProposalHeadProps & {
   label?: string;
   documentSlug: string;
   dbTokens?: DbToken[];
+  authToken?: string | null;
 };
 
 type DocumentsArrays = {
@@ -80,6 +82,7 @@ export const ProposalDetail = ({
   label,
   documentSlug,
   dbTokens,
+  authToken,
 }: ProposalDetailProps) => {
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: proposalId as number,
@@ -97,6 +100,23 @@ export const ProposalDetail = ({
         dir: DirectionType.DESC,
       },
     ],
+  });
+
+  const tokenSymbol = proposalDetails?.tokens?.[0]?.symbol;
+
+  const { isUpdatingToken, isDeletingToken } = useProposalEvents({
+    proposalId,
+    tokenSymbol,
+    authToken,
+    onProposalExecuted: (transactionHash: string) => {
+      console.log(
+        'Proposal executed via banner, transaction:',
+        transactionHash,
+      );
+    },
+    onProposalRejected: () => {
+      console.log('Proposal rejected via banner');
+    },
   });
 
   const findDocumentStatus = (
@@ -147,13 +167,17 @@ export const ProposalDetail = ({
   const [quorumReached, setQuorumReached] = useState(false);
   const [unityReached, setUnityReached] = useState(false);
   const [isActionCompleted, setIsActionCompleted] = useState(false);
+  const [isExpiring, setIsExpiring] = useState(false);
 
   const handleCheckProposalExpiration = async () => {
     try {
+      setIsExpiring(true);
       await onCheckProposalExpiration();
       setIsActionCompleted(true);
     } catch (error) {
       console.error('Error checking proposal expiration:', error);
+    } finally {
+      setIsExpiring(false);
     }
   };
 
@@ -234,6 +258,7 @@ export const ProposalDetail = ({
         unityReached={unityReached}
         onHandleAction={handleCheckProposalExpiration}
         isActionCompleted={isActionCompleted}
+        isExpiring={isExpiring}
         web3SpaceId={proposalDetails?.spaceId}
       />
       {proposalDetails?.votingMethods.map((method, idx) => (
