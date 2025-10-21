@@ -13,13 +13,13 @@ export const VoteProposalButton = ({
     case 'yes':
       return (
         <Button className={className} variant="outline" colorVariant="success">
-          You voted yes
+          You Voted Yes
         </Button>
       );
     case 'no':
       return (
         <Button className={className} variant="outline" colorVariant="error">
-          You voted No
+          You Voted No
         </Button>
       );
     default:
