@@ -17,6 +17,7 @@ import {
   SpaceDetails,
   DirectionType,
   Document,
+  useSpaceMinProposalDuration,
 } from '@hypha-platform/core/client';
 import {
   ProposalTransactionItem,
@@ -29,10 +30,12 @@ import {
   ProposalDelegatesData,
 } from '../../governance';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
-import { ButtonClose } from '@hypha-platform/epics';
+import { ButtonClose, ExpireProposalBanner } from '@hypha-platform/epics';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { ProposalActivateSpacesData } from '../../governance/components/proposal-activate-spaces-data';
 import { useSpaceDocumentsWithStatuses } from '../../governance';
+import { isPast } from 'date-fns';
+import { useState, useEffect } from 'react';
 
 type ProposalDetailProps = ProposalHeadProps & {
   onAccept: () => void;
@@ -131,6 +134,68 @@ export const ProposalDetail = ({
     return proposalStatus === 'accepted' || proposalStatus === 'rejected';
   };
 
+  const spaceIdBigInt = proposalDetails?.spaceId
+    ? BigInt(proposalDetails?.spaceId)
+    : null;
+
+  const { duration } = useSpaceMinProposalDuration({
+    spaceId: spaceIdBigInt as bigint,
+  });
+
+  const [displayExpireProposalBanner, setDisplayExpireProposalBanner] =
+    useState(false);
+  const [quorumReached, setQuorumReached] = useState(false);
+  const [unityReached, setUnityReached] = useState(false);
+  const [isActionCompleted, setIsActionCompleted] = useState(false);
+
+  const handleCheckProposalExpiration = async () => {
+    try {
+      await onCheckProposalExpiration();
+      setIsActionCompleted(true);
+    } catch (error) {
+      console.error('Error checking proposal expiration:', error);
+    }
+  };
+
+  useEffect(() => {
+    const isProposalExpired = Boolean(
+      proposalDetails?.endTime && isPast(new Date(proposalDetails.endTime)),
+    );
+
+    const isDurationZero = duration === 0n;
+
+    const isQuorumReached = Boolean(
+      Number(proposalDetails?.quorumPercentage ?? 0) >=
+        Number(spaceDetails?.quorum ?? 0),
+    );
+    setQuorumReached(isQuorumReached);
+
+    const isUnityReached = Boolean(
+      Number(proposalDetails?.unityPercentage ?? 0) >=
+        Number(spaceDetails?.unity ?? 0),
+    );
+    setUnityReached(isUnityReached);
+
+    let shouldShowBanner = false;
+
+    if (
+      isProposalExpired &&
+      !proposalDetails?.executed &&
+      !proposalDetails?.expired
+    ) {
+      if (!isDurationZero) {
+        shouldShowBanner = true;
+      } else {
+        const conditionsMet = isQuorumReached && isUnityReached;
+        if (!conditionsMet) {
+          shouldShowBanner = true;
+        }
+      }
+    }
+
+    setDisplayExpireProposalBanner(shouldShowBanner);
+  }, [duration, proposalDetails, spaceDetails]);
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex gap-2 justify-between">
@@ -163,6 +228,14 @@ export const ProposalDetail = ({
       </Skeleton>
       <MarkdownSuspense>{content}</MarkdownSuspense>
       <AttachmentList attachments={attachments || []} />
+      <ExpireProposalBanner
+        isDisplay={displayExpireProposalBanner}
+        quorumReached={quorumReached}
+        unityReached={unityReached}
+        onHandleAction={handleCheckProposalExpiration}
+        isActionCompleted={isActionCompleted}
+        web3SpaceId={proposalDetails?.spaceId}
+      />
       {proposalDetails?.votingMethods.map((method, idx) => (
         <ProposalVotingInfo
           key={idx}
@@ -240,7 +313,6 @@ export const ProposalDetail = ({
         expired={proposalDetails?.expired}
         onAccept={onAccept}
         onReject={onReject}
-        onCheckProposalExpiration={onCheckProposalExpiration}
         isCheckingExpiration={isCheckingExpiration}
         isLoading={isLoading}
         isVoting={isVoting}
