@@ -98,12 +98,6 @@ export const updateToken = async (
   { agreementId, agreementWeb3Id, ...rest }: UpdateTokenInput,
   { db }: { db: DatabaseInstance },
 ) => {
-  console.log('Updating token with input:', {
-    agreementId,
-    agreementWeb3Id,
-    ...rest,
-  });
-
   let existingToken;
   if (agreementId !== undefined) {
     existingToken = await db
@@ -121,8 +115,6 @@ export const updateToken = async (
     throw new Error('Either agreementId or agreementWeb3Id must be provided');
   }
 
-  console.log('Existing token check:', existingToken);
-
   if (existingToken.length === 0) {
     throw new Error(
       `No token found with ${
@@ -132,6 +124,7 @@ export const updateToken = async (
       }`,
     );
   }
+
   const updateData = {
     ...rest,
     ...(rest.agreementWeb3IdUpdate !== undefined && {
@@ -139,17 +132,16 @@ export const updateToken = async (
     }),
   };
 
+  const findTokenCondition =
+    agreementId !== undefined
+      ? eq(tokens.agreementId, agreementId)
+      : eq(tokens.agreementWeb3Id, agreementWeb3Id!);
+
   const [updated] = await db
     .update(tokens)
     .set(updateData)
-    .where(
-      agreementId !== undefined
-        ? eq(tokens.agreementId, agreementId)
-        : eq(tokens.agreementWeb3Id, agreementWeb3Id!),
-    )
+    .where(findTokenCondition)
     .returning();
-
-  console.log('Update result:', updated);
 
   if (!updated) {
     throw new Error('Failed to update token');
