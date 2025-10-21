@@ -50,7 +50,6 @@ export const FormVoting = ({
   isLoading,
   onAccept,
   onReject,
-  onCheckProposalExpiration,
   isCheckingExpiration,
   isVoting,
   documentSlug,
@@ -68,7 +67,6 @@ export const FormVoting = ({
   isLoading?: boolean;
   onAccept: () => void;
   onReject: () => void;
-  onCheckProposalExpiration: () => void;
   isCheckingExpiration: boolean;
   isVoting?: boolean;
   documentSlug: string;
@@ -246,17 +244,6 @@ export const FormVoting = ({
             <div className="text-1">
               {formatTimeRemaining(endTime, executed, expired)}
             </div>
-            {isPast(new Date(endTime)) && !executed && !expired ? (
-              <div className="flex gap-2">
-                <Button
-                  onClick={onCheckProposalExpiration}
-                  disabled={isDisabled}
-                  title={tooltipMessage}
-                >
-                  Execute
-                </Button>
-              </div>
-            ) : null}
           </div>
           {executed || expired || isPast(new Date(endTime)) ? null : (
             <div className="flex gap-2">

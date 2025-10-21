@@ -1,0 +1,126 @@
+'use client';
+
+import { Card, Button } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
+import { useJoinSpace } from '../../spaces';
+import { useIsDelegate } from '@hypha-platform/core/client';
+import { useAuthentication } from '@hypha-platform/authentication';
+
+interface ExpireProposalBannerProps {
+  quorumReached?: boolean;
+  unityReached?: boolean;
+  onHandleAction?: () => void;
+  isDisplay?: boolean;
+  isActionCompleted?: boolean;
+  web3SpaceId?: number;
+}
+
+type BannerState = {
+  title: string;
+  subtitle: string;
+  buttonText: string;
+  completedMessage: string;
+};
+
+export const ExpireProposalBanner = ({
+  quorumReached,
+  unityReached,
+  onHandleAction,
+  isDisplay,
+  isActionCompleted = false,
+  web3SpaceId,
+}: ExpireProposalBannerProps) => {
+  if (!isDisplay) {
+    return null;
+  }
+
+  const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
+  const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
+  const { isAuthenticated } = useAuthentication();
+
+  const isDisabled = !isAuthenticated || (!isMember && !isDelegate);
+  const tooltipMessage = !isAuthenticated
+    ? 'Please sign in to use this feature.'
+    : !isMember && !isDelegate
+    ? 'Please join this space to use this feature.'
+    : '';
+
+  const getBannerState = (): BannerState => {
+    if (!quorumReached) {
+      return {
+        title: 'The voting period has ended.',
+        subtitle:
+          'Participation was too low for this proposal to be approved. This proposal will be rejected.',
+        buttonText: 'Confirm Outcome',
+        completedMessage:
+          'Outcome recorded: Proposal rejected due to insufficient participation.',
+      };
+    }
+
+    if (quorumReached && !unityReached) {
+      return {
+        title: 'The voting period has ended.',
+        subtitle:
+          'Participation was sufficient, but support was too divided. This proposal will be rejected.',
+        buttonText: 'Confirm Outcome',
+        completedMessage:
+          'Outcome recorded: Proposal rejected due to lack of alignment.',
+      };
+    }
+
+    if (quorumReached && unityReached) {
+      return {
+        title: 'The voting period has ended.',
+        subtitle:
+          'This proposal has met all requirements and is approved as a new agreement.',
+        buttonText: 'Confirm Outcome',
+        completedMessage:
+          'Outcome recorded: Proposal approved and moved to the Accepted section.',
+      };
+    }
+
+    return {
+      title: 'The voting period has ended.',
+      subtitle:
+        'Participation was too low, and support was too divided. This proposal will be rejected.',
+      buttonText: 'Confirm Outcome',
+      completedMessage:
+        'Outcome recorded: Proposal rejected due to insufficient participation and lack of alignment.',
+    };
+  };
+
+  const { title, subtitle, buttonText, completedMessage } = getBannerState();
+
+  return (
+    <Card
+      className="bg-cover bg-center"
+      style={{ backgroundImage: 'url("/placeholder/sales-banner-bg.png")' }}
+    >
+      <div className="p-5 flex flex-col gap-4">
+        <div className="flex justify-between items-center">
+          <span className="text-6 font-medium text-white">{title}</span>
+        </div>
+
+        {isActionCompleted ? (
+          <>
+            <span className={cn('text-2', 'text-white')}>
+              {completedMessage}
+            </span>
+          </>
+        ) : (
+          <>
+            <span className={cn('text-2', 'text-white')}>{subtitle}</span>
+            <Button
+              disabled={isDisabled}
+              title={tooltipMessage}
+              onClick={onHandleAction}
+              className="w-fit"
+            >
+              {buttonText}
+            </Button>
+          </>
+        )}
+      </div>
+    </Card>
+  );
+};
