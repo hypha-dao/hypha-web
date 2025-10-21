@@ -1,40 +1,27 @@
-import {
-  useMyVote,
-  useProposalDetailsWeb3Rpc,
-} from '@hypha-platform/core/client';
+import { DocumentStatus, useMyVote } from '@hypha-platform/core/client';
 import { Button } from '@hypha-platform/ui';
 import React from 'react';
 
 export const VoteProposalButton = ({
-  proposalId,
   documentSlug,
+  proposalStatus,
   className,
 }: {
-  proposalId?: number | null | undefined;
   documentSlug?: string;
+  proposalStatus?: DocumentStatus;
   className?: string;
 }) => {
-  const { proposalDetails } = useProposalDetailsWeb3Rpc({
-    proposalId: proposalId as number,
-  });
   const { myVote } = useMyVote(documentSlug);
   const output = React.useMemo(() => {
-    console.log('My vote:', myVote);
-    console.log('Proposal details:', proposalDetails);
-    const expired = proposalDetails?.expired;
-    const executed = proposalDetails?.executed;
-    if (expired && !executed) {
+    if (proposalStatus === 'onVoting' && myVote === null) {
       return (
-        <Button
-          className={className}
-          variant="outline"
-          colorVariant="accent"
-          disabled={expired || executed}
-        >
+        <Button className={className} variant="outline" colorVariant="accent">
           Confirm Outcome
         </Button>
       );
     }
+    const isSettled =
+      proposalStatus === 'accepted' || proposalStatus === 'rejected';
     switch (myVote) {
       case 'yes':
         return (
@@ -42,7 +29,7 @@ export const VoteProposalButton = ({
             className={className}
             variant="outline"
             colorVariant="success"
-            disabled={expired || executed}
+            disabled={isSettled}
           >
             You Voted Yes
           </Button>
@@ -53,7 +40,7 @@ export const VoteProposalButton = ({
             className={className}
             variant="outline"
             colorVariant="error"
-            disabled={expired || executed}
+            disabled={isSettled}
           >
             You Voted No
           </Button>
@@ -64,12 +51,12 @@ export const VoteProposalButton = ({
             className={className}
             variant="outline"
             colorVariant="accent"
-            disabled={expired || executed}
+            disabled={isSettled}
           >
-            {expired || executed ? 'No Vote' : 'Vote Now'}
+            {isSettled ? 'No Vote' : 'Vote Now'}
           </Button>
         );
     }
-  }, [proposalDetails, myVote]);
+  }, [proposalStatus, myVote]);
   return output;
 };

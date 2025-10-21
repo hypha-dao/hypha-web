@@ -33,9 +33,9 @@ export const DocumentGridContainer = ({
         ...doc,
         interactions: (
           <VoteProposalButton
-            className="w-full self-end"
-            proposalId={doc.web3ProposalId}
+            className="flex w-full self-end"
             documentSlug={doc?.slug}
+            proposalStatus={doc?.status}
           />
         ),
       }))}
