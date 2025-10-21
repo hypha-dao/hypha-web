@@ -12,14 +12,12 @@ type DocumentGridContainerProps = {
     order?: Order<Document>;
   };
   documents: Document[];
-  showVoteButton?: boolean;
 };
 
 export const DocumentGridContainer = ({
   basePath,
   pagination,
   documents,
-  showVoteButton = false,
 }: DocumentGridContainerProps) => {
   const { page, firstPageSize, pageSize } = pagination;
   const startIndex = page <= 1 ? 0 : firstPageSize + (page - 2) * pageSize;
@@ -31,19 +29,16 @@ export const DocumentGridContainer = ({
 
   return (
     <DocumentGrid
-      documents={paginatedDocuments.map((doc) =>
-        showVoteButton
-          ? {
-              ...doc,
-              interactions: (
-                <VoteProposalButton
-                  className="w-full"
-                  documentSlug={doc?.slug}
-                />
-              ),
-            }
-          : doc,
-      )}
+      documents={paginatedDocuments.map((doc) => ({
+        ...doc,
+        interactions: (
+          <VoteProposalButton
+            className="w-full self-end"
+            proposalId={doc.web3ProposalId}
+            documentSlug={doc?.slug}
+          />
+        ),
+      }))}
       isLoading={false}
       basePath={basePath}
     />

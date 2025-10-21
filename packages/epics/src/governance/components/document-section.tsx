@@ -17,7 +17,6 @@ type DocumentSectionProps = {
   isLoading: boolean;
   firstPageSize?: number;
   pageSize?: number;
-  showVoteButton?: boolean;
 };
 
 export const DocumentSection: FC<DocumentSectionProps> = ({
@@ -29,7 +28,6 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
   isLoading,
   firstPageSize = 3,
   pageSize = 3,
-  showVoteButton = false,
 }) => {
   const {
     pages,
@@ -79,7 +77,6 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
                 ],
               }}
               documents={filteredDocuments}
-              showVoteButton={showVoteButton}
             />
           ))}
         </div>
