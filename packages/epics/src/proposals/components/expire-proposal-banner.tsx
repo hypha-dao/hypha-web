@@ -5,6 +5,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import { useJoinSpace } from '../../spaces';
 import { useIsDelegate } from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { Loader2 } from 'lucide-react';
 
 interface ExpireProposalBannerProps {
   quorumReached?: boolean;
@@ -12,6 +13,7 @@ interface ExpireProposalBannerProps {
   onHandleAction?: () => void;
   isDisplay?: boolean;
   isActionCompleted?: boolean;
+  isExpiring?: boolean;
   web3SpaceId?: number;
 }
 
@@ -28,6 +30,7 @@ export const ExpireProposalBanner = ({
   onHandleAction,
   isDisplay,
   isActionCompleted = false,
+  isExpiring = false,
   web3SpaceId,
 }: ExpireProposalBannerProps) => {
   if (!isDisplay) {
@@ -38,11 +41,14 @@ export const ExpireProposalBanner = ({
   const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
   const { isAuthenticated } = useAuthentication();
 
-  const isDisabled = !isAuthenticated || (!isMember && !isDelegate);
+  const isDisabled =
+    !isAuthenticated || (!isMember && !isDelegate) || isExpiring;
   const tooltipMessage = !isAuthenticated
     ? 'Please sign in to use this feature.'
     : !isMember && !isDelegate
     ? 'Please join this space to use this feature.'
+    : isExpiring
+    ? 'Processing...'
     : '';
 
   const getBannerState = (): BannerState => {
@@ -51,7 +57,7 @@ export const ExpireProposalBanner = ({
         title: 'The voting period has ended.',
         subtitle:
           'Participation was too low for this proposal to be approved. This proposal will be rejected.',
-        buttonText: 'Confirm Outcome',
+        buttonText: isExpiring ? 'Processing...' : 'Confirm Outcome',
         completedMessage:
           'Outcome recorded: Proposal rejected due to insufficient participation.',
       };
@@ -62,7 +68,7 @@ export const ExpireProposalBanner = ({
         title: 'The voting period has ended.',
         subtitle:
           'Participation was sufficient, but support was too divided. This proposal will be rejected.',
-        buttonText: 'Confirm Outcome',
+        buttonText: isExpiring ? 'Processing...' : 'Confirm Outcome',
         completedMessage:
           'Outcome recorded: Proposal rejected due to lack of alignment.',
       };
@@ -73,7 +79,7 @@ export const ExpireProposalBanner = ({
         title: 'The voting period has ended.',
         subtitle:
           'This proposal has met all requirements and is approved as a new agreement.',
-        buttonText: 'Confirm Outcome',
+        buttonText: isExpiring ? 'Processing...' : 'Confirm Outcome',
         completedMessage:
           'Outcome recorded: Proposal approved and moved to the Accepted section.',
       };
@@ -83,7 +89,7 @@ export const ExpireProposalBanner = ({
       title: 'The voting period has ended.',
       subtitle:
         'Participation was too low, and support was too divided. This proposal will be rejected.',
-      buttonText: 'Confirm Outcome',
+      buttonText: isExpiring ? 'Processing...' : 'Confirm Outcome',
       completedMessage:
         'Outcome recorded: Proposal rejected due to insufficient participation and lack of alignment.',
     };
@@ -110,14 +116,21 @@ export const ExpireProposalBanner = ({
         ) : (
           <>
             <span className={cn('text-2', 'text-white')}>{subtitle}</span>
-            <Button
-              disabled={isDisabled}
-              title={tooltipMessage}
-              onClick={onHandleAction}
-              className="w-fit"
-            >
-              {buttonText}
-            </Button>
+            {isExpiring ? (
+              <div className="flex items-center gap-2 text-sm text-neutral-10">
+                <Loader2 className="animate-spin w-4 h-4" />
+                Expiring...
+              </div>
+            ) : (
+              <Button
+                disabled={isDisabled}
+                title={tooltipMessage}
+                onClick={onHandleAction}
+                className="w-fit"
+              >
+                {buttonText}
+              </Button>
+            )}
           </>
         )}
       </div>
