@@ -13,7 +13,6 @@ export const useTokenManagement = ({
   const { trigger: fetchTokens } = useSWRMutation<DbToken[]>(
     ['findAllTokens', tokenSymbol],
     async () => {
-      console.log('Fetching tokens with symbol:', tokenSymbol);
       const res = await fetch(
         `/api/v1/tokens?search=${encodeURIComponent(tokenSymbol ?? '')}`,
         {
@@ -21,11 +20,9 @@ export const useTokenManagement = ({
         },
       );
       if (!res.ok) {
-        console.error('Failed to fetch tokens, status:', res.status);
         throw new Error('Failed to fetch tokens');
       }
       const tokens = await res.json();
-      console.log('Fetched tokens:', tokens);
       return tokens;
     },
   );
@@ -33,10 +30,8 @@ export const useTokenManagement = ({
   const { trigger: deleteToken, isMutating: isDeletingToken } = useSWRMutation(
     authToken ? [authToken, 'deleteToken'] : null,
     async ([authToken], { arg }: { arg: DeleteTokenInput }) => {
-      console.log('Deleting token with input:', arg);
       try {
         const result = await deleteTokenAction(arg, { authToken });
-        console.log('Token deletion successful:', result);
         return result;
       } catch (error) {
         console.error('Token deletion failed:', error);

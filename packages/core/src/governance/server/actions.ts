@@ -86,11 +86,6 @@ export async function updateTokenAction(
   input: UpdateTokenInput,
   { authToken }: { authToken: string },
 ) {
-  console.log('updateTokenAction called with:', {
-    input,
-    hasAuthToken: !!authToken,
-  });
-
   if (!authToken) {
     console.error('authToken is required to update token');
     throw new Error('authToken is required to update token');
@@ -98,7 +93,6 @@ export async function updateTokenAction(
 
   try {
     const result = await updateToken(input, { db });
-    console.log('updateTokenAction completed successfully:', result);
     return result;
   } catch (error) {
     console.error('updateTokenAction failed:', error);

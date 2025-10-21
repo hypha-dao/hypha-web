@@ -21,12 +21,6 @@ export const useVote = ({
   tokenSymbol?: string | null;
   authToken?: string | null;
 }) => {
-  console.log('useVote initialized:', {
-    proposalId,
-    tokenSymbol,
-    authToken: !!authToken,
-  });
-
   const voting = useProposalVoting({ proposalId });
   const {
     fetchTokens,
@@ -46,90 +40,42 @@ export const useVote = ({
 
   useEffect(() => {
     if (!proposalId || !authToken) {
-      console.log('useVote: Missing required params', {
-        proposalId,
-        hasAuthToken: !!authToken,
-      });
       return;
     }
-
-    console.log(
-      'useVote: Setting up event listeners for proposal:',
-      proposalId,
-    );
 
     const unwatchExecuted = publicClient.watchContractEvent({
       address: daoProposalsImplementationConfig.address[8453],
       abi: daoProposalsImplementationConfig.abi,
       eventName: 'ProposalExecuted',
       onLogs: async (logs) => {
-        console.log(
-          'ProposalExecuted logs received:',
-          logs.length,
-          'for proposal:',
-          proposalId,
-        );
-
         for (const log of logs) {
           try {
             const eventProposalId = log.args.proposalId;
-            console.log(
-              'Processing log for proposal:',
-              eventProposalId?.toString(),
-              'target:',
-              proposalId,
-            );
 
             if (eventProposalId === BigInt(proposalId)) {
-              console.log(
-                '✅ ProposalExecuted event matched:',
-                proposalId,
-                'tx:',
-                log.transactionHash,
-              );
-
-              console.log('Step 1: Handling join space executed proposal...');
               await handleJoinSpaceExecutedProposal(
                 Number(proposalId),
                 log.transactionHash,
               );
-
-              console.log('Step 2: Fetching proposal actions...');
               const actions = await fetchProposalActions(Number(proposalId));
-              console.log('Proposal actions:', actions);
 
               if (!isValidProposalAction(actions)) {
-                console.log(
-                  '❌ Invalid proposal actions, skipping token update',
-                );
                 return;
               }
 
-              console.log('Step 3: Setting up token deployed watcher...');
               setupTokenDeployedWatcher(log.transactionHash);
 
-              console.log(
-                'Step 4: Attempting to extract token address from receipt...',
-              );
               try {
                 const tokenAddress = await extractTokenAddressFromReceipt(
                   log.transactionHash,
-                );
-                console.log(
-                  '✅ Token address extracted from receipt:',
-                  tokenAddress,
                 );
 
                 await updateToken({
                   agreementWeb3Id: Number(proposalId),
                   address: tokenAddress,
                 });
-                console.log('✅ Token updated after execution via receipt');
               } catch (receiptError) {
-                console.log(
-                  'ℹ️ Token address not found in receipt, waiting for TokenDeployed event...',
-                  receiptError,
-                );
+                console.log(receiptError);
               }
             } else {
               console.log(
@@ -140,12 +86,12 @@ export const useVote = ({
               );
             }
           } catch (error) {
-            console.error('❌ Error handling ProposalExecuted event:', error);
+            console.error('Error handling ProposalExecuted event:', error);
           }
         }
       },
       onError: (error) => {
-        console.error('❌ Error watching ProposalExecuted events:', error);
+        console.error('Error watching ProposalExecuted events:', error);
       },
     });
 
@@ -161,31 +107,18 @@ export const useVote = ({
             const eventProposalId = log.args.proposalId;
 
             if (eventProposalId === BigInt(proposalId)) {
-              console.log('✅ ProposalRejected event matched:', proposalId);
-
               const actions = await fetchProposalActions(Number(proposalId));
-              console.log('Rejection - proposal actions:', actions);
 
               if (!isValidProposalAction(actions)) {
-                console.log(
-                  '❌ Invalid proposal actions, skipping token deletion',
-                );
                 return;
               }
 
-              console.log('Fetching tokens for deletion...');
               const tokens = await fetchTokens();
-              console.log('Available tokens:', tokens);
 
               const token = tokens?.find((t) => t.symbol === tokenSymbol);
-              console.log('Token to delete:', token);
 
               if (token?.id != null) {
-                console.log('Deleting token:', tokenSymbol, 'ID:', token.id);
                 await deleteToken({ id: BigInt(token.id) });
-                console.log(
-                  `✅ Token ${tokenSymbol} (ID: ${token.id}) deleted after rejection`,
-                );
               } else {
                 console.error('❌ Token not found for deletion:', {
                   tokenSymbol,
@@ -194,12 +127,12 @@ export const useVote = ({
               }
             }
           } catch (error) {
-            console.error('❌ Error handling ProposalRejected event:', error);
+            console.error('Error handling ProposalRejected event:', error);
           }
         }
       },
       onError: (error) => {
-        console.error('❌ Error watching ProposalRejected events:', error);
+        console.error('Error watching ProposalRejected events:', error);
       },
     });
 
