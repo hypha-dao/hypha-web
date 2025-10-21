@@ -132,7 +132,7 @@ export const updateToken = async (
     }),
   };
 
-  const whereCondition =
+  const findTokenCondition =
     agreementId !== undefined
       ? eq(tokens.agreementId, agreementId)
       : eq(tokens.agreementWeb3Id, agreementWeb3Id!);
@@ -140,7 +140,7 @@ export const updateToken = async (
   const [updated] = await db
     .update(tokens)
     .set(updateData)
-    .where(whereCondition)
+    .where(findTokenCondition)
     .returning();
 
   if (!updated) {
