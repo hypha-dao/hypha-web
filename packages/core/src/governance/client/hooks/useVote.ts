@@ -120,7 +120,7 @@ export const useVote = ({
               if (token?.id != null) {
                 await deleteToken({ id: BigInt(token.id) });
               } else {
-                console.error('❌ Token not found for deletion:', {
+                console.error('Token not found for deletion:', {
                   tokenSymbol,
                   tokens,
                 });
