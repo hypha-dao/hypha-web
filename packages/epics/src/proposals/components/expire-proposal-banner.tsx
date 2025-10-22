@@ -15,6 +15,8 @@ interface ExpireProposalBannerProps {
   isActionCompleted?: boolean;
   isExpiring?: boolean;
   web3SpaceId?: number;
+  quorumPercentage?: number;
+  unityPercentage?: number;
 }
 
 type BannerState = {
@@ -32,6 +34,8 @@ export const ExpireProposalBanner = ({
   isActionCompleted = false,
   isExpiring = false,
   web3SpaceId,
+  quorumPercentage = 0,
+  unityPercentage = 0,
 }: ExpireProposalBannerProps) => {
   if (!isDisplay) {
     return null;
@@ -52,6 +56,17 @@ export const ExpireProposalBanner = ({
     : '';
 
   const getBannerState = (): BannerState => {
+    if (quorumPercentage === 0 && unityPercentage === 0) {
+      return {
+        title: 'The voting period has ended.',
+        subtitle:
+          'No votes were recorded for this proposal. Without any participation, this proposal will be rejected.',
+        buttonText: isExpiring ? 'Processing...' : 'Confirm Outcome',
+        completedMessage:
+          'Outcome recorded: Proposal rejected due to no participation.',
+      };
+    }
+
     if (!quorumReached && unityReached) {
       return {
         title: 'The voting period has ended.',
