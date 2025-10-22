@@ -34,7 +34,7 @@ export const VoteProposalButton = ({
     if (proposalStatus === 'onVoting' && proposalDetails?.expired) {
       return (
         <Button className={className} variant="outline" colorVariant="accent">
-          Confirm Outcome
+          Confirm Decision
         </Button>
       );
     }
