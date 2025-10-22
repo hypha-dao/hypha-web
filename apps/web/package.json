@@ -30,7 +30,7 @@
   "devDependencies": {
     "@hypha-platform/config-eslint": "workspace:*",
     "@hypha-platform/config-typescript": "workspace:*",
-    "@types/node": "^22.14.0",
+    "@types/node": "^24.9.1",
     "@types/react": "19.1.0",
     "@types/react-dom": "19.1.1",
     "eslint": "^9.24.0",
