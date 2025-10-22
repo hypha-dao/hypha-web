@@ -1,6 +1,6 @@
 'use client';
 
-import { CreateAgreementBaseFields, useTokens } from '@hypha-platform/epics';
+import { CreateAgreementBaseFields, useDbTokens } from '@hypha-platform/epics';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -40,7 +40,6 @@ export const IssueNewTokenForm = ({
   plugin,
 }: IssueNewTokenFormProps) => {
   const { id: spaceSlug } = useParams();
-  const { tokens } = useTokens({ spaceSlug: spaceSlug as string });
   const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
@@ -81,6 +80,12 @@ export const IssueNewTokenForm = ({
     mode: 'onChange',
   });
 
+  const { tokens: dbTokens, refetchDbTokens } = useDbTokens();
+
+  React.useEffect(() => {
+    refetchDbTokens();
+  }, [refetchDbTokens]);
+
   React.useEffect(() => {
     if (progress === 100 && agreementSlug) {
       router.push(successfulUrl);
@@ -90,16 +95,16 @@ export const IssueNewTokenForm = ({
   const handleCreate = async (data: FormValues) => {
     setFormError(null);
 
-    const duplicateToken = tokens?.find((token: DbToken) => {
+    const duplicateToken = dbTokens?.find((token: DbToken) => {
       const isNameEqual =
         token.name?.toLowerCase() === data.name?.toLowerCase();
       const isSymbolEqual =
         token.symbol?.toLowerCase() === data.symbol?.toLowerCase();
-      console.log(token, data);
-      return isNameEqual && isSymbolEqual;
+      const isSpaceEqual = token.spaceId === spaceId;
+      return isNameEqual && isSymbolEqual && isSpaceEqual;
     });
 
-    if (tokens.length && duplicateToken) {
+    if (dbTokens?.length && duplicateToken) {
       setFormError(
         'A token with the same name and symbol already exists in your space. Please modify either the name or symbol to proceed.',
       );

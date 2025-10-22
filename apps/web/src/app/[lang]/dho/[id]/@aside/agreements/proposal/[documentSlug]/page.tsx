@@ -4,13 +4,13 @@ import {
   ProposalDetail,
   SidePanel,
   useSpaceDocumentsWithStatuses,
+  useDbTokens,
 } from '@hypha-platform/epics';
 import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
 import { useDocumentSlug } from '@web/hooks/use-document-slug';
 import { useDocumentBySlug } from '@web/hooks/use-document-by-slug';
 import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
-import { useDbTokens } from '@web/hooks/use-db-tokens';
 import {
   useVote,
   useJwt,

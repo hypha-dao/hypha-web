@@ -18,7 +18,7 @@ export function useTokens({ spaceSlug }: { spaceSlug: string }) {
     [spaceSlug],
   );
 
-  const { data, isLoading } = useSWR([endpoint], ([endpoint]) =>
+  const { data, isLoading, mutate } = useSWR([endpoint], ([endpoint]) =>
     fetch(endpoint).then((res) => res.json()),
   );
 
@@ -38,5 +38,6 @@ export function useTokens({ spaceSlug }: { spaceSlug: string }) {
   return {
     tokens,
     isLoading,
+    revalidateTokens: mutate,
   };
 }

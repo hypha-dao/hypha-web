@@ -24,6 +24,7 @@ type Token = {
 type UseDbTokensReturn = {
   tokens: Token[];
   isLoading: boolean;
+  refetchDbTokens: () => void;
 };
 
 type UseDbTokensProps = {
@@ -38,7 +39,11 @@ export const useDbTokens = ({
     return search ? `${base}?search=${encodeURIComponent(search)}` : base;
   }, [search]);
 
-  const { data: tokens, isLoading } = useSWR([endpoint], ([endpoint]) =>
+  const {
+    data: tokens,
+    isLoading,
+    mutate,
+  } = useSWR([endpoint], ([endpoint]) =>
     fetch(endpoint).then((res) => {
       if (!res.ok) {
         throw new Error('Failed to fetch tokens');
@@ -47,5 +52,5 @@ export const useDbTokens = ({
     }),
   );
 
-  return { tokens: tokens || [], isLoading };
+  return { tokens: tokens || [], isLoading, refetchDbTokens: mutate };
 };
