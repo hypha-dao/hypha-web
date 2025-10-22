@@ -16,14 +16,14 @@ export const VoteProposalButton = ({
   className,
 }: {
   documentSlug?: string;
-  web3ProposalId?: number | null;
+  web3ProposalId: number;
   web3SpaceId: number;
   proposalStatus?: DocumentStatus;
   className?: string;
 }) => {
   const { myVote } = useMyVote(documentSlug);
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
-    proposalId: web3ProposalId as number,
+    proposalId: web3ProposalId,
   });
   const { isMember } = useJoinSpace({
     spaceId: web3SpaceId,

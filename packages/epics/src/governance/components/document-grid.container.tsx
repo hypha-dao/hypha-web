@@ -33,15 +33,18 @@ export const DocumentGridContainer = ({
     <DocumentGrid
       documents={paginatedDocuments.map((doc) => ({
         ...doc,
-        interactions: (
-          <VoteProposalButton
-            className="flex w-full self-end"
-            documentSlug={doc?.slug}
-            web3ProposalId={doc?.web3ProposalId}
-            web3SpaceId={web3SpaceId}
-            proposalStatus={doc?.status}
-          />
-        ),
+        interactions:
+          doc && doc.web3ProposalId ? (
+            <VoteProposalButton
+              className="flex w-full self-end"
+              documentSlug={doc.slug}
+              web3ProposalId={doc.web3ProposalId}
+              web3SpaceId={web3SpaceId}
+              proposalStatus={doc.status}
+            />
+          ) : (
+            <></>
+          ),
       }))}
       isLoading={false}
       basePath={basePath}
