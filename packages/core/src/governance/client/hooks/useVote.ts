@@ -32,8 +32,18 @@ export const useVote = ({
     },
   });
 
+  const handleCheckProposalExpiration = async () => {
+    try {
+      await voting.handleCheckProposalExpiration();
+    } catch (error) {
+      console.error('Error in check proposal expiration:', error);
+      throw error;
+    }
+  };
+
   return {
     ...voting,
+    handleCheckProposalExpiration,
     isDeletingToken,
     isUpdatingToken,
   };
