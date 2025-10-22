@@ -7,11 +7,6 @@ export default function Loading() {
     <SidePanel>
       <ProposalDetail
         closeUrl={''}
-        onAccept={() => console.log('accept')}
-        onReject={() => console.log('reject')}
-        onCheckProposalExpiration={() =>
-          console.log('handleCheckProposalExpiration')
-        }
         isCheckingExpiration={false}
         content={''}
         creator={{
