@@ -34,7 +34,7 @@ export const VoteProposalButton = ({
     const endTime = formatISO(new Date(proposalDetails?.endTime || new Date()));
     const needsDecision = isPast(new Date(endTime)) && !executed && !expired;
     if (!isMember) {
-      return <></>;
+      return null;
     }
     if (proposalStatus === 'onVoting' && needsDecision) {
       return (

@@ -42,9 +42,7 @@ export const DocumentGridContainer = ({
               web3SpaceId={web3SpaceId}
               proposalStatus={doc.status}
             />
-          ) : (
-            <></>
-          ),
+          ) : null,
       }))}
       isLoading={false}
       basePath={basePath}
