@@ -24,6 +24,7 @@ const buttonVariants = cva(
         accent: '',
         neutral: '',
         error: '',
+        success: '',
       },
     },
     defaultVariants: {
@@ -48,6 +49,11 @@ const buttonVariants = cva(
         className: 'bg-error-9 text-error-contrast hover:bg-error-10',
       },
       {
+        variant: 'default',
+        colorVariant: 'success',
+        className: 'bg-success-9 text-success-contrast hover:bg-success-10',
+      },
+      {
         variant: 'outline',
         colorVariant: 'accent',
         className:
@@ -66,6 +72,12 @@ const buttonVariants = cva(
           'border-error-9 text-error-9 hover:bg-error-2 hover:text-error-11',
       },
       {
+        variant: 'outline',
+        colorVariant: 'success',
+        className:
+          'border-success-10 text-success-11 hover:bg-success-2 hover:text-success-12',
+      },
+      {
         variant: 'link',
         colorVariant: 'accent',
         className: 'text-accent-9 hover:text-accent-10',
@@ -81,6 +93,11 @@ const buttonVariants = cva(
         className: 'text-error-9 hover:text-error-10',
       },
       {
+        variant: 'link',
+        colorVariant: 'success',
+        className: 'text-success-9 hover:text-success-10',
+      },
+      {
         variant: 'ghost',
         colorVariant: 'accent',
         className: 'text-accent-11 hover:bg-accent-3 hover:text-accent-12',
@@ -94,6 +111,11 @@ const buttonVariants = cva(
         variant: 'ghost',
         colorVariant: 'error',
         className: 'text-error-11 hover:bg-error-3 hover:text-error-12',
+      },
+      {
+        variant: 'ghost',
+        colorVariant: 'success',
+        className: 'text-success-11 hover:bg-success-3 hover:text-success-12',
       },
     ],
   },

@@ -1,5 +1,6 @@
 import { Order, Document } from '@hypha-platform/core/client';
 import { DocumentGrid } from './document-grid';
+import { VoteProposalButton } from './vote-proposal-button';
 
 type DocumentGridContainerProps = {
   basePath: string;
@@ -10,7 +11,7 @@ type DocumentGridContainerProps = {
     searchTerm?: string;
     order?: Order<Document>;
   };
-  documents: any[];
+  documents: Document[];
 };
 
 export const DocumentGridContainer = ({
@@ -28,7 +29,16 @@ export const DocumentGridContainer = ({
 
   return (
     <DocumentGrid
-      documents={paginatedDocuments}
+      documents={paginatedDocuments.map((doc) => ({
+        ...doc,
+        interactions: (
+          <VoteProposalButton
+            className="flex w-full self-end"
+            documentSlug={doc?.slug}
+            proposalStatus={doc?.status}
+          />
+        ),
+      }))}
       isLoading={false}
       basePath={basePath}
     />
