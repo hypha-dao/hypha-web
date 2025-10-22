@@ -84,7 +84,7 @@ export const IssueNewTokenForm = ({
 
   React.useEffect(() => {
     refetchDbTokens();
-  }, [refetchDbTokens, dbTokens]);
+  }, [refetchDbTokens]);
 
   React.useEffect(() => {
     if (progress === 100 && agreementSlug) {
