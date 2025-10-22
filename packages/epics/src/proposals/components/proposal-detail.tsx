@@ -5,8 +5,6 @@ import { FormVoting } from './form-voting';
 import { ProposalHead, ProposalHeadProps } from './proposal-head';
 import { Separator, AttachmentList, Skeleton } from '@hypha-platform/ui';
 import { formatDate } from '@hypha-platform/ui-utils';
-// TODO(#891): restore when comments support is implemented
-// import { CommentsList } from '../../interactions/components/comments-list';
 import Image from 'next/image';
 import {
   useProposalDetailsWeb3Rpc,
@@ -18,7 +16,7 @@ import {
   DirectionType,
   Document,
   useSpaceMinProposalDuration,
-  useProposalEvents,
+  useVote,
 } from '@hypha-platform/core/client';
 import {
   ProposalTransactionItem,
@@ -39,11 +37,6 @@ import { isPast } from 'date-fns';
 import { useState, useEffect } from 'react';
 
 type ProposalDetailProps = ProposalHeadProps & {
-  onAccept: () => void;
-  onReject: () => void;
-  onCheckProposalExpiration: () => void;
-  isCheckingExpiration: boolean;
-  isVoting?: boolean;
   content?: string;
   closeUrl: string;
   leadImage?: string;
@@ -68,17 +61,12 @@ export const ProposalDetail = ({
   commitment,
   status,
   isLoading,
-  onAccept,
-  onReject,
-  onCheckProposalExpiration,
-  isCheckingExpiration,
   content,
   closeUrl,
   leadImage,
   attachments,
   proposalId,
   spaceSlug,
-  isVoting,
   label,
   documentSlug,
   dbTokens,
@@ -104,19 +92,18 @@ export const ProposalDetail = ({
 
   const tokenSymbol = proposalDetails?.tokens?.[0]?.symbol;
 
-  const { isUpdatingToken, isDeletingToken } = useProposalEvents({
+  const {
+    handleAccept,
+    handleReject,
+    handleCheckProposalExpiration,
+    isCheckingExpiration,
+    isVoting,
+    isDeletingToken,
+    isUpdatingToken,
+  } = useVote({
     proposalId,
     tokenSymbol,
     authToken,
-    onProposalExecuted: (transactionHash: string) => {
-      console.log(
-        'Proposal executed via banner, transaction:',
-        transactionHash,
-      );
-    },
-    onProposalRejected: () => {
-      console.log('Proposal rejected via banner');
-    },
   });
 
   const findDocumentStatus = (
@@ -169,11 +156,10 @@ export const ProposalDetail = ({
   const [isActionCompleted, setIsActionCompleted] = useState(false);
   const [isExpiring, setIsExpiring] = useState(false);
 
-  const handleCheckProposalExpiration = async () => {
+  const onHandleCheckProposalExpiration = async () => {
     try {
       setIsExpiring(true);
-      await onCheckProposalExpiration();
-      setIsActionCompleted(true);
+      await handleCheckProposalExpiration();
     } catch (error) {
       console.error('Error checking proposal expiration:', error);
     } finally {
@@ -220,6 +206,12 @@ export const ProposalDetail = ({
     setDisplayExpireProposalBanner(shouldShowBanner);
   }, [duration, proposalDetails, spaceDetails]);
 
+  useEffect(() => {
+    if (proposalDetails?.executed || proposalDetails?.expired) {
+      setIsActionCompleted(true);
+    }
+  }, [proposalDetails?.executed, proposalDetails?.expired]);
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex gap-2 justify-between">
@@ -256,7 +248,7 @@ export const ProposalDetail = ({
         isDisplay={displayExpireProposalBanner}
         quorumReached={quorumReached}
         unityReached={unityReached}
-        onHandleAction={handleCheckProposalExpiration}
+        onHandleAction={onHandleCheckProposalExpiration}
         isActionCompleted={isActionCompleted}
         isExpiring={isExpiring}
         web3SpaceId={proposalDetails?.spaceId}
@@ -336,8 +328,8 @@ export const ProposalDetail = ({
         endTime={formatISO(new Date(proposalDetails?.endTime || new Date()))}
         executed={proposalDetails?.executed}
         expired={proposalDetails?.expired}
-        onAccept={onAccept}
-        onReject={onReject}
+        onAccept={handleAccept}
+        onReject={handleReject}
         isCheckingExpiration={isCheckingExpiration}
         isLoading={isLoading}
         isVoting={isVoting}
@@ -348,14 +340,6 @@ export const ProposalDetail = ({
         proposalStatus={proposalStatus}
         hideDurationData={hideDurationData()}
       />
-      {/* TODO: uncomment when comments support will be implemented */}
-      {/* <Separator />
-      <CommentsList
-        pagination={{
-          total: 0,
-        }}
-        comments={[]}
-      /> */}
     </div>
   );
 };

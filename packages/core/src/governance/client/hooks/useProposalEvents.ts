@@ -44,6 +44,7 @@ export const useProposalEvents = ({
         const actions = await fetchProposalActions(Number(proposalId));
 
         if (!isValidProposalAction(actions)) {
+          onProposalExecuted?.(transactionHash);
           return;
         }
 
@@ -54,10 +55,12 @@ export const useProposalEvents = ({
             transactionHash as `0x${string}`,
           );
 
-          await updateToken({
-            agreementWeb3Id: Number(proposalId),
-            address: tokenAddress,
-          });
+          if (tokenAddress) {
+            await updateToken({
+              agreementWeb3Id: Number(proposalId),
+              address: tokenAddress,
+            });
+          }
         } catch (receiptError) {
           console.log('Error extracting token address:', receiptError);
         }
@@ -73,6 +76,7 @@ export const useProposalEvents = ({
         const actions = await fetchProposalActions(Number(proposalId));
 
         if (!isValidProposalAction(actions)) {
+          onProposalRejected?.();
           return;
         }
 
@@ -83,13 +87,12 @@ export const useProposalEvents = ({
           await deleteToken({ id: BigInt(token.id) });
           onProposalRejected?.();
         } else {
-          console.error('Token not found for deletion:', {
-            tokenSymbol,
-            tokens,
-          });
+          console.error('Token not found for deletion');
+          onProposalRejected?.();
         }
       } catch (error) {
         console.error('Error handling proposal rejection:', error);
+        onProposalRejected?.();
       }
     };
 
@@ -101,7 +104,6 @@ export const useProposalEvents = ({
         for (const log of logs) {
           try {
             const eventProposalId = log.args.proposalId;
-
             if (eventProposalId === BigInt(proposalId)) {
               await handleProposalExecuted(log.transactionHash);
             }
@@ -109,9 +111,6 @@ export const useProposalEvents = ({
             console.error('Error handling ProposalExecuted event:', error);
           }
         }
-      },
-      onError: (error) => {
-        console.error('Error watching ProposalExecuted events:', error);
       },
     });
 
@@ -123,7 +122,6 @@ export const useProposalEvents = ({
         for (const log of logs) {
           try {
             const eventProposalId = log.args.proposalId;
-
             if (eventProposalId === BigInt(proposalId)) {
               await handleProposalRejected();
             }
@@ -132,15 +130,30 @@ export const useProposalEvents = ({
           }
         }
       },
-      onError: (error) => {
-        console.error('Error watching ProposalRejected events:', error);
+    });
+
+    const unwatchExpired = publicClient.watchContractEvent({
+      address: daoProposalsImplementationConfig.address[8453],
+      abi: daoProposalsImplementationConfig.abi,
+      eventName: 'ProposalExpired',
+      onLogs: async (logs) => {
+        for (const log of logs) {
+          try {
+            const eventProposalId = log.args.proposalId;
+            if (eventProposalId === BigInt(proposalId)) {
+              await handleProposalRejected();
+            }
+          } catch (error) {
+            console.error('Error handling ProposalExpired event:', error);
+          }
+        }
       },
     });
 
     return () => {
-      console.log('Cleaning up event listeners for proposal:', proposalId);
       unwatchExecuted();
       unwatchRejected();
+      unwatchExpired();
     };
   }, [
     proposalId,
