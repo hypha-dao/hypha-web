@@ -52,7 +52,7 @@ export const ExpireProposalBanner = ({
     : '';
 
   const getBannerState = (): BannerState => {
-    if (!quorumReached) {
+    if (!quorumReached && unityReached) {
       return {
         title: 'The voting period has ended.',
         subtitle:
