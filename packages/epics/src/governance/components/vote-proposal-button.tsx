@@ -6,6 +6,7 @@ import {
 import { Button } from '@hypha-platform/ui';
 import React from 'react';
 import { useJoinSpace } from '../../spaces';
+import { formatISO, isPast } from 'date-fns';
 
 export const VoteProposalButton = ({
   documentSlug,
@@ -28,10 +29,14 @@ export const VoteProposalButton = ({
     spaceId: web3SpaceId,
   });
   const output = React.useMemo(() => {
+    const expired = proposalDetails?.expired;
+    const executed = proposalDetails?.executed;
+    const endTime = formatISO(new Date(proposalDetails?.endTime || new Date()));
+    const needsDecision = isPast(new Date(endTime)) && !executed && !expired;
     if (!isMember) {
       return <></>;
     }
-    if (proposalStatus === 'onVoting' && proposalDetails?.expired) {
+    if (proposalStatus === 'onVoting' && needsDecision) {
       return (
         <Button className={className} variant="outline" colorVariant="accent">
           Confirm Decision
