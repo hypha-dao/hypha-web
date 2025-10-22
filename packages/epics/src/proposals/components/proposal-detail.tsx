@@ -47,6 +47,11 @@ type ProposalDetailProps = ProposalHeadProps & {
   documentSlug: string;
   dbTokens?: DbToken[];
   authToken?: string | null;
+  onAccept?: () => Promise<void>;
+  onReject?: () => Promise<void>;
+  onCheckProposalExpiration?: () => Promise<void>;
+  isCheckingExpiration?: boolean;
+  isVoting?: boolean;
 };
 
 type DocumentsArrays = {
@@ -71,6 +76,11 @@ export const ProposalDetail = ({
   documentSlug,
   dbTokens,
   authToken,
+  onAccept,
+  onReject,
+  onCheckProposalExpiration,
+  isCheckingExpiration: externalIsCheckingExpiration,
+  isVoting: externalIsVoting,
 }: ProposalDetailProps) => {
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: proposalId as number,
@@ -93,11 +103,11 @@ export const ProposalDetail = ({
   const tokenSymbol = proposalDetails?.tokens?.[0]?.symbol;
 
   const {
-    handleAccept,
-    handleReject,
-    handleCheckProposalExpiration,
-    isCheckingExpiration,
-    isVoting,
+    handleAccept: internalHandleAccept,
+    handleReject: internalHandleReject,
+    handleCheckProposalExpiration: internalHandleCheckProposalExpiration,
+    isCheckingExpiration: internalIsCheckingExpiration,
+    isVoting: internalIsVoting,
     isDeletingToken,
     isUpdatingToken,
   } = useVote({
@@ -105,6 +115,17 @@ export const ProposalDetail = ({
     tokenSymbol,
     authToken,
   });
+
+  const handleAccept = onAccept || internalHandleAccept;
+  const handleReject = onReject || internalHandleReject;
+  const handleCheckProposalExpiration =
+    onCheckProposalExpiration || internalHandleCheckProposalExpiration;
+  const isCheckingExpiration =
+    externalIsCheckingExpiration !== undefined
+      ? externalIsCheckingExpiration
+      : internalIsCheckingExpiration;
+  const isVoting =
+    externalIsVoting !== undefined ? externalIsVoting : internalIsVoting;
 
   const findDocumentStatus = (
     documentsArrays: DocumentsArrays,
