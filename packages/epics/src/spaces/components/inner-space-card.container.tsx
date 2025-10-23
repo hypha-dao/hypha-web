@@ -65,6 +65,7 @@ export const InnerSpaceCardContainer = ({
                     ? getDhoPathOverview(lang, space.parent.slug)
                     : undefined
                 }
+                createdAt={space.createdAt}
                 className={
                   space.id === currentSpaceId
                     ? 'border-2 border-action-light'
