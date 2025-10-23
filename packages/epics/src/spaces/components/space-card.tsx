@@ -112,7 +112,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
               </div>
               <div className="flex flex-row">
                 <Skeleton loading={isLoading} height="16px" width="80px">
-                  <div className="text-neutral-11 ml-1 text-1">
+                  <div className="text-neutral-11 text-1">
                     Created on {formatDate(createdAt, true)}
                   </div>
                 </Skeleton>

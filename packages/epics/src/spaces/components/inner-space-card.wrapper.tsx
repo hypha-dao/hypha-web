@@ -13,6 +13,7 @@ type InnerSpaceCardWrapperProps = {
   useMembers: UseMembers;
   parentTitle?: string;
   parentPath?: string;
+  createdAt?: Date;
   className?: string;
 };
 
@@ -24,6 +25,7 @@ export const InnerSpaceCardWrapper = ({
   useMembers,
   parentTitle,
   parentPath,
+  createdAt,
   className,
 }: InnerSpaceCardWrapperProps) => {
   const { persons, isLoading } = useMembers({ spaceSlug });
@@ -47,6 +49,7 @@ export const InnerSpaceCardWrapper = ({
       isLoading={isLoading}
       parentTitle={parentTitle}
       parentPath={parentPath}
+      createdAt={createdAt}
       className={className}
     />
   );
