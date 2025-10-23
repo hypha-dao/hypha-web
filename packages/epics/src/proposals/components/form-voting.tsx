@@ -13,6 +13,7 @@ import { useJoinSpace } from '../../spaces';
 import { useSpaceMinProposalDuration } from '@hypha-platform/core/client';
 import { formatDuration } from '@hypha-platform/ui-utils';
 import { useTheme } from 'next-themes';
+import { useState } from 'react';
 
 function formatTimeRemaining(
   endTime: string,
@@ -82,6 +83,8 @@ export const FormVoting = ({
   const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
   const { theme } = useTheme();
 
+  const [localVote, setLocalVote] = useState<string | null>(null);
+
   const isDisabled =
     isVoting ||
     !isAuthenticated ||
@@ -127,6 +130,19 @@ export const FormVoting = ({
   const { duration } = useSpaceMinProposalDuration({
     spaceId: spaceIdBigInt as bigint,
   });
+
+  const handleAccept = () => {
+    setLocalVote('yes');
+    onAccept();
+  };
+
+  const handleReject = () => {
+    setLocalVote('no');
+    onReject();
+  };
+
+  const showVotedMessage = myVote || localVote;
+  const voteText = myVote || localVote;
 
   return (
     <div className="flex flex-col gap-7 text-neutral-11">
@@ -244,9 +260,9 @@ export const FormVoting = ({
           </div>
           {executed || expired || isPast(new Date(endTime)) ? null : (
             <div className="flex gap-2">
-              {myVote ? (
+              {showVotedMessage ? (
                 <div className="text-sm text-neutral-10">
-                  You already voted {myVote}
+                  You already voted {voteText}
                 </div>
               ) : (
                 <>
@@ -254,7 +270,7 @@ export const FormVoting = ({
                     variant="outline"
                     colorVariant="accent"
                     className="active:bg-accent-9"
-                    onClick={onReject}
+                    onClick={handleReject}
                     disabled={isDisabled}
                     title={tooltipMessage}
                   >
@@ -264,7 +280,7 @@ export const FormVoting = ({
                     variant="outline"
                     colorVariant="accent"
                     className="active:bg-accent-9"
-                    onClick={onAccept}
+                    onClick={handleAccept}
                     disabled={isDisabled}
                     title={tooltipMessage}
                   >
