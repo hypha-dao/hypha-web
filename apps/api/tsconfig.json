@@ -1,22 +1,17 @@
 {
   "extends": "@hypha-platform/config-typescript/base.json",
   "compilerOptions": {
-    "module": "ESNext",
-    "moduleResolution": "Node",
-    "esModuleInterop": true,
+    "lib": ["es2022"],
+    "allowJs": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    "noEmit": true,
     "outDir": "dist",
     "resolveJsonModule": true,
-    "isolatedModules": true,
     "incremental": true,
-    "types": ["node"],
-    "skipLibCheck": true,
-    "strict": true,
     "declaration": false,
     "declarationMap": false,
-    "sourceMap": false
+    "sourceMap": true,
+    "types": ["node"]
   },
   "include": ["**/*.ts"],
   "exclude": ["**/*.spec.ts", "**/*.test.ts", "dist", "node_modules"]

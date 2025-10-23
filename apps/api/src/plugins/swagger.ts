@@ -3,11 +3,10 @@ import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUI from '@fastify/swagger-ui';
 import YAML from 'yamljs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { API_PREFIX, API_VERSION } from '../constants';
 
 export async function registerSwagger(app: FastifyInstance) {
-  const currentDir = path.dirname(fileURLToPath(import.meta.url));
+  const currentDir = path.dirname(__filename);
   const specPath = path.join(
     currentDir,
     '..',
