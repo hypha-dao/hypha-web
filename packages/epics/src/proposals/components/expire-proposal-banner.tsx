@@ -61,9 +61,9 @@ export const ExpireProposalBanner = ({
         title: 'The voting period has ended.',
         subtitle:
           'No votes were recorded for this proposal. Without any participation, this proposal will be rejected.',
-        buttonText: isExpiring ? 'Processing...' : 'Confirm Outcome',
+        buttonText: isExpiring ? 'Processing...' : 'Confirm Decision',
         completedMessage:
-          'Outcome recorded: Proposal rejected due to no participation.',
+          'Decision recorded: Proposal rejected due to no participation.',
       };
     }
 
@@ -72,9 +72,9 @@ export const ExpireProposalBanner = ({
         title: 'The voting period has ended.',
         subtitle:
           'Participation was too low for this proposal to be approved. This proposal will be rejected.',
-        buttonText: isExpiring ? 'Processing...' : 'Confirm Outcome',
+        buttonText: isExpiring ? 'Processing...' : 'Confirm Decision',
         completedMessage:
-          'Outcome recorded: Proposal rejected due to insufficient participation.',
+          'Decision recorded: Proposal rejected due to insufficient participation.',
       };
     }
 
@@ -83,9 +83,9 @@ export const ExpireProposalBanner = ({
         title: 'The voting period has ended.',
         subtitle:
           'Participation was sufficient, but support was too divided. This proposal will be rejected.',
-        buttonText: isExpiring ? 'Processing...' : 'Confirm Outcome',
+        buttonText: isExpiring ? 'Processing...' : 'Confirm Decision',
         completedMessage:
-          'Outcome recorded: Proposal rejected due to lack of alignment.',
+          'Decision recorded: Proposal rejected due to lack of alignment.',
       };
     }
 
@@ -94,9 +94,9 @@ export const ExpireProposalBanner = ({
         title: 'The voting period has ended.',
         subtitle:
           'This proposal has met all requirements and is approved as a new agreement.',
-        buttonText: isExpiring ? 'Processing...' : 'Confirm Outcome',
+        buttonText: isExpiring ? 'Processing...' : 'Confirm Decision',
         completedMessage:
-          'Outcome recorded: Proposal approved and moved to the Accepted section.',
+          'Decision recorded: Proposal approved and moved to the Accepted section.',
       };
     }
 
@@ -104,9 +104,9 @@ export const ExpireProposalBanner = ({
       title: 'The voting period has ended.',
       subtitle:
         'Participation was too low, and support was too divided. This proposal will be rejected.',
-      buttonText: isExpiring ? 'Processing...' : 'Confirm Outcome',
+      buttonText: isExpiring ? 'Processing...' : 'Confirm Decision',
       completedMessage:
-        'Outcome recorded: Proposal rejected due to insufficient participation and lack of alignment.',
+        'Decision recorded: Proposal rejected due to insufficient participation and lack of alignment.',
     };
   };
 
