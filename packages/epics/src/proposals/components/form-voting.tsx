@@ -83,7 +83,7 @@ export const FormVoting = ({
   const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
   const { theme } = useTheme();
 
-  const [localVote, setLocalVote] = useState<string | null>(null);
+  const [localVote, setLocalVote] = useState<'no' | 'yes' | null>(null);
 
   const isDisabled =
     isVoting ||
