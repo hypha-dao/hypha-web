@@ -93,23 +93,27 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
             </Skeleton>
           </div>
           <div className="flex gap-2 text-xs items-center">
-            <div className="flex flex-row gap-y-2 gap-x-4 flex-wrap">
-              <div className="flex flex-row">
-                <Skeleton loading={isLoading} height="16px" width="80px">
-                  <div className="font-bold text-1">{members}</div>
-                  <div className="text-neutral-11 ml-1 text-1">Members</div>
-                </Skeleton>
-              </div>
-              <div className="flex flex-row">
-                <Skeleton loading={isLoading} height="16px" width="80px">
-                  <div className="font-bold text-1">{agreements}</div>
-                  <div className="text-neutral-11 ml-1 text-1">Agreements</div>
-                </Skeleton>
+            <div className="flex flex-col gap-y-2 gap-x-4 flex-wrap">
+              <div className="flex flex-row gap-y-2 gap-x-4 flex-wrap">
+                <div className="flex flex-row">
+                  <Skeleton loading={isLoading} height="16px" width="80px">
+                    <div className="font-bold text-1">{members}</div>
+                    <div className="text-neutral-11 ml-1 text-1">Members</div>
+                  </Skeleton>
+                </div>
+                <div className="flex flex-row">
+                  <Skeleton loading={isLoading} height="16px" width="80px">
+                    <div className="font-bold text-1">{agreements}</div>
+                    <div className="text-neutral-11 ml-1 text-1">
+                      Agreements
+                    </div>
+                  </Skeleton>
+                </div>
               </div>
               <div className="flex flex-row">
                 <Skeleton loading={isLoading} height="16px" width="80px">
                   <div className="text-neutral-11 ml-1 text-1">
-                    {formatDate(createdAt, true)}
+                    Created on {formatDate(createdAt, true)}
                   </div>
                 </Skeleton>
               </div>
