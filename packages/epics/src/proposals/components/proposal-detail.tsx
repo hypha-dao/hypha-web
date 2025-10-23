@@ -159,7 +159,11 @@ export const ProposalDetail = ({
   const proposalStatus = findDocumentStatus(documentsArrays, proposalId);
 
   const hideDurationData = () => {
-    return proposalStatus === 'accepted' || proposalStatus === 'rejected';
+    return (
+      proposalStatus === 'accepted' ||
+      proposalStatus === 'rejected' ||
+      displayExpireProposalBanner
+    );
   };
 
   const spaceIdBigInt = proposalDetails?.spaceId
