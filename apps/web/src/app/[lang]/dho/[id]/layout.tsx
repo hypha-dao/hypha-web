@@ -136,7 +136,7 @@ export default async function DhoLayout({
               </div>
             </div>
             <div className="flex">
-              <div className="text-gray-500 ml-1 text-1">
+              <div className="text-gray-500 text-1">
                 Created on {formatDate(spaceFromDb.createdAt, true)}
               </div>
             </div>
