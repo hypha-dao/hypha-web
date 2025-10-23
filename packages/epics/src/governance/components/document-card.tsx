@@ -108,7 +108,7 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
             height="48px"
             loading={isLoading}
           >
-            {createdAt && formatDate(createdAt, true)}
+            {createdAt && <>Created on {formatDate(createdAt, true)}</>}
           </Skeleton>
         </div>
         {interactions}
