@@ -26,13 +26,14 @@ import {
   useMe,
 } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
-import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
+import { formatDate, tryDecodeUriPart } from '@hypha-platform/ui-utils';
 
 export type MemberType = {
   avatar: string;
   name: string;
   surname: string;
   slug: string;
+  createdAt: Date;
 };
 
 interface PersonHeadProps {
@@ -52,6 +53,7 @@ export const PersonHead = ({
   name,
   surname,
   slug,
+  createdAt,
   about,
   background,
   links,
@@ -65,6 +67,8 @@ export const PersonHead = ({
   const { lang, personSlug: personSlugRaw } =
     useParams<ProfileComponentParams>();
   const personSlug = tryDecodeUriPart(personSlugRaw);
+
+  const sigupDate = formatDate(createdAt ?? new Date(), true);
 
   const customLogoStyles: React.CSSProperties = {
     width: '128px',
@@ -136,6 +140,11 @@ export const PersonHead = ({
           <div className="flex flex-col gap-4">
             <WebLinks links={links} />
             <div className="flex gap-5 text-1">
+              {createdAt ? (
+                <span className="flex gap-3">
+                  Hypha member since {sigupDate}
+                </span>
+              ) : null}
               {email && isMe(personSlug) ? (
                 <span className="flex gap-3">
                   <MailIcon width={16} height={16} />
