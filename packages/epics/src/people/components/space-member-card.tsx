@@ -50,7 +50,8 @@ export const SpaceMemberCard: React.FC<{
         <div className="flex justify-between flex-col gap-6 items-end">
           <Skeleton height="16px" width="120px" loading={isLoading}>
             <Text className="text-1 text-gray-500">
-              {formatDate(space.createdAt, true)}
+              {/* TODO: show joined at date/time instead */}
+              Joined space on {formatDate(space.createdAt, true)}
             </Text>
           </Skeleton>
         </div>

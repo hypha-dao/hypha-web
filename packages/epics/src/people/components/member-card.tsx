@@ -147,7 +147,8 @@ export const MemberCard: React.FC<MemberCardProps> = ({
           >
             <div className="flex items-center text-gray-500">
               <Text className="text-1">
-                {formatDate(createdAt ?? new Date(), true)}
+                {/* TODO: show joined at date/time instead */}
+                Joined space on {formatDate(createdAt ?? new Date(), true)}
               </Text>
             </div>
           </Skeleton>
