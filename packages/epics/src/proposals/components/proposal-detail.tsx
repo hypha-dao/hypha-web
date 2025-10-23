@@ -267,8 +267,6 @@ export const ProposalDetail = ({
           alt={title ?? ''}
         />
       </Skeleton>
-      <MarkdownSuspense>{content}</MarkdownSuspense>
-      <AttachmentList attachments={attachments || []} />
       <ExpireProposalBanner
         isDisplay={displayExpireProposalBanner}
         quorumReached={quorumReached}
@@ -280,6 +278,8 @@ export const ProposalDetail = ({
         isExpiring={isExpiring}
         web3SpaceId={proposalDetails?.spaceId}
       />
+      <MarkdownSuspense>{content}</MarkdownSuspense>
+      <AttachmentList attachments={attachments || []} />
       {proposalDetails?.votingMethods.map((method, idx) => (
         <ProposalVotingInfo
           key={idx}
