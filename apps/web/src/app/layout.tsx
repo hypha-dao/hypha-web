@@ -20,6 +20,7 @@ import { ROOT_URL } from './constants';
 
 import '@hypha-platform/ui-utils/global.css';
 import 'react-tooltip/dist/react-tooltip.css';
+import ScrollUp from '@web/components/scroll-up';
 
 const lato = Lato({
   subsets: ['latin'],
@@ -84,6 +85,7 @@ export default async function RootLayout({
 
   return (
     <Html className={clsx(lato.variable, sourceSans.variable)}>
+      <ScrollUp />
       <AuthProvider
         config={{
           appId: process.env.NEXT_PUBLIC_PRIVY_APP_ID!,
