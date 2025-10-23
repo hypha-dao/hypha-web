@@ -40,6 +40,10 @@ export const ExpireProposalBanner = ({
 }: ExpireProposalBannerProps) => {
   const [localActionCompleted, setLocalActionCompleted] = useState(false);
 
+  const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
+  const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
+  const { isAuthenticated } = useAuthentication();
+
   useEffect(() => {
     setLocalActionCompleted(false);
   }, [quorumPercentage, unityPercentage, quorumReached, unityReached]);
@@ -47,10 +51,6 @@ export const ExpireProposalBanner = ({
   if (!isDisplay) {
     return null;
   }
-
-  const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
-  const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
-  const { isAuthenticated } = useAuthentication();
 
   const isDisabled =
     !isAuthenticated ||
