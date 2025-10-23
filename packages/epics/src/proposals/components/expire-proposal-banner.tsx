@@ -6,6 +6,7 @@ import { useJoinSpace } from '../../spaces';
 import { useIsDelegate } from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 interface ExpireProposalBannerProps {
   quorumReached?: boolean;
@@ -37,6 +38,12 @@ export const ExpireProposalBanner = ({
   quorumPercentage = 0,
   unityPercentage = 0,
 }: ExpireProposalBannerProps) => {
+  const [localActionCompleted, setLocalActionCompleted] = useState(false);
+
+  useEffect(() => {
+    setLocalActionCompleted(false);
+  }, [quorumPercentage, unityPercentage, quorumReached, unityReached]);
+
   if (!isDisplay) {
     return null;
   }
@@ -46,13 +53,18 @@ export const ExpireProposalBanner = ({
   const { isAuthenticated } = useAuthentication();
 
   const isDisabled =
-    !isAuthenticated || (!isMember && !isDelegate) || isExpiring;
+    !isAuthenticated ||
+    (!isMember && !isDelegate) ||
+    isExpiring ||
+    localActionCompleted;
   const tooltipMessage = !isAuthenticated
     ? 'Please sign in to use this feature.'
     : !isMember && !isDelegate
     ? 'Please join this space to use this feature.'
     : isExpiring
     ? 'Processing...'
+    : localActionCompleted
+    ? 'Action completed'
     : '';
 
   const getBannerState = (): BannerState => {
@@ -112,6 +124,20 @@ export const ExpireProposalBanner = ({
 
   const { title, subtitle, buttonText, completedMessage } = getBannerState();
 
+  const handleAction = async () => {
+    if (onHandleAction && !isExpiring && !localActionCompleted) {
+      try {
+        await onHandleAction();
+        setLocalActionCompleted(true);
+      } catch (error) {
+        console.error('Error handling action:', error);
+        setLocalActionCompleted(false);
+      }
+    }
+  };
+
+  const showCompletedMessage = isActionCompleted || localActionCompleted;
+
   return (
     <Card
       className="bg-cover bg-center"
@@ -122,7 +148,7 @@ export const ExpireProposalBanner = ({
           <span className="text-6 font-medium text-white">{title}</span>
         </div>
 
-        {isActionCompleted ? (
+        {showCompletedMessage ? (
           <>
             <span className={cn('text-2', 'text-white')}>
               {completedMessage}
@@ -140,7 +166,7 @@ export const ExpireProposalBanner = ({
               <Button
                 disabled={isDisabled}
                 title={tooltipMessage}
-                onClick={onHandleAction}
+                onClick={handleAction}
                 className="w-fit"
               >
                 {buttonText}
