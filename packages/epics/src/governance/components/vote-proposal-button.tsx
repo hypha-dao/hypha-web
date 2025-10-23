@@ -1,22 +1,45 @@
-import { DocumentStatus, useMyVote } from '@hypha-platform/core/client';
+import {
+  DocumentStatus,
+  useMyVote,
+  useProposalDetailsWeb3Rpc,
+} from '@hypha-platform/core/client';
 import { Button } from '@hypha-platform/ui';
 import React from 'react';
+import { useJoinSpace } from '../../spaces';
+import { formatISO, isPast } from 'date-fns';
 
 export const VoteProposalButton = ({
   documentSlug,
+  web3ProposalId,
+  web3SpaceId,
   proposalStatus,
   className,
 }: {
   documentSlug?: string;
+  web3ProposalId: number;
+  web3SpaceId: number;
   proposalStatus?: DocumentStatus;
   className?: string;
 }) => {
   const { myVote } = useMyVote(documentSlug);
+  const { proposalDetails } = useProposalDetailsWeb3Rpc({
+    proposalId: web3ProposalId,
+  });
+  const { isMember } = useJoinSpace({
+    spaceId: web3SpaceId,
+  });
   const output = React.useMemo(() => {
-    if (proposalStatus === 'onVoting' && myVote === null) {
+    const expired = proposalDetails?.expired;
+    const executed = proposalDetails?.executed;
+    const endTime = formatISO(new Date(proposalDetails?.endTime || new Date()));
+    const needsDecision = isPast(new Date(endTime)) && !executed && !expired;
+    if (!isMember) {
+      return null;
+    }
+    if (proposalStatus === 'onVoting' && needsDecision) {
       return (
         <Button className={className} variant="outline" colorVariant="accent">
-          Confirm Outcome
+          Confirm Decision
         </Button>
       );
     }
@@ -57,6 +80,6 @@ export const VoteProposalButton = ({
           </Button>
         );
     }
-  }, [proposalStatus, myVote]);
+  }, [proposalStatus, myVote, proposalDetails, isMember]);
   return output;
 };

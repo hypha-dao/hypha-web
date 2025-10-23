@@ -4,6 +4,7 @@ import { VoteProposalButton } from './vote-proposal-button';
 
 type DocumentGridContainerProps = {
   basePath: string;
+  web3SpaceId: number;
   pagination: {
     page: number;
     firstPageSize: number;
@@ -16,6 +17,7 @@ type DocumentGridContainerProps = {
 
 export const DocumentGridContainer = ({
   basePath,
+  web3SpaceId,
   pagination,
   documents,
 }: DocumentGridContainerProps) => {
@@ -31,13 +33,16 @@ export const DocumentGridContainer = ({
     <DocumentGrid
       documents={paginatedDocuments.map((doc) => ({
         ...doc,
-        interactions: (
-          <VoteProposalButton
-            className="flex w-full self-end"
-            documentSlug={doc?.slug}
-            proposalStatus={doc?.status}
-          />
-        ),
+        interactions:
+          doc && doc.web3ProposalId ? (
+            <VoteProposalButton
+              className="flex w-full self-end"
+              documentSlug={doc.slug}
+              web3ProposalId={doc.web3ProposalId}
+              web3SpaceId={web3SpaceId}
+              proposalStatus={doc.status}
+            />
+          ) : null,
       }))}
       isLoading={false}
       basePath={basePath}

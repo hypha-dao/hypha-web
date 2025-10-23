@@ -29,6 +29,7 @@ export function DocumentsSections({
     <div className="flex flex-col gap-6 py-4">
       <DocumentSection
         basePath={`${basePath}/proposal`}
+        web3SpaceId={web3SpaceId}
         documents={documents.onVoting}
         label="On Voting"
         hasSearch={true}
@@ -38,6 +39,7 @@ export function DocumentsSections({
       />
       <DocumentSection
         basePath={`${basePath}/proposal`}
+        web3SpaceId={web3SpaceId}
         documents={documents.accepted}
         label="Accepted"
         hasSearch={true}
@@ -47,6 +49,7 @@ export function DocumentsSections({
       />
       <DocumentSection
         basePath={`${basePath}/proposal`}
+        web3SpaceId={web3SpaceId}
         documents={documents.rejected}
         label="Rejected"
         hasSearch={true}

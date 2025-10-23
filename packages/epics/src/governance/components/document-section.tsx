@@ -10,6 +10,7 @@ import { Empty } from '../../common';
 
 type DocumentSectionProps = {
   basePath: string;
+  web3SpaceId: number;
   documents: Document[];
   label?: string;
   headSectionButton?: React.ReactNode;
@@ -21,6 +22,7 @@ type DocumentSectionProps = {
 
 export const DocumentSection: FC<DocumentSectionProps> = ({
   basePath,
+  web3SpaceId,
   documents,
   label,
   headSectionButton,
@@ -64,6 +66,7 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
             <DocumentGridContainer
               key={index}
               basePath={basePath}
+              web3SpaceId={web3SpaceId}
               pagination={{
                 page: index + 1,
                 firstPageSize,
