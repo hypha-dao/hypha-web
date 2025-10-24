@@ -10,7 +10,6 @@ import {
   index,
 } from 'drizzle-orm/pg-core';
 import { commonDateFields } from './shared';
-import { people } from './people';
 import { spaces } from './space';
 export const documentStateEnum = pgEnum('document_state', [
   'discussion',
@@ -27,9 +26,7 @@ export const documents = pgTable(
   'documents',
   {
     id: serial('id').primaryKey(),
-    creatorId: integer('creator_id')
-      .notNull()
-      .references(() => people.id),
+    creatorId: integer('creator_id').notNull(),
     spaceId: integer('space_id').references(() => spaces.id),
     title: text('title'),
     description: text('description'),
