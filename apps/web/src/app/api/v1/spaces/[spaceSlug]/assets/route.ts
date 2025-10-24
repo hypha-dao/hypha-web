@@ -51,6 +51,7 @@ export async function GET(
       transferable: token.transferable,
       isVotingToken: token.isVotingToken,
       address: token.address ?? undefined,
+      createdAt: token.createdAt ?? undefined,
     }));
 
     let spaceDetails;
