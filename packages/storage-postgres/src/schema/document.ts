@@ -26,8 +26,7 @@ export const documents = pgTable(
   'documents',
   {
     id: serial('id').primaryKey(),
-    creatorId: integer('creator_id')
-      .notNull(),
+    creatorId: integer('creator_id').notNull(),
     spaceId: integer('space_id').references(() => spaces.id),
     title: text('title'),
     description: text('description'),
