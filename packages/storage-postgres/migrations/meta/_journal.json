@@ -260,6 +260,13 @@
       "when": 1759483155183,
       "tag": "0036_cuddly_mother_askani",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1761295330918,
+      "tag": "0037_curved_whistler",
+      "breakpoints": true
     }
   ]
 }
