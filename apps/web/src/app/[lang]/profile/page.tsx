@@ -66,6 +66,7 @@ export default function Profile() {
         location={''}
         email={''}
         slug={''}
+        createdAt={new Date()}
         onExportEmbeddedWallet={isEmbeddedWallet ? exportWallet : undefined}
       />
       <Tabs value={activeTab} className="w-full flex flex-col gap-4">
