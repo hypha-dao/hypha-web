@@ -11,7 +11,7 @@ import {
   voteMock,
 } from '../../../mocks';
 import { response, Response, query, Query } from './schema/get-proposals/';
-import type { Status } from './schema';
+import type { State } from './schema';
 import { newDbClient } from '../../../plugins/db-client';
 import { findAllDocumentsBySpaceId } from '../../../plugins/db-queries';
 import { type Environment } from '../../../schemas/';
@@ -154,7 +154,7 @@ export default async function proposalsRoutes(app: FastifyInstance) {
             ? (Number(yesVotes) / unityTotalVotingPowerNumber) * 100
             : 0;
 
-        const status: Status = executed || expired ? 'past' : 'active';
+        const status: State = executed || expired ? 'past' : 'active';
 
         return {
           deadline: new Date(Number(endTime) * 1000),
@@ -168,18 +168,22 @@ export default async function proposalsRoutes(app: FastifyInstance) {
         data: dbData.data.map((data, index) => ({
           id: data.id,
           title: data.title,
-          type: 'agreement',
-          image_url: data.leadImage || '',
-          status: proposalWeb3Details[index]!.status,
+          description: data.description || '',
+          label: 'agreement',
+          image_URL: data.leadImage || '',
+          state: proposalWeb3Details[index]!.status,
           unity: proposalWeb3Details[index]!.unity,
           quorum: proposalWeb3Details[index]!.quorum,
           user_vote: null,
           voting_deadline: proposalWeb3Details[index]!.deadline.toISOString(),
-          author: {
-            username: data.creator?.name || '',
-            reference: '',
-            avatar_url: data.creator?.avatarUrl || '',
+          creatorId: data.creatorId,
+          creator: {
+            name: data.creator?.name || '',
+            surname: data.creator?.surname || '',
+            avatarUrl: data.creator?.avatarUrl || '',
           },
+          createdAt: data.createdAt.toISOString(),
+          updatedAt: data.updatedAt.toISOString(),
         })),
         meta: {
           limit,
