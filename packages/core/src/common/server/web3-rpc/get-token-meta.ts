@@ -36,7 +36,10 @@ export async function getTokenMeta(
   tokenAddress: `0x${string}`,
   dbTokens?: DbToken[],
 ): Promise<
-  Omit<Token, 'address'> & { space?: { slug: string; title: string } }
+  Omit<Token, 'address'> & {
+    space?: { slug: string; title: string };
+    createdAt?: Date;
+  }
 > {
   const stable = TOKENS.find(
     (token) => token.address.toLowerCase() === tokenAddress.toLowerCase(),
@@ -54,12 +57,15 @@ export async function getTokenMeta(
 
     const icon = getIconForHyphaTokens(symbol, dbToken?.iconUrl ?? stable.icon);
 
+    const createdAt = dbToken?.createdAt;
+
     return {
       symbol,
       name,
       type,
       icon,
       ...(space && { space: { slug: space.slug, title: space.title } }),
+      ...(createdAt && { createdAt }),
     };
   }
 
@@ -113,12 +119,15 @@ export async function getTokenMeta(
       space = await findSpaceById({ id: dbToken.spaceId }, { db });
     }
 
+    const createdAt = dbToken?.createdAt;
+
     return {
       symbol,
       name,
       icon,
       type: hyphaTokenType || dbToken?.type || null,
       ...(space && { space: { slug: space.slug, title: space.title } }),
+      ...(createdAt && { createdAt }),
     };
   } catch (error: any) {
     console.error(`Failed to fetch token info for ${tokenAddress}:`, error);
