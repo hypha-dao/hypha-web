@@ -261,7 +261,11 @@ export const ChangeVotingMethodPlugin = ({
         {votingMethod === '1v1v' && (
           <>
             <Label>Voting Token Allocation</Label>
-            <TokenSelectorField name="token" tokens={filteredTokensFor1v1v} />
+            <TokenSelectorField
+              showRequirementMark={true}
+              name="token"
+              tokens={filteredTokensFor1v1v}
+            />
             <MemberWithNumberFieldFieldArray name="members" members={members} />
           </>
         )}
@@ -269,7 +273,11 @@ export const ChangeVotingMethodPlugin = ({
         {votingMethod === '1t1v' && (
           <Skeleton loading={isLoading} width={'100%'} height={24}>
             <Label>Voting Token Allocation</Label>
-            <TokenSelectorField name="token" tokens={filteredTokensFor1t1v} />
+            <TokenSelectorField
+              showRequirementMark={true}
+              name="token"
+              tokens={filteredTokensFor1t1v}
+            />
             <MemberWithNumberFieldFieldArray name="members" members={members} />
           </Skeleton>
         )}
