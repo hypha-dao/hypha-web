@@ -11,9 +11,14 @@ import {
   voteMock,
 } from '../../../mocks';
 import { response, Response, query, Query } from './schema/get-proposals/';
+import type { Status } from './schema';
 import { newDbClient } from '../../../plugins/db-client';
 import { findAllDocumentsBySpaceId } from '../../../plugins/db-queries';
 import { type Environment } from '../../../schemas/';
+import {
+  daoProposalsImplementationAbi,
+  daoProposalsImplementationAddress,
+} from '../../../plugins/web3-abi';
 
 export default async function proposalsRoutes(app: FastifyInstance) {
   const {
@@ -56,7 +61,7 @@ export default async function proposalsRoutes(app: FastifyInstance) {
         };
       }
 
-      const res = await findAllDocumentsBySpaceId(
+      const dbData = await findAllDocumentsBySpaceId(
         { id: dao_id },
         {
           db,
@@ -65,17 +70,111 @@ export default async function proposalsRoutes(app: FastifyInstance) {
         },
       );
 
+      const web3Data = await (async () => {
+        const client = app.web3Client;
+
+        // TODO: use a proper default
+        const chainId = client.chain?.id || 8453;
+        type ChainId = keyof typeof daoProposalsImplementationAddress;
+        const contractAddress =
+          chainId in daoProposalsImplementationAddress &&
+          daoProposalsImplementationAddress[chainId as ChainId];
+        if (!contractAddress) {
+          console.error('Contract address was not found');
+
+          return;
+        }
+
+        const missingWeb3Id = dbData.data.find(
+          ({ web3ProposalId }) => web3ProposalId === null,
+        );
+        if (missingWeb3Id) {
+          console.error(
+            'Missing proposal web3Id in',
+            missingWeb3Id.id,
+            'proposal',
+          );
+
+          return;
+        }
+
+        try {
+          return await client.multicall({
+            allowFailure: false,
+            contracts: dbData.data.map(({ web3ProposalId }) => ({
+              address: contractAddress,
+              abi: daoProposalsImplementationAbi,
+              functionName: 'getProposalCore',
+              args: [BigInt(web3ProposalId as number)],
+            })),
+          });
+        } catch (e) {
+          console.error('Error fetching proposal details:', e);
+        }
+      })();
+      if (!web3Data || web3Data.length !== dbData.data.length) {
+        // TODO: implement proper return
+        throw new Error('Internal server error');
+      }
+
+      const proposalWeb3Details = web3Data.map((details) => {
+        const [
+          _spaceId,
+          _startTime,
+          endTime,
+          executed,
+          expired,
+          yesVotes,
+          noVotes,
+          totalVotingPowerAtSnapshot,
+          _creator,
+          _transactions,
+        ] = details as readonly [
+          bigint,
+          bigint,
+          bigint,
+          boolean,
+          boolean,
+          bigint,
+          bigint,
+          bigint,
+          `0x${string}`,
+          readonly object[],
+        ];
+
+        const quorumTotalVotingPowerNumber = Number(totalVotingPowerAtSnapshot);
+        const quorum =
+          quorumTotalVotingPowerNumber > 0
+            ? (Number(yesVotes + noVotes) / quorumTotalVotingPowerNumber) * 100
+            : 0;
+
+        const unityTotalVotingPowerNumber = Number(yesVotes) + Number(noVotes);
+        const unity =
+          unityTotalVotingPowerNumber > 0
+            ? (Number(yesVotes) / unityTotalVotingPowerNumber) * 100
+            : 0;
+
+        const status: Status = executed || expired ? 'past' : 'active';
+
+        return {
+          deadline: new Date(Number(endTime) * 1000),
+          unity,
+          quorum,
+          status,
+        };
+      });
+
       return {
-        data: res.data.map((data) => ({
+        data: dbData.data.map((data, index) => ({
           id: data.id,
           title: data.title,
           type: 'agreement',
           image_url: data.leadImage || '',
-          status: 'active',
-          unity: 0,
-          quorum: 0,
+          status: proposalWeb3Details[index]!.status,
+          unity: proposalWeb3Details[index]!.unity,
+          quorum: proposalWeb3Details[index]!.quorum,
           user_vote: null,
-          voting_deadline: '',
+          voting_deadline: proposalWeb3Details[index]!.deadline.toISOString(),
           author: {
             username: data.creator?.name || '',
             reference: '',
@@ -85,7 +184,7 @@ export default async function proposalsRoutes(app: FastifyInstance) {
         meta: {
           limit,
           offset,
-          total: res.pagination.total,
+          total: dbData.pagination.total,
         },
       };
     },
