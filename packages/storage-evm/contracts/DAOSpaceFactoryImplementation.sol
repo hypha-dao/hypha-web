@@ -141,7 +141,7 @@ contract DAOSpaceFactoryImplementation is
       IDAOProposals.ProposalParams memory params = IDAOProposals
         .ProposalParams({
           spaceId: _spaceId,
-          duration: 172800, // 1 day
+          duration: 172800, // 2 day
           transactions: transactions
         });
 

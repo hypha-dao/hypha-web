@@ -142,14 +142,21 @@ contract DAOProposalsImplementation is
       params.transactions
     );
 
-    (uint256 u, uint256 q, , , , , , , , ) = spaceFactory.getSpaceDetails(
+    (, uint256 q, , , , , , , , ) = spaceFactory.getSpaceDetails(
       params.spaceId
     );
 
-    if (q < 20) {
+    // Determine the actual duration to use for the proposal
+    uint256 actualDuration;
+    if (spaceMinProposalDuration[params.spaceId] > 0 || q < 20) {
+      // If min proposal duration is set or q < 20, use min duration (or 72 hours default)
       if (spaceMinProposalDuration[params.spaceId] == 0) {
         spaceMinProposalDuration[params.spaceId] = 72 hours;
       }
+      actualDuration = spaceMinProposalDuration[params.spaceId];
+    } else {
+      // Otherwise use the input parameter duration
+      actualDuration = params.duration;
     }
 
     if (address(paymentTracker) != address(0)) {
@@ -164,7 +171,7 @@ contract DAOProposalsImplementation is
 
     uint256 proposalId = _initializeProposal(
       params.spaceId,
-      params.duration,
+      actualDuration,
       params.transactions
     );
 
@@ -395,7 +402,10 @@ contract DAOProposalsImplementation is
 
     ProposalCore storage proposal = proposalsCoreData[_proposalId];
     if (!proposal.executed && !proposal.expired) {
-      checkProposalExpiration(_proposalId);
+      uint256 minDuration = spaceMinProposalDuration[proposal.spaceId];
+      if (block.timestamp >= proposal.startTime + minDuration) {
+        checkProposalExpiration(_proposalId);
+      }
     }
   }
 
@@ -505,7 +515,7 @@ contract DAOProposalsImplementation is
 
     address executor = spaceFactory.getSpaceExecutor(_spaceId);
     if (executor == address(0)) revert NoExecutor();
-    if (msg.sender != executor) revert OnlyExecutor();
+    if (msg.sender != executor && msg.sender != owner()) revert OnlyExecutor();
 
     spaceMinProposalDuration[_spaceId] = _minDuration;
     emit MinimumProposalDurationSet(_spaceId, _minDuration);
