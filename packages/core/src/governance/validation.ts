@@ -396,6 +396,18 @@ export const schemaCreateProposalChangeVotingMethod = z
         'Auto-execution is disabled. Please set a minimum voting duration.',
       path: ['votingDuration'],
     },
+  )
+  .refine(
+    (data) => {
+      if (data.votingMethod === '1v1v' || data.votingMethod === '1t1v') {
+        return typeof data.token === 'string' && data.token.length > 0;
+      }
+      return true;
+    },
+    {
+      message: 'Please select a token to pursue with this voting method.',
+      path: ['token'],
+    },
   );
 
 export const schemaCreateAgreementForm = z.object({
