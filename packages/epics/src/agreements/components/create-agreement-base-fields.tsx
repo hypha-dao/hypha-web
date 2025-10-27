@@ -80,8 +80,6 @@ export function CreateAgreementBaseFields({
 
   const { theme } = useTheme();
 
-  console.log(theme);
-
   return (
     <>
       <div className="flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-2">

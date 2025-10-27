@@ -44,7 +44,7 @@ export const useProposalEvents = ({
         const actions = await fetchProposalActions(Number(proposalId));
 
         if (!isValidProposalAction(actions)) {
-          onProposalExecuted?.(transactionHash);
+          await onProposalExecuted?.(transactionHash);
           return;
         }
 
@@ -65,7 +65,7 @@ export const useProposalEvents = ({
           console.log('Error extracting token address:', receiptError);
         }
 
-        onProposalExecuted?.(transactionHash);
+        await onProposalExecuted?.(transactionHash);
       } catch (error) {
         console.error('Error handling proposal execution:', error);
       }
@@ -76,7 +76,7 @@ export const useProposalEvents = ({
         const actions = await fetchProposalActions(Number(proposalId));
 
         if (!isValidProposalAction(actions)) {
-          onProposalRejected?.();
+          await onProposalRejected?.();
           return;
         }
 
@@ -85,14 +85,14 @@ export const useProposalEvents = ({
 
         if (token?.id != null) {
           await deleteToken({ id: BigInt(token.id) });
-          onProposalRejected?.();
+          await onProposalRejected?.();
         } else {
           console.error('Token not found for deletion');
-          onProposalRejected?.();
+          await onProposalRejected?.();
         }
       } catch (error) {
         console.error('Error handling proposal rejection:', error);
-        onProposalRejected?.();
+        await onProposalRejected?.();
       }
     };
 

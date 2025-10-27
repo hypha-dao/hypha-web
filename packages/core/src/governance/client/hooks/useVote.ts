@@ -3,6 +3,7 @@
 import { useProposalVoting } from './useProposalVoting';
 import { useProposalEvents } from './useProposalEvents';
 import { useJoinSpaceProposalHandler } from '@hypha-platform/core/client';
+import { useCallback } from 'react';
 
 export const useVote = ({
   proposalId,
@@ -18,11 +19,8 @@ export const useVote = ({
     authToken,
   });
 
-  const { isDeletingToken, isUpdatingToken } = useProposalEvents({
-    proposalId,
-    tokenSymbol,
-    authToken,
-    onProposalExecuted: async (transactionHash: string) => {
+  const onProposalExecuted = useCallback(
+    async (transactionHash: string) => {
       if (proposalId) {
         await handleJoinSpaceExecutedProposal(
           Number(proposalId),
@@ -30,6 +28,14 @@ export const useVote = ({
         );
       }
     },
+    [proposalId, handleJoinSpaceExecutedProposal],
+  );
+
+  const { isDeletingToken, isUpdatingToken } = useProposalEvents({
+    proposalId,
+    tokenSymbol,
+    authToken,
+    onProposalExecuted,
   });
 
   const handleCheckProposalExpiration = async () => {
