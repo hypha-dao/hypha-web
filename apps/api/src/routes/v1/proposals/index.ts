@@ -5,15 +5,23 @@ import {
   VoteRequest,
 } from '../../../types/v1/generated';
 import {
-  proposalsListMock,
   proposalDetailsMock,
   proposalVotesMock,
   voteMock,
 } from '../../../mocks';
 import { response, Response, query, Query } from './schema/get-proposals/';
+import {
+  response as proposalIdResponse,
+  type Response as ProposalIdResponse,
+  params as proposalIdParams,
+  type Params as ProposalIdParams,
+} from './schema/get-proposals-id';
 import type { State } from './schema';
 import { newDbClient } from '../../../plugins/db-client';
-import { findAllDocumentsBySpaceId } from '../../../plugins/db-queries';
+import {
+  findAllDocumentsBySpaceId,
+  findDocumentById,
+} from '../../../plugins/db-queries';
 import { type Environment } from '../../../schemas/';
 import {
   daoProposalsImplementationAbi,
@@ -213,18 +221,115 @@ export default async function proposalsRoutes(app: FastifyInstance) {
   /**
    * GET /proposals/:id
    */
-  app.get('/:id', async (request, reply) => {
-    const params = z.object({ id: z.coerce.number() }).parse(request.params);
+  app.get<{ Reply: ProposalIdResponse; Params: ProposalIdParams }>(
+    '/:id',
+    {
+      schema: {
+        params: proposalIdParams,
+        response: { '2xx': proposalIdResponse },
+      },
+    },
+    async (request) => {
+      const { id } = request.params;
 
-    const mockResponse = {
-      ...proposalDetailsMock,
-      id: params.id,
-      title: `Proposal #${params.id} `,
-      details: 'This is a detailed description of the proposal.',
-    };
+      const dbData = await findDocumentById({ id }, { db });
+      if (!dbData) {
+        // TODO: implement proper return
+        throw Error('Proposal does not exist');
+      }
 
-    return reply.send(mockResponse);
-  });
+      const web3Data = await (async () => {
+        const client = app.web3Client;
+
+        // TODO: use a proper default
+        const chainId = client.chain?.id || 8453;
+        type ChainId = keyof typeof daoProposalsImplementationAddress;
+        const contractAddress =
+          chainId in daoProposalsImplementationAddress &&
+          daoProposalsImplementationAddress[chainId as ChainId];
+        if (!contractAddress) {
+          console.error('Contract address was not found');
+
+          return;
+        }
+
+        const web3Id = dbData.web3ProposalId;
+        if (!web3Id) {
+          console.error('Missing proposal web3Id for', id, 'proposal');
+
+          return;
+        }
+
+        try {
+          return await client.readContract({
+            address: contractAddress,
+            abi: daoProposalsImplementationAbi,
+            functionName: 'getProposalCore',
+            args: [BigInt(web3Id)],
+          });
+        } catch (e) {
+          console.error('Error fetching proposal details:', e);
+        }
+      })();
+      if (!web3Data) {
+        // TODO: implement proper return
+        throw new Error('Internal server error');
+      }
+
+      const [
+        _spaceId,
+        _startTime,
+        endTime,
+        executed,
+        expired,
+        yesVotes,
+        noVotes,
+        totalVotingPowerAtSnapshot,
+      ] = web3Data;
+
+      const quorumTotalVotingPowerNumber = Number(totalVotingPowerAtSnapshot);
+      const quorum =
+        quorumTotalVotingPowerNumber > 0
+          ? (Number(yesVotes + noVotes) / quorumTotalVotingPowerNumber) * 100
+          : 0;
+
+      const unityTotalVotingPowerNumber = Number(yesVotes) + Number(noVotes);
+      const unity =
+        unityTotalVotingPowerNumber > 0
+          ? (Number(yesVotes) / unityTotalVotingPowerNumber) * 100
+          : 0;
+
+      const state: State = executed || expired ? 'past' : 'active';
+
+      const web3ProposalDetails = {
+        voting_deadline: new Date(Number(endTime) * 1000),
+        unity,
+        quorum,
+        state,
+      };
+
+      return {
+        ...web3ProposalDetails,
+        id: dbData.id,
+        title: dbData.title,
+        description: dbData.description || '',
+        label: 'agreement',
+        image_URL: dbData.leadImage || '',
+        user_vote: null,
+        voting_deadline: web3ProposalDetails.voting_deadline.toISOString(),
+        commitment: undefined,
+        payments: [],
+        creatorId: dbData.creatorId,
+        creator: {
+          name: dbData.creator?.name || '',
+          surname: dbData.creator?.surname || '',
+          avatarUrl: dbData.creator?.avatarUrl || '',
+        },
+        createdAt: dbData.createdAt.toISOString(),
+        updatedAt: dbData.updatedAt.toISOString(),
+      };
+    },
+  );
 
   /**
    * GET /proposals/:id/votes
