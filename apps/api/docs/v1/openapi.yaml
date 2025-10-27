@@ -635,13 +635,15 @@ components:
           type: integer
         title:
           type: string
-        type:
+        description:
+          type: string
+        label:
           type: string
           enum: ["contribution", "payment", "funding", "agreement"]
-        image_url:
+        image_URL:
           type: string
           format: uri
-        status:
+        state:
           type: string
           enum: ["active", "past"]
         unity:
@@ -655,18 +657,26 @@ components:
         voting_deadline:
           type: string
           format: date-time
-        author:
+        creatorId:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        creator:
           type: object
           properties:
-            username:
-              type: string
-            reference:
-              type: string
-            avatar_url:
+            avatarUrl:
               type: string
               format: uri
-          required: [username, reference, avatar_url]
-      required: [id, title, type, image_url, status, unity, quorum, user_vote, voting_deadline, author]
+            name:
+              type: string
+            surname:
+              type: string
+          required: [surname, name, avatarUrl]
+      required: [id, title, description, label, image_URL, state, unity, quorum, user_vote, voting_deadline, creatorId, creator, createdAt, updatedAt]
     ProposalDetailsResponse:
       type: object
       properties:
