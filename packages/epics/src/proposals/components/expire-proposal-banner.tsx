@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, Button } from '@hypha-platform/ui';
+import { Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useJoinSpace } from '../../spaces';
 import { useIsDelegate } from '@hypha-platform/core/client';
@@ -139,24 +139,21 @@ export const ExpireProposalBanner = ({
   const showCompletedMessage = isActionCompleted || localActionCompleted;
 
   return (
-    <Card
-      className="bg-cover bg-center"
-      style={{ backgroundImage: 'url("/placeholder/sales-banner-bg.png")' }}
-    >
+    <div className="border-1 rounded-[8px] bg-accent-surface bg-center border-accent-6">
       <div className="p-5 flex flex-col gap-4">
         <div className="flex justify-between items-center">
-          <span className="text-6 font-medium text-white">{title}</span>
+          <span className="text-2 font-bold text-foreground">{title}</span>
         </div>
 
         {showCompletedMessage ? (
           <>
-            <span className={cn('text-2', 'text-white')}>
+            <span className={cn('text-2', 'text-foreground')}>
               {completedMessage}
             </span>
           </>
         ) : (
           <>
-            <span className={cn('text-2', 'text-white')}>{subtitle}</span>
+            <span className={cn('text-2', 'text-foreground')}>{subtitle}</span>
             {isExpiring ? (
               <div className="flex items-center gap-2 text-sm text-neutral-10">
                 <Loader2 className="animate-spin w-4 h-4" />
@@ -175,6 +172,6 @@ export const ExpireProposalBanner = ({
           </>
         )}
       </div>
-    </Card>
+    </div>
   );
 };
