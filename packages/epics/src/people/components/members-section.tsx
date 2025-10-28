@@ -8,6 +8,7 @@ import { MembersList } from './members-list';
 import { useMembersSection } from '../hooks/use-members-section';
 import { UseMembers } from '../hooks/types';
 import { Empty } from '../../common';
+import { useSpaceBySlug } from '@hypha-platform/core/client';
 // TODO: need for #1309
 // import { Button } from '@hypha-platform/ui';
 // import {
@@ -38,6 +39,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
       spaceSlug,
       refreshInterval,
     });
+  const { space } = useSpaceBySlug(spaceSlug ?? '');
   console.debug('MembersSection', { searchTerm });
   // TODO: need for #1309
   // const { space } = useSpaceBySlug(spaceSlug as string);
@@ -88,6 +90,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
             page={index + 1}
             key={index}
             useMembers={useMembers}
+            spaceId={space?.id}
             spaceSlug={spaceSlug}
             searchTerm={searchTerm}
             refreshInterval={refreshInterval}
