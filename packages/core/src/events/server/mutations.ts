@@ -1,7 +1,11 @@
-import { events, Event } from '@hypha-platform/storage-postgres';
+import { events } from '@hypha-platform/storage-postgres';
 import { DbConfig } from '@hypha-platform/core/server';
+import { CreateEventInput } from '../types';
 
-export const createEvent = async (event: Event, { db }: DbConfig) => {
+export const createEvent = async (
+  event: CreateEventInput,
+  { db }: DbConfig,
+) => {
   const insertData = {
     ...event,
     createdAt: new Date(),
