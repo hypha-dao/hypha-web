@@ -9,7 +9,7 @@ import {
 } from '@hypha-platform/core/client';
 import { MemberWithNumberFieldFieldArray } from '../components/common/member-with-number-field-array';
 import { TokenSelectorField } from '../components/common/token-selector-field';
-import { useTokens } from '@hypha-platform/epics';
+import { useTokens, useAssets } from '@hypha-platform/epics';
 import { QuorumAndUnityChangerField } from '../components/common/quorum-and-unity-change-field';
 import { useFormContext, useWatch } from 'react-hook-form';
 import {
@@ -62,6 +62,8 @@ export const ChangeVotingMethodPlugin = ({
     tokens: Token[];
     isLoading: boolean;
   };
+
+  const { assets } = useAssets({ filter: { type: 'all' } });
 
   const HYPHA_ADDRESS =
     TOKENS.find((t) => t.symbol === 'HYPHA')?.address.toLowerCase() || '';
@@ -266,7 +268,11 @@ export const ChangeVotingMethodPlugin = ({
               name="token"
               tokens={filteredTokensFor1v1v}
             />
-            <MemberWithNumberFieldFieldArray name="members" members={members} />
+            <MemberWithNumberFieldFieldArray
+              name="members"
+              members={members}
+              assets={assets}
+            />
           </>
         )}
 
@@ -278,7 +284,11 @@ export const ChangeVotingMethodPlugin = ({
               name="token"
               tokens={filteredTokensFor1t1v}
             />
-            <MemberWithNumberFieldFieldArray name="members" members={members} />
+            <MemberWithNumberFieldFieldArray
+              name="members"
+              members={members}
+              assets={assets}
+            />
           </Skeleton>
         )}
       </div>
