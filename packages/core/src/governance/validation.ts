@@ -362,13 +362,58 @@ export const schemaCreateProposalChangeVotingMethod = z
     label: z.string().optional(),
     members: z
       .array(
-        z.object({
-          member: z
-            .string()
-            .min(1)
-            .refine(isAddress, { message: 'Invalid Ethereum address' }),
-          number: z.number().min(0),
-        }),
+        z
+          .object({
+            member: z.any(),
+            number: z.any(),
+          })
+          .superRefine((rawData, ctx) => {
+            const trimmedMember = String(rawData.member || '').trim();
+            if (trimmedMember.length === 0) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: [],
+                message:
+                  'Please select a member and specify the number of tokens to allocate.',
+              });
+              return;
+            }
+
+            if (!isAddress(trimmedMember)) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['member'],
+                message: 'Invalid Ethereum address',
+              });
+              return;
+            }
+
+            const numStr = String(rawData.number || '').trim();
+            if (numStr.length === 0) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: [],
+                message:
+                  'Please select a member and specify the number of tokens to allocate.',
+              });
+              return;
+            }
+
+            const num = Number(numStr);
+            if (isNaN(num) || num < 0) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: [],
+                message:
+                  'Please select a member and specify the number of tokens to allocate.',
+              });
+              return;
+            }
+          })
+          .transform((val) => ({
+            member: String(val.member || '').trim(),
+            number: Number(String(val.number || '').trim()),
+          })),
       )
       .optional(),
     token: z.string().optional(),
