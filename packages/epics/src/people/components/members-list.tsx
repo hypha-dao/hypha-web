@@ -10,6 +10,7 @@ type MembersListProps = {
   minimize?: boolean;
   basePath: string;
   useMembers: UseMembers;
+  spaceId?: number;
   spaceSlug?: string;
   searchTerm?: string;
   refreshInterval?: number;
@@ -20,6 +21,7 @@ export const MembersList: FC<MembersListProps> = ({
   minimize,
   basePath,
   useMembers,
+  spaceId,
   spaceSlug,
   searchTerm,
   refreshInterval,
@@ -39,7 +41,12 @@ export const MembersList: FC<MembersListProps> = ({
           key={member.slug}
           scroll={false}
         >
-          <MemberCard minimize={minimize} {...member} isLoading={isLoading} />
+          <MemberCard
+            spaceId={spaceId}
+            minimize={minimize}
+            {...member}
+            isLoading={isLoading}
+          />
         </Link>
       ))}
       {spaces.data.map((space) => (
