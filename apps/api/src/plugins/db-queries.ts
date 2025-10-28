@@ -15,6 +15,7 @@ import type {
   DocumentState,
 } from '../types/v1/db';
 import type { PaginationParams, FilterParams } from '../types/meta';
+import { alias } from 'drizzle-orm/pg-core';
 
 export const mapToDocument = (
   dbDocument: DbDocument,
@@ -115,4 +116,35 @@ export const findAllDocumentsBySpaceId = async (
       hasPreviousPage: page > 1,
     },
   };
+};
+
+export interface FindDocumentByIdInput {
+  id: number;
+}
+
+export const findDocumentById = async (
+  { id }: FindDocumentByIdInput,
+  { db }: DbConfig,
+) => {
+  const spaceCreator = alias(spaces, 'space_creator');
+
+  const result = await db
+    .select({
+      document: documents,
+      personCreator: people,
+      spaceCreator: spaceCreator,
+    })
+    .from(documents)
+    .leftJoin(people, eq(documents.creatorId, people.id))
+    .leftJoin(spaceCreator, eq(documents.creatorId, spaceCreator.id))
+    .where(eq(documents.id, id))
+    .limit(1);
+
+  return result[0]
+    ? mapToDocument(
+        result[0].document,
+        result[0].personCreator ?? undefined,
+        result[0].spaceCreator ?? undefined,
+      )
+    : null;
 };
