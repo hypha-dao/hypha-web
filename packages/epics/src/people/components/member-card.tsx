@@ -36,7 +36,6 @@ export type MemberCardProps = {
   isLoading?: boolean;
   minimize?: boolean;
   // isDelegate?: boolean;
-  createdAt?: Date;
 };
 
 export const MemberCard: React.FC<MemberCardProps> = ({
@@ -51,7 +50,6 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   isLoading,
   minimize,
   // isDelegate,
-  createdAt,
 }) => {
   // const { id: spaceSlug } = useParams();
   // const { space } = useSpaceBySlug(spaceSlug as string);
@@ -80,7 +78,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
     if (events.length === 0) {
       return undefined;
     }
-    const event = events.find((el) => el.parameters['spaceId'] === spaceId);
+    const event = events.find((el) => el.parameters?.['spaceId'] === spaceId);
     return event;
   }, [spaceId, events, isLoadingEvents]);
 

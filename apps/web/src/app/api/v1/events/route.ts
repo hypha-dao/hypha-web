@@ -32,9 +32,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(events);
   } catch (error) {
-    console.error('Failed to fetch tokens:', error);
+    console.error('Failed to fetch events:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch tokens' },
+      { error: 'Failed to fetch events' },
       { status: 500 },
     );
   }
