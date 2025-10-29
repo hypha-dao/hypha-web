@@ -346,6 +346,27 @@ export const schemaIssueNewToken = z.object({
     .optional(),
 });
 
+export const schemaCreateProposalChangeVotingMethodMembersField = z
+  .object({
+    member: z
+      .string()
+      .trim()
+      .min(1, { message: 'Please select a member.' })
+      .refine((memberAddress) => isAddress(memberAddress), {
+        message: 'Invalid member address.',
+      })
+      .catch(''),
+    number: z.coerce
+      .number()
+      .positive({ message: 'Please specify a positive number of tokens.' })
+      .catch(0),
+  })
+  .refine(({ member, number }) => !!(member && number > 0), {
+    message:
+      'Please select a member and specify the number of tokens to allocate.',
+    path: [],
+  });
+
 export const schemaCreateProposalChangeVotingMethod = z
   .object({
     title: z
@@ -369,60 +390,7 @@ export const schemaCreateProposalChangeVotingMethod = z
     web3ProposalId: z.number().optional(),
     label: z.string().optional(),
     members: z
-      .array(
-        z
-          .object({
-            member: z.any(),
-            number: z.any(),
-          })
-          .superRefine((rawData, ctx) => {
-            const trimmedMember = String(rawData.member || '').trim();
-            if (trimmedMember.length === 0) {
-              ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: [],
-                message:
-                  'Please select a member and specify the number of tokens to allocate.',
-              });
-              return;
-            }
-
-            if (!isAddress(trimmedMember)) {
-              ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ['member'],
-                message: 'Invalid Ethereum address',
-              });
-              return;
-            }
-
-            const numStr = String(rawData.number || '').trim();
-            if (numStr.length === 0) {
-              ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: [],
-                message:
-                  'Please select a member and specify the number of tokens to allocate.',
-              });
-              return;
-            }
-
-            const num = Number(numStr);
-            if (isNaN(num) || num < 0) {
-              ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: [],
-                message:
-                  'Please select a member and specify the number of tokens to allocate.',
-              });
-              return;
-            }
-          })
-          .transform((val) => ({
-            member: String(val.member || '').trim(),
-            number: Number(String(val.number || '').trim()),
-          })),
-      )
+      .array(schemaCreateProposalChangeVotingMethodMembersField)
       .optional(),
     token: z.string().optional(),
     quorumAndUnity: z

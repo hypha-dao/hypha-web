@@ -62,7 +62,7 @@ export const CreateProposalChangeVotingMethodForm = ({
       spaceId: spaceId ?? undefined,
       creatorId: person?.id,
       members: [],
-      token: '' as `0x${string}`,
+      token: '',
       quorumAndUnity: {
         quorum: 0,
         unity: 0,
