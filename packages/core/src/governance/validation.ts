@@ -346,10 +346,39 @@ export const schemaIssueNewToken = z.object({
     .optional(),
 });
 
+export const schemaCreateProposalChangeVotingMethodMembersField = z
+  .object({
+    member: z
+      .string()
+      .trim()
+      .min(1, { message: 'Please select a member.' })
+      .refine((memberAddress) => isAddress(memberAddress), {
+        message: 'Invalid member address.',
+      })
+      .catch(''),
+    number: z.coerce
+      .number()
+      .positive({ message: 'Please specify a positive number of tokens.' })
+      .catch(0),
+  })
+  .refine(({ member, number }) => !!(member && number > 0), {
+    message:
+      'Please select a member and specify the number of tokens to allocate.',
+    path: [],
+  });
+
 export const schemaCreateProposalChangeVotingMethod = z
   .object({
-    title: z.string().trim().min(1).max(50),
-    description: z.string().trim().min(1).max(4000),
+    title: z
+      .string()
+      .trim()
+      .min(1, { message: 'Please add a title for your proposal' })
+      .max(50),
+    description: z
+      .string()
+      .trim()
+      .min(1, { message: 'Please add content to your proposal' })
+      .max(4000),
     slug: z
       .string()
       .min(1)
@@ -361,15 +390,7 @@ export const schemaCreateProposalChangeVotingMethod = z
     web3ProposalId: z.number().optional(),
     label: z.string().optional(),
     members: z
-      .array(
-        z.object({
-          member: z
-            .string()
-            .min(1)
-            .refine(isAddress, { message: 'Invalid Ethereum address' }),
-          number: z.number().min(0),
-        }),
-      )
+      .array(schemaCreateProposalChangeVotingMethodMembersField)
       .optional(),
     token: z.string().optional(),
     quorumAndUnity: z
@@ -380,7 +401,12 @@ export const schemaCreateProposalChangeVotingMethod = z
       .optional(),
     votingMethod: z.enum(['1m1v', '1v1v', '1t1v']).nullable().optional(),
     autoExecution: z.boolean().optional(),
-    votingDuration: z.number().optional(),
+    votingDuration: z
+      .number({
+        message:
+          'Auto-execution is disabled. Please set a minimum voting duration.',
+      })
+      .optional(),
     leadImage: z.custom<File>().optional(),
     attachments: z.array(z.custom<File>()).max(3).optional(),
   })
@@ -395,6 +421,18 @@ export const schemaCreateProposalChangeVotingMethod = z
       message:
         'Auto-execution is disabled. Please set a minimum voting duration.',
       path: ['votingDuration'],
+    },
+  )
+  .refine(
+    (data) => {
+      if (data.votingMethod === '1v1v' || data.votingMethod === '1t1v') {
+        return typeof data.token === 'string' && data.token.length > 0;
+      }
+      return true;
+    },
+    {
+      message: 'Please select a token to pursue with this voting method.',
+      path: ['token'],
     },
   );
 

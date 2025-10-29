@@ -9,6 +9,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   Image,
+  RequirementMark,
+  FormLabel,
 } from '@hypha-platform/ui';
 import { Token } from './token-payout-field-array';
 
@@ -16,12 +18,14 @@ interface TokenSelectorProps {
   value: string;
   onChange: (tokenAddress: string) => void;
   tokens: Token[];
+  showRequirementMark?: boolean;
 }
 
 export const TokenSelector = ({
   value,
   onChange,
   tokens,
+  showRequirementMark = false,
 }: TokenSelectorProps) => {
   const selectedToken = tokens.find((t) => t.address === value);
 
@@ -31,7 +35,10 @@ export const TokenSelector = ({
 
   return (
     <div className="flex justify-between w-full">
-      <label className="text-2 text-neutral-11 flex items-center">Token</label>
+      <FormLabel className="text-2 text-neutral-11 gap-1 flex">
+        Token
+        {showRequirementMark && <RequirementMark className="text-2" />}
+      </FormLabel>
       <div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
