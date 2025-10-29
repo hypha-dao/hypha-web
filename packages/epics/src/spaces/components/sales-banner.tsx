@@ -79,7 +79,7 @@ export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
           className="text-foreground flex-shrink-0 mt-0.5"
         />
         <div className="flex flex-col gap-2 flex-1">
-          <span className="text-2 text-foreground font-medium">{title}</span>
+          <span className="text-2 text-foreground font-bold">{title}</span>
           <span className="text-2 text-foreground">{subtitle}</span>
         </div>
       </div>
