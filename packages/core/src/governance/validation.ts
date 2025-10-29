@@ -348,8 +348,16 @@ export const schemaIssueNewToken = z.object({
 
 export const schemaCreateProposalChangeVotingMethod = z
   .object({
-    title: z.string().trim().min(1).max(50),
-    description: z.string().trim().min(1).max(4000),
+    title: z
+      .string()
+      .trim()
+      .min(1, { message: 'Please add a title for your proposal' })
+      .max(50),
+    description: z
+      .string()
+      .trim()
+      .min(1, { message: 'Please add content to your proposal' })
+      .max(4000),
     slug: z
       .string()
       .min(1)
