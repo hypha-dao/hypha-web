@@ -6,6 +6,8 @@ import {
   SelectContent,
   SelectItem,
   Input,
+  FormLabel,
+  RequirementMark,
 } from '@hypha-platform/ui';
 import { PercentIcon } from 'lucide-react';
 import { useFormContext, useWatch } from 'react-hook-form';
@@ -80,10 +82,9 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
   return (
     <>
       <div className="flex justify-between items-center gap-3">
-        <div className="text-2 text-neutral-11 font-medium">
-          Voice Decay Frequency
-        </div>
-
+        <FormLabel className="text-2 text-neutral-11 gap-1">
+          Voice Decay Frequency <RequirementMark className="text-2" />
+        </FormLabel>
         <div className="flex justify-between flex-row flex-1 gap-3 max-w-[50%]">
           <div className="flex flex-col flex-1 min-w-10">
             <Input
@@ -110,10 +111,9 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
         </div>
       </div>
       <div className="flex justify-between items-center gap-3">
-        <div className="text-2 text-neutral-11 font-medium">
-          Voice Decay Percentage
-        </div>
-
+        <FormLabel className="text-2 text-neutral-11 gap-1">
+          Voice Decay Percentage <RequirementMark className="text-2" />
+        </FormLabel>
         <div className="flex flex-col flex-1 max-w-[25%]">
           <Input
             id="decay-percent"
