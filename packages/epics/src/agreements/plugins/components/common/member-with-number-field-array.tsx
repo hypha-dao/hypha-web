@@ -63,10 +63,6 @@ export const MemberWithNumberFieldFieldArray = ({
       if (fields.length === 0) {
         append({ member: null, number: '' });
       }
-    } else {
-      if (fields.length > 0) {
-        remove();
-      }
     }
   }, [shouldShowFields, hasZeroSupply, append, remove, fields.length]);
 
@@ -98,7 +94,7 @@ export const MemberWithNumberFieldFieldArray = ({
       <div className="flex flex-col gap-4">
         <div className="flex flex-col md:flex-row gap-4">
           <Text className="flex gap-2 pt-1 text-2 text-neutral-11 text-nowrap">
-            Initial allocation
+            Additional allocation (Optional)
           </Text>
           <div className="flex flex-col gap-2">
             <div className="flex justify-end w-full">
@@ -121,7 +117,9 @@ export const MemberWithNumberFieldFieldArray = ({
     <div className="flex flex-col gap-4">
       <div className="flex flex-col md:flex-row gap-4">
         <FormLabel className="text-2 text-neutral-11 gap-1 flex text-nowrap">
-          Initial allocation
+          {!hasZeroSupply
+            ? 'Additional allocation (Optional)'
+            : 'Initial allocation'}
           {hasZeroSupply && <RequirementMark className="text-2" />}
         </FormLabel>
         <div className="flex flex-col gap-2">
