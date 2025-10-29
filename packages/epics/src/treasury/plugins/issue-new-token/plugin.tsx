@@ -46,7 +46,7 @@ export const IssueNewTokenPlugin = () => {
               htmlFor="decay-settings-toggle"
               className="text-2 text-neutral-11 font-medium"
             >
-              Enable Decay Settings
+              Advanced Decay Settings
             </label>
             <Switch
               id="decay-settings-toggle"
