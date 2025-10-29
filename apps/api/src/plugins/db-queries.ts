@@ -148,3 +148,18 @@ export const findDocumentById = async (
       )
     : null;
 };
+
+export const findDocumentWeb3Id = async (
+  { id }: { id: number },
+  { db }: DbConfig,
+) => {
+  const [res] = await db
+    .select({
+      web3Id: documents.web3ProposalId,
+    })
+    .from(documents)
+    .where(eq(documents.id, id))
+    .limit(1);
+
+  return res?.web3Id || null;
+};
