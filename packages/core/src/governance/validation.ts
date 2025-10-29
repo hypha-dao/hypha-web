@@ -425,7 +425,12 @@ export const schemaCreateProposalChangeVotingMethod = z
       .optional(),
     votingMethod: z.enum(['1m1v', '1v1v', '1t1v']).nullable().optional(),
     autoExecution: z.boolean().optional(),
-    votingDuration: z.number().optional(),
+    votingDuration: z
+      .number({
+        message:
+          'Auto-execution is disabled. Please set a minimum voting duration.',
+      })
+      .optional(),
     leadImage: z.custom<File>().optional(),
     attachments: z.array(z.custom<File>()).max(3).optional(),
   })
