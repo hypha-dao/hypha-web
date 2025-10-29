@@ -1,3 +1,5 @@
+'use client';
+
 import { useCallback, useState } from 'react';
 import { useAccount } from 'wagmi';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
@@ -49,6 +51,7 @@ export const useProposalVoting = ({
       });
     } catch (err) {
       console.error('Error checking proposal expiration:', err);
+      throw err;
     } finally {
       setIsCheckingExpiration(false);
     }

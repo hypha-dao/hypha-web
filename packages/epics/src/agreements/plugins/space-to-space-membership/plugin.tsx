@@ -7,6 +7,7 @@ import {
   FormField,
   FormItem,
   FormControl,
+  FormLabel,
   FormMessage,
   Label,
   RequirementMark,
@@ -26,10 +27,9 @@ export const SpaceToSpaceMembershipPlugin = ({
 
   return (
     <div className="flex flex-col gap-5 w-full">
-      <div className="flex gap-1 items-start">
-        <Label>Space</Label>
-        <RequirementMark />
-      </div>
+      <FormLabel className="text-2 text-neutral-11 w-full gap-1">
+        Space <RequirementMark className="text-2" />
+      </FormLabel>
       <FormField
         control={control}
         name="space"
@@ -49,10 +49,9 @@ export const SpaceToSpaceMembershipPlugin = ({
         )}
       />
       <Separator />
-      <div className="flex gap-1 items-start">
-        <Label>Delegation Rules</Label>
-        <RequirementMark />
-      </div>
+      <FormLabel className="text-2 text-neutral-11 w-full gap-1">
+        Delegation Rules <RequirementMark className="text-2" />
+      </FormLabel>
       <FormField
         control={control}
         name="member"

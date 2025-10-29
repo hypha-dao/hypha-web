@@ -476,11 +476,11 @@ export const schemaSpaceToSpaceMembership = z.object({
   ...createAgreementFiles,
   label: z.literal('Space To Space'),
   space: z
-    .string()
-    .min(1, { message: 'Please choose a space' })
+    .string({ message: 'Please select a space to join' })
+    .min(1)
     .refine(isAddress, { message: 'Invalid Ethereum address' }),
   member: z
-    .string()
-    .min(1, { message: 'Please choose a member' })
+    .string({ message: 'Please select a delegated voting member' })
+    .min(1)
     .refine(isAddress, { message: 'Invalid Ethereum address' }),
 });

@@ -5,8 +5,6 @@ import { FormVoting } from './form-voting';
 import { ProposalHead, ProposalHeadProps } from './proposal-head';
 import { Separator, AttachmentList, Skeleton } from '@hypha-platform/ui';
 import { formatDate } from '@hypha-platform/ui-utils';
-// TODO(#891): restore when comments support is implemented
-// import { CommentsList } from '../../interactions/components/comments-list';
 import Image from 'next/image';
 import {
   useProposalDetailsWeb3Rpc,
@@ -17,6 +15,8 @@ import {
   SpaceDetails,
   DirectionType,
   Document,
+  useSpaceMinProposalDuration,
+  useVote,
 } from '@hypha-platform/core/client';
 import {
   ProposalTransactionItem,
@@ -29,17 +29,14 @@ import {
   ProposalDelegatesData,
 } from '../../governance';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
-import { ButtonClose } from '@hypha-platform/epics';
+import { ButtonClose, ExpireProposalBanner } from '@hypha-platform/epics';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { ProposalActivateSpacesData } from '../../governance/components/proposal-activate-spaces-data';
 import { useSpaceDocumentsWithStatuses } from '../../governance';
+import { isPast } from 'date-fns';
+import { useState, useEffect } from 'react';
 
 type ProposalDetailProps = ProposalHeadProps & {
-  onAccept: () => void;
-  onReject: () => void;
-  onCheckProposalExpiration: () => void;
-  isCheckingExpiration: boolean;
-  isVoting?: boolean;
   content?: string;
   closeUrl: string;
   leadImage?: string;
@@ -49,6 +46,12 @@ type ProposalDetailProps = ProposalHeadProps & {
   label?: string;
   documentSlug: string;
   dbTokens?: DbToken[];
+  authToken?: string | null;
+  onAccept?: () => Promise<void>;
+  onReject?: () => Promise<void>;
+  onCheckProposalExpiration?: () => Promise<void>;
+  isCheckingExpiration?: boolean;
+  isVoting?: boolean;
 };
 
 type DocumentsArrays = {
@@ -63,20 +66,21 @@ export const ProposalDetail = ({
   commitment,
   status,
   isLoading,
-  onAccept,
-  onReject,
-  onCheckProposalExpiration,
-  isCheckingExpiration,
   content,
   closeUrl,
   leadImage,
   attachments,
   proposalId,
   spaceSlug,
-  isVoting,
   label,
   documentSlug,
   dbTokens,
+  authToken,
+  onAccept,
+  onReject,
+  onCheckProposalExpiration,
+  isCheckingExpiration: externalIsCheckingExpiration,
+  isVoting: externalIsVoting,
 }: ProposalDetailProps) => {
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: proposalId as number,
@@ -95,6 +99,33 @@ export const ProposalDetail = ({
       },
     ],
   });
+
+  const tokenSymbol = proposalDetails?.tokens?.[0]?.symbol;
+
+  const {
+    handleAccept: internalHandleAccept,
+    handleReject: internalHandleReject,
+    handleCheckProposalExpiration: internalHandleCheckProposalExpiration,
+    isCheckingExpiration: internalIsCheckingExpiration,
+    isVoting: internalIsVoting,
+    isDeletingToken,
+    isUpdatingToken,
+  } = useVote({
+    proposalId,
+    tokenSymbol,
+    authToken,
+  });
+
+  const handleAccept = onAccept || internalHandleAccept;
+  const handleReject = onReject || internalHandleReject;
+  const handleCheckProposalExpiration =
+    onCheckProposalExpiration || internalHandleCheckProposalExpiration;
+  const isCheckingExpiration =
+    externalIsCheckingExpiration !== undefined
+      ? externalIsCheckingExpiration
+      : internalIsCheckingExpiration;
+  const isVoting =
+    externalIsVoting !== undefined ? externalIsVoting : internalIsVoting;
 
   const findDocumentStatus = (
     documentsArrays: DocumentsArrays,
@@ -128,8 +159,83 @@ export const ProposalDetail = ({
   const proposalStatus = findDocumentStatus(documentsArrays, proposalId);
 
   const hideDurationData = () => {
-    return proposalStatus === 'accepted' || proposalStatus === 'rejected';
+    return (
+      proposalStatus === 'accepted' ||
+      proposalStatus === 'rejected' ||
+      displayExpireProposalBanner
+    );
   };
+
+  const spaceIdBigInt = proposalDetails?.spaceId
+    ? BigInt(proposalDetails?.spaceId)
+    : null;
+
+  const { duration } = useSpaceMinProposalDuration({
+    spaceId: spaceIdBigInt as bigint,
+  });
+
+  const [displayExpireProposalBanner, setDisplayExpireProposalBanner] =
+    useState(false);
+  const [quorumReached, setQuorumReached] = useState(false);
+  const [unityReached, setUnityReached] = useState(false);
+  const [isActionCompleted, setIsActionCompleted] = useState(false);
+  const [isExpiring, setIsExpiring] = useState(false);
+
+  const onHandleCheckProposalExpiration = async () => {
+    try {
+      setIsExpiring(true);
+      await handleCheckProposalExpiration();
+    } catch (error) {
+      console.error('Error checking proposal expiration:', error);
+    } finally {
+      setIsExpiring(false);
+    }
+  };
+
+  useEffect(() => {
+    const isProposalExpired = Boolean(
+      proposalDetails?.endTime && isPast(new Date(proposalDetails.endTime)),
+    );
+
+    const isDurationZero = duration === 0n;
+
+    const isQuorumReached = Boolean(
+      Number(proposalDetails?.quorumPercentage ?? 0) >=
+        Number(spaceDetails?.quorum ?? 0),
+    );
+    setQuorumReached(isQuorumReached);
+
+    const isUnityReached = Boolean(
+      Number(proposalDetails?.unityPercentage ?? 0) >=
+        Number(spaceDetails?.unity ?? 0),
+    );
+    setUnityReached(isUnityReached);
+
+    let shouldShowBanner = false;
+
+    if (
+      isProposalExpired &&
+      !proposalDetails?.executed &&
+      !proposalDetails?.expired
+    ) {
+      if (!isDurationZero) {
+        shouldShowBanner = true;
+      } else {
+        const conditionsMet = isQuorumReached && isUnityReached;
+        if (!conditionsMet) {
+          shouldShowBanner = true;
+        }
+      }
+    }
+
+    setDisplayExpireProposalBanner(shouldShowBanner);
+  }, [duration, proposalDetails, spaceDetails]);
+
+  useEffect(() => {
+    if (proposalDetails?.executed || proposalDetails?.expired) {
+      setIsActionCompleted(true);
+    }
+  }, [proposalDetails?.executed, proposalDetails?.expired]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -161,6 +267,17 @@ export const ProposalDetail = ({
           alt={title ?? ''}
         />
       </Skeleton>
+      <ExpireProposalBanner
+        isDisplay={displayExpireProposalBanner}
+        quorumReached={quorumReached}
+        unityReached={unityReached}
+        quorumPercentage={proposalDetails?.quorumPercentage || 0}
+        unityPercentage={proposalDetails?.unityPercentage || 0}
+        onHandleAction={onHandleCheckProposalExpiration}
+        isActionCompleted={isActionCompleted}
+        isExpiring={isExpiring}
+        web3SpaceId={proposalDetails?.spaceId}
+      />
       <MarkdownSuspense>{content}</MarkdownSuspense>
       <AttachmentList attachments={attachments || []} />
       {proposalDetails?.votingMethods.map((method, idx) => (
@@ -238,9 +355,8 @@ export const ProposalDetail = ({
         endTime={formatISO(new Date(proposalDetails?.endTime || new Date()))}
         executed={proposalDetails?.executed}
         expired={proposalDetails?.expired}
-        onAccept={onAccept}
-        onReject={onReject}
-        onCheckProposalExpiration={onCheckProposalExpiration}
+        onAccept={handleAccept}
+        onReject={handleReject}
         isCheckingExpiration={isCheckingExpiration}
         isLoading={isLoading}
         isVoting={isVoting}
@@ -251,14 +367,6 @@ export const ProposalDetail = ({
         proposalStatus={proposalStatus}
         hideDurationData={hideDurationData()}
       />
-      {/* TODO: uncomment when comments support will be implemented */}
-      {/* <Separator />
-      <CommentsList
-        pagination={{
-          total: 0,
-        }}
-        comments={[]}
-      /> */}
     </div>
   );
 };
