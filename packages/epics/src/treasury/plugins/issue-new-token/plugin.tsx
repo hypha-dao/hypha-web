@@ -18,7 +18,7 @@ export const IssueNewTokenPlugin = () => {
   const { getValues, setValue } = useFormContext();
   const values = getValues();
   const [tokenType, setTokenType] = useState<string>(values['type']);
-  const [showDecaySettings, setShowDecaySettings] = useState<boolean>(true);
+  const [showDecaySettings, setShowDecaySettings] = useState<boolean>(false);
 
   useEffect(() => {
     if (tokenType === 'voice') {
