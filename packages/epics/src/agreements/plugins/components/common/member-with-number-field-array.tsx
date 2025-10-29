@@ -9,6 +9,7 @@ import {
   FormControl,
   FormMessage,
   RequirementMark,
+  FormLabel,
 } from '@hypha-platform/ui';
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
 import { Text } from '@radix-ui/themes';
@@ -119,10 +120,10 @@ export const MemberWithNumberFieldFieldArray = ({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col md:flex-row gap-4">
-        <Text className="flex gap-2 pt-1 text-2 text-neutral-11 text-nowrap">
+        <FormLabel className="text-2 text-neutral-11 gap-1 flex text-nowrap">
           Initial allocation
-          {hasZeroSupply && <RequirementMark />}
-        </Text>
+          {hasZeroSupply && <RequirementMark className="text-2" />}
+        </FormLabel>
         <div className="flex flex-col gap-2">
           {fields.map((field, index) => (
             <div key={field.id} className="flex items-center gap-2">

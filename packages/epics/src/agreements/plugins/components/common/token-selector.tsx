@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
   Image,
   RequirementMark,
+  FormLabel,
 } from '@hypha-platform/ui';
 import { Token } from './token-payout-field-array';
 
@@ -34,12 +35,10 @@ export const TokenSelector = ({
 
   return (
     <div className="flex justify-between w-full">
-      <span className="flex items-center gap-2">
-        <label className="text-2 text-neutral-11 flex items-center">
-          Token
-        </label>
+      <FormLabel className="text-2 text-neutral-11 gap-1 flex">
+        Token
         {showRequirementMark && <RequirementMark className="text-2" />}
-      </span>
+      </FormLabel>
       <div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
