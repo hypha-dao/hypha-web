@@ -54,7 +54,7 @@ export const AssetsSection: FC<AssetSectionProps> = ({
     : visibleAssets;
   const { isAuthenticated } = useAuthentication();
 
-  const isDisabled = !isAuthenticated || (!isMember && !isDelegate);
+  const isDisabled = !(isAuthenticated || isMember || isDelegate);
   const tooltipMessage = !isAuthenticated
     ? 'Please sign in to use this feature.'
     : !isMember && !isDelegate
