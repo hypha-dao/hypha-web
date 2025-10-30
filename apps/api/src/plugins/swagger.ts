@@ -1,46 +1,28 @@
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUI from '@fastify/swagger-ui';
-import YAML from 'yamljs';
-import path from 'path';
-import { API_PREFIX, API_VERSION } from '../constants';
+import { API_VERSION } from '../constants';
 
 export async function registerSwagger(app: FastifyInstance) {
-  const currentDir = path.dirname(__filename);
-  const specPath = path.join(
-    currentDir,
-    '..',
-    '..',
-    'docs',
-    API_VERSION,
-    'openapi.yaml',
-  );
-  const fallbackPath = path.join(currentDir, 'openapi.yaml');
-
-  const openApiSpec = (() => {
-    try {
-      return YAML.load(specPath);
-    } catch (error) {
-      console.error(
-        `Failed to load openapi specification from "${specPath}".`,
-        `Trying fallback path "${fallbackPath}".`,
-      );
-
-      return YAML.load(fallbackPath);
-    }
-  })();
-
-  // Dynamically prefix all paths with /api/v1
-  openApiSpec.paths = Object.fromEntries(
-    Object.entries(openApiSpec.paths).map(([key, val]) => [
-      `${API_PREFIX}${key}`,
-      val,
-    ]),
-  );
+  const servers =
+    process.env.NODE_ENV !== 'production'
+      ? [{ url: 'http://localhost:3001', description: 'Development server' }]
+      : [];
 
   await app.register(fastifySwagger, {
-    mode: 'static',
-    specification: { document: openApiSpec },
+    mode: 'dynamic',
+    openapi: {
+      openapi: '3.0.0',
+      info: {
+        title: 'Hypha API',
+        version: '1.0.0',
+      },
+      servers,
+      externalDocs: {
+        url: 'https://swagger.io',
+        description: 'Find more info here',
+      },
+    },
   });
 
   await app.register(fastifySwaggerUI, {

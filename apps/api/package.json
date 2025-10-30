@@ -20,11 +20,9 @@
     "fastify-plugin": "^5.1.0",
     "server-only": "^0.0.1",
     "typebox": "^1.0.41",
-    "viem": "^2.27.2",
-    "yamljs": "^0.3.0"
+    "viem": "^2.27.2"
   },
   "devDependencies": {
-    "@hypha-platform/config-typescript": "workspace:*",
-    "@types/yamljs": "^0.2.34"
+    "@hypha-platform/config-typescript": "workspace:*"
   }
 }
