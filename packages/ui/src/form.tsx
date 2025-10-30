@@ -186,7 +186,7 @@ const FormMessage = React.forwardRef<
       .map(([key, value], index) => (
         <FormMessageError
           key={`${formMessageId}-${key}-${index}`}
-          message={`"${key}": ${(value as FieldError).message}`}
+          message={(value as FieldError).message}
         />
       ))
   ) : (
