@@ -84,6 +84,6 @@ export const VoteProposalButton = ({
           </Button>
         );
     }
-  }, [proposalStatus, myVote, proposalDetails, isMember]);
+  }, [proposalStatus, myVote, proposalDetails, isMember, isDelegate]);
   return output;
 };
