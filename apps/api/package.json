@@ -7,9 +7,7 @@
   "author": "",
   "license": "ISC",
   "scripts": {
-    "codegen": "openapi --input docs/v1/openapi.yaml --output src/types/v1/generated --client fetch",
     "dev": "tsx src/server.ts",
-    "prebuild": "pnpm codegen",
     "build": "tsc",
     "start": "node dist/server.js"
   },
@@ -27,7 +25,6 @@
   },
   "devDependencies": {
     "@hypha-platform/config-typescript": "workspace:*",
-    "@types/yamljs": "^0.2.34",
-    "openapi-typescript-codegen": "^0.29.0"
+    "@types/yamljs": "^0.2.34"
   }
 }
