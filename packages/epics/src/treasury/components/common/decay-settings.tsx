@@ -22,7 +22,7 @@ const TIME_FORMAT_TO_SECONDS: Record<TimeFormat, number> = {
 };
 
 type DecaySettingsOutput = {
-  decayInterval: number;
+  decayInterval: number | string;
   decayPercentage: number;
 };
 
@@ -34,7 +34,7 @@ type DecaySettingsProps = {
 export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
   const initialTimeFormat = value
     ? (Object.entries(TIME_FORMAT_TO_SECONDS).find(
-        ([_, seconds]) => value.decayInterval % seconds === 0,
+        ([_, seconds]) => (value.decayInterval as number) % seconds === 0,
       )?.[0] as TimeFormat) || 'Weeks'
     : 'Weeks';
 
@@ -46,7 +46,8 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
     control,
     name: 'decayPeriod',
     defaultValue: value
-      ? value.decayInterval / TIME_FORMAT_TO_SECONDS[initialTimeFormat]
+      ? (value.decayInterval as number) /
+        TIME_FORMAT_TO_SECONDS[initialTimeFormat]
       : 0,
   });
 
@@ -62,7 +63,10 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
 
   const notifyChange = () => {
     if (onChange && !Number.isNaN(decayPeriod) && !Number.isNaN(decayPercent)) {
-      const decayInterval = decayPeriod * TIME_FORMAT_TO_SECONDS[timeFormat];
+      const decayInterval =
+        typeof decayPeriod === 'string'
+          ? ''
+          : decayPeriod * TIME_FORMAT_TO_SECONDS[timeFormat];
       onChange({
         decayInterval,
         decayPercentage: decayPercent,

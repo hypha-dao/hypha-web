@@ -254,18 +254,21 @@ export const schemaQuorumAndUnity = z.object({
 const decaySettingsSchema = z.object({
   decayInterval: z
     .number({
-      required_error: 'Decay interval is required',
-      invalid_type_error: 'Decay interval must be a number',
+      invalid_type_error: 'Please enter a voice decay frequency',
     })
-    .min(0, 'Decay interval must be greater or equal to 0'),
-
+    .refine((val) => val >= 1, {
+      message: 'Voice decay frequency must be greater than 0',
+    }),
   decayPercentage: z
     .number({
-      required_error: 'Decay percentage is required',
-      invalid_type_error: 'Decay percentage must be a number',
+      invalid_type_error: 'Please enter a voice decay percentage',
     })
-    .min(0, 'Decay percentage must be at least 0%')
-    .max(100, 'Decay percentage must not exceed 100%'),
+    .refine((val) => val >= 1, {
+      message: 'Voice decay percentage must be greater than 0',
+    })
+    .refine((val) => val <= 100, {
+      message: 'Decay percentage must not exceed 100%',
+    }),
 });
 
 export const schemaIssueNewToken = z.object({
