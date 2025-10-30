@@ -1,5 +1,5 @@
 import { Type, Static } from 'typebox';
-import { userVote } from '../user-vote';
+import { userVote } from '@schemas/proposal';
 
 const voter = Type.Object({
   name: Type.String(),
