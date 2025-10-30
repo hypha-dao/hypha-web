@@ -256,16 +256,12 @@ const decaySettingsSchema = z.object({
     .number({
       invalid_type_error: 'Please enter a voice decay frequency',
     })
-    .refine((val) => val >= 1, {
-      message: 'Voice decay frequency must be greater than 0',
-    }),
+    .positive({ message: 'Voice decay frequency must be greater than 0' }),
   decayPercentage: z
     .number({
       invalid_type_error: 'Please enter a voice decay percentage',
     })
-    .refine((val) => val >= 1, {
-      message: 'Voice decay percentage must be greater than 0',
-    })
+    .positive({ message: 'Voice decay percentage must be greater than 0' })
     .refine((val) => val <= 100, {
       message: 'Decay percentage must not exceed 100%',
     }),
