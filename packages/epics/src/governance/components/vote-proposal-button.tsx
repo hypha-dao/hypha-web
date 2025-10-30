@@ -1,5 +1,6 @@
 import {
   DocumentStatus,
+  useIsDelegate,
   useMyVote,
   useProposalDetailsWeb3Rpc,
 } from '@hypha-platform/core/client';
@@ -28,12 +29,15 @@ export const VoteProposalButton = ({
   const { isMember } = useJoinSpace({
     spaceId: web3SpaceId,
   });
+  const { isDelegate } = useIsDelegate({
+    spaceId: web3SpaceId,
+  });
   const output = React.useMemo(() => {
     const expired = proposalDetails?.expired;
     const executed = proposalDetails?.executed;
     const endTime = formatISO(new Date(proposalDetails?.endTime || new Date()));
     const needsDecision = isPast(new Date(endTime)) && !executed && !expired;
-    if (!isMember) {
+    if (!isMember && !isDelegate) {
       return null;
     }
     if (proposalStatus === 'onVoting' && needsDecision) {
@@ -80,6 +84,6 @@ export const VoteProposalButton = ({
           </Button>
         );
     }
-  }, [proposalStatus, myVote, proposalDetails, isMember]);
+  }, [proposalStatus, myVote, proposalDetails, isMember, isDelegate]);
   return output;
 };
