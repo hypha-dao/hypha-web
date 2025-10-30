@@ -1,10 +1,4 @@
 import { FastifyInstance } from 'fastify';
-import { z } from 'zod';
-import {
-  CreateProposalRequest,
-  VoteRequest,
-} from '../../../types/v1/generated';
-import { proposalDetailsMock, voteMock } from '../../../mocks';
 import { response, Response, query, Query } from './schema/get-proposals/';
 import {
   response as proposalIdResponse,
@@ -211,17 +205,8 @@ export default async function proposalsRoutes(app: FastifyInstance) {
   /**
    * POST /proposals
    */
-  app.post('/', async (request, reply) => {
-    const body = request.body as CreateProposalRequest;
-
-    const mockResponse = {
-      ...proposalDetailsMock,
-      id: 2,
-      title: body.title,
-      details: body.details,
-    };
-
-    return reply.send(mockResponse);
+  app.post('/', async (_, reply) => {
+    return reply.code(500).send({ message: 'Not implemented yet' });
   });
 
   /**
@@ -429,16 +414,7 @@ export default async function proposalsRoutes(app: FastifyInstance) {
   /**
    * POST /proposals/:id/vote
    */
-  app.post('/:id/vote', async (request, reply) => {
-    const params = z.object({ id: z.coerce.number() }).parse(request.params);
-    const body = request.body as VoteRequest;
-
-    const mockResponse = {
-      ...voteMock,
-      user_vote: body.vote,
-      proposal_id: params.id,
-    };
-
-    return reply.send(mockResponse);
+  app.post('/:id/vote', async (_, reply) => {
+    return reply.code(500).send({ message: 'Not implemented yet' });
   });
 }
