@@ -80,8 +80,6 @@ export const IssueNewTokenForm = ({
     mode: 'onChange',
   });
 
-  console.log('form', form);
-
   const { tokens: dbTokens, refetchDbTokens } = useDbTokens();
 
   React.useEffect(() => {
