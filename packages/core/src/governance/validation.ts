@@ -262,7 +262,7 @@ const decaySettingsSchema = z.object({
       invalid_type_error: 'Please enter a voice decay percentage',
     })
     .positive({ message: 'Voice decay percentage must be greater than 0' })
-    .refine((val) => val <= 100, {
+    .lte(100, {
       message: 'Decay percentage must not exceed 100%',
     }),
 });
