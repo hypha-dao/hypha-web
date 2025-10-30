@@ -14,19 +14,19 @@ import {
   Params as GetProposalVotersParams,
   Query as GetProposalVotersQuery,
 } from './schema/get-proposals-id-voters';
-import type { State } from './schema';
-import { newDbClient } from '../../../plugins/db-client';
+import type { State } from '@schemas/proposal';
+import { newDbClient } from '@plugins/db-client';
 import {
   findAllDocumentsBySpaceId,
   findDocumentById,
   peopleByAddresses,
   findDocumentWeb3Id,
-} from '../../../plugins/db-queries';
-import { type Environment } from '../../../schemas/';
+} from '@plugins/db-queries';
+import { type Environment } from '@schemas/env';
 import {
   daoProposalsImplementationAbi,
   daoProposalsImplementationAddress,
-} from '../../../plugins/web3-abi';
+} from '@plugins/web3-abi';
 
 export default async function proposalsRoutes(app: FastifyInstance) {
   const {

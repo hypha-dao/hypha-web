@@ -1,5 +1,5 @@
 import { Type, Static } from 'typebox';
-import { state } from '../state';
+import { state } from '@schemas/proposal';
 
 export const query = Type.Object({
   dao_id: Type.Optional(Type.Integer({ minimum: 0 })),
