@@ -4,7 +4,16 @@ import '@openzeppelin/hardhat-upgrades';
 import 'hardhat-deploy';
 
 const config: HardhatUserConfig = {
-  solidity: '0.8.28',
+  solidity: {
+    version: '0.8.28',
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200,
+      },
+      viaIR: true,
+    },
+  },
   gasReporter: {
     enabled: process.env.REPORT_GAS ? true : false,
   },
