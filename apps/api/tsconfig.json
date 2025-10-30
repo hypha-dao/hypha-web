@@ -18,7 +18,7 @@
       "@plugins/*": ["./src/plugins/*"],
       "@routes/*": ["./src/routes/*"],
       "@schemas/*": ["./src/schemas/*"],
-      "@types/*": ["./src/types/*"]
+      "@common/*": ["./src/common/*"]
     }
   },
   "include": ["**/*.ts"],

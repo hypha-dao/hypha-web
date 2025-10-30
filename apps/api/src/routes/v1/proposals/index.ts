@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import type { CreateProposalRequest, VoteRequest } from '@types/v1/generated';
+import type { CreateProposalRequest, VoteRequest } from '@common/v1/generated';
 import { proposalDetailsMock, voteMock } from '@mocks/index';
 import { response, Response, query, Query } from './schema/get-proposals/';
 import {
