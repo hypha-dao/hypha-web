@@ -1,4 +1,4 @@
-import { eq, sql, and } from 'drizzle-orm';
+import { eq, sql, and, inArray } from 'drizzle-orm';
 
 import {
   documents,
@@ -147,4 +147,53 @@ export const findDocumentById = async (
         result[0].spaceCreator ?? undefined,
       )
     : null;
+};
+
+export const findDocumentWeb3Id = async (
+  { id }: { id: number },
+  { db }: DbConfig,
+) => {
+  const [res] = await db
+    .select({
+      web3Id: documents.web3ProposalId,
+    })
+    .from(documents)
+    .where(eq(documents.id, id))
+    .limit(1);
+
+  return res?.web3Id || null;
+};
+
+export const peopleByAddresses = async (
+  { addresses }: { addresses: `0x${string}`[] },
+  { db, pagination }: DbConfig & { pagination: PaginationParams<DbPerson> },
+) => {
+  const { pageSize = 20, offset = 0 } = pagination;
+  const upperAddresses = addresses.map((addr) => addr.toUpperCase());
+
+  const res = await db
+    .select({
+      name: people.name,
+      surname: people.surname,
+      avatarUrl: people.avatarUrl,
+      address: people.address,
+      total: sql<number>`cast(count(*) over() as integer)`,
+    })
+    .from(people)
+    .where(inArray(sql<string>`upper(${people.address})`, upperAddresses))
+    .limit(pageSize)
+    .offset(offset)
+    .groupBy(people.name, people.surname, people.avatarUrl, people.address);
+
+  const total = res.at(0)?.total ?? 0;
+  const data = res.map(({ total, ...rest }) => ({ ...rest }));
+
+  return {
+    data,
+    meta: {
+      total,
+      limit: pageSize,
+      offset,
+    },
+  };
 };

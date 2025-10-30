@@ -4,11 +4,7 @@ import {
   CreateProposalRequest,
   VoteRequest,
 } from '../../../types/v1/generated';
-import {
-  proposalDetailsMock,
-  proposalVotesMock,
-  voteMock,
-} from '../../../mocks';
+import { proposalDetailsMock, voteMock } from '../../../mocks';
 import { response, Response, query, Query } from './schema/get-proposals/';
 import {
   response as proposalIdResponse,
@@ -16,11 +12,21 @@ import {
   params as proposalIdParams,
   type Params as ProposalIdParams,
 } from './schema/get-proposals-id';
+import {
+  response as getProposalVotersResponse,
+  params as getProposalVotersParams,
+  query as getProposalVotersQuery,
+  Response as GetProposalVotersResponse,
+  Params as GetProposalVotersParams,
+  Query as GetProposalVotersQuery,
+} from './schema/get-proposals-id-voters';
 import type { State } from './schema';
 import { newDbClient } from '../../../plugins/db-client';
 import {
   findAllDocumentsBySpaceId,
   findDocumentById,
+  peopleByAddresses,
+  findDocumentWeb3Id,
 } from '../../../plugins/db-queries';
 import { type Environment } from '../../../schemas/';
 import {
@@ -334,16 +340,91 @@ export default async function proposalsRoutes(app: FastifyInstance) {
   /**
    * GET /proposals/:id/votes
    */
-  app.get('/:id/votes', async (request, reply) => {
-    const params = z.object({ id: z.coerce.number() }).parse(request.params);
+  app.get<{
+    Reply: GetProposalVotersResponse;
+    Params: GetProposalVotersParams;
+    Querystring: GetProposalVotersQuery;
+  }>(
+    '/:id/votes',
+    {
+      schema: {
+        params: getProposalVotersParams,
+        querystring: getProposalVotersQuery,
+        response: { '2xx': getProposalVotersResponse },
+      },
+    },
+    async (request) => {
+      const { id } = request.params;
+      const { limit, offset } = request.query;
 
-    const mockResponse = {
-      ...proposalVotesMock,
-      proposal_id: params.id,
-    };
+      const web3Id = await findDocumentWeb3Id({ id }, { db });
 
-    return reply.send(mockResponse);
-  });
+      const web3Data = await (async () => {
+        const client = app.web3Client;
+
+        // TODO: use a proper default
+        const chainId = client.chain?.id || 8453;
+        type ChainId = keyof typeof daoProposalsImplementationAddress;
+        const contractAddress =
+          chainId in daoProposalsImplementationAddress &&
+          daoProposalsImplementationAddress[chainId as ChainId];
+        if (!contractAddress) {
+          console.error('Contract address was not found');
+
+          return;
+        }
+
+        if (!web3Id) {
+          console.error('Missing proposal web3Id for', id, 'proposal');
+
+          return;
+        }
+
+        try {
+          return await client.readContract({
+            address: contractAddress,
+            abi: daoProposalsImplementationAbi,
+            functionName: 'getProposalVoters',
+            args: [BigInt(web3Id)],
+          });
+        } catch (e) {
+          console.error('Error fetching proposal details:', e);
+        }
+      })();
+      if (!web3Data) {
+        // TODO: implement proper return
+        throw new Error('Internal server error');
+      }
+
+      const [yesVoters, noVoters] = web3Data;
+
+      const addresses = yesVoters.concat(noVoters);
+      const people = peopleByAddresses(
+        { addresses },
+        {
+          pagination: { pageSize: limit, offset },
+          db,
+        },
+      );
+
+      const votes = new Map<string, 'yes' | 'no'>();
+      yesVoters.forEach((addr) => votes.set(addr.toLowerCase(), 'yes'));
+      noVoters.forEach((addr) => votes.set(addr.toLowerCase(), 'no'));
+
+      const { data, meta } = await people;
+
+      const voters = data.map((person) => ({
+        name: person.name || '',
+        surname: person.surname || '',
+        avatarUrl: person.avatarUrl,
+        address: person.address || '',
+        vote: votes.get(person.address?.toLowerCase() ?? '') || null,
+        timestamp: null,
+      }));
+
+      return { voters, meta };
+    },
+  );
 
   /**
    * POST /proposals/:id/vote
