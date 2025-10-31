@@ -17,6 +17,7 @@ import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter } from 'next/navigation';
 import { useSpaceDetailsWeb3Rpc } from '@hypha-platform/core/client';
+import { VOTING_METHOD_TYPES } from '../hooks';
 
 type FormValues = z.infer<typeof schemaCreateProposalChangeVotingMethod>;
 
@@ -103,9 +104,9 @@ export const CreateProposalChangeVotingMethodForm = ({
       form.setValue('quorumAndUnity.unity', unity);
       form.setValue('votingMethod', votingMethod);
 
-      if (votingMethod === '1t1v') {
+      if (votingMethod === VOTING_METHOD_TYPES[1]) {
         form.setValue('token', votingPowerToken);
-      } else if (votingMethod === '1v1v') {
+      } else if (votingMethod === VOTING_METHOD_TYPES[3]) {
         form.setValue('token', voicePowerToken);
       }
     }
