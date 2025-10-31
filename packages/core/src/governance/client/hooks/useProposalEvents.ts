@@ -1,8 +1,15 @@
 'use client';
 
-import { useEffect } from 'react';
-import { daoProposalsImplementationConfig } from '@hypha-platform/core/generated';
-import { publicClient, useCreateEvent } from '@hypha-platform/core/client';
+import { useEffect, useState } from 'react';
+import {
+  daoProposalsImplementationConfig,
+  daoSpaceFactoryImplementationConfig,
+} from '@hypha-platform/core/generated';
+import {
+  publicClient,
+  useCreateEvent,
+  useSpacesByWeb3Ids,
+} from '@hypha-platform/core/client';
 import { useProposalActions } from './useProposalActions';
 import { useTokenManagement } from './useTokenManagement';
 import { useTokenDeploymentWatcher } from './useTokenDeploymentWatcher';
@@ -36,6 +43,11 @@ export const useProposalEvents = ({
   });
   const { fetchProposalActions, isValidProposalAction } = useProposalActions();
   const { createEvent } = useCreateEvent({ authToken });
+  const [joinState, setJoinState] = useState<{
+    web3spaceIds: bigint[];
+    memberAddress?: `0x${string}`;
+  }>({ web3spaceIds: [] });
+  const { spaces } = useSpacesByWeb3Ids(joinState.web3spaceIds, false);
 
   useEffect(() => {
     if (!documentId || !proposalId || !authToken) {
@@ -171,10 +183,30 @@ export const useProposalEvents = ({
       },
     });
 
+    const unwatchMemberJoined = publicClient.watchContractEvent({
+      address: daoSpaceFactoryImplementationConfig.address[8453],
+      abi: daoSpaceFactoryImplementationConfig.abi,
+      eventName: 'MemberJoined',
+      onLogs: async (logs) => {
+        for (const log of logs) {
+          try {
+            const web3SpaceId = log.args.spaceId;
+            const memberAddress = log.args.memberAddress;
+            if (web3SpaceId && memberAddress) {
+              setJoinState({ web3spaceIds: [web3SpaceId], memberAddress });
+            }
+          } catch (error) {
+            console.error('Error handling MemberJoined event:', error);
+          }
+        }
+      },
+    });
+
     return () => {
       unwatchExecuted();
       unwatchRejected();
       unwatchExpired();
+      unwatchMemberJoined();
     };
   }, [
     documentId,
@@ -190,6 +222,37 @@ export const useProposalEvents = ({
     onProposalExecuted,
     onProposalRejected,
   ]);
+
+  useEffect(() => {
+    if (
+      joinState.web3spaceIds.length > 0 &&
+      joinState.memberAddress &&
+      spaces?.length > 0
+    ) {
+      const createJoinSpaceEvent = async ({
+        spaceId,
+        memberAddress,
+      }: {
+        spaceId: number;
+        memberAddress: string;
+      }) => {
+        await createEvent({
+          type: 'joinSpace',
+          referenceEntity: 'space',
+          referenceId: spaceId,
+          parameters: { memberAddress },
+        });
+        setJoinState({ web3spaceIds: [] });
+      };
+      const [space] = spaces;
+      if (space?.id) {
+        createJoinSpaceEvent({
+          spaceId: space.id,
+          memberAddress: joinState.memberAddress,
+        });
+      }
+    }
+  }, [joinState, spaces]);
 
   return {
     isDeletingToken,
