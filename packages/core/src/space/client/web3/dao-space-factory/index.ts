@@ -22,3 +22,4 @@ export * from './get-delegate';
 export * from './get-spaces-for-delegate';
 export * from './get-space-token-requirements';
 export * from './get-space-min-proposal-duration';
+export * from './get-voice-tokens-voting-power';
