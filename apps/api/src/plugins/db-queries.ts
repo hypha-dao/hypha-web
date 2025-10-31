@@ -13,8 +13,8 @@ import type {
   CreatorType,
   Document,
   DocumentState,
-} from '../types/v1/db';
-import type { PaginationParams, FilterParams } from '../types/meta';
+} from '@common/v1/db';
+import type { PaginationParams, FilterParams } from '@common/meta';
 import { alias } from 'drizzle-orm/pg-core';
 
 export const mapToDocument = (

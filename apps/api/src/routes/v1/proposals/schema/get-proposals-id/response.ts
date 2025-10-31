@@ -1,7 +1,5 @@
 import { Type, Static } from 'typebox';
-import { summary } from '../summary';
-import { commitment } from '../commitment';
-import { payment } from '../payment';
+import { summary, commitment, payment } from '@schemas/proposal';
 
 export const response = Type.Object({
   ...summary.properties,
