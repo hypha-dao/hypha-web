@@ -39,7 +39,7 @@ export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
         count={totalBalance || 0}
         label="Balance"
         hasSearch
-        searchPlaceholder="Search assets by name, symbol, or address..."
+        searchPlaceholder="Search tokens"
         onChangeSearch={setSearchTerm}
       >
         <label className="flex items-center gap-1">
