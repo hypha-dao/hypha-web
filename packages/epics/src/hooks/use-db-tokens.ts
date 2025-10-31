@@ -16,7 +16,7 @@ type Token = {
   isVotingToken: boolean;
   decayInterval?: number;
   decayPercentage?: number;
-  createdAt: string;
+  createdAt: Date;
   documentCount: number;
   address?: string;
 };

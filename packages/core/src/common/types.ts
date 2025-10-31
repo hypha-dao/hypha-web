@@ -48,4 +48,5 @@ export type DbToken = {
   isVotingToken: boolean;
   address?: string;
   agreementWeb3Id?: number;
+  createdAt?: Date;
 };

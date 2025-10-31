@@ -37,6 +37,7 @@ import { isPast } from 'date-fns';
 import { useState, useEffect } from 'react';
 
 type ProposalDetailProps = ProposalHeadProps & {
+  documentId?: number;
   content?: string;
   closeUrl: string;
   leadImage?: string;
@@ -61,6 +62,7 @@ type DocumentsArrays = {
 };
 
 export const ProposalDetail = ({
+  documentId,
   creator,
   title,
   commitment,
@@ -111,6 +113,7 @@ export const ProposalDetail = ({
     isDeletingToken,
     isUpdatingToken,
   } = useVote({
+    documentId,
     proposalId,
     tokenSymbol,
     authToken,
@@ -247,7 +250,10 @@ export const ProposalDetail = ({
           status={status}
           isLoading={isLoading}
           label={label}
-          createDate={formatDate(proposalDetails?.startTime ?? new Date())}
+          createDate={formatDate(
+            proposalDetails?.startTime ?? new Date(),
+            true,
+          )}
           proposalStatus={proposalStatus}
         />
         <ButtonClose closeUrl={closeUrl} />

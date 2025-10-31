@@ -30,6 +30,7 @@ import {
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
 import { Breadcrumbs } from './_components/breadcrumbs';
+import { formatDate } from '@hypha-platform/ui-utils';
 
 export default async function DhoLayout({
   aside,
@@ -119,17 +120,26 @@ export default async function DhoLayout({
         <div className="mt-6">
           <Text className="text-2">{spaceFromDb.description}</Text>
         </div>
-        <div className="flex gap-4 items-center mt-6 flex-wrap">
-          <div className="flex">
-            <div className="font-bold text-1">{spaceMembers}</div>
-            <div className="text-gray-500 ml-1 text-1">Members</div>
-          </div>
-          <div className="flex">
-            <div className="font-bold text-1">
-              {/* @ts-ignore: TODO: infer types from relations */}
-              {spaceAgreements}
+        <div className="flex gap-4 items-start mt-6 flex-wrap">
+          <div className="flex flex-col gap-y-2 gap-x-4">
+            <div className="flex flex-row gap-y-2 gap-x-4">
+              <div className="flex">
+                <div className="font-bold text-1">{spaceMembers}</div>
+                <div className="text-gray-500 ml-1 text-1">Members</div>
+              </div>
+              <div className="flex">
+                <div className="font-bold text-1">
+                  {/* @ts-ignore: TODO: infer types from relations */}
+                  {spaceAgreements}
+                </div>
+                <div className="text-gray-500 ml-1 text-1">Agreements</div>
+              </div>
             </div>
-            <div className="text-gray-500 ml-1 text-1">Agreements</div>
+            <div className="flex">
+              <div className="text-gray-500 text-1">
+                Created on {formatDate(spaceFromDb.createdAt, true)}
+              </div>
+            </div>
           </div>
           <SubscriptionBadge web3SpaceId={spaceFromDb.web3SpaceId as number} />
           <SpaceModeLabel
@@ -178,6 +188,7 @@ export default async function DhoLayout({
                           lang,
                           space.slug,
                         )}/space-configuration`}
+                        createdAt={space.createdAt}
                       />
                     </Link>
                   </CarouselItem>

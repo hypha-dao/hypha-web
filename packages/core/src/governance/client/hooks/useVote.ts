@@ -6,10 +6,12 @@ import { useJoinSpaceProposalHandler } from '@hypha-platform/core/client';
 import { useCallback } from 'react';
 
 export const useVote = ({
+  documentId,
   proposalId,
   tokenSymbol,
   authToken,
 }: {
+  documentId?: number | null;
   proposalId?: number | null;
   tokenSymbol?: string | null;
   authToken?: string | null;
@@ -32,6 +34,7 @@ export const useVote = ({
   );
 
   const { isDeletingToken, isUpdatingToken } = useProposalEvents({
+    documentId,
     proposalId,
     tokenSymbol,
     authToken,

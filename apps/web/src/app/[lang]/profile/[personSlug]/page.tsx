@@ -75,6 +75,7 @@ export default async function ProfilePage(props: PageProps) {
             location={person?.location ?? ''}
             email={person?.email ?? ''}
             slug={person?.slug ?? ''}
+            createdAt={person?.createdAt}
             exportEmbeddedWallet={true}
           />
           <Separator />
