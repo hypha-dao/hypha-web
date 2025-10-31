@@ -26,7 +26,6 @@ import React from 'react';
 
 export type MemberCardProps = {
   spaceId?: number;
-  id?: number;
   name?: string;
   surname?: string;
   nickname?: string;
@@ -35,12 +34,12 @@ export type MemberCardProps = {
   status?: string;
   isLoading?: boolean;
   minimize?: boolean;
+  address?: string;
   // isDelegate?: boolean;
 };
 
 export const MemberCard: React.FC<MemberCardProps> = ({
   spaceId,
-  id,
   name,
   surname,
   nickname,
@@ -49,6 +48,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   status,
   isLoading,
   minimize,
+  address,
   // isDelegate,
 }) => {
   // const { id: spaceSlug } = useParams();
@@ -67,20 +67,22 @@ export const MemberCard: React.FC<MemberCardProps> = ({
 
   const { events, isLoadingEvents } = useEvents({
     type: 'joinSpace',
-    referenceId: id,
-    referenceEntity: 'person',
+    referenceId: spaceId,
+    referenceEntity: 'space',
   });
 
   const joinEvent = React.useMemo(() => {
-    if (!spaceId || isLoadingEvents || !events) {
+    if (!address || isLoadingEvents || !events) {
       return undefined;
     }
     if (events.length === 0) {
       return undefined;
     }
-    const event = events.find((el) => el.parameters?.['spaceId'] === spaceId);
+    const event = events.find(
+      (el) => el.parameters?.['memberAddress'] === address,
+    );
     return event;
-  }, [spaceId, events, isLoadingEvents]);
+  }, [address, events, isLoadingEvents]);
 
   return (
     <Card className="w-full h-full p-5 mb-2 flex items-center">

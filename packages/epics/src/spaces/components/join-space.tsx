@@ -83,14 +83,14 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
 
   const createJoinEvent = React.useCallback(
     async ({ spaceId, person }: { spaceId: number; person: Person }) => {
-      if (!spaceId || !person?.id) {
+      if (!spaceId || !person?.address) {
         return;
       }
       await createEvent({
         type: 'joinSpace',
-        referenceEntity: 'person',
-        referenceId: person.id,
-        parameters: { spaceId },
+        referenceEntity: 'space',
+        referenceId: spaceId,
+        parameters: { memberAddress: person.address },
       });
     },
     [createEvent],
