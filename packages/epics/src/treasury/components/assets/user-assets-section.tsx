@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useState } from 'react';
+import { FC } from 'react';
 import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 import { Empty } from '../../../common';
 import { useUserAssetsSection } from '../../hooks/use-user-assets-section';
@@ -21,25 +21,27 @@ export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
   isMyProfile,
 }) => {
   const {
-    visibleAssets,
+    filteredAssets,
     activeFilter,
     isLoading,
     loadMore,
     hasMore,
     totalBalance,
-  } = useUserAssetsSection({
-    personSlug,
-  });
-
-  const [hideSmallBalances, setHideSmallBalances] = useState(false);
-
-  const filteredAssets = hideSmallBalances
-    ? visibleAssets.filter((asset) => asset.value >= 1)
-    : visibleAssets;
+    searchTerm,
+    setSearchTerm,
+    hideSmallBalances,
+    setHideSmallBalances,
+  } = useUserAssetsSection({ personSlug });
 
   const renderFilterAndButtons = () => (
     <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-2">
-      <SectionFilter count={totalBalance || 0} label="Balance">
+      <SectionFilter
+        count={totalBalance || 0}
+        label="Balance"
+        hasSearch
+        searchPlaceholder="Search assets by name, symbol, or address..."
+        onChangeSearch={setSearchTerm}
+      >
         <label className="flex items-center gap-1">
           <Input
             type="checkbox"
@@ -79,13 +81,15 @@ export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
           isLoading={isLoading}
         />
       )}
-      <SectionLoadMore
-        onClick={loadMore}
-        disabled={!hasMore}
-        isLoading={isLoading}
-      >
-        {hasMore ? 'Load more assets' : 'No more assets'}
-      </SectionLoadMore>
+      {hasMore && filteredAssets.length >= 9 && !searchTerm.trim() && (
+        <SectionLoadMore
+          onClick={loadMore}
+          disabled={!hasMore}
+          isLoading={isLoading}
+        >
+          Load more assets
+        </SectionLoadMore>
+      )}
     </div>
   );
 };
