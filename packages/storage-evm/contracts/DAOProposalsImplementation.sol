@@ -184,9 +184,6 @@ contract DAOProposalsImplementation is
       params.transactions.length > 0 ? params.transactions[0].data : bytes('')
     );
 
-    // Automatically record creator's "yes" vote
-    _recordVote(proposalId, msg.sender, true);
-
     return proposalId;
   }
 
@@ -195,55 +192,6 @@ contract DAOProposalsImplementation is
   ) public view override returns (uint256) {
     ProposalCore storage proposal = proposalsCoreData[_proposalId];
     return proposal.startTime + proposal.duration;
-  }
-
-  function _recordVote(
-    uint256 _proposalId,
-    address _voter,
-    bool _support
-  ) internal {
-    uint256 votingPower = _getVoterPower(_proposalId, _voter);
-    if (votingPower == 0) revert NoPower();
-
-    ProposalCore storage proposal = proposalsCoreData[_proposalId];
-    proposal.hasVoted[_voter] = true;
-    proposal.votingPowerAtSnapshot[_voter] = votingPower;
-
-    if (_support) {
-      proposal.yesVotes += votingPower;
-      proposalYesVoters[_proposalId].push(_voter);
-    } else {
-      proposal.noVotes += votingPower;
-      proposalNoVoters[_proposalId].push(_voter);
-    }
-
-    emit VoteCast(_proposalId, _voter, _support, votingPower);
-    checkAndExecuteProposal(_proposalId);
-  }
-
-  function _getVoterPower(
-    uint256 _proposalId,
-    address _voter
-  ) internal returns (uint256) {
-    ProposalCore storage proposal = proposalsCoreData[_proposalId];
-
-    (, , uint256 votingPowerSourceId, , , , , , , ) = spaceFactory
-      .getSpaceDetails(proposal.spaceId);
-
-    address votingPowerSourceAddr = directoryContract
-      .getVotingPowerSourceContract(votingPowerSourceId);
-
-    if (votingPowerSourceId == 3) {
-      return
-        IDecayTokenVotingPower(votingPowerSourceAddr)
-          .applyDecayAndGetVotingPower(_voter, proposal.spaceId);
-    } else {
-      return
-        IVotingPowerSource(votingPowerSourceAddr).getVotingPower(
-          _voter,
-          proposal.spaceId
-        );
-    }
   }
 
   function vote(uint256 _proposalId, bool _support) external override {
@@ -265,7 +213,48 @@ contract DAOProposalsImplementation is
       }
     }
 
-    _recordVote(_proposalId, msg.sender, _support);
+    (, , uint256 votingPowerSourceId, , , , , , , ) = spaceFactory
+      .getSpaceDetails(proposal.spaceId);
+
+    address votingPowerSourceAddr = directoryContract
+      .getVotingPowerSourceContract(votingPowerSourceId);
+
+    uint256 votingPower;
+
+    if (votingPowerSourceId == 3) {
+      IDecayTokenVotingPower decayVotingPowerSource = IDecayTokenVotingPower(
+        votingPowerSourceAddr
+      );
+      votingPower = decayVotingPowerSource.applyDecayAndGetVotingPower(
+        msg.sender,
+        proposal.spaceId
+      );
+    } else {
+      IVotingPowerSource votingPowerSource = IVotingPowerSource(
+        votingPowerSourceAddr
+      );
+      votingPower = votingPowerSource.getVotingPower(
+        msg.sender,
+        proposal.spaceId
+      );
+    }
+
+    if (votingPower == 0) revert NoPower();
+
+    proposal.hasVoted[msg.sender] = true;
+    proposal.votingPowerAtSnapshot[msg.sender] = votingPower;
+
+    if (_support) {
+      proposal.yesVotes += votingPower;
+      proposalYesVoters[_proposalId].push(msg.sender);
+    } else {
+      proposal.noVotes += votingPower;
+      proposalNoVoters[_proposalId].push(msg.sender);
+    }
+
+    emit VoteCast(_proposalId, msg.sender, _support, votingPower);
+
+    checkAndExecuteProposal(_proposalId);
   }
 
   function checkAndExecuteProposal(uint256 _proposalId) internal {

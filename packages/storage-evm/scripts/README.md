@@ -10,12 +10,23 @@ npx nx run storage-evm:script ./scripts/dao-space-factory-proxy.deploy.ts --netw
 
 ```bash
 npx nx run storage-evm:script ./scripts/dao-proposals-proxy.deploy.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/dao-proposals-proxy.deploy.ts --network base-mainnet
+
 ```
 
 ### decaying-token-factory-proxy.deploy
-
+decaying-space-token-proxy.deploy.ts
 ```bash
+
+npx nx run storage-evm:script ./scripts/decaying-space-token-proxy.deploy.ts --network base-mainnet
+
 npx nx run storage-evm:script ./scripts/decaying-token-factory-proxy.deploy.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/decaying-token-factory.upgrade.ts --network base-mainnet
+
+decaying-token-factory.upgrade.ts
+
 npx nx run storage-evm:script ./scripts/energy-distribution.upgrade.ts --network base-mainnet
 npx nx run storage-evm:script ./scripts/energy-token.deploy.ts --network base-mainnet
 

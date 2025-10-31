@@ -171,11 +171,14 @@ contract DAOSpaceFactoryImplementation is
     }
   }
 
-  function addMember(
-    uint256 _spaceId,
-    address _memberAddress
-  ) external onlySpaceExecutor(_spaceId) {
+  function addMember(uint256 _spaceId, address _memberAddress) external {
     //require(_spaceId > 0 && _spaceId <= spaceCounter, 'Invalid space ID');
+
+    // Allow either the space executor or contract owner to add members
+    require(
+      msg.sender == spaces[_spaceId].executor || msg.sender == owner(),
+      'Not authorized: only executor or owner'
+    );
 
     Space storage space = spaces[_spaceId];
 

@@ -10,7 +10,8 @@ import './RegularSpaceToken.sol';
  */
 contract DecayingSpaceToken is Initializable, RegularSpaceToken {
   // Decay configuration
-  uint256 public decayRate; // Decay rate in seconds
+  uint256 public decayPercentage; // Decay percentage in basis points (0-10000)
+  uint256 public decayRate; // Decay interval in seconds
   mapping(address => uint256) public lastApplied;
 
   // Track token holders for decayed total supply calculation
@@ -59,7 +60,8 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
       'DecayingSpaceToken: decay interval must be positive'
     );
 
-    decayRate = _decayInterval; // Assuming decayRate is the interval
+    decayPercentage = _decayPercentage;
+    decayRate = _decayInterval;
   }
 
   /**
@@ -103,10 +105,7 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
     }
 
     // Apply decay formula: balance * (1 - decayPercentage/10000)^periodsPassed
-    // The original code had decayPercentage, but it's not defined in the new_code.
-    // Assuming decayPercentage is meant to be decayRate for now, or it's a placeholder.
-    // For now, I'll use decayRate as the decay factor.
-    uint256 factor = 10000 - decayRate; // e.g. 9900
+    uint256 factor = 10000 - decayPercentage; // e.g. 9900 for 1% decay
     uint256 acc = 10000; // 100%
     uint256 n = periodsPassed;
     while (n > 0) {

@@ -7,7 +7,7 @@ interface ParsedArgs {
   spaceId?: number;
 }
 
-const regularTokenFactoryAbi = [
+const tokenFactoryAbi = [
   {
     inputs: [
       {
@@ -74,31 +74,79 @@ async function main(): Promise<void> {
   // Contract addresses
   const REGULAR_TOKEN_FACTORY_ADDRESS =
     '0x95A33EC94de2189893884DaD63eAa19f7390144a'; // RegularTokenFactory Proxy
+  const DECAYING_TOKEN_FACTORY_ADDRESS =
+    '0x299f4D2327933c1f363301dbd2a28379ccD5539b'; // DecayingTokenFactory Proxy
+  const OWNERSHIP_TOKEN_FACTORY_ADDRESS =
+    '0xA1eDf096B72226ae2f7BDEb12E9c9C82152BccB6'; // OwnershipTokenFactory Proxy
 
   // Connect to the network
   const rpcUrl = process.env.RPC_URL || 'https://base-rpc.publicnode.com';
   const provider = new ethers.JsonRpcProvider(rpcUrl);
 
-  // Get the contract instance
+  // Get contract instances
   const regularTokenFactory = new ethers.Contract(
     REGULAR_TOKEN_FACTORY_ADDRESS,
-    regularTokenFactoryAbi,
+    tokenFactoryAbi,
+    provider,
+  );
+
+  const decayingTokenFactory = new ethers.Contract(
+    DECAYING_TOKEN_FACTORY_ADDRESS,
+    tokenFactoryAbi,
+    provider,
+  );
+
+  const ownershipTokenFactory = new ethers.Contract(
+    OWNERSHIP_TOKEN_FACTORY_ADDRESS,
+    tokenFactoryAbi,
     provider,
   );
 
   try {
     console.log(`Querying tokens for Space ID: ${spaceId}\n`);
 
-    const tokenAddresses = await regularTokenFactory.getSpaceToken(spaceId);
+    // Query all three factories in parallel
+    const [regularTokens, decayingTokens, ownershipTokens] = await Promise.all([
+      regularTokenFactory.getSpaceToken(spaceId),
+      decayingTokenFactory.getSpaceToken(spaceId),
+      ownershipTokenFactory.getSpaceToken(spaceId),
+    ]);
+
+    const totalTokens =
+      regularTokens.length + decayingTokens.length + ownershipTokens.length;
 
     console.log(`=== Space ${spaceId} Tokens ===`);
-    console.log(`Number of tokens: ${tokenAddresses.length}`);
+    console.log(`Total tokens: ${totalTokens}`);
+    console.log('');
 
-    if (tokenAddresses.length === 0) {
-      console.log('No tokens found for this space');
+    // Display Regular Tokens
+    console.log(`Regular Tokens: ${regularTokens.length}`);
+    if (regularTokens.length === 0) {
+      console.log('  No regular tokens found');
     } else {
-      console.log('\nToken Addresses:');
-      tokenAddresses.forEach((address: string, index: number) => {
+      regularTokens.forEach((address: string, index: number) => {
+        console.log(`  ${index + 1}. ${address}`);
+      });
+    }
+    console.log('');
+
+    // Display Decaying Tokens
+    console.log(`Decaying Tokens: ${decayingTokens.length}`);
+    if (decayingTokens.length === 0) {
+      console.log('  No decaying tokens found');
+    } else {
+      decayingTokens.forEach((address: string, index: number) => {
+        console.log(`  ${index + 1}. ${address}`);
+      });
+    }
+    console.log('');
+
+    // Display Ownership Tokens
+    console.log(`Ownership Tokens: ${ownershipTokens.length}`);
+    if (ownershipTokens.length === 0) {
+      console.log('  No ownership tokens found');
+    } else {
+      ownershipTokens.forEach((address: string, index: number) => {
         console.log(`  ${index + 1}. ${address}`);
       });
     }
