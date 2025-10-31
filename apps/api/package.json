@@ -7,9 +7,7 @@
   "author": "",
   "license": "ISC",
   "scripts": {
-    "codegen": "openapi --input docs/v1/openapi.yaml --output src/types/v1/generated --client fetch",
     "dev": "tsx src/server.ts",
-    "prebuild": "pnpm codegen",
     "build": "tsc",
     "start": "node dist/server.js"
   },
@@ -22,12 +20,9 @@
     "fastify-plugin": "^5.1.0",
     "server-only": "^0.0.1",
     "typebox": "^1.0.41",
-    "viem": "^2.27.2",
-    "yamljs": "^0.3.0"
+    "viem": "^2.27.2"
   },
   "devDependencies": {
-    "@hypha-platform/config-typescript": "workspace:*",
-    "@types/yamljs": "^0.2.34",
-    "openapi-typescript-codegen": "^0.29.0"
+    "@hypha-platform/config-typescript": "workspace:*"
   }
 }
