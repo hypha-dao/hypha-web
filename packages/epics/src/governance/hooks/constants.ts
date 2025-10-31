@@ -6,3 +6,9 @@ export const VOTING_METHOD_TEMPLATES = [
   { title: 'Consent', quorum: 0, unity: 100 },
   { title: 'Hearing', quorum: 100, unity: 0 },
 ];
+
+export const VOTING_METHOD_TYPES = {
+  1: '1t1v',
+  2: '1m1v',
+  3: '1v1v',
+};

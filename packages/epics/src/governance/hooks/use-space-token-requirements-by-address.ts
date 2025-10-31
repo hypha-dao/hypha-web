@@ -5,7 +5,7 @@ import { useSpaceDetailsWeb3Rpc } from '@hypha-platform/core/client';
 import { useSpaceTokenRequirements } from '../../spaces';
 import { Space } from '@hypha-platform/core/client';
 import { zeroAddress } from 'viem';
-import { useAssets } from '../../treasury';
+import { AssetItem, useAssets } from '../../treasury';
 import { JoinMethods } from './types';
 
 interface Props {
@@ -22,6 +22,8 @@ interface UseSpaceTokenRequirementsResult {
   selectedSpace: Space | undefined;
   loading: boolean;
   error: boolean;
+  requiredToken?: AssetItem;
+  requiredAmount?: number;
 }
 
 export const useSpaceTokenRequirementsByAddress = ({
@@ -90,6 +92,8 @@ export const useSpaceTokenRequirementsByAddress = ({
   const error = !hasValidWeb3Id && !!selectedSpace;
 
   return {
+    requiredToken: asset,
+    requiredAmount,
     isTokenBased,
     hasTokenRequirements,
     hasEnoughTokens,

@@ -10,13 +10,17 @@ import {
   useJwt,
   useMe,
   useSpaceDetailsWeb3Rpc,
+  type Space,
 } from '@hypha-platform/core/client';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { useConfig } from 'wagmi';
 import { z } from 'zod';
-import { CreateAgreementBaseFields } from '@hypha-platform/epics';
+import {
+  CreateAgreementBaseFields,
+  useSpaceTokenRequirementsByAddress,
+} from '@hypha-platform/epics';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
 
@@ -31,6 +35,7 @@ interface CreateProposalChangeEntryMethodFormProps {
   successfulUrl: string;
   backUrl?: string;
   plugin: React.ReactNode;
+  spaces: Space[];
 }
 
 const ENTRY_METHODS = [
@@ -45,6 +50,7 @@ export const CreateProposalChangeEntryMethodForm = ({
   spaceId,
   web3SpaceId,
   plugin,
+  spaces,
 }: CreateProposalChangeEntryMethodFormProps) => {
   const router = useRouter();
   const { person } = useMe();
@@ -52,6 +58,11 @@ export const CreateProposalChangeEntryMethodForm = ({
   const config = useConfig();
   const { spaceDetails, isLoading } = useSpaceDetailsWeb3Rpc({
     spaceId: web3SpaceId as number,
+  });
+
+  const { requiredToken, requiredAmount } = useSpaceTokenRequirementsByAddress({
+    spaceAddress: spaceDetails?.executor,
+    spaces,
   });
 
   const {
@@ -92,6 +103,18 @@ export const CreateProposalChangeEntryMethodForm = ({
       form.setValue('entryMethod', Number(entryMethod));
     }
   }, [spaceDetails, isLoading]);
+
+  React.useEffect(() => {
+    if (requiredToken) {
+      const tokenBase = requiredToken
+        ? {
+            amount: requiredAmount as number,
+            token: requiredToken?.address as string,
+          }
+        : undefined;
+      form.setValue('tokenBase', tokenBase);
+    }
+  }, [requiredToken]);
 
   const handleCreate = async (data: FormValues) => {
     if (

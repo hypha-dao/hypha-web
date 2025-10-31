@@ -7,6 +7,7 @@ import {
   schemaCreateProposalChangeVotingMethod,
   useMe,
   useCreateChangeVotingMethodOrchestrator,
+  useTokensVotingPower,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
@@ -16,6 +17,7 @@ import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter } from 'next/navigation';
 import { useSpaceDetailsWeb3Rpc } from '@hypha-platform/core/client';
+import { VOTING_METHOD_TYPES } from '../hooks';
 
 type FormValues = z.infer<typeof schemaCreateProposalChangeVotingMethod>;
 
@@ -51,6 +53,9 @@ export const CreateProposalChangeVotingMethodForm = ({
     progress,
     agreement: { slug: agreementSlug },
   } = useCreateChangeVotingMethodOrchestrator({ authToken: jwt, config });
+  const { votingPowerToken, voicePowerToken } = useTokensVotingPower({
+    spaceId: BigInt(web3SpaceId as number),
+  });
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schemaCreateProposalChangeVotingMethod),
@@ -98,8 +103,14 @@ export const CreateProposalChangeVotingMethodForm = ({
       form.setValue('quorumAndUnity.quorum', quorum);
       form.setValue('quorumAndUnity.unity', unity);
       form.setValue('votingMethod', votingMethod);
+
+      if (votingMethod === VOTING_METHOD_TYPES[1]) {
+        form.setValue('token', votingPowerToken);
+      } else if (votingMethod === VOTING_METHOD_TYPES[3]) {
+        form.setValue('token', voicePowerToken);
+      }
     }
-  }, [spaceDetails, isLoading]);
+  }, [spaceDetails, isLoading, votingPowerToken, voicePowerToken]);
 
   const handleCreate = async (data: FormValues) => {
     if (!web3SpaceId || !data.votingMethod) return;
