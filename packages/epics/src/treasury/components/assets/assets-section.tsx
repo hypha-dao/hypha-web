@@ -78,7 +78,7 @@ export const AssetsSection: FC<AssetSectionProps> = ({
         <Link
           className={isDisabled ? 'cursor-not-allowed' : ''}
           href={
-            isAuthenticated && isMember
+            isAuthenticated && (isMember || isDelegate)
               ? `${governancePath}/create/issue-new-token?back=${basePath}`
               : {}
           }
