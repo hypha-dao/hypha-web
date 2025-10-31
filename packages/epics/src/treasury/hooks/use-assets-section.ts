@@ -17,6 +17,8 @@ export const useAssetsSection = ({
 }: UseAssetsSectionProps = {}) => {
   const [activeFilter, setActiveFilter] = React.useState('all');
   const [visibleCount, setVisibleCount] = React.useState(pageSize);
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [hideSmallBalances, setHideSmallBalances] = React.useState(false);
 
   const { isLoading, balance, assets } = useAssets({
     ...(activeFilter !== 'all' && { filter: { type: activeFilter } }),
@@ -33,17 +35,42 @@ export const useAssetsSection = ({
   const totalBalance = `${balance < 0 ? '-' : ''}$ ${formatCurrencyValue(
     Math.abs(balance),
   )}`;
-  const visibleAssets = assets.slice(0, visibleCount);
-  const hasMore = visibleCount < assets.length;
+
+  const filteredAssets = React.useMemo(() => {
+    let result = assets;
+
+    if (hideSmallBalances) {
+      result = result.filter((asset) => asset.value >= 1);
+    }
+
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(
+        (asset) =>
+          asset.name.toLowerCase().includes(term) ||
+          asset.symbol.toLowerCase().includes(term) ||
+          asset.address.toLowerCase().includes(term),
+      );
+    }
+
+    return result.slice(0, visibleCount);
+  }, [assets, hideSmallBalances, searchTerm, visibleCount]);
+
+  const hasMore = filteredAssets.length < assets.length;
 
   return {
     isLoading,
     loadMore,
-    visibleAssets,
+    filteredAssets,
     hasMore,
     activeFilter,
     setActiveFilter,
     filterOptions,
     totalBalance,
+    searchTerm,
+    setSearchTerm,
+    hideSmallBalances,
+    setHideSmallBalances,
+    visibleCount,
   };
 };
