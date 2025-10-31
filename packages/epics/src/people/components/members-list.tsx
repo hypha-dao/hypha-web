@@ -55,7 +55,11 @@ export const MembersList: FC<MembersListProps> = ({
           key={space.slug}
           scroll={false}
         >
-          <SpaceMemberCard space={space} isLoading={isLoading} />
+          <SpaceMemberCard
+            hostSpaceId={spaceId}
+            space={space}
+            isLoading={isLoading}
+          />
         </Link>
       ))}
 
