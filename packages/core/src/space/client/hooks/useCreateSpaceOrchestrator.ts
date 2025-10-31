@@ -165,7 +165,7 @@ export const useCreateSpaceOrchestrator = ({
       startTask('CREATE_WEB2_SPACE');
       const inputCreateSpaceWeb2 = schemaCreateSpaceWeb2.parse(arg);
       const createdSpace = await web2.createSpace(inputCreateSpaceWeb2);
-      if (person) {
+      if (person && createdSpace?.id) {
         await createEvent({
           type: 'joinSpace',
           referenceEntity: 'person',

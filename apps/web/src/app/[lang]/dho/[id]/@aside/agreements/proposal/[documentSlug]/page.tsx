@@ -37,6 +37,7 @@ export default function Agreements() {
     handleCheckProposalExpiration,
     isCheckingExpiration,
   } = useVote({
+    documentId: document?.id,
     proposalId: document?.web3ProposalId,
     authToken: authToken,
     tokenSymbol: proposalDetails?.tokens[0]?.symbol,
@@ -151,6 +152,7 @@ export default function Agreements() {
         className="-m-4 lg:-m-7"
       >
         <ProposalDetail
+          documentId={document?.id}
           closeUrl={getDhoPathAgreements(lang as Locale, id as string)}
           onAccept={handleOnAccept}
           onReject={handleOnReject}

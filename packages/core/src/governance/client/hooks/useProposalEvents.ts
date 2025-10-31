@@ -2,19 +2,21 @@
 
 import { useEffect } from 'react';
 import { daoProposalsImplementationConfig } from '@hypha-platform/core/generated';
-import { publicClient } from '@hypha-platform/core/client';
+import { publicClient, useCreateEvent } from '@hypha-platform/core/client';
 import { useProposalActions } from './useProposalActions';
 import { useTokenManagement } from './useTokenManagement';
 import { useTokenDeploymentWatcher } from './useTokenDeploymentWatcher';
 import { extractTokenAddressFromReceipt } from './extractTokenAddressFromReceipt';
 
 export const useProposalEvents = ({
+  documentId,
   proposalId,
   tokenSymbol,
   authToken,
   onProposalExecuted,
   onProposalRejected,
 }: {
+  documentId?: number | null;
   proposalId?: number | null;
   tokenSymbol?: string | null;
   authToken?: string | null;
@@ -33,9 +35,10 @@ export const useProposalEvents = ({
     updateToken,
   });
   const { fetchProposalActions, isValidProposalAction } = useProposalActions();
+  const { createEvent } = useCreateEvent({ authToken });
 
   useEffect(() => {
-    if (!proposalId || !authToken) {
+    if (!documentId || !proposalId || !authToken) {
       return;
     }
 
@@ -106,6 +109,12 @@ export const useProposalEvents = ({
             const eventProposalId = log.args.proposalId;
             if (eventProposalId === BigInt(proposalId)) {
               await handleProposalExecuted(log.transactionHash);
+              await createEvent({
+                type: 'executeProposal',
+                referenceEntity: 'document',
+                referenceId: documentId,
+                parameters: {},
+              });
             }
           } catch (error) {
             console.error('Error handling ProposalExecuted event:', error);
@@ -124,6 +133,12 @@ export const useProposalEvents = ({
             const eventProposalId = log.args.proposalId;
             if (eventProposalId === BigInt(proposalId)) {
               await handleProposalRejected();
+              await createEvent({
+                type: 'rejectProposal',
+                referenceEntity: 'document',
+                referenceId: documentId,
+                parameters: {},
+              });
             }
           } catch (error) {
             console.error('Error handling ProposalRejected event:', error);
@@ -142,6 +157,12 @@ export const useProposalEvents = ({
             const eventProposalId = log.args.proposalId;
             if (eventProposalId === BigInt(proposalId)) {
               await handleProposalRejected();
+              await createEvent({
+                type: 'rejectProposal',
+                referenceEntity: 'document',
+                referenceId: documentId,
+                parameters: {},
+              });
             }
           } catch (error) {
             console.error('Error handling ProposalExpired event:', error);
@@ -156,6 +177,7 @@ export const useProposalEvents = ({
       unwatchExpired();
     };
   }, [
+    documentId,
     proposalId,
     tokenSymbol,
     authToken,
