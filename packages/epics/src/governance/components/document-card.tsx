@@ -10,11 +10,15 @@ import { PersonLabel } from '../../people/components/person-label';
 import { type Creator } from '../../people/components/person-label';
 import { type BadgeItem, BadgesList } from '@hypha-platform/ui';
 import { formatDate, stripMarkdown } from '@hypha-platform/ui-utils';
+import { DocumentStatus, useEvents } from '@hypha-platform/core/client';
+import React from 'react';
 
 interface Document {
+  id?: number;
   title?: string;
   description?: string;
   createdAt?: Date;
+  status?: DocumentStatus;
 }
 
 interface DocumentCardProps {
@@ -44,6 +48,7 @@ function stripDescription(description: string): string {
 }
 
 export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
+  id: documentId,
   title,
   description,
   isLoading,
@@ -52,7 +57,24 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
   badges,
   interactions,
   createdAt,
+  status,
 }) => {
+  const type = React.useMemo(() => {
+    switch (status) {
+      case 'accepted':
+        return 'executeProposal';
+      case 'rejected':
+        return 'rejectProposal';
+      default:
+        return undefined;
+    }
+  }, [status]);
+  const { events, isLoadingEvents } = useEvents({
+    type,
+    referenceEntity: 'document',
+    referenceId: documentId,
+  });
+  const event = !isLoadingEvents && events instanceof Array ? events[0] : null;
   return (
     <Card className="h-full w-full space-y-5">
       <CardHeader className="p-0 rounded-tl-md rounded-tr-md overflow-hidden h-[150px]">
@@ -108,7 +130,15 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
             height="48px"
             loading={isLoading}
           >
-            {createdAt && <>Created on {formatDate(createdAt, true)}</>}
+            {type === 'executeProposal' && event && (
+              <>Accepted on {formatDate(event.createdAt, true)}</>
+            )}
+            {type === 'rejectProposal' && event && (
+              <>Rejected on {formatDate(event.createdAt, true)}</>
+            )}
+            {!type && createdAt && (
+              <>Created on {formatDate(createdAt, true)}</>
+            )}
           </Skeleton>
         </div>
         {interactions}
