@@ -38,7 +38,9 @@ export const SectionFilter: FC<SectionFilterProps> = ({
           onChange={(e) => onChangeSearch?.(e.target.value)}
         />
       ) : null}
-      <div className="flex items-center text-nowrap">{children}</div>
+      {children && (
+        <div className="flex items-center text-nowrap">{children}</div>
+      )}
     </div>
   );
 };
