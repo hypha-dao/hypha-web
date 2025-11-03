@@ -53,7 +53,7 @@ export const useEvents = ({
   );
 
   return {
-    events: events as Event[] | undefined,
+    events,
     isLoadingEvents,
     error,
   };

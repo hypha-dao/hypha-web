@@ -155,6 +155,7 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
     person,
     profilePageUrl,
     revalidateInviteStatus,
+    createJoinEvent,
   ]);
 
   const FORTY_EIGHT_HOURS_MS = 48 * 60 * 60 * 1000;
