@@ -35,11 +35,10 @@ export const SpaceMemberCard: React.FC<{
     if (events.length === 0) {
       return undefined;
     }
-    const normalalizedAddress = space.address.toLowerCase();
+    const normalizedAddress = space.address.toLowerCase();
     const event = events.find(
       (el) =>
-        el.parameters?.['memberAddress']?.toLowerCase?.() ===
-        normalalizedAddress,
+        el.parameters?.['memberAddress']?.toLowerCase?.() === normalizedAddress,
     );
     return event;
   }, [space, events, isLoadingEvents]);
