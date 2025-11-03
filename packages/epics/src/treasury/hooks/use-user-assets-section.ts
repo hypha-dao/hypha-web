@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { FILTER_OPTIONS_ASSETS } from '../../common/constants';
