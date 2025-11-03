@@ -3,11 +3,17 @@
 import React from 'react';
 import { useTransfers } from './use-transfers';
 
-const PAGE_SIZE = 4;
+const DEFAULT_PAGE_SIZE = 4;
 
-export const useTransfersSection = ({ spaceSlug }: { spaceSlug: string }) => {
+export const useTransfersSection = ({
+  spaceSlug,
+  pageSize = DEFAULT_PAGE_SIZE,
+}: {
+  spaceSlug: string;
+  pageSize?: number;
+}) => {
   const [activeSort, setSort] = React.useState('all');
-  const [visibleCount, setVisibleCount] = React.useState(PAGE_SIZE);
+  const [visibleCount, setVisibleCount] = React.useState(pageSize);
   const [searchTerm, setSearchTerm] = React.useState('');
 
   const { isLoading, transfers } = useTransfers({
@@ -16,12 +22,12 @@ export const useTransfersSection = ({ spaceSlug }: { spaceSlug: string }) => {
   });
 
   React.useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
-  }, [activeSort, transfers]);
+    setVisibleCount(pageSize);
+  }, [activeSort, transfers, pageSize]);
 
   const loadMore = React.useCallback(() => {
-    setVisibleCount((prev) => prev + PAGE_SIZE);
-  }, []);
+    setVisibleCount((prev) => prev + pageSize);
+  }, [pageSize]);
 
   const filteredResults = React.useMemo(() => {
     if (!transfers) return [];
@@ -65,5 +71,6 @@ export const useTransfersSection = ({ spaceSlug }: { spaceSlug: string }) => {
     setSort,
     searchTerm,
     setSearchTerm,
+    pageSize,
   };
 };

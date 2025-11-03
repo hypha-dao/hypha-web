@@ -7,10 +7,12 @@ import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 
 type TransactionsSectionProps = {
   spaceSlug?: string;
+  pageSize?: number;
 };
 
 export const TransactionsSection: FC<TransactionsSectionProps> = ({
   spaceSlug,
+  pageSize = 4,
 }) => {
   const {
     transfers,
@@ -20,7 +22,8 @@ export const TransactionsSection: FC<TransactionsSectionProps> = ({
     hasMore,
     searchTerm,
     setSearchTerm,
-  } = useTransfersSection({ spaceSlug: spaceSlug as string });
+    pageSize: usedPageSize,
+  } = useTransfersSection({ spaceSlug: spaceSlug as string, pageSize });
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-4">
@@ -41,7 +44,7 @@ export const TransactionsSection: FC<TransactionsSectionProps> = ({
         />
       )}
 
-      {hasMore && transfers.length >= 4 && !searchTerm.trim() && (
+      {hasMore && transfers.length >= usedPageSize && !searchTerm.trim() && (
         <SectionLoadMore
           onClick={loadMore}
           disabled={!hasMore}

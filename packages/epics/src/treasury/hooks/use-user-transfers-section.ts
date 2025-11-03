@@ -2,15 +2,17 @@
 import React from 'react';
 import { useUserTransfers } from './use-user-transfers';
 
-const PAGE_SIZE = 4;
+const DEFAULT_PAGE_SIZE = 4;
 
 export const useUserTransfersSection = ({
   personSlug,
+  pageSize = DEFAULT_PAGE_SIZE,
 }: {
   personSlug?: string;
+  pageSize?: number;
 }) => {
   const [activeSort, setSort] = React.useState('all');
-  const [visibleCount, setVisibleCount] = React.useState(PAGE_SIZE);
+  const [visibleCount, setVisibleCount] = React.useState(pageSize);
   const [searchTerm, setSearchTerm] = React.useState('');
 
   const { isLoading, transfers } = useUserTransfers({
@@ -19,12 +21,12 @@ export const useUserTransfersSection = ({
   });
 
   React.useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
-  }, [activeSort, transfers]);
+    setVisibleCount(pageSize);
+  }, [activeSort, transfers, pageSize]);
 
   const loadMore = React.useCallback(() => {
-    setVisibleCount((prev) => prev + PAGE_SIZE);
-  }, []);
+    setVisibleCount((prev) => prev + pageSize);
+  }, [pageSize]);
 
   const filteredResults = React.useMemo(() => {
     if (!transfers) return [];
@@ -68,5 +70,6 @@ export const useUserTransfersSection = ({
     setSort,
     searchTerm,
     setSearchTerm,
+    pageSize,
   };
 };
