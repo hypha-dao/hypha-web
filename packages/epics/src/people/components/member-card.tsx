@@ -78,8 +78,11 @@ export const MemberCard: React.FC<MemberCardProps> = ({
     if (events.length === 0) {
       return undefined;
     }
+    const normalalizedAddress = address.toLowerCase();
     const event = events.find(
-      (el) => el.parameters?.['memberAddress'] === address,
+      (el) =>
+        el.parameters?.['memberAddress']?.toLowerCase?.() ===
+        normalalizedAddress,
     );
     return event;
   }, [address, events, isLoadingEvents]);

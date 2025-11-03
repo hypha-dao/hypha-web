@@ -111,11 +111,13 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
                 </div>
               </div>
               <div className="flex flex-row">
-                <Skeleton loading={isLoading} height="16px" width="80px">
-                  <div className="text-neutral-11 text-1">
-                    Created on {formatDate(createdAt, true)}
-                  </div>
-                </Skeleton>
+                {createdAt && !Number.isNaN(createdAt.getTime()) && (
+                  <Skeleton loading={isLoading} height="16px" width="80px">
+                    <div className="text-neutral-11 text-1">
+                      Created on {formatDate(createdAt, true)}
+                    </div>
+                  </Skeleton>
+                )}
               </div>
             </div>
             <div className="flex grow"></div>

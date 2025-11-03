@@ -19,6 +19,11 @@ export const useEvents = ({
 }: UseEventsInput) => {
   const endpoint = React.useMemo(() => {
     const params = new URLSearchParams();
+    const all = type && referenceId && referenceEntity;
+    const none = !type && !referenceId && !referenceEntity;
+    if (!all && !none) {
+      return null;
+    }
     if (type) {
       params.set('type', type);
     }
