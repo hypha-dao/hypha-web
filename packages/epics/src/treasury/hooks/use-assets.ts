@@ -45,7 +45,7 @@ type AssetItem = {
 };
 
 type UseAssetsData = {
-  assets: (AssetItem & { createdAt?: string })[];
+  assets: (Omit<AssetItem, 'createdAt'> & { createdAt?: string })[];
   isLoading: boolean;
   balance: number;
 };
