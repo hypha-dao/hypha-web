@@ -10,6 +10,8 @@ interface UseEventsInput {
   referenceEntity?: EventEntity;
 }
 
+type EventResponse = Omit<Event, 'createdAt'> & { createdAt: string };
+
 export const useEvents = ({
   type,
   referenceId,
@@ -33,16 +35,20 @@ export const useEvents = ({
     data: events,
     isLoading: isLoadingEvents,
     error,
-  } = useSWR(endpoint, (endpoint) =>
+  } = useSWR<Event[]>(endpoint, (endpoint: string | URL | Request) =>
     fetch(endpoint, {
       headers: {
         'Content-Type': 'application/json',
       },
-    }).then((res) => {
+    }).then(async (res) => {
       if (!res.ok) {
         throw new Error(`Failed to fetch events: ${res.statusText}`);
       }
-      return res.json();
+      const rawEvents: EventResponse[] = await res.json();
+      return rawEvents.map((event) => ({
+        ...event,
+        createdAt: new Date(event.createdAt),
+      }));
     }),
   );
 
