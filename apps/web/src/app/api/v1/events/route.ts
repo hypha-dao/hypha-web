@@ -4,7 +4,7 @@ import { db } from '@hypha-platform/storage-postgres';
 import { EVENT_ENTITY_TYPES, EventEntity } from '@hypha-platform/core/client';
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  const { searchParams } = request.nextUrl;
   const type = searchParams.get('type') || undefined;
   const referenceIdRaw = searchParams.get('referenceId') || undefined;
   const referenceId = (() => {

@@ -36,11 +36,7 @@ export const useEvents = ({
     isLoading: isLoadingEvents,
     error,
   } = useSWR<Event[]>(endpoint, (endpoint: string | URL | Request) =>
-    fetch(endpoint, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    }).then(async (res) => {
+    fetch(endpoint).then(async (res) => {
       if (!res.ok) {
         throw new Error(`Failed to fetch events: ${res.statusText}`);
       }
