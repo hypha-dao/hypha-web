@@ -8,6 +8,7 @@ import {
   text,
   timestamp,
 } from 'drizzle-orm/pg-core';
+import { EVENT_ENTITY_TYPES } from './event-types';
 
 export const events = pgTable(
   'events',
@@ -18,7 +19,7 @@ export const events = pgTable(
     // Polymorphic reference
     referenceId: integer('reference_id').notNull(),
     referenceEntity: text('reference_entity', {
-      enum: ['person', 'space', 'document', 'token'],
+      enum: EVENT_ENTITY_TYPES,
     }).notNull(),
     parameters: jsonb('params').notNull().default({}),
   },

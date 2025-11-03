@@ -1,9 +1,10 @@
 import { z } from 'zod';
+import { EVENT_ENTITY_TYPES } from './types';
 
 export const schemaCreateEventProps = {
   type: z.string().trim(),
   referenceId: z.number(),
-  referenceEntity: z.enum(['person', 'space', 'document', 'token']),
+  referenceEntity: z.enum(EVENT_ENTITY_TYPES),
   parameters: z.object({}),
 };
 
