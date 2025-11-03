@@ -128,7 +128,7 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
             className="min-w-full"
             width="200px"
             height="48px"
-            loading={isLoading}
+            loading={isLoading || isLoadingEvents}
           >
             {type === 'executeProposal' && event && (
               <>Accepted on {formatDate(event.createdAt, true)}</>

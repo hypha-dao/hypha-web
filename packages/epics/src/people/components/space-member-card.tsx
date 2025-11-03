@@ -69,11 +69,17 @@ export const SpaceMemberCard: React.FC<{
             <Text className="text-1 text-neutral-11">{space.description}</Text>
           </Skeleton>
         </div>
-        {joinEvent && (
+        {(isLoadingEvents || joinEvent) && (
           <div className="flex justify-between flex-col gap-6 items-end">
-            <Skeleton height="16px" width="120px" loading={isLoading}>
+            <Skeleton
+              height="16px"
+              width="120px"
+              loading={isLoading || isLoadingEvents}
+            >
               <Text className="text-1 text-gray-500">
-                Joined space on {formatDate(joinEvent.createdAt, true)}
+                {joinEvent && (
+                  <>Joined space on {formatDate(joinEvent.createdAt, true)}</>
+                )}
               </Text>
             </Skeleton>
           </div>

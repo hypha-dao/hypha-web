@@ -10,10 +10,10 @@ export const createEvent = async (
     ...event,
     createdAt: new Date(),
   };
-  const [dbPerson] = await db.insert(events).values(insertData).returning();
-  if (!dbPerson) {
+  const [dbEvent] = await db.insert(events).values(insertData).returning();
+  if (!dbEvent) {
     throw new Error('Failed to create event');
   }
 
-  return dbPerson;
+  return dbEvent;
 };

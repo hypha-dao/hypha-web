@@ -68,7 +68,7 @@ export const PersonHead = ({
     useParams<ProfileComponentParams>();
   const personSlug = tryDecodeUriPart(personSlugRaw);
 
-  const sigupDate = formatDate(createdAt ?? new Date(), true);
+  const signupDate = createdAt ? formatDate(createdAt, true) : null;
 
   const customLogoStyles: React.CSSProperties = {
     width: '128px',
@@ -140,9 +140,9 @@ export const PersonHead = ({
           <div className="flex flex-col gap-4">
             <WebLinks links={links} />
             <div className="flex gap-5 text-1">
-              {createdAt ? (
+              {signupDate ? (
                 <span className="flex gap-3">
-                  Hypha member since {sigupDate}
+                  Hypha member since {signupDate}
                 </span>
               ) : null}
               {email && isMe(personSlug) ? (

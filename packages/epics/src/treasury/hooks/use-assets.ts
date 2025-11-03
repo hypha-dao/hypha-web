@@ -45,7 +45,7 @@ type AssetItem = {
 };
 
 type UseAssetsData = {
-  assets: (AssetItem & { createdAt: string })[];
+  assets: (AssetItem & { createdAt?: string })[];
   isLoading: boolean;
   balance: number;
 };
@@ -91,24 +91,19 @@ export const useAssets = ({
 
   const filteredAssets = React.useMemo(() => {
     if (!hasValidData) return [];
+    const transformAsset = (asset: (typeof typedData.assets)[0]) => ({
+      ...asset,
+      createdAt:
+        asset.createdAt && asset.createdAt.length > 0
+          ? new Date(asset.createdAt)
+          : undefined,
+    });
     if (!filter || filter.type === 'all') {
-      return typedData.assets.map((asset) => ({
-        ...asset,
-        createdAt:
-          asset.createdAt && asset.createdAt.length > 0
-            ? new Date(asset.createdAt)
-            : undefined,
-      }));
+      return typedData.assets.map(transformAsset);
     }
     return typedData.assets
       .filter((asset) => asset.type === filter.type)
-      .map((asset) => ({
-        ...asset,
-        createdAt:
-          asset.createdAt && asset.createdAt.length > 0
-            ? new Date(asset.createdAt)
-            : undefined,
-      }));
+      .map(transformAsset);
   }, [hasValidData, typedData?.assets, filter]);
 
   return {

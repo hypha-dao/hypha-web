@@ -29,18 +29,26 @@ export const useEvents = ({
     return `/api/v1/events${params.size > 0 ? '?' + params.toString() : ''}`;
   }, [type, referenceId, referenceEntity]);
 
-  const { data: events, isLoading: isLoadingEvents } = useSWR(
-    endpoint,
-    (endpoint) =>
-      fetch(endpoint, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }).then((res) => res.json()),
+  const {
+    data: events,
+    isLoading: isLoadingEvents,
+    error,
+  } = useSWR(endpoint, (endpoint) =>
+    fetch(endpoint, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }).then((res) => {
+      if (!res.ok) {
+        throw new Error(`Failed to fetch events: ${res.statusText}`);
+      }
+      return res.json();
+    }),
   );
 
   return {
     events: events as Event[],
     isLoadingEvents,
+    error,
   };
 };
