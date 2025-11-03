@@ -101,39 +101,39 @@ FOR TESTING
 Compiled 1 Solidity file successfully (evm target: paris).
 Deploying RegularTokenFactory with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying RegularTokenFactory...
-RegularTokenFactory proxy deployed to: 0x9425c91c19066f6CAC6C25bF934F8861914Ccf2e
+egularTokenFactory proxy deployed to: 0x9425c91c19066f6CAC6C25bF934F8861914Ccf2e
 
 
 Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying SpaceToken...
-SpaceToken deployed to: 0xDAdFbF2D33A8aB74f86752f2afF25F6323d73B87
+paceToken deployed to: 0xDAdFbF2D33A8aB74f86752f2afF25F6323d73B87
 
 Deploying RegularTokenFactory with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying RegularTokenFactory...
-RegularTokenFactory proxy deployed to: 0x475C1306CB572Af6f22F9ab6F9E9a7403c360ea5
+egularTokenFactory proxy deployed to: 0x475C1306CB572Af6f22F9ab6F9E9a7403c360ea5
 
 Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying RegularSpaceToken...
-RegularSpaceToken deployed to: 0xd20C8ef38F213D3907B22a2bD128D32869676dad
+egularSpaceToken deployed to: 0xd20C8ef38F213D3907B22a2bD128D32869676dad
 
 Compiled 6 Solidity files successfully (evm target: paris).
 Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying RegularSpaceToken...
-RegularSpaceToken deployed to: 0x9962c152D8F79e0d8E12512457fa12bCd41F8Cba
+egularSpaceToken deployed to: 0x9962c152D8F79e0d8E12512457fa12bCd41F8Cba
 
 
 Compiled 3 Solidity files successfully (evm target: paris).
 Deploying OwnershipTokenFactory with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying OwnershipTokenFactory...
-OwnershipTokenFactory proxy deployed to: 0xc69cB3D966e0Eb5306035e9a27979507D1F334Ee
+wnershipTokenFactory proxy deployed to: 0xc69cB3D966e0Eb5306035e9a27979507D1F334Ee
 
 Deploying DecayingTokenFactory with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying DecayingTokenFactory...
-DecayingTokenFactory proxy deployed to: 0x66CA84bDa7508fa873fc22954b3144064cc5FF37
+ecayingTokenFactory proxy deployed to: 0x66CA84bDa7508fa873fc22954b3144064cc5FF37
 
 Deploying DecayingSpaceToken implementation...
-DecayingSpaceToken implementation deployed to: 0x5BE10FdAce191216236668d9cDb12772f73CB698
+ecayingSpaceToken implementation deployed to: 0x5BE10FdAce191216236668d9cDb12772f73CB698
 
 
 Deploying OwnershipSpaceToken implementation...
-OwnershipSpaceToken implementation deployed to: 0xB06f27e16648F36C529839413f307a87b80d6ca1
+wnershipSpaceToken implementation deployed to: 0xB06f27e16648F36C529839413f307a87b80d6ca1
