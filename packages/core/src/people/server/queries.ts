@@ -38,6 +38,8 @@ export const getDefaultFields = () => {
 
 export const mapToDomainPerson = (dbPerson: Partial<DbPerson>): Person => {
   invariant(dbPerson.slug, 'Person must have a slug');
+  invariant(dbPerson.createdAt, 'Person must have createdAt');
+  invariant(dbPerson.updatedAt, 'Person must have updatedAt');
 
   return {
     id: dbPerson.id!,
