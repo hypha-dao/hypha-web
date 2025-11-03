@@ -18,14 +18,21 @@ export const TransactionsSection: FC<TransactionsSectionProps> = ({
     isLoading,
     loadMore,
     hasMore,
-    totalRequestsValue,
+    searchTerm,
+    setSearchTerm,
   } = useTransfersSection({ spaceSlug: spaceSlug as string });
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-4">
-      <SectionFilter label="Transactions" />
+      <SectionFilter
+        label="Transactions"
+        hasSearch
+        searchPlaceholder="Search transactions"
+        onChangeSearch={setSearchTerm}
+      />
+
       {transfers.length === 0 && !isLoading ? (
-        <Text className="text-neutral-11 mt-2 mb-6">List is empty</Text>
+        <Text className="text-neutral-11 mt-2 mb-6">No transactions found</Text>
       ) : (
         <TransactionsList
           transfers={transfers}
@@ -33,15 +40,14 @@ export const TransactionsSection: FC<TransactionsSectionProps> = ({
           isLoading={isLoading}
         />
       )}
-      {hasMore && (
+
+      {hasMore && transfers.length >= 4 && !searchTerm.trim() && (
         <SectionLoadMore
           onClick={loadMore}
           disabled={!hasMore}
           isLoading={isLoading}
         >
-          <Text>
-            {hasMore ? 'Load more transactions' : 'No more transactions'}
-          </Text>
+          <Text>Load more transactions</Text>
         </SectionLoadMore>
       )}
     </div>
