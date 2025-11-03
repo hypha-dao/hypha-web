@@ -47,7 +47,7 @@ export const useEvents = ({
   );
 
   return {
-    events: events as Event[],
+    events: events as Event[] | undefined,
     isLoadingEvents,
     error,
   };

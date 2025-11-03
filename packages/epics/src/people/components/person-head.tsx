@@ -33,7 +33,7 @@ export type MemberType = {
   name: string;
   surname: string;
   slug: string;
-  createdAt: Date;
+  createdAt?: Date;
 };
 
 interface PersonHeadProps {
