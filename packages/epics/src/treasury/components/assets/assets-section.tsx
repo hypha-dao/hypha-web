@@ -1,5 +1,5 @@
 'use client';
-import { FC, useState } from 'react';
+import { FC } from 'react';
 import { AssetsList } from './assets-list';
 import { Text } from '@radix-ui/themes';
 import { useAssetsSection } from '../../hooks/use-assets-section';
@@ -39,19 +39,19 @@ export const AssetsSection: FC<AssetSectionProps> = ({
   const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
 
   const {
-    visibleAssets,
+    filteredAssets,
     activeFilter,
     isLoading,
     loadMore,
     hasMore,
     totalBalance,
+    searchTerm,
+    setSearchTerm,
+    hideSmallBalances,
+    setHideSmallBalances,
+    visibleCount,
   } = useAssetsSection();
 
-  const [hideSmallBalances, setHideSmallBalances] = useState(false);
-
-  const filteredAssets = hideSmallBalances
-    ? visibleAssets.filter((asset) => asset.value >= 1)
-    : visibleAssets;
   const { isAuthenticated } = useAuthentication();
 
   const isDisabled = !(isAuthenticated || isMember || isDelegate);
@@ -63,7 +63,13 @@ export const AssetsSection: FC<AssetSectionProps> = ({
 
   const renderFilterAndButtons = () => (
     <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-2">
-      <SectionFilter count={totalBalance || 0} label="Balance">
+      <SectionFilter
+        count={totalBalance || 0}
+        label="Balance"
+        hasSearch
+        searchPlaceholder="Search tokens"
+        onChangeSearch={setSearchTerm}
+      >
         <label className="flex items-center gap-1">
           <Input
             type="checkbox"
@@ -118,15 +124,17 @@ export const AssetsSection: FC<AssetSectionProps> = ({
           isLoading={isLoading}
         />
       )}
-      {hasMore && (
-        <SectionLoadMore
-          onClick={loadMore}
-          disabled={!hasMore}
-          isLoading={isLoading}
-        >
-          <Text>Load more assets</Text>
-        </SectionLoadMore>
-      )}
+      {hasMore &&
+        !searchTerm.trim() &&
+        filteredAssets.length >= visibleCount && (
+          <SectionLoadMore
+            onClick={loadMore}
+            disabled={!hasMore}
+            isLoading={isLoading}
+          >
+            <Text>Load more assets</Text>
+          </SectionLoadMore>
+        )}
     </div>
   );
 };
