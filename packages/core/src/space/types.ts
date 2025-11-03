@@ -23,6 +23,8 @@ export interface Space {
   flags: SpaceFlags[];
   parent?: Space | null;
   organisationSpaces?: Space[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface CreateSpaceInput {

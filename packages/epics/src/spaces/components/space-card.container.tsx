@@ -47,6 +47,7 @@ export const SpaceCardContainer = ({
                 lang,
                 space.slug,
               )}/space-configuration`}
+              createdAt={space.createdAt}
             />
           </Link>
         </div>

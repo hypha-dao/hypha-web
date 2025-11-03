@@ -10,6 +10,9 @@ import {
   Badge,
 } from '@hypha-platform/ui';
 import { SewingPinFilledIcon } from '@radix-ui/react-icons';
+import { formatDate } from '@hypha-platform/ui-utils';
+import { useEvents } from '@hypha-platform/core/client';
+import React from 'react';
 // TODO: need for #1309
 // import { useParams } from 'next/navigation';
 // import {
@@ -22,6 +25,7 @@ import { SewingPinFilledIcon } from '@radix-ui/react-icons';
 // import { useSpaceDelegate } from '@hypha-platform/core/client';
 
 export type MemberCardProps = {
+  spaceId?: number;
   name?: string;
   surname?: string;
   nickname?: string;
@@ -30,10 +34,12 @@ export type MemberCardProps = {
   status?: string;
   isLoading?: boolean;
   minimize?: boolean;
+  address?: string;
   // isDelegate?: boolean;
 };
 
 export const MemberCard: React.FC<MemberCardProps> = ({
+  spaceId,
   name,
   surname,
   nickname,
@@ -42,6 +48,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   status,
   isLoading,
   minimize,
+  address,
   // isDelegate,
 }) => {
   // const { id: spaceSlug } = useParams();
@@ -57,6 +64,27 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   //   : !isMember
   //   ? 'Please join this space to use this feature.'
   //   : '';
+
+  const { events, isLoadingEvents } = useEvents({
+    type: 'joinSpace',
+    referenceId: spaceId,
+    referenceEntity: 'space',
+  });
+
+  const joinEvent = React.useMemo(() => {
+    if (!address || isLoadingEvents || !events) {
+      return undefined;
+    }
+    if (events.length === 0) {
+      return undefined;
+    }
+    const normalizedAddress = address.toLowerCase();
+    const event = events.find(
+      (el) =>
+        el.parameters?.['memberAddress']?.toLowerCase?.() === normalizedAddress,
+    );
+    return event;
+  }, [address, events, isLoadingEvents]);
 
   return (
     <Card className="w-full h-full p-5 mb-2 flex items-center">
@@ -136,6 +164,20 @@ export const MemberCard: React.FC<MemberCardProps> = ({
               <Text className="text-1">{location}</Text>
             </div>
           </Skeleton>
+          {joinEvent && (
+            <Skeleton
+              width="96px"
+              height="16px"
+              loading={isLoading}
+              // className={localIsDelegate ? 'mt-2' : ''}
+            >
+              <div className="flex items-center text-gray-500">
+                <Text className="text-1">
+                  Joined space on {formatDate(joinEvent.createdAt, true)}
+                </Text>
+              </div>
+            </Skeleton>
+          )}
         </div>
       </div>
     </Card>
