@@ -14,3 +14,4 @@ export { useUndelegateWeb3Rpc } from './useUndelegate.web3.rpc';
 export { useIsDelegate } from './useIsDelegate';
 export { useSpaceDelegate } from './useSpaceDelegate';
 export { useSpaceMinProposalDuration } from './useSpaceMinProposalDuration';
+export { useGetDelegators } from './useGetDelegators';
