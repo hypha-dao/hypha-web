@@ -4,7 +4,13 @@
   "private": true,
   "scripts": {
     "lint": "eslint . --max-warnings 0",
-    "wagmi:generate": "wagmi generate"
+    "wagmi:generate": "wagmi generate",
+    "test:transfer-helper": "cd scripts/base-mainnet-contracts-scripts && npx tsx test-tranfer-helper.ts",
+    "test:transfer-helper-smart-account": "cd scripts/base-mainnet-contracts-scripts && npx tsx run-smart-account-test.ts",
+    "test:transfer-helper-smart-account-direct": "cd scripts/base-mainnet-contracts-scripts && npx tsx test-transfer-helper-smart-account.ts",
+    "test:transfer-helper-smart-account-simple": "cd scripts/base-mainnet-contracts-scripts && npx tsx test-transfer-helper-smart-account-simple.ts",
+    "test:transfer-helper-real-smart-account": "cd scripts/base-mainnet-contracts-scripts && npx tsx test-transfer-helper-real-smart-account.ts",
+    "test:transfer-helper-fixed": "cd scripts/base-mainnet-contracts-scripts && npx tsx test-transfer-helper-fixed.ts"
   },
   "devDependencies": {
     "@hypha-platform/config-eslint": "workspace:*",
@@ -12,6 +18,10 @@
     "@wagmi/cli": "^2.2.0",
     "hardhat": "^2.22.17"
   },
-  "dependencies": {},
+  "dependencies": {
+    "permissionless": "^0.2.47",
+    "viem": "^2.27.2",
+    "dotenv": "^16.4.7"
+  },
   "exports": {}
 }

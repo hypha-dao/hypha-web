@@ -67,7 +67,8 @@ Agreements deployed to: 0x83B5d4F555A68126bB302685e67767Bb7a2985F0
 
 Deploying OwnershipTokenVotingPower with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying OwnershipTokenVotingPower...
-OwnershipTokenVotingPower proxy deployed to: 0x255c7b5DaC3696199fEF7A8CC6Cc87190bc36eFd
+OwnershipTokenVotingPower proxy deployed to: 0x3214DE1Eb858799Db626Bd9699e78c2E6E33D2BE
+VanaOwnershipTokenVotingPower proxy deployed to: 0x255c7b5DaC3696199fEF7A8CC6Cc87190bc36eFd
 
 Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying SpacePaymentTracker...
