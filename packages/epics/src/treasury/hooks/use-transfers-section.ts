@@ -2,35 +2,65 @@
 
 import React from 'react';
 import { useTransfers } from './use-transfers';
-import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 
-const PAGE_SIZE = 4;
+const DEFAULT_PAGE_SIZE = 4;
 
-export const useTransfersSection = ({ spaceSlug }: { spaceSlug: string }) => {
+export const useTransfersSection = ({
+  spaceSlug,
+  pageSize = DEFAULT_PAGE_SIZE,
+}: {
+  spaceSlug: string;
+  pageSize?: number;
+}) => {
   const [activeSort, setSort] = React.useState('all');
-  const [visibleCount, setVisibleCount] = React.useState(PAGE_SIZE);
+  const [visibleCount, setVisibleCount] = React.useState(pageSize);
+  const [searchTerm, setSearchTerm] = React.useState('');
 
   const { isLoading, transfers } = useTransfers({
     ...(activeSort !== 'all' && { sort: { sort: activeSort } }),
-    spaceSlug: spaceSlug,
+    spaceSlug,
   });
 
   React.useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
-  }, [activeSort, transfers]);
+    setVisibleCount(pageSize);
+  }, [activeSort, transfers, pageSize]);
 
   const loadMore = React.useCallback(() => {
-    setVisibleCount((prev) => prev + PAGE_SIZE);
-  }, []);
+    setVisibleCount((prev) => prev + pageSize);
+  }, [pageSize]);
 
-  const totalValue = React.useMemo(() => {
-    if (!transfers) return 0;
-    return transfers.reduce((sum, transfer) => sum + (transfer.value || 0), 0);
-  }, [transfers]);
+  const filteredResults = React.useMemo(() => {
+    if (!transfers) return [];
+    if (!searchTerm.trim()) return transfers;
 
-  const totalRequestsValue = `$ ${formatCurrencyValue(totalValue)}`;
-  const visibleTransfers = transfers?.slice(0, visibleCount) || [];
-  const hasMore = transfers ? visibleCount < transfers.length : false;
+    const term = searchTerm.toLowerCase();
+
+    return transfers.filter((transfer) => {
+      const hash = transfer.transactionHash?.toLowerCase() ?? '';
+      const symbol = transfer.symbol?.toLowerCase() ?? '';
+      const name = transfer.person?.name?.toLowerCase() ?? '';
+      const surname = transfer.person?.surname?.toLowerCase() ?? '';
+      const from = transfer.from?.toLowerCase() ?? '';
+      const to = transfer.to?.toLowerCase() ?? '';
+
+      return (
+        hash.includes(term) ||
+        symbol.includes(term) ||
+        name.includes(term) ||
+        surname.includes(term) ||
+        from.includes(term) ||
+        to.includes(term)
+      );
+    });
+  }, [transfers, searchTerm]);
+
+  const visibleTransfers = React.useMemo(() => {
+    if (searchTerm.trim()) return filteredResults;
+    return filteredResults.slice(0, visibleCount);
+  }, [filteredResults, visibleCount, searchTerm]);
+
+  const hasMore =
+    !searchTerm.trim() && visibleCount < (filteredResults?.length || 0);
 
   return {
     isLoading,
@@ -39,6 +69,8 @@ export const useTransfersSection = ({ spaceSlug }: { spaceSlug: string }) => {
     hasMore,
     activeSort,
     setSort,
-    totalRequestsValue,
+    searchTerm,
+    setSearchTerm,
+    pageSize,
   };
 };

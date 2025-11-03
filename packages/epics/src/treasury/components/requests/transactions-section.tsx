@@ -7,10 +7,12 @@ import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 
 type TransactionsSectionProps = {
   spaceSlug?: string;
+  pageSize?: number;
 };
 
 export const TransactionsSection: FC<TransactionsSectionProps> = ({
   spaceSlug,
+  pageSize = 4,
 }) => {
   const {
     transfers,
@@ -18,14 +20,22 @@ export const TransactionsSection: FC<TransactionsSectionProps> = ({
     isLoading,
     loadMore,
     hasMore,
-    totalRequestsValue,
-  } = useTransfersSection({ spaceSlug: spaceSlug as string });
+    searchTerm,
+    setSearchTerm,
+    pageSize: usedPageSize,
+  } = useTransfersSection({ spaceSlug: spaceSlug as string, pageSize });
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-4">
-      <SectionFilter label="Transactions" />
+      <SectionFilter
+        label="Transactions"
+        hasSearch
+        searchPlaceholder="Search transactions"
+        onChangeSearch={setSearchTerm}
+      />
+
       {transfers.length === 0 && !isLoading ? (
-        <Text className="text-neutral-11 mt-2 mb-6">List is empty</Text>
+        <Text className="text-neutral-11 mt-2 mb-6">No transactions found</Text>
       ) : (
         <TransactionsList
           transfers={transfers}
@@ -33,15 +43,14 @@ export const TransactionsSection: FC<TransactionsSectionProps> = ({
           isLoading={isLoading}
         />
       )}
-      {hasMore && (
+
+      {hasMore && transfers.length >= usedPageSize && !searchTerm.trim() && (
         <SectionLoadMore
           onClick={loadMore}
           disabled={!hasMore}
           isLoading={isLoading}
         >
-          <Text>
-            {hasMore ? 'Load more transactions' : 'No more transactions'}
-          </Text>
+          <Text>Load more transactions</Text>
         </SectionLoadMore>
       )}
     </div>
