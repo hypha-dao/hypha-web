@@ -18,11 +18,11 @@ export async function GET(request: NextRequest) {
     }
   })();
   const referenceEntityRaw = searchParams.get('referenceEntity') || undefined;
-  const referenceEntity = (() => {
-    return EVENT_ENTITY_TYPES.includes(referenceEntityRaw as EventEntity)
-      ? (referenceEntityRaw as EventEntity)
-      : undefined;
-  })();
+  const referenceEntity = EVENT_ENTITY_TYPES.includes(
+    referenceEntityRaw as EventEntity,
+  )
+    ? (referenceEntityRaw as EventEntity)
+    : undefined;
 
   try {
     const events = await findAllEvents(
