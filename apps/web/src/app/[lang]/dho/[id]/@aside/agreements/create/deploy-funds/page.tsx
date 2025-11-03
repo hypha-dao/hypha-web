@@ -4,8 +4,9 @@ import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 import { Plugin } from '../plugins';
 import { notFound } from 'next/navigation';
 import { PATH_SELECT_CREATE_ACTION } from '@web/app/constants';
-import { findSpaceBySlug, getAllSpaces } from '@hypha-platform/core/server';
+import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
+import { fetchMembersAndSpaces } from '@web/utils/fetch-users-members';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -18,14 +19,14 @@ export default async function CreateDeployFundsPage({ params }: PageProps) {
   const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
 
   if (!spaceFromDb) notFound();
+
   const { id: spaceId, web3SpaceId, slug: spaceSlug } = spaceFromDb;
 
   const successfulUrl = getDhoPathAgreements(lang as Locale, id);
 
-  const spaces = await getAllSpaces();
-  const filteredSpaces = spaces.filter(
-    (space) => space.address && space.address.trim() !== '',
-  );
+  const { spaces, members } = await fetchMembersAndSpaces({
+    activeSpaceId: spaceId,
+  });
 
   return (
     <SidePanel>
@@ -38,7 +39,8 @@ export default async function CreateDeployFundsPage({ params }: PageProps) {
           <Plugin
             name="deploy-funds"
             spaceSlug={spaceSlug}
-            spaces={filteredSpaces}
+            spaces={spaces}
+            members={members}
           />
         }
       />

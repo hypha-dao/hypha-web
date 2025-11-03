@@ -10,11 +10,12 @@ import {
 } from '@hypha-platform/ui';
 import { PersonAvatar } from './person-avatar';
 import { EthAddress } from './eth-address';
-import { TrashIcon, LogOutIcon, Repeat } from 'lucide-react';
+import { TrashIcon, LogOutIcon, Repeat, Shield } from 'lucide-react';
 import { ButtonNavItem, ButtonNavItemProps } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { Person } from '@hypha-platform/core/client';
 import { Text } from '@radix-ui/themes';
+import { usePrivy, useMfaEnrollment } from '@privy-io/react-auth';
 
 export type ButtonProfileProps = {
   address?: string;
@@ -41,6 +42,9 @@ export const ButtonProfile = ({
   onChangeThemeMode,
   resolvedTheme,
 }: ButtonProfileProps) => {
+  const { user } = usePrivy();
+  const { showMfaEnrollmentModal } = useMfaEnrollment();
+  const hasMfaMethods = user && user.mfaMethods && user.mfaMethods.length > 0;
   return (
     <div>
       {isConnected ? (
@@ -90,6 +94,18 @@ export const ButtonProfile = ({
                   : 'Switch to dark mode'
               }
             />
+
+            {hasMfaMethods ? (
+              <ButtonNavItem
+                onClick={showMfaEnrollmentModal}
+                label={'Update funds protection (MFA)'}
+              />
+            ) : (
+              <ButtonNavItem
+                onClick={showMfaEnrollmentModal}
+                label={'Protect funds (MFA)'}
+              />
+            )}
 
             <ButtonNavItem
               onClick={onLogout}
@@ -144,6 +160,29 @@ export const ButtonProfile = ({
                       : 'Switch to dark mode'}
                     <Repeat className="icon-sm" />
                   </DropdownMenuItem>
+                )}
+                {hasMfaMethods ? (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={showMfaEnrollmentModal}
+                      className="px-0 text-1"
+                    >
+                      Update funds protection (MFA)
+                      <Shield className="icon-sm" />
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={showMfaEnrollmentModal}
+                      className="px-0 text-1 flex justify-between"
+                    >
+                      Protect funds (MFA)
+                      <Shield className="icon-sm" />
+                    </DropdownMenuItem>
+                  </>
                 )}
                 <DropdownMenuSeparator />
                 {onDelete && (

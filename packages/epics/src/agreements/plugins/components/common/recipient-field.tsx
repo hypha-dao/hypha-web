@@ -15,17 +15,27 @@ export function RecipientField({
   spaces,
   defaultRecipientType = 'member',
   readOnly,
+  emptyMembersMessage,
+  emptySpacesMessage,
+  label,
+  showTabs,
+  name = 'recipient',
 }: {
   members: Person[];
   spaces?: Space[];
   defaultRecipientType?: RecipientType;
   readOnly?: boolean;
+  emptyMembersMessage?: string;
+  emptySpacesMessage?: string;
+  label?: string;
+  showTabs?: boolean;
+  name?: string;
 }) {
   const { control } = useFormContext();
   return (
     <FormField
       control={control}
-      name="recipient"
+      name={name}
       render={({ field: { value, onChange } }) => (
         <FormItem>
           {/* @ts-expect-error Server Component */}
@@ -39,6 +49,10 @@ export function RecipientField({
               spaces={spaces}
               defaultRecipientType={defaultRecipientType}
               readOnly={readOnly}
+              emptyMembersMessage={emptyMembersMessage}
+              emptySpacesMessage={emptySpacesMessage}
+              label={label}
+              showTabs={showTabs}
             />
           </FormControl>
           <FormMessage />

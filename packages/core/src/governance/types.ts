@@ -27,6 +27,8 @@ export interface Attachment {
   url: string;
 }
 
+export type DocumentStatus = 'accepted' | 'rejected' | 'onVoting';
+
 export type Document = {
   id: number;
   creatorId: number;
@@ -41,7 +43,7 @@ export type Document = {
   attachments?: (string | Attachment)[];
   web3ProposalId: number | null;
   label?: string;
-  status?: 'accepted' | 'rejected' | 'onVoting';
+  status?: DocumentStatus;
 };
 
 export interface CreateAgreementInput {
@@ -49,6 +51,8 @@ export interface CreateAgreementInput {
   description: string;
   leadImage?: string;
   attachments?: (string | Attachment)[];
+  web3ProposalId?: number;
+  state?: DocumentState;
   slug?: string;
   spaceId: number;
   creatorId: number;
@@ -109,6 +113,14 @@ export type CreateTokenInput = {
     decayPercentage: number;
   };
   web3SpaceId: number;
+  agreementWeb3Id?: number;
+};
+
+export type UpdateTokenInput = {
+  agreementId?: number;
+  agreementWeb3Id?: number;
+  address?: string;
+  agreementWeb3IdUpdate?: number;
 };
 
 export type DeleteTokenInput = {

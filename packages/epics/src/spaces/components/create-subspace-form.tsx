@@ -72,6 +72,7 @@ export const CreateSubspaceForm = ({
         initialParentSpaceId={parentSpaceId as number}
         parentSpaceSlug={parentSpaceSlug}
         label="add"
+        slugIncorrectMessage="A space with this name already exists. Please choose a different name for your space."
       />
     </LoadingBackdrop>
   );

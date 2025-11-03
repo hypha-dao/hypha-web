@@ -21,3 +21,9 @@ export type UseDocumentsProps = {
 };
 
 export type UseDocuments = (props: UseDocumentsProps) => UseDocumentsReturn;
+
+export enum JoinMethods {
+  OPEN_ACCESS = 0,
+  TOKEN_BASED = 1,
+  INVITE_ONLY = 2,
+}

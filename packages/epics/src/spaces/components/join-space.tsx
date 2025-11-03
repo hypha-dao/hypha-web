@@ -58,7 +58,7 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
     memberAddress: person?.address as `0x${string}`,
   });
 
-  const { hasActiveProposal, revalidateInviteStatus, isInviteLoading } =
+  const { revalidateInviteStatus, isInviteLoading, lastInviteTime } =
     useInviteStatus({
       spaceId: BigInt(web3SpaceId),
       address: person?.address as `0x${string}`,
@@ -138,18 +138,25 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
     revalidateInviteStatus,
   ]);
 
+  const FORTY_EIGHT_HOURS_MS = 48 * 60 * 60 * 1000;
+
+  const isInvitePending = useMemo(() => {
+    if (!isInviteOnly) return false;
+    if (inviteRequested) return true;
+    if (!lastInviteTime) return false;
+    return Date.now() - lastInviteTime < FORTY_EIGHT_HOURS_MS;
+  }, [isInviteOnly, inviteRequested, lastInviteTime]);
+
   const buttonTitle = useMemo(() => {
     if (isMember || justJoined) return 'Already member';
     if (isInviteOnly) {
-      if (hasActiveProposal || inviteRequested) return 'Invite pending';
+      if (isInvitePending) return 'Invite pending';
       return 'Request Invite';
     }
     return 'Become member';
-  }, [isMember, justJoined, isInviteOnly, hasActiveProposal, inviteRequested]);
+  }, [isMember, justJoined, isInviteOnly, isInvitePending]);
 
   const showLoader = isProcessing || isJoiningSpace || isCreating;
-  const isInvitePending =
-    isInviteOnly && (hasActiveProposal || inviteRequested);
   const isButtonDisabled =
     isMember ||
     justJoined ||

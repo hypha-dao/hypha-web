@@ -11,6 +11,7 @@ import {
 } from '@web/app/constants';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useJoinSpace } from '@hypha-platform/epics';
+import { useIsDelegate } from '@hypha-platform/core/client';
 
 interface ActionButtonsProps {
   web3SpaceId?: number;
@@ -20,11 +21,12 @@ export const ActionButtons = ({ web3SpaceId }: ActionButtonsProps) => {
   const pathname = usePathname();
   const { isAuthenticated } = useAuthentication();
   const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
+  const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
 
-  const isDisabled = !isAuthenticated || !isMember;
+  const isDisabled = !isAuthenticated || (!isMember && !isDelegate);
   const tooltipMessage = !isAuthenticated
     ? 'Please sign in to use this feature.'
-    : !isMember
+    : !isMember && !isDelegate
     ? 'Please join this space to use this feature.'
     : '';
 
@@ -33,7 +35,7 @@ export const ActionButtons = ({ web3SpaceId }: ActionButtonsProps) => {
       <Link
         className={isDisabled ? 'cursor-not-allowed' : ''}
         href={
-          isAuthenticated && isMember
+          isAuthenticated && (isMember || isDelegate)
             ? `${cleanPath(pathname)}${PATH_SELECT_SETTINGS_ACTION}`
             : {}
         }
@@ -48,7 +50,7 @@ export const ActionButtons = ({ web3SpaceId }: ActionButtonsProps) => {
         className={isDisabled ? 'cursor-not-allowed' : ''}
         title={tooltipMessage || ''}
         href={
-          isAuthenticated && isMember
+          isAuthenticated && (isMember || isDelegate)
             ? `${cleanPath(pathname)}${PATH_SELECT_CREATE_ACTION}`
             : {}
         }

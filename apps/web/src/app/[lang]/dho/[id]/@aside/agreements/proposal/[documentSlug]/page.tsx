@@ -4,13 +4,13 @@ import {
   ProposalDetail,
   SidePanel,
   useSpaceDocumentsWithStatuses,
+  useDbTokens,
 } from '@hypha-platform/epics';
 import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
 import { useDocumentSlug } from '@web/hooks/use-document-slug';
 import { useDocumentBySlug } from '@web/hooks/use-document-by-slug';
 import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
-import { useDbTokens } from '@web/hooks/use-db-tokens';
 import {
   useVote,
   useJwt,
@@ -31,13 +31,16 @@ export default function Agreements() {
       proposalId: document?.web3ProposalId as number,
     });
   const { mutate: votersMutate, myVote } = useMyVote(documentSlug);
-  const { handleAccept, handleReject, handleCheckProposalExpiration } = useVote(
-    {
-      proposalId: document?.web3ProposalId,
-      authToken: authToken,
-      tokenSymbol: proposalDetails?.tokens[0]?.symbol,
-    },
-  );
+  const {
+    handleAccept,
+    handleReject,
+    handleCheckProposalExpiration,
+    isCheckingExpiration,
+  } = useVote({
+    proposalId: document?.web3ProposalId,
+    authToken: authToken,
+    tokenSymbol: proposalDetails?.tokens[0]?.symbol,
+  });
   const { space } = useSpaceBySlug(id as string);
   const { update } = useSpaceDocumentsWithStatuses({
     spaceSlug: space?.slug as string,
@@ -152,6 +155,7 @@ export default function Agreements() {
           onAccept={handleOnAccept}
           onReject={handleOnReject}
           onCheckProposalExpiration={handleOnCheckProposalExpiration}
+          isCheckingExpiration={isCheckingExpiration}
           isVoting={isVoting}
           content={document?.description}
           creator={{

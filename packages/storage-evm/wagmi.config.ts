@@ -23,6 +23,8 @@ export default defineConfig({
         'OwnershipTokenVotingPowerImplementation.sol/**',
         'VoteDecayTokenVotingPowerImplementation.sol/**',
         'HyphaToken.sol/**',
+        'SpacePaymentTracker.sol/**',
+        'VotingPowerDelegationImplementation.sol/**',
       ],
       deployments: {
         DAOSpaceFactoryImplementation: {
@@ -60,6 +62,12 @@ export default defineConfig({
         },
         HyphaToken: {
           [base.id]: '0x8b93862835C36e9689E9bb1Ab21De3982e266CD3',
+        },
+        SpacePaymentTracker: {
+          [base.id]: '0x4B61250c8F19BA96C473c65022453E95176b0139',
+        },
+        VotingPowerDelegationImplementation: {
+          [base.id]: '0xc87546357EeFF8653cF058Be2BA850813e39cda0',
         },
       },
     }),

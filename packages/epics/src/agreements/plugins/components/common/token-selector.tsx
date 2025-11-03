@@ -9,6 +9,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   Image,
+  RequirementMark,
+  FormLabel,
 } from '@hypha-platform/ui';
 import { Token } from './token-payout-field-array';
 
@@ -16,12 +18,14 @@ interface TokenSelectorProps {
   value: string;
   onChange: (tokenAddress: string) => void;
   tokens: Token[];
+  showRequirementMark?: boolean;
 }
 
 export const TokenSelector = ({
   value,
   onChange,
   tokens,
+  showRequirementMark = false,
 }: TokenSelectorProps) => {
   const selectedToken = tokens.find((t) => t.address === value);
 
@@ -31,7 +35,10 @@ export const TokenSelector = ({
 
   return (
     <div className="flex justify-between w-full">
-      <label className="text-2 text-neutral-11 flex items-center">Token</label>
+      <FormLabel className="text-2 text-neutral-11 gap-1 flex">
+        Token
+        {showRequirementMark && <RequirementMark className="text-2" />}
+      </FormLabel>
       <div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -64,7 +71,7 @@ export const TokenSelector = ({
               <ChevronDownIcon className="size-2" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-full">
+          <DropdownMenuContent className="w-full max-h-[200px] overflow-y-scroll">
             {tokens.map((token) => (
               <DropdownMenuItem
                 key={token.address}
@@ -78,7 +85,16 @@ export const TokenSelector = ({
                   className="mr-2 rounded-full h-5 w-5"
                 />
                 <div className="flex flex-col">
-                  <span className="text-2 text-neutral-11">{token.symbol}</span>
+                  <span className="flex gap-2 items-center">
+                    <span className="text-2 text-neutral-11">
+                      {token.symbol}
+                    </span>
+                    {token?.type && (
+                      <div className="rounded-lg capitalize text-[10px] text-accent-11 border-1 border-accent-11 px-2 py-0.75">
+                        {token.type}
+                      </div>
+                    )}
+                  </span>
                   {token.space?.title ? (
                     <span className="text-1 text-accent-11">
                       by {token.space?.title}

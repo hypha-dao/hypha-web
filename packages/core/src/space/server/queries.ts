@@ -10,6 +10,10 @@ import {
 } from 'drizzle-orm';
 import { memberships, Space, spaces } from '@hypha-platform/storage-postgres';
 import { DbConfig } from '@hypha-platform/core/server';
+import {
+  PaginationParams,
+  PaginatedResponse,
+} from '@hypha-platform/core/client';
 
 type FindAllSpacesProps = {
   search?: string;
@@ -127,6 +131,21 @@ export const findSpaceBySlug = async (
   };
 };
 
+type CheckSpaceSlugExistsInput = { slug: string };
+
+export const checkSpaceSlugExists = async (
+  { slug }: CheckSpaceSlugExistsInput,
+  { db }: DbConfig,
+): Promise<{ exists: boolean; spaceId?: number }> => {
+  const response = await db.query.spaces.findFirst({
+    where: (spaces, { eq }) => eq(spaces.slug, slug),
+  });
+
+  const exists = !!response;
+  const spaceId = response?.id;
+  return { exists, spaceId };
+};
+
 type FindAllSpacesByMemberIdInput = {
   memberId: number;
   parentOnly?: boolean;
@@ -225,4 +244,91 @@ ORDER BY level, id;
     }
     return space as Space;
   });
+};
+
+const getSpaceDefaultFields = () => {
+  return {
+    id: spaces.id,
+    logoUrl: spaces.logoUrl,
+    leadImage: spaces.leadImage,
+    title: spaces.title,
+    description: spaces.description,
+    slug: spaces.slug,
+    web3SpaceId: spaces.web3SpaceId,
+    links: spaces.links,
+    categories: spaces.categories,
+    parentId: spaces.parentId,
+    createdAt: spaces.createdAt,
+    updatedAt: spaces.updatedAt,
+    address: spaces.address,
+    flags: spaces.flags,
+    isArchived: spaces.isArchived,
+    total: sql<number>`cast(count(*) over() as integer)`,
+  };
+};
+
+export const findSpaceByAddresses = async (
+  addresses: string[],
+  {
+    pagination,
+    searchTerm,
+  }: { pagination?: PaginationParams<Space>; searchTerm?: string },
+  { db }: DbConfig,
+): Promise<PaginatedResponse<Space>> => {
+  const uniqueAddresses = Array.from(
+    new Set(addresses.map((addr) => addr.toUpperCase())),
+  );
+
+  const hasPagination =
+    pagination?.page != null && pagination?.pageSize != null;
+  const page = pagination?.page ?? 1;
+  const pageSize = pagination?.pageSize ?? uniqueAddresses.length;
+  const offset = hasPagination ? (page - 1) * pageSize : 0;
+
+  const whereConditions = [
+    inArray(sql`upper(${spaces.address})`, uniqueAddresses),
+    eq(spaces.isArchived, false),
+  ];
+
+  if (searchTerm) {
+    const term = `%${searchTerm}%`;
+    whereConditions.push(
+      sql`(${spaces.title} ILIKE ${term} OR ${spaces.description} ILIKE ${term})`,
+    );
+  }
+
+  const [totalResult] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(spaces)
+    .where(and(...whereConditions));
+
+  const total = Number(totalResult?.count ?? 0);
+  const totalPages = hasPagination ? Math.ceil(total / pageSize) : 1;
+  const hasNextPage = hasPagination ? page < totalPages : false;
+  const hasPreviousPage = hasPagination ? page > 1 : false;
+
+  type ResultRow = Partial<Space> & { total: number };
+  const resultQuery = db
+    .select(getSpaceDefaultFields())
+    .from(spaces)
+    .where(and(...whereConditions));
+
+  const result = hasPagination
+    ? ((await resultQuery.offset(offset).limit(pageSize)) as ResultRow[])
+    : ((await resultQuery) as ResultRow[]);
+
+  return {
+    data: result.map((row) => {
+      const { total, ...space } = row;
+      return space as Space;
+    }),
+    pagination: {
+      total,
+      page,
+      pageSize: hasPagination ? pageSize : total,
+      totalPages,
+      hasNextPage,
+      hasPreviousPage,
+    },
+  };
 };

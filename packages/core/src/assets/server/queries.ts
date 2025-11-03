@@ -28,6 +28,8 @@ export const findAllTokens = async (
       documentCount: sql<number>`count(distinct ${documents.id})`.mapWith(
         Number,
       ),
+      address: tokens.address,
+      agreementWeb3Id: tokens.agreementWeb3Id,
     })
     .from(tokens)
     .leftJoin(documents, eq(documents.id, tokens.agreementId))
@@ -60,6 +62,8 @@ export const findAllTokens = async (
       tokens.decayInterval,
       tokens.decayPercentage,
       tokens.createdAt,
+      tokens.address,
+      tokens.agreementWeb3Id,
     )
     .orderBy(asc(tokens.name));
 

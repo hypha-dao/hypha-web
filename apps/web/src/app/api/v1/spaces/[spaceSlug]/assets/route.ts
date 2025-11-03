@@ -17,8 +17,12 @@ import {
   TOKENS,
   Token,
   ALLOWED_SPACES,
+  getTokenDecimals,
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
+import { hasEmojiOrLink } from '@hypha-platform/ui-utils';
+
+const EVT_TOKEN_ADDRESS = '0xd8724e6609838a54f7e505679bf6818f1a3f2d40';
 
 export async function GET(
   _: NextRequest,
@@ -46,6 +50,7 @@ export async function GET(
       iconUrl: token.iconUrl ?? undefined,
       transferable: token.transferable,
       isVotingToken: token.isVotingToken,
+      address: token.address ?? undefined,
     }));
 
     let spaceDetails;
@@ -163,19 +168,24 @@ export async function GET(
       allTokens.map(async (token) => {
         try {
           const meta = await getTokenMeta(token.address, dbTokens);
+          if (hasEmojiOrLink(meta.name) || hasEmojiOrLink(meta.symbol)) {
+            return null;
+          }
           const { amount } = await getBalance(token.address, spaceAddress);
           let totalSupply: bigint | undefined;
-          let maxSupply: bigint | undefined;
           try {
             const supply = await getSupply(token.address);
             totalSupply = supply.totalSupply;
-            maxSupply = supply.maxSupply;
           } catch (err) {
             console.warn(
               `Failed to fetch supply for token ${token.address}: ${err}`,
             );
           }
-          const rate = prices[token.address] || 0;
+          let rate = prices[token.address] || 0;
+          if (token.address.toLowerCase() === EVT_TOKEN_ADDRESS) {
+            rate = 1;
+          }
+          const decimals = await getTokenDecimals(token.address);
           return {
             ...meta,
             address: token.address,
@@ -185,13 +195,11 @@ export async function GET(
             transactions: [],
             closeUrl: [],
             slug: '',
-            supply:
-              totalSupply && maxSupply
-                ? {
-                    total: Number(totalSupply / 10n ** 18n),
-                    max: Number(maxSupply / 10n ** 18n),
-                  }
-                : undefined,
+            supply: totalSupply
+              ? {
+                  total: Number(totalSupply / 10n ** BigInt(decimals)),
+                }
+              : undefined,
             space: meta.space
               ? {
                   slug: meta.space.slug,

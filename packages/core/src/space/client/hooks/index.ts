@@ -1,6 +1,7 @@
 export { useCreateSpaceOrchestrator } from './useCreateSpaceOrchestrator';
 export { useJoinSpaceWeb3Rpc } from './useJoinSpace.web3.rpc';
 export { useSpaceBySlug } from './useSpaceBySlug';
+export { useSpaceBySlugExists } from './useSpaceBySlugExists';
 export { useSpaceDetailsWeb3Rpc } from './useSpaceDetails.web3.rpc';
 export { useSpaceHasVoiceToken } from './useSpaceHasVoiceToken';
 export { useTokensVotingPower } from './useTokensVotingPower';
@@ -8,3 +9,8 @@ export { useSpaceProposalsWeb3Rpc } from './useSpaceProposals.web3.rpc';
 export { useUpdateSpaceOrchestrator } from './useUpdateSpaceOrchestrator';
 export { useOrganisationSpacesBySingleSlug } from './useOrganisationSpacesBySingleSlug';
 export { useSpacesByWeb3Ids } from './useSpacesByWeb3Ids';
+export { useDelegateWeb3Rpc } from './useDelegate.web3.rpc';
+export { useUndelegateWeb3Rpc } from './useUndelegate.web3.rpc';
+export { useIsDelegate } from './useIsDelegate';
+export { useSpaceDelegate } from './useSpaceDelegate';
+export { useSpaceMinProposalDuration } from './useSpaceMinProposalDuration';

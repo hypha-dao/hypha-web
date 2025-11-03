@@ -4,7 +4,7 @@ import { useReadContract } from 'wagmi';
 import { erc20Abi } from 'viem';
 import { Image } from '@hypha-platform/ui';
 import { EthAddress } from '../../people';
-import { useTokens } from '@hypha-platform/epics';
+import { useTokens, usePersonByWeb3Address } from '@hypha-platform/epics';
 import { Token } from '@hypha-platform/core/client';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 
@@ -21,6 +21,8 @@ export const ProposalTransactionItem = ({
   tokenAddress,
   spaceSlug,
 }: ProposalTransactionItemProps) => {
+  if (!recipient) return null;
+  const { person } = usePersonByWeb3Address(recipient as `0x${string}`);
   const { tokens } = useTokens({ spaceSlug });
   const token = tokens.find(
     (t: Token) => t.address.toLowerCase() === tokenAddress?.toLowerCase(),
@@ -55,7 +57,22 @@ export const ProposalTransactionItem = ({
         </div>
       </div>
       <div className="w-[140px]">
-        <EthAddress address={recipient || ''} />
+        {!person ? (
+          <EthAddress address={recipient || ''} />
+        ) : (
+          <span className="flex gap-2 text-2 text-neutral-11 justify-end">
+            <Image
+              className="rounded-lg w-[24px] h-[24px]"
+              src={person?.avatarUrl ?? '/placeholder/default-profile.svg'}
+              width={24}
+              height={24}
+              alt={`${person?.nickname} avatar`}
+            />
+            <span className="text-nowrap">
+              {person?.name} {person?.surname}
+            </span>
+          </span>
+        )}
       </div>
     </div>
   );

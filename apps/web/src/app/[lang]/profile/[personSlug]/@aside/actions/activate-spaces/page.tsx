@@ -4,16 +4,19 @@ import {
   ButtonBack,
   ButtonClose,
   ActivateSpacesForm,
+  ProfilePageParams,
 } from '@hypha-platform/epics';
 import { Separator } from '@hypha-platform/ui';
+import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
 
 type PageProps = {
-  params: Promise<{ lang: string; personSlug: string }>;
+  params: Promise<ProfilePageParams>;
 };
 
 export default async function ActivateSpacesProfile(props: PageProps) {
-  const { lang, personSlug } = await props.params;
+  const { lang, personSlug: personSlugRaw } = await props.params;
+  const personSlug = tryDecodeUriPart(personSlugRaw);
 
   let spaces = [] as Space[];
   let error = null;

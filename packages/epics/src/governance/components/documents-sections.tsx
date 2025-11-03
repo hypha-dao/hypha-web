@@ -29,24 +29,33 @@ export function DocumentsSections({
     <div className="flex flex-col gap-6 py-4">
       <DocumentSection
         basePath={`${basePath}/proposal`}
+        web3SpaceId={web3SpaceId}
         documents={documents.onVoting}
         label="On Voting"
         hasSearch={true}
         isLoading={isLoading}
+        firstPageSize={9}
+        pageSize={15}
       />
       <DocumentSection
         basePath={`${basePath}/proposal`}
+        web3SpaceId={web3SpaceId}
         documents={documents.accepted}
         label="Accepted"
         hasSearch={true}
         isLoading={isLoading}
+        firstPageSize={3}
+        pageSize={15}
       />
       <DocumentSection
         basePath={`${basePath}/proposal`}
+        web3SpaceId={web3SpaceId}
         documents={documents.rejected}
         label="Rejected"
         hasSearch={true}
         isLoading={isLoading}
+        firstPageSize={3}
+        pageSize={15}
       />
     </div>
   );

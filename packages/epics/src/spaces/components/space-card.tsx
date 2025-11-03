@@ -32,13 +32,6 @@ const customCardHeaderStyles: React.CSSProperties = {
   height: '150px',
 };
 
-const customAvatarStyles: React.CSSProperties = {
-  width: '64px',
-  height: '64px',
-  position: 'absolute',
-  top: '-54px',
-};
-
 export const SpaceCard: React.FC<SpaceCardProps> = ({
   description,
   icon,
@@ -71,7 +64,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
       </CardHeader>
       <CardContent className="flex flex-col flex-1 pt-5 relative">
         <div>
-          <Avatar style={customAvatarStyles}>
+          <Avatar className="w-[64px] h-[64px] absolute top-[-54px]">
             <Skeleton width="64px" height="64px" loading={isLoading}>
               <AvatarImage src={icon} alt="logo" />
             </Skeleton>

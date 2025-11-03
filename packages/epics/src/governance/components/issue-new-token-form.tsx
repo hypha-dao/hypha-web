@@ -1,6 +1,6 @@
 'use client';
 
-import { CreateAgreementBaseFields } from '@hypha-platform/epics';
+import { CreateAgreementBaseFields, useDbTokens } from '@hypha-platform/epics';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -8,6 +8,7 @@ import {
   createAgreementFiles,
   useMe,
   useCreateIssueTokenOrchestrator,
+  DbToken,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
@@ -15,7 +16,7 @@ import React from 'react';
 import { useJwt } from '@hypha-platform/core/client';
 import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 
 type FormValues = z.infer<typeof schemaIssueNewToken>;
 
@@ -38,6 +39,7 @@ export const IssueNewTokenForm = ({
   web3SpaceId,
   plugin,
 }: IssueNewTokenFormProps) => {
+  const { id: spaceSlug } = useParams();
   const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
@@ -51,6 +53,8 @@ export const IssueNewTokenForm = ({
     progress,
     agreement: { slug: agreementSlug },
   } = useCreateIssueTokenOrchestrator({ authToken: jwt, config });
+
+  const [formError, setFormError] = React.useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(fullSchemaIssueNewToken),
@@ -73,7 +77,14 @@ export const IssueNewTokenForm = ({
       label: 'Issue New Token',
       isVotingToken: false,
     },
+    mode: 'onChange',
   });
+
+  const { tokens: dbTokens, refetchDbTokens } = useDbTokens();
+
+  React.useEffect(() => {
+    refetchDbTokens();
+  }, [refetchDbTokens]);
 
   React.useEffect(() => {
     if (progress === 100 && agreementSlug) {
@@ -82,13 +93,31 @@ export const IssueNewTokenForm = ({
   }, [progress, agreementSlug, router, successfulUrl]);
 
   const handleCreate = async (data: FormValues) => {
+    setFormError(null);
+
+    const duplicateToken = dbTokens?.find((token: DbToken) => {
+      const isNameEqual =
+        token.name?.toLowerCase() === data.name?.toLowerCase();
+      const isSymbolEqual =
+        token.symbol?.toLowerCase() === data.symbol?.toLowerCase();
+      const isSpaceEqual = token.spaceId === spaceId;
+      return isNameEqual && isSymbolEqual && isSpaceEqual;
+    });
+
+    if (dbTokens?.length && duplicateToken) {
+      setFormError(
+        'A token with the same name and symbol already exists in your space. Please modify either the name or symbol to proceed.',
+      );
+      return;
+    }
+
     await createIssueToken({
       ...data,
       iconUrl: data.iconUrl || undefined,
       spaceId: spaceId as number,
       web3SpaceId: web3SpaceId as number,
       transferable: data.type !== 'voice',
-      isVotingToken: false, // TODO: in the future it is necessary to get rid of this field at the application level
+      isVotingToken: false,
     });
   };
 
@@ -126,8 +155,15 @@ export const IssueNewTokenForm = ({
           />
           {plugin}
           <Separator />
-          <div className="flex justify-end w-full">
-            <Button type="submit">Publish</Button>
+          <div className="flex flex-col gap-2">
+            {formError && (
+              <div className="text-error-11 text-2 font-medium">
+                {formError}
+              </div>
+            )}
+            <div className="flex justify-end w-full">
+              <Button type="submit">Publish</Button>
+            </div>
           </div>
         </form>
       </Form>

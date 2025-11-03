@@ -11,7 +11,10 @@ import {
   getProposalFromLogs,
   mapToCreateProposalWeb3Input,
 } from '../web3';
-import { publicClient } from '@hypha-platform/core/client';
+import {
+  publicClient,
+  getSpaceMinProposalDuration,
+} from '@hypha-platform/core/client';
 
 import {
   daoSpaceFactoryImplementationAbi,
@@ -82,6 +85,10 @@ export const useChangeEntryMethodMutationsWeb3Rpc = ({
         throw new Error('Smart wallet client not available');
       }
 
+      const duration = await publicClient.readContract(
+        getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
+      );
+
       const transactions: Array<TxData> = [];
 
       switch (arg.joinMethod) {
@@ -105,7 +112,7 @@ export const useChangeEntryMethodMutationsWeb3Rpc = ({
 
       const input = {
         spaceId: BigInt(arg.spaceId),
-        duration: getDuration(4),
+        duration: duration && duration > 0 ? duration : getDuration(4),
         transactions,
       };
 

@@ -1,7 +1,4 @@
 import { defineConfig } from 'drizzle-kit';
-import dotenv from 'dotenv';
-
-dotenv.config({ path: '../../apps/web/.env' });
 
 const url = process.env.BRANCH_DB_URL || process.env.DEFAULT_DB_URL;
 

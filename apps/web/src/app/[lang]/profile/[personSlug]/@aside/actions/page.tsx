@@ -1,7 +1,12 @@
 'use client';
 
 import React from 'react';
-import { ButtonClose, SelectAction, SidePanel } from '@hypha-platform/epics';
+import {
+  ButtonClose,
+  ProfilePageParams,
+  SelectAction,
+  SidePanel,
+} from '@hypha-platform/epics';
 import { useParams } from 'next/navigation';
 import {
   PlusCircledIcon,
@@ -12,12 +17,14 @@ import {
 } from '@radix-ui/react-icons';
 import { useMemberBySlug } from '@web/hooks/use-member-by-slug';
 import { useFundWallet } from '@hypha-platform/epics';
+import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
 
 const MIGRATE_HYPHA_TOKENS_URL = 'https://hypha-react-demo.vercel.app';
 
 export default function ProfileWallet() {
-  const { lang, personSlug } = useParams();
-  const { person } = useMemberBySlug(personSlug as string);
+  const { lang, personSlug: personSlugRaw } = useParams<ProfilePageParams>();
+  const personSlug = tryDecodeUriPart(personSlugRaw);
+  const { person } = useMemberBySlug(personSlug);
   const { fundWallet } = useFundWallet({ address: person?.address });
 
   const WALLET_ACTIONS = [
@@ -31,12 +38,11 @@ export default function ProfileWallet() {
       },
     },
     {
-      title: 'Transfer Funds (Coming soon)',
+      title: 'Transfer Funds',
       description:
         'Send tokens from your personal wallet to a member, space, or custom address.',
       href: 'transfer-funds',
       icon: <Share1Icon />,
-      disabled: true,
     },
     {
       title: 'Buy Hypha Tokens (Rewards)',

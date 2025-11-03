@@ -15,6 +15,7 @@ import {
   ALLOWED_SPACES,
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
+import { hasEmojiOrLink } from '@hypha-platform/ui-utils';
 
 export async function GET(
   request: NextRequest,
@@ -50,6 +51,7 @@ export async function GET(
       iconUrl: token.iconUrl ?? undefined,
       transferable: token.transferable,
       isVotingToken: token.isVotingToken,
+      address: token.address ?? undefined,
     }));
 
     let regularTokens: readonly `0x${string}`[] = [];
@@ -195,6 +197,9 @@ export async function GET(
       allTokens.map(async (token) => {
         try {
           const meta = await getTokenMeta(token.address, dbTokens);
+          if (hasEmojiOrLink(meta.name) || hasEmojiOrLink(meta.symbol)) {
+            return null;
+          }
           return {
             ...meta,
             address: token.address,
