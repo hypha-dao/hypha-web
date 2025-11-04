@@ -102,7 +102,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
         )}
       </div>
       <div className="w-full flex flex-row gap-1">
-        {createdAt !== undefined && !Number.isNaN(createdAt.getTime()) && (
+        {createdAt !== undefined && !Number.isNaN(createdAt.getTime?.()) && (
           <Text className="text-1 text-neutral-11">
             {`Created on ${formatDate(createdAt, true)}`}
           </Text>
