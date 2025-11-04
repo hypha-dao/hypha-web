@@ -12,7 +12,7 @@ import {
   Image,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
-import { cn } from '@hypha-platform/ui-utils';
+import { cn, formatDate } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
 
 type Member = {
@@ -29,6 +29,7 @@ type InnerSpaceCardProps = {
   isLoading?: boolean;
   parentTitle?: string;
   parentPath?: string;
+  createdAt?: Date;
   className?: string;
 };
 
@@ -42,6 +43,7 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
   isLoading,
   parentTitle,
   parentPath,
+  createdAt,
   className,
 }) => {
   const avatarSize = 'w-[24px] h-[24px]';
@@ -132,6 +134,15 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
             ) : null}
           </Skeleton>
         </div>
+        {createdAt && (
+          <div className="flex flex-row">
+            <Skeleton loading={isLoading} height="16px" width="80px">
+              <div className="text-neutral-11 text-1">
+                Created on {formatDate(createdAt, true)}
+              </div>
+            </Skeleton>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -10,6 +10,8 @@ import {
   useMe,
   useJwt,
   useAddMemberOrchestrator,
+  useCreateEvent,
+  Person,
 } from '@hypha-platform/core/client';
 import { BaseError, useConfig } from 'wagmi';
 import { useParams } from 'next/navigation';
@@ -57,6 +59,7 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
     spaceId: web3SpaceId,
     memberAddress: person?.address as `0x${string}`,
   });
+  const { createEvent } = useCreateEvent({ authToken: jwt });
 
   const { revalidateInviteStatus, isInviteLoading, lastInviteTime } =
     useInviteStatus({
@@ -77,6 +80,21 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
       setIsProcessing(false);
     }
   }, [isJoiningSpace, isInviteOnly, agreement]);
+
+  const createJoinEvent = React.useCallback(
+    async ({ spaceId, person }: { spaceId: number; person: Person }) => {
+      if (!spaceId || !person?.address) {
+        return;
+      }
+      await createEvent({
+        type: 'joinSpace',
+        referenceEntity: 'space',
+        referenceId: spaceId,
+        parameters: { memberAddress: person.address },
+      });
+    },
+    [createEvent],
+  );
 
   const handleJoinSpace = useCallback(async () => {
     setJoinError(null);
@@ -111,6 +129,7 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
         setIsProcessing(false);
       } else {
         await joinSpace();
+        await createJoinEvent({ spaceId, person });
         setJustJoined(true);
         await revalidateIsMember();
         setIsProcessing(false);
@@ -136,6 +155,7 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
     person,
     profilePageUrl,
     revalidateInviteStatus,
+    createJoinEvent,
   ]);
 
   const FORTY_EIGHT_HOURS_MS = 48 * 60 * 60 * 1000;

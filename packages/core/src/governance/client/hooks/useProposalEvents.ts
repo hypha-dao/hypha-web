@@ -1,20 +1,29 @@
 'use client';
 
-import { useEffect } from 'react';
-import { daoProposalsImplementationConfig } from '@hypha-platform/core/generated';
-import { publicClient } from '@hypha-platform/core/client';
+import { useEffect, useState } from 'react';
+import {
+  daoProposalsImplementationConfig,
+  daoSpaceFactoryImplementationConfig,
+} from '@hypha-platform/core/generated';
+import {
+  publicClient,
+  useCreateEvent,
+  useSpacesByWeb3Ids,
+} from '@hypha-platform/core/client';
 import { useProposalActions } from './useProposalActions';
 import { useTokenManagement } from './useTokenManagement';
 import { useTokenDeploymentWatcher } from './useTokenDeploymentWatcher';
 import { extractTokenAddressFromReceipt } from './extractTokenAddressFromReceipt';
 
 export const useProposalEvents = ({
+  documentId,
   proposalId,
   tokenSymbol,
   authToken,
   onProposalExecuted,
   onProposalRejected,
 }: {
+  documentId?: number | null;
   proposalId?: number | null;
   tokenSymbol?: string | null;
   authToken?: string | null;
@@ -33,9 +42,15 @@ export const useProposalEvents = ({
     updateToken,
   });
   const { fetchProposalActions, isValidProposalAction } = useProposalActions();
+  const { createEvent } = useCreateEvent({ authToken });
+  const [joinState, setJoinState] = useState<{
+    web3spaceIds: bigint[];
+    memberAddress?: `0x${string}`;
+  }>({ web3spaceIds: [] });
+  const { spaces } = useSpacesByWeb3Ids(joinState.web3spaceIds, false);
 
   useEffect(() => {
-    if (!proposalId || !authToken) {
+    if (!documentId || !proposalId || !authToken) {
       return;
     }
 
@@ -106,6 +121,12 @@ export const useProposalEvents = ({
             const eventProposalId = log.args.proposalId;
             if (eventProposalId === BigInt(proposalId)) {
               await handleProposalExecuted(log.transactionHash);
+              await createEvent({
+                type: 'executeProposal',
+                referenceEntity: 'document',
+                referenceId: documentId,
+                parameters: {},
+              });
             }
           } catch (error) {
             console.error('Error handling ProposalExecuted event:', error);
@@ -124,6 +145,12 @@ export const useProposalEvents = ({
             const eventProposalId = log.args.proposalId;
             if (eventProposalId === BigInt(proposalId)) {
               await handleProposalRejected();
+              await createEvent({
+                type: 'rejectProposal',
+                referenceEntity: 'document',
+                referenceId: documentId,
+                parameters: {},
+              });
             }
           } catch (error) {
             console.error('Error handling ProposalRejected event:', error);
@@ -142,9 +169,34 @@ export const useProposalEvents = ({
             const eventProposalId = log.args.proposalId;
             if (eventProposalId === BigInt(proposalId)) {
               await handleProposalRejected();
+              await createEvent({
+                type: 'rejectProposal',
+                referenceEntity: 'document',
+                referenceId: documentId,
+                parameters: {},
+              });
             }
           } catch (error) {
             console.error('Error handling ProposalExpired event:', error);
+          }
+        }
+      },
+    });
+
+    const unwatchMemberJoined = publicClient.watchContractEvent({
+      address: daoSpaceFactoryImplementationConfig.address[8453],
+      abi: daoSpaceFactoryImplementationConfig.abi,
+      eventName: 'MemberJoined',
+      onLogs: async (logs) => {
+        for (const log of logs) {
+          try {
+            const web3SpaceId = log.args.spaceId;
+            const memberAddress = log.args.memberAddress;
+            if (web3SpaceId && memberAddress) {
+              setJoinState({ web3spaceIds: [web3SpaceId], memberAddress });
+            }
+          } catch (error) {
+            console.error('Error handling MemberJoined event:', error);
           }
         }
       },
@@ -154,8 +206,10 @@ export const useProposalEvents = ({
       unwatchExecuted();
       unwatchRejected();
       unwatchExpired();
+      unwatchMemberJoined();
     };
   }, [
+    documentId,
     proposalId,
     tokenSymbol,
     authToken,
@@ -168,6 +222,37 @@ export const useProposalEvents = ({
     onProposalExecuted,
     onProposalRejected,
   ]);
+
+  useEffect(() => {
+    if (
+      joinState.web3spaceIds.length > 0 &&
+      joinState.memberAddress &&
+      spaces?.length > 0
+    ) {
+      const createJoinSpaceEvent = async ({
+        spaceId,
+        memberAddress,
+      }: {
+        spaceId: number;
+        memberAddress: string;
+      }) => {
+        await createEvent({
+          type: 'joinSpace',
+          referenceEntity: 'space',
+          referenceId: spaceId,
+          parameters: { memberAddress },
+        });
+        setJoinState({ web3spaceIds: [] });
+      };
+      const [space] = spaces;
+      if (space?.id) {
+        createJoinSpaceEvent({
+          spaceId: space.id,
+          memberAddress: joinState.memberAddress,
+        });
+      }
+    }
+  }, [joinState, spaces]);
 
   return {
     isDeletingToken,

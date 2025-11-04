@@ -267,6 +267,13 @@
       "when": 1761295330918,
       "tag": "0037_curved_whistler",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1761761510511,
+      "tag": "0038_nostalgic_komodo",
+      "breakpoints": true
     }
   ]
 }

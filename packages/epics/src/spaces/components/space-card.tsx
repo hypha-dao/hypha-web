@@ -11,7 +11,7 @@ import {
   Image,
 } from '@hypha-platform/ui';
 import { SpaceModeLabel } from './space-mode-label';
-import { cn } from '@hypha-platform/ui-utils';
+import { cn, formatDate } from '@hypha-platform/ui-utils';
 
 type SpaceCardProps = {
   description: string;
@@ -25,6 +25,7 @@ type SpaceCardProps = {
   isDemo?: boolean;
   configPath?: string;
   web3SpaceId?: number;
+  createdAt: Date;
   className?: string;
 };
 
@@ -44,6 +45,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
   isDemo = false,
   configPath,
   web3SpaceId,
+  createdAt,
   className,
 }) => {
   return (
@@ -91,18 +93,32 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
             </Skeleton>
           </div>
           <div className="flex gap-2 text-xs items-center">
-            <div className="flex flex-row gap-y-2 gap-x-4 flex-wrap">
-              <div className="flex flex-row">
-                <Skeleton loading={isLoading} height="16px" width="80px">
-                  <div className="font-bold text-1">{members}</div>
-                  <div className="text-neutral-11 ml-1 text-1">Members</div>
-                </Skeleton>
+            <div className="flex flex-col gap-y-2 gap-x-4 flex-wrap">
+              <div className="flex flex-row gap-y-2 gap-x-4 flex-wrap">
+                <div className="flex flex-row">
+                  <Skeleton loading={isLoading} height="16px" width="80px">
+                    <div className="font-bold text-1">{members}</div>
+                    <div className="text-neutral-11 ml-1 text-1">Members</div>
+                  </Skeleton>
+                </div>
+                <div className="flex flex-row">
+                  <Skeleton loading={isLoading} height="16px" width="80px">
+                    <div className="font-bold text-1">{agreements}</div>
+                    <div className="text-neutral-11 ml-1 text-1">
+                      Agreements
+                    </div>
+                  </Skeleton>
+                </div>
               </div>
               <div className="flex flex-row">
-                <Skeleton loading={isLoading} height="16px" width="80px">
-                  <div className="font-bold text-1">{agreements}</div>
-                  <div className="text-neutral-11 ml-1 text-1">Agreements</div>
-                </Skeleton>
+                {createdAt instanceof Date &&
+                  !Number.isNaN(createdAt.getTime()) && (
+                    <Skeleton loading={isLoading} height="16px" width="80px">
+                      <div className="text-neutral-11 text-1">
+                        Created on {formatDate(createdAt, true)}
+                      </div>
+                    </Skeleton>
+                  )}
               </div>
             </div>
             <div className="flex grow"></div>
