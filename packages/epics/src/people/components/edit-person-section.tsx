@@ -229,10 +229,10 @@ export const EditPersonSection = ({
                 <span className="flex items-center">
                   <FormField
                     control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
                           <Input
                             disabled={isLoading}
                             placeholder="Email"

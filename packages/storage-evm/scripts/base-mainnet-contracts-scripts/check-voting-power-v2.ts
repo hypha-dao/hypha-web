@@ -25,28 +25,39 @@ async function main() {
   const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
   const factory = new ethers.Contract(SPACE_FACTORY, factoryAbi, provider);
   const directory = new ethers.Contract(DIRECTORY, directoryAbi, provider);
-  
+
   const details = await factory.getSpaceDetails(SPACE_ID);
   const votingPowerSourceId = details[2];
-  
-  console.log('Space 488 voting power source ID:', votingPowerSourceId.toString());
-  
-  const votingPowerAddress = await directory.getVotingPowerSourceContract(votingPowerSourceId);
+
+  console.log(
+    'Space 488 voting power source ID:',
+    votingPowerSourceId.toString(),
+  );
+
+  const votingPowerAddress = await directory.getVotingPowerSourceContract(
+    votingPowerSourceId,
+  );
   console.log('Voting power contract:', votingPowerAddress);
   console.log();
-  
-  const votingPowerContract = new ethers.Contract(votingPowerAddress, votingPowerAbi, provider);
-  
+
+  const votingPowerContract = new ethers.Contract(
+    votingPowerAddress,
+    votingPowerAbi,
+    provider,
+  );
+
   const voterPower = await votingPowerContract.getVotingPower(VOTER, SPACE_ID);
   const totalPower = await votingPowerContract.getTotalVotingPower(SPACE_ID);
-  
+
   console.log('Voter:', VOTER);
   console.log('Your voting power:', voterPower.toString());
   console.log('Total voting power:', totalPower.toString());
-  
+
   if (voterPower == 0n) {
     console.log('\n❌ YOU HAVE ZERO VOTING POWER!');
-    console.log('This explains the voting error - the contract reverts with NoPower()');
+    console.log(
+      'This explains the voting error - the contract reverts with NoPower()',
+    );
   } else {
     console.log('\n✓ You have voting power - not a voting power issue');
   }

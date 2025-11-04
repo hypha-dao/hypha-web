@@ -14,13 +14,13 @@ const abi = [
 async function main() {
   const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
   const contract = new ethers.Contract(SPACE_FACTORY, abi, provider);
-  
+
   console.log('Checking if address is a space executor:', EXECUTOR_ADDRESS);
   console.log();
-  
+
   const spaceId = await contract.executorToSpaceId(EXECUTOR_ADDRESS);
   console.log('Space ID for this executor:', spaceId.toString());
-  
+
   if (spaceId > 0) {
     console.log('\n✓ This IS a valid space executor');
     const details = await contract.getSpaceDetails(spaceId);

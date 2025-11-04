@@ -20,26 +20,38 @@ const memberVotingPowerAbi = [
 async function main() {
   const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
   const factory = new ethers.Contract(SPACE_FACTORY, factoryAbi, provider);
-  
+
   const details = await factory.getSpaceDetails(SPACE_ID);
   const votingPowerSourceId = details[2];
-  
-  console.log('Space 488 voting power source ID:', votingPowerSourceId.toString());
-  
+
+  console.log(
+    'Space 488 voting power source ID:',
+    votingPowerSourceId.toString(),
+  );
+
   // For voting power source 2 (member voting power)
   if (votingPowerSourceId == 2n) {
     const MEMBER_VOTING_POWER = '0xb10eb6Ad1Ee3fe12736c217a8ce761d15B79c97F';
-    const votingPowerContract = new ethers.Contract(MEMBER_VOTING_POWER, memberVotingPowerAbi, provider);
-    
-    const voterPower = await votingPowerContract.getVotingPower(VOTER, SPACE_ID);
+    const votingPowerContract = new ethers.Contract(
+      MEMBER_VOTING_POWER,
+      memberVotingPowerAbi,
+      provider,
+    );
+
+    const voterPower = await votingPowerContract.getVotingPower(
+      VOTER,
+      SPACE_ID,
+    );
     const totalPower = await votingPowerContract.getTotalVotingPower(SPACE_ID);
-    
+
     console.log('\nVoter:', VOTER);
     console.log('Your voting power:', voterPower.toString());
     console.log('Total voting power:', totalPower.toString());
-    
+
     if (voterPower == 0n) {
-      console.log('\n❌ YOU HAVE ZERO VOTING POWER - This is why voting fails!');
+      console.log(
+        '\n❌ YOU HAVE ZERO VOTING POWER - This is why voting fails!',
+      );
       console.log('The contract will revert with NoPower() error.');
     } else {
       console.log('\n✓ You have voting power');
