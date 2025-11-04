@@ -1,5 +1,5 @@
 import { Text } from '@radix-ui/themes';
-import { Card, Skeleton, Image } from '@hypha-platform/ui';
+import { Card, Skeleton, Image, Badge } from '@hypha-platform/ui';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { getDhoPathAgreements } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
@@ -15,7 +15,6 @@ type AssetCardProps = {
   isLoading?: boolean;
   supply?: {
     total: number;
-    max: number;
   };
   space?: {
     title: string;
@@ -34,6 +33,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   supply,
   space,
   lang,
+  type,
 }) => {
   return (
     <Card className="w-full h-full p-5 mb-2 flex flex-col justify-between">
@@ -46,7 +46,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
             className="rounded-full"
           >
             <Image
-              className="rounded-full w-7 h-7"
+              className="rounded-full min-w-7 min-h-7"
               src={icon ? icon : ''}
               height={32}
               width={32}
@@ -66,14 +66,25 @@ export const AssetCard: React.FC<AssetCardProps> = ({
             </Text>
           </Skeleton>
           <Skeleton width="80px" height="16px" loading={isLoading}>
-            <span className="flex gap-1">
-              <Text className="text-1 text-gray-500">{symbol}</Text>
+            <span className="flex gap-2 items-center">
+              <span className="flex gap-2 items-center">
+                <Text className="text-1 text-gray-500">{symbol}</Text>
+                {type && (
+                  <Badge
+                    colorVariant="accent"
+                    variant="outline"
+                    className="w-fit capitalize h-fit"
+                  >
+                    {type}
+                  </Badge>
+                )}
+              </span>
               {space?.title ? (
                 <Link
                   href={getDhoPathAgreements(lang as Locale, space.slug)}
-                  className="text-accent-11 text-1 text-ellipsis overflow-hidden text-nowrap hover:underline"
+                  className="text-accent-11 text-1 text-ellipsis overflow-hidden hover:underline"
                 >
-                  by {space.title}
+                  from {space.title}
                 </Link>
               ) : null}
             </span>
@@ -82,10 +93,9 @@ export const AssetCard: React.FC<AssetCardProps> = ({
       </div>
       <div className="w-full flex flex-row gap-1">
         <Text className="text-1">{name}</Text>
-        {supply?.total !== undefined && supply?.max !== undefined && (
+        {supply?.total !== undefined && (
           <Text className="text-1 text-neutral-11">
-            {formatCurrencyValue(supply.total)} Issued /{' '}
-            {formatCurrencyValue(supply.max)} Max supply
+            {`Total Issuance: ${formatCurrencyValue(supply.total)}`}
           </Text>
         )}
       </div>

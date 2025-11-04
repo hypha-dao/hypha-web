@@ -16,11 +16,11 @@ import { fileRouter } from '@hypha-platform/core/server';
 import { HYPHA_LOCALE } from '@hypha-platform/cookie';
 import { i18nConfig } from '@hypha-platform/i18n';
 import { MenuTop } from '@hypha-platform/ui';
+import { ROOT_URL } from './constants';
 
 import '@hypha-platform/ui-utils/global.css';
 import 'react-tooltip/dist/react-tooltip.css';
-
-import { ROOT_URL } from '../constants';
+import ScrollUp from '@web/components/scroll-up';
 
 const lato = Lato({
   subsets: ['latin'],
@@ -85,6 +85,7 @@ export default async function RootLayout({
 
   return (
     <Html className={clsx(lato.variable, sourceSans.variable)}>
+      <ScrollUp />
       <AuthProvider
         config={{
           appId: process.env.NEXT_PUBLIC_PRIVY_APP_ID!,

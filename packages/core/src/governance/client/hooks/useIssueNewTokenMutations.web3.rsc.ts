@@ -5,8 +5,11 @@ import useSWR from 'swr';
 import { encodeFunctionData } from 'viem';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 
-import { publicClient } from '@hypha-platform/core/client';
-import { schemaCreateProposalWeb3 } from '@hypha-platform/core/client';
+import {
+  schemaCreateProposalWeb3,
+  publicClient,
+  getSpaceMinProposalDuration,
+} from '@hypha-platform/core/client';
 import {
   getProposalFromLogs,
   mapToCreateProposalWeb3Input,
@@ -53,6 +56,10 @@ export const useIssueTokenMutationsWeb3Rpc = ({
     `createIssueToken-${proposalSlug}`,
     async (_, { arg }: { arg: CreateTokenArgs }) => {
       if (!client) throw new Error('Smart wallet client not available');
+
+      const duration = await publicClient.readContract(
+        getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
+      );
 
       let txData: Array<{
         target: `0x${string}`;
@@ -131,7 +138,7 @@ export const useIssueTokenMutationsWeb3Rpc = ({
 
       const parsedProposal = schemaCreateProposalWeb3.parse({
         spaceId: BigInt(arg.spaceId),
-        duration: getDuration(4),
+        duration: duration && duration > 0 ? duration : getDuration(4),
         transactions: txData,
       });
 

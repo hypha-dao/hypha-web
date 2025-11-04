@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   findPersonByAddresses,
   findSpaceBySlug,
+  findSpaceByAddresses,
 } from '@hypha-platform/core/server';
 import { getSpaceDetails } from '@hypha-platform/core/client';
 import { publicClient } from '@hypha-platform/core/client';
@@ -67,13 +68,22 @@ export async function GET(
       ? { pagination: { page: page!, pageSize: pageSize! } }
       : {};
 
-    const result = await findPersonByAddresses(
+    const persons = await findPersonByAddresses(
       members as `0x${string}`[],
       { ...paginationOptions, searchTerm },
       { db },
     );
 
-    return NextResponse.json(result);
+    const spaces = await findSpaceByAddresses(
+      members as `0x${string}`[],
+      { ...paginationOptions, searchTerm },
+      { db },
+    );
+
+    return NextResponse.json({
+      persons,
+      spaces,
+    });
   } catch (error) {
     console.error('Failed to fetch members:', error);
     return NextResponse.json(

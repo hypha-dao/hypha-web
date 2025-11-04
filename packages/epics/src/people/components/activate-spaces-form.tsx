@@ -21,28 +21,35 @@ import { Space, useMe } from '@hypha-platform/core/client';
 import { SpaceWithNumberOfMonthsFieldArray } from './space-with-number-of-months-array';
 import { useActivateSpaces } from '../hooks/use-activate-hypha-spaces';
 import { Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { RecipientField } from '../../agreements';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useFundWallet } from '../../treasury';
+import { z } from 'zod';
+import { isAddress } from 'ethers';
 
 interface ActivateSpacesFormProps {
   spaces: Space[];
 }
 
+const schema = activateSpacesSchema.extend({
+  buyer: z.string().refine(isAddress, { message: 'Invalid wallet address' }),
+});
+type FormValues = z.infer<typeof schema>;
+
 const RECIPIENT_SPACE_ADDRESS = '0x695f21B04B22609c4ab9e5886EB0F65cDBd464B6';
 
 export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
-  const { person } = useMe();
+  const { person, isLoading: isPersonLoading } = useMe();
   const { lang } = useParams();
   const { fundWallet } = useFundWallet({
     address: person?.address as `0x${string}`,
   });
   const recipientSpace =
     spaces?.filter((s) => s?.address === RECIPIENT_SPACE_ADDRESS) || [];
-  const form = useForm<ActivateSpacesFormValues>({
-    resolver: zodResolver(activateSpacesSchema),
+  const form = useForm<FormValues>({
+    resolver: zodResolver(schema),
     mode: 'onChange',
     defaultValues: {
       paymentToken: 'HYPHA',
@@ -55,6 +62,15 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
       recipient: RECIPIENT_SPACE_ADDRESS,
     },
   });
+
+  useEffect(() => {
+    if (person?.address) {
+      const currentBuyer = form.getValues('buyer');
+      if (currentBuyer !== person.address) {
+        form.setValue('buyer', person.address);
+      }
+    }
+  }, [person?.address]);
 
   const {
     control,
@@ -75,6 +91,10 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
     });
 
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
+  const buyerMember = useMemo(() => {
+    return !isPersonLoading && person ? [person] : [];
+  }, [isPersonLoading, person]);
 
   const onSubmit = async (data: ActivateSpacesFormValues) => {
     setShowSuccessMessage(false);
@@ -194,13 +214,24 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
           </span>
         </div>
         <Separator />
-        <Label>Recipient</Label>
         <RecipientField
+          label="Paid by"
+          members={buyerMember}
+          defaultRecipientType="member"
+          readOnly={true}
+          showTabs={false}
+          name="buyer"
+        />
+        <Separator />
+        <RecipientField
+          label="Paid to"
           members={[]}
           spaces={recipientSpace}
           defaultRecipientType="space"
           readOnly={true}
+          showTabs={false}
         />
+        <Separator />
         <div className="flex gap-2 justify-end">
           {isActivating ? (
             <div className="flex items-center gap-2 text-sm text-neutral-10">

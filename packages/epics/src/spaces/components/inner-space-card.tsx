@@ -1,6 +1,9 @@
 'use client';
 
 import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
   Card,
   CardContent,
   CardHeader,
@@ -8,7 +11,6 @@ import {
   Skeleton,
   Image,
 } from '@hypha-platform/ui';
-import { Avatar, AvatarImage } from '@radix-ui/react-avatar';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
@@ -30,6 +32,8 @@ type InnerSpaceCardProps = {
   className?: string;
 };
 
+const DEFAULT_AVATAR_PATH = '/placeholder/default-profile.svg';
+
 export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
   description,
   leadImageUrl,
@@ -40,6 +44,8 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
   parentPath,
   className,
 }) => {
+  const avatarSize = 'w-[24px] h-[24px]';
+  const skeletonSize = '24px';
   return (
     <Card className={cn('h-full w-full', className)}>
       <CardHeader className="p-0 rounded-tl-md rounded-tr-md overflow-hidden h-[150px]">
@@ -84,24 +90,41 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
         </div>
 
         <div className="flex gap-1 mb-4">
-          <Skeleton width="24px" height="24px" loading={isLoading}>
+          <Skeleton
+            width={skeletonSize}
+            height={skeletonSize}
+            loading={isLoading}
+            className="rounded-lg"
+          >
             <div className="flex gap-1">
               {members
                 ? members.slice(0, 3).map((member, index) => (
-                    <Avatar key={`${member.name} ${member.surname} - ${index}`}>
+                    <Avatar
+                      key={`${member.name} ${member.surname} - ${index}`}
+                      className={`${avatarSize} rounded-lg`}
+                    >
                       <AvatarImage
-                        className="rounded-lg"
+                        className={`${avatarSize} rounded-lg`}
                         src={member.avatar}
-                        width={24}
-                        height={24}
+                        width={20}
+                        height={20}
                       />
+                      <AvatarFallback className={`${avatarSize} rounded-lg`}>
+                        <Image
+                          width={20}
+                          height={20}
+                          className={`${avatarSize} rounded-lg`}
+                          src={DEFAULT_AVATAR_PATH}
+                          alt={`${member.name} ${member.surname}`}
+                        />
+                      </AvatarFallback>
                     </Avatar>
                   ))
                 : null}
             </div>
           </Skeleton>
 
-          <Skeleton width="106px" height="24px" loading={isLoading}>
+          <Skeleton width="106px" height={skeletonSize} loading={isLoading}>
             {members && members.length > 3 ? (
               <Text className="ml-2 flex items-center text-1 text-action-light text-nowrap">
                 + other {members.length - 3} members

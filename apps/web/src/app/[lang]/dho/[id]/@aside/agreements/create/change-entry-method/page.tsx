@@ -6,7 +6,11 @@ import { Locale } from '@hypha-platform/i18n';
 import { notFound } from 'next/navigation';
 import { Plugin } from '../plugins';
 import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
-import { findSpaceBySlug } from '@hypha-platform/core/server';
+import {
+  findSpaceBySlug,
+  getAllSpaces,
+  type Space,
+} from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 
@@ -26,6 +30,23 @@ export default async function CreateChangeEntryMethodPage({
   const { id: spaceId, web3SpaceId, slug: spaceSlug } = spaceFromDb;
   const successfulUrl = getDhoPathAgreements(lang as Locale, id);
 
+  let spaces = [] as Space[];
+  let error = null;
+
+  try {
+    spaces = await getAllSpaces({
+      parentOnly: false,
+      omitSandbox: false,
+    });
+  } catch (err) {
+    console.error('Failed to fetch spaces:', err);
+    error = err instanceof Error ? err.message : 'Failed to load spaces';
+  }
+
+  const filteredSpaces = spaces?.filter(
+    (space) => space?.address && space.address.trim() !== '',
+  );
+
   return (
     <SidePanel>
       <CreateProposalChangeEntryMethodForm
@@ -40,6 +61,7 @@ export default async function CreateChangeEntryMethodPage({
             name="change-entry-method"
           />
         }
+        spaces={filteredSpaces}
       />
     </SidePanel>
   );

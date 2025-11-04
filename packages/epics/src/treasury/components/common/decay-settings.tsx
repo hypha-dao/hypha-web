@@ -6,6 +6,8 @@ import {
   SelectContent,
   SelectItem,
   Input,
+  FormLabel,
+  RequirementMark,
 } from '@hypha-platform/ui';
 import { PercentIcon } from 'lucide-react';
 import { useFormContext, useWatch } from 'react-hook-form';
@@ -20,7 +22,7 @@ const TIME_FORMAT_TO_SECONDS: Record<TimeFormat, number> = {
 };
 
 type DecaySettingsOutput = {
-  decayInterval: number;
+  decayInterval: number | string;
   decayPercentage: number;
 };
 
@@ -32,7 +34,7 @@ type DecaySettingsProps = {
 export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
   const initialTimeFormat = value
     ? (Object.entries(TIME_FORMAT_TO_SECONDS).find(
-        ([_, seconds]) => value.decayInterval % seconds === 0,
+        ([_, seconds]) => (value.decayInterval as number) % seconds === 0,
       )?.[0] as TimeFormat) || 'Weeks'
     : 'Weeks';
 
@@ -44,7 +46,8 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
     control,
     name: 'decayPeriod',
     defaultValue: value
-      ? value.decayInterval / TIME_FORMAT_TO_SECONDS[initialTimeFormat]
+      ? (value.decayInterval as number) /
+        TIME_FORMAT_TO_SECONDS[initialTimeFormat]
       : 0,
   });
 
@@ -60,7 +63,10 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
 
   const notifyChange = () => {
     if (onChange && !Number.isNaN(decayPeriod) && !Number.isNaN(decayPercent)) {
-      const decayInterval = decayPeriod * TIME_FORMAT_TO_SECONDS[timeFormat];
+      const decayInterval =
+        typeof decayPeriod === 'string'
+          ? ''
+          : decayPeriod * TIME_FORMAT_TO_SECONDS[timeFormat];
       onChange({
         decayInterval,
         decayPercentage: decayPercent,
@@ -80,10 +86,9 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
   return (
     <>
       <div className="flex justify-between items-center gap-3">
-        <div className="text-2 text-neutral-11 font-medium">
-          Voice Decay Frequency
-        </div>
-
+        <FormLabel className="text-2 text-neutral-11 gap-1">
+          Voice Decay Frequency <RequirementMark className="text-2" />
+        </FormLabel>
         <div className="flex justify-between flex-row flex-1 gap-3 max-w-[50%]">
           <div className="flex flex-col flex-1 min-w-10">
             <Input
@@ -110,10 +115,9 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
         </div>
       </div>
       <div className="flex justify-between items-center gap-3">
-        <div className="text-2 text-neutral-11 font-medium">
-          Voice Decay Percentage
-        </div>
-
+        <FormLabel className="text-2 text-neutral-11 gap-1">
+          Voice Decay Percentage <RequirementMark className="text-2" />
+        </FormLabel>
         <div className="flex flex-col flex-1 max-w-[25%]">
           <Input
             id="decay-percent"

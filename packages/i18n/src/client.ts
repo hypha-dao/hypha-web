@@ -1,1 +1,1 @@
-export * from './components/client/select-language';
+export * from './i18n-config';

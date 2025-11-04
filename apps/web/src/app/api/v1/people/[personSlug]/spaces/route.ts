@@ -3,14 +3,17 @@ import {
   findPersonBySlug,
   getDb,
 } from '@hypha-platform/core/server';
+import { ProfileRouteParams } from '@hypha-platform/epics';
 import { db } from '@hypha-platform/storage-postgres';
+import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ personSlug: string }> },
+  { params }: { params: Promise<ProfileRouteParams> },
 ) {
-  const { personSlug } = await params;
+  const { personSlug: personSlugRaw } = await params;
+  const personSlug = tryDecodeUriPart(personSlugRaw);
   console.debug(`GET /api/v1/people/${personSlug}/spaces`);
 
   const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';

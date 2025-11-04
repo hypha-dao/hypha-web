@@ -15,6 +15,8 @@ import { schemaCreateProposalWeb3 } from '@hypha-platform/core/client';
 import { publicClient } from '@hypha-platform/core/client';
 
 import {
+  daoProposalsImplementationAbi,
+  daoProposalsImplementationAddress,
   daoSpaceFactoryImplementationAbi,
   daoSpaceFactoryImplementationAddress,
   decayingSpaceTokenAbi,
@@ -24,8 +26,11 @@ import {
   voteDecayTokenVotingPowerImplementationAddress,
 } from '@hypha-platform/core/generated';
 
-import { transactionSchema } from '@hypha-platform/core/client';
-import { VotingMethodType } from '@hypha-platform/core/client';
+import {
+  VotingMethodType,
+  getSpaceMinProposalDuration,
+  transactionSchema,
+} from '@hypha-platform/core/client';
 import { getDuration } from '@hypha-platform/ui-utils';
 
 const chainId = 8453;
@@ -37,6 +42,7 @@ interface ChangeVotingMethodArgs {
   token: string | undefined;
   quorumAndUnity: { quorum: bigint; unity: bigint };
   votingMethod: VotingMethodType;
+  votingDuration?: number;
 }
 
 const VOTING_METHOD_MAP: Record<VotingMethodType, bigint> = {
@@ -63,6 +69,10 @@ export const useChangeVotingMethodMutationsWeb3Rpc = ({
     async (_, { arg }: { arg: ChangeVotingMethodArgs }) => {
       if (!client) throw new Error('Smart wallet client not available');
 
+      const duration = await publicClient.readContract(
+        getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
+      );
+
       const transactions: TxData[] = [];
 
       const votingMethodCode = VOTING_METHOD_MAP[arg.votingMethod];
@@ -79,6 +89,16 @@ export const useChangeVotingMethodMutationsWeb3Rpc = ({
             arg.quorumAndUnity.unity,
             arg.quorumAndUnity.quorum,
           ],
+        }),
+      });
+
+      transactions.push({
+        target: daoProposalsImplementationAddress[chainId],
+        value: 0,
+        data: encodeFunctionData({
+          abi: daoProposalsImplementationAbi,
+          functionName: 'setMinimumProposalDuration',
+          args: [BigInt(arg.spaceId), BigInt(arg.votingDuration as number)],
         }),
       });
 
@@ -134,7 +154,7 @@ export const useChangeVotingMethodMutationsWeb3Rpc = ({
 
       const input = {
         spaceId: BigInt(arg.spaceId),
-        duration: getDuration(4),
+        duration: duration && duration > 0 ? duration : getDuration(4),
         transactions,
       };
 

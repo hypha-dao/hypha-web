@@ -1,9 +1,13 @@
-import { PersonHead, ProfileMemberSpaces } from '@hypha-platform/epics';
+import {
+  MFABanner,
+  PersonHead,
+  ProfileMemberSpaces,
+  ProfilePageParams,
+} from '@hypha-platform/epics';
 import Link from 'next/link';
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Text } from '@radix-ui/themes';
 import { Container, Separator } from '@hypha-platform/ui';
-import { Locale } from '@hypha-platform/i18n';
 import React from 'react';
 import {
   findPersonBySlug,
@@ -14,9 +18,10 @@ import { getMemberSpaces, Space } from '@hypha-platform/core/client';
 import { ProfileTabs } from './_components/profile-tabs';
 import { web3Client } from '@hypha-platform/core/server';
 import { Hex, zeroAddress } from 'viem';
+import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
 
 type PageProps = {
-  params: Promise<{ lang: Locale; personSlug: string }>;
+  params: Promise<ProfilePageParams>;
 };
 
 export async function generateMetadata(props: PageProps) {
@@ -29,7 +34,8 @@ export async function generateMetadata(props: PageProps) {
 export default async function ProfilePage(props: PageProps) {
   const params = await props.params;
 
-  const { lang, personSlug } = params;
+  const { lang, personSlug: personSlugRaw } = params;
+  const personSlug = tryDecodeUriPart(personSlugRaw);
 
   const person = await findPersonBySlug({ slug: personSlug }, { db });
   const personAddress = (person?.address as Hex) || zeroAddress;
@@ -72,6 +78,7 @@ export default async function ProfilePage(props: PageProps) {
             exportEmbeddedWallet={true}
           />
           <Separator />
+          <MFABanner />
           <ProfileMemberSpaces spaces={spaces} profileView={true} />
           <ProfileTabs person={person} lang={lang} />
         </div>

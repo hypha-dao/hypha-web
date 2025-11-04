@@ -239,6 +239,7 @@ export const daoProposalsImplementationAbi = [
     inputs: [{ name: 'target', internalType: 'address', type: 'address' }],
     name: 'AddressEmptyCode',
   },
+  { type: 'error', inputs: [], name: 'DurationTooLong' },
   {
     type: 'error',
     inputs: [
@@ -247,9 +248,25 @@ export const daoProposalsImplementationAbi = [
     name: 'ERC1967InvalidImplementation',
   },
   { type: 'error', inputs: [], name: 'ERC1967NonPayable' },
+  { type: 'error', inputs: [], name: 'EmptyData' },
+  { type: 'error', inputs: [], name: 'Executed' },
+  { type: 'error', inputs: [], name: 'ExecutionFailed' },
+  { type: 'error', inputs: [], name: 'Expired' },
   { type: 'error', inputs: [], name: 'FailedCall' },
+  { type: 'error', inputs: [], name: 'InvalidDelegation' },
+  { type: 'error', inputs: [], name: 'InvalidDirectory' },
+  { type: 'error', inputs: [], name: 'InvalidFactory' },
   { type: 'error', inputs: [], name: 'InvalidInitialization' },
+  { type: 'error', inputs: [], name: 'InvalidTarget' },
+  { type: 'error', inputs: [], name: 'InvalidTracker' },
+  { type: 'error', inputs: [], name: 'NoExecutor' },
+  { type: 'error', inputs: [], name: 'NoPower' },
+  { type: 'error', inputs: [], name: 'NoTransactions' },
+  { type: 'error', inputs: [], name: 'NotInitialized' },
   { type: 'error', inputs: [], name: 'NotInitializing' },
+  { type: 'error', inputs: [], name: 'NotMember' },
+  { type: 'error', inputs: [], name: 'NotStarted' },
+  { type: 'error', inputs: [], name: 'OnlyExecutor' },
   {
     type: 'error',
     inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
@@ -260,12 +277,15 @@ export const daoProposalsImplementationAbi = [
     inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
     name: 'OwnableUnauthorizedAccount',
   },
+  { type: 'error', inputs: [], name: 'SetMinDuration' },
+  { type: 'error', inputs: [], name: 'SubscriptionInactive' },
   { type: 'error', inputs: [], name: 'UUPSUnauthorizedCallContext' },
   {
     type: 'error',
     inputs: [{ name: 'slot', internalType: 'bytes32', type: 'bytes32' }],
     name: 'UUPSUnsupportedProxiableUUID',
   },
+  { type: 'error', inputs: [], name: 'Voted' },
   {
     type: 'event',
     anonymous: false,
@@ -297,6 +317,25 @@ export const daoProposalsImplementationAbi = [
       },
     ],
     name: 'Initialized',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'duration',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'MinimumProposalDurationSet',
   },
   {
     type: 'event',
@@ -737,6 +776,25 @@ export const daoProposalsImplementationAbi = [
   {
     type: 'function',
     inputs: [
+      { name: '_delegationContract', internalType: 'address', type: 'address' },
+    ],
+    name: 'setDelegationContract',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: '_minDuration', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'setMinimumProposalDuration',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
       { name: '_paymentTracker', internalType: 'address', type: 'address' },
     ],
     name: 'setPaymentTracker',
@@ -753,6 +811,13 @@ export const daoProposalsImplementationAbi = [
   {
     type: 'function',
     inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    name: 'spaceMinProposalDuration',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     name: 'spaceTrialActivated',
     outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
     stateMutability: 'view',
@@ -761,6 +826,13 @@ export const daoProposalsImplementationAbi = [
     type: 'function',
     inputs: [{ name: 'newOwner', internalType: 'address', type: 'address' }],
     name: 'transferOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_proposalId', internalType: 'uint256', type: 'uint256' }],
+    name: 'triggerExecutionCheck',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -1255,7 +1327,7 @@ export const daoSpaceFactoryImplementationAbi = [
     type: 'function',
     inputs: [{ name: '_spaceId', internalType: 'uint256', type: 'uint256' }],
     name: 'joinSpace',
-    outputs: [],
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'nonpayable',
   },
   {
@@ -1420,20 +1492,20 @@ export const daoSpaceFactoryImplementationConfig = {
  * [__View Contract on Base Basescan__](https://basescan.org/address/0xc8995514f8c76b9d9a509b4fdba0d06eb732907e)
  */
 export const decayingSpaceTokenAbi = [
+  { type: 'constructor', inputs: [], stateMutability: 'nonpayable' },
   {
-    type: 'constructor',
-    inputs: [
-      { name: 'name', internalType: 'string', type: 'string' },
-      { name: 'symbol', internalType: 'string', type: 'string' },
-      { name: '_executor', internalType: 'address', type: 'address' },
-      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: '_maxSupply', internalType: 'uint256', type: 'uint256' },
-      { name: '_transferable', internalType: 'bool', type: 'bool' },
-      { name: '_decayPercentage', internalType: 'uint256', type: 'uint256' },
-      { name: '_decayInterval', internalType: 'uint256', type: 'uint256' },
-    ],
-    stateMutability: 'nonpayable',
+    type: 'error',
+    inputs: [{ name: 'target', internalType: 'address', type: 'address' }],
+    name: 'AddressEmptyCode',
   },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'implementation', internalType: 'address', type: 'address' },
+    ],
+    name: 'ERC1967InvalidImplementation',
+  },
+  { type: 'error', inputs: [], name: 'ERC1967NonPayable' },
   {
     type: 'error',
     inputs: [
@@ -1472,6 +1544,9 @@ export const decayingSpaceTokenAbi = [
     inputs: [{ name: 'spender', internalType: 'address', type: 'address' }],
     name: 'ERC20InvalidSpender',
   },
+  { type: 'error', inputs: [], name: 'FailedCall' },
+  { type: 'error', inputs: [], name: 'InvalidInitialization' },
+  { type: 'error', inputs: [], name: 'NotInitializing' },
   {
     type: 'error',
     inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
@@ -1481,6 +1556,12 @@ export const decayingSpaceTokenAbi = [
     type: 'error',
     inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
     name: 'OwnableUnauthorizedAccount',
+  },
+  { type: 'error', inputs: [], name: 'UUPSUnauthorizedCallContext' },
+  {
+    type: 'error',
+    inputs: [{ name: 'slot', internalType: 'bytes32', type: 'bytes32' }],
+    name: 'UUPSUnsupportedProxiableUUID',
   },
   {
     type: 'event',
@@ -1538,6 +1619,19 @@ export const decayingSpaceTokenAbi = [
     anonymous: false,
     inputs: [
       {
+        name: 'version',
+        internalType: 'uint64',
+        type: 'uint64',
+        indexed: false,
+      },
+    ],
+    name: 'Initialized',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
         name: 'previousOwner',
         internalType: 'address',
         type: 'address',
@@ -1566,6 +1660,26 @@ export const decayingSpaceTokenAbi = [
       },
     ],
     name: 'Transfer',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'implementation',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'Upgraded',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'UPGRADE_INTERFACE_VERSION',
+    outputs: [{ name: '', internalType: 'string', type: 'string' }],
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -1642,16 +1756,39 @@ export const decayingSpaceTokenAbi = [
   {
     type: 'function',
     inputs: [],
-    name: 'executor',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    name: 'getDecayedTotalSupply',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
   {
     type: 'function',
-    inputs: [],
-    name: 'getDecayedTotalSupply',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
+    inputs: [
+      { name: 'name', internalType: 'string', type: 'string' },
+      { name: 'symbol', internalType: 'string', type: 'string' },
+      { name: '_executor', internalType: 'address', type: 'address' },
+      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: '_maxSupply', internalType: 'uint256', type: 'uint256' },
+      { name: '_transferable', internalType: 'bool', type: 'bool' },
+    ],
+    name: 'initialize',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'name', internalType: 'string', type: 'string' },
+      { name: 'symbol', internalType: 'string', type: 'string' },
+      { name: '_executor', internalType: 'address', type: 'address' },
+      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: '_maxSupply', internalType: 'uint256', type: 'uint256' },
+      { name: '_transferable', internalType: 'bool', type: 'bool' },
+      { name: '_decayPercentage', internalType: 'uint256', type: 'uint256' },
+      { name: '_decayInterval', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'initialize',
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -1689,6 +1826,13 @@ export const decayingSpaceTokenAbi = [
     inputs: [],
     name: 'owner',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'proxiableUUID',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
     stateMutability: 'view',
   },
   {
@@ -1761,6 +1905,16 @@ export const decayingSpaceTokenAbi = [
     outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
     stateMutability: 'view',
   },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'newImplementation', internalType: 'address', type: 'address' },
+      { name: 'data', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'upgradeToAndCall',
+    outputs: [],
+    stateMutability: 'payable',
+  },
 ] as const;
 
 /**
@@ -1831,6 +1985,19 @@ export const decayingTokenFactoryAbi = [
       },
     ],
     name: 'DecayVotingPowerContractUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'implementation',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'DecayingTokenImplementationUpdated',
   },
   {
     type: 'event',
@@ -1986,6 +2153,13 @@ export const decayingTokenFactoryAbi = [
   },
   {
     type: 'function',
+    inputs: [],
+    name: 'decayingTokenImplementation',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     inputs: [
       { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
       { name: 'name', internalType: 'string', type: 'string' },
@@ -2060,6 +2234,15 @@ export const decayingTokenFactoryAbi = [
   {
     type: 'function',
     inputs: [
+      { name: '_implementation', internalType: 'address', type: 'address' },
+    ],
+    name: 'setDecayingTokenImplementation',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
       { name: '_spacesContract', internalType: 'address', type: 'address' },
     ],
     name: 'setSpacesContract',
@@ -2112,6 +2295,763 @@ export const decayingTokenFactoryAddress = {
 export const decayingTokenFactoryConfig = {
   address: decayingTokenFactoryAddress,
   abi: decayingTokenFactoryAbi,
+} as const;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// EnergyDistributionImplementation
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0x02d88b0C4CC3A4AE86482056c25d65916Dd6DD95)
+ */
+export const energyDistributionImplementationAbi = [
+  { type: 'constructor', inputs: [], stateMutability: 'nonpayable' },
+  {
+    type: 'error',
+    inputs: [{ name: 'target', internalType: 'address', type: 'address' }],
+    name: 'AddressEmptyCode',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'implementation', internalType: 'address', type: 'address' },
+    ],
+    name: 'ERC1967InvalidImplementation',
+  },
+  { type: 'error', inputs: [], name: 'ERC1967NonPayable' },
+  { type: 'error', inputs: [], name: 'FailedCall' },
+  { type: 'error', inputs: [], name: 'InvalidInitialization' },
+  { type: 'error', inputs: [], name: 'NotInitializing' },
+  {
+    type: 'error',
+    inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
+    name: 'OwnableInvalidOwner',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'OwnableUnauthorizedAccount',
+  },
+  { type: 'error', inputs: [], name: 'UUPSUnauthorizedCallContext' },
+  {
+    type: 'error',
+    inputs: [{ name: 'slot', internalType: 'bytes32', type: 'bytes32' }],
+    name: 'UUPSUnsupportedProxiableUUID',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'price',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'maxCapacity',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'BatteryConfigured',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'oldState',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'newState',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'energyChange',
+        internalType: 'int256',
+        type: 'int256',
+        indexed: false,
+      },
+    ],
+    name: 'BatteryStateChanged',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'totalItems',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'CollectiveConsumptionUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'deviceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'CommunityDeviceIdSet',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'debtor',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'amount',
+        internalType: 'int256',
+        type: 'int256',
+        indexed: false,
+      },
+      {
+        name: 'previousBalance',
+        internalType: 'int256',
+        type: 'int256',
+        indexed: false,
+      },
+      {
+        name: 'newBalance',
+        internalType: 'int256',
+        type: 'int256',
+        indexed: false,
+      },
+    ],
+    name: 'DebtSettled',
+  },
+  { type: 'event', anonymous: false, inputs: [], name: 'EmergencyReset' },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'member',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'quantity',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'cashCreditBalance',
+        internalType: 'int256',
+        type: 'int256',
+        indexed: false,
+      },
+    ],
+    name: 'EnergyConsumed',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'totalSources',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'totalQuantity',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'EnergyDistributed',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'totalQuantity',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'exportValue',
+        internalType: 'int256',
+        type: 'int256',
+        indexed: false,
+      },
+    ],
+    name: 'EnergyExported',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'totalQuantity',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'importCost',
+        internalType: 'int256',
+        type: 'int256',
+        indexed: false,
+      },
+    ],
+    name: 'EnergyImported',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'deviceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'ExportDeviceIdSet',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'price',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'ExportPriceSet',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'version',
+        internalType: 'uint64',
+        type: 'uint64',
+        indexed: false,
+      },
+    ],
+    name: 'Initialized',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'memberAddress',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'deviceIds',
+        internalType: 'uint256[]',
+        type: 'uint256[]',
+        indexed: false,
+      },
+      {
+        name: 'ownershipPercentage',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'MemberAdded',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'memberAddress',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'MemberRemoved',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previousOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'newOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'OwnershipTransferred',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'oldContract',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'newContract',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'SettlementContractUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'implementation',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'Upgraded',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'account',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'isWhitelisted',
+        internalType: 'bool',
+        type: 'bool',
+        indexed: false,
+      },
+    ],
+    name: 'WhitelistUpdated',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'UPGRADE_INTERFACE_VERSION',
+    outputs: [{ name: '', internalType: 'string', type: 'string' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'memberAddress', internalType: 'address', type: 'address' },
+      { name: 'deviceIds', internalType: 'uint256[]', type: 'uint256[]' },
+      { name: 'ownershipPercentage', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'addMember',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'price', internalType: 'uint256', type: 'uint256' },
+      { name: 'maxCapacity', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'configureBattery',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: 'consumptionRequests',
+        internalType: 'struct IEnergyDistribution.ConsumptionRequest[]',
+        type: 'tuple[]',
+        components: [
+          { name: 'deviceId', internalType: 'uint256', type: 'uint256' },
+          { name: 'quantity', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+    ],
+    name: 'consumeEnergyTokens',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: 'sources',
+        internalType: 'struct IEnergyDistribution.EnergySource[]',
+        type: 'tuple[]',
+        components: [
+          { name: 'sourceId', internalType: 'uint256', type: 'uint256' },
+          { name: 'price', internalType: 'uint256', type: 'uint256' },
+          { name: 'quantity', internalType: 'uint256', type: 'uint256' },
+          { name: 'isImport', internalType: 'bool', type: 'bool' },
+        ],
+      },
+      { name: 'batteryState', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'distributeEnergyTokens',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'emergencyReset',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'member', internalType: 'address', type: 'address' }],
+    name: 'getAllocatedTokens',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getBatteryInfo',
+    outputs: [
+      {
+        name: '',
+        internalType: 'struct IEnergyDistribution.BatteryInfo',
+        type: 'tuple',
+        components: [
+          { name: 'currentState', internalType: 'uint256', type: 'uint256' },
+          { name: 'price', internalType: 'uint256', type: 'uint256' },
+          { name: 'maxCapacity', internalType: 'uint256', type: 'uint256' },
+          { name: 'configured', internalType: 'bool', type: 'bool' },
+        ],
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'member', internalType: 'address', type: 'address' }],
+    name: 'getCashCreditBalance',
+    outputs: [
+      { name: '', internalType: 'int256', type: 'int256' },
+      { name: '', internalType: 'address', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getCollectiveConsumption',
+    outputs: [
+      {
+        name: '',
+        internalType: 'struct IEnergyDistribution.CollectiveConsumption[]',
+        type: 'tuple[]',
+        components: [
+          { name: 'owner', internalType: 'address', type: 'address' },
+          { name: 'price', internalType: 'uint256', type: 'uint256' },
+          { name: 'quantity', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getCommunityCashCreditBalance',
+    outputs: [{ name: '', internalType: 'int256', type: 'int256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getCommunityDeviceId',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'deviceId', internalType: 'uint256', type: 'uint256' }],
+    name: 'getDeviceOwner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getEnergyTokenAddress',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getExportCashCreditBalance',
+    outputs: [{ name: '', internalType: 'int256', type: 'int256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getExportDeviceId',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getExportPrice',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getImportCashCreditBalance',
+    outputs: [{ name: '', internalType: 'int256', type: 'int256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'memberAddress', internalType: 'address', type: 'address' },
+    ],
+    name: 'getMember',
+    outputs: [
+      {
+        name: '',
+        internalType: 'struct IEnergyDistribution.Member',
+        type: 'tuple',
+        components: [
+          { name: 'memberAddress', internalType: 'address', type: 'address' },
+          { name: 'deviceIds', internalType: 'uint256[]', type: 'uint256[]' },
+          {
+            name: 'ownershipPercentage',
+            internalType: 'uint256',
+            type: 'uint256',
+          },
+          { name: 'isActive', internalType: 'bool', type: 'bool' },
+        ],
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getSettledBalance',
+    outputs: [{ name: '', internalType: 'int256', type: 'int256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getSettlementContract',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'member', internalType: 'address', type: 'address' }],
+    name: 'getTokenBalance',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getTotalOwnershipPercentage',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'initialOwner', internalType: 'address', type: 'address' },
+      { name: 'energyTokenAddress', internalType: 'address', type: 'address' },
+    ],
+    name: 'initialize',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'isAddressWhitelisted',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'owner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'proxiableUUID',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'memberAddress', internalType: 'address', type: 'address' },
+    ],
+    name: 'removeMember',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'renounceOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'deviceId', internalType: 'uint256', type: 'uint256' }],
+    name: 'setCommunityDeviceId',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'tokenAddress', internalType: 'address', type: 'address' },
+    ],
+    name: 'setEnergyToken',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'deviceId', internalType: 'uint256', type: 'uint256' }],
+    name: 'setExportDeviceId',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'price', internalType: 'uint256', type: 'uint256' }],
+    name: 'setExportPrice',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_settlementContract', internalType: 'address', type: 'address' },
+    ],
+    name: 'setSettlementContract',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'debtor', internalType: 'address', type: 'address' },
+      { name: 'amount', internalType: 'int256', type: 'int256' },
+    ],
+    name: 'settleDebt',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address' }],
+    name: 'transferOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'account', internalType: 'address', type: 'address' },
+      { name: '_isWhitelisted', internalType: 'bool', type: 'bool' },
+    ],
+    name: 'updateWhitelist',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'newImplementation', internalType: 'address', type: 'address' },
+      { name: 'data', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'upgradeToAndCall',
+    outputs: [],
+    stateMutability: 'payable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'verifyZeroSumProperty',
+    outputs: [
+      { name: '', internalType: 'bool', type: 'bool' },
+      { name: '', internalType: 'int256', type: 'int256' },
+    ],
+    stateMutability: 'view',
+  },
+] as const;
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0x02d88b0C4CC3A4AE86482056c25d65916Dd6DD95)
+ */
+export const energyDistributionImplementationAddress = {
+  8453: '0x02d88b0C4CC3A4AE86482056c25d65916Dd6DD95',
+} as const;
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0x02d88b0C4CC3A4AE86482056c25d65916Dd6DD95)
+ */
+export const energyDistributionImplementationConfig = {
+  address: energyDistributionImplementationAddress,
+  abi: energyDistributionImplementationAbi,
 } as const;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2280,32 +3220,6 @@ export const hyphaTokenAbi = [
     anonymous: false,
     inputs: [
       {
-        name: 'newAmount',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'HyphaPerDayUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'newPrice',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'HyphaPriceUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
         name: 'version',
         internalType: 'uint64',
         type: 'uint64',
@@ -2313,34 +3227,6 @@ export const hyphaTokenAbi = [
       },
     ],
     name: 'Initialized',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'account',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      { name: 'status', internalType: 'bool', type: 'bool', indexed: true },
-    ],
-    name: 'MintTransferWhitelistUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'account',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      { name: 'status', internalType: 'bool', type: 'bool', indexed: true },
-    ],
-    name: 'NormalTransferWhitelistUpdated',
   },
   {
     type: 'event',
@@ -2360,6 +3246,31 @@ export const hyphaTokenAbi = [
       },
     ],
     name: 'OwnershipTransferred',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'newHyphaPrice',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'newUsdcPerDay',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'newHyphaPerDay',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'PricingParametersUpdated',
   },
   {
     type: 'event',
@@ -2494,6 +3405,20 @@ export const hyphaTokenAbi = [
     type: 'event',
     anonymous: false,
     inputs: [
+      { name: 'from', internalType: 'address', type: 'address', indexed: true },
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'TokensBurned',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
       { name: 'to', internalType: 'address', type: 'address', indexed: true },
       {
         name: 'amount',
@@ -2537,13 +3462,25 @@ export const hyphaTokenAbi = [
     anonymous: false,
     inputs: [
       {
-        name: 'newAmount',
-        internalType: 'uint256',
-        type: 'uint256',
+        name: 'account',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'mintTransferStatus',
+        internalType: 'bool',
+        type: 'bool',
+        indexed: false,
+      },
+      {
+        name: 'normalTransferStatus',
+        internalType: 'bool',
+        type: 'bool',
         indexed: false,
       },
     ],
-    name: 'UsdcPerDayUpdated',
+    name: 'WhitelistStatusUpdated',
   },
   {
     type: 'function',
@@ -2613,6 +3550,16 @@ export const hyphaTokenAbi = [
     name: 'balanceOf',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'from', internalType: 'address', type: 'address' },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'burnFrom',
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -2821,40 +3768,6 @@ export const hyphaTokenAbi = [
   },
   {
     type: 'function',
-    inputs: [{ name: 'newAmount', internalType: 'uint256', type: 'uint256' }],
-    name: 'setHyphaPerDay',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'newPrice', internalType: 'uint256', type: 'uint256' }],
-    name: 'setHyphaPrice',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'account', internalType: 'address', type: 'address' },
-      { name: 'status', internalType: 'bool', type: 'bool' },
-    ],
-    name: 'setMintTransferWhitelist',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'account', internalType: 'address', type: 'address' },
-      { name: 'status', internalType: 'bool', type: 'bool' },
-    ],
-    name: 'setNormalTransferWhitelist',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
     inputs: [
       { name: '_paymentTracker', internalType: 'address', type: 'address' },
     ],
@@ -2864,8 +3777,23 @@ export const hyphaTokenAbi = [
   },
   {
     type: 'function',
-    inputs: [{ name: 'newAmount', internalType: 'uint256', type: 'uint256' }],
-    name: 'setUsdcPerDay',
+    inputs: [
+      { name: 'newHyphaPrice', internalType: 'uint256', type: 'uint256' },
+      { name: 'newUsdcPerDay', internalType: 'uint256', type: 'uint256' },
+      { name: 'newHyphaPerDay', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'setPricingParameters',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'account', internalType: 'address', type: 'address' },
+      { name: 'mintTransferStatus', internalType: 'bool', type: 'bool' },
+      { name: 'normalTransferStatus', internalType: 'bool', type: 'bool' },
+    ],
+    name: 'setWhitelistStatus',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -3052,6 +3980,19 @@ export const ownershipTokenFactoryAbi = [
     anonymous: false,
     inputs: [
       {
+        name: 'implementation',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'OwnershipTokenImplementationUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
         name: 'previousOwner',
         internalType: 'address',
         type: 'address',
@@ -3213,6 +4154,13 @@ export const ownershipTokenFactoryAbi = [
   {
     type: 'function',
     inputs: [],
+    name: 'ownershipTokenImplementation',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
     name: 'proxiableUUID',
     outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
     stateMutability: 'view',
@@ -3221,6 +4169,15 @@ export const ownershipTokenFactoryAbi = [
     type: 'function',
     inputs: [],
     name: 'renounceOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_implementation', internalType: 'address', type: 'address' },
+    ],
+    name: 'setOwnershipTokenImplementation',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -3649,6 +4606,19 @@ export const regularTokenFactoryAbi = [
     anonymous: false,
     inputs: [
       {
+        name: 'implementation',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'SpaceTokenImplementationUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
         name: 'newSpacesContract',
         internalType: 'address',
         type: 'address',
@@ -3806,6 +4776,15 @@ export const regularTokenFactoryAbi = [
   {
     type: 'function',
     inputs: [
+      { name: '_implementation', internalType: 'address', type: 'address' },
+    ],
+    name: 'setSpaceTokenImplementation',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
       { name: '_spacesContract', internalType: 'address', type: 'address' },
     ],
     name: 'setSpacesContract',
@@ -3824,6 +4803,13 @@ export const regularTokenFactoryAbi = [
     name: 'setVotingPowerContract',
     outputs: [],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'spaceTokenImplementation',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -3878,6 +4864,323 @@ export const regularTokenFactoryAddress = {
 export const regularTokenFactoryConfig = {
   address: regularTokenFactoryAddress,
   abi: regularTokenFactoryAbi,
+} as const;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// SpacePaymentTracker
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0x4B61250c8F19BA96C473c65022453E95176b0139)
+ */
+export const spacePaymentTrackerAbi = [
+  { type: 'constructor', inputs: [], stateMutability: 'nonpayable' },
+  {
+    type: 'error',
+    inputs: [{ name: 'target', internalType: 'address', type: 'address' }],
+    name: 'AddressEmptyCode',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'implementation', internalType: 'address', type: 'address' },
+    ],
+    name: 'ERC1967InvalidImplementation',
+  },
+  { type: 'error', inputs: [], name: 'ERC1967NonPayable' },
+  { type: 'error', inputs: [], name: 'FailedCall' },
+  { type: 'error', inputs: [], name: 'InvalidInitialization' },
+  { type: 'error', inputs: [], name: 'NotInitializing' },
+  {
+    type: 'error',
+    inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
+    name: 'OwnableInvalidOwner',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'OwnableUnauthorizedAccount',
+  },
+  { type: 'error', inputs: [], name: 'UUPSUnauthorizedCallContext' },
+  {
+    type: 'error',
+    inputs: [{ name: 'slot', internalType: 'bytes32', type: 'bytes32' }],
+    name: 'UUPSUnsupportedProxiableUUID',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'contractAddress',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      { name: 'role', internalType: 'string', type: 'string', indexed: false },
+    ],
+    name: 'ContractAuthorized',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+    ],
+    name: 'FreeTrialActivated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'version',
+        internalType: 'uint64',
+        type: 'uint64',
+        indexed: false,
+      },
+    ],
+    name: 'Initialized',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previousOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'newOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'OwnershipTransferred',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'expiryTime',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'SpacePaymentUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'implementation',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'Upgraded',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'FREE_TRIAL_DAYS',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'UPGRADE_INTERFACE_VERSION',
+    outputs: [{ name: '', internalType: 'string', type: 'string' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'spaceId', internalType: 'uint256', type: 'uint256' }],
+    name: 'activateFreeTrial',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: 'durationInDays', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'extendFreeTrial',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'spaceId', internalType: 'uint256', type: 'uint256' }],
+    name: 'getSpaceExpiryTime',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'spaceId', internalType: 'uint256', type: 'uint256' }],
+    name: 'hasSpacePaid',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'spaceId', internalType: 'uint256', type: 'uint256' }],
+    name: 'hasUsedFreeTrial',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'hyphaTokenContract',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'initialOwner', internalType: 'address', type: 'address' },
+    ],
+    name: 'initialize',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'spaceId', internalType: 'uint256', type: 'uint256' }],
+    name: 'isSpaceActive',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'owner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'proposalsContract',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'proxiableUUID',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'renounceOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_hyphaTokenContract', internalType: 'address', type: 'address' },
+      { name: '_proposalsContract', internalType: 'address', type: 'address' },
+    ],
+    name: 'setAuthorizedContracts',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: 'newExpiryTime', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'setCustomExpiryTime',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'spaceId', internalType: 'uint256', type: 'uint256' }],
+    name: 'setSpaceAsPaid',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    name: 'spacePayments',
+    outputs: [
+      { name: 'expiryTime', internalType: 'uint256', type: 'uint256' },
+      { name: 'freeTrialUsed', internalType: 'bool', type: 'bool' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address' }],
+    name: 'transferOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '', internalType: 'address', type: 'address' },
+      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: 'durationInDays', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'updateSpacePayment',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'newImplementation', internalType: 'address', type: 'address' },
+      { name: 'data', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'upgradeToAndCall',
+    outputs: [],
+    stateMutability: 'payable',
+  },
+] as const;
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0x4B61250c8F19BA96C473c65022453E95176b0139)
+ */
+export const spacePaymentTrackerAddress = {
+  8453: '0x4B61250c8F19BA96C473c65022453E95176b0139',
+} as const;
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0x4B61250c8F19BA96C473c65022453E95176b0139)
+ */
+export const spacePaymentTrackerConfig = {
+  address: spacePaymentTrackerAddress,
+  abi: spacePaymentTrackerAbi,
 } as const;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -4763,4 +6066,366 @@ export const voteDecayTokenVotingPowerImplementationAddress = {
 export const voteDecayTokenVotingPowerImplementationConfig = {
   address: voteDecayTokenVotingPowerImplementationAddress,
   abi: voteDecayTokenVotingPowerImplementationAbi,
+} as const;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// VotingPowerDelegationImplementation
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0xc87546357EeFF8653cF058Be2BA850813e39cda0)
+ */
+export const votingPowerDelegationImplementationAbi = [
+  { type: 'constructor', inputs: [], stateMutability: 'nonpayable' },
+  {
+    type: 'error',
+    inputs: [{ name: 'target', internalType: 'address', type: 'address' }],
+    name: 'AddressEmptyCode',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'implementation', internalType: 'address', type: 'address' },
+    ],
+    name: 'ERC1967InvalidImplementation',
+  },
+  { type: 'error', inputs: [], name: 'ERC1967NonPayable' },
+  { type: 'error', inputs: [], name: 'FailedCall' },
+  { type: 'error', inputs: [], name: 'InvalidInitialization' },
+  { type: 'error', inputs: [], name: 'NotInitializing' },
+  {
+    type: 'error',
+    inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
+    name: 'OwnableInvalidOwner',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'OwnableUnauthorizedAccount',
+  },
+  { type: 'error', inputs: [], name: 'UUPSUnauthorizedCallContext' },
+  {
+    type: 'error',
+    inputs: [{ name: 'slot', internalType: 'bytes32', type: 'bytes32' }],
+    name: 'UUPSUnsupportedProxiableUUID',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'version',
+        internalType: 'uint64',
+        type: 'uint64',
+        indexed: false,
+      },
+    ],
+    name: 'Initialized',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previousOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'newOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'OwnershipTransferred',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'implementation',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'Upgraded',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'delegator',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'delegate',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+    ],
+    name: 'VotingPowerDelegated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'delegator',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'previousDelegate',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+    ],
+    name: 'VotingPowerUndelegated',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'UPGRADE_INTERFACE_VERSION',
+    outputs: [{ name: '', internalType: 'string', type: 'string' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_delegate', internalType: 'address', type: 'address' },
+      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'delegate',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '', internalType: 'address', type: 'address' },
+      { name: '', internalType: 'uint256', type: 'uint256' },
+      { name: '', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'delegateToDelegators',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '', internalType: 'address', type: 'address' },
+      { name: '', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'delegateToSpaceIndex',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '', internalType: 'address', type: 'address' },
+      { name: '', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'delegateToSpaces',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_user', internalType: 'address', type: 'address' },
+      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'getDelegate',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_spaceId', internalType: 'uint256', type: 'uint256' }],
+    name: 'getDelegatesForSpace',
+    outputs: [{ name: '', internalType: 'address[]', type: 'address[]' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_user', internalType: 'address', type: 'address' },
+      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'getDelegationInfo',
+    outputs: [
+      { name: 'delegateAddress', internalType: 'address', type: 'address' },
+      { name: 'hasDelegatedStatus', internalType: 'bool', type: 'bool' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_delegate', internalType: 'address', type: 'address' },
+      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'getDelegators',
+    outputs: [{ name: '', internalType: 'address[]', type: 'address[]' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_delegate', internalType: 'address', type: 'address' }],
+    name: 'getSpacesForDelegate',
+    outputs: [{ name: '', internalType: 'uint256[]', type: 'uint256[]' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_user', internalType: 'address', type: 'address' },
+      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'hasDelegated',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'initialOwner', internalType: 'address', type: 'address' },
+    ],
+    name: 'initialize',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '', internalType: 'uint256', type: 'uint256' },
+      { name: '', internalType: 'address', type: 'address' },
+    ],
+    name: 'isDelegateInSpace',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_user', internalType: 'address', type: 'address' },
+      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'isDelegated',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'owner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'proxiableUUID',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'renounceOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '', internalType: 'uint256', type: 'uint256' },
+      { name: '', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'spaceDelegates',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address' }],
+    name: 'transferOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_spaceId', internalType: 'uint256', type: 'uint256' }],
+    name: 'undelegate',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'newImplementation', internalType: 'address', type: 'address' },
+      { name: 'data', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'upgradeToAndCall',
+    outputs: [],
+    stateMutability: 'payable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '', internalType: 'address', type: 'address' },
+      { name: '', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'userDelegates',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '', internalType: 'address', type: 'address' },
+      { name: '', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'userHasDelegated',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+] as const;
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0xc87546357EeFF8653cF058Be2BA850813e39cda0)
+ */
+export const votingPowerDelegationImplementationAddress = {
+  8453: '0xc87546357EeFF8653cF058Be2BA850813e39cda0',
+} as const;
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0xc87546357EeFF8653cF058Be2BA850813e39cda0)
+ */
+export const votingPowerDelegationImplementationConfig = {
+  address: votingPowerDelegationImplementationAddress,
+  abi: votingPowerDelegationImplementationAbi,
 } as const;

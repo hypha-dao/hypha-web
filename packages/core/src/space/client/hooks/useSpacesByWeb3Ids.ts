@@ -13,14 +13,17 @@ type UseSpacesByWeb3IdsReturn = {
 
 export const useSpacesByWeb3Ids = (
   web3SpaceIds: readonly bigint[],
+  parentOnly?: boolean,
 ): UseSpacesByWeb3IdsReturn => {
-  const endpoint = React.useMemo(
-    () =>
-      web3SpaceIds.length > 0
-        ? `/api/v1/spaces?web3SpaceIds=${web3SpaceIds.join(',')}`
-        : null,
-    [web3SpaceIds],
-  );
+  const endpoint = React.useMemo(() => {
+    const parentOnlyParam =
+      typeof parentOnly === 'undefined' ? '' : `&parentOnly=${parentOnly}`;
+    return web3SpaceIds.length > 0
+      ? `/api/v1/spaces?web3SpaceIds=${web3SpaceIds.join(
+          ',',
+        )}${parentOnlyParam}`
+      : null;
+  }, [web3SpaceIds, parentOnly]);
 
   const { data: spaces, isLoading } = useSWR(endpoint, (endpoint) =>
     fetch(endpoint, {

@@ -22,8 +22,9 @@ import React from 'react';
 const RECIPIENT_SPACE_ADDRESS = '0x3dEf11d005F8C85c93e3374B28fcC69B25a650Af';
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
 
-const conbinedSchemaBuyHyphaTokens =
-  schemaBuyHyphaTokens.extend(createAgreementFiles);
+const conbinedSchemaBuyHyphaTokens = schemaBuyHyphaTokens
+  .extend(createAgreementFiles)
+  .extend({ buyerWeb3Id: z.number(), buyerWallet: z.string() });
 type FormValues = z.infer<typeof conbinedSchemaBuyHyphaTokens>;
 
 interface BuyHyphaTokensFormProps {
@@ -84,6 +85,13 @@ export const BuyHyphaTokensForm = ({
       label: 'Buy Hypha Tokens',
     },
   });
+
+  React.useEffect(() => {
+    if (spaceDetails?.executor && web3SpaceId) {
+      form.setValue('buyerWeb3Id', web3SpaceId as number);
+      form.setValue('buyerWallet', spaceDetails.executor as `0x${string}`);
+    }
+  }, [form, web3SpaceId, spaceDetails]);
 
   React.useEffect(() => {
     if (progress === 100 && agreementSlug) {

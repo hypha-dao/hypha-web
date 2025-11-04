@@ -78,6 +78,7 @@ export const MemberWithNumberField = ({
     <div className="flex gap-2 items-center">
       <div className="flex-1">
         <Combobox
+          className="max-w-[190px]"
           options={options}
           placeholder={placeholder}
           onChange={handleMemberChange}

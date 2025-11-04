@@ -22,7 +22,7 @@ export default async function ActivateSpacesPage({ params }: PageProps) {
   const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
 
   if (!spaceFromDb) notFound();
-  const { id: spaceId, web3SpaceId } = spaceFromDb;
+  const { id: spaceId, web3SpaceId, slug: spaceSlug } = spaceFromDb;
 
   let spaces = [] as Space[];
   let error = null;
@@ -54,7 +54,11 @@ export default async function ActivateSpacesPage({ params }: PageProps) {
           spaceId={spaceId}
           web3SpaceId={web3SpaceId}
         >
-          <Plugin name="activate-spaces" spaces={filteredSpaces} />
+          <Plugin
+            name="activate-spaces"
+            spaceSlug={spaceSlug}
+            spaces={filteredSpaces}
+          />
         </ActivateSpacesFormSpace>
       )}
     </SidePanel>

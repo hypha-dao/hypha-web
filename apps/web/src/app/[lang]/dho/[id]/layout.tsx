@@ -1,8 +1,10 @@
 import {
   JoinSpace,
+  SalesBanner,
   SpaceCard,
   SpaceModeLabel,
   WebLinks,
+  SubscriptionBadge,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import {
@@ -58,7 +60,6 @@ export default async function DhoLayout({
         `Failed to get space details for a space ${spaceFromDb.web3SpaceId}:`,
         error,
       );
-
       return 0;
     }
   })();
@@ -74,12 +75,11 @@ export default async function DhoLayout({
         `Failed to get space details for a space ${spaceFromDb.web3SpaceId}:`,
         error,
       );
-
       return 0;
     }
   })();
 
-  const spaces = await getAllSpaces();
+  const spaces = await getAllSpaces({ parentOnly: false, omitSandbox: true });
 
   return (
     <div className="flex max-w-container-2xl mx-auto">
@@ -95,7 +95,7 @@ export default async function DhoLayout({
             src={spaceFromDb.leadImage || DEFAULT_SPACE_LEAD_IMAGE}
             alt={spaceFromDb.title}
           ></Image>
-          <Avatar className="border-4 w-[128px] h-[128px] absolute bottom-[-35px] left-[15px]">
+          <Avatar className="w-[128px] h-[128px] absolute bottom-[-35px] left-[15px]">
             <AvatarImage
               src={spaceFromDb.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
               alt="logo"
@@ -119,18 +119,19 @@ export default async function DhoLayout({
         <div className="mt-6">
           <Text className="text-2">{spaceFromDb.description}</Text>
         </div>
-        <div className="flex gap-2 items-center mt-6">
+        <div className="flex gap-4 items-center mt-6 flex-wrap">
           <div className="flex">
             <div className="font-bold text-1">{spaceMembers}</div>
             <div className="text-gray-500 ml-1 text-1">Members</div>
           </div>
-          <div className="flex ml-3">
+          <div className="flex">
             <div className="font-bold text-1">
               {/* @ts-ignore: TODO: infer types from relations */}
               {spaceAgreements}
             </div>
             <div className="text-gray-500 ml-1 text-1">Agreements</div>
           </div>
+          <SubscriptionBadge web3SpaceId={spaceFromDb.web3SpaceId as number} />
           <SpaceModeLabel
             web3SpaceId={spaceFromDb.web3SpaceId as number}
             isSandbox={spaceFromDb.flags.includes('sandbox')}
@@ -139,17 +140,21 @@ export default async function DhoLayout({
               lang,
               daoSlug,
             )}/space-configuration`}
-            className="ml-3"
           />
+        </div>
+        <div className="mt-8">
+          <SalesBanner web3SpaceId={spaceFromDb.web3SpaceId as number} />
         </div>
         {tab}
         {children}
         <div className="space-y-9">
           <Separator />
           <div className="border-primary-foreground">
-            <Text className="text-4 font-medium">Spaces you might like</Text>
-            <Carousel className="my-6">
-              <CarouselContent>
+            <Text className="text-4 font-medium pb-4 pt-4">
+              Spaces you might like
+            </Text>
+            <Carousel className="my-6 mt-6">
+              <CarouselContent className="pb-5" showScrollbar>
                 {spaces.map((space) => (
                   <CarouselItem
                     key={space.id}

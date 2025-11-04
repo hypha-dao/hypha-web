@@ -31,7 +31,7 @@ type TransactionCardProps = {
   commentCount?: number;
 };
 
-type AssetItem = {
+export type AssetItem = {
   icon: string;
   name: string;
   symbol: string;
@@ -50,6 +50,7 @@ type AssetItem = {
     title: string;
     slug: string;
   };
+  address?: string;
 };
 
 type AssetsListProps = {

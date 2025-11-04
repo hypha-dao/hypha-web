@@ -15,6 +15,7 @@ import {
   MixerVerticalIcon,
   PlusCircledIcon,
   RadiobuttonIcon,
+  Link2Icon,
 } from '@radix-ui/react-icons';
 import { useFundWallet } from '@hypha-platform/epics';
 import { useParams } from 'next/navigation';
@@ -100,6 +101,15 @@ export const SelectSettingsAction = ({
       href: '#',
       icon: <CrossCircledIcon />,
       disabled: true,
+    },
+    {
+      group: 'Members',
+      title: 'Space-to-Space Membership',
+      description:
+        'Allow your space to join another space as a member, gaining the ability to participate in governance and vote on proposals.',
+      href: 'create/space-to-space-membership',
+      icon: <Link2Icon />,
+      baseTab: 'agreements',
     },
     {
       defaultDurationDays: 4,

@@ -18,9 +18,14 @@ interface Token {
 interface TokenSelectorFieldProps {
   name: string;
   tokens: Token[];
+  showRequirementMark?: boolean;
 }
 
-export function TokenSelectorField({ name, tokens }: TokenSelectorFieldProps) {
+export function TokenSelectorField({
+  name,
+  tokens,
+  showRequirementMark = false,
+}: TokenSelectorFieldProps) {
   const { control } = useFormContext();
 
   return (
@@ -35,6 +40,7 @@ export function TokenSelectorField({ name, tokens }: TokenSelectorFieldProps) {
               value={field.value}
               onChange={(tokenAddress) => field.onChange(tokenAddress)}
               tokens={tokens}
+              showRequirementMark={showRequirementMark}
             />
           </FormControl>
           <FormMessage />

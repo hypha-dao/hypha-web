@@ -14,14 +14,20 @@ import {
   Token,
   validTokenTypes,
   TokenType,
+  getTokenDecimals,
+  getEnergyBalances,
 } from '@hypha-platform/core/client';
 import { headers } from 'next/headers';
+import { hasEmojiOrLink, tryDecodeUriPart } from '@hypha-platform/ui-utils';
+import { ProfileRouteParams } from '@hypha-platform/epics';
+import { web3Client } from '@hypha-platform/core/server';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ personSlug: string }> },
+  { params }: { params: Promise<ProfileRouteParams> },
 ) {
-  const { personSlug } = await params;
+  const { personSlug: personSlugRaw } = await params;
+  const personSlug = tryDecodeUriPart(personSlugRaw);
   const headersList = await headers();
   const authToken = headersList.get('Authorization')?.split(' ')[1] || '';
   if (!authToken) {
@@ -45,6 +51,18 @@ export async function GET(
       );
     }
 
+    let energyBalanceRaw: bigint = 0n;
+    let energyTokenAddress: `0x${string}` | undefined = undefined;
+
+    try {
+      const config = getEnergyBalances({ member: address });
+      const result = await web3Client.readContract(config);
+      energyBalanceRaw = BigInt(result[0]);
+      energyTokenAddress = result[1] as `0x${string}`;
+    } catch (error) {
+      console.warn('Failed to fetch energy balance:', error);
+    }
+
     let externalTokens: any[] = [];
     try {
       externalTokens = await getTokenBalancesByAddress(address);
@@ -66,15 +84,66 @@ export async function GET(
         type: 'utility' as const,
       }));
 
+    const filteredExternalTokens = parsedExternalTokens.filter((token) => {
+      return !hasEmojiOrLink(token.symbol) && !hasEmojiOrLink(token.name);
+    });
+
     const addressMap = new Map<string, Token>();
     TOKENS.forEach((token) =>
       addressMap.set(token.address.toLowerCase(), token),
     );
-    parsedExternalTokens.forEach((token) => {
+    filteredExternalTokens.forEach((token) => {
       if (!addressMap.has(token.address.toLowerCase())) {
         addressMap.set(token.address.toLowerCase(), token);
       }
     });
+
+    if (energyTokenAddress) {
+      const lower = energyTokenAddress.toLowerCase();
+      if (!addressMap.has(lower)) {
+        let name = 'Unnamed';
+        let symbol = 'UNKNOWN';
+        try {
+          name = await web3Client.readContract({
+            address: energyTokenAddress,
+            abi: [
+              {
+                type: 'function',
+                inputs: [],
+                name: 'name',
+                outputs: [{ internalType: 'string', type: 'string' }],
+                stateMutability: 'view',
+              },
+            ],
+            functionName: 'name',
+          });
+          symbol = await web3Client.readContract({
+            address: energyTokenAddress,
+            abi: [
+              {
+                type: 'function',
+                inputs: [],
+                name: 'symbol',
+                outputs: [{ internalType: 'string', type: 'string' }],
+                stateMutability: 'view',
+              },
+            ],
+            functionName: 'symbol',
+          });
+        } catch (error) {
+          console.warn('Failed to fetch energy token metadata:', error);
+        }
+        const token: Token = {
+          name,
+          symbol,
+          address: energyTokenAddress,
+          icon: '/placeholder/token-icon.svg',
+          type: 'utility' as const,
+        };
+        addressMap.set(lower, token);
+      }
+    }
+
     const allTokens: Token[] = Array.from(addressMap.values());
 
     let prices: Record<string, number | undefined> = {};
@@ -100,25 +169,39 @@ export async function GET(
       iconUrl: token.iconUrl ?? undefined,
       transferable: token.transferable,
       isVotingToken: token.isVotingToken,
+      address: token.address ?? undefined,
     }));
 
     const assets = await Promise.all(
       allTokens.map(async (token) => {
         try {
           const meta = await getTokenMeta(token.address, dbTokens);
-          const { amount } = await getBalance(token.address, address);
+          const isEnergyToken =
+            token.address.toLowerCase() === energyTokenAddress?.toLowerCase();
+          let amount: number;
+          const decimals = await getTokenDecimals(token.address);
+          if (isEnergyToken) {
+            amount =
+              Number(energyBalanceRaw / 10n ** BigInt(decimals)) +
+              Number(energyBalanceRaw % 10n ** BigInt(decimals)) /
+                10 ** decimals;
+          } else {
+            const { amount: rawAmount } = await getBalance(
+              token.address,
+              address,
+            );
+            amount = rawAmount;
+          }
           let totalSupply: bigint | undefined;
-          let maxSupply: bigint | undefined;
           try {
             const supply = await getSupply(token.address);
             totalSupply = supply.totalSupply;
-            maxSupply = supply.maxSupply;
           } catch (err) {
             console.warn(
               `Failed to fetch supply for token ${token.address}: ${err}`,
             );
           }
-          const rate = prices[token.address] || 0;
+          const rate = isEnergyToken ? 1 : prices[token.address] || 0;
           return {
             ...meta,
             address: token.address,
@@ -128,13 +211,11 @@ export async function GET(
             transactions: [],
             closeUrl: [],
             slug: '',
-            supply:
-              totalSupply && maxSupply
-                ? {
-                    total: Number(totalSupply / 10n ** 18n),
-                    max: Number(maxSupply / 10n ** 18n),
-                  }
-                : undefined,
+            supply: totalSupply
+              ? {
+                  total: Number(totalSupply / 10n ** BigInt(decimals)),
+                }
+              : undefined,
             space: meta.space
               ? {
                   slug: meta.space.slug,

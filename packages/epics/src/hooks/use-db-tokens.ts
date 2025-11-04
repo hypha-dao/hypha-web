@@ -2,7 +2,6 @@
 
 import React from 'react';
 import useSWR from 'swr';
-import { useJwt } from '@hypha-platform/core/client';
 
 type Token = {
   id: number;
@@ -19,11 +18,13 @@ type Token = {
   decayPercentage?: number;
   createdAt: string;
   documentCount: number;
+  address?: string;
 };
 
 type UseDbTokensReturn = {
   tokens: Token[];
   isLoading: boolean;
+  refetchDbTokens: () => void;
 };
 
 type UseDbTokensProps = {
@@ -33,27 +34,23 @@ type UseDbTokensProps = {
 export const useDbTokens = ({
   search,
 }: UseDbTokensProps = {}): UseDbTokensReturn => {
-  const { jwt } = useJwt();
-
   const endpoint = React.useMemo(() => {
     const base = '/api/v1/tokens';
     return search ? `${base}?search=${encodeURIComponent(search)}` : base;
   }, [search]);
 
-  const { data: tokens, isLoading } = useSWR(
-    jwt ? [endpoint, jwt] : null,
-    ([endpoint]) =>
-      fetch(endpoint, {
-        headers: {
-          Authorization: `Bearer ${jwt}`,
-        },
-      }).then((res) => {
-        if (!res.ok) {
-          throw new Error('Failed to fetch tokens');
-        }
-        return res.json();
-      }),
+  const {
+    data: tokens,
+    isLoading,
+    mutate,
+  } = useSWR([endpoint], ([endpoint]) =>
+    fetch(endpoint).then((res) => {
+      if (!res.ok) {
+        throw new Error('Failed to fetch tokens');
+      }
+      return res.json();
+    }),
   );
 
-  return { tokens: tokens || [], isLoading };
+  return { tokens: tokens || [], isLoading, refetchDbTokens: mutate };
 };

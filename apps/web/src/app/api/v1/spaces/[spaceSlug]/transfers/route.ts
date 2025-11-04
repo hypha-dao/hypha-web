@@ -16,6 +16,7 @@ import {
 } from '@hypha-platform/core/server';
 import { zeroAddress } from 'viem';
 import { db } from '@hypha-platform/storage-postgres';
+import { hasEmojiOrLink } from '@hypha-platform/ui-utils';
 
 /**
  * @summary Route to get ERC20 transfers of a space
@@ -78,6 +79,7 @@ export async function GET(
       iconUrl: token.iconUrl ?? undefined,
       transferable: token.transferable,
       isVotingToken: token.isVotingToken,
+      address: token.address ?? undefined,
     }));
 
     const transfersWithEntityInfo = await Promise.all(
@@ -87,19 +89,14 @@ export async function GET(
         const direction = isIncoming ? 'incoming' : 'outgoing';
         const counterparty = isIncoming ? 'from' : 'to';
 
-        const isMint = transfer.from === zeroAddress;
-        if (isMint) {
-          const { icon } = await getTokenMeta(
-            transfer.token as `0x${string}`,
-            dbTokens,
-          );
-
-          return {
-            ...transfer,
-            tokenIcon: icon,
-            direction,
-            counterparty,
-          };
+        const meta = await getTokenMeta(
+          transfer.token as `0x${string}`,
+          dbTokens,
+        );
+        const name = meta.name || 'Unnamed';
+        const symbol = meta.symbol || 'UNKNOWN';
+        if (hasEmojiOrLink(name) || hasEmojiOrLink(symbol)) {
+          return null;
         }
 
         const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
@@ -117,6 +114,7 @@ export async function GET(
 
         return {
           ...transfer,
+          tokenIcon: meta.icon,
           person: person && {
             name: person.name,
             surname: person.surname,
@@ -132,7 +130,9 @@ export async function GET(
       }),
     );
 
-    return NextResponse.json(transfersWithEntityInfo);
+    const validTransfers = transfersWithEntityInfo.filter((t) => t !== null);
+
+    return NextResponse.json(validTransfers);
   } catch (error: any) {
     const errorMessage =
       error?.message || error?.shortMessage || JSON.stringify(error);

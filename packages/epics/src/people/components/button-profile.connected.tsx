@@ -54,7 +54,9 @@ export const ConnectedButtonProfile = ({
     if (user) {
       if (person) {
         if (isErrorUser(person)) {
-          router.push(newUserRedirectPath);
+          if (person.error !== 'Internal Server Error') {
+            router.push(newUserRedirectPath);
+          }
         } else if (
           (person?.id && pathname === newUserRedirectPath) ||
           isLoggingIn

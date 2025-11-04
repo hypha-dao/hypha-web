@@ -254,18 +254,17 @@ export const schemaQuorumAndUnity = z.object({
 const decaySettingsSchema = z.object({
   decayInterval: z
     .number({
-      required_error: 'Decay interval is required',
-      invalid_type_error: 'Decay interval must be a number',
+      invalid_type_error: 'Please enter a voice decay frequency',
     })
-    .min(0, 'Decay interval must be greater or equal to 0'),
-
+    .positive({ message: 'Voice decay frequency must be greater than 0' }),
   decayPercentage: z
     .number({
-      required_error: 'Decay percentage is required',
-      invalid_type_error: 'Decay percentage must be a number',
+      invalid_type_error: 'Please enter a voice decay percentage',
     })
-    .min(0, 'Decay percentage must be at least 0%')
-    .max(100, 'Decay percentage must not exceed 100%'),
+    .positive({ message: 'Voice decay percentage must be greater than 0' })
+    .lte(100, {
+      message: 'Decay percentage must not exceed 100%',
+    }),
 });
 
 export const schemaIssueNewToken = z.object({
@@ -275,7 +274,10 @@ export const schemaIssueNewToken = z.object({
     .string()
     .trim()
     .min(2, { message: 'Please enter a token name (min. 2 characters)' })
-    .max(100, { message: 'Token name must be at most 100 characters long' }),
+    .max(100, { message: 'Token name must be at most 100 characters long' })
+    .refine((val) => !/[\p{Emoji}]|(https?:\/\/|www\.|t\.me\/)/iu.test(val), {
+      message: 'Token name cannot contain emojis or links',
+    }),
 
   symbol: z
     .string()
@@ -285,6 +287,9 @@ export const schemaIssueNewToken = z.object({
     .regex(/^[A-Z]+$/, {
       message:
         'Please enter the token symbol using only uppercase letters (A–Z)',
+    })
+    .refine((val) => !/[\p{Emoji}]|(https?:\/\/|www\.|t\.me\/)/iu.test(val), {
+      message: 'Token symbol cannot contain emojis or links',
     }),
 
   iconUrl: z
@@ -340,14 +345,95 @@ export const schemaIssueNewToken = z.object({
     .optional(),
 });
 
-export const schemaChangeVotingMethod = z.object({
-  ...createAgreementWeb2Props,
-  ...createAgreementFiles,
-  members: z.array(schemaMemberWithNumber).optional(),
-  token: z.string().optional(),
-  quorumAndUnity: schemaQuorumAndUnity.optional(),
-  votingMethod: z.enum(['1m1v', '1v1v', '1t1v']).nullable().optional(),
-});
+export const schemaCreateProposalChangeVotingMethodMembersField = z
+  .object({
+    member: z
+      .string()
+      .trim()
+      .min(1, { message: 'Please select a member.' })
+      .refine((memberAddress) => isAddress(memberAddress), {
+        message: 'Invalid member address.',
+      })
+      .catch(''),
+    number: z.coerce
+      .number()
+      .positive({ message: 'Please specify a positive number of tokens.' })
+      .catch(0),
+  })
+  .refine(({ member, number }) => !!(member && number > 0), {
+    message:
+      'Please select a member and specify the number of tokens to allocate.',
+    path: [],
+  });
+
+export const schemaCreateProposalChangeVotingMethod = z
+  .object({
+    title: z
+      .string()
+      .trim()
+      .min(1, { message: 'Please add a title for your proposal' })
+      .max(50),
+    description: z
+      .string()
+      .trim()
+      .min(1, { message: 'Please add content to your proposal' })
+      .max(4000),
+    slug: z
+      .string()
+      .min(1)
+      .max(50)
+      .regex(/^[a-z0-9-]+$/)
+      .optional(),
+    creatorId: z.number().min(1),
+    spaceId: z.number().min(1),
+    web3ProposalId: z.number().optional(),
+    label: z.string().optional(),
+    members: z
+      .array(schemaCreateProposalChangeVotingMethodMembersField)
+      .optional(),
+    token: z.string().optional(),
+    quorumAndUnity: z
+      .object({
+        quorum: z.number().min(0).max(100),
+        unity: z.number().min(0).max(100),
+      })
+      .optional(),
+    votingMethod: z.enum(['1m1v', '1v1v', '1t1v']).nullable().optional(),
+    autoExecution: z.boolean().optional(),
+    votingDuration: z
+      .number({
+        message:
+          'Auto-execution is disabled. Please set a minimum voting duration.',
+      })
+      .optional(),
+    leadImage: z.custom<File>().optional(),
+    attachments: z.array(z.custom<File>()).max(3).optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.autoExecution === false) {
+        return data.votingDuration !== undefined && data.votingDuration > 0;
+      }
+      return true;
+    },
+    {
+      message:
+        'Auto-execution is disabled. Please set a minimum voting duration.',
+      path: ['votingDuration'],
+    },
+  )
+  .refine(
+    (data) => {
+      if (data.votingMethod === '1v1v' || data.votingMethod === '1t1v') {
+        return typeof data.token === 'string' && data.token.length > 0;
+      }
+      return true;
+    },
+    {
+      message: 'Please select a token to pursue with this voting method.',
+      path: ['token'],
+    },
+  );
 
 export const schemaCreateAgreementForm = z.object({
   ...createAgreementWeb2Props,
@@ -420,4 +506,18 @@ export const schemaActivateSpaces = z.object({
       }),
     )
     .min(1),
+});
+
+export const schemaSpaceToSpaceMembership = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  label: z.literal('Space To Space'),
+  space: z
+    .string({ message: 'Please select a space to join' })
+    .min(1)
+    .refine(isAddress, { message: 'Invalid Ethereum address' }),
+  member: z
+    .string({ message: 'Please select a delegated voting member' })
+    .min(1)
+    .refine(isAddress, { message: 'Invalid Ethereum address' }),
 });

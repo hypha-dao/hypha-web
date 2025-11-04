@@ -68,6 +68,7 @@ export const useProposalDetailsWeb3Rpc = ({
       transferable?: boolean;
       decayPercentage?: bigint;
       decayInterval?: bigint;
+      address?: string;
     }> = [];
 
     const votingMethods: Array<{
@@ -115,6 +116,22 @@ export const useProposalDetailsWeb3Rpc = ({
       spaceIds: [],
       paymentAmounts: [],
       tokenSymbol: '',
+    };
+
+    let delegatesData: {
+      member?: string;
+      space?: bigint;
+    } = {
+      member: undefined,
+      space: undefined,
+    };
+
+    let minimumProposalDurationData: {
+      spaceId?: string;
+      duration?: bigint;
+    } = {
+      spaceId: undefined,
+      duration: undefined,
     };
 
     (transactions as any[]).forEach((tx) => {
@@ -168,6 +185,15 @@ export const useProposalDetailsWeb3Rpc = ({
             tokenSymbol: 'HYPHA',
           };
           break;
+
+        case 'delegate':
+          delegatesData = decoded.data;
+          break;
+
+        case 'setMinimumProposalDuration':
+          minimumProposalDurationData = decoded.data;
+          break;
+
         default:
           break;
       }
@@ -194,6 +220,8 @@ export const useProposalDetailsWeb3Rpc = ({
       votingMethodsToken,
       buyHyphaTokensData,
       activateSpacesData,
+      delegatesData,
+      minimumProposalDurationData,
     };
   }, [data]);
 
