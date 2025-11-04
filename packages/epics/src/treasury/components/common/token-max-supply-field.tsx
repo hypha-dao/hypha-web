@@ -32,7 +32,6 @@ export function TokenMaxSupplyField() {
             <FormLabel className="text-2 text-neutral-11 w-full">
               Token Max Supply
             </FormLabel>
-            {/* @ts-expect-error Server Component */}
             <FormControl>
               <Input
                 type="number"

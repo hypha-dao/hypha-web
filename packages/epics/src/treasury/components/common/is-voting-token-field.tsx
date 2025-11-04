@@ -23,7 +23,6 @@ export const IsVotingTokenField = () => {
             <FormLabel className="text-2 text-neutral-11 w-full">
               Is Voting Token
             </FormLabel>
-            {/* @ts-expect-error Server Component */}
             <FormControl>
               <Switch
                 checked={field.value}

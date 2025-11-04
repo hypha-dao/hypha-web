@@ -53,7 +53,6 @@ export const ChangeEntryMethodPlugin = ({
               name="tokenBase"
               render={({ field: { value, onChange } }) => (
                 <FormItem>
-                  {/* @ts-expect-error Server Component */}
                   <FormControl>
                     <Skeleton loading={isLoading} width={'100%'} height={24}>
                       <EntryMethodTokenField

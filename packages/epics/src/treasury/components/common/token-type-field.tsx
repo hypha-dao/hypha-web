@@ -56,7 +56,6 @@ export function TokenTypeField({ onValueChange }: TokenTypeFieldProps) {
             <FormLabel className="text-2 text-neutral-11 w-full gap-1">
               Token Type <RequirementMark className="text-2" />
             </FormLabel>
-            {/* @ts-expect-error Server Component */}
             <FormControl>
               <Select
                 value={field.value}

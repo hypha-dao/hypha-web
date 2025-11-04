@@ -25,7 +25,6 @@ export function TokenIconField() {
             <FormLabel className="text-2 text-neutral-11 gap-1">
               Token Icon <RequirementMark className="text-2" />
             </FormLabel>
-            {/* @ts-expect-error Server Component */}
             <FormControl>
               <TokenIconUpload
                 defaultImage={field.value}

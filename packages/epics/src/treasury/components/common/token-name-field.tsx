@@ -24,7 +24,6 @@ export function TokenNameField() {
             <FormLabel className="text-2 text-neutral-11 w-full gap-1">
               Token Name <RequirementMark className="text-2" />
             </FormLabel>
-            {/* @ts-expect-error Server Component */}
             <FormControl>
               <Input placeholder="Type a name" {...field} />
             </FormControl>

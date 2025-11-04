@@ -24,7 +24,6 @@ export function EntryMethodField({
       name="entryMethod"
       render={({ field }) => (
         <FormItem>
-          {/* @ts-expect-error Server Component */}
           <FormControl>
             <EntryMethod
               onChange={onChange}

@@ -24,7 +24,6 @@ export function TokenSymbolField() {
             <FormLabel className="text-2 text-neutral-11 w-full gap-1">
               Token Symbol <RequirementMark className="text-2" />
             </FormLabel>
-            {/* @ts-expect-error Server Component */}
             <FormControl>
               <Input placeholder="Type a symbol" {...field} />
             </FormControl>
