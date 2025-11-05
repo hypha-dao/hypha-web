@@ -46,6 +46,7 @@ import {
   ButtonBack,
   ParentSpaceSelector,
   useMemberWeb3SpaceIds,
+  useScrollToErrors,
 } from '@hypha-platform/epics';
 import slugify from 'slugify';
 import { cn } from '@hypha-platform/ui-utils';
@@ -143,6 +144,8 @@ export const SpaceForm = ({
     resolver: zodResolver(schema),
     defaultValues,
   });
+
+  useScrollToErrors(form);
 
   const parentSpaceId = form.watch('parentId');
   const slug = form.watch('slug');

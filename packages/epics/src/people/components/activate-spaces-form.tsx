@@ -28,6 +28,7 @@ import { useParams } from 'next/navigation';
 import { useFundWallet } from '../../treasury';
 import { z } from 'zod';
 import { isAddress } from 'ethers';
+import { useScrollToErrors } from '../../hooks';
 
 interface ActivateSpacesFormProps {
   spaces: Space[];
@@ -62,6 +63,8 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
       recipient: RECIPIENT_SPACE_ADDRESS,
     },
   });
+
+  useScrollToErrors(form);
 
   useEffect(() => {
     if (person?.address) {

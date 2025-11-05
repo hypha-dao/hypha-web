@@ -5,9 +5,9 @@ import {
   RecipientField,
   type Token,
   useFundWallet,
+  useScrollToErrors,
 } from '@hypha-platform/epics';
 import { useForm, useWatch } from 'react-hook-form';
-import { useInvestInHyphaMutation, useMe } from '../../../../core/src/people';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
@@ -22,7 +22,12 @@ import {
 } from '@hypha-platform/ui';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Space, TOKENS } from '@hypha-platform/core/client';
+import {
+  Space,
+  TOKENS,
+  useInvestInHyphaMutation,
+  useMe,
+} from '@hypha-platform/core/client';
 import { TokenPayoutField } from '../../agreements/plugins/components/common/token-payout-field';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { purchaseSchema } from '../hooks/validation';
@@ -84,6 +89,8 @@ export const PeoplePurchaseHyphaTokens = ({
       buyer: person && person.address ? person.address : '',
     },
   });
+
+  useScrollToErrors(form);
 
   useEffect(() => {
     if (person?.address) {

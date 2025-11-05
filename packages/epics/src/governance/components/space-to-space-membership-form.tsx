@@ -17,6 +17,7 @@ import { useConfig } from 'wagmi';
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useSpaceTokenRequirementsByAddress } from '../hooks';
+import { useScrollToErrors } from '../../hooks';
 
 interface SpaceToSpaceMembershipFormProps {
   successfulUrl: string;
@@ -56,6 +57,8 @@ export const SpaceToSpaceMembershipForm = ({
       label: 'Space To Space',
     },
   });
+
+  useScrollToErrors(form);
 
   const { jwt } = useJwt();
   const config = useConfig();

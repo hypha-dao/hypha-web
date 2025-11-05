@@ -29,6 +29,7 @@ import { Loader2 } from 'lucide-react';
 import { Links } from '../../common';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useEffect } from 'react';
+import { useScrollToErrors } from '../../hooks';
 
 const schemaSignupPersonForm = schemaSignupPerson.extend(editPersonFiles.shape);
 
@@ -65,6 +66,8 @@ export const SignupPanel = ({
       links: [],
     },
   });
+
+  useScrollToErrors(form);
 
   useEffect(() => {
     if (user?.email) {

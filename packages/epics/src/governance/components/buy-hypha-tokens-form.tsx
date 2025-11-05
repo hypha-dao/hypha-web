@@ -18,6 +18,7 @@ import { useConfig } from 'wagmi';
 import { useRouter } from 'next/navigation';
 import { useAssets, useFundWallet } from '../../treasury';
 import React from 'react';
+import { useScrollToErrors } from '../../hooks';
 
 const RECIPIENT_SPACE_ADDRESS = '0x3dEf11d005F8C85c93e3374B28fcC69B25a650Af';
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
@@ -85,6 +86,8 @@ export const BuyHyphaTokensForm = ({
       label: 'Buy Hypha Tokens',
     },
   });
+
+  useScrollToErrors(form);
 
   React.useEffect(() => {
     if (spaceDetails?.executor && web3SpaceId) {

@@ -22,8 +22,8 @@ import {
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/ui-utils';
-import { Links } from '../../common';
-import { ButtonClose } from '@hypha-platform/epics';
+import { ButtonClose, Links } from '../../common';
+import { useScrollToErrors } from '../../hooks';
 
 interface Person {
   avatarUrl?: string;
@@ -75,6 +75,8 @@ export const EditPersonSection = ({
     },
     mode: 'onChange',
   });
+
+  useScrollToErrors(form);
 
   const handleSubmit = async (values: FormData) => {
     try {

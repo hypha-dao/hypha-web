@@ -21,6 +21,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useActivateSpaces } from '../../people/hooks/use-activate-hypha-spaces';
 import { isAddress } from 'ethers';
+import { useScrollToErrors } from '../../hooks';
 
 const RECIPIENT_SPACE_ADDRESS = '0x695f21B04B22609c4ab9e5886EB0F65cDBd464B6';
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
@@ -96,6 +97,8 @@ export const ActivateSpacesFormSpace = ({
       label: 'Activate Spaces',
     },
   });
+
+  useScrollToErrors(form);
 
   React.useEffect(() => {
     if (spaceDetails?.executor && web3SpaceId) {

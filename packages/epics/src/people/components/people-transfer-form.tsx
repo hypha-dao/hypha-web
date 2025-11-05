@@ -1,12 +1,6 @@
 'use client';
 
-import { RecipientField, TokenPayoutFieldArray } from '@hypha-platform/epics';
 import { useForm } from 'react-hook-form';
-import {
-  Person,
-  personTransfer,
-  useTransferTokensMutation,
-} from '../../../../core/src/people';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form } from '@hypha-platform/ui';
@@ -14,8 +8,15 @@ import { Separator, Button } from '@hypha-platform/ui';
 import { Space } from '../../../../core/src/space';
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
-import { useMe } from '../../../../core/src/people';
-import { useFundWallet } from '@hypha-platform/epics';
+import {
+  Person,
+  personTransfer,
+  useMe,
+  useTransferTokensMutation,
+} from '@hypha-platform/core/client';
+import { RecipientField, TokenPayoutFieldArray } from '../../agreements';
+import { useScrollToErrors } from '../../hooks';
+import { useFundWallet } from '../../treasury/hooks';
 
 interface Token {
   icon: string;
@@ -58,6 +59,8 @@ export const PeopleTransferForm = ({
       ],
     },
   });
+
+  useScrollToErrors(form);
 
   const handleTransfer = async (data: FormValues) => {
     try {

@@ -1,6 +1,5 @@
 'use client';
 
-import { CreateAgreementBaseFields, useDbTokens } from '@hypha-platform/epics';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -9,14 +8,16 @@ import {
   useMe,
   useCreateIssueTokenOrchestrator,
   DbToken,
+  useJwt,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
-import { useJwt } from '@hypha-platform/core/client';
 import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter, useParams } from 'next/navigation';
+import { useDbTokens, useScrollToErrors } from '../../hooks';
+import { CreateAgreementBaseFields } from '../../agreements';
 
 type FormValues = z.infer<typeof schemaIssueNewToken>;
 
@@ -79,6 +80,8 @@ export const IssueNewTokenForm = ({
     },
     mode: 'onChange',
   });
+
+  useScrollToErrors(form);
 
   const { tokens: dbTokens, refetchDbTokens } = useDbTokens();
 

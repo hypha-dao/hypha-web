@@ -17,6 +17,7 @@ import {
 import { useParams } from 'next/navigation';
 import { ProfileComponentParams } from './types';
 import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
+import { useScrollToErrors } from '../../hooks';
 
 interface DelegateVotingSectionProps {
   spaceSlug?: string;
@@ -108,10 +109,14 @@ export const DelegateVotingSection = ({
     },
   });
 
+  useScrollToErrors(delegateToMemberForm);
+
   const passOnDelegatedVoiceForm = useForm<PassOnDelegatedVoiceForm>({
     resolver: zodResolver(passOnDelegatedVoiceSchema),
     defaultValues: { delegatedSpace: undefined, delegatedMember: '' },
   });
+
+  useScrollToErrors(delegateToMemberForm);
 
   const selectedSpaceWeb3SpaceId =
     passOnDelegatedVoiceForm.watch('delegatedSpace');
