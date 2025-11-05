@@ -110,7 +110,7 @@ export const ProposalHead = ({
 
             <Skeleton height="16px" width="80px" loading={isLoading}>
               <Text className="text-1 text-gray-500">
-                {displayName} · {createDate}
+                {displayName} {createDate && <>· Created on {createDate}</>}
               </Text>
             </Skeleton>
           </div>

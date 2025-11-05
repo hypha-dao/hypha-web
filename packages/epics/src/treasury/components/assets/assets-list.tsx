@@ -42,6 +42,7 @@ export type AssetItem = {
   transactions: TransactionCardProps[];
   closeUrl: string;
   slug: string;
+  createdAt?: Date;
   supply?: {
     total: number;
     max: number;

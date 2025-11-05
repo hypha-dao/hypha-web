@@ -6,17 +6,42 @@ import { Text } from '@radix-ui/themes';
 import { useSpaceDelegate } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
+import { formatDate } from '@hypha-platform/ui-utils';
+import { useEvents } from '@hypha-platform/core/client';
+import React from 'react';
 
 export const SpaceMemberCard: React.FC<{
+  hostSpaceId?: number;
   space: Space;
   isLoading?: boolean;
-}> = ({ space, isLoading }) => {
+}> = ({ hostSpaceId: spaceId, space, isLoading }) => {
   const { id: spaceSlug } = useParams();
   const { space: currentSpace } = useSpaceBySlug(spaceSlug as string);
   const { person: delegator } = useSpaceDelegate({
     user: space?.address as `0x${string}`,
     spaceId: currentSpace?.web3SpaceId as number,
   });
+
+  const { events, isLoadingEvents } = useEvents({
+    type: 'joinSpace',
+    referenceId: spaceId,
+    referenceEntity: 'space',
+  });
+
+  const joinEvent = React.useMemo(() => {
+    if (!space?.address || isLoadingEvents || !events) {
+      return undefined;
+    }
+    if (events.length === 0) {
+      return undefined;
+    }
+    const normalizedAddress = space.address.toLowerCase();
+    const event = events.find(
+      (el) =>
+        el.parameters?.['memberAddress']?.toLowerCase?.() === normalizedAddress,
+    );
+    return event;
+  }, [space, events, isLoadingEvents]);
 
   return (
     <Card className="w-full h-full p-5 mb-2 flex gap-5 flex-col">
@@ -35,7 +60,7 @@ export const SpaceMemberCard: React.FC<{
             alt={space.title}
           />
         </Skeleton>
-        <div className="flex flex-col justify-center">
+        <div className="flex flex-col justify-center grow">
           <Badge className="w-fit" colorVariant="accent">
             Space
           </Badge>
@@ -46,6 +71,21 @@ export const SpaceMemberCard: React.FC<{
             <Text className="text-1 text-neutral-11">{space.description}</Text>
           </Skeleton>
         </div>
+        {(isLoadingEvents || joinEvent) && (
+          <div className="flex justify-between flex-col gap-6 items-end">
+            <Skeleton
+              height="16px"
+              width="120px"
+              loading={isLoading || isLoadingEvents}
+            >
+              <Text className="text-1 text-gray-500">
+                {joinEvent && (
+                  <>Joined space on {formatDate(joinEvent.createdAt, true)}</>
+                )}
+              </Text>
+            </Skeleton>
+          </div>
+        )}
       </div>
       <div>
         {delegator ? (

@@ -57,6 +57,7 @@ export default function Profile() {
         <Text className="text-sm text-neutral-11 ml-1">/ Profile Page</Text>
       </div>
       <PersonHead
+        isLoading={isLoading}
         avatar={''}
         name={''}
         surname={''}
@@ -66,6 +67,7 @@ export default function Profile() {
         location={''}
         email={''}
         slug={''}
+        createdAt={new Date()}
         onExportEmbeddedWallet={isEmbeddedWallet ? exportWallet : undefined}
       />
       <Tabs value={activeTab} className="w-full flex flex-col gap-4">

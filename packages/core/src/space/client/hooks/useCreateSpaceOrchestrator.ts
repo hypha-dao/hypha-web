@@ -16,6 +16,8 @@ import {
   schemaCreateSpaceWeb3,
 } from '../../validation';
 import { useSpaceFileUploads } from './useSpaceFileUploads';
+import { useCreateEvent } from '../../../events';
+import { useMe } from '../../../people';
 
 type UseCreateSpaceOrchestratorInput = {
   authToken?: string | null;
@@ -108,6 +110,8 @@ export const useCreateSpaceOrchestrator = ({
   authToken,
   config,
 }: UseCreateSpaceOrchestratorInput) => {
+  const { createEvent } = useCreateEvent({ authToken });
+  const { person } = useMe();
   const web2 = useSpaceMutationsWeb2Rsc(authToken);
   const web3 = useSpaceMutationsWeb3Rpc();
   const spaceFiles = useSpaceFileUploads(authToken, (uploadedFiles, id) => {
@@ -161,6 +165,14 @@ export const useCreateSpaceOrchestrator = ({
       startTask('CREATE_WEB2_SPACE');
       const inputCreateSpaceWeb2 = schemaCreateSpaceWeb2.parse(arg);
       const createdSpace = await web2.createSpace(inputCreateSpaceWeb2);
+      if (person?.address && createdSpace?.id) {
+        await createEvent({
+          type: 'joinSpace',
+          referenceEntity: 'space',
+          referenceId: createdSpace.id,
+          parameters: { memberAddress: person.address },
+        });
+      }
       completeTask('CREATE_WEB2_SPACE');
 
       startTask('CREATE_WEB3_SPACE');

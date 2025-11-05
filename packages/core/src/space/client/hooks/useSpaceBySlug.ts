@@ -14,8 +14,9 @@ export const useSpaceBySlug = (spaceSlug: string): UseSpaceBySlugReturn => {
     () => `/api/v1/spaces/${spaceSlug}`,
     [spaceSlug],
   );
-  const { data: space, isLoading } = useSWR([endpoint], ([endpoint]) =>
-    fetch(endpoint).then((res) => res.json()),
+  const { data: space, isLoading } = useSWR(
+    spaceSlug ? endpoint : null,
+    (endpoint) => fetch(endpoint).then((res) => res.json()),
   );
   return { space, isLoading };
 };

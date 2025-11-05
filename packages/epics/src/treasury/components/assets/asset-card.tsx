@@ -1,6 +1,6 @@
 import { Text } from '@radix-ui/themes';
 import { Card, Skeleton, Image, Badge } from '@hypha-platform/ui';
-import { formatCurrencyValue } from '@hypha-platform/ui-utils';
+import { formatCurrencyValue, formatDate } from '@hypha-platform/ui-utils';
 import { getDhoPathAgreements } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import Link from 'next/link';
@@ -21,6 +21,7 @@ type AssetCardProps = {
     slug: string;
   };
   lang?: Locale;
+  createdAt?: Date;
 };
 
 export const AssetCard: React.FC<AssetCardProps> = ({
@@ -34,6 +35,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   space,
   lang,
   type,
+  createdAt,
 }) => {
   return (
     <Card className="w-full h-full p-5 mb-2 flex flex-col justify-between">
@@ -96,6 +98,13 @@ export const AssetCard: React.FC<AssetCardProps> = ({
         {supply?.total !== undefined && (
           <Text className="text-1 text-neutral-11">
             {`Total Issuance: ${formatCurrencyValue(supply.total)}`}
+          </Text>
+        )}
+      </div>
+      <div className="w-full flex flex-row gap-1">
+        {createdAt instanceof Date && !Number.isNaN(createdAt.getTime()) && (
+          <Text className="text-1 text-neutral-11">
+            {`Created on ${formatDate(createdAt, true)}`}
           </Text>
         )}
       </div>

@@ -41,6 +41,13 @@ type AssetItem = {
   closeUrl: string;
   slug: string;
   address: string;
+  createdAt?: Date;
+};
+
+type UseAssetsData = {
+  assets: (Omit<AssetItem, 'createdAt'> & { createdAt?: string })[];
+  isLoading: boolean;
+  balance: number;
 };
 
 type UseAssetsReturn = {
@@ -76,7 +83,7 @@ export const useAssets = ({
     { refreshInterval },
   );
 
-  const typedData = data as UseAssetsReturn | undefined;
+  const typedData = data as UseAssetsData | undefined;
   const hasValidData =
     typedData &&
     Array.isArray(typedData.assets) &&
@@ -84,8 +91,19 @@ export const useAssets = ({
 
   const filteredAssets = React.useMemo(() => {
     if (!hasValidData) return [];
-    if (!filter || filter.type === 'all') return typedData.assets;
-    return typedData.assets.filter((asset) => asset.type === filter.type);
+    const transformAsset = (asset: (typeof typedData.assets)[0]) => ({
+      ...asset,
+      createdAt:
+        asset.createdAt && asset.createdAt.length > 0
+          ? new Date(asset.createdAt)
+          : undefined,
+    });
+    if (!filter || filter.type === 'all') {
+      return typedData.assets.map(transformAsset);
+    }
+    return typedData.assets
+      .filter((asset) => asset.type === filter.type)
+      .map(transformAsset);
   }, [hasValidData, typedData?.assets, filter]);
 
   return {
