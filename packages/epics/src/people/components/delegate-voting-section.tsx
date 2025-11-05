@@ -116,7 +116,7 @@ export const DelegateVotingSection = ({
     defaultValues: { delegatedSpace: undefined, delegatedMember: '' },
   });
 
-  useScrollToErrors(delegateToMemberForm);
+  useScrollToErrors(passOnDelegatedVoiceForm);
 
   const selectedSpaceWeb3SpaceId =
     passOnDelegatedVoiceForm.watch('delegatedSpace');
