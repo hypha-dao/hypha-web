@@ -1,6 +1,6 @@
 const { ethers } = require('ethers');
 
-const provider = new ethers.JsonRpcProvider('https://api.developer.coinbase.com/rpc/v1/base/c722jjhaAIFXo1GB3AR0iQc9yK0yjoGO');
+const provider = new ethers.JsonRpcProvider('');
 
 async function checkError() {
   try {
