@@ -103,6 +103,14 @@ interface IDAOProposals {
     bool support,
     uint256 votingPower
   );
+  event VoteChanged(
+    uint256 indexed proposalId,
+    address indexed voter,
+    bool previousSupport,
+    bool newSupport,
+    uint256 previousVotingPower,
+    uint256 newVotingPower
+  );
   event ProposalExecuted(
     uint256 indexed proposalId,
     bool passed,

@@ -2314,6 +2314,490 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
     });
   });
 
+  describe('Vote Resubmission Tests', function () {
+    it('Should allow a user to change their vote from YES to NO', async function () {
+      console.log('\n--- Testing Vote Change: YES to NO ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Vote Change Test',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Initial vote: YES
+      await daoProposals.connect(members[0]).vote(proposalId, true);
+      let proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.yesVotes).to.equal(1);
+      expect(proposalState.noVotes).to.equal(0);
+      console.log('Initial vote: 1 YES, 0 NO');
+
+      // Change vote: YES to NO
+      await daoProposals.connect(members[0]).vote(proposalId, false);
+      proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.yesVotes).to.equal(0);
+      expect(proposalState.noVotes).to.equal(1);
+      console.log('After change: 0 YES, 1 NO');
+
+      // Verify voter lists
+      const voters = await daoProposals.getProposalVoters(proposalId);
+      expect(voters.yesVoters.length).to.equal(0);
+      expect(voters.noVoters.length).to.equal(1);
+      expect(voters.noVoters[0]).to.equal(members[0].address);
+
+      console.log('✅ Successfully changed vote from YES to NO');
+    });
+
+    it('Should allow a user to change their vote from NO to YES', async function () {
+      console.log('\n--- Testing Vote Change: NO to YES ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Vote Change Test 2',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Initial vote: NO
+      await daoProposals.connect(members[0]).vote(proposalId, false);
+      let proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.yesVotes).to.equal(0);
+      expect(proposalState.noVotes).to.equal(1);
+      console.log('Initial vote: 0 YES, 1 NO');
+
+      // Change vote: NO to YES
+      await daoProposals.connect(members[0]).vote(proposalId, true);
+      proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.yesVotes).to.equal(1);
+      expect(proposalState.noVotes).to.equal(0);
+      console.log('After change: 1 YES, 0 NO');
+
+      // Verify voter lists
+      const voters = await daoProposals.getProposalVoters(proposalId);
+      expect(voters.yesVoters.length).to.equal(1);
+      expect(voters.noVoters.length).to.equal(0);
+      expect(voters.yesVoters[0]).to.equal(members[0].address);
+
+      console.log('✅ Successfully changed vote from NO to YES');
+    });
+
+    it('Should emit VoteChanged event when changing vote', async function () {
+      console.log('\n--- Testing VoteChanged Event ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Event Test',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Initial vote
+      await daoProposals.connect(members[0]).vote(proposalId, true);
+
+      // Change vote and check for VoteChanged event
+      await expect(daoProposals.connect(members[0]).vote(proposalId, false))
+        .to.emit(daoProposals, 'VoteChanged')
+        .withArgs(proposalId, members[0].address, true, false, 1, 1);
+
+      console.log('✅ VoteChanged event emitted correctly');
+    });
+
+    it('Should handle vote changes with delegated voting power', async function () {
+      console.log('\n--- Testing Vote Change with Delegation ---');
+
+      const { spaceId } = await createSpace({
+        unity: 80, // High unity to prevent immediate execution
+        quorum: 50,
+        memberCount: 5,
+        name: 'Delegation Vote Change',
+      });
+
+      // Setup delegation: members[0] and members[1] delegate to members[2]
+      await votingPowerDelegation
+        .connect(members[0])
+        .delegate(members[2].address, spaceId);
+      await votingPowerDelegation
+        .connect(members[1])
+        .delegate(members[2].address, spaceId);
+
+      // Verify delegated power
+      const delegatePower = await spaceVotingPower.getVotingPower(
+        members[2].address,
+        spaceId,
+      );
+      expect(delegatePower).to.equal(3); // Own + 2 delegated
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Cast a NO vote first to prevent immediate execution
+      await daoProposals.connect(owner).vote(proposalId, false);
+
+      // Initial vote with delegated power: YES
+      await daoProposals.connect(members[2]).vote(proposalId, true);
+      let proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.yesVotes).to.equal(3);
+      console.log('Initial vote with 3 delegated power: 3 YES, 1 NO');
+
+      // Change vote: YES to NO
+      await daoProposals.connect(members[2]).vote(proposalId, false);
+      proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.yesVotes).to.equal(0);
+      expect(proposalState.noVotes).to.equal(4);
+      console.log('After change: 0 YES, 4 NO');
+
+      console.log('✅ Vote change works correctly with delegated power');
+    });
+
+    it('Should handle multiple users changing their votes', async function () {
+      console.log('\n--- Testing Multiple Vote Changes ---');
+
+      const { spaceId } = await createSpace({
+        unity: 70, // 70% unity - high enough to prevent easy execution (7/10 votes needed)
+        quorum: 50, // Lower quorum
+        memberCount: 10,
+        name: 'Multiple Changes',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Initial votes - use 3 YES, 2 NO (need 5 for quorum = 50% of 10)
+      // With 70% unity (7/10 votes needed), max possible = 3+5 = 8 > 7, safe from early rejection
+      await daoProposals.connect(members[0]).vote(proposalId, true);
+      await daoProposals.connect(members[1]).vote(proposalId, true);
+      await daoProposals.connect(members[2]).vote(proposalId, true);
+      await daoProposals.connect(members[3]).vote(proposalId, false);
+      await daoProposals.connect(members[4]).vote(proposalId, false); // 3 YES, 2 NO (60% YES of votes cast, but < 70%)
+
+      let proposalState = await daoProposals.getProposalCore(proposalId);
+      console.log(
+        `Initial: ${proposalState.yesVotes} YES, ${proposalState.noVotes} NO, Expired: ${proposalState.expired}, Executed: ${proposalState.executed}`,
+      );
+      expect(proposalState.expired).to.equal(false); // Should not be expired
+      expect(proposalState.executed).to.equal(false); // Should not be executed
+
+      // Change votes but maintain balance to avoid unity threshold
+      await daoProposals.connect(members[1]).vote(proposalId, false); // YES to NO: 2 YES, 3 NO (40% YES)
+      proposalState = await daoProposals.getProposalCore(proposalId);
+      console.log(
+        `After first change: ${proposalState.yesVotes} YES, ${proposalState.noVotes} NO, Expired: ${proposalState.expired}, Executed: ${proposalState.executed}`,
+      );
+      expect(proposalState.expired).to.equal(false); // Should still not be expired
+      expect(proposalState.executed).to.equal(false); // Should still not be executed
+
+      await daoProposals.connect(members[3]).vote(proposalId, true); // NO to YES: 3 YES, 2 NO (back to 60%)
+
+      proposalState = await daoProposals.getProposalCore(proposalId);
+      console.log(
+        `After second change: ${proposalState.yesVotes} YES, ${proposalState.noVotes} NO`,
+      );
+      expect(proposalState.yesVotes).to.equal(3); // members[0], members[2], members[3]
+      expect(proposalState.noVotes).to.equal(2); // members[1], members[4]
+
+      // Verify voter lists
+      const voters = await daoProposals.getProposalVoters(proposalId);
+      expect(voters.yesVoters.length).to.equal(3);
+      expect(voters.noVoters.length).to.equal(2);
+
+      console.log('✅ Multiple vote changes handled correctly');
+    });
+
+    it('Should handle vote change that causes proposal execution', async function () {
+      console.log('\n--- Testing Vote Change Causing Execution ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60, // Need 60% to pass
+        quorum: 40, // Lower quorum
+        memberCount: 10,
+        name: 'Execution Test',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Initial votes: 2 YES, 2 NO (quorum met, but 50% unity < 60% required)
+      await daoProposals.connect(members[0]).vote(proposalId, true);
+      await daoProposals.connect(members[1]).vote(proposalId, true);
+      await daoProposals.connect(members[2]).vote(proposalId, false);
+      await daoProposals.connect(members[3]).vote(proposalId, false);
+
+      let proposalState = await daoProposals.getProposalCore(proposalId);
+      console.log(`Initial: 2 YES, 2 NO, Executed: ${proposalState.executed}`);
+      expect(proposalState.executed).to.equal(false);
+
+      // Change NO vote to YES: 3 YES, 1 NO = 75% unity >= 60% required
+      await daoProposals.connect(members[2]).vote(proposalId, true);
+
+      proposalState = await daoProposals.getProposalCore(proposalId);
+      console.log(
+        `After change: 3 YES, 1 NO, Executed: ${proposalState.executed}`,
+      );
+      expect(proposalState.yesVotes).to.equal(3);
+      expect(proposalState.noVotes).to.equal(1);
+      expect(proposalState.executed).to.equal(true);
+
+      console.log('✅ Vote change correctly triggered proposal execution');
+    });
+
+    it('Should prevent voting after proposal is executed even with vote change', async function () {
+      console.log(
+        '\n--- Testing Vote Prevention After Execution (with change) ---',
+      );
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Executed Prevention',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Vote to execute proposal
+      await daoProposals.connect(members[0]).vote(proposalId, true);
+      await daoProposals.connect(members[1]).vote(proposalId, true);
+      await daoProposals.connect(members[2]).vote(proposalId, true);
+
+      const proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.executed).to.equal(true);
+      console.log('Proposal executed with 3 YES votes');
+
+      // Try to change vote after execution
+      await expect(
+        daoProposals.connect(members[0]).vote(proposalId, false),
+      ).to.be.revertedWithCustomError(daoProposals, 'Executed');
+
+      console.log(
+        '✅ Vote change correctly prevented after proposal execution',
+      );
+    });
+
+    it('Should handle vote change with updated voting power for decay tokens', async function () {
+      console.log('\n--- Testing Vote Change with Updated Voting Power ---');
+
+      // This test demonstrates that when a user changes their vote,
+      // the system uses their CURRENT voting power (which may have changed),
+      // not their original voting power from the first vote.
+
+      // For simplicity, we'll use space membership voting and delegation
+      // to demonstrate the concept (delegation power can change)
+
+      const { spaceId } = await createSpace({
+        unity: 70, // High enough to prevent immediate execution
+        quorum: 50,
+        memberCount: 5,
+        name: 'Updated Power Test',
+      });
+
+      // Setup: members[1] and members[2] delegate to members[0]
+      await votingPowerDelegation
+        .connect(members[1])
+        .delegate(members[0].address, spaceId);
+
+      let delegatePower = await spaceVotingPower.getVotingPower(
+        members[0].address,
+        spaceId,
+      );
+      expect(delegatePower).to.equal(2); // Own + 1 delegated
+      console.log(`Initial delegate power: ${delegatePower}`);
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Cast initial vote with 2 voting power
+      await daoProposals.connect(members[0]).vote(proposalId, true);
+      let proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.yesVotes).to.equal(2);
+      console.log(`Initial YES votes: ${proposalState.yesVotes}`);
+
+      // Now another member delegates, increasing members[0]'s power
+      await votingPowerDelegation
+        .connect(members[2])
+        .delegate(members[0].address, spaceId);
+
+      delegatePower = await spaceVotingPower.getVotingPower(
+        members[0].address,
+        spaceId,
+      );
+      expect(delegatePower).to.equal(3); // Own + 2 delegated
+      console.log(`Updated delegate power: ${delegatePower}`);
+
+      // Change vote - should use NEW voting power (3)
+      await daoProposals.connect(members[0]).vote(proposalId, false);
+
+      proposalState = await daoProposals.getProposalCore(proposalId);
+      console.log(
+        `After vote change: ${proposalState.yesVotes} YES, ${proposalState.noVotes} NO`,
+      );
+
+      // Old vote (2) removed, new vote (3) added
+      expect(proposalState.yesVotes).to.equal(0);
+      expect(proposalState.noVotes).to.equal(3); // Uses current power!
+
+      console.log('✅ Vote change correctly uses updated voting power (2 → 3)');
+    });
+
+    it('Should maintain correct voter lists after multiple vote changes', async function () {
+      console.log('\n--- Testing Voter List Integrity ---');
+
+      const { spaceId } = await createSpace({
+        unity: 70, // 70% unity - high threshold prevents execution
+        quorum: 50,
+        memberCount: 10,
+        name: 'Voter List Test',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Initial votes - use 3 YES, 2 NO (need 5 for quorum = 50% of 10)
+      await daoProposals.connect(members[0]).vote(proposalId, true);
+      await daoProposals.connect(members[1]).vote(proposalId, true);
+      await daoProposals.connect(members[2]).vote(proposalId, true);
+      await daoProposals.connect(members[3]).vote(proposalId, false);
+      await daoProposals.connect(members[4]).vote(proposalId, false); // 3 YES, 2 NO (60% YES < 80%)
+
+      // Change votes multiple times while keeping balance below 80%
+      await daoProposals.connect(members[0]).vote(proposalId, false); // YES->NO: 2 YES, 3 NO (40% YES)
+      await daoProposals.connect(members[3]).vote(proposalId, true); // NO->YES: 3 YES, 2 NO (60% YES)
+      await daoProposals.connect(members[1]).vote(proposalId, false); // YES->NO: 2 YES, 3 NO (40% YES)
+      await daoProposals.connect(members[4]).vote(proposalId, true); // NO->YES: 3 YES, 2 NO (60% YES)
+
+      // Verify final state
+      const proposalState = await daoProposals.getProposalCore(proposalId);
+      const voters = await daoProposals.getProposalVoters(proposalId);
+
+      console.log(
+        `Final: ${proposalState.yesVotes} YES, ${proposalState.noVotes} NO`,
+      );
+      console.log(`YES voters: ${voters.yesVoters.length}`);
+      console.log(`NO voters: ${voters.noVoters.length}`);
+
+      // Expected: members[2], members[3], members[4] voted YES; members[0], members[1] voted NO
+      expect(proposalState.yesVotes).to.equal(3);
+      expect(proposalState.noVotes).to.equal(2);
+      expect(voters.yesVoters.length).to.equal(3);
+      expect(voters.noVoters.length).to.equal(2);
+
+      // Check each voter appears exactly once
+      const allVoters = [...voters.yesVoters, ...voters.noVoters];
+      const uniqueVoters = new Set(allVoters);
+      expect(uniqueVoters.size).to.equal(5);
+
+      console.log('✅ Voter lists maintained correctly after multiple changes');
+    });
+
+    it('Should handle vote change right before minimum duration expires', async function () {
+      console.log('\n--- Testing Vote Change Before Min Duration ---');
+
+      const { spaceId } = await createSpace({
+        unity: 0, // First vote wins
+        quorum: 50,
+        memberCount: 5,
+        name: 'Min Duration Test',
+      });
+
+      // Set minimum duration
+      const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+      await ethers.provider.send('hardhat_impersonateAccount', [
+        spaceDetails.executor,
+      ]);
+      await ethers.provider.send('hardhat_setBalance', [
+        spaceDetails.executor,
+        '0x1000000000000000000',
+      ]);
+      const executorSigner = await ethers.getSigner(spaceDetails.executor);
+      await daoProposals
+        .connect(executorSigner)
+        .setMinimumProposalDuration(spaceId, 3600); // 1 hour
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Vote to meet quorum
+      await daoProposals.connect(members[0]).vote(proposalId, true);
+      await daoProposals.connect(members[1]).vote(proposalId, true);
+      await daoProposals.connect(members[2]).vote(proposalId, true);
+
+      let proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.executed).to.equal(false); // Min duration not elapsed
+      console.log('Quorum met but min duration prevents execution');
+
+      // Advance time close to minimum duration
+      await ethers.provider.send('evm_increaseTime', [3500]); // 58 minutes
+      await ethers.provider.send('evm_mine');
+
+      // Change vote just before expiry
+      await daoProposals.connect(members[0]).vote(proposalId, false);
+      proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.executed).to.equal(false);
+      console.log('Vote changed before min duration, still not executed');
+
+      // Advance past minimum duration
+      await ethers.provider.send('evm_increaseTime', [200]);
+      await ethers.provider.send('evm_mine');
+
+      // Trigger execution check
+      await daoProposals.triggerExecutionCheck(proposalId);
+      proposalState = await daoProposals.getProposalCore(proposalId);
+
+      console.log(
+        `After min duration: Executed or Expired: ${
+          proposalState.executed || proposalState.expired
+        }`,
+      );
+
+      console.log('✅ Vote change before minimum duration handled correctly');
+    });
+
+    it('Should correctly calculate quorum after vote changes', async function () {
+      console.log('\n--- Testing Quorum Calculation After Vote Changes ---');
+
+      const { spaceId } = await createSpace({
+        unity: 67, // Need 67% to execute
+        quorum: 60, // High quorum (need 6 votes out of 10)
+        memberCount: 10,
+        name: 'Quorum Calc Test',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Vote with 5 members (not enough for 60% quorum of 10)
+      await daoProposals.connect(members[0]).vote(proposalId, true);
+      await daoProposals.connect(members[1]).vote(proposalId, true);
+      await daoProposals.connect(members[2]).vote(proposalId, false);
+      await daoProposals.connect(members[3]).vote(proposalId, false);
+      await daoProposals.connect(members[4]).vote(proposalId, true); // 3 YES, 2 NO
+
+      let proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.executed).to.equal(false);
+      console.log('5 votes cast, quorum not met (need 6)');
+
+      // Add 6th vote to meet quorum (still won't execute: 3/6 = 50% < 67%)
+      await daoProposals.connect(members[5]).vote(proposalId, false);
+      proposalState = await daoProposals.getProposalCore(proposalId);
+      console.log(
+        `6 votes cast: ${proposalState.yesVotes} YES, ${proposalState.noVotes} NO`,
+      );
+      expect(proposalState.executed).to.equal(false); // 3/6 = 50% < 67%
+
+      // Change NO votes to YES to reach unity threshold
+      await daoProposals.connect(members[2]).vote(proposalId, true); // NO->YES: 4 YES, 2 NO (67%)
+      await daoProposals.connect(members[3]).vote(proposalId, true); // NO->YES: 5 YES, 1 NO (83%)
+
+      proposalState = await daoProposals.getProposalCore(proposalId);
+      console.log(
+        `After changes: ${proposalState.yesVotes} YES, ${proposalState.noVotes} NO, Executed: ${proposalState.executed}`,
+      );
+
+      // Should have 5 YES, 1 NO = 6 total (quorum met), 5/6 = 83% > 67% unity
+      expect(proposalState.executed).to.equal(true);
+
+      console.log('✅ Quorum correctly maintained after vote changes');
+    });
+  });
+
   describe('Executor Token Transfer Logic', function () {
     it('should allow executor to transfer more tokens than they have by minting the difference', async function () {
       console.log('\n--- Testing Executor Token Transfer ---');
