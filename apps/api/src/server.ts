@@ -2,11 +2,11 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { fastifyEnv } from '@fastify/env';
-import { registerSwagger } from './plugins/swagger';
-import web3Client from './plugins/web3-client';
-import v1Routes from './routes/v1';
+import { registerSwagger } from '@plugins/swagger';
+import web3Client from '@plugins/web3-client';
+import v1Routes from '@routes/v1';
 import { API_PREFIX } from './constants';
-import { environment, type Environment } from './schemas/';
+import { environment, type Environment } from '@schemas/env';
 
 const app = Fastify();
 app.register(cors);

@@ -1,5 +1,5 @@
 import { Type, Static } from 'typebox';
-import { summary } from '../summary';
+import { summary } from '@schemas/proposal';
 
 export const response = Type.Object({
   data: Type.Array(summary),
