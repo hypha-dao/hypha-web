@@ -21,15 +21,15 @@ export const useScrollToErrors = <T extends FieldValues>(form: T) => {
       .map((name) => {
         const error = errors[name];
         const message = error?.message?.toString() ?? '';
-        const foundParagraph = allParagraphs.find((div) =>
-          div.textContent.includes(message),
+        const foundParagraph = allParagraphs.find(
+          (div) => div.textContent?.includes(message) ?? false,
         );
-        const element = Array.from(document.getElementsByName(name)).filter(
+        const [element] = Array.from(document.getElementsByName(name)).filter(
           (el) => {
             const rect = el.getBoundingClientRect();
             return rect.width > 0 || rect.height > 0;
           },
-        )[0];
+        );
         return element ?? foundParagraph;
       })
       .filter((el) => !!el);
