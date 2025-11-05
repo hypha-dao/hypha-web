@@ -75,7 +75,7 @@ contract TokenVotingPowerImplementation is
   }
 
   /**
-   * @dev Link a space with its voting token - can only be set by the space's executor
+   * @dev Link a space with its voting token - can be set by the space's executor or contract owner
    * @param _spaceId The space ID to link
    * @param _tokenAddress The ERC20 token address to use for voting power
    */
@@ -87,13 +87,20 @@ contract TokenVotingPowerImplementation is
     require(_tokenAddress != address(0), 'Invalid token address');
     require(spaceFactory != address(0), 'Space factory not set');
 
-    // Check that the caller is the space's executor
-    address spaceExecutor = IDAOSpaceFactory(spaceFactory).getSpaceExecutor(
-      _spaceId
-    );
+    // Check that the caller is either the contract owner or the space's executor
+    bool isOwner = msg.sender == owner();
+    bool isSpaceExecutor = false;
+
+    if (!isOwner) {
+      address spaceExecutor = IDAOSpaceFactory(spaceFactory).getSpaceExecutor(
+        _spaceId
+      );
+      isSpaceExecutor = msg.sender == spaceExecutor;
+    }
+
     require(
-      msg.sender == spaceExecutor,
-      'Only space executor can set space token'
+      isOwner || isSpaceExecutor,
+      'Only contract owner or space executor can set space token'
     );
 
     spaceTokens[_spaceId] = _tokenAddress;

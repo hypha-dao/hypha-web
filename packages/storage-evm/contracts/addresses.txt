@@ -86,3 +86,54 @@ Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 Deploying VotingPowerDelegation...
 VotingPowerDelegation deployed to: 0xc87546357EeFF8653cF058Be2BA850813e39cda0
 
+
+OLD
+RegularSpaceToken implementation deployed to: 0xF47129F5ffA4D1CE40C4E9C4fc08Cb6d071d8Cd6
+DecayingSpaceToken implementation deployed to: 0x5BE10FdAce191216236668d9cDb12772f73CB698
+OwnershipSpaceToken implementation deployed to: 0xB06f27e16648F36C529839413f307a87b80d6ca1
+
+NEW
+OwnershipSpaceToken implementation deployed to: 0x3252909FF5a0e2015648ad2E00fb4dA1A2FFc416
+DecayingSpaceToken implementation deployed to: 0x97661C189c4Abfb3763cFF9AB41d871FC856A19D
+RegularSpaceToken implementation deployed to: 0x8C105Debd4B222FFb2c438f7034158c6BA29aDB5
+
+FOR TESTING
+Compiled 1 Solidity file successfully (evm target: paris).
+Deploying RegularTokenFactory with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying RegularTokenFactory...
+egularTokenFactory proxy deployed to: 0x9425c91c19066f6CAC6C25bF934F8861914Ccf2e
+
+
+Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying SpaceToken...
+paceToken deployed to: 0xDAdFbF2D33A8aB74f86752f2afF25F6323d73B87
+
+Deploying RegularTokenFactory with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying RegularTokenFactory...
+egularTokenFactory proxy deployed to: 0x475C1306CB572Af6f22F9ab6F9E9a7403c360ea5
+
+Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying RegularSpaceToken...
+egularSpaceToken deployed to: 0xd20C8ef38F213D3907B22a2bD128D32869676dad
+
+Compiled 6 Solidity files successfully (evm target: paris).
+Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying RegularSpaceToken...
+egularSpaceToken deployed to: 0x9962c152D8F79e0d8E12512457fa12bCd41F8Cba
+
+
+Compiled 3 Solidity files successfully (evm target: paris).
+Deploying OwnershipTokenFactory with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying OwnershipTokenFactory...
+wnershipTokenFactory proxy deployed to: 0xc69cB3D966e0Eb5306035e9a27979507D1F334Ee
+
+Deploying DecayingTokenFactory with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying DecayingTokenFactory...
+ecayingTokenFactory proxy deployed to: 0x66CA84bDa7508fa873fc22954b3144064cc5FF37
+
+Deploying DecayingSpaceToken implementation...
+ecayingSpaceToken implementation deployed to: 0x5BE10FdAce191216236668d9cDb12772f73CB698
+
+
+Deploying OwnershipSpaceToken implementation...
+wnershipSpaceToken implementation deployed to: 0xB06f27e16648F36C529839413f307a87b80d6ca1

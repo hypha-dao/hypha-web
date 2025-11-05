@@ -6,6 +6,8 @@ interface IDecayingSpaceToken {
 
   function decayPercentage() external view returns (uint256);
 
+  function decayRate() external view returns (uint256);
+
   function applyDecay(address user) external;
 
   /**

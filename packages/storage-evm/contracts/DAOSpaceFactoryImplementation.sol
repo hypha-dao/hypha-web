@@ -55,8 +55,12 @@ contract DAOSpaceFactoryImplementation is
     SpaceCreationParams memory params
   ) external returns (uint256) {
     // Common parameter validation
-    require(params.quorum > 0 && params.quorum <= 100, 'quorum');
-    require(params.unity > 0 && params.unity <= 100, 'unity');
+    require(params.quorum >= 0 && params.quorum <= 100, 'Invalid quorum range');
+    require(params.unity >= 0 && params.unity <= 100, 'Invalid unity range');
+    require(
+      !(params.quorum == 0 && params.unity == 0),
+      'Both quorum and unity cannot be zero'
+    );
 
     spaceCounter++;
 
@@ -96,7 +100,7 @@ contract DAOSpaceFactoryImplementation is
     return spaceCounter;
   }
 
-  function joinSpace(uint256 _spaceId) public {
+  function joinSpace(uint256 _spaceId) public returns (uint256) {
     require(_spaceId > 0 && _spaceId <= spaceCounter, 'isp');
     //require(joinMethodDirectoryAddress != address(0), 'Dir not set');
 
@@ -137,7 +141,7 @@ contract DAOSpaceFactoryImplementation is
       IDAOProposals.ProposalParams memory params = IDAOProposals
         .ProposalParams({
           spaceId: _spaceId,
-          duration: 172800, // 1 day
+          duration: 172800, // 2 day
           transactions: transactions
         });
 
@@ -151,7 +155,7 @@ contract DAOSpaceFactoryImplementation is
       memberActiveInviteProposal[_spaceId][msg.sender] = proposalId;
 
       //emit JoinRequestedWithProposal(_spaceId, msg.sender, proposalId);
-      return;
+      return proposalId;
     } else {
       require(
         IDirectory(joinMethodDirectoryAddress).joincheck(
@@ -163,14 +167,18 @@ contract DAOSpaceFactoryImplementation is
       );
 
       addMemberInternal(_spaceId, msg.sender);
+      return type(uint256).max;
     }
   }
 
-  function addMember(
-    uint256 _spaceId,
-    address _memberAddress
-  ) external onlySpaceExecutor(_spaceId) {
+  function addMember(uint256 _spaceId, address _memberAddress) external {
     //require(_spaceId > 0 && _spaceId <= spaceCounter, 'Invalid space ID');
+
+    // Allow either the space executor or contract owner to add members
+    require(
+      msg.sender == spaces[_spaceId].executor || msg.sender == owner(),
+      'Not authorized: only executor or owner'
+    );
 
     Space storage space = spaces[_spaceId];
 
@@ -221,9 +229,11 @@ contract DAOSpaceFactoryImplementation is
 
     // Allow contract owner to remove members regardless of exit method
     bool isOwner = msg.sender == owner();
+    // Allow member to remove themselves
+    bool isSelfRemoval = msg.sender == _memberToRemove;
 
-    // If not owner, check exit method authorization
-    if (!isOwner) {
+    // If not owner and not self-removal, check exit method authorization
+    if (!isOwner && !isSelfRemoval) {
       // If exit method is 1, only executor can remove members
       if (space.exitMethod == 1) {
         require(
@@ -240,7 +250,7 @@ contract DAOSpaceFactoryImplementation is
             space.exitMethod,
             _memberToRemove
           ),
-          'Exit criteria not met'
+          'Exit criteria is not met'
         );
       }
     }
@@ -259,7 +269,7 @@ contract DAOSpaceFactoryImplementation is
     }
 
     require(found, 'Member not found');
-    require(_memberToRemove != space.creator, 'Cannot remove space creator');
+    //require(_memberToRemove != space.creator, 'Cannot remove space creator');
 
     // Remove from regular members array
     space.members[memberIndex] = space.members[space.members.length - 1];
@@ -397,8 +407,12 @@ contract DAOSpaceFactoryImplementation is
       'Not authorized: only executor or owner'
     );
     require(_newVotingPowerSource > 0, 'Invalid voting power source');
-    require(_newQuorum > 0 && _newQuorum <= 100, 'Invalid quorm');
-    require(_newUnity > 0 && _newUnity <= 99, 'Invalid unityy');
+    require(_newQuorum >= 0 && _newQuorum <= 100, 'Invalid quorum range');
+    require(_newUnity >= 0 && _newUnity <= 100, 'Invalid unity range');
+    require(
+      !(_newQuorum == 0 && _newUnity == 0),
+      'Both quorum and unity cannot be zero'
+    );
 
     Space storage space = spaces[_spaceId];
     uint256 oldVotingPowerSource = space.votingPowerSource;
@@ -425,7 +439,7 @@ contract DAOSpaceFactoryImplementation is
     uint256 _spaceId,
     uint256 _newJoinMethod
   ) external onlySpaceExecutor(_spaceId) {
-    require(_newJoinMethod > 0, 'Invalid join method');
+    require(_newJoinMethod >= 0, 'Invalid join method');
 
     Space storage space = spaces[_spaceId];
     uint256 oldJoinMethod = space.joinMethod;

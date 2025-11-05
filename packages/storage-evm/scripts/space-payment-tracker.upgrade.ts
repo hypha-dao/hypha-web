@@ -1,7 +1,7 @@
 import { ethers, upgrades } from 'hardhat';
 
-// Replace this with your actual proxy address when upgrading
-const PROXY_ADDRESS = '0x';
+// SpacePaymentTracker proxy address from addresses.txt
+const PROXY_ADDRESS = '0x4B61250c8F19BA96C473c65022453E95176b0139';
 
 async function main(): Promise<void> {
   // Get the deployer's address

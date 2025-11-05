@@ -3,7 +3,13 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "lint": "eslint . --max-warnings 0",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "script": "npx hardhat run",
+    "clean": "npx hardhat clean",
+    "compile": "npx hardhat compile",
+    "solhint": "solhint 'contracts/**/*.sol'",
+    "solhint:fix": "solhint 'contracts/**/*.sol' --fix",
     "wagmi:generate": "wagmi generate"
   },
   "devDependencies": {

@@ -46,11 +46,11 @@ interface IHyphaToken {
     uint256 totalHyphaMinted
   );
 
-  event HyphaPriceUpdated(uint256 newPrice);
-
-  event UsdcPerDayUpdated(uint256 newAmount);
-
-  event HyphaPerDayUpdated(uint256 newAmount);
+  event PricingParametersUpdated(
+    uint256 newHyphaPrice,
+    uint256 newUsdcPerDay,
+    uint256 newHyphaPerDay
+  );
 
   event DestinationAddressesUpdated(
     address indexed iexAddress,
@@ -59,15 +59,13 @@ interface IHyphaToken {
 
   event TokensMinted(address indexed to, uint256 amount);
 
-  event MintTransferWhitelistUpdated(
+  event WhitelistStatusUpdated(
     address indexed account,
-    bool indexed status
+    bool mintTransferStatus,
+    bool normalTransferStatus
   );
 
-  event NormalTransferWhitelistUpdated(
-    address indexed account,
-    bool indexed status
-  );
+  event TokensBurned(address indexed from, uint256 amount);
 
   // Function signatures
   function initialize(address _usdc, address _paymentTracker) external;
@@ -102,11 +100,11 @@ interface IHyphaToken {
     uint256[] calldata hyphaAmounts
   ) external;
 
-  function setHyphaPrice(uint256 newPrice) external;
-
-  function setUsdcPerDay(uint256 newAmount) external;
-
-  function setHyphaPerDay(uint256 newAmount) external;
+  function setPricingParameters(
+    uint256 newHyphaPrice,
+    uint256 newUsdcPerDay,
+    uint256 newHyphaPerDay
+  ) external;
 
   function setDestinationAddresses(
     address _iexAddress,
@@ -115,9 +113,11 @@ interface IHyphaToken {
 
   function mint(address to, uint256 amount) external;
 
-  function setMintTransferWhitelist(address account, bool status) external;
-
-  function setNormalTransferWhitelist(address account, bool status) external;
+  function setWhitelistStatus(
+    address account,
+    bool mintTransferStatus,
+    bool normalTransferStatus
+  ) external;
 
   function isMintTransferWhitelisted(
     address account
@@ -126,4 +126,6 @@ interface IHyphaToken {
   function isNormalTransferWhitelisted(
     address account
   ) external view returns (bool);
+
+  function burnFrom(address from, uint256 amount) external;
 }

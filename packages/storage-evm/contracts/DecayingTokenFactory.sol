@@ -10,6 +10,7 @@ import './interfaces/IDecayingTokenFactory.sol';
 import './interfaces/IDecayTokenVotingPower.sol';
 import './interfaces/IDAOSpaceFactory.sol';
 import './interfaces/IExecutor.sol';
+import '@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol';
 
 contract DecayingTokenFactory is
   Initializable,
@@ -18,6 +19,10 @@ contract DecayingTokenFactory is
   DecayingTokenFactoryStorage,
   IDecayingTokenFactory
 {
+  address public decayingTokenImplementation;
+
+  event DecayingTokenImplementationUpdated(address indexed implementation);
+
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
     _disableInitializers();
@@ -31,6 +36,17 @@ contract DecayingTokenFactory is
   function _authorizeUpgrade(
     address newImplementation
   ) internal override onlyOwner {}
+
+  function setDecayingTokenImplementation(
+    address _implementation
+  ) external onlyOwner {
+    require(
+      _implementation != address(0),
+      'Implementation cannot be zero address'
+    );
+    decayingTokenImplementation = _implementation;
+    emit DecayingTokenImplementationUpdated(_implementation);
+  }
 
   function setSpacesContract(address _spacesContract) external onlyOwner {
     require(
@@ -76,6 +92,10 @@ contract DecayingTokenFactory is
   ) public override returns (address) {
     require(spacesContract != address(0), 'Spaces contract not set');
     require(
+      decayingTokenImplementation != address(0),
+      'Decaying token implementation not set'
+    );
+    require(
       decayPercentage > 0 && decayPercentage <= 10_000,
       'Decay percentage must be between 1 and 10000 bp'
     );
@@ -90,8 +110,8 @@ contract DecayingTokenFactory is
       'Only space executor can deploy tokens'
     );
 
-    // Deploy a decaying token
-    DecayingSpaceToken newToken = new DecayingSpaceToken(
+    bytes memory callData = abi.encodeWithSelector(
+      DecayingSpaceToken.initialize.selector,
       name,
       symbol,
       spaceExecutor,
@@ -101,7 +121,11 @@ contract DecayingTokenFactory is
       decayPercentage,
       decayInterval
     );
-    address tokenAddress = address(newToken);
+
+    address tokenAddress = address(
+      new ERC1967Proxy(decayingTokenImplementation, callData)
+    );
+
     isTokenDeployedByFactory[tokenAddress] = true;
 
     // Store the token in the array of all tokens for this space
@@ -109,9 +133,6 @@ contract DecayingTokenFactory is
 
     emit TokenDeployed(spaceId, tokenAddress, name, symbol);
     emit DecayingTokenParameters(tokenAddress, decayPercentage, decayInterval);
-
-    // No need to explicitly add token to space anymore
-    // SpaceFactory.hasToken() now checks the token's spaceId directly
 
     return tokenAddress;
   }

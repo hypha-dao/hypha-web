@@ -1,6 +1,7 @@
 import { ethers, upgrades } from 'hardhat';
 
 // Replace this with your actual proxy address when upgrading
+//const PROXY_ADDRESS = '0x95A33EC94de2189893884DaD63eAa19f7390144a'; // RegularTokenFactory from addresses.txt
 const PROXY_ADDRESS = '0x95A33EC94de2189893884DaD63eAa19f7390144a'; // RegularTokenFactory from addresses.txt
 
 async function main(): Promise<void> {

@@ -1,25 +1,41 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
-import '@openzeppelin/contracts/access/Ownable.sol';
-import '@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
+import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
-contract SpaceToken is ERC20, ERC20Burnable, Ownable {
-  address public immutable executor;
-  uint256 public immutable spaceId;
-  uint256 public immutable maxSupply;
-  bool public immutable transferable;
+contract RegularSpaceToken is
+  Initializable,
+  ERC20Upgradeable,
+  ERC20BurnableUpgradeable,
+  OwnableUpgradeable,
+  UUPSUpgradeable
+{
+  uint256 public spaceId;
+  uint256 public maxSupply;
+  bool public transferable;
+  address public executor;
 
-  constructor(
+  /// @custom:oz-upgrades-unsafe-allow constructor
+  constructor() {
+    _disableInitializers();
+  }
+
+  function initialize(
     string memory name,
     string memory symbol,
     address _executor,
     uint256 _spaceId,
     uint256 _maxSupply,
     bool _transferable
-  ) ERC20(name, symbol) Ownable(_executor) {
-    require(_executor != address(0), 'Executor cannot be zero address');
+  ) public initializer {
+    __ERC20_init(name, symbol);
+    __ERC20Burnable_init();
+    __Ownable_init(0x2687fe290b54d824c136Ceff2d5bD362Bc62019a);
+    __UUPSUpgradeable_init();
 
     executor = _executor;
     spaceId = _spaceId;
@@ -27,16 +43,16 @@ contract SpaceToken is ERC20, ERC20Burnable, Ownable {
     transferable = _transferable;
   }
 
-  modifier onlyExecutor() {
-    require(msg.sender == executor, 'Only executor can call this function');
-    _;
-  }
+  function _authorizeUpgrade(
+    address newImplementation
+  ) internal override onlyOwner {}
 
-  function mint(address to, uint256 amount) public virtual onlyExecutor {
+  function mint(address to, uint256 amount) public virtual {
+    require(msg.sender == executor, 'Only executor can mint');
     // Check against maximum supply
     require(
       maxSupply == 0 || totalSupply() + amount <= maxSupply,
-      'Mint would exceed maximum supply'
+      'Mint max supply problemchik blet'
     );
 
     _mint(to, amount);
@@ -47,15 +63,18 @@ contract SpaceToken is ERC20, ERC20Burnable, Ownable {
     address to,
     uint256 amount
   ) public virtual override returns (bool) {
-    require(transferable, 'Token transfers are disabled');
-
-    // If executor is transferring, mint to recipient instead
-    if (msg.sender == executor) {
-      mint(to, amount);
-      return true;
+    address sender = _msgSender();
+    require(transferable || sender == executor, 'Token transfers are disabled');
+    // If executor is transferring, ensure they have enough balance, minting if necessary
+    if (sender == executor) {
+      if (balanceOf(sender) < amount) {
+        uint256 amountToMint = amount - balanceOf(sender);
+        mint(sender, amountToMint);
+      }
     }
 
-    return super.transfer(to, amount);
+    _transfer(sender, to, amount);
+    return true;
   }
 
   // Override transferFrom function to respect transferability
@@ -64,19 +83,22 @@ contract SpaceToken is ERC20, ERC20Burnable, Ownable {
     address to,
     uint256 amount
   ) public virtual override returns (bool) {
-    require(transferable, 'Token transfers are disabled');
+    address spender = _msgSender();
+    require(
+      transferable || spender == executor,
+      'Token transfers are disabled'
+    );
 
-    // If executor is the one being transferred from, mint to recipient instead
+    // If executor is the one being transferred from, ensure they have enough balance, minting if necessary
     if (from == executor) {
-      // Only executor can initiate this type of transfer
-      require(
-        msg.sender == executor,
-        'Only executor can transfer from executor account'
-      );
-      mint(to, amount);
-      return true;
+      if (balanceOf(from) < amount) {
+        uint256 amountToMint = amount - balanceOf(from);
+        mint(from, amountToMint);
+      }
     }
 
-    return super.transferFrom(from, to, amount);
+    _spendAllowance(from, spender, amount);
+    _transfer(from, to, amount);
+    return true;
   }
 }

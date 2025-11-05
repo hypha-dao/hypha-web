@@ -22,7 +22,7 @@ interface IDAOSpaceFactory {
     SpaceCreationParams memory params
   ) external returns (uint256);
 
-  function joinSpace(uint256 _spaceId) external;
+  function joinSpace(uint256 _spaceId) external returns (uint256);
 
   function addMember(uint256 _spaceId, address _memberAddress) external;
 

@@ -10,12 +10,27 @@ npx nx run storage-evm:script ./scripts/dao-space-factory-proxy.deploy.ts --netw
 
 ```bash
 npx nx run storage-evm:script ./scripts/dao-proposals-proxy.deploy.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/dao-proposals-proxy.deploy.ts --network base-mainnet
+
 ```
 
 ### decaying-token-factory-proxy.deploy
-
+decaying-space-token-proxy.deploy.ts
 ```bash
+
+npx nx run storage-evm:script ./scripts/decaying-space-token-proxy.deploy.ts --network base-mainnet
+
 npx nx run storage-evm:script ./scripts/decaying-token-factory-proxy.deploy.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/decaying-token-factory.upgrade.ts --network base-mainnet
+
+decaying-token-factory.upgrade.ts
+
+npx nx run storage-evm:script ./scripts/energy-distribution.upgrade.ts --network base-mainnet
+npx nx run storage-evm:script ./scripts/energy-token.deploy.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/energy-token.manual-upgrade.ts --network base-mainnet
 ```
 
 ### exit-method-directory-proxy.deploy
@@ -94,13 +109,6 @@ npx nx run storage-evm:script ./scripts/vote-decay-token-voting-power-proxy.depl
 
 ```bash
 npx nx run storage-evm:script ./scripts/voting-power-directory-proxy.deploy.ts --network base-mainnet
-
-npx nx run storage-evm:script ./scripts/decaying-token-factory.upgrade.ts--network base-mainnet
-
-npx nx run storage-evm:script ./scripts/ownership-token-factory.upgrade.ts--network base-mainnet
-
-npx nx run storage-evm:script ./scripts/ownership-token-voting-power.upgrade.ts --network base-mainnet
-
 ```
 
 ### work-proposal-proxy.deploy
@@ -122,17 +130,11 @@ npx nx run storage-evm:test ./test/DAOSpaceFactoryImplementation.test.ts
 npx nx run storage-evm:test ./test/DAOProposalsImplementation.test.ts
 npx nx run storage-evm:test ./test/HyphaToken.test.ts
 npx nx run storage-evm:test ./test/ProposalVotingComprehensive.test.ts
-npx nx run storage-evm:test ./test/DAOSpaceFactoryImplementation.inviteSystem.test.ts
+npx nx run storage-evm:test ./test/ProposalVotingComprehensive.test.ts
+
+npx nx run storage-evm:test ./test/EnergySettlementMultiCycle.test.ts
 
 
-
-# If node is in /usr/local/bin/node
-export PATH="/usr/local/bin:$PATH"
-# If using NVM
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-
-cd /Users/vlad/hypha-web/packages/storage-evm && REPORT_GAS=true npx hardhat test --config hardhat.local.config.ts ./test/DAOSpaceFactoryImplementation.test.ts | cat
 
 ```
 
@@ -172,3 +174,71 @@ npx nx run storage-evm:script ./scripts/votedecay-voting-power.upgrade.ts --netw
 npx nx run storage-evm:script ./scripts/agreements-proxy.deploy.ts --network base-mainnet
 ```
 
+## Utility Scripts
+
+### Get Proposal Data
+
+A utility script to fetch and display detailed information about DAO proposals, including decoded transaction call data.
+
+#### Usage
+
+```bash
+cd packages/storage-evm/scripts/base-mainnet-contracts-scripts
+```
+
+**Get the latest proposal:**
+
+```bash
+ts-node get-proposal-data.ts
+```
+
+**Get a specific proposal by ID:**
+
+```bash
+ts-node get-proposal-data.ts id 123
+# or simply
+ts-node get-proposal-data.ts 123
+```
+
+**Check if a specific address has voted on a proposal:**
+
+```bash
+ts-node get-proposal-data.ts 123 0xYourAddressHere
+# This will show both your wallet's vote status and the specified address's vote status
+```
+
+**Get the N most recent proposals:**
+
+```bash
+ts-node get-proposal-data.ts latest 5
+```
+
+**Get a range of proposals:**
+
+```bash
+ts-node get-proposal-data.ts range 1 10
+```
+
+#### Features
+
+- **Proposal Details**: Shows proposal ID, space ID, status, creator, timing information
+- **Voting Results**: Displays yes/no votes, participation rates, percentages
+- **Voter Lists**: Lists all addresses that voted yes or no
+- **Transaction Decoding**: Automatically decodes transaction call data including:
+  - Function signatures (e.g., `transfer(address,uint256)`)
+  - Decoded parameters with types and values
+  - Value amounts in both wei and ETH
+  - Support for common ERC20, governance, and DAO management functions
+  - Helpful links to 4byte.directory for unknown function signatures
+
+#### Configuration
+
+The script requires a `.env` file in the project root with:
+
+```
+RPC_URL=<your_rpc_url>
+PRIVATE_KEY=<your_private_key>
+DAO_PROPOSALS_ADDRESS=<dao_proposals_contract_address>
+```
+
+Note: The script will automatically try multiple known contract addresses if `DAO_PROPOSALS_ADDRESS` is not set.
