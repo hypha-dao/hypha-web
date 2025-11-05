@@ -130,8 +130,11 @@ export function useMemberWeb3SpaceIds({
               },
             );
 
+            const membersLower = members.map((member: string) =>
+              member?.toLowerCase(),
+            );
             const isValid = delegators.some((delegator: Address) =>
-              members.includes(delegator),
+              membersLower.includes(delegator?.toLowerCase()),
             );
             console.log(
               'isValid for spaceId',
