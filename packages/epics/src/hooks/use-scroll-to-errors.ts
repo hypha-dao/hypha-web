@@ -21,7 +21,7 @@ export const useScrollToErrors = <T extends FieldValues>(
           const error = errors[name];
           const message = error?.message?.toString() ?? '';
 
-          const selector = `[name="${name.replace(/"/g, '\\"')}"]`;
+          const selector = `[name="${CSS.escape(name)}"]`;
           const [element] = Array.from(
             formContainer.querySelectorAll(selector),
           ).filter((el) => {
