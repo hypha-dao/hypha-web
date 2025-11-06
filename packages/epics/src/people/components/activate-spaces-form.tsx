@@ -21,13 +21,14 @@ import { Space, useMe } from '@hypha-platform/core/client';
 import { SpaceWithNumberOfMonthsFieldArray } from './space-with-number-of-months-array';
 import { useActivateSpaces } from '../hooks/use-activate-hypha-spaces';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { RecipientField } from '../../agreements';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useFundWallet } from '../../treasury';
 import { z } from 'zod';
 import { isAddress } from 'ethers';
+import { useScrollToErrors } from '../../hooks';
 
 interface ActivateSpacesFormProps {
   spaces: Space[];
@@ -48,6 +49,7 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
   });
   const recipientSpace =
     spaces?.filter((s) => s?.address === RECIPIENT_SPACE_ADDRESS) || [];
+  const formRef = useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     mode: 'onChange',
@@ -62,6 +64,8 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
       recipient: RECIPIENT_SPACE_ADDRESS,
     },
   });
+
+  useScrollToErrors(form, formRef);
 
   useEffect(() => {
     if (person?.address) {
@@ -145,7 +149,11 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
 
   return (
     <Form {...form}>
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
+      <form
+        ref={formRef}
+        onSubmit={handleSubmit(onSubmit)}
+        className="flex flex-col gap-5"
+      >
         <SpaceWithNumberOfMonthsFieldArray spaces={spaces} name="spaces" />
         <Separator />
         <Label>Check out</Label>

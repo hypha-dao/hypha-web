@@ -22,8 +22,9 @@ import {
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/ui-utils';
-import { Links } from '../../common';
-import { ButtonClose } from '@hypha-platform/epics';
+import { ButtonClose, Links } from '../../common';
+import { useScrollToErrors } from '../../hooks';
+import { useRef } from 'react';
 
 interface Person {
   avatarUrl?: string;
@@ -59,6 +60,7 @@ export const EditPersonSection = ({
   onUpdate,
   error,
 }: EditPersonSectionProps) => {
+  const formRef = useRef<HTMLFormElement>(null);
   const form = useForm<FormData>({
     resolver: zodResolver(schemaEditPersonForm),
     defaultValues: {
@@ -76,6 +78,8 @@ export const EditPersonSection = ({
     mode: 'onChange',
   });
 
+  useScrollToErrors(form, formRef);
+
   const handleSubmit = async (values: FormData) => {
     try {
       await onEdit(values);
@@ -88,7 +92,11 @@ export const EditPersonSection = ({
   return (
     <div className="relative">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+        <form
+          ref={formRef}
+          onSubmit={form.handleSubmit(handleSubmit)}
+          className="space-y-8"
+        >
           <div className="flex flex-col gap-5">
             <div className="flex flex-col-reverse md:flex-row gap-5 justify-between">
               <div className="flex items-center space-x-2">
