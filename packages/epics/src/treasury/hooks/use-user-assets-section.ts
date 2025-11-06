@@ -24,7 +24,7 @@ export const useUserAssetsSection = ({
   const [searchTerm, setSearchTerm] = React.useState('');
   const [hideSmallBalances, setHideSmallBalances] = React.useState(false);
 
-  const { isLoading, balance, assets } = useUserAssets({
+  const { isLoading, balance, assets, manualUpdate } = useUserAssets({
     ...(activeFilter !== 'all' && { filter: { type: activeFilter } }),
     personSlug,
   });
@@ -77,5 +77,6 @@ export const useUserAssetsSection = ({
     hideSmallBalances,
     setHideSmallBalances,
     visibleCount,
+    updateUserAssets: manualUpdate,
   };
 };
