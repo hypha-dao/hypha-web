@@ -7,7 +7,11 @@ import { polyfill } from 'seamless-scroll-polyfill';
 
 export default function SeamlessScrollPolyfill() {
   React.useEffect(() => {
-    polyfill();
+    try {
+      polyfill();
+    } catch (error) {
+      console.error('Failed to apply scroll polyfill:', error);
+    }
   }, []);
   return <></>;
 }
