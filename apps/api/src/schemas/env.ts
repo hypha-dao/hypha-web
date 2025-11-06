@@ -10,6 +10,7 @@ export const environment = Type.Object({
       description: 'HTTP endpoint to a JSON-RPC API',
     }),
   ),
+  ALCHEMY_API_KEY: Type.String(),
 });
 
 export type Environment = Static<typeof environment>;
