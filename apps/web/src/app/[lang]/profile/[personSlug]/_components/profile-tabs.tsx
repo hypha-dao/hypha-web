@@ -4,6 +4,7 @@ import { Person, useMe } from '@hypha-platform/core/client';
 import {
   UserAssetsSection,
   UserTransactionsSection,
+  PendingRewardsSection,
 } from '@hypha-platform/epics';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import React from 'react';
@@ -34,6 +35,7 @@ export const ProfileTabs = ({
         </TabsTrigger>
       </TabsList>
       <TabsContent value="treasury" className="flex flex-col gap-4">
+        {isMyProfile && <PendingRewardsSection person={person as Person} />}
         <UserAssetsSection
           isMyProfile={isMyProfile}
           personSlug={person?.slug || ''}
