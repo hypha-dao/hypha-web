@@ -21,7 +21,6 @@ export const ProfileTabs = ({
   const isMyProfile =
     person?.address?.toLowerCase() ===
     authenticatedPerson?.address?.toLowerCase();
-
   return (
     <Tabs value={activeTab} className="w-full flex flex-col gap-4">
       <TabsList className="w-full">
@@ -35,7 +34,10 @@ export const ProfileTabs = ({
         </TabsTrigger>
       </TabsList>
       <TabsContent value="treasury" className="flex flex-col gap-6">
-        {isMyProfile && <PendingRewardsSection person={person as Person} />}
+        <PendingRewardsSection
+          person={person as Person}
+          isMyProfile={isMyProfile}
+        />
         <UserAssetsSection
           isMyProfile={isMyProfile}
           personSlug={person?.slug || ''}

@@ -12,10 +12,12 @@ const HYPHA_TOKEN_ADDRESS = '0x8b93862835C36e9689E9bb1Ab21De3982e266CD3';
 
 type PendingRewardsSectionProps = {
   person: Person;
+  isMyProfile?: boolean;
 };
 
 export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
   person,
+  isMyProfile,
 }) => {
   const {
     filteredAssets,
@@ -42,10 +44,8 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
           value: parsedRewardValue,
         }
       : undefined;
-
   const disableClaimButton =
     !(parsedRewardValue >= 0.01) || isClaiming || pendingRewards === undefined;
-
   const onHandleClaim = async () => {
     await claim();
     await updatePendingRewards();
@@ -58,9 +58,13 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
         <SectionFilter label="Rewards" />
         <Button
           title={
-            disableClaimButton ? 'The reward value must be greater than 0' : ''
+            isMyProfile
+              ? 'Claim is only available on your personal page'
+              : disableClaimButton
+              ? 'The reward value must be greater than 0'
+              : ''
           }
-          disabled={disableClaimButton}
+          disabled={!isMyProfile || disableClaimButton}
           onClick={onHandleClaim}
         >
           {isClaiming && <Loader2 className="animate-spin w-4 h-4" />}
