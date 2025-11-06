@@ -10,7 +10,7 @@ import { db } from '@hypha-platform/storage-postgres';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string; tab: string }>;
-  searchParams: Promise<{ back?: string; backMenu?: string }>;
+  searchParams: Promise<{ hideBack?: string }>;
 };
 
 export default async function IssueNewTokenPage({
@@ -18,7 +18,8 @@ export default async function IssueNewTokenPage({
   searchParams,
 }: PageProps) {
   const { lang, id, tab } = await params;
-  const { back = '', backMenu = '' } = await searchParams;
+  const { hideBack = 'false' } = await searchParams;
+  const hideBackUrl = hideBack?.toLowerCase?.() === 'true';
 
   // TODO: implement authorization
   const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
@@ -27,9 +28,11 @@ export default async function IssueNewTokenPage({
 
   const { id: spaceId, web3SpaceId } = spaceFromDb;
 
-  const successfulUrl = back ? back : getDhoPathAgreements(lang, id);
+  const successfulUrl = getDhoPathAgreements(lang, id);
   const closeUrl = `/${lang}/dho/${id}/${tab}`;
-  const backUrl = back ? backMenu : `${closeUrl}${PATH_SELECT_SETTINGS_ACTION}`;
+  const backUrl = hideBackUrl
+    ? undefined
+    : `${closeUrl}${PATH_SELECT_SETTINGS_ACTION}`;
 
   return (
     <SidePanel>
