@@ -97,6 +97,28 @@ OwnershipSpaceToken implementation deployed to: 0x3252909FF5a0e2015648ad2E00fb4d
 DecayingSpaceToken implementation deployed to: 0x97661C189c4Abfb3763cFF9AB41d871FC856A19D
 RegularSpaceToken implementation deployed to: 0x8C105Debd4B222FFb2c438f7034158c6BA29aDB5
 
+
+
+TransferHelper
+
+1️⃣  Whitelist this contract with Coinbase Paymaster
+   Contract address: 0xBE14090eB3034a26Cea1b72d3Ebb143b06Fb0736
+
+2️⃣  In your frontend, users need to approve this contract before transfers:
+   await tokenContract.approve("0xBE14090eB3034a26Cea1b72d3Ebb143b06Fb0736", amount);
+
+3️⃣  Execute transfers through the helper contract:
+   await transferHelper.transferToken(tokenAddress, recipientAddress, amount);
+
+4️⃣  For batch transfers (save gas):
+   await transferHelper.batchTransfer(tokenAddress, [recipient1, recipient2], [amount1, amount2]);
+
+5️⃣  Optional: Enable token whitelist (restrict which tokens can be transferred):
+   await transferHelper.setWhitelistRequirement(true);
+   await transferHelper.setTokenWhitelist(tokenAddress, true);
+
+
+
 FOR TESTING
 Compiled 1 Solidity file successfully (evm target: paris).
 Deploying RegularTokenFactory with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a

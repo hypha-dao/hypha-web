@@ -70,16 +70,6 @@ const daoSpaceFactoryAbi = [
     stateMutability: 'view',
     type: 'function',
   },
-  {
-    inputs: [
-      { internalType: 'uint256', name: '_spaceId', type: 'uint256' },
-      { internalType: 'address', name: '_account', type: 'address' },
-    ],
-    name: 'isMember',
-    outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
 ];
 
 // DAOProposals ABI with necessary functions
@@ -144,17 +134,18 @@ const daoProposalsAbi = [
   },
 ];
 
-// OwnershipTokenFactory ABI
-const ownershipTokenFactoryAbi = [
+// RegularTokenFactory ABI
+const regularTokenFactoryAbi = [
   {
     inputs: [
       { internalType: 'uint256', name: 'spaceId', type: 'uint256' },
       { internalType: 'string', name: 'name', type: 'string' },
       { internalType: 'string', name: 'symbol', type: 'string' },
       { internalType: 'uint256', name: 'maxSupply', type: 'uint256' },
+      { internalType: 'bool', name: 'transferable', type: 'bool' },
       { internalType: 'bool', name: 'isVotingToken', type: 'bool' },
     ],
-    name: 'deployOwnershipToken',
+    name: 'deployToken',
     outputs: [{ internalType: 'address', name: '', type: 'address' }],
     stateMutability: 'nonpayable',
     type: 'function',
@@ -195,6 +186,13 @@ const ownershipTokenFactoryAbi = [
     stateMutability: 'view',
     type: 'function',
   },
+  {
+    inputs: [{ internalType: 'uint256', name: 'spaceId', type: 'uint256' }],
+    name: 'getSpaceToken',
+    outputs: [{ internalType: 'address[]', name: '', type: 'address[]' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
   // Event for tracking token deployment
   {
     anonymous: false,
@@ -229,22 +227,8 @@ const ownershipTokenFactoryAbi = [
   },
 ];
 
-// InviteSystem ABI
-const inviteSystemAbi = [
-  {
-    inputs: [
-      { internalType: 'uint256', name: '_spaceId', type: 'uint256' },
-      { internalType: 'address[]', name: '_addresses', type: 'address[]' },
-    ],
-    name: 'inviteMembers',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-];
-
-// OwnershipSpaceToken ABI
-const ownershipSpaceTokenAbi = [
+// RegularSpaceToken ABI
+const regularSpaceTokenAbi = [
   {
     inputs: [
       { internalType: 'address', name: 'to', type: 'address' },
@@ -283,14 +267,21 @@ const ownershipSpaceTokenAbi = [
     stateMutability: 'view',
     type: 'function',
   },
+  {
+    inputs: [],
+    name: 'transferable',
+    outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
 ];
 
 // Target address for TransferHelper testing
 const TRANSFER_HELPER_TEST_ADDRESS =
   '0x2687fe290b54d824c136Ceff2d5bD362Bc62019a';
 
-async function testOwnershipTokenCreationAndMinting(): Promise<void> {
-  console.log('Starting ownership token creation and minting test...');
+async function testRegularTokenCreationAndMinting(): Promise<void> {
+  console.log('Starting regular utility token creation and minting test...');
   console.log(
     `Will mint tokens to TransferHelper test address: ${TRANSFER_HELPER_TEST_ADDRESS}`,
   );
@@ -365,32 +356,21 @@ async function testOwnershipTokenCreationAndMinting(): Promise<void> {
     wallet,
   );
 
-  // Use actual deployed addresses (you'll need to provide these)
-  const ownershipTokenFactoryAddress =
-    process.env.OWNERSHIP_TOKEN_FACTORY_ADDRESS ||
-    '0xA1eDf096B72226ae2f7BDEb12E9c9C82152BccB6'; // OwnershipTokenFactory proxy address
+  // Use actual deployed addresses
+  const regularTokenFactoryAddress =
+    process.env.REGULAR_TOKEN_FACTORY_ADDRESS ||
+    '0x95A33EC94de2189893884DaD63eAa19f7390144a'; // RegularTokenFactory proxy address
 
-  const ownershipTokenFactory = new ethers.Contract(
-    ownershipTokenFactoryAddress,
-    ownershipTokenFactoryAbi,
-    wallet,
-  );
-
-  const inviteSystemAddress =
-    process.env.INVITE_SYSTEM_ADDRESS ||
-    '0x2B05b9C4B0CefCf0ff46fCDa6F055fa6e4fF9a57'; // InviteSystem proxy address
-
-  const inviteSystem = new ethers.Contract(
-    inviteSystemAddress,
-    inviteSystemAbi,
+  const regularTokenFactory = new ethers.Contract(
+    regularTokenFactoryAddress,
+    regularTokenFactoryAbi,
     wallet,
   );
 
   console.log('Contract addresses:');
   console.log(`- DAO Space Factory: ${daoSpaceFactory.target}`);
   console.log(`- DAO Proposals: ${daoProposals.target}`);
-  console.log(`- Ownership Token Factory: ${ownershipTokenFactory.target}`);
-  console.log(`- Invite System: ${inviteSystem.target}`);
+  console.log(`- Regular Token Factory: ${regularTokenFactory.target}`);
 
   try {
     // Step 1: Create a Space
@@ -438,79 +418,40 @@ async function testOwnershipTokenCreationAndMinting(): Promise<void> {
     console.log(`Space members: ${members}`);
     console.log(`Creator is member: ${members.includes(wallet.address)}`);
 
-    // Step 1.5: Invite TransferHelper test address to the space
+    // Step 2: Create proposal to deploy regular token
     console.log(
-      '\n=== Step 1.5: Inviting TransferHelper test address to space ===',
-    );
-    console.log(`Inviting address: ${TRANSFER_HELPER_TEST_ADDRESS}`);
-
-    try {
-      const inviteTx = await inviteSystem.inviteMembers(spaceId, [
-        TRANSFER_HELPER_TEST_ADDRESS,
-      ]);
-      console.log(`Invite transaction hash: ${inviteTx.hash}`);
-      await inviteTx.wait();
-      console.log('✅ Invitation confirmed');
-
-      // Verify membership
-      const isNowMember = await daoSpaceFactory.isMember(
-        spaceId,
-        TRANSFER_HELPER_TEST_ADDRESS,
-      );
-      console.log(
-        `${TRANSFER_HELPER_TEST_ADDRESS} is now member: ${isNowMember}`,
-      );
-
-      if (!isNowMember) {
-        console.warn(
-          '⚠️  Address may not be a member yet. Tokens may not be transferable.',
-        );
-      }
-    } catch (error) {
-      console.error('Error inviting member:', error.message);
-      console.log(
-        '⚠️  Continuing anyway, but token transfers may fail if address is not a member',
-      );
-    }
-
-    // Step 2: Create proposal to deploy ownership token
-    console.log(
-      '\n=== Step 2: Creating proposal to deploy ownership token ===',
+      '\n=== Step 2: Creating proposal to deploy regular utility token ===',
     );
 
     const tokenParams = {
       spaceId: spaceId,
-      name: 'Test Ownership Token',
-      symbol: 'TOT',
-      maxSupply: ethers.parseUnits('1000000000000000000000000', 18), // 1M tokens max
-      isVotingToken: false, // Not setting as voting token for simplicity
+      name: 'Test Utility Token',
+      symbol: 'TUT',
+      maxSupply: 0, // Unlimited supply
+      transferable: true, // ✅ Make it transferable to anyone
+      isVotingToken: false,
     };
 
     console.log(
-      'Creating proposal to deploy ownership token with parameters:',
-      {
-        spaceId: tokenParams.spaceId,
-        name: tokenParams.name,
-        symbol: tokenParams.symbol,
-        maxSupply: ethers.formatUnits(tokenParams.maxSupply, 18),
-        isVotingToken: tokenParams.isVotingToken,
-      },
+      'Creating proposal to deploy regular token with parameters:',
+      tokenParams,
     );
 
-    // Encode the deployOwnershipToken function call
+    // Encode the deployToken function call
     const deployTokenData = ethers.AbiCoder.defaultAbiCoder().encode(
-      ['uint256', 'string', 'string', 'uint256', 'bool'],
+      ['uint256', 'string', 'string', 'uint256', 'bool', 'bool'],
       [
         tokenParams.spaceId,
         tokenParams.name,
         tokenParams.symbol,
         tokenParams.maxSupply,
+        tokenParams.transferable,
         tokenParams.isVotingToken,
       ],
     );
 
     const deployTokenMethod =
-      'deployOwnershipToken(uint256,string,string,uint256,bool)';
+      'deployToken(uint256,string,string,uint256,bool,bool)';
     const deployTokenFunctionSelector = ethers
       .id(deployTokenMethod)
       .substring(0, 10);
@@ -522,7 +463,7 @@ async function testOwnershipTokenCreationAndMinting(): Promise<void> {
       duration: 3600, // 1 hour
       transactions: [
         {
-          target: ownershipTokenFactoryAddress,
+          target: regularTokenFactoryAddress,
           value: 0,
           data: encodedDeployTokenData,
         },
@@ -586,91 +527,66 @@ async function testOwnershipTokenCreationAndMinting(): Promise<void> {
       return;
     }
 
-    // Step 3: Get the deployed token address from events
-    console.log('\n=== Step 3: Getting deployed token address from events ===');
+    // Step 3: Get the deployed token address
+    console.log('\n=== Step 3: Getting deployed token address ===');
 
     let tokenAddress = null;
     try {
-      // Look for TokenDeployed event in the transaction receipt
-      // Since the execution happens in a separate transaction, we might need to look at recent blocks
-      console.log('Looking for TokenDeployed events...');
+      // Use the getSpaceToken function to get all tokens for this space
+      const spaceTokens = await regularTokenFactory.getSpaceToken(spaceId);
+      console.log(`Found ${spaceTokens.length} tokens for space ${spaceId}`);
 
-      // Get recent blocks to find the token deployment event
-      const currentBlock = await provider.getBlockNumber();
-      const fromBlock = currentBlock - 100; // Look back 100 blocks
-
-      const filter = {
-        address: ownershipTokenFactoryAddress,
-        topics: [ethers.id('TokenDeployed(uint256,address,string,string)')],
-        fromBlock: fromBlock,
-        toBlock: currentBlock,
-      };
-
-      const logs = await provider.getLogs(filter);
-      console.log(`Found ${logs.length} TokenDeployed events`);
-
-      if (logs.length === 0) {
-        console.log('❌ No TokenDeployed events found');
+      if (spaceTokens.length === 0) {
+        console.log('❌ No tokens found for this space');
         console.log(
           'The token deployment may have failed or not completed yet',
         );
         return;
       }
 
-      // Find the event for our space ID
-      let tokenDeployedEvent = null;
-      for (const log of logs) {
-        try {
-          const decoded = ownershipTokenFactory.interface.parseLog({
-            topics: log.topics as string[],
-            data: log.data,
-          });
-          if (
-            decoded &&
-            decoded.args.spaceId.toString() === spaceId.toString()
-          ) {
-            tokenDeployedEvent = decoded;
-            break;
-          }
-        } catch (error) {
-          // Skip invalid logs
-        }
-      }
-
-      if (!tokenDeployedEvent) {
-        console.log(`❌ No TokenDeployed event found for space ${spaceId}`);
-        return;
-      }
-
-      tokenAddress = tokenDeployedEvent.args.tokenAddress;
+      // Get the most recently deployed token (last in the array)
+      tokenAddress = spaceTokens[spaceTokens.length - 1];
       console.log(
         `✅ Found token address for space ${spaceId}: ${tokenAddress}`,
       );
-      console.log(`Token name: ${tokenDeployedEvent.args.name}`);
-      console.log(`Token symbol: ${tokenDeployedEvent.args.symbol}`);
+
+      // Log all tokens if there are multiple
+      if (spaceTokens.length > 1) {
+        console.log('All tokens for this space:');
+        spaceTokens.forEach((token, index) => {
+          console.log(`  ${index + 1}. ${token}`);
+        });
+        console.log(`Using the most recent token: ${tokenAddress}`);
+      }
     } catch (error) {
-      console.error('Error getting token address from events:', error.message);
+      console.error('Error getting token address:', error.message);
       return;
     }
 
-    // Create OwnershipSpaceToken contract instance
-    const ownershipSpaceToken = new ethers.Contract(
+    // Create RegularSpaceToken contract instance
+    const regularSpaceToken = new ethers.Contract(
       tokenAddress,
-      ownershipSpaceTokenAbi,
+      regularSpaceTokenAbi,
       wallet,
     );
 
     // Step 4: Verify token properties
     console.log('\n=== Step 4: Verifying token properties ===');
     try {
-      const tokenName = await ownershipSpaceToken.name();
-      const tokenSymbol = await ownershipSpaceToken.symbol();
-      const totalSupply = await ownershipSpaceToken.totalSupply();
+      const tokenName = await regularSpaceToken.name();
+      const tokenSymbol = await regularSpaceToken.symbol();
+      const totalSupply = await regularSpaceToken.totalSupply();
+      const isTransferable = await regularSpaceToken.transferable();
 
       console.log(`Token name: ${tokenName}`);
       console.log(`Token symbol: ${tokenSymbol}`);
       console.log(`Total supply: ${ethers.formatUnits(totalSupply, 18)}`);
+      console.log(`Transferable: ${isTransferable}`);
       console.log('✅ Token properties verified');
+
+      if (isTransferable) {
+        console.log('💡 Token is transferable - can be sent to any address!');
+      }
     } catch (error) {
       console.error('Error verifying token properties:', error.message);
     }
@@ -680,7 +596,7 @@ async function testOwnershipTokenCreationAndMinting(): Promise<void> {
       '\n=== Step 5: Creating proposal to mint tokens to TransferHelper test address ===',
     );
 
-    const mintAmount = ethers.parseUnits('1000', 18); // Mint 1000 tokens
+    const mintAmount = ethers.parseUnits('10000', 18); // Mint 10,000 tokens
     const mintTo = TRANSFER_HELPER_TEST_ADDRESS; // Mint to the TransferHelper test address
 
     console.log(
@@ -774,13 +690,11 @@ async function testOwnershipTokenCreationAndMinting(): Promise<void> {
     // Step 8: Check token balance after minting
     console.log('\n=== Step 8: Checking token balances ===');
     try {
-      const testAddressBalance = await ownershipSpaceToken.balanceOf(
+      const testAddressBalance = await regularSpaceToken.balanceOf(
         TRANSFER_HELPER_TEST_ADDRESS,
       );
-      const creatorBalance = await ownershipSpaceToken.balanceOf(
-        wallet.address,
-      );
-      const newTotalSupply = await ownershipSpaceToken.totalSupply();
+      const creatorBalance = await regularSpaceToken.balanceOf(wallet.address);
+      const newTotalSupply = await regularSpaceToken.totalSupply();
 
       console.log(
         `TransferHelper test address (${TRANSFER_HELPER_TEST_ADDRESS}) balance: ${ethers.formatUnits(
@@ -802,24 +716,13 @@ async function testOwnershipTokenCreationAndMinting(): Promise<void> {
         console.log(
           `💡 You can now use these tokens to test TransferHelper functionality`,
         );
+        console.log(
+          '💡 This is a regular utility token - transferable to ANY address!',
+        );
       } else if (!mintProposalData.executed) {
         console.log('⏳ Minting not yet executed');
       } else {
         console.log('⚠️  Minting may have failed');
-      }
-
-      // Verify the test address is a space member
-      const isMember = await daoSpaceFactory.isMember(
-        spaceId,
-        TRANSFER_HELPER_TEST_ADDRESS,
-      );
-      console.log(
-        `\n✅ ${TRANSFER_HELPER_TEST_ADDRESS} is space member: ${isMember}`,
-      );
-      if (isMember) {
-        console.log(
-          '💡 Token is transferable between space members including this address',
-        );
       }
     } catch (error) {
       console.error('Error checking token balance:', error.message);
@@ -827,26 +730,23 @@ async function testOwnershipTokenCreationAndMinting(): Promise<void> {
 
     console.log('\n=== Final Test Summary ===');
     console.log(`✅ Space created: ${spaceId}`);
-    console.log(`✅ Ownership token deployed: ${tokenAddress}`);
-    console.log(
-      `✅ TransferHelper test address invited: ${TRANSFER_HELPER_TEST_ADDRESS}`,
-    );
+    console.log(`✅ Regular utility token deployed: ${tokenAddress}`);
     console.log(`✅ Deploy token proposal created: ${deployProposalId}`);
     console.log(`✅ Mint proposal created: ${mintProposalId}`);
     console.log(`✅ Deploy proposal executed: ${deployProposalData.executed}`);
     console.log(`✅ Mint proposal executed: ${mintProposalData.executed}`);
     console.log(
-      '🎉 Ownership token creation and minting test completed successfully!',
+      '🎉 Regular utility token creation and minting test completed successfully!',
     );
     console.log('📊 The test demonstrated:');
     console.log('   - Token deployment through governance');
-    console.log('   - Space member invitation');
     console.log('   - Token minting through governance to specific address');
     console.log('   - Verification of token deployment and balance');
     console.log('\n🔧 TransferHelper Testing:');
     console.log(`   Token Address: ${tokenAddress}`);
     console.log(`   Test Address: ${TRANSFER_HELPER_TEST_ADDRESS}`);
-    console.log(`   Token Amount: 1000 tokens`);
+    console.log(`   Token Amount: 10,000 tokens`);
+    console.log(`   Token Type: Regular Utility (transferable to anyone)`);
     console.log(
       '   Note: Use this token address in your TransferHelper test scripts',
     );
@@ -858,4 +758,4 @@ async function testOwnershipTokenCreationAndMinting(): Promise<void> {
 }
 
 // Run the test
-testOwnershipTokenCreationAndMinting().catch(console.error);
+testRegularTokenCreationAndMinting().catch(console.error);
