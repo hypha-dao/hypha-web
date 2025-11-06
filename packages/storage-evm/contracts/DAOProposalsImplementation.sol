@@ -202,7 +202,7 @@ contract DAOProposalsImplementation is
     if (block.timestamp < proposal.startTime) revert NotStarted();
     if (proposal.expired) revert Expired();
     if (proposal.executed) revert Executed();
-    if (proposal.hasVoted[msg.sender]) revert Voted();
+
     if (address(paymentTracker) != address(0)) {
       if (paymentTracker.isSpaceActive(proposal.spaceId)) {} else {
         if (!paymentTracker.hasUsedFreeTrial(proposal.spaceId)) {
@@ -241,6 +241,28 @@ contract DAOProposalsImplementation is
 
     if (votingPower == 0) revert NoPower();
 
+    // Handle vote resubmission - remove previous vote if exists
+    if (proposal.hasVoted[msg.sender]) {
+      uint256 previousVotingPower = proposal.votingPowerAtSnapshot[msg.sender];
+      bool previousSupport = _findAndRemoveVoter(_proposalId, msg.sender);
+
+      // Subtract previous voting power from the appropriate vote count
+      if (previousSupport) {
+        proposal.yesVotes -= previousVotingPower;
+      } else {
+        proposal.noVotes -= previousVotingPower;
+      }
+
+      emit VoteChanged(
+        _proposalId,
+        msg.sender,
+        previousSupport,
+        _support,
+        previousVotingPower,
+        votingPower
+      );
+    }
+
     proposal.hasVoted[msg.sender] = true;
     proposal.votingPowerAtSnapshot[msg.sender] = votingPower;
 
@@ -255,6 +277,37 @@ contract DAOProposalsImplementation is
     emit VoteCast(_proposalId, msg.sender, _support, votingPower);
 
     checkAndExecuteProposal(_proposalId);
+  }
+
+  function _findAndRemoveVoter(
+    uint256 _proposalId,
+    address _voter
+  ) internal returns (bool previousSupport) {
+    address[] storage yesVoters = proposalYesVoters[_proposalId];
+    address[] storage noVoters = proposalNoVoters[_proposalId];
+
+    // Check and remove from yes voters
+    for (uint i = 0; i < yesVoters.length; i++) {
+      if (yesVoters[i] == _voter) {
+        // Move the last element to this position and pop
+        yesVoters[i] = yesVoters[yesVoters.length - 1];
+        yesVoters.pop();
+        return true; // Was a yes vote
+      }
+    }
+
+    // Check and remove from no voters
+    for (uint i = 0; i < noVoters.length; i++) {
+      if (noVoters[i] == _voter) {
+        // Move the last element to this position and pop
+        noVoters[i] = noVoters[noVoters.length - 1];
+        noVoters.pop();
+        return false; // Was a no vote
+      }
+    }
+
+    // Should never reach here if hasVoted is true
+    return false;
   }
 
   function checkAndExecuteProposal(uint256 _proposalId) internal {
