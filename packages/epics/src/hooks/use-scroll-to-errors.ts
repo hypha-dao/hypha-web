@@ -24,7 +24,7 @@ export const useScrollToErrors = <T extends FieldValues>(
             },
           );
 
-          const foundParagraph = element
+          const foundParagraph = !element
             ? allParagraphs.find(
                 (p) => p.textContent?.includes(message) ?? false,
               )
