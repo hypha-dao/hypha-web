@@ -3,10 +3,14 @@
 import React from 'react';
 import { FieldErrors, FieldValues, UseFormReturn } from 'react-hook-form';
 
+export type CustomScrollIntoError = () => void;
+
 export const useScrollToErrors = <T extends FieldValues>(
   form: UseFormReturn<T>,
   formRef?: React.RefObject<HTMLFormElement | null>,
 ) => {
+  const [customScrollIntoError, setCustomScrollIntoError] =
+    React.useState<CustomScrollIntoError | null>(null);
   const scrollIntoError = React.useCallback(
     <T extends FieldValues>(errors: FieldErrors<T>) => {
       const formContainer = formRef?.current ?? document;
@@ -48,8 +52,16 @@ export const useScrollToErrors = <T extends FieldValues>(
   );
 
   React.useEffect(() => {
-    scrollIntoError(form.formState.errors);
+    if (customScrollIntoError) {
+      customScrollIntoError();
+    } else {
+      scrollIntoError(form.formState.errors);
+    }
   }, [form.formState.errors, scrollIntoError]);
 
-  return { scrollIntoError };
+  return {
+    customScrollIntoError,
+    setCustomScrollIntoError,
+    scrollIntoError,
+  };
 };
