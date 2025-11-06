@@ -17,7 +17,11 @@ type PendingRewardsSectionProps = {
 export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
   person,
 }) => {
-  const { filteredAssets, updateUserAssets } = useUserAssetsSection({
+  const {
+    filteredAssets,
+    updateUserAssets,
+    isLoading: isLoadingAssets,
+  } = useUserAssetsSection({
     personSlug: person?.slug,
   });
 
@@ -60,7 +64,7 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
       </div>
       <div className="w-full">
         <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
-          <AssetCard {...hyphaTokenAsset} />
+          <AssetCard {...hyphaTokenAsset} isLoading={isLoadingAssets} />
         </div>
         {isLoading && <AssetCard isLoading />}
       </div>
