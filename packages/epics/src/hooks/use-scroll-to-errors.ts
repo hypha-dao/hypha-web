@@ -21,12 +21,16 @@ export const useScrollToErrors = <T extends FieldValues>(
           const error = errors[name];
           const message = error?.message?.toString() ?? '';
 
-          const [element] = Array.from(document.getElementsByName(name)).filter(
-            (el) => {
-              const rect = el.getBoundingClientRect();
-              return rect.width > 0 || rect.height > 0;
-            },
-          );
+          const selector = `[name="${name.replace(/"/g, '\\"')}"]`;
+          const [element] = Array.from(
+            formContainer.querySelectorAll(selector),
+          ).filter((el) => {
+            if (!(el instanceof HTMLElement)) {
+              return;
+            }
+            const rect = el.getBoundingClientRect();
+            return rect.width > 0 || rect.height > 0;
+          });
 
           const foundParagraph = !element
             ? allParagraphs.find(
@@ -34,7 +38,7 @@ export const useScrollToErrors = <T extends FieldValues>(
               )
             : undefined;
 
-          return element ?? foundParagraph;
+          return (element as HTMLElement) ?? foundParagraph;
         })
         .filter((el) => !!el);
 
@@ -48,7 +52,7 @@ export const useScrollToErrors = <T extends FieldValues>(
         errorElement.focus({ preventScroll: true });
       }
     },
-    [],
+    [formRef],
   );
 
   React.useEffect(() => {
