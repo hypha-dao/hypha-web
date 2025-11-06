@@ -26,7 +26,7 @@ export const useScrollToErrors = <T extends FieldValues>(
             formContainer.querySelectorAll(selector),
           ).filter((el) => {
             if (!(el instanceof HTMLElement)) {
-              return;
+              return false;
             }
             const rect = el.getBoundingClientRect();
             return rect.width > 0 || rect.height > 0;
