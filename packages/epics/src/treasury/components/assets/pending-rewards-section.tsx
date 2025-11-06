@@ -31,9 +31,10 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
   const originalAsset = filteredAssets?.find(
     (a) => a.address === HYPHA_TOKEN_ADDRESS,
   );
-  const parsedRewardValue = Number(
-    (pendingRewards as bigint) / 10n ** BigInt(18),
-  );
+
+  const parsedRewardValue =
+    pendingRewards !== undefined ? Number(pendingRewards / 10n ** 18n) : 0;
+
   const hyphaTokenAsset =
     originalAsset && pendingRewards !== undefined
       ? {
@@ -42,7 +43,8 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
         }
       : undefined;
 
-  const disableClaimButton = !(parsedRewardValue >= 0.01) || isClaiming;
+  const disableClaimButton =
+    !(parsedRewardValue >= 0.01) || isClaiming || pendingRewards === undefined;
 
   const onHandleClaim = async () => {
     await claim();
