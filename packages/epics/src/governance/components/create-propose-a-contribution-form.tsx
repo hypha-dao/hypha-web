@@ -52,6 +52,7 @@ export const CreateProposeAContributionForm = ({
     agreement: { slug: agreementSlug },
   } = useCreateProposeAContributionOrchestrator({ authToken: jwt, config });
 
+  const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(fullSchemaCreateProposeAContributionForm),
     defaultValues: {
@@ -72,7 +73,7 @@ export const CreateProposeAContributionForm = ({
     },
   });
 
-  useScrollToErrors(form);
+  useScrollToErrors(form, formRef);
 
   React.useEffect(() => {
     if (progress === 100 && agreementSlug) {
@@ -116,6 +117,7 @@ export const CreateProposeAContributionForm = ({
     >
       <Form {...form}>
         <form
+          ref={formRef}
           onSubmit={form.handleSubmit(handleCreate)}
           className="flex flex-col gap-5"
         >

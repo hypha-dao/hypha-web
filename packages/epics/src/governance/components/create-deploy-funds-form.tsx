@@ -52,6 +52,7 @@ export const CreateDeployFundsForm = ({
     agreement: { slug: agreementSlug },
   } = useCreateDeployFundsOrchestrator({ authToken: jwt, config });
 
+  const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(fullSchemaCreateDeployFundsForm),
     defaultValues: {
@@ -71,7 +72,7 @@ export const CreateDeployFundsForm = ({
     },
   });
 
-  useScrollToErrors(form);
+  useScrollToErrors(form, formRef);
 
   React.useEffect(() => {
     if (progress === 100 && agreementSlug) {
@@ -128,6 +129,7 @@ export const CreateDeployFundsForm = ({
     >
       <Form {...form}>
         <form
+          ref={formRef}
           onSubmit={form.handleSubmit(handleCreate)}
           className="flex flex-col gap-5"
         >

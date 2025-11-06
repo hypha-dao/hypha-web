@@ -81,6 +81,7 @@ export const ActivateSpacesFormSpace = ({
     agreement: { slug: agreementSlug },
   } = useActivateSpacesOrchestrator({ authToken: jwt, config });
 
+  const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(combinedSchemaActivateSpaces),
     mode: 'onChange',
@@ -98,7 +99,7 @@ export const ActivateSpacesFormSpace = ({
     },
   });
 
-  useScrollToErrors(form);
+  useScrollToErrors(form, formRef);
 
   React.useEffect(() => {
     if (spaceDetails?.executor && web3SpaceId) {
@@ -206,6 +207,7 @@ export const ActivateSpacesFormSpace = ({
     >
       <Form {...form}>
         <form
+          ref={formRef}
           onSubmit={form.handleSubmit(handleCreate)}
           className="flex flex-col gap-5"
         >

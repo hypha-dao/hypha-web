@@ -68,6 +68,7 @@ export const BuyHyphaTokensForm = ({
     agreement: { slug: agreementSlug },
   } = useBuyHyphaTokensOrchestrator({ authToken: jwt, config });
 
+  const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(conbinedSchemaBuyHyphaTokens),
     mode: 'onChange',
@@ -87,7 +88,7 @@ export const BuyHyphaTokensForm = ({
     },
   });
 
-  useScrollToErrors(form);
+  useScrollToErrors(form, formRef);
 
   React.useEffect(() => {
     if (spaceDetails?.executor && web3SpaceId) {
@@ -173,6 +174,7 @@ export const BuyHyphaTokensForm = ({
     >
       <Form {...form}>
         <form
+          ref={formRef}
           onSubmit={form.handleSubmit(handleCreate)}
           className="flex flex-col gap-5"
         >

@@ -52,6 +52,7 @@ export const CreateAgreementForm = ({
     agreement: { slug: agreementSlug },
   } = useCreateAgreementOrchestrator({ authToken: jwt, config });
 
+  const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(fullSchemaCreateSpaceForm),
     defaultValues: {
@@ -64,7 +65,7 @@ export const CreateAgreementForm = ({
     },
   });
 
-  useScrollToErrors(form);
+  useScrollToErrors(form, formRef);
 
   React.useEffect(() => {
     if (progress === 100 && agreementSlug) {
@@ -103,6 +104,7 @@ export const CreateAgreementForm = ({
     >
       <Form {...form}>
         <form
+          ref={formRef}
           onSubmit={form.handleSubmit(handleCreate, handleInvalid)}
           className="flex flex-col gap-5"
         >

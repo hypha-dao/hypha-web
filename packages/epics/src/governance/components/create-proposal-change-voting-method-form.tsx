@@ -58,6 +58,7 @@ export const CreateProposalChangeVotingMethodForm = ({
     spaceId: BigInt(web3SpaceId as number),
   });
 
+  const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(schemaCreateProposalChangeVotingMethod),
     defaultValues: {
@@ -80,7 +81,7 @@ export const CreateProposalChangeVotingMethodForm = ({
     mode: 'onChange',
   });
 
-  useScrollToErrors(form);
+  useScrollToErrors(form, formRef);
 
   const { quorum = 0, unity = 0 } = form.watch('quorumAndUnity') ?? {};
 
@@ -164,6 +165,7 @@ export const CreateProposalChangeVotingMethodForm = ({
     >
       <Form {...form}>
         <form
+          ref={formRef}
           onSubmit={form.handleSubmit(handleCreate)}
           className="flex flex-col gap-5"
         >

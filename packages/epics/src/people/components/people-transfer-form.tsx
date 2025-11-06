@@ -7,7 +7,7 @@ import { Form } from '@hypha-platform/ui';
 import { Separator, Button } from '@hypha-platform/ui';
 import { Space } from '../../../../core/src/space';
 import { Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Person,
   personTransfer,
@@ -47,6 +47,7 @@ export const PeopleTransferForm = ({
 
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
+  const formRef = useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(personTransfer),
     defaultValues: {
@@ -60,7 +61,7 @@ export const PeopleTransferForm = ({
     },
   });
 
-  useScrollToErrors(form);
+  useScrollToErrors(form, formRef);
 
   const handleTransfer = async (data: FormValues) => {
     try {
@@ -116,6 +117,7 @@ export const PeopleTransferForm = ({
     <>
       <Form {...form}>
         <form
+          ref={formRef}
           onSubmit={form.handleSubmit(handleTransfer)}
           className="flex flex-col gap-5"
         >

@@ -52,6 +52,7 @@ export const CreatePayForExpensesForm = ({
     agreement: { slug: agreementSlug },
   } = useCreatePayForExpensesOrchestrator({ authToken: jwt, config });
 
+  const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(fullSchemaCreatePayForExpensesForm),
     defaultValues: {
@@ -71,7 +72,7 @@ export const CreatePayForExpensesForm = ({
     },
   });
 
-  useScrollToErrors(form);
+  useScrollToErrors(form, formRef);
 
   React.useEffect(() => {
     if (progress === 100 && agreementSlug) {
@@ -129,6 +130,7 @@ export const CreatePayForExpensesForm = ({
     >
       <Form {...form}>
         <form
+          ref={formRef}
           onSubmit={form.handleSubmit(handleCreate)}
           className="flex flex-col gap-5"
         >

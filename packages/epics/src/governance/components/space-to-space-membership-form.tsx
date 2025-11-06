@@ -42,6 +42,7 @@ export const SpaceToSpaceMembershipForm = ({
 }: SpaceToSpaceMembershipFormProps) => {
   const { person } = useMe();
 
+  const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(combinedSchemaSpaceToSpaceMembership),
     mode: 'onChange',
@@ -58,7 +59,7 @@ export const SpaceToSpaceMembershipForm = ({
     },
   });
 
-  useScrollToErrors(form);
+  useScrollToErrors(form, formRef);
 
   const { jwt } = useJwt();
   const config = useConfig();
@@ -128,6 +129,7 @@ export const SpaceToSpaceMembershipForm = ({
     >
       <Form {...form}>
         <form
+          ref={formRef}
           onSubmit={form.handleSubmit(handleCreate)}
           className="flex flex-col gap-5"
         >

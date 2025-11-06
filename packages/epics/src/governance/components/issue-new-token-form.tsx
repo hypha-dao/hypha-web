@@ -57,6 +57,7 @@ export const IssueNewTokenForm = ({
 
   const [formError, setFormError] = React.useState<string | null>(null);
 
+  const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(fullSchemaIssueNewToken),
     defaultValues: {
@@ -81,7 +82,7 @@ export const IssueNewTokenForm = ({
     mode: 'onChange',
   });
 
-  useScrollToErrors(form);
+  useScrollToErrors(form, formRef);
 
   const { tokens: dbTokens, refetchDbTokens } = useDbTokens();
 
@@ -141,6 +142,7 @@ export const IssueNewTokenForm = ({
     >
       <Form {...form}>
         <form
+          ref={formRef}
           onSubmit={form.handleSubmit(handleCreate)}
           className="flex flex-col gap-5"
         >

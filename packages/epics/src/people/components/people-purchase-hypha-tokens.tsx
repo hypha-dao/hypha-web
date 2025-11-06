@@ -21,7 +21,7 @@ import {
   RequirementMark,
 } from '@hypha-platform/ui';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Space,
   TOKENS,
@@ -78,6 +78,7 @@ export const PeoplePurchaseHyphaTokens = ({
   const recipientSpace =
     spaces?.filter((s) => s?.address === RECIPIENT_SPACE_ADDRESS) || [];
 
+  const formRef = useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -90,7 +91,7 @@ export const PeoplePurchaseHyphaTokens = ({
     },
   });
 
-  useScrollToErrors(form);
+  useScrollToErrors(form, formRef);
 
   useEffect(() => {
     if (person?.address) {
@@ -167,6 +168,7 @@ export const PeoplePurchaseHyphaTokens = ({
   return (
     <Form {...form}>
       <form
+        ref={formRef}
         onSubmit={form.handleSubmit(handlePurchase)}
         className="flex flex-col gap-5"
       >
