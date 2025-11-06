@@ -44,7 +44,7 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
   };
 
   return (
-    <div className="flex flex-col w-full justify-center items-center gap-4">
+    <div className="flex flex-col w-full justify-center items-center gap-3">
       <div className="w-full flex justify-between">
         <SectionFilter label="Rewards" />
         <Button

@@ -34,7 +34,7 @@ export const ProfileTabs = ({
           Treasury
         </TabsTrigger>
       </TabsList>
-      <TabsContent value="treasury" className="flex flex-col gap-4">
+      <TabsContent value="treasury" className="flex flex-col gap-6">
         {isMyProfile && <PendingRewardsSection person={person as Person} />}
         <UserAssetsSection
           isMyProfile={isMyProfile}
