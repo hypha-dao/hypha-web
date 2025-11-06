@@ -34,10 +34,7 @@ export const useScrollToErrors = <T extends FieldValues>(
 
           const foundParagraph = !element
             ? allParagraphs.find(
-                (p) =>
-                  (p.getAttribute('id')?.includes('form-item-message') ??
-                    false) &&
-                  (p.textContent?.includes(message) ?? false),
+                (p) => p.textContent?.includes(message) ?? false,
               )
             : undefined;
 
@@ -64,7 +61,7 @@ export const useScrollToErrors = <T extends FieldValues>(
     } else {
       scrollIntoError(form.formState.errors);
     }
-  }, [form.formState.errors]);
+  }, [form.formState.errors, scrollIntoError, customScrollIntoError]);
 
   return {
     customScrollIntoError,
