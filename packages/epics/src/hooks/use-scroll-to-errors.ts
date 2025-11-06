@@ -2,12 +2,6 @@
 
 import React from 'react';
 import { FieldErrors, FieldValues, UseFormReturn } from 'react-hook-form';
-// Built-in scrollIntoView options are not supported in Safari before 14
-import { polyfill } from 'seamless-scroll-polyfill';
-
-if (typeof window !== 'undefined') {
-  polyfill();
-}
 
 export const useScrollToErrors = <T extends FieldValues>(
   form: UseFormReturn<T>,
