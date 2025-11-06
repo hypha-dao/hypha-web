@@ -35,7 +35,7 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
         }
       : undefined;
 
-  const disableClaimButton = !(Number(pendingRewards) > 0) || isClaiming;
+  const disableClaimButton = !(Number(pendingRewards) >= 0.01) || isClaiming;
 
   const onHandleClaim = async () => {
     await claim();
