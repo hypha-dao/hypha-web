@@ -8,10 +8,12 @@ import { CATEGORIES, SPACE_FLAGS } from '../categories/types';
 const createSpaceWeb2Props = {
   title: z
     .string()
+    .trim()
     .min(1, 'Please enter your space name')
     .max(50, 'Title must contain at most 50 characters'),
   description: z
     .string()
+    .trim()
     .min(1, 'Please add the purpose of your space')
     .max(300, 'Description must contain at most 300 characters'),
   slug: z
