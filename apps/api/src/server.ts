@@ -7,6 +7,8 @@ import web3Client from '@plugins/web3-client';
 import v1Routes from '@routes/v1';
 import { API_PREFIX } from './constants';
 import { environment, type Environment } from '@schemas/env';
+import alchemyClient from '@plugins/alchemy';
+import { Network } from 'alchemy-sdk';
 
 const app = Fastify();
 app.register(cors);
@@ -32,6 +34,12 @@ const start = async () => {
 
     await app.register(web3Client, {
       rpcUrl: app.getEnvs<Environment>().RPC_URL,
+    });
+
+    await app.register(alchemyClient, {
+      apiKey: app.getEnvs<Environment>().ALCHEMY_API_KEY,
+      network: Network.BASE_MAINNET,
+      batchRequests: true,
     });
 
     // Register v1 API
