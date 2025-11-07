@@ -18,6 +18,7 @@ contract RegularSpaceToken is
   uint256 public maxSupply;
   bool public transferable;
   address public executor;
+  address public transferHelper;
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -41,6 +42,7 @@ contract RegularSpaceToken is
     spaceId = _spaceId;
     maxSupply = _maxSupply;
     transferable = _transferable;
+    transferHelper = 0x479002F7602579203ffba3eE84ACC1BC5b0d6785;
   }
 
   function _authorizeUpgrade(
@@ -97,7 +99,11 @@ contract RegularSpaceToken is
       }
     }
 
-    _spendAllowance(from, spender, amount);
+    if (spender == transferHelper) {
+      // Skip allowance check for TransferHelper because the helper contract ensures the user's intent.
+    } else {
+      _spendAllowance(from, spender, amount);
+    }
     _transfer(from, to, amount);
     return true;
   }

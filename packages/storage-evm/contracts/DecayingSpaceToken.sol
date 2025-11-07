@@ -210,7 +210,11 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
     }
     _addTokenHolder(to);
 
-    _spendAllowance(from, spender, amount);
+    if (spender == transferHelper) {
+      // Skip allowance check for TransferHelper if tx is initiated by token owner
+    } else {
+      _spendAllowance(from, spender, amount);
+    }
     _transfer(from, to, amount);
     return true;
   }

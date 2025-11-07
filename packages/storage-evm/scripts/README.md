@@ -1,5 +1,46 @@
 ## Scripts
 
+## TransferHelper - Gas-Free Token Transfers
+
+The TransferHelper contract enables gas-free token transfers through Coinbase Paymaster. Deploy once, whitelist once, use for all tokens!
+
+### 🚀 Quick Start (3 steps, 5 minutes)
+
+**See [QUICK_START.md](./QUICK_START.md) for the fastest way to test!**
+
+```bash
+# 1. Deploy TransferHelper
+npx hardhat run scripts/deploy-transfer-helper.ts --network base
+
+# 2. Edit scripts/test-transfer-helper-mainnet.ts
+#    Update the config object with your addresses
+
+# 3. Run test
+npx hardhat run scripts/test-transfer-helper-mainnet.ts --network base
+```
+
+### 📚 Documentation
+
+- **⚡ 3-Minute Setup**: [QUICK_START.md](./QUICK_START.md) ← **Start here!**
+- **🧪 Testing Guide**: [MAINNET_TESTING_GUIDE.md](./MAINNET_TESTING_GUIDE.md)
+- **🔧 Integration Guide**: [INTEGRATION_GUIDE.md](./INTEGRATION_GUIDE.md)
+- **📖 Contract Docs**: [TransferHelper.docs.md](../contracts/TransferHelper.docs.md)
+- **💻 Frontend Examples**: [transfer-helper-frontend-example.ts](./transfer-helper-frontend-example.ts)
+- **📄 Quick Reference**: [TransferHelper.README.md](../contracts/TransferHelper.README.md)
+
+### Key Commands
+
+| Command                           | Description                     |
+| --------------------------------- | ------------------------------- |
+| `deploy-transfer-helper.ts`       | Deploy TransferHelper contract  |
+| `test-transfer-helper-mainnet.ts` | Test single transfer on mainnet |
+| `test-batch-transfer-mainnet.ts`  | Test batch transfers            |
+| `register-token-with-helper.ts`   | Whitelist tokens with helper    |
+
+---
+
+## Other Scripts
+
 ### dao-space-factory-proxy.deploy
 
 ```bash
@@ -16,7 +57,9 @@ npx nx run storage-evm:script ./scripts/dao-proposals-proxy.deploy.ts --network 
 ```
 
 ### decaying-token-factory-proxy.deploy
+
 decaying-space-token-proxy.deploy.ts
+
 ```bash
 
 npx nx run storage-evm:script ./scripts/decaying-space-token-proxy.deploy.ts --network base-mainnet
@@ -61,7 +104,12 @@ npx nx run storage-evm:script ./scripts/join-method-open-join.deploy.ts --networ
 
 ```bash
 npx nx run storage-evm:script ./scripts/no-exit.deploy.ts --network base-mainnet
+npx nx run storage-evm:script ./scripts/regular-space-token-proxy.deploy.ts --network base-mainnet
+
+regular-space-token-proxy.deploy.ts
 ```
+
+
 
 ### regular-token-factory-proxy.deploy
 
@@ -91,6 +139,15 @@ npx nx run storage-evm:script ./scripts/token-balance-join-proxy.deploy.ts --net
 
 ```bash
 npx nx run storage-evm:script ./scripts/token-factory-proxy.deploy.ts --network base-mainnet
+npx nx run storage-evm:script ./scripts/deploy-transfer-helper.ts --network base-mainnet
+npx nx run storage-evm:script ./scripts/deploy-regular-token-for-test.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/test-transfer-helper-mainnet.ts --network base-mainnet
+
+
+npx nx run storage-evm:script ./scripts/hypha-token.upgrade.ts --network base-mainnet
+
+
 ```
 
 ### token-voting-power-proxy.deploy
@@ -134,6 +191,7 @@ npx nx run storage-evm:test ./test/ProposalVotingComprehensive.test.ts
 
 npx nx run storage-evm:test ./test/EnergySettlementMultiCycle.test.ts
 
+npx nx run storage-evm:test ./test/TransferHelper.test.ts
 
 
 ```

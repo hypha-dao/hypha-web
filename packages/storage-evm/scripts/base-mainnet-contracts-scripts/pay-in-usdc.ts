@@ -442,7 +442,7 @@ async function main(): Promise<void> {
 
   // Payment parameters
   const spaceId = 241;
-  const usdcAmount = ethers.parseUnits('0.5', 6); // 0.5 USDC with 6 decimals
+  const usdcAmount = ethers.parseUnits('1', 6); // 0.5 USDC with 6 decimals
 
   try {
     // STEP 1: Get initial state
