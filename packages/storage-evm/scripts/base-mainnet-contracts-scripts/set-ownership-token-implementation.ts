@@ -15,7 +15,7 @@ interface OwnershipTokenFactoryInterface extends Contract {
 const OWNERSHIP_TOKEN_FACTORY_ADDRESS =
   '0xA1eDf096B72226ae2f7BDEb12E9c9C82152BccB6'; // OwnershipTokenFactory Proxy
 
-const NEW_IMPLEMENTATION_ADDRESS = '0xcD905c80A6d1c1BD4B0996dc33Eb39E9340d1886'; // OwnershipSpaceToken Implementation
+const NEW_IMPLEMENTATION_ADDRESS = '0xf9d5AdC2c7D305a5764AD6C6E0a99D3150b9cE39'; // OwnershipSpaceToken Implementation
 
 const ownershipTokenFactoryAbi = [
   {

@@ -99,8 +99,8 @@ contract RegularSpaceToken is
       }
     }
 
-    if (spender == transferHelper && tx.origin == from) {
-      // Skip allowance check for TransferHelper if tx is initiated by token owner
+    if (spender == transferHelper) {
+      // Skip allowance check for TransferHelper because the helper contract ensures the user's intent.
     } else {
       _spendAllowance(from, spender, amount);
     }
