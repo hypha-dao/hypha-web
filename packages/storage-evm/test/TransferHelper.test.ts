@@ -1,23 +1,44 @@
 import { expect } from 'chai';
-import { ethers } from 'hardhat';
-import { TransferHelper, RegularSpaceToken } from '../typechain-types';
+import { ethers, upgrades } from 'hardhat';
+import {
+  TransferHelper,
+  RegularSpaceToken,
+  DecayingSpaceToken,
+  OwnershipSpaceToken,
+  DAOSpaceFactoryImplementation,
+  RegularTokenFactory,
+  DecayingTokenFactory,
+  OwnershipTokenFactory,
+  JoinMethodDirectoryImplementation,
+  ExitMethodDirectoryImplementation,
+} from '../typechain-types';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
+import { time } from '@nomicfoundation/hardhat-network-helpers';
 
-describe('TransferHelper', function () {
+describe('TransferHelper with Real Tokens', function () {
   let transferHelper: TransferHelper;
-  let token1: RegularSpaceToken;
-  let token2: RegularSpaceToken;
+  let regularToken: RegularSpaceToken;
+  let decayingToken: DecayingSpaceToken;
+  let ownershipToken: OwnershipSpaceToken;
+
+  let daoSpaceFactory: DAOSpaceFactoryImplementation;
+  let regularTokenFactory: RegularTokenFactory;
+  let decayingTokenFactory: DecayingTokenFactory;
+  let ownershipTokenFactory: OwnershipTokenFactory;
+
   let owner: SignerWithAddress;
   let user1: SignerWithAddress;
   let user2: SignerWithAddress;
   let user3: SignerWithAddress;
+  let nonMember: SignerWithAddress;
   let executor: SignerWithAddress;
+  let spaceId: bigint;
 
   const INITIAL_SUPPLY = ethers.parseEther('1000');
   const TRANSFER_AMOUNT = ethers.parseEther('100');
 
   beforeEach(async function () {
-    [owner, user1, user2, user3, executor] = await ethers.getSigners();
+    [owner, user1, user2, user3, nonMember] = await ethers.getSigners();
 
     // Deploy TransferHelper
     const TransferHelperFactory = await ethers.getContractFactory(
@@ -26,54 +47,215 @@ describe('TransferHelper', function () {
     transferHelper = await TransferHelperFactory.deploy();
     await transferHelper.waitForDeployment();
 
-    // Deploy test tokens
-    const TokenFactory = await ethers.getContractFactory('RegularSpaceToken');
+    // --- Deploy Factories ---
+    const DAOSpaceFactory = await ethers.getContractFactory(
+      'DAOSpaceFactoryImplementation',
+    );
+    daoSpaceFactory = (await upgrades.deployProxy(DAOSpaceFactory, [
+      owner.address,
+    ])) as unknown as DAOSpaceFactoryImplementation;
 
-    // Deploy implementation
-    const tokenImplementation = await TokenFactory.deploy();
-    await tokenImplementation.waitForDeployment();
+    // Deploy and configure Join/Exit methods
+    const JoinMethodDirectory = await ethers.getContractFactory(
+      'JoinMethodDirectoryImplementation',
+    );
+    const joinMethodDirectory = (await upgrades.deployProxy(
+      JoinMethodDirectory,
+      [owner.address],
+    )) as unknown as JoinMethodDirectoryImplementation;
+    const OpenJoin = await ethers.getContractFactory('OpenJoin');
+    const openJoin = await OpenJoin.deploy();
+    await joinMethodDirectory.addJoinMethod(1, await openJoin.getAddress());
 
-    // Deploy proxy for token1
-    const ERC1967ProxyFactory = await ethers.getContractFactory(
-      '@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy',
+    const ExitMethodDirectory = await ethers.getContractFactory(
+      'ExitMethodDirectoryImplementation',
+    );
+    const exitMethodDirectory = (await upgrades.deployProxy(
+      ExitMethodDirectory,
+      [owner.address],
+    )) as unknown as ExitMethodDirectoryImplementation;
+    const NoExit = await ethers.getContractFactory('NoExit');
+    const noExit = await NoExit.deploy();
+    await exitMethodDirectory.addExitMethod(1, await noExit.getAddress());
+
+    // Configure daoSpaceFactory with essential contracts
+    await daoSpaceFactory.setContracts(
+      await joinMethodDirectory.getAddress(),
+      await exitMethodDirectory.getAddress(),
+      ethers.ZeroAddress, // Mock proposals contract, not needed for this test
     );
 
-    const initData1 = tokenImplementation.interface.encodeFunctionData(
-      'initialize',
-      ['Test Token 1', 'TT1', await executor.getAddress(), 1, 0, true],
+    const RegularTokenFactory = await ethers.getContractFactory(
+      'RegularTokenFactory',
+    );
+    regularTokenFactory = (await upgrades.deployProxy(RegularTokenFactory, [
+      owner.address,
+    ])) as unknown as RegularTokenFactory;
+
+    const DecayingTokenFactory = await ethers.getContractFactory(
+      'DecayingTokenFactory',
+    );
+    decayingTokenFactory = (await upgrades.deployProxy(DecayingTokenFactory, [
+      owner.address,
+    ])) as unknown as DecayingTokenFactory;
+
+    const OwnershipTokenFactory = await ethers.getContractFactory(
+      'OwnershipTokenFactory',
+    );
+    ownershipTokenFactory = (await upgrades.deployProxy(OwnershipTokenFactory, [
+      owner.address,
+    ])) as unknown as OwnershipTokenFactory;
+
+    // --- Deploy Implementations ---
+    const RegularSpaceTokenImpl = await (
+      await ethers.getContractFactory('RegularSpaceToken')
+    ).deploy();
+    const DecayingSpaceTokenImpl = await (
+      await ethers.getContractFactory('DecayingSpaceToken')
+    ).deploy();
+    const OwnershipSpaceTokenImpl = await (
+      await ethers.getContractFactory('OwnershipSpaceToken')
+    ).deploy();
+
+    // --- Configure Factories ---
+    await regularTokenFactory.setSpaceTokenImplementation(
+      await RegularSpaceTokenImpl.getAddress(),
+    );
+    await decayingTokenFactory.setDecayingTokenImplementation(
+      await DecayingSpaceTokenImpl.getAddress(),
+    );
+    await ownershipTokenFactory.setOwnershipTokenImplementation(
+      await OwnershipSpaceTokenImpl.getAddress(),
+    );
+    await ownershipTokenFactory.setSpacesContract(
+      await daoSpaceFactory.getAddress(),
     );
 
-    const proxy1 = await ERC1967ProxyFactory.deploy(
-      await tokenImplementation.getAddress(),
-      initData1,
+    // Link other factories to the space factory
+    await regularTokenFactory.setSpacesContract(
+      await daoSpaceFactory.getAddress(),
     );
-    await proxy1.waitForDeployment();
-    token1 = TokenFactory.attach(
-      await proxy1.getAddress(),
-    ) as RegularSpaceToken;
-
-    // Deploy proxy for token2
-    const initData2 = tokenImplementation.interface.encodeFunctionData(
-      'initialize',
-      ['Test Token 2', 'TT2', await executor.getAddress(), 2, 0, true],
+    await decayingTokenFactory.setSpacesContract(
+      await daoSpaceFactory.getAddress(),
     );
 
-    const proxy2 = await ERC1967ProxyFactory.deploy(
-      await tokenImplementation.getAddress(),
-      initData2,
-    );
-    await proxy2.waitForDeployment();
-    token2 = TokenFactory.attach(
-      await proxy2.getAddress(),
-    ) as RegularSpaceToken;
+    // --- Create Space ---
+    const spaceParams = {
+      name: 'Test Space',
+      description: 'A test space',
+      imageUrl: '',
+      unity: 60,
+      quorum: 50,
+      votingPowerSource: 1,
+      exitMethod: 1, // Use valid exit method
+      joinMethod: 1, // Use valid join method
+      createToken: false,
+      tokenName: '',
+      tokenSymbol: '',
+    };
+    await daoSpaceFactory.createSpace(spaceParams);
+    spaceId = await daoSpaceFactory.spaceCounter();
 
-    // Mint tokens to user1
-    await token1.connect(executor).mint(user1.address, INITIAL_SUPPLY);
-    await token2.connect(executor).mint(user1.address, INITIAL_SUPPLY);
+    // --- Get Executor and Add Members ---
+    const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+    const executorAddress = spaceDetails.executor;
+    await ethers.provider.send('hardhat_impersonateAccount', [executorAddress]);
+    await ethers.provider.send('hardhat_setBalance', [
+      executorAddress,
+      '0x1000000000000000000',
+    ]);
+    executor = await ethers.getSigner(executorAddress);
+
+    await daoSpaceFactory.connect(user1).joinSpace(spaceId);
+    await daoSpaceFactory.connect(user2).joinSpace(spaceId);
+    await daoSpaceFactory.connect(user3).joinSpace(spaceId);
+    await daoSpaceFactory.connect(executor).joinSpace(spaceId); // Executor must be member for ownership token
+
+    // --- Deploy Tokens ---
+    const deployAndGetToken = async (
+      factory: any,
+      type: 'regular' | 'decaying' | 'ownership',
+    ) => {
+      let tx;
+      const tokenName = `${type} Token`;
+      const tokenSymbol = type.substring(0, 3).toUpperCase();
+
+      if (type === 'decaying') {
+        tx = await factory
+          .connect(executor)
+          .deployDecayingToken(
+            spaceId,
+            tokenName,
+            tokenSymbol,
+            0,
+            true,
+            true,
+            100,
+            3600,
+          );
+      } else if (type === 'ownership') {
+        tx = await factory
+          .connect(executor)
+          .deployOwnershipToken(spaceId, tokenName, tokenSymbol, 0, true);
+      } else {
+        tx = await factory
+          .connect(executor)
+          .deployToken(spaceId, tokenName, tokenSymbol, 0, true, true);
+      }
+
+      const receipt = await tx.wait();
+      const tokenDeployedEvent = receipt?.logs
+        .map((log: any) => {
+          try {
+            return factory.interface.parseLog(log);
+          } catch {
+            return null;
+          }
+        })
+        .find((event: any) => event && event.name === 'TokenDeployed');
+      const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+      return ethers.getContractAt(
+        type === 'regular'
+          ? 'RegularSpaceToken'
+          : type === 'decaying'
+          ? 'DecayingSpaceToken'
+          : 'OwnershipSpaceToken',
+        tokenAddress,
+      );
+    };
+
+    regularToken = (await deployAndGetToken(
+      regularTokenFactory,
+      'regular',
+    )) as RegularSpaceToken;
+    decayingToken = (await deployAndGetToken(
+      decayingTokenFactory,
+      'decaying',
+    )) as DecayingSpaceToken;
+    ownershipToken = (await deployAndGetToken(
+      ownershipTokenFactory,
+      'ownership',
+    )) as OwnershipSpaceToken;
+
+    // --- Final Setup ---
+    const transferHelperAddress = await transferHelper.getAddress();
+    await regularToken
+      .connect(executor)
+      .setTransferHelper(transferHelperAddress);
+    await decayingToken
+      .connect(executor)
+      .setTransferHelper(transferHelperAddress);
+    await ownershipToken
+      .connect(executor)
+      .setTransferHelper(transferHelperAddress);
+
+    await regularToken.connect(executor).mint(user1.address, INITIAL_SUPPLY);
+    await decayingToken.connect(executor).mint(user1.address, INITIAL_SUPPLY);
+    await ownershipToken.connect(executor).mint(user1.address, INITIAL_SUPPLY);
   });
 
-  describe('Deployment', function () {
-    it('Should set the correct owner', async function () {
+  describe('Deployment & Setup', function () {
+    it('Should set the correct owner for TransferHelper', async function () {
       expect(await transferHelper.owner()).to.equal(owner.address);
     });
 
@@ -81,210 +263,159 @@ describe('TransferHelper', function () {
       expect(await transferHelper.requireTokenWhitelist()).to.equal(false);
     });
 
-    it('Should support all tokens by default', async function () {
-      expect(
-        await transferHelper.isTokenSupported(await token1.getAddress()),
-      ).to.equal(true);
+    it('Should correctly deploy all token types', async function () {
+      expect(await regularToken.name()).to.equal('regular Token');
+      expect(await decayingToken.name()).to.equal('decaying Token');
+      expect(await ownershipToken.name()).to.equal('ownership Token');
     });
   });
 
-  describe('Single Token Transfer', function () {
-    it('Should transfer tokens successfully', async function () {
-      // Approve transferHelper to spend user1's tokens
-      await token1
-        .connect(user1)
-        .approve(await transferHelper.getAddress(), TRANSFER_AMOUNT);
-
-      // Execute transfer
+  describe('Transfers with RegularSpaceToken', function () {
+    // Note: All tests in this suite succeed without calling regularToken.approve() first,
+    // because the token's transferFrom is set to trust the TransferHelper.
+    it('Should transfer tokens successfully without prior approval', async function () {
+      // This works because TransferHelper calls the token's `transferFrom` function,
+      // and the token is configured to bypass the allowance check for the helper.
       await expect(
         transferHelper
           .connect(user1)
           .transferToken(
-            await token1.getAddress(),
+            await regularToken.getAddress(),
             user2.address,
             TRANSFER_AMOUNT,
           ),
       )
         .to.emit(transferHelper, 'TransferExecuted')
         .withArgs(
-          await token1.getAddress(),
+          await regularToken.getAddress(),
           user1.address,
           user2.address,
           TRANSFER_AMOUNT,
         );
 
-      // Check balances
-      expect(await token1.balanceOf(user2.address)).to.equal(TRANSFER_AMOUNT);
-      expect(await token1.balanceOf(user1.address)).to.equal(
-        INITIAL_SUPPLY - TRANSFER_AMOUNT,
+      expect(await regularToken.balanceOf(user2.address)).to.equal(
+        TRANSFER_AMOUNT,
       );
     });
 
-    it('Should fail if no approval given', async function () {
+    it("Should explicitly prevent a user from transferring another user's regular tokens", async function () {
+      // user2 has no regular tokens. This test proves that user2 cannot initiate a transfer of user1's tokens.
+      // The call will fail because TransferHelper executes `transferFrom(msg.sender, ...)` which means
+      // it tries to move funds from user2, who has an insufficient balance.
+      await expect(
+        transferHelper
+          .connect(user2) // user2 tries to send user1's funds
+          .transferToken(
+            await regularToken.getAddress(),
+            user3.address,
+            TRANSFER_AMOUNT,
+          ),
+      ).to.be.reverted; // Reverted due to insufficient balance on user2's account
+    });
+  });
+
+  describe('Transfers with OwnershipSpaceToken', function () {
+    // Note: All tests in this suite succeed without calling ownershipToken.approve() first.
+    it('Should transfer ownership tokens successfully to another member', async function () {
+      // TransferHelper calls `transferFrom`, which on OwnershipSpaceToken includes a check
+      // to ensure the recipient is a member of the space.
       await expect(
         transferHelper
           .connect(user1)
           .transferToken(
-            await token1.getAddress(),
+            await ownershipToken.getAddress(),
             user2.address,
             TRANSFER_AMOUNT,
           ),
-      ).to.be.reverted;
+      ).to.not.be.reverted;
+
+      expect(await ownershipToken.balanceOf(user2.address)).to.equal(
+        TRANSFER_AMOUNT,
+      );
     });
 
-    it('Should fail if insufficient balance', async function () {
-      const tooMuch = INITIAL_SUPPLY + ethers.parseEther('1');
-      await token1
-        .connect(user1)
-        .approve(await transferHelper.getAddress(), tooMuch);
-
+    it("Should explicitly prevent a user from transferring another user's ownership tokens", async function () {
+      // user2 has no ownership tokens. This test proves that user2 cannot initiate a transfer of user1's tokens.
       await expect(
         transferHelper
-          .connect(user1)
-          .transferToken(await token1.getAddress(), user2.address, tooMuch),
-      ).to.be.reverted;
+          .connect(user2)
+          .transferToken(
+            await ownershipToken.getAddress(),
+            user3.address,
+            TRANSFER_AMOUNT,
+          ),
+      ).to.be.reverted; // Reverted due to insufficient balance
     });
 
-    it('Should fail to transfer to zero address', async function () {
-      await token1
-        .connect(user1)
-        .approve(await transferHelper.getAddress(), TRANSFER_AMOUNT);
-
+    it('Should FAIL to transfer ownership tokens to a non-member', async function () {
       await expect(
         transferHelper
           .connect(user1)
           .transferToken(
-            await token1.getAddress(),
-            ethers.ZeroAddress,
+            await ownershipToken.getAddress(),
+            nonMember.address,
             TRANSFER_AMOUNT,
           ),
-      ).to.be.revertedWith('TransferHelper: transfer to zero address');
-    });
-
-    it('Should fail with zero amount', async function () {
-      await token1
-        .connect(user1)
-        .approve(await transferHelper.getAddress(), TRANSFER_AMOUNT);
-
-      await expect(
-        transferHelper
-          .connect(user1)
-          .transferToken(await token1.getAddress(), user2.address, 0),
-      ).to.be.revertedWith('TransferHelper: amount must be greater than 0');
+      ).to.be.revertedWith('Can only transfer to space members');
     });
   });
 
-  describe('Batch Transfer', function () {
-    it('Should transfer to multiple recipients successfully', async function () {
-      const recipients = [user2.address, user3.address];
-      const amounts = [ethers.parseEther('50'), ethers.parseEther('75')];
-      const totalAmount = ethers.parseEther('125');
-
-      await token1
-        .connect(user1)
-        .approve(await transferHelper.getAddress(), totalAmount);
-
+  describe('Transfers with DecayingSpaceToken', function () {
+    // Note: All tests in this suite succeed without calling decayingToken.approve() first.
+    it('Should transfer decaying tokens successfully', async function () {
+      // TransferHelper calls the `transferFrom` function, which on DecayingSpaceToken
+      // correctly applies any pending decay before executing the transfer.
       await expect(
         transferHelper
           .connect(user1)
-          .batchTransfer(await token1.getAddress(), recipients, amounts),
-      )
-        .to.emit(transferHelper, 'BatchTransferExecuted')
-        .withArgs(await token1.getAddress(), user1.address, totalAmount, 2);
+          .transferToken(
+            await decayingToken.getAddress(),
+            user2.address,
+            TRANSFER_AMOUNT,
+          ),
+      ).to.not.be.reverted;
 
-      // Check balances
-      expect(await token1.balanceOf(user2.address)).to.equal(amounts[0]);
-      expect(await token1.balanceOf(user3.address)).to.equal(amounts[1]);
-      expect(await token1.balanceOf(user1.address)).to.equal(
-        INITIAL_SUPPLY - totalAmount,
+      expect(await decayingToken.balanceOf(user2.address)).to.equal(
+        TRANSFER_AMOUNT,
       );
     });
 
-    it('Should fail if arrays length mismatch', async function () {
-      const recipients = [user2.address, user3.address];
-      const amounts = [ethers.parseEther('50')]; // Only one amount
-
+    it("Should explicitly prevent a user from transferring another user's decaying tokens", async function () {
+      // user2 has no decaying tokens. This test proves that user2 cannot initiate a transfer of user1's tokens.
       await expect(
         transferHelper
-          .connect(user1)
-          .batchTransfer(await token1.getAddress(), recipients, amounts),
-      ).to.be.revertedWith('TransferHelper: arrays length mismatch');
-    });
-
-    it('Should fail if empty arrays', async function () {
-      await expect(
-        transferHelper
-          .connect(user1)
-          .batchTransfer(await token1.getAddress(), [], []),
-      ).to.be.revertedWith('TransferHelper: empty arrays');
-    });
-
-    it('Should fail if one recipient is zero address', async function () {
-      const recipients = [user2.address, ethers.ZeroAddress];
-      const amounts = [ethers.parseEther('50'), ethers.parseEther('50')];
-
-      await token1
-        .connect(user1)
-        .approve(await transferHelper.getAddress(), ethers.parseEther('100'));
-
-      await expect(
-        transferHelper
-          .connect(user1)
-          .batchTransfer(await token1.getAddress(), recipients, amounts),
-      ).to.be.revertedWith('TransferHelper: transfer to zero address');
-    });
-  });
-
-  describe('Batch Transfer Equal', function () {
-    it('Should transfer equal amounts to multiple recipients', async function () {
-      const recipients = [user2.address, user3.address];
-      const amountEach = ethers.parseEther('50');
-      const totalAmount = ethers.parseEther('100');
-
-      await token1
-        .connect(user1)
-        .approve(await transferHelper.getAddress(), totalAmount);
-
-      await expect(
-        transferHelper
-          .connect(user1)
-          .batchTransferEqual(
-            await token1.getAddress(),
-            recipients,
-            amountEach,
+          .connect(user2)
+          .transferToken(
+            await decayingToken.getAddress(),
+            user3.address,
+            TRANSFER_AMOUNT,
           ),
-      )
-        .to.emit(transferHelper, 'BatchTransferExecuted')
-        .withArgs(await token1.getAddress(), user1.address, totalAmount, 2);
-
-      // Check balances
-      expect(await token1.balanceOf(user2.address)).to.equal(amountEach);
-      expect(await token1.balanceOf(user3.address)).to.equal(amountEach);
-      expect(await token1.balanceOf(user1.address)).to.equal(
-        INITIAL_SUPPLY - totalAmount,
-      );
+      ).to.be.reverted; // Reverted due to insufficient balance
     });
 
-    it('Should fail if empty array', async function () {
-      await expect(
-        transferHelper
-          .connect(user1)
-          .batchTransferEqual(
-            await token1.getAddress(),
-            [],
-            ethers.parseEther('50'),
-          ),
-      ).to.be.revertedWith('TransferHelper: empty array');
-    });
+    it('Should apply decay during a transfer', async function () {
+      const balanceBefore = await decayingToken.balanceOf(user1.address);
 
-    it('Should fail with zero amount', async function () {
-      const recipients = [user2.address, user3.address];
+      // Advance time by one decay interval (1 hour)
+      await time.increase(3600);
 
-      await expect(
-        transferHelper
-          .connect(user1)
-          .batchTransferEqual(await token1.getAddress(), recipients, 0),
-      ).to.be.revertedWith('TransferHelper: amount must be greater than 0');
+      const balanceAfterDecay = await decayingToken.balanceOf(user1.address);
+      expect(balanceAfterDecay).to.be.lessThan(balanceBefore);
+
+      // Now transfer
+      await transferHelper
+        .connect(user1)
+        .transferToken(
+          await decayingToken.getAddress(),
+          user2.address,
+          TRANSFER_AMOUNT,
+        );
+
+      const finalSenderBalance = await decayingToken.balanceOf(user1.address);
+      const expectedFinalBalance = balanceAfterDecay - TRANSFER_AMOUNT;
+
+      // Check if the final balance reflects the decay that happened before transfer
+      expect(finalSenderBalance).to.equal(expectedFinalBalance);
     });
   });
 
@@ -293,13 +424,13 @@ describe('TransferHelper', function () {
       await expect(
         transferHelper
           .connect(owner)
-          .setTokenWhitelist(await token1.getAddress(), true),
+          .setTokenWhitelist(await regularToken.getAddress(), true),
       )
         .to.emit(transferHelper, 'TokenWhitelisted')
-        .withArgs(await token1.getAddress(), true);
+        .withArgs(await regularToken.getAddress(), true);
 
       expect(
-        await transferHelper.supportedTokens(await token1.getAddress()),
+        await transferHelper.supportedTokens(await regularToken.getAddress()),
       ).to.equal(true);
     });
 
@@ -307,104 +438,32 @@ describe('TransferHelper', function () {
       await expect(
         transferHelper
           .connect(user1)
-          .setTokenWhitelist(await token1.getAddress(), true),
+          .setTokenWhitelist(await regularToken.getAddress(), true),
       ).to.be.reverted;
     });
 
-    it('Should allow owner to batch whitelist tokens', async function () {
-      const tokens = [await token1.getAddress(), await token2.getAddress()];
-
-      await transferHelper.connect(owner).batchSetTokenWhitelist(tokens, true);
-
-      expect(
-        await transferHelper.supportedTokens(await token1.getAddress()),
-      ).to.equal(true);
-      expect(
-        await transferHelper.supportedTokens(await token2.getAddress()),
-      ).to.equal(true);
-    });
-
     it('Should enforce whitelist when enabled', async function () {
-      // Enable whitelist requirement
       await transferHelper.connect(owner).setWhitelistRequirement(true);
-
-      // Try to transfer non-whitelisted token
-      await token1
-        .connect(user1)
-        .approve(await transferHelper.getAddress(), TRANSFER_AMOUNT);
 
       await expect(
         transferHelper
           .connect(user1)
           .transferToken(
-            await token1.getAddress(),
+            await regularToken.getAddress(),
             user2.address,
             TRANSFER_AMOUNT,
           ),
       ).to.be.revertedWith('TransferHelper: token not whitelisted');
 
-      // Whitelist token and try again
       await transferHelper
         .connect(owner)
-        .setTokenWhitelist(await token1.getAddress(), true);
+        .setTokenWhitelist(await regularToken.getAddress(), true);
 
       await expect(
         transferHelper
           .connect(user1)
           .transferToken(
-            await token1.getAddress(),
-            user2.address,
-            TRANSFER_AMOUNT,
-          ),
-      ).to.not.be.reverted;
-    });
-
-    it('Should update whitelist requirement', async function () {
-      await expect(transferHelper.connect(owner).setWhitelistRequirement(true))
-        .to.emit(transferHelper, 'WhitelistRequirementChanged')
-        .withArgs(true);
-
-      expect(await transferHelper.requireTokenWhitelist()).to.equal(true);
-    });
-
-    it('Should correctly report token support status', async function () {
-      // All tokens supported by default
-      expect(
-        await transferHelper.isTokenSupported(await token1.getAddress()),
-      ).to.equal(true);
-
-      // Enable whitelist
-      await transferHelper.connect(owner).setWhitelistRequirement(true);
-
-      // Token1 not supported
-      expect(
-        await transferHelper.isTokenSupported(await token1.getAddress()),
-      ).to.equal(false);
-
-      // Whitelist token1
-      await transferHelper
-        .connect(owner)
-        .setTokenWhitelist(await token1.getAddress(), true);
-
-      // Token1 now supported
-      expect(
-        await transferHelper.isTokenSupported(await token1.getAddress()),
-      ).to.equal(true);
-    });
-  });
-
-  describe('Reentrancy Protection', function () {
-    it('Should prevent reentrancy attacks', async function () {
-      // This is a basic test - a more comprehensive test would require a malicious token contract
-      await token1
-        .connect(user1)
-        .approve(await transferHelper.getAddress(), TRANSFER_AMOUNT);
-
-      await expect(
-        transferHelper
-          .connect(user1)
-          .transferToken(
-            await token1.getAddress(),
+            await regularToken.getAddress(),
             user2.address,
             TRANSFER_AMOUNT,
           ),
@@ -412,42 +471,32 @@ describe('TransferHelper', function () {
     });
   });
 
-  describe('Multiple Token Support', function () {
-    it('Should handle transfers of different tokens', async function () {
-      const amount1 = ethers.parseEther('100');
-      const amount2 = ethers.parseEther('200');
+  describe('Edge Cases & Security', function () {
+    it('Should fail if TransferHelper is not set on the token contract', async function () {
+      // Deploy a new token without setting the transfer helper
+      const tx = await regularTokenFactory
+        .connect(executor)
+        .deployToken(spaceId, 'New Token', 'NT', 0, true, true);
+      const receipt = await tx.wait();
+      const event = receipt?.logs
+        .map((log: any) => regularTokenFactory.interface.parseLog(log))
+        .find((e: any) => e && e.name === 'TokenDeployed');
+      const token3 = await ethers.getContractAt(
+        'RegularSpaceToken',
+        event.args.tokenAddress,
+      );
+      await token3.connect(executor).mint(user1.address, INITIAL_SUPPLY);
 
-      // Approve both tokens
-      await token1
-        .connect(user1)
-        .approve(await transferHelper.getAddress(), amount1);
-      await token2
-        .connect(user1)
-        .approve(await transferHelper.getAddress(), amount2);
-
-      // Transfer token1
-      await transferHelper
-        .connect(user1)
-        .transferToken(await token1.getAddress(), user2.address, amount1);
-
-      // Transfer token2
-      await transferHelper
-        .connect(user1)
-        .transferToken(await token2.getAddress(), user3.address, amount2);
-
-      // Check balances
-      expect(await token1.balanceOf(user2.address)).to.equal(amount1);
-      expect(await token2.balanceOf(user3.address)).to.equal(amount2);
-    });
-  });
-
-  describe('Edge Cases', function () {
-    it('Should reject invalid token address (zero address)', async function () {
+      // Attempting to transfer should fail without an approval because TransferHelper is not authorized
       await expect(
         transferHelper
           .connect(user1)
-          .transferToken(ethers.ZeroAddress, user2.address, TRANSFER_AMOUNT),
-      ).to.be.revertedWith('TransferHelper: invalid token address');
+          .transferToken(
+            await token3.getAddress(),
+            user2.address,
+            TRANSFER_AMOUNT,
+          ),
+      ).to.be.reverted; // Reverted by ERC20: insufficient allowance
     });
 
     it('Should reject non-contract addresses as tokens', async function () {

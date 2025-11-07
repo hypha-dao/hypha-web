@@ -145,6 +145,12 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
       return true;
     }
 
+    if (spender == transferHelper && tx.origin == from) {
+      require(_isSpaceMember(to), 'Can only transfer to space members');
+      _transfer(from, to, amount);
+      return true;
+    }
+
     // Only executor can initiate other transfers
     require(spender == executor, 'Only executor can transfer tokens');
 

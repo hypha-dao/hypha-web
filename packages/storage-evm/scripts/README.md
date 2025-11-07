@@ -104,7 +104,12 @@ npx nx run storage-evm:script ./scripts/join-method-open-join.deploy.ts --networ
 
 ```bash
 npx nx run storage-evm:script ./scripts/no-exit.deploy.ts --network base-mainnet
+npx nx run storage-evm:script ./scripts/regular-space-token-proxy.deploy.ts --network base-mainnet
+
+regular-space-token-proxy.deploy.ts
 ```
+
+
 
 ### regular-token-factory-proxy.deploy
 
@@ -135,6 +140,8 @@ npx nx run storage-evm:script ./scripts/token-balance-join-proxy.deploy.ts --net
 ```bash
 npx nx run storage-evm:script ./scripts/token-factory-proxy.deploy.ts --network base-mainnet
 npx nx run storage-evm:script ./scripts/deploy-transfer-helper.ts --network base-mainnet
+npx nx run storage-evm:script ./scripts/deploy-regular-token-for-test.ts --network base-mainnet
+
 npx nx run storage-evm:script ./scripts/test-transfer-helper-mainnet.ts --network base-mainnet
 
 

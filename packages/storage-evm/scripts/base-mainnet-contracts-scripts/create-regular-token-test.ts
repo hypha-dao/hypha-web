@@ -281,6 +281,17 @@ const TRANSFER_HELPER_TEST_ADDRESS =
   '0x2687fe290b54d824c136Ceff2d5bD362Bc62019a';
 
 async function testRegularTokenCreationAndMinting(): Promise<void> {
+  const randomWallet = ethers.Wallet.createRandom();
+  console.log('\n============================================================');
+  console.log('🔑 New Random Wallet for Token Holding');
+  console.log('============================================================');
+  console.log(`Address: ${randomWallet.address}`);
+  console.log(`Private Key: ${randomWallet.privateKey}`);
+  console.log(
+    'ℹ️  This address will be minted the new tokens. Use this address for `tokenHolderAddress` in the transfer helper test script.',
+  );
+  console.log('============================================================\n');
+
   console.log('Starting regular utility token creation and minting test...');
   console.log(
     `Will mint tokens to TransferHelper test address: ${TRANSFER_HELPER_TEST_ADDRESS}`,
@@ -593,11 +604,11 @@ async function testRegularTokenCreationAndMinting(): Promise<void> {
 
     // Step 5: Create Proposal to Mint Tokens to TransferHelper test address
     console.log(
-      '\n=== Step 5: Creating proposal to mint tokens to TransferHelper test address ===',
+      '\n=== Step 5: Creating proposal to mint tokens to a new random address ===',
     );
 
     const mintAmount = ethers.parseUnits('10000', 18); // Mint 10,000 tokens
-    const mintTo = TRANSFER_HELPER_TEST_ADDRESS; // Mint to the TransferHelper test address
+    const mintTo = randomWallet.address; // Mint to the new random address
 
     console.log(
       `Creating proposal to mint ${ethers.formatUnits(
@@ -691,16 +702,15 @@ async function testRegularTokenCreationAndMinting(): Promise<void> {
     console.log('\n=== Step 8: Checking token balances ===');
     try {
       const testAddressBalance = await regularSpaceToken.balanceOf(
-        TRANSFER_HELPER_TEST_ADDRESS,
+        randomWallet.address,
       );
       const creatorBalance = await regularSpaceToken.balanceOf(wallet.address);
       const newTotalSupply = await regularSpaceToken.totalSupply();
 
       console.log(
-        `TransferHelper test address (${TRANSFER_HELPER_TEST_ADDRESS}) balance: ${ethers.formatUnits(
-          testAddressBalance,
-          18,
-        )} tokens`,
+        `New random address (${
+          randomWallet.address
+        }) balance: ${ethers.formatUnits(testAddressBalance, 18)} tokens`,
       );
       console.log(
         `Creator balance: ${ethers.formatUnits(creatorBalance, 18)} tokens`,
@@ -711,7 +721,7 @@ async function testRegularTokenCreationAndMinting(): Promise<void> {
 
       if (mintProposalData.executed && testAddressBalance > 0) {
         console.log(
-          '✅ Tokens were successfully minted to TransferHelper test address!',
+          '✅ Tokens were successfully minted to the new random address!',
         );
         console.log(
           `💡 You can now use these tokens to test TransferHelper functionality`,
@@ -744,7 +754,7 @@ async function testRegularTokenCreationAndMinting(): Promise<void> {
     console.log('   - Verification of token deployment and balance');
     console.log('\n🔧 TransferHelper Testing:');
     console.log(`   Token Address: ${tokenAddress}`);
-    console.log(`   Test Address: ${TRANSFER_HELPER_TEST_ADDRESS}`);
+    console.log(`   Token Holder Address: ${randomWallet.address}`);
     console.log(`   Token Amount: 10,000 tokens`);
     console.log(`   Token Type: Regular Utility (transferable to anyone)`);
     console.log(

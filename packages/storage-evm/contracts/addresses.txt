@@ -95,17 +95,30 @@ OwnershipSpaceToken implementation deployed to: 0xB06f27e16648F36C529839413f307a
 NEW
 OwnershipSpaceToken implementation deployed to: 0x3252909FF5a0e2015648ad2E00fb4dA1A2FFc416
 DecayingSpaceToken implementation deployed to: 0x97661C189c4Abfb3763cFF9AB41d871FC856A19D
-RegularSpaceToken implementation deployed to: 0x8C105Debd4B222FFb2c438f7034158c6BA29aDB5
+RegularSpaceToken implementation deployed to: 0x9e536e14EA59c955d37fBae65ed0965de225880b
+
+
+before transfer helper RegularSpaceToken implementation deployed to: 0x8C105Debd4B222FFb2c438f7034158c6BA29aDB5
 
 
 
-TransferHelper
+
+✅ TransferHelper deployed successfully!
+TransferHelper address: 0x479002F7602579203ffba3eE84ACC1BC5b0d6785
+Owner: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Whitelist requirement: false
+
+📝 To verify the contract on Etherscan, run:
+npx hardhat verify --network <network> 0x479002F7602579203ffba3eE84ACC1BC5b0d6785
+
+📖 Usage Instructions:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1️⃣  Whitelist this contract with Coinbase Paymaster
-   Contract address: 0xBE14090eB3034a26Cea1b72d3Ebb143b06Fb0736
+   Contract address: 0x479002F7602579203ffba3eE84ACC1BC5b0d6785
 
 2️⃣  In your frontend, users need to approve this contract before transfers:
-   await tokenContract.approve("0xBE14090eB3034a26Cea1b72d3Ebb143b06Fb0736", amount);
+   await tokenContract.approve("0x479002F7602579203ffba3eE84ACC1BC5b0d6785", amount);
 
 3️⃣  Execute transfers through the helper contract:
    await transferHelper.transferToken(tokenAddress, recipientAddress, amount);

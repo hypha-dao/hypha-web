@@ -16,6 +16,7 @@ import { ethers } from 'hardhat';
 interface TestConfig {
   transferHelperAddress: string;
   testTokenAddress: string;
+  tokenHolderAddress: string;
   recipientAddress: string;
   transferAmount: string; // in token units (e.g., "10" for 10 tokens)
 }
@@ -25,10 +26,13 @@ interface TestConfig {
 // ============================================================================
 const config: TestConfig = {
   // Your deployed TransferHelper address
-  transferHelperAddress: '0xBE14090eB3034a26Cea1b72d3Ebb143b06Fb0736',
+  transferHelperAddress: '0x479002F7602579203ffba3eE84ACC1BC5b0d6785',
 
   // Token to test with (use your deployed token or any ERC20)
-  testTokenAddress: '0xD616548429EB5cBB3dA7A191910caDe2e27f5aFf',
+  testTokenAddress: '0x8730C64c3E0A36E2b46C2Cd1fcE05B30Dee56a32',
+
+  // The address that was minted the tokens in the creation script
+  tokenHolderAddress: '0xC902cBb668768684E7f21a238dAb4eFD7D4aAF73',
 
   // Address to send test transfer to (use a wallet you control for testing)
   recipientAddress: '0x82f4a7807852de5667AFee822e6C960b60581498',
@@ -39,7 +43,8 @@ const config: TestConfig = {
 // ============================================================================
 
 async function main() {
-  console.log('🧪 Testing TransferHelper on Mainnet');
+  console.log('🧪 Testing TransferHelper on Mainnet (Negative Test Case)');
+  console.log('🧪 Ensuring a user CANNOT transfer tokens they do not own.');
   console.log('═══════════════════════════════════════════════════════\n');
 
   const [signer] = await ethers.getSigners();
@@ -48,7 +53,7 @@ async function main() {
   console.log('📋 Configuration:');
   console.log('─────────────────────────────────────────────────────');
   console.log('Network:', (await ethers.provider.getNetwork()).name);
-  console.log('Signer:', signerAddress);
+  console.log('Signer (Initiator):', signerAddress);
   console.log(
     'Balance:',
     ethers.formatEther(await ethers.provider.getBalance(signerAddress)),
@@ -56,6 +61,7 @@ async function main() {
   );
   console.log('TransferHelper:', config.transferHelperAddress);
   console.log('Test Token:', config.testTokenAddress);
+  console.log('Token Holder:', config.tokenHolderAddress);
   console.log('Recipient:', config.recipientAddress);
   console.log('');
 
@@ -81,6 +87,15 @@ async function main() {
   }
 
   if (
+    config.tokenHolderAddress === '0x...' ||
+    !ethers.isAddress(config.tokenHolderAddress)
+  ) {
+    console.error('❌ Error: Invalid token holder address');
+    console.log('Set tokenHolderAddress from the token creation script output');
+    process.exit(1);
+  }
+
+  if (
     config.recipientAddress === '0x...' ||
     !ethers.isAddress(config.recipientAddress)
   ) {
@@ -99,7 +114,7 @@ async function main() {
     config.transferHelperAddress,
   );
 
-  const ERC20_ABI = [
+  const TOKEN_WITH_HELPER_ABI = [
     'function name() view returns (string)',
     'function symbol() view returns (string)',
     'function decimals() view returns (uint8)',
@@ -107,9 +122,15 @@ async function main() {
     'function allowance(address owner, address spender) view returns (uint256)',
     'function approve(address spender, uint256 amount) returns (bool)',
     'function transfer(address to, uint256 amount) returns (bool)',
+    // Custom functions for our system
+    'function transferHelper() view returns (address)',
   ];
 
-  const token = new ethers.Contract(config.testTokenAddress, ERC20_ABI, signer);
+  const token = new ethers.Contract(
+    config.testTokenAddress,
+    TOKEN_WITH_HELPER_ABI,
+    signer,
+  );
 
   // Get token info
   console.log('🪙 Token Information:');
@@ -136,38 +157,54 @@ async function main() {
   console.log('─────────────────────────────────────────────────────');
 
   const senderBalance = await token.balanceOf(signerAddress);
-  const recipientBalance = await token.balanceOf(config.recipientAddress);
+  const tokenHolderBalance = await token.balanceOf(config.tokenHolderAddress);
 
   console.log(
-    'Sender:',
+    'Signer (Initiator):',
     ethers.formatUnits(senderBalance, tokenDecimals),
     tokenSymbol,
   );
   console.log(
-    'Recipient:',
-    ethers.formatUnits(recipientBalance, tokenDecimals),
+    'Token Holder:',
+    ethers.formatUnits(tokenHolderBalance, tokenDecimals),
     tokenSymbol,
   );
   console.log('');
 
-  // Calculate transfer amount in wei
+  // VITAL TEST CONDITION: Signer must NOT have enough tokens for this test to be valid.
   const transferAmountWei = ethers.parseUnits(
     config.transferAmount,
     tokenDecimals,
   );
-
-  // Check if sender has enough balance
-  if (senderBalance < transferAmountWei) {
-    console.error('❌ Error: Insufficient token balance');
-    console.log(`Need: ${config.transferAmount} ${tokenSymbol}`);
-    console.log(
-      `Have: ${ethers.formatUnits(
-        senderBalance,
-        tokenDecimals,
-      )} ${tokenSymbol}`,
+  if (senderBalance >= transferAmountWei) {
+    console.error(
+      '❌ TEST SETUP ERROR: The signer has enough tokens to perform the transfer.',
+    );
+    console.error(
+      '   This test is designed to ensure a user CANNOT transfer tokens they do not own.',
+    );
+    console.error(
+      '   Please run this test with a signer account that has a zero (or insufficient) balance of the test token.',
     );
     process.exit(1);
   }
+
+  // VITAL TEST CONDITION: The separate token holder must have enough tokens.
+  if (tokenHolderBalance < transferAmountWei) {
+    console.error(
+      '❌ TEST SETUP ERROR: The token holder does not have enough tokens.',
+    );
+    console.error(
+      '   Please ensure the tokenHolderAddress has been minted tokens and has a sufficient balance.',
+    );
+    process.exit(1);
+  }
+
+  console.log(
+    '✅ Test setup is correct. Signer has insufficient funds, but the token holder has funds.',
+  );
+  console.log('   Now attempting the transfer, which is expected to FAIL.');
+  console.log('');
 
   // Check TransferHelper status
   console.log('🔍 TransferHelper Status:');
@@ -197,56 +234,44 @@ async function main() {
     process.exit(1);
   }
 
-  // Step 1: Check current allowance
-  console.log('📝 Step 1: Checking Allowance');
+  // Step 1: Check if the token is configured to bypass approval
+  console.log('📝 Step 1: Checking Token Configuration for Approval Bypass');
   console.log('─────────────────────────────────────────────────────');
 
-  const currentAllowance = await token.allowance(
-    signerAddress,
-    config.transferHelperAddress,
-  );
-  console.log(
-    'Current Allowance:',
-    ethers.formatUnits(currentAllowance, tokenDecimals),
-    tokenSymbol,
-  );
-
-  let needsApproval = currentAllowance < transferAmountWei;
-  console.log('Needs Approval:', needsApproval);
-  console.log('');
-
-  // Step 2: Approve if needed
-  if (needsApproval) {
-    console.log('✍️  Step 2: Approving TransferHelper');
-    console.log('─────────────────────────────────────────────────────');
-
-    try {
-      const approveTx = await token.approve(
-        config.transferHelperAddress,
-        transferAmountWei,
+  try {
+    const configuredHelper = await token.transferHelper();
+    if (
+      configuredHelper.toLowerCase() ===
+      config.transferHelperAddress.toLowerCase()
+    ) {
+      console.log('✅ Token is configured to trust this TransferHelper.');
+      console.log('   Approval step will be bypassed.');
+    } else {
+      console.error(
+        '❌ Error: Token has a different TransferHelper configured.',
       );
-      console.log('Approval TX:', approveTx.hash);
-      console.log('Waiting for confirmation...');
-
-      const approveReceipt = await approveTx.wait();
-      console.log('✅ Approved! Block:', approveReceipt?.blockNumber);
-      console.log('Gas Used:', approveReceipt?.gasUsed.toString());
-      console.log('');
-    } catch (error: any) {
-      console.error('❌ Approval failed:', error.message);
+      console.error('   Configured Helper:', configuredHelper);
+      console.error('   Expected Helper:  ', config.transferHelperAddress);
       process.exit(1);
     }
-  } else {
-    console.log('✅ Step 2: Approval not needed (sufficient allowance)');
-    console.log('');
+  } catch (e) {
+    console.error('❌ Error: Token does not have `transferHelper()` function.');
+    console.error(
+      '   This script requires a token configured for this system.',
+    );
+    process.exit(1);
   }
+  console.log('');
 
-  // Step 3: Execute transfer via TransferHelper
-  console.log('🚀 Step 3: Executing Transfer via TransferHelper');
+  // Step 2: Execute transfer via TransferHelper
+  console.log(
+    '🚀 Step 2: Executing Transfer via TransferHelper (Expecting Failure)',
+  );
   console.log('─────────────────────────────────────────────────────');
-  console.log('Transferring:', config.transferAmount, tokenSymbol);
-  console.log('From:', signerAddress);
+  console.log('Attempting to transfer:', config.transferAmount, tokenSymbol);
+  console.log('From (Signer):', signerAddress);
   console.log('To:', config.recipientAddress);
+  console.log('(Tokens are held by:', config.tokenHolderAddress, ')');
   console.log('');
 
   try {
@@ -260,91 +285,47 @@ async function main() {
     console.log('Waiting for confirmation...');
 
     const transferReceipt = await transferTx.wait();
-    console.log('✅ Transfer successful! Block:', transferReceipt?.blockNumber);
-    console.log('Gas Used:', transferReceipt?.gasUsed.toString());
+    console.log('Block:', transferReceipt?.blockNumber);
 
-    // Parse events
-    const transferHelperInterface = transferHelper.interface;
-    const logs = transferReceipt?.logs || [];
-
-    for (const log of logs) {
-      try {
-        const parsed = transferHelperInterface.parseLog({
-          topics: [...log.topics],
-          data: log.data,
-        });
-
-        if (parsed?.name === 'TransferExecuted') {
-          console.log('');
-          console.log('📊 Event: TransferExecuted');
-          console.log('Token:', parsed.args.token);
-          console.log('From:', parsed.args.from);
-          console.log('To:', parsed.args.to);
-          console.log(
-            'Amount:',
-            ethers.formatUnits(parsed.args.amount, tokenDecimals),
-            tokenSymbol,
-          );
-        }
-      } catch (e) {
-        // Not a TransferHelper event, skip
+    // If we reach here, the transfer SUCCEEDED, which is an error for this test case.
+    console.error(
+      '❌ TEST FAILED: The transfer succeeded when it should have failed!',
+    );
+    console.error(
+      '   This means TransferHelper might be allowing users to transfer tokens that are not theirs.',
+    );
+    console.error(
+      '   The signer had an insufficient balance, but the transfer was still processed.',
+    );
+    process.exit(1);
+  } catch (error: any) {
+    console.log('✅ SUCCESS: The transfer failed as expected.');
+    if (error.message) {
+      console.log('   Error message:', error.message);
+      if (
+        error.message.includes('insufficient balance') ||
+        error.message.includes('transfer amount exceeds balance')
+      ) {
+        console.log(
+          '   This is the correct error message, confirming the balance check worked.',
+        );
+      } else {
+        console.warn(
+          '   Warning: The error message was not the expected balance error, but the transaction failed, which is correct.',
+        );
       }
     }
     console.log('');
-  } catch (error: any) {
-    console.error('❌ Transfer failed:', error.message);
-    process.exit(1);
   }
-
-  // Step 4: Verify final balances
-  console.log('✅ Step 4: Verifying Final Balances');
-  console.log('─────────────────────────────────────────────────────');
-
-  const finalSenderBalance = await token.balanceOf(signerAddress);
-  const finalRecipientBalance = await token.balanceOf(config.recipientAddress);
-
-  console.log(
-    'Sender:',
-    ethers.formatUnits(finalSenderBalance, tokenDecimals),
-    tokenSymbol,
-  );
-  console.log(
-    'Recipient:',
-    ethers.formatUnits(finalRecipientBalance, tokenDecimals),
-    tokenSymbol,
-  );
-  console.log('');
-
-  console.log('Changes:');
-  console.log(
-    'Sender:',
-    ethers.formatUnits(senderBalance - finalSenderBalance, tokenDecimals),
-    tokenSymbol,
-    '(sent)',
-  );
-  console.log(
-    'Recipient:',
-    ethers.formatUnits(finalRecipientBalance - recipientBalance, tokenDecimals),
-    tokenSymbol,
-    '(received)',
-  );
-  console.log('');
 
   // Summary
   console.log('═══════════════════════════════════════════════════════');
-  console.log('🎉 TEST COMPLETED SUCCESSFULLY!');
+  console.log('🎉 NEGATIVE TEST COMPLETED SUCCESSFULLY!');
   console.log('═══════════════════════════════════════════════════════');
   console.log('');
-  console.log('✅ TransferHelper is working correctly');
-  console.log('✅ Tokens were transferred successfully');
   console.log(
-    '✅ Ready to integrate with Coinbase Paymaster for gas sponsorship',
+    '✅ TransferHelper correctly prevented a user from transferring tokens they do not own.',
   );
-  console.log('');
-  console.log('Next steps:');
-  console.log('1. Whitelist TransferHelper in Coinbase Developer Portal');
-  console.log('2. Configure your frontend to use TransferHelper');
-  console.log('3. Test with Coinbase Smart Wallet for gas-free transfers');
   console.log('');
 }
 

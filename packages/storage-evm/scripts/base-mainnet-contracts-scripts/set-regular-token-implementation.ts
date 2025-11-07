@@ -15,7 +15,7 @@ interface RegularTokenFactoryInterface extends Contract {
 const REGULAR_TOKEN_FACTORY_ADDRESS =
   '0x95A33EC94de2189893884DaD63eAa19f7390144a'; // RegularTokenFactory Proxy
 
-const NEW_IMPLEMENTATION_ADDRESS = '0x8C105Debd4B222FFb2c438f7034158c6BA29aDB5'; // RegularSpaceToken Implementation
+const NEW_IMPLEMENTATION_ADDRESS = '0x9e536e14EA59c955d37fBae65ed0965de225880b'; // RegularSpaceToken Implementation
 
 const regularTokenFactoryAbi = [
   {
