@@ -93,8 +93,8 @@ DecayingSpaceToken implementation deployed to: 0x5BE10FdAce191216236668d9cDb1277
 OwnershipSpaceToken implementation deployed to: 0xB06f27e16648F36C529839413f307a87b80d6ca1
 
 NEW
-OwnershipSpaceToken implementation deployed to: 0x3252909FF5a0e2015648ad2E00fb4dA1A2FFc416
-DecayingSpaceToken implementation deployed to: 0x97661C189c4Abfb3763cFF9AB41d871FC856A19D
+OwnershipSpaceToken implementation deployed to: 0xcD905c80A6d1c1BD4B0996dc33Eb39E9340d1886
+DecayingSpaceToken implementation deployed to: 0x39f10AEEbC0D33CBE4EceDcEeffb65A7ec59C10a
 RegularSpaceToken implementation deployed to: 0x9e536e14EA59c955d37fBae65ed0965de225880b
 
 
