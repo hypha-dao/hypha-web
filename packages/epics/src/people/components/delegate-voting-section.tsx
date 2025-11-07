@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Separator, Label, Button } from '@hypha-platform/ui';
 import { DelegatedMemberSelector } from './delegated-member-selector';
 import { DelegatedSpaceSelector } from './delegated-space-selector';
@@ -17,6 +17,7 @@ import {
 import { useParams } from 'next/navigation';
 import { ProfileComponentParams } from './types';
 import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
+import { useScrollToErrors } from '../../hooks';
 
 interface DelegateVotingSectionProps {
   spaceSlug?: string;
@@ -100,6 +101,7 @@ export const DelegateVotingSection = ({
 
   if (!isMember) return null;
 
+  const delegateToMemberFormRef = useRef<HTMLFormElement>(null);
   const delegateToMemberForm = useForm<DelegateToMemberForm>({
     resolver: zodResolver(delegateToMemberSchema),
     defaultValues: {
@@ -108,10 +110,15 @@ export const DelegateVotingSection = ({
     },
   });
 
+  useScrollToErrors(delegateToMemberForm, delegateToMemberFormRef);
+
+  const passOnDelegatedVoiceFormRef = useRef<HTMLFormElement>(null);
   const passOnDelegatedVoiceForm = useForm<PassOnDelegatedVoiceForm>({
     resolver: zodResolver(passOnDelegatedVoiceSchema),
     defaultValues: { delegatedSpace: undefined, delegatedMember: '' },
   });
+
+  useScrollToErrors(passOnDelegatedVoiceForm, passOnDelegatedVoiceFormRef);
 
   const selectedSpaceWeb3SpaceId =
     passOnDelegatedVoiceForm.watch('delegatedSpace');
@@ -146,6 +153,7 @@ export const DelegateVotingSection = ({
     <div className="flex flex-col gap-5">
       <Form {...delegateToMemberForm}>
         <form
+          ref={delegateToMemberFormRef}
           onSubmit={delegateToMemberForm.handleSubmit(handleDelegateToMember)}
           className="flex flex-col gap-5"
         >
@@ -195,6 +203,7 @@ export const DelegateVotingSection = ({
       {spaces?.data?.length ? (
         <Form {...passOnDelegatedVoiceForm}>
           <form
+            ref={passOnDelegatedVoiceFormRef}
             onSubmit={passOnDelegatedVoiceForm.handleSubmit(
               handleDelegateSpace,
             )}

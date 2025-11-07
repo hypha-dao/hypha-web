@@ -18,6 +18,7 @@ import { useConfig } from 'wagmi';
 import { useRouter } from 'next/navigation';
 import { useAssets, useFundWallet } from '../../treasury';
 import React from 'react';
+import { useScrollToErrors } from '../../hooks';
 
 const RECIPIENT_SPACE_ADDRESS = '0x3dEf11d005F8C85c93e3374B28fcC69B25a650Af';
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
@@ -67,6 +68,7 @@ export const BuyHyphaTokensForm = ({
     agreement: { slug: agreementSlug },
   } = useBuyHyphaTokensOrchestrator({ authToken: jwt, config });
 
+  const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(conbinedSchemaBuyHyphaTokens),
     mode: 'onChange',
@@ -85,6 +87,8 @@ export const BuyHyphaTokensForm = ({
       label: 'Buy Hypha Tokens',
     },
   });
+
+  useScrollToErrors(form, formRef);
 
   React.useEffect(() => {
     if (spaceDetails?.executor && web3SpaceId) {
@@ -170,6 +174,7 @@ export const BuyHyphaTokensForm = ({
     >
       <Form {...form}>
         <form
+          ref={formRef}
           onSubmit={form.handleSubmit(handleCreate)}
           className="flex flex-col gap-5"
         >

@@ -263,6 +263,9 @@ importers:
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
+      seamless-scroll-polyfill:
+        specifier: ^2.3.4
+        version: 2.3.4
       slugify:
         specifier: ^1.6.6
         version: 1.6.6
@@ -17200,6 +17203,9 @@ packages:
 
   scuid@1.1.0:
     resolution: {integrity: sha512-MuCAyrGZcTLfQoH2XoBlQ8C6bzwN88XT/0slOGz0pn8+gIP85BOAfYa44ZXQUTOwRwPU0QvgU+V+OSajl/59Xg==}
+
+  seamless-scroll-polyfill@2.3.4:
+    resolution: {integrity: sha512-Biobd4LDoeFODX1bfiru84GveSajzFELFB3ejMZsRR2TpD73W46uEZYAEqSx5RtKpN2umhGWaoSRivs0ZcHp9g==}
 
   secp256k1@4.0.4:
     resolution: {integrity: sha512-6JfvwvjUOn8F/jUoBY2Q1v5WY5XS+rj8qSe0v8Y4ezH4InLgTEeOOPQsRll9OV429Pvo6BCHGavIyJfr3TAhsw==}
@@ -41974,6 +41980,8 @@ snapshots:
   scrypt-js@3.0.1: {}
 
   scuid@1.1.0: {}
+
+  seamless-scroll-polyfill@2.3.4: {}
 
   secp256k1@4.0.4:
     dependencies:

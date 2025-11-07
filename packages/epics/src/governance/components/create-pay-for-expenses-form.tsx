@@ -1,6 +1,5 @@
 'use client';
 
-import { CreateAgreementBaseFields } from '@hypha-platform/epics';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -16,6 +15,8 @@ import { useCreatePayForExpensesOrchestrator } from '@hypha-platform/core/client
 import { useRouter } from 'next/navigation';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useConfig } from 'wagmi';
+import { useScrollToErrors } from '../../hooks';
+import { CreateAgreementBaseFields } from '../../agreements';
 
 const fullSchemaCreatePayForExpensesForm =
   schemaCreateAgreementForm.extend(createAgreementFiles);
@@ -51,6 +52,7 @@ export const CreatePayForExpensesForm = ({
     agreement: { slug: agreementSlug },
   } = useCreatePayForExpensesOrchestrator({ authToken: jwt, config });
 
+  const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(fullSchemaCreatePayForExpensesForm),
     defaultValues: {
@@ -69,6 +71,8 @@ export const CreatePayForExpensesForm = ({
       ],
     },
   });
+
+  useScrollToErrors(form, formRef);
 
   React.useEffect(() => {
     if (progress === 100 && agreementSlug) {
@@ -126,6 +130,7 @@ export const CreatePayForExpensesForm = ({
     >
       <Form {...form}>
         <form
+          ref={formRef}
           onSubmit={form.handleSubmit(handleCreate)}
           className="flex flex-col gap-5"
         >
