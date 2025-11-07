@@ -4,7 +4,7 @@ import {
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { notFound } from 'next/navigation';
-import { Plugin } from '../plugins';
+import { Plugin } from '../../../../_components/plugins';
 import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 import {
   findSpaceBySlug,

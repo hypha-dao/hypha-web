@@ -2,7 +2,7 @@ import { SidePanel } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { notFound } from 'next/navigation';
 import { IssueNewTokenForm } from '@hypha-platform/epics';
-import { Plugin } from '../plugins';
+import { Plugin } from '../../../../_components/plugins';
 import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
