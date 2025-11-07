@@ -137,6 +137,10 @@ npx nx run storage-evm:script ./scripts/token-factory-proxy.deploy.ts --network 
 npx nx run storage-evm:script ./scripts/deploy-transfer-helper.ts --network base-mainnet
 npx nx run storage-evm:script ./scripts/test-transfer-helper-mainnet.ts --network base-mainnet
 
+
+npx nx run storage-evm:script ./scripts/hypha-token.upgrade.ts --network base-mainnet
+
+
 ```
 
 ### token-voting-power-proxy.deploy
