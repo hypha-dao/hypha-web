@@ -29,10 +29,10 @@ const config: TestConfig = {
   transferHelperAddress: '0x479002F7602579203ffba3eE84ACC1BC5b0d6785',
 
   // Token to test with (use your deployed token or any ERC20)
-  testTokenAddress: '0x8730C64c3E0A36E2b46C2Cd1fcE05B30Dee56a32',
+  testTokenAddress: '0x1886f3fd7e0790e729f1ef3DB778137cf4f2d740',
 
   // The address that was minted the tokens in the creation script
-  tokenHolderAddress: '0xC902cBb668768684E7f21a238dAb4eFD7D4aAF73',
+  tokenHolderAddress: '0x46eE5572B991188A7102911648Ae1D82Dc0d8a51',
 
   // Address to send test transfer to (use a wallet you control for testing)
   recipientAddress: '0x82f4a7807852de5667AFee822e6C960b60581498',
