@@ -8,16 +8,17 @@ import {
   useMe,
   useCreateChangeVotingMethodOrchestrator,
   useTokensVotingPower,
+  useJwt,
+  useSpaceDetailsWeb3Rpc,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
-import { useJwt } from '@hypha-platform/core/client';
 import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter } from 'next/navigation';
-import { useSpaceDetailsWeb3Rpc } from '@hypha-platform/core/client';
 import { VOTING_METHOD_TYPES } from '../hooks';
+import { useScrollToErrors } from '../../hooks';
 
 type FormValues = z.infer<typeof schemaCreateProposalChangeVotingMethod>;
 
@@ -57,6 +58,7 @@ export const CreateProposalChangeVotingMethodForm = ({
     spaceId: BigInt(web3SpaceId as number),
   });
 
+  const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(schemaCreateProposalChangeVotingMethod),
     defaultValues: {
@@ -78,6 +80,8 @@ export const CreateProposalChangeVotingMethodForm = ({
     },
     mode: 'onChange',
   });
+
+  useScrollToErrors(form, formRef);
 
   const { quorum = 0, unity = 0 } = form.watch('quorumAndUnity') ?? {};
 
@@ -161,6 +165,7 @@ export const CreateProposalChangeVotingMethodForm = ({
     >
       <Form {...form}>
         <form
+          ref={formRef}
           onSubmit={form.handleSubmit(handleCreate)}
           className="flex flex-col gap-5"
         >

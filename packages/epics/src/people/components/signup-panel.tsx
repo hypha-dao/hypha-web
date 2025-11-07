@@ -28,7 +28,8 @@ import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { Links } from '../../common';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { useScrollToErrors } from '../../hooks';
 
 const schemaSignupPersonForm = schemaSignupPerson.extend(editPersonFiles.shape);
 
@@ -50,6 +51,7 @@ export const SignupPanel = ({
   error,
 }: SignupPanelProps) => {
   const { user } = useAuthentication();
+  const formRef = useRef<HTMLFormElement>(null);
   const form = useForm<FormData>({
     resolver: zodResolver(schemaSignupPersonForm),
     defaultValues: {
@@ -66,6 +68,8 @@ export const SignupPanel = ({
     },
   });
 
+  useScrollToErrors(form, formRef);
+
   useEffect(() => {
     if (user?.email) {
       form.setValue('email', user.email.trim());
@@ -77,7 +81,11 @@ export const SignupPanel = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSave)} className="space-y-8">
+      <form
+        ref={formRef}
+        onSubmit={form.handleSubmit(onSave)}
+        className="space-y-8"
+      >
         <div className="flex flex-col gap-5">
           <div className="flex gap-5 justify-between">
             <div className="flex items-center space-x-2">

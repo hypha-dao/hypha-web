@@ -1,22 +1,22 @@
 'use client';
 
-import { CreateAgreementBaseFields } from '@hypha-platform/epics';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   schemaCreateAgreementForm,
   createAgreementFiles,
+  useMe,
+  useJwt,
+  useCreateAgreementOrchestrator,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
-import { Button } from '@hypha-platform/ui';
+import { Button, Form } from '@hypha-platform/ui';
 import React from 'react';
-import { useCreateAgreementOrchestrator } from '@hypha-platform/core/client';
 import { useRouter } from 'next/navigation';
-import { useJwt } from '@hypha-platform/core/client';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
-import { Form } from '@hypha-platform/ui';
-import { useMe } from '@hypha-platform/core/client';
 import { useConfig } from 'wagmi';
+import { useScrollToErrors } from '../../hooks';
+import { CreateAgreementBaseFields } from '../../agreements';
 
 type FormValues = z.infer<typeof schemaCreateAgreementForm>;
 
@@ -52,6 +52,7 @@ export const CreateAgreementForm = ({
     agreement: { slug: agreementSlug },
   } = useCreateAgreementOrchestrator({ authToken: jwt, config });
 
+  const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(fullSchemaCreateSpaceForm),
     defaultValues: {
@@ -63,6 +64,8 @@ export const CreateAgreementForm = ({
       creatorId: person?.id,
     },
   });
+
+  useScrollToErrors(form, formRef);
 
   React.useEffect(() => {
     if (progress === 100 && agreementSlug) {
@@ -101,6 +104,7 @@ export const CreateAgreementForm = ({
     >
       <Form {...form}>
         <form
+          ref={formRef}
           onSubmit={form.handleSubmit(handleCreate, handleInvalid)}
           className="flex flex-col gap-5"
         >

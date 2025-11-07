@@ -5,9 +5,9 @@ import {
   RecipientField,
   type Token,
   useFundWallet,
+  useScrollToErrors,
 } from '@hypha-platform/epics';
 import { useForm, useWatch } from 'react-hook-form';
-import { useInvestInHyphaMutation, useMe } from '../../../../core/src/people';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
@@ -21,8 +21,13 @@ import {
   RequirementMark,
 } from '@hypha-platform/ui';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { Space, TOKENS } from '@hypha-platform/core/client';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Space,
+  TOKENS,
+  useInvestInHyphaMutation,
+  useMe,
+} from '@hypha-platform/core/client';
 import { TokenPayoutField } from '../../agreements/plugins/components/common/token-payout-field';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { purchaseSchema } from '../hooks/validation';
@@ -73,6 +78,7 @@ export const PeoplePurchaseHyphaTokens = ({
   const recipientSpace =
     spaces?.filter((s) => s?.address === RECIPIENT_SPACE_ADDRESS) || [];
 
+  const formRef = useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -84,6 +90,8 @@ export const PeoplePurchaseHyphaTokens = ({
       buyer: person && person.address ? person.address : '',
     },
   });
+
+  useScrollToErrors(form, formRef);
 
   useEffect(() => {
     if (person?.address) {
@@ -160,6 +168,7 @@ export const PeoplePurchaseHyphaTokens = ({
   return (
     <Form {...form}>
       <form
+        ref={formRef}
         onSubmit={form.handleSubmit(handlePurchase)}
         className="flex flex-col gap-5"
       >

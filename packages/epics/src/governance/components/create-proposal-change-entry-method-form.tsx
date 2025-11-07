@@ -17,12 +17,11 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { useConfig } from 'wagmi';
 import { z } from 'zod';
-import {
-  CreateAgreementBaseFields,
-  useSpaceTokenRequirementsByAddress,
-} from '@hypha-platform/epics';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
+import { useSpaceTokenRequirementsByAddress } from '../hooks';
+import { CreateAgreementBaseFields } from '../../agreements';
+import { useScrollToErrors } from '../../hooks';
 
 const schemaCreateProposalChangeEntryMethod =
   schemaChangeEntryMethod.extend(createAgreementFiles);
@@ -91,10 +90,13 @@ export const CreateProposalChangeEntryMethodForm = ({
     };
   }, [spaceId, person, spaceDetails]);
 
+  const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(schemaCreateProposalChangeEntryMethod),
     defaultValues: defaultValues,
   });
+
+  useScrollToErrors(form, formRef);
 
   React.useEffect(() => {
     if (spaceDetails && !isLoading) {
@@ -169,6 +171,7 @@ export const CreateProposalChangeEntryMethodForm = ({
     >
       <Form {...form}>
         <form
+          ref={formRef}
           onSubmit={form.handleSubmit(handleCreate, onInvalid)}
           className="flex flex-col gap-5"
         >

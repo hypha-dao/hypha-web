@@ -17,6 +17,7 @@ import { useConfig } from 'wagmi';
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useSpaceTokenRequirementsByAddress } from '../hooks';
+import { useScrollToErrors } from '../../hooks';
 
 interface SpaceToSpaceMembershipFormProps {
   successfulUrl: string;
@@ -41,6 +42,7 @@ export const SpaceToSpaceMembershipForm = ({
 }: SpaceToSpaceMembershipFormProps) => {
   const { person } = useMe();
 
+  const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(combinedSchemaSpaceToSpaceMembership),
     mode: 'onChange',
@@ -56,6 +58,8 @@ export const SpaceToSpaceMembershipForm = ({
       label: 'Space To Space',
     },
   });
+
+  useScrollToErrors(form, formRef);
 
   const { jwt } = useJwt();
   const config = useConfig();
@@ -125,6 +129,7 @@ export const SpaceToSpaceMembershipForm = ({
     >
       <Form {...form}>
         <form
+          ref={formRef}
           onSubmit={form.handleSubmit(handleCreate)}
           className="flex flex-col gap-5"
         >

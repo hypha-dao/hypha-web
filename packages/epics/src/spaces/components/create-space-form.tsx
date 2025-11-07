@@ -46,6 +46,7 @@ import {
   ButtonBack,
   ParentSpaceSelector,
   useMemberWeb3SpaceIds,
+  useScrollToErrors,
 } from '@hypha-platform/epics';
 import slugify from 'slugify';
 import { cn } from '@hypha-platform/ui-utils';
@@ -139,10 +140,13 @@ export const SpaceForm = ({
       .refine(resolveSlug, { message: slugIncorrectMessage }),
   });
 
+  const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<SchemaCreateSpaceForm>({
     resolver: zodResolver(schema),
     defaultValues,
   });
+
+  useScrollToErrors(form, formRef);
 
   const parentSpaceId = form.watch('parentId');
   const slug = form.watch('slug');
@@ -333,6 +337,7 @@ export const SpaceForm = ({
   return (
     <Form {...form}>
       <form
+        ref={formRef}
         onSubmit={form.handleSubmit(
           async (space) => {
             if (
