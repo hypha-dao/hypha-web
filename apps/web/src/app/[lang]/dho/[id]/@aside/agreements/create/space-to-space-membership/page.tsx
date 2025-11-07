@@ -8,7 +8,7 @@ import {
   type Space,
   findSpaceBySlug,
 } from '@hypha-platform/core/server';
-import { Plugin } from '../plugins';
+import { Plugin } from '../../../../_components/plugins';
 import { db } from '@hypha-platform/storage-postgres';
 import { notFound } from 'next/navigation';
 

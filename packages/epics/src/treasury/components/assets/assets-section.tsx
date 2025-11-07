@@ -20,13 +20,11 @@ import { cn } from '@hypha-platform/ui-utils';
 
 type AssetSectionProps = {
   basePath: string;
-  governancePath: string;
   web3SpaceId?: number;
 };
 
 export const AssetsSection: FC<AssetSectionProps> = ({
   basePath,
-  governancePath,
   web3SpaceId,
 }) => {
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({
@@ -85,7 +83,7 @@ export const AssetsSection: FC<AssetSectionProps> = ({
           className={isDisabled ? 'cursor-not-allowed' : ''}
           href={
             isAuthenticated && (isMember || isDelegate)
-              ? `${governancePath}/create/issue-new-token?back=${basePath}`
+              ? `${basePath}/create/issue-new-token?hideBack=true`
               : {}
           }
           scroll={false}

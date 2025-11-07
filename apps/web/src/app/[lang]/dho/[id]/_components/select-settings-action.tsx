@@ -119,7 +119,6 @@ export const SelectSettingsAction = ({
         'Create a new token for utility, cash credit, or ownership within your space.',
       href: 'create/issue-new-token',
       icon: <RadiobuttonIcon />,
-      baseTab: 'agreements',
     },
     {
       group: 'Treasury',

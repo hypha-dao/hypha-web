@@ -28,12 +28,14 @@ interface CreateAgreementFormProps {
   web3SpaceId: number | undefined | null;
   successfulUrl: string;
   backUrl?: string;
+  closeUrl?: string;
   label?: string;
 }
 
 export const CreateAgreementForm = ({
   successfulUrl,
   backUrl,
+  closeUrl,
   spaceId,
   web3SpaceId,
   label = 'Agreement',
@@ -114,7 +116,7 @@ export const CreateAgreementForm = ({
               name: person?.name || '',
               surname: person?.surname || '',
             }}
-            closeUrl={successfulUrl}
+            closeUrl={closeUrl || successfulUrl}
             backUrl={backUrl}
             isLoading={false}
             label={label}
