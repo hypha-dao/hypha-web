@@ -9,7 +9,8 @@ export function newGetTokenBalanceByAddress(client: Alchemy) {
     const nonEmptyBalances = {
       ...balances,
       tokenBalances: balances.tokenBalances.filter(
-        (balance) => balance.error === null,
+        // Despite type `string | null` value isn't null
+        (balance) => balance.error == null,
       ),
     };
 
