@@ -28,7 +28,7 @@ interface PeopleTransferFormType {
   peoples: Person[];
   spaces: Space[];
   tokens: Token[];
-  updateAssets: () => void;
+  updateAssets: () => Promise<void>;
 }
 
 type FormValues = z.infer<typeof personTransfer>;
@@ -84,7 +84,7 @@ export const PeopleTransferForm = ({
         setShowSuccessMessage(false);
       }, 3000);
       form.reset();
-      updateAssets();
+      await updateAssets();
     } catch (error) {
       console.error('Transfer failed:', error);
       let errorMessage: string =
