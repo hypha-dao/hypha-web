@@ -1,6 +1,6 @@
 'use client';
 
-import { FC } from 'react';
+import { FC, useCallback } from 'react';
 import { SectionFilter } from '@hypha-platform/ui/server';
 import { type Person, usePendingRewards } from '@hypha-platform/core/client';
 import { AssetCard } from './asset-card';
@@ -46,11 +46,11 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
       : undefined;
   const disableClaimButton =
     !(parsedRewardValue >= 0.01) || isClaiming || pendingRewards === undefined;
-  const onHandleClaim = async () => {
+  const onHandleClaim = useCallback(async () => {
     await claim();
     await updatePendingRewards();
     await updateUserAssets();
-  };
+  }, [claim, updatePendingRewards, updateUserAssets]);
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-3">
