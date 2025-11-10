@@ -7,7 +7,7 @@ export const environment = Type.Object({
   DEFAULT_DB_AUTHENTICATED_URL: Type.Optional(Type.String()),
   RPC_URL: Type.Optional(
     Type.String({
-      description: 'HTTP endpoint to a JSON-RPC API',
+      description: 'HTTP endpoint to a JSON-RPC API of Ethereum',
     }),
   ),
   ALCHEMY_API_KEY: Type.String(),
