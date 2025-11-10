@@ -47,7 +47,7 @@ type UseAssetsReturn = {
   assets: AssetItem[];
   isLoading: boolean;
   balance: number;
-  manualUpdate: () => void;
+  manualUpdate: () => Promise<void>;
 };
 
 export const useUserAssets = ({
