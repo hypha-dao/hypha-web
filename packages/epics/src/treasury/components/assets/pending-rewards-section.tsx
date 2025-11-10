@@ -58,7 +58,7 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
         <SectionFilter label="Rewards" />
         <Button
           title={
-            isMyProfile
+            !isMyProfile
               ? 'Claim is only available on your personal page'
               : disableClaimButton
               ? 'The reward value must be greater than 0'
