@@ -274,7 +274,7 @@ export const FormVoting = ({
               </div>
               {showVotedMessage && (
                 <div className="text-2 text-neutral-10">
-                  You already voted {voteText}
+                  You voted {voteText}
                 </div>
               )}
             </div>
