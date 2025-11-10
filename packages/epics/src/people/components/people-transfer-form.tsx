@@ -84,7 +84,12 @@ export const PeopleTransferForm = ({
         setShowSuccessMessage(false);
       }, 3000);
       form.reset();
-      await updateAssets();
+      try {
+        await updateAssets();
+      } catch (error) {
+        console.error('Failed to refresh assets:', error);
+        // Assets will update on next refresh; no need to alarm the user
+      }
     } catch (error) {
       console.error('Transfer failed:', error);
       let errorMessage: string =
