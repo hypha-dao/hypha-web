@@ -142,6 +142,9 @@ export const FormVoting = ({
   const showVotedMessage = myVote || localVote;
   const voteText = myVote || localVote;
 
+  const isRejectDisabled = isDisabled || voteText === 'no';
+  const isAcceptDisabled = isDisabled || voteText === 'yes';
+
   return (
     <div className="flex flex-col gap-7 text-neutral-11">
       <VoterList documentSlug={documentSlug} />
@@ -246,34 +249,33 @@ export const FormVoting = ({
             </div>
           </div>
           {executed || expired || isPast(new Date(endTime)) ? null : (
-            <div className="flex gap-2">
-              {showVotedMessage ? (
-                <div className="text-sm text-neutral-10">
-                  You already voted {voteText}
+            <div className="flex flex-col gap-2 items-end">
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  colorVariant="accent"
+                  className="active:bg-accent-9"
+                  onClick={handleReject}
+                  disabled={isRejectDisabled}
+                  title={tooltipMessage}
+                >
+                  {labels.reject}
+                </Button>
+                <Button
+                  variant="outline"
+                  colorVariant="accent"
+                  className="active:bg-accent-9"
+                  onClick={handleAccept}
+                  disabled={isAcceptDisabled}
+                  title={tooltipMessage}
+                >
+                  {labels.accept}
+                </Button>
+              </div>
+              {showVotedMessage && (
+                <div className="text-2 text-neutral-10">
+                  You voted {voteText}
                 </div>
-              ) : (
-                <>
-                  <Button
-                    variant="outline"
-                    colorVariant="accent"
-                    className="active:bg-accent-9"
-                    onClick={handleReject}
-                    disabled={isDisabled}
-                    title={tooltipMessage}
-                  >
-                    {labels.reject}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    colorVariant="accent"
-                    className="active:bg-accent-9"
-                    onClick={handleAccept}
-                    disabled={isDisabled}
-                    title={tooltipMessage}
-                  >
-                    {labels.accept}
-                  </Button>
-                </>
               )}
             </div>
           )}
