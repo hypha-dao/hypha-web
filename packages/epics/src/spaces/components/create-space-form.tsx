@@ -130,7 +130,7 @@ export const SpaceForm = ({
   const schema = schemaCreateSpaceForm.extend({
     slug: z
       .string()
-      .min(1)
+      .min(1, '')
       .max(50)
       .regex(
         /^[a-z0-9'-]+$/,
