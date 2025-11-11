@@ -128,7 +128,7 @@ export const PeoplePurchaseHyphaTokens = ({
         setShowSuccessMessage(false);
       }, 3000);
       form.reset();
-      manualUpdate();
+      await manualUpdate();
     } catch (error) {
       console.error('Purchase failed:', error);
       let errorMessage: string =
