@@ -75,7 +75,11 @@ contract DecayingTokenFactory is
    * @param symbol The token symbol
    * @param maxSupply The maximum token supply (0 for unlimited)
    * @param transferable Whether the token can be transferred
-   * @param isVotingToken Whether to register this as the space's voting token
+   * @param fixedMaxSupply If true, maxSupply cannot be changed later
+   * @param autoMinting If true, executor can auto-mint on transfer; if false, must mint separately
+   * @param priceInUSD Token price in USD (with 6 decimals, e.g., 1000000 = $1)
+   * @param useTransferWhitelist If true, enforce transfer whitelist
+   * @param useReceiveWhitelist If true, enforce receive whitelist
    * @param decayPercentage The decay percentage in basis points (0-10000)
    * @param decayInterval The interval in seconds between decay periods
    * @return The address of the deployed token
@@ -86,10 +90,14 @@ contract DecayingTokenFactory is
     string memory symbol,
     uint256 maxSupply,
     bool transferable,
-    bool isVotingToken,
+    bool fixedMaxSupply,
+    bool autoMinting,
+    uint256 priceInUSD,
+    bool useTransferWhitelist,
+    bool useReceiveWhitelist,
     uint256 decayPercentage,
     uint256 decayInterval
-  ) public override returns (address) {
+  ) public returns (address) {
     require(spacesContract != address(0), 'Spaces contract not set');
     require(
       decayingTokenImplementation != address(0),
@@ -118,6 +126,11 @@ contract DecayingTokenFactory is
       spaceId,
       maxSupply,
       transferable,
+      fixedMaxSupply,
+      autoMinting,
+      priceInUSD,
+      useTransferWhitelist,
+      useReceiveWhitelist,
       decayPercentage,
       decayInterval
     );
