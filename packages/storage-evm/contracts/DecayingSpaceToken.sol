@@ -40,6 +40,11 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
     uint256 _spaceId,
     uint256 _maxSupply,
     bool _transferable,
+    bool _fixedMaxSupply,
+    bool _autoMinting,
+    uint256 _priceInUSD,
+    bool _useTransferWhitelist,
+    bool _useReceiveWhitelist,
     uint256 _decayPercentage,
     uint256 _decayInterval
   ) public initializer {
@@ -49,7 +54,12 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
       _executor,
       _spaceId,
       _maxSupply,
-      _transferable
+      _transferable,
+      _fixedMaxSupply,
+      _autoMinting,
+      _priceInUSD,
+      _useTransferWhitelist,
+      _useReceiveWhitelist
     );
     require(
       _decayPercentage <= 10000,

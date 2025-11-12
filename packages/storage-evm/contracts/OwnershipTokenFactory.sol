@@ -74,7 +74,11 @@ contract OwnershipTokenFactory is
    * @param name The token name
    * @param symbol The token symbol
    * @param maxSupply The maximum token supply (0 for unlimited)
-   * @param isVotingToken Whether to register this as the space's voting token
+   * @param fixedMaxSupply If true, maxSupply cannot be changed later
+   * @param autoMinting If true, executor can auto-mint on transfer; if false, must mint separately
+   * @param priceInUSD Token price in USD (with 6 decimals, e.g., 1000000 = $1)
+   * @param useTransferWhitelist If true, enforce transfer whitelist
+   * @param useReceiveWhitelist If true, enforce receive whitelist
    * @return The address of the deployed token
    */
   function deployOwnershipToken(
@@ -82,8 +86,12 @@ contract OwnershipTokenFactory is
     string memory name,
     string memory symbol,
     uint256 maxSupply,
-    bool isVotingToken
-  ) public override returns (address) {
+    bool fixedMaxSupply,
+    bool autoMinting,
+    uint256 priceInUSD,
+    bool useTransferWhitelist,
+    bool useReceiveWhitelist
+  ) public returns (address) {
     require(spacesContract != address(0), 'Spaces contract not set');
     require(
       ownershipTokenImplementation != address(0),
@@ -106,7 +114,12 @@ contract OwnershipTokenFactory is
       spaceExecutor,
       spaceId,
       maxSupply,
-      spacesContract
+      spacesContract,
+      fixedMaxSupply,
+      autoMinting,
+      priceInUSD,
+      useTransferWhitelist,
+      useReceiveWhitelist
     );
 
     address tokenAddress = address(
@@ -130,7 +143,7 @@ contract OwnershipTokenFactory is
    */
   function getSpaceToken(
     uint256 spaceId
-  ) public view override returns (address[] memory) {
+  ) public view returns (address[] memory) {
     return allSpaceTokens[spaceId];
   }
 }
