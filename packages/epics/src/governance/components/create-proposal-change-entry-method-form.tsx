@@ -7,6 +7,7 @@ import {
   EntryMethodType,
   schemaChangeEntryMethod,
   useChangeEntryMethodOrchestrator,
+  useHookRegistry,
   useJwt,
   useMe,
   useSpaceDetailsWeb3Rpc,
@@ -71,8 +72,14 @@ export const CreateProposalChangeEntryMethodForm = ({
     isError,
     isPending,
     progress,
-    changeEntryMethod: { slug: agreementSlug },
+    changeEntryMethod: {
+      slug: agreementSlug,
+      proposalId: web3ProposalId,
+      creator,
+    },
   } = useChangeEntryMethodOrchestrator({ authToken: jwt, config });
+  const { useSendNotifications } = useHookRegistry();
+  const { notifyProposalCreated } = useSendNotifications!({ authToken: jwt });
 
   const defaultValues = React.useMemo(() => {
     return {
@@ -149,10 +156,29 @@ export const CreateProposalChangeEntryMethodForm = ({
   };
 
   React.useEffect(() => {
-    if (progress === 100 && agreementSlug) {
+    if (
+      progress === 100 &&
+      agreementSlug &&
+      web3ProposalId &&
+      web3SpaceId &&
+      creator
+    ) {
+      notifyProposalCreated({
+        proposalId: web3ProposalId,
+        spaceId: BigInt(web3SpaceId),
+        creator,
+      });
       router.push(successfulUrl);
     }
-  }, [progress, agreementSlug, router, successfulUrl]);
+  }, [
+    progress,
+    agreementSlug,
+    web3ProposalId,
+    web3SpaceId,
+    creator,
+    router,
+    successfulUrl,
+  ]);
 
   return (
     <LoadingBackdrop
