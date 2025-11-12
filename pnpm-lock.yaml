@@ -963,6 +963,9 @@ importers:
       '@hypha-platform/core':
         specifier: workspace:*
         version: link:../core
+      '@hypha-platform/storage-postgres':
+        specifier: workspace:*
+        version: link:../storage-postgres
       '@onesignal/node-onesignal':
         specifier: 5.2.0-beta1
         version: 5.2.0-beta1

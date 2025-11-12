@@ -8,8 +8,8 @@ import OneSignal, {
   SubscriptionChangeEvent,
   UserChangeEvent,
 } from 'react-onesignal';
-import { useMe } from '@hypha-platform/core/client';
-import { checkTag, NotificationsContext } from '../hooks';
+import { HookRegistryProvider, useMe } from '@hypha-platform/core/client';
+import { checkTag, NotificationsContext, useSendNotifications } from '../hooks';
 import { TAG_SUBSCRIBED } from '../constants';
 
 const DEV_ENV = process.env.NODE_ENV === 'development';
@@ -69,6 +69,7 @@ export function NotificationSubscriber({
         return;
       }
       try {
+        //TODO: remove
         const scope = `/${
           serviceWorkerPath?.split('/').filter(Boolean)[0] ?? ''
         }/`;
@@ -200,7 +201,9 @@ export function NotificationSubscriber({
         loggedIn,
       }}
     >
-      {children}
+      <HookRegistryProvider useSendNotifications={useSendNotifications}>
+        {children}
+      </HookRegistryProvider>
     </NotificationsContext.Provider>
   );
 }
