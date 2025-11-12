@@ -19,6 +19,44 @@ describe('Token Configuration Tests', function () {
   async function deployAndSetupFixture() {
     const [owner, alice, bob, charlie, ...others] = await ethers.getSigners();
 
+    // Deploy JoinMethodDirectory with OpenJoin
+    const JoinMethodDirectory = await ethers.getContractFactory(
+      'JoinMethodDirectoryImplementation',
+    );
+    const joinMethodDirectory = await upgrades.deployProxy(
+      JoinMethodDirectory,
+      [owner.address],
+      { initializer: 'initialize', kind: 'uups' },
+    );
+
+    const OpenJoin = await ethers.getContractFactory('OpenJoin');
+    const openJoin = await OpenJoin.deploy();
+    await joinMethodDirectory.addJoinMethod(1, await openJoin.getAddress());
+
+    // Deploy ExitMethodDirectory with NoExit
+    const ExitMethodDirectory = await ethers.getContractFactory(
+      'ExitMethodDirectoryImplementation',
+    );
+    const exitMethodDirectory = await upgrades.deployProxy(
+      ExitMethodDirectory,
+      [owner.address],
+      { initializer: 'initialize', kind: 'uups' },
+    );
+
+    const NoExit = await ethers.getContractFactory('NoExit');
+    const noExit = await NoExit.deploy();
+    await exitMethodDirectory.addExitMethod(1, await noExit.getAddress());
+
+    // Deploy VotingPowerDirectory
+    const VotingPowerDirectory = await ethers.getContractFactory(
+      'VotingPowerDirectoryImplementation',
+    );
+    const votingPowerDirectory = await upgrades.deployProxy(
+      VotingPowerDirectory,
+      [owner.address],
+      { initializer: 'initialize', kind: 'uups' },
+    );
+
     // Deploy DAOSpaceFactory
     const DAOSpaceFactory = await ethers.getContractFactory(
       'DAOSpaceFactoryImplementation',
@@ -27,6 +65,13 @@ describe('Token Configuration Tests', function () {
       DAOSpaceFactory,
       [owner.address],
       { initializer: 'initialize', kind: 'uups' },
+    );
+
+    // Set contracts in DAOSpaceFactory
+    await daoSpaceFactory.setContracts(
+      await joinMethodDirectory.getAddress(),
+      await exitMethodDirectory.getAddress(),
+      await votingPowerDirectory.getAddress(),
     );
 
     // Deploy RegularTokenFactory
@@ -961,7 +1006,421 @@ describe('Token Configuration Tests', function () {
     });
   });
 
-  describe('9. Access Control', function () {
+  describe('9. Token Minting', function () {
+    describe('Regular Token Minting', function () {
+      let token: Contract;
+
+      beforeEach(async function () {
+        const tx = await regularTokenFactory
+          .connect(executorSigner)
+          .deployToken(
+            spaceId,
+            'Mint Test Token',
+            'MINT',
+            ethers.parseEther('10000'),
+            true,
+            false,
+            true,
+            0,
+            false,
+            false,
+          );
+
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return regularTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+
+        token = await ethers.getContractAt('RegularSpaceToken', tokenAddress);
+      });
+
+      it('Should allow executor to mint tokens', async function () {
+        const mintAmount = ethers.parseEther('100');
+
+        await token.connect(executorSigner).mint(alice.address, mintAmount);
+
+        expect(await token.balanceOf(alice.address)).to.equal(mintAmount);
+        expect(await token.totalSupply()).to.equal(mintAmount);
+      });
+
+      it('Should not allow non-executor to mint tokens', async function () {
+        const mintAmount = ethers.parseEther('100');
+
+        await expect(
+          token.connect(alice).mint(bob.address, mintAmount),
+        ).to.be.revertedWith('Only executor can mint');
+      });
+
+      it('Should respect max supply when minting', async function () {
+        const overMintAmount = ethers.parseEther('10001');
+
+        await expect(
+          token.connect(executorSigner).mint(alice.address, overMintAmount),
+        ).to.be.revertedWith('Mint max supply problemchik blet');
+      });
+
+      it('Should allow minting up to max supply', async function () {
+        const maxSupply = ethers.parseEther('10000');
+
+        await token.connect(executorSigner).mint(alice.address, maxSupply);
+
+        expect(await token.balanceOf(alice.address)).to.equal(maxSupply);
+        expect(await token.totalSupply()).to.equal(maxSupply);
+      });
+
+      it('Should allow unlimited minting when max supply is 0', async function () {
+        // Deploy token with unlimited supply
+        const tx = await regularTokenFactory
+          .connect(executorSigner)
+          .deployToken(
+            spaceId,
+            'Unlimited Token',
+            'UNLTD',
+            0, // max supply = 0 (unlimited)
+            true,
+            false,
+            true,
+            0,
+            false,
+            false,
+          );
+
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return regularTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+
+        const unlimitedToken = await ethers.getContractAt(
+          'RegularSpaceToken',
+          tokenAddress,
+        );
+
+        // Mint very large amount
+        const largeAmount = ethers.parseEther('1000000');
+        await unlimitedToken
+          .connect(executorSigner)
+          .mint(alice.address, largeAmount);
+
+        expect(await unlimitedToken.balanceOf(alice.address)).to.equal(
+          largeAmount,
+        );
+      });
+
+      it('Should allow minting to multiple addresses', async function () {
+        const mintAmount = ethers.parseEther('100');
+
+        await token.connect(executorSigner).mint(alice.address, mintAmount);
+        await token.connect(executorSigner).mint(bob.address, mintAmount);
+        await token.connect(executorSigner).mint(charlie.address, mintAmount);
+
+        expect(await token.balanceOf(alice.address)).to.equal(mintAmount);
+        expect(await token.balanceOf(bob.address)).to.equal(mintAmount);
+        expect(await token.balanceOf(charlie.address)).to.equal(mintAmount);
+        expect(await token.totalSupply()).to.equal(mintAmount * 3n);
+      });
+
+      it('Should allow direct minting regardless of autoMinting setting', async function () {
+        // Deploy token with autoMinting = false
+        const tx = await regularTokenFactory
+          .connect(executorSigner)
+          .deployToken(
+            spaceId,
+            'No Auto Mint Token',
+            'NOAUTO',
+            ethers.parseEther('10000'),
+            true,
+            false,
+            false, // autoMinting = false
+            0,
+            false,
+            false,
+          );
+
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return regularTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+
+        const noAutoToken = await ethers.getContractAt(
+          'RegularSpaceToken',
+          tokenAddress,
+        );
+
+        // Direct minting should work even with autoMinting = false
+        const mintAmount = ethers.parseEther('500');
+        await noAutoToken
+          .connect(executorSigner)
+          .mint(alice.address, mintAmount);
+
+        expect(await noAutoToken.balanceOf(alice.address)).to.equal(mintAmount);
+        expect(await noAutoToken.autoMinting()).to.be.false;
+
+        // But transfer without balance should fail
+        await expect(
+          noAutoToken
+            .connect(executorSigner)
+            .transfer(bob.address, ethers.parseEther('100')),
+        ).to.be.reverted;
+
+        // After minting to executor, transfer should work
+        await noAutoToken
+          .connect(executorSigner)
+          .mint(executorSigner.address, ethers.parseEther('100'));
+        await noAutoToken
+          .connect(executorSigner)
+          .transfer(bob.address, ethers.parseEther('100'));
+
+        expect(await noAutoToken.balanceOf(bob.address)).to.equal(
+          ethers.parseEther('100'),
+        );
+      });
+    });
+
+    describe('Decaying Token Minting', function () {
+      let decayingToken: Contract;
+
+      beforeEach(async function () {
+        const tx = await decayingTokenFactory
+          .connect(executorSigner)
+          .deployDecayingToken(
+            spaceId,
+            'Decaying Mint Token',
+            'DMINT',
+            ethers.parseEther('5000'),
+            true,
+            false,
+            true,
+            0,
+            false,
+            false,
+            100, // 1% decay
+            3600, // 1 hour
+          );
+
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return decayingTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+
+        decayingToken = await ethers.getContractAt(
+          'DecayingSpaceToken',
+          tokenAddress,
+        );
+      });
+
+      it('Should allow executor to mint decaying tokens', async function () {
+        const mintAmount = ethers.parseEther('200');
+
+        await decayingToken
+          .connect(executorSigner)
+          .mint(alice.address, mintAmount);
+
+        expect(await decayingToken.balanceOf(alice.address)).to.equal(
+          mintAmount,
+        );
+        expect(await decayingToken.totalSupply()).to.equal(mintAmount);
+      });
+
+      it('Should set lastApplied timestamp when minting to new address', async function () {
+        const mintAmount = ethers.parseEther('100');
+
+        // Get current block timestamp
+        const blockBefore = await ethers.provider.getBlock('latest');
+        const timestampBefore = blockBefore!.timestamp;
+
+        await decayingToken
+          .connect(executorSigner)
+          .mint(alice.address, mintAmount);
+
+        const lastApplied = await decayingToken.lastApplied(alice.address);
+        expect(lastApplied).to.be.gt(timestampBefore);
+      });
+
+      it('Should respect max supply for decaying tokens', async function () {
+        const overMintAmount = ethers.parseEther('5001');
+
+        await expect(
+          decayingToken
+            .connect(executorSigner)
+            .mint(alice.address, overMintAmount),
+        ).to.be.revertedWith('Mint max supply problemchik blet');
+      });
+
+      it('Should not allow non-executor to mint decaying tokens', async function () {
+        const mintAmount = ethers.parseEther('100');
+
+        await expect(
+          decayingToken.connect(bob).mint(alice.address, mintAmount),
+        ).to.be.revertedWith('Only executor can mint');
+      });
+
+      it('Should apply decay before minting to existing holders', async function () {
+        const initialMint = ethers.parseEther('1000');
+        const secondMint = ethers.parseEther('500');
+
+        // First mint
+        await decayingToken
+          .connect(executorSigner)
+          .mint(alice.address, initialMint);
+
+        // Time travel forward
+        await ethers.provider.send('evm_increaseTime', [3600]); // 1 hour
+        await ethers.provider.send('evm_mine', []);
+
+        // Second mint should apply decay first
+        await decayingToken
+          .connect(executorSigner)
+          .mint(alice.address, secondMint);
+
+        const balance = await decayingToken.balanceOf(alice.address);
+        // Balance should be less than initial + second due to decay
+        expect(balance).to.be.lt(initialMint + secondMint);
+      });
+    });
+
+    describe('Ownership Token Minting', function () {
+      let ownershipToken: Contract;
+
+      beforeEach(async function () {
+        const tx = await ownershipTokenFactory
+          .connect(executorSigner)
+          .deployOwnershipToken(
+            spaceId,
+            'Ownership Mint Token',
+            'OMINT',
+            ethers.parseEther('100'),
+            false,
+            true,
+            0,
+            false,
+            false,
+          );
+
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return ownershipTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+
+        ownershipToken = await ethers.getContractAt(
+          'OwnershipSpaceToken',
+          tokenAddress,
+        );
+
+        // Join space so alice and bob become members
+        await daoSpaceFactory.connect(alice).joinSpace(spaceId);
+        await daoSpaceFactory.connect(bob).joinSpace(spaceId);
+      });
+
+      it('Should allow executor to mint to space members', async function () {
+        const mintAmount = ethers.parseEther('10');
+
+        await ownershipToken
+          .connect(executorSigner)
+          .mint(alice.address, mintAmount);
+
+        expect(await ownershipToken.balanceOf(alice.address)).to.equal(
+          mintAmount,
+        );
+      });
+
+      it('Should allow minting to executor', async function () {
+        const mintAmount = ethers.parseEther('10');
+
+        await ownershipToken
+          .connect(executorSigner)
+          .mint(executorSigner.address, mintAmount);
+
+        expect(await ownershipToken.balanceOf(executorSigner.address)).to.equal(
+          mintAmount,
+        );
+      });
+
+      it('Should not allow minting to non-members', async function () {
+        const mintAmount = ethers.parseEther('10');
+
+        // Charlie is not a space member
+        await expect(
+          ownershipToken
+            .connect(executorSigner)
+            .mint(charlie.address, mintAmount),
+        ).to.be.revertedWith('Can only mint to space members or executor');
+      });
+
+      it('Should not allow non-executor to mint ownership tokens', async function () {
+        const mintAmount = ethers.parseEther('10');
+
+        await expect(
+          ownershipToken.connect(alice).mint(bob.address, mintAmount),
+        ).to.be.revertedWith('Only executor can mint');
+      });
+
+      it('Should respect max supply for ownership tokens', async function () {
+        const overMintAmount = ethers.parseEther('101');
+
+        await expect(
+          ownershipToken
+            .connect(executorSigner)
+            .mint(alice.address, overMintAmount),
+        ).to.be.revertedWith('Mint max supply problemchik blet');
+      });
+
+      it('Should allow minting to multiple space members', async function () {
+        const mintAmount = ethers.parseEther('5');
+
+        await ownershipToken
+          .connect(executorSigner)
+          .mint(alice.address, mintAmount);
+        await ownershipToken
+          .connect(executorSigner)
+          .mint(bob.address, mintAmount);
+
+        expect(await ownershipToken.balanceOf(alice.address)).to.equal(
+          mintAmount,
+        );
+        expect(await ownershipToken.balanceOf(bob.address)).to.equal(
+          mintAmount,
+        );
+        expect(await ownershipToken.totalSupply()).to.equal(mintAmount * 2n);
+      });
+    });
+  });
+
+  describe('10. Access Control', function () {
     let token: Contract;
 
     beforeEach(async function () {
@@ -1024,7 +1483,7 @@ describe('Token Configuration Tests', function () {
     });
   });
 
-  describe('10. Complex Scenarios', function () {
+  describe('11. Complex Scenarios', function () {
     it('Should handle soulbound-like token configuration', async function () {
       // Deploy non-transferable token with receive whitelist
       const tx = await regularTokenFactory.connect(executorSigner).deployToken(
