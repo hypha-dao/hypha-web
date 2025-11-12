@@ -3,7 +3,7 @@ import { response, type Response } from './schema/get-wallet';
 import type { Environment } from '@schemas/env';
 import { newDbClient } from '@plugins/db-client';
 import { findTokensByAddresses } from '@plugins/db-queries';
-import { erc20Abi, formatUnits } from 'viem';
+import { erc20Abi, formatUnits, isAddress } from 'viem';
 
 export default async function walletRoutes(app: FastifyInstance) {
   const {
@@ -63,12 +63,11 @@ export default async function walletRoutes(app: FastifyInstance) {
         userAddress,
       );
 
-      // TODO: check if all tokenAddress are valid Ethereum addresses
-      const tokenAddresses = rawBalances.map(
-        ({ tokenAddress }) => tokenAddress,
-      );
+      const tokenAddresses = rawBalances
+        .map(({ tokenAddress }) => tokenAddress)
+        .filter((address) => isAddress(address));
       const fetchingDbTokens = findTokensByAddresses(
-        { addresses: tokenAddresses as `0x${string}`[] },
+        { addresses: tokenAddresses },
         { db },
       );
 
