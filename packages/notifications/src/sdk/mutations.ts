@@ -20,6 +20,7 @@ export const sendPushNotifications = async ({
   headings?: LangMap;
   username?: string;
 }) => {
+  console.log('Send push...');
   return await sendPushByAlias({
     app_id: ONESIGNAL_APP_ID,
     alias: {
@@ -36,12 +37,15 @@ export const sentEmailNotifications = async ({
 }: {
   body: string;
   subject: string;
-  username?: string;
+  username?: string | string[];
 }) => {
+  console.log('Send email...');
   return await sendEmailByAlias({
     app_id: ONESIGNAL_APP_ID,
     alias: {
-      include_aliases: { external_id: [username!] },
+      include_aliases: {
+        external_id: Array.isArray(username) ? username : [username!],
+      },
     },
     content: { email_body: body, email_subject: subject },
   });
