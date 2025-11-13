@@ -64,7 +64,7 @@ export function cspMiddleware(): NextMiddlewareFunction {
     const cspHeaderValue =
       [
         "default-src 'self'",
-        `script-src 'self' ${enableUnsafeScripts} https://challenges.cloudflare.com`,
+        `script-src 'self' ${enableUnsafeScripts} https://challenges.cloudflare.com https://cdn.onesignal.com https://vercel.live`,
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         `img-src 'self' ${imageSrc}`,
         "font-src 'self' https://fonts.gstatic.com",
