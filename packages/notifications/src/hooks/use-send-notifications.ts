@@ -13,7 +13,7 @@ import {
   notifyProposalAcceptedAction,
   notifyProposalCreatedAction,
   notifyProposalRejectedAction,
-} from '../sdk/actions';
+} from '../actions';
 
 export const useSendNotifications: UseSendNotificationsHook = ({
   authToken,

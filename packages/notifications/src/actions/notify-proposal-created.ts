@@ -2,9 +2,7 @@
 
 import {
   fetchSpaceDetails,
-  NotifyProposalAcceptedInput,
   NotifyProposalCreatedInput,
-  NotifyProposalRejectedInput,
 } from '@hypha-platform/core/client';
 import {
   findPeopleByWeb3Addresses,
@@ -20,8 +18,7 @@ import {
   pushProposalCreationForCreator,
   pushProposalCreationForMembers,
 } from '../template';
-import { sendPushNotifications, sentEmailNotifications } from './mutations';
-import { sendPushByAlias } from './send-push';
+import { sendPushNotifications, sentEmailNotifications } from '../mutations';
 
 async function notifyPushProposalCreatedForCreator({
   person,
@@ -38,7 +35,7 @@ async function notifyPushProposalCreatedForCreator({
   await sendPushNotifications({
     contents,
     headings,
-    username: person?.slug!,
+    usernames: person?.slug ? [person.slug] : [],
   });
 }
 async function notifyEmailProposalCreatedForCreator({
@@ -56,7 +53,7 @@ async function notifyEmailProposalCreatedForCreator({
   await sentEmailNotifications({
     body,
     subject,
-    username: person?.slug!,
+    usernames: person?.slug ? [person.slug] : [],
   });
 }
 async function notifyPushProposalCreatedForMembersAction(
@@ -69,12 +66,10 @@ async function notifyPushProposalCreatedForMembersAction(
   const sendingPushes = notificationParams.map(async (params) => {
     const { contents, headings } = pushProposalCreationForMembers(params);
 
-    return await sendPushByAlias({
-      app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '',
-      alias: {
-        include_aliases: { external_id: params.slugs },
-      },
-      content: { contents, headings },
+    return await sendPushNotifications({
+      contents,
+      headings,
+      usernames: params.slugs,
     });
   });
   await Promise.all(sendingPushes);
@@ -92,7 +87,7 @@ async function notifyEmailProposalCreatedForMembersAction(
     return await sentEmailNotifications({
       body,
       subject,
-      username: params.slugs,
+      usernames: params.slugs,
     });
   });
   await Promise.all(sendingEmails);
@@ -204,22 +199,4 @@ export async function notifyProposalCreatedAction(
         reason,
       ),
     );
-}
-
-export async function notifyProposalAcceptedAction(
-  { proposalId }: NotifyProposalAcceptedInput,
-  { authToken }: { authToken?: string },
-) {
-  if (!authToken) throw new Error('authToken is required to send notification');
-  //TODO
-  return {};
-}
-
-export async function notifyProposalRejectedAction(
-  { proposalId }: NotifyProposalRejectedInput,
-  { authToken }: { authToken?: string },
-) {
-  if (!authToken) throw new Error('authToken is required to send notification');
-  //TODO
-  return {};
 }
