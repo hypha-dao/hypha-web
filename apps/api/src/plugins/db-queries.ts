@@ -245,3 +245,26 @@ export const findTokensByAddresses = async (
 
   return results;
 };
+
+export const findPersonByAuth = async ({ db }: DbConfig) => {
+  const [dbPerson] = await db
+    .select()
+    .from(people)
+    .where(sql`sub = auth.user_id()`)
+    .limit(1);
+
+  return dbPerson ?? null;
+};
+
+export const verifyAuth = async ({ db }: DbConfig) => {
+  try {
+    const { rows } = await db.execute(
+      sql<{ user_id: string }>`SELECT user_id from auth.user_id()`,
+    );
+    const user_id = rows[0]?.user_id;
+
+    return !!user_id;
+  } catch {
+    return false;
+  }
+};
