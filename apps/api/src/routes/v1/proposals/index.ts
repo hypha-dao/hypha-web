@@ -35,12 +35,7 @@ export default async function proposalsRoutes(app: FastifyInstance) {
     DEFAULT_DB_AUTHENTICATED_URL,
   } = app.getEnvs<Environment>();
   const dbUrl =
-    DEFAULT_DB_URL || DEFAULT_DB_ANONYMOUS_URL || DEFAULT_DB_AUTHENTICATED_URL;
-  if (dbUrl == null)
-    throw Error(
-      'DB connection url is not set ' +
-        '(DEFAULT_DB_URL, DEFAULT_DB_ANONYMOUS_URL, DEFAULT_DB_AUTHENTICATED_URL)',
-    );
+    DEFAULT_DB_AUTHENTICATED_URL || DEFAULT_DB_ANONYMOUS_URL || DEFAULT_DB_URL;
   const db = newDbClient(dbUrl);
 
   /**

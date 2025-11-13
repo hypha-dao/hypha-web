@@ -7,6 +7,7 @@
   "author": "",
   "license": "ISC",
   "scripts": {
+    "postinstall": "[ -f .env ] || cp .env.template .env",
     "dev": "tsx src/server.ts",
     "build": "tsc && tsc-alias",
     "start": "node dist/server.js"
