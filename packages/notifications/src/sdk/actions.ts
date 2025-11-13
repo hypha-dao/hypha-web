@@ -1,45 +1,104 @@
 'use server';
 
 import {
+  fetchSpaceDetails,
   NotifyProposalAcceptedInput,
   NotifyProposalCreatedInput,
   NotifyProposalRejectedInput,
 } from '@hypha-platform/core/client';
 import {
+  findPeopleByWeb3Addresses,
   findPersonByWeb3Address,
   findSpaceByWeb3Id,
+  Person,
+  Space,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import {
   emailProposalCreationForCreator,
+  emailProposalCreationForMembers,
   pushProposalCreationForCreator,
+  pushProposalCreationForMembers,
 } from '../template';
 import { sendPushNotifications, sentEmailNotifications } from './mutations';
+import { sendPushByAlias } from './send-push';
 
 async function notifyPushProposalCreatedForCreator({
-  spaceId: spaceWeb3Id,
-  creator: creatorWeb3Address,
+  person,
+  space,
 }: {
-  spaceId: bigint;
-  creator: `0x${string}`;
+  person?: Person;
+  space?: Space;
 }) {
-  const person = await findPersonByWeb3Address(
-    { address: creatorWeb3Address },
-    { db },
-  );
-  const space = await findSpaceByWeb3Id({ id: Number(spaceWeb3Id) }, { db });
   const { contents, headings } = pushProposalCreationForCreator({
     creatorName: person?.name,
     spaceTitle: space?.title,
     spaceSlug: space?.slug,
   });
-  return await sendPushNotifications({
+  await sendPushNotifications({
     contents,
     headings,
     username: person?.slug!,
   });
 }
 async function notifyEmailProposalCreatedForCreator({
+  person,
+  space,
+}: {
+  person?: Person;
+  space?: Space;
+}) {
+  const { body, subject } = emailProposalCreationForCreator({
+    creatorName: person?.name,
+    spaceTitle: space?.title,
+    spaceSlug: space?.slug,
+  });
+  await sentEmailNotifications({
+    body,
+    subject,
+    username: person?.slug!,
+  });
+}
+async function notifyPushProposalCreatedForMembersAction(
+  notificationParams: {
+    slugs: string[];
+    spaceTitle?: string;
+    spaceSlug?: string;
+  }[],
+) {
+  const sendingPushes = notificationParams.map(async (params) => {
+    const { contents, headings } = pushProposalCreationForMembers(params);
+
+    return await sendPushByAlias({
+      app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '',
+      alias: {
+        include_aliases: { external_id: params.slugs },
+      },
+      content: { contents, headings },
+    });
+  });
+  await Promise.all(sendingPushes);
+}
+async function notifyEmailProposalCreatedForMembersAction(
+  notificationParams: {
+    slugs: string[];
+    spaceTitle?: string;
+    spaceSlug?: string;
+  }[],
+) {
+  const sendingEmails = notificationParams.map(async (params) => {
+    const { body, subject } = emailProposalCreationForMembers(params);
+
+    return await sentEmailNotifications({
+      body,
+      subject,
+      username: params.slugs,
+    });
+  });
+  await Promise.all(sendingEmails);
+}
+
+async function notifyProposalCreatedForCreator({
   spaceId: spaceWeb3Id,
   creator: creatorWeb3Address,
 }: {
@@ -51,44 +110,100 @@ async function notifyEmailProposalCreatedForCreator({
     { db },
   );
   const space = await findSpaceByWeb3Id({ id: Number(spaceWeb3Id) }, { db });
-  const { body, subject } = emailProposalCreationForCreator({
-    creatorName: person?.name,
+  if (!person || !space) {
+    console.warn('Not found space or person for sending notification.');
+    return [];
+  }
+
+  const notifications: Promise<any>[] = [
+    notifyPushProposalCreatedForCreator({ person, space }),
+  ];
+  if (process.env.NODE_ENV === 'production') {
+    notifications.push(notifyEmailProposalCreatedForCreator({ person, space }));
+  }
+  return notifications;
+}
+
+async function notifyProposalCreatedForMembersAction({
+  proposalId,
+  spaceId: spaceWeb3Id,
+}: {
+  proposalId: bigint;
+  spaceId: bigint;
+}) {
+  const spaceIds = [spaceWeb3Id];
+  const spacesDetails = await (async () => {
+    try {
+      return await fetchSpaceDetails({ spaceIds });
+    } catch (e) {
+      console.error('Failed to fetch space details for proposal creation:', e);
+    }
+  })();
+  if (!spacesDetails || spacesDetails.length === 0) {
+    console.warn(
+      'Zero spaces found in the blockchain for the "ProposalCreation" event.',
+      'Proposal IDs:',
+      [proposalId],
+    );
+
+    return;
+  }
+  const fetchingData = spacesDetails.map(async ({ members, spaceId }) => {
+    const people = await findPeopleByWeb3Addresses(
+      {
+        addresses: members as string[],
+      },
+      { db },
+    );
+    const space = await findSpaceByWeb3Id({ id: Number(spaceId) }, { db });
+
+    return { people, space };
+  });
+  const spacesWithPeople = (await Promise.allSettled(fetchingData))
+    .filter((res) => res.status === 'fulfilled')
+    .map(({ value }) => value)
+    .filter((space) => space.people.length > 0);
+
+  const notificationParams = spacesWithPeople.map(({ space, people }) => ({
+    slugs: people.map(({ slug }) => slug!),
     spaceTitle: space?.title,
     spaceSlug: space?.slug,
-  });
-  return await sentEmailNotifications({
-    body,
-    subject,
-    username: person?.slug!,
-  });
+  }));
+
+  const notifications: Promise<any>[] = [
+    notifyPushProposalCreatedForMembersAction(notificationParams),
+  ];
+  if (process.env.NODE_ENV === 'production') {
+    notifications.push(
+      notifyEmailProposalCreatedForMembersAction(notificationParams),
+    );
+  }
+  return notifications;
 }
-async function notifyPushProposalCreatedForMembersAction({
-  proposalId,
-}: {
-  proposalId: bigint;
-}) {}
-async function notifyEmailProposalCreatedForMembersAction({
-  proposalId,
-}: {
-  proposalId: bigint;
-}) {}
 
 export async function notifyProposalCreatedAction(
   { proposalId, spaceId, creator }: NotifyProposalCreatedInput,
   { authToken }: { authToken?: string },
 ) {
   if (!authToken) throw new Error('authToken is required to send notification');
-  const notifications = [
-    notifyPushProposalCreatedForCreator({ spaceId, creator }),
-    notifyPushProposalCreatedForMembersAction({ proposalId }),
-  ];
-  if (process.env.NODE_ENV === 'production') {
-    notifications.push(
-      notifyEmailProposalCreatedForCreator({ spaceId, creator }),
-      notifyEmailProposalCreatedForMembersAction({ proposalId }),
+  const notifying = Promise.allSettled([
+    notifyProposalCreatedForCreator({
+      spaceId,
+      creator,
+    }),
+    notifyProposalCreatedForMembersAction({
+      proposalId,
+      spaceId,
+    }),
+  ]);
+  (await notifying)
+    .filter((res) => res.status === 'rejected')
+    .forEach(({ reason }) =>
+      console.error(
+        'Failed to notify space members about proposal creation:',
+        reason,
+      ),
     );
-  }
-  await Promise.all(notifications);
 }
 
 export async function notifyProposalAcceptedAction(
