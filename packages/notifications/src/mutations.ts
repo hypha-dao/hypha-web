@@ -1,9 +1,9 @@
 'use server';
 
-import { ProposalCreationProps } from '../template';
-import { sendPushByAlias } from './send-push';
-import { sendEmailByAlias } from './send-email';
-import { LangMap } from './types';
+import { ProposalCreationProps } from './template';
+import { sendPushByAlias } from './sdk/send-push';
+import { sendEmailByAlias } from './sdk/send-email';
+import { LangMap } from './sdk/types';
 
 const ONESIGNAL_APP_ID = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '';
 
@@ -14,17 +14,19 @@ export interface SendNotificationsInput extends ProposalCreationProps {
 export const sendPushNotifications = async ({
   contents,
   headings,
-  username,
+  usernames,
 }: {
   contents: LangMap;
   headings?: LangMap;
-  username?: string;
+  usernames: string[];
 }) => {
   console.log('Send push...');
   return await sendPushByAlias({
     app_id: ONESIGNAL_APP_ID,
     alias: {
-      include_aliases: { external_id: [username!] },
+      include_aliases: {
+        external_id: usernames,
+      },
     },
     content: { contents, headings },
   });
@@ -33,18 +35,18 @@ export const sendPushNotifications = async ({
 export const sentEmailNotifications = async ({
   body,
   subject,
-  username,
+  usernames,
 }: {
   body: string;
   subject: string;
-  username?: string | string[];
+  usernames: string[];
 }) => {
   console.log('Send email...');
   return await sendEmailByAlias({
     app_id: ONESIGNAL_APP_ID,
     alias: {
       include_aliases: {
-        external_id: Array.isArray(username) ? username : [username!],
+        external_id: usernames,
       },
     },
     content: { email_body: body, email_subject: subject },
