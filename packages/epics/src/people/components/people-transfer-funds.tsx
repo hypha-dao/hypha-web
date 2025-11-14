@@ -10,7 +10,6 @@ import {
 import { PeopleTransferForm } from '@hypha-platform/epics';
 import { Person } from '../../../../core/src/people';
 import { Space } from '../../../../core/src/space';
-import { TOKENS } from '@hypha-platform/core/client';
 import { Separator } from '@hypha-platform/ui';
 
 interface Token {
@@ -37,16 +36,13 @@ export const ProfileTransferFunds = ({
     refreshInterval: 10000,
   });
 
-  // TODO: temporarily hidden until there is a way to transfer space tokens without whitelisting them
-  // const tokens: Token[] = assets
-  //   .filter((asset) => !['ownership', 'voice'].includes(asset.type))
-  //   .map((asset) => ({
-  //     icon: asset.icon,
-  //     symbol: asset.symbol,
-  //     address: asset.address as `0x${string}`,
-  //   }));
-
-  const transferableTokens = TOKENS.filter(({ transferable }) => transferable);
+  const tokens: Token[] = assets
+    .filter((asset) => !['ownership', 'voice'].includes(asset.type))
+    .map((asset) => ({
+      icon: asset.icon,
+      symbol: asset.symbol,
+      address: asset.address as `0x${string}`,
+    }));
 
   return (
     <SidePanel>
@@ -70,7 +66,7 @@ export const ProfileTransferFunds = ({
         <PeopleTransferForm
           peoples={peoples}
           spaces={spaces}
-          tokens={transferableTokens}
+          tokens={tokens}
           updateAssets={manualUpdate}
         />
       </div>
