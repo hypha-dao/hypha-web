@@ -203,7 +203,10 @@ contract RegularSpaceToken is
    * @param _autoMinting Whether auto-minting is enabled
    */
   function setAutoMinting(bool _autoMinting) external virtual {
-    require(msg.sender == executor, 'Only executor can update auto-minting');
+    require(
+      msg.sender == executor || msg.sender == owner(),
+      'Only executor or owner can update auto-minting'
+    );
     autoMinting = _autoMinting;
     emit AutoMintingUpdated(_autoMinting);
   }

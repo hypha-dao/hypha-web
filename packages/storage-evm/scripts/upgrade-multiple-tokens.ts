@@ -19,18 +19,15 @@ import path from 'path';
 const TOKEN_TYPE: 'Regular' | 'Ownership' | 'Decaying' = 'Regular';
 
 // Token addresses to upgrade (edit this array or load from file)
-const TOKEN_ADDRESSES: string[] = [
-  // Example addresses - replace with actual addresses
-  // '0x1234567890123456789012345678901234567890',
-  // '0x2345678901234567890123456789012345678901',
-];
+const TOKEN_ADDRESSES: string[] = [''];
 
 // Set to true to load addresses from a file instead of using TOKEN_ADDRESSES array
-const LOAD_FROM_FILE = false;
-const ADDRESS_FILE_PATH = './token-upgrade-data/regular-addresses-latest.txt';
+const LOAD_FROM_FILE = true;
+const ADDRESS_FILE_PATH =
+  '/Users/vlad/hypha-web/packages/storage-evm/scripts/base-mainnet-contracts-scripts/token-upgrade-data/regular-addresses-2025-11-14T09-30-58-747Z.txt';
 
 // Set to true to perform a dry run (prepare upgrade but don't execute)
-const DRY_RUN = false;
+const DRY_RUN = false; // Start with dry run for testing
 
 // Wait time between upgrades (in milliseconds) to avoid rate limiting
 const WAIT_TIME_BETWEEN_UPGRADES = 5000;
@@ -108,6 +105,22 @@ async function upgradeToken(
       console.log(
         `  ✅ DRY RUN: Would deploy new implementation at: ${preparedImpl}`,
       );
+
+      // Check if implementation would actually change
+      if (
+        result.oldImplementation?.toLowerCase() ===
+        preparedImpl.toString().toLowerCase()
+      ) {
+        console.log(
+          '  ℹ️  DRY RUN: Implementation would be unchanged (already upgraded)',
+        );
+      } else {
+        console.log('  ✅ DRY RUN: Implementation would change!');
+      }
+
+      console.log(
+        '  🔍 DRY RUN: Would configure autoMinting=true after upgrade',
+      );
       result.newImplementation = preparedImpl.toString();
       result.success = true;
       return result;
@@ -117,16 +130,50 @@ async function upgradeToken(
 
     let upgradedContract;
     try {
-      // Try to upgrade
+      // Get current gas price from network
+      const provider = ethers.provider;
+      const feeData = await provider.getFeeData();
+
+      // Increase gas price by 200% (3x) to avoid underpriced transactions
+      // This is necessary when there are stuck/pending transactions in mempool
+      const maxFeePerGas = feeData.maxFeePerGas
+        ? (feeData.maxFeePerGas * 300n) / 100n
+        : undefined;
+      const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas
+        ? (feeData.maxPriorityFeePerGas * 300n) / 100n
+        : undefined;
+
+      console.log('  ⛽ Gas settings:');
+      if (maxFeePerGas) {
+        console.log(
+          `     Max fee: ${ethers.formatUnits(maxFeePerGas, 'gwei')} gwei`,
+        );
+      }
+      if (maxPriorityFeePerGas) {
+        console.log(
+          `     Priority fee: ${ethers.formatUnits(
+            maxPriorityFeePerGas,
+            'gwei',
+          )} gwei`,
+        );
+      }
+
+      // Try to upgrade with increased gas
       upgradedContract = await upgrades.upgradeProxy(
         tokenAddress,
         contractFactory,
         {
           unsafeSkipStorageCheck: true,
+          txOverrides: {
+            maxFeePerGas,
+            maxPriorityFeePerGas,
+          },
         },
       );
 
+      console.log('  ⏳ Waiting for deployment to complete...');
       await upgradedContract.waitForDeployment();
+      console.log('  ✅ Deployment complete');
     } catch (error: any) {
       // Check if the error is about unregistered deployment
       if (error.message.includes('is not registered')) {
@@ -136,20 +183,46 @@ async function upgradeToken(
         await upgrades.forceImport(tokenAddress, contractFactory);
         console.log('  ✅ Proxy imported successfully');
 
-        // Retry the upgrade
+        // Retry the upgrade with same gas settings
         upgradedContract = await upgrades.upgradeProxy(
           tokenAddress,
           contractFactory,
           {
             unsafeSkipStorageCheck: true,
+            txOverrides: {
+              maxFeePerGas,
+              maxPriorityFeePerGas,
+            },
           },
         );
 
+        console.log('  ⏳ Waiting for deployment to complete...');
         await upgradedContract.waitForDeployment();
+        console.log('  ✅ Deployment complete');
+      } else if (
+        error.message.includes('replacement transaction underpriced')
+      ) {
+        console.error('  ❌ Replacement transaction underpriced');
+        console.error(
+          '  ℹ️  This means there is a pending transaction with the same nonce.',
+        );
+        console.error(
+          '  ℹ️  Please wait 10-15 minutes or cancel pending transactions.',
+        );
+        console.error(
+          '  ℹ️  Run: npx nx run storage-evm:script ./scripts/check-pending-txs.ts --network base-mainnet',
+        );
+        throw error;
       } else {
         throw error;
       }
     }
+
+    // Wait a moment for blockchain state to propagate
+    console.log(
+      '  ⏳ Waiting for blockchain state to propagate (3 seconds)...',
+    );
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     // Get new implementation address
     result.newImplementation = await upgrades.erc1967.getImplementationAddress(
@@ -158,18 +231,49 @@ async function upgradeToken(
     console.log(`  New implementation: ${result.newImplementation}`);
 
     // Verify the upgrade actually happened
-    if (
-      result.oldImplementation?.toLowerCase() ===
-      result.newImplementation?.toLowerCase()
-    ) {
-      console.log(
-        '  ⚠️  WARNING: Implementation address did not change! Upgrade may have failed.',
-      );
-      result.error = 'Implementation address did not change';
-      result.success = false;
+    const implementationChanged =
+      result.oldImplementation?.toLowerCase() !==
+      result.newImplementation?.toLowerCase();
+
+    if (!implementationChanged) {
+      console.log('  ℹ️  Implementation address unchanged (already upgraded)');
     } else {
       console.log('  ✅ Successfully upgraded!');
+    }
+
+    // Post-upgrade configuration: Enable autoMinting for backward compatibility
+    // This runs whether or not the implementation changed
+    console.log('  🔧 Configuring post-upgrade settings...');
+    try {
+      const tokenContract = await ethers.getContractAt(
+        'RegularSpaceToken',
+        tokenAddress,
+      );
+
+      // Check current autoMinting status
+      const currentAutoMinting = await tokenContract.autoMinting();
+      console.log(`  Current autoMinting: ${currentAutoMinting}`);
+
+      if (!currentAutoMinting) {
+        console.log('  Setting autoMinting to true...');
+        const configTx = await tokenContract.setAutoMinting(true);
+        await configTx.wait();
+        console.log('  ✅ AutoMinting enabled (backward compatibility)');
+      } else {
+        console.log('  ℹ️  AutoMinting already enabled, skipping');
+      }
+
       result.success = true;
+    } catch (configError: any) {
+      console.log(
+        `  ⚠️  Warning: Could not configure autoMinting: ${configError.message}`,
+      );
+      console.log('  ℹ️  You may need to call setAutoMinting(true) manually');
+      // Mark as success if implementation changed, otherwise keep as false
+      result.success = implementationChanged;
+      if (!result.success) {
+        result.error = 'Implementation unchanged and autoMinting config failed';
+      }
     }
   } catch (error: any) {
     console.error(`  ❌ Error: ${error.message}`);
