@@ -25,6 +25,7 @@ export default defineConfig({
         'HyphaToken.sol/**',
         'SpacePaymentTracker.sol/**',
         'VotingPowerDelegationImplementation.sol/**',
+        'EnergyDistributionImplementation.sol/**',
       ],
       deployments: {
         DAOSpaceFactoryImplementation: {
@@ -68,6 +69,9 @@ export default defineConfig({
         },
         VotingPowerDelegationImplementation: {
           [base.id]: '0xc87546357EeFF8653cF058Be2BA850813e39cda0',
+        },
+        EnergyDistributionImplementation: {
+          [base.id]: '0x02d88b0C4CC3A4AE86482056c25d65916Dd6DD95',
         },
       },
     }),
