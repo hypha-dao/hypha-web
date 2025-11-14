@@ -42,7 +42,12 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
     address _executor,
     uint256 _spaceId,
     uint256 _maxSupply,
-    address _spacesContract
+    address _spacesContract,
+    bool _fixedMaxSupply,
+    bool _autoMinting,
+    uint256 _priceInUSD,
+    bool _useTransferWhitelist,
+    bool _useReceiveWhitelist
   ) public initializer {
     RegularSpaceToken.initialize(
       name,
@@ -50,7 +55,12 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
       _executor,
       _spaceId,
       _maxSupply,
-      true
+      true, // Ownership tokens are always transferable by executor
+      _fixedMaxSupply,
+      _autoMinting,
+      _priceInUSD,
+      _useTransferWhitelist,
+      _useReceiveWhitelist
     );
     require(
       _spacesContract != address(0),
@@ -66,13 +76,24 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
    */
   function transfer(address to, uint256 amount) public override returns (bool) {
     address sender = _msgSender();
-    if (sender == executor) {
+
+    // Check transfer whitelist (if enabled)
+    if (useTransferWhitelist) {
+      require(canTransfer[sender], 'Sender not whitelisted to transfer');
+    }
+
+    // Check receive whitelist (if enabled)
+    if (useReceiveWhitelist) {
+      require(canReceive[to], 'Recipient not whitelisted to receive');
+    }
+
+    // If executor is transferring and auto-minting is enabled, mint if necessary
+    if (sender == executor && autoMinting) {
       if (balanceOf(sender) < amount) {
         uint256 amountToMint = amount - balanceOf(sender);
         mint(sender, amountToMint);
       }
     }
-    // If executor is transferring, mint to recipient instead
 
     // Allow space members to transfer to escrow contract if it was created by the executor
     if (to == escrowContract && _isSpaceMember(sender)) {
@@ -133,12 +154,25 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
     uint256 amount
   ) public override returns (bool) {
     address spender = _msgSender();
-    if (from == executor) {
+
+    // Check transfer whitelist (if enabled)
+    if (useTransferWhitelist) {
+      require(canTransfer[from], 'Sender not whitelisted to transfer');
+    }
+
+    // Check receive whitelist (if enabled)
+    if (useReceiveWhitelist) {
+      require(canReceive[to], 'Recipient not whitelisted to receive');
+    }
+
+    // If executor is the source and auto-minting is enabled, mint if necessary
+    if (from == executor && autoMinting) {
       if (balanceOf(from) < amount) {
         uint256 amountToMint = amount - balanceOf(from);
         mint(from, amountToMint);
       }
     }
+
     // Allow escrow contract to transfer to space members
     if (spender == escrowContract && _isSpaceMember(to)) {
       _transfer(from, to, amount);
