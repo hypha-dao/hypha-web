@@ -6,10 +6,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { getDhoPathAgreements } from '../@tab/agreements/constants';
 import { getDhoPathMembers } from '../@tab/members/constants';
-import { getActiveTabFromPath } from './get-active-tab-from-path';
 import { getDhoPathTreasury } from '../@tab/treasury/constants';
 import { getDhoPathOverview } from '../@tab/overview/constants';
 import { ScrollArea, ScrollBar } from '@hypha-platform/ui';
+import { getActiveTabFromPath } from '@hypha-platform/epics';
 
 export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
   const pathname = usePathname();
