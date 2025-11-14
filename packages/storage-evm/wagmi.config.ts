@@ -26,6 +26,7 @@ export default defineConfig({
         'SpacePaymentTracker.sol/**',
         'VotingPowerDelegationImplementation.sol/**',
         'EnergyDistributionImplementation.sol/**',
+        'TransferHelper.sol/**',
       ],
       deployments: {
         DAOSpaceFactoryImplementation: {
@@ -72,6 +73,9 @@ export default defineConfig({
         },
         EnergyDistributionImplementation: {
           [base.id]: '0x02d88b0C4CC3A4AE86482056c25d65916Dd6DD95',
+        },
+        TransferHelper: {
+          [base.id]: '0x479002F7602579203ffba3eE84ACC1BC5b0d6785',
         },
       },
     }),
