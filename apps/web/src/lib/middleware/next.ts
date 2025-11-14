@@ -52,7 +52,10 @@ export function cspMiddleware(): NextMiddlewareFunction {
   ].join(' ');
 
   return (request: NextRequest) => {
-    if (process.env.NODE_ENV === 'development') {
+    if (
+      process.env.NODE_ENV === 'development' &&
+      process.env.ENABLE_LOCALHOST_CSP !== 'true'
+    ) {
       return NextResponse.next();
     }
 
@@ -61,8 +64,8 @@ export function cspMiddleware(): NextMiddlewareFunction {
     const cspHeaderValue =
       [
         "default-src 'self'",
-        `script-src 'self' ${enableUnsafeScripts} https://challenges.cloudflare.com`,
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        `script-src 'self' ${enableUnsafeScripts} https://challenges.cloudflare.com https://cdn.onesignal.com https://api.onesignal.com https://vercel.live`,
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://onesignal.com",
         `img-src 'self' ${imageSrc}`,
         "font-src 'self' https://fonts.gstatic.com",
         "object-src 'none'",

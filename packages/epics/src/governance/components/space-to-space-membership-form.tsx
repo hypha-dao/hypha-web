@@ -9,6 +9,7 @@ import {
   Space,
   useSpaceToSpaceMembershipOrchestrator,
   useJwt,
+  useHookRegistry,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -71,14 +72,27 @@ export const SpaceToSpaceMembershipForm = ({
     isError,
     isPending,
     progress,
-    agreement: { slug: agreementSlug },
+    agreement: { slug: agreementSlug, proposalId: web3ProposalId, creator },
   } = useSpaceToSpaceMembershipOrchestrator({ authToken: jwt, config, spaces });
+  const { useSendNotifications } = useHookRegistry();
+  const { notifyProposalCreated } = useSendNotifications!({ authToken: jwt });
 
   React.useEffect(() => {
-    if (progress === 100 && agreementSlug) {
+    if (
+      progress === 100 &&
+      agreementSlug &&
+      web3ProposalId &&
+      web3SpaceId &&
+      creator
+    ) {
+      notifyProposalCreated({
+        proposalId: web3ProposalId,
+        spaceId: BigInt(web3SpaceId),
+        creator,
+      });
       router.push(successfulUrl);
     }
-  }, [progress, agreementSlug]);
+  }, [progress, agreementSlug, web3ProposalId, web3SpaceId, creator]);
 
   const spaceAddress = form.watch('space');
 

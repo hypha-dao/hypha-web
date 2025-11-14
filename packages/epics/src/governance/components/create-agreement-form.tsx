@@ -8,6 +8,7 @@ import {
   useMe,
   useJwt,
   useCreateAgreementOrchestrator,
+  useHookRegistry,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form } from '@hypha-platform/ui';
@@ -51,8 +52,10 @@ export const CreateAgreementForm = ({
     isError,
     isPending,
     progress,
-    agreement: { slug: agreementSlug },
+    agreement: { slug: agreementSlug, proposalId: web3ProposalId, creator },
   } = useCreateAgreementOrchestrator({ authToken: jwt, config });
+  const { useSendNotifications } = useHookRegistry();
+  const { notifyProposalCreated } = useSendNotifications!({ authToken: jwt });
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
@@ -70,10 +73,21 @@ export const CreateAgreementForm = ({
   useScrollToErrors(form, formRef);
 
   React.useEffect(() => {
-    if (progress === 100 && agreementSlug) {
+    if (
+      progress === 100 &&
+      agreementSlug &&
+      web3ProposalId &&
+      web3SpaceId &&
+      creator
+    ) {
+      notifyProposalCreated({
+        proposalId: web3ProposalId,
+        spaceId: BigInt(web3SpaceId),
+        creator,
+      });
       router.push(successfulUrl);
     }
-  }, [progress, agreementSlug]);
+  }, [progress, agreementSlug, web3ProposalId, web3SpaceId, creator]);
 
   const handleCreate = async (data: FormValues) => {
     await createAgreement({
