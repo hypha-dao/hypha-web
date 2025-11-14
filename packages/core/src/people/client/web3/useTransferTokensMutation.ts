@@ -2,8 +2,11 @@
 
 import useSWRMutation from 'swr/mutation';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
-import { parseUnits } from 'viem';
-import { getTokenDecimals } from '@hypha-platform/core/client';
+import { erc20Abi, parseUnits } from 'viem';
+import {
+  getTokenDecimals,
+  ERC20_TOKEN_TRANSFER_ADDRESSES,
+} from '@hypha-platform/core/client';
 import { transferHelperAbi, transferHelperAddress } from '../../../generated';
 
 interface TransferTokensInput {
@@ -34,17 +37,27 @@ export const useTransferTokensMutation = () => {
         arg.payouts.map(async (payout) => {
           const decimals = await getTokenDecimals(payout.token);
           const amount = parseUnits(payout.amount, decimals);
+          let txHash: string;
 
-          const txHash = await client.writeContract({
-            address: transferHelperAddress[8453],
-            abi: transferHelperAbi,
-            functionName: 'transferToken',
-            args: [
-              payout.token as `0x${string}`,
-              arg.recipient as `0x${string}`,
-              amount,
-            ],
-          });
+          if (ERC20_TOKEN_TRANSFER_ADDRESSES.includes(payout.token)) {
+            txHash = await client.writeContract({
+              address: payout.token as `0x${string}`,
+              abi: erc20Abi,
+              functionName: 'transfer',
+              args: [arg.recipient as `0x${string}`, amount],
+            });
+          } else {
+            txHash = await client.writeContract({
+              address: transferHelperAddress[8453],
+              abi: transferHelperAbi,
+              functionName: 'transferToken',
+              args: [
+                payout.token as `0x${string}`,
+                arg.recipient as `0x${string}`,
+                amount,
+              ],
+            });
+          }
 
           return { token: payout.token, txHash };
         }),
