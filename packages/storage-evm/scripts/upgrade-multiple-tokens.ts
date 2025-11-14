@@ -99,7 +99,8 @@ async function upgradeToken(
         tokenAddress,
         contractFactory,
         {
-          unsafeSkipStorageCheck: true,
+          // Storage check enabled for safety
+          // Will verify that new variables don't corrupt existing storage
         },
       );
       console.log(
@@ -158,12 +159,12 @@ async function upgradeToken(
         );
       }
 
-      // Try to upgrade with increased gas
+      // Try to upgrade with increased gas and storage validation
       upgradedContract = await upgrades.upgradeProxy(
         tokenAddress,
         contractFactory,
         {
-          unsafeSkipStorageCheck: true,
+          // Storage check enabled for safety
           txOverrides: {
             maxFeePerGas,
             maxPriorityFeePerGas,
@@ -183,12 +184,12 @@ async function upgradeToken(
         await upgrades.forceImport(tokenAddress, contractFactory);
         console.log('  ✅ Proxy imported successfully');
 
-        // Retry the upgrade with same gas settings
+        // Retry the upgrade with same gas settings and storage validation
         upgradedContract = await upgrades.upgradeProxy(
           tokenAddress,
           contractFactory,
           {
-            unsafeSkipStorageCheck: true,
+            // Storage check enabled for safety
             txOverrides: {
               maxFeePerGas,
               maxPriorityFeePerGas,
