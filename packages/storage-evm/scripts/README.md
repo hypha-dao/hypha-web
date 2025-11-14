@@ -202,6 +202,8 @@ npx nx run storage-evm:test ./test/TokenConfiguration.test.ts
 ### Upgrade Space Factory
 
 ```bash
+npx nx run storage-evm:script ./scripts/upgrade-multiple-tokens.ts --network base-mainnet
+
 npx nx run storage-evm:script ./scripts/dao-space-factory.upgrade.ts --network base-mainnet
 ```
 
