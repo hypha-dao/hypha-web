@@ -65,7 +65,7 @@ export function cspMiddleware(): NextMiddlewareFunction {
       [
         "default-src 'self'",
         `script-src 'self' ${enableUnsafeScripts} https://challenges.cloudflare.com https://cdn.onesignal.com https://api.onesignal.com https://vercel.live`,
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://onesignal.com",
         `img-src 'self' ${imageSrc}`,
         "font-src 'self' https://fonts.gstatic.com",
         "object-src 'none'",
@@ -74,7 +74,7 @@ export function cspMiddleware(): NextMiddlewareFunction {
         "frame-ancestors 'none'",
         'child-src https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org',
         'frame-src https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com',
-        `connect-src 'self' https://cdn.onesignal.com https://api.onesignal.com ${connectSrc}`,
+        `connect-src 'self' ${connectSrc}`,
         "worker-src 'self'",
         "manifest-src 'self'",
       ].join(';') + ';';
