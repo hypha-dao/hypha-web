@@ -246,7 +246,10 @@ export const findTokensByAddresses = async (
   return results;
 };
 
-export const findPersonByAuth = async ({ db }: DbConfig) => {
+export const findPersonByAuth = async (
+  { authToken }: { authToken: string },
+  { db }: DbConfig,
+) => {
   const [dbPerson] = await db
     .select()
     .from(people)
