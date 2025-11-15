@@ -19,10 +19,11 @@
     "@hypha-platform/evm": "workspace:*",
     "@hypha-platform/feature-flags": "workspace:*",
     "@hypha-platform/i18n": "workspace:*",
+    "@hypha-platform/notifications": "workspace:*",
     "@hypha-platform/storage-postgres": "workspace:*",
     "@hypha-platform/ui": "workspace:*",
     "@hypha-platform/ui-utils": "workspace:*",
-    "@hypha-platform/notifications": "workspace:*",
+    "@tailwindcss/postcss": "^4.1.11",
     "next": "^15.4.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
