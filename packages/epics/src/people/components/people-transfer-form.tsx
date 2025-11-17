@@ -17,6 +17,7 @@ import {
 import { RecipientField, TokenPayoutFieldArray } from '../../agreements';
 import { useScrollToErrors } from '../../hooks';
 import { useFundWallet } from '../../treasury/hooks';
+import { useJwt } from '@hypha-platform/core/client';
 
 interface Token {
   icon: string;
@@ -43,7 +44,10 @@ export const PeopleTransferForm = ({
   const { fundWallet } = useFundWallet({
     address: person?.address as `0x${string}`,
   });
-  const { transferTokens, isTransferring } = useTransferTokensMutation();
+  const { jwt: authToken } = useJwt();
+  const { transferTokens, isTransferring } = useTransferTokensMutation({
+    authToken,
+  });
 
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
@@ -76,6 +80,7 @@ export const PeopleTransferForm = ({
             amount: payout.amount?.toString() ?? '0',
             token: payout.token ?? '',
           })) ?? [],
+        memo: 'Test memo',
       };
       const result = await transferTokens(transferInput);
       console.log('Transfer hashes:', result);

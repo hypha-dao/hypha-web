@@ -8,17 +8,39 @@ import {
   ERC20_TOKEN_TRANSFER_ADDRESSES,
 } from '@hypha-platform/core/client';
 import { transferHelperAbi, transferHelperAddress } from '../../../generated';
+import { CreateTransferInput } from '@hypha-platform/core/client';
+import { createTransferAction } from '../../../transaction/server/actions';
 
 interface TransferTokensInput {
   recipient: string;
   payouts: {
     amount: string;
     token: string;
+    memo?: string;
   }[];
+  memo?: string;
 }
 
-export const useTransferTokensMutation = () => {
+interface UseTransferTokensProps {
+  authToken?: string | null;
+}
+
+export const useTransferTokensMutation = ({
+  authToken,
+}: UseTransferTokensProps) => {
   const { client } = useSmartWallets();
+
+  const {
+    trigger: createTransferMutation,
+    reset: resetCreateTransferMutation,
+    isMutating: isCreatingTransfer,
+    error: errorCreateTransferMutation,
+    data: createdTransfer,
+  } = useSWRMutation(
+    authToken ? [authToken, 'createTransfer'] : null,
+    async ([authToken], { arg }: { arg: CreateTransferInput }) =>
+      createTransferAction(arg, { authToken }),
+  );
 
   const {
     trigger: transferTokens,
@@ -63,6 +85,21 @@ export const useTransferTokensMutation = () => {
         }),
       );
 
+      if (arg.memo && authToken) {
+        try {
+          await Promise.all(
+            transactionHashes.map(({ token, txHash }) =>
+              createTransferMutation({
+                transactionHash: txHash,
+                memo: arg.memo!,
+              }),
+            ),
+          );
+        } catch (error) {
+          console.error('Failed to create transfer records:', error);
+        }
+      }
+
       return transactionHashes;
     },
   );
@@ -73,5 +110,10 @@ export const useTransferTokensMutation = () => {
     isTransferring,
     transferHashes,
     transferError,
+    createTransfer: createTransferMutation,
+    resetCreateTransferMutation,
+    isCreatingTransfer,
+    errorCreateTransferMutation,
+    createdTransfer,
   };
 };
