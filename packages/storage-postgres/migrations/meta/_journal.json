@@ -274,6 +274,13 @@
       "when": 1761761510511,
       "tag": "0038_nostalgic_komodo",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1763357543183,
+      "tag": "0039_sudden_talos",
+      "breakpoints": true
     }
   ]
 }
