@@ -4,9 +4,9 @@ import { db } from '@hypha-platform/storage-postgres';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { hash: string } },
+  { params }: { params: Promise<{ hash: string }> },
 ) {
-  const { hash } = params;
+  const { hash } = await params;
 
   try {
     const transfer = await findTransferByTransactionHash(hash, { db });
