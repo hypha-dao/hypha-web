@@ -25,8 +25,8 @@
     "@hypha-platform/config-eslint": "workspace:*",
     "@hypha-platform/config-typescript": "workspace:*",
     "@wagmi/cli": "^2.2.0",
-    "hardhat": "^2.22.17"
+    "hardhat": "^2.22.17",
+    "hardhat-contract-sizer": "^2.10.1"
   },
-  "dependencies": {},
   "exports": {}
 }

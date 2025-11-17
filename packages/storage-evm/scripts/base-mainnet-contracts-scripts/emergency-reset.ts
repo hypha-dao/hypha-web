@@ -29,6 +29,30 @@ const energyDistributionAbi = [
     type: 'function',
   },
   {
+    inputs: [
+      { internalType: 'address', name: 'account', type: 'address' },
+      { internalType: 'bool', name: '_isWhitelisted', type: 'bool' },
+    ],
+    name: 'updateWhitelist',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'address', name: 'account', type: 'address' }],
+    name: 'isAddressWhitelisted',
+    outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'owner',
+    outputs: [{ internalType: 'address', name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
     inputs: [],
     name: 'getCollectiveConsumption',
     outputs: [
@@ -81,12 +105,47 @@ const energyDistributionAbi = [
     stateMutability: 'view',
     type: 'function',
   },
+  {
+    inputs: [],
+    name: 'getEnergyTokenAddress',
+    outputs: [{ internalType: 'address', name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
   // Events
   {
     anonymous: false,
     inputs: [],
     name: 'EmergencyReset',
     type: 'event',
+  },
+];
+
+// EnergyToken ABI
+const energyTokenAbi = [
+  {
+    inputs: [{ internalType: 'address', name: 'account', type: 'address' }],
+    name: 'authorized',
+    outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'address', name: 'account', type: 'address' },
+      { internalType: 'bool', name: '_authorized', type: 'bool' },
+    ],
+    name: 'setAuthorized',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'owner',
+    outputs: [{ internalType: 'address', name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
   },
 ];
 
@@ -228,6 +287,129 @@ async function executeEmergencyReset(): Promise<void> {
   );
 
   try {
+    // Step 0: Check whitelist and owner status
+    console.log('📋 Step 0: Access Control Check');
+    console.log('=====================================');
+
+    const owner = await energyDistribution.owner();
+    console.log(`Contract Owner: ${owner}`);
+    console.log(`Your Address: ${wallet.address}`);
+
+    const isWhitelisted = await energyDistribution.isAddressWhitelisted(
+      wallet.address,
+    );
+    console.log(`Whitelisted: ${isWhitelisted ? '✅ Yes' : '❌ No'}`);
+
+    const isOwner = owner.toLowerCase() === wallet.address.toLowerCase();
+    console.log(`Is Owner: ${isOwner ? '✅ Yes' : '❌ No'}`);
+
+    if (!isWhitelisted) {
+      if (!isOwner) {
+        console.log('\n❌ CANNOT PROCEED:');
+        console.log('   - You are not whitelisted');
+        console.log('   - You are not the contract owner');
+        console.log('   - Only the owner can whitelist addresses');
+        console.log(
+          `\n💡 Ask the contract owner (${owner}) to whitelist your address:`,
+        );
+        console.log(`   ${wallet.address}`);
+        return;
+      }
+
+      console.log('\n🔧 Whitelisting your address first...');
+      const whitelistTx = await energyDistribution.updateWhitelist(
+        wallet.address,
+        true,
+      );
+      console.log(`📝 Whitelist transaction submitted: ${whitelistTx.hash}`);
+      await whitelistTx.wait();
+      console.log('✅ Address whitelisted successfully!\n');
+    }
+
+    // Step 0.5: Check EnergyToken authorization
+    console.log('\n🔐 Checking EnergyToken Authorization...');
+    console.log('-'.repeat(40));
+
+    const energyTokenAddress = await energyDistribution.getEnergyTokenAddress();
+    console.log(`EnergyToken Contract: ${energyTokenAddress}`);
+
+    const energyToken = new ethers.Contract(
+      energyTokenAddress,
+      energyTokenAbi,
+      wallet,
+    );
+
+    let isAuthorized = false;
+    let tokenOwner: string;
+
+    try {
+      // Try to check authorization
+      isAuthorized = await energyToken.authorized(energyDistributionAddress);
+      console.log(
+        `EnergyDistribution Authorized: ${isAuthorized ? '✅ Yes' : '❌ No'}`,
+      );
+    } catch (error) {
+      console.log(
+        '⚠️  Cannot check authorization status (contract may not support this)',
+      );
+      console.log('   Assuming contract needs authorization...');
+      isAuthorized = false;
+    }
+
+    try {
+      tokenOwner = await energyToken.owner();
+      console.log(`EnergyToken Owner: ${tokenOwner}`);
+    } catch (error) {
+      console.log('⚠️  Cannot determine token owner');
+      console.log('   The token contract may have a different interface');
+      console.log('\n💡 Proceeding with emergency reset anyway...');
+      console.log('💡 If it fails, the token may need manual authorization\n');
+      // Continue anyway
+      tokenOwner = ethers.ZeroAddress;
+    }
+
+    if (!isAuthorized && tokenOwner !== ethers.ZeroAddress) {
+      const isTokenOwner =
+        tokenOwner.toLowerCase() === wallet.address.toLowerCase();
+      console.log(`You are Token Owner: ${isTokenOwner ? '✅ Yes' : '❌ No'}`);
+
+      if (!isTokenOwner) {
+        console.log('\n⚠️  WARNING:');
+        console.log(
+          '   - EnergyDistribution contract may not be authorized to burn tokens',
+        );
+        console.log('   - You are not the EnergyToken owner');
+        console.log('   - The emergency reset may fail due to authorization');
+        console.log(
+          `\n💡 Ask the token owner (${tokenOwner}) to authorize the EnergyDistribution contract:`,
+        );
+        console.log(`   Contract: ${energyDistributionAddress}`);
+        console.log(
+          `\n💡 Command: energyToken.setAuthorized("${energyDistributionAddress}", true)`,
+        );
+        console.log(
+          '\n⏳ Attempting reset anyway (will fail if not authorized)...\n',
+        );
+        // Continue anyway to show the actual error
+      } else {
+        try {
+          console.log(
+            '\n🔧 Authorizing EnergyDistribution contract to burn tokens...',
+          );
+          const authTx = await energyToken.setAuthorized(
+            energyDistributionAddress,
+            true,
+          );
+          console.log(`📝 Authorization transaction submitted: ${authTx.hash}`);
+          await authTx.wait();
+          console.log('✅ EnergyDistribution authorized successfully!\n');
+        } catch (authError) {
+          console.log('⚠️  Authorization failed:', authError);
+          console.log('   Attempting reset anyway...\n');
+        }
+      }
+    }
+
     // Step 1: Check current system status
     console.log('📋 Step 1: Pre-Reset System Analysis');
     console.log('=====================================');
@@ -456,6 +638,136 @@ async function checkResetNeed(): Promise<void> {
   }
 }
 
+async function checkWhitelistStatus(): Promise<void> {
+  console.log('🔍 Whitelist Status Check');
+  console.log('='.repeat(40));
+
+  const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+
+  // Load wallet
+  let accountData: AccountData[] = [];
+  try {
+    const data = fs.readFileSync('accounts.json', 'utf8');
+    if (data.trim()) {
+      const parsedData = JSON.parse(data);
+      accountData = parsedData.filter(
+        (account: AccountData) =>
+          account.privateKey &&
+          account.privateKey !== 'YOUR_PRIVATE_KEY_HERE_WITHOUT_0x_PREFIX' &&
+          account.privateKey.length === 64,
+      );
+    }
+  } catch (error) {
+    console.log('accounts.json not found. Using environment variables.');
+  }
+
+  if (accountData.length === 0) {
+    const privateKey = process.env.PRIVATE_KEY;
+    if (privateKey) {
+      const cleanPrivateKey = privateKey.startsWith('0x')
+        ? privateKey.slice(2)
+        : privateKey;
+      const wallet = new ethers.Wallet(cleanPrivateKey);
+      accountData = [{ privateKey: cleanPrivateKey, address: wallet.address }];
+    }
+  }
+
+  if (accountData.length === 0) {
+    console.error(
+      '❌ No accounts found. Please create accounts.json or set PRIVATE_KEY in .env',
+    );
+    return;
+  }
+
+  const wallet = new ethers.Wallet(accountData[0].privateKey, provider);
+
+  const energyDistributionAddress =
+    '0x02d88b0C4CC3A4AE86482056c25d65916Dd6DD95';
+  const energyDistribution = new ethers.Contract(
+    energyDistributionAddress,
+    energyDistributionAbi,
+    provider,
+  );
+
+  try {
+    const owner = await energyDistribution.owner();
+    const isWhitelisted = await energyDistribution.isAddressWhitelisted(
+      wallet.address,
+    );
+    const isOwner = owner.toLowerCase() === wallet.address.toLowerCase();
+
+    console.log(`📍 Contract: ${energyDistributionAddress}`);
+    console.log(`🔑 Your Address: ${wallet.address}\n`);
+
+    console.log('Access Control Status:');
+    console.log('=====================');
+    console.log(`Contract Owner: ${owner}`);
+    console.log(`Is Owner: ${isOwner ? '✅ Yes' : '❌ No'}`);
+    console.log(`Is Whitelisted: ${isWhitelisted ? '✅ Yes' : '❌ No'}`);
+
+    // Check EnergyToken authorization
+    const energyTokenAddress = await energyDistribution.getEnergyTokenAddress();
+    console.log(`\nEnergyToken: ${energyTokenAddress}`);
+
+    const energyToken = new ethers.Contract(
+      energyTokenAddress,
+      energyTokenAbi,
+      provider,
+    );
+
+    const isAuthorized = await energyToken.authorized(
+      energyDistributionAddress,
+    );
+    const tokenOwner = await energyToken.owner();
+    const isTokenOwner =
+      tokenOwner.toLowerCase() === wallet.address.toLowerCase();
+
+    console.log(`EnergyToken Owner: ${tokenOwner}`);
+    console.log(`You are Token Owner: ${isTokenOwner ? '✅ Yes' : '❌ No'}`);
+    console.log(`Contract Authorized: ${isAuthorized ? '✅ Yes' : '❌ No'}`);
+
+    console.log('\n📋 Reset Capability:');
+    console.log('===================');
+
+    const issues = [];
+    if (!isWhitelisted) {
+      issues.push('❌ You are not whitelisted');
+    }
+    if (!isAuthorized) {
+      issues.push('❌ EnergyDistribution not authorized to burn tokens');
+    }
+
+    if (issues.length === 0) {
+      console.log('✅ You can execute emergency reset');
+    } else {
+      console.log('⚠️  Issues preventing emergency reset:');
+      for (const issue of issues) {
+        console.log(`   ${issue}`);
+      }
+
+      console.log('\n💡 Solutions:');
+      if (!isWhitelisted) {
+        if (isOwner) {
+          console.log('   - Run "execute" to auto-whitelist yourself');
+        } else {
+          console.log(`   - Ask contract owner (${owner}) to whitelist you`);
+        }
+      }
+      if (!isAuthorized) {
+        if (isTokenOwner) {
+          console.log('   - Run "execute" to auto-authorize the contract');
+        } else {
+          console.log(
+            `   - Ask token owner (${tokenOwner}) to authorize EnergyDistribution`,
+          );
+        }
+      }
+    }
+  } catch (error) {
+    console.error('❌ Check failed:', error);
+  }
+}
+
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const command = args[0] || 'check';
@@ -472,9 +784,14 @@ async function main(): Promise<void> {
     case 'status':
       await checkResetNeed();
       break;
+    case 'whitelist':
+    case 'access':
+      await checkWhitelistStatus();
+      break;
     default:
       console.log('Available commands:');
       console.log('- check: Assess if emergency reset is needed');
+      console.log('- whitelist: Check whitelist and access control status');
       console.log(
         '- execute: Execute emergency reset (DANGER: clears all balances)',
       );
@@ -491,4 +808,4 @@ async function main(): Promise<void> {
 
 main().catch(console.error);
 
-export { executeEmergencyReset, checkResetNeed };
+export { executeEmergencyReset, checkResetNeed, checkWhitelistStatus };

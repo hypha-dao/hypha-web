@@ -6,6 +6,7 @@ import 'hardhat-deploy';
 import '@nomiclabs/hardhat-solhint';
 import 'hardhat-deploy';
 import 'solidity-coverage';
+import 'hardhat-contract-sizer';
 
 import './tasks';
 
