@@ -3,7 +3,6 @@ import { i18nConfig } from '../../packages/i18n/src/i18n-config';
 
 const IMAGE_HOSTS = process.env.NEXT_PUBLIC_IMAGE_HOSTS?.split(', ') ?? [];
 const LOCALES = i18nConfig.locales;
-const isDevelop = process.env.NODE_ENV === 'development';
 
 const nextConfig: NextConfig = {
   headers: async () => {
