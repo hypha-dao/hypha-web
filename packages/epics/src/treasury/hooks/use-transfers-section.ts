@@ -42,6 +42,7 @@ export const useTransfersSection = ({
       const surname = transfer.person?.surname?.toLowerCase() ?? '';
       const from = transfer.from?.toLowerCase() ?? '';
       const to = transfer.to?.toLowerCase() ?? '';
+      const memo = transfer.memo?.toLowerCase() ?? '';
 
       return (
         hash.includes(term) ||
@@ -49,7 +50,8 @@ export const useTransfersSection = ({
         name.includes(term) ||
         surname.includes(term) ||
         from.includes(term) ||
-        to.includes(term)
+        to.includes(term) ||
+        memo.includes(term)
       );
     });
   }, [transfers, searchTerm]);

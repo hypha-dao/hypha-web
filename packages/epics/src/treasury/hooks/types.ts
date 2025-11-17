@@ -18,4 +18,5 @@ export interface TransferWithEntity {
   tokenIcon?: string;
   direction: 'incoming' | 'outgoing';
   counterparty: 'from' | 'to';
+  memo?: string;
 }
