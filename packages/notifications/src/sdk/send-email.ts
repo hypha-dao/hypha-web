@@ -8,11 +8,13 @@ export async function sendEmailByAlias({
   app_id,
   alias,
   content,
+  filters,
 }: EmailParamsForAlias) {
   const params = {
     app_id,
     ...alias,
     ...content,
+    filters,
   };
 
   return await sendEmail(params);
@@ -22,11 +24,13 @@ export async function sendEmailBySegment({
   app_id,
   segment,
   content,
+  filters,
 }: EmailParamsForSegment) {
   const params = {
     app_id,
     ...segment,
     ...content,
+    filters,
   };
 
   return await sendEmail(params);

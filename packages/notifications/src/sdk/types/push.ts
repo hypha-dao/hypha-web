@@ -1,6 +1,9 @@
 import type { Alias, Segment } from './audience';
 import type { Template } from './template';
-import type { LanguageStringMap } from '@onesignal/node-onesignal';
+import type {
+  FilterExpression,
+  LanguageStringMap,
+} from '@onesignal/node-onesignal';
 
 export type LangMap = LanguageStringMap & {
   en: string;
@@ -17,10 +20,12 @@ export type PushParamsForAlias = {
   app_id: string;
   alias: Alias;
   content: PushContent;
+  filters: Array<FilterExpression>;
 };
 
 export type PushParamsForSegment = {
   app_id: string;
   segment: Segment;
   content: PushContent;
+  filters: Array<FilterExpression>;
 };

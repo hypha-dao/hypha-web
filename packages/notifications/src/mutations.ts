@@ -28,6 +28,14 @@ export const sendPushNotifications = async ({
         external_id: usernames,
       },
     },
+    filters: [
+      {
+        field: 'tag',
+        relation: '=',
+        key: 'subscribed',
+        value: 'true',
+      },
+    ],
     content: { contents, headings },
   });
 };
@@ -50,5 +58,13 @@ export const sentEmailNotifications = async ({
       },
     },
     content: { email_body: body, email_subject: subject },
+    filters: [
+      {
+        field: 'tag',
+        relation: '=',
+        key: 'subscribed',
+        value: 'true',
+      },
+    ],
   });
 };

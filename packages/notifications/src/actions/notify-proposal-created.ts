@@ -122,9 +122,11 @@ async function notifyProposalCreatedForCreator({
 async function notifyProposalCreatedForMembersAction({
   proposalId,
   spaceId: spaceWeb3Id,
+  creator: creatorWeb3Address,
 }: {
   proposalId: bigint;
   spaceId: bigint;
+  creator: `0x${string}`;
 }) {
   const spaceIds = [spaceWeb3Id];
   const spacesDetails = await (async () => {
@@ -144,12 +146,14 @@ async function notifyProposalCreatedForMembersAction({
     return;
   }
   const fetchingData = spacesDetails.map(async ({ members, spaceId }) => {
-    const people = await findPeopleByWeb3Addresses(
-      {
-        addresses: members as string[],
-      },
-      { db },
-    );
+    const people = (
+      await findPeopleByWeb3Addresses(
+        {
+          addresses: members as string[],
+        },
+        { db },
+      )
+    ).filter((person: Person) => person.address !== creatorWeb3Address);
     const space = await findSpaceByWeb3Id({ id: Number(spaceId) }, { db });
 
     return { people, space };
@@ -189,6 +193,7 @@ export async function notifyProposalCreatedAction(
     notifyProposalCreatedForMembersAction({
       proposalId,
       spaceId,
+      creator,
     }),
   ]);
   (await notifying)
