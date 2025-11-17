@@ -62,6 +62,7 @@ export const PeopleTransferForm = ({
           token: undefined,
         },
       ],
+      memo: '',
     },
   });
 
@@ -80,7 +81,7 @@ export const PeopleTransferForm = ({
             amount: payout.amount?.toString() ?? '0',
             token: payout.token ?? '',
           })) ?? [],
-        memo: 'Test memo',
+        memo: data.memo,
       };
       const result = await transferTokens(transferInput);
       console.log('Transfer hashes:', result);
@@ -131,7 +132,11 @@ export const PeopleTransferForm = ({
           onSubmit={form.handleSubmit(handleTransfer)}
           className="flex flex-col gap-5"
         >
-          <RecipientField members={peoples} spaces={spaces} />
+          <RecipientField
+            members={peoples}
+            spaces={spaces}
+            withMemoField={true}
+          />
           <Separator />
           <TokenPayoutFieldArray
             label="Amount"
