@@ -131,6 +131,9 @@ export function NotificationSubscriber({
           'permissionChange',
           (permission: boolean) => {
             console.log('The notification permission change:', permission);
+            if (!permission) {
+              setSubscribed(false);
+            }
           },
         );
         OneSignal.Notifications.addEventListener(
@@ -149,6 +152,7 @@ export function NotificationSubscriber({
           'slidedownCancelClick',
           (wasShown: boolean) => {
             console.log('Slidedown Cancel Click:', wasShown);
+            setSubscribed(false);
           },
         );
         OneSignal.Slidedown.addEventListener(
