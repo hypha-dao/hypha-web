@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { findAllTransfers } from '@hypha-platform/core/client';
+import { findAllTransfers } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 
 export async function GET(request: NextRequest) {
