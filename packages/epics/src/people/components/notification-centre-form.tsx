@@ -30,16 +30,19 @@ import {
   YesNo,
   yesNoEnum,
 } from '../hooks/validation';
+import { useRouter } from 'next/navigation';
 
 export type NotificationCentreFormProps = {
   closeUrl: string;
   isLoading?: boolean;
   error?: string | null;
   subscribed?: boolean;
-  subscribe: () => void;
-  unsubscribe: () => void;
+  subscribe: () => Promise<void>;
+  unsubscribe: () => Promise<void>;
   configuration?: NotificationCofiguration;
-  saveConfigurations: (configuration: NotificationCofiguration) => void;
+  saveConfigurations: (
+    configuration: NotificationCofiguration,
+  ) => Promise<void>;
 };
 
 function getSwitch(value: boolean): YesNo {
@@ -89,6 +92,7 @@ export const NotificationCentreForm = ({
     },
     mode: 'onChange',
   });
+  const router = useRouter();
 
   React.useEffect(() => {
     if (!configuration) {
@@ -111,19 +115,23 @@ export const NotificationCentreForm = ({
     form.reset(modified, { keepDirty: false });
   }, [form, configuration]);
 
-  const handleSubmit = async (values: NotificationCentreFormValues) => {
-    console.log('Save notification settings:', values);
-    saveConfigurations({
-      browserNotifications: parseSwitch(values.browserNotifications),
-      emailNotifications: parseSwitch(values.emailNotifications),
-      subscriptions: values.subscriptions.map((subscription) => {
-        return {
-          name: subscription.tagName,
-          value: subscription.tagValue,
-        };
-      }),
-    });
-  };
+  const handleSubmit = React.useCallback(
+    async (values: NotificationCentreFormValues) => {
+      console.log('Save notification settings:', values);
+      await saveConfigurations({
+        browserNotifications: parseSwitch(values.browserNotifications),
+        emailNotifications: parseSwitch(values.emailNotifications),
+        subscriptions: values.subscriptions.map((subscription) => {
+          return {
+            name: subscription.tagName,
+            value: subscription.tagValue,
+          };
+        }),
+      });
+      router.push(closeUrl);
+    },
+    [saveConfigurations, router, closeUrl],
+  );
 
   const handleInvalid = async (err?: any) => {
     console.log('Notification settings errors:', err);
