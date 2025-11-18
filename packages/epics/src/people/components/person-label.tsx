@@ -48,7 +48,7 @@ export const PersonLabel = ({
         </Text>
       </Skeleton>
       {isDelegate && (
-        <Badge variant="outline" size={1}>
+        <Badge colorVariant="accent" variant="outline" size={1}>
           Delegate
         </Badge>
       )}
