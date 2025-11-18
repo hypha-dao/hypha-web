@@ -25,6 +25,7 @@ type CreatorType = {
   name?: string;
   surname?: string;
   type?: 'person' | 'space';
+  address?: string;
 };
 
 export const mapToDocument = (
@@ -42,6 +43,7 @@ export const mapToDocument = (
       name: spaceCreator.title || '',
       surname: '',
       type: 'space',
+      address: spaceCreator.address as string,
     };
   } else if (personCreator) {
     actualCreator = {
@@ -49,6 +51,7 @@ export const mapToDocument = (
       name: personCreator.name || '',
       surname: personCreator.surname || '',
       type: 'person',
+      address: personCreator.address as string,
     };
   } else if (spaceCreator) {
     actualCreator = {
@@ -56,6 +59,7 @@ export const mapToDocument = (
       name: spaceCreator.title || '',
       surname: '',
       type: 'space',
+      address: spaceCreator.address as string,
     };
   }
 

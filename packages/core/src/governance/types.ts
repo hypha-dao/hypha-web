@@ -2,6 +2,7 @@ export type Creator = {
   avatarUrl?: string;
   name?: string;
   surname?: string;
+  address?: string;
 };
 
 export enum DocumentState {
