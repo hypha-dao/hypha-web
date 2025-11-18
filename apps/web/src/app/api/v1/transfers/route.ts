@@ -3,7 +3,7 @@ import { findAllTransfers } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  const { searchParams } = request.nextUrl;
   const transactionHash = searchParams.get('transactionHash') || undefined;
   const memo = searchParams.get('memo') || undefined;
 
