@@ -1,20 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import { response, type Response } from './schema/get-wallet';
-import type { Environment } from '@schemas/env';
-import { newDbClient } from '@plugins/db-client';
-import { findTokensByAddresses } from '@plugins/db-queries';
 import { erc20Abi, formatUnits, isAddress } from 'viem';
 
 export default async function walletRoutes(app: FastifyInstance) {
-  const {
-    DEFAULT_DB_URL,
-    DEFAULT_DB_ANONYMOUS_URL,
-    DEFAULT_DB_AUTHENTICATED_URL,
-  } = app.getEnvs<Environment>();
-  const dbUrl =
-    DEFAULT_DB_AUTHENTICATED_URL || DEFAULT_DB_ANONYMOUS_URL || DEFAULT_DB_URL;
-  const db = newDbClient(dbUrl);
-
   /**
    * GET /wallet/receive
    */
@@ -61,10 +49,9 @@ export default async function walletRoutes(app: FastifyInstance) {
       const tokenAddresses = rawBalances
         .map(({ tokenAddress }) => tokenAddress)
         .filter((address) => isAddress(address));
-      const fetchingDbTokens = findTokensByAddresses(
-        { addresses: tokenAddresses },
-        { db },
-      );
+      const fetchingDbTokens = app.db.findTokensByAddresses({
+        addresses: tokenAddresses,
+      });
 
       const balances = new Map(
         rawBalances.map(({ tokenAddress, balance }) => [

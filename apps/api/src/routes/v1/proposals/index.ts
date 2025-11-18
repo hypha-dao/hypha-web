@@ -15,29 +15,12 @@ import {
   Query as GetProposalVotersQuery,
 } from './schema/get-proposals-id-voters';
 import type { State } from '@schemas/proposal';
-import { newDbClient } from '@plugins/db-client';
-import {
-  findAllDocumentsBySpaceId,
-  findDocumentById,
-  peopleByAddresses,
-  findDocumentWeb3Id,
-} from '@plugins/db-queries';
-import { type Environment } from '@schemas/env';
 import {
   daoProposalsImplementationAbi,
   daoProposalsImplementationAddress,
 } from '@plugins/web3-abi';
 
 export default async function proposalsRoutes(app: FastifyInstance) {
-  const {
-    DEFAULT_DB_URL,
-    DEFAULT_DB_ANONYMOUS_URL,
-    DEFAULT_DB_AUTHENTICATED_URL,
-  } = app.getEnvs<Environment>();
-  const dbUrl =
-    DEFAULT_DB_AUTHENTICATED_URL || DEFAULT_DB_ANONYMOUS_URL || DEFAULT_DB_URL;
-  const db = newDbClient(dbUrl);
-
   /**
    * GET /proposals
    */
@@ -64,14 +47,11 @@ export default async function proposalsRoutes(app: FastifyInstance) {
         };
       }
 
-      const dbData = await findAllDocumentsBySpaceId(
-        { id: dao_id },
-        {
-          db,
-          filter: {},
-          pagination: { offset, pageSize: limit },
-        },
-      );
+      const dbData = await app.db.findAllDocumentsBySpaceId({
+        id: dao_id,
+        filter: {},
+        pagination: { offset, pageSize: limit },
+      });
 
       const web3Data = await (async () => {
         const client = app.web3Client;
@@ -218,7 +198,7 @@ export default async function proposalsRoutes(app: FastifyInstance) {
     async (request) => {
       const { id } = request.params;
 
-      const dbData = await findDocumentById({ id }, { db });
+      const dbData = await app.db.findDocumentById({ id });
       if (!dbData) {
         // TODO: implement proper return
         throw Error('Proposal does not exist');
@@ -337,7 +317,7 @@ export default async function proposalsRoutes(app: FastifyInstance) {
       const { id } = request.params;
       const { limit, offset } = request.query;
 
-      const web3Id = await findDocumentWeb3Id({ id }, { db });
+      const web3Id = await app.db.findDocumentWeb3Id({ id });
 
       const web3Data = await (async () => {
         const client = app.web3Client;
@@ -379,13 +359,10 @@ export default async function proposalsRoutes(app: FastifyInstance) {
       const [yesVoters, noVoters] = web3Data;
 
       const addresses = yesVoters.concat(noVoters);
-      const people = peopleByAddresses(
-        { addresses },
-        {
-          pagination: { pageSize: limit, offset },
-          db,
-        },
-      );
+      const people = app.db.peopleByAddresses({
+        addresses,
+        pagination: { pageSize: limit, offset },
+      });
 
       const votes = new Map<string, 'yes' | 'no'>();
       yesVoters.forEach((addr) => votes.set(addr.toLowerCase(), 'yes'));
