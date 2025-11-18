@@ -10,7 +10,7 @@
     "@hypha-platform/core": "workspace:*",
     "@hypha-platform/storage-postgres": "workspace:*",
     "react": "^19.1.0",
-    "react-onesignal": "^3.2.3"
+    "react-onesignal": "^3.4.0"
   },
   "exports": {
     "./client": "./src/client.ts",
