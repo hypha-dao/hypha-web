@@ -27,6 +27,7 @@ import {
   useSpaceBySlug,
   useSpaceMinProposalDuration,
   useSpaceDetailsWeb3Rpc,
+  useIsDelegate,
 } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
 import { formatDuration } from '@hypha-platform/ui-utils';
@@ -80,6 +81,10 @@ export function CreateAgreementBaseFields({
 
   const { theme } = useTheme();
 
+  const { isDelegate } = useIsDelegate({
+    spaceId: space?.web3SpaceId as number,
+  });
+
   return (
     <>
       <div className="flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-2">
@@ -96,6 +101,16 @@ export function CreateAgreementBaseFields({
                 <Badge className="w-fit" colorVariant="accent">
                   {label}
                 </Badge>
+                {isDelegate && (
+                  <Badge
+                    variant="outline"
+                    colorVariant="accent"
+                    isLoading={isLoading}
+                    className="ml-2"
+                  >
+                    Delegate
+                  </Badge>
+                )}
                 <div className="flex grow"></div>
                 {backUrl && (
                   <ButtonBack

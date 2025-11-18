@@ -164,6 +164,7 @@ export default function Agreements() {
             avatar: document?.creator?.avatarUrl || '',
             name: document?.creator?.name || '',
             surname: document?.creator?.surname || '',
+            address: document?.creator?.address || '',
           }}
           title={document?.title}
           status={document?.state}

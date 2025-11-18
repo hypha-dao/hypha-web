@@ -5,8 +5,16 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import { useGetDelegators } from './useGetDelegators';
 import { useSpaceDetailsWeb3Rpc } from './useSpaceDetails.web3.rpc';
 
-export const useIsDelegate = ({ spaceId }: { spaceId?: number }) => {
+export const useIsDelegate = ({
+  spaceId,
+  userAddress,
+}: {
+  spaceId?: number;
+  userAddress?: `0x${string}`;
+}) => {
   const { user } = useAuthentication();
+
+  const targetAddress = userAddress ?? user?.wallet?.address;
 
   const {
     data: delegates,
@@ -21,7 +29,7 @@ export const useIsDelegate = ({ spaceId }: { spaceId?: number }) => {
     isLoading: isLoadingDelegators,
     error: delegatorsError,
   } = useGetDelegators({
-    user: user?.wallet?.address,
+    user: targetAddress,
     spaceId: spaceId ? BigInt(spaceId) : undefined,
   });
 
@@ -31,7 +39,7 @@ export const useIsDelegate = ({ spaceId }: { spaceId?: number }) => {
 
   const spaceMembers = spaceDetails?.members ?? [];
 
-  if (!spaceId) {
+  if (!spaceId || !targetAddress) {
     return {
       isDelegate: false,
       isLoading: false,
@@ -39,10 +47,12 @@ export const useIsDelegate = ({ spaceId }: { spaceId?: number }) => {
     };
   }
 
-  const userAddress = user?.wallet?.address?.toLowerCase();
+  const lowerTargetAddress = targetAddress.toLowerCase();
 
   const isInDelegates = delegates
-    ? delegates.some((delegate) => delegate.toLowerCase() === userAddress)
+    ? delegates.some(
+        (delegate) => delegate.toLowerCase() === lowerTargetAddress,
+      )
     : false;
 
   const isDelegatorInMembers = delegators

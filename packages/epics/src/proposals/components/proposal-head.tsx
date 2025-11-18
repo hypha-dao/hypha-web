@@ -1,12 +1,17 @@
+'use client';
+
 import { Text } from '@radix-ui/themes';
 import { Badge, Skeleton } from '@hypha-platform/ui';
 import { PersonAvatar } from '../../people/components/person-avatar';
+import { useParams } from 'next/navigation';
+import { useIsDelegate, useSpaceBySlug } from '@hypha-platform/core/client';
 
 export type CreatorType = {
   avatar?: string;
   name?: string;
   surname?: string;
   type?: 'person' | 'space';
+  address?: string;
 };
 
 export type ProposalHeadProps = {
@@ -58,6 +63,12 @@ export const ProposalHead = ({
 
   const { text: statusText, colorVariant: statusColor } = getStatusBadgeProps();
 
+  const { id: spaceSlug } = useParams();
+  const { space: currentSpace } = useSpaceBySlug(spaceSlug as string);
+  const { isDelegate } = useIsDelegate({
+    spaceId: currentSpace?.web3SpaceId as number,
+    userAddress: creator?.address as `0x${string}`,
+  });
   return (
     <div className="flex gap-3 w-full">
       <div className="flex items-center space-x-3">
@@ -93,6 +104,15 @@ export const ProposalHead = ({
                   isLoading={isLoading}
                 >
                   {statusText}
+                </Badge>
+              )}
+              {isDelegate && (
+                <Badge
+                  variant="outline"
+                  colorVariant="accent"
+                  isLoading={isLoading}
+                >
+                  Delegate
                 </Badge>
               )}
             </div>
