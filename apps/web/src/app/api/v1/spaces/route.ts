@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       const options = parentOnly !== undefined ? { parentOnly } : undefined;
       spaces = await getSpacesByWeb3Ids(web3SpaceIds, options);
     } else {
-      spaces = await getAllSpaces();
+      spaces = await getAllSpaces({ parentOnly });
     }
 
     return NextResponse.json(spaces);
