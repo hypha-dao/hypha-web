@@ -19,6 +19,8 @@ import { useScrollToErrors } from '../../hooks';
 import { useFundWallet } from '../../treasury/hooks';
 import { useJwt } from '@hypha-platform/core/client';
 import { useUserAssets } from '../../treasury/hooks';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 
 interface Token {
   icon: string;
@@ -73,6 +75,8 @@ export const PeopleTransferForm = ({
 
   useScrollToErrors(form, formRef);
 
+  const { lang } = useParams();
+
   const handleTransfer = async (data: FormValues) => {
     try {
       if (!data.recipient) {
@@ -93,6 +97,7 @@ export const PeopleTransferForm = ({
       });
 
       let hasInsufficientFunds = false;
+      let isHyphaInsufficient = false;
       tokenTotals.forEach((totalAmount, tokenAddress) => {
         const asset = assets.find(
           (a) => a.address.toLowerCase() === tokenAddress,
@@ -100,11 +105,18 @@ export const PeopleTransferForm = ({
         const balance = asset ? parseFloat(String(asset.value)) : 0;
         if (totalAmount > balance) {
           hasInsufficientFunds = true;
+          if (asset?.symbol === 'HYPHA') {
+            isHyphaInsufficient = true;
+          }
         }
       });
 
       if (hasInsufficientFunds) {
-        form.setError('root', { message: 'insufficient_funds' });
+        form.setError('root', {
+          message: isHyphaInsufficient
+            ? 'insufficient_hypha'
+            : 'insufficient_funds',
+        });
         return;
       }
 
@@ -205,6 +217,19 @@ export const PeopleTransferForm = ({
                   >
                     top up your account
                   </span>{' '}
+                  to proceed.
+                </>
+              ) : form.formState.errors.root.message ===
+                'insufficient_hypha' ? (
+                <>
+                  Your wallet balance is insufficient to complete this
+                  transaction. Please{' '}
+                  <Link
+                    href={`/${lang}/profile/${person?.slug}/actions/purchase-hypha-tokens`}
+                    className="font-bold cursor-pointer text-accent-9 underline"
+                  >
+                    top up your account with HYPHA
+                  </Link>{' '}
                   to proceed.
                 </>
               ) : (
