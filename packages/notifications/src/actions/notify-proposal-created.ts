@@ -110,13 +110,13 @@ async function notifyProposalCreatedForCreator({
     return [];
   }
 
-  const notifications: Promise<any>[] = [
+  const notifications = [
     notifyPushProposalCreatedForCreator({ person, space }),
   ];
   if (process.env.NODE_ENV === 'production') {
     notifications.push(notifyEmailProposalCreatedForCreator({ person, space }));
   }
-  return notifications;
+  return await Promise.all(notifications);
 }
 
 async function notifyProposalCreatedForMembersAction({
@@ -170,7 +170,7 @@ async function notifyProposalCreatedForMembersAction({
     spaceSlug: space?.slug,
   }));
 
-  const notifications: Promise<any>[] = [
+  const notifications = [
     notifyPushProposalCreatedForMembersAction(notificationParams),
   ];
   if (process.env.NODE_ENV === 'production') {
@@ -178,7 +178,7 @@ async function notifyProposalCreatedForMembersAction({
       notifyEmailProposalCreatedForMembersAction(notificationParams),
     );
   }
-  return notifications;
+  return await Promise.all(notifications);
 }
 
 export async function notifyProposalCreatedAction(
