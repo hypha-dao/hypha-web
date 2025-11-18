@@ -22,6 +22,7 @@ import '@hypha-platform/ui-utils/global.css';
 import 'react-tooltip/dist/react-tooltip.css';
 import ScrollUp from '@web/components/scroll-up';
 import SeamlessScrollPolyfill from '@web/components/seamless-scroll-polyfill';
+import '@web/utils/initialize-proxy';
 
 const lato = Lato({
   subsets: ['latin'],
