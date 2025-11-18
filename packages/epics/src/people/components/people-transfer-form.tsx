@@ -63,7 +63,7 @@ export const PeopleTransferForm = ({
           token: undefined,
         },
       ],
-      memo: '',
+      memo: undefined,
     },
   });
 
