@@ -16,6 +16,11 @@ interface Token {
   icon: string;
   symbol: string;
   address: `0x${string}`;
+  type?: string;
+  space?: {
+    title: string;
+    slug: string;
+  };
 }
 
 interface ProfileTransferFundsProps {
@@ -35,13 +40,14 @@ export const ProfileTransferFunds = ({
     personSlug,
     refreshInterval: 10000,
   });
-
   const tokens: Token[] = assets
     .filter((asset) => !['ownership', 'voice'].includes(asset.type))
     .map((asset) => ({
       icon: asset.icon,
       symbol: asset.symbol,
       address: asset.address as `0x${string}`,
+      type: asset.type,
+      space: asset.space,
     }));
 
   return (
