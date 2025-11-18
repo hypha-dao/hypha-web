@@ -120,8 +120,8 @@ export const TransferCard: React.FC<TransferCardProps> = ({
         </div>
 
         {memo && (
-          <div className="mt-3 pt-3 border-t border-neutral-6">
-            <Text className="text-2 text-neutral-11">{memo}</Text>
+          <div className="mt-3 pt-3 border-t border-neutral-6 text-2 text-neutral-11">
+            Memo: <Text>{memo}</Text>
           </div>
         )}
       </div>
