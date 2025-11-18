@@ -72,7 +72,7 @@ export function RecipientField({
               <FormControl>
                 <Textarea
                   {...field}
-                  placeholder="Add a memo (optional)"
+                  placeholder="Add any relevant notes or details about this transaction"
                   value={field.value || ''}
                   onChange={field.onChange}
                 />
