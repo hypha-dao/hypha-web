@@ -14,11 +14,9 @@
     "types": ["node"],
     "baseUrl": ".",
     "paths": {
-      "@mocks/*": ["./src/mocks/*"],
       "@plugins/*": ["./src/plugins/*"],
       "@routes/*": ["./src/routes/*"],
-      "@schemas/*": ["./src/schemas/*"],
-      "@common/*": ["./src/common/*"]
+      "@schemas/*": ["./src/schemas/*"]
     }
   },
   "include": ["**/*.ts"],
