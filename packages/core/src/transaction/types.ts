@@ -1,4 +1,4 @@
 export interface CreateTransferInput {
   transactionHash: string;
-  memo: string;
+  memo?: string;
 }
