@@ -18,6 +18,7 @@ import { RecipientField, TokenPayoutFieldArray } from '../../agreements';
 import { useScrollToErrors } from '../../hooks';
 import { useFundWallet } from '../../treasury/hooks';
 import { useJwt } from '@hypha-platform/core/client';
+import { useUserAssets } from '../../treasury/hooks';
 
 interface Token {
   icon: string;
@@ -66,12 +67,45 @@ export const PeopleTransferForm = ({
     },
   });
 
+  const { assets } = useUserAssets({
+    personSlug: person?.slug,
+  });
+
   useScrollToErrors(form, formRef);
 
   const handleTransfer = async (data: FormValues) => {
     try {
       if (!data.recipient) {
         throw new Error('Recipient is required.');
+      }
+
+      const tokenTotals = new Map<string, number>();
+      data.payouts?.forEach((payout) => {
+        if (payout.token && payout.amount !== undefined) {
+          const lowerToken = payout.token.toLowerCase();
+          const amountNum = parseFloat(String(payout.amount));
+          if (isNaN(amountNum)) {
+            return;
+          }
+          const currentTotal = tokenTotals.get(lowerToken) || 0;
+          tokenTotals.set(lowerToken, currentTotal + amountNum);
+        }
+      });
+
+      let hasInsufficientFunds = false;
+      tokenTotals.forEach((totalAmount, tokenAddress) => {
+        const asset = assets.find(
+          (a) => a.address.toLowerCase() === tokenAddress,
+        );
+        const balance = asset ? parseFloat(String(asset.value)) : 0;
+        if (totalAmount > balance) {
+          hasInsufficientFunds = true;
+        }
+      });
+
+      if (hasInsufficientFunds) {
+        form.setError('root', { message: 'insufficient_funds' });
+        return;
       }
 
       const transferInput = {
@@ -94,7 +128,6 @@ export const PeopleTransferForm = ({
         await updateAssets();
       } catch (error) {
         console.error('Failed to refresh assets:', error);
-        // Assets will update on next refresh; no need to alarm the user
       }
     } catch (error) {
       console.error('Transfer failed:', error);
