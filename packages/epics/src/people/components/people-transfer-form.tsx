@@ -17,6 +17,10 @@ import {
 import { RecipientField, TokenPayoutFieldArray } from '../../agreements';
 import { useScrollToErrors } from '../../hooks';
 import { useFundWallet } from '../../treasury/hooks';
+import { useJwt } from '@hypha-platform/core/client';
+import { useUserAssets } from '../../treasury/hooks';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 
 interface Token {
   icon: string;
@@ -43,7 +47,10 @@ export const PeopleTransferForm = ({
   const { fundWallet } = useFundWallet({
     address: person?.address as `0x${string}`,
   });
-  const { transferTokens, isTransferring } = useTransferTokensMutation();
+  const { jwt: authToken } = useJwt();
+  const { transferTokens, isTransferring } = useTransferTokensMutation({
+    authToken,
+  });
 
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
@@ -58,15 +65,59 @@ export const PeopleTransferForm = ({
           token: undefined,
         },
       ],
+      memo: undefined,
     },
   });
 
+  const { assets } = useUserAssets({
+    personSlug: person?.slug,
+  });
+
   useScrollToErrors(form, formRef);
+
+  const { lang } = useParams();
 
   const handleTransfer = async (data: FormValues) => {
     try {
       if (!data.recipient) {
         throw new Error('Recipient is required.');
+      }
+
+      const tokenTotals = new Map<string, number>();
+      data.payouts?.forEach((payout) => {
+        if (payout.token && payout.amount !== undefined) {
+          const lowerToken = payout.token.toLowerCase();
+          const amountNum = parseFloat(String(payout.amount));
+          if (isNaN(amountNum)) {
+            return;
+          }
+          const currentTotal = tokenTotals.get(lowerToken) || 0;
+          tokenTotals.set(lowerToken, currentTotal + amountNum);
+        }
+      });
+
+      let hasInsufficientFunds = false;
+      let isHyphaInsufficient = false;
+      tokenTotals.forEach((totalAmount, tokenAddress) => {
+        const asset = assets.find(
+          (a) => a.address.toLowerCase() === tokenAddress,
+        );
+        const balance = asset ? parseFloat(String(asset.value)) : 0;
+        if (totalAmount > balance) {
+          hasInsufficientFunds = true;
+          if (asset?.symbol === 'HYPHA') {
+            isHyphaInsufficient = true;
+          }
+        }
+      });
+
+      if (hasInsufficientFunds) {
+        form.setError('root', {
+          message: isHyphaInsufficient
+            ? 'insufficient_hypha'
+            : 'insufficient_funds',
+        });
+        return;
       }
 
       const transferInput = {
@@ -76,6 +127,7 @@ export const PeopleTransferForm = ({
             amount: payout.amount?.toString() ?? '0',
             token: payout.token ?? '',
           })) ?? [],
+        memo: data.memo,
       };
       const result = await transferTokens(transferInput);
       console.log('Transfer hashes:', result);
@@ -88,7 +140,6 @@ export const PeopleTransferForm = ({
         await updateAssets();
       } catch (error) {
         console.error('Failed to refresh assets:', error);
-        // Assets will update on next refresh; no need to alarm the user
       }
     } catch (error) {
       console.error('Transfer failed:', error);
@@ -126,7 +177,11 @@ export const PeopleTransferForm = ({
           onSubmit={form.handleSubmit(handleTransfer)}
           className="flex flex-col gap-5"
         >
-          <RecipientField members={peoples} spaces={spaces} />
+          <RecipientField
+            members={peoples}
+            spaces={spaces}
+            withMemoField={true}
+          />
           <Separator />
           <TokenPayoutFieldArray
             label="Amount"
@@ -162,6 +217,19 @@ export const PeopleTransferForm = ({
                   >
                     top up your account
                   </span>{' '}
+                  to proceed.
+                </>
+              ) : form.formState.errors.root.message ===
+                'insufficient_hypha' ? (
+                <>
+                  Your wallet balance is insufficient to complete this
+                  transaction. Please{' '}
+                  <Link
+                    href={`/${lang}/profile/${person?.slug}/actions/purchase-hypha-tokens`}
+                    className="font-bold cursor-pointer text-accent-9 underline"
+                  >
+                    top up your account with HYPHA
+                  </Link>{' '}
                   to proceed.
                 </>
               ) : (

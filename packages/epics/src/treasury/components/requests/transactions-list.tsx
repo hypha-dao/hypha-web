@@ -33,6 +33,7 @@ export const TransactionsList: FC<TransactionsListProps> = ({
           from={transfer.from}
           to={transfer.to}
           isMint={transfer.from === ZeroAddress}
+          memo={transfer.memo}
         />
       ))}
       {isLoading && (

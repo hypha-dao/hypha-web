@@ -17,6 +17,7 @@ import { findPersonBySlug, getDb } from '@hypha-platform/core/server';
 import { zeroAddress } from 'viem';
 import { hasEmojiOrLink, tryDecodeUriPart } from '@hypha-platform/ui-utils';
 import { ProfileRouteParams } from '@hypha-platform/epics';
+import { findAllTransfers } from '@hypha-platform/core/server';
 
 /**
  * A route to get ERC20 transfers for a user.
@@ -73,6 +74,18 @@ export async function GET(
       limit,
     });
 
+    const dbTransfers = await findAllTransfers(
+      { db: getDb({ authToken }) },
+      {},
+    );
+
+    const memoMap = new Map(
+      dbTransfers.map((dbTransfer) => [
+        dbTransfer.transactionHash.toLowerCase(),
+        dbTransfer.memo,
+      ]),
+    );
+
     const rawDbTokens = await findAllTokens(
       { db: getDb({ authToken }) },
       { search: undefined },
@@ -109,6 +122,7 @@ export async function GET(
         let person = null;
         let space = null;
         let tokenIcon = tokenMeta.icon;
+
         person = await findPersonByWeb3Address(
           { address: counterpartyAddress },
           { db: getDb({ authToken }) },
@@ -119,8 +133,13 @@ export async function GET(
             { db: getDb({ authToken }) },
           );
         }
+
+        const memo =
+          memoMap.get(transfer.transaction_hash.toLowerCase()) || null;
+
         return {
           ...transfer,
+          memo,
           person: person
             ? {
                 name: person.name,

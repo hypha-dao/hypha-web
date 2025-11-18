@@ -41,6 +41,10 @@ type AssetItem = {
   closeUrl: string;
   slug: string;
   address: string;
+  space?: {
+    title: string;
+    slug: string;
+  };
 };
 
 type UseAssetsReturn = {

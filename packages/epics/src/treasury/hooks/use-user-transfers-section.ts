@@ -41,6 +41,7 @@ export const useUserTransfersSection = ({
       const surname = transfer.person?.surname?.toLowerCase() ?? '';
       const from = transfer.from?.toLowerCase() ?? '';
       const to = transfer.to?.toLowerCase() ?? '';
+      const memo = transfer.memo?.toLowerCase() ?? '';
 
       return (
         hash.includes(term) ||
@@ -48,7 +49,8 @@ export const useUserTransfersSection = ({
         name.includes(term) ||
         surname.includes(term) ||
         from.includes(term) ||
-        to.includes(term)
+        to.includes(term) ||
+        memo.includes(term)
       );
     });
   }, [transfers, searchTerm]);

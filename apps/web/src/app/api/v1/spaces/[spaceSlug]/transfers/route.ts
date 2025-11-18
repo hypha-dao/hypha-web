@@ -12,7 +12,9 @@ import {
   getTokenMeta,
   findPersonByWeb3Address,
   findAllTokens,
+  findAllTransfers,
   web3Client,
+  getDb,
 } from '@hypha-platform/core/server';
 import { zeroAddress } from 'viem';
 import { db } from '@hypha-platform/storage-postgres';
@@ -40,6 +42,11 @@ export async function GET(
 ) {
   const { spaceSlug } = await params;
 
+  const authToken = headers.get('Authorization')?.split(' ')[1] || '';
+  if (!authToken) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const { fromDate, toDate, fromBlock, toBlock, limit, token } =
     schemaGetTransfersQuery.parse(
       Object.fromEntries(nextUrl.searchParams.entries()),
@@ -65,6 +72,18 @@ export async function GET(
       toBlock,
       limit,
     });
+
+    const dbTransfers = await findAllTransfers(
+      { db: getDb({ authToken }) },
+      {},
+    );
+
+    const memoMap = new Map(
+      dbTransfers.map((dbTransfer) => [
+        dbTransfer.transactionHash.toLowerCase(),
+        dbTransfer.memo,
+      ]),
+    );
 
     const rawDbTokens = await findAllTokens({ db }, { search: undefined });
     const dbTokens = rawDbTokens.map((token) => ({
@@ -112,8 +131,12 @@ export async function GET(
               { db },
             )) || undefined;
 
+        const memo =
+          memoMap.get(transfer.transaction_hash.toLowerCase()) || null;
+
         return {
           ...transfer,
+          memo,
           tokenIcon: meta.icon,
           person: person && {
             name: person.name,

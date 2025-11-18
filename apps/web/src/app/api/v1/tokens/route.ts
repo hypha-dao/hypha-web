@@ -3,7 +3,7 @@ import { findAllTokens } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  const { searchParams } = request.nextUrl;
   const search = searchParams.get('search') || undefined;
 
   try {

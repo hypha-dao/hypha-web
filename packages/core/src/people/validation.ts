@@ -137,6 +137,7 @@ export const personTransfer = z.object({
       }),
     )
     .min(1, { message: 'At least one payout is required' }),
+  memo: z.string().optional(),
 });
 
 export type PersonFiles = z.infer<typeof editPersonFiles>;

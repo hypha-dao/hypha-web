@@ -10,6 +10,7 @@ import {
   schema,
   spaces,
   tokens,
+  transfers,
 } from './schema';
 import { CATEGORIES } from './schema/categories';
 
@@ -32,63 +33,75 @@ const SAMPLE_CATEGORIES = [...CATEGORIES];
 
 async function main() {
   const db = drizzle(process.env.BRANCH_DB_URL! || process.env.DEFAULT_DB_URL!);
-  await reset(db, { people, memberships, spaces, documents, tokens });
-  await seed(db, { people, memberships, spaces, documents, tokens }).refine(
-    (f) => {
-      return {
-        people: {
-          // count: 1000,
-          with: {
-            memberships: 2,
-            // documents: 10,
-            documents: 2,
-          },
-          columns: {
-            avatarUrl: f.valuesFromArray({
-              values: AVATAR_URLS,
-            }),
-            name: f.firstName(),
-            surname: f.lastName(),
-            description: f.loremIpsum(),
-            location: f.city(),
-          },
+  await reset(db, {
+    people,
+    memberships,
+    spaces,
+    documents,
+    tokens,
+    transfers,
+  });
+  await seed(db, {
+    people,
+    memberships,
+    spaces,
+    documents,
+    tokens,
+    transfers,
+  }).refine((f) => {
+    return {
+      people: {
+        // count: 1000,
+        with: {
+          memberships: 2,
+          // documents: 10,
+          documents: 2,
         },
-        documents: {
-          columns: {
-            title: f.loremIpsum(),
-            description: f.loremIpsum({ sentencesCount: 10 }),
-            state: f.valuesFromArray({
-              values: ['discussion', 'proposal', 'agreement'],
-            }),
-          },
+        columns: {
+          avatarUrl: f.valuesFromArray({
+            values: AVATAR_URLS,
+          }),
+          name: f.firstName(),
+          surname: f.lastName(),
+          description: f.loremIpsum(),
+          location: f.city(),
         },
-        spaces: {
-          // count: 1000,
-          with: {
-            memberships: 2,
-          },
-          columns: {
-            title: f.companyName(),
-            description: f.loremIpsum(),
-            logoUrl: f.valuesFromArray({
-              values: SPACE_LOGO_URLS,
-            }),
-            leadImage: f.valuesFromArray({
-              values: SPACE_LEAD_IMAGE_URLS,
-            }),
-            links: f.valuesFromArray({
-              values: SAMPLE_LINKS,
-              arraySize: 2,
-            }),
-            categories: f.valuesFromArray({
-              values: SAMPLE_CATEGORIES,
-              arraySize: 2,
-            }),
-          },
+      },
+      documents: {
+        columns: {
+          title: f.loremIpsum(),
+          description: f.loremIpsum({ sentencesCount: 10 }),
+          state: f.valuesFromArray({
+            values: ['discussion', 'proposal', 'agreement'],
+          }),
         },
-      };
-    },
-  );
+      },
+      spaces: {
+        // count: 1000,
+        with: {
+          memberships: 2,
+        },
+        columns: {
+          title: f.companyName(),
+          description: f.loremIpsum(),
+          logoUrl: f.valuesFromArray({
+            values: SPACE_LOGO_URLS,
+          }),
+          leadImage: f.valuesFromArray({
+            values: SPACE_LEAD_IMAGE_URLS,
+          }),
+          links: f.valuesFromArray({
+            values: SAMPLE_LINKS,
+            arraySize: 2,
+          }),
+          categories: f.valuesFromArray({
+            values: SAMPLE_CATEGORIES,
+            arraySize: 2,
+          }),
+        },
+      },
+    };
+  });
   await resetIndexes(db as unknown as NodePgDatabase<typeof schema>);
 }
 

@@ -3,18 +3,44 @@
 import useSWRMutation from 'swr/mutation';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 import { erc20Abi, parseUnits } from 'viem';
-import { getTokenDecimals } from '@hypha-platform/core/client';
+import {
+  getTokenDecimals,
+  ERC20_TOKEN_TRANSFER_ADDRESSES,
+} from '@hypha-platform/core/client';
+import { transferHelperAbi, transferHelperAddress } from '../../../generated';
+import { CreateTransferInput } from '@hypha-platform/core/client';
+import { createTransferAction } from '../../../transaction/server/actions';
 
 interface TransferTokensInput {
   recipient: string;
   payouts: {
     amount: string;
     token: string;
+    memo?: string;
   }[];
+  memo?: string;
 }
 
-export const useTransferTokensMutation = () => {
+interface UseTransferTokensProps {
+  authToken?: string | null;
+}
+
+export const useTransferTokensMutation = ({
+  authToken,
+}: UseTransferTokensProps) => {
   const { client } = useSmartWallets();
+
+  const {
+    trigger: createTransferMutation,
+    reset: resetCreateTransferMutation,
+    isMutating: isCreatingTransfer,
+    error: errorCreateTransferMutation,
+    data: createdTransfer,
+  } = useSWRMutation(
+    authToken ? [authToken, 'createTransfer'] : null,
+    async ([authToken], { arg }: { arg: CreateTransferInput }) =>
+      createTransferAction(arg, { authToken }),
+  );
 
   const {
     trigger: transferTokens,
@@ -33,17 +59,46 @@ export const useTransferTokensMutation = () => {
         arg.payouts.map(async (payout) => {
           const decimals = await getTokenDecimals(payout.token);
           const amount = parseUnits(payout.amount, decimals);
+          let txHash: string;
 
-          const txHash = await client.writeContract({
-            address: payout.token as `0x${string}`,
-            abi: erc20Abi,
-            functionName: 'transfer',
-            args: [arg.recipient as `0x${string}`, amount],
-          });
+          if (ERC20_TOKEN_TRANSFER_ADDRESSES.includes(payout.token)) {
+            txHash = await client.writeContract({
+              address: payout.token as `0x${string}`,
+              abi: erc20Abi,
+              functionName: 'transfer',
+              args: [arg.recipient as `0x${string}`, amount],
+            });
+          } else {
+            txHash = await client.writeContract({
+              address: transferHelperAddress[8453],
+              abi: transferHelperAbi,
+              functionName: 'transferToken',
+              args: [
+                payout.token as `0x${string}`,
+                arg.recipient as `0x${string}`,
+                amount,
+              ],
+            });
+          }
 
           return { token: payout.token, txHash };
         }),
       );
+
+      if (arg.memo && authToken) {
+        try {
+          await Promise.all(
+            transactionHashes.map(({ token, txHash }) =>
+              createTransferMutation({
+                transactionHash: txHash,
+                memo: arg.memo!,
+              }),
+            ),
+          );
+        } catch (error) {
+          console.error('Failed to create transfer records:', error);
+        }
+      }
 
       return transactionHashes;
     },
@@ -55,5 +110,10 @@ export const useTransferTokensMutation = () => {
     isTransferring,
     transferHashes,
     transferError,
+    createTransfer: createTransferMutation,
+    resetCreateTransferMutation,
+    isCreatingTransfer,
+    errorCreateTransferMutation,
+    createdTransfer,
   };
 };
