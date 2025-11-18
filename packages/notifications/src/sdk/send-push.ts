@@ -8,13 +8,11 @@ export async function sendPushByAlias({
   app_id,
   alias,
   content,
-  filters,
 }: PushParamsForAlias) {
   const params = {
     app_id,
     ...alias,
     ...content,
-    filters,
   };
 
   return await sendPush(params);
@@ -24,13 +22,11 @@ export async function sendPushBySegment({
   app_id,
   segment,
   content,
-  filters,
 }: PushParamsForSegment) {
   const params = {
     app_id,
     ...segment,
     ...content,
-    filters,
   };
 
   return await sendPush(params);

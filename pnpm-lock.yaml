@@ -967,8 +967,8 @@ importers:
         specifier: workspace:*
         version: link:../storage-postgres
       '@onesignal/node-onesignal':
-        specifier: 5.2.0-beta1
-        version: 5.2.0-beta1
+        specifier: 5.3.1-beta1
+        version: 5.3.1-beta1
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -5181,8 +5181,8 @@ packages:
   '@nx/workspace@20.8.0':
     resolution: {integrity: sha512-FdaHA5ISHSN+RyHswAAx+2A9HC77kWeFgeucdX2NSBs2QK2Lzg2Et639RzR1sYk2gYTP6tOkQXHHGKcg3jmiYQ==}
 
-  '@onesignal/node-onesignal@5.2.0-beta1':
-    resolution: {integrity: sha512-ztLZfWulStLko/MH0LqW8urStX6mQsZSqknm8oJaW/a1m8Q+gyt4K46NMMgDapiWsepcVb9BXm/2rf+fHX4oIA==}
+  '@onesignal/node-onesignal@5.3.1-beta1':
+    resolution: {integrity: sha512-md7JMEVQZLnI8hhaZj4U8FuwOBtaW8IzE0vkDI2ShFFu+kVoBuAmARErXKXFTLbI9QpOQuPo4Phl6YL//rsT7w==}
 
   '@open-draft/deferred-promise@2.2.0':
     resolution: {integrity: sha512-CecwLWx3rhxVQF6V4bAgPS5t+So2sTbPgAzafKkVizyi7tlwpcFpdFqq+wqF2OwNBmqFuu6tOyouTuxgpMfzmA==}
@@ -25701,9 +25701,8 @@ snapshots:
       - '@swc/core'
       - debug
 
-  '@onesignal/node-onesignal@5.2.0-beta1':
+  '@onesignal/node-onesignal@5.3.1-beta1':
     dependencies:
-      '@types/node': 24.2.1
       btoa: 1.2.1
       es6-promise: 4.2.8
       form-data: 2.5.3
@@ -30256,6 +30255,7 @@ snapshots:
   '@types/node@24.2.1':
     dependencies:
       undici-types: 7.10.0
+    optional: true
 
   '@types/node@8.10.66': {}
 
@@ -43811,7 +43811,8 @@ snapshots:
 
   undici-types@6.21.0: {}
 
-  undici-types@7.10.0: {}
+  undici-types@7.10.0:
+    optional: true
 
   undici@5.29.0:
     dependencies:

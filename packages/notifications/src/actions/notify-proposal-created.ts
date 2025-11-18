@@ -122,11 +122,9 @@ async function notifyProposalCreatedForCreator({
 async function notifyProposalCreatedForMembersAction({
   proposalId,
   spaceId: spaceWeb3Id,
-  creator: creatorWeb3Address,
 }: {
   proposalId: bigint;
   spaceId: bigint;
-  creator: `0x${string}`;
 }) {
   const spaceIds = [spaceWeb3Id];
   const spacesDetails = await (async () => {
@@ -145,19 +143,22 @@ async function notifyProposalCreatedForMembersAction({
 
     return;
   }
-  const fetchingData = spacesDetails.map(async ({ members, spaceId }) => {
-    const people = (
-      await findPeopleByWeb3Addresses(
+  const fetchingData = spacesDetails.map(
+    async ({ members, spaceId, creator }) => {
+      const filteredMembers = members.filter(
+        (member) => member.toUpperCase() !== creator.toUpperCase(),
+      );
+      const people = await findPeopleByWeb3Addresses(
         {
-          addresses: members as string[],
+          addresses: filteredMembers as string[],
         },
         { db },
-      )
-    ).filter((person: Person) => person.address !== creatorWeb3Address);
-    const space = await findSpaceByWeb3Id({ id: Number(spaceId) }, { db });
+      );
+      const space = await findSpaceByWeb3Id({ id: Number(spaceId) }, { db });
 
-    return { people, space };
-  });
+      return { people, space };
+    },
+  );
   const spacesWithPeople = (await Promise.allSettled(fetchingData))
     .filter((res) => res.status === 'fulfilled')
     .map(({ value }) => value)
@@ -193,7 +194,6 @@ export async function notifyProposalCreatedAction(
     notifyProposalCreatedForMembersAction({
       proposalId,
       spaceId,
-      creator,
     }),
   ]);
   (await notifying)

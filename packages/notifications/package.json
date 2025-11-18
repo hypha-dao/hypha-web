@@ -6,7 +6,7 @@
     "@hypha-platform/config-typescript": "workspace:*"
   },
   "dependencies": {
-    "@onesignal/node-onesignal": "5.2.0-beta1",
+    "@onesignal/node-onesignal": "5.3.1-beta1",
     "@hypha-platform/core": "workspace:*",
     "@hypha-platform/storage-postgres": "workspace:*",
     "react": "^19.1.0",

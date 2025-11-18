@@ -1,4 +1,3 @@
-import { FilterExpression } from '@onesignal/node-onesignal';
 import type { Alias, Segment } from './audience';
 import type { Template } from './template';
 
@@ -18,12 +17,10 @@ export type EmailParamsForAlias = {
   app_id: string;
   alias: EmailAlias;
   content: EmailContent;
-  filters: Array<FilterExpression>;
 };
 
 export type EmailParamsForSegment = {
   app_id: string;
   segment: Segment;
   content: EmailContent;
-  filters: Array<FilterExpression>;
 };
