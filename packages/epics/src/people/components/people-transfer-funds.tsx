@@ -11,6 +11,7 @@ import { PeopleTransferForm } from '@hypha-platform/epics';
 import { Person } from '../../../../core/src/people';
 import { Space } from '../../../../core/src/space';
 import { Separator } from '@hypha-platform/ui';
+import { ERC20_TOKEN_TRANSFER_ADDRESSES } from '@hypha-platform/core/client';
 
 interface Token {
   icon: string;
@@ -41,7 +42,12 @@ export const ProfileTransferFunds = ({
     refreshInterval: 10000,
   });
   const tokens: Token[] = assets
-    .filter((asset) => !['ownership', 'voice'].includes(asset.type))
+    .filter(
+      (asset) =>
+        (asset.type != null && !['ownership', 'voice'].includes(asset.type)) ||
+        (asset.type == null &&
+          ERC20_TOKEN_TRANSFER_ADDRESSES.includes(asset.address)),
+    )
     .map((asset) => ({
       icon: asset.icon,
       symbol: asset.symbol,
