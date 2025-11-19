@@ -573,4 +573,5 @@ contract DAOProposalsImplementation is
     spaceMinProposalDuration[_spaceId] = _minDuration;
     emit MinimumProposalDurationSet(_spaceId, _minDuration);
   }
+
 }

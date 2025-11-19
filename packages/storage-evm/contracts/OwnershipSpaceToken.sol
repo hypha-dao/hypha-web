@@ -77,14 +77,20 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
   function transfer(address to, uint256 amount) public override returns (bool) {
     address sender = _msgSender();
 
-    // Check transfer whitelist (if enabled)
-    if (useTransferWhitelist) {
-      require(canTransfer[sender], 'Sender not whitelisted to transfer');
+    // Executor always bypasses whitelist checks
+    if (sender != executor) {
+      // Check transfer whitelist (if enabled)
+      if (useTransferWhitelist) {
+        require(canTransfer[sender], 'Sender not whitelisted to transfer');
+      }
     }
 
-    // Check receive whitelist (if enabled)
-    if (useReceiveWhitelist) {
-      require(canReceive[to], 'Recipient not whitelisted to receive');
+    // Executor can always receive tokens
+    if (to != executor) {
+      // Check receive whitelist (if enabled)
+      if (useReceiveWhitelist) {
+        require(canReceive[to], 'Recipient not whitelisted to receive');
+      }
     }
 
     // If executor is transferring and auto-minting is enabled, mint if necessary
@@ -155,14 +161,20 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
   ) public override returns (bool) {
     address spender = _msgSender();
 
-    // Check transfer whitelist (if enabled)
-    if (useTransferWhitelist) {
-      require(canTransfer[from], 'Sender not whitelisted to transfer');
+    // Executor always bypasses whitelist checks
+    if (from != executor) {
+      // Check transfer whitelist (if enabled)
+      if (useTransferWhitelist) {
+        require(canTransfer[from], 'Sender not whitelisted to transfer');
+      }
     }
 
-    // Check receive whitelist (if enabled)
-    if (useReceiveWhitelist) {
-      require(canReceive[to], 'Recipient not whitelisted to receive');
+    // Executor can always receive tokens
+    if (to != executor) {
+      // Check receive whitelist (if enabled)
+      if (useReceiveWhitelist) {
+        require(canReceive[to], 'Recipient not whitelisted to receive');
+      }
     }
 
     // If executor is the source and auto-minting is enabled, mint if necessary

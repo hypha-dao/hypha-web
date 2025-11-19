@@ -203,8 +203,9 @@ npx nx run storage-evm:test ./test/TokenConfiguration.test.ts
 
 ```bash
 npx nx run storage-evm:script ./scripts/upgrade-multiple-tokens.ts --network base-mainnet
+npx nx run storage-evm:script ./scripts/upgrade-multiple-tokens.ts --network base-mainnet
 
-npx nx run storage-evm:script ./scripts/dao-space-factory.upgrade.ts --network base-mainnet
+npx nx run storage-evm:script ./scripts/set-transfer-helper-multiple-tokens.ts --network base-mainnet
 ```
 
 ### Upgrade DAO Proposals

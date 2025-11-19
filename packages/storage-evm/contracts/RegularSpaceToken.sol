@@ -110,14 +110,20 @@ contract RegularSpaceToken is
     address sender = _msgSender();
     require(transferable || sender == executor, 'Token transfers are disabled');
 
-    // Check transfer whitelist
-    if (useTransferWhitelist) {
-      require(canTransfer[sender], 'Sender not whitelisted to transfer');
+    // Executor always bypasses whitelist checks
+    if (sender != executor) {
+      // Check transfer whitelist
+      if (useTransferWhitelist) {
+        require(canTransfer[sender], 'Sender not whitelisted to transfer');
+      }
     }
 
-    // Check receive whitelist
-    if (useReceiveWhitelist) {
-      require(canReceive[to], 'Recipient not whitelisted to receive');
+    // Executor can always receive tokens
+    if (to != executor) {
+      // Check receive whitelist
+      if (useReceiveWhitelist) {
+        require(canReceive[to], 'Recipient not whitelisted to receive');
+      }
     }
 
     // If executor is transferring and auto-minting is enabled, ensure they have enough balance, minting if necessary
@@ -144,14 +150,20 @@ contract RegularSpaceToken is
       'Token transfers are disabled'
     );
 
-    // Check transfer whitelist
-    if (useTransferWhitelist) {
-      require(canTransfer[from], 'Sender not whitelisted to transfer');
+    // Executor always bypasses whitelist checks
+    if (from != executor) {
+      // Check transfer whitelist
+      if (useTransferWhitelist) {
+        require(canTransfer[from], 'Sender not whitelisted to transfer');
+      }
     }
 
-    // Check receive whitelist
-    if (useReceiveWhitelist) {
-      require(canReceive[to], 'Recipient not whitelisted to receive');
+    // Executor can always receive tokens
+    if (to != executor) {
+      // Check receive whitelist
+      if (useReceiveWhitelist) {
+        require(canReceive[to], 'Recipient not whitelisted to receive');
+      }
     }
 
     // If executor is the one being transferred from and auto-minting is enabled, ensure they have enough balance, minting if necessary
@@ -282,6 +294,18 @@ contract RegularSpaceToken is
     );
     useReceiveWhitelist = enabled;
     emit UseReceiveWhitelistUpdated(enabled);
+  }
+
+  /**
+   * @dev Set the transfer helper address
+   * @param _transferHelper The new transfer helper address
+   */
+  function setTransferHelper(address _transferHelper) external virtual {
+    require(
+      msg.sender == executor || msg.sender == owner(),
+      'Only executor or owner can set transfer helper'
+    );
+    transferHelper = _transferHelper;
   }
 
   /**
