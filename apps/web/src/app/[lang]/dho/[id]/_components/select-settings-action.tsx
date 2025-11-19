@@ -137,7 +137,7 @@ export const SelectSettingsAction = ({
       title: 'Mint Tokens to Space Treasury',
       description:
         'Mint tokens into your space treasury to fund operations, distribute rewards, or provide liquidity.',
-      href: '/',
+      href: 'create/mint-tokens-to-space-treasury',
       icon: <ArrowDownIcon />,
     },
     {
