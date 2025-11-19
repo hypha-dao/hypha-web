@@ -36,6 +36,9 @@ export function NotificationSubscriber({
   const [subscribed, setSubscribed] = React.useState(false);
   const [loggedIn, setLoggedIn] = React.useState(false);
   const router = useRouter();
+  React.useEffect(() => {
+    console.log('subscribed changed:', subscribed);
+  }, [subscribed]);
 
   React.useEffect(() => {
     if (!initialized || !OneSignal || isLoading) {

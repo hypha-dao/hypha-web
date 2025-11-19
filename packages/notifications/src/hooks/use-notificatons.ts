@@ -104,7 +104,7 @@ export const useNotifications = () => {
     setError(null);
     try {
       console.log('subscribe');
-      await OneSignal.Slidedown.promptPush({ force: DEV_ENV });
+      await OneSignal.Slidedown.promptPush({ force: true });
       await OneSignal.User.addTag(TAG_SUBSCRIBED, TRUE);
       setSubscribed(true);
       await initializeConfiguration();
