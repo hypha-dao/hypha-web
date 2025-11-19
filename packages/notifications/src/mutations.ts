@@ -5,13 +5,6 @@ import { sendPushByAlias } from './sdk/send-push';
 import { sendEmailByAlias } from './sdk/send-email';
 import { LangMap } from './sdk/types';
 import { sdkClient } from './sdk';
-import {
-  TAG_EMAIL,
-  TAG_PUSH,
-  TAG_SUB_NEW_PROPOSAL_OPEN,
-  TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED,
-  TAG_SUBSCRIBED,
-} from './constants';
 
 const ONESIGNAL_APP_ID = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '';
 
@@ -19,14 +12,8 @@ export interface SendNotificationsInput extends ProposalCreationProps {
   proposalCreatorSlug?: string;
 }
 
-type TrueFalseType = 'true' | 'false';
-
-interface Tags {
-  [TAG_SUBSCRIBED]?: TrueFalseType;
-  [TAG_PUSH]?: TrueFalseType;
-  [TAG_EMAIL]?: TrueFalseType;
-  [TAG_SUB_NEW_PROPOSAL_OPEN]?: TrueFalseType;
-  [TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED]?: TrueFalseType;
+export interface Tags {
+  [key: string]: string;
 }
 
 const filterUsers = async (usernames: Array<string>, requiredTags: Tags) => {
@@ -43,7 +30,7 @@ const filterUsers = async (usernames: Array<string>, requiredTags: Tags) => {
         return false;
       }
       for (const [tag, value] of Object.entries(requiredTags)) {
-        if (typeof tags[tag] === 'undefined' && tags[tag] !== value) {
+        if (typeof tags[tag] === 'undefined' || tags[tag] !== value) {
           return false;
         }
       }
@@ -57,15 +44,18 @@ export const sendPushNotifications = async ({
   contents,
   headings,
   usernames,
+  requiredTags,
 }: {
   contents: LangMap;
   headings?: LangMap;
   usernames: string[];
+  requiredTags?: Tags;
 }) => {
   console.log('Send push...');
   const aliases = await filterUsers(usernames, {
     subscribed: 'true',
     push: 'true',
+    ...requiredTags,
   });
   return await sendPushByAlias({
     app_id: ONESIGNAL_APP_ID,
@@ -82,15 +72,18 @@ export const sentEmailNotifications = async ({
   body,
   subject,
   usernames,
+  requiredTags,
 }: {
   body: string;
   subject: string;
   usernames: string[];
+  requiredTags?: Tags;
 }) => {
   console.log('Send email...');
   const aliases = await filterUsers(usernames, {
     subscribed: 'true',
     email: 'true',
+    ...requiredTags,
   });
   return await sendEmailByAlias({
     app_id: ONESIGNAL_APP_ID,

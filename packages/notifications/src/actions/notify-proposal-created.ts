@@ -19,6 +19,7 @@ import {
   pushProposalCreationForMembers,
 } from '../template';
 import { sendPushNotifications, sentEmailNotifications } from '../mutations';
+import { TAG_SUB_NEW_PROPOSAL_OPEN } from '../constants';
 
 async function notifyPushProposalCreatedForCreator({
   person,
@@ -36,6 +37,9 @@ async function notifyPushProposalCreatedForCreator({
     contents,
     headings,
     usernames: person?.slug ? [person.slug] : [],
+    requiredTags: {
+      [TAG_SUB_NEW_PROPOSAL_OPEN]: 'true',
+    },
   });
 }
 async function notifyEmailProposalCreatedForCreator({
@@ -54,6 +58,9 @@ async function notifyEmailProposalCreatedForCreator({
     body,
     subject,
     usernames: person?.slug ? [person.slug] : [],
+    requiredTags: {
+      [TAG_SUB_NEW_PROPOSAL_OPEN]: 'true',
+    },
   });
 }
 async function notifyPushProposalCreatedForMembersAction(
@@ -70,6 +77,9 @@ async function notifyPushProposalCreatedForMembersAction(
       contents,
       headings,
       usernames: params.slugs,
+      requiredTags: {
+        [TAG_SUB_NEW_PROPOSAL_OPEN]: 'true',
+      },
     });
   });
   await Promise.all(sendingPushes);
@@ -88,6 +98,9 @@ async function notifyEmailProposalCreatedForMembersAction(
       body,
       subject,
       usernames: params.slugs,
+      requiredTags: {
+        [TAG_SUB_NEW_PROPOSAL_OPEN]: 'true',
+      },
     });
   });
   await Promise.all(sendingEmails);
