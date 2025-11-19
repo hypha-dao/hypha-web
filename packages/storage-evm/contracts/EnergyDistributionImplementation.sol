@@ -714,7 +714,7 @@ contract EnergyDistributionImplementation is
   ) external view override returns (int256, address) {
     return (
       _getCashCreditBalance(member),
-      0xd8724e6609838a54F7e505679BF6818f1A3F2D40
+      0xEa6FC1ff9C204E7b40073cCB091Ca8ac30B0B80a
     );
   }
 
