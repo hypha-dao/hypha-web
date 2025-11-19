@@ -133,6 +133,14 @@ export const SelectSettingsAction = ({
       disabled: !space?.address,
     },
     {
+      group: 'Treasury',
+      title: 'Mint Tokens to Space Treasury',
+      description:
+        'Mint tokens into your space treasury to fund operations, distribute rewards, or provide liquidity.',
+      href: '/',
+      icon: <ArrowDownIcon />,
+    },
+    {
       group: 'Extensions & Plug-ins',
       title: 'Integrate Smart Contract in Space (Advanced)',
       description:
