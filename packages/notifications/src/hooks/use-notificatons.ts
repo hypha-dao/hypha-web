@@ -52,6 +52,17 @@ export function checkTag(
   return Object.hasOwn(tags, tagName) ? tags[tagName] === TRUE : defaultValue;
 }
 
+export async function hasPermission() {
+  if (!OneSignal) {
+    return false;
+  }
+  const tags = await OneSignal.User.getTags();
+  const isSubscribed = checkTag(tags, TAG_SUBSCRIBED, false);
+  const externalId = OneSignal.User.externalId;
+  const permission = OneSignal.Notifications.permission;
+  return permission && isSubscribed && Boolean(externalId);
+}
+
 export const useNotifications = () => {
   const { initialized, subscribed, setSubscribed, loggedIn } =
     React.useContext(NotificationsContext);

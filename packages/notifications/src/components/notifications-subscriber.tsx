@@ -9,8 +9,11 @@ import OneSignal, {
   UserChangeEvent,
 } from 'react-onesignal';
 import { HookRegistryProvider, useMe } from '@hypha-platform/core/client';
-import { checkTag, NotificationsContext, useSendNotifications } from '../hooks';
-import { TAG_SUBSCRIBED } from '../constants';
+import {
+  hasPermission,
+  NotificationsContext,
+  useSendNotifications,
+} from '../hooks';
 import { useRouter } from 'next/navigation';
 
 const DEV_ENV = process.env.NODE_ENV === 'development';
@@ -45,8 +48,7 @@ export function NotificationSubscriber({
             await OneSignal.login(personSlug);
           }
           setLoggedIn(true);
-          const tags = await OneSignal.User.getTags();
-          const isSubscribed = checkTag(tags, TAG_SUBSCRIBED, false);
+          const isSubscribed = await hasPermission();
           setSubscribed(isSubscribed);
         } catch (err) {
           console.error('Error on login:', err);
@@ -71,7 +73,6 @@ export function NotificationSubscriber({
         return;
       }
       try {
-        //TODO: remove
         const scope = `/${
           serviceWorkerPath?.split('/').filter(Boolean)[0] ?? ''
         }/`;
@@ -109,10 +110,10 @@ export function NotificationSubscriber({
         });
         console.log('OneSignal initialized');
         setInitialized(true);
-        const tags = await OneSignal.User.getTags();
-        const isSubscribed = checkTag(tags, TAG_SUBSCRIBED, false);
-        const externalId = OneSignal.User.externalId;
-        setSubscribed(isSubscribed && Boolean(externalId));
+        console.log(OneSignal);
+        const isSubscribed = await hasPermission();
+        setSubscribed(isSubscribed);
+        console.log('subscribed:', subscribed);
         OneSignal.Notifications.addEventListener(
           'click',
           (event: NotificationClickEvent) => {
