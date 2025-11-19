@@ -27,24 +27,7 @@ export async function findTokensByAddresses(
       agreementWeb3Id: tokens.agreementWeb3Id,
     })
     .from(tokens)
-    .where(inArray(sql<string>`upper(${tokens.address})`, upperAddresses))
-    .groupBy(
-      tokens.id,
-      tokens.spaceId,
-      tokens.agreementId,
-      tokens.name,
-      tokens.symbol,
-      tokens.maxSupply,
-      tokens.type,
-      tokens.iconUrl,
-      tokens.transferable,
-      tokens.isVotingToken,
-      tokens.decayInterval,
-      tokens.decayPercentage,
-      tokens.createdAt,
-      tokens.address,
-      tokens.agreementWeb3Id,
-    );
+    .where(inArray(sql<string>`upper(${tokens.address})`, upperAddresses));
 
   return results;
 }

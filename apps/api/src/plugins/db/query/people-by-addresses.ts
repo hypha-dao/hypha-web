@@ -13,22 +13,23 @@ export async function peopleByAddresses(
   const { pageSize = 20, offset = 0 } = pagination;
   const upperAddresses = addresses.map((addr) => addr.toUpperCase());
 
-  const res = await db
+  const [resultsCount] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(people)
+    .where(inArray(sql<string>`upper(${people.address})`, upperAddresses));
+  const total = resultsCount?.count ?? 0;
+
+  const data = await db
     .select({
       name: people.name,
       surname: people.surname,
       avatarUrl: people.avatarUrl,
       address: people.address,
-      total: sql<number>`cast(count(*) over() as integer)`,
     })
     .from(people)
     .where(inArray(sql<string>`upper(${people.address})`, upperAddresses))
     .limit(pageSize)
-    .offset(offset)
-    .groupBy(people.name, people.surname, people.avatarUrl, people.address);
-
-  const total = res.at(0)?.total ?? 0;
-  const data = res.map(({ total, ...rest }) => ({ ...rest }));
+    .offset(offset);
 
   return {
     data,
