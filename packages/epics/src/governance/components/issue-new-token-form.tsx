@@ -19,6 +19,8 @@ import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter, useParams } from 'next/navigation';
 import { useDbTokens, useScrollToErrors } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
+import { Locale } from '@hypha-platform/i18n';
+import { getProposalUrl } from '../../common';
 
 type FormValues = z.infer<typeof schemaIssueNewToken>;
 
@@ -43,11 +45,11 @@ export const IssueNewTokenForm = ({
   web3SpaceId,
   plugin,
 }: IssueNewTokenFormProps) => {
-  const { id: spaceSlug } = useParams();
   const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
+  const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
   const {
     createIssueToken,
     reset,
@@ -103,10 +105,12 @@ export const IssueNewTokenForm = ({
       web3SpaceId &&
       creator
     ) {
+      const url = getProposalUrl(lang, spaceSlug, agreementSlug);
       notifyProposalCreated({
         proposalId: web3ProposalId,
         spaceId: BigInt(web3SpaceId),
         creator,
+        url,
       });
       router.push(successfulUrl);
     }

@@ -11,6 +11,7 @@ import OneSignal, {
 import { HookRegistryProvider, useMe } from '@hypha-platform/core/client';
 import { checkTag, NotificationsContext, useSendNotifications } from '../hooks';
 import { TAG_SUBSCRIBED } from '../constants';
+import { useRouter } from 'next/navigation';
 
 const DEV_ENV = process.env.NODE_ENV === 'development';
 
@@ -31,6 +32,7 @@ export function NotificationSubscriber({
   const [initialized, setInitialized] = React.useState(false);
   const [subscribed, setSubscribed] = React.useState(false);
   const [loggedIn, setLoggedIn] = React.useState(false);
+  const router = useRouter();
 
   React.useEffect(() => {
     if (!initialized || !OneSignal || isLoading) {
@@ -102,6 +104,8 @@ export function NotificationSubscriber({
             disable: true,
             message: '',
           },
+          notificationClickHandlerMatch: 'origin',
+          notificationClickHandlerAction: 'focus',
         });
         console.log('OneSignal initialized');
         setInitialized(true);
@@ -113,6 +117,10 @@ export function NotificationSubscriber({
           'click',
           (event: NotificationClickEvent) => {
             console.log('The notification was clicked!', event);
+            if (event.notification.launchURL) {
+              const url = new URL(event.notification.launchURL);
+              router.push(url.pathname);
+            }
           },
         );
         OneSignal.Notifications.addEventListener(

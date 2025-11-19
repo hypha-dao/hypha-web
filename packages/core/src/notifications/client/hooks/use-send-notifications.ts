@@ -2,6 +2,7 @@ export interface NotifyProposalCreatedInput {
   proposalId: bigint;
   spaceId: bigint;
   creator: `0x${string}`;
+  url?: string;
 }
 export interface NotifyProposalAcceptedInput {
   proposalId: bigint;

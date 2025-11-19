@@ -16,10 +16,12 @@ import { z } from 'zod';
 import { LoadingBackdrop, Form, Separator, Button } from '@hypha-platform/ui';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useConfig } from 'wagmi';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useAssets, useFundWallet } from '../../treasury';
 import React from 'react';
 import { useScrollToErrors } from '../../hooks';
+import { getProposalUrl } from '../../common';
+import { Locale } from '@hypha-platform/i18n';
 
 const RECIPIENT_SPACE_ADDRESS = '0x3dEf11d005F8C85c93e3374B28fcC69B25a650Af';
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
@@ -48,6 +50,7 @@ export const BuyHyphaTokensForm = ({
   const { jwt } = useJwt();
   const config = useConfig();
   const router = useRouter();
+  const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({
     spaceId: web3SpaceId as number,
   });
@@ -108,10 +111,12 @@ export const BuyHyphaTokensForm = ({
       web3SpaceId &&
       creator
     ) {
+      const url = getProposalUrl(lang, spaceSlug, agreementSlug);
       notifyProposalCreated({
         proposalId: web3ProposalId,
         spaceId: BigInt(web3SpaceId),
         creator,
+        url,
       });
       router.push(successfulUrl);
     }

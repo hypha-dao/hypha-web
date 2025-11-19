@@ -13,11 +13,13 @@ import {
 import { z } from 'zod';
 import { Button, Form } from '@hypha-platform/ui';
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useConfig } from 'wagmi';
 import { useScrollToErrors } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
+import { Locale } from '@hypha-platform/i18n';
+import { getProposalUrl } from '../../common';
 
 type FormValues = z.infer<typeof schemaCreateAgreementForm>;
 
@@ -45,6 +47,7 @@ export const CreateAgreementForm = ({
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
+  const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
   const {
     createAgreement,
     reset,
@@ -80,10 +83,12 @@ export const CreateAgreementForm = ({
       web3SpaceId &&
       creator
     ) {
+      const url = getProposalUrl(lang, spaceSlug, agreementSlug);
       notifyProposalCreated({
         proposalId: web3ProposalId,
         spaceId: BigInt(web3SpaceId),
         creator,
+        url,
       });
       router.push(successfulUrl);
     }

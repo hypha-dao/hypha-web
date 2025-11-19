@@ -24,9 +24,11 @@ import { TAG_SUB_NEW_PROPOSAL_OPEN } from '../constants';
 async function notifyPushProposalCreatedForCreator({
   person,
   space,
+  url,
 }: {
   person?: Person;
   space?: Space;
+  url?: string;
 }) {
   const { contents, headings } = pushProposalCreationForCreator({
     creatorName: person?.name,
@@ -40,6 +42,7 @@ async function notifyPushProposalCreatedForCreator({
     requiredTags: {
       [TAG_SUB_NEW_PROPOSAL_OPEN]: 'true',
     },
+    url,
   });
 }
 async function notifyEmailProposalCreatedForCreator({
@@ -69,6 +72,7 @@ async function notifyPushProposalCreatedForMembersAction(
     spaceTitle?: string;
     spaceSlug?: string;
   }[],
+  url?: string,
 ) {
   const sendingPushes = notificationParams.map(async (params) => {
     const { contents, headings } = pushProposalCreationForMembers(params);
@@ -80,6 +84,7 @@ async function notifyPushProposalCreatedForMembersAction(
       requiredTags: {
         [TAG_SUB_NEW_PROPOSAL_OPEN]: 'true',
       },
+      url,
     });
   });
   await Promise.all(sendingPushes);
@@ -109,9 +114,11 @@ async function notifyEmailProposalCreatedForMembersAction(
 async function notifyProposalCreatedForCreator({
   spaceId: spaceWeb3Id,
   creator: creatorWeb3Address,
+  url,
 }: {
   spaceId: bigint;
   creator: `0x${string}`;
+  url?: string;
 }) {
   const person = await findPersonByWeb3Address(
     { address: creatorWeb3Address },
@@ -124,7 +131,7 @@ async function notifyProposalCreatedForCreator({
   }
 
   const notifications = [
-    notifyPushProposalCreatedForCreator({ person, space }),
+    notifyPushProposalCreatedForCreator({ person, space, url }),
   ];
   if (process.env.NODE_ENV === 'production') {
     notifications.push(notifyEmailProposalCreatedForCreator({ person, space }));
@@ -135,9 +142,11 @@ async function notifyProposalCreatedForCreator({
 async function notifyProposalCreatedForMembersAction({
   proposalId,
   spaceId: spaceWeb3Id,
+  url,
 }: {
   proposalId: bigint;
   spaceId: bigint;
+  url?: string;
 }) {
   const spaceIds = [spaceWeb3Id];
   const spacesDetails = await (async () => {
@@ -184,7 +193,7 @@ async function notifyProposalCreatedForMembersAction({
   }));
 
   const notifications = [
-    notifyPushProposalCreatedForMembersAction(notificationParams),
+    notifyPushProposalCreatedForMembersAction(notificationParams, url),
   ];
   if (process.env.NODE_ENV === 'production') {
     notifications.push(
@@ -195,7 +204,7 @@ async function notifyProposalCreatedForMembersAction({
 }
 
 export async function notifyProposalCreatedAction(
-  { proposalId, spaceId, creator }: NotifyProposalCreatedInput,
+  { proposalId, spaceId, creator, url }: NotifyProposalCreatedInput,
   { authToken }: { authToken?: string },
 ) {
   if (!authToken) throw new Error('authToken is required to send notification');
@@ -203,10 +212,12 @@ export async function notifyProposalCreatedAction(
     notifyProposalCreatedForCreator({
       spaceId,
       creator,
+      url,
     }),
     notifyProposalCreatedForMembersAction({
       proposalId,
       spaceId,
+      url,
     }),
   ]);
   (await notifying)

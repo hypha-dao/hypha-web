@@ -45,11 +45,13 @@ export const sendPushNotifications = async ({
   headings,
   usernames,
   requiredTags,
+  url,
 }: {
   contents: LangMap;
   headings?: LangMap;
   usernames: string[];
   requiredTags?: Tags;
+  url?: string;
 }) => {
   console.log('Send push...');
   const aliases = await filterUsers(usernames, {
@@ -65,6 +67,7 @@ export const sendPushNotifications = async ({
       },
     },
     content: { contents, headings },
+    url,
   });
 };
 

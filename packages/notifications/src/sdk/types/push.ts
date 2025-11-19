@@ -17,10 +17,12 @@ export type PushParamsForAlias = {
   app_id: string;
   alias: Alias;
   content: PushContent;
+  url?: string;
 };
 
 export type PushParamsForSegment = {
   app_id: string;
   segment: Segment;
   content: PushContent;
+  url?: string;
 };

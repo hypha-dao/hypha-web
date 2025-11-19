@@ -16,9 +16,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useConfig } from 'wagmi';
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useSpaceTokenRequirementsByAddress } from '../hooks';
 import { useScrollToErrors } from '../../hooks';
+import { Locale } from '@hypha-platform/i18n';
+import { getProposalUrl } from '../../common';
 
 interface SpaceToSpaceMembershipFormProps {
   successfulUrl: string;
@@ -65,6 +67,7 @@ export const SpaceToSpaceMembershipForm = ({
   const { jwt } = useJwt();
   const config = useConfig();
   const router = useRouter();
+  const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
   const {
     spaceToSpaceAction,
     reset,
@@ -85,10 +88,12 @@ export const SpaceToSpaceMembershipForm = ({
       web3SpaceId &&
       creator
     ) {
+      const url = getProposalUrl(lang, spaceSlug, agreementSlug);
       notifyProposalCreated({
         proposalId: web3ProposalId,
         spaceId: BigInt(web3SpaceId),
         creator,
+        url,
       });
       router.push(successfulUrl);
     }

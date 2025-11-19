@@ -17,9 +17,11 @@ import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
 import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { VOTING_METHOD_TYPES } from '../hooks';
 import { useScrollToErrors } from '../../hooks';
+import { getProposalUrl } from '../../common';
+import { Locale } from '@hypha-platform/i18n';
 
 type FormValues = z.infer<typeof schemaCreateProposalChangeVotingMethod>;
 
@@ -42,6 +44,7 @@ export const CreateProposalChangeVotingMethodForm = ({
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
+  const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
 
   const { spaceDetails, isLoading } = useSpaceDetailsWeb3Rpc({
     spaceId: web3SpaceId as number,
@@ -151,10 +154,12 @@ export const CreateProposalChangeVotingMethodForm = ({
       web3SpaceId &&
       creator
     ) {
+      const url = getProposalUrl(lang, spaceSlug, agreementSlug);
       notifyProposalCreated({
         proposalId: web3ProposalId,
         spaceId: BigInt(web3SpaceId),
         creator,
+        url,
       });
       router.push(successfulUrl);
     }

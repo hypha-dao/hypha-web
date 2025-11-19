@@ -14,7 +14,7 @@ import {
   type Space,
 } from '@hypha-platform/core/client';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { useConfig } from 'wagmi';
 import { z } from 'zod';
@@ -23,6 +23,8 @@ import React from 'react';
 import { useSpaceTokenRequirementsByAddress } from '../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useScrollToErrors } from '../../hooks';
+import { getProposalUrl } from '../../common';
+import { Locale } from '@hypha-platform/i18n';
 
 const schemaCreateProposalChangeEntryMethod =
   schemaChangeEntryMethod.extend(createAgreementFiles);
@@ -56,6 +58,7 @@ export const CreateProposalChangeEntryMethodForm = ({
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
+  const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
   const { spaceDetails, isLoading } = useSpaceDetailsWeb3Rpc({
     spaceId: web3SpaceId as number,
   });
@@ -163,10 +166,12 @@ export const CreateProposalChangeEntryMethodForm = ({
       web3SpaceId &&
       creator
     ) {
+      const url = getProposalUrl(lang, spaceSlug, agreementSlug);
       notifyProposalCreated({
         proposalId: web3ProposalId,
         spaceId: BigInt(web3SpaceId),
         creator,
+        url,
       });
       router.push(successfulUrl);
     }
