@@ -41,11 +41,11 @@ export function NotificationSubscriber({
         try {
           if (!OneSignal.User.externalId) {
             await OneSignal.login(personSlug);
-            setLoggedIn(true);
-            const tags = await OneSignal.User.getTags();
-            const isSubscribed = checkTag(tags, TAG_SUBSCRIBED, false);
-            setSubscribed(isSubscribed);
           }
+          setLoggedIn(true);
+          const tags = await OneSignal.User.getTags();
+          const isSubscribed = checkTag(tags, TAG_SUBSCRIBED, false);
+          setSubscribed(isSubscribed);
         } catch (err) {
           console.error('Error on login:', err);
         }
@@ -55,8 +55,8 @@ export function NotificationSubscriber({
       const logoutNotifications = async () => {
         if (OneSignal.User.externalId) {
           await OneSignal.logout();
-          setLoggedIn(false);
         }
+        setLoggedIn(false);
       };
       logoutNotifications();
     }
