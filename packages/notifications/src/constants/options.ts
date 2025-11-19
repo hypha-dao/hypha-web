@@ -9,6 +9,7 @@ export const NOTIFICATION_SUBSCRIPTIONS: {
   description: string;
   tagName: SubscriptionTag;
   tagValue: boolean;
+  disabled?: boolean;
 }[] = [
   {
     title: 'A new proposal is open for vote',
@@ -21,5 +22,6 @@ export const NOTIFICATION_SUBSCRIPTIONS: {
     description: "In any of the spaces you're a member of.",
     tagName: TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED,
     tagValue: true,
+    disabled: true,
   },
 ];

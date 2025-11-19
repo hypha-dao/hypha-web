@@ -271,7 +271,11 @@ export const NotificationCentreForm = ({
                               <div className="flex flex-row gap-2">
                                 <Checkbox
                                   id={checkboxId}
-                                  checked={subscription.tagValue}
+                                  disabled={subscription.disabled}
+                                  checked={
+                                    !subscription.disabled &&
+                                    subscription.tagValue
+                                  }
                                   onCheckedChange={(value) => {
                                     onChange({
                                       ...subscription,

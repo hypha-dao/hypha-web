@@ -55,6 +55,7 @@ export const notificationSubscriptionSchema = z.object({
   description: z.string(),
   tagName: z.enum(SUBSCRIPTION_TAGS),
   tagValue: z.boolean().default(false),
+  disabled: z.boolean().optional(),
 });
 
 export const schemaNotificationCentreForm = z.object({
