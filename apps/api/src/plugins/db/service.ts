@@ -10,6 +10,8 @@ import {
   findDocumentWeb3Id,
   findTokensByAddresses,
   peopleByAddresses,
+  findPersonByAuth,
+  verifyAuth,
 } from './query';
 
 export class DbService {
@@ -77,5 +79,17 @@ export class DbService {
     addresses: `0x${string}`[];
   } & Omit<Parameters<typeof peopleByAddresses>[1], 'db'>) {
     return peopleByAddresses({ addresses }, { db: this.db, pagination });
+  }
+
+  public findPersonByAuth({ authToken }: { authToken: string }) {
+    const db = this.getDb(authToken);
+
+    return findPersonByAuth({ db });
+  }
+
+  public verifyAuth({ authToken }: { authToken: string }) {
+    const db = this.getDb(authToken);
+
+    return verifyAuth({ db });
   }
 }
