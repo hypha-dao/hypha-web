@@ -52,7 +52,10 @@ export function cspMiddleware(): NextMiddlewareFunction {
   ].join(' ');
 
   return (request: NextRequest) => {
-    if (process.env.NODE_ENV === 'development') {
+    if (
+      process.env.NODE_ENV === 'development' &&
+      process.env.ENABLE_LOCALHOST_CSP !== 'true'
+    ) {
       return NextResponse.next();
     }
 

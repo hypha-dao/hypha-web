@@ -28,6 +28,7 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
+    unoptimized: process.env.DISABLE_IMAGE_OPTIMIZATION === 'true',
     remotePatterns: IMAGE_HOSTS.map((hostname) => ({
       protocol: 'https',
       hostname,

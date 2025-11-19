@@ -23,9 +23,11 @@
     "@hypha-platform/ui": "workspace:*",
     "@hypha-platform/ui-utils": "workspace:*",
     "@hypha-platform/notifications": "workspace:*",
+    "fetch-socks": "^1.3.2",
     "next": "^15.4.1",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "undici": "^7.16.0"
   },
   "devDependencies": {
     "@hypha-platform/config-eslint": "workspace:*",
