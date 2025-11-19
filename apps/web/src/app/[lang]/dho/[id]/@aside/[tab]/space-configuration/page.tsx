@@ -8,6 +8,7 @@ import {
   useUpdateSpaceOrchestrator,
 } from '@hypha-platform/core/client';
 import {
+  getDhoPathOverview,
   SchemaCreateSpaceForm,
   SidePanel,
   SpaceForm,
@@ -19,7 +20,6 @@ import { Button } from '@hypha-platform/ui';
 import { useRouter } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
 import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
-import { getDhoPathOverview } from '../../../@tab/overview/constants';
 
 export default function SpaceConfiguration() {
   const { person } = useMe();
