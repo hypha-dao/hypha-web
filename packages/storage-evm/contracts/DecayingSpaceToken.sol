@@ -173,8 +173,25 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
   function transfer(address to, uint256 amount) public override returns (bool) {
     address sender = _msgSender();
     require(transferable || sender == executor, 'Token transfers are disabled');
+
+    // Executor always bypasses whitelist checks
+    if (sender != executor) {
+      // Check transfer whitelist
+      if (useTransferWhitelist) {
+        require(canTransfer[sender], 'Sender not whitelisted to transfer');
+      }
+    }
+
+    // Executor can always receive tokens
+    if (to != executor) {
+      // Check receive whitelist
+      if (useReceiveWhitelist) {
+        require(canReceive[to], 'Recipient not whitelisted to receive');
+      }
+    }
+
     applyDecay(sender);
-    if (sender == executor) {
+    if (sender == executor && autoMinting) {
       if (super.balanceOf(sender) < amount) {
         uint256 amountToMint = amount - super.balanceOf(sender);
         mint(sender, amountToMint);
@@ -205,8 +222,24 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
       'Token transfers are disabled'
     );
 
+    // Executor always bypasses whitelist checks
+    if (from != executor) {
+      // Check transfer whitelist
+      if (useTransferWhitelist) {
+        require(canTransfer[from], 'Sender not whitelisted to transfer');
+      }
+    }
+
+    // Executor can always receive tokens
+    if (to != executor) {
+      // Check receive whitelist
+      if (useReceiveWhitelist) {
+        require(canReceive[to], 'Recipient not whitelisted to receive');
+      }
+    }
+
     applyDecay(from);
-    if (from == executor) {
+    if (from == executor && autoMinting) {
       if (super.balanceOf(from) < amount) {
         uint256 amountToMint = amount - super.balanceOf(from);
         mint(from, amountToMint);

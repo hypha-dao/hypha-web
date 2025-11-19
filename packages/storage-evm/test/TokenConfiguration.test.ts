@@ -1469,7 +1469,7 @@ describe('Token Configuration Tests', function () {
     it('Should restrict setAutoMinting to executor only', async function () {
       await expect(
         token.connect(charlie).setAutoMinting(false),
-      ).to.be.revertedWith('Only executor can update auto-minting');
+      ).to.be.revertedWith('Only executor or owner can update auto-minting');
     });
 
     it('Should restrict whitelist updates to executor only', async function () {

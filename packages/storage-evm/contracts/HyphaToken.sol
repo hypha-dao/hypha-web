@@ -71,7 +71,7 @@ contract HyphaToken is
     }
 
     // Default behavior: transfers are disabled
-    revert('HYPHA: Transfers disabled');
+    revert('HYPHA Tokens are currently non-transferrable');
   }
 
   function transferFrom(
@@ -99,7 +99,7 @@ contract HyphaToken is
     }
 
     // Default behavior: transfers are disabled
-    revert('HYPHA: Transfers disabled');
+    revert('HYPHA Tokens are currently non-transferrable');
   }
 
   /**
