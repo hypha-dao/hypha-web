@@ -267,6 +267,11 @@ const decaySettingsSchema = z.object({
     }),
 });
 
+export const schemaMintTokensToSpaceTreasury = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+});
+
 export const schemaIssueNewToken = z.object({
   ...createAgreementWeb2Props,
   ...createAgreementFiles,

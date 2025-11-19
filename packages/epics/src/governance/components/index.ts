@@ -19,3 +19,4 @@ export * from './activate-spaces-form-space';
 export * from './space-to-space-membership-form';
 export * from './proposal-delegates-data';
 export * from './vote-proposal-button';
+export * from './mint-tokens-to-space-treasury-form';
