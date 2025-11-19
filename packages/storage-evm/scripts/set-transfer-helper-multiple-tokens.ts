@@ -27,9 +27,8 @@ const TOKEN_ADDRESSES: string[] = [''];
 
 // Set to true to load addresses from a file instead of using TOKEN_ADDRESSES array
 const LOAD_FROM_FILE = true;
-const ADDRESS_FILE_PATH = '/Users/vlad/hypha-web/packages/storage-evm/scripts/base-mainnet-contracts-scripts/token-upgrade-data/regular-addresses-2025-11-14T09-30-58-747Z.txt';
-;
-
+const ADDRESS_FILE_PATH =
+  '/Users/vlad/hypha-web/packages/storage-evm/scripts/base-mainnet-contracts-scripts/token-upgrade-data/regular-addresses-2025-11-14T09-30-58-747Z.txt';
 // Set to true to perform a dry run (check current values but don't execute)
 const DRY_RUN = false; // Start with dry run for testing
 
