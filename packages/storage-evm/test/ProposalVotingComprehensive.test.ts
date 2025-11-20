@@ -1454,7 +1454,7 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
           daoProposals
             .connect(members[0])
             .setMinimumProposalDuration(spaceId, 86400),
-        ).to.be.revertedWithCustomError(daoProposals, 'OnlyExecutor');
+        ).to.be.revertedWith('Not authorized: only executor or owner');
 
         // Owner should succeed (owner is allowed in addition to executor)
         await expect(
@@ -2254,7 +2254,7 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       // Step 4: Y (non-member) tries to vote. Should fail with 'NotMember' because they are no longer a delegate.
       await expect(
         daoProposals.connect(nonMemberFirstDelegate).vote(proposalId, true),
-      ).to.be.revertedWithCustomError(daoProposals, 'NotMember');
+      ).to.be.revertedWith('Not a member or delegate');
       console.log(
         'nonMemberFirstDelegate (Y) correctly prevented from voting.',
       );
@@ -2569,7 +2569,7 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       // Try to change vote after execution
       await expect(
         daoProposals.connect(members[0]).vote(proposalId, false),
-      ).to.be.revertedWithCustomError(daoProposals, 'Executed');
+      ).to.be.revertedWith('Proposal already executed');
 
       console.log(
         '✅ Vote change correctly prevented after proposal execution',
@@ -2841,7 +2841,11 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         'TTT',
         0, // maxSupply (0 = unlimited)
         true, // transferable
-        true, // isVotingToken
+        false, // fixedMaxSupply
+        true, // autoMinting
+        0, // priceInUSD
+        false, // useTransferWhitelist
+        false, // useReceiveWhitelist
       );
       const receipt = await tx.wait();
 
@@ -2912,6 +2916,161 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
     });
   });
 
+  describe('HyphaToken Subscription Bypass Tests', function () {
+    it('Should allow creating proposals targeting HyphaToken without active subscription', async function () {
+      console.log('\n--- Testing HyphaToken Bypass for Proposal Creation ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 3,
+        name: 'HyphaToken Bypass Test',
+      });
+
+      // Get the hardcoded HyphaToken address from the contract
+      const hyphaTokenAddress = await daoProposals.hyphaTokenAddress();
+      console.log(`HyphaToken address: ${hyphaTokenAddress}`);
+
+      // Create a proposal that calls HyphaToken (mock call to payForSpaces)
+      const hyphaTokenCalldata = ethers
+        .id('payForSpaces(uint256[],uint256[])')
+        .slice(0, 10);
+
+      const proposalParams = {
+        spaceId,
+        duration: 3600,
+        transactions: [
+          {
+            target: hyphaTokenAddress,
+            value: 0,
+            data: hyphaTokenCalldata,
+          },
+        ],
+      };
+
+      // This should succeed even without an active subscription
+      await expect(daoProposals.connect(owner).createProposal(proposalParams))
+        .to.not.be.reverted;
+
+      const proposalId = await daoProposals.proposalCounter();
+      console.log(
+        `✅ Successfully created proposal ${proposalId} targeting HyphaToken`,
+      );
+    });
+
+    it('Should allow voting on proposals targeting HyphaToken without active subscription', async function () {
+      console.log('\n--- Testing HyphaToken Bypass for Voting ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 3,
+        name: 'HyphaToken Voting Bypass Test',
+      });
+
+      // Get the hardcoded HyphaToken address
+      const hyphaTokenAddress = await daoProposals.hyphaTokenAddress();
+
+      // Create a proposal that calls HyphaToken
+      const hyphaTokenCalldata = ethers
+        .id('investInHypha(uint256)')
+        .slice(0, 10);
+
+      const proposalParams = {
+        spaceId,
+        duration: 3600,
+        transactions: [
+          {
+            target: hyphaTokenAddress,
+            value: 0,
+            data: hyphaTokenCalldata,
+          },
+        ],
+      };
+
+      await daoProposals.connect(owner).createProposal(proposalParams);
+      const proposalId = await daoProposals.proposalCounter();
+
+      // Voting should succeed even without an active subscription
+      await expect(daoProposals.connect(members[0]).vote(proposalId, true)).to
+        .not.be.reverted;
+
+      await expect(daoProposals.connect(members[1]).vote(proposalId, true)).to
+        .not.be.reverted;
+
+      const proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.yesVotes).to.equal(2);
+
+      console.log(
+        `✅ Successfully voted on proposal targeting HyphaToken without subscription`,
+      );
+    });
+
+    it('Should allow mixed proposals with HyphaToken and other targets', async function () {
+      console.log('\n--- Testing Mixed Proposals with HyphaToken ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 3,
+        name: 'Mixed Proposal Test',
+      });
+
+      const hyphaTokenAddress = await daoProposals.hyphaTokenAddress();
+      const hyphaTokenCalldata = ethers
+        .id('payForSpaces(uint256[],uint256[])')
+        .slice(0, 10);
+      const otherCalldata = daoSpaceFactory.interface.encodeFunctionData(
+        'getSpaceDetails',
+        [spaceId],
+      );
+
+      // Create a proposal with multiple transactions, one targeting HyphaToken
+      const proposalParams = {
+        spaceId,
+        duration: 3600,
+        transactions: [
+          {
+            target: await daoSpaceFactory.getAddress(),
+            value: 0,
+            data: otherCalldata,
+          },
+          {
+            target: hyphaTokenAddress,
+            value: 0,
+            data: hyphaTokenCalldata,
+          },
+        ],
+      };
+
+      // Should succeed because one transaction targets HyphaToken
+      await expect(daoProposals.connect(owner).createProposal(proposalParams))
+        .to.not.be.reverted;
+
+      const proposalId = await daoProposals.proposalCounter();
+
+      // Voting should also succeed
+      await expect(daoProposals.connect(members[0]).vote(proposalId, true)).to
+        .not.be.reverted;
+
+      console.log(
+        `✅ Mixed proposal with HyphaToken bypasses subscription check`,
+      );
+    });
+
+    it('Should verify HyphaToken address is correctly set', async function () {
+      console.log('\n--- Verifying HyphaToken Address ---');
+
+      const expectedAddress = '0x8b93862835C36e9689E9bb1Ab21De3982e266CD3';
+      const actualAddress = await daoProposals.hyphaTokenAddress();
+
+      expect(actualAddress.toLowerCase()).to.equal(
+        expectedAddress.toLowerCase(),
+      );
+      console.log(`✅ HyphaToken address correctly set to: ${actualAddress}`);
+    });
+  });
+
   describe('Ownership and Decaying Token Transfer Logic', function () {
     describe('OwnershipSpaceToken Transfers', function () {
       let spaceId: any;
@@ -2962,7 +3121,11 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
             'Ownership Test Token',
             'OTT',
             0, // maxSupply (0 = unlimited)
-            false, // isVotingToken
+            false, // fixedMaxSupply
+            true, // autoMinting
+            0, // priceInUSD
+            false, // useTransferWhitelist
+            false, // useReceiveWhitelist
           );
         const receipt = await tx.wait();
         const tokenDeployedEvent = receipt?.logs
@@ -3185,8 +3348,12 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
             'DTT',
             0, // maxSupply
             transferable,
-            false, // isVotingToken
-            100, // 1% decay
+            false, // fixedMaxSupply
+            true, // autoMinting
+            0, // priceInUSD
+            false, // useTransferWhitelist
+            false, // useReceiveWhitelist
+            100, // 1% decay (100 basis points)
             60 * 60, // per hour
           );
         const receipt = await tx.wait();

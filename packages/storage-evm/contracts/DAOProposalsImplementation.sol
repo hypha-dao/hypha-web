@@ -18,26 +18,9 @@ contract DAOProposalsImplementation is
   DAOProposalsStorage,
   IDAOProposals
 {
-  error InvalidFactory();
-  error InvalidDirectory();
-  error NotInitialized();
-  error NotMember();
-  error DurationTooLong();
-  error NoTransactions();
-  error InvalidTarget();
-  error EmptyData();
-  error NoExecutor();
-  error SetMinDuration();
-  error SubscriptionInactive();
-  error NotStarted();
-  error Expired();
-  error Executed();
-  error Voted();
-  error NoPower();
-  error InvalidTracker();
-  error InvalidDelegation();
-  error OnlyExecutor();
-  error ExecutionFailed();
+  // HyphaToken address - proposals targeting this contract bypass subscription checks
+  address public constant hyphaTokenAddress =
+    0x8b93862835C36e9689E9bb1Ab21De3982e266CD3;
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -58,8 +41,8 @@ contract DAOProposalsImplementation is
     address _spaceFactory,
     address _directory
   ) external override onlyOwner {
-    if (_spaceFactory == address(0)) revert InvalidFactory();
-    if (_directory == address(0)) revert InvalidDirectory();
+    require(_spaceFactory != address(0), 'Invalid factory address');
+    require(_directory != address(0), 'Invalid directory address');
 
     spaceFactory = IDAOSpaceFactory(_spaceFactory);
     directoryContract = IDirectory(_directory);
@@ -103,7 +86,7 @@ contract DAOProposalsImplementation is
     uint256 _duration,
     Transaction[] calldata _transactions
   ) internal view {
-    if (address(spaceFactory) == address(0)) revert NotInitialized();
+    require(address(spaceFactory) != address(0), 'Contracts not initialized');
 
     if (msg.sender != address(spaceFactory)) {
       if (!spaceFactory.isMember(_spaceId, msg.sender)) {
@@ -115,22 +98,22 @@ contract DAOProposalsImplementation is
             isDelegate = true;
           }
         }
-        if (!isDelegate) {
-          revert NotMember();
-        }
+        require(isDelegate, 'Not a member or delegate');
       }
     }
 
-    if (_duration > MAX_VOTING_DURATION) revert DurationTooLong();
-    if (_transactions.length == 0) revert NoTransactions();
+    require(_duration <= MAX_VOTING_DURATION, 'Duration exceeds maximum');
+    require(_transactions.length > 0, 'No transactions provided');
 
     for (uint i = 0; i < _transactions.length; i++) {
-      if (_transactions[i].target == address(0)) revert InvalidTarget();
-      if (_transactions[i].data.length == 0) revert EmptyData();
+      require(_transactions[i].target != address(0), 'Invalid target address');
+      require(_transactions[i].data.length > 0, 'Transaction data is empty');
     }
 
-    if (spaceFactory.getSpaceExecutor(_spaceId) == address(0))
-      revert NoExecutor();
+    require(
+      spaceFactory.getSpaceExecutor(_spaceId) != address(0),
+      'No executor for space'
+    );
   }
 
   function createProposal(
@@ -159,12 +142,16 @@ contract DAOProposalsImplementation is
       actualDuration = params.duration;
     }
 
-    if (address(paymentTracker) != address(0)) {
+    // Skip subscription check if proposal targets HyphaToken (payment/investment functions)
+    if (
+      address(paymentTracker) != address(0) &&
+      !_targetsHyphaToken(params.transactions)
+    ) {
       if (!paymentTracker.isSpaceActive(params.spaceId)) {
         if (!paymentTracker.hasUsedFreeTrial(params.spaceId)) {
           paymentTracker.activateFreeTrial(params.spaceId);
         } else {
-          revert SubscriptionInactive();
+          require(false, 'Subscription inactive');
         }
       }
     }
@@ -195,20 +182,24 @@ contract DAOProposalsImplementation is
   }
 
   function vote(uint256 _proposalId, bool _support) external override {
-    if (address(spaceFactory) == address(0)) revert NotInitialized();
+    require(address(spaceFactory) != address(0), 'Contracts not initialized');
     ProposalCore storage proposal = proposalsCoreData[_proposalId];
 
     checkProposalExpiration(_proposalId);
-    if (block.timestamp < proposal.startTime) revert NotStarted();
-    if (proposal.expired) revert Expired();
-    if (proposal.executed) revert Executed();
+    require(block.timestamp >= proposal.startTime, 'Proposal not started');
+    require(!proposal.expired, 'Proposal has expired');
+    require(!proposal.executed, 'Proposal already executed');
 
-    if (address(paymentTracker) != address(0)) {
+    // Skip subscription check if proposal targets HyphaToken (payment/investment functions)
+    if (
+      address(paymentTracker) != address(0) &&
+      !_proposalTargetsHyphaToken(_proposalId)
+    ) {
       if (paymentTracker.isSpaceActive(proposal.spaceId)) {} else {
         if (!paymentTracker.hasUsedFreeTrial(proposal.spaceId)) {
           paymentTracker.activateFreeTrial(proposal.spaceId);
         } else {
-          revert SubscriptionInactive();
+          require(false, 'Subscription inactive');
         }
       }
     }
@@ -239,7 +230,7 @@ contract DAOProposalsImplementation is
       );
     }
 
-    if (votingPower == 0) revert NoPower();
+    require(votingPower > 0, 'No voting power');
 
     // Handle vote resubmission - remove previous vote if exists
     if (proposal.hasVoted[msg.sender]) {
@@ -386,7 +377,7 @@ contract DAOProposalsImplementation is
     spaceAcceptedProposals[proposal.spaceId].push(_proposalId);
 
     address executor = spaceFactory.getSpaceExecutor(proposal.spaceId);
-    if (executor == address(0)) revert NoExecutor();
+    require(executor != address(0), 'No executor for space');
 
     IExecutor.Transaction[]
       memory execTransactions = new IExecutor.Transaction[](
@@ -401,7 +392,7 @@ contract DAOProposalsImplementation is
     }
 
     bool success = IExecutor(executor).executeTransactions(execTransactions);
-    if (!success) revert ExecutionFailed();
+    require(success, 'Execution failed');
 
     emit ProposalExecuted(
       _proposalId,
@@ -416,7 +407,7 @@ contract DAOProposalsImplementation is
   ) public override returns (bool) {
     ProposalCore storage proposal = proposalsCoreData[_proposalId];
 
-    if (address(spaceFactory) == address(0)) revert NotInitialized();
+    require(address(spaceFactory) != address(0), 'Contracts not initialized');
     if (!spaceFactory.isMember(proposal.spaceId, msg.sender)) {
       bool isDelegate = false;
       if (address(delegationContract) != address(0)) {
@@ -428,9 +419,7 @@ contract DAOProposalsImplementation is
           isDelegate = true;
         }
       }
-      if (!isDelegate) {
-        revert NotMember();
-      }
+      require(isDelegate, 'Not a member or delegate');
     }
 
     if (
@@ -450,7 +439,7 @@ contract DAOProposalsImplementation is
   }
 
   function triggerExecutionCheck(uint256 _proposalId) external {
-    if (address(spaceFactory) == address(0)) revert NotInitialized();
+    require(address(spaceFactory) != address(0), 'Contracts not initialized');
     checkAndExecuteProposal(_proposalId);
 
     ProposalCore storage proposal = proposalsCoreData[_proposalId];
@@ -524,15 +513,48 @@ contract DAOProposalsImplementation is
   }
 
   function setPaymentTracker(address _paymentTracker) external onlyOwner {
-    if (_paymentTracker == address(0)) revert InvalidTracker();
+    require(_paymentTracker != address(0), 'Invalid tracker address');
     paymentTracker = ISpacePaymentTracker(_paymentTracker);
   }
 
   function setDelegationContract(
     address _delegationContract
   ) external onlyOwner {
-    if (_delegationContract == address(0)) revert InvalidDelegation();
+    require(_delegationContract != address(0), 'Invalid delegation address');
     delegationContract = IVotingPowerDelegation(_delegationContract);
+  }
+
+  /**
+   * @dev Check if a proposal targets the HyphaToken contract
+   * @param _transactions Array of transactions to check
+   * @return true if any transaction targets HyphaToken
+   */
+  function _targetsHyphaToken(
+    Transaction[] calldata _transactions
+  ) internal pure returns (bool) {
+    for (uint i = 0; i < _transactions.length; i++) {
+      if (_transactions[i].target == hyphaTokenAddress) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * @dev Check if a proposal (by ID) targets the HyphaToken contract
+   * @param _proposalId Proposal ID to check
+   * @return true if any transaction targets HyphaToken
+   */
+  function _proposalTargetsHyphaToken(
+    uint256 _proposalId
+  ) internal view returns (bool) {
+    ProposalCore storage proposal = proposalsCoreData[_proposalId];
+    for (uint i = 0; i < proposal.transactions.length; i++) {
+      if (proposal.transactions[i].target == hyphaTokenAddress) {
+        return true;
+      }
+    }
+    return false;
   }
 
   function getExecutedProposalsBySpace(
@@ -564,14 +586,16 @@ contract DAOProposalsImplementation is
     uint256 _spaceId,
     uint256 _minDuration
   ) external {
-    if (address(spaceFactory) == address(0)) revert NotInitialized();
+    require(address(spaceFactory) != address(0), 'Contracts not initialized');
 
     address executor = spaceFactory.getSpaceExecutor(_spaceId);
-    if (executor == address(0)) revert NoExecutor();
-    if (msg.sender != executor && msg.sender != owner()) revert OnlyExecutor();
+    require(executor != address(0), 'No executor for space');
+    require(
+      msg.sender == executor || msg.sender == owner(),
+      'Not authorized: only executor or owner'
+    );
 
     spaceMinProposalDuration[_spaceId] = _minDuration;
     emit MinimumProposalDurationSet(_spaceId, _minDuration);
   }
-
 }
