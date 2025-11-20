@@ -7,23 +7,33 @@ import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { useDbSpaces } from '../../hooks';
 import { EthAddress } from '../../people';
 import { Image } from '@hypha-platform/ui';
+import { useDbTokens } from '../../hooks';
+import { DbToken } from '@hypha-platform/core/server';
 
 interface ProposalMintItemProps {
   member: `0x${string}`;
   number: bigint;
+  token: `0x${string}`;
 }
 
-export const ProposalMintItem = ({ member, number }: ProposalMintItemProps) => {
+export const ProposalMintItem = ({
+  member,
+  number,
+  token,
+}: ProposalMintItemProps) => {
   const { spaces: dbSpaces } = useDbSpaces({
     parentOnly: false,
   });
+  const { tokens: dbTokens } = useDbTokens();
   const originalNumber = Number(number) / Number(10n ** 18n);
   const { person, isLoading } = usePersonByWeb3Address(member);
 
   const space = dbSpaces.find(
     (s) => s.address?.toLowerCase() === member.toLowerCase(),
   );
-
+  const mintedToken = dbTokens.find(
+    (t: DbToken) => t.address?.toLowerCase() === token?.toLowerCase(),
+  );
   return (
     <div className="flex flex-col gap-3">
       <Skeleton loading={isLoading} className="h-7 w-full">
@@ -62,8 +72,16 @@ export const ProposalMintItem = ({ member, number }: ProposalMintItemProps) => {
               </>
             )}
           </div>
-          <div className="text-1">
+          <div className="text-1 flex gap-2 items-center">
+            <Image
+              className="rounded-full w-[24px] h-[24px]"
+              src={mintedToken?.iconUrl ?? 'placeholder/neutral-token-icon.svg'}
+              width={24}
+              height={24}
+              alt="Default avatar"
+            />
             {formatCurrencyValue(Number(originalNumber))}
+            <span>{mintedToken?.symbol}</span>
           </div>
         </div>
       </Skeleton>
