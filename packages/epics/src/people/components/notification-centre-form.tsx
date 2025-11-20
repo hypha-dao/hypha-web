@@ -243,10 +243,6 @@ export const NotificationCentreForm = ({
                 )}
               />
             </span>
-            <span className="text-2 text-neutral-11">
-              Receive real-time alerts directly in your browser while you’re
-              online. You may be prompted to allow browser permissions.
-            </span>
             <Separator />
             <div className="flex gap-5 justify-between">
               <h3 className="text-3 font-medium text-neutral-11">
