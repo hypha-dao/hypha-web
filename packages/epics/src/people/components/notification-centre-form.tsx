@@ -169,10 +169,6 @@ export const NotificationCentreForm = ({
                 Notification Centre
               </span>
             </div>
-            <span className="text-2 text-neutral-11">
-              On this page, choose how you’d like to be notified about proposals
-              and other Network activity.
-            </span>
             <Separator />
             <div className="flex gap-5 justify-between">
               <h3 className="text-3 font-medium text-neutral-11">
@@ -187,6 +183,19 @@ export const NotificationCentreForm = ({
               )}
               {error && <FormMessage>{error}</FormMessage>}
             </span>
+            {subscribed ? (
+              <span className="text-2 text-neutral-11">
+                You’re subscribed to notifications. Click unsubscribe at any
+                time to stop receiving alerts.
+              </span>
+            ) : (
+              <span className="text-2 text-neutral-11">
+                Click subscribe to receive notifications. Some browsers block
+                notifications by default, so you may need to enable them using
+                the padlock icon next to the address bar or in your browser’s
+                settings.
+              </span>
+            )}
             <Separator />
             <div className="flex gap-5 justify-between">
               <h3 className="text-3 font-medium text-neutral-11">
