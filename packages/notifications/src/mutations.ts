@@ -98,3 +98,31 @@ export const sentEmailNotifications = async ({
     content: { email_body: body, email_subject: subject },
   });
 };
+
+export const sentEmailNotificationsTemplate = async ({
+  templateId,
+  customData,
+  usernames,
+  requiredTags,
+}: {
+  templateId: string;
+  customData?: Record<string, string>;
+  usernames: string[];
+  requiredTags?: Tags;
+}) => {
+  console.log('Send email...');
+  const aliases = await filterUsers(usernames, {
+    subscribed: 'true',
+    email: 'true',
+    ...requiredTags,
+  });
+  return await sendEmailByAlias({
+    app_id: ONESIGNAL_APP_ID,
+    alias: {
+      include_aliases: {
+        external_id: aliases,
+      },
+    },
+    content: { template_id: templateId, custom_data: customData },
+  });
+};

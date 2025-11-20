@@ -7,6 +7,7 @@ import {
 import {
   findPeopleByWeb3Addresses,
   findPersonByWeb3Address,
+  findPersonsBySlug,
   findSpaceByWeb3Id,
   Person,
   Space,
@@ -18,7 +19,11 @@ import {
   pushProposalCreationForCreator,
   pushProposalCreationForMembers,
 } from '../template';
-import { sendPushNotifications, sentEmailNotifications } from '../mutations';
+import {
+  sendPushNotifications,
+  sentEmailNotifications,
+  sentEmailNotificationsTemplate,
+} from '../mutations';
 import { TAG_SUB_NEW_PROPOSAL_OPEN } from '../constants';
 
 async function notifyPushProposalCreatedForCreator({
@@ -28,7 +33,7 @@ async function notifyPushProposalCreatedForCreator({
 }: {
   person?: Person;
   space?: Space;
-  url?: string;
+  url: string;
 }) {
   const { contents, headings } = pushProposalCreationForCreator({
     creatorName: person?.name,
@@ -48,18 +53,33 @@ async function notifyPushProposalCreatedForCreator({
 async function notifyEmailProposalCreatedForCreator({
   person,
   space,
+  url,
+  unsubscribeLink,
 }: {
   person?: Person;
   space?: Space;
+  url: string;
+  unsubscribeLink: string;
 }) {
-  const { body, subject } = emailProposalCreationForCreator({
-    creatorName: person?.name,
-    spaceTitle: space?.title,
-    spaceSlug: space?.slug,
-  });
-  await sentEmailNotifications({
-    body,
-    subject,
+  const templateId =
+    process.env.NEXT_PUBLIC_EMAIL_TEMPLATE_PROPOSAL_OPEN_FOR_CREATOR || '';
+  if (!templateId) {
+    throw new Error(
+      'Environment variable NEXT_PUBLIC_EMAIL_TEMPLATE_PROPOSAL_OPEN_FOR_CREATOR is not configure, cannot send an email',
+    );
+  }
+  if (!space || !person) {
+    throw new Error('Space or person not specified, cannot send an email');
+  }
+  const customData = {
+    space_title: space.title,
+    user_name: `${person.name} ${person.surname}`,
+    url: url ?? 'https://app.hypha.earth',
+    unsubscribe_link: unsubscribeLink ?? 'https://app.hypha.earth',
+  };
+  await sentEmailNotificationsTemplate({
+    templateId,
+    customData,
     usernames: person?.slug ? [person.slug] : [],
     requiredTags: {
       [TAG_SUB_NEW_PROPOSAL_OPEN]: 'true',
@@ -89,20 +109,34 @@ async function notifyPushProposalCreatedForMembersAction(
   });
   await Promise.all(sendingPushes);
 }
-async function notifyEmailProposalCreatedForMembersAction(
-  notificationParams: {
-    slugs: string[];
-    spaceTitle?: string;
-    spaceSlug?: string;
-  }[],
-) {
-  const sendingEmails = notificationParams.map(async (params) => {
-    const { body, subject } = emailProposalCreationForMembers(params);
+async function notifyEmailProposalCreatedForMembersAction(notificationParams: {
+  slugs: string[];
+  spaceTitle?: string;
+  spaceSlug?: string;
+  url: string;
+  unsubscribeLink: string;
+}) {
+  const templateId =
+    process.env.NEXT_PUBLIC_EMAIL_TEMPLATE_PROPOSAL_OPEN_FOR_MEMBERS || '';
+  if (!templateId) {
+    throw new Error(
+      'Environment variable NEXT_PUBLIC_EMAIL_TEMPLATE_PROPOSAL_OPEN_FOR_MEMBERS is not configure, cannot send an email',
+    );
+  }
+  const { slugs } = notificationParams;
+  const persons = await findPersonsBySlug({ slugs }, { db });
 
-    return await sentEmailNotifications({
-      body,
-      subject,
-      usernames: params.slugs,
+  const sendingEmails = persons.map(async (person) => {
+    const customData = {
+      space_title: notificationParams.spaceTitle ?? '',
+      user_name: `${person.name} ${person.surname}`,
+      url: notificationParams.url,
+      unsubscribe_link: notificationParams.unsubscribeLink,
+    };
+    return await sentEmailNotificationsTemplate({
+      templateId,
+      customData,
+      usernames: person?.slug ? [person.slug] : [],
       requiredTags: {
         [TAG_SUB_NEW_PROPOSAL_OPEN]: 'true',
       },
@@ -115,10 +149,12 @@ async function notifyProposalCreatedForCreator({
   spaceId: spaceWeb3Id,
   creator: creatorWeb3Address,
   url,
+  unsubscribeLink,
 }: {
   spaceId: bigint;
   creator: `0x${string}`;
-  url?: string;
+  url: string;
+  unsubscribeLink: string;
 }) {
   const person = await findPersonByWeb3Address(
     { address: creatorWeb3Address },
@@ -134,7 +170,14 @@ async function notifyProposalCreatedForCreator({
     notifyPushProposalCreatedForCreator({ person, space, url }),
   ];
   if (process.env.NODE_ENV === 'production') {
-    notifications.push(notifyEmailProposalCreatedForCreator({ person, space }));
+    notifications.push(
+      notifyEmailProposalCreatedForCreator({
+        person,
+        space,
+        url,
+        unsubscribeLink,
+      }),
+    );
   }
   return await Promise.all(notifications);
 }
@@ -143,10 +186,12 @@ async function notifyProposalCreatedForMembersAction({
   proposalId,
   spaceId: spaceWeb3Id,
   url,
+  unsubscribeLink,
 }: {
   proposalId: bigint;
   spaceId: bigint;
-  url?: string;
+  url: string;
+  unsubscribeLink: string;
 }) {
   const spaceIds = [spaceWeb3Id];
   const spacesDetails = await (async () => {
@@ -165,35 +210,28 @@ async function notifyProposalCreatedForMembersAction({
 
     return;
   }
-  const fetchingData = spacesDetails.map(
-    async ({ members, spaceId, creator }) => {
-      const filteredMembers = members.filter(
-        (member) => member.toUpperCase() !== creator.toUpperCase(),
-      );
-      const people = await findPeopleByWeb3Addresses(
-        {
-          addresses: filteredMembers as string[],
-        },
-        { db },
-      );
-      const space = await findSpaceByWeb3Id({ id: Number(spaceId) }, { db });
-
-      return { people, space };
-    },
+  const { members, spaceId, creator } = spacesDetails[0]!;
+  const filteredMembers = members.filter(
+    (member) => member.toUpperCase() !== creator.toUpperCase(),
   );
-  const spacesWithPeople = (await Promise.allSettled(fetchingData))
-    .filter((res) => res.status === 'fulfilled')
-    .map(({ value }) => value)
-    .filter((space) => space.people.length > 0);
+  const people = await findPeopleByWeb3Addresses(
+    {
+      addresses: filteredMembers as string[],
+    },
+    { db },
+  );
+  const space = await findSpaceByWeb3Id({ id: Number(spaceId) }, { db });
 
-  const notificationParams = spacesWithPeople.map(({ space, people }) => ({
+  const notificationParams = {
     slugs: people.map(({ slug }) => slug!),
     spaceTitle: space?.title,
     spaceSlug: space?.slug,
-  }));
+    url,
+    unsubscribeLink,
+  };
 
   const notifications = [
-    notifyPushProposalCreatedForMembersAction(notificationParams, url),
+    notifyPushProposalCreatedForMembersAction([notificationParams], url),
   ];
   if (process.env.NODE_ENV === 'production') {
     notifications.push(
@@ -208,16 +246,23 @@ export async function notifyProposalCreatedAction(
   { authToken }: { authToken?: string },
 ) {
   if (!authToken) throw new Error('authToken is required to send notification');
+  const safeUrl = url ?? 'https://app.hypha.earth';
+  const baseUrl = new URL(safeUrl);
+  const unsubscribeLink = `${baseUrl.protocol}//${baseUrl.host}${
+    baseUrl.pathname.substring(0, 3) || '/en'
+  }/my-spaces/notification-centre`;
   const notifying = Promise.allSettled([
     notifyProposalCreatedForCreator({
       spaceId,
       creator,
-      url,
+      url: safeUrl,
+      unsubscribeLink,
     }),
     notifyProposalCreatedForMembersAction({
       proposalId,
       spaceId,
-      url,
+      url: safeUrl,
+      unsubscribeLink,
     }),
   ]);
   (await notifying)

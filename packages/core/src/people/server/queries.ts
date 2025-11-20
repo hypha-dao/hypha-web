@@ -275,6 +275,21 @@ export const findPeopleBySpaceSlug = async (
   };
 };
 
+export type FindPersonsBySlugInput = {
+  slugs: Array<string>;
+};
+export const findPersonsBySlug = async (
+  { slugs }: FindPersonsBySlugInput,
+  { db }: DbConfig,
+) => {
+  const persons = await db
+    .select()
+    .from(people)
+    .where(inArray(people.slug, slugs));
+
+  return persons.map(mapToDomainPerson);
+};
+
 export type FindPersonBySlugInput = {
   slug: string;
 };
