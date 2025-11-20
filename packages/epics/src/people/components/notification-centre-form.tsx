@@ -14,6 +14,7 @@ import {
   RadioGroup,
   RadioGroupItem,
   Separator,
+  Skeleton,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { useFieldArray, useForm } from 'react-hook-form';
@@ -149,25 +150,14 @@ export const NotificationCentreForm = ({
           onSubmit={form.handleSubmit(handleSubmit, handleInvalid)}
           className="space-y-8"
         >
+          <ButtonClose closeUrl={closeUrl} className="absolute top-0 right-0" />
           <div className="flex flex-col gap-5">
-            <div className="flex flex-col-reverse md:flex-row gap-5 justify-between">
-              <div className="flex items-center space-x-2">
-                {/* TODO */}
-                <div className="flex justify-between items-center w-full">
-                  <div className="flex flex-col">
-                    <div className="flex gap-1 mb-1">{/* TODO: fields */}</div>
-                    {/* TODO: fields */}
-                  </div>
-                </div>
-              </div>
-              <div className="flex justify-end">
-                <ButtonClose closeUrl={closeUrl} className="px-0 md:px-3" />
-              </div>
-            </div>
             <div className="flex gap-5 justify-between">
-              <span className="text-4 text-secondary-foreground">
-                Notification Centre
-              </span>
+              <Skeleton width="100px" height="24px" loading={isLoading}>
+                <span className="text-4 text-secondary-foreground">
+                  Notification Centre
+                </span>
+              </Skeleton>
             </div>
             <Separator />
             <div className="flex gap-5 justify-between">
