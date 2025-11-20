@@ -3,6 +3,11 @@ import { response, type Response } from './schema/get-wallet';
 import { erc20Abi, formatUnits, isAddress } from 'viem';
 
 export default async function walletRoutes(app: FastifyInstance) {
+  await app.register(import('@fastify/rate-limit'), {
+    max: 100,
+    timeWindow: '1 minute',
+  });
+
   /**
    * GET /wallet/receive
    */
@@ -39,11 +44,17 @@ export default async function walletRoutes(app: FastifyInstance) {
     {
       schema: { response: { 200: response } },
     },
-    async () => {
-      // TODO: find user's address
-      const userAddress = '0x';
+    async (request) => {
+      const authToken = request.headers.authorization?.split(' ').at(1);
+      // TODO: implement proper return
+      if (authToken == null) throw new Error('Unauthorized');
+
+      const userAddress = (await app.db.findPersonByAuth({ authToken }))
+        ?.address;
+      // TODO: implement proper return
+      if (userAddress == null) throw new Error('User not found');
       const rawBalances = await app.alchemy.getTokenBalanceByAddress(
-        userAddress,
+        userAddress as `0x${string}`,
       );
 
       const tokenAddresses = rawBalances
