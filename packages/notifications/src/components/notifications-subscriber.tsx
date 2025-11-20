@@ -36,9 +36,6 @@ export function NotificationSubscriber({
   const [subscribed, setSubscribed] = React.useState(false);
   const [loggedIn, setLoggedIn] = React.useState(false);
   const router = useRouter();
-  React.useEffect(() => {
-    console.log('subscribed changed:', subscribed);
-  }, [subscribed]);
 
   React.useEffect(() => {
     if (!initialized || !OneSignal || isLoading) {
@@ -79,7 +76,6 @@ export function NotificationSubscriber({
         const scope = `/${
           serviceWorkerPath?.split('/').filter(Boolean)[0] ?? ''
         }/`;
-        console.log('scope:', scope);
         await OneSignal.init({
           appId,
           safari_web_id: safariWebId,
@@ -113,7 +109,6 @@ export function NotificationSubscriber({
         });
         console.log('OneSignal initialized');
         setInitialized(true);
-        console.log(OneSignal);
         const isSubscribed = await hasPermission();
         setSubscribed(isSubscribed);
         console.log('subscribed:', subscribed);
