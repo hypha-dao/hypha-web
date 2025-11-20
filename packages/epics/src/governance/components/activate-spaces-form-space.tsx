@@ -24,7 +24,7 @@ import { useActivateSpaces } from '../../people/hooks/use-activate-hypha-spaces'
 import { isAddress } from 'ethers';
 import { useScrollToErrors } from '../../hooks';
 import { Locale } from '@hypha-platform/i18n';
-import { getProposalUrl } from '../../common';
+import { getDhoUrlAgreements } from '../../common';
 
 const RECIPIENT_SPACE_ADDRESS = '0x695f21B04B22609c4ab9e5886EB0F65cDBd464B6';
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
@@ -136,7 +136,7 @@ export const ActivateSpacesFormSpace = ({
       web3SpaceId &&
       creator
     ) {
-      const url = getProposalUrl(lang, spaceSlug, agreementSlug);
+      const url = getDhoUrlAgreements(lang, spaceSlug);
       notifyProposalCreated({
         proposalId: web3ProposalId,
         spaceId: BigInt(web3SpaceId),

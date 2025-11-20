@@ -20,7 +20,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAssets, useFundWallet } from '../../treasury';
 import React from 'react';
 import { useScrollToErrors } from '../../hooks';
-import { getProposalUrl } from '../../common';
+import { getDhoUrlAgreements } from '../../common';
 import { Locale } from '@hypha-platform/i18n';
 
 const RECIPIENT_SPACE_ADDRESS = '0x3dEf11d005F8C85c93e3374B28fcC69B25a650Af';
@@ -111,7 +111,7 @@ export const BuyHyphaTokensForm = ({
       web3SpaceId &&
       creator
     ) {
-      const url = getProposalUrl(lang, spaceSlug, agreementSlug);
+      const url = getDhoUrlAgreements(lang, spaceSlug);
       notifyProposalCreated({
         proposalId: web3ProposalId,
         spaceId: BigInt(web3SpaceId),

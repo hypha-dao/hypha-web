@@ -18,7 +18,7 @@ import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useConfig } from 'wagmi';
 import { useScrollToErrors } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
-import { getProposalUrl } from '../../common';
+import { getDhoUrlAgreements } from '../../common';
 import { Locale } from '@hypha-platform/i18n';
 
 const fullSchemaCreatePayForExpensesForm =
@@ -88,7 +88,7 @@ export const CreatePayForExpensesForm = ({
       web3SpaceId &&
       creator
     ) {
-      const url = getProposalUrl(lang, spaceSlug, agreementSlug);
+      const url = getDhoUrlAgreements(lang, spaceSlug);
       notifyProposalCreated({
         proposalId: web3ProposalId,
         spaceId: BigInt(web3SpaceId),

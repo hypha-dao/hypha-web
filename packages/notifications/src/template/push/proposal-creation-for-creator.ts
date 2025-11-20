@@ -7,7 +7,7 @@ export function pushProposalCreationForCreator({
   proposalTitle,
   spaceTitle,
 }: ProposalCreationProps): Push {
-  const space = spaceTitle ? `the space "${spaceTitle}"` : 'a space';
+  const space = spaceTitle ? `"${spaceTitle}"` : 'a space';
   const proposal = proposalTitle ? `"${proposalTitle}"` : proposalState;
 
   switch (proposalLabel) {
@@ -19,8 +19,12 @@ export function pushProposalCreationForCreator({
 
     default:
       return {
-        headings: { en: `You successfully created a ${proposalState}` },
-        contents: { en: `Your ${proposal} was created in ${space}.` },
+        headings: {
+          en: `You successfully created a ${proposalState} ${proposal}`,
+        },
+        contents: {
+          en: `Your ${proposal} was successfully created in ${space}`,
+        },
       };
   }
 }

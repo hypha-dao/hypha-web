@@ -20,7 +20,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useSpaceTokenRequirementsByAddress } from '../hooks';
 import { useScrollToErrors } from '../../hooks';
 import { Locale } from '@hypha-platform/i18n';
-import { getProposalUrl } from '../../common';
+import { getDhoUrlAgreements } from '../../common';
 
 interface SpaceToSpaceMembershipFormProps {
   successfulUrl: string;
@@ -88,7 +88,7 @@ export const SpaceToSpaceMembershipForm = ({
       web3SpaceId &&
       creator
     ) {
-      const url = getProposalUrl(lang, spaceSlug, agreementSlug);
+      const url = getDhoUrlAgreements(lang, spaceSlug);
       notifyProposalCreated({
         proposalId: web3ProposalId,
         spaceId: BigInt(web3SpaceId),

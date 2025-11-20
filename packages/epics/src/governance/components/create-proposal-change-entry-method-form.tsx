@@ -23,7 +23,7 @@ import React from 'react';
 import { useSpaceTokenRequirementsByAddress } from '../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useScrollToErrors } from '../../hooks';
-import { getProposalUrl } from '../../common';
+import { getDhoUrlAgreements } from '../../common';
 import { Locale } from '@hypha-platform/i18n';
 
 const schemaCreateProposalChangeEntryMethod =
@@ -166,7 +166,7 @@ export const CreateProposalChangeEntryMethodForm = ({
       web3SpaceId &&
       creator
     ) {
-      const url = getProposalUrl(lang, spaceSlug, agreementSlug);
+      const url = getDhoUrlAgreements(lang, spaceSlug);
       notifyProposalCreated({
         proposalId: web3ProposalId,
         spaceId: BigInt(web3SpaceId),

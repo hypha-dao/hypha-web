@@ -20,7 +20,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useDbTokens, useScrollToErrors } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { Locale } from '@hypha-platform/i18n';
-import { getProposalUrl } from '../../common';
+import { getDhoUrlAgreements } from '../../common';
 
 type FormValues = z.infer<typeof schemaIssueNewToken>;
 
@@ -105,7 +105,7 @@ export const IssueNewTokenForm = ({
       web3SpaceId &&
       creator
     ) {
-      const url = getProposalUrl(lang, spaceSlug, agreementSlug);
+      const url = getDhoUrlAgreements(lang, spaceSlug);
       notifyProposalCreated({
         proposalId: web3ProposalId,
         spaceId: BigInt(web3SpaceId),

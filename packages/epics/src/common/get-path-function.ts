@@ -4,6 +4,12 @@ export const getDhoPathAgreements = (lang: Locale, id: string) => {
   return `/${lang}/dho/${id}/agreements`;
 };
 
+export const getDhoUrlAgreements = (lang: Locale, id: string) => {
+  const protocol = window.location.protocol;
+  const host = window.location.host;
+  return `${protocol}//${host}/${lang}/dho/${id}/agreements`;
+};
+
 export const getProposalPath = (
   lang: Locale,
   spaceSlug: string,

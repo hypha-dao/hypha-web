@@ -19,7 +19,7 @@ import { useConfig } from 'wagmi';
 import { useScrollToErrors } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { Locale } from '@hypha-platform/i18n';
-import { getProposalUrl } from '../../common';
+import { getDhoUrlAgreements } from '../../common';
 
 type FormValues = z.infer<typeof schemaCreateAgreementForm>;
 
@@ -89,7 +89,7 @@ export const CreateProposeAContributionForm = ({
       web3SpaceId &&
       creator
     ) {
-      const url = getProposalUrl(lang, spaceSlug, agreementSlug);
+      const url = getDhoUrlAgreements(lang, spaceSlug);
       notifyProposalCreated({
         proposalId: web3ProposalId,
         spaceId: BigInt(web3SpaceId),

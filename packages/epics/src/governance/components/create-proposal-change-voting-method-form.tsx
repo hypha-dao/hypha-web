@@ -20,7 +20,7 @@ import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useParams, useRouter } from 'next/navigation';
 import { VOTING_METHOD_TYPES } from '../hooks';
 import { useScrollToErrors } from '../../hooks';
-import { getProposalUrl } from '../../common';
+import { getDhoUrlAgreements } from '../../common';
 import { Locale } from '@hypha-platform/i18n';
 
 type FormValues = z.infer<typeof schemaCreateProposalChangeVotingMethod>;
@@ -154,7 +154,7 @@ export const CreateProposalChangeVotingMethodForm = ({
       web3SpaceId &&
       creator
     ) {
-      const url = getProposalUrl(lang, spaceSlug, agreementSlug);
+      const url = getDhoUrlAgreements(lang, spaceSlug);
       notifyProposalCreated({
         proposalId: web3ProposalId,
         spaceId: BigInt(web3SpaceId),
