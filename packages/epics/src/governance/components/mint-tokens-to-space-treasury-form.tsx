@@ -7,13 +7,14 @@ import {
   createAgreementFiles,
   useMe,
   useJwt,
+  useCreateMintTokensToSpaceTreasuryOrchestrator,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
 import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useScrollToErrors } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 
@@ -40,11 +41,22 @@ export const MintTokensToSpaceTreasuryForm = ({
   web3SpaceId,
   plugin,
 }: MintTokensToSpaceTreasuryFormProps) => {
-  const { id: spaceSlug } = useParams();
   const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
+  const {
+    createMintTokensToSpaceTreasury,
+    reset,
+    currentAction,
+    isError,
+    isPending,
+    progress,
+    agreement: { slug: agreementSlug },
+  } = useCreateMintTokensToSpaceTreasuryOrchestrator({
+    authToken: jwt,
+    config,
+  });
 
   const [formError, setFormError] = React.useState<string | null>(null);
 
@@ -69,40 +81,72 @@ export const MintTokensToSpaceTreasuryForm = ({
 
   useScrollToErrors(form, formRef);
 
+  React.useEffect(() => {
+    if (progress === 100 && agreementSlug) {
+      router.push(successfulUrl);
+    }
+  }, [progress, agreementSlug, router, successfulUrl]);
+
   const handleCreate = async (data: FormValues) => {
     setFormError(null);
+    await createMintTokensToSpaceTreasury({
+      ...data,
+      mint: {
+        amount: Number(data.mint.amount),
+        token: data.mint.token as `0x${string}`,
+      },
+      spaceId: spaceId as number,
+      web3SpaceId: web3SpaceId as number,
+    });
   };
 
   return (
-    <Form {...form}>
-      <form
-        ref={formRef}
-        onSubmit={form.handleSubmit(handleCreate)}
-        className="flex flex-col gap-5"
-      >
-        <CreateAgreementBaseFields
-          creator={{
-            avatar: person?.avatarUrl || '',
-            name: person?.name || '',
-            surname: person?.surname || '',
-          }}
-          closeUrl={closeUrl || successfulUrl}
-          backUrl={backUrl}
-          backLabel="Back to settings"
-          isLoading={false}
-          label="Treasury Minting"
-        />
-        {plugin}
-        <Separator />
-        <div className="flex flex-col gap-2">
-          {formError && (
-            <div className="text-error-11 text-2 font-medium">{formError}</div>
-          )}
-          <div className="flex justify-end w-full">
-            <Button type="submit">Publish</Button>
+    <LoadingBackdrop
+      progress={progress}
+      isLoading={isPending}
+      message={
+        isError ? (
+          <div className="flex flex-col">
+            <div>Ouh Snap. There was an error</div>
+            <Button onClick={reset}>Reset</Button>
           </div>
-        </div>
-      </form>
-    </Form>
+        ) : (
+          <div>{currentAction}</div>
+        )
+      }
+    >
+      <Form {...form}>
+        <form
+          ref={formRef}
+          onSubmit={form.handleSubmit(handleCreate)}
+          className="flex flex-col gap-5"
+        >
+          <CreateAgreementBaseFields
+            creator={{
+              avatar: person?.avatarUrl || '',
+              name: person?.name || '',
+              surname: person?.surname || '',
+            }}
+            closeUrl={closeUrl || successfulUrl}
+            backUrl={backUrl}
+            backLabel="Back to settings"
+            isLoading={false}
+            label="Treasury Minting"
+          />
+          {plugin}
+          <Separator />
+          <div className="flex flex-col gap-2">
+            {formError && (
+              <div className="text-error-11 text-2 font-medium">
+                {formError}
+              </div>
+            )}
+            <div className="flex justify-end w-full">
+              <Button type="submit">Publish</Button>
+            </div>
+          </div>
+        </form>
+      </Form>
+    </LoadingBackdrop>
   );
 };
