@@ -67,8 +67,6 @@ export const MintTokensToSpaceTreasuryForm = ({
     mode: 'onChange',
   });
 
-  console.log(form);
-
   useScrollToErrors(form, formRef);
 
   const handleCreate = async (data: FormValues) => {
