@@ -18,7 +18,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useDbTokens } from '../../../hooks';
 
-export interface ExtendedToken extends Token {
+interface ExtendedToken extends Token {
   space?: {
     title: string;
     slug: string;
