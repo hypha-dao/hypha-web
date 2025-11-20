@@ -280,6 +280,9 @@ export const NotificationCentreForm = ({
                                 />
                                 <FormLabel htmlFor={checkboxId}>
                                   {subscription.title}
+                                  {subscription.disabled && (
+                                    <span> (Coming Soon)</span>
+                                  )}
                                 </FormLabel>
                               </div>
                             </span>
