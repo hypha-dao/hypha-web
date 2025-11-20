@@ -3,6 +3,11 @@ import { response, type Response } from './schema/get-wallet';
 import { erc20Abi, formatUnits, isAddress } from 'viem';
 
 export default async function walletRoutes(app: FastifyInstance) {
+  await app.register(import('@fastify/rate-limit'), {
+    max: 100,
+    timeWindow: '1 minute',
+  });
+
   /**
    * GET /wallet/receive
    */
