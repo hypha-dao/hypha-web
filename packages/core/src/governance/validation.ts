@@ -270,6 +270,14 @@ const decaySettingsSchema = z.object({
 export const schemaMintTokensToSpaceTreasury = z.object({
   ...createAgreementWeb2Props,
   ...createAgreementFiles,
+  mint: z.object({
+    amount: z
+      .string({ message: 'Please enter amount' })
+      .min(1, 'Please enter amount'),
+    token: z
+      .string({ message: 'Choose a token to mint' })
+      .min(1, 'Choose a token to mint'),
+  }),
 });
 
 export const schemaIssueNewToken = z.object({

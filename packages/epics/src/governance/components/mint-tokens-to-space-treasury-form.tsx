@@ -59,9 +59,15 @@ export const MintTokensToSpaceTreasuryForm = ({
       spaceId: spaceId ?? undefined,
       creatorId: person?.id,
       label: 'Treasury Minting',
+      mint: {
+        amount: undefined,
+        token: undefined,
+      },
     },
     mode: 'onChange',
   });
+
+  console.log(form);
 
   useScrollToErrors(form, formRef);
 

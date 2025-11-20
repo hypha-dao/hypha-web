@@ -10,6 +10,7 @@ import {
   BuyHyphaTokensPlugin,
   ActivateSpacesPlugin,
   SpaceToSpaceMembershipPlugin,
+  MintTokensToSpaceTreasuryPlugin,
 } from '@hypha-platform/epics';
 import { useMembers } from '@web/hooks/use-members';
 import { Person, Space } from '@hypha-platform/core/client';
@@ -24,6 +25,7 @@ export const PLUGINS = {
   'buy-hypha-tokens': BuyHyphaTokensPlugin,
   'activate-spaces': ActivateSpacesPlugin,
   'space-to-space-membership': SpaceToSpaceMembershipPlugin,
+  'mint-tokens-to-space-treasury': MintTokensToSpaceTreasuryPlugin,
 };
 
 type PluginProps = {

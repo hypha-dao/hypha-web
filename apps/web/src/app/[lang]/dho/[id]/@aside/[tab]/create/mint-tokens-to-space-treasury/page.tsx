@@ -1,6 +1,7 @@
 import {
   SidePanel,
   MintTokensToSpaceTreasuryForm,
+  MintTokensToSpaceTreasuryPlugin,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { notFound } from 'next/navigation';
@@ -26,7 +27,7 @@ export default async function MintTokensToSpaceTreasuryPage({
 
   if (!spaceFromDb) notFound();
 
-  const { id: spaceId, web3SpaceId } = spaceFromDb;
+  const { id: spaceId, web3SpaceId, slug } = spaceFromDb;
 
   const successfulUrl = getDhoPathAgreements(lang, id);
   const closeUrl = `/${lang}/dho/${id}/${tab}`;
@@ -42,7 +43,7 @@ export default async function MintTokensToSpaceTreasuryPage({
         successfulUrl={successfulUrl}
         backUrl={backUrl}
         closeUrl={closeUrl}
-        plugin={<></>}
+        plugin={<MintTokensToSpaceTreasuryPlugin spaceSlug={slug} />}
       />
     </SidePanel>
   );
