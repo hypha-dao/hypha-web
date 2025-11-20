@@ -8,6 +8,7 @@ import v1Routes from '@routes/v1';
 import { API_PREFIX } from './constants';
 import { environment, type Environment } from '@schemas/env';
 import alchemyClient from '@plugins/alchemy';
+import dbService from '@plugins/db';
 import { Network } from 'alchemy-sdk';
 
 const app = Fastify();
@@ -30,6 +31,12 @@ const start = async () => {
     await app.register(fastifyEnv, {
       schema: environment,
       dotenv: true,
+    });
+
+    await app.register(dbService, {
+      authenticatedUrl: app.getEnvs<Environment>().DEFAULT_DB_AUTHENTICATED_URL,
+      anonymousUrl: app.getEnvs<Environment>().DEFAULT_DB_ANONYMOUS_URL,
+      defaultUrl: app.getEnvs<Environment>().DEFAULT_DB_URL,
     });
 
     await app.register(web3Client, {
