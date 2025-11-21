@@ -10,15 +10,18 @@ import {
   useBuyHyphaTokensOrchestrator,
   useJwt,
   useSpaceDetailsWeb3Rpc,
+  useHookRegistry,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { LoadingBackdrop, Form, Separator, Button } from '@hypha-platform/ui';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useConfig } from 'wagmi';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useAssets, useFundWallet } from '../../treasury';
 import React from 'react';
 import { useScrollToErrors } from '../../hooks';
+import { getDhoUrlAgreements } from '../../common';
+import { Locale } from '@hypha-platform/i18n';
 
 const RECIPIENT_SPACE_ADDRESS = '0x3dEf11d005F8C85c93e3374B28fcC69B25a650Af';
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
@@ -47,6 +50,7 @@ export const BuyHyphaTokensForm = ({
   const { jwt } = useJwt();
   const config = useConfig();
   const router = useRouter();
+  const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({
     spaceId: web3SpaceId as number,
   });
@@ -65,8 +69,10 @@ export const BuyHyphaTokensForm = ({
     isError,
     isPending,
     progress,
-    agreement: { slug: agreementSlug },
+    agreement: { slug: agreementSlug, proposalId: web3ProposalId, creator },
   } = useBuyHyphaTokensOrchestrator({ authToken: jwt, config });
+  const { useSendNotifications } = useHookRegistry();
+  const { notifyProposalCreated } = useSendNotifications!({ authToken: jwt });
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
@@ -98,10 +104,23 @@ export const BuyHyphaTokensForm = ({
   }, [form, web3SpaceId, spaceDetails]);
 
   React.useEffect(() => {
-    if (progress === 100 && agreementSlug) {
+    if (
+      progress === 100 &&
+      agreementSlug &&
+      web3ProposalId &&
+      web3SpaceId &&
+      creator
+    ) {
+      const url = getDhoUrlAgreements(lang, spaceSlug);
+      notifyProposalCreated({
+        proposalId: web3ProposalId,
+        spaceId: BigInt(web3SpaceId),
+        creator,
+        url,
+      });
       router.push(successfulUrl);
     }
-  }, [progress, agreementSlug]);
+  }, [progress, agreementSlug, web3ProposalId, web3SpaceId, creator]);
 
   const handleCreate = async (data: FormValues) => {
     if (!web3SpaceId || spaceId === undefined) return;

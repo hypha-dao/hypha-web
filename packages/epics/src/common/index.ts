@@ -7,3 +7,5 @@ export * from './links';
 export * from './select-action';
 export * from './side-panel';
 export * from './web-links';
+export * from './get-active-tab-from-path';
+export * from './get-path-function';

@@ -1,11 +1,14 @@
 'use client';
 
-import { CreateSubspaceForm, SidePanel } from '@hypha-platform/epics';
+import {
+  CreateSubspaceForm,
+  getDhoPathOverview,
+  SidePanel,
+} from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
 import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
-import { getDhoPathOverview } from '../../../../@tab/overview/constants';
 
 export default function CreateSubspacePage() {
   const { id: spaceSlug, lang } = useParams<{ id: string; lang: Locale }>();

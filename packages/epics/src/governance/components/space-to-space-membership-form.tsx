@@ -9,15 +9,18 @@ import {
   Space,
   useSpaceToSpaceMembershipOrchestrator,
   useJwt,
+  useHookRegistry,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useConfig } from 'wagmi';
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useSpaceTokenRequirementsByAddress } from '../hooks';
 import { useScrollToErrors } from '../../hooks';
+import { Locale } from '@hypha-platform/i18n';
+import { getDhoUrlAgreements } from '../../common';
 
 interface SpaceToSpaceMembershipFormProps {
   successfulUrl: string;
@@ -64,6 +67,7 @@ export const SpaceToSpaceMembershipForm = ({
   const { jwt } = useJwt();
   const config = useConfig();
   const router = useRouter();
+  const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
   const {
     spaceToSpaceAction,
     reset,
@@ -71,14 +75,29 @@ export const SpaceToSpaceMembershipForm = ({
     isError,
     isPending,
     progress,
-    agreement: { slug: agreementSlug },
+    agreement: { slug: agreementSlug, proposalId: web3ProposalId, creator },
   } = useSpaceToSpaceMembershipOrchestrator({ authToken: jwt, config, spaces });
+  const { useSendNotifications } = useHookRegistry();
+  const { notifyProposalCreated } = useSendNotifications!({ authToken: jwt });
 
   React.useEffect(() => {
-    if (progress === 100 && agreementSlug) {
+    if (
+      progress === 100 &&
+      agreementSlug &&
+      web3ProposalId &&
+      web3SpaceId &&
+      creator
+    ) {
+      const url = getDhoUrlAgreements(lang, spaceSlug);
+      notifyProposalCreated({
+        proposalId: web3ProposalId,
+        spaceId: BigInt(web3SpaceId),
+        creator,
+        url,
+      });
       router.push(successfulUrl);
     }
-  }, [progress, agreementSlug]);
+  }, [progress, agreementSlug, web3ProposalId, web3SpaceId, creator]);
 
   const spaceAddress = form.watch('space');
 

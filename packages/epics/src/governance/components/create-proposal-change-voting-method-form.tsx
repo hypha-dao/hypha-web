@@ -10,15 +10,18 @@ import {
   useTokensVotingPower,
   useJwt,
   useSpaceDetailsWeb3Rpc,
+  useHookRegistry,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
 import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { VOTING_METHOD_TYPES } from '../hooks';
 import { useScrollToErrors } from '../../hooks';
+import { getDhoUrlAgreements } from '../../common';
+import { Locale } from '@hypha-platform/i18n';
 
 type FormValues = z.infer<typeof schemaCreateProposalChangeVotingMethod>;
 
@@ -41,6 +44,7 @@ export const CreateProposalChangeVotingMethodForm = ({
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
+  const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
 
   const { spaceDetails, isLoading } = useSpaceDetailsWeb3Rpc({
     spaceId: web3SpaceId as number,
@@ -52,8 +56,10 @@ export const CreateProposalChangeVotingMethodForm = ({
     isError,
     isPending,
     progress,
-    agreement: { slug: agreementSlug },
+    agreement: { slug: agreementSlug, proposalId: web3ProposalId, creator },
   } = useCreateChangeVotingMethodOrchestrator({ authToken: jwt, config });
+  const { useSendNotifications } = useHookRegistry();
+  const { notifyProposalCreated } = useSendNotifications!({ authToken: jwt });
   const { votingPowerToken, voicePowerToken } = useTokensVotingPower({
     spaceId: BigInt(web3SpaceId as number),
   });
@@ -141,10 +147,31 @@ export const CreateProposalChangeVotingMethodForm = ({
   };
 
   React.useEffect(() => {
-    if (progress === 100 && agreementSlug) {
+    if (
+      progress === 100 &&
+      agreementSlug &&
+      web3ProposalId &&
+      web3SpaceId &&
+      creator
+    ) {
+      const url = getDhoUrlAgreements(lang, spaceSlug);
+      notifyProposalCreated({
+        proposalId: web3ProposalId,
+        spaceId: BigInt(web3SpaceId),
+        creator,
+        url,
+      });
       router.push(successfulUrl);
     }
-  }, [progress, agreementSlug, router, successfulUrl]);
+  }, [
+    progress,
+    agreementSlug,
+    web3ProposalId,
+    web3SpaceId,
+    creator,
+    router,
+    successfulUrl,
+  ]);
 
   const isButtonDisabled = quorum === 0 && unity === 0;
 

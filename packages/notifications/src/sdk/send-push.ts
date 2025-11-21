@@ -8,11 +8,13 @@ export async function sendPushByAlias({
   app_id,
   alias,
   content,
+  url,
 }: PushParamsForAlias) {
   const params = {
     app_id,
     ...alias,
     ...content,
+    url,
   };
 
   return await sendPush(params);
@@ -22,11 +24,13 @@ export async function sendPushBySegment({
   app_id,
   segment,
   content,
+  url,
 }: PushParamsForSegment) {
   const params = {
     app_id,
     ...segment,
     ...content,
+    url,
   };
 
   return await sendPush(params);
@@ -37,6 +41,9 @@ async function sendPush(params: Partial<Notification>) {
 
   Object.assign(notification, params);
   notification.target_channel = 'push';
+  notification.headings = {
+    en: 'Hypha',
+  };
 
   return await notify(notification);
 }

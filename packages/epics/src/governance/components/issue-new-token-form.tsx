@@ -9,6 +9,7 @@ import {
   useCreateIssueTokenOrchestrator,
   DbToken,
   useJwt,
+  useHookRegistry,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
@@ -18,6 +19,8 @@ import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter, useParams } from 'next/navigation';
 import { useDbTokens, useScrollToErrors } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
+import { Locale } from '@hypha-platform/i18n';
+import { getDhoUrlAgreements } from '../../common';
 
 type FormValues = z.infer<typeof schemaIssueNewToken>;
 
@@ -42,11 +45,11 @@ export const IssueNewTokenForm = ({
   web3SpaceId,
   plugin,
 }: IssueNewTokenFormProps) => {
-  const { id: spaceSlug } = useParams();
   const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
+  const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
   const {
     createIssueToken,
     reset,
@@ -54,8 +57,10 @@ export const IssueNewTokenForm = ({
     isError,
     isPending,
     progress,
-    agreement: { slug: agreementSlug },
+    agreement: { slug: agreementSlug, proposalId: web3ProposalId, creator },
   } = useCreateIssueTokenOrchestrator({ authToken: jwt, config });
+  const { useSendNotifications } = useHookRegistry();
+  const { notifyProposalCreated } = useSendNotifications!({ authToken: jwt });
 
   const [formError, setFormError] = React.useState<string | null>(null);
 
@@ -93,10 +98,31 @@ export const IssueNewTokenForm = ({
   }, [refetchDbTokens]);
 
   React.useEffect(() => {
-    if (progress === 100 && agreementSlug) {
+    if (
+      progress === 100 &&
+      agreementSlug &&
+      web3ProposalId &&
+      web3SpaceId &&
+      creator
+    ) {
+      const url = getDhoUrlAgreements(lang, spaceSlug);
+      notifyProposalCreated({
+        proposalId: web3ProposalId,
+        spaceId: BigInt(web3SpaceId),
+        creator,
+        url,
+      });
       router.push(successfulUrl);
     }
-  }, [progress, agreementSlug, router, successfulUrl]);
+  }, [
+    progress,
+    agreementSlug,
+    web3ProposalId,
+    web3SpaceId,
+    creator,
+    router,
+    successfulUrl,
+  ]);
 
   const handleCreate = async (data: FormValues) => {
     setFormError(null);

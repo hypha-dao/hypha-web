@@ -7,9 +7,9 @@ import {
   type Space,
 } from '@hypha-platform/core/client';
 import type { UseMembers } from '../hooks';
-import { getDhoPathOverview } from './space-card.container';
 import { SpaceCard } from './space-card';
 import { InnerSpaceCardWrapper } from './inner-space-card.wrapper';
+import { getDhoPathOverview } from '../../common';
 
 type SpaceCardContainerProps = {
   lang: Locale;

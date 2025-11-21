@@ -8,15 +8,18 @@ import {
   useJwt,
   useMe,
   useCreateProposeAContributionOrchestrator,
+  useHookRegistry,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useConfig } from 'wagmi';
 import { useScrollToErrors } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
+import { Locale } from '@hypha-platform/i18n';
+import { getDhoUrlAgreements } from '../../common';
 
 type FormValues = z.infer<typeof schemaCreateAgreementForm>;
 
@@ -42,6 +45,7 @@ export const CreateProposeAContributionForm = ({
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
+  const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
   const {
     createProposeAContribution,
     reset,
@@ -49,8 +53,10 @@ export const CreateProposeAContributionForm = ({
     isError,
     isPending,
     progress,
-    agreement: { slug: agreementSlug },
+    agreement: { slug: agreementSlug, proposalId: web3ProposalId, creator },
   } = useCreateProposeAContributionOrchestrator({ authToken: jwt, config });
+  const { useSendNotifications } = useHookRegistry();
+  const { notifyProposalCreated } = useSendNotifications!({ authToken: jwt });
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
@@ -76,10 +82,23 @@ export const CreateProposeAContributionForm = ({
   useScrollToErrors(form, formRef);
 
   React.useEffect(() => {
-    if (progress === 100 && agreementSlug) {
+    if (
+      progress === 100 &&
+      agreementSlug &&
+      web3ProposalId &&
+      web3SpaceId &&
+      creator
+    ) {
+      const url = getDhoUrlAgreements(lang, spaceSlug);
+      notifyProposalCreated({
+        proposalId: web3ProposalId,
+        spaceId: BigInt(web3SpaceId),
+        creator,
+        url,
+      });
       router.push(successfulUrl);
     }
-  }, [progress, agreementSlug]);
+  }, [progress, agreementSlug, web3ProposalId, web3SpaceId, creator]);
 
   const handleCreate = async (data: FormValues) => {
     if (!data.recipient || !data.payouts || data.payouts.length === 0) {

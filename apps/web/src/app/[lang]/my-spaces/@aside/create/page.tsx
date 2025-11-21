@@ -1,6 +1,10 @@
 'use client';
 
-import { SpaceForm, SidePanel } from '@hypha-platform/epics';
+import {
+  SpaceForm,
+  SidePanel,
+  getDhoPathOverview,
+} from '@hypha-platform/epics';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import React from 'react';
 import { Locale } from '@hypha-platform/i18n';
@@ -12,7 +16,6 @@ import {
 } from '@hypha-platform/core/client';
 import { useConfig } from 'wagmi';
 import { Button } from '@hypha-platform/ui';
-import { getDhoPathOverview } from '@web/app/[lang]/dho/[id]/@tab/overview/constants';
 
 export default function AsideCreateSpacePage() {
   const { lang } = useParams();

@@ -6,3 +6,4 @@ export * from './people';
 export * from './space';
 export * from './transaction';
 export * from './events';
+export * from './notifications';

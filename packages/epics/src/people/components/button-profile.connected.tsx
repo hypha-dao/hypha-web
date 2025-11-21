@@ -4,9 +4,10 @@ import { ButtonProfile } from './button-profile';
 import { useRouter, useParams, usePathname } from 'next/navigation';
 import { UseAuthentication } from '@hypha-platform/authentication';
 import { UseMe } from '../hooks/types';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { ButtonNavItemProps } from '@hypha-platform/ui';
 import { useTheme } from 'next-themes';
+import { getActiveTabFromPath } from '../../common';
 
 type ConnectedButtonProfileProps = {
   useAuthentication: UseAuthentication;
@@ -44,8 +45,25 @@ export const ConnectedButtonProfile = ({
 
   const router = useRouter();
   const pathname = usePathname();
-  const { lang } = useParams();
+  const { lang, id } = useParams();
   const { resolvedTheme, setTheme } = useTheme();
+
+  const notificationCentrePath = useMemo(() => {
+    if (!isPersonLoading && person?.slug) {
+      if (pathname.includes('/network')) {
+        return `/${lang}/network/notification-centre`;
+      } else if (pathname.includes('/my-spaces')) {
+        return `/${lang}/my-spaces/notification-centre`;
+      } else if (pathname.includes('/dho/')) {
+        const activeTab = getActiveTabFromPath(pathname);
+        return `/${lang}/dho/${id}/${activeTab}/notification-centre`;
+      } else {
+        return `/${lang}/profile/${person.slug}/notification-centre`;
+      }
+    } else {
+      return undefined;
+    }
+  }, [lang, id, person, isPersonLoading, pathname]);
 
   useEffect(() => {
     if (isAuthLoading || isPersonLoading || !isAuthenticated) {
@@ -104,6 +122,7 @@ export const ConnectedButtonProfile = ({
           ? `/${lang}/profile/${person?.slug ?? ''}`
           : newUserRedirectPath
       }
+      notificationCentrePath={notificationCentrePath}
       navItems={navItems}
     />
   );
