@@ -22,7 +22,7 @@ import {
 import { db } from '@hypha-platform/storage-postgres';
 import { hasEmojiOrLink } from '@hypha-platform/ui-utils';
 
-const EVT_TOKEN_ADDRESS = '0xd8724e6609838a54f7e505679bf6818f1a3f2d40';
+const EVC_TOKEN_ADDRESS = '0xEa6FC1ff9C204E7b40073cCB091Ca8ac30B0B80a';
 
 export async function GET(
   _: NextRequest,
@@ -188,7 +188,7 @@ export async function GET(
             );
           }
           let rate = prices[token.address] || 0;
-          if (token.address.toLowerCase() === EVT_TOKEN_ADDRESS) {
+          if (token.address.toLowerCase() === EVC_TOKEN_ADDRESS) {
             rate = 1;
           }
           const decimals = await getTokenDecimals(token.address);
