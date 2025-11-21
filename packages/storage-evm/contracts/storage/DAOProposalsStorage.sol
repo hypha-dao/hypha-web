@@ -148,4 +148,8 @@ contract DAOProposalsStorage is Initializable {
   // Minimum proposal duration for a space
   mapping(uint256 => uint256) public spaceMinProposalDuration;
   IVotingPowerDelegation internal delegationContract;
+
+  // New storage variables for proposal withdrawal feature
+  mapping(uint256 => bool) internal proposalWithdrawn;
+  mapping(uint256 => uint256[]) internal spaceWithdrawnProposals;
 }

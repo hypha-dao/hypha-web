@@ -3490,6 +3490,530 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
     });
   });
 
+  describe('Proposal Withdrawal Tests', function () {
+    it('Should allow proposal creator to withdraw their proposal', async function () {
+      console.log('\n--- Testing Basic Proposal Withdrawal ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Withdrawal Test',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Verify proposal is not withdrawn initially
+      expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(
+        false,
+      );
+
+      // Withdraw the proposal
+      await expect(daoProposals.connect(owner).withdrawProposal(proposalId))
+        .to.emit(daoProposals, 'ProposalWithdrawn')
+        .withArgs(proposalId, spaceId, owner.address);
+
+      // Verify proposal is now withdrawn
+      expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(true);
+
+      console.log('✅ Proposal successfully withdrawn by creator');
+    });
+
+    it('Should prevent non-creator from withdrawing a proposal', async function () {
+      console.log('\n--- Testing Withdrawal by Non-Creator ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Non-Creator Withdrawal Test',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Try to withdraw as a different member
+      await expect(
+        daoProposals.connect(members[0]).withdrawProposal(proposalId),
+      ).to.be.revertedWith('Only creator can withdraw');
+
+      console.log('✅ Non-creator correctly prevented from withdrawing');
+    });
+
+    it('Should prevent voting on a withdrawn proposal', async function () {
+      console.log('\n--- Testing Voting Prevention on Withdrawn Proposal ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Withdrawn Voting Test',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Withdraw the proposal
+      await daoProposals.connect(owner).withdrawProposal(proposalId);
+
+      // Try to vote on withdrawn proposal
+      await expect(
+        daoProposals.connect(members[0]).vote(proposalId, true),
+      ).to.be.revertedWith('Proposal has been withdrawn');
+
+      console.log('✅ Voting correctly prevented on withdrawn proposal');
+    });
+
+    it('Should prevent withdrawing an already executed proposal', async function () {
+      console.log('\n--- Testing Withdrawal of Executed Proposal ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Executed Withdrawal Test',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Vote to execute the proposal
+      await daoProposals.connect(members[0]).vote(proposalId, true);
+      await daoProposals.connect(members[1]).vote(proposalId, true);
+      await daoProposals.connect(members[2]).vote(proposalId, true);
+
+      const proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.executed).to.equal(true);
+
+      // Try to withdraw executed proposal
+      await expect(
+        daoProposals.connect(owner).withdrawProposal(proposalId),
+      ).to.be.revertedWith('Proposal already executed');
+
+      console.log('✅ Withdrawal correctly prevented for executed proposal');
+    });
+
+    it('Should prevent withdrawing an expired proposal', async function () {
+      console.log('\n--- Testing Withdrawal of Expired Proposal ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Expired Withdrawal Test',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Advance time past proposal duration
+      await ethers.provider.send('evm_increaseTime', [3601]); // Past 1 hour
+      await ethers.provider.send('evm_mine');
+
+      // Expire the proposal
+      await daoProposals.connect(owner).checkProposalExpiration(proposalId);
+
+      const proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.expired).to.equal(true);
+
+      // Try to withdraw expired proposal
+      await expect(
+        daoProposals.connect(owner).withdrawProposal(proposalId),
+      ).to.be.revertedWith('Proposal has expired');
+
+      console.log('✅ Withdrawal correctly prevented for expired proposal');
+    });
+
+    it('Should prevent withdrawing an already withdrawn proposal', async function () {
+      console.log('\n--- Testing Double Withdrawal ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Double Withdrawal Test',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Withdraw the proposal
+      await daoProposals.connect(owner).withdrawProposal(proposalId);
+
+      // Try to withdraw again
+      await expect(
+        daoProposals.connect(owner).withdrawProposal(proposalId),
+      ).to.be.revertedWith('Proposal already withdrawn');
+
+      console.log('✅ Double withdrawal correctly prevented');
+    });
+
+    it('Should correctly track withdrawn proposals by space', async function () {
+      console.log('\n--- Testing Withdrawn Proposals Tracking ---');
+
+      const { spaceId: spaceId1 } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 3,
+        name: 'Space 1',
+      });
+
+      const { spaceId: spaceId2 } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 3,
+        name: 'Space 2',
+      });
+
+      // Create proposals in both spaces
+      const proposal1 = await createTestProposal(spaceId1, owner);
+      const proposal2 = await createTestProposal(spaceId1, owner);
+      const proposal3 = await createTestProposal(spaceId2, owner);
+
+      // Withdraw proposals
+      await daoProposals.connect(owner).withdrawProposal(proposal1);
+      await daoProposals.connect(owner).withdrawProposal(proposal2);
+      await daoProposals.connect(owner).withdrawProposal(proposal3);
+
+      // Check withdrawn proposals for space 1
+      const withdrawnSpace1 = await daoProposals.getWithdrawnProposalsBySpace(
+        spaceId1,
+      );
+      expect(withdrawnSpace1.length).to.equal(2);
+      expect(withdrawnSpace1).to.include(proposal1);
+      expect(withdrawnSpace1).to.include(proposal2);
+
+      console.log(`Space 1 withdrawn proposals: ${withdrawnSpace1.length}`);
+
+      // Check withdrawn proposals for space 2
+      const withdrawnSpace2 = await daoProposals.getWithdrawnProposalsBySpace(
+        spaceId2,
+      );
+      expect(withdrawnSpace2.length).to.equal(1);
+      expect(withdrawnSpace2).to.include(proposal3);
+
+      console.log(`Space 2 withdrawn proposals: ${withdrawnSpace2.length}`);
+      console.log('✅ Withdrawn proposals correctly tracked by space');
+    });
+
+    it('Should allow withdrawal before any votes are cast', async function () {
+      console.log('\n--- Testing Withdrawal Before Voting ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Pre-Vote Withdrawal',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Withdraw before any votes
+      await daoProposals.connect(owner).withdrawProposal(proposalId);
+
+      const proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.yesVotes).to.equal(0);
+      expect(proposalState.noVotes).to.equal(0);
+      expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(true);
+
+      console.log('✅ Proposal withdrawn successfully before any votes');
+    });
+
+    it('Should allow withdrawal after some votes are cast', async function () {
+      console.log('\n--- Testing Withdrawal After Partial Voting ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Mid-Vote Withdrawal',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Cast some votes
+      await daoProposals.connect(members[0]).vote(proposalId, true);
+      await daoProposals.connect(members[1]).vote(proposalId, false);
+
+      let proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.yesVotes).to.equal(1);
+      expect(proposalState.noVotes).to.equal(1);
+
+      // Withdraw after votes
+      await daoProposals.connect(owner).withdrawProposal(proposalId);
+
+      proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.yesVotes).to.equal(1); // Votes remain
+      expect(proposalState.noVotes).to.equal(1); // Votes remain
+      expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(true);
+
+      // Try to vote after withdrawal
+      await expect(
+        daoProposals.connect(members[2]).vote(proposalId, true),
+      ).to.be.revertedWith('Proposal has been withdrawn');
+
+      console.log(
+        '✅ Proposal withdrawn after votes, further voting prevented',
+      );
+    });
+
+    it('Should emit ProposalWithdrawn event with correct parameters', async function () {
+      console.log('\n--- Testing ProposalWithdrawn Event ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Event Test',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Withdraw and check event
+      await expect(daoProposals.connect(owner).withdrawProposal(proposalId))
+        .to.emit(daoProposals, 'ProposalWithdrawn')
+        .withArgs(proposalId, spaceId, owner.address);
+
+      console.log('✅ ProposalWithdrawn event emitted with correct parameters');
+    });
+
+    it('Should handle withdrawal with delegated voting power scenario', async function () {
+      console.log('\n--- Testing Withdrawal with Delegation ---');
+
+      const { spaceId } = await createSpace({
+        unity: 80, // High unity to prevent execution with 3 YES, 1 NO (75%)
+        quorum: 50,
+        memberCount: 5,
+        name: 'Delegation Withdrawal',
+      });
+
+      // Setup delegation
+      await votingPowerDelegation
+        .connect(members[0])
+        .delegate(members[1].address, spaceId);
+      await votingPowerDelegation
+        .connect(members[2])
+        .delegate(members[1].address, spaceId);
+
+      const delegatePower = await spaceVotingPower.getVotingPower(
+        members[1].address,
+        spaceId,
+      );
+      expect(delegatePower).to.equal(3); // Own + 2 delegated
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Cast a NO vote first to prevent immediate execution when delegate votes
+      await daoProposals.connect(members[3]).vote(proposalId, false);
+
+      // Delegate votes with accumulated power
+      await daoProposals.connect(members[1]).vote(proposalId, true);
+
+      let proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.yesVotes).to.equal(3);
+      expect(proposalState.noVotes).to.equal(1);
+      expect(proposalState.executed).to.equal(false); // Should not be executed yet
+
+      // Withdraw proposal
+      await daoProposals.connect(owner).withdrawProposal(proposalId);
+
+      proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.executed).to.equal(false);
+      expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(true);
+
+      // Verify delegate cannot vote anymore
+      await expect(
+        daoProposals.connect(members[1]).vote(proposalId, false),
+      ).to.be.revertedWith('Proposal has been withdrawn');
+
+      console.log('✅ Withdrawal works correctly with delegated voting');
+    });
+
+    it('Should allow withdrawal for proposals with minimum duration set', async function () {
+      console.log('\n--- Testing Withdrawal with Minimum Duration ---');
+
+      const { spaceId } = await createSpace({
+        unity: 0,
+        quorum: 15, // Low quorum to trigger minimum duration
+        memberCount: 5,
+        name: 'Min Duration Withdrawal',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Verify minimum duration was set (should be 72 hours for q < 20)
+      const minDuration = await daoProposals.spaceMinProposalDuration(spaceId);
+      expect(minDuration).to.equal(259200); // 72 hours
+
+      // Withdraw before minimum duration elapses
+      await daoProposals.connect(owner).withdrawProposal(proposalId);
+
+      expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(true);
+
+      console.log(
+        '✅ Withdrawal allowed for proposals with minimum duration set',
+      );
+    });
+
+    it('Should handle multiple withdrawals across different spaces', async function () {
+      console.log('\n--- Testing Multiple Withdrawals Across Spaces ---');
+
+      const { spaceId: space1 } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 3,
+        name: 'Multi-Space 1',
+      });
+
+      const { spaceId: space2 } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 3,
+        name: 'Multi-Space 2',
+      });
+
+      const { spaceId: space3 } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 3,
+        name: 'Multi-Space 3',
+      });
+
+      // Create multiple proposals per space
+      const proposals = [];
+      for (let i = 0; i < 3; i++) {
+        proposals.push(await createTestProposal(space1, owner));
+        proposals.push(await createTestProposal(space2, owner));
+        proposals.push(await createTestProposal(space3, owner));
+      }
+
+      // Withdraw all proposals
+      for (const proposalId of proposals) {
+        await daoProposals.connect(owner).withdrawProposal(proposalId);
+      }
+
+      // Verify all spaces have correct withdrawal counts
+      const space1Withdrawn = await daoProposals.getWithdrawnProposalsBySpace(
+        space1,
+      );
+      const space2Withdrawn = await daoProposals.getWithdrawnProposalsBySpace(
+        space2,
+      );
+      const space3Withdrawn = await daoProposals.getWithdrawnProposalsBySpace(
+        space3,
+      );
+
+      expect(space1Withdrawn.length).to.equal(3);
+      expect(space2Withdrawn.length).to.equal(3);
+      expect(space3Withdrawn.length).to.equal(3);
+
+      console.log(
+        `✅ Multiple withdrawals tracked correctly: Space1=${space1Withdrawn.length}, Space2=${space2Withdrawn.length}, Space3=${space3Withdrawn.length}`,
+      );
+    });
+
+    it('Should maintain proposal data integrity after withdrawal', async function () {
+      console.log('\n--- Testing Data Integrity After Withdrawal ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Data Integrity Test',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Cast votes
+      await daoProposals.connect(members[0]).vote(proposalId, true);
+      await daoProposals.connect(members[1]).vote(proposalId, false);
+
+      const beforeWithdrawal = await daoProposals.getProposalCore(proposalId);
+
+      // Withdraw
+      await daoProposals.connect(owner).withdrawProposal(proposalId);
+
+      const afterWithdrawal = await daoProposals.getProposalCore(proposalId);
+
+      // Verify all data remains unchanged except withdrawal status
+      expect(afterWithdrawal.spaceId).to.equal(beforeWithdrawal.spaceId);
+      expect(afterWithdrawal.startTime).to.equal(beforeWithdrawal.startTime);
+      expect(afterWithdrawal.endTime).to.equal(beforeWithdrawal.endTime);
+      expect(afterWithdrawal.yesVotes).to.equal(beforeWithdrawal.yesVotes);
+      expect(afterWithdrawal.noVotes).to.equal(beforeWithdrawal.noVotes);
+      expect(afterWithdrawal.creator).to.equal(beforeWithdrawal.creator);
+      expect(afterWithdrawal.executed).to.equal(false);
+      expect(afterWithdrawal.expired).to.equal(false);
+
+      // Verify withdrawal status
+      expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(true);
+
+      console.log('✅ Proposal data integrity maintained after withdrawal');
+    });
+
+    it('Should return empty array for spaces with no withdrawn proposals', async function () {
+      console.log('\n--- Testing Empty Withdrawn Proposals List ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 3,
+        name: 'No Withdrawals',
+      });
+
+      // Create but don't withdraw
+      await createTestProposal(spaceId, owner);
+      await createTestProposal(spaceId, owner);
+
+      const withdrawnProposals =
+        await daoProposals.getWithdrawnProposalsBySpace(spaceId);
+
+      expect(withdrawnProposals.length).to.equal(0);
+
+      console.log('✅ Empty array returned for spaces with no withdrawals');
+    });
+
+    it('Should handle withdrawal combined with HyphaToken bypass', async function () {
+      console.log('\n--- Testing Withdrawal with HyphaToken Bypass ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 3,
+        name: 'HyphaToken Withdrawal Test',
+      });
+
+      // Get HyphaToken address
+      const hyphaTokenAddress = await daoProposals.hyphaTokenAddress();
+      const hyphaTokenCalldata = ethers
+        .id('payForSpaces(uint256[],uint256[])')
+        .slice(0, 10);
+
+      const proposalParams = {
+        spaceId,
+        duration: 3600,
+        transactions: [
+          {
+            target: hyphaTokenAddress,
+            value: 0,
+            data: hyphaTokenCalldata,
+          },
+        ],
+      };
+
+      // Create proposal targeting HyphaToken
+      await daoProposals.connect(owner).createProposal(proposalParams);
+      const proposalId = await daoProposals.proposalCounter();
+
+      // Withdraw the HyphaToken proposal
+      await daoProposals.connect(owner).withdrawProposal(proposalId);
+
+      expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(true);
+
+      // Verify cannot vote on withdrawn HyphaToken proposal
+      await expect(
+        daoProposals.connect(members[0]).vote(proposalId, true),
+      ).to.be.revertedWith('Proposal has been withdrawn');
+
+      console.log('✅ Withdrawal works correctly for HyphaToken proposals');
+    });
+  });
+
   describe('Token Voting Power - Member Holdings Only Tests', function () {
     describe('Regular Token Voting Power', function () {
       it('Should calculate total voting power based only on member token holdings, not total supply', async function () {
