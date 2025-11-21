@@ -151,6 +151,16 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       { initializer: 'initialize', kind: 'uups' },
     );
 
+    // Deploy DecayTokenVotingPower for decay token voting
+    const VoteDecayTokenVotingPower = await ethers.getContractFactory(
+      'VoteDecayTokenVotingPowerImplementation',
+    );
+    const decayTokenVotingPower = await upgrades.deployProxy(
+      VoteDecayTokenVotingPower,
+      [owner.address],
+      { initializer: 'initialize', kind: 'uups' },
+    );
+
     // Deploy VotingPowerDirectory
     const VotingPowerDirectory = await ethers.getContractFactory(
       'VotingPowerDirectoryImplementation',
@@ -181,7 +191,17 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       await daoSpaceFactory.getAddress(),
     );
     await decayingTokenFactory.setDecayVotingPowerContract(
-      await tokenVotingPower.getAddress(),
+      await decayTokenVotingPower.getAddress(),
+    );
+
+    await decayTokenVotingPower.setSpaceFactory(
+      await daoSpaceFactory.getAddress(),
+    );
+    await decayTokenVotingPower.setDelegationContract(
+      await votingPowerDelegation.getAddress(),
+    );
+    await decayTokenVotingPower.setDecayTokenFactory(
+      await decayingTokenFactory.getAddress(),
     );
 
     // Deploy RegularSpaceToken implementation
@@ -231,7 +251,12 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
     // Add token voting power source to directory (ID: 2)
     await votingPowerDirectory.addVotingPowerSource(
       await tokenVotingPower.getAddress(),
-    );
+    ); // ID: 2
+
+    // Add decay token voting power source to directory (ID: 3)
+    await votingPowerDirectory.addVotingPowerSource(
+      await decayTokenVotingPower.getAddress(),
+    ); // ID: 3
 
     await daoProposals.setContracts(
       await daoSpaceFactory.getAddress(),
@@ -257,6 +282,7 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       daoProposals,
       spaceVotingPower,
       tokenVotingPower,
+      decayTokenVotingPower,
       votingPowerDirectory,
       votingPowerDelegation,
       joinMethodDirectory,
@@ -340,6 +366,7 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
     daoProposals = fixture.daoProposals;
     spaceVotingPower = fixture.spaceVotingPower;
     tokenVotingPower = fixture.tokenVotingPower;
+    decayTokenVotingPower = fixture.decayTokenVotingPower;
     votingPowerDirectory = fixture.votingPowerDirectory;
     votingPowerDelegation = fixture.votingPowerDelegation;
     regularTokenFactory = fixture.regularTokenFactory;
@@ -1454,7 +1481,7 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
           daoProposals
             .connect(members[0])
             .setMinimumProposalDuration(spaceId, 86400),
-        ).to.be.revertedWithCustomError(daoProposals, 'OnlyExecutor');
+        ).to.be.revertedWith('Not authorized: only executor or owner');
 
         // Owner should succeed (owner is allowed in addition to executor)
         await expect(
@@ -2254,7 +2281,7 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       // Step 4: Y (non-member) tries to vote. Should fail with 'NotMember' because they are no longer a delegate.
       await expect(
         daoProposals.connect(nonMemberFirstDelegate).vote(proposalId, true),
-      ).to.be.revertedWithCustomError(daoProposals, 'NotMember');
+      ).to.be.revertedWith('Not a member or delegate');
       console.log(
         'nonMemberFirstDelegate (Y) correctly prevented from voting.',
       );
@@ -2569,7 +2596,7 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       // Try to change vote after execution
       await expect(
         daoProposals.connect(members[0]).vote(proposalId, false),
-      ).to.be.revertedWithCustomError(daoProposals, 'Executed');
+      ).to.be.revertedWith('Proposal already executed');
 
       console.log(
         '✅ Vote change correctly prevented after proposal execution',
@@ -2841,7 +2868,11 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         'TTT',
         0, // maxSupply (0 = unlimited)
         true, // transferable
-        true, // isVotingToken
+        false, // fixedMaxSupply
+        true, // autoMinting
+        0, // priceInUSD
+        false, // useTransferWhitelist
+        false, // useReceiveWhitelist
       );
       const receipt = await tx.wait();
 
@@ -2912,6 +2943,161 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
     });
   });
 
+  describe('HyphaToken Subscription Bypass Tests', function () {
+    it('Should allow creating proposals targeting HyphaToken without active subscription', async function () {
+      console.log('\n--- Testing HyphaToken Bypass for Proposal Creation ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 3,
+        name: 'HyphaToken Bypass Test',
+      });
+
+      // Get the hardcoded HyphaToken address from the contract
+      const hyphaTokenAddress = await daoProposals.hyphaTokenAddress();
+      console.log(`HyphaToken address: ${hyphaTokenAddress}`);
+
+      // Create a proposal that calls HyphaToken (mock call to payForSpaces)
+      const hyphaTokenCalldata = ethers
+        .id('payForSpaces(uint256[],uint256[])')
+        .slice(0, 10);
+
+      const proposalParams = {
+        spaceId,
+        duration: 3600,
+        transactions: [
+          {
+            target: hyphaTokenAddress,
+            value: 0,
+            data: hyphaTokenCalldata,
+          },
+        ],
+      };
+
+      // This should succeed even without an active subscription
+      await expect(daoProposals.connect(owner).createProposal(proposalParams))
+        .to.not.be.reverted;
+
+      const proposalId = await daoProposals.proposalCounter();
+      console.log(
+        `✅ Successfully created proposal ${proposalId} targeting HyphaToken`,
+      );
+    });
+
+    it('Should allow voting on proposals targeting HyphaToken without active subscription', async function () {
+      console.log('\n--- Testing HyphaToken Bypass for Voting ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 3,
+        name: 'HyphaToken Voting Bypass Test',
+      });
+
+      // Get the hardcoded HyphaToken address
+      const hyphaTokenAddress = await daoProposals.hyphaTokenAddress();
+
+      // Create a proposal that calls HyphaToken
+      const hyphaTokenCalldata = ethers
+        .id('investInHypha(uint256)')
+        .slice(0, 10);
+
+      const proposalParams = {
+        spaceId,
+        duration: 3600,
+        transactions: [
+          {
+            target: hyphaTokenAddress,
+            value: 0,
+            data: hyphaTokenCalldata,
+          },
+        ],
+      };
+
+      await daoProposals.connect(owner).createProposal(proposalParams);
+      const proposalId = await daoProposals.proposalCounter();
+
+      // Voting should succeed even without an active subscription
+      await expect(daoProposals.connect(members[0]).vote(proposalId, true)).to
+        .not.be.reverted;
+
+      await expect(daoProposals.connect(members[1]).vote(proposalId, true)).to
+        .not.be.reverted;
+
+      const proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.yesVotes).to.equal(2);
+
+      console.log(
+        `✅ Successfully voted on proposal targeting HyphaToken without subscription`,
+      );
+    });
+
+    it('Should allow mixed proposals with HyphaToken and other targets', async function () {
+      console.log('\n--- Testing Mixed Proposals with HyphaToken ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 3,
+        name: 'Mixed Proposal Test',
+      });
+
+      const hyphaTokenAddress = await daoProposals.hyphaTokenAddress();
+      const hyphaTokenCalldata = ethers
+        .id('payForSpaces(uint256[],uint256[])')
+        .slice(0, 10);
+      const otherCalldata = daoSpaceFactory.interface.encodeFunctionData(
+        'getSpaceDetails',
+        [spaceId],
+      );
+
+      // Create a proposal with multiple transactions, one targeting HyphaToken
+      const proposalParams = {
+        spaceId,
+        duration: 3600,
+        transactions: [
+          {
+            target: await daoSpaceFactory.getAddress(),
+            value: 0,
+            data: otherCalldata,
+          },
+          {
+            target: hyphaTokenAddress,
+            value: 0,
+            data: hyphaTokenCalldata,
+          },
+        ],
+      };
+
+      // Should succeed because one transaction targets HyphaToken
+      await expect(daoProposals.connect(owner).createProposal(proposalParams))
+        .to.not.be.reverted;
+
+      const proposalId = await daoProposals.proposalCounter();
+
+      // Voting should also succeed
+      await expect(daoProposals.connect(members[0]).vote(proposalId, true)).to
+        .not.be.reverted;
+
+      console.log(
+        `✅ Mixed proposal with HyphaToken bypasses subscription check`,
+      );
+    });
+
+    it('Should verify HyphaToken address is correctly set', async function () {
+      console.log('\n--- Verifying HyphaToken Address ---');
+
+      const expectedAddress = '0x8b93862835C36e9689E9bb1Ab21De3982e266CD3';
+      const actualAddress = await daoProposals.hyphaTokenAddress();
+
+      expect(actualAddress.toLowerCase()).to.equal(
+        expectedAddress.toLowerCase(),
+      );
+      console.log(`✅ HyphaToken address correctly set to: ${actualAddress}`);
+    });
+  });
+
   describe('Ownership and Decaying Token Transfer Logic', function () {
     describe('OwnershipSpaceToken Transfers', function () {
       let spaceId: any;
@@ -2962,7 +3148,11 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
             'Ownership Test Token',
             'OTT',
             0, // maxSupply (0 = unlimited)
-            false, // isVotingToken
+            false, // fixedMaxSupply
+            true, // autoMinting
+            0, // priceInUSD
+            false, // useTransferWhitelist
+            false, // useReceiveWhitelist
           );
         const receipt = await tx.wait();
         const tokenDeployedEvent = receipt?.logs
@@ -3185,8 +3375,12 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
             'DTT',
             0, // maxSupply
             transferable,
-            false, // isVotingToken
-            100, // 1% decay
+            false, // fixedMaxSupply
+            true, // autoMinting
+            0, // priceInUSD
+            false, // useTransferWhitelist
+            false, // useReceiveWhitelist
+            100, // 1% decay (100 basis points)
             60 * 60, // per hour
           );
         const receipt = await tx.wait();
@@ -3291,6 +3485,1054 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         expect(recipientBalance).to.be.closeTo(
           transferAmount,
           ethers.parseEther('0.1'),
+        );
+      });
+    });
+  });
+
+  describe('Proposal Withdrawal Tests', function () {
+    it('Should allow proposal creator to withdraw their proposal', async function () {
+      console.log('\n--- Testing Basic Proposal Withdrawal ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Withdrawal Test',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Verify proposal is not withdrawn initially
+      expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(
+        false,
+      );
+
+      // Withdraw the proposal
+      await expect(daoProposals.connect(owner).withdrawProposal(proposalId))
+        .to.emit(daoProposals, 'ProposalWithdrawn')
+        .withArgs(proposalId, spaceId, owner.address);
+
+      // Verify proposal is now withdrawn
+      expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(true);
+
+      console.log('✅ Proposal successfully withdrawn by creator');
+    });
+
+    it('Should prevent non-creator from withdrawing a proposal', async function () {
+      console.log('\n--- Testing Withdrawal by Non-Creator ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Non-Creator Withdrawal Test',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Try to withdraw as a different member
+      await expect(
+        daoProposals.connect(members[0]).withdrawProposal(proposalId),
+      ).to.be.revertedWith('Only creator can withdraw');
+
+      console.log('✅ Non-creator correctly prevented from withdrawing');
+    });
+
+    it('Should prevent voting on a withdrawn proposal', async function () {
+      console.log('\n--- Testing Voting Prevention on Withdrawn Proposal ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Withdrawn Voting Test',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Withdraw the proposal
+      await daoProposals.connect(owner).withdrawProposal(proposalId);
+
+      // Try to vote on withdrawn proposal
+      await expect(
+        daoProposals.connect(members[0]).vote(proposalId, true),
+      ).to.be.revertedWith('Proposal has been withdrawn');
+
+      console.log('✅ Voting correctly prevented on withdrawn proposal');
+    });
+
+    it('Should prevent withdrawing an already executed proposal', async function () {
+      console.log('\n--- Testing Withdrawal of Executed Proposal ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Executed Withdrawal Test',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Vote to execute the proposal
+      await daoProposals.connect(members[0]).vote(proposalId, true);
+      await daoProposals.connect(members[1]).vote(proposalId, true);
+      await daoProposals.connect(members[2]).vote(proposalId, true);
+
+      const proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.executed).to.equal(true);
+
+      // Try to withdraw executed proposal
+      await expect(
+        daoProposals.connect(owner).withdrawProposal(proposalId),
+      ).to.be.revertedWith('Proposal already executed');
+
+      console.log('✅ Withdrawal correctly prevented for executed proposal');
+    });
+
+    it('Should prevent withdrawing an expired proposal', async function () {
+      console.log('\n--- Testing Withdrawal of Expired Proposal ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Expired Withdrawal Test',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Advance time past proposal duration
+      await ethers.provider.send('evm_increaseTime', [3601]); // Past 1 hour
+      await ethers.provider.send('evm_mine');
+
+      // Expire the proposal
+      await daoProposals.connect(owner).checkProposalExpiration(proposalId);
+
+      const proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.expired).to.equal(true);
+
+      // Try to withdraw expired proposal
+      await expect(
+        daoProposals.connect(owner).withdrawProposal(proposalId),
+      ).to.be.revertedWith('Proposal has expired');
+
+      console.log('✅ Withdrawal correctly prevented for expired proposal');
+    });
+
+    it('Should prevent withdrawing an already withdrawn proposal', async function () {
+      console.log('\n--- Testing Double Withdrawal ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Double Withdrawal Test',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Withdraw the proposal
+      await daoProposals.connect(owner).withdrawProposal(proposalId);
+
+      // Try to withdraw again
+      await expect(
+        daoProposals.connect(owner).withdrawProposal(proposalId),
+      ).to.be.revertedWith('Proposal already withdrawn');
+
+      console.log('✅ Double withdrawal correctly prevented');
+    });
+
+    it('Should correctly track withdrawn proposals by space', async function () {
+      console.log('\n--- Testing Withdrawn Proposals Tracking ---');
+
+      const { spaceId: spaceId1 } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 3,
+        name: 'Space 1',
+      });
+
+      const { spaceId: spaceId2 } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 3,
+        name: 'Space 2',
+      });
+
+      // Create proposals in both spaces
+      const proposal1 = await createTestProposal(spaceId1, owner);
+      const proposal2 = await createTestProposal(spaceId1, owner);
+      const proposal3 = await createTestProposal(spaceId2, owner);
+
+      // Withdraw proposals
+      await daoProposals.connect(owner).withdrawProposal(proposal1);
+      await daoProposals.connect(owner).withdrawProposal(proposal2);
+      await daoProposals.connect(owner).withdrawProposal(proposal3);
+
+      // Check withdrawn proposals for space 1
+      const withdrawnSpace1 = await daoProposals.getWithdrawnProposalsBySpace(
+        spaceId1,
+      );
+      expect(withdrawnSpace1.length).to.equal(2);
+      expect(withdrawnSpace1).to.include(proposal1);
+      expect(withdrawnSpace1).to.include(proposal2);
+
+      console.log(`Space 1 withdrawn proposals: ${withdrawnSpace1.length}`);
+
+      // Check withdrawn proposals for space 2
+      const withdrawnSpace2 = await daoProposals.getWithdrawnProposalsBySpace(
+        spaceId2,
+      );
+      expect(withdrawnSpace2.length).to.equal(1);
+      expect(withdrawnSpace2).to.include(proposal3);
+
+      console.log(`Space 2 withdrawn proposals: ${withdrawnSpace2.length}`);
+      console.log('✅ Withdrawn proposals correctly tracked by space');
+    });
+
+    it('Should allow withdrawal before any votes are cast', async function () {
+      console.log('\n--- Testing Withdrawal Before Voting ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Pre-Vote Withdrawal',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Withdraw before any votes
+      await daoProposals.connect(owner).withdrawProposal(proposalId);
+
+      const proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.yesVotes).to.equal(0);
+      expect(proposalState.noVotes).to.equal(0);
+      expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(true);
+
+      console.log('✅ Proposal withdrawn successfully before any votes');
+    });
+
+    it('Should allow withdrawal after some votes are cast', async function () {
+      console.log('\n--- Testing Withdrawal After Partial Voting ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Mid-Vote Withdrawal',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Cast some votes
+      await daoProposals.connect(members[0]).vote(proposalId, true);
+      await daoProposals.connect(members[1]).vote(proposalId, false);
+
+      let proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.yesVotes).to.equal(1);
+      expect(proposalState.noVotes).to.equal(1);
+
+      // Withdraw after votes
+      await daoProposals.connect(owner).withdrawProposal(proposalId);
+
+      proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.yesVotes).to.equal(1); // Votes remain
+      expect(proposalState.noVotes).to.equal(1); // Votes remain
+      expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(true);
+
+      // Try to vote after withdrawal
+      await expect(
+        daoProposals.connect(members[2]).vote(proposalId, true),
+      ).to.be.revertedWith('Proposal has been withdrawn');
+
+      console.log(
+        '✅ Proposal withdrawn after votes, further voting prevented',
+      );
+    });
+
+    it('Should emit ProposalWithdrawn event with correct parameters', async function () {
+      console.log('\n--- Testing ProposalWithdrawn Event ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Event Test',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Withdraw and check event
+      await expect(daoProposals.connect(owner).withdrawProposal(proposalId))
+        .to.emit(daoProposals, 'ProposalWithdrawn')
+        .withArgs(proposalId, spaceId, owner.address);
+
+      console.log('✅ ProposalWithdrawn event emitted with correct parameters');
+    });
+
+    it('Should handle withdrawal with delegated voting power scenario', async function () {
+      console.log('\n--- Testing Withdrawal with Delegation ---');
+
+      const { spaceId } = await createSpace({
+        unity: 80, // High unity to prevent execution with 3 YES, 1 NO (75%)
+        quorum: 50,
+        memberCount: 5,
+        name: 'Delegation Withdrawal',
+      });
+
+      // Setup delegation
+      await votingPowerDelegation
+        .connect(members[0])
+        .delegate(members[1].address, spaceId);
+      await votingPowerDelegation
+        .connect(members[2])
+        .delegate(members[1].address, spaceId);
+
+      const delegatePower = await spaceVotingPower.getVotingPower(
+        members[1].address,
+        spaceId,
+      );
+      expect(delegatePower).to.equal(3); // Own + 2 delegated
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Cast a NO vote first to prevent immediate execution when delegate votes
+      await daoProposals.connect(members[3]).vote(proposalId, false);
+
+      // Delegate votes with accumulated power
+      await daoProposals.connect(members[1]).vote(proposalId, true);
+
+      let proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.yesVotes).to.equal(3);
+      expect(proposalState.noVotes).to.equal(1);
+      expect(proposalState.executed).to.equal(false); // Should not be executed yet
+
+      // Withdraw proposal
+      await daoProposals.connect(owner).withdrawProposal(proposalId);
+
+      proposalState = await daoProposals.getProposalCore(proposalId);
+      expect(proposalState.executed).to.equal(false);
+      expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(true);
+
+      // Verify delegate cannot vote anymore
+      await expect(
+        daoProposals.connect(members[1]).vote(proposalId, false),
+      ).to.be.revertedWith('Proposal has been withdrawn');
+
+      console.log('✅ Withdrawal works correctly with delegated voting');
+    });
+
+    it('Should allow withdrawal for proposals with minimum duration set', async function () {
+      console.log('\n--- Testing Withdrawal with Minimum Duration ---');
+
+      const { spaceId } = await createSpace({
+        unity: 0,
+        quorum: 15, // Low quorum to trigger minimum duration
+        memberCount: 5,
+        name: 'Min Duration Withdrawal',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Verify minimum duration was set (should be 72 hours for q < 20)
+      const minDuration = await daoProposals.spaceMinProposalDuration(spaceId);
+      expect(minDuration).to.equal(259200); // 72 hours
+
+      // Withdraw before minimum duration elapses
+      await daoProposals.connect(owner).withdrawProposal(proposalId);
+
+      expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(true);
+
+      console.log(
+        '✅ Withdrawal allowed for proposals with minimum duration set',
+      );
+    });
+
+    it('Should handle multiple withdrawals across different spaces', async function () {
+      console.log('\n--- Testing Multiple Withdrawals Across Spaces ---');
+
+      const { spaceId: space1 } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 3,
+        name: 'Multi-Space 1',
+      });
+
+      const { spaceId: space2 } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 3,
+        name: 'Multi-Space 2',
+      });
+
+      const { spaceId: space3 } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 3,
+        name: 'Multi-Space 3',
+      });
+
+      // Create multiple proposals per space
+      const proposals = [];
+      for (let i = 0; i < 3; i++) {
+        proposals.push(await createTestProposal(space1, owner));
+        proposals.push(await createTestProposal(space2, owner));
+        proposals.push(await createTestProposal(space3, owner));
+      }
+
+      // Withdraw all proposals
+      for (const proposalId of proposals) {
+        await daoProposals.connect(owner).withdrawProposal(proposalId);
+      }
+
+      // Verify all spaces have correct withdrawal counts
+      const space1Withdrawn = await daoProposals.getWithdrawnProposalsBySpace(
+        space1,
+      );
+      const space2Withdrawn = await daoProposals.getWithdrawnProposalsBySpace(
+        space2,
+      );
+      const space3Withdrawn = await daoProposals.getWithdrawnProposalsBySpace(
+        space3,
+      );
+
+      expect(space1Withdrawn.length).to.equal(3);
+      expect(space2Withdrawn.length).to.equal(3);
+      expect(space3Withdrawn.length).to.equal(3);
+
+      console.log(
+        `✅ Multiple withdrawals tracked correctly: Space1=${space1Withdrawn.length}, Space2=${space2Withdrawn.length}, Space3=${space3Withdrawn.length}`,
+      );
+    });
+
+    it('Should maintain proposal data integrity after withdrawal', async function () {
+      console.log('\n--- Testing Data Integrity After Withdrawal ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Data Integrity Test',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Cast votes
+      await daoProposals.connect(members[0]).vote(proposalId, true);
+      await daoProposals.connect(members[1]).vote(proposalId, false);
+
+      const beforeWithdrawal = await daoProposals.getProposalCore(proposalId);
+
+      // Withdraw
+      await daoProposals.connect(owner).withdrawProposal(proposalId);
+
+      const afterWithdrawal = await daoProposals.getProposalCore(proposalId);
+
+      // Verify all data remains unchanged except withdrawal status
+      expect(afterWithdrawal.spaceId).to.equal(beforeWithdrawal.spaceId);
+      expect(afterWithdrawal.startTime).to.equal(beforeWithdrawal.startTime);
+      expect(afterWithdrawal.endTime).to.equal(beforeWithdrawal.endTime);
+      expect(afterWithdrawal.yesVotes).to.equal(beforeWithdrawal.yesVotes);
+      expect(afterWithdrawal.noVotes).to.equal(beforeWithdrawal.noVotes);
+      expect(afterWithdrawal.creator).to.equal(beforeWithdrawal.creator);
+      expect(afterWithdrawal.executed).to.equal(false);
+      expect(afterWithdrawal.expired).to.equal(false);
+
+      // Verify withdrawal status
+      expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(true);
+
+      console.log('✅ Proposal data integrity maintained after withdrawal');
+    });
+
+    it('Should return empty array for spaces with no withdrawn proposals', async function () {
+      console.log('\n--- Testing Empty Withdrawn Proposals List ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 3,
+        name: 'No Withdrawals',
+      });
+
+      // Create but don't withdraw
+      await createTestProposal(spaceId, owner);
+      await createTestProposal(spaceId, owner);
+
+      const withdrawnProposals =
+        await daoProposals.getWithdrawnProposalsBySpace(spaceId);
+
+      expect(withdrawnProposals.length).to.equal(0);
+
+      console.log('✅ Empty array returned for spaces with no withdrawals');
+    });
+
+    it('Should handle withdrawal combined with HyphaToken bypass', async function () {
+      console.log('\n--- Testing Withdrawal with HyphaToken Bypass ---');
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 3,
+        name: 'HyphaToken Withdrawal Test',
+      });
+
+      // Get HyphaToken address
+      const hyphaTokenAddress = await daoProposals.hyphaTokenAddress();
+      const hyphaTokenCalldata = ethers
+        .id('payForSpaces(uint256[],uint256[])')
+        .slice(0, 10);
+
+      const proposalParams = {
+        spaceId,
+        duration: 3600,
+        transactions: [
+          {
+            target: hyphaTokenAddress,
+            value: 0,
+            data: hyphaTokenCalldata,
+          },
+        ],
+      };
+
+      // Create proposal targeting HyphaToken
+      await daoProposals.connect(owner).createProposal(proposalParams);
+      const proposalId = await daoProposals.proposalCounter();
+
+      // Withdraw the HyphaToken proposal
+      await daoProposals.connect(owner).withdrawProposal(proposalId);
+
+      expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(true);
+
+      // Verify cannot vote on withdrawn HyphaToken proposal
+      await expect(
+        daoProposals.connect(members[0]).vote(proposalId, true),
+      ).to.be.revertedWith('Proposal has been withdrawn');
+
+      console.log('✅ Withdrawal works correctly for HyphaToken proposals');
+    });
+  });
+
+  describe('Token Voting Power - Member Holdings Only Tests', function () {
+    describe('Regular Token Voting Power', function () {
+      it('Should calculate total voting power based only on member token holdings, not total supply', async function () {
+        console.log(
+          '\n--- Testing Regular Token: Total Voting Power = Member Holdings Only ---',
+        );
+
+        // Create a space with token-based voting
+        const spaceParams = {
+          name: 'Token Voting Test',
+          description: 'Testing token voting power calculation',
+          imageUrl: 'https://test.com/image.png',
+          unity: 60,
+          quorum: 50,
+          votingPowerSource: 2, // Token-based voting
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        };
+
+        await daoSpaceFactory.createSpace(spaceParams);
+        const spaceId = await daoSpaceFactory.spaceCounter();
+
+        // Add members
+        await daoSpaceFactory.connect(members[0]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[1]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[2]).joinSpace(spaceId);
+
+        // Get executor and deploy token
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        const executorAddress = spaceDetails.executor;
+        await ethers.provider.send('hardhat_impersonateAccount', [
+          executorAddress,
+        ]);
+        await ethers.provider.send('hardhat_setBalance', [
+          executorAddress,
+          '0x1000000000000000000',
+        ]);
+        const executorSigner = await ethers.getSigner(executorAddress);
+
+        // Deploy token
+        const tx = await regularTokenFactory
+          .connect(executorSigner)
+          .deployToken(
+            spaceId,
+            'Test Token',
+            'TTT',
+            0,
+            true,
+            false,
+            true,
+            0,
+            false,
+            false,
+          );
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return regularTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+        const token = await ethers.getContractAt(
+          'RegularSpaceToken',
+          tokenAddress,
+        );
+
+        console.log(`Token deployed at: ${tokenAddress}`);
+
+        // Set the token in the voting power contract
+        await tokenVotingPower
+          .connect(executorSigner)
+          .setSpaceToken(spaceId, tokenAddress);
+
+        // Mint tokens to members AND non-members
+        const memberTokens = ethers.parseEther('100');
+        const nonMemberTokens = ethers.parseEther('500'); // More tokens to non-members!
+
+        await token.connect(executorSigner).mint(owner.address, memberTokens);
+        await token
+          .connect(executorSigner)
+          .mint(members[0].address, memberTokens);
+        await token
+          .connect(executorSigner)
+          .mint(members[1].address, memberTokens);
+        await token
+          .connect(executorSigner)
+          .mint(members[2].address, memberTokens);
+
+        // Mint to non-members (should NOT count in total voting power)
+        await token
+          .connect(executorSigner)
+          .mint(members[5].address, nonMemberTokens);
+        await token
+          .connect(executorSigner)
+          .mint(members[6].address, nonMemberTokens);
+
+        const totalSupply = await token.totalSupply();
+        const memberHoldings = memberTokens * BigInt(4); // 4 members
+        const nonMemberHoldings = nonMemberTokens * BigInt(2); // 2 non-members
+
+        console.log(`Total supply: ${ethers.formatEther(totalSupply)}`);
+        console.log(
+          `Member holdings: ${ethers.formatEther(
+            memberHoldings,
+          )} (4 members x 100)`,
+        );
+        console.log(
+          `Non-member holdings: ${ethers.formatEther(
+            nonMemberHoldings,
+          )} (2 non-members x 500)`,
+        );
+
+        // Get total voting power - should only count member holdings
+        const totalVotingPower = await tokenVotingPower.getTotalVotingPower(
+          spaceId,
+        );
+        console.log(
+          `Total voting power: ${ethers.formatEther(totalVotingPower)}`,
+        );
+
+        expect(totalVotingPower).to.equal(memberHoldings);
+        expect(totalVotingPower).to.not.equal(totalSupply);
+
+        console.log(
+          '✅ Total voting power correctly counts only member holdings, not total supply',
+        );
+      });
+
+      it('Should calculate quorum based on member holdings only in proposals', async function () {
+        console.log(
+          '\n--- Testing Regular Token: Quorum Based on Member Holdings ---',
+        );
+
+        // Create space with token voting
+        const spaceParams = {
+          name: 'Quorum Test',
+          description: 'Testing quorum calculation',
+          imageUrl: '',
+          unity: 60,
+          quorum: 50, // 50% quorum
+          votingPowerSource: 2,
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        };
+
+        await daoSpaceFactory.createSpace(spaceParams);
+        const spaceId = await daoSpaceFactory.spaceCounter();
+
+        await daoSpaceFactory.connect(members[0]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[1]).joinSpace(spaceId);
+
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        const executorAddress = spaceDetails.executor;
+        await ethers.provider.send('hardhat_impersonateAccount', [
+          executorAddress,
+        ]);
+        await ethers.provider.send('hardhat_setBalance', [
+          executorAddress,
+          '0x1000000000000000000',
+        ]);
+        const executorSigner = await ethers.getSigner(executorAddress);
+
+        const tx = await regularTokenFactory
+          .connect(executorSigner)
+          .deployToken(
+            spaceId,
+            'TT',
+            'TT',
+            0,
+            true,
+            false,
+            true,
+            0,
+            false,
+            false,
+          );
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return regularTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+        const token = await ethers.getContractAt(
+          'RegularSpaceToken',
+          tokenAddress,
+        );
+
+        // Set the token in the voting power contract
+        await tokenVotingPower
+          .connect(executorSigner)
+          .setSpaceToken(spaceId, tokenAddress);
+
+        // Scenario: Members have 300 tokens total, non-members have 700 tokens
+        await token
+          .connect(executorSigner)
+          .mint(owner.address, ethers.parseEther('100'));
+        await token
+          .connect(executorSigner)
+          .mint(members[0].address, ethers.parseEther('100'));
+        await token
+          .connect(executorSigner)
+          .mint(members[1].address, ethers.parseEther('100'));
+        await token
+          .connect(executorSigner)
+          .mint(members[5].address, ethers.parseEther('700')); // Non-member
+
+        const totalVotingPower = await tokenVotingPower.getTotalVotingPower(
+          spaceId,
+        );
+        expect(totalVotingPower).to.equal(ethers.parseEther('300')); // Only member holdings
+
+        console.log(
+          `Total voting power (member holdings): ${ethers.formatEther(
+            totalVotingPower,
+          )}`,
+        );
+
+        // Create proposal
+        const proposalCalldata = daoSpaceFactory.interface.encodeFunctionData(
+          'getSpaceDetails',
+          [spaceId],
+        );
+        await daoProposals.createProposal({
+          spaceId,
+          duration: 3600,
+          transactions: [
+            {
+              target: await daoSpaceFactory.getAddress(),
+              value: 0,
+              data: proposalCalldata,
+            },
+          ],
+        });
+        const proposalId = await daoProposals.proposalCounter();
+
+        // With 50% quorum, need 150 tokens (50% of 300 member holdings)
+        // Vote with 160 tokens should meet quorum
+        await daoProposals.connect(owner).vote(proposalId, true); // 100 tokens
+        await daoProposals.connect(members[0]).vote(proposalId, true); // 100 tokens
+
+        const proposalState = await daoProposals.getProposalCore(proposalId);
+        console.log(
+          `Votes cast: ${ethers.formatEther(
+            proposalState.yesVotes,
+          )} (200 tokens)`,
+        );
+        console.log(
+          `Required quorum: ${ethers.formatEther(
+            (totalVotingPower * BigInt(50)) / BigInt(100),
+          )} (50% of 300)`,
+        );
+
+        // Should execute: 200/200 = 100% unity, quorum met (200 > 150)
+        expect(proposalState.executed).to.equal(true);
+
+        console.log(
+          '✅ Quorum correctly calculated based on member holdings (150 tokens), not total supply (500 tokens)',
+        );
+      });
+    });
+
+    describe('Decay Token Voting Power', function () {
+      it('Should calculate total voting power based only on member decay token holdings', async function () {
+        console.log(
+          '\n--- Testing Decay Token: Total Voting Power = Member Holdings Only ---',
+        );
+
+        // Create space with decay token voting
+        const spaceParams = {
+          name: 'Decay Token Test',
+          description: 'Testing decay token voting',
+          imageUrl: '',
+          unity: 60,
+          quorum: 50,
+          votingPowerSource: 3, // Decay token voting (if ID 3 exists)
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        };
+
+        await daoSpaceFactory.createSpace(spaceParams);
+        const spaceId = await daoSpaceFactory.spaceCounter();
+
+        await daoSpaceFactory.connect(members[0]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[1]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[2]).joinSpace(spaceId);
+
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        const executorAddress = spaceDetails.executor;
+        await ethers.provider.send('hardhat_impersonateAccount', [
+          executorAddress,
+        ]);
+        await ethers.provider.send('hardhat_setBalance', [
+          executorAddress,
+          '0x1000000000000000000',
+        ]);
+        const executorSigner = await ethers.getSigner(executorAddress);
+
+        // Deploy decay token
+        const tx = await decayingTokenFactory
+          .connect(executorSigner)
+          .deployDecayingToken(
+            spaceId,
+            'Decay Token',
+            'DTT',
+            0,
+            true,
+            false,
+            true,
+            0,
+            false,
+            false,
+            100, // 1% decay
+            3600, // per hour
+          );
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return decayingTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+        const decayToken = await ethers.getContractAt(
+          'DecayingSpaceToken',
+          tokenAddress,
+        );
+
+        console.log(`Decay token deployed at: ${tokenAddress}`);
+
+        // Set the token in the decay voting power contract
+        await decayTokenVotingPower
+          .connect(executorSigner)
+          .setSpaceToken(spaceId, tokenAddress);
+
+        // Mint tokens to members and non-members
+        const memberTokens = ethers.parseEther('100');
+        const nonMemberTokens = ethers.parseEther('600');
+
+        await decayToken
+          .connect(executorSigner)
+          .mint(owner.address, memberTokens);
+        await decayToken
+          .connect(executorSigner)
+          .mint(members[0].address, memberTokens);
+        await decayToken
+          .connect(executorSigner)
+          .mint(members[1].address, memberTokens);
+        await decayToken
+          .connect(executorSigner)
+          .mint(members[2].address, memberTokens);
+
+        // Non-members
+        await decayToken
+          .connect(executorSigner)
+          .mint(members[5].address, nonMemberTokens);
+        await decayToken
+          .connect(executorSigner)
+          .mint(members[6].address, nonMemberTokens);
+
+        const totalSupply = await decayToken.totalSupply();
+        const memberHoldings = memberTokens * BigInt(4);
+        const nonMemberHoldings = nonMemberTokens * BigInt(2);
+
+        console.log(`Total supply: ${ethers.formatEther(totalSupply)}`);
+        console.log(`Member holdings: ${ethers.formatEther(memberHoldings)}`);
+        console.log(
+          `Non-member holdings: ${ethers.formatEther(nonMemberHoldings)}`,
+        );
+
+        // Get total voting power from decay token voting power contract
+        const totalVotingPower =
+          await decayTokenVotingPower.getTotalVotingPower(spaceId);
+        console.log(
+          `Total voting power: ${ethers.formatEther(totalVotingPower)}`,
+        );
+
+        expect(totalVotingPower).to.equal(memberHoldings);
+        expect(totalVotingPower).to.not.equal(totalSupply);
+
+        console.log(
+          '✅ Decay token total voting power correctly counts only member holdings',
+        );
+      });
+
+      it('Should handle decay and still count only member holdings', async function () {
+        console.log(
+          '\n--- Testing Decay Token: Member Holdings After Decay ---',
+        );
+
+        const spaceParams = {
+          name: 'Decay with Time',
+          description: 'Testing decay over time',
+          imageUrl: '',
+          unity: 60,
+          quorum: 50,
+          votingPowerSource: 3,
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        };
+
+        await daoSpaceFactory.createSpace(spaceParams);
+        const spaceId = await daoSpaceFactory.spaceCounter();
+
+        await daoSpaceFactory.connect(members[0]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[1]).joinSpace(spaceId);
+
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        const executorAddress = spaceDetails.executor;
+        await ethers.provider.send('hardhat_impersonateAccount', [
+          executorAddress,
+        ]);
+        await ethers.provider.send('hardhat_setBalance', [
+          executorAddress,
+          '0x1000000000000000000',
+        ]);
+        const executorSigner = await ethers.getSigner(executorAddress);
+
+        const tx = await decayingTokenFactory
+          .connect(executorSigner)
+          .deployDecayingToken(
+            spaceId,
+            'DT',
+            'DT',
+            0,
+            true,
+            false,
+            true,
+            0,
+            false,
+            false,
+            1000, // 10% decay per interval
+            3600,
+          );
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return decayingTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+        const decayToken = await ethers.getContractAt(
+          'DecayingSpaceToken',
+          tokenAddress,
+        );
+
+        // Set the token in the decay voting power contract
+        await decayTokenVotingPower
+          .connect(executorSigner)
+          .setSpaceToken(spaceId, tokenAddress);
+
+        // Mint tokens
+        await decayToken
+          .connect(executorSigner)
+          .mint(owner.address, ethers.parseEther('1000'));
+        await decayToken
+          .connect(executorSigner)
+          .mint(members[0].address, ethers.parseEther('1000'));
+        await decayToken
+          .connect(executorSigner)
+          .mint(members[5].address, ethers.parseEther('5000')); // Non-member
+
+        const initialTotalVotingPower =
+          await decayTokenVotingPower.getTotalVotingPower(spaceId);
+        console.log(
+          `Initial total voting power: ${ethers.formatEther(
+            initialTotalVotingPower,
+          )} (members only)`,
+        );
+
+        // Advance time to cause decay
+        await ethers.provider.send('evm_increaseTime', [3600]); // 1 hour
+        await ethers.provider.send('evm_mine', []);
+
+        const decayedTotalVotingPower =
+          await decayTokenVotingPower.getTotalVotingPower(spaceId);
+        console.log(
+          `After decay total voting power: ${ethers.formatEther(
+            decayedTotalVotingPower,
+          )} (members only)`,
+        );
+
+        // Should be less than initial due to decay
+        expect(decayedTotalVotingPower).to.be.lessThan(initialTotalVotingPower);
+
+        // Should still only count member holdings (not the 5000 held by non-member)
+        expect(decayedTotalVotingPower).to.be.lessThan(
+          ethers.parseEther('3000'),
+        ); // Less than 2000 after decay
+
+        console.log(
+          '✅ Decay token correctly applies decay and counts only member holdings',
         );
       });
     });
