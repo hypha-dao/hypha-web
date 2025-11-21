@@ -73,7 +73,7 @@ async function notifyEmailProposalCreatedForCreator({
   }
   const customData = {
     space_title: space.title,
-    user_name: `${person.name} ${person.surname}`,
+    user_name: person.name ?? '',
     url: url ?? 'https://app.hypha.earth',
     unsubscribe_link: unsubscribeLink ?? 'https://app.hypha.earth',
   };
@@ -123,7 +123,7 @@ async function notifyEmailProposalCreatedForMembersAction(params: {
   const sendingEmails = params.people.map(async (person) => {
     const customData = {
       space_title: params.spaceTitle ?? '',
-      user_name: `${person.name} ${person.surname}`,
+      user_name: person.name ?? '',
       url: params.url,
       unsubscribe_link: params.unsubscribeLink,
     };
