@@ -151,6 +151,16 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       { initializer: 'initialize', kind: 'uups' },
     );
 
+    // Deploy DecayTokenVotingPower for decay token voting
+    const VoteDecayTokenVotingPower = await ethers.getContractFactory(
+      'VoteDecayTokenVotingPowerImplementation',
+    );
+    const decayTokenVotingPower = await upgrades.deployProxy(
+      VoteDecayTokenVotingPower,
+      [owner.address],
+      { initializer: 'initialize', kind: 'uups' },
+    );
+
     // Deploy VotingPowerDirectory
     const VotingPowerDirectory = await ethers.getContractFactory(
       'VotingPowerDirectoryImplementation',
@@ -181,7 +191,17 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       await daoSpaceFactory.getAddress(),
     );
     await decayingTokenFactory.setDecayVotingPowerContract(
-      await tokenVotingPower.getAddress(),
+      await decayTokenVotingPower.getAddress(),
+    );
+
+    await decayTokenVotingPower.setSpaceFactory(
+      await daoSpaceFactory.getAddress(),
+    );
+    await decayTokenVotingPower.setDelegationContract(
+      await votingPowerDelegation.getAddress(),
+    );
+    await decayTokenVotingPower.setDecayTokenFactory(
+      await decayingTokenFactory.getAddress(),
     );
 
     // Deploy RegularSpaceToken implementation
@@ -231,7 +251,12 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
     // Add token voting power source to directory (ID: 2)
     await votingPowerDirectory.addVotingPowerSource(
       await tokenVotingPower.getAddress(),
-    );
+    ); // ID: 2
+
+    // Add decay token voting power source to directory (ID: 3)
+    await votingPowerDirectory.addVotingPowerSource(
+      await decayTokenVotingPower.getAddress(),
+    ); // ID: 3
 
     await daoProposals.setContracts(
       await daoSpaceFactory.getAddress(),
@@ -257,6 +282,7 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       daoProposals,
       spaceVotingPower,
       tokenVotingPower,
+      decayTokenVotingPower,
       votingPowerDirectory,
       votingPowerDelegation,
       joinMethodDirectory,
@@ -340,6 +366,7 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
     daoProposals = fixture.daoProposals;
     spaceVotingPower = fixture.spaceVotingPower;
     tokenVotingPower = fixture.tokenVotingPower;
+    decayTokenVotingPower = fixture.decayTokenVotingPower;
     votingPowerDirectory = fixture.votingPowerDirectory;
     votingPowerDelegation = fixture.votingPowerDelegation;
     regularTokenFactory = fixture.regularTokenFactory;
@@ -3458,6 +3485,530 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         expect(recipientBalance).to.be.closeTo(
           transferAmount,
           ethers.parseEther('0.1'),
+        );
+      });
+    });
+  });
+
+  describe('Token Voting Power - Member Holdings Only Tests', function () {
+    describe('Regular Token Voting Power', function () {
+      it('Should calculate total voting power based only on member token holdings, not total supply', async function () {
+        console.log(
+          '\n--- Testing Regular Token: Total Voting Power = Member Holdings Only ---',
+        );
+
+        // Create a space with token-based voting
+        const spaceParams = {
+          name: 'Token Voting Test',
+          description: 'Testing token voting power calculation',
+          imageUrl: 'https://test.com/image.png',
+          unity: 60,
+          quorum: 50,
+          votingPowerSource: 2, // Token-based voting
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        };
+
+        await daoSpaceFactory.createSpace(spaceParams);
+        const spaceId = await daoSpaceFactory.spaceCounter();
+
+        // Add members
+        await daoSpaceFactory.connect(members[0]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[1]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[2]).joinSpace(spaceId);
+
+        // Get executor and deploy token
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        const executorAddress = spaceDetails.executor;
+        await ethers.provider.send('hardhat_impersonateAccount', [
+          executorAddress,
+        ]);
+        await ethers.provider.send('hardhat_setBalance', [
+          executorAddress,
+          '0x1000000000000000000',
+        ]);
+        const executorSigner = await ethers.getSigner(executorAddress);
+
+        // Deploy token
+        const tx = await regularTokenFactory
+          .connect(executorSigner)
+          .deployToken(
+            spaceId,
+            'Test Token',
+            'TTT',
+            0,
+            true,
+            false,
+            true,
+            0,
+            false,
+            false,
+          );
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return regularTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+        const token = await ethers.getContractAt(
+          'RegularSpaceToken',
+          tokenAddress,
+        );
+
+        console.log(`Token deployed at: ${tokenAddress}`);
+
+        // Set the token in the voting power contract
+        await tokenVotingPower
+          .connect(executorSigner)
+          .setSpaceToken(spaceId, tokenAddress);
+
+        // Mint tokens to members AND non-members
+        const memberTokens = ethers.parseEther('100');
+        const nonMemberTokens = ethers.parseEther('500'); // More tokens to non-members!
+
+        await token.connect(executorSigner).mint(owner.address, memberTokens);
+        await token
+          .connect(executorSigner)
+          .mint(members[0].address, memberTokens);
+        await token
+          .connect(executorSigner)
+          .mint(members[1].address, memberTokens);
+        await token
+          .connect(executorSigner)
+          .mint(members[2].address, memberTokens);
+
+        // Mint to non-members (should NOT count in total voting power)
+        await token
+          .connect(executorSigner)
+          .mint(members[5].address, nonMemberTokens);
+        await token
+          .connect(executorSigner)
+          .mint(members[6].address, nonMemberTokens);
+
+        const totalSupply = await token.totalSupply();
+        const memberHoldings = memberTokens * BigInt(4); // 4 members
+        const nonMemberHoldings = nonMemberTokens * BigInt(2); // 2 non-members
+
+        console.log(`Total supply: ${ethers.formatEther(totalSupply)}`);
+        console.log(
+          `Member holdings: ${ethers.formatEther(
+            memberHoldings,
+          )} (4 members x 100)`,
+        );
+        console.log(
+          `Non-member holdings: ${ethers.formatEther(
+            nonMemberHoldings,
+          )} (2 non-members x 500)`,
+        );
+
+        // Get total voting power - should only count member holdings
+        const totalVotingPower = await tokenVotingPower.getTotalVotingPower(
+          spaceId,
+        );
+        console.log(
+          `Total voting power: ${ethers.formatEther(totalVotingPower)}`,
+        );
+
+        expect(totalVotingPower).to.equal(memberHoldings);
+        expect(totalVotingPower).to.not.equal(totalSupply);
+
+        console.log(
+          '✅ Total voting power correctly counts only member holdings, not total supply',
+        );
+      });
+
+      it('Should calculate quorum based on member holdings only in proposals', async function () {
+        console.log(
+          '\n--- Testing Regular Token: Quorum Based on Member Holdings ---',
+        );
+
+        // Create space with token voting
+        const spaceParams = {
+          name: 'Quorum Test',
+          description: 'Testing quorum calculation',
+          imageUrl: '',
+          unity: 60,
+          quorum: 50, // 50% quorum
+          votingPowerSource: 2,
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        };
+
+        await daoSpaceFactory.createSpace(spaceParams);
+        const spaceId = await daoSpaceFactory.spaceCounter();
+
+        await daoSpaceFactory.connect(members[0]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[1]).joinSpace(spaceId);
+
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        const executorAddress = spaceDetails.executor;
+        await ethers.provider.send('hardhat_impersonateAccount', [
+          executorAddress,
+        ]);
+        await ethers.provider.send('hardhat_setBalance', [
+          executorAddress,
+          '0x1000000000000000000',
+        ]);
+        const executorSigner = await ethers.getSigner(executorAddress);
+
+        const tx = await regularTokenFactory
+          .connect(executorSigner)
+          .deployToken(
+            spaceId,
+            'TT',
+            'TT',
+            0,
+            true,
+            false,
+            true,
+            0,
+            false,
+            false,
+          );
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return regularTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+        const token = await ethers.getContractAt(
+          'RegularSpaceToken',
+          tokenAddress,
+        );
+
+        // Set the token in the voting power contract
+        await tokenVotingPower
+          .connect(executorSigner)
+          .setSpaceToken(spaceId, tokenAddress);
+
+        // Scenario: Members have 300 tokens total, non-members have 700 tokens
+        await token
+          .connect(executorSigner)
+          .mint(owner.address, ethers.parseEther('100'));
+        await token
+          .connect(executorSigner)
+          .mint(members[0].address, ethers.parseEther('100'));
+        await token
+          .connect(executorSigner)
+          .mint(members[1].address, ethers.parseEther('100'));
+        await token
+          .connect(executorSigner)
+          .mint(members[5].address, ethers.parseEther('700')); // Non-member
+
+        const totalVotingPower = await tokenVotingPower.getTotalVotingPower(
+          spaceId,
+        );
+        expect(totalVotingPower).to.equal(ethers.parseEther('300')); // Only member holdings
+
+        console.log(
+          `Total voting power (member holdings): ${ethers.formatEther(
+            totalVotingPower,
+          )}`,
+        );
+
+        // Create proposal
+        const proposalCalldata = daoSpaceFactory.interface.encodeFunctionData(
+          'getSpaceDetails',
+          [spaceId],
+        );
+        await daoProposals.createProposal({
+          spaceId,
+          duration: 3600,
+          transactions: [
+            {
+              target: await daoSpaceFactory.getAddress(),
+              value: 0,
+              data: proposalCalldata,
+            },
+          ],
+        });
+        const proposalId = await daoProposals.proposalCounter();
+
+        // With 50% quorum, need 150 tokens (50% of 300 member holdings)
+        // Vote with 160 tokens should meet quorum
+        await daoProposals.connect(owner).vote(proposalId, true); // 100 tokens
+        await daoProposals.connect(members[0]).vote(proposalId, true); // 100 tokens
+
+        const proposalState = await daoProposals.getProposalCore(proposalId);
+        console.log(
+          `Votes cast: ${ethers.formatEther(
+            proposalState.yesVotes,
+          )} (200 tokens)`,
+        );
+        console.log(
+          `Required quorum: ${ethers.formatEther(
+            (totalVotingPower * BigInt(50)) / BigInt(100),
+          )} (50% of 300)`,
+        );
+
+        // Should execute: 200/200 = 100% unity, quorum met (200 > 150)
+        expect(proposalState.executed).to.equal(true);
+
+        console.log(
+          '✅ Quorum correctly calculated based on member holdings (150 tokens), not total supply (500 tokens)',
+        );
+      });
+    });
+
+    describe('Decay Token Voting Power', function () {
+      it('Should calculate total voting power based only on member decay token holdings', async function () {
+        console.log(
+          '\n--- Testing Decay Token: Total Voting Power = Member Holdings Only ---',
+        );
+
+        // Create space with decay token voting
+        const spaceParams = {
+          name: 'Decay Token Test',
+          description: 'Testing decay token voting',
+          imageUrl: '',
+          unity: 60,
+          quorum: 50,
+          votingPowerSource: 3, // Decay token voting (if ID 3 exists)
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        };
+
+        await daoSpaceFactory.createSpace(spaceParams);
+        const spaceId = await daoSpaceFactory.spaceCounter();
+
+        await daoSpaceFactory.connect(members[0]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[1]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[2]).joinSpace(spaceId);
+
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        const executorAddress = spaceDetails.executor;
+        await ethers.provider.send('hardhat_impersonateAccount', [
+          executorAddress,
+        ]);
+        await ethers.provider.send('hardhat_setBalance', [
+          executorAddress,
+          '0x1000000000000000000',
+        ]);
+        const executorSigner = await ethers.getSigner(executorAddress);
+
+        // Deploy decay token
+        const tx = await decayingTokenFactory
+          .connect(executorSigner)
+          .deployDecayingToken(
+            spaceId,
+            'Decay Token',
+            'DTT',
+            0,
+            true,
+            false,
+            true,
+            0,
+            false,
+            false,
+            100, // 1% decay
+            3600, // per hour
+          );
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return decayingTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+        const decayToken = await ethers.getContractAt(
+          'DecayingSpaceToken',
+          tokenAddress,
+        );
+
+        console.log(`Decay token deployed at: ${tokenAddress}`);
+
+        // Set the token in the decay voting power contract
+        await decayTokenVotingPower
+          .connect(executorSigner)
+          .setSpaceToken(spaceId, tokenAddress);
+
+        // Mint tokens to members and non-members
+        const memberTokens = ethers.parseEther('100');
+        const nonMemberTokens = ethers.parseEther('600');
+
+        await decayToken
+          .connect(executorSigner)
+          .mint(owner.address, memberTokens);
+        await decayToken
+          .connect(executorSigner)
+          .mint(members[0].address, memberTokens);
+        await decayToken
+          .connect(executorSigner)
+          .mint(members[1].address, memberTokens);
+        await decayToken
+          .connect(executorSigner)
+          .mint(members[2].address, memberTokens);
+
+        // Non-members
+        await decayToken
+          .connect(executorSigner)
+          .mint(members[5].address, nonMemberTokens);
+        await decayToken
+          .connect(executorSigner)
+          .mint(members[6].address, nonMemberTokens);
+
+        const totalSupply = await decayToken.totalSupply();
+        const memberHoldings = memberTokens * BigInt(4);
+        const nonMemberHoldings = nonMemberTokens * BigInt(2);
+
+        console.log(`Total supply: ${ethers.formatEther(totalSupply)}`);
+        console.log(`Member holdings: ${ethers.formatEther(memberHoldings)}`);
+        console.log(
+          `Non-member holdings: ${ethers.formatEther(nonMemberHoldings)}`,
+        );
+
+        // Get total voting power from decay token voting power contract
+        const totalVotingPower =
+          await decayTokenVotingPower.getTotalVotingPower(spaceId);
+        console.log(
+          `Total voting power: ${ethers.formatEther(totalVotingPower)}`,
+        );
+
+        expect(totalVotingPower).to.equal(memberHoldings);
+        expect(totalVotingPower).to.not.equal(totalSupply);
+
+        console.log(
+          '✅ Decay token total voting power correctly counts only member holdings',
+        );
+      });
+
+      it('Should handle decay and still count only member holdings', async function () {
+        console.log(
+          '\n--- Testing Decay Token: Member Holdings After Decay ---',
+        );
+
+        const spaceParams = {
+          name: 'Decay with Time',
+          description: 'Testing decay over time',
+          imageUrl: '',
+          unity: 60,
+          quorum: 50,
+          votingPowerSource: 3,
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        };
+
+        await daoSpaceFactory.createSpace(spaceParams);
+        const spaceId = await daoSpaceFactory.spaceCounter();
+
+        await daoSpaceFactory.connect(members[0]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[1]).joinSpace(spaceId);
+
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        const executorAddress = spaceDetails.executor;
+        await ethers.provider.send('hardhat_impersonateAccount', [
+          executorAddress,
+        ]);
+        await ethers.provider.send('hardhat_setBalance', [
+          executorAddress,
+          '0x1000000000000000000',
+        ]);
+        const executorSigner = await ethers.getSigner(executorAddress);
+
+        const tx = await decayingTokenFactory
+          .connect(executorSigner)
+          .deployDecayingToken(
+            spaceId,
+            'DT',
+            'DT',
+            0,
+            true,
+            false,
+            true,
+            0,
+            false,
+            false,
+            1000, // 10% decay per interval
+            3600,
+          );
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return decayingTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+        const decayToken = await ethers.getContractAt(
+          'DecayingSpaceToken',
+          tokenAddress,
+        );
+
+        // Set the token in the decay voting power contract
+        await decayTokenVotingPower
+          .connect(executorSigner)
+          .setSpaceToken(spaceId, tokenAddress);
+
+        // Mint tokens
+        await decayToken
+          .connect(executorSigner)
+          .mint(owner.address, ethers.parseEther('1000'));
+        await decayToken
+          .connect(executorSigner)
+          .mint(members[0].address, ethers.parseEther('1000'));
+        await decayToken
+          .connect(executorSigner)
+          .mint(members[5].address, ethers.parseEther('5000')); // Non-member
+
+        const initialTotalVotingPower =
+          await decayTokenVotingPower.getTotalVotingPower(spaceId);
+        console.log(
+          `Initial total voting power: ${ethers.formatEther(
+            initialTotalVotingPower,
+          )} (members only)`,
+        );
+
+        // Advance time to cause decay
+        await ethers.provider.send('evm_increaseTime', [3600]); // 1 hour
+        await ethers.provider.send('evm_mine', []);
+
+        const decayedTotalVotingPower =
+          await decayTokenVotingPower.getTotalVotingPower(spaceId);
+        console.log(
+          `After decay total voting power: ${ethers.formatEther(
+            decayedTotalVotingPower,
+          )} (members only)`,
+        );
+
+        // Should be less than initial due to decay
+        expect(decayedTotalVotingPower).to.be.lessThan(initialTotalVotingPower);
+
+        // Should still only count member holdings (not the 5000 held by non-member)
+        expect(decayedTotalVotingPower).to.be.lessThan(
+          ethers.parseEther('3000'),
+        ); // Less than 2000 after decay
+
+        console.log(
+          '✅ Decay token correctly applies decay and counts only member holdings',
         );
       });
     });

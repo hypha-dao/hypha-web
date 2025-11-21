@@ -178,7 +178,7 @@ contract VoteDecayTokenVotingPowerImplementation is
   /**
    * @dev Get total voting power from a specific space
    * @param _sourceSpaceId The space ID from which to derive total voting power
-   * @return The total voting power (total decayed supply of the token)
+   * @return The total voting power (sum of decayed token balances held by space members)
    */
   function getTotalVotingPower(
     uint256 _sourceSpaceId
@@ -186,9 +186,20 @@ contract VoteDecayTokenVotingPowerImplementation is
     require(_sourceSpaceId > 0, 'Invalid space ID');
     address tokenAddress = spaceTokens[_sourceSpaceId];
     require(tokenAddress != address(0), 'Token not set for space');
+    require(spaceFactory != address(0), 'Space factory not set');
 
-    // Return the decayed total supply instead of the raw total
-    return IDecayingSpaceToken(tokenAddress).getDecayedTotalSupply();
+    // Get all space members
+    (, , , , address[] memory members, , , , , ) = IDAOSpaceFactory(
+      spaceFactory
+    ).getSpaceDetails(_sourceSpaceId);
+
+    // Sum up decayed token balances of all members
+    uint256 totalPower = 0;
+    for (uint256 i = 0; i < members.length; i++) {
+      totalPower += IDecayingSpaceToken(tokenAddress).balanceOf(members[i]);
+    }
+
+    return totalPower;
   }
 
   /**
