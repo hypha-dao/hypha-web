@@ -47,12 +47,7 @@ export async function GET(
       name: token.name,
       symbol: token.symbol,
       maxSupply: token.maxSupply,
-      type: token.type as
-        | 'utility'
-        | 'credits'
-        | 'ownership'
-        | 'voice'
-        | 'impact',
+      type: token.type as 'utility' | 'credits' | 'ownership' | 'voice',
       iconUrl: token.iconUrl ?? undefined,
       transferable: token.transferable,
       isVotingToken: token.isVotingToken,
@@ -208,7 +203,6 @@ export async function GET(
           return {
             ...meta,
             address: token.address,
-            type: token.type,
           };
         } catch (err) {
           console.warn(`Skipping token ${token.address}: ${err}`);

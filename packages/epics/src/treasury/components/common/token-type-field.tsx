@@ -30,7 +30,7 @@ const TOKEN_TYPE_OPTIONS = [
     value: 'impact',
     label: 'Impact Token',
     description:
-      'represents the materialisation of positive impact through measurable actions or outcomes',
+      'values measurable social, economic, and environmental outcomes',
   },
   {
     value: 'credits',
