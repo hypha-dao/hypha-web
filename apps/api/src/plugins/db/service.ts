@@ -12,6 +12,7 @@ import {
   peopleByAddresses,
   findPersonByAuth,
   verifyAuth,
+  findTokenById,
 } from './query';
 
 export class DbService {
@@ -91,5 +92,9 @@ export class DbService {
     const db = this.getDb(authToken);
 
     return verifyAuth({ db });
+  }
+
+  public findTokenById({ id }: { id: number }) {
+    return findTokenById({ id }, { db: this.db });
   }
 }
