@@ -7,7 +7,7 @@ import { LoadingBackdrop } from '@hypha-platform/ui';
 import { usePathname } from 'next/navigation';
 
 export default function AsideNotificationCentrePage() {
-  const { isLoading: isPersonLoading } = useMe();
+  const { person, isLoading: isPersonLoading } = useMe();
   const pathname = usePathname();
   const closeUrl = pathname.substring(0, pathname.lastIndexOf('/'));
   const {
@@ -29,6 +29,7 @@ export default function AsideNotificationCentrePage() {
         className="-m-4 lg:-m-7"
       >
         <NotificationCentreForm
+          person={person}
           closeUrl={closeUrl}
           isLoading={isBusy}
           error={error}

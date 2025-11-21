@@ -32,8 +32,10 @@ import {
   yesNoEnum,
 } from '../hooks/validation';
 import { useRouter } from 'next/navigation';
+import { Person } from '@hypha-platform/core/client';
 
 export type NotificationCentreFormProps = {
+  person?: Person;
   closeUrl: string;
   isLoading?: boolean;
   error?: string | null;
@@ -71,6 +73,7 @@ const notificationSubscriptions: NotificationSubscription[] =
   });
 
 export const NotificationCentreForm = ({
+  person,
   closeUrl,
   isLoading,
   error,
@@ -85,7 +88,7 @@ export const NotificationCentreForm = ({
     defaultValues: {
       emailNotifications: configuration
         ? getSwitch(configuration.emailNotifications)
-        : 'yes',
+        : 'no',
       browserNotifications: configuration
         ? getSwitch(configuration.browserNotifications)
         : 'yes',
@@ -196,7 +199,14 @@ export const NotificationCentreForm = ({
               Choose how you’d like to receive notifications:
             </span>
             <span className="text-2 text-neutral-11 flex flex-row justify-between">
-              <FormLabel>Email Notifications</FormLabel>
+              <FormLabel>
+                Email Notifications{' '}
+                {person && (
+                  <>
+                    (to <pre className="inline">{person.email}</pre>)
+                  </>
+                )}
+              </FormLabel>
               <FormField
                 control={form.control}
                 name="emailNotifications"
