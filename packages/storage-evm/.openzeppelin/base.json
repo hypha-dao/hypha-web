@@ -19811,7 +19811,7 @@
             "label": "members",
             "offset": 0,
             "slot": "0",
-            "type": "t_mapping(t_address,t_struct(Member)5551_storage)",
+            "type": "t_mapping(t_address,t_struct(Member)16973_storage)",
             "contract": "EnergyDistributionStorage",
             "src": "contracts/storage/EnergyDistributionStorage.sol:10"
           },
@@ -19843,7 +19843,7 @@
             "label": "collectiveConsumption",
             "offset": 0,
             "slot": "4",
-            "type": "t_array(t_struct(CollectiveConsumption)5558_storage)dyn_storage",
+            "type": "t_array(t_struct(CollectiveConsumption)16980_storage)dyn_storage",
             "contract": "EnergyDistributionStorage",
             "src": "contracts/storage/EnergyDistributionStorage.sol:20"
           },
@@ -19963,7 +19963,7 @@
             "label": "energyToken",
             "offset": 0,
             "slot": "19",
-            "type": "t_contract(EnergyToken)5530",
+            "type": "t_contract(EnergyToken)10014",
             "contract": "EnergyDistributionStorage",
             "src": "contracts/storage/EnergyDistributionStorage.sol:59"
           },
@@ -20031,7 +20031,7 @@
             "label": "address[]",
             "numberOfBytes": "32"
           },
-          "t_array(t_struct(CollectiveConsumption)5558_storage)dyn_storage": {
+          "t_array(t_struct(CollectiveConsumption)16980_storage)dyn_storage": {
             "label": "struct IEnergyDistribution.CollectiveConsumption[]",
             "numberOfBytes": "32"
           },
@@ -20043,7 +20043,7 @@
             "label": "uint256[]",
             "numberOfBytes": "32"
           },
-          "t_contract(EnergyToken)5530": {
+          "t_contract(EnergyToken)10014": {
             "label": "contract EnergyToken",
             "numberOfBytes": "20"
           },
@@ -20059,7 +20059,7 @@
             "label": "mapping(address => int256)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_address,t_struct(Member)5551_storage)": {
+          "t_mapping(t_address,t_struct(Member)16973_storage)": {
             "label": "mapping(address => struct IEnergyDistribution.Member)",
             "numberOfBytes": "32"
           },
@@ -20071,7 +20071,7 @@
             "label": "mapping(uint256 => address)",
             "numberOfBytes": "32"
           },
-          "t_struct(CollectiveConsumption)5558_storage": {
+          "t_struct(CollectiveConsumption)16980_storage": {
             "label": "struct IEnergyDistribution.CollectiveConsumption",
             "members": [
               {
@@ -20095,7 +20095,368 @@
             ],
             "numberOfBytes": "96"
           },
-          "t_struct(Member)5551_storage": {
+          "t_struct(Member)16973_storage": {
+            "label": "struct IEnergyDistribution.Member",
+            "members": [
+              {
+                "label": "memberAddress",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "deviceIds",
+                "type": "t_array(t_uint256)dyn_storage",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "ownershipPercentage",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "isActive",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "3"
+              }
+            ],
+            "numberOfBytes": "128"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.Ownable": [
+            {
+              "contract": "OwnableUpgradeable",
+              "label": "_owner",
+              "type": "t_address",
+              "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:24",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
+    },
+    "fecfd77febc9009e6ac202fbef166b54fb823efffd914d5753db55c776e0cbfa": {
+      "address": "0x27Be5AE5Bf09B3d98df09aA166ba388a60A2Dc10",
+      "txHash": "0xe678953edeb76552ce5336dee9912a97e9f9b30e7cc4317106a84e142bed641b",
+      "layout": {
+        "solcVersion": "0.8.28",
+        "storage": [
+          {
+            "label": "members",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_mapping(t_address,t_struct(Member)17301_storage)",
+            "contract": "EnergyDistributionStorage",
+            "src": "contracts/storage/EnergyDistributionStorage.sol:10"
+          },
+          {
+            "label": "memberAddresses",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_address)dyn_storage",
+            "contract": "EnergyDistributionStorage",
+            "src": "contracts/storage/EnergyDistributionStorage.sol:11"
+          },
+          {
+            "label": "deviceToMember",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_mapping(t_uint256,t_address)",
+            "contract": "EnergyDistributionStorage",
+            "src": "contracts/storage/EnergyDistributionStorage.sol:14"
+          },
+          {
+            "label": "allocatedTokens",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "EnergyDistributionStorage",
+            "src": "contracts/storage/EnergyDistributionStorage.sol:17"
+          },
+          {
+            "label": "collectiveConsumption",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_array(t_struct(CollectiveConsumption)17308_storage)dyn_storage",
+            "contract": "EnergyDistributionStorage",
+            "src": "contracts/storage/EnergyDistributionStorage.sol:20"
+          },
+          {
+            "label": "cashCreditBalances",
+            "offset": 0,
+            "slot": "5",
+            "type": "t_mapping(t_address,t_int256)",
+            "contract": "EnergyDistributionStorage",
+            "src": "contracts/storage/EnergyDistributionStorage.sol:23"
+          },
+          {
+            "label": "exportCashCreditBalance",
+            "offset": 0,
+            "slot": "6",
+            "type": "t_int256",
+            "contract": "EnergyDistributionStorage",
+            "src": "contracts/storage/EnergyDistributionStorage.sol:26"
+          },
+          {
+            "label": "importCashCreditBalance",
+            "offset": 0,
+            "slot": "7",
+            "type": "t_int256",
+            "contract": "EnergyDistributionStorage",
+            "src": "contracts/storage/EnergyDistributionStorage.sol:29"
+          },
+          {
+            "label": "totalOwnershipPercentage",
+            "offset": 0,
+            "slot": "8",
+            "type": "t_uint256",
+            "contract": "EnergyDistributionStorage",
+            "src": "contracts/storage/EnergyDistributionStorage.sol:32"
+          },
+          {
+            "label": "batteryCurrentState",
+            "offset": 0,
+            "slot": "9",
+            "type": "t_uint256",
+            "contract": "EnergyDistributionStorage",
+            "src": "contracts/storage/EnergyDistributionStorage.sol:35"
+          },
+          {
+            "label": "batteryPrice",
+            "offset": 0,
+            "slot": "10",
+            "type": "t_uint256",
+            "contract": "EnergyDistributionStorage",
+            "src": "contracts/storage/EnergyDistributionStorage.sol:36"
+          },
+          {
+            "label": "batteryMaxCapacity",
+            "offset": 0,
+            "slot": "11",
+            "type": "t_uint256",
+            "contract": "EnergyDistributionStorage",
+            "src": "contracts/storage/EnergyDistributionStorage.sol:37"
+          },
+          {
+            "label": "batteryConfigured",
+            "offset": 0,
+            "slot": "12",
+            "type": "t_bool",
+            "contract": "EnergyDistributionStorage",
+            "src": "contracts/storage/EnergyDistributionStorage.sol:38"
+          },
+          {
+            "label": "exportDeviceId",
+            "offset": 0,
+            "slot": "13",
+            "type": "t_uint256",
+            "contract": "EnergyDistributionStorage",
+            "src": "contracts/storage/EnergyDistributionStorage.sol:41"
+          },
+          {
+            "label": "communityDeviceId",
+            "offset": 0,
+            "slot": "14",
+            "type": "t_uint256",
+            "contract": "EnergyDistributionStorage",
+            "src": "contracts/storage/EnergyDistributionStorage.sol:44"
+          },
+          {
+            "label": "exportPrice",
+            "offset": 0,
+            "slot": "15",
+            "type": "t_uint256",
+            "contract": "EnergyDistributionStorage",
+            "src": "contracts/storage/EnergyDistributionStorage.sol:47"
+          },
+          {
+            "label": "settlementContract",
+            "offset": 0,
+            "slot": "16",
+            "type": "t_address",
+            "contract": "EnergyDistributionStorage",
+            "src": "contracts/storage/EnergyDistributionStorage.sol:50"
+          },
+          {
+            "label": "settledBalance",
+            "offset": 0,
+            "slot": "17",
+            "type": "t_int256",
+            "contract": "EnergyDistributionStorage",
+            "src": "contracts/storage/EnergyDistributionStorage.sol:53"
+          },
+          {
+            "label": "isWhitelisted",
+            "offset": 0,
+            "slot": "18",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "EnergyDistributionStorage",
+            "src": "contracts/storage/EnergyDistributionStorage.sol:56"
+          },
+          {
+            "label": "energyToken",
+            "offset": 0,
+            "slot": "19",
+            "type": "t_contract(EnergyToken)10014",
+            "contract": "EnergyDistributionStorage",
+            "src": "contracts/storage/EnergyDistributionStorage.sol:59"
+          },
+          {
+            "label": "communityCashCreditBalance",
+            "offset": 0,
+            "slot": "20",
+            "type": "t_int256",
+            "contract": "EnergyDistributionStorage",
+            "src": "contracts/storage/EnergyDistributionStorage.sol:62"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "21",
+            "type": "t_array(t_uint256)31_storage",
+            "contract": "EnergyDistributionStorage",
+            "src": "contracts/storage/EnergyDistributionStorage.sol:68"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)73_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(OwnableStorage)13_storage": {
+            "label": "struct OwnableUpgradeable.OwnableStorage",
+            "members": [
+              {
+                "label": "_owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_struct(CollectiveConsumption)17308_storage)dyn_storage": {
+            "label": "struct IEnergyDistribution.CollectiveConsumption[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)31_storage": {
+            "label": "uint256[31]",
+            "numberOfBytes": "992"
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]",
+            "numberOfBytes": "32"
+          },
+          "t_contract(EnergyToken)10014": {
+            "label": "contract EnergyToken",
+            "numberOfBytes": "20"
+          },
+          "t_int256": {
+            "label": "int256",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_int256)": {
+            "label": "mapping(address => int256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(Member)17301_storage)": {
+            "label": "mapping(address => struct IEnergyDistribution.Member)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_address)": {
+            "label": "mapping(uint256 => address)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(CollectiveConsumption)17308_storage": {
+            "label": "struct IEnergyDistribution.CollectiveConsumption",
+            "members": [
+              {
+                "label": "owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "price",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "quantity",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              }
+            ],
+            "numberOfBytes": "96"
+          },
+          "t_struct(Member)17301_storage": {
             "label": "struct IEnergyDistribution.Member",
             "members": [
               {
