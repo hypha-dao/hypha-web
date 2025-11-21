@@ -189,6 +189,7 @@ contract DAOProposalsImplementation is
     require(block.timestamp >= proposal.startTime, 'Proposal not started');
     require(!proposal.expired, 'Proposal has expired');
     require(!proposal.executed, 'Proposal already executed');
+    require(!proposalWithdrawn[_proposalId], 'Proposal has been withdrawn');
 
     // Skip subscription check if proposal targets HyphaToken (payment/investment functions)
     if (
@@ -597,5 +598,48 @@ contract DAOProposalsImplementation is
 
     spaceMinProposalDuration[_spaceId] = _minDuration;
     emit MinimumProposalDurationSet(_spaceId, _minDuration);
+  }
+
+  /**
+   * @dev Withdraw a proposal
+   * @param _proposalId Proposal ID to withdraw
+   * @notice Only the proposal creator can withdraw their proposal
+   * @notice Proposal cannot be withdrawn if it's already executed, expired, or withdrawn
+   */
+  function withdrawProposal(uint256 _proposalId) external override {
+    require(address(spaceFactory) != address(0), 'Contracts not initialized');
+    ProposalCore storage proposal = proposalsCoreData[_proposalId];
+
+    require(proposal.creator == msg.sender, 'Only creator can withdraw');
+    require(!proposal.executed, 'Proposal already executed');
+    require(!proposal.expired, 'Proposal has expired');
+    require(!proposalWithdrawn[_proposalId], 'Proposal already withdrawn');
+
+    proposalWithdrawn[_proposalId] = true;
+    spaceWithdrawnProposals[proposal.spaceId].push(_proposalId);
+
+    emit ProposalWithdrawn(_proposalId, proposal.spaceId, msg.sender);
+  }
+
+  /**
+   * @dev Check if a proposal is withdrawn
+   * @param _proposalId Proposal ID to check
+   * @return true if the proposal is withdrawn, false otherwise
+   */
+  function isProposalWithdrawn(
+    uint256 _proposalId
+  ) external view override returns (bool) {
+    return proposalWithdrawn[_proposalId];
+  }
+
+  /**
+   * @dev Get all withdrawn proposals for a space
+   * @param _spaceId Space ID
+   * @return Array of withdrawn proposal IDs
+   */
+  function getWithdrawnProposalsBySpace(
+    uint256 _spaceId
+  ) external view override returns (uint256[] memory) {
+    return spaceWithdrawnProposals[_spaceId];
   }
 }
