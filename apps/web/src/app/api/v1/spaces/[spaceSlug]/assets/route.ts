@@ -46,7 +46,12 @@ export async function GET(
       name: token.name,
       symbol: token.symbol,
       maxSupply: token.maxSupply,
-      type: token.type as 'utility' | 'credits' | 'ownership' | 'voice',
+      type: token.type as
+        | 'utility'
+        | 'credits'
+        | 'ownership'
+        | 'voice'
+        | 'impact',
       iconUrl: token.iconUrl ?? undefined,
       transferable: token.transferable,
       isVotingToken: token.isVotingToken,

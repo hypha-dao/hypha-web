@@ -203,7 +203,6 @@ export async function GET(
           return {
             ...meta,
             address: token.address,
-            type: token.type,
           };
         } catch (err) {
           console.warn(`Skipping token ${token.address}: ${err}`);
