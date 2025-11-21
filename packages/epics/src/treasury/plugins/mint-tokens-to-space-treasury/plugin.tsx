@@ -9,6 +9,7 @@ import {
   FormControl,
   FormMessage,
   Input,
+  FormLabel,
 } from '@hypha-platform/ui';
 import { TokenPayoutField } from '../../../agreements/plugins/components/common/token-payout-field';
 import { useTokens, useTokenSupply } from '../../hooks';
@@ -17,6 +18,7 @@ import { DbToken, Token } from '@hypha-platform/core/client';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useDbTokens } from '../../../hooks';
+import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 
 interface ExtendedToken extends Token {
   space?: {
@@ -53,6 +55,13 @@ export const MintTokensToSpaceTreasuryPlugin = ({
   return (
     <div className="flex flex-col gap-4">
       <Skeleton loading={isLoading} width={'100%'} height={90}>
+        <div className="flex flex-col gap-4">
+          <FormLabel>Mint to Space Treasury</FormLabel>
+          <span className="text-2 text-neutral-11">
+            Mint tokens into your space treasury to fund operations, distribute
+            rewards, or provide liquidity.{' '}
+          </span>
+        </div>
         <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
           <div className="flex gap-1">
             <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
@@ -92,7 +101,9 @@ export const MintTokensToSpaceTreasuryPlugin = ({
                   Unlimited Supply
                 </span>
               ) : (
-                <Input value={selectedToken?.maxSupply} disabled />
+                <span className="text-2 text-neutral-11">
+                  {formatCurrencyValue(selectedToken?.maxSupply as number)}
+                </span>
               )}
             </div>
             <div className="flex justify-between items-center">
@@ -100,7 +111,9 @@ export const MintTokensToSpaceTreasuryPlugin = ({
                 Issuance to Date
               </span>
               <Skeleton width={120} height={32} loading={isLoadingSupply}>
-                <Input value={supply} disabled />
+                <span className="text-2 text-neutral-11">
+                  {formatCurrencyValue(supply)}
+                </span>
               </Skeleton>
             </div>
             {selectedToken?.maxSupply != 0 && (
@@ -109,10 +122,11 @@ export const MintTokensToSpaceTreasuryPlugin = ({
                   <span className="text-2 text-neutral-11 w-full">
                     Mint Amount Limit
                   </span>
-                  <Input
-                    value={Number(selectedToken?.maxSupply) - Number(supply)}
-                    disabled
-                  />
+                  <span className="text-2 text-neutral-11">
+                    {formatCurrencyValue(
+                      Number(selectedToken?.maxSupply) - Number(supply),
+                    )}
+                  </span>
                 </div>
                 {Number(amount) >
                   Number(selectedToken?.maxSupply) - Number(supply) && (
