@@ -335,7 +335,12 @@ export const ProposalDetail = ({
         </div>
       )}
       {proposalDetails?.mintings.map((mint, idx) => (
-        <ProposalMintItem key={idx} member={mint.member} number={mint.number} />
+        <ProposalMintItem
+          key={idx}
+          member={mint.member}
+          number={mint.number}
+          token={mint.token}
+        />
       ))}
       {proposalDetails?.buyHyphaTokensData.amount ? (
         <ProposalBuyHyphaTokensData

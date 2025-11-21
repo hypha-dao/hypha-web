@@ -7,3 +7,4 @@ export * from './use-user-assets-section';
 export * from './use-user-transfers';
 export * from './use-user-transfers-section';
 export * from './use-fund-wallet';
+export * from './use-token-supply';

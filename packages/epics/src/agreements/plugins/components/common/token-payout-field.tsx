@@ -103,37 +103,41 @@ export const TokenPayoutField = ({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-full max-h-[200px] overflow-y-scroll">
-            {tokens.map((token) => (
-              <DropdownMenuItem
-                key={token.address}
-                onSelect={() => handleTokenChange(token)}
-              >
-                <Image
-                  src={token.icon}
-                  width={24}
-                  height={24}
-                  alt={token.symbol}
-                  className="mr-2 rounded-full h-5 w-5"
-                />
-                <div className="flex flex-col">
-                  <span className="flex gap-2 items-center">
-                    <span className="text-2 text-neutral-11">
-                      {token.symbol}
+            {tokens.length > 0 ? (
+              tokens.map((token) => (
+                <DropdownMenuItem
+                  key={token.address}
+                  onSelect={() => handleTokenChange(token)}
+                >
+                  <Image
+                    src={token.icon}
+                    width={24}
+                    height={24}
+                    alt={token.symbol}
+                    className="mr-2 rounded-full h-5 w-5"
+                  />
+                  <div className="flex flex-col">
+                    <span className="flex gap-2 items-center">
+                      <span className="text-2 text-neutral-11">
+                        {token.symbol}
+                      </span>
+                      {token?.type && (
+                        <div className="rounded-lg capitalize text-[10px] text-accent-11 border-1 border-accent-11 px-2 py-0.75">
+                          {token.type}
+                        </div>
+                      )}
                     </span>
-                    {token?.type && (
-                      <div className="rounded-lg capitalize text-[10px] text-accent-11 border-1 border-accent-11 px-2 py-0.75">
-                        {token.type}
-                      </div>
-                    )}
-                  </span>
-                  {token?.space?.title ? (
-                    <span className="text-1 text-accent-11">
-                      by {token?.space?.title}
-                    </span>
-                  ) : null}
-                </div>
-              </DropdownMenuItem>
-            ))}
+                    {token?.space?.title ? (
+                      <span className="text-1 text-accent-11">
+                        by {token?.space?.title}
+                      </span>
+                    ) : null}
+                  </div>
+                </DropdownMenuItem>
+              ))
+            ) : (
+              <span className="text-2 text-neutral-11">No tokens found</span>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

@@ -122,6 +122,14 @@ export const SelectSettingsAction = ({
     },
     {
       group: 'Treasury',
+      title: 'Mint Tokens to Space Treasury',
+      description:
+        'Mint tokens into your space treasury to fund operations, distribute rewards, or provide liquidity.',
+      href: 'create/mint-tokens-to-space-treasury',
+      icon: <ArrowDownIcon />,
+    },
+    {
+      group: 'Treasury',
       title: 'Deposit Funds',
       description:
         'Deposit funds into your treasury by copying the treasury address or scanning the QR code.',

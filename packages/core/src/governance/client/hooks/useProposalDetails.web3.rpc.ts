@@ -81,6 +81,7 @@ export const useProposalDetailsWeb3Rpc = ({
     const mintings: Array<{
       member: `0x${string}`;
       number: bigint;
+      token: `0x${string}`;
     }> = [];
 
     const entryMethods: Array<{
@@ -157,7 +158,7 @@ export const useProposalDetailsWeb3Rpc = ({
           break;
 
         case 'mint':
-          mintings.push(decoded.data);
+          mintings.push({ ...decoded.data, token: tx.target });
           break;
 
         case 'tokenRequirement':

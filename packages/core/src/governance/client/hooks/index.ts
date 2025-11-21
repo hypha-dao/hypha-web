@@ -23,3 +23,5 @@ export * from './useSpaceToSpaceMembershipOrchestrator';
 export * from './useSpaceToSpaceMembershipMutations.web3.rsc';
 export * from './useJoinSpaceProposalHandler';
 export * from './useProposalEvents';
+export * from './useMintTokensToSpaceTreasuryMutations.web3.rsc';
+export * from './useMintTokensToSpaceTreasuryOrchestrator';
