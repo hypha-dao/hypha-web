@@ -177,11 +177,13 @@ async function notifyProposalCreatedForCreator({
 async function notifyProposalCreatedForMembersAction({
   proposalId,
   spaceId: spaceWeb3Id,
+  creator,
   url,
   unsubscribeLink,
 }: {
   proposalId: bigint;
   spaceId: bigint;
+  creator: `0x${string}`;
   url: string;
   unsubscribeLink: string;
 }) {
@@ -193,7 +195,7 @@ async function notifyProposalCreatedForMembersAction({
       console.error('Failed to fetch space details for proposal creation:', e);
     }
   })();
-  if (!spacesDetails || spacesDetails.length === 0) {
+  if (!spacesDetails || spacesDetails.length === 0 || !spacesDetails[0]) {
     console.warn(
       'Zero spaces found in the blockchain for the "ProposalCreation" event.',
       'Proposal IDs:',
@@ -202,9 +204,10 @@ async function notifyProposalCreatedForMembersAction({
 
     return;
   }
-  const { members, spaceId, creator } = spacesDetails[0]!;
+  const [{ members, spaceId }] = spacesDetails;
+  const normalizedCreator = creator.toUpperCase();
   const filteredMembers = members.filter(
-    (member) => member.toUpperCase() !== creator.toUpperCase(),
+    (member) => member.toUpperCase() !== normalizedCreator,
   );
   const people = await findPeopleByWeb3Addresses(
     {
@@ -248,6 +251,7 @@ export async function notifyProposalCreatedAction(
     notifyProposalCreatedForMembersAction({
       proposalId,
       spaceId,
+      creator,
       url: safeUrl,
       unsubscribeLink,
     }),
