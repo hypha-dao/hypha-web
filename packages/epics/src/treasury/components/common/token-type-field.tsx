@@ -22,14 +22,20 @@ const TOKEN_TYPE_OPTIONS = [
     description: 'used for access or functionality within the space',
   },
   {
-    value: 'credits',
-    label: 'Cash Credits',
-    description: 'redeemable credits that can be exchanged for fiat currency',
-  },
-  {
     value: 'ownership',
     label: 'Ownership Token',
     description: 'reflects stake or equity in the space',
+  },
+  {
+    value: 'impact',
+    label: 'Impact Token',
+    description:
+      'represents the materialisation of positive impact through measurable actions or outcomes',
+  },
+  {
+    value: 'credits',
+    label: 'Cash Credits',
+    description: 'redeemable credits that can be exchanged for fiat currency',
   },
   {
     value: 'voice',

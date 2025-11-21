@@ -10,7 +10,7 @@ type Token = {
   name: string;
   symbol: string;
   maxSupply: number;
-  type: 'utility' | 'credits' | 'ownership' | 'voice';
+  type: 'utility' | 'credits' | 'ownership' | 'voice' | 'impact';
   iconUrl?: string;
   transferable: boolean;
   isVotingToken: boolean;

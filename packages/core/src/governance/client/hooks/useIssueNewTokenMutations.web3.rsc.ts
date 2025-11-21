@@ -32,7 +32,7 @@ interface CreateTokenArgs {
   maxSupply: number;
   transferable: boolean;
   isVotingToken: boolean;
-  type: 'utility' | 'credits' | 'ownership' | 'voice';
+  type: 'utility' | 'credits' | 'ownership' | 'voice' | 'impact';
   decayPercentage?: number;
   decayInterval?: number;
 }
@@ -67,7 +67,7 @@ export const useIssueTokenMutationsWeb3Rpc = ({
         data: `0x${string}`;
       }> = [];
 
-      if (['utility', 'credits'].includes(arg.type)) {
+      if (['utility', 'credits', 'impact'].includes(arg.type)) {
         txData = [
           {
             target: regularTokenFactoryAddress[chainId],

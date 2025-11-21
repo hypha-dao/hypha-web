@@ -3,7 +3,14 @@ export type Token = {
   icon: string;
   address: `0x${string}`;
   name: string;
-  type: 'liquid' | 'voice' | 'ownership' | 'utility' | 'credits' | null;
+  type:
+    | 'liquid'
+    | 'voice'
+    | 'ownership'
+    | 'utility'
+    | 'credits'
+    | 'impact'
+    | null;
   transferable?: boolean;
 };
 
@@ -61,5 +68,6 @@ export const validTokenTypes = [
   'credits',
   'ownership',
   'voice',
+  'impact',
 ] as const;
 export type TokenType = (typeof validTokenTypes)[number];
