@@ -86,28 +86,24 @@ async function notifyEmailProposalCreatedForCreator({
     },
   });
 }
-async function notifyPushProposalCreatedForMembersAction(
-  notificationParams: {
-    slugs: string[];
-    spaceTitle?: string;
-    spaceSlug?: string;
-  }[],
-  url?: string,
-) {
-  const sendingPushes = notificationParams.map(async (params) => {
-    const { contents, headings } = pushProposalCreationForMembers(params);
+async function notifyPushProposalCreatedForMembersAction(notificationParams: {
+  slugs: string[];
+  spaceTitle?: string;
+  spaceSlug?: string;
+  url?: string;
+}) {
+  const { contents, headings } =
+    pushProposalCreationForMembers(notificationParams);
 
-    return await sendPushNotifications({
-      contents,
-      headings,
-      usernames: params.slugs,
-      requiredTags: {
-        [TAG_SUB_NEW_PROPOSAL_OPEN]: 'true',
-      },
-      url,
-    });
+  return await sendPushNotifications({
+    contents,
+    headings,
+    usernames: notificationParams.slugs,
+    requiredTags: {
+      [TAG_SUB_NEW_PROPOSAL_OPEN]: 'true',
+    },
+    url: notificationParams.url,
   });
-  await Promise.all(sendingPushes);
 }
 async function notifyEmailProposalCreatedForMembersAction(notificationParams: {
   slugs: string[];
@@ -166,19 +162,17 @@ async function notifyProposalCreatedForCreator({
     return [];
   }
 
+  const notificationParams = {
+    person,
+    space,
+    url,
+    unsubscribeLink,
+  };
+
   const notifications = [
-    notifyPushProposalCreatedForCreator({ person, space, url }),
+    notifyPushProposalCreatedForCreator(notificationParams),
+    notifyEmailProposalCreatedForCreator(notificationParams),
   ];
-  if (process.env.NODE_ENV === 'production') {
-    notifications.push(
-      notifyEmailProposalCreatedForCreator({
-        person,
-        space,
-        url,
-        unsubscribeLink,
-      }),
-    );
-  }
   return await Promise.all(notifications);
 }
 
@@ -231,13 +225,9 @@ async function notifyProposalCreatedForMembersAction({
   };
 
   const notifications = [
-    notifyPushProposalCreatedForMembersAction([notificationParams], url),
+    notifyPushProposalCreatedForMembersAction(notificationParams),
+    notifyEmailProposalCreatedForMembersAction(notificationParams),
   ];
-  if (process.env.NODE_ENV === 'production') {
-    notifications.push(
-      notifyEmailProposalCreatedForMembersAction(notificationParams),
-    );
-  }
   return await Promise.all(notifications);
 }
 
@@ -248,9 +238,8 @@ export async function notifyProposalCreatedAction(
   if (!authToken) throw new Error('authToken is required to send notification');
   const safeUrl = url ?? 'https://app.hypha.earth';
   const baseUrl = new URL(safeUrl);
-  const unsubscribeLink = `${baseUrl.protocol}//${baseUrl.host}${
-    baseUrl.pathname.substring(0, 3) || '/en'
-  }/my-spaces/notification-centre`;
+  const lang = baseUrl.pathname.substring(0, 3) || '/en';
+  const unsubscribeLink = `${baseUrl.protocol}//${baseUrl.host}${lang}/my-spaces/notification-centre`;
   const notifying = Promise.allSettled([
     notifyProposalCreatedForCreator({
       spaceId,
