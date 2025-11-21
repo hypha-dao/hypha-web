@@ -86,27 +86,27 @@ async function notifyEmailProposalCreatedForCreator({
     },
   });
 }
-async function notifyPushProposalCreatedForMembersAction(notificationParams: {
-  slugs: string[];
+async function notifyPushProposalCreatedForMembersAction(params: {
+  people: Array<Person>;
   spaceTitle?: string;
   spaceSlug?: string;
   url?: string;
 }) {
-  const { contents, headings } =
-    pushProposalCreationForMembers(notificationParams);
+  const usernames = params.people.map(({ slug }) => slug!);
+  const { contents, headings } = pushProposalCreationForMembers(params);
 
   return await sendPushNotifications({
     contents,
     headings,
-    usernames: notificationParams.slugs,
+    usernames,
     requiredTags: {
       [TAG_SUB_NEW_PROPOSAL_OPEN]: 'true',
     },
-    url: notificationParams.url,
+    url: params.url,
   });
 }
-async function notifyEmailProposalCreatedForMembersAction(notificationParams: {
-  slugs: string[];
+async function notifyEmailProposalCreatedForMembersAction(params: {
+  people: Array<Person>;
   spaceTitle?: string;
   spaceSlug?: string;
   url: string;
@@ -119,15 +119,13 @@ async function notifyEmailProposalCreatedForMembersAction(notificationParams: {
       'Environment variable NEXT_PUBLIC_EMAIL_TEMPLATE_PROPOSAL_OPEN_FOR_MEMBERS is not configure, cannot send an email',
     );
   }
-  const { slugs } = notificationParams;
-  const persons = await findPersonsBySlug({ slugs }, { db });
 
-  const sendingEmails = persons.map(async (person) => {
+  const sendingEmails = params.people.map(async (person) => {
     const customData = {
-      space_title: notificationParams.spaceTitle ?? '',
+      space_title: params.spaceTitle ?? '',
       user_name: `${person.name} ${person.surname}`,
-      url: notificationParams.url,
-      unsubscribe_link: notificationParams.unsubscribeLink,
+      url: params.url,
+      unsubscribe_link: params.unsubscribeLink,
     };
     return await sentEmailNotificationsTemplate({
       templateId,
@@ -217,7 +215,7 @@ async function notifyProposalCreatedForMembersAction({
   const space = await findSpaceByWeb3Id({ id: Number(spaceId) }, { db });
 
   const notificationParams = {
-    slugs: people.map(({ slug }) => slug!),
+    people,
     spaceTitle: space?.title,
     spaceSlug: space?.slug,
     url,
