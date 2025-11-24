@@ -76,6 +76,7 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
    */
   function transfer(address to, uint256 amount) public override returns (bool) {
     address sender = _msgSender();
+    require(!archived, 'Token is archived');
 
     // Executor always bypasses whitelist checks
     if (sender != executor) {
@@ -127,6 +128,7 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
     uint256 escrowId,
     uint256 amount
   ) external returns (bool) {
+    require(!archived, 'Token is archived');
     require(
       _isSpaceMember(msg.sender),
       'Only space members can transfer to escrow'
@@ -160,6 +162,7 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
     uint256 amount
   ) public override returns (bool) {
     address spender = _msgSender();
+    require(!archived, 'Token is archived');
 
     // Executor always bypasses whitelist checks
     if (from != executor) {
@@ -220,10 +223,19 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
    */
   function mint(address to, uint256 amount) public override {
     require(msg.sender == executor, 'Only executor can mint');
+    require(!archived, 'Token is archived');
     require(
       _isSpaceMember(to) || to == executor,
       'Can only mint to space members or executor'
     );
-    super.mint(to, amount);
+    // Call the parent's mint logic but avoid double-checking archived status
+    require(msg.sender == executor, 'Only executor can mint');
+    // Check against maximum supply
+    require(
+      maxSupply == 0 || totalSupply() + amount <= maxSupply,
+      'Mint max supply problemchik blet'
+    );
+
+    _mint(to, amount);
   }
 }

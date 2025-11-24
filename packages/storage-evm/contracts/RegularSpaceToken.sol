@@ -31,11 +31,15 @@ contract RegularSpaceToken is
   bool public useTransferWhitelist; // If true, enforce transfer whitelist
   bool public useReceiveWhitelist; // If true, enforce receive whitelist
 
+  // Archive status - MUST BE AT THE END FOR UPGRADEABILITY
+  bool public archived; // If true, minting and transfers are disabled
+
   // Events
   event MaxSupplyUpdated(uint256 oldMaxSupply, uint256 newMaxSupply);
   event TransferableUpdated(bool transferable);
   event AutoMintingUpdated(bool autoMinting);
   event PriceInUSDUpdated(uint256 oldPrice, uint256 newPrice);
+  event ArchivedStatusUpdated(bool archived);
   event TransferWhitelistUpdated(address indexed account, bool canTransfer);
   event ReceiveWhitelistUpdated(address indexed account, bool canReceive);
   event UseTransferWhitelistUpdated(bool enabled);
@@ -93,6 +97,7 @@ contract RegularSpaceToken is
 
   function mint(address to, uint256 amount) public virtual {
     require(msg.sender == executor, 'Only executor can mint');
+    require(!archived, 'Token is archived');
     // Check against maximum supply
     require(
       maxSupply == 0 || totalSupply() + amount <= maxSupply,
@@ -108,6 +113,7 @@ contract RegularSpaceToken is
     uint256 amount
   ) public virtual override returns (bool) {
     address sender = _msgSender();
+    require(!archived, 'Token is archived');
     require(transferable || sender == executor, 'Token transfers are disabled');
 
     // Executor always bypasses whitelist checks
@@ -145,6 +151,7 @@ contract RegularSpaceToken is
     uint256 amount
   ) public virtual override returns (bool) {
     address spender = _msgSender();
+    require(!archived, 'Token is archived');
     require(
       transferable || spender == executor,
       'Token transfers are disabled'
@@ -208,6 +215,16 @@ contract RegularSpaceToken is
     require(msg.sender == executor, 'Only executor can update transferable');
     transferable = _transferable;
     emit TransferableUpdated(_transferable);
+  }
+
+  /**
+   * @dev Update archived status
+   * @param _archived Whether token is archived (disables minting and transfers)
+   */
+  function setArchived(bool _archived) external virtual {
+    require(msg.sender == executor, 'Only executor can update archived status');
+    archived = _archived;
+    emit ArchivedStatusUpdated(_archived);
   }
 
   /**

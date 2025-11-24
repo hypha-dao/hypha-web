@@ -1483,7 +1483,601 @@ describe('Token Configuration Tests', function () {
     });
   });
 
-  describe('11. Complex Scenarios', function () {
+  describe('11. Token Archive Functionality', function () {
+    describe('Regular Token Archive', function () {
+      let token: Contract;
+
+      beforeEach(async function () {
+        const tx = await regularTokenFactory
+          .connect(executorSigner)
+          .deployToken(
+            spaceId,
+            'Archive Test Token',
+            'ARCH',
+            ethers.parseEther('10000'),
+            true,
+            false,
+            true,
+            0,
+            false,
+            false,
+          );
+
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return regularTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+
+        token = await ethers.getContractAt('RegularSpaceToken', tokenAddress);
+
+        // Mint some tokens to alice for transfer tests
+        await token
+          .connect(executorSigner)
+          .mint(alice.address, ethers.parseEther('1000'));
+      });
+
+      it('Should start as not archived by default', async function () {
+        expect(await token.archived()).to.be.false;
+      });
+
+      it('Should allow executor to archive token', async function () {
+        await expect(token.connect(executorSigner).setArchived(true))
+          .to.emit(token, 'ArchivedStatusUpdated')
+          .withArgs(true);
+
+        expect(await token.archived()).to.be.true;
+      });
+
+      it('Should allow executor to unarchive token', async function () {
+        // First archive
+        await token.connect(executorSigner).setArchived(true);
+        expect(await token.archived()).to.be.true;
+
+        // Then unarchive
+        await expect(token.connect(executorSigner).setArchived(false))
+          .to.emit(token, 'ArchivedStatusUpdated')
+          .withArgs(false);
+
+        expect(await token.archived()).to.be.false;
+      });
+
+      it('Should not allow non-executor to archive token', async function () {
+        await expect(token.connect(alice).setArchived(true)).to.be.revertedWith(
+          'Only executor can update archived status',
+        );
+      });
+
+      it('Should not allow non-executor to unarchive token', async function () {
+        // Archive first
+        await token.connect(executorSigner).setArchived(true);
+
+        // Try to unarchive as non-executor
+        await expect(token.connect(bob).setArchived(false)).to.be.revertedWith(
+          'Only executor can update archived status',
+        );
+      });
+
+      it('Should prevent minting when archived', async function () {
+        // Archive the token
+        await token.connect(executorSigner).setArchived(true);
+
+        // Try to mint - should fail
+        await expect(
+          token
+            .connect(executorSigner)
+            .mint(bob.address, ethers.parseEther('100')),
+        ).to.be.revertedWith('Token is archived');
+      });
+
+      it('Should allow minting after unarchiving', async function () {
+        // Archive then unarchive
+        await token.connect(executorSigner).setArchived(true);
+        await token.connect(executorSigner).setArchived(false);
+
+        // Minting should work now
+        await token
+          .connect(executorSigner)
+          .mint(bob.address, ethers.parseEther('100'));
+
+        expect(await token.balanceOf(bob.address)).to.equal(
+          ethers.parseEther('100'),
+        );
+      });
+
+      it('Should prevent transfers when archived', async function () {
+        // Archive the token
+        await token.connect(executorSigner).setArchived(true);
+
+        // Try to transfer - should fail
+        await expect(
+          token.connect(alice).transfer(bob.address, ethers.parseEther('10')),
+        ).to.be.revertedWith('Token is archived');
+      });
+
+      it('Should prevent executor transfers when archived', async function () {
+        // Archive the token
+        await token.connect(executorSigner).setArchived(true);
+
+        // Even executor cannot transfer when archived
+        await expect(
+          token
+            .connect(executorSigner)
+            .transfer(bob.address, ethers.parseEther('10')),
+        ).to.be.revertedWith('Token is archived');
+      });
+
+      it('Should prevent transferFrom when archived', async function () {
+        // Approve bob to spend alice's tokens
+        await token
+          .connect(alice)
+          .approve(bob.address, ethers.parseEther('100'));
+
+        // Archive the token
+        await token.connect(executorSigner).setArchived(true);
+
+        // Try transferFrom - should fail
+        await expect(
+          token
+            .connect(bob)
+            .transferFrom(
+              alice.address,
+              charlie.address,
+              ethers.parseEther('10'),
+            ),
+        ).to.be.revertedWith('Token is archived');
+      });
+
+      it('Should allow transfers after unarchiving', async function () {
+        // Archive then unarchive
+        await token.connect(executorSigner).setArchived(true);
+        await token.connect(executorSigner).setArchived(false);
+
+        // Transfers should work now
+        await token
+          .connect(alice)
+          .transfer(bob.address, ethers.parseEther('50'));
+
+        expect(await token.balanceOf(bob.address)).to.equal(
+          ethers.parseEther('50'),
+        );
+      });
+
+      it('Should allow reading balances when archived', async function () {
+        // Archive the token
+        await token.connect(executorSigner).setArchived(true);
+
+        // Reading balances should still work
+        expect(await token.balanceOf(alice.address)).to.equal(
+          ethers.parseEther('1000'),
+        );
+        expect(await token.totalSupply()).to.equal(ethers.parseEther('1000'));
+      });
+
+      it('Should allow toggling archive status multiple times', async function () {
+        // Archive
+        await token.connect(executorSigner).setArchived(true);
+        expect(await token.archived()).to.be.true;
+
+        // Unarchive
+        await token.connect(executorSigner).setArchived(false);
+        expect(await token.archived()).to.be.false;
+
+        // Archive again
+        await token.connect(executorSigner).setArchived(true);
+        expect(await token.archived()).to.be.true;
+
+        // Unarchive again
+        await token.connect(executorSigner).setArchived(false);
+        expect(await token.archived()).to.be.false;
+      });
+    });
+
+    describe('Decaying Token Archive', function () {
+      let decayingToken: Contract;
+
+      beforeEach(async function () {
+        const tx = await decayingTokenFactory
+          .connect(executorSigner)
+          .deployDecayingToken(
+            spaceId,
+            'Decaying Archive Token',
+            'DARCH',
+            ethers.parseEther('5000'),
+            true,
+            false,
+            true,
+            0,
+            false,
+            false,
+            100, // 1% decay
+            3600, // 1 hour
+          );
+
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return decayingTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+
+        decayingToken = await ethers.getContractAt(
+          'DecayingSpaceToken',
+          tokenAddress,
+        );
+
+        // Mint some tokens to alice
+        await decayingToken
+          .connect(executorSigner)
+          .mint(alice.address, ethers.parseEther('500'));
+      });
+
+      it('Should prevent minting decaying tokens when archived', async function () {
+        await decayingToken.connect(executorSigner).setArchived(true);
+
+        await expect(
+          decayingToken
+            .connect(executorSigner)
+            .mint(bob.address, ethers.parseEther('100')),
+        ).to.be.revertedWith('Token is archived');
+      });
+
+      it('Should prevent decaying token transfers when archived', async function () {
+        await decayingToken.connect(executorSigner).setArchived(true);
+
+        await expect(
+          decayingToken
+            .connect(alice)
+            .transfer(bob.address, ethers.parseEther('10')),
+        ).to.be.revertedWith('Token is archived');
+      });
+
+      it('Should allow decaying token operations after unarchiving', async function () {
+        // Archive and unarchive
+        await decayingToken.connect(executorSigner).setArchived(true);
+        await decayingToken.connect(executorSigner).setArchived(false);
+
+        // Operations should work
+        await decayingToken
+          .connect(executorSigner)
+          .mint(bob.address, ethers.parseEther('100'));
+        await decayingToken
+          .connect(alice)
+          .transfer(bob.address, ethers.parseEther('50'));
+
+        expect(await decayingToken.balanceOf(bob.address)).to.be.gt(
+          ethers.parseEther('100'),
+        );
+      });
+
+      it('Should NOT apply decay when archived', async function () {
+        // Apply decay first to get a baseline
+        await decayingToken.applyDecay(alice.address);
+        const balanceBeforeArchive = await decayingToken.balanceOf(
+          alice.address,
+        );
+
+        // Archive token
+        await decayingToken.connect(executorSigner).setArchived(true);
+
+        // Time travel
+        await ethers.provider.send('evm_increaseTime', [3600]);
+        await ethers.provider.send('evm_mine', []);
+
+        // Balance should remain the same while archived (no decay applied)
+        const balanceWhileArchived = await decayingToken.balanceOf(
+          alice.address,
+        );
+        expect(balanceWhileArchived).to.equal(balanceBeforeArchive);
+
+        // Calling applyDecay while archived should update timestamp but not burn tokens
+        await decayingToken.applyDecay(alice.address);
+        const balanceAfterApply = await decayingToken.balanceOf(alice.address);
+        expect(balanceAfterApply).to.equal(balanceBeforeArchive);
+      });
+
+      it('Should not accumulate decay during archived period', async function () {
+        const initialBalance = await decayingToken.balanceOf(alice.address);
+
+        // Time travel 1 hour and apply decay
+        await ethers.provider.send('evm_increaseTime', [3600]);
+        await ethers.provider.send('evm_mine', []);
+
+        // Apply decay to burn the tokens for the 1 hour that passed
+        await decayingToken.applyDecay(alice.address);
+        const balanceAfterFirstDecay = await decayingToken.balanceOf(
+          alice.address,
+        );
+
+        // Should have decayed by ~1%
+        expect(balanceAfterFirstDecay).to.be.lt(initialBalance);
+
+        // Now archive the token
+        await decayingToken.connect(executorSigner).setArchived(true);
+
+        // Time travel 10 hours while archived
+        await ethers.provider.send('evm_increaseTime', [36000]);
+        await ethers.provider.send('evm_mine', []);
+
+        // Balance should still be the same (no decay during archived period)
+        const balanceWhileArchived = await decayingToken.balanceOf(
+          alice.address,
+        );
+        expect(balanceWhileArchived).to.equal(balanceAfterFirstDecay);
+
+        // Unarchive - this will automatically update lastApplied timestamps for all holders
+        await decayingToken.connect(executorSigner).setArchived(false);
+
+        // Immediately after unarchiving, balance should still be the same
+        // because lastApplied was updated to current time during unarchive
+        const balanceAfterUnarchive = await decayingToken.balanceOf(
+          alice.address,
+        );
+        expect(balanceAfterUnarchive).to.equal(balanceAfterFirstDecay);
+
+        // Time travel 1 more hour after unarchiving
+        await ethers.provider.send('evm_increaseTime', [3600]);
+        await ethers.provider.send('evm_mine', []);
+
+        // Now decay should apply for only the 1 hour after unarchiving, not the 10 hours during archive
+        const balanceAfterUnarchiveDecay = await decayingToken.balanceOf(
+          alice.address,
+        );
+        expect(balanceAfterUnarchiveDecay).to.be.lt(balanceAfterUnarchive);
+        // Should have decayed by approximately 1% for 1 period
+        expect(balanceAfterUnarchiveDecay).to.be.gt(
+          (balanceAfterFirstDecay * 98n) / 100n,
+        );
+      });
+    });
+
+    describe('Ownership Token Archive', function () {
+      let ownershipToken: Contract;
+
+      beforeEach(async function () {
+        const tx = await ownershipTokenFactory
+          .connect(executorSigner)
+          .deployOwnershipToken(
+            spaceId,
+            'Ownership Archive Token',
+            'OARCH',
+            ethers.parseEther('100'),
+            false,
+            true,
+            0,
+            false,
+            false,
+          );
+
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return ownershipTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+
+        ownershipToken = await ethers.getContractAt(
+          'OwnershipSpaceToken',
+          tokenAddress,
+        );
+
+        // Join space so alice becomes a member
+        await daoSpaceFactory.connect(alice).joinSpace(spaceId);
+        await daoSpaceFactory.connect(bob).joinSpace(spaceId);
+
+        // Mint tokens to alice
+        await ownershipToken
+          .connect(executorSigner)
+          .mint(alice.address, ethers.parseEther('10'));
+      });
+
+      it('Should prevent minting ownership tokens when archived', async function () {
+        await ownershipToken.connect(executorSigner).setArchived(true);
+
+        await expect(
+          ownershipToken
+            .connect(executorSigner)
+            .mint(bob.address, ethers.parseEther('5')),
+        ).to.be.revertedWith('Token is archived');
+      });
+
+      it('Should prevent ownership token transfers when archived', async function () {
+        await ownershipToken.connect(executorSigner).setArchived(true);
+
+        await expect(
+          ownershipToken
+            .connect(executorSigner)
+            .transfer(bob.address, ethers.parseEther('5')),
+        ).to.be.revertedWith('Token is archived');
+      });
+
+      it('Should prevent transferToEscrow when archived', async function () {
+        await ownershipToken.connect(executorSigner).setArchived(true);
+
+        await expect(
+          ownershipToken
+            .connect(alice)
+            .transferToEscrow(1, ethers.parseEther('1')),
+        ).to.be.revertedWith('Token is archived');
+      });
+
+      it('Should allow ownership token operations after unarchiving', async function () {
+        // Archive and unarchive
+        await ownershipToken.connect(executorSigner).setArchived(true);
+        await ownershipToken.connect(executorSigner).setArchived(false);
+
+        // Operations should work
+        await ownershipToken
+          .connect(executorSigner)
+          .mint(bob.address, ethers.parseEther('5'));
+
+        // Executor transfers to alice (with auto-minting enabled)
+        await ownershipToken
+          .connect(executorSigner)
+          .transfer(alice.address, ethers.parseEther('3'));
+
+        // Alice: 10 (initial) + 3 (from executor) = 13
+        expect(await ownershipToken.balanceOf(alice.address)).to.equal(
+          ethers.parseEther('13'),
+        );
+        // Bob: 5 (minted)
+        expect(await ownershipToken.balanceOf(bob.address)).to.equal(
+          ethers.parseEther('5'),
+        );
+      });
+    });
+
+    describe('Archive with Auto-Minting', function () {
+      let token: Contract;
+
+      beforeEach(async function () {
+        const tx = await regularTokenFactory
+          .connect(executorSigner)
+          .deployToken(
+            spaceId,
+            'Auto Mint Archive Token',
+            'AMART',
+            ethers.parseEther('10000'),
+            true,
+            false,
+            true, // autoMinting enabled
+            0,
+            false,
+            false,
+          );
+
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return regularTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+
+        token = await ethers.getContractAt('RegularSpaceToken', tokenAddress);
+      });
+
+      it('Should prevent auto-mint transfers when archived', async function () {
+        await token.connect(executorSigner).setArchived(true);
+
+        // Even with auto-minting enabled, archived tokens cannot transfer
+        await expect(
+          token
+            .connect(executorSigner)
+            .transfer(alice.address, ethers.parseEther('100')),
+        ).to.be.revertedWith('Token is archived');
+      });
+
+      it('Should allow auto-mint transfers after unarchiving', async function () {
+        // Archive and unarchive
+        await token.connect(executorSigner).setArchived(true);
+        await token.connect(executorSigner).setArchived(false);
+
+        // Auto-mint transfer should work
+        await token
+          .connect(executorSigner)
+          .transfer(alice.address, ethers.parseEther('100'));
+
+        expect(await token.balanceOf(alice.address)).to.equal(
+          ethers.parseEther('100'),
+        );
+      });
+    });
+
+    describe('Archive with Whitelists', function () {
+      let token: Contract;
+
+      beforeEach(async function () {
+        const tx = await regularTokenFactory
+          .connect(executorSigner)
+          .deployToken(
+            spaceId,
+            'Whitelist Archive Token',
+            'WHART',
+            ethers.parseEther('10000'),
+            true,
+            false,
+            true,
+            0,
+            true, // useTransferWhitelist
+            true, // useReceiveWhitelist
+          );
+
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return regularTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+
+        token = await ethers.getContractAt('RegularSpaceToken', tokenAddress);
+
+        // Setup whitelists
+        await token
+          .connect(executorSigner)
+          .batchSetTransferWhitelist([alice.address], [true]);
+        await token
+          .connect(executorSigner)
+          .batchSetReceiveWhitelist([bob.address], [true]);
+
+        // Mint tokens to alice
+        await token
+          .connect(executorSigner)
+          .mint(alice.address, ethers.parseEther('100'));
+      });
+
+      it('Should prevent whitelisted transfers when archived', async function () {
+        await token.connect(executorSigner).setArchived(true);
+
+        // Even though alice is whitelisted, archived prevents transfer
+        await expect(
+          token.connect(alice).transfer(bob.address, ethers.parseEther('10')),
+        ).to.be.revertedWith('Token is archived');
+      });
+
+      it('Should allow updating whitelists when archived', async function () {
+        await token.connect(executorSigner).setArchived(true);
+
+        // Whitelist updates should still work
+        await expect(
+          token
+            .connect(executorSigner)
+            .batchSetTransferWhitelist([charlie.address], [true]),
+        )
+          .to.emit(token, 'TransferWhitelistUpdated')
+          .withArgs(charlie.address, true);
+
+        expect(await token.canTransfer(charlie.address)).to.be.true;
+      });
+    });
+  });
+
+  describe('12. Complex Scenarios', function () {
     it('Should handle soulbound-like token configuration', async function () {
       // Deploy non-transferable token with receive whitelist
       const tx = await regularTokenFactory.connect(executorSigner).deployToken(
