@@ -1,6 +1,6 @@
 'use client';
 
-import { Separator, Switch } from '@hypha-platform/ui';
+import { FormLabel, Separator, Switch } from '@hypha-platform/ui';
 import {
   TokenNameField,
   TokenSymbolField,
@@ -28,6 +28,12 @@ export const IssueNewTokenPlugin = () => {
 
   return (
     <div className="flex flex-col gap-4">
+      <FormLabel>General</FormLabel>
+      <span className="text-2 text-neutral-11">
+        {' '}
+        Select your token type and customize its name, symbol, and icon for
+        clear identification.
+      </span>
       <TokenTypeField
         onValueChange={(value: string) => {
           setTokenType(value);
