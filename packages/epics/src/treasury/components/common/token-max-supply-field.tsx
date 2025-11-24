@@ -30,7 +30,7 @@ export function TokenMaxSupplyField() {
         <FormItem>
           <div className="flex justify-between items-center">
             <FormLabel className="text-2 text-neutral-11 w-full">
-              Token Max Supply
+              Max Supply
             </FormLabel>
             <FormControl>
               <Input
