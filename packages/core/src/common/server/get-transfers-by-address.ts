@@ -52,7 +52,7 @@ export async function getTransfersByAddress(
     const blockNumber = parseInt(transfer.blockNum, 16);
     const timestamp = Date.parse(transfer.metadata.blockTimestamp) || 0;
 
-    const getTimestampAndMetadata = async () => {
+    const getMetadata = async () => {
       const tokenMetadata = transfer.rawContract.address
         ? await alchemy.core.getTokenMetadata(transfer.rawContract.address)
         : { decimals: 18, symbol: transfer.asset || 'UNKNOWN' };
@@ -73,14 +73,14 @@ export async function getTransfersByAddress(
       block_number: blockNumber,
       transaction_index: 0,
       transaction_hash: transfer.hash,
-      _getTimestampAndMetadata: getTimestampAndMetadata,
+      _getMetadata: getMetadata,
     };
   });
 
   const transfersWithData = await Promise.all(
     allTransfers.map(async (transfer) => {
-      const { decimals, symbol } = await transfer._getTimestampAndMetadata();
-      const { _getTimestampAndMetadata, ...rest } = transfer;
+      const { decimals, symbol } = await transfer._getMetadata();
+      const { _getMetadata, ...rest } = transfer;
       return { ...rest, decimals, symbol };
     }),
   );
