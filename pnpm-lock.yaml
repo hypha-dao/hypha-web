@@ -16879,8 +16879,8 @@ packages:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
-  react-onesignal@3.4.0:
-    resolution: {integrity: sha512-iUAUZVw4lCtQbT4FPxpTDYPrfdYJPDFZERnYSd2ho6aNf/76vBG1v6HLMhTCjtNkQ2ufAW9L97N/pZuNvjEEUw==}
+  react-onesignal@3.2.3:
+    resolution: {integrity: sha512-5LIbQbybNTQ8ngaMeJEBB1EEzDEYJ8SS10L7hHKNCIIWrTmeKpYFhCgwjwb1QFdZ+eRjil5y+ujJR6syf7SVVw==}
     engines: {node: '>=14', npm: '>=6'}
 
   react-qr-code@2.0.18:
@@ -26044,7 +26044,7 @@ snapshots:
 
   '@onesignal/node-onesignal@5.2.0-beta1':
     dependencies:
-      '@types/node': 24.10.1
+      '@types/node': 24.2.1
       btoa: 1.2.1
       es6-promise: 4.2.8
       form-data: 2.5.5
@@ -41977,7 +41977,7 @@ snapshots:
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
 
-  react-onesignal@3.4.0: {}
+  react-onesignal@3.2.3: {}
 
   react-qr-code@2.0.18(react@19.2.0):
     dependencies:
