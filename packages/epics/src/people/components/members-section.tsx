@@ -8,17 +8,15 @@ import { MembersList } from './members-list';
 import { useMembersSection } from '../hooks/use-members-section';
 import { UseMembers } from '../hooks/types';
 import { Empty } from '../../common';
-import { useSpaceBySlug } from '@hypha-platform/core/client';
-// TODO: need for #1309
-// import { Button } from '@hypha-platform/ui';
-// import {
-//   useSpaceBySlug,
-//   useMe,
-//   useIsDelegate,
-// } from '@hypha-platform/core/client';
-// import { useJoinSpace } from '../../spaces';
-// import { useAuthentication } from '@hypha-platform/authentication';
-// import Link from 'next/link';
+import { Button } from '@hypha-platform/ui';
+import {
+  useSpaceBySlug,
+  useMe,
+  useIsDelegate,
+} from '@hypha-platform/core/client';
+import { useJoinSpace } from '../../spaces';
+import { useAuthentication } from '@hypha-platform/authentication';
+import Link from 'next/link';
 
 type MemberSectionProps = {
   basePath: string;
@@ -39,28 +37,26 @@ export const MembersSection: FC<MemberSectionProps> = ({
       spaceSlug,
       refreshInterval,
     });
-  const { space } = useSpaceBySlug(spaceSlug ?? '');
   console.debug('MembersSection', { searchTerm });
-  // TODO: need for #1309
-  // const { space } = useSpaceBySlug(spaceSlug as string);
-  // const { isMember, isLoading: useJoinSpaceLoading } = useJoinSpace({
-  //   spaceId: space?.web3SpaceId as number,
-  // });
-  // const { person } = useMe();
-  // const { isAuthenticated } = useAuthentication();
-  // const { isDelegate } = useIsDelegate({
-  //   spaceId: space?.web3SpaceId as number,
-  // });
-  // const isDisabled = !isAuthenticated || (!isMember && !isDelegate);
-  // const tooltipMessage = !isAuthenticated
-  //   ? 'Please sign in to use this feature.'
-  //   : !isMember && !isDelegate
-  //   ? 'Please join this space to use this feature.'
-  //   : '';
+  const { space } = useSpaceBySlug(spaceSlug as string);
+  const { isMember, isLoading: useJoinSpaceLoading } = useJoinSpace({
+    spaceId: space?.web3SpaceId as number,
+  });
+  const { person } = useMe();
+  const { isAuthenticated } = useAuthentication();
+  const { isDelegate } = useIsDelegate({
+    spaceId: space?.web3SpaceId as number,
+  });
+  const isDisabled = !isAuthenticated || (!isMember && !isDelegate);
+  const tooltipMessage = !isAuthenticated
+    ? 'Please sign in to use this feature.'
+    : !isMember && !isDelegate
+    ? 'Please join this space to use this feature.'
+    : '';
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-4">
-      <span className="w-full flex">
+      <span className="w-full flex gap-4">
         <SectionFilter
           count={pagination?.total || 0}
           label="Members"
@@ -68,7 +64,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
           searchPlaceholder="Search members"
           onChangeSearch={onUpdateSearch}
         />
-        {/* <Link
+        <Link
           title={tooltipMessage || ''}
           className={isDisabled ? 'cursor-not-allowed' : ''}
           href={`${basePath}/${person?.slug}`}
@@ -77,7 +73,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
           <Button disabled={isDisabled || useJoinSpaceLoading}>
             Delegate Voting
           </Button>
-        </Link> */}
+        </Link>
       </span>
       {pagination?.total === 0 ? (
         <Empty>

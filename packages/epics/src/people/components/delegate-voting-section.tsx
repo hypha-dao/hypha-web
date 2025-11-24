@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Separator, Label, Button } from '@hypha-platform/ui';
 import { DelegatedMemberSelector } from './delegated-member-selector';
-import { DelegatedSpaceSelector } from './delegated-space-selector';
+// import { DelegatedSpaceSelector } from './delegated-space-selector';
 import { UseMembers } from '../../spaces';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,6 +34,7 @@ const delegateToMemberSchema = z.object({
 });
 type DelegateToMemberForm = z.infer<typeof delegateToMemberSchema>;
 
+/*
 const passOnDelegatedVoiceSchema = z.object({
   delegatedSpace: z.number({
     required_error: 'Please select a space',
@@ -42,6 +43,7 @@ const passOnDelegatedVoiceSchema = z.object({
   delegatedMember: z.string().min(1, 'Please select a member'),
 });
 type PassOnDelegatedVoiceForm = z.infer<typeof passOnDelegatedVoiceSchema>;
+*/
 
 export const DelegateVotingSection = ({
   web3SpaceId,
@@ -66,6 +68,7 @@ export const DelegateVotingSection = ({
     resetDelegateMutation: resetDelegateMember,
   } = useDelegateWeb3Rpc();
 
+  /*
   const {
     delegate: delegateToSpace,
     isDelegating: isDelegatingToSpace,
@@ -73,9 +76,10 @@ export const DelegateVotingSection = ({
     errorDelegate: errorDelegateSpace,
     resetDelegateMutation: resetDelegateSpace,
   } = useDelegateWeb3Rpc();
+  */
 
   const [successMember, setSuccessMember] = useState(false);
-  const [successSpace, setSuccessSpace] = useState(false);
+  /* const [successSpace, setSuccessSpace] = useState(false); */
 
   useEffect(() => {
     if (delegateHashMember) {
@@ -88,6 +92,7 @@ export const DelegateVotingSection = ({
     }
   }, [delegateHashMember, resetDelegateMember]);
 
+  /*
   useEffect(() => {
     if (delegateHashSpace) {
       setSuccessSpace(true);
@@ -98,6 +103,7 @@ export const DelegateVotingSection = ({
       return () => clearTimeout(t);
     }
   }, [delegateHashSpace, resetDelegateSpace]);
+  */
 
   if (!isMember) return null;
 
@@ -112,6 +118,7 @@ export const DelegateVotingSection = ({
 
   useScrollToErrors(delegateToMemberForm, delegateToMemberFormRef);
 
+  /*
   const passOnDelegatedVoiceFormRef = useRef<HTMLFormElement>(null);
   const passOnDelegatedVoiceForm = useForm<PassOnDelegatedVoiceForm>({
     resolver: zodResolver(passOnDelegatedVoiceSchema),
@@ -134,6 +141,7 @@ export const DelegateVotingSection = ({
   useEffect(() => {
     setValue('delegatedMember', '');
   }, [selectedSpaceWeb3SpaceId, selectedSpace?.slug, setValue]);
+  */
 
   const handleDelegateToMember = async (data: DelegateToMemberForm) => {
     await delegateToMember({
@@ -142,12 +150,14 @@ export const DelegateVotingSection = ({
     });
   };
 
+  /*
   const handleDelegateSpace = async (data: PassOnDelegatedVoiceForm) => {
     await delegateToSpace({
       address: data.delegatedMember as `0x${string}`,
       spaceId: data.delegatedSpace,
     });
   };
+  */
 
   return (
     <div className="flex flex-col gap-5">
@@ -200,6 +210,7 @@ export const DelegateVotingSection = ({
         </form>
       </Form>
       <Separator />
+      {/*
       {spaces?.data?.length ? (
         <Form {...passOnDelegatedVoiceForm}>
           <form
@@ -275,8 +286,8 @@ export const DelegateVotingSection = ({
             )}
           </form>
         </Form>
-      ) : null}
-      <Separator />
+      ) : null} */}
+      {/* <Separator /> */}
     </div>
   );
 };
