@@ -58,6 +58,8 @@ export const DelegateVotingSection = ({
     spaceSlug,
     paginationDisabled: true,
   });
+  const filteredMembers =
+    persons?.data?.filter((member) => member.address !== person?.address) ?? [];
   const isMember = person?.slug === personSlug;
 
   const {
@@ -181,7 +183,7 @@ export const DelegateVotingSection = ({
                     Delegated Voting Member
                   </div>
                   <DelegatedMemberSelector
-                    members={persons?.data}
+                    members={filteredMembers}
                     value={field.value}
                     onChange={(selected) =>
                       field.onChange(selected ? selected.address : '')
