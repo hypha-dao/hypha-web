@@ -102,6 +102,12 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
    */
   function balanceOf(address account) public view override returns (uint256) {
     uint256 currentBalance = super.balanceOf(account);
+
+    // If token is archived, decay is paused - return actual balance without decay
+    if (archived) {
+      return currentBalance;
+    }
+
     if (currentBalance == 0 || lastApplied[account] == 0) {
       return currentBalance;
     }
@@ -134,6 +140,13 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
    * @param account The address to apply decay to
    */
   function applyDecay(address account) public {
+    // If token is archived, update lastApplied to prevent decay accumulation during archived period
+    // but don't actually apply any decay
+    if (archived) {
+      lastApplied[account] = block.timestamp;
+      return;
+    }
+
     uint256 oldBalance = super.balanceOf(account);
     uint256 newBalance = balanceOf(account);
 
@@ -158,13 +171,22 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
    */
   function mint(address to, uint256 amount) public override {
     require(msg.sender == executor, 'Only executor can mint');
+    require(!archived, 'Token is archived');
     if (lastApplied[to] == 0) {
       lastApplied[to] = block.timestamp;
     } else {
       applyDecay(to); // Apply any pending decay first
     }
     _addTokenHolder(to);
-    super.mint(to, amount);
+    // Call RegularSpaceToken's mint but skip the archived check since we already did it
+    require(msg.sender == executor, 'Only executor can mint');
+    // Check against maximum supply
+    require(
+      maxSupply == 0 || totalSupply() + amount <= maxSupply,
+      'Mint max supply problemchik blet'
+    );
+
+    _mint(to, amount);
   }
 
   /**
@@ -172,6 +194,7 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
    */
   function transfer(address to, uint256 amount) public override returns (bool) {
     address sender = _msgSender();
+    require(!archived, 'Token is archived');
     require(transferable || sender == executor, 'Token transfers are disabled');
 
     // Executor always bypasses whitelist checks
@@ -217,6 +240,7 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
     uint256 amount
   ) public override returns (bool) {
     address spender = _msgSender();
+    require(!archived, 'Token is archived');
     require(
       transferable || spender == executor,
       'Token transfers are disabled'
@@ -277,5 +301,27 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
     }
 
     return totalDecayedSupply;
+  }
+
+  /**
+   * @dev Override setArchived to update all token holders' lastApplied timestamps when unarchiving
+   * This prevents decay from accumulating during the archived period
+   */
+  function setArchived(bool _archived) external override {
+    require(msg.sender == executor, 'Only executor can update archived status');
+
+    // If we're unarchiving (going from true to false), update all holders' timestamps
+    if (archived && !_archived) {
+      // Update lastApplied for all token holders to prevent retroactive decay
+      for (uint256 i = 0; i < _tokenHolders.length; i++) {
+        address holder = _tokenHolders[i];
+        if (_isTokenHolder[holder] && lastApplied[holder] > 0) {
+          lastApplied[holder] = block.timestamp;
+        }
+      }
+    }
+
+    archived = _archived;
+    emit ArchivedStatusUpdated(_archived);
   }
 }
