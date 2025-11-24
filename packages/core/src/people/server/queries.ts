@@ -282,6 +282,8 @@ export const findPersonsBySlug = async (
   { slugs }: FindPersonsBySlugInput,
   { db }: DbConfig,
 ) => {
+  if (slugs.length === 0) return [];
+
   const persons = await db
     .select()
     .from(people)
