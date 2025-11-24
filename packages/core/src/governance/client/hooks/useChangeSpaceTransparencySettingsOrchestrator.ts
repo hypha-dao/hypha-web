@@ -185,31 +185,30 @@ export const useChangeSpaceTransparencySettingsOrchestrator = ({
       const spaceActivityAccess = arg.spaceActivityAccess;
 
       try {
-        // TODO: Implement web3 mutations when contract is available
-        // if (config) {
-        //   if (typeof web3SpaceId !== 'number') {
-        //     throw new Error(
-        //       'web3SpaceId is required for web3 proposal creation',
-        //     );
-        //   }
-        //   if (typeof spaceDiscoverability !== 'number') {
-        //     throw new Error(
-        //       'spaceDiscoverability is required for web3 proposal creation',
-        //     );
-        //   }
-        //   if (typeof spaceActivityAccess !== 'number') {
-        //     throw new Error(
-        //       'spaceActivityAccess is required for web3 proposal creation',
-        //     );
-        //   }
-        //   startTask('CREATE_WEB3_CHANGE_SPACE_TRANSPARENCY_SETTINGS');
-        //   await web3.createChangeSpaceTransparencySettings({
-        //     spaceId: web3SpaceId,
-        //     spaceDiscoverability: spaceDiscoverability,
-        //     spaceActivityAccess: spaceActivityAccess,
-        //   });
-        //   completeTask('CREATE_WEB3_CHANGE_SPACE_TRANSPARENCY_SETTINGS');
-        // }
+        if (config) {
+          if (typeof web3SpaceId !== 'number') {
+            throw new Error(
+              'web3SpaceId is required for web3 proposal creation',
+            );
+          }
+          if (typeof spaceDiscoverability !== 'number') {
+            throw new Error(
+              'spaceDiscoverability is required for web3 proposal creation',
+            );
+          }
+          if (typeof spaceActivityAccess !== 'number') {
+            throw new Error(
+              'spaceActivityAccess is required for web3 proposal creation',
+            );
+          }
+          startTask('CREATE_WEB3_CHANGE_SPACE_TRANSPARENCY_SETTINGS');
+          await web3.createChangeSpaceTransparencySettings({
+            spaceId: web3SpaceId,
+            spaceDiscoverability: spaceDiscoverability,
+            spaceActivityAccess: spaceActivityAccess,
+          });
+          completeTask('CREATE_WEB3_CHANGE_SPACE_TRANSPARENCY_SETTINGS');
+        }
 
         startTask('UPLOAD_FILES');
         const inputFiles = schemaCreateAgreementFiles.parse(arg);
@@ -217,8 +216,10 @@ export const useChangeSpaceTransparencySettingsOrchestrator = ({
         completeTask('UPLOAD_FILES');
       } catch (err) {
         if (err instanceof Error) {
-          // TODO: Uncomment when web3 is implemented
-          // errorTask('CREATE_WEB3_CHANGE_SPACE_TRANSPARENCY_SETTINGS', err.message);
+          errorTask(
+            'CREATE_WEB3_CHANGE_SPACE_TRANSPARENCY_SETTINGS',
+            err.message,
+          );
         }
         if (web2Slug) {
           await web2.deleteAgreementBySlug({ slug: web2Slug });
@@ -231,29 +232,21 @@ export const useChangeSpaceTransparencySettingsOrchestrator = ({
   const { data: updatedWeb2Agreement } = useSWR(
     web2.createdAgreement?.slug &&
       taskState.UPLOAD_FILES.status === TaskStatus.IS_DONE &&
-      // TODO: Uncomment when web3 is implemented
-      // (!config ||
-      //   taskState.CREATE_WEB3_CHANGE_SPACE_TRANSPARENCY_SETTINGS.status ===
-      //     TaskStatus.IS_DONE)
-      // For now, skip web3 check since web3 is not implemented
-      true
+      (!config ||
+        taskState.CREATE_WEB3_CHANGE_SPACE_TRANSPARENCY_SETTINGS.status ===
+          TaskStatus.IS_DONE)
       ? [
           web2.createdAgreement.slug,
-          // TODO: Uncomment when web3 is implemented
-          // web3.changeSpaceTransparencySettingsData?.proposalId,
+          web3.changeSpaceTransparencySettingsData?.proposalId,
           'linkingWeb2AndWeb3',
         ]
       : null,
-    async ([slug]) => {
-      // TODO: Uncomment when web3 is implemented
-      // const web3ProposalId = args[1];
+    async ([slug, web3ProposalId]) => {
       try {
         startTask('LINK_WEB2_AND_WEB3_CHANGE_SPACE_TRANSPARENCY_SETTINGS');
         const result = await web2.updateAgreementBySlug({
           slug,
-          // TODO: Uncomment when web3 is implemented
-          // web3ProposalId: web3ProposalId ? Number(web3ProposalId) : undefined,
-          web3ProposalId: undefined,
+          web3ProposalId: web3ProposalId ? Number(web3ProposalId) : undefined,
         });
         completeTask('LINK_WEB2_AND_WEB3_CHANGE_SPACE_TRANSPARENCY_SETTINGS');
         return result;
@@ -276,26 +269,23 @@ export const useChangeSpaceTransparencySettingsOrchestrator = ({
   const errors = React.useMemo(() => {
     return [
       web2.errorCreateAgreementMutation,
-      // TODO: Uncomment when web3 is implemented
-      // web3.errorChangeSpaceTransparencySettings,
-      // web3.errorWaitProposalFromTx,
+      web3.errorChangeSpaceTransparencySettings,
+      web3.errorWaitProposalFromTx,
     ].filter(Boolean);
-  }, [web2]);
+  }, [web2, web3]);
 
   const reset = useCallback(() => {
     resetTasks();
     web2.resetCreateAgreementMutation();
-    // TODO: Uncomment when web3 is implemented
-    // web3.resetChangeSpaceTransparencySettings();
-  }, [resetTasks, web2]);
+    web3.resetChangeSpaceTransparencySettings();
+  }, [resetTasks, web2, web3]);
 
   return {
     reset,
     createChangeSpaceTransparencySettings,
     changeSpaceTransparencySettings: {
       ...web2.createdAgreement,
-      // TODO: Uncomment when web3 is implemented
-      // ...web3.changeSpaceTransparencySettingsData,
+      ...web3.changeSpaceTransparencySettingsData,
       ...updatedWeb2Agreement,
     },
     taskState,

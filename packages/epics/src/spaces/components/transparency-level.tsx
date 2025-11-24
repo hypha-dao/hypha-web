@@ -11,8 +11,8 @@ import { PlusCircledIcon } from '@radix-ui/react-icons';
 
 export enum TransparencyLevel {
   PUBLIC = 0,
-  ORGANISATION = 1,
-  NETWORK = 2,
+  NETWORK = 1,
+  ORGANISATION = 2,
   SPACE = 3,
 }
 
