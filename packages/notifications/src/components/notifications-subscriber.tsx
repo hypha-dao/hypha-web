@@ -268,7 +268,7 @@ export function NotificationSubscriber({
         subscriptionChangeHandler,
       );
     };
-  }, [appId, serviceWorkerPath]);
+  }, [appId, safariWebId, serviceWorkerPath]);
 
   return (
     <NotificationsContext.Provider
