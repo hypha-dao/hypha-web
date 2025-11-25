@@ -54,11 +54,16 @@ export async function hasPermission() {
   if (!OneSignal) {
     return false;
   }
-  const tags = await OneSignal.User.getTags();
-  const isSubscribed = checkTag(tags, TAG_SUBSCRIBED, false);
-  const externalId = OneSignal.User.externalId;
-  const permission = OneSignal.Notifications.permission;
-  return permission && isSubscribed && Boolean(externalId);
+  try {
+    const tags = await OneSignal.User.getTags();
+    const isSubscribed = checkTag(tags, TAG_SUBSCRIBED, false);
+    const externalId = OneSignal.User.externalId;
+    const permission = OneSignal.Notifications.permission;
+    return permission && isSubscribed && Boolean(externalId);
+  } catch (err) {
+    console.warn('Failed to check notification permission', err);
+    return false;
+  }
 }
 
 export const useNotifications = () => {
@@ -88,7 +93,7 @@ export const useNotifications = () => {
       });
     } catch (err) {
       console.warn('Failed to initialize notification configuration', err);
-      setError?.('Could not load notification settings.');
+      setError('Could not load notification settings.');
     }
   }, [initialized, OneSignal, loggedIn, setError]);
 
