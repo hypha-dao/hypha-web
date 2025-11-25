@@ -708,6 +708,9 @@ importers:
       '@fastify/swagger-ui':
         specifier: ^5.2.3
         version: 5.2.3
+      '@hypha-platform/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       alchemy-sdk:
         specifier: ^3.6.1
         version: 3.6.1(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10)

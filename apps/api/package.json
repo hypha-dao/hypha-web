@@ -13,6 +13,7 @@
     "start": "node dist/server.js"
   },
   "dependencies": {
+    "@hypha-platform/core": "workspace:*",
     "@fastify/cors": "^11.0.1",
     "@fastify/env": "^5.0.3",
     "@fastify/rate-limit": "^10.3.0",
