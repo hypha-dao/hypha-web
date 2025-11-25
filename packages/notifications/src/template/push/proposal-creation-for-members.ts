@@ -23,7 +23,7 @@ export function pushProposalCreationForMembers({
         headings: {
           en: `New ${proposalState} was created in one of your spaces`,
         },
-        contents: { en: `A new ${proposal} was just created in ${space}` },
+        contents: { en: `A new ${proposal} was just created in ${space}.` },
       };
   }
 }
