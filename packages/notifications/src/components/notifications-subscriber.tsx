@@ -65,6 +65,7 @@ export function NotificationSubscriber({
           await OneSignal.logout();
         }
         setLoggedIn(false);
+        setSubscribed(false);
       };
       logoutNotifications();
     }
