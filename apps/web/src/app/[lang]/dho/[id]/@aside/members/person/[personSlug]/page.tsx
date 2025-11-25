@@ -9,6 +9,7 @@ import {
   SidePanel,
   useMemberWeb3SpaceIds,
 } from '@hypha-platform/epics';
+import { useIsDelegate } from '@hypha-platform/core/client';
 
 import { useMemberBySlug } from '@web/hooks/use-member-by-slug';
 import { getDhoPathMembers } from '../../../../@tab/members/constants';
@@ -28,6 +29,10 @@ export default function Member() {
   });
   const { spaces } = useSpacesByWeb3Ids(web3SpaceIds ?? []);
   const { space } = useSpaceBySlug(id);
+  const { isDelegate } = useIsDelegate({
+    spaceId: space?.web3SpaceId as number,
+    userAddress: person?.address as `0x${string}`,
+  });
 
   return (
     <SidePanel>
@@ -48,11 +53,13 @@ export default function Member() {
           lang={lang}
           spaces={spaces}
         />
-        <DelegateVotingSection
-          web3SpaceId={space?.web3SpaceId as number}
-          useMembers={useMembers}
-          spaceSlug={id}
-        />
+        {!isDelegate && (
+          <DelegateVotingSection
+            web3SpaceId={space?.web3SpaceId as number}
+            useMembers={useMembers}
+            spaceSlug={id}
+          />
+        )}
       </div>
     </SidePanel>
   );

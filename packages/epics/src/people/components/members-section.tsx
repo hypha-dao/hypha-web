@@ -6,7 +6,7 @@ import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 
 import { MembersList } from './members-list';
 import { useMembersSection } from '../hooks/use-members-section';
-import { UseMembers } from '../hooks/types';
+import { UseMembers } from '../../spaces';
 import { Empty } from '../../common';
 import { Button } from '@hypha-platform/ui';
 import {
@@ -47,10 +47,10 @@ export const MembersSection: FC<MemberSectionProps> = ({
   const { isDelegate } = useIsDelegate({
     spaceId: space?.web3SpaceId as number,
   });
-  const isDisabled = !isAuthenticated || (!isMember && !isDelegate);
+  const isDisabled = !isAuthenticated || !isMember;
   const tooltipMessage = !isAuthenticated
     ? 'Please sign in to use this feature.'
-    : !isMember && !isDelegate
+    : !isMember
     ? 'Please join this space to use this feature.'
     : '';
 
@@ -64,16 +64,18 @@ export const MembersSection: FC<MemberSectionProps> = ({
           searchPlaceholder="Search members"
           onChangeSearch={onUpdateSearch}
         />
-        <Link
-          title={tooltipMessage || ''}
-          className={isDisabled ? 'cursor-not-allowed' : ''}
-          href={`${basePath}/${person?.slug}`}
-          scroll={false}
-        >
-          <Button disabled={isDisabled || useJoinSpaceLoading}>
-            Delegate Voting
-          </Button>
-        </Link>
+        {!isDelegate && (
+          <Link
+            title={tooltipMessage || ''}
+            className={isDisabled ? 'cursor-not-allowed' : ''}
+            href={`${basePath}/${person?.slug}`}
+            scroll={false}
+          >
+            <Button disabled={isDisabled || useJoinSpaceLoading}>
+              Delegate Voting
+            </Button>
+          </Link>
+        )}
       </span>
       {pagination?.total === 0 ? (
         <Empty>

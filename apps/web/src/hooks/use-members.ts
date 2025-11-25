@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import useSWR from 'swr';
+import useSWR, { mutate as mutateCache, type Key } from 'swr';
 import queryString from 'query-string';
 
 import { type UseMembers, type UseMembersReturn } from '@hypha-platform/epics';
@@ -53,7 +53,11 @@ export const useMembers: UseMembers = ({
   const interval = refreshInterval ?? 0;
   const keepPreviousData = !!interval;
 
-  const { data: response, isLoading } = useSWR(
+  const {
+    data: response,
+    isLoading,
+    mutate,
+  } = useSWR(
     spaceSlug ? [endpoint] : null,
     ([endpoint]) =>
       fetch(endpoint, {
@@ -67,9 +71,30 @@ export const useMembers: UseMembers = ({
     },
   );
 
+  const updateMembers = React.useCallback(async () => {
+    if (!spaceSlug) {
+      await mutate();
+      return;
+    }
+
+    await mutateCache(
+      (key: Key) => {
+        if (!Array.isArray(key)) return false;
+        const [url] = key;
+        return (
+          typeof url === 'string' &&
+          url.startsWith(`/api/v1/spaces/${spaceSlug}/members`)
+        );
+      },
+      undefined,
+      { revalidate: true },
+    );
+  }, [mutate, spaceSlug]);
+
   return {
     persons: response?.persons || { data: [], pagination: undefined },
     spaces: response?.spaces || { data: [], pagination: undefined },
     isLoading,
+    updateMembers,
   };
 };

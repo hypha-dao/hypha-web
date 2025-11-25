@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { Separator, Label, Button } from '@hypha-platform/ui';
 import { DelegatedMemberSelector } from './delegated-member-selector';
 // import { DelegatedSpaceSelector } from './delegated-space-selector';
@@ -13,7 +13,10 @@ import {
   useSpaceBySlug,
   useDelegateWeb3Rpc,
   useMe,
+  useSpaceDelegate,
+  useUndelegateWeb3Rpc,
 } from '@hypha-platform/core/client';
+import { mutate as mutateCache, type Key } from 'swr';
 import { useParams } from 'next/navigation';
 import { ProfileComponentParams } from './types';
 import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
@@ -54,7 +57,8 @@ export const DelegateVotingSection = ({
   const personSlug = tryDecodeUriPart(personSlugRaw);
   const { person } = useMe();
   const { space } = useSpaceBySlug(spaceSlug as string);
-  const { persons, spaces } = useMembers({
+  const effectiveSpaceId = space?.web3SpaceId || web3SpaceId;
+  const { persons, spaces, updateMembers } = useMembers({
     spaceSlug,
     paginationDisabled: true,
   });
@@ -69,6 +73,8 @@ export const DelegateVotingSection = ({
     errorDelegate: errorDelegateMember,
     resetDelegateMutation: resetDelegateMember,
   } = useDelegateWeb3Rpc();
+  const { undelegate, isUndelegating, errorUndelegate } =
+    useUndelegateWeb3Rpc();
 
   /*
   const {
@@ -114,9 +120,37 @@ export const DelegateVotingSection = ({
     resolver: zodResolver(delegateToMemberSchema),
     defaultValues: {
       delegatedMember: '',
-      delegatedSpace: space?.web3SpaceId as number,
+      delegatedSpace: effectiveSpaceId as number,
     },
   });
+
+  const viewerAddress = person?.address?.toLowerCase();
+
+  const { person: currentDelegate } = useSpaceDelegate({
+    user: person?.address as `0x${string}`,
+    spaceId: effectiveSpaceId,
+  });
+  const currentDelegateAddress = currentDelegate?.address?.toLowerCase();
+  const hasConfirmedDelegate =
+    Boolean(currentDelegateAddress) && currentDelegateAddress !== viewerAddress;
+
+  useEffect(() => {
+    if (effectiveSpaceId) {
+      delegateToMemberForm.setValue('delegatedSpace', effectiveSpaceId);
+    }
+  }, [delegateToMemberForm, effectiveSpaceId]);
+
+  useEffect(() => {
+    const delegateAddress =
+      hasConfirmedDelegate && currentDelegate?.address
+        ? currentDelegate.address
+        : '';
+    const existingValue =
+      delegateToMemberForm.getValues('delegatedMember') ?? '';
+    if (delegateAddress !== existingValue) {
+      delegateToMemberForm.setValue('delegatedMember', delegateAddress);
+    }
+  }, [currentDelegate?.address, delegateToMemberForm, hasConfirmedDelegate]);
 
   useScrollToErrors(delegateToMemberForm, delegateToMemberFormRef);
 
@@ -145,11 +179,39 @@ export const DelegateVotingSection = ({
   }, [selectedSpaceWeb3SpaceId, selectedSpace?.slug, setValue]);
   */
 
+  const delegateCacheKey = useMemo<Key | null>(() => {
+    if (!person?.address || !effectiveSpaceId) {
+      return null;
+    }
+    return [
+      person.address as `0x${string}`,
+      BigInt(effectiveSpaceId),
+      'delegate',
+    ];
+  }, [effectiveSpaceId, person?.address]);
+
   const handleDelegateToMember = async (data: DelegateToMemberForm) => {
     await delegateToMember({
       address: data.delegatedMember as `0x${string}`,
       spaceId: data.delegatedSpace,
     });
+    delegateToMemberForm.setValue('delegatedMember', data.delegatedMember);
+    if (delegateCacheKey) {
+      await mutateCache(delegateCacheKey);
+    }
+    await updateMembers?.();
+  };
+
+  const handleUndelegate = async () => {
+    if (!effectiveSpaceId || !hasConfirmedDelegate) return;
+    await undelegate({
+      spaceId: effectiveSpaceId,
+    });
+    delegateToMemberForm.setValue('delegatedMember', '');
+    if (delegateCacheKey) {
+      await mutateCache(delegateCacheKey);
+    }
+    await updateMembers?.();
   };
 
   /*
@@ -160,7 +222,6 @@ export const DelegateVotingSection = ({
     });
   };
   */
-
   return (
     <div className="flex flex-col gap-5">
       <Form {...delegateToMemberForm}>
@@ -194,8 +255,22 @@ export const DelegateVotingSection = ({
               </FormItem>
             )}
           />
-          <span className="flex items-center justify-end w-full">
-            <Button type="submit" disabled={isDelegatingToMember}>
+          <span className="flex items-center justify-end w-full gap-3">
+            {hasConfirmedDelegate ? (
+              <Button
+                type="button"
+                variant="outline"
+                colorVariant="accent"
+                disabled={isUndelegating || isDelegatingToMember}
+                onClick={handleUndelegate}
+              >
+                {isUndelegating ? 'Undelegating...' : 'Undelegate'}
+              </Button>
+            ) : null}
+            <Button
+              type="submit"
+              disabled={isDelegatingToMember || isUndelegating}
+            >
               {isDelegatingToMember ? 'Delegating...' : 'Save'}
             </Button>
           </span>
@@ -207,6 +282,11 @@ export const DelegateVotingSection = ({
           {errorDelegateMember && (
             <span className="text-red-600 text-sm">
               {errorDelegateMember.message}
+            </span>
+          )}
+          {errorUndelegate && (
+            <span className="text-red-600 text-sm">
+              {errorUndelegate.message}
             </span>
           )}
         </form>

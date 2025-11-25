@@ -23,6 +23,7 @@ import { useJoinSpace } from '../../spaces';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useIsDelegate } from '@hypha-platform/core/client';
 import { useEffect } from 'react';
+import { mutate as mutateCache, type Key } from 'swr';
 
 export type MemberCardProps = {
   spaceId?: number;
@@ -58,7 +59,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   });
   const [localIsDelegate, setLocalIsDelegate] = useState(isDelegate);
   const { isMember } = useJoinSpace({ spaceId: space?.web3SpaceId as number });
-  const { isAuthenticated } = useAuthentication();
+  const { isAuthenticated, user } = useAuthentication();
 
   const isDisabled = isUndelegating || !isAuthenticated || !isMember;
   const tooltipMessage = !isAuthenticated
@@ -87,6 +88,12 @@ export const MemberCard: React.FC<MemberCardProps> = ({
     );
     return event;
   }, [address, events, isLoadingEvents]);
+
+  const delegateCacheKey = React.useMemo<Key | null>(() => {
+    const viewerAddress = user?.wallet?.address as `0x${string}` | undefined;
+    if (!viewerAddress || !space?.web3SpaceId) return null;
+    return [viewerAddress, BigInt(space.web3SpaceId), 'delegate'];
+  }, [space?.web3SpaceId, user?.wallet?.address]);
 
   useEffect(() => {
     setLocalIsDelegate(isDelegate);
@@ -150,6 +157,9 @@ export const MemberCard: React.FC<MemberCardProps> = ({
                         spaceId: space?.web3SpaceId as number,
                       });
                       setLocalIsDelegate(false);
+                      if (delegateCacheKey) {
+                        await mutateCache(delegateCacheKey);
+                      }
                     } catch (error) {
                       console.error('Undelegate failed:', error);
                     }
