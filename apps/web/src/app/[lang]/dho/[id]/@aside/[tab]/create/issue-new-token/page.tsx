@@ -42,7 +42,7 @@ export default async function IssueNewTokenPage({
         successfulUrl={successfulUrl}
         backUrl={backUrl}
         closeUrl={closeUrl}
-        plugin={<Plugin name="issue-new-token" />}
+        plugin={<Plugin name="issue-new-token" spaceSlug={id} />}
       />
     </SidePanel>
   );
