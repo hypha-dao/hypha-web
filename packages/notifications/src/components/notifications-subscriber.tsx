@@ -44,7 +44,11 @@ export function NotificationSubscriber({
     if (person?.slug) {
       const loginNotifications = async (personSlug: string) => {
         try {
-          if (!OneSignal.User.externalId) {
+          const currentExternalId = OneSignal.User.externalId;
+          if (currentExternalId !== personSlug) {
+            if (currentExternalId) {
+              await OneSignal.logout();
+            }
             await OneSignal.login(personSlug);
           }
           setLoggedIn(true);

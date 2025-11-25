@@ -92,7 +92,9 @@ async function notifyPushProposalCreatedForMembersAction(params: {
   spaceSlug?: string;
   url?: string;
 }) {
-  const usernames = params.people.map(({ slug }) => slug!);
+  const usernames = params.people
+    .map(({ slug }) => slug)
+    .filter(Boolean) as string[];
   const { contents, headings } = pushProposalCreationForMembers(params);
 
   return await sendPushNotifications({
