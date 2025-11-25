@@ -73,7 +73,9 @@ export function NotificationSubscriber({
 
   React.useEffect(() => {
     const notificationClickHandler = (event: NotificationClickEvent) => {
-      console.log('The notification was clicked!', event);
+      if (DEV_ENV) {
+        console.log('The notification was clicked!', event);
+      }
       if (event.notification.launchURL) {
         const url = new URL(
           event.notification.launchURL,
@@ -119,13 +121,18 @@ export function NotificationSubscriber({
       console.log('User change:', change);
     };
     const subscriptionChangeHandler = (event: SubscriptionChangeEvent) => {
-      console.log('User PushSubscription change:', event);
-      console.log('event.previous.id', event.previous.id);
-      console.log('event.current.id', event.current.id);
-      console.log('event.previous.token', event.previous.token);
-      console.log('event.current.token', event.current.token);
-      console.log('event.previous.optedIn', event.previous.optedIn);
-      console.log('event.current.optedIn', event.current.optedIn);
+      if (DEV_ENV) {
+        console.log('User PushSubscription change:', {
+          previous: {
+            id: event.previous.id,
+            optedIn: event.previous.optedIn,
+          },
+          current: {
+            id: event.current.id,
+            optedIn: event.current.optedIn,
+          },
+        });
+      }
     };
     const initialize = async () => {
       if (initialized) {
