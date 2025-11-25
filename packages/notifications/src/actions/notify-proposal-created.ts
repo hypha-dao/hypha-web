@@ -18,7 +18,7 @@ import {
 } from '../template';
 import {
   sendPushNotifications,
-  sentEmailNotificationsTemplate,
+  sendEmailNotificationsTemplate,
 } from '../mutations';
 import { TAG_SUB_NEW_PROPOSAL_OPEN } from '../constants';
 
@@ -73,7 +73,7 @@ async function notifyEmailProposalCreatedForCreator({
     url: url ?? 'https://app.hypha.earth',
     unsubscribe_link: unsubscribeLink ?? 'https://app.hypha.earth',
   };
-  await sentEmailNotificationsTemplate({
+  await sendEmailNotificationsTemplate({
     templateId,
     customData,
     usernames: person?.slug ? [person.slug] : [],
@@ -125,7 +125,7 @@ async function notifyEmailProposalCreatedForMembersAction(params: {
       url: params.url,
       unsubscribe_link: params.unsubscribeLink,
     };
-    return await sentEmailNotificationsTemplate({
+    return await sendEmailNotificationsTemplate({
       templateId,
       customData,
       usernames: person?.slug ? [person.slug] : [],

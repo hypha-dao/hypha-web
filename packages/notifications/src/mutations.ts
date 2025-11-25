@@ -60,12 +60,22 @@ export const sendPushNotifications = async ({
   requiredTags?: Tags;
   url?: string;
 }) => {
+  if (!ONESIGNAL_APP_ID) {
+    throw new Error('ONESIGNAL_APP_ID environment variable is not set');
+  }
+
   console.log('Send push...');
   const aliases = await filterUsers(usernames, {
     subscribed: 'true',
     push: 'true',
     ...requiredTags,
   });
+
+  if (aliases.length === 0) {
+    console.warn('No users matched push notification criteria');
+    return null;
+  }
+
   return await sendPushByAlias({
     app_id: ONESIGNAL_APP_ID,
     alias: {
@@ -78,7 +88,7 @@ export const sendPushNotifications = async ({
   });
 };
 
-export const sentEmailNotifications = async ({
+export const sendEmailNotifications = async ({
   body,
   subject,
   usernames,
@@ -89,12 +99,22 @@ export const sentEmailNotifications = async ({
   usernames: string[];
   requiredTags?: Tags;
 }) => {
+  if (!ONESIGNAL_APP_ID) {
+    throw new Error('ONESIGNAL_APP_ID environment variable is not set');
+  }
+
   console.log('Send email...');
   const aliases = await filterUsers(usernames, {
     subscribed: 'true',
     email: 'true',
     ...requiredTags,
   });
+
+  if (aliases.length === 0) {
+    console.warn('No users matched push notification criteria');
+    return null;
+  }
+
   return await sendEmailByAlias({
     app_id: ONESIGNAL_APP_ID,
     alias: {
@@ -106,7 +126,7 @@ export const sentEmailNotifications = async ({
   });
 };
 
-export const sentEmailNotificationsTemplate = async ({
+export const sendEmailNotificationsTemplate = async ({
   templateId,
   customData,
   usernames,
@@ -117,12 +137,22 @@ export const sentEmailNotificationsTemplate = async ({
   usernames: string[];
   requiredTags?: Tags;
 }) => {
+  if (!ONESIGNAL_APP_ID) {
+    throw new Error('ONESIGNAL_APP_ID environment variable is not set');
+  }
+
   console.log('Send email...');
   const aliases = await filterUsers(usernames, {
     subscribed: 'true',
     email: 'true',
     ...requiredTags,
   });
+
+  if (aliases.length === 0) {
+    console.warn('No users matched push notification criteria');
+    return null;
+  }
+
   return await sendEmailByAlias({
     app_id: ONESIGNAL_APP_ID,
     alias: {

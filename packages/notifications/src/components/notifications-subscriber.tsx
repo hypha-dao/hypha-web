@@ -61,11 +61,16 @@ export function NotificationSubscriber({
       loginNotifications(person.slug);
     } else {
       const logoutNotifications = async () => {
-        if (OneSignal.User.externalId) {
-          await OneSignal.logout();
+        try {
+          if (OneSignal.User.externalId) {
+            await OneSignal.logout();
+          }
+        } catch (err) {
+          console.error('Error on logout:', err);
+        } finally {
+          setLoggedIn(false);
+          setSubscribed(false);
         }
-        setLoggedIn(false);
-        setSubscribed(false);
       };
       logoutNotifications();
     }
