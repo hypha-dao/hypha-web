@@ -73,22 +73,24 @@ export const useNotifications = () => {
     if (!initialized || !OneSignal || !loggedIn) {
       return;
     }
-    const tags = await OneSignal.User.getTags();
-    const browserNotifications = checkTag(tags, TAG_PUSH, true);
-    const emailNotifications = checkTag(tags, TAG_EMAIL, true);
-    const subscriptions = SUBSCRIPTION_TAGS.map((tagName) => {
-      const tagValue = checkTag(tags, tagName, true);
-      return {
+    try {
+      const tags = await OneSignal.User.getTags();
+      const browserNotifications = checkTag(tags, TAG_PUSH, true);
+      const emailNotifications = checkTag(tags, TAG_EMAIL, true);
+      const subscriptions = SUBSCRIPTION_TAGS.map((tagName) => ({
         name: tagName,
-        value: tagValue,
-      };
-    });
-    setConfiguration({
-      browserNotifications,
-      emailNotifications,
-      subscriptions,
-    });
-  }, [initialized, OneSignal, loggedIn]);
+        value: checkTag(tags, tagName, true),
+      }));
+      setConfiguration({
+        browserNotifications,
+        emailNotifications,
+        subscriptions,
+      });
+    } catch (err) {
+      console.warn('Failed to initialize notification configuration', err);
+      setError?.('Could not load notification settings.');
+    }
+  }, [initialized, OneSignal, loggedIn, setError]);
 
   React.useEffect(() => {
     initializeConfiguration();
