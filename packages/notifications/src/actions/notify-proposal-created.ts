@@ -7,21 +7,17 @@ import {
 import {
   findPeopleByWeb3Addresses,
   findPersonByWeb3Address,
-  findPersonsBySlug,
   findSpaceByWeb3Id,
   Person,
   Space,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import {
-  emailProposalCreationForCreator,
-  emailProposalCreationForMembers,
   pushProposalCreationForCreator,
   pushProposalCreationForMembers,
 } from '../template';
 import {
   sendPushNotifications,
-  sentEmailNotifications,
   sentEmailNotificationsTemplate,
 } from '../mutations';
 import { TAG_SUB_NEW_PROPOSAL_OPEN } from '../constants';
