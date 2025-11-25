@@ -267,6 +267,27 @@ const decaySettingsSchema = z.object({
     }),
 });
 
+const transferWhitelistEntrySchema = z.object({
+  type: z.enum(['member', 'space']).default('member'),
+  address: z
+    .string({ message: 'Please enter a blockchain address' })
+    .trim()
+    .min(1, { message: 'Please enter a blockchain address' })
+    .refine((value) => isAddress(value), {
+      message: 'Please enter a valid blockchain address',
+    }),
+  includeSpaceMembers: z.boolean().optional(),
+});
+
+const transferWhitelistSchema = z.object({
+  to: z
+    .array(transferWhitelistEntrySchema)
+    .min(1, { message: 'Add at least one entry to the “To” whitelist' }),
+  from: z
+    .array(transferWhitelistEntrySchema)
+    .min(1, { message: 'Add at least one entry to the “From” whitelist' }),
+});
+
 export const schemaMintTokensToSpaceTreasury = z.object({
   ...createAgreementWeb2Props,
   ...createAgreementFiles,
@@ -356,6 +377,8 @@ export const schemaIssueNewToken = z.object({
   transferable: z
     .boolean({ required_error: 'Transferable flag is required' })
     .optional(),
+  enableAdvancedTransferControls: z.boolean().optional(),
+  transferWhitelist: transferWhitelistSchema.optional(),
 });
 
 export const schemaCreateProposalChangeVotingMethodMembersField = z
