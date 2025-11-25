@@ -280,7 +280,7 @@ export function NotificationSubscriber({
         subscriptionChangeHandler,
       );
     };
-  }, [appId, safariWebId, serviceWorkerPath]);
+  }, [appId, safariWebId, serviceWorkerPath, router]);
 
   return (
     <NotificationsContext.Provider
