@@ -17,22 +17,29 @@ export interface Tags {
 }
 
 const filterUsers = async (usernames: Array<string>, requiredTags: Tags) => {
-  const users = await Promise.all(
+  const results = await Promise.allSettled(
     usernames.map(async (username) => ({
       username,
       user: await sdkClient.getUser(ONESIGNAL_APP_ID, 'external_id', username),
     })),
   );
+  const users = results
+    .filter(
+      (r): r is PromiseFulfilledResult<{ username: string; user: any }> =>
+        r.status === 'fulfilled',
+    )
+    .map((r) => r.value);
   const filteredUsernames = users
     .filter(({ user }) => {
       const tags = user.properties?.tags;
       if (!tags) {
         return false;
       }
-      for (const [tag, value] of Object.entries(requiredTags)) {
-        if (typeof tags[tag] === 'undefined' || tags[tag] !== value) {
-          return false;
-        }
+      const hasMismatch = Object.entries(requiredTags).some(([tag, value]) => {
+        return !Object.hasOwn(tags, tag) || tags[tag] !== value;
+      });
+      if (hasMismatch) {
+        return false;
       }
       return true;
     })
