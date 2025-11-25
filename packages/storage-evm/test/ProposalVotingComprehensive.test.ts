@@ -2873,6 +2873,8 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         0, // priceInUSD
         false, // useTransferWhitelist
         false, // useReceiveWhitelist
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
       const receipt = await tx.wait();
 
@@ -3153,6 +3155,8 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
             0, // priceInUSD
             false, // useTransferWhitelist
             false, // useReceiveWhitelist
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
           );
         const receipt = await tx.wait();
         const tokenDeployedEvent = receipt?.logs
@@ -3380,6 +3384,8 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
             0, // priceInUSD
             false, // useTransferWhitelist
             false, // useReceiveWhitelist
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
             100, // 1% decay (100 basis points)
             60 * 60, // per hour
           );
@@ -4070,6 +4076,8 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
             0,
             false,
             false,
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
           );
         const receipt = await tx.wait();
         const tokenDeployedEvent = receipt?.logs
@@ -4199,6 +4207,8 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
             0,
             false,
             false,
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
           );
         const receipt = await tx.wait();
         const tokenDeployedEvent = receipt?.logs
@@ -4343,6 +4353,8 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
             0,
             false,
             false,
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
             100, // 1% decay
             3600, // per hour
           );
@@ -4468,6 +4480,8 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
             0,
             false,
             false,
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
             1000, // 10% decay per interval
             3600,
           );

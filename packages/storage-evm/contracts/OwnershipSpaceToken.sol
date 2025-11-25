@@ -47,7 +47,9 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
     bool _autoMinting,
     uint256 _priceInUSD,
     bool _useTransferWhitelist,
-    bool _useReceiveWhitelist
+    bool _useReceiveWhitelist,
+    address[] memory _initialTransferWhitelist,
+    address[] memory _initialReceiveWhitelist
   ) public initializer {
     RegularSpaceToken.initialize(
       name,
@@ -60,7 +62,9 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
       _autoMinting,
       _priceInUSD,
       _useTransferWhitelist,
-      _useReceiveWhitelist
+      _useReceiveWhitelist,
+      _initialTransferWhitelist,
+      _initialReceiveWhitelist
     );
     require(
       _spacesContract != address(0),

@@ -204,6 +204,8 @@ describe('Token Configuration Tests', function () {
         0, // priceInUSD
         false, // useTransferWhitelist
         false, // useReceiveWhitelist
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
 
       const receipt = await tx.wait();
@@ -250,6 +252,8 @@ describe('Token Configuration Tests', function () {
         0,
         false,
         false,
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
 
       const receipt = await tx.wait();
@@ -289,6 +293,8 @@ describe('Token Configuration Tests', function () {
         0,
         false,
         false,
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
 
       const receipt = await tx.wait();
@@ -335,6 +341,8 @@ describe('Token Configuration Tests', function () {
         0,
         false,
         false,
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
 
       const receipt = await tx.wait();
@@ -379,6 +387,8 @@ describe('Token Configuration Tests', function () {
         0,
         false,
         false,
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
 
       const receipt = await tx.wait();
@@ -435,6 +445,8 @@ describe('Token Configuration Tests', function () {
         0,
         false,
         false,
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
 
       const receipt = await tx.wait();
@@ -488,6 +500,8 @@ describe('Token Configuration Tests', function () {
         0,
         true, // useTransferWhitelist = true
         true, // useReceiveWhitelist = true
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
 
       const receipt = await tx.wait();
@@ -644,20 +658,20 @@ describe('Token Configuration Tests', function () {
     it('Should set initial price in USD', async function () {
       const priceInUSD = 5000000n; // $5.00 (6 decimals)
 
-      const tx = await regularTokenFactory
-        .connect(executorSigner)
-        .deployToken(
-          spaceId,
-          'Price Token',
-          'PRC',
-          ethers.parseEther('10000'),
-          true,
-          false,
-          true,
-          priceInUSD,
-          false,
-          false,
-        );
+      const tx = await regularTokenFactory.connect(executorSigner).deployToken(
+        spaceId,
+        'Price Token',
+        'PRC',
+        ethers.parseEther('10000'),
+        true,
+        false,
+        true,
+        priceInUSD,
+        false,
+        false,
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
+      );
 
       const receipt = await tx.wait();
       const tokenDeployedEvent = receipt?.logs
@@ -691,6 +705,8 @@ describe('Token Configuration Tests', function () {
         1000000n, // $1.00
         false,
         false,
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
 
       const receipt = await tx.wait();
@@ -721,20 +737,20 @@ describe('Token Configuration Tests', function () {
     });
 
     it('Should only allow executor to update price', async function () {
-      const tx = await regularTokenFactory
-        .connect(executorSigner)
-        .deployToken(
-          spaceId,
-          'Price Token',
-          'PRC',
-          ethers.parseEther('10000'),
-          true,
-          false,
-          true,
-          1000000n,
-          false,
-          false,
-        );
+      const tx = await regularTokenFactory.connect(executorSigner).deployToken(
+        spaceId,
+        'Price Token',
+        'PRC',
+        ethers.parseEther('10000'),
+        true,
+        false,
+        true,
+        1000000n,
+        false,
+        false,
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
+      );
 
       const receipt = await tx.wait();
       const tokenDeployedEvent = receipt?.logs
@@ -772,6 +788,8 @@ describe('Token Configuration Tests', function () {
         0,
         false,
         false,
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
 
       const receipt = await tx.wait();
@@ -823,20 +841,20 @@ describe('Token Configuration Tests', function () {
     let token: Contract;
 
     beforeEach(async function () {
-      const tx = await regularTokenFactory
-        .connect(executorSigner)
-        .deployToken(
-          spaceId,
-          'Burn Token',
-          'BRN',
-          ethers.parseEther('10000'),
-          true,
-          false,
-          true,
-          0,
-          false,
-          false,
-        );
+      const tx = await regularTokenFactory.connect(executorSigner).deployToken(
+        spaceId,
+        'Burn Token',
+        'BRN',
+        ethers.parseEther('10000'),
+        true,
+        false,
+        true,
+        0,
+        false,
+        false,
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
+      );
 
       const receipt = await tx.wait();
       const tokenDeployedEvent = receipt?.logs
@@ -927,6 +945,8 @@ describe('Token Configuration Tests', function () {
           priceInUSD,
           true, // useTransferWhitelist
           false, // useReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
           100, // 1% decay
           3600, // 1 hour
         );
@@ -976,6 +996,8 @@ describe('Token Configuration Tests', function () {
           priceInUSD,
           false, // useTransferWhitelist
           true, // useReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
         );
 
       const receipt = await tx.wait();
@@ -1024,6 +1046,8 @@ describe('Token Configuration Tests', function () {
             0,
             false,
             false,
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
           );
 
         const receipt = await tx.wait();
@@ -1090,6 +1114,8 @@ describe('Token Configuration Tests', function () {
             0,
             false,
             false,
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
           );
 
         const receipt = await tx.wait();
@@ -1148,6 +1174,8 @@ describe('Token Configuration Tests', function () {
             0,
             false,
             false,
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
           );
 
         const receipt = await tx.wait();
@@ -1214,6 +1242,8 @@ describe('Token Configuration Tests', function () {
             0,
             false,
             false,
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
             100, // 1% decay
             3600, // 1 hour
           );
@@ -1322,6 +1352,8 @@ describe('Token Configuration Tests', function () {
             0,
             false,
             false,
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
           );
 
         const receipt = await tx.wait();
@@ -1424,20 +1456,20 @@ describe('Token Configuration Tests', function () {
     let token: Contract;
 
     beforeEach(async function () {
-      const tx = await regularTokenFactory
-        .connect(executorSigner)
-        .deployToken(
-          spaceId,
-          'Access Token',
-          'ACC',
-          ethers.parseEther('10000'),
-          true,
-          false,
-          true,
-          1000000n,
-          false,
-          false,
-        );
+      const tx = await regularTokenFactory.connect(executorSigner).deployToken(
+        spaceId,
+        'Access Token',
+        'ACC',
+        ethers.parseEther('10000'),
+        true,
+        false,
+        true,
+        1000000n,
+        false,
+        false,
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
+      );
 
       const receipt = await tx.wait();
       const tokenDeployedEvent = receipt?.logs
@@ -1501,6 +1533,8 @@ describe('Token Configuration Tests', function () {
             0,
             false,
             false,
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
           );
 
         const receipt = await tx.wait();
@@ -1696,6 +1730,8 @@ describe('Token Configuration Tests', function () {
             0,
             false,
             false,
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
             100, // 1% decay
             3600, // 1 hour
           );
@@ -1858,6 +1894,8 @@ describe('Token Configuration Tests', function () {
             0,
             false,
             false,
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
           );
 
         const receipt = await tx.wait();
@@ -1960,6 +1998,8 @@ describe('Token Configuration Tests', function () {
             0,
             false,
             false,
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
           );
 
         const receipt = await tx.wait();
@@ -2021,6 +2061,8 @@ describe('Token Configuration Tests', function () {
             0,
             true, // useTransferWhitelist
             true, // useReceiveWhitelist
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
           );
 
         const receipt = await tx.wait();
@@ -2091,6 +2133,8 @@ describe('Token Configuration Tests', function () {
         0,
         false,
         true, // only whitelisted can receive
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
 
       const receipt = await tx.wait();
@@ -2149,6 +2193,8 @@ describe('Token Configuration Tests', function () {
         0,
         true, // only whitelisted can send
         true, // only whitelisted can receive
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
 
       const receipt = await tx.wait();

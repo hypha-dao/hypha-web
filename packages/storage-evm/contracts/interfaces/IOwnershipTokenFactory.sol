@@ -17,7 +17,9 @@ interface IOwnershipTokenFactory {
     bool autoMinting,
     uint256 priceInUSD,
     bool useTransferWhitelist,
-    bool useReceiveWhitelist
+    bool useReceiveWhitelist,
+    address[] memory initialTransferWhitelist,
+    address[] memory initialReceiveWhitelist
   ) external returns (address);
 
   function getSpaceToken(
