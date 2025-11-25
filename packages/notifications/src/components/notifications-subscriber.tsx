@@ -98,10 +98,26 @@ export function NotificationSubscriber({
       console.log('The notification dismiss:', event);
     };
     const permissionChangeHandler = (permission: boolean) => {
-      console.log('The notification permission change:', permission);
+      if (DEV_ENV) {
+        console.log('The notification permission change:', permission);
+      }
       if (!permission) {
         setSubscribed(false);
+        return;
       }
+
+      hasPermission()
+        .then((isSubscribed) => {
+          setSubscribed(isSubscribed);
+        })
+        .catch((err) => {
+          if (DEV_ENV) {
+            console.warn(
+              'Failed to recompute subscription after permission change',
+              err,
+            );
+          }
+        });
     };
     const permissionPromptDisplayHandler = () => {
       console.log('The notification permission prompt display!');
