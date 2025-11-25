@@ -73,9 +73,9 @@ export function NotificationSubscriber({
         return;
       }
       try {
-        const scope = `/${
-          serviceWorkerPath?.split('/').filter(Boolean)[0] ?? ''
-        }/`;
+        const scope = serviceWorkerPath
+          ? `/${serviceWorkerPath.split('/').filter(Boolean)[0]}/`
+          : '/';
         await OneSignal.init({
           appId,
           safari_web_id: safariWebId,
@@ -116,8 +116,11 @@ export function NotificationSubscriber({
           (event: NotificationClickEvent) => {
             console.log('The notification was clicked!', event);
             if (event.notification.launchURL) {
-              const url = new URL(event.notification.launchURL);
-              router.push(url.pathname);
+              const url = new URL(
+                event.notification.launchURL,
+                window.location.origin,
+              );
+              router.push(url.pathname + url.search + url.hash);
             }
           },
         );

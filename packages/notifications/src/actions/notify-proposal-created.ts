@@ -65,7 +65,7 @@ async function notifyEmailProposalCreatedForCreator({
     process.env.NEXT_PUBLIC_EMAIL_TEMPLATE_PROPOSAL_OPEN_FOR_CREATOR || '';
   if (!templateId) {
     throw new Error(
-      'Environment variable NEXT_PUBLIC_EMAIL_TEMPLATE_PROPOSAL_OPEN_FOR_CREATOR is not configure, cannot send an email',
+      'Environment variable NEXT_PUBLIC_EMAIL_TEMPLATE_PROPOSAL_OPEN_FOR_CREATOR is not configured, cannot send an email',
     );
   }
   if (!space || !person) {
@@ -116,7 +116,7 @@ async function notifyEmailProposalCreatedForMembersAction(params: {
     process.env.NEXT_PUBLIC_EMAIL_TEMPLATE_PROPOSAL_OPEN_FOR_MEMBERS || '';
   if (!templateId) {
     throw new Error(
-      'Environment variable NEXT_PUBLIC_EMAIL_TEMPLATE_PROPOSAL_OPEN_FOR_MEMBERS is not configure, cannot send an email',
+      'Environment variable NEXT_PUBLIC_EMAIL_TEMPLATE_PROPOSAL_OPEN_FOR_MEMBERS is not configured, cannot send an email',
     );
   }
 
@@ -239,8 +239,15 @@ export async function notifyProposalCreatedAction(
   if (!authToken) throw new Error('authToken is required to send notification');
   //TODO: implement auth later
   const safeUrl = url ?? 'https://app.hypha.earth';
-  const baseUrl = new URL(safeUrl);
-  const lang = baseUrl.pathname.substring(0, 3) || '/en';
+  const baseUrl = (() => {
+    try {
+      return new URL(safeUrl);
+    } catch {
+      return new URL('https://app.hypha.earth/en');
+    }
+  })();
+  const langMatch = baseUrl.pathname.match(/^\/[a-z]{2}(?=\/|$)/i);
+  const lang = langMatch?.[0] ?? '/en';
   const unsubscribeLink = `${baseUrl.protocol}//${baseUrl.host}${lang}/my-spaces/notification-centre`;
   const notifying = Promise.allSettled([
     notifyProposalCreatedForCreator({
