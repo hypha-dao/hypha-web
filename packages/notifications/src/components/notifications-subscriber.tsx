@@ -72,6 +72,61 @@ export function NotificationSubscriber({
   }, [initialized, OneSignal, isLoading, person]);
 
   React.useEffect(() => {
+    const notificationClickHandler = (event: NotificationClickEvent) => {
+      console.log('The notification was clicked!', event);
+      if (event.notification.launchURL) {
+        const url = new URL(
+          event.notification.launchURL,
+          window.location.origin,
+        );
+        router.push(url.pathname + url.search + url.hash);
+      }
+    };
+    const foregroundWillDisplayHandler = (
+      event: NotificationForegroundWillDisplayEvent,
+    ) => {
+      console.log('The notification foreground will display:', event);
+    };
+    const notificationDismiss = (event: NotificationDismissEvent) => {
+      console.log('The notification dismiss:', event);
+    };
+    const permissionChangeHandler = (permission: boolean) => {
+      console.log('The notification permission change:', permission);
+      if (!permission) {
+        setSubscribed(false);
+      }
+    };
+    const permissionPromptDisplayHandler = () => {
+      console.log('The notification permission prompt display!');
+    };
+    const slidedownAllowClickHandler = (wasShown: boolean) => {
+      console.log('Slidedown Allow Click:', wasShown);
+    };
+    const slidedownCancelClick = (wasShown: boolean) => {
+      console.log('Slidedown Cancel Click:', wasShown);
+      setSubscribed(false);
+    };
+    const slidedownClosedHandler = (wasShown: boolean) => {
+      console.log('Slidedown Closed:', wasShown);
+    };
+    const slidedownQueuedHandler = (wasShown: boolean) => {
+      console.log('Slidedown Queued:', wasShown);
+    };
+    const slidedownShownHandler = (wasShown: boolean) => {
+      console.log('Slidedown Shown:', wasShown);
+    };
+    const userChangeHandler = (change: UserChangeEvent) => {
+      console.log('User change:', change);
+    };
+    const subscriptionChangeHandler = (event: SubscriptionChangeEvent) => {
+      console.log('User PushSubscription change:', event);
+      console.log('event.previous.id', event.previous.id);
+      console.log('event.current.id', event.current.id);
+      console.log('event.previous.token', event.previous.token);
+      console.log('event.current.token', event.current.token);
+      console.log('event.previous.optedIn', event.previous.optedIn);
+      console.log('event.current.optedIn', event.current.optedIn);
+    };
     const initialize = async () => {
       if (initialized) {
         console.warn('OneSignal should be initialized only once!');
@@ -118,95 +173,101 @@ export function NotificationSubscriber({
         setSubscribed(isSubscribed);
         OneSignal.Notifications.addEventListener(
           'click',
-          (event: NotificationClickEvent) => {
-            console.log('The notification was clicked!', event);
-            if (event.notification.launchURL) {
-              const url = new URL(
-                event.notification.launchURL,
-                window.location.origin,
-              );
-              router.push(url.pathname + url.search + url.hash);
-            }
-          },
+          notificationClickHandler,
         );
         OneSignal.Notifications.addEventListener(
           'foregroundWillDisplay',
-          (event: NotificationForegroundWillDisplayEvent) => {
-            console.log('The notification foreground will display:', event);
-          },
+          foregroundWillDisplayHandler,
         );
         OneSignal.Notifications.addEventListener(
           'dismiss',
-          (event: NotificationDismissEvent) => {
-            console.log('The notification dismiss:', event);
-          },
+          notificationDismiss,
         );
         OneSignal.Notifications.addEventListener(
           'permissionChange',
-          (permission: boolean) => {
-            console.log('The notification permission change:', permission);
-            if (!permission) {
-              setSubscribed(false);
-            }
-          },
+          permissionChangeHandler,
         );
         OneSignal.Notifications.addEventListener(
           'permissionPromptDisplay',
-          () => {
-            console.log('The notification permission prompt display!');
-          },
+          permissionPromptDisplayHandler,
         );
         OneSignal.Slidedown.addEventListener(
           'slidedownAllowClick',
-          (wasShown: boolean) => {
-            console.log('Slidedown Allow Click:', wasShown);
-          },
+          slidedownAllowClickHandler,
         );
         OneSignal.Slidedown.addEventListener(
           'slidedownCancelClick',
-          (wasShown: boolean) => {
-            console.log('Slidedown Cancel Click:', wasShown);
-            setSubscribed(false);
-          },
+          slidedownCancelClick,
         );
         OneSignal.Slidedown.addEventListener(
           'slidedownClosed',
-          (wasShown: boolean) => {
-            console.log('Slidedown Closed:', wasShown);
-          },
+          slidedownClosedHandler,
         );
         OneSignal.Slidedown.addEventListener(
           'slidedownQueued',
-          (wasShown: boolean) => {
-            console.log('Slidedown Queued:', wasShown);
-          },
+          slidedownQueuedHandler,
         );
         OneSignal.Slidedown.addEventListener(
           'slidedownShown',
-          (wasShown: boolean) => {
-            console.log('Slidedown Shown:', wasShown);
-          },
+          slidedownShownHandler,
         );
-        OneSignal.User.addEventListener('change', (change: UserChangeEvent) => {
-          console.log('User change:', change);
-        });
+        OneSignal.User.addEventListener('change', userChangeHandler);
         OneSignal.User.PushSubscription.addEventListener(
           'change',
-          (event: SubscriptionChangeEvent) => {
-            console.log('User PushSubscription change:', event);
-            console.log('event.previous.id', event.previous.id);
-            console.log('event.current.id', event.current.id);
-            console.log('event.previous.token', event.previous.token);
-            console.log('event.current.token', event.current.token);
-            console.log('event.previous.optedIn', event.previous.optedIn);
-            console.log('event.current.optedIn', event.current.optedIn);
-          },
+          subscriptionChangeHandler,
         );
       } catch (err) {
         console.log('Initialize error:', err);
       }
     };
     initialize();
+    return () => {
+      OneSignal.Notifications.removeEventListener(
+        'click',
+        notificationClickHandler,
+      );
+      OneSignal.Notifications.removeEventListener(
+        'foregroundWillDisplay',
+        foregroundWillDisplayHandler,
+      );
+      OneSignal.Notifications.removeEventListener(
+        'dismiss',
+        notificationDismiss,
+      );
+      OneSignal.Notifications.removeEventListener(
+        'permissionChange',
+        permissionChangeHandler,
+      );
+      OneSignal.Notifications.removeEventListener(
+        'permissionPromptDisplay',
+        permissionPromptDisplayHandler,
+      );
+      OneSignal.Slidedown.removeEventListener(
+        'slidedownAllowClick',
+        slidedownAllowClickHandler,
+      );
+      OneSignal.Slidedown.removeEventListener(
+        'slidedownCancelClick',
+        slidedownCancelClick,
+      );
+      OneSignal.Slidedown.removeEventListener(
+        'slidedownClosed',
+        slidedownClosedHandler,
+      );
+      OneSignal.Slidedown.removeEventListener(
+        'slidedownQueued',
+        slidedownQueuedHandler,
+      );
+      OneSignal.Slidedown.removeEventListener(
+        'slidedownShown',
+        slidedownShownHandler,
+      );
+      OneSignal.User.removeEventListener('change', userChangeHandler);
+      OneSignal.User.PushSubscription.removeEventListener(
+        'change',
+        subscriptionChangeHandler,
+      );
+    };
   }, [appId, serviceWorkerPath]);
 
   return (
