@@ -280,21 +280,6 @@ export const IssueNewTokenPlugin = ({
                 <>
                   <div className="flex w-full justify-between">
                     <span className="text-2 text-neutral-11 w-full">
-                      Token Price (USD)
-                    </span>
-                    <Controller
-                      name="tokenPrice"
-                      render={({ field }) => (
-                        <Input
-                          type="number"
-                          placeholder="Enter token price in USD"
-                          {...field}
-                        />
-                      )}
-                    />
-                  </div>
-                  <div className="flex w-full justify-between">
-                    <span className="text-2 text-neutral-11 w-full">
                       Reference Currency
                     </span>
                     <Controller
@@ -313,9 +298,24 @@ export const IssueNewTokenPlugin = ({
                             <SelectItem value="GBP">GBP</SelectItem>
                             <SelectItem value="JPY">JPY</SelectItem>
                             <SelectItem value="CNY">CNY</SelectItem>
-                            {/* Add more main currencies as needed */}
                           </SelectContent>
                         </Select>
+                      )}
+                    />
+                  </div>
+
+                  <div className="flex w-full justify-between">
+                    <span className="text-2 text-neutral-11 w-full">
+                      Token Price
+                    </span>
+                    <Controller
+                      name="tokenPrice"
+                      render={({ field }) => (
+                        <Input
+                          type="number"
+                          placeholder="Enter token price in USD"
+                          {...field}
+                        />
                       )}
                     />
                   </div>
