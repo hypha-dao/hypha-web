@@ -80,6 +80,8 @@ contract DecayingTokenFactory is
    * @param priceInUSD Token price in USD (with 6 decimals, e.g., 1000000 = $1)
    * @param useTransferWhitelist If true, enforce transfer whitelist
    * @param useReceiveWhitelist If true, enforce receive whitelist
+   * @param initialTransferWhitelist Initial addresses that can send tokens
+   * @param initialReceiveWhitelist Initial addresses that can receive tokens
    * @param decayPercentage The decay percentage in basis points (0-10000)
    * @param decayInterval The interval in seconds between decay periods
    * @return The address of the deployed token
@@ -95,6 +97,8 @@ contract DecayingTokenFactory is
     uint256 priceInUSD,
     bool useTransferWhitelist,
     bool useReceiveWhitelist,
+    address[] memory initialTransferWhitelist,
+    address[] memory initialReceiveWhitelist,
     uint256 decayPercentage,
     uint256 decayInterval
   ) public returns (address) {
@@ -131,6 +135,8 @@ contract DecayingTokenFactory is
       priceInUSD,
       useTransferWhitelist,
       useReceiveWhitelist,
+      initialTransferWhitelist,
+      initialReceiveWhitelist,
       decayPercentage,
       decayInterval
     );

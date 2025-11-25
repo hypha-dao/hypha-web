@@ -45,6 +45,8 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
     uint256 _priceInUSD,
     bool _useTransferWhitelist,
     bool _useReceiveWhitelist,
+    address[] memory _initialTransferWhitelist,
+    address[] memory _initialReceiveWhitelist,
     uint256 _decayPercentage,
     uint256 _decayInterval
   ) public initializer {
@@ -59,7 +61,9 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
       _autoMinting,
       _priceInUSD,
       _useTransferWhitelist,
-      _useReceiveWhitelist
+      _useReceiveWhitelist,
+      _initialTransferWhitelist,
+      _initialReceiveWhitelist
     );
     require(
       _decayPercentage <= 10000,

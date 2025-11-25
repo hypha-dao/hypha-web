@@ -66,7 +66,9 @@ contract RegularSpaceToken is
     bool _autoMinting,
     uint256 _priceInUSD,
     bool _useTransferWhitelist,
-    bool _useReceiveWhitelist
+    bool _useReceiveWhitelist,
+    address[] memory _initialTransferWhitelist,
+    address[] memory _initialReceiveWhitelist
   ) public initializer {
     __ERC20_init(name, symbol);
     __ERC20Burnable_init();
@@ -89,6 +91,16 @@ contract RegularSpaceToken is
     // Executor is always whitelisted for both sending and receiving
     canTransfer[_executor] = true;
     canReceive[_executor] = true;
+
+    // Set initial transfer whitelist
+    for (uint256 i = 0; i < _initialTransferWhitelist.length; i++) {
+      canTransfer[_initialTransferWhitelist[i]] = true;
+    }
+
+    // Set initial receive whitelist
+    for (uint256 i = 0; i < _initialReceiveWhitelist.length; i++) {
+      canReceive[_initialReceiveWhitelist[i]] = true;
+    }
   }
 
   function _authorizeUpgrade(

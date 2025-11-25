@@ -21,6 +21,8 @@ interface IDecayingTokenFactory {
     uint256 priceInUSD,
     bool useTransferWhitelist,
     bool useReceiveWhitelist,
+    address[] memory initialTransferWhitelist,
+    address[] memory initialReceiveWhitelist,
     uint256 decayPercentage,
     uint256 decayInterval
   ) external returns (address);

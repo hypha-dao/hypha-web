@@ -79,6 +79,8 @@ contract OwnershipTokenFactory is
    * @param priceInUSD Token price in USD (with 6 decimals, e.g., 1000000 = $1)
    * @param useTransferWhitelist If true, enforce transfer whitelist
    * @param useReceiveWhitelist If true, enforce receive whitelist
+   * @param initialTransferWhitelist Initial addresses that can send tokens
+   * @param initialReceiveWhitelist Initial addresses that can receive tokens
    * @return The address of the deployed token
    */
   function deployOwnershipToken(
@@ -90,7 +92,9 @@ contract OwnershipTokenFactory is
     bool autoMinting,
     uint256 priceInUSD,
     bool useTransferWhitelist,
-    bool useReceiveWhitelist
+    bool useReceiveWhitelist,
+    address[] memory initialTransferWhitelist,
+    address[] memory initialReceiveWhitelist
   ) public returns (address) {
     require(spacesContract != address(0), 'Spaces contract not set');
     require(
@@ -119,7 +123,9 @@ contract OwnershipTokenFactory is
       autoMinting,
       priceInUSD,
       useTransferWhitelist,
-      useReceiveWhitelist
+      useReceiveWhitelist,
+      initialTransferWhitelist,
+      initialReceiveWhitelist
     );
 
     address tokenAddress = address(
