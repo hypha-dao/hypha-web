@@ -21,6 +21,7 @@ export type UseMembersReturn = {
     pagination?: PaginationMetadata;
   };
   isLoading: boolean;
+  updateMembers?: () => Promise<void>;
 };
 
 export type UseMembersProps = {
