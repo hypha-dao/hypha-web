@@ -131,34 +131,46 @@ export const useNotifications = () => {
         console.warn('Cannot save notification settings until initialized');
         return;
       }
-      if (configuration.browserNotifications) {
-        if (!OneSignal.User.PushSubscription.optedIn) {
-          await OneSignal.User.PushSubscription.optIn();
-        }
-        await OneSignal.User.addTag(TAG_PUSH, TRUE);
-      } else {
-        if (OneSignal.User.PushSubscription.optedIn) {
-          await OneSignal.User.PushSubscription.optOut();
-        }
-        await OneSignal.User.addTag(TAG_PUSH, FALSE);
+      if (isLoading || !person) {
+        console.warn(
+          'Cannot save notification settings while user data is loading',
+        );
+        return;
       }
-      if (configuration.emailNotifications) {
-        if (!isLoading && person?.email) {
-          await OneSignal.User.addEmail(person.email);
-          await OneSignal.User.addTag(TAG_EMAIL, TRUE);
+      setError(null);
+      try {
+        if (configuration.browserNotifications) {
+          if (!OneSignal.User.PushSubscription.optedIn) {
+            await OneSignal.User.PushSubscription.optIn();
+          }
+          await OneSignal.User.addTag(TAG_PUSH, TRUE);
+        } else {
+          if (OneSignal.User.PushSubscription.optedIn) {
+            await OneSignal.User.PushSubscription.optOut();
+          }
+          await OneSignal.User.addTag(TAG_PUSH, FALSE);
         }
-      } else {
-        if (!isLoading && person?.email) {
-          await OneSignal.User.removeEmail(person.email);
+        if (configuration.emailNotifications) {
+          if (person.email) {
+            await OneSignal.User.addEmail(person.email);
+          }
+          await OneSignal.User.addTag(TAG_EMAIL, TRUE);
+        } else {
+          if (person.email) {
+            await OneSignal.User.removeEmail(person.email);
+          }
           await OneSignal.User.addTag(TAG_EMAIL, FALSE);
         }
+        for (const subscription of configuration.subscriptions) {
+          const tagName = subscription.name;
+          const tagValue = subscription.value ? TRUE : FALSE;
+          await OneSignal.User.addTag(tagName, tagValue);
+        }
+        setConfiguration(configuration);
+      } catch (err) {
+        console.warn('Failed to save notification configuration', err);
+        setError('Could not save notification settings. Please try again.');
       }
-      for (const subscription of configuration.subscriptions) {
-        const tagName = subscription.name;
-        const tagValue = subscription.value ? TRUE : FALSE;
-        await OneSignal.User.addTag(tagName, tagValue);
-      }
-      setConfiguration(configuration);
     },
     [OneSignal, initialized, person, isLoading],
   );
