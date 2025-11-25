@@ -111,7 +111,7 @@ export const sendEmailNotifications = async ({
   });
 
   if (aliases.length === 0) {
-    console.warn('No users matched push notification criteria');
+    console.warn('No users matched email notification criteria');
     return null;
   }
 
@@ -149,7 +149,7 @@ export const sendEmailNotificationsTemplate = async ({
   });
 
   if (aliases.length === 0) {
-    console.warn('No users matched push notification criteria');
+    console.warn('No users matched email notification criteria');
     return null;
   }
 
