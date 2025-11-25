@@ -23,7 +23,7 @@ export interface INotificationsContext {
   loggedIn: boolean;
 }
 
-export interface NotificationCofiguration {
+export interface NotificationConfiguration {
   emailNotifications: boolean;
   browserNotifications: boolean;
   subscriptions: {
@@ -66,7 +66,7 @@ export const useNotifications = () => {
     React.useContext(NotificationsContext);
   const [error, setError] = React.useState<string | null>(null);
   const [configuration, setConfiguration] =
-    React.useState<NotificationCofiguration>();
+    React.useState<NotificationConfiguration>();
   const { person, isLoading } = useMe();
 
   const initializeConfiguration = React.useCallback(async () => {
@@ -124,7 +124,7 @@ export const useNotifications = () => {
     }
   }, [OneSignal, initialized, setError, setSubscribed]);
   const saveConfigurations = React.useCallback(
-    async (configuration: NotificationCofiguration) => {
+    async (configuration: NotificationConfiguration) => {
       if (!initialized) {
         console.warn('Cannot save notification settings until initialized');
         return;
