@@ -4,8 +4,8 @@ import type {
   FastifyPluginOptions,
 } from 'fastify';
 import fp from 'fastify-plugin';
-import { createPublicClient, http } from 'viem';
-import { type Chain, base } from 'viem/chains';
+import type { Chain } from 'viem/chains';
+import { Web3Service } from './service';
 
 export interface Web3ClientOptions extends FastifyPluginOptions {
   rpcUrl?: string;
@@ -15,23 +15,17 @@ export interface Web3ClientOptions extends FastifyPluginOptions {
 
 const web3Client: FastifyPluginAsync<Web3ClientOptions> = async (
   fastify: FastifyInstance,
-  { rpcUrl, chain = base, multicallWait = 100 }: Web3ClientOptions,
+  options: Web3ClientOptions,
 ) => {
-  const client = createPublicClient({
-    batch: {
-      multicall: { wait: multicallWait },
-    },
-    chain,
-    transport: rpcUrl ? http(rpcUrl) : http(),
-  });
+  const client = new Web3Service(options);
 
-  fastify.decorate('web3Client', client);
+  fastify.decorate('web3', client);
 };
 
 export default fp(web3Client);
 
 declare module 'fastify' {
   interface FastifyInstance {
-    web3Client: ReturnType<typeof createPublicClient>;
+    web3: Web3Service;
   }
 }

@@ -1,1 +1,0 @@
-../../../../packages/core/src/generated.ts
