@@ -6,6 +6,7 @@ import type {
 import fp from 'fastify-plugin';
 import { Alchemy, type AlchemySettings } from 'alchemy-sdk';
 import { newGetTokenBalanceByAddress } from './token-balance-by-address';
+import { newGetAssetTransfers } from './transfers-by-address';
 
 export interface AlchemyClientOptions
   extends AlchemySettings,
@@ -18,8 +19,9 @@ const alchemyClient: FastifyPluginAsync<AlchemyClientOptions> = async (
   const client = new Alchemy(config);
 
   const getTokenBalanceByAddress = newGetTokenBalanceByAddress(client);
+  const getAssetTransfers = newGetAssetTransfers(client);
 
-  fastify.decorate('alchemy', { getTokenBalanceByAddress });
+  fastify.decorate('alchemy', { getTokenBalanceByAddress, getAssetTransfers });
 };
 
 export default fp(alchemyClient);
@@ -28,6 +30,7 @@ declare module 'fastify' {
   interface FastifyInstance {
     alchemy: {
       getTokenBalanceByAddress: ReturnType<typeof newGetTokenBalanceByAddress>;
+      getAssetTransfers: ReturnType<typeof newGetAssetTransfers>;
     };
   }
 }
