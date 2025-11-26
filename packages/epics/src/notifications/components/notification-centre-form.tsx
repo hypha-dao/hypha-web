@@ -172,9 +172,13 @@ export const NotificationCentreForm = ({
             </div>
             <span className="text-2 text-neutral-11">
               {subscribed ? (
-                <Button onClick={unsubscribe}>Unsubscribe</Button>
+                <Button type="button" onClick={unsubscribe}>
+                  Unsubscribe
+                </Button>
               ) : (
-                <Button onClick={subscribe}>Subscribe</Button>
+                <Button type="button" onClick={subscribe}>
+                  Subscribe
+                </Button>
               )}
               {error && <FormMessage>{error}</FormMessage>}
             </span>
