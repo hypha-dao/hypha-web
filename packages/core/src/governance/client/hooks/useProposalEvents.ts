@@ -15,6 +15,12 @@ import { useTokenManagement } from './useTokenManagement';
 import { useTokenDeploymentWatcher } from './useTokenDeploymentWatcher';
 import { extractTokenAddressFromReceipt } from './extractTokenAddressFromReceipt';
 
+export interface OnProposalCreatedInput {
+  creator: `0x${string}`;
+  web3ProposalId: bigint;
+  web3SpaceId: bigint;
+}
+
 export const useProposalEvents = ({
   documentId,
   proposalId,
@@ -22,13 +28,15 @@ export const useProposalEvents = ({
   authToken,
   onProposalExecuted,
   onProposalRejected,
+  onProposalCreated,
 }: {
   documentId?: number | null;
   proposalId?: number | null;
   tokenSymbol?: string | null;
   authToken?: string | null;
-  onProposalExecuted?: (transactionHash: string) => void;
-  onProposalRejected?: () => void;
+  onProposalExecuted?: (transactionHash: string) => Promise<void>;
+  onProposalRejected?: () => Promise<void>;
+  onProposalCreated?: (params: OnProposalCreatedInput) => Promise<void>;
 }) => {
   const {
     fetchTokens,
@@ -50,7 +58,7 @@ export const useProposalEvents = ({
   const { spaces } = useSpacesByWeb3Ids(joinState.web3spaceIds, false);
 
   useEffect(() => {
-    if (!documentId || !proposalId || !authToken) {
+    if (!authToken) {
       return;
     }
 
@@ -111,11 +119,30 @@ export const useProposalEvents = ({
       }
     };
 
+    const handleProposalCreated = async ({
+      creator,
+      web3ProposalId,
+      web3SpaceId,
+    }: OnProposalCreatedInput) => {
+      try {
+        await onProposalCreated?.({
+          creator,
+          web3ProposalId,
+          web3SpaceId,
+        });
+      } catch (error) {
+        console.error('Error handling proposal creation:', error);
+      }
+    };
+
     const unwatchExecuted = publicClient.watchContractEvent({
       address: daoProposalsImplementationConfig.address[8453],
       abi: daoProposalsImplementationConfig.abi,
       eventName: 'ProposalExecuted',
       onLogs: async (logs) => {
+        if (!documentId || !proposalId) {
+          return;
+        }
         for (const log of logs) {
           try {
             const eventProposalId = log.args.proposalId;
@@ -140,6 +167,9 @@ export const useProposalEvents = ({
       abi: daoProposalsImplementationConfig.abi,
       eventName: 'ProposalRejected',
       onLogs: async (logs) => {
+        if (!documentId || !proposalId) {
+          return;
+        }
         for (const log of logs) {
           try {
             const eventProposalId = log.args.proposalId;
@@ -164,6 +194,9 @@ export const useProposalEvents = ({
       abi: daoProposalsImplementationConfig.abi,
       eventName: 'ProposalExpired',
       onLogs: async (logs) => {
+        if (!documentId || !proposalId) {
+          return;
+        }
         for (const log of logs) {
           try {
             const eventProposalId = log.args.proposalId;
@@ -202,11 +235,38 @@ export const useProposalEvents = ({
       },
     });
 
+    const unwatchProposalCreated = publicClient.watchContractEvent({
+      address: daoProposalsImplementationConfig.address[8453],
+      abi: daoProposalsImplementationConfig.abi,
+      eventName: 'ProposalCreated',
+      onLogs: async (logs) => {
+        for (const log of logs) {
+          try {
+            const {
+              creator,
+              proposalId: web3ProposalId,
+              spaceId: web3SpaceId,
+            } = log.args;
+            if (creator && web3ProposalId && web3SpaceId) {
+              await handleProposalCreated({
+                creator,
+                web3ProposalId,
+                web3SpaceId,
+              });
+            }
+          } catch (error) {
+            console.error('Error handling ProposalCreated event:', error);
+          }
+        }
+      },
+    });
+
     return () => {
       unwatchExecuted();
       unwatchRejected();
       unwatchExpired();
       unwatchMemberJoined();
+      unwatchProposalCreated();
     };
   }, [
     documentId,
@@ -221,6 +281,7 @@ export const useProposalEvents = ({
     setupTokenDeployedWatcher,
     onProposalExecuted,
     onProposalRejected,
+    onProposalCreated,
   ]);
 
   useEffect(() => {

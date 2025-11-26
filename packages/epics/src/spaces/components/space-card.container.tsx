@@ -1,17 +1,10 @@
 'use client';
 
-import { SpaceCard } from '@hypha-platform/epics';
 import Link from 'next/link';
 import { Locale } from '@hypha-platform/i18n';
 import { Space } from '@hypha-platform/core/client';
-
-export const getDhoPathAgreements = (lang: Locale, id: string) => {
-  return `/${lang}/dho/${id}/agreements`;
-};
-
-export const getDhoPathOverview = (lang: Locale, id: string) => {
-  return `/${lang}/dho/${id}/overview`;
-};
+import { getDhoPathAgreements } from '../../common';
+import { SpaceCard } from './space-card';
 
 type SpaceCardContainerProps = {
   lang: Locale;

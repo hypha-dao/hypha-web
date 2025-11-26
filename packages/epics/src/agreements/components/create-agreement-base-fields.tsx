@@ -28,12 +28,15 @@ import {
   useSpaceMinProposalDuration,
   useSpaceDetailsWeb3Rpc,
   useIsDelegate,
+  useJwt,
 } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
 import { formatDuration } from '@hypha-platform/ui-utils';
 
-import { ButtonClose, ButtonBack } from '@hypha-platform/epics';
 import { useTheme } from 'next-themes';
+import { Locale } from '@hypha-platform/i18n';
+import { ButtonBack, ButtonClose } from '../../common';
+import { useProposalNotifications } from '../../governance/hooks';
 
 type Creator = { avatar: string; name: string; surname: string };
 
@@ -59,13 +62,14 @@ export function CreateAgreementBaseFields({
   backLabel = 'Back to Create',
   label = 'Agreement',
 }: CreateAgreementFormProps) {
+  const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
+  const { jwt: authToken } = useJwt();
+
   const form = useFormContext<CreateAgreementFormData>();
 
   if (!form) {
     return <div>Form context is missing!</div>;
   }
-
-  const { id: spaceSlug } = useParams();
 
   const { space } = useSpaceBySlug(spaceSlug as string);
 
@@ -84,6 +88,8 @@ export function CreateAgreementBaseFields({
   const { isDelegate } = useIsDelegate({
     spaceId: space?.web3SpaceId as number,
   });
+
+  useProposalNotifications({ lang, spaceSlug, authToken });
 
   return (
     <>

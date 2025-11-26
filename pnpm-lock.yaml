@@ -912,6 +912,9 @@ importers:
       '@hypha-platform/i18n':
         specifier: workspace:*
         version: link:../i18n
+      '@hypha-platform/notifications':
+        specifier: workspace:*
+        version: link:../notifications
       '@hypha-platform/ui':
         specifier: workspace:*
         version: link:../ui

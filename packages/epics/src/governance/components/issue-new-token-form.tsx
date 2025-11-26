@@ -15,7 +15,7 @@ import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
 import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useDbTokens, useScrollToErrors } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 
@@ -42,7 +42,6 @@ export const IssueNewTokenForm = ({
   web3SpaceId,
   plugin,
 }: IssueNewTokenFormProps) => {
-  const { id: spaceSlug } = useParams();
   const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
