@@ -67,8 +67,8 @@ async function notifyEmailProposalCreatedForCreator({
   const customData = {
     space_title: space.title,
     user_name: person.name ?? '',
-    url: url ?? 'https://app.hypha.earth',
-    unsubscribe_link: unsubscribeLink ?? 'https://app.hypha.earth',
+    url,
+    unsubscribe_link: unsubscribeLink,
   };
   await sendEmailNotificationsTemplate({
     templateId,
@@ -125,7 +125,7 @@ async function notifyEmailProposalCreatedForMembersAction(params: {
     return await sendEmailNotificationsTemplate({
       templateId,
       customData,
-      usernames: person?.slug ? [person.slug] : [],
+      usernames: person.slug ? [person.slug] : [],
       requiredTags: {
         [TAG_SUB_NEW_PROPOSAL_OPEN]: 'true',
       },
