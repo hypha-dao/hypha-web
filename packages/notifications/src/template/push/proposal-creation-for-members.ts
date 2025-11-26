@@ -8,7 +8,7 @@ export function pushProposalCreationForMembers({
   proposalTitle,
   spaceTitle,
 }: ProposalCreationProps): Push {
-  const space = spaceTitle ? `the space "${spaceTitle}"` : 'a space';
+  const space = spaceTitle ? `"${spaceTitle}"` : 'a space';
   const proposal = proposalTitle ? `"${proposalTitle}"` : `a ${proposalState}`;
 
   switch (proposalLabel) {
@@ -23,7 +23,7 @@ export function pushProposalCreationForMembers({
         headings: {
           en: `New ${proposalState} was created in one of your spaces`,
         },
-        contents: { en: `${creatorName} created ${proposal} in ${space}.` },
+        contents: { en: `A new ${proposal} was just created in ${space}.` },
       };
   }
 }
