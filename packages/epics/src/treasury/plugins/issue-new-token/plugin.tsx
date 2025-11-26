@@ -259,8 +259,8 @@ export const IssueNewTokenPlugin = ({
             <div className="flex flex-col gap-4">
               <FormLabel>Token Value on Treasury</FormLabel>
               <span className="text-2 text-neutral-11">
-                Set an initial value for your token in USD. The reference price
-                is displayed in your treasury and helps members understand the
+                Set an initial value for your token. The reference price is
+                displayed in your treasury and helps members understand the
                 token’s starting market value.
               </span>
               <div className="flex w-full justify-between items-center text-2 text-neutral-11">
@@ -313,7 +313,7 @@ export const IssueNewTokenPlugin = ({
                       render={({ field }) => (
                         <Input
                           type="number"
-                          placeholder="Enter token price in USD"
+                          placeholder="Enter token price"
                           {...field}
                         />
                       )}
