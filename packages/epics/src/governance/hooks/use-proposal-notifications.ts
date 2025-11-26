@@ -18,9 +18,8 @@ export const useProposalNotifications = ({
   spaceSlug,
   authToken,
 }: UseProposalNotificationsInput) => {
-  //TODO: uncomment on inject useSendNotifications
-  /*const { useSendNotifications } = useHookRegistry();
-  const { notifyProposalCreated } = useSendNotifications!({ authToken });*/
+  const { useSendNotifications } = useHookRegistry();
+  const { notifyProposalCreated } = useSendNotifications!({ authToken });
   const onProposalCreated = React.useCallback(
     async ({
       creator,
@@ -28,13 +27,12 @@ export const useProposalNotifications = ({
       web3SpaceId,
     }: OnProposalCreatedInput) => {
       const url = getDhoUrlAgreements(lang, spaceSlug);
-      //TODO: uncomment on inject useSendNotifications
-      /*await notifyProposalCreated({
+      await notifyProposalCreated({
         proposalId: web3ProposalId,
         spaceId: BigInt(web3SpaceId),
         creator,
         url,
-      });*/
+      });
     },
     [lang, spaceSlug],
   );
