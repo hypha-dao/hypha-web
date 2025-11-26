@@ -1,3 +1,5 @@
+'use client';
+
 import { Person, Space } from '@hypha-platform/core/client';
 import { Separator } from '@hypha-platform/ui';
 import { TokenSupplySection } from './token-supply-section';

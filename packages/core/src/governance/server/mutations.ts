@@ -89,6 +89,10 @@ export const createToken = async (
       isVotingToken: input.isVotingToken,
       decayInterval: input.decaySettings?.decayInterval,
       decayPercentage: input.decaySettings?.decayPercentage,
+      referencePrice: input.referencePrice
+        ? String(input.referencePrice)
+        : null,
+      referenceCurrency: input.referenceCurrency || null,
     })
     .returning();
   return token;

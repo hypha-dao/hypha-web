@@ -115,6 +115,8 @@ export type CreateTokenInput = {
   };
   web3SpaceId: number;
   agreementWeb3Id?: number;
+  referencePrice?: number;
+  referenceCurrency?: 'USD' | 'EUR' | 'GBP' | 'JPY' | 'CNY';
 };
 
 export type UpdateTokenInput = {

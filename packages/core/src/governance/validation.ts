@@ -360,10 +360,12 @@ export const baseSchemaIssueNewToken = z.object({
       }),
   ),
 
-  maxSupplyType: z.object({
-    label: z.string(),
-    value: z.enum(['immutable', 'updatable']),
-  }),
+  maxSupplyType: z
+    .object({
+      label: z.string(),
+      value: z.enum(['immutable', 'updatable']),
+    })
+    .optional(),
   decaySettings: decaySettingsSchema,
 
   isVotingToken: z.boolean(),
