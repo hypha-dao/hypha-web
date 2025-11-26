@@ -27,19 +27,19 @@ async function notifyPushProposalCreatedForCreator({
   space,
   url,
 }: {
-  person?: Person;
-  space?: Space;
+  person: Person;
+  space: Space;
   url: string;
 }) {
   const { contents, headings } = pushProposalCreationForCreator({
-    creatorName: person?.name,
-    spaceTitle: space?.title,
-    spaceSlug: space?.slug,
+    creatorName: person.name,
+    spaceTitle: space.title,
+    spaceSlug: space.slug,
   });
   await sendPushNotifications({
     contents,
     headings,
-    usernames: person?.slug ? [person.slug] : [],
+    usernames: person.slug ? [person.slug] : [],
     requiredTags: {
       [TAG_SUB_NEW_PROPOSAL_OPEN]: 'true',
     },
@@ -52,8 +52,8 @@ async function notifyEmailProposalCreatedForCreator({
   url,
   unsubscribeLink,
 }: {
-  person?: Person;
-  space?: Space;
+  person: Person;
+  space: Space;
   url: string;
   unsubscribeLink: string;
 }) {
@@ -64,9 +64,6 @@ async function notifyEmailProposalCreatedForCreator({
       'Environment variable NEXT_PUBLIC_EMAIL_TEMPLATE_PROPOSAL_OPEN_FOR_CREATOR is not configured, cannot send an email',
     );
   }
-  if (!space || !person) {
-    throw new Error('Space or person not specified, cannot send an email');
-  }
   const customData = {
     space_title: space.title,
     user_name: person.name ?? '',
@@ -76,7 +73,7 @@ async function notifyEmailProposalCreatedForCreator({
   await sendEmailNotificationsTemplate({
     templateId,
     customData,
-    usernames: person?.slug ? [person.slug] : [],
+    usernames: person.slug ? [person.slug] : [],
     requiredTags: {
       [TAG_SUB_NEW_PROPOSAL_OPEN]: 'true',
     },
