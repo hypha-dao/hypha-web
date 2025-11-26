@@ -131,7 +131,7 @@ async function notifyEmailProposalCreatedForMembersAction(params: {
       },
     });
   });
-  await Promise.all(sendingEmails);
+  return sendingEmails;
 }
 
 async function notifyProposalCreatedForCreator({
@@ -166,7 +166,7 @@ async function notifyProposalCreatedForCreator({
     notifyPushProposalCreatedForCreator(notificationParams),
     notifyEmailProposalCreatedForCreator(notificationParams),
   ];
-  return await Promise.all(notifications);
+  return notifications;
 }
 
 async function notifyProposalCreatedForMembersAction({
@@ -197,7 +197,7 @@ async function notifyProposalCreatedForMembersAction({
       [proposalId],
     );
 
-    return;
+    return [];
   }
   const [{ members, spaceId }] = spacesDetails;
   const normalizedCreator = creator.toUpperCase();
@@ -222,9 +222,9 @@ async function notifyProposalCreatedForMembersAction({
 
   const notifications = [
     notifyPushProposalCreatedForMembersAction(notificationParams),
-    notifyEmailProposalCreatedForMembersAction(notificationParams),
+    ...(await notifyEmailProposalCreatedForMembersAction(notificationParams)),
   ];
-  return await Promise.all(notifications);
+  return notifications;
 }
 
 export async function notifyProposalCreatedAction(
@@ -245,19 +245,19 @@ export async function notifyProposalCreatedAction(
   const lang = langMatch?.[0] ?? '/en';
   const unsubscribeLink = `${baseUrl.protocol}//${baseUrl.host}${lang}/my-spaces/notification-centre`;
   const notifying = Promise.allSettled([
-    notifyProposalCreatedForCreator({
+    ...(await notifyProposalCreatedForCreator({
       spaceId,
       creator,
       url: safeUrl,
       unsubscribeLink,
-    }),
-    notifyProposalCreatedForMembersAction({
+    })),
+    ...(await notifyProposalCreatedForMembersAction({
       proposalId,
       spaceId,
       creator,
       url: safeUrl,
       unsubscribeLink,
-    }),
+    })),
   ]);
   (await notifying)
     .filter((res) => res.status === 'rejected')
