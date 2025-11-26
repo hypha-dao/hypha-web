@@ -301,9 +301,10 @@ export const schemaMintTokensToSpaceTreasury = z.object({
   }),
 });
 
-export const schemaIssueNewToken = z.object({
+export const baseSchemaIssueNewToken = z.object({
   ...createAgreementWeb2Props,
   ...createAgreementFiles,
+
   name: z
     .string()
     .trim()
@@ -345,20 +346,6 @@ export const schemaIssueNewToken = z.object({
     ])
     .transform((val) => (val === '' || val === null ? undefined : val)),
 
-  // tokenDescription: z
-  //   .string()
-  //   .min(10, { message: 'Description must be at least 10 characters long' })
-  //   .max(500, { message: 'Description must be at most 500 characters long' }),
-
-  // TODO: after MVP
-  // digits: z.preprocess(
-  //   (val) => Number(val),
-  //   z
-  //     .number()
-  //     .min(0, { message: 'Digits must be 0 or greater' })
-  //     .max(18, { message: 'Digits must not exceed 18' }),
-  // ),
-
   type: z.enum(['utility', 'credits', 'ownership', 'voice', 'impact'], {
     required_error: 'Please select a token type',
   }),
@@ -372,14 +359,70 @@ export const schemaIssueNewToken = z.object({
         message: 'Max supply must be a non-negative number',
       }),
   ),
+
+  maxSupplyType: z.object({
+    label: z.string(),
+    value: z.enum(['immutable', 'updatable']),
+  }),
   decaySettings: decaySettingsSchema,
+
   isVotingToken: z.boolean(),
-  transferable: z
-    .boolean({ required_error: 'Transferable flag is required' })
-    .optional(),
+  transferable: z.boolean().optional(),
   enableAdvancedTransferControls: z.boolean().optional(),
   transferWhitelist: transferWhitelistSchema.optional(),
+
+  enableProposalAutoMinting: z.boolean(),
+  enableTokenPrice: z.boolean(),
+  referenceCurrency: z.enum(['USD', 'EUR', 'GBP', 'JPY', 'CNY']).optional(),
+  tokenPrice: z.preprocess((val) => {
+    if (val === '' || val === undefined || val === null) return undefined;
+    const n = Number(val);
+    return isNaN(n) ? undefined : n;
+  }, z.number().positive().optional()),
 });
+
+export const schemaIssueNewToken = baseSchemaIssueNewToken.superRefine(
+  (data, ctx) => {
+    if (data.maxSupply > 0 && !data.maxSupplyType) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Max supply type is required when max supply is set',
+        path: ['maxSupplyType'],
+      });
+    }
+
+    if (data.enableTokenPrice) {
+      if (!data.referenceCurrency) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Reference currency is required',
+          path: ['referenceCurrency'],
+        });
+      }
+      if (!data.tokenPrice || data.tokenPrice <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Token price is required and must be positive',
+          path: ['tokenPrice'],
+        });
+      }
+    }
+
+    if (
+      data.enableAdvancedTransferControls &&
+      (!data.transferWhitelist ||
+        !data.transferWhitelist.to?.length ||
+        !data.transferWhitelist.from?.length)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'Transfer whitelist must have at least one entry for "to" and "from"',
+        path: ['transferWhitelist'],
+      });
+    }
+  },
+);
 
 export const schemaCreateProposalChangeVotingMethodMembersField = z
   .object({
