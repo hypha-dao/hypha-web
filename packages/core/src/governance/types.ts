@@ -127,3 +127,9 @@ export type UpdateTokenInput = {
 export type DeleteTokenInput = {
   id: bigint;
 };
+
+export interface OnProposalCreatedInput {
+  creator: `0x${string}`;
+  web3ProposalId: bigint;
+  web3SpaceId: bigint;
+}

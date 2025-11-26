@@ -7,15 +7,17 @@ import React from 'react';
 import { getDhoUrlAgreements } from '../../common';
 import { Locale } from '@hypha-platform/i18n';
 
+export interface UseProposalNotificationsInput {
+  lang: Locale;
+  spaceSlug: string;
+  authToken?: string | null;
+}
+
 export const useProposalNotifications = ({
   lang,
   spaceSlug,
   authToken,
-}: {
-  lang: Locale;
-  spaceSlug: string;
-  authToken?: string | null;
-}) => {
+}: UseProposalNotificationsInput) => {
   //TODO: uncomment on inject useSendNotifications
   /*const { useSendNotifications } = useHookRegistry();
   const { notifyProposalCreated } = useSendNotifications!({ authToken });*/
@@ -25,10 +27,6 @@ export const useProposalNotifications = ({
       web3ProposalId,
       web3SpaceId,
     }: OnProposalCreatedInput) => {
-      //TODO: remove before merge
-      console.log(
-        `Proposal ${web3ProposalId} is created by ${creator} in space ${web3SpaceId}`,
-      );
       const url = getDhoUrlAgreements(lang, spaceSlug);
       //TODO: uncomment on inject useSendNotifications
       /*await notifyProposalCreated({

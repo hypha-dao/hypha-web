@@ -6,6 +6,7 @@ import {
   daoSpaceFactoryImplementationConfig,
 } from '@hypha-platform/core/generated';
 import {
+  OnProposalCreatedInput,
   publicClient,
   useCreateEvent,
   useSpacesByWeb3Ids,
@@ -14,12 +15,6 @@ import { useProposalActions } from './useProposalActions';
 import { useTokenManagement } from './useTokenManagement';
 import { useTokenDeploymentWatcher } from './useTokenDeploymentWatcher';
 import { extractTokenAddressFromReceipt } from './extractTokenAddressFromReceipt';
-
-export interface OnProposalCreatedInput {
-  creator: `0x${string}`;
-  web3ProposalId: bigint;
-  web3SpaceId: bigint;
-}
 
 export const useProposalEvents = ({
   documentId,

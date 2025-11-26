@@ -105,8 +105,10 @@ export const NotificationCentreForm = ({
     const modified = {
       browserNotifications: getSwitch(configuration.browserNotifications),
       emailNotifications: getSwitch(configuration.emailNotifications),
-      subscriptions: notificationSubscriptions.map((subscription, index) => {
-        const sub = configuration.subscriptions?.[index];
+      subscriptions: notificationSubscriptions.map((subscription) => {
+        const sub = configuration.subscriptions?.find(
+          (s) => s.name === subscription.tagName,
+        );
         const tagName = sub?.name ?? subscription.tagName;
         const tagValue = sub?.value ?? subscription.tagValue;
         return {
