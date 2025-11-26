@@ -35,6 +35,13 @@ interface CreateTokenArgs {
   type: 'utility' | 'credits' | 'ownership' | 'voice' | 'impact';
   decayPercentage?: number;
   decayInterval?: number;
+  fixedMaxSupply?: boolean;
+  autoMinting?: boolean;
+  priceInUSD?: number;
+  useTransferWhitelist?: boolean;
+  useReceiveWhitelist?: boolean;
+  initialTransferWhitelist?: `0x${string}`[];
+  initialReceiveWhitelist?: `0x${string}`[];
 }
 
 const chainId = 8453;
@@ -67,6 +74,14 @@ export const useIssueTokenMutationsWeb3Rpc = ({
         data: `0x${string}`;
       }> = [];
 
+      const fixedMaxSupply = arg.fixedMaxSupply ?? false;
+      const autoMinting = arg.autoMinting ?? true;
+      const priceInUSD = arg.priceInUSD ? BigInt(arg.priceInUSD) : 0n;
+      const useTransferWhitelist = arg.useTransferWhitelist ?? false;
+      const useReceiveWhitelist = arg.useReceiveWhitelist ?? false;
+      const initialTransferWhitelist = arg.initialTransferWhitelist ?? [];
+      const initialReceiveWhitelist = arg.initialReceiveWhitelist ?? [];
+
       if (['utility', 'credits', 'impact'].includes(arg.type)) {
         txData = [
           {
@@ -81,7 +96,13 @@ export const useIssueTokenMutationsWeb3Rpc = ({
                 arg.symbol,
                 BigInt(arg.maxSupply) * 10n ** 18n,
                 arg.transferable,
-                arg.isVotingToken,
+                fixedMaxSupply,
+                autoMinting,
+                priceInUSD,
+                useTransferWhitelist,
+                useReceiveWhitelist,
+                initialTransferWhitelist,
+                initialReceiveWhitelist,
               ],
             }),
           },
@@ -99,7 +120,13 @@ export const useIssueTokenMutationsWeb3Rpc = ({
                 arg.name,
                 arg.symbol,
                 BigInt(arg.maxSupply) * 10n ** 18n,
-                arg.isVotingToken,
+                fixedMaxSupply,
+                autoMinting,
+                priceInUSD,
+                useTransferWhitelist,
+                useReceiveWhitelist,
+                initialTransferWhitelist,
+                initialReceiveWhitelist,
               ],
             }),
           },
@@ -127,7 +154,13 @@ export const useIssueTokenMutationsWeb3Rpc = ({
                 arg.symbol,
                 BigInt(arg.maxSupply) * 10n ** 18n,
                 arg.transferable,
-                arg.isVotingToken,
+                fixedMaxSupply,
+                autoMinting,
+                priceInUSD,
+                useTransferWhitelist,
+                useReceiveWhitelist,
+                initialTransferWhitelist,
+                initialReceiveWhitelist,
                 BigInt(arg.decayPercentage),
                 BigInt(arg.decayInterval),
               ],

@@ -1,3 +1,5 @@
+'use client';
+
 import { Switch } from '@hypha-platform/ui';
 
 export const DecaySettingsToggle = ({

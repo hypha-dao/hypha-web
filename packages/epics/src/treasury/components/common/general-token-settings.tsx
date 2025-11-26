@@ -1,3 +1,5 @@
+'use client';
+
 import { FormLabel } from '@hypha-platform/ui';
 import { TokenTypeField } from './token-type-field';
 import { TokenNameField } from './token-name-field';

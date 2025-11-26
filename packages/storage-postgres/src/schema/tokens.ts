@@ -5,6 +5,7 @@ import {
   serial,
   boolean,
   timestamp,
+  numeric,
 } from 'drizzle-orm/pg-core';
 import { spaces } from './space';
 import { documents } from './document';
@@ -28,6 +29,8 @@ export const tokens = pgTable('tokens', {
   createdAt: timestamp('created_at').defaultNow(),
   address: text('address'),
   agreementWeb3Id: integer('agreement_web3_id'),
+  referencePrice: numeric('reference_price'),
+  referenceCurrency: text('reference_currency'),
 });
 
 export const tokenRelations = relations(tokens, ({ one }) => ({

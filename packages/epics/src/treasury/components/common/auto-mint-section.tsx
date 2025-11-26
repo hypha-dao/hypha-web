@@ -1,3 +1,5 @@
+'use client';
+
 import { FormLabel } from '@hypha-platform/ui';
 import { EnableProposalAutoMintingField } from './enable-proposal-auto-minting-field';
 

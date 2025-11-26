@@ -64,8 +64,15 @@ export const useProposalDetailsWeb3Rpc = ({
       name: string;
       symbol: string;
       maxSupply: bigint;
-      isVotingToken: boolean;
+      isVotingToken?: boolean;
       transferable?: boolean;
+      fixedMaxSupply?: boolean;
+      autoMinting?: boolean;
+      priceInUSD?: bigint;
+      useTransferWhitelist?: boolean;
+      useReceiveWhitelist?: boolean;
+      initialTransferWhitelist?: `0x${string}`[];
+      initialReceiveWhitelist?: `0x${string}`[];
       decayPercentage?: bigint;
       decayInterval?: bigint;
       address?: string;

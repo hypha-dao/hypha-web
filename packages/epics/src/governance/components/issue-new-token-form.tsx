@@ -100,6 +100,14 @@ export const IssueNewTokenForm = ({
     refetchDbTokens();
   }, [refetchDbTokens]);
 
+  React.useEffect(() => {
+    if (progress === 100 && agreementSlug) {
+      router.push(successfulUrl);
+    }
+  }, [progress, agreementSlug, router, successfulUrl]);
+
+  console.log(form.formState.errors);
+
   const handleCreate = async (data: FormValues) => {
     setFormError(null);
 
@@ -125,6 +133,10 @@ export const IssueNewTokenForm = ({
       web3SpaceId: web3SpaceId as number,
       transferable: data.type !== 'voice',
       isVotingToken: data.type === 'voice',
+      referencePrice: data.enableTokenPrice ? data.tokenPrice : undefined,
+      referenceCurrency: data.enableTokenPrice
+        ? data.referenceCurrency
+        : undefined,
     });
   };
 

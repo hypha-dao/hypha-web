@@ -1,3 +1,5 @@
+'use client';
+
 import { FormLabel, Switch } from '@hypha-platform/ui';
 
 export const AdvancedSettingsToggle = ({
