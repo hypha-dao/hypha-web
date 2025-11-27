@@ -38,6 +38,10 @@ export default function EditProfilePage() {
   const hasEmailAccount = !!privyUser?.email?.address;
   const currentPrivyEmail = privyUser?.email?.address;
 
+  const hasOAuthAccount = !!(privyUser?.google || privyUser?.apple);
+  const cannotChangeEmail =
+    authenticated && hasOAuthAccount && !hasEmailAccount;
+
   const schemaEditPersonForm = schemaEditPersonWeb2.extend(
     editPersonFiles.shape,
   );
@@ -128,6 +132,7 @@ export default function EditProfilePage() {
           onEdit={onEdit}
           onUpdate={revalidate}
           error={error}
+          cannotChangeEmail={cannotChangeEmail}
         />
       </LoadingBackdrop>
     </SidePanel>
