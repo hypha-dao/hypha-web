@@ -4,6 +4,7 @@ import { TransactionsList } from './transactions-list';
 import { Text } from '@radix-ui/themes';
 import { useUserTransfersSection } from '../../hooks';
 import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
+import { Empty } from '../../../common';
 
 type TransactionsSectionProps = {
   personSlug?: string;
@@ -35,7 +36,9 @@ export const UserTransactionsSection: FC<TransactionsSectionProps> = ({
       />
 
       {transfers.length === 0 && !isLoading ? (
-        <Text className="text-neutral-11 mt-2 mb-6">No transactions found</Text>
+        <Empty>
+          <p>No transactions found</p>
+        </Empty>
       ) : (
         <TransactionsList
           transfers={transfers}
