@@ -1,6 +1,6 @@
 'use client';
 
-import { Person, useMe } from '@hypha-platform/core/client';
+import { Person } from '@hypha-platform/core/client';
 import React from 'react';
 import OneSignal from 'react-onesignal';
 import {
