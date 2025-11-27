@@ -15,13 +15,13 @@ import {
   notifyProposalRejectedAction,
 } from '../actions';
 
+const noOp = async () => {
+  console.warn('Cannot send notification empty authToken');
+};
+
 export const useSendNotifications: UseSendNotificationsHook = ({
   authToken,
 }: UseSendNotificationsInput): UseSendNotificationsReturn => {
-  if (!authToken) {
-    throw new Error('No authToken provided, cannot notify');
-  }
-
   const { trigger: notifyProposalCreated } = useSWRMutation(
     authToken ? [authToken, 'notifyProposalCreated'] : null,
     async (
@@ -47,8 +47,8 @@ export const useSendNotifications: UseSendNotificationsHook = ({
   );
 
   return {
-    notifyProposalCreated,
-    notifyProposalAccepted,
-    notifyProposalRejected,
+    notifyProposalCreated: authToken ? notifyProposalCreated : noOp,
+    notifyProposalAccepted: authToken ? notifyProposalAccepted : noOp,
+    notifyProposalRejected: authToken ? notifyProposalRejected : noOp,
   };
 };
