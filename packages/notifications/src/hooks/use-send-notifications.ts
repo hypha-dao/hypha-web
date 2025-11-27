@@ -15,6 +15,10 @@ import {
   notifyProposalRejectedAction,
 } from '../actions';
 
+const noOp = async () => {
+  console.warn('Cannot send notification empty authToken');
+};
+
 export const useSendNotifications: UseSendNotificationsHook = ({
   authToken,
 }: UseSendNotificationsInput): UseSendNotificationsReturn => {
@@ -43,8 +47,8 @@ export const useSendNotifications: UseSendNotificationsHook = ({
   );
 
   return {
-    notifyProposalCreated,
-    notifyProposalAccepted,
-    notifyProposalRejected,
+    notifyProposalCreated: authToken ? notifyProposalCreated : noOp,
+    notifyProposalAccepted: authToken ? notifyProposalAccepted : noOp,
+    notifyProposalRejected: authToken ? notifyProposalRejected : noOp,
   };
 };

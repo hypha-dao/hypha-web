@@ -74,12 +74,6 @@ export const CreateDeployFundsForm = ({
 
   useScrollToErrors(form, formRef);
 
-  React.useEffect(() => {
-    if (progress === 100 && agreementSlug) {
-      router.push(successfulUrl);
-    }
-  }, [progress, agreementSlug, router, successfulUrl]);
-
   const handleCreate = async (data: FormValues) => {
     if (!data.recipient || !data.payouts || data.payouts.length === 0) {
       console.error('Recipient or payouts are missing');
@@ -139,6 +133,7 @@ export const CreateDeployFundsForm = ({
               name: person?.name || '',
               surname: person?.surname || '',
             }}
+            successfulUrl={successfulUrl}
             closeUrl={successfulUrl}
             backUrl={backUrl}
             isLoading={false}

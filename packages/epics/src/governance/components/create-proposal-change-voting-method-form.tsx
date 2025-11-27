@@ -140,12 +140,6 @@ export const CreateProposalChangeVotingMethodForm = ({
     }
   };
 
-  React.useEffect(() => {
-    if (progress === 100 && agreementSlug) {
-      router.push(successfulUrl);
-    }
-  }, [progress, agreementSlug, router, successfulUrl]);
-
   const isButtonDisabled = quorum === 0 && unity === 0;
 
   return (
@@ -175,6 +169,7 @@ export const CreateProposalChangeVotingMethodForm = ({
               name: person?.name || '',
               surname: person?.surname || '',
             }}
+            successfulUrl={successfulUrl}
             closeUrl={successfulUrl}
             backUrl={backUrl}
             backLabel="Back to Settings"

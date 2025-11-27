@@ -11,32 +11,28 @@ export interface UseProposalNotificationsInput {
   lang: Locale;
   spaceSlug: string;
   authToken?: string | null;
+  postProposalCreated?: () => Promise<void>;
 }
 
 export const useProposalNotifications = ({
   lang,
   spaceSlug,
   authToken,
+  postProposalCreated,
 }: UseProposalNotificationsInput) => {
-  //TODO: uncomment on inject useSendNotifications
-  /*const { useSendNotifications } = useHookRegistry();
-  const { notifyProposalCreated } = useSendNotifications!({ authToken });*/
+  const { useSendNotifications } = useHookRegistry();
+  const { notifyProposalCreated } = useSendNotifications({ authToken });
   const onProposalCreated = React.useCallback(
     async ({
       creator,
-      web3ProposalId,
-      web3SpaceId,
+      web3ProposalId: proposalId,
+      web3SpaceId: spaceId,
     }: OnProposalCreatedInput) => {
       const url = getDhoUrlAgreements(lang, spaceSlug);
-      //TODO: uncomment on inject useSendNotifications
-      /*await notifyProposalCreated({
-        proposalId: web3ProposalId,
-        spaceId: BigInt(web3SpaceId),
-        creator,
-        url,
-      });*/
+      await notifyProposalCreated({ proposalId, spaceId, creator, url });
+      await postProposalCreated?.();
     },
-    [lang, spaceSlug],
+    [lang, spaceSlug, notifyProposalCreated, postProposalCreated],
   );
   useProposalEvents({
     authToken,

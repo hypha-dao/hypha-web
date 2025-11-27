@@ -74,12 +74,6 @@ export const SpaceToSpaceMembershipForm = ({
     agreement: { slug: agreementSlug },
   } = useSpaceToSpaceMembershipOrchestrator({ authToken: jwt, config, spaces });
 
-  React.useEffect(() => {
-    if (progress === 100 && agreementSlug) {
-      router.push(successfulUrl);
-    }
-  }, [progress, agreementSlug]);
-
   const spaceAddress = form.watch('space');
 
   const { hasTokenRequirements, hasEnoughTokens, missingTokenMessage } =
@@ -139,6 +133,7 @@ export const SpaceToSpaceMembershipForm = ({
               name: person?.name || '',
               surname: person?.surname || '',
             }}
+            successfulUrl={successfulUrl}
             closeUrl={successfulUrl}
             backUrl={backUrl}
             backLabel="Back to Settings"

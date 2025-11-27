@@ -4,15 +4,13 @@ import React, { createContext, useContext, ReactNode } from 'react';
 import { UseSendNotificationsHook } from '../hooks';
 
 interface HookRegistry {
-  useSendNotifications: UseSendNotificationsHook | null;
+  useSendNotifications: UseSendNotificationsHook;
 }
 
-const HookRegistryContext = createContext<HookRegistry>({
-  useSendNotifications: null,
-});
+const HookRegistryContext = createContext<HookRegistry | null>(null);
 
 interface HookRegistryProviderProps {
-  useSendNotifications?: UseSendNotificationsHook;
+  useSendNotifications: UseSendNotificationsHook;
   children: ReactNode;
 }
 
@@ -21,7 +19,7 @@ export const HookRegistryProvider: React.FC<HookRegistryProviderProps> = ({
   children,
 }) => {
   const registry: HookRegistry = {
-    useSendNotifications: useSendNotifications || null,
+    useSendNotifications,
   };
 
   return (

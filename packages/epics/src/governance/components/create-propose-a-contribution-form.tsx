@@ -75,12 +75,6 @@ export const CreateProposeAContributionForm = ({
 
   useScrollToErrors(form, formRef);
 
-  React.useEffect(() => {
-    if (progress === 100 && agreementSlug) {
-      router.push(successfulUrl);
-    }
-  }, [progress, agreementSlug]);
-
   const handleCreate = async (data: FormValues) => {
     if (!data.recipient || !data.payouts || data.payouts.length === 0) {
       console.error('Recipient or payouts are missing');
@@ -127,6 +121,7 @@ export const CreateProposeAContributionForm = ({
               name: person?.name || '',
               surname: person?.surname || '',
             }}
+            successfulUrl={successfulUrl}
             closeUrl={successfulUrl}
             backUrl={backUrl}
             isLoading={false}

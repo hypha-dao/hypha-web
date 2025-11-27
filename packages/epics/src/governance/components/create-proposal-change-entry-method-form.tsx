@@ -148,12 +148,6 @@ export const CreateProposalChangeEntryMethodForm = ({
     console.log('Invalid form:', err);
   };
 
-  React.useEffect(() => {
-    if (progress === 100 && agreementSlug) {
-      router.push(successfulUrl);
-    }
-  }, [progress, agreementSlug, router, successfulUrl]);
-
   return (
     <LoadingBackdrop
       progress={progress}
@@ -181,6 +175,7 @@ export const CreateProposalChangeEntryMethodForm = ({
               name: person?.name || '',
               surname: person?.surname || '',
             }}
+            successfulUrl={successfulUrl}
             backUrl={backUrl}
             backLabel="Back to Settings"
             closeUrl={successfulUrl}
