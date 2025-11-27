@@ -66,11 +66,7 @@ function parseYesNoValue(value: string, defaultValue: YesNo): YesNo {
 }
 
 const notificationSubscriptions: NotificationSubscription[] =
-  NOTIFICATION_SUBSCRIPTIONS.map((subscription) => {
-    return {
-      ...subscription,
-    };
-  });
+  NOTIFICATION_SUBSCRIPTIONS;
 
 export const NotificationCentreForm = ({
   person,
@@ -123,7 +119,6 @@ export const NotificationCentreForm = ({
 
   const handleSubmit = React.useCallback(
     async (values: NotificationCentreFormValues) => {
-      console.log('Save notification settings:', values);
       await saveConfigurations({
         browserNotifications: parseSwitch(values.browserNotifications),
         emailNotifications: parseSwitch(values.emailNotifications),
@@ -140,7 +135,7 @@ export const NotificationCentreForm = ({
   );
 
   const handleInvalid = async (err?: any) => {
-    console.log('Notification settings errors:', err);
+    console.warn('Notification settings errors:', err);
   };
 
   const { fields: subscriptions } = useFieldArray({
