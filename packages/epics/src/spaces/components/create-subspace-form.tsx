@@ -10,7 +10,7 @@ import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { Button } from '@hypha-platform/ui';
 import { useMe } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
-import { getDhoPathOverview } from './space-card.container';
+import { getDhoPathOverview } from '../../common';
 
 interface CreateSpaceFormProps {
   parentSpaceId: number | null;

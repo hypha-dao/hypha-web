@@ -22,6 +22,7 @@ import Link from 'next/link';
 import { useActivateSpaces } from '../../people/hooks/use-activate-hypha-spaces';
 import { isAddress } from 'ethers';
 import { useScrollToErrors } from '../../hooks';
+import { Locale } from '@hypha-platform/i18n';
 
 const RECIPIENT_SPACE_ADDRESS = '0x695f21B04B22609c4ab9e5886EB0F65cDBd464B6';
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
@@ -56,7 +57,7 @@ export const ActivateSpacesFormSpace = ({
   const { jwt } = useJwt();
   const config = useConfig();
   const router = useRouter();
-  const { lang, id: spaceSlug } = useParams<{ lang: string; id: string }>();
+  const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({
     spaceId: web3SpaceId as number,
   });
