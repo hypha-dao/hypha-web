@@ -158,16 +158,18 @@ export const ButtonProfile = ({
                     </Link>
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuSeparator />
                 {notificationCentrePath && (
-                  <DropdownMenuItem className="px-0 text-1">
-                    <Link
-                      className="text-accent-11"
-                      href={notificationCentrePath}
-                    >
-                      Notification Centre
-                    </Link>
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="px-0 text-1">
+                      <Link
+                        className="text-accent-11"
+                        href={notificationCentrePath}
+                      >
+                        Notification Centre
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
                 )}
                 <DropdownMenuSeparator />
                 {onChangeThemeMode && (
