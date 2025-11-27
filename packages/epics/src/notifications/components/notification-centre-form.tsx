@@ -65,9 +65,6 @@ function parseYesNoValue(value: string, defaultValue: YesNo): YesNo {
   }
 }
 
-const notificationSubscriptions: NotificationSubscription[] =
-  NOTIFICATION_SUBSCRIPTIONS;
-
 export const NotificationCentreForm = ({
   person,
   closeUrl,
@@ -88,7 +85,7 @@ export const NotificationCentreForm = ({
       browserNotifications: configuration
         ? getSwitch(configuration.browserNotifications)
         : 'yes',
-      subscriptions: notificationSubscriptions,
+      subscriptions: NOTIFICATION_SUBSCRIPTIONS,
     },
     mode: 'onChange',
   });
@@ -101,7 +98,7 @@ export const NotificationCentreForm = ({
     const modified = {
       browserNotifications: getSwitch(configuration.browserNotifications),
       emailNotifications: getSwitch(configuration.emailNotifications),
-      subscriptions: notificationSubscriptions.map((subscription) => {
+      subscriptions: NOTIFICATION_SUBSCRIPTIONS.map((subscription) => {
         const sub = configuration.subscriptions?.find(
           (s) => s.name === subscription.tagName,
         );
