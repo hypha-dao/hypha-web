@@ -27,7 +27,12 @@ export const useProposalNotifications = ({
       web3SpaceId: spaceId,
     }: OnProposalCreatedInput) => {
       const url = getDhoUrlAgreements(lang, spaceSlug);
-      /*await*/ notifyProposalCreated({ proposalId, spaceId, creator, url });
+      //NOTE: notification should be sent detached so no await here
+      notifyProposalCreated({ proposalId, spaceId, creator, url }).catch(
+        (err) => {
+          console.warn('Send notification on proposal created failed:', err);
+        },
+      );
     },
     [lang, spaceSlug, notifyProposalCreated],
   );

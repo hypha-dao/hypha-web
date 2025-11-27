@@ -18,6 +18,10 @@ import {
 export const useSendNotifications: UseSendNotificationsHook = ({
   authToken,
 }: UseSendNotificationsInput): UseSendNotificationsReturn => {
+  if (!authToken) {
+    throw new Error('No authToken provided, cannot notify');
+  }
+
   const { trigger: notifyProposalCreated } = useSWRMutation(
     authToken ? [authToken, 'notifyProposalCreated'] : null,
     async (
