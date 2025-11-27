@@ -169,4 +169,19 @@ interface IEnergyDistribution {
 
   // FIX 5: Emergency reset event
   event EmergencyReset();
+
+  // DEBUG: Events for diagnosing consumption issues
+  event DebugConsumptionAttempt(
+    uint256 indexed poolIndex,
+    address owner,
+    uint256 quantityBefore,
+    uint256 canConsume,
+    uint256 quantityAfter
+  );
+  event DebugConsumptionLoopInfo(
+    uint256 collectiveLength,
+    uint256 remainingToConsume,
+    bool isFirstPass
+  );
+  event DebugPoolStateAfterConsumption(uint256 totalRemainingInPool);
 }
