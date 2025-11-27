@@ -1,6 +1,6 @@
 'use client';
 
-import { useMe } from '@hypha-platform/core/client';
+import { Person, useMe } from '@hypha-platform/core/client';
 import React from 'react';
 import OneSignal from 'react-onesignal';
 import {
@@ -66,13 +66,18 @@ export async function hasPermission() {
   }
 }
 
-export const useNotifications = () => {
+export const useNotifications = ({
+  person,
+  isLoading,
+}: {
+  person: Person | undefined;
+  isLoading: boolean;
+}) => {
   const { initialized, subscribed, setSubscribed, loggedIn } =
     React.useContext(NotificationsContext);
   const [error, setError] = React.useState<string | null>(null);
   const [configuration, setConfiguration] =
     React.useState<NotificationConfiguration>();
-  const { person, isLoading } = useMe();
 
   const initializeConfiguration = React.useCallback(async () => {
     if (!initialized || !OneSignal || !loggedIn) {
