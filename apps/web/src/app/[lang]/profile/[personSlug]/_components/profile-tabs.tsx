@@ -7,7 +7,6 @@ import {
   PendingRewardsSection,
 } from '@hypha-platform/epics';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hypha-platform/ui';
-import { useAuthentication } from '@hypha-platform/authentication';
 import React from 'react';
 
 export const ProfileTabs = ({
@@ -19,7 +18,6 @@ export const ProfileTabs = ({
 }) => {
   const [activeTab, setActiveTab] = React.useState('treasury');
   const { person: authenticatedPerson } = useMe();
-  const { isAuthenticated } = useAuthentication();
   const isMyProfile =
     person?.address?.toLowerCase() ===
     authenticatedPerson?.address?.toLowerCase();
@@ -36,12 +34,10 @@ export const ProfileTabs = ({
         </TabsTrigger>
       </TabsList>
       <TabsContent value="treasury" className="flex flex-col gap-6">
-        {isAuthenticated && (
-          <PendingRewardsSection
-            person={person as Person}
-            isMyProfile={isMyProfile}
-          />
-        )}
+        <PendingRewardsSection
+          person={person as Person}
+          isMyProfile={isMyProfile}
+        />
         <UserAssetsSection
           isMyProfile={isMyProfile}
           personSlug={person?.slug || ''}

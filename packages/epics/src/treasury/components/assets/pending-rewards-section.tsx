@@ -7,6 +7,8 @@ import { AssetCard } from './asset-card';
 import { useUserAssetsSection } from '../../hooks';
 import { Button } from '@hypha-platform/ui';
 import { Loader2 } from 'lucide-react';
+import { useAuthentication } from '@hypha-platform/authentication';
+import { Empty } from '../../../common';
 
 const HYPHA_TOKEN_ADDRESS = '0x8b93862835C36e9689E9bb1Ab21De3982e266CD3';
 
@@ -19,6 +21,7 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
   person,
   isMyProfile,
 }) => {
+  const { isAuthenticated } = useAuthentication();
   const {
     filteredAssets,
     updateUserAssets,
@@ -72,10 +75,18 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
         </Button>
       </div>
       <div className="w-full">
-        <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
-          <AssetCard {...hyphaTokenAsset} isLoading={isLoadingAssets} />
-        </div>
-        {isLoading && <AssetCard isLoading />}
+        {!isAuthenticated ? (
+          <Empty>
+            <p>No rewards found for this user</p>
+          </Empty>
+        ) : (
+          <>
+            <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+              <AssetCard {...hyphaTokenAsset} isLoading={isLoadingAssets} />
+            </div>
+            {isLoading && <AssetCard isLoading />}
+          </>
+        )}
       </div>
     </div>
   );
