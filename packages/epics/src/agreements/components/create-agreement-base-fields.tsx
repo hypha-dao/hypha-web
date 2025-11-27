@@ -30,13 +30,14 @@ import {
   useIsDelegate,
   useJwt,
 } from '@hypha-platform/core/client';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { formatDuration } from '@hypha-platform/ui-utils';
 
 import { useTheme } from 'next-themes';
 import { Locale } from '@hypha-platform/i18n';
 import { ButtonBack, ButtonClose } from '../../common';
 import { useProposalNotifications } from '../../governance/hooks';
+import React from 'react';
 
 type Creator = { avatar: string; name: string; surname: string };
 
@@ -48,6 +49,7 @@ export type CreateAgreementFormData = z.infer<typeof schemaCreateAgreementForm>;
 export type CreateAgreementFormProps = {
   creator?: Creator;
   isLoading?: boolean;
+  successfulUrl: string;
   closeUrl: string;
   backUrl?: string;
   backLabel?: string;
@@ -57,6 +59,7 @@ export type CreateAgreementFormProps = {
 export function CreateAgreementBaseFields({
   creator,
   isLoading = false,
+  successfulUrl,
   closeUrl,
   backUrl,
   backLabel = 'Back to Create',
@@ -64,6 +67,7 @@ export function CreateAgreementBaseFields({
 }: CreateAgreementFormProps) {
   const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
   const { jwt: authToken } = useJwt();
+  const router = useRouter();
 
   const form = useFormContext<CreateAgreementFormData>();
 
@@ -89,7 +93,13 @@ export function CreateAgreementBaseFields({
     spaceId: space?.web3SpaceId as number,
   });
 
-  useProposalNotifications({ lang, spaceSlug, authToken });
+  const postProposalCreated = React.useCallback(async () => {
+    if (successfulUrl) {
+      router.push(successfulUrl);
+    }
+  }, [router, successfulUrl]);
+
+  useProposalNotifications({ lang, spaceSlug, authToken, postProposalCreated });
 
   return (
     <>

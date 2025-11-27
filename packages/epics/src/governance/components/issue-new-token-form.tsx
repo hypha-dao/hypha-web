@@ -91,12 +91,6 @@ export const IssueNewTokenForm = ({
     refetchDbTokens();
   }, [refetchDbTokens]);
 
-  React.useEffect(() => {
-    if (progress === 100 && agreementSlug) {
-      router.push(successfulUrl);
-    }
-  }, [progress, agreementSlug, router, successfulUrl]);
-
   const handleCreate = async (data: FormValues) => {
     setFormError(null);
 
@@ -153,6 +147,7 @@ export const IssueNewTokenForm = ({
               name: person?.name || '',
               surname: person?.surname || '',
             }}
+            successfulUrl={successfulUrl}
             closeUrl={closeUrl || successfulUrl}
             backUrl={backUrl}
             backLabel="Back to settings"

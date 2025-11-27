@@ -11,12 +11,14 @@ export interface UseProposalNotificationsInput {
   lang: Locale;
   spaceSlug: string;
   authToken?: string | null;
+  postProposalCreated?: () => Promise<void>;
 }
 
 export const useProposalNotifications = ({
   lang,
   spaceSlug,
   authToken,
+  postProposalCreated,
 }: UseProposalNotificationsInput) => {
   const { useSendNotifications } = useHookRegistry();
   const { notifyProposalCreated } = useSendNotifications({ authToken });
@@ -27,14 +29,10 @@ export const useProposalNotifications = ({
       web3SpaceId: spaceId,
     }: OnProposalCreatedInput) => {
       const url = getDhoUrlAgreements(lang, spaceSlug);
-      //NOTE: notification should be sent detached so no await here
-      notifyProposalCreated({ proposalId, spaceId, creator, url }).catch(
-        (err) => {
-          console.warn('Send notification on proposal created failed:', err);
-        },
-      );
+      await notifyProposalCreated({ proposalId, spaceId, creator, url });
+      await postProposalCreated?.();
     },
-    [lang, spaceSlug, notifyProposalCreated],
+    [lang, spaceSlug, notifyProposalCreated, postProposalCreated],
   );
   useProposalEvents({
     authToken,

@@ -81,12 +81,6 @@ export const MintTokensToSpaceTreasuryForm = ({
 
   useScrollToErrors(form, formRef);
 
-  React.useEffect(() => {
-    if (progress === 100 && agreementSlug) {
-      router.push(successfulUrl);
-    }
-  }, [progress, agreementSlug, router, successfulUrl]);
-
   const handleCreate = async (data: FormValues) => {
     setFormError(null);
     await createMintTokensToSpaceTreasury({
@@ -127,6 +121,7 @@ export const MintTokensToSpaceTreasuryForm = ({
               name: person?.name || '',
               surname: person?.surname || '',
             }}
+            successfulUrl={successfulUrl}
             closeUrl={closeUrl || successfulUrl}
             backUrl={backUrl}
             backLabel="Back to settings"

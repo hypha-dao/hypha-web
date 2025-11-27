@@ -69,12 +69,6 @@ export const CreateAgreementForm = ({
 
   useScrollToErrors(form, formRef);
 
-  React.useEffect(() => {
-    if (progress === 100 && agreementSlug) {
-      router.push(successfulUrl);
-    }
-  }, [progress, agreementSlug]);
-
   const handleCreate = async (data: FormValues) => {
     await createAgreement({
       ...data,
@@ -116,6 +110,7 @@ export const CreateAgreementForm = ({
               name: person?.name || '',
               surname: person?.surname || '',
             }}
+            successfulUrl={successfulUrl}
             closeUrl={closeUrl || successfulUrl}
             backUrl={backUrl}
             isLoading={false}

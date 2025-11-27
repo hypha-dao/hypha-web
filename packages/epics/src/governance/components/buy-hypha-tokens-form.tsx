@@ -97,12 +97,6 @@ export const BuyHyphaTokensForm = ({
     }
   }, [form, web3SpaceId, spaceDetails]);
 
-  React.useEffect(() => {
-    if (progress === 100 && agreementSlug) {
-      router.push(successfulUrl);
-    }
-  }, [progress, agreementSlug]);
-
   const handleCreate = async (data: FormValues) => {
     if (!web3SpaceId || spaceId === undefined) return;
 
@@ -184,6 +178,7 @@ export const BuyHyphaTokensForm = ({
               name: person?.name || '',
               surname: person?.surname || '',
             }}
+            successfulUrl={successfulUrl}
             closeUrl={successfulUrl}
             backUrl={backUrl}
             backLabel="Back to Settings"

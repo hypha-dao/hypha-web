@@ -124,12 +124,6 @@ export const ActivateSpacesFormSpace = ({
   const watchedPaymentToken = form.watch('paymentToken');
   const total = watchedPaymentToken === 'USDC' ? totalUSDC : totalHYPHA;
 
-  React.useEffect(() => {
-    if (progress === 100 && agreementSlug) {
-      router.push(successfulUrl);
-    }
-  }, [progress, agreementSlug, router, successfulUrl]);
-
   const handleCreate = async (data: FormValues) => {
     if (!web3SpaceId || spaceId === undefined) return;
 
@@ -218,6 +212,7 @@ export const ActivateSpacesFormSpace = ({
               name: person?.name || '',
               surname: person?.surname || '',
             }}
+            successfulUrl={successfulUrl}
             closeUrl={successfulUrl}
             backUrl={backUrl}
             backLabel="Back to Settings"
