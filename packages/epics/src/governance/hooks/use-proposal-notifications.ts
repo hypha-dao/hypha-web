@@ -27,7 +27,7 @@ export const useProposalNotifications = ({
       web3SpaceId: spaceId,
     }: OnProposalCreatedInput) => {
       const url = getDhoUrlAgreements(lang, spaceSlug);
-      await notifyProposalCreated({ proposalId, spaceId, creator, url });
+      /*await*/ notifyProposalCreated({ proposalId, spaceId, creator, url });
     },
     [lang, spaceSlug, notifyProposalCreated],
   );
