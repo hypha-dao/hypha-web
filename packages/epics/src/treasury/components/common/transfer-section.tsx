@@ -9,12 +9,15 @@ export const TransferSection = ({
   enableAdvancedTransferControls,
   members,
   spaces,
+  tokenType,
 }: {
   transferable: boolean;
   enableAdvancedTransferControls: boolean;
   members: Person[];
   spaces: Space[];
+  tokenType?: string;
 }) => {
+  const isOwnershipToken = tokenType === 'ownership';
   return (
     <div className="flex flex-col gap-4">
       <FormLabel>Token Transfer</FormLabel>
@@ -46,13 +49,15 @@ export const TransferSection = ({
                 members={members}
                 spaces={spaces}
               />
-              <TransferWhitelistFieldArray
-                name="transferWhitelist.from"
-                label="“From” Whitelist"
-                description="Define which members or spaces are allowed to send tokens. Add members or spaces, include blockchain addresses, and choose if the whitelisting applies to an entire space or just its treasury account."
-                members={members}
-                spaces={spaces}
-              />
+              {!isOwnershipToken && (
+                <TransferWhitelistFieldArray
+                  name="transferWhitelist.from"
+                  label="“From” Whitelist"
+                  description="Define which members or spaces are allowed to send tokens. Add members or spaces, include blockchain addresses, and choose if the whitelisting applies to an entire space or just its treasury account."
+                  members={members}
+                  spaces={spaces}
+                />
+              )}
             </>
           )}
         </>

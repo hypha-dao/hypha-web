@@ -412,18 +412,29 @@ export const schemaIssueNewToken = baseSchemaIssueNewToken.superRefine(
       }
     }
 
-    if (
-      data.enableAdvancedTransferControls &&
-      (!data.transferWhitelist ||
-        !data.transferWhitelist.to?.length ||
-        !data.transferWhitelist.from?.length)
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message:
-          'Transfer whitelist must have at least one entry for "to" and "from"',
-        path: ['transferWhitelist'],
-      });
+    if (data.enableAdvancedTransferControls) {
+      const isOwnershipToken = data.type === 'ownership';
+
+      if (!data.transferWhitelist || !data.transferWhitelist.to?.length) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            'Transfer whitelist must have at least one entry for "to" whitelist',
+          path: ['transferWhitelist'],
+        });
+      }
+
+      if (
+        !isOwnershipToken &&
+        (!data.transferWhitelist || !data.transferWhitelist.from?.length)
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            'Transfer whitelist must have at least one entry for "from" whitelist',
+          path: ['transferWhitelist'],
+        });
+      }
     }
   },
 );
