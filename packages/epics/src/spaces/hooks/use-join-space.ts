@@ -12,7 +12,7 @@ export const useJoinSpace = ({ spaceId }: { spaceId?: number }) => {
     if (!Number.isSafeInteger(spaceId) || (spaceId as number) < 0) {
       throw new Error('spaceId is required to join a space');
     }
-    return joinSpaceWeb3();
+    return await joinSpaceWeb3();
   }, [joinSpaceWeb3, spaceId]);
 
   return {
