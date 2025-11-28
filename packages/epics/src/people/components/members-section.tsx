@@ -6,7 +6,7 @@ import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 
 import { MembersList } from './members-list';
 import { useMembersSection } from '../hooks/use-members-section';
-import { UseMembers } from '../../spaces';
+import { ExitSpace, UseMembers } from '../../spaces';
 import { Empty } from '../../common';
 import { Button } from '@hypha-platform/ui';
 import {
@@ -63,7 +63,9 @@ export const MembersSection: FC<MemberSectionProps> = ({
           hasSearch
           searchPlaceholder="Search members"
           onChangeSearch={onUpdateSearch}
-        />
+        >
+          <ExitSpace />
+        </SectionFilter>
         {!isDelegate && (
           <Link
             title={tooltipMessage || ''}
