@@ -110,7 +110,16 @@ type CreateIssueTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
   };
   web3SpaceId: number;
   referencePrice?: number;
-  referenceCurrency?: 'USD' | 'EUR' | 'GBP' | 'JPY' | 'CNY';
+  referenceCurrency?:
+    | 'USD'
+    | 'EUR'
+    | 'GBP'
+    | 'JPY'
+    | 'CNY'
+    | 'CAD'
+    | 'CHF'
+    | 'AUD'
+    | 'HKD';
   maxSupplyType?: { label: string; value: 'immutable' | 'updatable' };
   enableProposalAutoMinting?: boolean;
   enableAdvancedTransferControls?: boolean;
