@@ -69,13 +69,11 @@ export function TokenMaxSupplyTypeField() {
 
             <div className="text-2 text-neutral-11 flex flex-col gap-3">
               <span>
-                Choosing 'Forever Immutable' makes the maximum supply permanent
-                and prevents any future changes.
-              </span>
-              <span>
-                Select 'Updatable Over Time' for future increases (e.g., gradual
-                or milestone-based releases), or keep supply unlimited by
-                leaving limited supply disabled.
+                Choosing “Forever Immutable” locks in the maximum supply
+                permanently and blocks any future changes. Select “Updatable
+                Over Time” if you may raise the cap later (for example via
+                gradual or milestone-based releases), or leave limited supply
+                turned off to keep supply unlimited.
               </span>
             </div>
 
