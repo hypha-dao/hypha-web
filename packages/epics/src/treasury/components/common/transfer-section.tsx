@@ -19,9 +19,9 @@ export const TransferSection = ({
     <div className="flex flex-col gap-4">
       <FormLabel>Token Transfer</FormLabel>
       <span className="text-2 text-neutral-11">
-        Control who can send and receive your token. Make it freely
-        transferable, limit transfers to whitelisted accounts or spaces, or
-        fully restrict transfers for maximum oversight.
+        Control who can send and receive your token. You can make it fully
+        transferable, restrict transfers to whitelisted accounts or spaces, or
+        disable transfers entirely for maximum control.
       </span>
       <TransferableField />
       {transferable && (
