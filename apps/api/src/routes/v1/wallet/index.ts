@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { response, type Response } from './schema/get-wallet';
 import { erc20Abi, formatUnits, isAddress } from 'viem';
 import tokenRoutes from './token';
+import receiveRoutes from './receive';
 
 export default async function walletRoutes(app: FastifyInstance) {
   await app.register(import('@fastify/rate-limit'), {
@@ -13,11 +14,8 @@ export default async function walletRoutes(app: FastifyInstance) {
     prefix: 'token',
   });
 
-  /**
-   * GET /wallet/receive
-   */
-  app.get('/receive', async (_, reply) => {
-    return reply.code(500).send({ message: 'Not implemented yet' });
+  await app.register(receiveRoutes, {
+    prefix: 'receive',
   });
 
   /**
