@@ -6,7 +6,7 @@ import { useHasSpacePaid } from '../hooks';
 import { useSpacePayments } from '../hooks/use-space-payments';
 import { cleanPath } from '../utils/cleanPath';
 import { usePathname } from 'next/navigation';
-import { useJoinSpace } from '../hooks';
+import { useSpaceMember } from '../hooks';
 import { useAuthentication } from '@hypha-platform/authentication';
 import Link from 'next/link';
 import { useIsDelegate } from '@hypha-platform/core/client';
@@ -29,7 +29,7 @@ export function SubscriptionBadge({
   const { hasSpacePaid } = useHasSpacePaid({
     spaceId: BigInt(web3SpaceId),
   });
-  const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
+  const { isMember } = useSpaceMember({ spaceId: web3SpaceId as number });
   const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
   const { isAuthenticated } = useAuthentication();
 

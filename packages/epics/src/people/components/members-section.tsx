@@ -6,7 +6,7 @@ import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 
 import { MembersList } from './members-list';
 import { useMembersSection } from '../hooks/use-members-section';
-import { ExitSpace, UseMembers } from '../../spaces';
+import { ExitSpace, UseMembers, useSpaceMember } from '../../spaces';
 import { Empty } from '../../common';
 import { Button } from '@hypha-platform/ui';
 import {
@@ -14,7 +14,6 @@ import {
   useMe,
   useIsDelegate,
 } from '@hypha-platform/core/client';
-import { useJoinSpace } from '../../spaces';
 import { useAuthentication } from '@hypha-platform/authentication';
 import Link from 'next/link';
 
@@ -39,7 +38,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
     });
   console.debug('MembersSection', { searchTerm });
   const { space } = useSpaceBySlug(spaceSlug as string);
-  const { isMember, isLoading: useJoinSpaceLoading } = useJoinSpace({
+  const { isMember, isLoading: useJoinSpaceLoading } = useSpaceMember({
     spaceId: space?.web3SpaceId as number,
   });
   const { person } = useMe();

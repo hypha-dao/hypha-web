@@ -15,7 +15,7 @@ import {
 } from '@hypha-platform/core/client';
 import { BaseError, useConfig } from 'wagmi';
 import { useParams } from 'next/navigation';
-import { useInviteStatus } from '../hooks';
+import { useInviteStatus, useSpaceMember } from '../hooks';
 import { useAuthentication } from '@hypha-platform/authentication';
 
 type JoinSpaceProps = {
@@ -42,10 +42,12 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
 
   const { person } = useMe();
 
-  const { isMember, isLoading, joinSpace, revalidateIsMember, isJoiningSpace } =
-    useJoinSpace({
-      spaceId: web3SpaceId,
-    });
+  const { joinSpace, isJoiningSpace } = useJoinSpace({
+    spaceId: web3SpaceId,
+  });
+  const { isMember, isLoading, revalidateIsMember } = useSpaceMember({
+    spaceId: web3SpaceId,
+  });
 
   const {
     requestInvite,

@@ -2,7 +2,7 @@
 
 import { Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { useJoinSpace } from '../../spaces';
+import { useSpaceMember } from '../../spaces';
 import { useIsDelegate } from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { Loader2 } from 'lucide-react';
@@ -40,7 +40,7 @@ export const ExpireProposalBanner = ({
 }: ExpireProposalBannerProps) => {
   const [localActionCompleted, setLocalActionCompleted] = useState(false);
 
-  const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
+  const { isMember } = useSpaceMember({ spaceId: web3SpaceId as number });
   const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
   const { isAuthenticated } = useAuthentication();
 
