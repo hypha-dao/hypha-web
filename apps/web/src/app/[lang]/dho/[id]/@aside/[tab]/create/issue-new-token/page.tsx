@@ -7,6 +7,9 @@ import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
+import { Person, Space } from '@hypha-platform/core/client';
+import { getAllSpaces } from '@hypha-platform/core/server';
+import { findAllPeopleWithoutPagination } from '@hypha-platform/core/server';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string; tab: string }>;
@@ -34,6 +37,24 @@ export default async function IssueNewTokenPage({
     ? undefined
     : `${closeUrl}${PATH_SELECT_SETTINGS_ACTION}`;
 
+  let spaces = [] as Space[];
+  const peoples: Person[] = await findAllPeopleWithoutPagination({ db });
+  const filteredPeoples = peoples.filter(
+    (person) => person.address && person.address.trim() !== '',
+  );
+
+  try {
+    spaces = await getAllSpaces({
+      parentOnly: false,
+      omitSandbox: false,
+    });
+  } catch (err) {
+    console.error('Failed to fetch spaces:', err);
+  }
+
+  const filteredSpaces = spaces?.filter(
+    (space) => space?.address && space.address.trim() !== '',
+  );
   return (
     <SidePanel>
       <IssueNewTokenForm
@@ -42,7 +63,14 @@ export default async function IssueNewTokenPage({
         successfulUrl={successfulUrl}
         backUrl={backUrl}
         closeUrl={closeUrl}
-        plugin={<Plugin name="issue-new-token" spaceSlug={id} />}
+        plugin={
+          <Plugin
+            name="issue-new-token"
+            spaceSlug={id}
+            spaces={filteredSpaces}
+            members={filteredPeoples}
+          />
+        }
       />
     </SidePanel>
   );
