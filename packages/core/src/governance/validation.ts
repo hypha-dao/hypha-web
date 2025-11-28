@@ -267,6 +267,27 @@ const decaySettingsSchema = z.object({
     }),
 });
 
+const transferWhitelistEntrySchema = z.object({
+  type: z.enum(['member', 'space']).default('member'),
+  address: z
+    .string({ message: 'Please enter a blockchain address' })
+    .trim()
+    .min(1, { message: 'Please enter a blockchain address' })
+    .refine((value) => isAddress(value), {
+      message: 'Please enter a valid blockchain address',
+    }),
+  includeSpaceMembers: z.boolean().optional(),
+});
+
+const transferWhitelistSchema = z.object({
+  to: z
+    .array(transferWhitelistEntrySchema)
+    .min(1, { message: 'Add at least one entry to the “To” whitelist' }),
+  from: z
+    .array(transferWhitelistEntrySchema)
+    .min(1, { message: 'Add at least one entry to the “From” whitelist' }),
+});
+
 export const schemaMintTokensToSpaceTreasury = z.object({
   ...createAgreementWeb2Props,
   ...createAgreementFiles,
@@ -280,9 +301,10 @@ export const schemaMintTokensToSpaceTreasury = z.object({
   }),
 });
 
-export const schemaIssueNewToken = z.object({
+export const baseSchemaIssueNewToken = z.object({
   ...createAgreementWeb2Props,
   ...createAgreementFiles,
+
   name: z
     .string()
     .trim()
@@ -324,20 +346,6 @@ export const schemaIssueNewToken = z.object({
     ])
     .transform((val) => (val === '' || val === null ? undefined : val)),
 
-  // tokenDescription: z
-  //   .string()
-  //   .min(10, { message: 'Description must be at least 10 characters long' })
-  //   .max(500, { message: 'Description must be at most 500 characters long' }),
-
-  // TODO: after MVP
-  // digits: z.preprocess(
-  //   (val) => Number(val),
-  //   z
-  //     .number()
-  //     .min(0, { message: 'Digits must be 0 or greater' })
-  //     .max(18, { message: 'Digits must not exceed 18' }),
-  // ),
-
   type: z.enum(['utility', 'credits', 'ownership', 'voice', 'impact'], {
     required_error: 'Please select a token type',
   }),
@@ -351,12 +359,85 @@ export const schemaIssueNewToken = z.object({
         message: 'Max supply must be a non-negative number',
       }),
   ),
-  decaySettings: decaySettingsSchema,
-  isVotingToken: z.boolean(),
-  transferable: z
-    .boolean({ required_error: 'Transferable flag is required' })
+
+  maxSupplyType: z
+    .object({
+      label: z.string(),
+      value: z.enum(['immutable', 'updatable']),
+    })
     .optional(),
+  decaySettings: decaySettingsSchema,
+
+  isVotingToken: z.boolean(),
+  transferable: z.boolean().optional(),
+  enableAdvancedTransferControls: z.boolean().optional(),
+  transferWhitelist: transferWhitelistSchema.optional(),
+
+  enableProposalAutoMinting: z.boolean(),
+  enableTokenPrice: z.boolean(),
+  referenceCurrency: z
+    .enum(['USD', 'EUR', 'GBP', 'JPY', 'CNY', 'CAD', 'CHF', 'AUD', 'HKD'])
+    .optional(),
+  tokenPrice: z.preprocess((val) => {
+    if (val === '' || val === undefined || val === null) return undefined;
+    const n = Number(val);
+    return isNaN(n) ? undefined : n;
+  }, z.number().positive().optional()),
 });
+
+export const schemaIssueNewToken = baseSchemaIssueNewToken.superRefine(
+  (data, ctx) => {
+    if (data.maxSupply > 0 && !data.maxSupplyType) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Max supply type is required when max supply is set',
+        path: ['maxSupplyType'],
+      });
+    }
+
+    if (data.enableTokenPrice) {
+      if (!data.referenceCurrency) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Reference currency is required',
+          path: ['referenceCurrency'],
+        });
+      }
+      if (!data.tokenPrice || data.tokenPrice <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Token price is required and must be positive',
+          path: ['tokenPrice'],
+        });
+      }
+    }
+
+    if (data.enableAdvancedTransferControls) {
+      const isOwnershipToken = data.type === 'ownership';
+
+      if (!data.transferWhitelist || !data.transferWhitelist.to?.length) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            'Transfer whitelist must have at least one entry for "to" whitelist',
+          path: ['transferWhitelist'],
+        });
+      }
+
+      if (
+        !isOwnershipToken &&
+        (!data.transferWhitelist || !data.transferWhitelist.from?.length)
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            'Transfer whitelist must have at least one entry for "from" whitelist',
+          path: ['transferWhitelist'],
+        });
+      }
+    }
+  },
+);
 
 export const schemaCreateProposalChangeVotingMethodMembersField = z
   .object({

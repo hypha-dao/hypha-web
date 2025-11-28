@@ -318,6 +318,16 @@ export const ProposalDetail = ({
           address={token.address}
           initialSupply={token.maxSupply}
           dbTokens={dbTokens}
+          transferable={token.transferable}
+          fixedMaxSupply={token.fixedMaxSupply}
+          autoMinting={token.autoMinting}
+          priceInUSD={token.priceInUSD}
+          useTransferWhitelist={token.useTransferWhitelist}
+          useReceiveWhitelist={token.useReceiveWhitelist}
+          initialTransferWhitelist={token.initialTransferWhitelist}
+          initialReceiveWhitelist={token.initialReceiveWhitelist}
+          decayPercentage={token.decayPercentage}
+          decayInterval={token.decayInterval}
         />
       ))}
       {Boolean(proposalDetails?.transfers?.length) && (
