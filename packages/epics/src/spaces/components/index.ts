@@ -4,6 +4,7 @@ export * from './create-space-form';
 export * from './create-subspace-form';
 export * from './entry-method-field';
 export * from './entry-method-token-field';
+export * from './exit-space';
 export * from './explore-spaces';
 export * from './filtered-spaces';
 export * from './inner-space-card.wrapper';
