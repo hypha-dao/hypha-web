@@ -375,7 +375,9 @@ export const baseSchemaIssueNewToken = z.object({
 
   enableProposalAutoMinting: z.boolean(),
   enableTokenPrice: z.boolean(),
-  referenceCurrency: z.enum(['USD', 'EUR', 'GBP', 'JPY', 'CNY']).optional(),
+  referenceCurrency: z
+    .enum(['USD', 'EUR', 'GBP', 'JPY', 'CNY', 'CAD', 'CHF', 'AUD', 'HKD'])
+    .optional(),
   tokenPrice: z.preprocess((val) => {
     if (val === '' || val === undefined || val === null) return undefined;
     const n = Number(val);
