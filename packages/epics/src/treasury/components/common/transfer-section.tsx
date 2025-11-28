@@ -42,14 +42,14 @@ export const TransferSection = ({
               <TransferWhitelistFieldArray
                 name="transferWhitelist.to"
                 label="“To” Whitelist"
-                description="Define who is allowed to receive tokens. Add members or spaces, include blockchain addresses, and choose if the whitelisting applies to an entire space or just its account."
+                description="Define which members or spaces are allowed to receive tokens. Add members or spaces, include blockchain addresses, and choose if the whitelisting applies to an entire space or just its treasury account."
                 members={members}
                 spaces={spaces}
               />
               <TransferWhitelistFieldArray
                 name="transferWhitelist.from"
                 label="“From” Whitelist"
-                description="Restrict which members or spaces are allowed to send tokens. Combine dropdown selections with custom blockchain addresses for complete coverage."
+                description="Define which members or spaces are allowed to send tokens. Add members or spaces, include blockchain addresses, and choose if the whitelisting applies to an entire space or just its treasury account."
                 members={members}
                 spaces={spaces}
               />
