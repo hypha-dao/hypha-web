@@ -5,3 +5,4 @@ export * from './use-invite-status';
 export * from './use-sales-banner';
 export * from './use-has-space-paid';
 export * from './use-space-token-requirements';
+export * from './use-space-member';

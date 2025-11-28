@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { Empty } from '../../../common';
 import { Input } from '@hypha-platform/ui';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useJoinSpace } from '../../../spaces';
+import { useSpaceMember } from '../../../spaces';
 import { useFundWallet } from '../../hooks';
 import {
   useSpaceDetailsWeb3Rpc,
@@ -33,7 +33,7 @@ export const AssetsSection: FC<AssetSectionProps> = ({
   const { fundWallet } = useFundWallet({
     address: spaceDetails?.executor as `0x${string}`,
   });
-  const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
+  const { isMember } = useSpaceMember({ spaceId: web3SpaceId as number });
   const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
 
   const {

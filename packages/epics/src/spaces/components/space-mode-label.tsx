@@ -4,7 +4,7 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import { Badge } from '@hypha-platform/ui';
 import clsx from 'clsx';
 import Link from 'next/link';
-import { useJoinSpace } from '../hooks/use-join-space';
+import { useSpaceMember } from '../hooks';
 import { useRouter } from 'next/navigation';
 
 interface SpaceModeLabelProps {
@@ -63,7 +63,7 @@ const MemberLabel = ({
   web3SpaceId: number;
   configPath: string;
 }) => {
-  const { isMember } = useJoinSpace({ spaceId: web3SpaceId });
+  const { isMember } = useSpaceMember({ spaceId: web3SpaceId });
   return isMember ? (
     <LabelButton caption={caption} configPath={configPath} />
   ) : (
