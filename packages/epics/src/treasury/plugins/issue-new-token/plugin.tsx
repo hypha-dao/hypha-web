@@ -36,6 +36,7 @@ export const IssueNewTokenPlugin = ({
     'enableAdvancedTransferControls',
   );
   const enableTokenPrice = watch('enableTokenPrice');
+  const currentTokenType = watch('type');
 
   useEffect(() => {
     if (getValues('enableProposalAutoMinting') === undefined) {
@@ -55,11 +56,28 @@ export const IssueNewTokenPlugin = ({
     }
   }, [getValues, setValue]);
 
+  // Sync tokenType state with form value
+  useEffect(() => {
+    if (currentTokenType !== tokenType) {
+      setTokenType(currentTokenType || '');
+    }
+  }, [currentTokenType, tokenType]);
+
   useEffect(() => {
     if (tokenType === 'voice') {
       setValue('isVotingToken', true);
     }
   }, [tokenType, setValue]);
+
+  // Clear "from" whitelist when switching to ownership token
+  useEffect(() => {
+    if (currentTokenType === 'ownership') {
+      const whitelist = getValues('transferWhitelist');
+      if (whitelist?.from) {
+        setValue('transferWhitelist.from', undefined);
+      }
+    }
+  }, [currentTokenType, getValues, setValue]);
 
   useEffect(() => {
     if (transferable === false) {
@@ -73,17 +91,26 @@ export const IssueNewTokenPlugin = ({
       return;
     }
     const whitelist = getValues('transferWhitelist');
+    const isOwnershipToken = currentTokenType === 'ownership';
+
     if (!whitelist?.to?.length) {
       setValue('transferWhitelist.to', [
         { type: 'member', address: '', includeSpaceMembers: true },
       ]);
     }
-    if (!whitelist?.from?.length) {
+    // Don't initialize "from" whitelist for ownership tokens
+    if (!isOwnershipToken && !whitelist?.from?.length) {
       setValue('transferWhitelist.from', [
         { type: 'member', address: '', includeSpaceMembers: true },
       ]);
     }
-  }, [enableAdvancedTransferControls, getValues, setValue, transferable]);
+  }, [
+    enableAdvancedTransferControls,
+    getValues,
+    setValue,
+    transferable,
+    currentTokenType,
+  ]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -103,6 +130,7 @@ export const IssueNewTokenPlugin = ({
           enableTokenPrice={enableTokenPrice}
           members={members}
           spaces={spaces}
+          tokenType={currentTokenType}
         />
       )}
       {tokenType === 'voice' && (

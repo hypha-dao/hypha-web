@@ -16,6 +16,7 @@ export const AdvancedTokenSettings = ({
   enableTokenPrice,
   members,
   spaces,
+  tokenType,
 }: {
   enableLimitedSupply: boolean;
   setEnableLimitedSupply: (value: boolean) => void;
@@ -25,6 +26,7 @@ export const AdvancedTokenSettings = ({
   enableTokenPrice: boolean;
   members: Person[];
   spaces: Space[];
+  tokenType?: string;
 }) => {
   return (
     <>
@@ -41,6 +43,7 @@ export const AdvancedTokenSettings = ({
         enableAdvancedTransferControls={enableAdvancedTransferControls}
         members={members}
         spaces={spaces}
+        tokenType={tokenType}
       />
       <Separator />
       <TokenValueSection enableTokenPrice={enableTokenPrice} />

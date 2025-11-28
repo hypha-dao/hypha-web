@@ -119,7 +119,6 @@ export const SelectSettingsAction = ({
         'Create a new token for utility, ownership, impact, cash credits, or voice within your space.',
       href: 'create/issue-new-token',
       icon: <RadiobuttonIcon />,
-      disabled: true,
     },
     {
       group: 'Treasury',
@@ -128,7 +127,6 @@ export const SelectSettingsAction = ({
         'Mint tokens into your space treasury to fund operations, distribute rewards, or provide liquidity.',
       href: 'create/mint-tokens-to-space-treasury',
       icon: <ArrowDownIcon />,
-      disabled: true,
     },
     {
       group: 'Treasury',
