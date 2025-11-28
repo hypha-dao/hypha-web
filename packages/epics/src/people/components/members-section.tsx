@@ -63,7 +63,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
           searchPlaceholder="Search members"
           onChangeSearch={onUpdateSearch}
         >
-          <ExitSpace />
+          <ExitSpace web3SpaceId={space?.web3SpaceId as number} />
         </SectionFilter>
         {!isDelegate && (
           <Link

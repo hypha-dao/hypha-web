@@ -1,6 +1,36 @@
 import { Button, ConfirmDialog } from '@hypha-platform/ui';
+import { useExitSpace, useSpaceMember } from '../hooks';
+import { useAuthentication } from '@hypha-platform/authentication';
+import React from 'react';
 
-export const ExitSpace = () => {
+type ExitSpaceProps = {
+  web3SpaceId: number;
+};
+
+export const ExitSpace = ({ web3SpaceId }: ExitSpaceProps) => {
+  const { isAuthenticated } = useAuthentication();
+
+  const { exitSpace, isExitingSpace } = useExitSpace({ spaceId: web3SpaceId });
+  const {
+    isMember,
+    isLoading: isLoadingMember,
+    revalidateIsMember,
+  } = useSpaceMember({
+    spaceId: web3SpaceId,
+  });
+
+  const disabled =
+    !isAuthenticated || isExitingSpace || isLoadingMember || !isMember;
+
+  const handleExitSpace = React.useCallback(async () => {
+    try {
+      await exitSpace();
+      await revalidateIsMember();
+    } catch (err) {
+      console.error('Failed to exit space:', err);
+    }
+  }, [exitSpace, revalidateIsMember]);
+
   return (
     <>
       <ConfirmDialog
@@ -8,14 +38,18 @@ export const ExitSpace = () => {
         description="Do you really want to exit this space?"
         customAcceptButtonText="Yes, leave"
         customRejectButtonText="No, stay"
-        onAcceptClicked={() => {
-          console.log('Accepted Exit Space');
-        }}
-        onRejectClicked={() => {
-          console.log('Rejected Exit Space');
-        }}
+        onAcceptClicked={handleExitSpace}
       >
-        <Button colorVariant="neutral" variant="outline">
+        <Button
+          colorVariant="neutral"
+          variant="outline"
+          title={
+            disabled
+              ? 'You need to be authorized and to be a member of current space to be able to exit'
+              : undefined
+          }
+          disabled={disabled}
+        >
           Exit Space
         </Button>
       </ConfirmDialog>
