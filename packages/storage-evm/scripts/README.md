@@ -106,6 +106,10 @@ npx nx run storage-evm:script ./scripts/join-method-open-join.deploy.ts --networ
 npx nx run storage-evm:script ./scripts/no-exit.deploy.ts --network base-mainnet
 npx nx run storage-evm:script ./scripts/regular-space-token-proxy.deploy.ts --network base-mainnet
 
+npx nx run storage-evm:script ./scripts/regular-token-factory-proxy.upgrade.ts --network base-mainnet
+
+regular-token-factory-proxy.upgrade.ts
+
 regular-space-token-proxy.deploy.ts
 ```
 
@@ -218,6 +222,10 @@ npx nx run storage-evm:script ./scripts/dao-proposals.upgrade.ts --network base-
 
 ```bash
 npx nx run storage-evm:script ./scripts/token-factory.upgrade.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/ownership-space-token-proxy.deploy.ts --network base-mainnet
+
+ownership-space-token-proxy.deploy.ts
 ```
 
 ### Upgrade Token Voting Power
