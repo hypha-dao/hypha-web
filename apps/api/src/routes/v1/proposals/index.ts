@@ -382,11 +382,4 @@ export default async function proposalsRoutes(app: FastifyInstance) {
       return { voters, meta };
     },
   );
-
-  /**
-   * POST /proposals/:id/vote
-   */
-  app.post('/:id/vote', async (_, reply) => {
-    return reply.code(500).send({ message: 'Not implemented yet' });
-  });
 }
