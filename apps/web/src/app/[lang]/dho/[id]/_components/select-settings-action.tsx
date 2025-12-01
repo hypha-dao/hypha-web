@@ -114,7 +114,7 @@ export const SelectSettingsAction = ({
     {
       defaultDurationDays: 4,
       group: 'Treasury',
-      title: 'Issue New Token (Under Maintenance until 1st Dec 2025)',
+      title: 'Issue New Token',
       description:
         'Create a new token for utility, ownership, impact, cash credits, or voice within your space.',
       href: 'create/issue-new-token',
@@ -122,8 +122,7 @@ export const SelectSettingsAction = ({
     },
     {
       group: 'Treasury',
-      title:
-        'Mint Tokens to Space Treasury (Under Maintenance until 1st Dec 2025)',
+      title: 'Mint Tokens to Space Treasury',
       description:
         'Mint tokens into your space treasury to fund operations, distribute rewards, or provide liquidity.',
       href: 'create/mint-tokens-to-space-treasury',
