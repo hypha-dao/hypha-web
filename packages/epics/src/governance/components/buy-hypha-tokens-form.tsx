@@ -58,15 +58,8 @@ export const BuyHyphaTokensForm = ({
     address: spaceDetails?.executor as `0x${string}`,
   });
 
-  const {
-    buyHyphaTokens,
-    reset,
-    currentAction,
-    isError,
-    isPending,
-    progress,
-    agreement: { web3ProposalId },
-  } = useBuyHyphaTokensOrchestrator({ authToken: jwt, config });
+  const { buyHyphaTokens, reset, currentAction, isError, isPending, progress } =
+    useBuyHyphaTokensOrchestrator({ authToken: jwt, config });
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
@@ -184,7 +177,6 @@ export const BuyHyphaTokensForm = ({
             backLabel="Back to Settings"
             isLoading={false}
             label="Buy Hypha Tokens (Rewards)"
-            web3ProposalId={web3ProposalId}
           />
           {children}
           <Separator />

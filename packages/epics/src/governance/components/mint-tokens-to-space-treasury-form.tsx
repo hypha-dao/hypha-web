@@ -52,7 +52,6 @@ export const MintTokensToSpaceTreasuryForm = ({
     isError,
     isPending,
     progress,
-    agreement: { web3ProposalId },
   } = useCreateMintTokensToSpaceTreasuryOrchestrator({
     authToken: jwt,
     config,
@@ -127,7 +126,6 @@ export const MintTokensToSpaceTreasuryForm = ({
             backLabel="Back to settings"
             isLoading={false}
             label="Treasury Minting"
-            web3ProposalId={web3ProposalId}
           />
           {plugin}
           <Separator />

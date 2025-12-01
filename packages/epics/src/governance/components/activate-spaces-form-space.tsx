@@ -72,15 +72,8 @@ export const ActivateSpacesFormSpace = ({
     address: spaceDetails?.executor as `0x${string}`,
   });
 
-  const {
-    activateSpaces,
-    reset,
-    currentAction,
-    isError,
-    isPending,
-    progress,
-    agreement: { web3ProposalId },
-  } = useActivateSpacesOrchestrator({ authToken: jwt, config });
+  const { activateSpaces, reset, currentAction, isError, isPending, progress } =
+    useActivateSpacesOrchestrator({ authToken: jwt, config });
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
@@ -218,7 +211,6 @@ export const ActivateSpacesFormSpace = ({
             backLabel="Back to Settings"
             isLoading={false}
             label="Activate Spaces"
-            web3ProposalId={web3ProposalId}
           />
           {children}
           <Separator />

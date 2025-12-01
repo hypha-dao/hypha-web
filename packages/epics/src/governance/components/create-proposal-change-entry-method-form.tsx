@@ -71,7 +71,6 @@ export const CreateProposalChangeEntryMethodForm = ({
     isError,
     isPending,
     progress,
-    changeEntryMethod: { web3ProposalId },
   } = useChangeEntryMethodOrchestrator({ authToken: jwt, config });
 
   const defaultValues = React.useMemo(() => {
@@ -181,7 +180,6 @@ export const CreateProposalChangeEntryMethodForm = ({
             closeUrl={successfulUrl}
             isLoading={false}
             label="Entry Method"
-            web3ProposalId={web3ProposalId}
           />
           {plugin}
           <Separator />

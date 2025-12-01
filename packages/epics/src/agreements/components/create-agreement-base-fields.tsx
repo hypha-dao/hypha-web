@@ -56,7 +56,6 @@ export type CreateAgreementFormProps = {
   backUrl?: string;
   backLabel?: string;
   label?: string;
-  web3ProposalId?: number | null;
 };
 
 export function CreateAgreementBaseFields({
@@ -67,7 +66,6 @@ export function CreateAgreementBaseFields({
   backUrl,
   backLabel = 'Back to Create',
   label = 'Agreement',
-  web3ProposalId,
 }: CreateAgreementFormProps) {
   const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
   const { jwt: authToken } = useJwt();
@@ -111,7 +109,7 @@ export function CreateAgreementBaseFields({
         router.push(successfulUrl);
       }
     },
-    [router, successfulUrl, me, isLoadingMe, space, web3ProposalId],
+    [router, successfulUrl, me, isLoadingMe, space],
   );
 
   useProposalNotifications({ lang, spaceSlug, authToken, postProposalCreated });

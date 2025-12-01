@@ -49,7 +49,6 @@ export const CreatePayForExpensesForm = ({
     isError,
     isPending,
     progress,
-    agreement: { web3ProposalId },
   } = useCreatePayForExpensesOrchestrator({ authToken: jwt, config });
 
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -139,7 +138,6 @@ export const CreatePayForExpensesForm = ({
             backUrl={backUrl}
             isLoading={false}
             label="Expenses"
-            web3ProposalId={web3ProposalId}
           />
           {plugin}
           <Separator />

@@ -49,7 +49,6 @@ export const CreateDeployFundsForm = ({
     isError,
     isPending,
     progress,
-    agreement: { web3ProposalId },
   } = useCreateDeployFundsOrchestrator({ authToken: jwt, config });
 
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -138,7 +137,6 @@ export const CreateDeployFundsForm = ({
             backUrl={backUrl}
             isLoading={false}
             label="Funding"
-            web3ProposalId={web3ProposalId}
           />
           {plugin}
           <Separator />
