@@ -12,7 +12,7 @@ export const useSpaceMember = ({ spaceId }: { spaceId?: number }) => {
 
   const {
     data: isMember,
-    isLoading,
+    isLoading: isMemberLoading,
     error,
     mutate,
   } = useSWR(
@@ -30,7 +30,7 @@ export const useSpaceMember = ({ spaceId }: { spaceId?: number }) => {
 
   return {
     isMember,
-    isLoading,
+    isMemberLoading,
     error,
     revalidateIsMember: mutate,
   };

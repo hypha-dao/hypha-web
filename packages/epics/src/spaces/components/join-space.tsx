@@ -45,7 +45,7 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
   const { joinSpace, isJoiningSpace } = useJoinSpace({
     spaceId: web3SpaceId,
   });
-  const { isMember, isLoading, revalidateIsMember } = useSpaceMember({
+  const { isMember, isMemberLoading, revalidateIsMember } = useSpaceMember({
     spaceId: web3SpaceId,
   });
 
@@ -182,7 +182,7 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
   const isButtonDisabled =
     isMember ||
     justJoined ||
-    isLoading ||
+    isMemberLoading ||
     isInviteLoading ||
     isInvitePending ||
     showLoader;
