@@ -100,12 +100,6 @@ export const IssueNewTokenForm = ({
     refetchDbTokens();
   }, [refetchDbTokens]);
 
-  /*React.useEffect(() => {
-    if (progress === 100 && agreementSlug) {
-      router.push(successfulUrl);
-    }
-  }, [progress, agreementSlug, router, successfulUrl]);*/
-
   console.log(form.formState.errors);
 
   const handleCreate = async (data: FormValues) => {
