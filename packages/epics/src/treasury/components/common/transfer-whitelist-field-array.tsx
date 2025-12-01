@@ -89,7 +89,7 @@ export const TransferWhitelistFieldArray = ({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-4">
         <FormLabel>{label}</FormLabel>
         {description ? (
           <span className="text-2 text-neutral-11">{description}</span>
