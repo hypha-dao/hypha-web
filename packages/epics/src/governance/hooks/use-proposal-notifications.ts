@@ -30,6 +30,22 @@ export const useProposalNotifications = ({
       web3SpaceId: spaceId,
     }: OnProposalCreatedInput) => {
       const url = getDhoUrlAgreements(lang, spaceSlug);
+      try {
+        await notifyProposalCreated({ proposalId, spaceId, creator, url });
+      } catch (error) {
+        console.warn(
+          'Some issues appeared on send notifications on proposal created:',
+          error,
+        );
+      }
+      try {
+        await postProposalCreated?.({ proposalId, spaceId, creator, url });
+      } catch (error) {
+        console.warn(
+          'Some issues appeared on notifications post preocessing after on proposal created:',
+          error,
+        );
+      }
       await notifyProposalCreated({ proposalId, spaceId, creator, url });
       await postProposalCreated?.({ proposalId, spaceId, creator, url });
     },
