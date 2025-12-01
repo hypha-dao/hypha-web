@@ -95,11 +95,61 @@ export const IssueNewTokenForm = ({
 
   const { tokens: dbTokens, refetchDbTokens } = useDbTokens();
 
+  const tokenType = form.watch('type');
+
   React.useEffect(() => {
     refetchDbTokens();
   }, [refetchDbTokens]);
 
-  console.log(form.formState.errors);
+  React.useEffect(() => {
+    if (progress === 100 && agreementSlug) {
+      router.push(successfulUrl);
+    }
+  }, [progress, agreementSlug, router, successfulUrl]);
+
+  const prevTokenTypeRef = React.useRef<string | undefined>(tokenType);
+  React.useEffect(() => {
+    const prevType = prevTokenTypeRef.current;
+    const currentType = tokenType;
+
+    if (prevType !== undefined && prevType !== currentType && currentType !== undefined) {
+      const currentValues = form.getValues();
+
+      const preservedFields = {
+        title: currentValues.title,
+        description: currentValues.description,
+        leadImage: currentValues.leadImage,
+        attachments: currentValues.attachments,
+        spaceId: currentValues.spaceId,
+        creatorId: currentValues.creatorId,
+        label: currentValues.label,
+      };
+
+      form.reset({
+        ...preservedFields,
+        name: '',
+        symbol: '',
+        iconUrl: undefined,
+        type: currentType,
+        maxSupply: 0,
+        decaySettings: {
+          decayInterval: 2592000,
+          decayPercentage: 1,
+        },
+        isVotingToken: currentType === 'voice',
+        transferable: currentType !== 'voice',
+        enableAdvancedTransferControls: false,
+        transferWhitelist: undefined,
+        enableProposalAutoMinting: true,
+        maxSupplyType: undefined,
+        enableTokenPrice: false,
+        referenceCurrency: undefined,
+        tokenPrice: undefined,
+      });
+    }
+
+    prevTokenTypeRef.current = currentType;
+  }, [tokenType, form]);
 
   const handleCreate = async (data: FormValues) => {
     setFormError(null);
