@@ -23,6 +23,9 @@ export const useSpaceMember = ({ spaceId }: { spaceId?: number }) => {
       await publicClient.readContract(
         isMemberConfig({ spaceId: BigInt(spaceId), memberAddress: address }),
       ),
+    {
+      refreshInterval: 30000,
+    },
   );
 
   return {
