@@ -49,7 +49,7 @@ export const CreateProposeAContributionForm = ({
     isError,
     isPending,
     progress,
-    agreement: { slug: agreementSlug },
+    agreement: { web3ProposalId },
   } = useCreateProposeAContributionOrchestrator({ authToken: jwt, config });
 
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -126,6 +126,7 @@ export const CreateProposeAContributionForm = ({
             backUrl={backUrl}
             isLoading={false}
             label="Contribution"
+            web3ProposalId={web3ProposalId}
           />
           {plugin}
           <Separator />

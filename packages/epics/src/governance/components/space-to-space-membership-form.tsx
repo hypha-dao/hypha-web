@@ -71,7 +71,7 @@ export const SpaceToSpaceMembershipForm = ({
     isError,
     isPending,
     progress,
-    agreement: { slug: agreementSlug },
+    agreement: { web3ProposalId },
   } = useSpaceToSpaceMembershipOrchestrator({ authToken: jwt, config, spaces });
 
   const spaceAddress = form.watch('space');
@@ -139,6 +139,7 @@ export const SpaceToSpaceMembershipForm = ({
             backLabel="Back to Settings"
             isLoading={false}
             label="Space To Space"
+            web3ProposalId={web3ProposalId}
           />
           {children}
 

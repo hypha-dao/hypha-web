@@ -54,7 +54,7 @@ export const IssueNewTokenForm = ({
     isError,
     isPending,
     progress,
-    agreement: { slug: agreementSlug },
+    agreement: { slug: agreementSlug, web3ProposalId },
   } = useCreateIssueTokenOrchestrator({ authToken: jwt, config });
 
   const [formError, setFormError] = React.useState<string | null>(null);
@@ -100,11 +100,11 @@ export const IssueNewTokenForm = ({
     refetchDbTokens();
   }, [refetchDbTokens]);
 
-  React.useEffect(() => {
+  /*React.useEffect(() => {
     if (progress === 100 && agreementSlug) {
       router.push(successfulUrl);
     }
-  }, [progress, agreementSlug, router, successfulUrl]);
+  }, [progress, agreementSlug, router, successfulUrl]);*/
 
   console.log(form.formState.errors);
 
@@ -173,6 +173,7 @@ export const IssueNewTokenForm = ({
             backLabel="Back to settings"
             isLoading={false}
             label="Issue New Token"
+            web3ProposalId={web3ProposalId}
           />
           {plugin}
           <Separator />

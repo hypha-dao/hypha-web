@@ -51,7 +51,7 @@ export const CreateAgreementForm = ({
     isError,
     isPending,
     progress,
-    agreement: { slug: agreementSlug },
+    agreement: { web3ProposalId },
   } = useCreateAgreementOrchestrator({ authToken: jwt, config });
 
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -115,6 +115,7 @@ export const CreateAgreementForm = ({
             backUrl={backUrl}
             isLoading={false}
             label={label}
+            web3ProposalId={web3ProposalId}
           />
           <div className="flex justify-end w-full">
             <Button type="submit">Publish</Button>

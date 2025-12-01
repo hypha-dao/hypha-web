@@ -1,4 +1,5 @@
 import {
+  NotifyProposalCreatedInput,
   OnProposalCreatedInput,
   useHookRegistry,
   useProposalEvents,
@@ -11,7 +12,7 @@ export interface UseProposalNotificationsInput {
   lang: Locale;
   spaceSlug: string;
   authToken?: string | null;
-  postProposalCreated?: () => Promise<void>;
+  postProposalCreated?: (arg: NotifyProposalCreatedInput) => Promise<void>;
 }
 
 export const useProposalNotifications = ({
@@ -30,7 +31,7 @@ export const useProposalNotifications = ({
     }: OnProposalCreatedInput) => {
       const url = getDhoUrlAgreements(lang, spaceSlug);
       await notifyProposalCreated({ proposalId, spaceId, creator, url });
-      await postProposalCreated?.();
+      await postProposalCreated?.({ proposalId, spaceId, creator, url });
     },
     [lang, spaceSlug, notifyProposalCreated, postProposalCreated],
   );
