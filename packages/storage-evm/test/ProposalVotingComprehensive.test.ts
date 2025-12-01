@@ -4551,4 +4551,1197 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       });
     });
   });
+
+  describe('Votes Exceeding Snapshot - Auto Resolution Tests', function () {
+    describe('Token Voting Power - Votes Exceed Snapshot', function () {
+      it('Should auto-execute proposal when single vote exceeds snapshot and unity threshold is met', async function () {
+        console.log(
+          '\n--- Testing Auto-Execute: Single Vote Exceeds Snapshot with Unity Met ---',
+        );
+
+        // Create space with token-based voting
+        const spaceParams = {
+          name: 'Votes Exceed Snapshot Test',
+          description: 'Testing auto-resolution when votes exceed snapshot',
+          imageUrl: 'https://test.com/image.png',
+          unity: 60, // 60% unity threshold
+          quorum: 50,
+          votingPowerSource: 2, // Token-based voting
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        };
+
+        await daoSpaceFactory.createSpace(spaceParams);
+        const spaceId = await daoSpaceFactory.spaceCounter();
+
+        // Add members
+        await daoSpaceFactory.connect(members[0]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[1]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[2]).joinSpace(spaceId);
+
+        // Get executor and deploy token
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        const executorAddress = spaceDetails.executor;
+        await ethers.provider.send('hardhat_impersonateAccount', [
+          executorAddress,
+        ]);
+        await ethers.provider.send('hardhat_setBalance', [
+          executorAddress,
+          '0x1000000000000000000',
+        ]);
+        const executorSigner = await ethers.getSigner(executorAddress);
+
+        // Deploy token
+        const tx = await regularTokenFactory
+          .connect(executorSigner)
+          .deployToken(
+            spaceId,
+            'Test Token',
+            'TTT',
+            0,
+            true,
+            false,
+            true,
+            0,
+            false,
+            false,
+            [],
+            [],
+          );
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return regularTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+        const token = await ethers.getContractAt(
+          'RegularSpaceToken',
+          tokenAddress,
+        );
+
+        // Set the token in the voting power contract
+        await tokenVotingPower
+          .connect(executorSigner)
+          .setSpaceToken(spaceId, tokenAddress);
+
+        // Initial mint: members have 100 tokens each (total 400 for 4 members)
+        await token
+          .connect(executorSigner)
+          .mint(owner.address, ethers.parseEther('100'));
+        await token
+          .connect(executorSigner)
+          .mint(members[0].address, ethers.parseEther('100'));
+        await token
+          .connect(executorSigner)
+          .mint(members[1].address, ethers.parseEther('100'));
+        await token
+          .connect(executorSigner)
+          .mint(members[2].address, ethers.parseEther('100'));
+
+        const initialTotalVotingPower =
+          await tokenVotingPower.getTotalVotingPower(spaceId);
+        console.log(
+          `Initial total voting power: ${ethers.formatEther(
+            initialTotalVotingPower,
+          )}`,
+        );
+
+        // Create proposal - snapshot is taken at 400 tokens
+        const proposalCalldata = daoSpaceFactory.interface.encodeFunctionData(
+          'getSpaceDetails',
+          [spaceId],
+        );
+        await daoProposals.createProposal({
+          spaceId,
+          duration: 3600,
+          transactions: [
+            {
+              target: await daoSpaceFactory.getAddress(),
+              value: 0,
+              data: proposalCalldata,
+            },
+          ],
+        });
+        const proposalId = await daoProposals.proposalCounter();
+
+        // Get the snapshot recorded in the proposal
+        let proposalState = await daoProposals.getProposalCore(proposalId);
+        console.log(
+          `Proposal totalVotingPowerAtSnapshot: ${ethers.formatEther(
+            proposalState.totalVotingPowerAtSnapshot,
+          )}`,
+        );
+
+        // AFTER proposal creation, mint MORE tokens to one member
+        // This simulates a member acquiring more tokens after proposal was created
+        await token
+          .connect(executorSigner)
+          .mint(owner.address, ethers.parseEther('500')); // owner now has 600 tokens
+
+        const newTotalVotingPower = await tokenVotingPower.getTotalVotingPower(
+          spaceId,
+        );
+        console.log(
+          `New total voting power (after minting): ${ethers.formatEther(
+            newTotalVotingPower,
+          )}`,
+        );
+        console.log(`Owner now has 600 tokens, snapshot was 400`);
+
+        // Set minimum duration to allow immediate execution after threshold
+        await daoProposals
+          .connect(executorSigner)
+          .setMinimumProposalDuration(spaceId, 1);
+
+        // Single vote with 600 tokens exceeds snapshot of 400
+        // YES votes: 600, Total: 600, Unity: 100% >= 60%
+        await daoProposals.connect(owner).vote(proposalId, true); // 600 tokens
+
+        proposalState = await daoProposals.getProposalCore(proposalId);
+        console.log(
+          `After voting - YES: ${ethers.formatEther(
+            proposalState.yesVotes,
+          )}, NO: ${ethers.formatEther(proposalState.noVotes)}`,
+        );
+        console.log(
+          `Snapshot: ${ethers.formatEther(
+            proposalState.totalVotingPowerAtSnapshot,
+          )}, Executed: ${proposalState.executed}`,
+        );
+
+        // Verify votes exceed snapshot
+        expect(proposalState.yesVotes).to.be.greaterThan(
+          proposalState.totalVotingPowerAtSnapshot,
+        );
+        expect(proposalState.executed).to.equal(true);
+        console.log(
+          '✅ Proposal auto-executed when single vote (600) exceeded snapshot (400) with 100% unity',
+        );
+      });
+
+      it('Should auto-reject proposal when single vote exceeds snapshot and unity threshold is NOT met', async function () {
+        console.log(
+          '\n--- Testing Auto-Reject: Single Vote Exceeds Snapshot with Unity NOT Met ---',
+        );
+
+        const spaceParams = {
+          name: 'Auto-Reject Test',
+          description: 'Testing auto-rejection when votes exceed snapshot',
+          imageUrl: '',
+          unity: 70, // 70% unity threshold
+          quorum: 50,
+          votingPowerSource: 2,
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        };
+
+        await daoSpaceFactory.createSpace(spaceParams);
+        const spaceId = await daoSpaceFactory.spaceCounter();
+
+        await daoSpaceFactory.connect(members[0]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[1]).joinSpace(spaceId);
+
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        const executorAddress = spaceDetails.executor;
+        await ethers.provider.send('hardhat_impersonateAccount', [
+          executorAddress,
+        ]);
+        await ethers.provider.send('hardhat_setBalance', [
+          executorAddress,
+          '0x1000000000000000000',
+        ]);
+        const executorSigner = await ethers.getSigner(executorAddress);
+
+        const tx = await regularTokenFactory
+          .connect(executorSigner)
+          .deployToken(
+            spaceId,
+            'TT',
+            'TT',
+            0,
+            true,
+            false,
+            true,
+            0,
+            false,
+            false,
+            [],
+            [],
+          );
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return regularTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+        const token = await ethers.getContractAt(
+          'RegularSpaceToken',
+          tokenAddress,
+        );
+
+        await tokenVotingPower
+          .connect(executorSigner)
+          .setSpaceToken(spaceId, tokenAddress);
+
+        // Initial: 100 tokens each (300 total)
+        await token
+          .connect(executorSigner)
+          .mint(owner.address, ethers.parseEther('100'));
+        await token
+          .connect(executorSigner)
+          .mint(members[0].address, ethers.parseEther('100'));
+        await token
+          .connect(executorSigner)
+          .mint(members[1].address, ethers.parseEther('100'));
+
+        // Create proposal - snapshot is 300
+        const proposalCalldata = daoSpaceFactory.interface.encodeFunctionData(
+          'getSpaceDetails',
+          [spaceId],
+        );
+        await daoProposals.createProposal({
+          spaceId,
+          duration: 3600,
+          transactions: [
+            {
+              target: await daoSpaceFactory.getAddress(),
+              value: 0,
+              data: proposalCalldata,
+            },
+          ],
+        });
+        const proposalId = await daoProposals.proposalCounter();
+
+        let proposalState = await daoProposals.getProposalCore(proposalId);
+        console.log(
+          `Snapshot: ${ethers.formatEther(
+            proposalState.totalVotingPowerAtSnapshot,
+          )}`,
+        );
+
+        // Mint more tokens AFTER proposal creation - only to owner for NO vote
+        await token
+          .connect(executorSigner)
+          .mint(owner.address, ethers.parseEther('400')); // owner now has 500 tokens
+
+        // Set minimum duration
+        await daoProposals
+          .connect(executorSigner)
+          .setMinimumProposalDuration(spaceId, 1);
+
+        // Single NO vote with 500 tokens exceeds snapshot of 300
+        // NO votes: 500, YES: 0, Total: 500, Unity: 0% < 70% required -> REJECT
+        await daoProposals.connect(owner).vote(proposalId, false); // 500 tokens NO
+
+        proposalState = await daoProposals.getProposalCore(proposalId);
+        console.log(
+          `After voting - YES: ${ethers.formatEther(
+            proposalState.yesVotes,
+          )}, NO: ${ethers.formatEther(proposalState.noVotes)}`,
+        );
+        console.log(
+          `Executed: ${proposalState.executed}, Expired: ${proposalState.expired}`,
+        );
+
+        // Verify votes exceed snapshot
+        expect(proposalState.noVotes).to.be.greaterThan(
+          proposalState.totalVotingPowerAtSnapshot,
+        );
+        expect(proposalState.executed).to.equal(false);
+        expect(proposalState.expired).to.equal(true);
+        console.log(
+          '✅ Proposal auto-rejected when single vote (500) exceeded snapshot (300) with 0% unity < 70%',
+        );
+      });
+
+      it('Should handle exact boundary: votes equal to snapshot', async function () {
+        console.log('\n--- Testing Boundary: Votes Exactly Equal Snapshot ---');
+
+        const spaceParams = {
+          name: 'Exact Boundary Test',
+          description: 'Testing when votes exactly equal snapshot',
+          imageUrl: '',
+          unity: 60,
+          quorum: 100, // 100% quorum to ensure all must vote
+          votingPowerSource: 2,
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        };
+
+        await daoSpaceFactory.createSpace(spaceParams);
+        const spaceId = await daoSpaceFactory.spaceCounter();
+
+        await daoSpaceFactory.connect(members[0]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[1]).joinSpace(spaceId);
+
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        const executorAddress = spaceDetails.executor;
+        await ethers.provider.send('hardhat_impersonateAccount', [
+          executorAddress,
+        ]);
+        await ethers.provider.send('hardhat_setBalance', [
+          executorAddress,
+          '0x1000000000000000000',
+        ]);
+        const executorSigner = await ethers.getSigner(executorAddress);
+
+        const tx = await regularTokenFactory
+          .connect(executorSigner)
+          .deployToken(
+            spaceId,
+            'TT',
+            'TT',
+            0,
+            true,
+            false,
+            true,
+            0,
+            false,
+            false,
+            [],
+            [],
+          );
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return regularTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+        const token = await ethers.getContractAt(
+          'RegularSpaceToken',
+          tokenAddress,
+        );
+
+        await tokenVotingPower
+          .connect(executorSigner)
+          .setSpaceToken(spaceId, tokenAddress);
+
+        // Mint tokens - total 300
+        await token
+          .connect(executorSigner)
+          .mint(owner.address, ethers.parseEther('100'));
+        await token
+          .connect(executorSigner)
+          .mint(members[0].address, ethers.parseEther('100'));
+        await token
+          .connect(executorSigner)
+          .mint(members[1].address, ethers.parseEther('100'));
+
+        const proposalCalldata = daoSpaceFactory.interface.encodeFunctionData(
+          'getSpaceDetails',
+          [spaceId],
+        );
+        await daoProposals.createProposal({
+          spaceId,
+          duration: 3600,
+          transactions: [
+            {
+              target: await daoSpaceFactory.getAddress(),
+              value: 0,
+              data: proposalCalldata,
+            },
+          ],
+        });
+        const proposalId = await daoProposals.proposalCounter();
+
+        let proposalState = await daoProposals.getProposalCore(proposalId);
+        const snapshot = proposalState.totalVotingPowerAtSnapshot;
+        console.log(`Snapshot: ${ethers.formatEther(snapshot)}`);
+
+        // Set minimum duration
+        await daoProposals
+          .connect(executorSigner)
+          .setMinimumProposalDuration(spaceId, 1);
+
+        // All members vote - total votes = exactly snapshot (300)
+        await daoProposals.connect(owner).vote(proposalId, true); // 100
+        await daoProposals.connect(members[0]).vote(proposalId, true); // 100
+        await daoProposals.connect(members[1]).vote(proposalId, true); // 100
+
+        proposalState = await daoProposals.getProposalCore(proposalId);
+        const totalVotes = proposalState.yesVotes + proposalState.noVotes;
+
+        console.log(
+          `Total votes: ${ethers.formatEther(
+            totalVotes,
+          )}, Snapshot: ${ethers.formatEther(snapshot)}`,
+        );
+        console.log(`Executed: ${proposalState.executed}`);
+
+        // Votes exactly equal snapshot, 100% YES votes >= 60% unity
+        expect(totalVotes).to.equal(snapshot);
+        expect(proposalState.executed).to.equal(true);
+        console.log(
+          '✅ Proposal executed when votes exactly equal snapshot with unity met',
+        );
+      });
+
+      it('Should prevent underflow in early rejection check when votes exceed snapshot', async function () {
+        console.log(
+          '\n--- Testing Underflow Prevention in Early Rejection ---',
+        );
+
+        const spaceParams = {
+          name: 'Underflow Prevention Test',
+          description: 'Testing _shouldRejectEarly does not underflow',
+          imageUrl: '',
+          unity: 80, // High unity to test early rejection logic
+          quorum: 30,
+          votingPowerSource: 2,
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        };
+
+        await daoSpaceFactory.createSpace(spaceParams);
+        const spaceId = await daoSpaceFactory.spaceCounter();
+
+        await daoSpaceFactory.connect(members[0]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[1]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[2]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[3]).joinSpace(spaceId);
+
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        const executorAddress = spaceDetails.executor;
+        await ethers.provider.send('hardhat_impersonateAccount', [
+          executorAddress,
+        ]);
+        await ethers.provider.send('hardhat_setBalance', [
+          executorAddress,
+          '0x1000000000000000000',
+        ]);
+        const executorSigner = await ethers.getSigner(executorAddress);
+
+        const tx = await regularTokenFactory
+          .connect(executorSigner)
+          .deployToken(
+            spaceId,
+            'TT',
+            'TT',
+            0,
+            true,
+            false,
+            true,
+            0,
+            false,
+            false,
+            [],
+            [],
+          );
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return regularTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+        const token = await ethers.getContractAt(
+          'RegularSpaceToken',
+          tokenAddress,
+        );
+
+        await tokenVotingPower
+          .connect(executorSigner)
+          .setSpaceToken(spaceId, tokenAddress);
+
+        // Small initial tokens: 50 each (total 250)
+        await token
+          .connect(executorSigner)
+          .mint(owner.address, ethers.parseEther('50'));
+        await token
+          .connect(executorSigner)
+          .mint(members[0].address, ethers.parseEther('50'));
+        await token
+          .connect(executorSigner)
+          .mint(members[1].address, ethers.parseEther('50'));
+        await token
+          .connect(executorSigner)
+          .mint(members[2].address, ethers.parseEther('50'));
+        await token
+          .connect(executorSigner)
+          .mint(members[3].address, ethers.parseEther('50'));
+
+        const proposalCalldata = daoSpaceFactory.interface.encodeFunctionData(
+          'getSpaceDetails',
+          [spaceId],
+        );
+        await daoProposals.createProposal({
+          spaceId,
+          duration: 3600,
+          transactions: [
+            {
+              target: await daoSpaceFactory.getAddress(),
+              value: 0,
+              data: proposalCalldata,
+            },
+          ],
+        });
+        const proposalId = await daoProposals.proposalCounter();
+
+        let proposalState = await daoProposals.getProposalCore(proposalId);
+        console.log(
+          `Snapshot: ${ethers.formatEther(
+            proposalState.totalVotingPowerAtSnapshot,
+          )}`,
+        ); // 250
+
+        // MASSIVE token increase after proposal
+        await token
+          .connect(executorSigner)
+          .mint(owner.address, ethers.parseEther('500'));
+        await token
+          .connect(executorSigner)
+          .mint(members[0].address, ethers.parseEther('500'));
+        await token
+          .connect(executorSigner)
+          .mint(members[1].address, ethers.parseEther('500'));
+
+        // Set minimum duration
+        await daoProposals
+          .connect(executorSigner)
+          .setMinimumProposalDuration(spaceId, 1);
+
+        // Now owner has 550, members[0-1] have 550 each
+        // Vote to exceed snapshot significantly
+        // This would have caused underflow before the fix: totalVotesCast > totalVotingPowerAtSnapshot
+        await daoProposals.connect(owner).vote(proposalId, false); // 550 NO
+
+        proposalState = await daoProposals.getProposalCore(proposalId);
+        console.log(
+          `After first vote - YES: ${ethers.formatEther(
+            proposalState.yesVotes,
+          )}, NO: ${ethers.formatEther(proposalState.noVotes)}`,
+        );
+        console.log(
+          `Votes cast: ${ethers.formatEther(
+            proposalState.yesVotes + proposalState.noVotes,
+          )}, Snapshot: ${ethers.formatEther(
+            proposalState.totalVotingPowerAtSnapshot,
+          )}`,
+        );
+
+        // The vote should succeed without reverting (no underflow)
+        // Since 550 > 250 snapshot, it should auto-resolve
+        // 0 YES, 550 NO = 0% unity < 80% required -> reject
+        expect(proposalState.expired).to.equal(true);
+        expect(proposalState.executed).to.equal(false);
+
+        console.log(
+          '✅ No underflow occurred - proposal correctly auto-rejected when votes exceeded snapshot',
+        );
+      });
+
+      it('Should respect minimum duration even when votes exceed snapshot', async function () {
+        console.log(
+          '\n--- Testing Min Duration Respected with Votes Exceeding Snapshot ---',
+        );
+
+        const spaceParams = {
+          name: 'Min Duration Respect Test',
+          description: 'Testing min duration with exceeded snapshot',
+          imageUrl: '',
+          unity: 60,
+          quorum: 50,
+          votingPowerSource: 2,
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        };
+
+        await daoSpaceFactory.createSpace(spaceParams);
+        const spaceId = await daoSpaceFactory.spaceCounter();
+
+        await daoSpaceFactory.connect(members[0]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[1]).joinSpace(spaceId);
+
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        const executorAddress = spaceDetails.executor;
+        await ethers.provider.send('hardhat_impersonateAccount', [
+          executorAddress,
+        ]);
+        await ethers.provider.send('hardhat_setBalance', [
+          executorAddress,
+          '0x1000000000000000000',
+        ]);
+        const executorSigner = await ethers.getSigner(executorAddress);
+
+        const tx = await regularTokenFactory
+          .connect(executorSigner)
+          .deployToken(
+            spaceId,
+            'TT',
+            'TT',
+            0,
+            true,
+            false,
+            true,
+            0,
+            false,
+            false,
+            [],
+            [],
+          );
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return regularTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+        const token = await ethers.getContractAt(
+          'RegularSpaceToken',
+          tokenAddress,
+        );
+
+        await tokenVotingPower
+          .connect(executorSigner)
+          .setSpaceToken(spaceId, tokenAddress);
+
+        // Initial: 100 each (300 total)
+        await token
+          .connect(executorSigner)
+          .mint(owner.address, ethers.parseEther('100'));
+        await token
+          .connect(executorSigner)
+          .mint(members[0].address, ethers.parseEther('100'));
+        await token
+          .connect(executorSigner)
+          .mint(members[1].address, ethers.parseEther('100'));
+
+        const proposalCalldata = daoSpaceFactory.interface.encodeFunctionData(
+          'getSpaceDetails',
+          [spaceId],
+        );
+        await daoProposals.createProposal({
+          spaceId,
+          duration: 3600,
+          transactions: [
+            {
+              target: await daoSpaceFactory.getAddress(),
+              value: 0,
+              data: proposalCalldata,
+            },
+          ],
+        });
+        const proposalId = await daoProposals.proposalCounter();
+
+        // Set a LONG minimum duration
+        const minDuration = 7200; // 2 hours
+        await daoProposals
+          .connect(executorSigner)
+          .setMinimumProposalDuration(spaceId, minDuration);
+
+        // Mint more tokens
+        await token
+          .connect(executorSigner)
+          .mint(owner.address, ethers.parseEther('200'));
+        await token
+          .connect(executorSigner)
+          .mint(members[0].address, ethers.parseEther('200'));
+
+        // Vote to exceed snapshot
+        await daoProposals.connect(owner).vote(proposalId, true); // 300 YES
+        await daoProposals.connect(members[0]).vote(proposalId, true); // 300 YES
+
+        let proposalState = await daoProposals.getProposalCore(proposalId);
+        console.log(
+          `Votes exceed snapshot - Executed: ${proposalState.executed}, Expired: ${proposalState.expired}`,
+        );
+
+        // Should NOT execute yet due to minimum duration
+        expect(proposalState.executed).to.equal(false);
+        expect(proposalState.expired).to.equal(false);
+        console.log('✅ Min duration prevents immediate execution');
+
+        // Advance time past minimum duration
+        await ethers.provider.send('evm_increaseTime', [minDuration + 1]);
+        await ethers.provider.send('evm_mine');
+
+        // Trigger execution check
+        await daoProposals.triggerExecutionCheck(proposalId);
+
+        proposalState = await daoProposals.getProposalCore(proposalId);
+        expect(proposalState.executed).to.equal(true);
+        console.log('✅ After min duration elapsed, proposal executed');
+      });
+    });
+
+    describe('Space Membership Voting - Votes Exceed Snapshot', function () {
+      it('Should handle delegation giving one voter more power than snapshot allows', async function () {
+        console.log(
+          '\n--- Testing Space Voting: Delegation Exceeds Snapshot ---',
+        );
+
+        // Create space with space membership voting
+        const { spaceId } = await createSpace({
+          unity: 60,
+          quorum: 50,
+          memberCount: 3, // owner + 2 members = 3 total
+          name: 'Delegation Exceeds Snapshot',
+        });
+
+        // Create proposal - snapshot is 3 members
+        const proposalId = await createTestProposal(spaceId, owner);
+
+        let proposalState = await daoProposals.getProposalCore(proposalId);
+        console.log(
+          `Snapshot (members at proposal creation): ${proposalState.totalVotingPowerAtSnapshot}`,
+        );
+        expect(proposalState.totalVotingPowerAtSnapshot).to.equal(3);
+
+        // Set minimum duration
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        await ethers.provider.send('hardhat_impersonateAccount', [
+          spaceDetails.executor,
+        ]);
+        await ethers.provider.send('hardhat_setBalance', [
+          spaceDetails.executor,
+          '0x1000000000000000000',
+        ]);
+        const executorSigner = await ethers.getSigner(spaceDetails.executor);
+        await daoProposals
+          .connect(executorSigner)
+          .setMinimumProposalDuration(spaceId, 1);
+
+        // Add MORE members AFTER proposal creation
+        await daoSpaceFactory.connect(members[2]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[3]).joinSpace(spaceId);
+
+        const newMemberCount = (await daoSpaceFactory.getSpaceMembers(spaceId))
+          .length;
+        console.log(`New member count: ${newMemberCount}`);
+        expect(newMemberCount).to.equal(5); // Now 5 members, but snapshot was 3
+
+        // Set up delegation so one voter has more power than the entire snapshot
+        // owner, members[0], members[1], members[2], members[3] all delegate to members[0]
+        await votingPowerDelegation
+          .connect(owner)
+          .delegate(members[0].address, spaceId);
+        await votingPowerDelegation
+          .connect(members[1])
+          .delegate(members[0].address, spaceId);
+        await votingPowerDelegation
+          .connect(members[2])
+          .delegate(members[0].address, spaceId);
+        await votingPowerDelegation
+          .connect(members[3])
+          .delegate(members[0].address, spaceId);
+
+        // members[0] now has 5 votes (own + 4 delegated) which exceeds snapshot of 3
+        const delegatePower = await spaceVotingPower.getVotingPower(
+          members[0].address,
+          spaceId,
+        );
+        console.log(`Delegate power: ${delegatePower}`);
+        expect(delegatePower).to.equal(5);
+        expect(delegatePower).to.be.greaterThan(
+          proposalState.totalVotingPowerAtSnapshot,
+        );
+
+        // Single vote with 5 power exceeds snapshot of 3
+        await daoProposals.connect(members[0]).vote(proposalId, true);
+
+        proposalState = await daoProposals.getProposalCore(proposalId);
+        console.log(
+          `After single delegate vote: ${proposalState.yesVotes} YES, Executed: ${proposalState.executed}`,
+        );
+
+        // 5 votes > 3 snapshot, 100% YES >= 60% unity -> auto-resolve and execute
+        expect(proposalState.yesVotes).to.be.greaterThan(
+          proposalState.totalVotingPowerAtSnapshot,
+        );
+        expect(proposalState.executed).to.equal(true);
+        console.log(
+          '✅ Proposal executed when delegated voting power (5) exceeded snapshot (3)',
+        );
+      });
+
+      it('Should handle delegation changes that increase voting power after proposal creation', async function () {
+        console.log(
+          '\n--- Testing Delegation: Power Increase After Proposal ---',
+        );
+
+        const { spaceId } = await createSpace({
+          unity: 60,
+          quorum: 50,
+          memberCount: 5,
+          name: 'Delegation Power Change',
+        });
+
+        // Create proposal - snapshot based on current state
+        const proposalId = await createTestProposal(spaceId, owner);
+
+        let proposalState = await daoProposals.getProposalCore(proposalId);
+        console.log(`Snapshot: ${proposalState.totalVotingPowerAtSnapshot}`);
+        expect(proposalState.totalVotingPowerAtSnapshot).to.equal(5);
+
+        // Set minimum duration
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        await ethers.provider.send('hardhat_impersonateAccount', [
+          spaceDetails.executor,
+        ]);
+        await ethers.provider.send('hardhat_setBalance', [
+          spaceDetails.executor,
+          '0x1000000000000000000',
+        ]);
+        const executorSigner = await ethers.getSigner(spaceDetails.executor);
+        await daoProposals
+          .connect(executorSigner)
+          .setMinimumProposalDuration(spaceId, 1);
+
+        // Add more members after proposal
+        await daoSpaceFactory.connect(members[4]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[5]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[6]).joinSpace(spaceId);
+
+        // Now 8 members total, snapshot was 5
+
+        // Set up delegation: multiple members delegate to one person
+        await votingPowerDelegation
+          .connect(members[0])
+          .delegate(members[3].address, spaceId);
+        await votingPowerDelegation
+          .connect(members[1])
+          .delegate(members[3].address, spaceId);
+        await votingPowerDelegation
+          .connect(members[4])
+          .delegate(members[3].address, spaceId);
+        await votingPowerDelegation
+          .connect(members[5])
+          .delegate(members[3].address, spaceId);
+
+        // members[3] now has 5 votes (own + 4 delegated)
+        const delegatePower = await spaceVotingPower.getVotingPower(
+          members[3].address,
+          spaceId,
+        );
+        console.log(`Delegate power: ${delegatePower}`);
+        expect(delegatePower).to.equal(5);
+
+        // Delegate votes YES with 5 voting power
+        await daoProposals.connect(members[3]).vote(proposalId, true);
+
+        proposalState = await daoProposals.getProposalCore(proposalId);
+        console.log(
+          `Votes cast: ${proposalState.yesVotes}, Snapshot: ${proposalState.totalVotingPowerAtSnapshot}`,
+        );
+        console.log(`Executed: ${proposalState.executed}`);
+
+        // 5 votes >= 5 snapshot, 100% YES >= 60% unity
+        expect(proposalState.executed).to.equal(true);
+        console.log(
+          '✅ Proposal executed when delegated voting power met/exceeded snapshot',
+        );
+      });
+    });
+
+    describe('Edge Cases - Votes Exceeding Snapshot', function () {
+      it('Should handle extremely large vote surplus over snapshot (single vote)', async function () {
+        console.log('\n--- Testing Extreme: Single Vote 10x Over Snapshot ---');
+
+        const spaceParams = {
+          name: 'Extreme Surplus Test',
+          description: 'Testing single vote 10x over snapshot',
+          imageUrl: '',
+          unity: 50,
+          quorum: 10,
+          votingPowerSource: 2,
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        };
+
+        await daoSpaceFactory.createSpace(spaceParams);
+        const spaceId = await daoSpaceFactory.spaceCounter();
+
+        await daoSpaceFactory.connect(members[0]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[1]).joinSpace(spaceId);
+
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        const executorAddress = spaceDetails.executor;
+        await ethers.provider.send('hardhat_impersonateAccount', [
+          executorAddress,
+        ]);
+        await ethers.provider.send('hardhat_setBalance', [
+          executorAddress,
+          '0x1000000000000000000',
+        ]);
+        const executorSigner = await ethers.getSigner(executorAddress);
+
+        const tx = await regularTokenFactory
+          .connect(executorSigner)
+          .deployToken(
+            spaceId,
+            'TT',
+            'TT',
+            0,
+            true,
+            false,
+            true,
+            0,
+            false,
+            false,
+            [],
+            [],
+          );
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return regularTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+        const token = await ethers.getContractAt(
+          'RegularSpaceToken',
+          tokenAddress,
+        );
+
+        await tokenVotingPower
+          .connect(executorSigner)
+          .setSpaceToken(spaceId, tokenAddress);
+
+        // Very small initial: 10 each (30 total)
+        await token
+          .connect(executorSigner)
+          .mint(owner.address, ethers.parseEther('10'));
+        await token
+          .connect(executorSigner)
+          .mint(members[0].address, ethers.parseEther('10'));
+        await token
+          .connect(executorSigner)
+          .mint(members[1].address, ethers.parseEther('10'));
+
+        const proposalCalldata = daoSpaceFactory.interface.encodeFunctionData(
+          'getSpaceDetails',
+          [spaceId],
+        );
+        await daoProposals.createProposal({
+          spaceId,
+          duration: 3600,
+          transactions: [
+            {
+              target: await daoSpaceFactory.getAddress(),
+              value: 0,
+              data: proposalCalldata,
+            },
+          ],
+        });
+        const proposalId = await daoProposals.proposalCounter();
+
+        let proposalState = await daoProposals.getProposalCore(proposalId);
+        const snapshot = proposalState.totalVotingPowerAtSnapshot;
+        console.log(`Snapshot: ${ethers.formatEther(snapshot)}`); // 30
+
+        // 10x increase for owner only!
+        await token
+          .connect(executorSigner)
+          .mint(owner.address, ethers.parseEther('290')); // owner now has 300 (10x of snapshot)
+
+        // Set min duration
+        await daoProposals
+          .connect(executorSigner)
+          .setMinimumProposalDuration(spaceId, 1);
+
+        // Single vote with 300 tokens (10x of 30 snapshot)
+        await daoProposals.connect(owner).vote(proposalId, true); // 300 YES
+
+        proposalState = await daoProposals.getProposalCore(proposalId);
+        console.log(`Votes: ${ethers.formatEther(proposalState.yesVotes)} YES`);
+        console.log(
+          `Single vote (${ethers.formatEther(
+            proposalState.yesVotes,
+          )}) vs Snapshot: ${ethers.formatEther(snapshot)}`,
+        );
+
+        // Single vote of 300 >> 30 snapshot, 100% YES >= 50% unity -> execute
+        expect(proposalState.yesVotes).to.be.greaterThan(snapshot);
+        expect(proposalState.executed).to.equal(true);
+        console.log('✅ Handled 10x single vote surplus correctly');
+      });
+
+      it('Should verify auto-resolution triggers correctly when single large vote exceeds snapshot', async function () {
+        console.log(
+          '\n--- Testing Auto-Resolution: Single Large Vote Exceeds Snapshot ---',
+        );
+
+        const spaceParams = {
+          name: 'Auto Resolution Verify',
+          description: 'Verifying auto-resolution behavior',
+          imageUrl: '',
+          unity: 60,
+          quorum: 50,
+          votingPowerSource: 2,
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        };
+
+        await daoSpaceFactory.createSpace(spaceParams);
+        const spaceId = await daoSpaceFactory.spaceCounter();
+
+        await daoSpaceFactory.connect(members[0]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[1]).joinSpace(spaceId);
+        await daoSpaceFactory.connect(members[2]).joinSpace(spaceId);
+
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
+        const executorAddress = spaceDetails.executor;
+        await ethers.provider.send('hardhat_impersonateAccount', [
+          executorAddress,
+        ]);
+        await ethers.provider.send('hardhat_setBalance', [
+          executorAddress,
+          '0x1000000000000000000',
+        ]);
+        const executorSigner = await ethers.getSigner(executorAddress);
+
+        const tx = await regularTokenFactory
+          .connect(executorSigner)
+          .deployToken(
+            spaceId,
+            'TT',
+            'TT',
+            0,
+            true,
+            false,
+            true,
+            0,
+            false,
+            false,
+            [],
+            [],
+          );
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return regularTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+        const token = await ethers.getContractAt(
+          'RegularSpaceToken',
+          tokenAddress,
+        );
+
+        await tokenVotingPower
+          .connect(executorSigner)
+          .setSpaceToken(spaceId, tokenAddress);
+
+        // Initial: 100 each (400 total for 4 members)
+        await token
+          .connect(executorSigner)
+          .mint(owner.address, ethers.parseEther('100'));
+        await token
+          .connect(executorSigner)
+          .mint(members[0].address, ethers.parseEther('100'));
+        await token
+          .connect(executorSigner)
+          .mint(members[1].address, ethers.parseEther('100'));
+        await token
+          .connect(executorSigner)
+          .mint(members[2].address, ethers.parseEther('100'));
+
+        const proposalCalldata = daoSpaceFactory.interface.encodeFunctionData(
+          'getSpaceDetails',
+          [spaceId],
+        );
+        await daoProposals.createProposal({
+          spaceId,
+          duration: 3600,
+          transactions: [
+            {
+              target: await daoSpaceFactory.getAddress(),
+              value: 0,
+              data: proposalCalldata,
+            },
+          ],
+        });
+        const proposalId = await daoProposals.proposalCounter();
+
+        let proposalState = await daoProposals.getProposalCore(proposalId);
+        const snapshot = proposalState.totalVotingPowerAtSnapshot;
+        console.log(`Snapshot: ${ethers.formatEther(snapshot)}`); // 400
+
+        // Mint a LOT more tokens to owner after proposal
+        await token
+          .connect(executorSigner)
+          .mint(owner.address, ethers.parseEther('500')); // owner now has 600
+
+        // Set min duration
+        await daoProposals
+          .connect(executorSigner)
+          .setMinimumProposalDuration(spaceId, 1);
+
+        // Single vote with 600 tokens >> 400 snapshot
+        // 100% YES >= 60% unity -> execute immediately
+        await daoProposals.connect(owner).vote(proposalId, true); // 600 YES
+
+        proposalState = await daoProposals.getProposalCore(proposalId);
+        console.log(
+          `After single vote: YES=${ethers.formatEther(
+            proposalState.yesVotes,
+          )}`,
+        );
+        console.log(
+          `Vote (${ethers.formatEther(
+            proposalState.yesVotes,
+          )}) > Snapshot (${ethers.formatEther(snapshot)})`,
+        );
+
+        // Verify the auto-resolution triggered
+        expect(proposalState.yesVotes).to.be.greaterThan(snapshot);
+        expect(proposalState.executed).to.equal(true);
+        console.log(
+          '✅ Auto-resolution correctly executed when single vote exceeded snapshot with sufficient unity',
+        );
+      });
+    });
+  });
 });

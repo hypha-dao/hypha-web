@@ -311,6 +311,26 @@ contract DAOProposalsImplementation is
     );
 
     uint256 totalVotesCast = proposal.yesVotes + proposal.noVotes;
+
+    // Handle case where votes exceed snapshot (e.g., members acquired tokens after proposal creation)
+    // This prevents underflow errors and treats it as "full participation"
+    if (totalVotesCast >= proposal.totalVotingPowerAtSnapshot) {
+      uint256 minDuration = spaceMinProposalDuration[proposal.spaceId];
+      if (block.timestamp < proposal.startTime + minDuration) {
+        return;
+      }
+
+      // All possible votes have been cast (or exceeded) - resolve based on current votes
+      if (proposal.yesVotes * 100 >= u * totalVotesCast) {
+        _executeProposal(_proposalId, proposal);
+      } else {
+        proposal.expired = true;
+        spaceRejectedProposals[proposal.spaceId].push(_proposalId);
+        emit ProposalRejected(_proposalId, proposal.yesVotes, proposal.noVotes);
+      }
+      return;
+    }
+
     uint256 requiredQuorum = (q * proposal.totalVotingPowerAtSnapshot + 99) /
       100;
     bool quorumReached = totalVotesCast >= requiredQuorum;
@@ -361,6 +381,13 @@ contract DAOProposalsImplementation is
   ) internal view returns (bool) {
     ProposalCore storage proposal = proposalsCoreData[_proposalId];
     uint256 totalVotesCast = proposal.yesVotes + proposal.noVotes;
+
+    // Safety check: if votes exceed or equal snapshot, no remaining voting power
+    // Let normal resolution handle it (prevents underflow)
+    if (totalVotesCast >= proposal.totalVotingPowerAtSnapshot) {
+      return false;
+    }
+
     uint256 remainingVotingPower = proposal.totalVotingPowerAtSnapshot -
       totalVotesCast;
     uint256 maxPossibleYesVotes = proposal.yesVotes + remainingVotingPower;
