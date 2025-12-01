@@ -22,7 +22,7 @@ export function filterSpaces(
   return userSpaces;
 }
 
-export function FilteredSpaces({
+export function MyFilteredSpaces({
   lang,
   spaces,
   showLoadMore = true,

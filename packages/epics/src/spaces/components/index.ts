@@ -6,7 +6,7 @@ export * from './entry-method-field';
 export * from './entry-method-token-field';
 export * from './exit-space';
 export * from './explore-spaces';
-export * from './filtered-spaces';
+export * from './my-filtered-spaces';
 export * from './inner-space-card.wrapper';
 export * from './inner-space-card';
 export * from './inner-space-card-list';
