@@ -54,9 +54,7 @@ export default async function IssueNewTokenPage({
 
   const filteredSpaces = spaces?.filter(
     (space) =>
-      space?.address &&
-      space.address.trim() !== '' &&
-      space.id !== spaceId,
+      space?.address && space.address.trim() !== '' && space.id !== spaceId,
   );
   return (
     <SidePanel>

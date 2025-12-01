@@ -112,7 +112,11 @@ export const IssueNewTokenForm = ({
     const prevType = prevTokenTypeRef.current;
     const currentType = tokenType;
 
-    if (prevType !== undefined && prevType !== currentType && currentType !== undefined) {
+    if (
+      prevType !== undefined &&
+      prevType !== currentType &&
+      currentType !== undefined
+    ) {
       const currentValues = form.getValues();
 
       const preservedFields = {

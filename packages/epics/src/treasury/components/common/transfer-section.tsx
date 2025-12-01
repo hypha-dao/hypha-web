@@ -44,7 +44,10 @@ export const TransferSection = ({
           {enableAdvancedTransferControls && (
             <>
               <span className="text-2 text-neutral-11">
-                {spaceName} and its members are automatically whitelisted. Listing space(s) and/or member(s) below allows them to send ("From" Whitelist) or receive ("To" Whitelist) tokens when whitelisting is enabled.
+                {spaceName} and its members are automatically whitelisted.
+                Listing space(s) and/or member(s) below allows them to send
+                ("From" Whitelist) or receive ("To" Whitelist) tokens when
+                whitelisting is enabled.
               </span>
               <TransferWhitelistFieldArray
                 name="transferWhitelist.to"
