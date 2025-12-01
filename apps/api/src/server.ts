@@ -10,6 +10,7 @@ import { environment, type Environment } from '@schemas/env';
 import alchemyClient from '@plugins/alchemy';
 import dbService from '@plugins/db';
 import { Network } from 'alchemy-sdk';
+import uploadthing from '@plugins/uploadthing';
 
 const app = Fastify();
 app.register(cors);
@@ -47,6 +48,21 @@ const start = async () => {
       apiKey: app.getEnvs<Environment>().ALCHEMY_API_KEY,
       network: Network.BASE_MAINNET,
       batchRequests: true,
+    });
+
+    await app.register(uploadthing, {
+      token: app.getEnvs<Environment>().UPLOADTHING_TOKEN,
+      isAllowed: async (req) => {
+        try {
+          const authToken = req.headers.authorization?.split(' ').at(1);
+          if (authToken == null) return false;
+
+          return app.db.verifyAuth({ authToken });
+        } catch (_) {
+          return false;
+        }
+      },
+      logger: app.log,
     });
 
     // Register v1 API

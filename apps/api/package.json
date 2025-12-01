@@ -24,6 +24,7 @@
     "fastify-plugin": "^5.1.0",
     "server-only": "^0.0.1",
     "typebox": "^1.0.41",
+    "uploadthing": "^7.5.2",
     "viem": "^2.27.2"
   },
   "devDependencies": {
