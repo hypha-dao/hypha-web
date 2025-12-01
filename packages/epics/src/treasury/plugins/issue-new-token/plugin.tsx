@@ -15,11 +15,13 @@ import {
 type IssueNewTokenPluginProps = {
   members?: Person[];
   spaces?: Space[];
+  spaceSlug?: string;
 };
 
 export const IssueNewTokenPlugin = ({
   members = [],
   spaces = [],
+  spaceSlug,
 }: IssueNewTokenPluginProps) => {
   const { getValues, setValue, watch } = useFormContext();
   const values = getValues();
@@ -128,6 +130,7 @@ export const IssueNewTokenPlugin = ({
           members={members}
           spaces={spaces}
           tokenType={currentTokenType}
+          spaceSlug={spaceSlug}
         />
       )}
       {tokenType === 'voice' && (
