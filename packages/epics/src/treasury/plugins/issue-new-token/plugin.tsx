@@ -93,12 +93,12 @@ export const IssueNewTokenPlugin = ({
 
     if (!whitelist?.to?.length) {
       setValue('transferWhitelist.to', [
-        { type: 'member', address: '', includeSpaceMembers: true },
+        { type: 'space', address: '', includeSpaceMembers: true },
       ]);
     }
     if (!isOwnershipToken && !whitelist?.from?.length) {
       setValue('transferWhitelist.from', [
-        { type: 'member', address: '', includeSpaceMembers: true },
+        { type: 'space', address: '', includeSpaceMembers: true },
       ]);
     }
   }, [
