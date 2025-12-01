@@ -32,15 +32,15 @@ export const ReferenceCurrencyField = () => {
                   <SelectValue placeholder="Select currency" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="USD">USD</SelectItem>
-                  <SelectItem value="GBP">GBP</SelectItem>
-                  <SelectItem value="CAD">Canadian Dollar</SelectItem>
-                  <SelectItem value="EUR">Euro</SelectItem>
-                  <SelectItem value="CNY">Chinese Yuan</SelectItem>
-                  <SelectItem value="CHF">CHF</SelectItem>
-                  <SelectItem value="JPY">Japanese Yen</SelectItem>
-                  <SelectItem value="AUD">Australian Dollar</SelectItem>
-                  <SelectItem value="HKD">HKD</SelectItem>
+                  <SelectItem value="USD">USD - United States Dollar</SelectItem>
+                  <SelectItem value="GBP">GBP - British Pound</SelectItem>
+                  <SelectItem value="CAD">CAD - Canadian Dollar</SelectItem>
+                  <SelectItem value="EUR">EUR - Euro</SelectItem>
+                  <SelectItem value="CNY">CNY - Chinese Yuan</SelectItem>
+                  <SelectItem value="CHF">CHF - Swiss Franc</SelectItem>
+                  <SelectItem value="JPY">JPY - Japanese Yen</SelectItem>
+                  <SelectItem value="AUD">AUD - Australian Dollar</SelectItem>
+                  <SelectItem value="HKD">HKD - Hong Kong Dollar</SelectItem>
                 </SelectContent>
               </Select>
             </FormControl>
