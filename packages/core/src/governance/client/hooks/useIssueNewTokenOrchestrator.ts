@@ -17,6 +17,7 @@ import {
 import { useTokenMutationsWeb2Rsc } from './useTokenMutationWeb2.rsc';
 import { Config } from '@wagmi/core';
 import { updateTokenAction } from '../../server/actions';
+import { ReferenceCurrency } from '../../types';
 
 type TaskName =
   | 'CREATE_WEB2_AGREEMENT'
@@ -110,16 +111,7 @@ type CreateIssueTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
   };
   web3SpaceId: number;
   referencePrice?: number;
-  referenceCurrency?:
-    | 'USD'
-    | 'EUR'
-    | 'GBP'
-    | 'JPY'
-    | 'CNY'
-    | 'CAD'
-    | 'CHF'
-    | 'AUD'
-    | 'HKD';
+  referenceCurrency?: ReferenceCurrency;
   maxSupplyType?: { label: string; value: 'immutable' | 'updatable' };
   enableProposalAutoMinting?: boolean;
   enableAdvancedTransferControls?: boolean;

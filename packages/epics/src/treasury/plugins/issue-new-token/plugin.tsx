@@ -56,7 +56,6 @@ export const IssueNewTokenPlugin = ({
     }
   }, [getValues, setValue]);
 
-  // Sync tokenType state with form value
   useEffect(() => {
     if (currentTokenType !== tokenType) {
       setTokenType(currentTokenType || '');
@@ -69,7 +68,6 @@ export const IssueNewTokenPlugin = ({
     }
   }, [tokenType, setValue]);
 
-  // Clear "from" whitelist when switching to ownership token
   useEffect(() => {
     if (currentTokenType === 'ownership') {
       const whitelist = getValues('transferWhitelist');
@@ -98,7 +96,6 @@ export const IssueNewTokenPlugin = ({
         { type: 'member', address: '', includeSpaceMembers: true },
       ]);
     }
-    // Don't initialize "from" whitelist for ownership tokens
     if (!isOwnershipToken && !whitelist?.from?.length) {
       setValue('transferWhitelist.from', [
         { type: 'member', address: '', includeSpaceMembers: true },
