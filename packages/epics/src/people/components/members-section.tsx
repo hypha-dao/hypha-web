@@ -38,7 +38,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
     });
   console.debug('MembersSection', { searchTerm });
   const { space } = useSpaceBySlug(spaceSlug as string);
-  const { isMember, isLoading: useJoinSpaceLoading } = useSpaceMember({
+  const { isMember, isMemberLoading } = useSpaceMember({
     spaceId: space?.web3SpaceId as number,
   });
   const { person } = useMe();
@@ -72,7 +72,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
             href={`${basePath}/${person?.slug}`}
             scroll={false}
           >
-            <Button disabled={isDisabled || useJoinSpaceLoading}>
+            <Button disabled={isDisabled || isMemberLoading}>
               Delegate Voting
             </Button>
           </Link>
