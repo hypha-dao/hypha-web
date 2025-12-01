@@ -25,5 +25,6 @@ export const useExitSpace = ({ spaceId }: { spaceId: number }) => {
   return {
     isExitingSpace,
     exitSpace,
+    isDisabled: Boolean(isLoading || !person?.address),
   };
 };

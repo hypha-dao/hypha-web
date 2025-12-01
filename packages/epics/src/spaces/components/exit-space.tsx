@@ -10,13 +10,19 @@ type ExitSpaceProps = {
 export const ExitSpace = ({ web3SpaceId }: ExitSpaceProps) => {
   const { isAuthenticated } = useAuthentication();
 
-  const { exitSpace, isExitingSpace } = useExitSpace({ spaceId: web3SpaceId });
+  const { exitSpace, isExitingSpace, isDisabled } = useExitSpace({
+    spaceId: web3SpaceId,
+  });
   const { isMember, isMemberLoading, revalidateIsMember } = useSpaceMember({
     spaceId: web3SpaceId,
   });
 
   const disabled =
-    !isAuthenticated || isExitingSpace || isMemberLoading || !isMember;
+    !isAuthenticated ||
+    isExitingSpace ||
+    isMemberLoading ||
+    isDisabled ||
+    !isMember;
 
   const handleExitSpace = React.useCallback(async () => {
     try {
