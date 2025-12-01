@@ -280,12 +280,8 @@ const transferWhitelistEntrySchema = z.object({
 });
 
 const transferWhitelistSchema = z.object({
-  to: z
-    .array(transferWhitelistEntrySchema)
-    .min(1, { message: 'Add at least one entry to the “To” whitelist' }),
-  from: z
-    .array(transferWhitelistEntrySchema)
-    .min(1, { message: 'Add at least one entry to the “From” whitelist' }),
+  to: z.array(transferWhitelistEntrySchema).optional(),
+  from: z.array(transferWhitelistEntrySchema).optional(),
 });
 
 export const schemaMintTokensToSpaceTreasury = z.object({
@@ -408,26 +404,29 @@ export const schemaIssueNewToken = baseSchemaIssueNewToken.superRefine(
 
     if (data.enableAdvancedTransferControls) {
       const isOwnershipToken = data.type === 'ownership';
+      const hasToEntries =
+        data.transferWhitelist?.to && data.transferWhitelist.to.length > 0;
+      const hasFromEntries =
+        data.transferWhitelist?.from && data.transferWhitelist.from.length > 0;
 
-      if (!data.transferWhitelist || !data.transferWhitelist.to?.length) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message:
-            'Transfer whitelist must have at least one entry for "to" whitelist',
-          path: ['transferWhitelist'],
-        });
-      }
-
-      if (
-        !isOwnershipToken &&
-        (!data.transferWhitelist || !data.transferWhitelist.from?.length)
-      ) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message:
-            'Transfer whitelist must have at least one entry for "from" whitelist',
-          path: ['transferWhitelist'],
-        });
+      if (isOwnershipToken) {
+        if (!hasToEntries) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+              'Transfer whitelist must have at least one entry for "to" whitelist',
+            path: ['transferWhitelist', 'to'],
+          });
+        }
+      } else {
+        if (!hasToEntries && !hasFromEntries) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+              'Transfer whitelist must have at least one entry for either "to" or "from" whitelist',
+            path: ['transferWhitelist'],
+          });
+        }
       }
     }
   },
