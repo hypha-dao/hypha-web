@@ -239,7 +239,6 @@ export const daoProposalsImplementationAbi = [
     inputs: [{ name: 'target', internalType: 'address', type: 'address' }],
     name: 'AddressEmptyCode',
   },
-  { type: 'error', inputs: [], name: 'DurationTooLong' },
   {
     type: 'error',
     inputs: [
@@ -248,25 +247,9 @@ export const daoProposalsImplementationAbi = [
     name: 'ERC1967InvalidImplementation',
   },
   { type: 'error', inputs: [], name: 'ERC1967NonPayable' },
-  { type: 'error', inputs: [], name: 'EmptyData' },
-  { type: 'error', inputs: [], name: 'Executed' },
-  { type: 'error', inputs: [], name: 'ExecutionFailed' },
-  { type: 'error', inputs: [], name: 'Expired' },
   { type: 'error', inputs: [], name: 'FailedCall' },
-  { type: 'error', inputs: [], name: 'InvalidDelegation' },
-  { type: 'error', inputs: [], name: 'InvalidDirectory' },
-  { type: 'error', inputs: [], name: 'InvalidFactory' },
   { type: 'error', inputs: [], name: 'InvalidInitialization' },
-  { type: 'error', inputs: [], name: 'InvalidTarget' },
-  { type: 'error', inputs: [], name: 'InvalidTracker' },
-  { type: 'error', inputs: [], name: 'NoExecutor' },
-  { type: 'error', inputs: [], name: 'NoPower' },
-  { type: 'error', inputs: [], name: 'NoTransactions' },
-  { type: 'error', inputs: [], name: 'NotInitialized' },
   { type: 'error', inputs: [], name: 'NotInitializing' },
-  { type: 'error', inputs: [], name: 'NotMember' },
-  { type: 'error', inputs: [], name: 'NotStarted' },
-  { type: 'error', inputs: [], name: 'OnlyExecutor' },
   {
     type: 'error',
     inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
@@ -277,15 +260,12 @@ export const daoProposalsImplementationAbi = [
     inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
     name: 'OwnableUnauthorizedAccount',
   },
-  { type: 'error', inputs: [], name: 'SetMinDuration' },
-  { type: 'error', inputs: [], name: 'SubscriptionInactive' },
   { type: 'error', inputs: [], name: 'UUPSUnauthorizedCallContext' },
   {
     type: 'error',
     inputs: [{ name: 'slot', internalType: 'bytes32', type: 'bytes32' }],
     name: 'UUPSUnsupportedProxiableUUID',
   },
-  { type: 'error', inputs: [], name: 'Voted' },
   {
     type: 'event',
     anonymous: false,
@@ -536,6 +516,31 @@ export const daoProposalsImplementationAbi = [
     anonymous: false,
     inputs: [
       {
+        name: 'proposalId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'withdrawnBy',
+        internalType: 'address',
+        type: 'address',
+        indexed: false,
+      },
+    ],
+    name: 'ProposalWithdrawn',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
         name: 'implementation',
         internalType: 'address',
         type: 'address',
@@ -728,6 +733,13 @@ export const daoProposalsImplementationAbi = [
   },
   {
     type: 'function',
+    inputs: [{ name: '_spaceId', internalType: 'uint256', type: 'uint256' }],
+    name: 'getWithdrawnProposalsBySpace',
+    outputs: [{ name: '', internalType: 'uint256[]', type: 'uint256[]' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     inputs: [
       { name: '_proposalId', internalType: 'uint256', type: 'uint256' },
       { name: '_voter', internalType: 'address', type: 'address' },
@@ -738,12 +750,26 @@ export const daoProposalsImplementationAbi = [
   },
   {
     type: 'function',
+    inputs: [],
+    name: 'hyphaTokenAddress',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     inputs: [
       { name: 'initialOwner', internalType: 'address', type: 'address' },
     ],
     name: 'initialize',
     outputs: [],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_proposalId', internalType: 'uint256', type: 'uint256' }],
+    name: 'isProposalWithdrawn',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -896,6 +922,13 @@ export const daoProposalsImplementationAbi = [
       { name: '_support', internalType: 'bool', type: 'bool' },
     ],
     name: 'vote',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_proposalId', internalType: 'uint256', type: 'uint256' }],
+    name: 'withdrawProposal',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -1635,6 +1668,27 @@ export const decayingSpaceTokenAbi = [
     type: 'event',
     anonymous: false,
     inputs: [
+      { name: 'archived', internalType: 'bool', type: 'bool', indexed: false },
+    ],
+    name: 'ArchivedStatusUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'autoMinting',
+        internalType: 'bool',
+        type: 'bool',
+        indexed: false,
+      },
+    ],
+    name: 'AutoMintingUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
       { name: 'user', internalType: 'address', type: 'address', indexed: true },
       {
         name: 'oldBalance',
@@ -1675,6 +1729,25 @@ export const decayingSpaceTokenAbi = [
     anonymous: false,
     inputs: [
       {
+        name: 'oldMaxSupply',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'newMaxSupply',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'MaxSupplyUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
         name: 'previousOwner',
         internalType: 'address',
         type: 'address',
@@ -1688,6 +1761,64 @@ export const decayingSpaceTokenAbi = [
       },
     ],
     name: 'OwnershipTransferred',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'oldPrice',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'newPrice',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'PriceInUSDUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'account',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'canReceive',
+        internalType: 'bool',
+        type: 'bool',
+        indexed: false,
+      },
+    ],
+    name: 'ReceiveWhitelistUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'burner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      { name: 'from', internalType: 'address', type: 'address', indexed: true },
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'TokensBurned',
   },
   {
     type: 'event',
@@ -1709,6 +1840,38 @@ export const decayingSpaceTokenAbi = [
     anonymous: false,
     inputs: [
       {
+        name: 'account',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'canTransfer',
+        internalType: 'bool',
+        type: 'bool',
+        indexed: false,
+      },
+    ],
+    name: 'TransferWhitelistUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'transferable',
+        internalType: 'bool',
+        type: 'bool',
+        indexed: false,
+      },
+    ],
+    name: 'TransferableUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
         name: 'implementation',
         internalType: 'address',
         type: 'address',
@@ -1716,6 +1879,22 @@ export const decayingSpaceTokenAbi = [
       },
     ],
     name: 'Upgraded',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'enabled', internalType: 'bool', type: 'bool', indexed: false },
+    ],
+    name: 'UseReceiveWhitelistUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'enabled', internalType: 'bool', type: 'bool', indexed: false },
+    ],
+    name: 'UseTransferWhitelistUpdated',
   },
   {
     type: 'function',
@@ -1753,10 +1932,44 @@ export const decayingSpaceTokenAbi = [
   },
   {
     type: 'function',
+    inputs: [],
+    name: 'archived',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'autoMinting',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
     name: 'balanceOf',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'accounts', internalType: 'address[]', type: 'address[]' },
+      { name: 'allowed', internalType: 'bool[]', type: 'bool[]' },
+    ],
+    name: 'batchSetReceiveWhitelist',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'accounts', internalType: 'address[]', type: 'address[]' },
+      { name: 'allowed', internalType: 'bool[]', type: 'bool[]' },
+    ],
+    name: 'batchSetTransferWhitelist',
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -1768,12 +1981,26 @@ export const decayingSpaceTokenAbi = [
   {
     type: 'function',
     inputs: [
-      { name: 'account', internalType: 'address', type: 'address' },
-      { name: 'value', internalType: 'uint256', type: 'uint256' },
+      { name: 'from', internalType: 'address', type: 'address' },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
     ],
     name: 'burnFrom',
     outputs: [],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '', internalType: 'address', type: 'address' }],
+    name: 'canReceive',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '', internalType: 'address', type: 'address' }],
+    name: 'canTransfer',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -1806,6 +2033,13 @@ export const decayingSpaceTokenAbi = [
   {
     type: 'function',
     inputs: [],
+    name: 'fixedMaxSupply',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
     name: 'getDecayedTotalSupply',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
@@ -1819,6 +2053,23 @@ export const decayingSpaceTokenAbi = [
       { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
       { name: '_maxSupply', internalType: 'uint256', type: 'uint256' },
       { name: '_transferable', internalType: 'bool', type: 'bool' },
+      { name: '_fixedMaxSupply', internalType: 'bool', type: 'bool' },
+      { name: '_autoMinting', internalType: 'bool', type: 'bool' },
+      { name: '_priceInUSD', internalType: 'uint256', type: 'uint256' },
+      { name: '_useTransferWhitelist', internalType: 'bool', type: 'bool' },
+      { name: '_useReceiveWhitelist', internalType: 'bool', type: 'bool' },
+      {
+        name: '_initialTransferWhitelist',
+        internalType: 'address[]',
+        type: 'address[]',
+      },
+      {
+        name: '_initialReceiveWhitelist',
+        internalType: 'address[]',
+        type: 'address[]',
+      },
+      { name: '_decayPercentage', internalType: 'uint256', type: 'uint256' },
+      { name: '_decayInterval', internalType: 'uint256', type: 'uint256' },
     ],
     name: 'initialize',
     outputs: [],
@@ -1833,8 +2084,21 @@ export const decayingSpaceTokenAbi = [
       { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
       { name: '_maxSupply', internalType: 'uint256', type: 'uint256' },
       { name: '_transferable', internalType: 'bool', type: 'bool' },
-      { name: '_decayPercentage', internalType: 'uint256', type: 'uint256' },
-      { name: '_decayInterval', internalType: 'uint256', type: 'uint256' },
+      { name: '_fixedMaxSupply', internalType: 'bool', type: 'bool' },
+      { name: '_autoMinting', internalType: 'bool', type: 'bool' },
+      { name: '_priceInUSD', internalType: 'uint256', type: 'uint256' },
+      { name: '_useTransferWhitelist', internalType: 'bool', type: 'bool' },
+      { name: '_useReceiveWhitelist', internalType: 'bool', type: 'bool' },
+      {
+        name: '_initialTransferWhitelist',
+        internalType: 'address[]',
+        type: 'address[]',
+      },
+      {
+        name: '_initialReceiveWhitelist',
+        internalType: 'address[]',
+        type: 'address[]',
+      },
     ],
     name: 'initialize',
     outputs: [],
@@ -1881,6 +2145,13 @@ export const decayingSpaceTokenAbi = [
   {
     type: 'function',
     inputs: [],
+    name: 'priceInUSD',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
     name: 'proxiableUUID',
     outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
     stateMutability: 'view',
@@ -1889,6 +2160,66 @@ export const decayingSpaceTokenAbi = [
     type: 'function',
     inputs: [],
     name: 'renounceOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_archived', internalType: 'bool', type: 'bool' }],
+    name: 'setArchived',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_autoMinting', internalType: 'bool', type: 'bool' }],
+    name: 'setAutoMinting',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'newMaxSupply', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'setMaxSupply',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'newPrice', internalType: 'uint256', type: 'uint256' }],
+    name: 'setPriceInUSD',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_transferHelper', internalType: 'address', type: 'address' },
+    ],
+    name: 'setTransferHelper',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_transferable', internalType: 'bool', type: 'bool' }],
+    name: 'setTransferable',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'enabled', internalType: 'bool', type: 'bool' }],
+    name: 'setUseReceiveWhitelist',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'enabled', internalType: 'bool', type: 'bool' }],
+    name: 'setUseTransferWhitelist',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -1971,6 +2302,20 @@ export const decayingSpaceTokenAbi = [
     name: 'upgradeToAndCall',
     outputs: [],
     stateMutability: 'payable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'useReceiveWhitelist',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'useTransferWhitelist',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
   },
 ] as const;
 
@@ -2223,7 +2568,21 @@ export const decayingTokenFactoryAbi = [
       { name: 'symbol', internalType: 'string', type: 'string' },
       { name: 'maxSupply', internalType: 'uint256', type: 'uint256' },
       { name: 'transferable', internalType: 'bool', type: 'bool' },
-      { name: 'isVotingToken', internalType: 'bool', type: 'bool' },
+      { name: 'fixedMaxSupply', internalType: 'bool', type: 'bool' },
+      { name: 'autoMinting', internalType: 'bool', type: 'bool' },
+      { name: 'priceInUSD', internalType: 'uint256', type: 'uint256' },
+      { name: 'useTransferWhitelist', internalType: 'bool', type: 'bool' },
+      { name: 'useReceiveWhitelist', internalType: 'bool', type: 'bool' },
+      {
+        name: 'initialTransferWhitelist',
+        internalType: 'address[]',
+        type: 'address[]',
+      },
+      {
+        name: 'initialReceiveWhitelist',
+        internalType: 'address[]',
+        type: 'address[]',
+      },
       { name: 'decayPercentage', internalType: 'uint256', type: 'uint256' },
       { name: 'decayInterval', internalType: 'uint256', type: 'uint256' },
     ],
@@ -4152,7 +4511,21 @@ export const ownershipTokenFactoryAbi = [
       { name: 'name', internalType: 'string', type: 'string' },
       { name: 'symbol', internalType: 'string', type: 'string' },
       { name: 'maxSupply', internalType: 'uint256', type: 'uint256' },
-      { name: 'isVotingToken', internalType: 'bool', type: 'bool' },
+      { name: 'fixedMaxSupply', internalType: 'bool', type: 'bool' },
+      { name: 'autoMinting', internalType: 'bool', type: 'bool' },
+      { name: 'priceInUSD', internalType: 'uint256', type: 'uint256' },
+      { name: 'useTransferWhitelist', internalType: 'bool', type: 'bool' },
+      { name: 'useReceiveWhitelist', internalType: 'bool', type: 'bool' },
+      {
+        name: 'initialTransferWhitelist',
+        internalType: 'address[]',
+        type: 'address[]',
+      },
+      {
+        name: 'initialReceiveWhitelist',
+        internalType: 'address[]',
+        type: 'address[]',
+      },
     ],
     name: 'deployOwnershipToken',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
@@ -4760,7 +5133,21 @@ export const regularTokenFactoryAbi = [
       { name: 'symbol', internalType: 'string', type: 'string' },
       { name: 'maxSupply', internalType: 'uint256', type: 'uint256' },
       { name: 'transferable', internalType: 'bool', type: 'bool' },
-      { name: 'isVotingToken', internalType: 'bool', type: 'bool' },
+      { name: 'fixedMaxSupply', internalType: 'bool', type: 'bool' },
+      { name: 'autoMinting', internalType: 'bool', type: 'bool' },
+      { name: 'priceInUSD', internalType: 'uint256', type: 'uint256' },
+      { name: 'useTransferWhitelist', internalType: 'bool', type: 'bool' },
+      { name: 'useReceiveWhitelist', internalType: 'bool', type: 'bool' },
+      {
+        name: 'initialTransferWhitelist',
+        internalType: 'address[]',
+        type: 'address[]',
+      },
+      {
+        name: 'initialReceiveWhitelist',
+        internalType: 'address[]',
+        type: 'address[]',
+      },
     ],
     name: 'deployToken',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],

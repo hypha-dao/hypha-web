@@ -281,6 +281,13 @@
       "when": 1763357543183,
       "tag": "0039_sudden_talos",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1764157589485,
+      "tag": "0040_empty_spot",
+      "breakpoints": true
     }
   ]
 }

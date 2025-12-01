@@ -99,6 +99,20 @@ export type TokenBase = {
   token: Address;
 };
 
+export const REFERENCE_CURRENCIES = [
+  'USD',
+  'EUR',
+  'GBP',
+  'JPY',
+  'CNY',
+  'CAD',
+  'CHF',
+  'AUD',
+  'HKD',
+] as const;
+
+export type ReferenceCurrency = (typeof REFERENCE_CURRENCIES)[number];
+
 export type CreateTokenInput = {
   agreementId?: number;
   spaceId: number;
@@ -115,6 +129,8 @@ export type CreateTokenInput = {
   };
   web3SpaceId: number;
   agreementWeb3Id?: number;
+  referencePrice?: number;
+  referenceCurrency?: ReferenceCurrency;
 };
 
 export type UpdateTokenInput = {

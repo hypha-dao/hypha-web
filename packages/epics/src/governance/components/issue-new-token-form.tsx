@@ -3,6 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
+  baseSchemaIssueNewToken,
   schemaIssueNewToken,
   createAgreementFiles,
   useMe,
@@ -21,7 +22,7 @@ import { CreateAgreementBaseFields } from '../../agreements';
 
 type FormValues = z.infer<typeof schemaIssueNewToken>;
 
-const fullSchemaIssueNewToken = schemaIssueNewToken
+export const fullSchemaIssueNewToken = baseSchemaIssueNewToken
   .extend({ label: z.string().optional() })
   .extend(createAgreementFiles);
 
@@ -79,6 +80,14 @@ export const IssueNewTokenForm = ({
       },
       label: 'Issue New Token',
       isVotingToken: false,
+      transferable: true,
+      enableAdvancedTransferControls: false,
+      transferWhitelist: undefined,
+      enableProposalAutoMinting: true,
+      maxSupplyType: undefined,
+      enableTokenPrice: false,
+      referenceCurrency: undefined,
+      tokenPrice: undefined,
     },
     mode: 'onChange',
   });
@@ -90,6 +99,14 @@ export const IssueNewTokenForm = ({
   React.useEffect(() => {
     refetchDbTokens();
   }, [refetchDbTokens]);
+
+  React.useEffect(() => {
+    if (progress === 100 && agreementSlug) {
+      router.push(successfulUrl);
+    }
+  }, [progress, agreementSlug, router, successfulUrl]);
+
+  console.log(form.formState.errors);
 
   const handleCreate = async (data: FormValues) => {
     setFormError(null);
@@ -109,14 +126,17 @@ export const IssueNewTokenForm = ({
       );
       return;
     }
-
     await createIssueToken({
       ...data,
       iconUrl: data.iconUrl || undefined,
       spaceId: spaceId as number,
       web3SpaceId: web3SpaceId as number,
       transferable: data.type !== 'voice',
-      isVotingToken: false,
+      isVotingToken: data.type === 'voice',
+      referencePrice: data.enableTokenPrice ? data.tokenPrice : undefined,
+      referenceCurrency: data.enableTokenPrice
+        ? data.referenceCurrency
+        : undefined,
     });
   };
 

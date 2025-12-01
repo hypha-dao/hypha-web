@@ -17,6 +17,7 @@ import {
 import { useTokenMutationsWeb2Rsc } from './useTokenMutationWeb2.rsc';
 import { Config } from '@wagmi/core';
 import { updateTokenAction } from '../../server/actions';
+import { ReferenceCurrency } from '../../types';
 
 type TaskName =
   | 'CREATE_WEB2_AGREEMENT'
@@ -109,6 +110,23 @@ type CreateIssueTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
     decayPercentage: number;
   };
   web3SpaceId: number;
+  referencePrice?: number;
+  referenceCurrency?: ReferenceCurrency;
+  maxSupplyType?: { label: string; value: 'immutable' | 'updatable' };
+  enableProposalAutoMinting?: boolean;
+  enableAdvancedTransferControls?: boolean;
+  transferWhitelist?: {
+    to?: Array<{
+      type: 'member' | 'space';
+      address: string;
+      includeSpaceMembers?: boolean;
+    }>;
+    from?: Array<{
+      type: 'member' | 'space';
+      address: string;
+      includeSpaceMembers?: boolean;
+    }>;
+  };
 };
 
 export const useCreateIssueTokenOrchestrator = ({
@@ -199,12 +217,48 @@ export const useCreateIssueTokenOrchestrator = ({
         ...arg,
         agreementId: createdAgreement.id,
         iconUrl,
+        referencePrice: arg.referencePrice,
+        referenceCurrency: arg.referenceCurrency,
       });
       completeTask('CREATE_TOKEN');
 
       try {
         if (config) {
           startTask('CREATE_WEB3_AGREEMENT');
+
+          const fixedMaxSupply =
+            arg.maxSupplyType?.value === 'immutable' ? true : false;
+          const autoMinting = arg.enableProposalAutoMinting ?? true;
+          const priceInUSD = arg.referencePrice
+            ? Math.round(arg.referencePrice * 100)
+            : 0;
+          const useTransferWhitelist =
+            arg.enableAdvancedTransferControls &&
+            arg.transferWhitelist?.from &&
+            arg.transferWhitelist.from.length > 0
+              ? true
+              : false;
+          const useReceiveWhitelist =
+            arg.enableAdvancedTransferControls &&
+            arg.transferWhitelist?.to &&
+            arg.transferWhitelist.to.length > 0
+              ? true
+              : false;
+
+          const initialTransferWhitelist: `0x${string}`[] =
+            useTransferWhitelist && arg.transferWhitelist?.from
+              ? arg.transferWhitelist.from
+                  .map((entry) => entry.address as `0x${string}`)
+                  .filter((addr) => addr && addr.startsWith('0x'))
+              : [];
+
+          const initialReceiveWhitelist: `0x${string}`[] =
+            useReceiveWhitelist && arg.transferWhitelist?.to
+              ? arg.transferWhitelist.to
+                  .map((entry) => entry.address as `0x${string}`)
+                  .filter((addr) => addr && addr.startsWith('0x'))
+              : [];
+
           const web3Result = await web3.createIssueToken({
             spaceId: arg.web3SpaceId,
             name: arg.name,
@@ -221,6 +275,13 @@ export const useCreateIssueTokenOrchestrator = ({
               arg.type === 'voice'
                 ? arg.decaySettings.decayInterval
                 : undefined,
+            fixedMaxSupply,
+            autoMinting,
+            priceInUSD,
+            useTransferWhitelist,
+            useReceiveWhitelist,
+            initialTransferWhitelist,
+            initialReceiveWhitelist,
           });
           completeTask('CREATE_WEB3_AGREEMENT');
         }
