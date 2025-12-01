@@ -376,11 +376,7 @@ export const baseSchemaIssueNewToken = z.object({
   enableProposalAutoMinting: z.boolean(),
   enableTokenPrice: z.boolean(),
   referenceCurrency: z.enum(REFERENCE_CURRENCIES).optional(),
-  tokenPrice: z.preprocess((val) => {
-    if (val === '' || val === undefined || val === null) return undefined;
-    const n = Number(val);
-    return isNaN(n) ? undefined : n;
-  }, z.number().positive().optional()),
+  tokenPrice: z.coerce.number().positive().optional(),
 });
 
 export const schemaIssueNewToken = baseSchemaIssueNewToken.superRefine(
