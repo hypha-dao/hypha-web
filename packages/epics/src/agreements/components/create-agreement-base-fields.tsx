@@ -102,7 +102,10 @@ export function CreateAgreementBaseFields({
       if (isLoadingMe || !me?.address || !space?.web3SpaceId) {
         return;
       }
-      if (creator !== me.address || spaceId !== BigInt(space.web3SpaceId)) {
+      if (
+        creator !== (me.address as `0x${string}`) ||
+        spaceId !== BigInt(space.web3SpaceId)
+      ) {
         return;
       }
       if (successfulUrl) {
