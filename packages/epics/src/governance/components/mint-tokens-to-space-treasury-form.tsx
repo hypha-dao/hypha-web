@@ -52,7 +52,6 @@ export const MintTokensToSpaceTreasuryForm = ({
     isError,
     isPending,
     progress,
-    agreement: { slug: agreementSlug },
   } = useCreateMintTokensToSpaceTreasuryOrchestrator({
     authToken: jwt,
     config,

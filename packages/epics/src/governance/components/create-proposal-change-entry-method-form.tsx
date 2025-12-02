@@ -71,7 +71,6 @@ export const CreateProposalChangeEntryMethodForm = ({
     isError,
     isPending,
     progress,
-    changeEntryMethod: { slug: agreementSlug },
   } = useChangeEntryMethodOrchestrator({ authToken: jwt, config });
 
   const defaultValues = React.useMemo(() => {

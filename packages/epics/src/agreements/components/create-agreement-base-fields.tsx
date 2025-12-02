@@ -29,6 +29,8 @@ import {
   useSpaceDetailsWeb3Rpc,
   useIsDelegate,
   useJwt,
+  NotifyProposalCreatedInput,
+  useMe,
 } from '@hypha-platform/core/client';
 import { useParams, useRouter } from 'next/navigation';
 import { formatDuration } from '@hypha-platform/ui-utils';
@@ -93,11 +95,25 @@ export function CreateAgreementBaseFields({
     spaceId: space?.web3SpaceId as number,
   });
 
-  const postProposalCreated = React.useCallback(async () => {
-    if (successfulUrl) {
-      router.push(successfulUrl);
-    }
-  }, [router, successfulUrl]);
+  const { person: me, isLoading: isLoadingMe } = useMe();
+
+  const postProposalCreated = React.useCallback(
+    async ({ spaceId, creator }: NotifyProposalCreatedInput) => {
+      if (isLoadingMe || !me?.address || !space?.web3SpaceId) {
+        return;
+      }
+      if (
+        creator !== (me.address as `0x${string}`) ||
+        spaceId !== BigInt(space.web3SpaceId)
+      ) {
+        return;
+      }
+      if (successfulUrl) {
+        router.push(successfulUrl);
+      }
+    },
+    [router, successfulUrl, me, isLoadingMe, space],
+  );
 
   useProposalNotifications({ lang, spaceSlug, authToken, postProposalCreated });
 

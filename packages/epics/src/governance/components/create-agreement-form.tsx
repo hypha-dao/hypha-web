@@ -51,7 +51,6 @@ export const CreateAgreementForm = ({
     isError,
     isPending,
     progress,
-    agreement: { slug: agreementSlug },
   } = useCreateAgreementOrchestrator({ authToken: jwt, config });
 
   const formRef = React.useRef<HTMLFormElement>(null);

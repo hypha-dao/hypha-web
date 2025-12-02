@@ -52,7 +52,6 @@ export const CreateProposalChangeVotingMethodForm = ({
     isError,
     isPending,
     progress,
-    agreement: { slug: agreementSlug },
   } = useCreateChangeVotingMethodOrchestrator({ authToken: jwt, config });
   const { votingPowerToken, voicePowerToken } = useTokensVotingPower({
     spaceId: BigInt(web3SpaceId as number),

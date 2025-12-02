@@ -54,7 +54,6 @@ export const IssueNewTokenForm = ({
     isError,
     isPending,
     progress,
-    agreement: { slug: agreementSlug },
   } = useCreateIssueTokenOrchestrator({ authToken: jwt, config });
 
   const [formError, setFormError] = React.useState<string | null>(null);
@@ -99,12 +98,6 @@ export const IssueNewTokenForm = ({
   React.useEffect(() => {
     refetchDbTokens();
   }, [refetchDbTokens]);
-
-  React.useEffect(() => {
-    if (progress === 100 && agreementSlug) {
-      router.push(successfulUrl);
-    }
-  }, [progress, agreementSlug, router, successfulUrl]);
 
   console.log(form.formState.errors);
 

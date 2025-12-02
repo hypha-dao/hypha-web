@@ -49,7 +49,6 @@ export const CreatePayForExpensesForm = ({
     isError,
     isPending,
     progress,
-    agreement: { slug: agreementSlug },
   } = useCreatePayForExpensesOrchestrator({ authToken: jwt, config });
 
   const formRef = React.useRef<HTMLFormElement>(null);

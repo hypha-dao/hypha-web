@@ -49,7 +49,6 @@ export const CreateProposeAContributionForm = ({
     isError,
     isPending,
     progress,
-    agreement: { slug: agreementSlug },
   } = useCreateProposeAContributionOrchestrator({ authToken: jwt, config });
 
   const formRef = React.useRef<HTMLFormElement>(null);

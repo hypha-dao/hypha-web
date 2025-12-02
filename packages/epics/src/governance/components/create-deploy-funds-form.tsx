@@ -49,7 +49,6 @@ export const CreateDeployFundsForm = ({
     isError,
     isPending,
     progress,
-    agreement: { slug: agreementSlug },
   } = useCreateDeployFundsOrchestrator({ authToken: jwt, config });
 
   const formRef = React.useRef<HTMLFormElement>(null);

@@ -71,7 +71,6 @@ export const SpaceToSpaceMembershipForm = ({
     isError,
     isPending,
     progress,
-    agreement: { slug: agreementSlug },
   } = useSpaceToSpaceMembershipOrchestrator({ authToken: jwt, config, spaces });
 
   const spaceAddress = form.watch('space');
