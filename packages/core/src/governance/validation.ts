@@ -372,7 +372,16 @@ export const baseSchemaIssueNewToken = z.object({
   enableProposalAutoMinting: z.boolean(),
   enableTokenPrice: z.boolean(),
   referenceCurrency: z.enum(REFERENCE_CURRENCIES).optional(),
-  tokenPrice: z.coerce.number().positive().optional(),
+  tokenPrice: z.preprocess(
+    (val) => {
+      if (val === '' || val === null || val === undefined) {
+        return undefined;
+      }
+      const num = Number(val);
+      return isNaN(num) ? undefined : num;
+    },
+    z.number().positive().optional(),
+  ),
 });
 
 export const schemaIssueNewToken = baseSchemaIssueNewToken.superRefine(
@@ -393,7 +402,12 @@ export const schemaIssueNewToken = baseSchemaIssueNewToken.superRefine(
           path: ['referenceCurrency'],
         });
       }
-      if (!data.tokenPrice || data.tokenPrice <= 0) {
+      if (
+        data.tokenPrice === undefined ||
+        data.tokenPrice === null ||
+        isNaN(data.tokenPrice) ||
+        data.tokenPrice <= 0
+      ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: 'Please enter a token price greater than 0',

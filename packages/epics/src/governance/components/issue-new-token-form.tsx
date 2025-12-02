@@ -20,11 +20,47 @@ import { useRouter } from 'next/navigation';
 import { useDbTokens, useScrollToErrors } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 
-type FormValues = z.infer<typeof schemaIssueNewToken>;
+const extendedBaseSchema = baseSchemaIssueNewToken.merge(
+  z.object({
+    label: z.string().optional(),
+  }),
+);
 
-export const fullSchemaIssueNewToken = baseSchemaIssueNewToken
-  .extend({ label: z.string().optional() })
-  .extend(createAgreementFiles);
+export const fullSchemaIssueNewToken = extendedBaseSchema.superRefine(
+  (data, ctx) => {
+    if (data.maxSupply > 0 && !data.maxSupplyType) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Please select a max supply type',
+        path: ['maxSupplyType'],
+      });
+    }
+
+    if (data.enableTokenPrice) {
+      if (!data.referenceCurrency) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Please select a reference currency',
+          path: ['referenceCurrency'],
+        });
+      }
+      if (
+        data.tokenPrice === undefined ||
+        data.tokenPrice === null ||
+        isNaN(data.tokenPrice) ||
+        data.tokenPrice <= 0
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Please enter a token price greater than 0',
+          path: ['tokenPrice'],
+        });
+      }
+    }
+  },
+);
+
+type FormValues = z.infer<typeof fullSchemaIssueNewToken>;
 
 interface IssueNewTokenFormProps {
   spaceId: number | undefined | null;

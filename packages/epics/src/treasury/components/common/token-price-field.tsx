@@ -32,7 +32,16 @@ export const TokenPriceField = () => {
               {enableTokenPrice && <RequirementMark className="text-2" />}
             </div>
             <FormControl>
-              <Input type="number" placeholder="Enter token price" {...field} />
+              <Input
+                type="number"
+                placeholder="Enter token price"
+                {...field}
+                value={field.value ?? ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  field.onChange(value === '' ? undefined : value);
+                }}
+              />
             </FormControl>
           </div>
           <FormMessage />
