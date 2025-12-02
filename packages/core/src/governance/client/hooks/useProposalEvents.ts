@@ -149,7 +149,6 @@ export const useProposalEvents = ({
       return;
     }
 
-
     const unwatchExecuted = publicClient.watchContractEvent({
       address: daoProposalsImplementationConfig.address[8453],
       abi: daoProposalsImplementationConfig.abi,
@@ -283,12 +282,7 @@ export const useProposalEvents = ({
       unwatchMemberJoined();
       unwatchProposalCreated();
     };
-  }, [
-    documentId,
-    proposalId,
-    tokenSymbol,
-    authToken,
-  ]);
+  }, [documentId, proposalId, tokenSymbol, authToken]);
 
   useEffect(() => {
     if (
