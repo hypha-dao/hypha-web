@@ -106,11 +106,14 @@ export function CreateAgreementBaseFields({
     if (progress < 100) {
       return;
     }
-    while (delayed.length > 0) {
-      const callback = delayed.shift();
+    if (delayed.length === 0) {
+      return;
+    }
+    for (const callback of delayed) {
       callback?.();
     }
-  }, [progress]);
+    setDelayed([]);
+  }, [progress, delayed, setDelayed]);
 
   const postProposalCreated = React.useCallback(
     async ({ spaceId, creator }: NotifyProposalCreatedInput) => {
@@ -125,15 +128,27 @@ export function CreateAgreementBaseFields({
       }
       if (successfulUrl) {
         if (progress < 100) {
-          delayed.push(() => {
-            router.push(successfulUrl);
-          });
+          setDelayed([
+            ...delayed,
+            () => {
+              router.push(successfulUrl);
+            },
+          ]);
         } else {
           router.push(successfulUrl);
         }
       }
     },
-    [router, successfulUrl, me, isLoadingMe, space, progress, delayed],
+    [
+      router,
+      successfulUrl,
+      me,
+      isLoadingMe,
+      space,
+      progress,
+      delayed,
+      setDelayed,
+    ],
   );
 
   useProposalNotifications({ lang, spaceSlug, authToken, postProposalCreated });
