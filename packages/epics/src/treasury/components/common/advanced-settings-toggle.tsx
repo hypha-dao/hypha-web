@@ -11,13 +11,14 @@ export const AdvancedSettingsToggle = ({
 }) => {
   return (
     <div className="flex flex-col gap-4">
-      <FormLabel>Advanced Token Settings</FormLabel>
+      <FormLabel>Advanced Token Settings (Optional)</FormLabel>
       <span className="text-2 text-neutral-11">
-        Activate advanced settings to access detailed controls for token supply,
-        minting automation, transfer policies, and token value.
+        Defaults are pre-configured for standard use. Only enable advanced
+        settings if you'd like to configure supply caps, manual minting,
+        transfer policies and whitelists, or set a token value.
       </span>
       <div className="flex w-full justify-between items-center text-2 text-neutral-11">
-        <span>Enable Token Advanced Settings</span>
+        <span>Enable Advanced Settings</span>
         <Switch
           checked={showAdvancedSettings}
           onCheckedChange={setShowAdvancedSettings}
