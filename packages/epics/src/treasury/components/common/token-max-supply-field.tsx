@@ -8,6 +8,7 @@ import {
   FormLabel,
   FormMessage,
   Input,
+  RequirementMark,
 } from '@hypha-platform/ui';
 import { handleNumberChange } from '@hypha-platform/ui-utils';
 
@@ -29,9 +30,12 @@ export function TokenMaxSupplyField() {
       render={({ field }) => (
         <FormItem>
           <div className="flex justify-between items-center">
-            <FormLabel className="text-2 text-neutral-11 w-full">
-              Max Supply
-            </FormLabel>
+            <div className="flex gap-1 w-full">
+              <FormLabel className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
+                Max Supply
+              </FormLabel>
+              <RequirementMark className="text-2" />
+            </div>
             <FormControl>
               <Input
                 type="number"

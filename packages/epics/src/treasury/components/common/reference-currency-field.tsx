@@ -1,6 +1,6 @@
 'use client';
 
-import { useFormContext } from 'react-hook-form';
+import { useFormContext, useWatch } from 'react-hook-form';
 import {
   FormField,
   FormItem,
@@ -11,10 +11,16 @@ import {
   SelectValue,
   SelectContent,
   SelectItem,
+  RequirementMark,
 } from '@hypha-platform/ui';
 
 export const ReferenceCurrencyField = () => {
   const { control } = useFormContext();
+  const enableTokenPrice = useWatch({
+    control,
+    name: 'enableTokenPrice',
+    defaultValue: false,
+  });
 
   return (
     <FormField
@@ -23,9 +29,12 @@ export const ReferenceCurrencyField = () => {
       render={({ field }) => (
         <FormItem>
           <div className="flex w-full justify-between">
-            <span className="text-2 text-neutral-11 w-full">
-              Reference Currency
-            </span>
+            <div className="flex gap-1 w-full">
+              <span className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
+                Reference Currency
+              </span>
+              {enableTokenPrice && <RequirementMark className="text-2" />}
+            </div>
             <FormControl>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <SelectTrigger>

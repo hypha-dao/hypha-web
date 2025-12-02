@@ -380,7 +380,7 @@ export const schemaIssueNewToken = baseSchemaIssueNewToken.superRefine(
     if (data.maxSupply > 0 && !data.maxSupplyType) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Max supply type is required when max supply is set',
+        message: 'Please select a max supply type',
         path: ['maxSupplyType'],
       });
     }
@@ -389,14 +389,14 @@ export const schemaIssueNewToken = baseSchemaIssueNewToken.superRefine(
       if (!data.referenceCurrency) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Reference currency is required',
+          message: 'Please select a reference currency',
           path: ['referenceCurrency'],
         });
       }
       if (!data.tokenPrice || data.tokenPrice <= 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Token price is required and must be positive',
+          message: 'Please enter a token price greater than 0',
           path: ['tokenPrice'],
         });
       }
