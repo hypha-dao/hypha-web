@@ -54,7 +54,10 @@ export const IssueNewTokenForm = ({
     isError,
     isPending,
     progress,
+    agreement,
   } = useCreateIssueTokenOrchestrator({ authToken: jwt, config });
+
+  const agreementSlug = agreement?.slug;
 
   const [formError, setFormError] = React.useState<string | null>(null);
 
