@@ -39,6 +39,16 @@ export const IssueNewTokenPlugin = ({
   );
   const enableTokenPrice = watch('enableTokenPrice');
   const currentTokenType = watch('type');
+  const tokenName = watch('name');
+  const tokenSymbol = watch('symbol');
+  const tokenIconUrl = watch('iconUrl');
+
+  const areGeneralFieldsFilled =
+    currentTokenType &&
+    tokenName?.trim()?.length >= 2 &&
+    tokenSymbol?.trim()?.length >= 2 &&
+    (tokenIconUrl instanceof File ||
+      (typeof tokenIconUrl === 'string' && tokenIconUrl.trim().length > 0));
 
   useEffect(() => {
     if (getValues('enableProposalAutoMinting') === undefined) {
@@ -69,6 +79,18 @@ export const IssueNewTokenPlugin = ({
       setValue('isVotingToken', true);
     }
   }, [tokenType, setValue]);
+
+  useEffect(() => {
+    if (!areGeneralFieldsFilled && showAdvancedSettings) {
+      setShowAdvancedSettings(false);
+    }
+  }, [areGeneralFieldsFilled, showAdvancedSettings]);
+
+  useEffect(() => {
+    if (!areGeneralFieldsFilled && showDecaySettings) {
+      setShowDecaySettings(false);
+    }
+  }, [areGeneralFieldsFilled, showDecaySettings]);
 
   useEffect(() => {
     if (currentTokenType === 'ownership') {
@@ -114,12 +136,16 @@ export const IssueNewTokenPlugin = ({
   return (
     <div className="flex flex-col gap-4">
       <GeneralTokenSettings tokenType={tokenType} setTokenType={setTokenType} />
-      <Separator />
-      <AdvancedSettingsToggle
-        showAdvancedSettings={showAdvancedSettings}
-        setShowAdvancedSettings={setShowAdvancedSettings}
-      />
-      {showAdvancedSettings && (
+      {areGeneralFieldsFilled && (
+        <>
+          <Separator />
+          <AdvancedSettingsToggle
+            showAdvancedSettings={showAdvancedSettings}
+            setShowAdvancedSettings={setShowAdvancedSettings}
+          />
+        </>
+      )}
+      {showAdvancedSettings && areGeneralFieldsFilled && (
         <AdvancedTokenSettings
           enableLimitedSupply={enableLimitedSupply}
           setEnableLimitedSupply={setEnableLimitedSupply}
@@ -133,8 +159,9 @@ export const IssueNewTokenPlugin = ({
           spaceSlug={spaceSlug}
         />
       )}
-      {tokenType === 'voice' && (
+      {tokenType === 'voice' && areGeneralFieldsFilled && (
         <>
+          <Separator />
           <DecaySettingsToggle
             showDecaySettings={showDecaySettings}
             setShowDecaySettings={setShowDecaySettings}
