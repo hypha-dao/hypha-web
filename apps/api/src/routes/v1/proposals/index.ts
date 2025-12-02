@@ -1,13 +1,18 @@
 import type { FastifyInstance } from 'fastify';
 import type { State } from '@schemas/proposal';
-import { schema, type Schema } from './schema';
+import {
+  getSchema,
+  postSchema,
+  type GetSchema,
+  type PostSchema,
+} from './schema';
 import {
   daoProposalsImplementationAbi,
   daoProposalsImplementationAddress,
 } from '@plugins/web3-abi';
 
 export default async function proposalsRoutes(app: FastifyInstance) {
-  app.get<Schema>('/', { schema }, async (request) => {
+  app.get<GetSchema>('/', { schema: getSchema }, async (request) => {
     const { limit, offset, dao_id } = request.query;
 
     if (!dao_id) {
@@ -151,7 +156,7 @@ export default async function proposalsRoutes(app: FastifyInstance) {
     };
   });
 
-  app.post('/', async (_, reply) => {
+  app.post<PostSchema>('/', { schema: postSchema }, async (_, reply) => {
     return reply.code(500).send({ message: 'Not implemented yet' });
   });
 }
