@@ -100,14 +100,14 @@ export function CreateAgreementBaseFields({
   const { person: me, isLoading: isLoadingMe } = useMe();
 
   type Callback = () => void;
-  const delayedPostProposalProcessing: Callback[] = [];
+  const [delayed, setDelayed] = React.useState<Array<Callback>>([]);
 
   React.useEffect(() => {
     if (progress < 100) {
       return;
     }
-    while (delayedPostProposalProcessing.length > 0) {
-      const callback = delayedPostProposalProcessing.shift();
+    while (delayed.length > 0) {
+      const callback = delayed.shift();
       callback?.();
     }
   }, [progress]);
@@ -125,7 +125,7 @@ export function CreateAgreementBaseFields({
       }
       if (successfulUrl) {
         if (progress < 100) {
-          delayedPostProposalProcessing.push(() => {
+          delayed.push(() => {
             router.push(successfulUrl);
           });
         } else {
@@ -133,7 +133,7 @@ export function CreateAgreementBaseFields({
         }
       }
     },
-    [router, successfulUrl, me, isLoadingMe, space, progress],
+    [router, successfulUrl, me, isLoadingMe, space, progress, delayed],
   );
 
   useProposalNotifications({ lang, spaceSlug, authToken, postProposalCreated });
