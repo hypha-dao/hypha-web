@@ -124,12 +124,16 @@ export function CreateAgreementBaseFields({
         return;
       }
       if (successfulUrl) {
-        delayedPostProposalProcessing.push(() => {
+        if (progress < 100) {
+          delayedPostProposalProcessing.push(() => {
+            router.push(successfulUrl);
+          });
+        } else {
           router.push(successfulUrl);
-        });
+        }
       }
     },
-    [router, successfulUrl, me, isLoadingMe, space],
+    [router, successfulUrl, me, isLoadingMe, space, progress],
   );
 
   useProposalNotifications({ lang, spaceSlug, authToken, postProposalCreated });

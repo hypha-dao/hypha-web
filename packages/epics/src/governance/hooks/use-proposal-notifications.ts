@@ -46,8 +46,6 @@ export const useProposalNotifications = ({
           error,
         );
       }
-      await notifyProposalCreated({ proposalId, spaceId, creator, url });
-      await postProposalCreated?.({ proposalId, spaceId, creator, url });
     },
     [lang, spaceSlug, notifyProposalCreated, postProposalCreated],
   );
