@@ -78,8 +78,6 @@ export const IssueNewTokenPlugin = ({
       prevType !== currentType &&
       currentType !== undefined
     ) {
-      // Сбрасываем advanced settings при смене типа токена
-      // Используем setValue с опциями для гарантированного обновления
       setValue('maxSupply', 0, { shouldDirty: true, shouldValidate: false });
       setValue(
         'decaySettings',
