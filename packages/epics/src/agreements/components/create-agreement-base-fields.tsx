@@ -56,6 +56,7 @@ export type CreateAgreementFormProps = {
   backUrl?: string;
   backLabel?: string;
   label?: string;
+  progress: number;
 };
 
 export function CreateAgreementBaseFields({
@@ -66,6 +67,7 @@ export function CreateAgreementBaseFields({
   backUrl,
   backLabel = 'Back to Create',
   label = 'Agreement',
+  progress,
 }: CreateAgreementFormProps) {
   const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
   const { jwt: authToken } = useJwt();
@@ -97,6 +99,19 @@ export function CreateAgreementBaseFields({
 
   const { person: me, isLoading: isLoadingMe } = useMe();
 
+  type Callback = () => void;
+  const delayedPostProposalProcessing: Callback[] = [];
+
+  React.useEffect(() => {
+    if (progress < 100) {
+      return;
+    }
+    while (delayedPostProposalProcessing.length > 0) {
+      const callback = delayedPostProposalProcessing.shift();
+      callback?.();
+    }
+  }, [progress]);
+
   const postProposalCreated = React.useCallback(
     async ({ spaceId, creator }: NotifyProposalCreatedInput) => {
       if (isLoadingMe || !me?.address || !space?.web3SpaceId) {
@@ -109,7 +124,9 @@ export function CreateAgreementBaseFields({
         return;
       }
       if (successfulUrl) {
-        router.push(successfulUrl);
+        delayedPostProposalProcessing.push(() => {
+          router.push(successfulUrl);
+        });
       }
     },
     [router, successfulUrl, me, isLoadingMe, space],

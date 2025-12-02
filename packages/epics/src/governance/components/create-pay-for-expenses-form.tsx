@@ -138,6 +138,7 @@ export const CreatePayForExpensesForm = ({
             backUrl={backUrl}
             isLoading={false}
             label="Expenses"
+            progress={progress}
           />
           {plugin}
           <Separator />

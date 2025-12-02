@@ -174,6 +174,7 @@ export const CreateProposalChangeVotingMethodForm = ({
             backLabel="Back to Settings"
             isLoading={false}
             label="Voting Method"
+            progress={progress}
           />
           {plugin}
           <Separator />

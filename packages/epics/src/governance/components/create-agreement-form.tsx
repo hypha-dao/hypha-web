@@ -114,6 +114,7 @@ export const CreateAgreementForm = ({
             backUrl={backUrl}
             isLoading={false}
             label={label}
+            progress={progress}
           />
           <div className="flex justify-end w-full">
             <Button type="submit">Publish</Button>
