@@ -372,16 +372,13 @@ export const baseSchemaIssueNewToken = z.object({
   enableProposalAutoMinting: z.boolean(),
   enableTokenPrice: z.boolean(),
   referenceCurrency: z.enum(REFERENCE_CURRENCIES).optional(),
-  tokenPrice: z.preprocess(
-    (val) => {
-      if (val === '' || val === null || val === undefined) {
-        return undefined;
-      }
-      const num = Number(val);
-      return isNaN(num) ? undefined : num;
-    },
-    z.number().positive().optional(),
-  ),
+  tokenPrice: z.preprocess((val) => {
+    if (val === '' || val === null || val === undefined) {
+      return undefined;
+    }
+    const num = Number(val);
+    return isNaN(num) ? undefined : num;
+  }, z.number().positive().optional()),
 });
 
 export const schemaIssueNewToken = baseSchemaIssueNewToken.superRefine(
