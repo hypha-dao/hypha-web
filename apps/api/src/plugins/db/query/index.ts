@@ -4,5 +4,6 @@ export * from './find-document-web3-id';
 export * from './find-person-by-auth';
 export * from './find-token-by-id';
 export * from './find-tokens-by-addresses';
+export * from './create-agreement';
 export * from './people-by-addresses';
 export * from './verify-auth';

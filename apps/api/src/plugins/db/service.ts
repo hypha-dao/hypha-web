@@ -5,6 +5,7 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import { neon } from '@neondatabase/serverless';
 import { schema } from './schema';
 import {
+  createAgreement,
   findAllDocumentsBySpaceId,
   findDocumentById,
   findDocumentWeb3Id,
@@ -96,5 +97,18 @@ export class DbService {
 
   public findTokenById({ id }: { id: number }) {
     return findTokenById({ id }, { db: this.db });
+  }
+
+  public async createAgreement({
+    authToken,
+    ...input
+  }: { authToken: string } & Parameters<typeof createAgreement>[0]) {
+    const db = this.getDb(authToken);
+
+    return db.transaction((tx) =>
+      createAgreement(input, {
+        db: tx as any,
+      }),
+    );
   }
 }
