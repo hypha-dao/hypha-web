@@ -175,15 +175,15 @@ export const IssueNewTokenPlugin = ({
     const whitelist = getValues('transferWhitelist');
     const isOwnershipToken = currentTokenType === 'ownership';
 
-    if (!whitelist?.to?.length) {
-      setValue('transferWhitelist.to', [
-        { type: 'space', address: '', includeSpaceMembers: true },
-      ]);
+    if (!whitelist) {
+      setValue('transferWhitelist', {});
     }
-    if (!isOwnershipToken && !whitelist?.from?.length) {
-      setValue('transferWhitelist.from', [
-        { type: 'space', address: '', includeSpaceMembers: true },
-      ]);
+
+    if (whitelist?.to === undefined) {
+      setValue('transferWhitelist.to', []);
+    }
+    if (!isOwnershipToken && whitelist?.from === undefined) {
+      setValue('transferWhitelist.from', []);
     }
   }, [
     enableAdvancedTransferControls,
