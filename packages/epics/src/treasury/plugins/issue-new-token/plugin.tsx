@@ -3,7 +3,7 @@
 import { Separator } from '@hypha-platform/ui';
 import { DecaySettingsField } from '../../components/common/decay-settings-field';
 import { useFormContext } from 'react-hook-form';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Person, Space } from '@hypha-platform/core/client';
 import {
   GeneralTokenSettings,
@@ -68,11 +68,73 @@ export const IssueNewTokenPlugin = ({
     }
   }, [getValues, setValue]);
 
+  const prevTokenTypeRef = useRef<string | undefined>(currentTokenType);
   useEffect(() => {
+    const prevType = prevTokenTypeRef.current;
+    const currentType = currentTokenType;
+
+    if (
+      prevType !== undefined &&
+      prevType !== currentType &&
+      currentType !== undefined
+    ) {
+      // Сбрасываем advanced settings при смене типа токена
+      // Используем setValue с опциями для гарантированного обновления
+      setValue('maxSupply', 0, { shouldDirty: true, shouldValidate: false });
+      setValue(
+        'decaySettings',
+        {
+          decayInterval: 2592000,
+          decayPercentage: 1,
+        },
+        { shouldDirty: true, shouldValidate: false },
+      );
+      setValue('isVotingToken', currentType === 'voice', {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
+      setValue('transferable', currentType !== 'voice', {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
+      setValue('enableAdvancedTransferControls', false, {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
+      setValue('transferWhitelist', undefined, {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
+      setValue('enableProposalAutoMinting', true, {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
+      setValue('maxSupplyType', undefined, {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
+      setValue('enableTokenPrice', false, {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
+      setValue('referenceCurrency', undefined, {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
+      setValue('tokenPrice', undefined, {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
+      setShowAdvancedSettings(false);
+      setEnableLimitedSupply(false);
+    }
+
     if (currentTokenType !== tokenType) {
       setTokenType(currentTokenType || '');
     }
-  }, [currentTokenType, tokenType]);
+
+    prevTokenTypeRef.current = currentType;
+  }, [currentTokenType, tokenType, setValue]);
 
   useEffect(() => {
     if (tokenType === 'voice') {
