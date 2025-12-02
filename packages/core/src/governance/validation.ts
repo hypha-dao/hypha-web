@@ -401,34 +401,6 @@ export const schemaIssueNewToken = baseSchemaIssueNewToken.superRefine(
         });
       }
     }
-
-    if (data.enableAdvancedTransferControls) {
-      const isOwnershipToken = data.type === 'ownership';
-      const hasToEntries =
-        data.transferWhitelist?.to && data.transferWhitelist.to.length > 0;
-      const hasFromEntries =
-        data.transferWhitelist?.from && data.transferWhitelist.from.length > 0;
-
-      if (isOwnershipToken) {
-        if (!hasToEntries) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message:
-              'Transfer whitelist must have at least one entry for "to" whitelist',
-            path: ['transferWhitelist', 'to'],
-          });
-        }
-      } else {
-        if (!hasToEntries && !hasFromEntries) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message:
-              'Transfer whitelist must have at least one entry for either "to" or "from" whitelist',
-            path: ['transferWhitelist'],
-          });
-        }
-      }
-    }
   },
 );
 
