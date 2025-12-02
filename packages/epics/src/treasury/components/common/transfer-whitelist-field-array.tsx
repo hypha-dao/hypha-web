@@ -27,7 +27,7 @@ type TransferWhitelistFieldArrayProps = {
 };
 
 const DEFAULT_WHITELIST_ENTRY = {
-  type: 'member' as WhitelistType,
+  type: 'space' as WhitelistType,
   address: '',
   includeSpaceMembers: true,
 };
@@ -89,7 +89,7 @@ export const TransferWhitelistFieldArray = ({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-4">
         <FormLabel>{label}</FormLabel>
         {description ? (
           <span className="text-2 text-neutral-11">{description}</span>
@@ -98,7 +98,7 @@ export const TransferWhitelistFieldArray = ({
       <div className="flex flex-col gap-3">
         {fields.map((field, index) => {
           const currentEntry = entries?.[index];
-          const currentType = (currentEntry?.type ?? 'member') as WhitelistType;
+          const currentType = (currentEntry?.type ?? 'space') as WhitelistType;
           const comboboxOptions =
             currentType === 'member'
               ? memberOptions
@@ -128,7 +128,7 @@ export const TransferWhitelistFieldArray = ({
                   name={`${name}.${index}.type`}
                   render={({ field }) => (
                     <Tabs
-                      value={(field.value as WhitelistType) ?? 'member'}
+                      value={(field.value as WhitelistType) ?? 'space'}
                       onValueChange={(value) => {
                         field.onChange(value as WhitelistType);
                         setValue(`${name}.${index}.address`, '');

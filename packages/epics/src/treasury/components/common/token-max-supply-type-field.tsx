@@ -1,6 +1,6 @@
 'use client';
 
-import { useFormContext } from 'react-hook-form';
+import { useFormContext, useWatch } from 'react-hook-form';
 import {
   FormControl,
   FormField,
@@ -12,6 +12,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  RequirementMark,
 } from '@hypha-platform/ui';
 import { ChevronDownIcon } from '@radix-ui/themes';
 
@@ -22,6 +23,11 @@ const OPTIONS = [
 
 export function TokenMaxSupplyTypeField() {
   const { control } = useFormContext();
+  const maxSupply = useWatch({
+    control,
+    name: 'maxSupply',
+    defaultValue: 0,
+  });
 
   return (
     <FormField
@@ -29,13 +35,17 @@ export function TokenMaxSupplyTypeField() {
       name="maxSupplyType"
       render={({ field }) => {
         const selectedLabel = field.value?.label || 'Select max supply type';
+        const showRequirementMark = maxSupply > 0;
 
         return (
           <FormItem>
             <div className="flex justify-between items-center w-full">
-              <FormLabel className="text-2 text-neutral-11">
-                Max Supply Type
-              </FormLabel>
+              <div className="flex gap-1 w-full">
+                <FormLabel className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
+                  Max Supply Type
+                </FormLabel>
+                {showRequirementMark && <RequirementMark className="text-2" />}
+              </div>
 
               <FormControl>
                 <DropdownMenu>

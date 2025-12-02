@@ -1,4 +1,4 @@
-import { Person, Space } from '@hypha-platform/core/client';
+import { Person, Space, useSpaceBySlug } from '@hypha-platform/core/client';
 import { FormLabel } from '@hypha-platform/ui';
 import { TransferableField } from './transferable-field';
 import { EnableAdvancedTransferControlsField } from './enable-advanced-transfer-controls-field';
@@ -10,14 +10,19 @@ export const TransferSection = ({
   members,
   spaces,
   tokenType,
+  spaceSlug,
 }: {
   transferable: boolean;
   enableAdvancedTransferControls: boolean;
   members: Person[];
   spaces: Space[];
   tokenType?: string;
+  spaceSlug?: string;
 }) => {
   const isOwnershipToken = tokenType === 'ownership';
+  const { space } = useSpaceBySlug(spaceSlug || '');
+  const spaceName = space?.title ?? '';
+
   return (
     <div className="flex flex-col gap-4">
       <FormLabel>Token Transfer</FormLabel>
@@ -39,7 +44,9 @@ export const TransferSection = ({
           {enableAdvancedTransferControls && (
             <>
               <span className="text-2 text-neutral-11">
-                Only listed members or spaces can send or receive tokens when
+                {spaceName} and its members are automatically whitelisted.
+                Listing space(s) and/or member(s) below allows them to send
+                ("From" Whitelist) or receive ("To" Whitelist) tokens when
                 whitelisting is enabled.
               </span>
               <TransferWhitelistFieldArray

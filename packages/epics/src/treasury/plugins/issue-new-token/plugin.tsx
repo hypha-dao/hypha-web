@@ -3,7 +3,7 @@
 import { Separator } from '@hypha-platform/ui';
 import { DecaySettingsField } from '../../components/common/decay-settings-field';
 import { useFormContext } from 'react-hook-form';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Person, Space } from '@hypha-platform/core/client';
 import {
   GeneralTokenSettings,
@@ -15,11 +15,13 @@ import {
 type IssueNewTokenPluginProps = {
   members?: Person[];
   spaces?: Space[];
+  spaceSlug?: string;
 };
 
 export const IssueNewTokenPlugin = ({
   members = [],
   spaces = [],
+  spaceSlug,
 }: IssueNewTokenPluginProps) => {
   const { getValues, setValue, watch } = useFormContext();
   const values = getValues();
@@ -37,6 +39,16 @@ export const IssueNewTokenPlugin = ({
   );
   const enableTokenPrice = watch('enableTokenPrice');
   const currentTokenType = watch('type');
+  const tokenName = watch('name');
+  const tokenSymbol = watch('symbol');
+  const tokenIconUrl = watch('iconUrl');
+
+  const areGeneralFieldsFilled =
+    currentTokenType &&
+    tokenName?.trim()?.length >= 2 &&
+    tokenSymbol?.trim()?.length >= 2 &&
+    (tokenIconUrl instanceof File ||
+      (typeof tokenIconUrl === 'string' && tokenIconUrl.trim().length > 0));
 
   useEffect(() => {
     if (getValues('enableProposalAutoMinting') === undefined) {
@@ -56,17 +68,89 @@ export const IssueNewTokenPlugin = ({
     }
   }, [getValues, setValue]);
 
+  const prevTokenTypeRef = useRef<string | undefined>(currentTokenType);
   useEffect(() => {
+    const prevType = prevTokenTypeRef.current;
+    const currentType = currentTokenType;
+
+    if (
+      prevType !== undefined &&
+      prevType !== currentType &&
+      currentType !== undefined
+    ) {
+      setValue('maxSupply', 0, { shouldDirty: true, shouldValidate: false });
+      setValue(
+        'decaySettings',
+        {
+          decayInterval: 2592000,
+          decayPercentage: 1,
+        },
+        { shouldDirty: true, shouldValidate: false },
+      );
+      setValue('isVotingToken', currentType === 'voice', {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
+      setValue('transferable', currentType !== 'voice', {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
+      setValue('enableAdvancedTransferControls', false, {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
+      setValue('transferWhitelist', undefined, {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
+      setValue('enableProposalAutoMinting', true, {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
+      setValue('maxSupplyType', undefined, {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
+      setValue('enableTokenPrice', false, {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
+      setValue('referenceCurrency', undefined, {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
+      setValue('tokenPrice', undefined, {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
+      setShowAdvancedSettings(false);
+      setEnableLimitedSupply(false);
+    }
+
     if (currentTokenType !== tokenType) {
       setTokenType(currentTokenType || '');
     }
-  }, [currentTokenType, tokenType]);
+
+    prevTokenTypeRef.current = currentType;
+  }, [currentTokenType, tokenType, setValue]);
 
   useEffect(() => {
     if (tokenType === 'voice') {
       setValue('isVotingToken', true);
     }
   }, [tokenType, setValue]);
+
+  useEffect(() => {
+    if (!areGeneralFieldsFilled && showAdvancedSettings) {
+      setShowAdvancedSettings(false);
+    }
+  }, [areGeneralFieldsFilled, showAdvancedSettings]);
+
+  useEffect(() => {
+    if (!areGeneralFieldsFilled && showDecaySettings) {
+      setShowDecaySettings(false);
+    }
+  }, [areGeneralFieldsFilled, showDecaySettings]);
 
   useEffect(() => {
     if (currentTokenType === 'ownership') {
@@ -91,15 +175,15 @@ export const IssueNewTokenPlugin = ({
     const whitelist = getValues('transferWhitelist');
     const isOwnershipToken = currentTokenType === 'ownership';
 
-    if (!whitelist?.to?.length) {
-      setValue('transferWhitelist.to', [
-        { type: 'member', address: '', includeSpaceMembers: true },
-      ]);
+    if (!whitelist) {
+      setValue('transferWhitelist', {});
     }
-    if (!isOwnershipToken && !whitelist?.from?.length) {
-      setValue('transferWhitelist.from', [
-        { type: 'member', address: '', includeSpaceMembers: true },
-      ]);
+
+    if (whitelist?.to === undefined) {
+      setValue('transferWhitelist.to', []);
+    }
+    if (!isOwnershipToken && whitelist?.from === undefined) {
+      setValue('transferWhitelist.from', []);
     }
   }, [
     enableAdvancedTransferControls,
@@ -112,12 +196,16 @@ export const IssueNewTokenPlugin = ({
   return (
     <div className="flex flex-col gap-4">
       <GeneralTokenSettings tokenType={tokenType} setTokenType={setTokenType} />
-      <Separator />
-      <AdvancedSettingsToggle
-        showAdvancedSettings={showAdvancedSettings}
-        setShowAdvancedSettings={setShowAdvancedSettings}
-      />
-      {showAdvancedSettings && (
+      {areGeneralFieldsFilled && (
+        <>
+          <Separator />
+          <AdvancedSettingsToggle
+            showAdvancedSettings={showAdvancedSettings}
+            setShowAdvancedSettings={setShowAdvancedSettings}
+          />
+        </>
+      )}
+      {showAdvancedSettings && areGeneralFieldsFilled && (
         <AdvancedTokenSettings
           enableLimitedSupply={enableLimitedSupply}
           setEnableLimitedSupply={setEnableLimitedSupply}
@@ -128,10 +216,12 @@ export const IssueNewTokenPlugin = ({
           members={members}
           spaces={spaces}
           tokenType={currentTokenType}
+          spaceSlug={spaceSlug}
         />
       )}
-      {tokenType === 'voice' && (
+      {tokenType === 'voice' && areGeneralFieldsFilled && (
         <>
+          <Separator />
           <DecaySettingsToggle
             showDecaySettings={showDecaySettings}
             setShowDecaySettings={setShowDecaySettings}

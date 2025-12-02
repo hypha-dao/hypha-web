@@ -280,12 +280,8 @@ const transferWhitelistEntrySchema = z.object({
 });
 
 const transferWhitelistSchema = z.object({
-  to: z
-    .array(transferWhitelistEntrySchema)
-    .min(1, { message: 'Add at least one entry to the “To” whitelist' }),
-  from: z
-    .array(transferWhitelistEntrySchema)
-    .min(1, { message: 'Add at least one entry to the “From” whitelist' }),
+  to: z.array(transferWhitelistEntrySchema).optional(),
+  from: z.array(transferWhitelistEntrySchema).optional(),
 });
 
 export const schemaMintTokensToSpaceTreasury = z.object({
@@ -376,7 +372,13 @@ export const baseSchemaIssueNewToken = z.object({
   enableProposalAutoMinting: z.boolean(),
   enableTokenPrice: z.boolean(),
   referenceCurrency: z.enum(REFERENCE_CURRENCIES).optional(),
-  tokenPrice: z.coerce.number().positive().optional(),
+  tokenPrice: z.preprocess((val) => {
+    if (val === '' || val === null || val === undefined) {
+      return undefined;
+    }
+    const num = Number(val);
+    return isNaN(num) ? undefined : num;
+  }, z.number().positive().optional()),
 });
 
 export const schemaIssueNewToken = baseSchemaIssueNewToken.superRefine(
@@ -384,7 +386,7 @@ export const schemaIssueNewToken = baseSchemaIssueNewToken.superRefine(
     if (data.maxSupply > 0 && !data.maxSupplyType) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Max supply type is required when max supply is set',
+        message: 'Please select a max supply type',
         path: ['maxSupplyType'],
       });
     }
@@ -393,40 +395,20 @@ export const schemaIssueNewToken = baseSchemaIssueNewToken.superRefine(
       if (!data.referenceCurrency) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Reference currency is required',
+          message: 'Please select a reference currency',
           path: ['referenceCurrency'],
         });
       }
-      if (!data.tokenPrice || data.tokenPrice <= 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Token price is required and must be positive',
-          path: ['tokenPrice'],
-        });
-      }
-    }
-
-    if (data.enableAdvancedTransferControls) {
-      const isOwnershipToken = data.type === 'ownership';
-
-      if (!data.transferWhitelist || !data.transferWhitelist.to?.length) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message:
-            'Transfer whitelist must have at least one entry for "to" whitelist',
-          path: ['transferWhitelist'],
-        });
-      }
-
       if (
-        !isOwnershipToken &&
-        (!data.transferWhitelist || !data.transferWhitelist.from?.length)
+        data.tokenPrice === undefined ||
+        data.tokenPrice === null ||
+        isNaN(data.tokenPrice) ||
+        data.tokenPrice <= 0
       ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message:
-            'Transfer whitelist must have at least one entry for "from" whitelist',
-          path: ['transferWhitelist'],
+          message: 'Please enter a token price greater than 0',
+          path: ['tokenPrice'],
         });
       }
     }
