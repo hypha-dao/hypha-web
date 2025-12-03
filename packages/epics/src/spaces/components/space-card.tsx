@@ -53,10 +53,12 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
   showExitButton = false,
 }) => {
   return (
-    <Card className={cn('relative w-full h-full flex flex-col', className)}>
+    <Card
+      className={cn('group relative w-full h-full flex flex-col', className)}
+    >
       {showExitButton && web3SpaceId && (
         <div
-          className="absolute w-[30px] h-[30px] top-[10px] right-[10px]"
+          className="absolute w-[30px] h-[30px] top-[10px] right-[10px] sm:invisible group-hover:visible"
           onClick={(event) => {
             event.preventDefault();
             event.stopPropagation();
