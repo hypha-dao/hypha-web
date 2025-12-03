@@ -140,7 +140,7 @@ export const ProfileMemberSpaces = ({
                               className="border-0 w-[20px] h-[20px]"
                               title="Exit Space"
                             >
-                              <ExitIcon fontSize={'12px'} />
+                              <ExitIcon width={12} height={12} />
                             </Button>
                           }
                         />

@@ -40,7 +40,9 @@ export const ExpireProposalBanner = ({
 }: ExpireProposalBannerProps) => {
   const [localActionCompleted, setLocalActionCompleted] = useState(false);
 
-  const { isMember } = useSpaceMember({ spaceId: web3SpaceId as number });
+  const { isMember, isMemberLoading } = useSpaceMember({
+    spaceId: web3SpaceId as number,
+  });
   const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
   const { isAuthenticated } = useAuthentication();
 
@@ -54,11 +56,14 @@ export const ExpireProposalBanner = ({
 
   const isDisabled =
     !isAuthenticated ||
+    isMemberLoading ||
     (!isMember && !isDelegate) ||
     isExpiring ||
     localActionCompleted;
   const tooltipMessage = !isAuthenticated
     ? 'Please sign in to use this feature.'
+    : isMemberLoading
+    ? 'Checking membership...'
     : !isMember && !isDelegate
     ? 'Please join this space to use this feature.'
     : isExpiring
