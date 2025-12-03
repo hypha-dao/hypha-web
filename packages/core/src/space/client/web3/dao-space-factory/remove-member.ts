@@ -14,13 +14,7 @@ export type RemoveMemberWeb3Config = {
 };
 
 export const removeMember = (
-  {
-    spaceId,
-    memberAddress,
-  }: {
-    spaceId: bigint;
-    memberAddress: `0x${string}`;
-  },
+  { spaceId, memberAddress }: RemoveMemberWeb3Input,
   { chain = base.id }: RemoveMemberWeb3Config = {},
 ) => {
   const address = daoSpaceFactoryImplementationAddress[chain];
