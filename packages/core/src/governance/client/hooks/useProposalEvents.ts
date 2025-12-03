@@ -88,9 +88,9 @@ export const useProposalEvents = ({
       fetchProposalActions,
       isValidProposalAction,
       onProposalExecuted,
-      setupTokenDeployedWatcher,
       extractTokenAddressFromReceipt,
       updateToken,
+      proposalId,
     ],
   );
 
@@ -123,6 +123,8 @@ export const useProposalEvents = ({
     onProposalRejected,
     fetchTokens,
     deleteToken,
+    proposalId,
+    tokenSymbol,
   ]);
 
   const handleProposalCreated = useCallback(

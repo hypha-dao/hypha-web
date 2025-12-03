@@ -128,27 +128,24 @@ export function CreateAgreementBaseFields({
       }
       if (successfulUrl) {
         if (progress < 100) {
-          setDelayed([
-            ...delayed,
-            () => {
-              router.push(successfulUrl);
-            },
-          ]);
+          setDelayed((prev) => {
+            if (prev.length > 0) {
+              // Normally should be called at most once
+              return prev;
+            }
+            return [
+              ...prev,
+              () => {
+                router.push(successfulUrl);
+              },
+            ];
+          });
         } else {
           router.push(successfulUrl);
         }
       }
     },
-    [
-      router,
-      successfulUrl,
-      me,
-      isLoadingMe,
-      space,
-      progress,
-      delayed,
-      setDelayed,
-    ],
+    [router, successfulUrl, me, isLoadingMe, space, progress],
   );
 
   useProposalNotifications({ lang, spaceSlug, authToken, postProposalCreated });
