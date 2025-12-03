@@ -137,7 +137,7 @@ export const ProposalTokenItem = ({
       <div className="flex justify-between items-center">
         <div className="text-1 text-neutral-11 w-full">Max Supply</div>
         <div className="text-1">
-          {formatCurrencyValue(Number(originalSupply))}
+          {Number(originalSupply) === 0 ? 'Unlimited' : formatCurrencyValue(Number(originalSupply))}
         </div>
       </div>
       {transferable !== undefined && (
