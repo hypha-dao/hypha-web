@@ -102,17 +102,18 @@ export const ProposalTokenItem = ({
   const originalSupply = initialSupply ? Number(initialSupply / 10n ** 18n) : 0;
   const { id } = useParams();
   const { space } = useSpaceBySlug(id as string);
-  const tokenIcon = dbTokens?.find(
+
+  const dbToken = dbTokens?.find(
     (t) =>
       t.symbol?.toUpperCase() === symbol?.toUpperCase() &&
       t.name?.toUpperCase() === name?.toUpperCase() &&
       t.spaceId == space?.id,
-  )?.iconUrl;
+  );
+  const tokenIcon = dbToken?.iconUrl;
 
-  const priceInUSDCents = priceInUSD ? Number(priceInUSD) : null;
-  const priceInUSDDisplay = priceInUSDCents
-    ? (priceInUSDCents / 100).toFixed(2)
-    : null;
+  const referenceCurrency = dbToken?.referenceCurrency;
+
+  const referencePrice = dbToken?.referencePrice;
 
   return (
     <div className="flex flex-col gap-5">
@@ -160,10 +161,10 @@ export const ProposalTokenItem = ({
           <div className="text-1">{autoMinting ? 'Enabled' : 'Disabled'}</div>
         </div>
       )}
-      {priceInUSDDisplay && (
+      {referencePrice && (
         <div className="flex justify-between items-center text-nowrap">
           <div className="text-1 text-neutral-11 w-full">Token Price</div>
-          <div className="text-1">${priceInUSDDisplay} USD</div>
+          <div className="text-1">${formatCurrencyValue(referencePrice)} {referenceCurrency}</div>
         </div>
       )}
       {decayPercentage !== undefined && decayInterval !== undefined && (

@@ -49,6 +49,6 @@ export type DbToken = {
   address?: string;
   agreementWeb3Id?: number;
   createdAt?: Date;
-  referencePrice?: string | null;
+  referencePrice?: number | null;
   referenceCurrency?: string | null;
 };
