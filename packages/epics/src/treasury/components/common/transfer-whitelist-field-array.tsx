@@ -80,10 +80,6 @@ export const TransferWhitelistFieldArray = ({
     index: number,
   ) => {
     event.preventDefault();
-    if (fields.length === 1) {
-      setValue(`${name}.${index}`, { ...DEFAULT_WHITELIST_ENTRY });
-      return;
-    }
     remove(index);
   };
 
