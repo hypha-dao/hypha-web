@@ -139,7 +139,9 @@ export const ProposalTokenItem = ({
       <div className="flex justify-between items-center">
         <div className="text-1 text-neutral-11 w-full">Max Supply</div>
         <div className="text-1">
-          {Number(originalSupply) === 0 ? 'Unlimited' : formatCurrencyValue(Number(originalSupply))}
+          {Number(originalSupply) === 0
+            ? 'Unlimited'
+            : formatCurrencyValue(Number(originalSupply))}
         </div>
       </div>
       {transferable !== undefined && (
@@ -165,7 +167,9 @@ export const ProposalTokenItem = ({
       {referencePrice && (
         <div className="flex justify-between items-center text-nowrap">
           <div className="text-1 text-neutral-11 w-full">Token Price</div>
-          <div className="text-1">${formatCurrencyValue(referencePrice)} {referenceCurrency}</div>
+          <div className="text-1">
+            ${formatCurrencyValue(referencePrice)} {referenceCurrency}
+          </div>
         </div>
       )}
       {decayPercentage !== undefined && decayInterval !== undefined && (

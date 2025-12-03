@@ -55,4 +55,3 @@ export const formatSeconds = (seconds: bigint | number): string => {
 
   return parts.join(' ') || '0 seconds';
 };
-
