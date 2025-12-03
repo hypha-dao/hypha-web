@@ -211,6 +211,7 @@ export const ActivateSpacesFormSpace = ({
             backLabel="Back to Settings"
             isLoading={false}
             label="Activate Spaces"
+            progress={progress}
           />
           {children}
           <Separator />

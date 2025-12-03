@@ -56,6 +56,7 @@ export type CreateAgreementFormProps = {
   backUrl?: string;
   backLabel?: string;
   label?: string;
+  progress: number;
 };
 
 export function CreateAgreementBaseFields({
@@ -66,6 +67,7 @@ export function CreateAgreementBaseFields({
   backUrl,
   backLabel = 'Back to Create',
   label = 'Agreement',
+  progress,
 }: CreateAgreementFormProps) {
   const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
   const { jwt: authToken } = useJwt();
@@ -97,6 +99,22 @@ export function CreateAgreementBaseFields({
 
   const { person: me, isLoading: isLoadingMe } = useMe();
 
+  type Callback = () => void;
+  const [delayed, setDelayed] = React.useState<Array<Callback>>([]);
+
+  React.useEffect(() => {
+    if (progress < 100) {
+      return;
+    }
+    if (delayed.length === 0) {
+      return;
+    }
+    for (const callback of delayed) {
+      callback?.();
+    }
+    setDelayed([]);
+  }, [progress, delayed, setDelayed]);
+
   const postProposalCreated = React.useCallback(
     async ({ spaceId, creator }: NotifyProposalCreatedInput) => {
       if (isLoadingMe || !me?.address || !space?.web3SpaceId) {
@@ -109,10 +127,25 @@ export function CreateAgreementBaseFields({
         return;
       }
       if (successfulUrl) {
-        router.push(successfulUrl);
+        if (progress < 100) {
+          setDelayed((prev) => {
+            if (prev.length > 0) {
+              // Normally should be called at most once
+              return prev;
+            }
+            return [
+              ...prev,
+              () => {
+                router.push(successfulUrl);
+              },
+            ];
+          });
+        } else {
+          router.push(successfulUrl);
+        }
       }
     },
-    [router, successfulUrl, me, isLoadingMe, space],
+    [router, successfulUrl, me, isLoadingMe, space, progress],
   );
 
   useProposalNotifications({ lang, spaceSlug, authToken, postProposalCreated });

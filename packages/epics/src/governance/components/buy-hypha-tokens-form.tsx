@@ -177,6 +177,7 @@ export const BuyHyphaTokensForm = ({
             backLabel="Back to Settings"
             isLoading={false}
             label="Buy Hypha Tokens (Rewards)"
+            progress={progress}
           />
           {children}
           <Separator />

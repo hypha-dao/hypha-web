@@ -138,6 +138,7 @@ export const SpaceToSpaceMembershipForm = ({
             backLabel="Back to Settings"
             isLoading={false}
             label="Space To Space"
+            progress={progress}
           />
           {children}
 

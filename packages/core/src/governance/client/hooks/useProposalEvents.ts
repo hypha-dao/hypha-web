@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   daoProposalsImplementationConfig,
   daoSpaceFactoryImplementationConfig,
@@ -52,12 +52,8 @@ export const useProposalEvents = ({
   }>({ web3spaceIds: [] });
   const { spaces } = useSpacesByWeb3Ids(joinState.web3spaceIds, false);
 
-  useEffect(() => {
-    if (!authToken) {
-      return;
-    }
-
-    const handleProposalExecuted = async (transactionHash: string) => {
+  const handleProposalExecuted = useCallback(
+    async (transactionHash: string) => {
       try {
         const actions = await fetchProposalActions(Number(proposalId));
 
@@ -87,34 +83,52 @@ export const useProposalEvents = ({
       } catch (error) {
         console.error('Error handling proposal execution:', error);
       }
-    };
+    },
+    [
+      fetchProposalActions,
+      isValidProposalAction,
+      onProposalExecuted,
+      extractTokenAddressFromReceipt,
+      updateToken,
+      proposalId,
+    ],
+  );
 
-    const handleProposalRejected = async () => {
-      try {
-        const actions = await fetchProposalActions(Number(proposalId));
+  const handleProposalRejected = useCallback(async () => {
+    try {
+      const actions = await fetchProposalActions(Number(proposalId));
 
-        if (!isValidProposalAction(actions)) {
-          await onProposalRejected?.();
-          return;
-        }
+      if (!isValidProposalAction(actions)) {
+        await onProposalRejected?.();
+        return;
+      }
 
-        const tokens = await fetchTokens();
-        const token = tokens?.find((t) => t.symbol === tokenSymbol);
+      const tokens = await fetchTokens();
+      const token = tokens?.find((t) => t.symbol === tokenSymbol);
 
-        if (token?.id != null) {
-          await deleteToken({ id: BigInt(token.id) });
-          await onProposalRejected?.();
-        } else {
-          console.error('Token not found for deletion');
-          await onProposalRejected?.();
-        }
-      } catch (error) {
-        console.error('Error handling proposal rejection:', error);
+      if (token?.id != null) {
+        await deleteToken({ id: BigInt(token.id) });
+        await onProposalRejected?.();
+      } else {
+        console.error('Token not found for deletion');
         await onProposalRejected?.();
       }
-    };
+    } catch (error) {
+      console.error('Error handling proposal rejection:', error);
+      await onProposalRejected?.();
+    }
+  }, [
+    fetchProposalActions,
+    isValidProposalAction,
+    onProposalRejected,
+    fetchTokens,
+    deleteToken,
+    proposalId,
+    tokenSymbol,
+  ]);
 
-    const handleProposalCreated = async ({
+  const handleProposalCreated = useCallback(
+    async ({
       creator,
       web3ProposalId,
       web3SpaceId,
@@ -128,7 +142,14 @@ export const useProposalEvents = ({
       } catch (error) {
         console.error('Error handling proposal creation:', error);
       }
-    };
+    },
+    [onProposalCreated],
+  );
+
+  useEffect(() => {
+    if (!authToken) {
+      return;
+    }
 
     const unwatchExecuted = publicClient.watchContractEvent({
       address: daoProposalsImplementationConfig.address[8453],
@@ -263,21 +284,7 @@ export const useProposalEvents = ({
       unwatchMemberJoined();
       unwatchProposalCreated();
     };
-  }, [
-    documentId,
-    proposalId,
-    tokenSymbol,
-    authToken,
-    fetchProposalActions,
-    isValidProposalAction,
-    fetchTokens,
-    deleteToken,
-    updateToken,
-    setupTokenDeployedWatcher,
-    onProposalExecuted,
-    onProposalRejected,
-    onProposalCreated,
-  ]);
+  }, [documentId, proposalId, tokenSymbol, authToken]);
 
   useEffect(() => {
     if (

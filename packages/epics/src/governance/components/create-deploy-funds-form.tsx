@@ -137,6 +137,7 @@ export const CreateDeployFundsForm = ({
             backUrl={backUrl}
             isLoading={false}
             label="Funding"
+            progress={progress}
           />
           {plugin}
           <Separator />

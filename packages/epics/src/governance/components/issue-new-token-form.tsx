@@ -211,6 +211,7 @@ export const IssueNewTokenForm = ({
             backLabel="Back to settings"
             isLoading={false}
             label="Issue New Token"
+            progress={progress}
           />
           {plugin}
           <Separator />

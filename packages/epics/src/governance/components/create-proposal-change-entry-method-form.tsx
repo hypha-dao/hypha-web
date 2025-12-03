@@ -180,6 +180,7 @@ export const CreateProposalChangeEntryMethodForm = ({
             closeUrl={successfulUrl}
             isLoading={false}
             label="Entry Method"
+            progress={progress}
           />
           {plugin}
           <Separator />

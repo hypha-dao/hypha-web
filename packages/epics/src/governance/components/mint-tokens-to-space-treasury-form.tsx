@@ -126,6 +126,7 @@ export const MintTokensToSpaceTreasuryForm = ({
             backLabel="Back to settings"
             isLoading={false}
             label="Treasury Minting"
+            progress={progress}
           />
           {plugin}
           <Separator />
