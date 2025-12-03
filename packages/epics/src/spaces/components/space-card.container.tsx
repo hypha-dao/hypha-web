@@ -26,12 +26,21 @@ export const SpaceCardContainer = ({
       {spaces.map((space) =>
         space.slug ? (
           <div key={space.id}>
-            <span
+            <div
               className="cursor-pointer"
+              role="link"
+              tabIndex={0}
               aria-label={`View agreements for ${space.title}`}
               onClick={() => {
                 const path = getDhoPathAgreements(lang, space.slug);
                 router.push(path);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  const path = getDhoPathAgreements(lang, space.slug);
+                  router.push(path);
+                }
               }}
             >
               <SpaceCard
@@ -51,7 +60,7 @@ export const SpaceCardContainer = ({
                 createdAt={space.createdAt}
                 showExitButton={showExitButton}
               />
-            </span>
+            </div>
           </div>
         ) : null,
       )}
