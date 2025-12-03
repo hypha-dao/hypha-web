@@ -1,5 +1,6 @@
 'use client';
 
+import { cn } from '@hypha-platform/ui-utils';
 import { useRouter } from 'next/navigation';
 import React from 'react';
 
@@ -13,7 +14,7 @@ const DivLink = React.forwardRef<HTMLDivElement, DivLinkProps>(
     return (
       <div
         ref={ref}
-        className="cursor-pointer"
+        className={cn('cursor-pointer', className)}
         role="link"
         tabIndex={0}
         aria-label={ariaLabel}
