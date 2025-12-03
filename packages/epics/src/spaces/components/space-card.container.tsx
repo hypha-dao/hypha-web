@@ -5,6 +5,7 @@ import { Space } from '@hypha-platform/core/client';
 import { getDhoPathAgreements } from '../../common';
 import { SpaceCard } from './space-card';
 import { useRouter } from 'next/navigation';
+import { DivLink } from '@hypha-platform/ui';
 
 type SpaceCardContainerProps = {
   lang: Locale;
@@ -26,22 +27,9 @@ export const SpaceCardContainer = ({
       {spaces.map((space) =>
         space.slug ? (
           <div key={space.id}>
-            <div
-              className="cursor-pointer"
-              role="link"
-              tabIndex={0}
+            <DivLink
+              href={getDhoPathAgreements(lang, space.slug)}
               aria-label={`View agreements for ${space.title}`}
-              onClick={() => {
-                const path = getDhoPathAgreements(lang, space.slug);
-                router.push(path);
-              }}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  const path = getDhoPathAgreements(lang, space.slug);
-                  router.push(path);
-                }
-              }}
             >
               <SpaceCard
                 description={space.description || ''}
@@ -60,7 +48,7 @@ export const SpaceCardContainer = ({
                 createdAt={space.createdAt}
                 showExitButton={showExitButton}
               />
-            </div>
+            </DivLink>
           </div>
         ) : null,
       )}

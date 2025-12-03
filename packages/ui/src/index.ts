@@ -42,6 +42,7 @@ export * from './switch';
 export * from './text-with-links';
 export * from './textarea';
 export * from './tooltip';
+export * from './div-link';
 
 export * from './organisms/editor';
 export * from './organisms/menu-top';
