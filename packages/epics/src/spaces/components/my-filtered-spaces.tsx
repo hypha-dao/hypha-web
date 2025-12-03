@@ -50,6 +50,7 @@ export function MyFilteredSpaces({
         lang={lang}
         spaces={filteredSpaces}
         showLoadMore={showLoadMore}
+        showExitButton={true}
       />
     </div>
   );
