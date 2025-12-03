@@ -4,7 +4,6 @@ import { Locale } from '@hypha-platform/i18n';
 import { Space } from '@hypha-platform/core/client';
 import { getDhoPathAgreements } from '../../common';
 import { SpaceCard } from './space-card';
-import { useRouter } from 'next/navigation';
 import { DivLink } from '@hypha-platform/ui';
 
 type SpaceCardContainerProps = {
@@ -18,7 +17,6 @@ export const SpaceCardContainer = ({
   spaces,
   showExitButton,
 }: SpaceCardContainerProps) => {
-  const router = useRouter();
   return (
     <div
       data-testid="member-spaces-container"
