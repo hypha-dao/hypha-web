@@ -97,7 +97,12 @@ export const IssueNewTokenPlugin = ({
     });
     clearTokenPriceFields();
     setEnableLimitedSupply(false);
-  }, [setValue, clearLimitedSupplyFields, clearTransferFields, clearTokenPriceFields]);
+  }, [
+    setValue,
+    clearLimitedSupplyFields,
+    clearTransferFields,
+    clearTokenPriceFields,
+  ]);
 
   useEffect(() => {
     const defaults = {
@@ -162,7 +167,11 @@ export const IssueNewTokenPlugin = ({
       setShowAdvancedSettings(false);
       clearAdvancedSettingsFields();
     }
-  }, [areGeneralFieldsFilled, showAdvancedSettings, clearAdvancedSettingsFields]);
+  }, [
+    areGeneralFieldsFilled,
+    showAdvancedSettings,
+    clearAdvancedSettingsFields,
+  ]);
 
   useEffect(() => {
     if (!areGeneralFieldsFilled && showDecaySettings) {
@@ -221,10 +230,14 @@ export const IssueNewTokenPlugin = ({
       const isOwnershipToken = currentTokenType === 'ownership';
 
       if (!whitelist) {
-        setValue('transferWhitelist', {}, {
-          shouldDirty: true,
-          shouldValidate: false,
-        });
+        setValue(
+          'transferWhitelist',
+          {},
+          {
+            shouldDirty: true,
+            shouldValidate: false,
+          },
+        );
       }
 
       const currentWhitelist = getValues('transferWhitelist');
