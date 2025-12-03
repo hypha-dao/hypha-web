@@ -6,6 +6,7 @@ import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
 import { EthAddress } from '../../people/components/eth-address';
 import { formatCurrencyValue } from '../../../../ui-utils/src/formatCurrencyValue';
+import { formatSeconds } from '@hypha-platform/ui-utils';
 import { usePersonByWeb3Address } from '../hooks';
 import { useDbSpaces } from '../../hooks';
 import { PersonAvatar } from '../../people/components/person-avatar';
@@ -184,7 +185,7 @@ export const ProposalTokenItem = ({
               <div className="text-1 text-neutral-11 w-full">
                 Decay Interval
               </div>
-              <div className="text-1">{Number(decayInterval)} seconds</div>
+              <div className="text-1">{formatSeconds(decayInterval)}</div>
             </div>
           </div>
         </>
