@@ -9,8 +9,8 @@ export function pushProposalCreationForCreator({
 }: ProposalCreationProps): Push {
   const space = spaceTitle ? `"${spaceTitle}"` : 'a space';
   const proposal = proposalTitle
-    ? `the ${proposalState} "${proposalTitle}"`
-    : `a ${proposalState}`;
+    ? `${proposalState} "${proposalTitle}"`
+    : `${proposalState}`;
 
   switch (proposalLabel) {
     case 'Invite':
