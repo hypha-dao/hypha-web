@@ -39,7 +39,9 @@ export const Footer = () => {
                 Hypha Services
               </Link>
             </Button>
-            <Button
+            {/* NOTE: Turned off until a new constitution is provided,
+                      which is still in development. */}
+            {/* <Button
               asChild
               variant="ghost"
               className="rounded-lg justify-start text-gray-400 px-0"
@@ -52,7 +54,7 @@ export const Footer = () => {
               >
                 Hypha Constitution
               </Link>
-            </Button>
+            </Button> */}
             <Button
               asChild
               variant="ghost"
