@@ -11,6 +11,7 @@ import alchemyClient from '@plugins/alchemy';
 import dbService from '@plugins/db';
 import { Network } from 'alchemy-sdk';
 import uploadthing from '@plugins/uploadthing';
+import sensible from '@fastify/sensible';
 
 const app = Fastify();
 app.register(cors);
@@ -19,6 +20,8 @@ const start = async () => {
   console.log('Booting API...');
 
   try {
+    await app.register(sensible, { sharedSchemaId: 'HttpError' });
+
     console.log('Adding health...');
 
     // health route for app runner
