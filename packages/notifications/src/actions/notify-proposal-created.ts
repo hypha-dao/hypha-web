@@ -13,11 +13,7 @@ import {
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import {
-  pushProposalCreationForCreator,
-  pushProposalCreationForMembers,
-} from '../template';
-import {
-  sendPushNotifications,
+  sendPushNotificationsTemplate,
   sendEmailNotificationsTemplate,
 } from '../mutations';
 import { TAG_SUB_NEW_PROPOSAL_OPEN } from '../constants';
@@ -31,14 +27,20 @@ async function notifyPushProposalCreatedForCreator({
   space: Space;
   url: string;
 }) {
-  const { contents, headings } = pushProposalCreationForCreator({
-    creatorName: person.name,
-    spaceTitle: space.title,
-    spaceSlug: space.slug,
-  });
-  await sendPushNotifications({
-    contents,
-    headings,
+  const templateId =
+    process.env.NEXT_PUBLIC_PUSH_TEMPLATE_PROPOSAL_OPEN_FOR_CREATOR || '';
+  if (!templateId) {
+    throw new Error(
+      'Environment variable NEXT_PUBLIC_PUSH_TEMPLATE_PROPOSAL_OPEN_FOR_CREATOR is not configured, cannot send a push',
+    );
+  }
+  const customData = {
+    space_title: space.title,
+    url,
+  };
+  await sendPushNotificationsTemplate({
+    templateId,
+    customData,
     usernames: person.slug ? [person.slug] : [],
     requiredTags: {
       [TAG_SUB_NEW_PROPOSAL_OPEN]: 'true',
@@ -85,14 +87,23 @@ async function notifyPushProposalCreatedForMembersAction(params: {
   spaceSlug?: string;
   url?: string;
 }) {
+  const templateId =
+    process.env.NEXT_PUBLIC_PUSH_TEMPLATE_PROPOSAL_OPEN_FOR_MEMBERS || '';
+  if (!templateId) {
+    throw new Error(
+      'Environment variable NEXT_PUBLIC_PUSH_TEMPLATE_PROPOSAL_OPEN_FOR_MEMBERS is not configured, cannot send a push',
+    );
+  }
   const usernames = params.people
     .map(({ slug }) => slug)
     .filter(Boolean) as string[];
-  const { contents, headings } = pushProposalCreationForMembers(params);
-
-  return await sendPushNotifications({
-    contents,
-    headings,
+  const customData = {
+    space_title: params.spaceTitle ?? '',
+    url: params.url ?? '',
+  };
+  return await sendPushNotificationsTemplate({
+    templateId,
+    customData,
     usernames,
     requiredTags: {
       [TAG_SUB_NEW_PROPOSAL_OPEN]: 'true',

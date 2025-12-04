@@ -88,6 +88,47 @@ export const sendPushNotifications = async ({
   });
 };
 
+export const sendPushNotificationsTemplate = async ({
+  templateId,
+  customData,
+  usernames,
+  requiredTags,
+  url,
+}: {
+  templateId: string;
+  customData?: Record<string, string>;
+  usernames: string[];
+  requiredTags?: Tags;
+  url?: string;
+}) => {
+  if (!ONESIGNAL_APP_ID) {
+    throw new Error('ONESIGNAL_APP_ID environment variable is not set');
+  }
+
+  console.log('Send push...');
+  const aliases = await filterUsers(usernames, {
+    subscribed: 'true',
+    push: 'true',
+    ...requiredTags,
+  });
+
+  if (aliases.length === 0) {
+    console.warn('No users matched push notification criteria');
+    return null;
+  }
+
+  return await sendPushByAlias({
+    app_id: ONESIGNAL_APP_ID,
+    alias: {
+      include_aliases: {
+        external_id: aliases,
+      },
+    },
+    content: { template_id: templateId, custom_data: customData },
+    url,
+  });
+};
+
 export const sendEmailNotifications = async ({
   body,
   subject,
