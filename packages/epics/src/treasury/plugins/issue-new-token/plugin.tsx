@@ -29,8 +29,14 @@ export const IssueNewTokenPlugin = ({
   const [showDecaySettings, setShowDecaySettings] = useState<boolean>(false);
   const [showAdvancedSettings, setShowAdvancedSettings] =
     useState<boolean>(false);
-  const [enableLimitedSupply, setEnableLimitedSupply] =
-    useState<boolean>(false);
+
+  const enableLimitedSupply = watch('enableLimitedSupply') ?? false;
+  const setEnableLimitedSupply = (value: boolean) => {
+    setValue('enableLimitedSupply', value, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
 
   const enableProposalAutoMinting = watch('enableProposalAutoMinting');
   const transferable = watch('transferable');

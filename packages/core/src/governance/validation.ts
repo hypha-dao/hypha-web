@@ -370,6 +370,7 @@ export const baseSchemaIssueNewToken = z.object({
   transferWhitelist: transferWhitelistSchema.optional(),
 
   enableProposalAutoMinting: z.boolean(),
+  enableLimitedSupply: z.boolean().optional(),
   enableTokenPrice: z.boolean(),
   referenceCurrency: z.enum(REFERENCE_CURRENCIES).optional(),
   tokenPrice: z.preprocess((val) => {
@@ -383,11 +384,29 @@ export const baseSchemaIssueNewToken = z.object({
 
 export const schemaIssueNewToken = baseSchemaIssueNewToken.superRefine(
   (data, ctx) => {
-    if (data.maxSupply > 0 && !data.maxSupplyType) {
+    if (
+      (data.enableLimitedSupply === true || data.maxSupply > 0) &&
+      !data.maxSupplyType
+    ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Please select a max supply type',
         path: ['maxSupplyType'],
+      });
+    }
+
+    if (
+      data.maxSupplyType?.value === 'updatable' &&
+      (data.maxSupply === undefined ||
+        data.maxSupply === null ||
+        isNaN(data.maxSupply) ||
+        data.maxSupply <= 0)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'Max supply must be greater than 0 when updatable type is selected',
+        path: ['maxSupply'],
       });
     }
 

@@ -22,11 +22,16 @@ const OPTIONS = [
 ];
 
 export function TokenMaxSupplyTypeField() {
-  const { control } = useFormContext();
+  const { control, trigger } = useFormContext();
   const maxSupply = useWatch({
     control,
     name: 'maxSupply',
     defaultValue: 0,
+  });
+  const enableLimitedSupply = useWatch({
+    control,
+    name: 'enableLimitedSupply',
+    defaultValue: false,
   });
 
   return (
@@ -35,7 +40,8 @@ export function TokenMaxSupplyTypeField() {
       name="maxSupplyType"
       render={({ field }) => {
         const selectedLabel = field.value?.label || 'Select max supply type';
-        const showRequirementMark = maxSupply > 0;
+        const showRequirementMark =
+          enableLimitedSupply === true || maxSupply > 0;
 
         return (
           <FormItem>
@@ -67,7 +73,10 @@ export function TokenMaxSupplyTypeField() {
                     {OPTIONS.map((opt) => (
                       <DropdownMenuItem
                         key={opt.value}
-                        onSelect={() => field.onChange(opt)}
+                        onSelect={() => {
+                          field.onChange(opt);
+                          trigger('maxSupply');
+                        }}
                       >
                         {opt.label}
                       </DropdownMenuItem>
