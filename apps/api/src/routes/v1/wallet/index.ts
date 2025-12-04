@@ -1,8 +1,9 @@
 import type { FastifyInstance } from 'fastify';
-import { response, type Response } from './schema/get-wallet';
+import { schema, type Schema } from './schema';
 import { erc20Abi, formatUnits, isAddress } from 'viem';
 import tokenRoutes from './token';
 import receiveRoutes from './receive';
+import type { UtilityToken, VoiceToken, OwnershipToken } from '@schemas/token';
 
 export default async function walletRoutes(app: FastifyInstance) {
   await app.register(import('@fastify/rate-limit'), {
@@ -35,102 +36,98 @@ export default async function walletRoutes(app: FastifyInstance) {
   /**
    * GET /wallet
    */
-  app.get<{ Reply: Response }>(
-    '/',
-    {
-      schema: { response: { 200: response } },
-    },
-    async (request) => {
-      const authToken = request.headers.authorization?.split(' ').at(1);
-      // TODO: implement proper return
-      if (authToken == null) throw new Error('Unauthorized');
+  app.get<Schema>('/', { schema }, async (request, reply) => {
+    const authToken = request.headers.authorization?.split(' ').at(1);
+    if (authToken == null) return reply.unauthorized();
 
-      const userAddress = (await app.db.findPersonByAuth({ authToken }))
-        ?.address;
-      // TODO: implement proper return
-      if (userAddress == null) throw new Error('User not found');
-      const rawBalances = await app.alchemy.getTokenBalanceByAddress(
-        userAddress as `0x${string}`,
-      );
+    const userAddress = (await app.db.findPersonByAuth({ authToken }))?.address;
+    if (userAddress == null)
+      return reply.notFound('User does not have an address');
+    const [err, rawBalances] = await app.to(
+      app.alchemy.getTokenBalanceByAddress(userAddress as `0x${string}`),
+    );
+    if (err) {
+      console.error(err);
+      return reply.internalServerError();
+    }
 
-      const tokenAddresses = rawBalances
-        .map(({ tokenAddress }) => tokenAddress)
-        .filter((address) => isAddress(address));
-      const fetchingDbTokens = app.db.findTokensByAddresses({
-        addresses: tokenAddresses,
+    const tokenAddresses = rawBalances
+      .map(({ tokenAddress }) => tokenAddress)
+      .filter((address) => isAddress(address));
+    const fetchingDbTokens = app.db.findTokensByAddresses({
+      addresses: tokenAddresses,
+    });
+
+    const balances = new Map(
+      rawBalances.map(({ tokenAddress, balance }) => [
+        tokenAddress.toLowerCase(),
+        balance,
+      ]),
+    );
+
+    const utility_tokens: UtilityToken[] = [];
+    const voice_tokens: VoiceToken[] = [];
+    const ownership_tokens: OwnershipToken[] = [];
+
+    const getSupply = async (address: `0x${string}`) => {
+      const baseContract = {
+        address,
+        abi: erc20Abi,
+      } as const;
+
+      const [supply, decimals] = await app.web3Client.multicall({
+        contracts: [
+          { ...baseContract, functionName: 'totalSupply', args: [] },
+          { ...baseContract, functionName: 'decimals', args: [] },
+        ],
       });
 
-      const balances = new Map(
-        rawBalances.map(({ tokenAddress, balance }) => [
-          tokenAddress.toLowerCase(),
-          balance,
-        ]),
-      );
+      if (supply.status === 'failure' || decimals.status === 'failure') {
+        return 0;
+      }
 
-      const utility_tokens: Response['utility_tokens'] = [];
-      const voice_tokens: Response['voice_tokens'] = [];
-      const ownership_tokens: Response['ownership_tokens'] = [];
+      return Number(formatUnits(supply.result, decimals.result));
+    };
 
-      const getSupply = async (address: `0x${string}`) => {
-        const baseContract = {
-          address,
-          abi: erc20Abi,
-        } as const;
+    const formingResults = (await fetchingDbTokens).map(async (token) => {
+      const normalizedAddress = token.address?.toLowerCase();
+      const balance =
+        normalizedAddress != null ? balances.get(normalizedAddress) ?? 0 : 0;
 
-        const [supply, decimals] = await app.web3Client.multicall({
-          contracts: [
-            { ...baseContract, functionName: 'totalSupply', args: [] },
-            { ...baseContract, functionName: 'decimals', args: [] },
-          ],
-        });
-
-        if (supply.status === 'failure' || decimals.status === 'failure') {
-          return 0;
-        }
-
-        return Number(formatUnits(supply.result, decimals.result));
+      const base = {
+        balance,
+        name: token.name,
+        symbol: token.symbol,
+        icon_url: token.iconUrl,
       };
 
-      const formingResults = (await fetchingDbTokens).map(async (token) => {
-        const normalizedAddress = token.address?.toLowerCase();
-        const balance =
-          normalizedAddress != null ? balances.get(normalizedAddress) ?? 0 : 0;
-
-        const base = {
-          balance,
-          name: token.name,
-          symbol: token.symbol,
-          icon_url: token.iconUrl,
-        };
-
-        switch (token.type) {
-          case 'voice': {
-            const supply =
-              token.address != null
-                ? await getSupply(token.address as `0x${string}`)
-                : 0;
-            const percentage = supply > 0 ? (100 * balance) / supply : 0;
-            voice_tokens.push({ ...base, percentage });
-            break;
-          }
-
-          case 'ownership': {
-            const supply =
-              token.address != null
-                ? await getSupply(token.address as `0x${string}`)
-                : 0;
-            const percentage = supply > 0 ? (100 * balance) / supply : 0;
-            ownership_tokens.push({ ...base, percentage });
-            break;
-          }
-
-          default:
-            utility_tokens.push(base);
+      switch (token.type) {
+        case 'voice': {
+          const supply =
+            token.address != null
+              ? await getSupply(token.address as `0x${string}`)
+              : 0;
+          const percentage = supply > 0 ? (100 * balance) / supply : 0;
+          voice_tokens.push({ ...base, percentage });
+          break;
         }
-      });
-      await Promise.all(formingResults);
 
-      return { utility_tokens, voice_tokens, ownership_tokens };
-    },
-  );
+        case 'ownership': {
+          const supply =
+            token.address != null
+              ? await getSupply(token.address as `0x${string}`)
+              : 0;
+          const percentage = supply > 0 ? (100 * balance) / supply : 0;
+          ownership_tokens.push({ ...base, percentage });
+          break;
+        }
+
+        default:
+          utility_tokens.push(base);
+      }
+    });
+    await Promise.all(formingResults);
+
+    return { utility_tokens, voice_tokens, ownership_tokens };
+  });
 }

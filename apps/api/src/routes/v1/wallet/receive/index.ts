@@ -2,14 +2,12 @@ import type { FastifyInstance } from 'fastify';
 import { schema, type Schema } from './schema';
 
 export default async function receiveRoutes(app: FastifyInstance) {
-  app.get<Schema>('/', { schema }, async (request) => {
+  app.get<Schema>('/', { schema }, async (request, reply) => {
     const authToken = request.headers.authorization?.split(' ').at(1);
-    // TODO: implement proper return
-    if (authToken == null) throw new Error('Unauthorized');
+    if (authToken == null) return reply.unauthorized();
 
     const userAddress = (await app.db.findPersonByAuth({ authToken }))?.address;
-    // TODO: implement proper return
-    if (!userAddress) throw new Error('User not found');
+    if (!userAddress) return reply.notFound('User not found');
 
     const { chain, tokenId } = request.query;
     if (tokenId != null) {

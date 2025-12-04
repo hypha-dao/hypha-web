@@ -1,11 +1,15 @@
 import { Type, Static } from 'typebox';
 import { summary, commitment, payment } from '@schemas/proposal';
 
-const response = Type.Object({
-  ...summary.properties,
-  commitment: Type.Optional(commitment),
-  payments: Type.Array(payment),
-});
+const response = {
+  200: Type.Object({
+    ...summary.properties,
+    commitment: Type.Optional(commitment),
+    payments: Type.Array(payment),
+  }),
+  '4xx': Type.Ref('HttpError'),
+  '5xx': Type.Ref('HttpError'),
+};
 
 const params = Type.Object({
   id: Type.Integer({
@@ -16,10 +20,10 @@ const params = Type.Object({
 
 export const schema = {
   params,
-  response: { 200: response },
+  response,
 } as const;
 
 export type Schema = {
-  Reply: Static<typeof response>;
+  Reply: Static<(typeof response)[200]>;
   Params: Static<typeof params>;
 };
