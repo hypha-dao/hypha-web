@@ -10,7 +10,7 @@ import {
 } from '@hypha-platform/ui';
 
 export const EnableTokenPriceField = () => {
-  const { control, trigger } = useFormContext();
+  const { control } = useFormContext();
 
   return (
     <FormField
@@ -23,14 +23,7 @@ export const EnableTokenPriceField = () => {
             <FormControl>
               <Switch
                 checked={field.value}
-                onCheckedChange={(checked) => {
-                  field.onChange(checked);
-                  if (checked) {
-                    setTimeout(() => {
-                      trigger(['tokenPrice', 'referenceCurrency']);
-                    }, 0);
-                  }
-                }}
+                onCheckedChange={field.onChange}
                 className="ml-2"
               />
             </FormControl>

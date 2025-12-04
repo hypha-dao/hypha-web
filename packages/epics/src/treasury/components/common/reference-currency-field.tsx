@@ -15,7 +15,7 @@ import {
 } from '@hypha-platform/ui';
 
 export const ReferenceCurrencyField = () => {
-  const { control } = useFormContext();
+  const { control, formState } = useFormContext();
   const enableTokenPrice = useWatch({
     control,
     name: 'enableTokenPrice',
@@ -56,7 +56,7 @@ export const ReferenceCurrencyField = () => {
               </Select>
             </FormControl>
           </div>
-          <FormMessage />
+          {formState.isSubmitted && <FormMessage />}
         </FormItem>
       )}
     />

@@ -11,7 +11,7 @@ import {
 } from '@hypha-platform/ui';
 
 export const TokenPriceField = () => {
-  const { control } = useFormContext();
+  const { control, formState } = useFormContext();
   const enableTokenPrice = useWatch({
     control,
     name: 'enableTokenPrice',
@@ -22,7 +22,7 @@ export const TokenPriceField = () => {
     <FormField
       control={control}
       name="tokenPrice"
-      render={({ field }) => (
+      render={({ field, fieldState }) => (
         <FormItem>
           <div className="flex w-full justify-between">
             <div className="flex gap-1 w-full">
@@ -44,7 +44,7 @@ export const TokenPriceField = () => {
               />
             </FormControl>
           </div>
-          <FormMessage />
+          {formState.isSubmitted && <FormMessage />}
         </FormItem>
       )}
     />

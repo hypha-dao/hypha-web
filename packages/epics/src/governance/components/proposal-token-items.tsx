@@ -6,6 +6,7 @@ import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
 import { EthAddress } from '../../people/components/eth-address';
 import { formatCurrencyValue } from '../../../../ui-utils/src/formatCurrencyValue';
+import { formatSeconds } from '@hypha-platform/ui-utils';
 import { usePersonByWeb3Address } from '../hooks';
 import { useDbSpaces } from '../../hooks';
 import { PersonAvatar } from '../../people/components/person-avatar';
@@ -102,17 +103,18 @@ export const ProposalTokenItem = ({
   const originalSupply = initialSupply ? Number(initialSupply / 10n ** 18n) : 0;
   const { id } = useParams();
   const { space } = useSpaceBySlug(id as string);
-  const tokenIcon = dbTokens?.find(
+
+  const dbToken = dbTokens?.find(
     (t) =>
       t.symbol?.toUpperCase() === symbol?.toUpperCase() &&
       t.name?.toUpperCase() === name?.toUpperCase() &&
       t.spaceId == space?.id,
-  )?.iconUrl;
+  );
+  const tokenIcon = dbToken?.iconUrl;
 
-  const priceInUSDCents = priceInUSD ? Number(priceInUSD) : null;
-  const priceInUSDDisplay = priceInUSDCents
-    ? (priceInUSDCents / 100).toFixed(2)
-    : null;
+  const referenceCurrency = dbToken?.referenceCurrency;
+
+  const referencePrice = dbToken?.referencePrice;
 
   return (
     <div className="flex flex-col gap-5">
@@ -137,7 +139,9 @@ export const ProposalTokenItem = ({
       <div className="flex justify-between items-center">
         <div className="text-1 text-neutral-11 w-full">Max Supply</div>
         <div className="text-1">
-          {formatCurrencyValue(Number(originalSupply))}
+          {Number(originalSupply) === 0
+            ? 'Unlimited'
+            : formatCurrencyValue(Number(originalSupply))}
         </div>
       </div>
       {transferable !== undefined && (
@@ -160,10 +164,12 @@ export const ProposalTokenItem = ({
           <div className="text-1">{autoMinting ? 'Enabled' : 'Disabled'}</div>
         </div>
       )}
-      {priceInUSDDisplay && (
+      {referencePrice && (
         <div className="flex justify-between items-center text-nowrap">
           <div className="text-1 text-neutral-11 w-full">Token Price</div>
-          <div className="text-1">${priceInUSDDisplay} USD</div>
+          <div className="text-1">
+            ${formatCurrencyValue(referencePrice)} {referenceCurrency}
+          </div>
         </div>
       )}
       {decayPercentage !== undefined && decayInterval !== undefined && (
@@ -183,7 +189,7 @@ export const ProposalTokenItem = ({
               <div className="text-1 text-neutral-11 w-full">
                 Decay Interval
               </div>
-              <div className="text-1">{Number(decayInterval)} seconds</div>
+              <div className="text-1">{formatSeconds(decayInterval)}</div>
             </div>
           </div>
         </>
