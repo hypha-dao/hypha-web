@@ -58,7 +58,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
     >
       {showExitButton && web3SpaceId && (
         <div
-          className="absolute w-[30px] h-[30px] top-[10px] right-[10px] sm:invisible group-hover:visible"
+          className="absolute w-[30px] h-[30px] top-[10px] right-[10px] invisible [@media(hover:none)]:visible group-hover:visible"
           onClick={(event) => {
             event.preventDefault();
             event.stopPropagation();
@@ -74,7 +74,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
                 className="border-0 w-[30px] h-[30px]"
                 title="Exit Space"
               >
-                <ExitIcon fontSize={'12px'} />
+                <ExitIcon width={18} height={18} />
               </Button>
             }
           />
