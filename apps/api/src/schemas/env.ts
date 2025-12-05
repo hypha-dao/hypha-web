@@ -17,6 +17,9 @@ export const environment = Type.Object({
     }),
   ),
   ALCHEMY_API_KEY: Type.Optional(Type.String()),
+  UPLOADTHING_TOKEN: Type.String({
+    description: 'A token for interacting with the SDK',
+  }),
 });
 
 export type Environment = Static<typeof environment>;

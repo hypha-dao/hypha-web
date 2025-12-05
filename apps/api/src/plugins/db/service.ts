@@ -5,6 +5,7 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import { neon } from '@neondatabase/serverless';
 import { schema } from './schema';
 import {
+  createAgreement,
   findAllDocumentsBySpaceId,
   findDocumentById,
   findDocumentWeb3Id,
@@ -96,5 +97,15 @@ export class DbService {
 
   public findTokenById({ id }: { id: number }) {
     return findTokenById({ id }, { db: this.db });
+  }
+
+  public async createAgreement({
+    authToken,
+    ...input
+  }: { authToken: string } & Parameters<typeof createAgreement>[0]) {
+    // TODO: #602 Define RLS Policies for Agreement Table
+    if (!authToken) throw new Error('No authorization token');
+
+    return this.db.transaction((tx) => createAgreement(input, { db: tx }));
   }
 }
