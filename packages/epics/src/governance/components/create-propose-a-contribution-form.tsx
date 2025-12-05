@@ -94,6 +94,8 @@ export const CreateProposeAContributionForm = ({
 
   return (
     <LoadingBackdrop
+      showKeepWindowOpenMessage={true}
+      fullHeight={true}
       progress={progress}
       isLoading={isPending}
       message={
@@ -106,7 +108,6 @@ export const CreateProposeAContributionForm = ({
           <div>{currentAction}</div>
         )
       }
-      className="-m-4 lg:-m-7"
     >
       <Form {...form}>
         <form

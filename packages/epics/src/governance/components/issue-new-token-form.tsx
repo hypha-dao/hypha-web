@@ -180,6 +180,8 @@ export const IssueNewTokenForm = ({
 
   return (
     <LoadingBackdrop
+      showKeepWindowOpenMessage={true}
+      fullHeight={true}
       progress={progress}
       isLoading={isPending}
       message={

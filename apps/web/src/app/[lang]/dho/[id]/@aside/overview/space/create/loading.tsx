@@ -8,10 +8,11 @@ export default function AsideCreateSubspacePage() {
   return (
     <SidePanel>
       <LoadingBackdrop
+        showKeepWindowOpenMessage={true}
+        fullHeight={true}
         progress={0}
         isLoading={true}
         message={<></>}
-        className="-m-4 lg:-m-7"
       >
         <SpaceForm
           creator={{

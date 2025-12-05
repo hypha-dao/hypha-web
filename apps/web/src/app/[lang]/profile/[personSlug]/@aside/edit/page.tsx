@@ -50,6 +50,8 @@ export default function EditProfilePage() {
   return (
     <SidePanel>
       <LoadingBackdrop
+        showKeepWindowOpenMessage={true}
+        fullHeight={true}
         isLoading={isEditing}
         progress={progress}
         message={
@@ -62,7 +64,6 @@ export default function EditProfilePage() {
             <div>{currentAction}</div>
           )
         }
-        className="-m-4 lg:-m-7"
       >
         <EditPersonSection
           person={person}

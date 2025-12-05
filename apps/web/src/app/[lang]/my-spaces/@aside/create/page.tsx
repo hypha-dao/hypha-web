@@ -45,6 +45,8 @@ export default function AsideCreateSpacePage() {
   return progress !== 100 ? (
     <SidePanel>
       <LoadingBackdrop
+        fullHeight={true}
+        showKeepWindowOpenMessage={true}
         progress={progress}
         isLoading={isPending}
         message={
@@ -57,7 +59,6 @@ export default function AsideCreateSpacePage() {
             <div>{currentAction}</div>
           )
         }
-        className="-m-4 lg:-m-7"
       >
         <SpaceForm
           creator={{

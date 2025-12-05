@@ -88,6 +88,8 @@ export default function SpaceConfiguration() {
   return (
     <SidePanel>
       <LoadingBackdrop
+        showKeepWindowOpenMessage={true}
+        fullHeight={true}
         progress={progress}
         isLoading={isBusy}
         message={
@@ -100,7 +102,6 @@ export default function SpaceConfiguration() {
             <div>{currentAction}</div>
           )
         }
-        className="-m-4 lg:-m-7"
       >
         <SpaceForm
           submitLabel="Update"

@@ -107,6 +107,8 @@ export const CreateDeployFundsForm = ({
 
   return (
     <LoadingBackdrop
+      showKeepWindowOpenMessage={true}
+      fullHeight={true}
       progress={progress}
       isLoading={isPending}
       message={
