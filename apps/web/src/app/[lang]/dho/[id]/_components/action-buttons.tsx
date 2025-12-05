@@ -41,7 +41,7 @@ export const ActionButtons = ({ web3SpaceId }: ActionButtonsProps) => {
         }
         title={tooltipMessage || 'Space Settings'}
       >
-        <Button colorVariant="accent" variant={'outline'} disabled={isDisabled}>
+        <Button colorVariant="accent" variant="outline" disabled={isDisabled}>
           <GearIcon className="sm:hidden" width={16} height={16} />
           <span className="hidden sm:flex">Space Settings</span>
         </Button>

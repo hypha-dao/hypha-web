@@ -89,7 +89,7 @@ export const AssetsSection: FC<AssetSectionProps> = ({
           scroll={false}
           title={tooltipMessage || ''}
         >
-          <Button disabled={isDisabled}>
+          <Button colorVariant="accent" variant="outline" disabled={isDisabled}>
             <RadiobuttonIcon />
             New Token
           </Button>
