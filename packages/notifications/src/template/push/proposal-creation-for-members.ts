@@ -9,7 +9,7 @@ export function pushProposalCreationForMembers({
   spaceTitle,
 }: ProposalCreationProps): Push {
   const space = spaceTitle ? `"${spaceTitle}"` : 'a space';
-  const proposal = proposalTitle ? `"${proposalTitle}"` : `a ${proposalState}`;
+  const proposal = proposalTitle ? `"${proposalTitle}"` : `${proposalState}`;
 
   switch (proposalLabel) {
     case 'Invite':
