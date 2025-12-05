@@ -7,7 +7,13 @@ import {
 } from '@hypha-platform/core/client';
 import useSWR from 'swr';
 
-export const useSpaceMember = ({ spaceId }: { spaceId?: number }) => {
+export const useSpaceMember = ({
+  spaceId,
+  refreshInterval = 30000,
+}: {
+  spaceId?: number;
+  refreshInterval?: number;
+}) => {
   const { user } = useAuthentication();
 
   const {
@@ -24,7 +30,7 @@ export const useSpaceMember = ({ spaceId }: { spaceId?: number }) => {
         isMemberConfig({ spaceId: BigInt(spaceId), memberAddress: address }),
       ),
     {
-      refreshInterval: 30000,
+      refreshInterval,
     },
   );
 
