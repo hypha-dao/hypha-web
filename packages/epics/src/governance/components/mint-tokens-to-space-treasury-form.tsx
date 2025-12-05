@@ -95,6 +95,7 @@ export const MintTokensToSpaceTreasuryForm = ({
 
   return (
     <LoadingBackdrop
+      showKeepWindowOpenMessage={true}
       progress={progress}
       isLoading={isPending}
       message={

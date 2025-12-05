@@ -94,6 +94,7 @@ export const CreateProposeAContributionForm = ({
 
   return (
     <LoadingBackdrop
+      showKeepWindowOpenMessage={true}
       progress={progress}
       isLoading={isPending}
       message={

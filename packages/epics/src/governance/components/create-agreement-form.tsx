@@ -83,6 +83,7 @@ export const CreateAgreementForm = ({
 
   return (
     <LoadingBackdrop
+      showKeepWindowOpenMessage={true}
       progress={progress}
       isLoading={isPending}
       message={

@@ -45,6 +45,7 @@ export default function AsideCreateSpacePage() {
   return progress !== 100 ? (
     <SidePanel>
       <LoadingBackdrop
+        showKeepWindowOpenMessage={true}
         progress={progress}
         isLoading={isPending}
         message={

@@ -23,6 +23,7 @@ export default function AsideNotificationCentrePage() {
   return (
     <SidePanel>
       <LoadingBackdrop
+        showKeepWindowOpenMessage={true}
         progress={progress}
         isLoading={isBusy}
         message={<></>}

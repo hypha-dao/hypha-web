@@ -119,6 +119,7 @@ export const BuyHyphaTokensForm = ({
 
   return (
     <LoadingBackdrop
+      showKeepWindowOpenMessage={true}
       progress={progress}
       isLoading={isPending || insufficientFunds}
       className="-m-4 lg:-m-7"

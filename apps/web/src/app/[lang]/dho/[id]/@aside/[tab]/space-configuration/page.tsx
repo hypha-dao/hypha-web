@@ -88,6 +88,7 @@ export default function SpaceConfiguration() {
   return (
     <SidePanel>
       <LoadingBackdrop
+        showKeepWindowOpenMessage={true}
         progress={progress}
         isLoading={isBusy}
         message={

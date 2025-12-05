@@ -40,6 +40,7 @@ export default function SignupPage() {
 
   return (
     <LoadingBackdrop
+      showKeepWindowOpenMessage={true}
       isLoading={isLoading || !user?.wallet?.address}
       message={<span>Loading...</span>}
     >

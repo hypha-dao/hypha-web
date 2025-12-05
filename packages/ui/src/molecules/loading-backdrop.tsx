@@ -7,6 +7,7 @@ type LoadingBackdrop = {
   progress?: number;
   className?: string;
   message?: React.ReactElement;
+  showKeepWindowOpenMessage?: boolean;
 };
 
 export const LoadingBackdrop = ({
@@ -15,6 +16,7 @@ export const LoadingBackdrop = ({
   children,
   className,
   message,
+  showKeepWindowOpenMessage = false,
 }: LoadingBackdrop) => {
   return (
     <div className="relative w-full">
@@ -27,6 +29,11 @@ export const LoadingBackdrop = ({
           )}
         >
           <Progress value={progress} className="h-2 w-3/4 max-w-md" />
+          {showKeepWindowOpenMessage && (
+            <div className="text-center text-sm font-medium">
+              Please keep this window open until the progress bar completes.
+            </div>
+          )}
           <div className="text-center text-sm">{message}</div>
         </div>
       )}

@@ -8,6 +8,7 @@ export default function AsideCreateAgreementPage() {
   return (
     <SidePanel>
       <LoadingBackdrop
+        showKeepWindowOpenMessage={true}
         progress={0}
         isLoading={true}
         message={<></>}

@@ -107,6 +107,7 @@ export const CreatePayForExpensesForm = ({
 
   return (
     <LoadingBackdrop
+      showKeepWindowOpenMessage={true}
       progress={progress}
       isLoading={isPending}
       message={

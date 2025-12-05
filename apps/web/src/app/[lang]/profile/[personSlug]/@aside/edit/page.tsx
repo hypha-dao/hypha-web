@@ -50,6 +50,7 @@ export default function EditProfilePage() {
   return (
     <SidePanel>
       <LoadingBackdrop
+        showKeepWindowOpenMessage={true}
         isLoading={isEditing}
         progress={progress}
         message={
