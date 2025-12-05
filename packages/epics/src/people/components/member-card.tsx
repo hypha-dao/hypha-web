@@ -19,7 +19,7 @@ import {
   useUndelegateWeb3Rpc,
 } from '@hypha-platform/core/client';
 import { useState } from 'react';
-import { useJoinSpace } from '../../spaces';
+import { useSpaceMember } from '../../spaces';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useIsDelegate } from '@hypha-platform/core/client';
 import { useEffect } from 'react';
@@ -58,7 +58,9 @@ export const MemberCard: React.FC<MemberCardProps> = ({
     userAddress: address as `0x${string}`,
   });
   const [localIsDelegate, setLocalIsDelegate] = useState(isDelegate);
-  const { isMember } = useJoinSpace({ spaceId: space?.web3SpaceId as number });
+  const { isMember } = useSpaceMember({
+    spaceId: space?.web3SpaceId as number,
+  });
   const { isAuthenticated, user } = useAuthentication();
 
   const isDisabled = isUndelegating || !isAuthenticated || !isMember;

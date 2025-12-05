@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@hypha-platform/ui';
-import { useSalesBanner, useJoinSpace } from '../hooks';
+import { useSalesBanner, useSpaceMember } from '../hooks';
 import { Cross1Icon } from '@radix-ui/react-icons';
 import { usePathname } from 'next/navigation';
 import { cleanPath } from '../utils/cleanPath';
@@ -27,7 +27,7 @@ export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
   const { status, daysLeft, onClose, isLoading } = useSalesBanner({
     spaceId: web3SpaceId,
   });
-  const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
+  const { isMember } = useSpaceMember({ spaceId: web3SpaceId as number });
   const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
   const { isAuthenticated } = useAuthentication();
 

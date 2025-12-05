@@ -9,7 +9,7 @@ import {
   useIsDelegate,
   type SpaceDetails,
 } from '@hypha-platform/core/client';
-import { useJoinSpace } from '../../spaces';
+import { useSpaceMember } from '../../spaces';
 import { useSpaceMinProposalDuration } from '@hypha-platform/core/client';
 import { formatDuration } from '@hypha-platform/ui-utils';
 import { useTheme } from 'next-themes';
@@ -77,7 +77,7 @@ export const FormVoting = ({
   hideDurationData?: boolean;
 }) => {
   const { myVote } = useMyVote(documentSlug);
-  const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
+  const { isMember } = useSpaceMember({ spaceId: web3SpaceId as number });
   const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
   const { theme } = useTheme();
 

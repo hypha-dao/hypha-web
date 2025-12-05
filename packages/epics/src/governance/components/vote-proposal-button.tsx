@@ -6,7 +6,7 @@ import {
 } from '@hypha-platform/core/client';
 import { Button } from '@hypha-platform/ui';
 import React from 'react';
-import { useJoinSpace } from '../../spaces';
+import { useSpaceMember } from '../../spaces';
 import { formatISO, isPast } from 'date-fns';
 
 export const VoteProposalButton = ({
@@ -26,7 +26,7 @@ export const VoteProposalButton = ({
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: web3ProposalId,
   });
-  const { isMember } = useJoinSpace({
+  const { isMember } = useSpaceMember({
     spaceId: web3SpaceId,
   });
   const { isDelegate } = useIsDelegate({

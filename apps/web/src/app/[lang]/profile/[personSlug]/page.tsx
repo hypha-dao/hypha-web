@@ -80,7 +80,11 @@ export default async function ProfilePage(props: PageProps) {
           />
           <Separator />
           <MFABanner />
-          <ProfileMemberSpaces spaces={spaces} profileView={true} />
+          <ProfileMemberSpaces
+            person={person}
+            spaces={spaces}
+            profileView={true}
+          />
           <ProfileTabs person={person} lang={lang} />
         </div>
       ) : (

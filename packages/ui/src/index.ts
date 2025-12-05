@@ -8,6 +8,7 @@ export * from './upload/attachments-list';
 export * from './upload/avatar';
 export * from './upload/lead-image';
 
+export * from './alert-dialog';
 export * from './avatar';
 export * from './badge';
 export * from './breadcrumb';
