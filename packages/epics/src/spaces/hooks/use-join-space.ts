@@ -5,7 +5,7 @@ import React from 'react';
 
 export const useJoinSpace = ({ spaceId }: { spaceId?: number }) => {
   const { joinSpace: joinSpaceWeb3, isJoiningSpace } = useJoinSpaceWeb3Rpc({
-    spaceId: spaceId as number,
+    spaceId,
   });
 
   const joinSpace = React.useCallback(async () => {
