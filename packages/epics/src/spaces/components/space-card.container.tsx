@@ -4,7 +4,7 @@ import { Locale } from '@hypha-platform/i18n';
 import { Space } from '@hypha-platform/core/client';
 import { getDhoPathAgreements } from '../../common';
 import { SpaceCard } from './space-card';
-import { DivLink } from '@hypha-platform/ui';
+import Link from 'next/link';
 
 type SpaceCardContainerProps = {
   lang: Locale;
@@ -25,7 +25,7 @@ export const SpaceCardContainer = ({
       {spaces.map((space) =>
         space.slug ? (
           <div key={space.id}>
-            <DivLink
+            <Link
               href={getDhoPathAgreements(lang, space.slug)}
               aria-label={`View agreements for ${space.title}`}
             >
@@ -46,7 +46,7 @@ export const SpaceCardContainer = ({
                 createdAt={space.createdAt}
                 showExitButton={showExitButton}
               />
-            </DivLink>
+            </Link>
           </div>
         ) : null,
       )}
