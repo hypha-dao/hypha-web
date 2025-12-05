@@ -103,12 +103,9 @@ export class DbService {
     authToken,
     ...input
   }: { authToken: string } & Parameters<typeof createAgreement>[0]) {
-    const db = this.getDb(authToken);
+    // TODO: #602 Define RLS Policies for Agreement Table
+    if (!authToken) throw new Error('No authorization token');
 
-    return db.transaction((tx) =>
-      createAgreement(input, {
-        db: tx as any,
-      }),
-    );
+    return this.db.transaction((tx) => createAgreement(input, { db: tx }));
   }
 }
