@@ -1,4 +1,6 @@
-import { Button, ConfirmDialog } from '@hypha-platform/ui';
+'use client';
+
+import { Badge, Button, ConfirmDialog } from '@hypha-platform/ui';
 import { useExitSpace, useSpaceMember } from '../hooks';
 import { useAuthentication } from '@hypha-platform/authentication';
 import React from 'react';
@@ -10,6 +12,7 @@ type ExitSpaceProps = {
 
 export const ExitSpace = ({ web3SpaceId, exitButton }: ExitSpaceProps) => {
   const { isAuthenticated } = useAuthentication();
+  const [showTooltip, setShowTooltip] = React.useState(false);
 
   const { exitSpace, isExitingSpace, isDisabled } = useExitSpace({
     spaceId: web3SpaceId,
@@ -26,20 +29,40 @@ export const ExitSpace = ({ web3SpaceId, exitButton }: ExitSpaceProps) => {
     !isMember;
 
   const handleExitSpace = React.useCallback(async () => {
+    if (disabled) {
+      return;
+    }
     try {
       await exitSpace();
       await revalidateIsMember();
     } catch (err) {
       console.error('Failed to exit space:', err);
+      setShowTooltip(true);
     }
-  }, [exitSpace, revalidateIsMember]);
+  }, [exitSpace, revalidateIsMember, disabled]);
 
+  React.useEffect(() => {
+    if (!showTooltip) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      setShowTooltip(false);
+    }, 3000);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [showTooltip]);
+
+  interface ExitButtonProps extends React.ReactElement {
+    disabled?: boolean;
+  }
   const button = exitButton ? (
     exitButton
   ) : (
     <Button
       colorVariant="accent"
       variant="outline"
+      className="relative"
       title={
         disabled
           ? 'You need to be authorized and to be a member of current space to be able to exit'
@@ -48,6 +71,15 @@ export const ExitSpace = ({ web3SpaceId, exitButton }: ExitSpaceProps) => {
       disabled={disabled}
     >
       Exit Space
+      {showTooltip && (
+        <Badge
+          variant="surface"
+          colorVariant="error"
+          className="absolute z-[1000] mt-[40px]"
+        >
+          Could not exit space
+        </Badge>
+      )}
     </Button>
   );
 
