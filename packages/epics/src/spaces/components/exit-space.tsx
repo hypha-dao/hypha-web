@@ -83,6 +83,10 @@ export const ExitSpace = ({ web3SpaceId, exitButton }: ExitSpaceProps) => {
     </Button>
   );
 
+  if (disabled) {
+    return button;
+  }
+
   return (
     <ConfirmDialog
       title="Exit Space"
