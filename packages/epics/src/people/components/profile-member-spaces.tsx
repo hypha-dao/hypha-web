@@ -124,7 +124,7 @@ export const ProfileMemberSpaces = ({
                     </div>
                     {profileView && space.web3SpaceId && isMyProfile ? (
                       <div
-                        className="absolute w-[20px] h-[20px] top-[5px] right-[5px] sm:invisible group-hover:visible"
+                        className="absolute w-[20px] h-[20px] top-[5px] right-[5px] invisible [@media(hover:none)]:visible group-hover:visible"
                         onClick={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
