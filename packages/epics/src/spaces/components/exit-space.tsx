@@ -38,7 +38,7 @@ export const ExitSpace = ({ web3SpaceId, exitButton }: ExitSpaceProps) => {
     exitButton
   ) : (
     <Button
-      colorVariant="neutral"
+      colorVariant="accent"
       variant="outline"
       title={
         disabled
