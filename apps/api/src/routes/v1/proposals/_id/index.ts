@@ -7,14 +7,11 @@ import {
 } from '@plugins/web3-abi';
 
 export default async function idRoutes(app: FastifyInstance) {
-  app.get<Schema>('/', { schema }, async (request) => {
+  app.get<Schema>('/', { schema }, async (request, reply) => {
     const { id } = request.params;
 
     const dbData = await app.db.findDocumentById({ id });
-    if (!dbData) {
-      // TODO: implement proper return
-      throw Error('Proposal does not exist');
-    }
+    if (!dbData) return reply.notFound('Proposal not found');
 
     const web3Data = await (async () => {
       const client = app.web3Client;
@@ -49,10 +46,7 @@ export default async function idRoutes(app: FastifyInstance) {
         console.error('Error fetching proposal details:', e);
       }
     })();
-    if (!web3Data) {
-      // TODO: implement proper return
-      throw new Error('Internal server error');
-    }
+    if (!web3Data) return reply.internalServerError();
 
     const [
       _spaceId,

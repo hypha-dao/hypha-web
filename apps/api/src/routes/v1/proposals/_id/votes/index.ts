@@ -6,11 +6,12 @@ import {
 } from '@plugins/web3-abi';
 
 export default async function votesRoutes(app: FastifyInstance) {
-  app.get<Schema>('/', { schema }, async (request) => {
+  app.get<Schema>('/', { schema }, async (request, reply) => {
     const { id } = request.params;
     const { limit, offset } = request.query;
 
     const web3Id = await app.db.findDocumentWeb3Id({ id });
+    if (web3Id == null) return reply.notFound('Document not found');
 
     const web3Data = await (async () => {
       const client = app.web3Client;
@@ -27,12 +28,6 @@ export default async function votesRoutes(app: FastifyInstance) {
         return;
       }
 
-      if (!web3Id) {
-        console.error('Missing proposal web3Id for', id, 'proposal');
-
-        return;
-      }
-
       try {
         return await client.readContract({
           address: contractAddress,
@@ -44,10 +39,7 @@ export default async function votesRoutes(app: FastifyInstance) {
         console.error('Error fetching proposal details:', e);
       }
     })();
-    if (!web3Data) {
-      // TODO: implement proper return
-      throw new Error('Internal server error');
-    }
+    if (!web3Data) return reply.internalServerError();
 
     const [yesVoters, noVoters] = web3Data;
 

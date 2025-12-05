@@ -6,21 +6,19 @@ export default async function tokenRoutes(app: FastifyInstance) {
   /**
    * @summary Fetches transactions of a user by specified token
    */
-  app.get<Schema>('/:id', { schema }, async (req) => {
+  app.get<Schema>('/:id', { schema }, async (req, reply) => {
     const authToken = req.headers.authorization?.split(' ').at(1);
-    // TODO: implement proper return
-    if (authToken == null) throw new Error('Unauthorized');
+    if (authToken == null) return reply.unauthorized();
 
     const userAddress = (await app.db.findPersonByAuth({ authToken }))?.address;
-    // TODO: implement proper return
-    if (userAddress == null) throw new Error('User not found');
+    if (userAddress == null)
+      return reply.notFound('User does not have an address');
 
     const { id } = req.params;
     const token = await app.db.findTokenById({ id });
-    // TODO: implement proper return
-    if (token == null) throw new Error('Token not found');
+    if (token == null) return reply.notFound('Token not found');
     if (token.address == null)
-      throw new Error('Token does not have an address');
+      return reply.notFound('Token does not have an address');
 
     const [balance, decimals] = await app.web3Client.multicall({
       contracts: [

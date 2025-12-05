@@ -5,9 +5,7 @@ import { response, type Response } from './response';
 export const schema = {
   querystring,
   params,
-  response: {
-    200: response,
-  },
+  response,
 } as const;
 
 export interface Schema {

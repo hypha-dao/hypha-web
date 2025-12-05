@@ -12,7 +12,7 @@ import {
 } from '@plugins/web3-abi';
 
 export default async function proposalsRoutes(app: FastifyInstance) {
-  app.get<GetSchema>('/', { schema: getSchema }, async (request) => {
+  app.get<GetSchema>('/', { schema: getSchema }, async (request, reply) => {
     const { limit, offset, dao_id } = request.query;
 
     if (!dao_id) {
@@ -75,10 +75,8 @@ export default async function proposalsRoutes(app: FastifyInstance) {
         console.error('Error fetching proposal details:', e);
       }
     })();
-    if (!web3Data || web3Data.length !== dbData.data.length) {
-      // TODO: implement proper return
-      throw new Error('Internal server error');
-    }
+    if (!web3Data || web3Data.length !== dbData.data.length)
+      return reply.internalServerError();
 
     const proposalWeb3Details = web3Data.map((details) => {
       const [
@@ -158,22 +156,13 @@ export default async function proposalsRoutes(app: FastifyInstance) {
 
   app.post<PostSchema>('/', { schema: postSchema }, async (request, reply) => {
     const authToken = request.headers.authorization?.split(' ').at(1);
-    if (!authToken) {
-      // TODO: implement proper return
-      return reply.code(403).send();
-    }
+    if (!authToken) return reply.unauthorized();
 
     const dbPerson = await app.db.findPersonByAuth({ authToken });
-    if (!dbPerson) {
-      // TODO: implement proper return
-      return reply.code(403).send();
-    }
+    if (!dbPerson) return reply.notFound('Person not found');
 
     const { creatorId } = request.body;
-    if (dbPerson.id !== creatorId) {
-      // TODO: implement proper return
-      return reply.code(403).send();
-    }
+    if (dbPerson.id !== creatorId) return reply.unauthorized();
 
     const web3Data = await (async () => {
       const client = app.web3Client;
@@ -202,10 +191,7 @@ export default async function proposalsRoutes(app: FastifyInstance) {
         console.error('Error fetching proposal details:', e);
       }
     })();
-    if (!web3Data) {
-      // TODO: implement proper return
-      return reply.code(500).send();
-    }
+    if (!web3Data) return reply.internalServerError();
 
     const dbData = await app.db.createAgreement({
       ...request.body,

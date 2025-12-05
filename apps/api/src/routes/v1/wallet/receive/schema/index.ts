@@ -5,6 +5,8 @@ export const schema = {
   querystring,
   response: {
     200: response,
+    '4xx': { $ref: 'HttpError' },
+    '5xx': { $ref: 'HttpError' },
   },
 } as const;
 
