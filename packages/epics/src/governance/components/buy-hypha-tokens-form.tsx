@@ -120,9 +120,9 @@ export const BuyHyphaTokensForm = ({
   return (
     <LoadingBackdrop
       showKeepWindowOpenMessage={true}
+      fullHeight={true}
       progress={progress}
       isLoading={isPending || insufficientFunds}
-      className="-m-4 lg:-m-7"
       message={
         insufficientFunds ? (
           <div className="flex flex-col text-center gap-2 justify-center items-center">

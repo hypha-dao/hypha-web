@@ -108,6 +108,7 @@ export const CreatePayForExpensesForm = ({
   return (
     <LoadingBackdrop
       showKeepWindowOpenMessage={true}
+      fullHeight={true}
       progress={progress}
       isLoading={isPending}
       message={
@@ -120,7 +121,6 @@ export const CreatePayForExpensesForm = ({
           <div>{currentAction}</div>
         )
       }
-      className="-m-4 md:-m-7"
     >
       <Form {...form}>
         <form

@@ -24,10 +24,10 @@ export default function AsideNotificationCentrePage() {
     <SidePanel>
       <LoadingBackdrop
         showKeepWindowOpenMessage={true}
+        fullHeight={true}
         progress={progress}
         isLoading={isBusy}
         message={<></>}
-        className="-m-4 lg:-m-7"
       >
         <NotificationCentreForm
           person={person}

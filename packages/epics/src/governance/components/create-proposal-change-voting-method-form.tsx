@@ -144,6 +144,7 @@ export const CreateProposalChangeVotingMethodForm = ({
   return (
     <LoadingBackdrop
       showKeepWindowOpenMessage={true}
+      fullHeight={true}
       progress={progress}
       isLoading={isPending || isLoading}
       message={

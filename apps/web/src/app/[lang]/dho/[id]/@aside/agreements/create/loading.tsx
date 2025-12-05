@@ -9,10 +9,10 @@ export default function AsideCreateAgreementPage() {
     <SidePanel>
       <LoadingBackdrop
         showKeepWindowOpenMessage={true}
+        fullHeight={true}
         progress={0}
         isLoading={true}
         message={<></>}
-        className="-m-4 lg:-m-7"
       >
         <CreateAgreementForm
           spaceId={undefined}

@@ -86,6 +86,7 @@ export const CreateAgreementForm = ({
       showKeepWindowOpenMessage={true}
       progress={progress}
       isLoading={isPending}
+      fullHeight={true}
       message={
         isError ? (
           <div className="flex flex-col">
@@ -96,7 +97,6 @@ export const CreateAgreementForm = ({
           <div>{currentAction}</div>
         )
       }
-      className="-m-4 lg:-m-7"
     >
       <Form {...form}>
         <form

@@ -8,6 +8,7 @@ type LoadingBackdrop = {
   className?: string;
   message?: React.ReactElement;
   showKeepWindowOpenMessage?: boolean;
+  fullHeight?: boolean;
 };
 
 export const LoadingBackdrop = ({
@@ -17,14 +18,17 @@ export const LoadingBackdrop = ({
   className,
   message,
   showKeepWindowOpenMessage = false,
+  fullHeight = false,
 }: LoadingBackdrop) => {
   return (
-    <div className="relative w-full">
+    <div className={cn('relative w-full', fullHeight && 'h-full')}>
       {children}
       {isLoading && (
         <div
           className={cn(
-            'absolute inset-0 flex flex-col items-center justify-center space-y-2 bg-background/75 z-10 min-h-full',
+            fullHeight
+              ? 'fixed top-9 bottom-0 right-0 flex flex-col items-center justify-center space-y-2 bg-background/75 z-10 w-full md:w-container-sm p-4 lg:p-7'
+              : 'absolute inset-0 flex flex-col items-center justify-center space-y-2 bg-background/75 z-10 min-h-full',
             className,
           )}
         >

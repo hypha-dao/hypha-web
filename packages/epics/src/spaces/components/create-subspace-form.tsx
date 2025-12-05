@@ -49,6 +49,7 @@ export const CreateSubspaceForm = ({
   return (
     <LoadingBackdrop
       showKeepWindowOpenMessage={true}
+      fullHeight={true}
       progress={progress}
       isLoading={isPending}
       message={
@@ -61,7 +62,6 @@ export const CreateSubspaceForm = ({
           <div>{currentAction}</div>
         )
       }
-      className="-m-4 lg:-m-7"
     >
       <SpaceForm
         isLoading={false}
