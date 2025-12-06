@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const PROPOSALS = '0x001bA7a00a259Fb12d7936455e292a60FC2bef14';
-const SPACE_ID = 488;
+const SPACE_ID = 558;
 
 const abi = [
   'function proposalCounter() view returns (uint256)',
@@ -17,11 +17,12 @@ async function main() {
 
   const counter = await contract.proposalCounter();
   console.log('Total proposals:', counter.toString());
-  console.log('\nActive proposals in space 488:\n');
+  console.log(`\nAll proposals in space ${SPACE_ID}:\n`);
 
   const now = Math.floor(Date.now() / 1000);
+  const spaceProposals: number[] = [];
 
-  for (let i = Number(counter); i >= Math.max(1, Number(counter) - 50); i--) {
+  for (let i = Number(counter); i >= Math.max(1, Number(counter) - 999); i--) {
     try {
       const proposal = await contract.getProposalCore(i);
       const spaceId = proposal[0];
@@ -30,16 +31,29 @@ async function main() {
       const executed = proposal[3];
       const expired = proposal[4];
 
-      if (spaceId == SPACE_ID && !executed && !expired && now < endTime) {
+      if (Number(spaceId) === SPACE_ID) {
+        spaceProposals.push(i);
+
+        let status = 'Pending';
+        if (executed) status = 'Executed';
+        else if (expired) status = 'Expired';
+        else if (now >= endTime) status = 'Ended';
+        else if (now >= startTime) status = 'Active';
+
         console.log(`Proposal ${i}:`);
-        console.log(`  Status: Active`);
-        console.log(`  Ends: ${new Date(endTime * 1000).toLocaleString()}`);
+        console.log(`  Status: ${status}`);
+        console.log(`  Start: ${new Date(startTime * 1000).toLocaleString()}`);
+        console.log(`  End: ${new Date(endTime * 1000).toLocaleString()}`);
         console.log();
       }
     } catch (e) {
       // Skip
     }
   }
+
+  console.log(
+    `\nFound ${spaceProposals.length} proposals for space ${SPACE_ID}`,
+  );
 }
 
 main().catch(console.error);
