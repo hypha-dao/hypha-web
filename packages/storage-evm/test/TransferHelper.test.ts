@@ -181,26 +181,45 @@ describe('TransferHelper with Real Tokens', function () {
       const tokenSymbol = type.substring(0, 3).toUpperCase();
 
       if (type === 'decaying') {
-        tx = await factory
-          .connect(executor)
-          .deployDecayingToken(
-            spaceId,
-            tokenName,
-            tokenSymbol,
-            0,
-            true,
-            true,
-            100,
-            3600,
-          );
+        tx = await factory.connect(executor).deployDecayingToken(
+          spaceId,
+          tokenName,
+          tokenSymbol,
+          0, // maxSupply
+          true, // transferable
+          false, // fixedMaxSupply
+          true, // autoMinting
+          0, // priceInUSD
+          false, // useTransferWhitelist
+          false, // useReceiveWhitelist
+          100, // decayPercentage
+          3600, // decayInterval
+        );
       } else if (type === 'ownership') {
-        tx = await factory
-          .connect(executor)
-          .deployOwnershipToken(spaceId, tokenName, tokenSymbol, 0, true);
+        tx = await factory.connect(executor).deployOwnershipToken(
+          spaceId,
+          tokenName,
+          tokenSymbol,
+          0, // maxSupply
+          false, // fixedMaxSupply
+          true, // autoMinting
+          0, // priceInUSD
+          false, // useTransferWhitelist
+          false, // useReceiveWhitelist
+        );
       } else {
-        tx = await factory
-          .connect(executor)
-          .deployToken(spaceId, tokenName, tokenSymbol, 0, true, true);
+        tx = await factory.connect(executor).deployToken(
+          spaceId,
+          tokenName,
+          tokenSymbol,
+          0, // maxSupply
+          true, // transferable
+          false, // fixedMaxSupply
+          true, // autoMinting
+          0, // priceInUSD
+          false, // useTransferWhitelist
+          false, // useReceiveWhitelist
+        );
       }
 
       const receipt = await tx.wait();
@@ -227,25 +246,25 @@ describe('TransferHelper with Real Tokens', function () {
     regularToken = (await deployAndGetToken(
       regularTokenFactory,
       'regular',
-    )) as RegularSpaceToken;
+    )) as unknown as RegularSpaceToken;
     decayingToken = (await deployAndGetToken(
       decayingTokenFactory,
       'decaying',
-    )) as DecayingSpaceToken;
+    )) as unknown as DecayingSpaceToken;
     ownershipToken = (await deployAndGetToken(
       ownershipTokenFactory,
       'ownership',
-    )) as OwnershipSpaceToken;
+    )) as unknown as OwnershipSpaceToken;
 
     // --- Final Setup ---
     const transferHelperAddress = await transferHelper.getAddress();
-    await regularToken
+    await (regularToken as any)
       .connect(executor)
       .setTransferHelper(transferHelperAddress);
-    await decayingToken
+    await (decayingToken as any)
       .connect(executor)
       .setTransferHelper(transferHelperAddress);
-    await ownershipToken
+    await (ownershipToken as any)
       .connect(executor)
       .setTransferHelper(transferHelperAddress);
 
@@ -474,13 +493,25 @@ describe('TransferHelper with Real Tokens', function () {
   describe('Edge Cases & Security', function () {
     it('Should fail if TransferHelper is not set on the token contract', async function () {
       // Deploy a new token without setting the transfer helper
-      const tx = await regularTokenFactory
-        .connect(executor)
-        .deployToken(spaceId, 'New Token', 'NT', 0, true, true);
+      const tx = await regularTokenFactory.connect(executor).deployToken(
+        spaceId,
+        'New Token',
+        'NT',
+        0, // maxSupply
+        true, // transferable
+        false, // fixedMaxSupply
+        true, // autoMinting
+        0, // priceInUSD
+        false, // useTransferWhitelist
+        false, // useReceiveWhitelist
+      );
       const receipt = await tx.wait();
       const event = receipt?.logs
         .map((log: any) => regularTokenFactory.interface.parseLog(log))
         .find((e: any) => e && e.name === 'TokenDeployed');
+      if (!event) {
+        throw new Error('TokenDeployed event not found');
+      }
       const token3 = await ethers.getContractAt(
         'RegularSpaceToken',
         event.args.tokenAddress,

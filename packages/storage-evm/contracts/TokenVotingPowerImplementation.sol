@@ -177,7 +177,7 @@ contract TokenVotingPowerImplementation is
   /**
    * @dev Get total voting power from a specific space
    * @param _sourceSpaceId The space ID from which to derive total voting power
-   * @return The total voting power (total supply of the token)
+   * @return The total voting power (sum of token balances held by space members)
    */
   function getTotalVotingPower(
     uint256 _sourceSpaceId
@@ -185,8 +185,20 @@ contract TokenVotingPowerImplementation is
     require(_sourceSpaceId > 0, 'Invalid space ID');
     address tokenAddress = spaceTokens[_sourceSpaceId];
     require(tokenAddress != address(0), 'Token not set for space');
+    require(spaceFactory != address(0), 'Space factory not set');
 
-    return IERC20(tokenAddress).totalSupply();
+    // Get all space members
+    (, , , , address[] memory members, , , , , ) = IDAOSpaceFactory(
+      spaceFactory
+    ).getSpaceDetails(_sourceSpaceId);
+
+    // Sum up token balances of all members
+    uint256 totalPower = 0;
+    for (uint256 i = 0; i < members.length; i++) {
+      totalPower += IERC20(tokenAddress).balanceOf(members[i]);
+    }
+
+    return totalPower;
   }
 
   // New event for delegation contract
