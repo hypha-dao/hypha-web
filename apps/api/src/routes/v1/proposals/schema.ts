@@ -17,6 +17,8 @@ export const getSchema = {
         offset: Type.Integer(),
       }),
     }),
+    '4xx': Type.Ref('HttpError'),
+    '5xx': Type.Ref('HttpError'),
   },
 } as const;
 
@@ -52,15 +54,17 @@ export const postSchema = {
   }),
   response: {
     201: summary,
+    '4xx': Type.Ref('HttpError'),
+    '5xx': Type.Ref('HttpError'),
   },
 } as const;
 
 export type GetSchema = {
-  Reply: Static<(typeof getSchema.response)[keyof typeof getSchema.response]>;
+  Reply: Static<(typeof getSchema.response)[200]>;
   Querystring: Static<typeof getSchema.querystring>;
 };
 
 export type PostSchema = {
   Body: Static<typeof postSchema.body>;
-  Reply: Static<(typeof postSchema.response)[keyof typeof postSchema.response]>;
+  Reply: Static<(typeof postSchema.response)[201]>;
 };

@@ -3,9 +3,7 @@ import { response, type Response } from './response';
 
 export const schema = {
   querystring,
-  response: {
-    200: response,
-  },
+  response,
 } as const;
 
 export interface Schema {

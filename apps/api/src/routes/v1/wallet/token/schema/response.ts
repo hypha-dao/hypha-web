@@ -4,10 +4,14 @@ import { body } from '@schemas/trx';
 
 const transactions = Type.Array(body);
 
-export const response = Type.Union([
-  Type.Object({ ...ownershipToken.properties, transactions }),
-  Type.Object({ ...utilityToken.properties, transactions }),
-  Type.Object({ ...voiceToken.properties, transactions }),
-]);
+export const response = {
+  200: Type.Union([
+    Type.Object({ ...ownershipToken.properties, transactions }),
+    Type.Object({ ...utilityToken.properties, transactions }),
+    Type.Object({ ...voiceToken.properties, transactions }),
+  ]),
+  '4xx': Type.Ref('HttpError'),
+  '5xx': Type.Ref('HttpError'),
+};
 
-export type Response = Static<typeof response>;
+export type Response = Static<(typeof response)[200]>;

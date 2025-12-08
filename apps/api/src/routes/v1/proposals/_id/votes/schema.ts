@@ -22,23 +22,27 @@ const voter = Type.Object({
   timestamp: Type.Union([Type.String({ format: 'date-time' }), Type.Null()]),
 });
 
-export const response = Type.Object({
-  voters: Type.Array(voter),
-  meta: Type.Object({
-    total: Type.Integer(),
-    limit: Type.Integer(),
-    offset: Type.Integer(),
+export const response = {
+  200: Type.Object({
+    voters: Type.Array(voter),
+    meta: Type.Object({
+      total: Type.Integer(),
+      limit: Type.Integer(),
+      offset: Type.Integer(),
+    }),
   }),
-});
+  '4xx': Type.Ref('HttpError'),
+  '5xx': Type.Ref('HttpError'),
+};
 
 export const schema = {
   params,
   querystring: query,
-  response: { 200: response },
+  response,
 } as const;
 
 export type Schema = {
-  Reply: Static<typeof response>;
+  Reply: Static<(typeof response)[200]>;
   Params: Static<typeof params>;
   Querystring: Static<typeof query>;
 };
