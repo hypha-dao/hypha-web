@@ -16,6 +16,7 @@ type SpaceCardListProps = {
   spaces: Space[];
   pageSize?: number;
   showLoadMore?: boolean;
+  showExitButton?: boolean;
 };
 
 export function SpaceCardList({
@@ -23,6 +24,7 @@ export function SpaceCardList({
   spaces,
   pageSize = 3,
   showLoadMore = true,
+  showExitButton = false,
 }: SpaceCardListProps) {
   const { pages, loadMore, pagination } = useSpaceCardList({
     spaces,
@@ -45,6 +47,7 @@ export function SpaceCardList({
                     key={index}
                     spaces={pageSpaces}
                     lang={lang}
+                    showExitButton={showExitButton}
                   />
                 );
               })
@@ -53,6 +56,7 @@ export function SpaceCardList({
                 key={`spaces-${spaces.length}`}
                 spaces={spaces}
                 lang={lang}
+                showExitButton={showExitButton}
               />
             )}
           </div>

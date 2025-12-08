@@ -2,16 +2,18 @@ import { DEFAULT_SPACE_LEAD_IMAGE } from '@hypha-platform/core/client';
 import {
   Avatar,
   AvatarImage,
-  Badge,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   Skeleton,
   Image,
+  Button,
 } from '@hypha-platform/ui';
+import { ExitIcon } from '@radix-ui/react-icons';
 import { SpaceModeLabel } from './space-mode-label';
 import { cn, formatDate } from '@hypha-platform/ui-utils';
+import { ExitSpace } from './exit-space';
 
 type SpaceCardProps = {
   description: string;
@@ -27,6 +29,7 @@ type SpaceCardProps = {
   web3SpaceId?: number;
   createdAt: Date;
   className?: string;
+  showExitButton?: boolean;
 };
 
 const customCardHeaderStyles: React.CSSProperties = {
@@ -47,9 +50,36 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
   web3SpaceId,
   createdAt,
   className,
+  showExitButton = false,
 }) => {
   return (
-    <Card className={cn('relative w-full h-full flex flex-col', className)}>
+    <Card
+      className={cn('group relative w-full h-full flex flex-col', className)}
+    >
+      {showExitButton && web3SpaceId && (
+        <div
+          className="absolute w-[30px] h-[30px] top-[10px] right-[10px] invisible [@media(hover:none)]:visible group-hover:visible"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+        >
+          <ExitSpace
+            web3SpaceId={web3SpaceId}
+            exitButton={
+              <Button
+                size="icon"
+                variant="outline"
+                colorVariant="neutral"
+                className="border-0 w-[30px] h-[30px]"
+                title="Exit Space"
+              >
+                <ExitIcon width={18} height={18} />
+              </Button>
+            }
+          />
+        </div>
+      )}
       <CardHeader
         style={customCardHeaderStyles}
         className="p-0 rounded-tl-md rounded-tr-md overflow-hidden flex-shrink-0"

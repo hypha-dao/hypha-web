@@ -10,7 +10,7 @@ import {
   PATH_SELECT_SETTINGS_ACTION,
 } from '@web/app/constants';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useJoinSpace } from '@hypha-platform/epics';
+import { useSpaceMember } from '@hypha-platform/epics';
 import { useIsDelegate } from '@hypha-platform/core/client';
 
 interface ActionButtonsProps {
@@ -20,7 +20,7 @@ interface ActionButtonsProps {
 export const ActionButtons = ({ web3SpaceId }: ActionButtonsProps) => {
   const pathname = usePathname();
   const { isAuthenticated } = useAuthentication();
-  const { isMember } = useJoinSpace({ spaceId: web3SpaceId as number });
+  const { isMember } = useSpaceMember({ spaceId: web3SpaceId as number });
   const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
 
   const isDisabled = !isAuthenticated || (!isMember && !isDelegate);
@@ -41,7 +41,7 @@ export const ActionButtons = ({ web3SpaceId }: ActionButtonsProps) => {
         }
         title={tooltipMessage || 'Space Settings'}
       >
-        <Button colorVariant="accent" variant={'outline'} disabled={isDisabled}>
+        <Button colorVariant="accent" variant="outline" disabled={isDisabled}>
           <GearIcon className="sm:hidden" width={16} height={16} />
           <span className="hidden sm:flex">Space Settings</span>
         </Button>

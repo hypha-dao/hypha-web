@@ -15,7 +15,7 @@ import {
 } from '@hypha-platform/core/client';
 import { BaseError, useConfig } from 'wagmi';
 import { useParams } from 'next/navigation';
-import { useInviteStatus } from '../hooks';
+import { useInviteStatus, useSpaceMember } from '../hooks';
 import { useAuthentication } from '@hypha-platform/authentication';
 
 type JoinSpaceProps = {
@@ -42,10 +42,12 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
 
   const { person } = useMe();
 
-  const { isMember, isLoading, joinSpace, revalidateIsMember, isJoiningSpace } =
-    useJoinSpace({
-      spaceId: web3SpaceId,
-    });
+  const { joinSpace, isJoiningSpace } = useJoinSpace({
+    spaceId: web3SpaceId,
+  });
+  const { isMember, isMemberLoading, revalidateIsMember } = useSpaceMember({
+    spaceId: web3SpaceId,
+  });
 
   const {
     requestInvite,
@@ -80,6 +82,15 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
       setIsProcessing(false);
     }
   }, [isJoiningSpace, isInviteOnly, agreement]);
+
+  React.useEffect(() => {
+    if (isMemberLoading || typeof isMember === 'undefined') {
+      return;
+    }
+    if (isMember) {
+      setJustJoined(false);
+    }
+  }, [isMember, isMemberLoading]);
 
   const createJoinEvent = React.useCallback(
     async ({ spaceId, person }: { spaceId: number; person: Person }) => {
@@ -180,7 +191,7 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
   const isButtonDisabled =
     isMember ||
     justJoined ||
-    isLoading ||
+    isMemberLoading ||
     isInviteLoading ||
     isInvitePending ||
     showLoader;

@@ -1,6 +1,6 @@
 import {
   SpaceCard,
-  FilteredSpaces,
+  MyFilteredSpaces,
   SpaceSearch,
   AuthenticatedLinkButton,
 } from '@hypha-platform/epics';
@@ -63,7 +63,7 @@ export default async function Index(props: PageProps) {
             </AuthenticatedLinkButton>
           ) : null}
         </div>
-        <FilteredSpaces lang={lang} spaces={mySpaces} showLoadMore={false} />
+        <MyFilteredSpaces lang={lang} spaces={mySpaces} showLoadMore={false} />
         <div
           data-testid="recommended-spaces-container"
           className="w-full space-y-6"

@@ -1,28 +1,33 @@
 'use client';
 
 import { Skeleton, Image, Button } from '@hypha-platform/ui';
-import { Space } from '@hypha-platform/core/client';
-import { getDhoPathAgreements } from '@hypha-platform/epics';
+import { Person, Space, useMe } from '@hypha-platform/core/client';
+import { ExitSpace, getDhoPathAgreements } from '@hypha-platform/epics';
 import React from 'react';
 import Link from 'next/link';
 import { Locale } from '@hypha-platform/i18n';
 import { useParams } from 'next/navigation';
 import { Empty } from '@hypha-platform/epics';
-import { GlobeIcon, PlusIcon } from '@radix-ui/react-icons';
+import { ExitIcon, GlobeIcon, PlusIcon } from '@radix-ui/react-icons';
 import { useAuthentication } from '@hypha-platform/authentication';
 
 export type ProfileMemberSpacesProps = {
+  person: Person;
   spaces?: Space[];
   isLoading?: boolean;
   profileView?: boolean;
 };
 
 export const ProfileMemberSpaces = ({
+  person,
   spaces,
   isLoading,
   profileView = false,
 }: ProfileMemberSpacesProps) => {
   const { lang } = useParams();
+
+  const { isMe } = useMe();
+  const isMyProfile = person.slug ? isMe(person.slug) : false;
 
   const iconSize = React.useMemo(() => (profileView ? 64 : 40), [profileView]);
   const { isAuthenticated } = useAuthentication();
@@ -99,7 +104,7 @@ export const ProfileMemberSpaces = ({
                   key={space.id || index}
                   href={getDhoPathAgreements(lang as Locale, space.slug ?? '')}
                 >
-                  <div title={space.title}>
+                  <div className="group relative" title={space.title}>
                     <div
                       className="relative flex shrink-0 overflow-hidden rounded-full"
                       style={{
@@ -117,6 +122,30 @@ export const ProfileMemberSpaces = ({
                         alt={space.title ?? ''}
                       />
                     </div>
+                    {profileView && space.web3SpaceId && isMyProfile ? (
+                      <div
+                        className="absolute w-[20px] h-[20px] top-[5px] right-[5px] invisible [@media(hover:none)]:visible group-hover:visible"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                        }}
+                      >
+                        <ExitSpace
+                          web3SpaceId={space.web3SpaceId}
+                          exitButton={
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              colorVariant="neutral"
+                              className="border-0 w-[20px] h-[20px]"
+                              title="Exit Space"
+                            >
+                              <ExitIcon width={12} height={12} />
+                            </Button>
+                          }
+                        />
+                      </div>
+                    ) : null}
                     {profileView ? (
                       <div
                         className="text-1 text-ellipsis overflow-hidden text-nowrap mt-2"
