@@ -24,17 +24,17 @@
     "@hypha-platform/ui": "workspace:*",
     "@hypha-platform/ui-utils": "workspace:*",
     "fetch-socks": "^1.3.2",
-    "next": "^15.4.1",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "next": "^15.4.8",
+    "react": "^19.1.2",
+    "react-dom": "^19.1.2",
     "undici": "^7.16.0"
   },
   "devDependencies": {
     "@hypha-platform/config-eslint": "workspace:*",
     "@hypha-platform/config-typescript": "workspace:*",
     "@types/node": "^22.14.0",
-    "@types/react": "19.1.0",
-    "@types/react-dom": "19.1.1",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
     "eslint": "^9.24.0",
     "typescript": "^5.8.2"
   }
