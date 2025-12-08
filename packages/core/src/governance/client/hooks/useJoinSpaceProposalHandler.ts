@@ -35,16 +35,25 @@ export const useJoinSpaceProposalHandler = ({
   const { space: currentSpace } = useSpaceBySlug(currentSpaceSlug as string);
   const spacesEndpoint = '/api/v1/spaces';
   const { jwt } = useJwt();
-  const { data: allSpaces, isLoading: isLoadingSpaces } = useSWR(
-    [spacesEndpoint, jwt],
-    ([spacesEndpoint]) =>
-      fetch(spacesEndpoint, {
-        headers: {
-          Authorization: `Bearer ${jwt}`,
-          'Content-Type': 'application/json',
-        },
-      }).then((res) => res.json()),
-  );
+  const {
+    data: allSpaces,
+    isLoading: isLoadingSpaces,
+    error: spacesError,
+    mutate: mutateSpaces,
+  } = useSWR(jwt ? [spacesEndpoint, jwt] : null, async ([endpoint, token]) => {
+    const res = await fetch(endpoint, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!res.ok) {
+      throw new Error(
+        `Failed to fetch spaces: ${res.status} ${res.statusText}`,
+      );
+    }
+    return res.json();
+  });
   const { trigger: createAgreement } = useSWRMutation(
     authToken ? [authToken, 'createAgreement'] : null,
     async ([authToken], { arg }: { arg: CreateAgreementInput }) =>
@@ -127,6 +136,10 @@ export const useJoinSpaceProposalHandler = ({
       originalProposalId: number,
     ) => {
       try {
+        if (!jwt) {
+          throw new Error('JWT token is not available');
+        }
+
         let targetSpace = findSpaceByWeb3Id(targetSpaceId);
         let attempts = 0;
         const maxAttempts = 10;
@@ -135,14 +148,22 @@ export const useJoinSpaceProposalHandler = ({
         while (!targetSpace && attempts < maxAttempts) {
           attempts++;
 
-          if (isLoadingSpaces || !allSpaces) {
+          if (isLoadingSpaces || !allSpaces || spacesError) {
             console.log(
               `Waiting for spaces to load (attempt ${attempts}/${maxAttempts})...`,
             );
+            if (spacesError) {
+              console.log(
+                'Spaces fetch error detected, retrying...',
+                spacesError,
+              );
+            }
+            await mutateSpaces();
           } else {
             console.log(
               `Space ${targetSpaceId} not found in loaded spaces, retrying (attempt ${attempts}/${maxAttempts})...`,
             );
+            await mutateSpaces();
           }
 
           await new Promise((resolve) => setTimeout(resolve, retryDelay));
@@ -151,7 +172,9 @@ export const useJoinSpaceProposalHandler = ({
 
         if (!targetSpace) {
           throw new Error(
-            `Space with web3Id ${targetSpaceId} not found after ${maxAttempts} attempts. Spaces loaded: ${!!allSpaces}, Loading: ${isLoadingSpaces}`,
+            `Space with web3Id ${targetSpaceId} not found after ${maxAttempts} attempts. Spaces loaded: ${!!allSpaces}, Loading: ${isLoadingSpaces}, Error: ${
+              spacesError ? String(spacesError) : 'none'
+            }`,
           );
         }
 
@@ -187,6 +210,9 @@ export const useJoinSpaceProposalHandler = ({
       currentSpace?.id,
       isLoadingSpaces,
       allSpaces,
+      jwt,
+      spacesError,
+      mutateSpaces,
     ],
   );
 
