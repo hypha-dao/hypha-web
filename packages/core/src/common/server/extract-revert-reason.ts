@@ -16,7 +16,8 @@ export function decodeRevertReason(hexReason: any): string {
 
 export function extractRevertReason(error: any): string {
   // Check different possible error structures
-  const errorString = error.toString?.() || '';
+  const errorString =
+    typeof error === 'string' ? error : error?.toString?.() || '';
 
   // Look for hex data in the error
   const hexMatch = errorString.match(/0x[0-9a-fA-F]+/);
@@ -25,10 +26,10 @@ export function extractRevertReason(error: any): string {
   }
 
   // Check error.data or error.reason
-  if (error.data?.startsWith?.('0x08c379a0')) {
+  if (error?.data?.startsWith?.('0x08c379a0')) {
     return decodeRevertReason(error.data);
   }
 
   // Return original error message if no encoded reason found
-  return error.message || errorString;
+  return error?.message || errorString;
 }
