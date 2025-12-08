@@ -10,3 +10,4 @@ export * from './get-cropped-img';
 export * from './hasEmojiOrLink';
 export * from './try-decode-uri-part';
 export * from './formatDuration';
+export * from './canConvertToBigInt';

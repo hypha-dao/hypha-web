@@ -30,7 +30,7 @@ import {
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
 import { Breadcrumbs } from './_components/breadcrumbs';
-import { formatDate } from '@hypha-platform/ui-utils';
+import { canConvertToBigInt, formatDate } from '@hypha-platform/ui-utils';
 
 export default async function DhoLayout({
   aside,
@@ -52,6 +52,9 @@ export default async function DhoLayout({
 
   const spaceMembers = await (async () => {
     try {
+      if (!canConvertToBigInt(spaceFromDb.web3SpaceId)) {
+        return 0;
+      }
       const [spaceDetails] = await fetchSpaceDetails({
         spaceIds: [BigInt(spaceFromDb.web3SpaceId as number)],
       });
@@ -67,6 +70,9 @@ export default async function DhoLayout({
 
   const spaceAgreements = await (async () => {
     try {
+      if (!canConvertToBigInt(spaceFromDb.web3SpaceId)) {
+        return 0;
+      }
       const [proposals] = await fetchSpaceProposalsIds({
         spaceIds: [BigInt(spaceFromDb.web3SpaceId as number)],
       });
@@ -141,7 +147,11 @@ export default async function DhoLayout({
               </div>
             </div>
           </div>
-          <SubscriptionBadge web3SpaceId={spaceFromDb.web3SpaceId as number} />
+          {canConvertToBigInt(spaceFromDb.web3SpaceId) && (
+            <SubscriptionBadge
+              web3SpaceId={spaceFromDb.web3SpaceId as number}
+            />
+          )}
           <SpaceModeLabel
             web3SpaceId={spaceFromDb.web3SpaceId as number}
             isSandbox={spaceFromDb.flags.includes('sandbox')}
