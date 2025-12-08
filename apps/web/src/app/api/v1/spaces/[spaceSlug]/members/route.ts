@@ -7,6 +7,7 @@ import {
 import { getSpaceDetails } from '@hypha-platform/core/client';
 import { publicClient } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
+import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 
 export async function GET(
   request: NextRequest,
@@ -23,9 +24,11 @@ export async function GET(
 
     let spaceDetails;
     try {
-      spaceDetails = await publicClient.readContract(
-        getSpaceDetails({ spaceId: BigInt(space.web3SpaceId as number) }),
-      );
+      spaceDetails = canConvertToBigInt(space.web3SpaceId)
+        ? await publicClient.readContract(
+            getSpaceDetails({ spaceId: BigInt(space.web3SpaceId as number) }),
+          )
+        : [];
     } catch (err: any) {
       const errorMessage =
         err?.message || err?.shortMessage || JSON.stringify(err);
@@ -49,7 +52,7 @@ export async function GET(
       );
     }
 
-    const [, , , , members] = spaceDetails;
+    const [, , , , members = []] = spaceDetails;
 
     const url = new URL(request.url);
     const pageRaw = url.searchParams.get('page');

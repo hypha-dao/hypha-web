@@ -16,7 +16,7 @@ export const useSalesBanner = ({ spaceId }: UseSalesBannerProps) => {
       : { spaceId: undefined as never },
   );
   const { hasSpacePaid } = useHasSpacePaid(
-    spaceId !== undefined
+    canConvertToBigInt(spaceId)
       ? { spaceId: BigInt(spaceId) }
       : { spaceId: undefined as never },
   );
