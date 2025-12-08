@@ -22,6 +22,26 @@ import {
 import { LoadingBackdrop, Button } from '@hypha-platform/ui';
 import { useEffect, useState } from 'react';
 
+function parseRevertReason(error: unknown): string {
+  const message =
+    typeof error === 'string' ? error : (error as any)?.message || '';
+
+  const start = message.indexOf('Execution reverted with reason:');
+  const end = message.indexOf('Request Arguments');
+
+  if (start !== -1) {
+    const reasonStart = start + 'Execution reverted with reason:'.length;
+    const reason =
+      end !== -1
+        ? message.substring(reasonStart, end).trim()
+        : message.substring(reasonStart).trim();
+    return (
+      extractRevertReason(reason) || 'Transaction reverted for unknown reason.'
+    );
+  }
+  return message || 'An unknown error occurred.';
+}
+
 export default function Agreements() {
   const { jwt: authToken } = useJwt();
   const { id, lang } = useParams();
@@ -73,7 +93,7 @@ export default function Agreements() {
       setProgress(100);
       setVoteMessage('Vote processed!');
     } catch (err: any) {
-      const parsedMessage = extractRevertReason(err);
+      const parsedMessage = parseRevertReason(err);
       console.error('Error during vote process:', parsedMessage);
       setProgress(70);
       setVoteMessage('Something went wrong.');
