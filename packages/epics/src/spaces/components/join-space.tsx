@@ -83,6 +83,15 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
     }
   }, [isJoiningSpace, isInviteOnly, agreement]);
 
+  React.useEffect(() => {
+    if (isMemberLoading || typeof isMember === 'undefined') {
+      return;
+    }
+    if (isMember) {
+      setJustJoined(false);
+    }
+  }, [isMember, isMemberLoading]);
+
   const createJoinEvent = React.useCallback(
     async ({ spaceId, person }: { spaceId: number; person: Person }) => {
       if (!spaceId || !person?.address) {

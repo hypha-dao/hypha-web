@@ -57,6 +57,15 @@ export const ExitSpace = ({ web3SpaceId, exitButton }: ExitSpaceProps) => {
     };
   }, [showTooltip]);
 
+  React.useEffect(() => {
+    if (isMemberLoading || typeof isMember === 'undefined') {
+      return;
+    }
+    if (isMember) {
+      setJustExit(false);
+    }
+  }, [isMember, isMemberLoading]);
+
   const button = exitButton ? (
     exitButton
   ) : (
