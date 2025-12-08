@@ -4,6 +4,7 @@ import { Badge, Button, ConfirmDialog } from '@hypha-platform/ui';
 import { useExitSpace, useSpaceMember } from '../hooks';
 import { useAuthentication } from '@hypha-platform/authentication';
 import React from 'react';
+import { Loader2 } from 'lucide-react';
 
 type ExitSpaceProps = {
   web3SpaceId: number;
@@ -14,6 +15,7 @@ export const ExitSpace = ({ web3SpaceId, exitButton }: ExitSpaceProps) => {
   const { isAuthenticated } = useAuthentication();
   const [showTooltip, setShowTooltip] = React.useState(false);
   const [justExit, setJustExit] = React.useState(false);
+  const [isProcessing, setProcessing] = React.useState(false);
 
   const { exitSpace, isExitingSpace, isDisabled } = useExitSpace({
     spaceId: web3SpaceId,
@@ -22,6 +24,7 @@ export const ExitSpace = ({ web3SpaceId, exitButton }: ExitSpaceProps) => {
     spaceId: web3SpaceId,
   });
 
+  const showLoader = isProcessing || isExitingSpace;
   const disabled =
     !isAuthenticated ||
     isExitingSpace ||
@@ -34,6 +37,7 @@ export const ExitSpace = ({ web3SpaceId, exitButton }: ExitSpaceProps) => {
     if (disabled) {
       return;
     }
+    setProcessing(true);
     try {
       setJustExit(true);
       await exitSpace();
@@ -42,6 +46,8 @@ export const ExitSpace = ({ web3SpaceId, exitButton }: ExitSpaceProps) => {
       setJustExit(false);
       console.error('Failed to exit space:', err);
       setShowTooltip(true);
+    } finally {
+      setProcessing(false);
     }
   }, [exitSpace, revalidateIsMember, disabled]);
 
@@ -80,6 +86,9 @@ export const ExitSpace = ({ web3SpaceId, exitButton }: ExitSpaceProps) => {
       }
       disabled={disabled}
     >
+      {showLoader && (
+        <Loader2 className="animate-spin" width={16} height={16} />
+      )}
       Exit Space
       {showTooltip && (
         <Badge
