@@ -18,7 +18,7 @@ import {
 } from '@hypha-platform/core/server';
 import { zeroAddress } from 'viem';
 import { db } from '@hypha-platform/storage-postgres';
-import { hasEmojiOrLink } from '@hypha-platform/ui-utils';
+import { canConvertToBigInt, hasEmojiOrLink } from '@hypha-platform/ui-utils';
 
 /**
  * @summary Route to get ERC20 transfers of a space
@@ -54,7 +54,7 @@ export async function GET(
 
   try {
     const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
-    if (!space) {
+    if (!space || !canConvertToBigInt(space.web3SpaceId)) {
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
 

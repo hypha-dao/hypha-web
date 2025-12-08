@@ -20,7 +20,7 @@ import {
   getTokenDecimals,
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
-import { hasEmojiOrLink } from '@hypha-platform/ui-utils';
+import { canConvertToBigInt, hasEmojiOrLink } from '@hypha-platform/ui-utils';
 
 const EVC_TOKEN_ADDRESS = '0xEa6FC1ff9C204E7b40073cCB091Ca8ac30B0B80a';
 
@@ -33,7 +33,7 @@ export async function GET(
   try {
     // TODO: implement authorization
     const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
-    if (!space) {
+    if (!space || !canConvertToBigInt(space.web3SpaceId)) {
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
 

@@ -3,6 +3,7 @@
 import { useSpacePayments } from './use-space-payments';
 import { useHasSpacePaid } from './use-has-space-paid';
 import { useState, useEffect } from 'react';
+import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 
 interface UseSalesBannerProps {
   spaceId?: number;
@@ -10,12 +11,12 @@ interface UseSalesBannerProps {
 
 export const useSalesBanner = ({ spaceId }: UseSalesBannerProps) => {
   const { payments, isLoading } = useSpacePayments(
-    spaceId !== undefined
+    canConvertToBigInt(spaceId)
       ? { spaceId: BigInt(spaceId) }
       : { spaceId: undefined as never },
   );
   const { hasSpacePaid } = useHasSpacePaid(
-    spaceId !== undefined
+    canConvertToBigInt(spaceId)
       ? { spaceId: BigInt(spaceId) }
       : { spaceId: undefined as never },
   );
