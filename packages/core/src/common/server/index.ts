@@ -13,3 +13,5 @@ export * from './web3-rpc';
 export * from './webhooks';
 
 export * from './route-handlers';
+
+export * from '../validation';

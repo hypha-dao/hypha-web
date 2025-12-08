@@ -17,7 +17,7 @@ import {
   activateSpacesSchema,
   ActivateSpacesFormValues,
 } from '../hooks/validation';
-import { Space, useMe } from '@hypha-platform/core/client';
+import { extractRevertReason, Space, useMe } from '@hypha-platform/core/client';
 import { SpaceWithNumberOfMonthsFieldArray } from './space-with-number-of-months-array';
 import { useActivateSpaces } from '../hooks/use-activate-hypha-spaces';
 import { Loader2 } from 'lucide-react';
@@ -129,7 +129,9 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
             /Execution reverted with reason: (.*?)\./,
           );
           errorMessage =
-            match && match[1] ? match[1] : 'Contract execution failed.';
+            match && match[1]
+              ? extractRevertReason(match[1])
+              : 'Contract execution failed.';
         } else if (error.message.includes('user rejected')) {
           errorMessage =
             'Transaction was rejected. Please approve the transaction to proceed.';
