@@ -13,6 +13,7 @@ type ExitSpaceProps = {
 export const ExitSpace = ({ web3SpaceId, exitButton }: ExitSpaceProps) => {
   const { isAuthenticated } = useAuthentication();
   const [showTooltip, setShowTooltip] = React.useState(false);
+  const [justExit, setJustExit] = React.useState(false);
 
   const { exitSpace, isExitingSpace, isDisabled } = useExitSpace({
     spaceId: web3SpaceId,
@@ -26,16 +27,19 @@ export const ExitSpace = ({ web3SpaceId, exitButton }: ExitSpaceProps) => {
     isExitingSpace ||
     isMemberLoading ||
     isDisabled ||
-    !isMember;
+    !isMember ||
+    justExit;
 
   const handleExitSpace = React.useCallback(async () => {
     if (disabled) {
       return;
     }
     try {
+      setJustExit(true);
       await exitSpace();
       await revalidateIsMember();
     } catch (err) {
+      setJustExit(false);
       console.error('Failed to exit space:', err);
       setShowTooltip(true);
     }
@@ -53,9 +57,6 @@ export const ExitSpace = ({ web3SpaceId, exitButton }: ExitSpaceProps) => {
     };
   }, [showTooltip]);
 
-  interface ExitButtonProps extends React.ReactElement {
-    disabled?: boolean;
-  }
   const button = exitButton ? (
     exitButton
   ) : (
