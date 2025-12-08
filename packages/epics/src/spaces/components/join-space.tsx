@@ -115,9 +115,9 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
           spaceId: spaceId,
           title: 'Invite Member',
           description: `**${person.name} ${person.surname} has just requested to join as a member!**
-        
+
         To move forward with onboarding, we'll need our space's approval on this proposal.
-        
+
         You can review ${person.name}'s profile <span className="text-accent-9">[here](${profilePageUrl}).</span>`,
           creatorId: person.id,
           memberAddress: person.address as `0x${string}`,
@@ -211,7 +211,7 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
         <ErrorAlert
           bgColor="bg-neutral-9"
           lines={[
-            'You’ve already submitted your invite request. Your proposal is now visible for review by the space members.',
+            'You’ve already submitted your invite request. Your proposal is now visible to space members for review. If needed, you’ll be able to resubmit 24 hours after your last submission.',
           ]}
         />
       )}
