@@ -35,7 +35,7 @@ export const useJoinSpaceProposalHandler = ({
   const { space: currentSpace } = useSpaceBySlug(currentSpaceSlug as string);
   const spacesEndpoint = '/api/v1/spaces';
   const { jwt } = useJwt();
-  const { data: allSpaces } = useSWR(
+  const { data: allSpaces, isLoading: isLoadingSpaces } = useSWR(
     [spacesEndpoint, jwt],
     ([spacesEndpoint]) =>
       fetch(spacesEndpoint, {
@@ -127,10 +127,32 @@ export const useJoinSpaceProposalHandler = ({
       originalProposalId: number,
     ) => {
       try {
-        const targetSpace = findSpaceByWeb3Id(targetSpaceId);
+        let targetSpace = findSpaceByWeb3Id(targetSpaceId);
+        let attempts = 0;
+        const maxAttempts = 10;
+        const retryDelay = 500;
+
+        while (!targetSpace && attempts < maxAttempts) {
+          attempts++;
+
+          if (isLoadingSpaces || !allSpaces) {
+            console.log(
+              `Waiting for spaces to load (attempt ${attempts}/${maxAttempts})...`,
+            );
+          } else {
+            console.log(
+              `Space ${targetSpaceId} not found in loaded spaces, retrying (attempt ${attempts}/${maxAttempts})...`,
+            );
+          }
+
+          await new Promise((resolve) => setTimeout(resolve, retryDelay));
+          targetSpace = findSpaceByWeb3Id(targetSpaceId);
+        }
 
         if (!targetSpace) {
-          throw new Error(`Space with web3Id ${targetSpaceId} not found`);
+          throw new Error(
+            `Space with web3Id ${targetSpaceId} not found after ${maxAttempts} attempts. Spaces loaded: ${!!allSpaces}, Loading: ${isLoadingSpaces}`,
+          );
         }
 
         const spaceUrl = `/en/dho/${currentSpace?.slug}/agreements/`;
@@ -138,9 +160,9 @@ export const useJoinSpaceProposalHandler = ({
         const inviteProposalData: CreateAgreementInput = {
           title: 'Invite Space',
           description: `**${currentSpace?.title} has just requested to join as a member!**
-    
+
         To move forward with onboarding, we'll need our space's approval on this proposal.
-        
+
         You can review ${currentSpace?.title} <span className="text-accent-9">[here](${spaceUrl}).</span>`,
           slug: `invite-request-${currentSpace?.id}-${Date.now()}`,
           creatorId: currentSpace?.id as number,
@@ -159,7 +181,13 @@ export const useJoinSpaceProposalHandler = ({
         throw error;
       }
     },
-    [createAgreement, findSpaceByWeb3Id, currentSpace?.id],
+    [
+      createAgreement,
+      findSpaceByWeb3Id,
+      currentSpace?.id,
+      isLoadingSpaces,
+      allSpaces,
+    ],
   );
 
   const handleJoinSpaceExecutedProposal = useCallback(
@@ -208,14 +236,14 @@ export const useJoinSpaceProposalHandler = ({
                   return;
                 }
 
-                console.log(
-                  `JoinSpace created proposal ${createdProposalId} in space ${targetSpaceId}`,
-                );
-
                 await createInviteProposal(
                   targetSpaceId,
                   createdProposalId,
                   proposalId,
+                );
+
+                console.log(
+                  `JoinSpace created proposal ${createdProposalId} in space ${targetSpaceId}`,
                 );
               } else {
                 console.log(
