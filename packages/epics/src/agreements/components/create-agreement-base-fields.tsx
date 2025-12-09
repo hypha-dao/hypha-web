@@ -60,6 +60,9 @@ export type CreateAgreementFormProps = {
   progress: number;
 };
 
+type Callback = () => Promise<void>;
+type CallbackList = Array<Callback>;
+
 export function CreateAgreementBaseFields({
   creator,
   isLoading = false,
@@ -100,23 +103,24 @@ export function CreateAgreementBaseFields({
 
   const { person: me, isLoading: isLoadingMe } = useMe();
 
-  type Callback = () => Promise<void>;
-  const [delayed, setDelayed] = React.useState<Array<Callback>>([]);
+  const [delayedCallbacks, setDelayedCallbacks] = React.useState<CallbackList>(
+    [],
+  );
 
   React.useEffect(() => {
     if (progress < 100) {
       return;
     }
-    if (delayed.length === 0) {
+    if (delayedCallbacks.length === 0) {
       return;
     }
     (async (delayed) => {
       for (const callback of delayed) {
         await callback?.();
       }
-    })([...delayed]);
-    setDelayed([]);
-  }, [progress, delayed, setDelayed]);
+    })([...delayedCallbacks]);
+    setDelayedCallbacks([]);
+  }, [progress, delayedCallbacks, setDelayedCallbacks]);
 
   const progressRef = React.useRef(progress);
   progressRef.current = progress;
@@ -154,7 +158,7 @@ export function CreateAgreementBaseFields({
           }
         };
         if (progressRef.current < 100) {
-          setDelayed((prev) => {
+          setDelayedCallbacks((prev) => {
             if (prev.length > 0) {
               // Normally should be called at most once
               return prev;
