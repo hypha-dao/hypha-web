@@ -56,6 +56,15 @@ export const SelectSettingsAction = ({
     },
     {
       group: 'Overview',
+      title: 'Activate Space(s)',
+      description:
+        'Contribute HYPHA or USDC to activate your space(s) and support the Hypha Network.',
+      href: 'create/activate-spaces',
+      baseTab: 'agreements',
+      icon: <ArrowRightIcon />,
+    },
+    {
+      group: 'Overview',
       title: 'Archive Space (Coming Soon)',
       description:
         'Archive this space to disable activity while preserving its data and history.',
@@ -130,6 +139,14 @@ export const SelectSettingsAction = ({
     },
     {
       group: 'Treasury',
+      title: 'Buy Hypha Tokens (Rewards)',
+      description:
+        'Purchase Hypha tokens to participate in the network and earn rewards.',
+      href: 'create/buy-hypha-tokens',
+      icon: <ArrowLeftIcon />,
+    },
+    {
+      group: 'Treasury',
       title: 'Deposit Funds',
       description:
         'Deposit funds into your treasury by copying the treasury address or scanning the QR code.',
@@ -169,23 +186,6 @@ export const SelectSettingsAction = ({
       icon: <RadiobuttonIcon />,
       baseTab: 'agreements',
       target: '_blank',
-    },
-    {
-      group: 'Hypha Network Tokenomics',
-      title: 'Buy Hypha Tokens (Rewards)',
-      description:
-        'Purchase Hypha tokens to participate in the network and earn rewards.',
-      href: 'create/buy-hypha-tokens',
-      icon: <ArrowLeftIcon />,
-    },
-    {
-      group: 'Hypha Network Tokenomics',
-      title: 'Activate Space(s)',
-      description:
-        'Contribute HYPHA or USDC to activate your space(s) and support the Hypha Network.',
-      href: 'create/activate-spaces',
-      baseTab: 'agreements',
-      icon: <ArrowRightIcon />,
     },
   ];
 
