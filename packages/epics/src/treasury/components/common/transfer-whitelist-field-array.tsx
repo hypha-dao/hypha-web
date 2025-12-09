@@ -8,13 +8,18 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  Image,
   Input,
   Switch,
 } from '@hypha-platform/ui';
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
 import { useFieldArray, useFormContext } from 'react-hook-form';
-import { Person, Space } from '@hypha-platform/core/client';
+import {
+  DEFAULT_SPACE_AVATAR_IMAGE,
+  Person,
+  Space,
+} from '@hypha-platform/core/client';
 
 type WhitelistType = 'member' | 'space';
 
@@ -163,6 +168,48 @@ export const TransferWhitelistFieldArray = ({
                     currentType === 'member'
                       ? 'No members match your search.'
                       : 'No spaces match your search.'
+                  }
+                  renderOption={(option) => (
+                    <>
+                      <Image
+                        src={
+                          option.avatarUrl ||
+                          (currentType === 'member'
+                            ? '/placeholder/default-profile.svg'
+                            : DEFAULT_SPACE_AVATAR_IMAGE)
+                        }
+                        alt={option.label}
+                        width={24}
+                        height={24}
+                        className="rounded-full min-h-5 min-w-5"
+                      />
+                      <span className="text-ellipsis overflow-hidden text-nowrap">
+                        {option.label}
+                      </span>
+                    </>
+                  )}
+                  renderValue={(option) =>
+                    option ? (
+                      <div className="flex items-center gap-2 truncate">
+                        <Image
+                          src={
+                            option.avatarUrl ||
+                            (currentType === 'member'
+                              ? '/placeholder/default-profile.svg'
+                              : DEFAULT_SPACE_AVATAR_IMAGE)
+                          }
+                          alt={option.label}
+                          width={24}
+                          height={24}
+                          className="rounded-full min-h-5 min-w-5"
+                        />
+                        <span className="truncate text-ellipsis overflow-hidden text-nowrap">
+                          {option.label}
+                        </span>
+                      </div>
+                    ) : (
+                      placeholder
+                    )
                   }
                 />
               </div>
