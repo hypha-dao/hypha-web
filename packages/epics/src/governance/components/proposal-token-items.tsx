@@ -203,44 +203,42 @@ export const ProposalTokenItem = ({
         </>
       )}
 
-      <>
-        <Separator />
-        <div className="flex flex-col gap-4">
-          <div className="text-1 text-neutral-11 font-medium">
-            Transfer Whitelists
-          </div>
+      {((initialTransferWhitelist && initialTransferWhitelist.length > 0) ||
+        (initialReceiveWhitelist && initialReceiveWhitelist.length > 0)) && (
+        <>
+          <Separator />
           <div className="flex flex-col gap-4">
-            <div className="text-1 text-neutral-11 font-bold">
-              From Whitelist
+            <div className="text-1 text-neutral-11 font-medium">
+              Transfer Whitelists
             </div>
-            {initialTransferWhitelist && initialTransferWhitelist.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {initialTransferWhitelist.map((addr, idx) => (
-                  <WhitelistAddressItem key={idx} address={addr} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-1 text-neutral-11">
-                No addresses specified
+            {initialTransferWhitelist &&
+              initialTransferWhitelist.length > 0 && (
+                <div className="flex flex-col gap-4">
+                  <div className="text-1 text-neutral-11 font-bold">
+                    From Whitelist
+                  </div>
+                  <div className="flex flex-col gap-4">
+                    {initialTransferWhitelist.map((addr, idx) => (
+                      <WhitelistAddressItem key={idx} address={addr} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            {initialReceiveWhitelist && initialReceiveWhitelist.length > 0 && (
+              <div className="flex flex-col gap-4">
+                <div className="text-1 text-neutral-11 font-bold">
+                  To Whitelist
+                </div>
+                <div className="flex flex-col gap-4">
+                  {initialReceiveWhitelist.map((addr, idx) => (
+                    <WhitelistAddressItem key={idx} address={addr} />
+                  ))}
+                </div>
               </div>
             )}
           </div>
-          <div className="flex flex-col gap-4">
-            <div className="text-1 text-neutral-11 font-bold">To Whitelist</div>
-            {initialReceiveWhitelist && initialReceiveWhitelist.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {initialReceiveWhitelist.map((addr, idx) => (
-                  <WhitelistAddressItem key={idx} address={addr} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-1 text-neutral-11">
-                No addresses specified
-              </div>
-            )}
-          </div>
-        </div>
-      </>
+        </>
+      )}
     </div>
   );
 };
