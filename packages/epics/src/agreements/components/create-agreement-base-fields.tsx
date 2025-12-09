@@ -118,6 +118,9 @@ export function CreateAgreementBaseFields({
     setDelayed([]);
   }, [progress, delayed, setDelayed]);
 
+  const progressRef = React.useRef(progress);
+  progressRef.current = progress;
+
   const postProposalCreated = React.useCallback(
     async ({
       spaceId,
@@ -150,7 +153,7 @@ export function CreateAgreementBaseFields({
             );
           }
         };
-        if (progress < 100) {
+        if (progressRef.current < 100) {
           setDelayed((prev) => {
             if (prev.length > 0) {
               // Normally should be called at most once
@@ -180,7 +183,7 @@ export function CreateAgreementBaseFields({
         }
       }
     },
-    [router, successfulUrl, me, isLoadingMe, space, progress],
+    [router, successfulUrl, me, isLoadingMe, space],
   );
 
   useProposalNotifications({
