@@ -116,8 +116,16 @@ export const ProposalTokenItem = ({
 
   const referencePrice = dbToken?.referencePrice;
 
+  const tokenType = dbToken?.type
+    ? dbToken.type.charAt(0).toUpperCase() + dbToken.type.slice(1)
+    : '';
+
   return (
     <div className="flex flex-col gap-5">
+      <div className="flex justify-between items-center">
+        <div className="text-1 text-neutral-11 w-full">Token Type</div>
+        <div className="text-1 text-nowrap">{tokenType}</div>
+      </div>
       <div className="flex justify-between items-center">
         <div className="text-1 text-neutral-11 w-full">Token Name</div>
         <div className="text-1 text-nowrap">{name}</div>
