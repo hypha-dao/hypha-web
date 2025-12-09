@@ -31,6 +31,7 @@ import {
   useJwt,
   NotifyProposalCreatedInput,
   useMe,
+  PostNotifyProposalCreatedInput,
 } from '@hypha-platform/core/client';
 import { useParams, useRouter } from 'next/navigation';
 import { formatDuration } from '@hypha-platform/ui-utils';
@@ -99,7 +100,7 @@ export function CreateAgreementBaseFields({
 
   const { person: me, isLoading: isLoadingMe } = useMe();
 
-  type Callback = () => void;
+  type Callback = () => Promise<void>;
   const [delayed, setDelayed] = React.useState<Array<Callback>>([]);
 
   React.useEffect(() => {
@@ -109,14 +110,22 @@ export function CreateAgreementBaseFields({
     if (delayed.length === 0) {
       return;
     }
-    for (const callback of delayed) {
-      callback?.();
-    }
+    (async (delayed) => {
+      for (const callback of delayed) {
+        await callback?.();
+      }
+    })([...delayed]);
     setDelayed([]);
   }, [progress, delayed, setDelayed]);
 
   const postProposalCreated = React.useCallback(
-    async ({ spaceId, creator }: NotifyProposalCreatedInput) => {
+    async ({
+      spaceId,
+      creator,
+      proposalId,
+      url,
+      sendNotifications,
+    }: PostNotifyProposalCreatedInput) => {
       if (isLoadingMe || !me?.address || !space?.web3SpaceId) {
         return;
       }
@@ -127,6 +136,20 @@ export function CreateAgreementBaseFields({
         return;
       }
       if (successfulUrl) {
+        const sendNotificationsSafe = async (
+          args: NotifyProposalCreatedInput,
+        ) => {
+          try {
+            if (sendNotifications) {
+              await sendNotifications(args);
+            }
+          } catch (error) {
+            console.warn(
+              'Some issues appeared on send notifications on proposal created:',
+              error,
+            );
+          }
+        };
         if (progress < 100) {
           setDelayed((prev) => {
             if (prev.length > 0) {
@@ -135,12 +158,24 @@ export function CreateAgreementBaseFields({
             }
             return [
               ...prev,
-              () => {
+              async () => {
+                await sendNotificationsSafe({
+                  proposalId,
+                  spaceId,
+                  creator,
+                  url,
+                });
                 router.push(successfulUrl);
               },
             ];
           });
         } else {
+          await sendNotificationsSafe({
+            proposalId,
+            spaceId,
+            creator,
+            url,
+          });
           router.push(successfulUrl);
         }
       }
@@ -148,7 +183,12 @@ export function CreateAgreementBaseFields({
     [router, successfulUrl, me, isLoadingMe, space, progress],
   );
 
-  useProposalNotifications({ lang, spaceSlug, authToken, postProposalCreated });
+  useProposalNotifications({
+    lang,
+    spaceSlug,
+    authToken,
+    postProposalCreated,
+  });
 
   return (
     <>
