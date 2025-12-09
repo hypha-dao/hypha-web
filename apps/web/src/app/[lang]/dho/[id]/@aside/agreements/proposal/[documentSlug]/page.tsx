@@ -132,7 +132,9 @@ export default function Agreements() {
         message={
           voteError ? (
             <div className="text-center space-y-2">
-              <div className="text-error-9 font-medium">{voteError}</div>
+              <div className="text-error-9 font-medium ml-6 mr-6">
+                {voteError}
+              </div>
               {canRetry && (
                 <Button
                   onClick={() => {
