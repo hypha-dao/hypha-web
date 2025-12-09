@@ -176,7 +176,7 @@ export const ProposalTokenItem = ({
         <div className="flex justify-between items-center text-nowrap">
           <div className="text-1 text-neutral-11 w-full">Token Price</div>
           <div className="text-1">
-            ${formatCurrencyValue(referencePrice)} {referenceCurrency}
+            {formatCurrencyValue(referencePrice)} {referenceCurrency}
           </div>
         </div>
       )}
