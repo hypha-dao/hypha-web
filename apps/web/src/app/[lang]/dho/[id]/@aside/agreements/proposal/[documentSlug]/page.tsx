@@ -17,9 +17,30 @@ import {
   useProposalDetailsWeb3Rpc,
   useSpaceBySlug,
   useMyVote,
+  extractRevertReason,
 } from '@hypha-platform/core/client';
 import { LoadingBackdrop, Button } from '@hypha-platform/ui';
 import { useEffect, useState } from 'react';
+
+function parseRevertReason(error: unknown): string {
+  const message =
+    typeof error === 'string' ? error : (error as any)?.message || '';
+
+  const start = message.indexOf('Execution reverted with reason:');
+  const end = message.indexOf('Request Arguments');
+
+  if (start !== -1) {
+    const reasonStart = start + 'Execution reverted with reason:'.length;
+    const reason =
+      end !== -1
+        ? message.substring(reasonStart, end).trim()
+        : message.substring(reasonStart).trim();
+    return (
+      extractRevertReason(reason) || 'Transaction reverted for unknown reason.'
+    );
+  }
+  return message || 'An unknown error occurred.';
+}
 
 export default function Agreements() {
   const { jwt: authToken } = useJwt();
@@ -53,24 +74,6 @@ export default function Agreements() {
   const [voteMessage, setVoteMessage] = useState('Processing vote...');
   const [voteError, setVoteError] = useState<string | null>(null);
   const [canRetry, setCanRetry] = useState(false);
-
-  function parseRevertReason(error: unknown): string {
-    const message =
-      typeof error === 'string' ? error : (error as any)?.message || '';
-
-    const start = message.indexOf('Execution reverted with reason:');
-    const end = message.indexOf('Request Arguments');
-
-    if (start !== -1) {
-      const reasonStart = start + 'Execution reverted with reason:'.length;
-      const reason =
-        end !== -1
-          ? message.substring(reasonStart, end).trim()
-          : message.substring(reasonStart).trim();
-      return reason || 'Transaction reverted for unknown reason.';
-    }
-    return message || 'An unknown error occurred.';
-  }
 
   const voteAndRefresh = async (voteFn: () => Promise<unknown>) => {
     setIsVoting(true);
@@ -129,7 +132,9 @@ export default function Agreements() {
         message={
           voteError ? (
             <div className="text-center space-y-2">
-              <div className="text-error-9 font-medium">{voteError}</div>
+              <div className="text-error-9 font-medium ml-6 mr-6">
+                {voteError}
+              </div>
               {canRetry && (
                 <Button
                   onClick={() => {
