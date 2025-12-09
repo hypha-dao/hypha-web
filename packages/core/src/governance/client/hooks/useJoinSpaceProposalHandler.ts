@@ -35,15 +35,35 @@ export const useJoinSpaceProposalHandler = ({
   const { space: currentSpace } = useSpaceBySlug(currentSpaceSlug as string);
   const spacesEndpoint = '/api/v1/spaces';
   const { jwt } = useJwt();
-  const { data: allSpaces } = useSWR(
-    [spacesEndpoint, jwt],
-    ([spacesEndpoint]) =>
-      fetch(spacesEndpoint, {
+  const {
+    data: allSpaces,
+    isLoading: isLoadingSpaces,
+    error: spacesError,
+    mutate: mutateSpaces,
+  } = useSWR(
+    jwt ? [spacesEndpoint, jwt] : null,
+    async ([endpoint, token]) => {
+      const res = await fetch(endpoint, {
         headers: {
-          Authorization: `Bearer ${jwt}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
-      }).then((res) => res.json()),
+      });
+      if (!res.ok) {
+        throw new Error(
+          `Failed to fetch spaces: ${res.status} ${res.statusText}`,
+        );
+      }
+      return res.json();
+    },
+    {
+      onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
+        if (error.message.includes('404')) return;
+
+        if (retryCount >= 10) return;
+
+        setTimeout(() => revalidate({ retryCount }), 500);
+      },
+    },
   );
   const { trigger: createAgreement } = useSWRMutation(
     authToken ? [authToken, 'createAgreement'] : null,
@@ -127,20 +147,46 @@ export const useJoinSpaceProposalHandler = ({
       originalProposalId: number,
     ) => {
       try {
-        const targetSpace = findSpaceByWeb3Id(targetSpaceId);
-
-        if (!targetSpace) {
-          throw new Error(`Space with web3Id ${targetSpaceId} not found`);
+        if (!jwt) {
+          throw new Error('JWT token is not available');
         }
+
+        const maxAttempts = 10;
+        const retryDelay = 500;
+
+        const waitForSpace = async (): Promise<Space> => {
+          for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            await mutateSpaces();
+
+            await new Promise((resolve) => setTimeout(resolve, retryDelay));
+
+            const targetSpace = findSpaceByWeb3Id(targetSpaceId);
+            if (targetSpace) {
+              return targetSpace;
+            }
+
+            console.log(
+              `Space ${targetSpaceId} not found, attempt ${attempt}/${maxAttempts}...`,
+            );
+          }
+
+          throw new Error(
+            `Space with web3Id ${targetSpaceId} not found after ${maxAttempts} attempts. Spaces loaded: ${!!allSpaces}, Loading: ${isLoadingSpaces}, Error: ${
+              spacesError ? String(spacesError) : 'none'
+            }`,
+          );
+        };
+
+        const targetSpace = await waitForSpace();
 
         const spaceUrl = `/en/dho/${currentSpace?.slug}/agreements/`;
 
         const inviteProposalData: CreateAgreementInput = {
           title: 'Invite Space',
           description: `**${currentSpace?.title} has just requested to join as a member!**
-    
+
         To move forward with onboarding, we'll need our space's approval on this proposal.
-        
+
         You can review ${currentSpace?.title} <span className="text-accent-9">[here](${spaceUrl}).</span>`,
           slug: `invite-request-${currentSpace?.id}-${Date.now()}`,
           creatorId: currentSpace?.id as number,
@@ -159,7 +205,16 @@ export const useJoinSpaceProposalHandler = ({
         throw error;
       }
     },
-    [createAgreement, findSpaceByWeb3Id, currentSpace?.id],
+    [
+      createAgreement,
+      findSpaceByWeb3Id,
+      currentSpace?.id,
+      isLoadingSpaces,
+      allSpaces,
+      jwt,
+      spacesError,
+      mutateSpaces,
+    ],
   );
 
   const handleJoinSpaceExecutedProposal = useCallback(
@@ -208,14 +263,14 @@ export const useJoinSpaceProposalHandler = ({
                   return;
                 }
 
-                console.log(
-                  `JoinSpace created proposal ${createdProposalId} in space ${targetSpaceId}`,
-                );
-
                 await createInviteProposal(
                   targetSpaceId,
                   createdProposalId,
                   proposalId,
+                );
+
+                console.log(
+                  `JoinSpace created proposal ${createdProposalId} in space ${targetSpaceId}`,
                 );
               } else {
                 console.log(
