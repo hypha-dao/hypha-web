@@ -28,30 +28,28 @@ const extendedBaseSchema = baseSchemaIssueNewToken.merge(
 
 export const fullSchemaIssueNewToken = extendedBaseSchema.superRefine(
   (data, ctx) => {
-    if (
-      (data.enableLimitedSupply === true || data.maxSupply > 0) &&
-      !data.maxSupplyType
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Please select a max supply type',
-        path: ['maxSupplyType'],
-      });
-    }
+    if (data.enableLimitedSupply === true) {
+      if (!data.maxSupplyType) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Please select a max supply type',
+          path: ['maxSupplyType'],
+        });
+      }
 
-    if (
-      data.maxSupplyType?.value === 'updatable' &&
-      (data.maxSupply === undefined ||
+      if (
+        data.maxSupply === undefined ||
         data.maxSupply === null ||
         isNaN(data.maxSupply) ||
-        data.maxSupply <= 0)
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message:
-          'Max supply must be greater than 0 when updatable type is selected',
-        path: ['maxSupply'],
-      });
+        data.maxSupply <= 0
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            'Enter a maximum supply greater than 0, or disable limited supply if you want unlimited supply.',
+          path: ['maxSupply'],
+        });
+      }
     }
 
     if (data.enableTokenPrice) {

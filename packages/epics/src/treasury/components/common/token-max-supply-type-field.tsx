@@ -22,7 +22,7 @@ const OPTIONS = [
 ];
 
 export function TokenMaxSupplyTypeField() {
-  const { control, trigger } = useFormContext();
+  const { control, trigger, formState } = useFormContext();
   const maxSupply = useWatch({
     control,
     name: 'maxSupply',
@@ -34,14 +34,16 @@ export function TokenMaxSupplyTypeField() {
     defaultValue: false,
   });
 
+  const maxSupplyError = formState.errors.maxSupply?.message as
+    | string
+    | undefined;
+
   return (
     <FormField
       control={control}
       name="maxSupplyType"
       render={({ field }) => {
         const selectedLabel = field.value?.label || 'Select max supply type';
-        const showRequirementMark =
-          enableLimitedSupply === true || maxSupply > 0;
 
         return (
           <FormItem>
@@ -50,7 +52,7 @@ export function TokenMaxSupplyTypeField() {
                 <FormLabel className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
                   Max Supply Type
                 </FormLabel>
-                {showRequirementMark && <RequirementMark className="text-2" />}
+                {enableLimitedSupply && <RequirementMark className="text-2" />}
               </div>
 
               <FormControl>
@@ -85,18 +87,21 @@ export function TokenMaxSupplyTypeField() {
                 </DropdownMenu>
               </FormControl>
             </div>
-
+            <FormMessage />
+            {maxSupplyError && (
+              <div className="text-sm font-medium text-destructive">
+                {maxSupplyError}
+              </div>
+            )}
             <div className="text-2 text-neutral-11 flex flex-col gap-3">
               <span>
-                Choosing “Forever Immutable” locks in the maximum supply
-                permanently and blocks any future changes. Select “Updatable
-                Over Time” if you may raise the cap later (for example via
+                Choosing "Forever Immutable" locks in the maximum supply
+                permanently and blocks any future changes. Select "Updatable
+                Over Time" if you may raise the cap later (for example via
                 gradual or milestone-based releases), or leave limited supply
                 turned off to keep supply unlimited.
               </span>
             </div>
-
-            <FormMessage />
           </FormItem>
         );
       }}
