@@ -135,7 +135,7 @@ export const ButtonProfile = ({
               ))}
             </div>
             <DropdownMenu modal={false}>
-              <DropdownMenuTrigger>
+              <DropdownMenuTrigger data-testid="profile-button">
                 <PersonAvatar
                   size="md"
                   avatarSrc={person?.avatarUrl}
@@ -219,6 +219,7 @@ export const ButtonProfile = ({
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
+                  data-testid="logout-button"
                   onClick={onLogout}
                   className="px-0 text-1 text-error-11 flex justify-between"
                 >
@@ -238,7 +239,7 @@ export const ButtonProfile = ({
               label={item.label}
             />
           ))}
-          <Button onClick={onLogin}>Sign in</Button>
+          <Button data-testid="sign-in-button" onClick={onLogin}>Sign in</Button>
           <Button
             className="hidden md:flex"
             variant="outline"

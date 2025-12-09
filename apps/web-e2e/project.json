@@ -4,6 +4,51 @@
   "sourceRoot": "apps/web-e2e/src",
   "tags": [],
   "implicitDependencies": ["web"],
-  "// targets": "to see all targets run: nx show project web-e2e --web",
-  "targets": {}
+  "targets": {
+    "e2e": {
+      "executor": "@nx/playwright:playwright",
+      "outputs": ["{workspaceRoot}/apps/web-e2e/playwright-report"],
+      "options": {
+        "config": "apps/web-e2e/playwright.config.ts"
+      }
+    },
+    "e2e-production": {
+      "executor": "@nx/playwright:playwright",
+      "outputs": ["{workspaceRoot}/apps/web-e2e/playwright-report-production"],
+      "options": {
+        "config": "apps/web-e2e/playwright.production.config.ts"
+      }
+    },
+    "e2e-production-auth": {
+      "executor": "@nx/playwright:playwright",
+      "options": {
+        "config": "apps/web-e2e/playwright.production.config.ts",
+        "project": ["auth-setup"],
+        "headed": true
+      }
+    },
+    "e2e-production-public": {
+      "executor": "@nx/playwright:playwright",
+      "outputs": ["{workspaceRoot}/apps/web-e2e/playwright-report-production"],
+      "options": {
+        "config": "apps/web-e2e/playwright.production.config.ts",
+        "project": ["production-public"]
+      }
+    },
+    "e2e-production-create-space": {
+      "executor": "@nx/playwright:playwright",
+      "outputs": ["{workspaceRoot}/apps/web-e2e/playwright-report-production"],
+      "options": {
+        "config": "apps/web-e2e/playwright.production.config.ts",
+        "project": ["production-quick"],
+        "grep": "create a new space"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["apps/web-e2e/**/*.ts"]
+      }
+    }
+  }
 }

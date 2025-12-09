@@ -58,3 +58,11 @@ vitest.config.*.timestamp*
 
 # Turborepo
 .turbo
+
+# Playwright
+**/test-results/
+**/test-results-production/
+**/playwright-report/
+**/playwright-report-production/
+**/playwright/.cache/
+**/.auth/*.json
