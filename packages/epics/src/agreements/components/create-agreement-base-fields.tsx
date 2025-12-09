@@ -114,9 +114,13 @@ export function CreateAgreementBaseFields({
     if (delayedCallbacks.length === 0) {
       return;
     }
-    (async (delayed) => {
-      for (const callback of delayed) {
-        await callback?.();
+    (async (callbacks) => {
+      for (const callback of callbacks) {
+        try {
+          await callback?.();
+        } catch (error) {
+          console.warn(error);
+        }
       }
     })([...delayedCallbacks]);
     setDelayedCallbacks([]);
