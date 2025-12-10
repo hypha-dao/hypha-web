@@ -4,17 +4,19 @@ import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { useSalesBanner } from '@hypha-platform/epics';
 import { Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { cleanPath } from './clean-path';
 import { usePathname, useRouter } from 'next/navigation';
-import { PATH_SELECT_ACTIVATE_ACTION } from '@web/app/constants';
+import { cleanPath } from '../utils/cleanPath';
+import React from 'react';
 
 interface ActivateProposalsBannerProps {
   spaceSlug: string;
+  activatePath: string;
   className?: string;
 }
 
 export const ActivateProposalsBanner = ({
   spaceSlug,
+  activatePath,
   className,
 }: ActivateProposalsBannerProps) => {
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
@@ -27,6 +29,11 @@ export const ActivateProposalsBanner = ({
   });
   const pathname = usePathname();
   const router = useRouter();
+
+  const handleAction = React.useCallback(() => {
+    const path = `${cleanPath(pathname)}${activatePath}`;
+    router.push(path);
+  }, [router, activatePath]);
 
   if (isSpaceLoading || !space || isStatusLoading || !status) {
     return null;
@@ -41,10 +48,6 @@ export const ActivateProposalsBanner = ({
     daysLeft,
   )} days ago. Please reactivate your space before submitting a new proposal.`;
   const buttonText = 'Reactivate Now';
-  const handleAction = () => {
-    const path = `${cleanPath(pathname)}${PATH_SELECT_ACTIVATE_ACTION}`;
-    router.push(path);
-  };
 
   return (
     <div

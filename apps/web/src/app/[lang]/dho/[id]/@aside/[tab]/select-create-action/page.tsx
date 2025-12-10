@@ -5,7 +5,10 @@ import {
 } from '@hypha-platform/epics';
 import { SelectCreateAction } from '../../../_components/select-create-action';
 import { Locale } from '@hypha-platform/i18n';
-import { PATH_SELECT_CREATE_ACTION } from '@web/app/constants';
+import {
+  PATH_SELECT_ACTIVATE_ACTION,
+  PATH_SELECT_CREATE_ACTION,
+} from '@web/app/constants';
 
 export default async function SelectCreateActions({
   params,
@@ -21,7 +24,10 @@ export default async function SelectCreateActions({
           className="absolute top-0 right-0"
         />
         <div className="flex flex-col gap-5 py-6">
-          <ActivateProposalsBanner spaceSlug={daoSlug} />
+          <ActivateProposalsBanner
+            spaceSlug={daoSlug}
+            activatePath={PATH_SELECT_ACTIVATE_ACTION}
+          />
         </div>
         <SelectCreateAction lang={lang} daoSlug={daoSlug} />
       </div>
