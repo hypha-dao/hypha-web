@@ -1,6 +1,6 @@
 'use client';
 
-import { SelectAction } from '@hypha-platform/epics';
+import { SelectAction, useSalesBanner } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import {
   ArrowUpIcon,
@@ -23,11 +23,15 @@ export const SelectCreateAction = ({
   lang: Locale;
   children?: React.ReactNode;
 }) => {
-  const { id: spaceSlug } = useParams();
-  const { space } = useSpaceBySlug(spaceSlug as string);
+  const { id: spaceSlug } = useParams<{ id: string }>();
+  const { space } = useSpaceBySlug(spaceSlug);
+  const { status, isLoading: isStatusLoading } = useSalesBanner({
+    spaceId: space?.web3SpaceId ?? undefined,
+  });
   const { fundWallet } = useFundWallet({
     address: space?.address as `0x${string}`,
   });
+  const isPaymentExpired = isStatusLoading ? false : status === 'expired';
 
   const CREATE_ACTIONS = [
     {
@@ -37,6 +41,7 @@ export const SelectCreateAction = ({
         'Define and formalise a mutual understanding, policy, or decision among members of the space.',
       href: 'agreements/create',
       icon: <FileIcon />,
+      disabled: isPaymentExpired,
     },
     {
       defaultDurationDays: 4,
@@ -45,6 +50,7 @@ export const SelectCreateAction = ({
         'Propose a new contribution, such as work, knowledge, capital, or resources, for the space to consider.',
       href: 'agreements/create/propose-contribution',
       icon: <RocketIcon />,
+      disabled: isPaymentExpired,
     },
     {
       defaultDurationDays: 7,
@@ -53,6 +59,7 @@ export const SelectCreateAction = ({
         'Make payments for products and services by transferring funds from your space treasury to another space, entity, or individual wallet.',
       href: 'agreements/create/pay-for-expenses',
       icon: <ArrowUpIcon />,
+      disabled: isPaymentExpired,
     },
     {
       defaultDurationDays: 7,
@@ -79,6 +86,7 @@ export const SelectCreateAction = ({
         'Allocate treasury funds for investments in other spaces in the network or for distributing resources across spaces within your organisation.',
       href: 'agreements/create/deploy-funds',
       icon: <Share1Icon />,
+      disabled: isPaymentExpired,
     },
     {
       title: 'Deposit Funds',
