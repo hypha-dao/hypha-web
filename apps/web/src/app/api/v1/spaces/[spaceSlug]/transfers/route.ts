@@ -94,12 +94,13 @@ export async function GET(
     }
     console.log(`[Transfers API] Space address: ${spaceAddress}`);
 
-    let transfers;
+    let transfers: Awaited<ReturnType<typeof getTransfersByAddress>>;
     try {
       console.log(
         `[Transfers API] Fetching transfers for address: ${spaceAddress}`,
       );
-      transfers = await getTransfersByAddress({
+      // Add overall timeout for getTransfersByAddress (30 seconds)
+      const transfersPromise = getTransfersByAddress({
         address: spaceAddress,
         contractAddresses: token,
         fromDate,
@@ -108,13 +109,29 @@ export async function GET(
         toBlock,
         limit,
       });
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error('getTransfersByAddress timeout after 30s')),
+          30000,
+        ),
+      );
+
+      transfers = await Promise.race([transfersPromise, timeoutPromise]);
       console.log(`[Transfers API] Fetched ${transfers.length} transfers`);
     } catch (transfersError) {
+      const errorMessage =
+        transfersError instanceof Error
+          ? transfersError.message
+          : String(transfersError);
       console.error(
-        `[Transfers API] Failed to fetch transfers for ${spaceSlug} (${spaceAddress}):`,
-        transfersError,
+        `[Transfers API] Failed to fetch transfers for ${spaceSlug} (${spaceAddress}): ${errorMessage}`,
       );
-      throw transfersError;
+      // Return empty array instead of throwing to allow page to load
+      // The UI will show "no transfers" instead of infinite loading
+      transfers = [];
+      console.warn(
+        `[Transfers API] Continuing with empty transfers array for ${spaceSlug}`,
+      );
     }
 
     let dbTransfers: Awaited<ReturnType<typeof findAllTransfers>>;
