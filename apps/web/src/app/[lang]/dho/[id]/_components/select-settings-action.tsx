@@ -23,17 +23,19 @@ import {
 } from '@radix-ui/react-icons';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
 
+type SelectSettingsActionProps = {
+  daoSlug: string;
+  activeTab: string;
+  lang: Locale;
+  children?: React.ReactNode;
+};
+
 export const SelectSettingsAction = ({
   daoSlug,
   activeTab,
   lang,
   children,
-}: {
-  daoSlug: string;
-  activeTab: string;
-  lang: Locale;
-  children?: React.ReactNode;
-}) => {
+}: SelectSettingsActionProps) => {
   const { space } = useSpaceBySlug(daoSlug);
   const { status, isLoading: isStatusLoading } = useSalesBanner({
     spaceId: space?.web3SpaceId ?? undefined,

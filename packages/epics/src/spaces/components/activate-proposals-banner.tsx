@@ -43,10 +43,11 @@ export const ActivateProposalsBanner = ({
     return null;
   }
 
+  const expiredElapsed =
+    daysLeft === 0 ? 'today' : `${Math.abs(daysLeft)} days ago`;
+
   const title = 'Proposal creation disabled';
-  const subtitle = `Your Hypha Network contribution expired ${Math.abs(
-    daysLeft,
-  )} days ago. Please reactivate your space before submitting a new proposal.`;
+  const subtitle = `Your Hypha Network contribution expired ${expiredElapsed}. Please reactivate your space before submitting a new proposal.`;
   const buttonText = 'Reactivate Now';
 
   return (

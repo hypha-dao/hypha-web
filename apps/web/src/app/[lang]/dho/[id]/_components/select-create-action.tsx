@@ -16,15 +16,17 @@ import {
 } from '@radix-ui/react-icons';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
 
+type SelectCreateActionProps = {
+  daoSlug: string;
+  lang: Locale;
+  children?: React.ReactNode;
+};
+
 export const SelectCreateAction = ({
   daoSlug,
   lang,
   children,
-}: {
-  daoSlug: string;
-  lang: Locale;
-  children?: React.ReactNode;
-}) => {
+}: SelectCreateActionProps) => {
   const { space } = useSpaceBySlug(daoSlug);
   const { status, isLoading: isStatusLoading } = useSalesBanner({
     spaceId: space?.web3SpaceId ?? undefined,
@@ -106,7 +108,9 @@ export const SelectCreateAction = ({
       content="Select an action to contribute, collaborate, make decisions or manage resources within your space."
       actions={CREATE_ACTIONS.map((action) => ({
         ...action,
-        href: `/${lang}/dho/${daoSlug}/${action.href}`,
+        ...(action.href && {
+          href: `/${lang}/dho/${daoSlug}/${action.href}`,
+        }),
       }))}
     >
       {children}
