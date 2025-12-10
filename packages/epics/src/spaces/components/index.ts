@@ -1,3 +1,4 @@
+export * from './activate-proposals-banner';
 export * from './category-search';
 export * from './category-spaces';
 export * from './create-space-form';
