@@ -397,10 +397,7 @@ export const schemaIssueNewToken = baseSchemaIssueNewToken.superRefine(
 
     if (
       data.maxSupplyType?.value === 'updatable' &&
-      (data.maxSupply === undefined ||
-        data.maxSupply === null ||
-        isNaN(data.maxSupply) ||
-        data.maxSupply <= 0)
+      (data.maxSupply == null || isNaN(data.maxSupply) || data.maxSupply <= 0)
     ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
