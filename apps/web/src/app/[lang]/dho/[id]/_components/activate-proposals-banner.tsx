@@ -18,7 +18,11 @@ export const ActivateProposalsBanner = ({
   className,
 }: ActivateProposalsBannerProps) => {
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
-  const { status, isLoading: isStatusLoading } = useSalesBanner({
+  const {
+    status,
+    daysLeft,
+    isLoading: isStatusLoading,
+  } = useSalesBanner({
     spaceId: space?.web3SpaceId ?? undefined,
   });
   const pathname = usePathname();
@@ -33,8 +37,9 @@ export const ActivateProposalsBanner = ({
   }
 
   const title = 'Proposal creation disabled';
-  const subtitle =
-    'Your Hypha Network contribution expired x days ago. Please reactivate your space before submitting a new proposal.';
+  const subtitle = `Your Hypha Network contribution expired ${Math.abs(
+    daysLeft,
+  )} days ago. Please reactivate your space before submitting a new proposal.`;
   const buttonText = 'Reactivate Now';
   const handleAction = () => {
     const path = `${cleanPath(pathname)}${PATH_SELECT_ACTIVATE_ACTION}`;
