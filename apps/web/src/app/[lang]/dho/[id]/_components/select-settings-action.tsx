@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  SelectAction,
-  useFundWallet,
-  useSalesBanner,
-} from '@hypha-platform/epics';
+import { SelectAction, useActionGating } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { isAbsoluteUrl } from '@hypha-platform/ui-utils';
 import {
@@ -21,7 +17,6 @@ import {
   RadiobuttonIcon,
   Link2Icon,
 } from '@radix-ui/react-icons';
-import { useSpaceBySlug } from '@hypha-platform/core/client';
 
 type SelectSettingsActionProps = {
   daoSlug: string;
@@ -36,14 +31,7 @@ export const SelectSettingsAction = ({
   lang,
   children,
 }: SelectSettingsActionProps) => {
-  const { space } = useSpaceBySlug(daoSlug);
-  const { status, isLoading: isStatusLoading } = useSalesBanner({
-    spaceId: space?.web3SpaceId ?? undefined,
-  });
-  const { fundWallet } = useFundWallet({
-    address: space?.address as `0x${string}`,
-  });
-  const isPaymentExpired = isStatusLoading ? false : status === 'expired';
+  const { isPaymentExpired, fundWallet, space } = useActionGating(daoSlug);
 
   const SETTINGS_ACTIONS = [
     {

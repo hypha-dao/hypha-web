@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  SelectAction,
-  useFundWallet,
-  useSalesBanner,
-} from '@hypha-platform/epics';
+import { SelectAction, useActionGating } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import {
   ArrowUpIcon,
@@ -14,7 +10,6 @@ import {
   RocketIcon,
   Share1Icon,
 } from '@radix-ui/react-icons';
-import { useSpaceBySlug } from '@hypha-platform/core/client';
 
 type SelectCreateActionProps = {
   daoSlug: string;
@@ -27,14 +22,7 @@ export const SelectCreateAction = ({
   lang,
   children,
 }: SelectCreateActionProps) => {
-  const { space } = useSpaceBySlug(daoSlug);
-  const { status, isLoading: isStatusLoading } = useSalesBanner({
-    spaceId: space?.web3SpaceId ?? undefined,
-  });
-  const { fundWallet } = useFundWallet({
-    address: space?.address as `0x${string}`,
-  });
-  const isPaymentExpired = isStatusLoading ? false : status === 'expired';
+  const { isPaymentExpired, fundWallet, space } = useActionGating(daoSlug);
 
   const CREATE_ACTIONS = [
     {
