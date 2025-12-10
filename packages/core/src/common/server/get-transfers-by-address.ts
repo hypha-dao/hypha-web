@@ -31,19 +31,40 @@ export async function getTransfersByAddress(
   const { address, contractAddresses, limit = 50 } = params;
   const alchemy = getAlchemy();
 
-  const fromTransfers = await alchemy.core.getAssetTransfers({
-    fromAddress: address,
-    category: [AssetTransfersCategory.ERC20],
-    contractAddresses,
-    withMetadata: true,
-  });
+  let fromTransfers;
+  let toTransfers;
 
-  const toTransfers = await alchemy.core.getAssetTransfers({
-    toAddress: address,
-    category: [AssetTransfersCategory.ERC20],
-    contractAddresses,
-    withMetadata: true,
-  });
+  try {
+    fromTransfers = await alchemy.core.getAssetTransfers({
+      fromAddress: address,
+      category: [AssetTransfersCategory.ERC20],
+      contractAddresses,
+      withMetadata: true,
+    });
+  } catch (error) {
+    console.error(
+      `[getTransfersByAddress] Failed to fetch fromTransfers for ${address}:`,
+      error,
+    );
+    // Continue with empty transfers if one direction fails
+    fromTransfers = { transfers: [] };
+  }
+
+  try {
+    toTransfers = await alchemy.core.getAssetTransfers({
+      toAddress: address,
+      category: [AssetTransfersCategory.ERC20],
+      contractAddresses,
+      withMetadata: true,
+    });
+  } catch (error) {
+    console.error(
+      `[getTransfersByAddress] Failed to fetch toTransfers for ${address}:`,
+      error,
+    );
+    // Continue with empty transfers if one direction fails
+    toTransfers = { transfers: [] };
+  }
 
   const allTransfers = [
     ...fromTransfers.transfers,

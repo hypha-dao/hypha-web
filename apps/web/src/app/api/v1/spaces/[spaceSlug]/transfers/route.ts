@@ -51,41 +51,85 @@ export async function GET(
       Object.fromEntries(nextUrl.searchParams.entries()),
     );
 
+  const startTime = Date.now();
   try {
+    console.log(`[Transfers API] Starting request for space: ${spaceSlug}`);
+
     const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
     if (!space || !canConvertToBigInt(space.web3SpaceId)) {
+      console.log(`[Transfers API] Space not found: ${spaceSlug}`);
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
-
-    const spaceDetails = await web3Client.readContract(
-      getSpaceDetails({ spaceId: BigInt(space.web3SpaceId as number) }),
+    console.log(
+      `[Transfers API] Space found: ${spaceSlug}, web3SpaceId: ${space.web3SpaceId}`,
     );
+
+    let spaceDetails;
+    try {
+      spaceDetails = await web3Client.readContract(
+        getSpaceDetails({ spaceId: BigInt(space.web3SpaceId as number) }),
+      );
+      console.log(
+        `[Transfers API] Space details fetched, length: ${
+          spaceDetails?.length || 0
+        }`,
+      );
+    } catch (web3Error) {
+      console.error(
+        `[Transfers API] Failed to fetch space details for ${spaceSlug}:`,
+        web3Error,
+      );
+      throw web3Error;
+    }
 
     const spaceAddress = spaceDetails.at(9) as `0x${string}`;
     if (!spaceAddress) {
       console.error(
-        `Space address not found for space ${spaceSlug}. spaceDetails length: ${spaceDetails.length}`,
+        `[Transfers API] Space address not found for space ${spaceSlug}. spaceDetails length: ${spaceDetails.length}`,
       );
       return NextResponse.json(
         { error: 'Space address not found' },
         { status: 500 },
       );
     }
+    console.log(`[Transfers API] Space address: ${spaceAddress}`);
 
-    const transfers = await getTransfersByAddress({
-      address: spaceAddress,
-      contractAddresses: token,
-      fromDate,
-      toDate,
-      fromBlock,
-      toBlock,
-      limit,
-    });
+    let transfers;
+    try {
+      console.log(
+        `[Transfers API] Fetching transfers for address: ${spaceAddress}`,
+      );
+      transfers = await getTransfersByAddress({
+        address: spaceAddress,
+        contractAddresses: token,
+        fromDate,
+        toDate,
+        fromBlock,
+        toBlock,
+        limit,
+      });
+      console.log(`[Transfers API] Fetched ${transfers.length} transfers`);
+    } catch (transfersError) {
+      console.error(
+        `[Transfers API] Failed to fetch transfers for ${spaceSlug} (${spaceAddress}):`,
+        transfersError,
+      );
+      throw transfersError;
+    }
 
-    const dbTransfers = await findAllTransfers(
-      { db: getDb({ authToken }) },
-      {},
-    );
+    let dbTransfers: Awaited<ReturnType<typeof findAllTransfers>>;
+    try {
+      console.log(`[Transfers API] Fetching DB transfers for ${spaceSlug}`);
+      dbTransfers = await findAllTransfers({ db: getDb({ authToken }) }, {});
+      console.log(`[Transfers API] Fetched ${dbTransfers.length} DB transfers`);
+    } catch (dbTransfersError) {
+      console.error(
+        `[Transfers API] Failed to fetch DB transfers for ${spaceSlug}:`,
+        dbTransfersError,
+      );
+      // Continue without DB transfers - memo will be null
+      dbTransfers = [] as Awaited<ReturnType<typeof findAllTransfers>>;
+    }
 
     const memoMap = new Map(
       dbTransfers.map((dbTransfer) => [
@@ -94,7 +138,19 @@ export async function GET(
       ]),
     );
 
-    const rawDbTokens = await findAllTokens({ db }, { search: undefined });
+    let rawDbTokens: Awaited<ReturnType<typeof findAllTokens>>;
+    try {
+      console.log(`[Transfers API] Fetching DB tokens for ${spaceSlug}`);
+      rawDbTokens = await findAllTokens({ db }, { search: undefined });
+      console.log(`[Transfers API] Fetched ${rawDbTokens.length} DB tokens`);
+    } catch (dbTokensError) {
+      console.error(
+        `[Transfers API] Failed to fetch DB tokens for ${spaceSlug}:`,
+        dbTokensError,
+      );
+      // Continue with empty tokens array
+      rawDbTokens = [] as Awaited<ReturnType<typeof findAllTokens>>;
+    }
     const dbTokens = rawDbTokens.map((token) => ({
       agreementId: token.agreementId ?? undefined,
       spaceId: token.spaceId ?? undefined,
@@ -110,6 +166,9 @@ export async function GET(
       address: token.address ?? undefined,
     }));
 
+    console.log(
+      `[Transfers API] Processing ${transfers.length} transfers with entity info for ${spaceSlug}`,
+    );
     const transfersWithEntityInfo = await Promise.allSettled(
       transfers.map(async (transfer) => {
         try {
@@ -209,6 +268,20 @@ export async function GET(
       .map((result) => (result.status === 'fulfilled' ? result.value : null))
       .filter((t) => t !== null);
 
+    const failedCount = transfersWithEntityInfo.filter(
+      (r) => r.status === 'rejected',
+    ).length;
+    if (failedCount > 0) {
+      console.warn(
+        `[Transfers API] ${failedCount} transfers failed to process for ${spaceSlug}`,
+      );
+    }
+
+    const duration = Date.now() - startTime;
+    console.log(
+      `[Transfers API] Completed request for ${spaceSlug}: ${validTransfers.length} valid transfers in ${duration}ms`,
+    );
+
     return NextResponse.json(validTransfers);
   } catch (error: unknown) {
     const errorMessage =
@@ -229,12 +302,13 @@ export async function GET(
       );
     }
 
+    const duration = Date.now() - startTime;
     console.error(
-      `Error while fetching transactions for space ${spaceSlug}:`,
+      `[Transfers API] Error while fetching transactions for space ${spaceSlug} (after ${duration}ms):`,
       error,
     );
     if (error instanceof Error) {
-      console.error('Error stack:', error.stack);
+      console.error('[Transfers API] Error stack:', error.stack);
     }
     return NextResponse.json(
       {
