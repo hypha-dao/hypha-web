@@ -33,13 +33,13 @@ export const ActivateProposalsBanner = ({
   const handleAction = React.useCallback(() => {
     const path = `${cleanPath(pathname)}${activatePath}`;
     router.push(path);
-  }, [router, activatePath]);
+  }, [router, activatePath, pathname]);
 
   if (isSpaceLoading || !space || isStatusLoading || !status) {
     return null;
   }
 
-  if (status != 'expired') {
+  if (status !== 'expired') {
     return null;
   }
 

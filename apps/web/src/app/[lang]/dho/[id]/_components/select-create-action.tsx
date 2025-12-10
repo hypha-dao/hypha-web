@@ -1,6 +1,10 @@
 'use client';
 
-import { SelectAction, useSalesBanner } from '@hypha-platform/epics';
+import {
+  SelectAction,
+  useFundWallet,
+  useSalesBanner,
+} from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import {
   ArrowUpIcon,
@@ -10,8 +14,6 @@ import {
   RocketIcon,
   Share1Icon,
 } from '@radix-ui/react-icons';
-import { useFundWallet } from '@hypha-platform/epics';
-import { useParams } from 'next/navigation';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
 
 export const SelectCreateAction = ({
@@ -23,8 +25,7 @@ export const SelectCreateAction = ({
   lang: Locale;
   children?: React.ReactNode;
 }) => {
-  const { id: spaceSlug } = useParams<{ id: string }>();
-  const { space } = useSpaceBySlug(spaceSlug);
+  const { space } = useSpaceBySlug(daoSlug);
   const { status, isLoading: isStatusLoading } = useSalesBanner({
     spaceId: space?.web3SpaceId ?? undefined,
   });
