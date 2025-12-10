@@ -25,10 +25,12 @@ export const SelectSettingsAction = ({
   daoSlug,
   activeTab,
   lang,
+  children,
 }: {
   daoSlug: string;
   activeTab: string;
   lang: Locale;
+  children?: React.ReactNode;
 }) => {
   const { id: spaceSlug } = useParams();
   const { space } = useSpaceBySlug(spaceSlug as string);
@@ -215,6 +217,8 @@ export const SelectSettingsAction = ({
           href,
         };
       })}
-    />
+    >
+      {children}
+    </SelectAction>
   );
 };

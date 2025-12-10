@@ -22,6 +22,7 @@ type SelectActionProps = {
   title: string;
   content: string;
   actions: ActionProps[];
+  children?: React.ReactNode;
 };
 
 type GroupedActions = {
@@ -33,6 +34,7 @@ export const SelectAction = ({
   title,
   content,
   actions,
+  children,
 }: SelectActionProps) => {
   const groupedActions = React.useMemo(
     () =>
@@ -62,6 +64,7 @@ export const SelectAction = ({
       >
         <span className="text-2 text-neutral-11">{content}</span>
       </Skeleton>
+      {children}
       <Separator />
       <div className="flex flex-col gap-6">
         {Object.entries(groupedActions || {}).map(([group, groupActions]) => (

@@ -17,9 +17,11 @@ import { useSpaceBySlug } from '@hypha-platform/core/client';
 export const SelectCreateAction = ({
   daoSlug,
   lang,
+  children,
 }: {
   daoSlug: string;
   lang: Locale;
+  children?: React.ReactNode;
 }) => {
   const { id: spaceSlug } = useParams();
   const { space } = useSpaceBySlug(spaceSlug as string);
@@ -97,6 +99,8 @@ export const SelectCreateAction = ({
         ...action,
         href: `/${lang}/dho/${daoSlug}/${action.href}`,
       }))}
-    />
+    >
+      {children}
+    </SelectAction>
   );
 };

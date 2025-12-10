@@ -23,13 +23,12 @@ export default async function SelectCreateActions({
           dropSegment={PATH_SELECT_CREATE_ACTION}
           className="absolute top-0 right-0"
         />
-        <div className="flex flex-col gap-5 py-6">
+        <SelectCreateAction lang={lang} daoSlug={daoSlug}>
           <ActivateProposalsBanner
             spaceSlug={daoSlug}
             activatePath={PATH_SELECT_ACTIVATE_ACTION}
           />
-        </div>
-        <SelectCreateAction lang={lang} daoSlug={daoSlug} />
+        </SelectCreateAction>
       </div>
     </SidePanel>
   );
