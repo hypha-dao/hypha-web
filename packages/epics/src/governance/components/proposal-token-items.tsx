@@ -6,6 +6,7 @@ import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
 import { EthAddress } from '../../people/components/eth-address';
 import { formatCurrencyValue } from '../../../../ui-utils/src/formatCurrencyValue';
+import { formatDecayInterval } from '@hypha-platform/ui-utils';
 import { usePersonByWeb3Address } from '../hooks';
 import { useDbSpaces } from '../../hooks';
 import { PersonAvatar } from '../../people/components/person-avatar';
@@ -102,20 +103,29 @@ export const ProposalTokenItem = ({
   const originalSupply = initialSupply ? Number(initialSupply / 10n ** 18n) : 0;
   const { id } = useParams();
   const { space } = useSpaceBySlug(id as string);
-  const tokenIcon = dbTokens?.find(
+
+  const dbToken = dbTokens?.find(
     (t) =>
       t.symbol?.toUpperCase() === symbol?.toUpperCase() &&
       t.name?.toUpperCase() === name?.toUpperCase() &&
       t.spaceId == space?.id,
-  )?.iconUrl;
+  );
+  const tokenIcon = dbToken?.iconUrl;
 
-  const priceInUSDCents = priceInUSD ? Number(priceInUSD) : null;
-  const priceInUSDDisplay = priceInUSDCents
-    ? (priceInUSDCents / 100).toFixed(2)
-    : null;
+  const referenceCurrency = dbToken?.referenceCurrency;
+
+  const referencePrice = dbToken?.referencePrice;
+
+  const tokenType = dbToken?.type
+    ? dbToken.type.charAt(0).toUpperCase() + dbToken.type.slice(1)
+    : '';
 
   return (
     <div className="flex flex-col gap-5">
+      <div className="flex justify-between items-center">
+        <div className="text-1 text-neutral-11 w-full">Token Type</div>
+        <div className="text-1 text-nowrap">{tokenType}</div>
+      </div>
       <div className="flex justify-between items-center">
         <div className="text-1 text-neutral-11 w-full">Token Name</div>
         <div className="text-1 text-nowrap">{name}</div>
@@ -137,7 +147,9 @@ export const ProposalTokenItem = ({
       <div className="flex justify-between items-center">
         <div className="text-1 text-neutral-11 w-full">Max Supply</div>
         <div className="text-1">
-          {formatCurrencyValue(Number(originalSupply))}
+          {Number(originalSupply) === 0
+            ? 'Unlimited'
+            : formatCurrencyValue(Number(originalSupply))}
         </div>
       </div>
       {transferable !== undefined && (
@@ -160,16 +172,18 @@ export const ProposalTokenItem = ({
           <div className="text-1">{autoMinting ? 'Enabled' : 'Disabled'}</div>
         </div>
       )}
-      {priceInUSDDisplay && (
+      {referencePrice && (
         <div className="flex justify-between items-center text-nowrap">
           <div className="text-1 text-neutral-11 w-full">Token Price</div>
-          <div className="text-1">${priceInUSDDisplay} USD</div>
+          <div className="text-1">
+            {formatCurrencyValue(referencePrice)} {referenceCurrency}
+          </div>
         </div>
       )}
       {decayPercentage !== undefined && decayInterval !== undefined && (
         <>
           <Separator />
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4">
             <div className="text-1 text-neutral-11 font-medium">
               Decay Settings
             </div>
@@ -183,50 +197,50 @@ export const ProposalTokenItem = ({
               <div className="text-1 text-neutral-11 w-full">
                 Decay Interval
               </div>
-              <div className="text-1">{Number(decayInterval)} seconds</div>
+              <div className="text-1 text-nowrap">
+                {formatDecayInterval(decayInterval)}
+              </div>
             </div>
           </div>
         </>
       )}
 
-      <>
-        <Separator />
-        <div className="flex flex-col gap-4">
-          <div className="text-1 text-neutral-11 font-medium">
-            Transfer Whitelists
-          </div>
+      {((initialTransferWhitelist && initialTransferWhitelist.length > 0) ||
+        (initialReceiveWhitelist && initialReceiveWhitelist.length > 0)) && (
+        <>
+          <Separator />
           <div className="flex flex-col gap-4">
-            <div className="text-1 text-neutral-11 font-bold">
-              From Whitelist
+            <div className="text-1 text-neutral-11 font-medium">
+              Transfer Whitelists
             </div>
-            {initialTransferWhitelist && initialTransferWhitelist.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {initialTransferWhitelist.map((addr, idx) => (
-                  <WhitelistAddressItem key={idx} address={addr} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-1 text-neutral-11">
-                No addresses specified
+            {initialTransferWhitelist &&
+              initialTransferWhitelist.length > 0 && (
+                <div className="flex flex-col gap-4">
+                  <div className="text-1 text-neutral-11 font-bold">
+                    From Whitelist
+                  </div>
+                  <div className="flex flex-col gap-4">
+                    {initialTransferWhitelist.map((addr, idx) => (
+                      <WhitelistAddressItem key={idx} address={addr} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            {initialReceiveWhitelist && initialReceiveWhitelist.length > 0 && (
+              <div className="flex flex-col gap-4">
+                <div className="text-1 text-neutral-11 font-bold">
+                  To Whitelist
+                </div>
+                <div className="flex flex-col gap-4">
+                  {initialReceiveWhitelist.map((addr, idx) => (
+                    <WhitelistAddressItem key={idx} address={addr} />
+                  ))}
+                </div>
               </div>
             )}
           </div>
-          <div className="flex flex-col gap-4">
-            <div className="text-1 text-neutral-11 font-bold">To Whitelist</div>
-            {initialReceiveWhitelist && initialReceiveWhitelist.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {initialReceiveWhitelist.map((addr, idx) => (
-                  <WhitelistAddressItem key={idx} address={addr} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-1 text-neutral-11">
-                No addresses specified
-              </div>
-            )}
-          </div>
-        </div>
-      </>
+        </>
+      )}
     </div>
   );
 };

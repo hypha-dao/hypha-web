@@ -19,6 +19,8 @@ type Token = {
   createdAt: Date;
   documentCount: number;
   address?: string;
+  referenceCurrency?: string | null;
+  referencePrice?: number | null;
 };
 
 type UseDbTokensReturn = {

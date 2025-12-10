@@ -30,6 +30,8 @@ export const findAllTokens = async (
       ),
       address: tokens.address,
       agreementWeb3Id: tokens.agreementWeb3Id,
+      referenceCurrency: tokens.referenceCurrency,
+      referencePrice: tokens.referencePrice,
     })
     .from(tokens)
     .leftJoin(documents, eq(documents.id, tokens.agreementId))
@@ -64,6 +66,8 @@ export const findAllTokens = async (
       tokens.createdAt,
       tokens.address,
       tokens.agreementWeb3Id,
+      tokens.referenceCurrency,
+      tokens.referencePrice,
     )
     .orderBy(asc(tokens.name));
 

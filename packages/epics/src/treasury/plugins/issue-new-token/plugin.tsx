@@ -3,7 +3,7 @@
 import { Separator } from '@hypha-platform/ui';
 import { DecaySettingsField } from '../../components/common/decay-settings-field';
 import { useFormContext } from 'react-hook-form';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Person, Space } from '@hypha-platform/core/client';
 import {
   GeneralTokenSettings,
@@ -29,8 +29,14 @@ export const IssueNewTokenPlugin = ({
   const [showDecaySettings, setShowDecaySettings] = useState<boolean>(false);
   const [showAdvancedSettings, setShowAdvancedSettings] =
     useState<boolean>(false);
-  const [enableLimitedSupply, setEnableLimitedSupply] =
-    useState<boolean>(false);
+
+  const enableLimitedSupply = watch('enableLimitedSupply') ?? false;
+  const setEnableLimitedSupply = (value: boolean) => {
+    setValue('enableLimitedSupply', value, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
 
   const enableProposalAutoMinting = watch('enableProposalAutoMinting');
   const transferable = watch('transferable');
@@ -50,23 +56,75 @@ export const IssueNewTokenPlugin = ({
     (tokenIconUrl instanceof File ||
       (typeof tokenIconUrl === 'string' && tokenIconUrl.trim().length > 0));
 
-  useEffect(() => {
-    if (getValues('enableProposalAutoMinting') === undefined) {
-      setValue('enableProposalAutoMinting', true);
-    }
-  }, [getValues, setValue]);
+  const clearLimitedSupplyFields = useCallback(() => {
+    setValue('maxSupply', 0, { shouldDirty: true, shouldValidate: false });
+    setValue('maxSupplyType', undefined, {
+      shouldDirty: true,
+      shouldValidate: false,
+    });
+  }, [setValue]);
+
+  const clearTransferFields = useCallback(() => {
+    setValue('enableAdvancedTransferControls', false, {
+      shouldDirty: true,
+      shouldValidate: false,
+    });
+    setValue('transferWhitelist', undefined, {
+      shouldDirty: true,
+      shouldValidate: false,
+    });
+  }, [setValue]);
+
+  const clearTokenPriceFields = useCallback(() => {
+    setValue('referenceCurrency', undefined, {
+      shouldDirty: true,
+      shouldValidate: false,
+    });
+    setValue('tokenPrice', undefined, {
+      shouldDirty: true,
+      shouldValidate: false,
+    });
+  }, [setValue]);
+
+  const clearAdvancedSettingsFields = useCallback(() => {
+    clearLimitedSupplyFields();
+    setValue('enableProposalAutoMinting', true, {
+      shouldDirty: true,
+      shouldValidate: false,
+    });
+    setValue('transferable', currentTokenType !== 'voice', {
+      shouldDirty: true,
+      shouldValidate: false,
+    });
+    clearTransferFields();
+    setValue('enableTokenPrice', false, {
+      shouldDirty: true,
+      shouldValidate: false,
+    });
+    clearTokenPriceFields();
+    setEnableLimitedSupply(false);
+  }, [
+    setValue,
+    clearLimitedSupplyFields,
+    clearTransferFields,
+    clearTokenPriceFields,
+    currentTokenType,
+  ]);
 
   useEffect(() => {
-    if (getValues('transferable') === undefined) {
-      setValue('transferable', true);
-    }
-  }, [getValues, setValue]);
+    const currentType = currentTokenType;
+    const defaults = {
+      enableProposalAutoMinting: true,
+      transferable: currentType !== 'voice',
+      enableTokenPrice: false,
+    };
 
-  useEffect(() => {
-    if (getValues('enableTokenPrice') === undefined) {
-      setValue('enableTokenPrice', false);
-    }
-  }, [getValues, setValue]);
+    Object.entries(defaults).forEach(([key, value]) => {
+      if (getValues(key) === undefined) {
+        setValue(key, value);
+      }
+    });
+  }, [getValues, setValue, currentTokenType]);
 
   const prevTokenTypeRef = useRef<string | undefined>(currentTokenType);
   useEffect(() => {
@@ -78,6 +136,7 @@ export const IssueNewTokenPlugin = ({
       prevType !== currentType &&
       currentType !== undefined
     ) {
+      clearAdvancedSettingsFields();
       setValue('maxSupply', 0, { shouldDirty: true, shouldValidate: false });
       setValue(
         'decaySettings',
@@ -95,36 +154,7 @@ export const IssueNewTokenPlugin = ({
         shouldDirty: true,
         shouldValidate: false,
       });
-      setValue('enableAdvancedTransferControls', false, {
-        shouldDirty: true,
-        shouldValidate: false,
-      });
-      setValue('transferWhitelist', undefined, {
-        shouldDirty: true,
-        shouldValidate: false,
-      });
-      setValue('enableProposalAutoMinting', true, {
-        shouldDirty: true,
-        shouldValidate: false,
-      });
-      setValue('maxSupplyType', undefined, {
-        shouldDirty: true,
-        shouldValidate: false,
-      });
-      setValue('enableTokenPrice', false, {
-        shouldDirty: true,
-        shouldValidate: false,
-      });
-      setValue('referenceCurrency', undefined, {
-        shouldDirty: true,
-        shouldValidate: false,
-      });
-      setValue('tokenPrice', undefined, {
-        shouldDirty: true,
-        shouldValidate: false,
-      });
       setShowAdvancedSettings(false);
-      setEnableLimitedSupply(false);
     }
 
     if (currentTokenType !== tokenType) {
@@ -132,7 +162,7 @@ export const IssueNewTokenPlugin = ({
     }
 
     prevTokenTypeRef.current = currentType;
-  }, [currentTokenType, tokenType, setValue]);
+  }, [currentTokenType, tokenType, setValue, clearAdvancedSettingsFields]);
 
   useEffect(() => {
     if (tokenType === 'voice') {
@@ -143,8 +173,13 @@ export const IssueNewTokenPlugin = ({
   useEffect(() => {
     if (!areGeneralFieldsFilled && showAdvancedSettings) {
       setShowAdvancedSettings(false);
+      clearAdvancedSettingsFields();
     }
-  }, [areGeneralFieldsFilled, showAdvancedSettings]);
+  }, [
+    areGeneralFieldsFilled,
+    showAdvancedSettings,
+    clearAdvancedSettingsFields,
+  ]);
 
   useEffect(() => {
     if (!areGeneralFieldsFilled && showDecaySettings) {
@@ -153,37 +188,79 @@ export const IssueNewTokenPlugin = ({
   }, [areGeneralFieldsFilled, showDecaySettings]);
 
   useEffect(() => {
+    if (!showAdvancedSettings) {
+      clearAdvancedSettingsFields();
+    }
+  }, [showAdvancedSettings, clearAdvancedSettingsFields]);
+
+  useEffect(() => {
+    if (!enableLimitedSupply) {
+      clearLimitedSupplyFields();
+    }
+  }, [enableLimitedSupply, clearLimitedSupplyFields]);
+
+  useEffect(() => {
+    if (transferable === false) {
+      clearTransferFields();
+    }
+  }, [transferable, clearTransferFields]);
+
+  useEffect(() => {
+    if (!enableAdvancedTransferControls) {
+      setValue('transferWhitelist', undefined, {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
+    }
+  }, [enableAdvancedTransferControls, setValue]);
+
+  useEffect(() => {
+    if (!enableTokenPrice) {
+      clearTokenPriceFields();
+    }
+  }, [enableTokenPrice, clearTokenPriceFields]);
+
+  useEffect(() => {
     if (currentTokenType === 'ownership') {
       const whitelist = getValues('transferWhitelist');
       if (whitelist?.from) {
-        setValue('transferWhitelist.from', undefined);
+        setValue('transferWhitelist.from', undefined, {
+          shouldDirty: true,
+          shouldValidate: false,
+        });
       }
     }
   }, [currentTokenType, getValues, setValue]);
 
   useEffect(() => {
-    if (transferable === false) {
-      setValue('enableAdvancedTransferControls', false);
-    }
-  }, [setValue, transferable]);
+    if (transferable && enableAdvancedTransferControls) {
+      const whitelist = getValues('transferWhitelist');
+      const isOwnershipToken = currentTokenType === 'ownership';
 
-  useEffect(() => {
-    if (!transferable || !enableAdvancedTransferControls) {
-      setValue('transferWhitelist', undefined);
-      return;
-    }
-    const whitelist = getValues('transferWhitelist');
-    const isOwnershipToken = currentTokenType === 'ownership';
+      if (!whitelist) {
+        setValue(
+          'transferWhitelist',
+          {},
+          {
+            shouldDirty: true,
+            shouldValidate: false,
+          },
+        );
+      }
 
-    if (!whitelist) {
-      setValue('transferWhitelist', {});
-    }
-
-    if (whitelist?.to === undefined) {
-      setValue('transferWhitelist.to', []);
-    }
-    if (!isOwnershipToken && whitelist?.from === undefined) {
-      setValue('transferWhitelist.from', []);
+      const currentWhitelist = getValues('transferWhitelist');
+      if (currentWhitelist?.to === undefined) {
+        setValue('transferWhitelist.to', [], {
+          shouldDirty: true,
+          shouldValidate: false,
+        });
+      }
+      if (!isOwnershipToken && currentWhitelist?.from === undefined) {
+        setValue('transferWhitelist.from', [], {
+          shouldDirty: true,
+          shouldValidate: false,
+        });
+      }
     }
   }, [
     enableAdvancedTransferControls,
