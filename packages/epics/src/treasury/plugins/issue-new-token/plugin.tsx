@@ -92,7 +92,7 @@ export const IssueNewTokenPlugin = ({
       shouldDirty: true,
       shouldValidate: false,
     });
-    setValue('transferable', true, {
+    setValue('transferable', currentTokenType !== 'voice', {
       shouldDirty: true,
       shouldValidate: false,
     });
@@ -108,12 +108,14 @@ export const IssueNewTokenPlugin = ({
     clearLimitedSupplyFields,
     clearTransferFields,
     clearTokenPriceFields,
+    currentTokenType,
   ]);
 
   useEffect(() => {
+    const currentType = currentTokenType;
     const defaults = {
       enableProposalAutoMinting: true,
-      transferable: true,
+      transferable: currentType !== 'voice',
       enableTokenPrice: false,
     };
 
@@ -122,7 +124,7 @@ export const IssueNewTokenPlugin = ({
         setValue(key, value);
       }
     });
-  }, [getValues, setValue]);
+  }, [getValues, setValue, currentTokenType]);
 
   const prevTokenTypeRef = useRef<string | undefined>(currentTokenType);
   useEffect(() => {

@@ -186,7 +186,7 @@ export const IssueNewTokenForm = ({
       iconUrl: data.iconUrl || undefined,
       spaceId: spaceId as number,
       web3SpaceId: web3SpaceId as number,
-      transferable: data.type !== 'voice',
+      transferable: data.transferable ?? data.type !== 'voice',
       isVotingToken: data.type === 'voice',
       referencePrice: data.enableTokenPrice ? data.tokenPrice : undefined,
       referenceCurrency: data.enableTokenPrice
