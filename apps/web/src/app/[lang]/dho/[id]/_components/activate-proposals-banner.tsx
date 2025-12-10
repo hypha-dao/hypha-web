@@ -4,6 +4,9 @@ import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { useSalesBanner } from '@hypha-platform/epics';
 import { Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { cleanPath } from './clean-path';
+import { usePathname, useRouter } from 'next/navigation';
+import { PATH_SELECT_ACTIVATE_ACTION } from '@web/app/constants';
 
 interface ActivateProposalsBannerProps {
   spaceSlug: string;
@@ -18,6 +21,8 @@ export const ActivateProposalsBanner = ({
   const { status, isLoading: isStatusLoading } = useSalesBanner({
     spaceId: space?.web3SpaceId ?? undefined,
   });
+  const pathname = usePathname();
+  const router = useRouter();
 
   if (isSpaceLoading || !space || isStatusLoading || !status) {
     return null;
@@ -27,12 +32,14 @@ export const ActivateProposalsBanner = ({
     return null;
   }
 
-  const title = ''; //TODO
-  const subtitle = ''; //TODO
-  const isDisabled = true; //TODO
-  const tooltipMessage = ''; //TODO
-  const buttonText = ''; //TODO
-  const handleAction = () => {}; //TODO
+  const title = 'Proposal creation disabled';
+  const subtitle =
+    'Your Hypha Network contribution expired x days ago. Please reactivate your space before submitting a new proposal.';
+  const buttonText = 'Reactivate Now';
+  const handleAction = () => {
+    const path = `${cleanPath(pathname)}${PATH_SELECT_ACTIVATE_ACTION}`;
+    router.push(path);
+  };
 
   return (
     <div
@@ -46,12 +53,7 @@ export const ActivateProposalsBanner = ({
           <span className="text-2 font-bold text-foreground">{title}</span>
         </div>
         <span className={cn('text-2', 'text-foreground')}>{subtitle}</span>
-        <Button
-          disabled={isDisabled}
-          title={tooltipMessage}
-          onClick={handleAction}
-          className="w-fit"
-        >
+        <Button onClick={handleAction} className="w-fit">
           {buttonText}
         </Button>
       </div>
