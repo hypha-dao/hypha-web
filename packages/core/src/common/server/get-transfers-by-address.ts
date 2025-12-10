@@ -53,13 +53,32 @@ export async function getTransfersByAddress(
     const timestamp = Date.parse(transfer.metadata.blockTimestamp) || 0;
 
     const getMetadata = async () => {
-      const tokenMetadata = transfer.rawContract.address
-        ? await alchemy.core.getTokenMetadata(transfer.rawContract.address)
-        : { decimals: 18, symbol: transfer.asset || 'UNKNOWN' };
-      return {
-        decimals: tokenMetadata.decimals ?? 18,
-        symbol: tokenMetadata.symbol ?? transfer.asset ?? 'UNKNOWN',
-      };
+      if (!transfer.rawContract.address) {
+        return {
+          decimals: 18,
+          symbol: transfer.asset || 'UNKNOWN',
+        };
+      }
+
+      try {
+        const tokenMetadata = await alchemy.core.getTokenMetadata(
+          transfer.rawContract.address,
+        );
+        return {
+          decimals: tokenMetadata.decimals ?? 18,
+          symbol: tokenMetadata.symbol ?? transfer.asset ?? 'UNKNOWN',
+        };
+      } catch (error) {
+        console.warn(
+          `Failed to fetch token metadata for ${transfer.rawContract.address}:`,
+          error,
+        );
+        // Fallback to default values if metadata fetch fails
+        return {
+          decimals: 18,
+          symbol: transfer.asset || 'UNKNOWN',
+        };
+      }
     };
 
     return {
@@ -77,17 +96,31 @@ export async function getTransfersByAddress(
     };
   });
 
-  const transfersWithData = await Promise.all(
+  const transfersWithData = await Promise.allSettled(
     allTransfers.map(async (transfer) => {
-      const { decimals, symbol } = await transfer._getMetadata();
-      const { _getMetadata, ...rest } = transfer;
-      return { ...rest, decimals, symbol };
+      try {
+        const { decimals, symbol } = await transfer._getMetadata();
+        const { _getMetadata, ...rest } = transfer;
+        return { ...rest, decimals, symbol };
+      } catch (error) {
+        console.warn(
+          `Failed to process transfer ${transfer.transaction_hash}:`,
+          error,
+        );
+        // Return transfer with default metadata if processing fails
+        const { _getMetadata, ...rest } = transfer;
+        return { ...rest, decimals: 18, symbol: 'UNKNOWN' };
+      }
     }),
   );
 
-  transfersWithData.sort((a, b) => {
+  const successfulTransfers = transfersWithData
+    .map((result) => (result.status === 'fulfilled' ? result.value : null))
+    .filter((t) => t !== null) as Transfer[];
+
+  successfulTransfers.sort((a, b) => {
     return b.block_number - a.block_number;
   });
 
-  return transfersWithData;
+  return successfulTransfers;
 }

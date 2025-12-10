@@ -16,7 +16,6 @@ import {
   web3Client,
   getDb,
 } from '@hypha-platform/core/server';
-import { zeroAddress } from 'viem';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt, hasEmojiOrLink } from '@hypha-platform/ui-utils';
 
@@ -63,6 +62,16 @@ export async function GET(
     );
 
     const spaceAddress = spaceDetails.at(9) as `0x${string}`;
+    if (!spaceAddress) {
+      console.error(
+        `Space address not found for space ${spaceSlug}. spaceDetails length: ${spaceDetails.length}`,
+      );
+      return NextResponse.json(
+        { error: 'Space address not found' },
+        { status: 500 },
+      );
+    }
+
     const transfers = await getTransfersByAddress({
       address: spaceAddress,
       contractAddresses: token,
@@ -101,64 +110,115 @@ export async function GET(
       address: token.address ?? undefined,
     }));
 
-    const transfersWithEntityInfo = await Promise.all(
+    const transfersWithEntityInfo = await Promise.allSettled(
       transfers.map(async (transfer) => {
-        const isIncoming =
-          transfer.to.toUpperCase() === spaceAddress.toUpperCase();
-        const direction = isIncoming ? 'incoming' : 'outgoing';
-        const counterparty = isIncoming ? 'from' : 'to';
+        try {
+          const isIncoming =
+            transfer.to.toUpperCase() === spaceAddress.toUpperCase();
+          const direction = isIncoming ? 'incoming' : 'outgoing';
+          const counterparty = isIncoming ? 'from' : 'to';
 
-        const meta = await getTokenMeta(
-          transfer.token as `0x${string}`,
-          dbTokens,
-        );
-        const name = meta.name || 'Unnamed';
-        const symbol = meta.symbol || 'UNKNOWN';
-        if (hasEmojiOrLink(name) || hasEmojiOrLink(symbol)) {
+          let meta;
+          try {
+            meta = await getTokenMeta(
+              transfer.token as `0x${string}`,
+              dbTokens,
+            );
+          } catch (metaError) {
+            console.warn(
+              `Failed to get token meta for ${transfer.token}, using fallback values:`,
+              metaError,
+            );
+            // Use fallback values from transfer if getTokenMeta fails
+            meta = {
+              name: 'Unnamed',
+              symbol: transfer.symbol || 'UNKNOWN',
+              icon: '/placeholder/neutral-token-icon.svg',
+              type: null,
+            };
+          }
+
+          const name = meta.name || 'Unnamed';
+          const symbol = meta.symbol || 'UNKNOWN';
+          if (hasEmojiOrLink(name) || hasEmojiOrLink(symbol)) {
+            return null;
+          }
+
+          const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
+          let person = undefined;
+          let space = undefined;
+
+          try {
+            person =
+              (await findPersonByWeb3Address(
+                { address: counterpartyAddress },
+                { db },
+              )) || undefined;
+          } catch (personError) {
+            console.warn(
+              `Failed to find person for address ${counterpartyAddress} for space ${spaceSlug}:`,
+              personError,
+            );
+          }
+
+          if (!person) {
+            try {
+              space =
+                (await findSpaceByAddress(
+                  { address: counterpartyAddress },
+                  { db },
+                )) || undefined;
+            } catch (spaceError) {
+              console.warn(
+                `Failed to find space for address ${counterpartyAddress} for space ${spaceSlug}:`,
+                spaceError,
+              );
+            }
+          }
+
+          const memo =
+            memoMap.get(transfer.transaction_hash.toLowerCase()) || null;
+
+          return {
+            ...transfer,
+            memo,
+            tokenIcon: meta.icon,
+            person: person && {
+              name: person.name,
+              surname: person.surname,
+              avatarUrl: person.avatarUrl,
+            },
+            space: space && {
+              title: space.title,
+              avatarUrl: space.logoUrl,
+            },
+            direction,
+            counterparty,
+          };
+        } catch (err) {
+          console.error(
+            `Error processing transfer ${transfer.transaction_hash} for space ${spaceSlug}:`,
+            err,
+          );
           return null;
         }
-
-        const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
-        const person =
-          (await findPersonByWeb3Address(
-            { address: counterpartyAddress },
-            { db },
-          )) || undefined;
-        const space = person
-          ? undefined
-          : (await findSpaceByAddress(
-              { address: counterpartyAddress },
-              { db },
-            )) || undefined;
-
-        const memo =
-          memoMap.get(transfer.transaction_hash.toLowerCase()) || null;
-
-        return {
-          ...transfer,
-          memo,
-          tokenIcon: meta.icon,
-          person: person && {
-            name: person.name,
-            surname: person.surname,
-            avatarUrl: person.avatarUrl,
-          },
-          space: space && {
-            title: space.title,
-            avatarUrl: space.logoUrl,
-          },
-          direction,
-          counterparty,
-        };
       }),
     );
 
-    const validTransfers = transfersWithEntityInfo.filter((t) => t !== null);
+    const validTransfers = transfersWithEntityInfo
+      .map((result) => (result.status === 'fulfilled' ? result.value : null))
+      .filter((t) => t !== null);
 
     return NextResponse.json(validTransfers);
-  } catch (error: any) {
+  } catch (error: unknown) {
     const errorMessage =
-      error?.message || error?.shortMessage || JSON.stringify(error);
+      (error instanceof Error && error.message) ||
+      (typeof error === 'object' &&
+        error !== null &&
+        'shortMessage' in error &&
+        typeof error.shortMessage === 'string' &&
+        error.shortMessage) ||
+      JSON.stringify(error);
     if (errorMessage.includes('rate limit') || errorMessage.includes('429')) {
       console.warn('Rate limit exceeded calling blockchain:', errorMessage);
       return NextResponse.json(
@@ -169,9 +229,19 @@ export async function GET(
       );
     }
 
-    console.error('Error while fetching transactions:', error);
+    console.error(
+      `Error while fetching transactions for space ${spaceSlug}:`,
+      error,
+    );
+    if (error instanceof Error) {
+      console.error('Error stack:', error.stack);
+    }
     return NextResponse.json(
-      { error: 'Failed to fetch transactions.' },
+      {
+        error: 'Failed to fetch transactions.',
+        details:
+          process.env.NODE_ENV === 'development' ? errorMessage : undefined,
+      },
       { status: 500 },
     );
   }
