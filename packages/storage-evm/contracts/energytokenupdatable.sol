@@ -96,7 +96,7 @@ contract RegularSpaceToken is
     );
 
     // Treasury/reserve address that receives minted tokens
-    address treasury = 0xD86e25d230D1dB17BC573399FB7f14c8d8c685Ae;
+    address treasury = 0xf048f5Cad727DD972619c360e00d371a9ef68658;
 
     // If owner or authorized contract is transferring, mint to treasury and transfer from there
     if (sender == owner() || authorized[sender]) {
@@ -126,7 +126,7 @@ contract RegularSpaceToken is
     );
 
     // Treasury/reserve address that receives minted tokens
-    address treasury = 0xD86e25d230D1dB17BC573399FB7f14c8d8c685Ae;
+    address treasury = 0xf048f5Cad727DD972619c360e00d371a9ef68658;
 
     // If spender is owner or authorized, mint to treasury and transfer from there
     if (spender == owner() || authorized[spender]) {
