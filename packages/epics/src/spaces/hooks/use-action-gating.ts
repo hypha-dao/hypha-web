@@ -10,7 +10,7 @@ export const useActionGating = (spaceSlug: string) => {
     spaceId: space?.web3SpaceId ?? undefined,
   });
   const { fundWallet } = useFundWallet({
-    address: (space?.address ?? '0x0') as `0x${string}`,
+    address: space?.address as `0x${string}`,
   });
 
   const isPaymentExpired = isStatusLoading ? true : status === 'expired';
