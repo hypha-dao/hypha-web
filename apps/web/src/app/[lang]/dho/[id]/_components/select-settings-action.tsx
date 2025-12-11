@@ -1,6 +1,6 @@
 'use client';
 
-import { SelectAction } from '@hypha-platform/epics';
+import { SelectAction, useActionGating } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { isAbsoluteUrl } from '@hypha-platform/ui-utils';
 import {
@@ -17,24 +17,21 @@ import {
   RadiobuttonIcon,
   Link2Icon,
 } from '@radix-ui/react-icons';
-import { useFundWallet } from '@hypha-platform/epics';
-import { useParams } from 'next/navigation';
-import { useSpaceBySlug } from '@hypha-platform/core/client';
+
+type SelectSettingsActionProps = {
+  daoSlug: string;
+  activeTab: string;
+  lang: Locale;
+  children?: React.ReactNode;
+};
 
 export const SelectSettingsAction = ({
   daoSlug,
   activeTab,
   lang,
-}: {
-  daoSlug: string;
-  activeTab: string;
-  lang: Locale;
-}) => {
-  const { id: spaceSlug } = useParams();
-  const { space } = useSpaceBySlug(spaceSlug as string);
-  const { fundWallet } = useFundWallet({
-    address: space?.address as `0x${string}`,
-  });
+  children,
+}: SelectSettingsActionProps) => {
+  const { isPaymentExpired, fundWallet, space } = useActionGating(daoSlug);
 
   const SETTINGS_ACTIONS = [
     {
@@ -82,6 +79,7 @@ export const SelectSettingsAction = ({
       href: 'create/change-voting-method',
       icon: <MixerVerticalIcon />,
       baseTab: 'agreements',
+      disabled: isPaymentExpired,
     },
     {
       defaultDurationDays: 4,
@@ -92,6 +90,7 @@ export const SelectSettingsAction = ({
       href: 'create/change-entry-method',
       icon: <EnterIcon />,
       baseTab: 'agreements',
+      disabled: isPaymentExpired,
     },
     {
       group: 'Members',
@@ -119,6 +118,7 @@ export const SelectSettingsAction = ({
       href: 'create/space-to-space-membership',
       icon: <Link2Icon />,
       baseTab: 'agreements',
+      disabled: isPaymentExpired,
     },
     {
       defaultDurationDays: 4,
@@ -128,6 +128,7 @@ export const SelectSettingsAction = ({
         'Create a new token for utility, ownership, impact, cash credits, or voice within your space.',
       href: 'create/issue-new-token',
       icon: <RadiobuttonIcon />,
+      disabled: isPaymentExpired,
     },
     {
       group: 'Treasury',
@@ -136,6 +137,7 @@ export const SelectSettingsAction = ({
         'Mint tokens into your space treasury to fund operations, distribute rewards, or provide liquidity.',
       href: 'create/mint-tokens-to-space-treasury',
       icon: <ArrowDownIcon />,
+      disabled: isPaymentExpired,
     },
     {
       group: 'Treasury',
@@ -166,6 +168,7 @@ export const SelectSettingsAction = ({
       icon: <RadiobuttonIcon />,
       baseTab: 'agreements',
       target: '_blank',
+      disabled: isPaymentExpired,
     },
     {
       group: 'Extensions & Plug-ins',
@@ -186,6 +189,7 @@ export const SelectSettingsAction = ({
       icon: <RadiobuttonIcon />,
       baseTab: 'agreements',
       target: '_blank',
+      disabled: isPaymentExpired,
     },
   ];
 
@@ -215,6 +219,8 @@ export const SelectSettingsAction = ({
           href,
         };
       })}
-    />
+    >
+      {children}
+    </SelectAction>
   );
 };
