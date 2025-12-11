@@ -15,6 +15,7 @@ import {
   verifyAuth,
   findTokenById,
   findSpaceByIds,
+  findSpacesByAddresses,
 } from './query';
 
 export class DbService {
@@ -112,5 +113,9 @@ export class DbService {
 
   public async findSpaceByIds({ ids }: { ids: number[] }) {
     return findSpaceByIds({ ids }, { db: this.db });
+  }
+
+  public async findSpacesByAddresses({ addresses }: { addresses: string[] }) {
+    return findSpacesByAddresses({ addresses }, { db: this.db });
   }
 }
