@@ -16,7 +16,6 @@ import {
   web3Client,
   getDb,
 } from '@hypha-platform/core/server';
-import { zeroAddress } from 'viem';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt, hasEmojiOrLink } from '@hypha-platform/ui-utils';
 
@@ -103,20 +102,24 @@ export async function GET(
 
     const transfersWithEntityInfo = await Promise.all(
       transfers.map(async (transfer) => {
-        const isIncoming =
-          transfer.to.toUpperCase() === spaceAddress.toUpperCase();
-        const direction = isIncoming ? 'incoming' : 'outgoing';
-        const counterparty = isIncoming ? 'from' : 'to';
+        let meta;
+        try {
+          meta = await getTokenMeta(transfer.token as `0x${string}`, dbTokens);
+        } catch (err) {
+          console.warn(`Failed to get meta for token ${transfer.token}:`, err);
+          meta = { name: 'Unknown', symbol: 'UNK', icon: undefined };
+        }
 
-        const meta = await getTokenMeta(
-          transfer.token as `0x${string}`,
-          dbTokens,
-        );
         const name = meta.name || 'Unnamed';
         const symbol = meta.symbol || 'UNKNOWN';
         if (hasEmojiOrLink(name) || hasEmojiOrLink(symbol)) {
           return null;
         }
+
+        const isIncoming =
+          transfer.to.toUpperCase() === spaceAddress.toUpperCase();
+        const direction = isIncoming ? 'incoming' : 'outgoing';
+        const counterparty = isIncoming ? 'from' : 'to';
 
         const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
         const person =
@@ -159,11 +162,20 @@ export async function GET(
   } catch (error: any) {
     const errorMessage =
       error?.message || error?.shortMessage || JSON.stringify(error);
-    if (errorMessage.includes('rate limit') || errorMessage.includes('429')) {
-      console.warn('Rate limit exceeded calling blockchain:', errorMessage);
+    if (
+      errorMessage.includes('rate limit') ||
+      errorMessage.includes('429') ||
+      errorMessage.includes('503') ||
+      errorMessage.includes('upstream connect error') ||
+      errorMessage.includes('ENOTFOUND') ||
+      errorMessage.includes('connection termination') ||
+      errorMessage.includes('ECONNRESET')
+    ) {
+      console.warn('Alchemy API issue:', errorMessage);
       return NextResponse.json(
         {
-          error: 'External API rate limit exceeded. Please try again later.',
+          error:
+            'External API (Alchemy) temporary issue. Please try again later.',
         },
         { status: 503 },
       );

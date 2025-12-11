@@ -32,6 +32,30 @@ function getHyphaTokensType(symbol: string): TokenType | null {
   }
 }
 
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  retries = 3,
+  delay = 1000,
+): Promise<T> {
+  let attempt = 0;
+  while (attempt < retries) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      attempt++;
+      if (attempt >= retries) {
+        throw error;
+      }
+      const waitTime = delay * Math.pow(2, attempt - 1);
+      console.warn(
+        `Retry ${attempt}/${retries} after ${waitTime}ms: ${error.message}`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
+    }
+  }
+  throw new Error('Retry failed');
+}
+
 export async function getTokenMeta(
   tokenAddress: `0x${string}`,
   dbTokens?: DbToken[],
@@ -75,21 +99,23 @@ export async function getTokenMeta(
   } as const;
 
   try {
-    const results = await web3Client.multicall({
-      allowFailure: true,
-      blockTag: 'safe',
-      contracts: [
-        {
-          ...contract,
-          functionName: 'symbol',
-          args: [],
-        },
-        {
-          ...contract,
-          functionName: 'name',
-          args: [],
-        },
-      ],
+    const results = await withRetry(async () => {
+      return await web3Client.multicall({
+        allowFailure: true,
+        blockTag: 'safe',
+        contracts: [
+          {
+            ...contract,
+            functionName: 'symbol',
+            args: [],
+          },
+          {
+            ...contract,
+            functionName: 'name',
+            args: [],
+          },
+        ],
+      });
     });
 
     const failure = results.find((result) => result.status === 'failure');
@@ -131,6 +157,11 @@ export async function getTokenMeta(
     };
   } catch (error: any) {
     console.error(`Failed to fetch token info for ${tokenAddress}:`, error);
-    throw new Error(`Could not retrieve token info: ${error.message}`);
+    return {
+      symbol: 'UNKNOWN',
+      name: 'Unknown Token',
+      icon: '/placeholder/neutral-token-icon.svg',
+      type: null,
+    };
   }
 }
