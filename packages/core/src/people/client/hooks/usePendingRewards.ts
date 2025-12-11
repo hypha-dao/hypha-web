@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback } from 'react';
 import {
   publicClient,
   getPendingRewards,
@@ -11,6 +12,9 @@ import useSWRMutation from 'swr/mutation';
 
 export const usePendingRewards = ({ user }: { user?: `0x${string}` }) => {
   const { client } = useSmartWallets();
+  const waitForClaimReceipt = useCallback(async (hash: `0x${string}`) => {
+    return publicClient.waitForTransactionReceipt({ hash });
+  }, []);
 
   const { data, isLoading, error, mutate } = useSWR(
     user ? [user, 'rewards'] : null,
@@ -32,6 +36,7 @@ export const usePendingRewards = ({ user }: { user?: `0x${string}` }) => {
   return {
     updatePendingRewards: mutate,
     claim: claimRewardsMutation,
+    waitForClaimReceipt,
     isClaiming,
     pendingRewards: data,
     isLoading,
