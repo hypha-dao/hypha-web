@@ -68,11 +68,15 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
     isClaiming ||
     pendingRewards === undefined;
   const onHandleClaim = useCallback(async () => {
-    const txHash = await claim();
-    await waitForClaimReceipt(txHash as `0x${string}`);
-    await updatePendingRewards();
-    await updateUserAssets();
-    setHasClaimed(true);
+    try {
+      const txHash = await claim();
+      await waitForClaimReceipt(txHash as `0x${string}`);
+      await updatePendingRewards();
+      await updateUserAssets();
+      setHasClaimed(true);
+    } catch (error) {
+      console.error('Claim failed:', error);
+    }
   }, [claim, waitForClaimReceipt, updatePendingRewards, updateUserAssets]);
 
   return (
