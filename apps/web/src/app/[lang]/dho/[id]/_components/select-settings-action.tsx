@@ -103,12 +103,13 @@ export const SelectSettingsAction = ({
     },*/
     {
       group: 'Members',
-      title: 'Membership Removal (Coming Soon)',
+      title: 'Membership Exit',
       description:
         'Remove a member from your space if they infringe upon agreed rules and policies.',
-      href: '#',
+      href: 'create/membership-exit',
       icon: <CrossCircledIcon />,
-      disabled: true,
+      baseTab: 'agreements',
+      disabled: isPaymentExpired,
     },
     {
       group: 'Members',
