@@ -11,6 +11,7 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import { Empty } from '../../../common';
 
 const HYPHA_TOKEN_ADDRESS = '0x8b93862835C36e9689E9bb1Ab21De3982e266CD3';
+const MIN_REWARD_CLAIM_VALUE = 0.01;
 
 type PendingRewardsSectionProps = {
   person: Person;
@@ -56,14 +57,14 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
         }
       : undefined;
   useEffect(() => {
-    if (parsedRewardValue >= 0.01) {
+    if (parsedRewardValue >= MIN_REWARD_CLAIM_VALUE) {
       setHasClaimed(false);
     }
   }, [parsedRewardValue]);
 
   const disableClaimButton =
     hasClaimed ||
-    !(parsedRewardValue >= 0.01) ||
+    !(parsedRewardValue >= MIN_REWARD_CLAIM_VALUE) ||
     isClaiming ||
     pendingRewards === undefined;
   const onHandleClaim = useCallback(async () => {
