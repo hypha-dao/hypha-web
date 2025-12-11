@@ -44,8 +44,11 @@ export const ActivateProposalsBanner = ({
   }
 
   //NOTE: later should be taken from locale
+  const absDays = Math.abs(daysLeft);
   const expiredElapsed =
-    daysLeft === 0 ? 'today' : `${Math.abs(daysLeft)} days ago`;
+    daysLeft === 0
+      ? 'today'
+      : `${absDays} ${absDays === 1 ? 'day' : 'days'} ago`;
   const dict = {
     banners: {
       activateProposals: {
