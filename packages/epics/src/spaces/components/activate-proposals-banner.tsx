@@ -43,12 +43,18 @@ export const ActivateProposalsBanner = ({
     return null;
   }
 
+  //NOTE: later should be taken from locale
   const expiredElapsed =
     daysLeft === 0 ? 'today' : `${Math.abs(daysLeft)} days ago`;
-
-  const title = 'Proposal creation disabled';
-  const subtitle = `Your Hypha Network contribution expired ${expiredElapsed}. Please reactivate your space before submitting a new proposal.`;
-  const buttonText = 'Reactivate Now';
+  const dict = {
+    banners: {
+      activateProposals: {
+        title: 'Proposal creation disabled',
+        subtitle: `Your Hypha Network contribution expired ${expiredElapsed}. Please reactivate your space before submitting a new proposal.`,
+        buttonText: 'Reactivate Now',
+      },
+    },
+  };
 
   return (
     <div
@@ -59,11 +65,15 @@ export const ActivateProposalsBanner = ({
     >
       <div className="p-5 flex flex-col gap-4">
         <div className="flex justify-between items-center">
-          <span className="text-2 font-bold text-foreground">{title}</span>
+          <span className="text-2 font-bold text-foreground">
+            {dict.banners.activateProposals.title}
+          </span>
         </div>
-        <span className={cn('text-2', 'text-foreground')}>{subtitle}</span>
+        <span className={cn('text-2', 'text-foreground')}>
+          {dict.banners.activateProposals.subtitle}
+        </span>
         <Button onClick={handleAction} className="w-fit">
-          {buttonText}
+          {dict.banners.activateProposals.buttonText}
         </Button>
       </div>
     </div>
