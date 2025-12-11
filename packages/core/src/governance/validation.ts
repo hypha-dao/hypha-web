@@ -607,3 +607,14 @@ export const schemaSpaceToSpaceMembership = z.object({
     .min(1)
     .refine(isAddress, { message: 'Invalid Ethereum address' }),
 });
+
+export const schemaMembershipExit = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  label: z.literal('Membership Exit'),
+  spaceId: z.number().min(1, { message: 'Please select a space to exit.' }),
+  member: z
+    .string({ message: 'Please select a member to remove' })
+    .min(1)
+    .refine(isAddress, { message: 'Invalid Ethereum address' }),
+});
