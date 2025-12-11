@@ -91,7 +91,8 @@ export const SelectSettingsAction = ({
       baseTab: 'agreements',
       disabled: isPaymentExpired,
     },
-    {
+    //TODO: will be uncommented later
+    /*{
       group: 'Members',
       title: 'Exit Method (Coming Soon)',
       description:
@@ -99,7 +100,7 @@ export const SelectSettingsAction = ({
       href: '#',
       icon: <ExitIcon />,
       disabled: true,
-    },
+    },*/
     {
       group: 'Members',
       title: 'Membership Removal (Coming Soon)',
