@@ -14,7 +14,8 @@ import {
   findPersonByAuth,
   verifyAuth,
   findTokenById,
-  findSpaceById,
+  findSpaceByIds,
+  findSpacesByAddresses,
 } from './query';
 
 export class DbService {
@@ -110,7 +111,11 @@ export class DbService {
     return this.db.transaction((tx) => createAgreement(input, { db: tx }));
   }
 
-  public async findSpaceById({ id }: { id: number }) {
-    return findSpaceById({ id }, { db: this.db });
+  public async findSpaceByIds({ ids }: { ids: number[] }) {
+    return findSpaceByIds({ ids }, { db: this.db });
+  }
+
+  public async findSpacesByAddresses({ addresses }: { addresses: string[] }) {
+    return findSpacesByAddresses({ addresses }, { db: this.db });
   }
 }

@@ -7,4 +7,5 @@ export * from './find-tokens-by-addresses';
 export * from './create-agreement';
 export * from './people-by-addresses';
 export * from './verify-auth';
-export * from './find-space-by-id';
+export * from './find-space-by-ids';
+export * from './find-spaces-by-addresses';

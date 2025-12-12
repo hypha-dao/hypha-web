@@ -14,7 +14,7 @@ export default async function spacesIdRoutes(app: FastifyInstance) {
   app.get<Schema>('/', { schema }, async (request, reply) => {
     const { id } = request.params;
 
-    const dbData = await app.db.findSpaceById({ id });
+    const [dbData] = await app.db.findSpaceByIds({ ids: [id] });
     if (dbData == null) return reply.notFound('Space not found');
 
     const result = {
