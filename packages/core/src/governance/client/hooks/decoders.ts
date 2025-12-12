@@ -267,6 +267,19 @@ export function decodeTransaction(tx: Tx) {
           : null;
       },
     },
+    {
+      abi: daoSpaceFactoryImplementationAbi,
+      handler: (decoded) =>
+        decoded.functionName === 'membershipExit'
+          ? {
+              type: 'membershipExit',
+              data: {
+                space: decoded.args[0],
+                member: decoded.args[1],
+              },
+            }
+          : null,
+    },
   ];
 
   for (const { abi, handler } of decoders) {
