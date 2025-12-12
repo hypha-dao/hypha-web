@@ -67,23 +67,10 @@ export const MembershipExitForm = ({
     progress,
   } = useMembershipExitOrchestrator({ authToken: jwt, config, spaces });
 
-  /* const spaceAddress = form.watch('space');
-
-  const { hasTokenRequirements, hasEnoughTokens, missingTokenMessage } =
-    useSpaceTokenRequirementsByAddress({
-      spaceAddress,
-      spaces,
-  }); */
-
   const handleCreate = async (data: FormValues) => {
     if (!data.spaceId || !data.member) {
       return;
     }
-
-    /* if (hasTokenRequirements && !hasEnoughTokens) {
-      console.warn('Cannot submit proposal: not enough tokens.');
-      return;
-    } */
 
     try {
       await membershipExitAction({
@@ -94,6 +81,10 @@ export const MembershipExitForm = ({
     } catch (error) {
       console.error('Error creating membership exit proposal:', error);
     }
+  };
+
+  const handleInvalid = async (err?: any) => {
+    console.warn('Error on Member Exit:', err);
   };
 
   return (
@@ -118,7 +109,7 @@ export const MembershipExitForm = ({
       <Form {...form}>
         <form
           ref={formRef}
-          onSubmit={form.handleSubmit(handleCreate)}
+          onSubmit={form.handleSubmit(handleCreate, handleInvalid)}
           className="flex flex-col gap-5"
         >
           <CreateAgreementBaseFields
@@ -140,17 +131,8 @@ export const MembershipExitForm = ({
           <Separator />
 
           <div className="flex justify-end w-full">
-            <Button
-              // disabled={hasTokenRequirements && !hasEnoughTokens}
-              type="submit"
-            >
-              Publish
-            </Button>
+            <Button type="submit">Publish</Button>
           </div>
-
-          {/* {hasTokenRequirements && !hasEnoughTokens && (
-            <div className="text-error-11 text-2">{missingTokenMessage}</div>
-          )} */}
         </form>
       </Form>
     </LoadingBackdrop>
