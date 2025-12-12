@@ -18,7 +18,7 @@ export const MembershipExitData = ({
   return (
     <div className="flex flex-col gap-5">
       <div className="flex w-full justify-between items-center">
-        <span className="text-2 text-neutral-11">Membership Exit</span>
+        <span className="text-2 text-neutral-11">Exit From Space</span>
         <span className="flex gap-2 text-2 text-neutral-11">
           <Image
             className="w-[24px] h-[24px] rounded-lg"
@@ -34,7 +34,7 @@ export const MembershipExitData = ({
         </span>
       </div>
       <div className="flex w-full justify-between items-center">
-        <span className="text-2 text-neutral-11">Delegated Voting Member</span>
+        <span className="text-2 text-neutral-11">Member Exits</span>
         <span className="flex gap-2 text-2 text-neutral-11">
           <Image
             className="rounded-lg"

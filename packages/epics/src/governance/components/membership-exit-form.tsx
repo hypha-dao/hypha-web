@@ -84,7 +84,7 @@ export const MembershipExitForm = ({
       try {
         await membershipExitAction({
           ...data,
-          web3SpaceId: data.spaceId,
+          web3SpaceId: data.space,
           member: data.member,
         });
       } catch (error) {
