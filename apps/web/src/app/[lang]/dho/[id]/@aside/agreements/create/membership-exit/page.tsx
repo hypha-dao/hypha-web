@@ -19,17 +19,17 @@ export default async function MembershipExitPage({ params }: PageProps) {
 
   if (!spaceFromDb) notFound();
 
-  const { web3SpaceId, slug: spaceSlug } = spaceFromDb;
+  const { id: spaceId, web3SpaceId, slug: spaceSlug } = spaceFromDb;
 
   return (
     <SidePanel>
       <MembershipExitForm
         successfulUrl={successfulUrl}
         backUrl={`${successfulUrl}${PATH_SELECT_SETTINGS_ACTION}`}
+        spaceId={spaceId}
         web3SpaceId={web3SpaceId}
-      >
-        <Plugin name="membership-exit" spaceSlug={spaceSlug} />
-      </MembershipExitForm>
+        plugin={<Plugin name="membership-exit" spaceSlug={spaceSlug} />}
+      />
     </SidePanel>
   );
 }

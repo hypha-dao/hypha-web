@@ -22,19 +22,19 @@ const combinedSchemaMembershipExit =
 type FormValues = z.infer<typeof combinedSchemaMembershipExit>;
 
 interface MembershipExitFormProps {
+  spaceId: number | undefined | null;
+  web3SpaceId?: number | null;
   successfulUrl: string;
   backUrl?: string;
-  children?: React.ReactNode;
-  web3SpaceId?: number | null;
-  spaces?: Space[];
+  plugin: React.ReactNode;
 }
 
 export const MembershipExitForm = ({
   successfulUrl,
   backUrl,
-  children,
+  spaceId,
   web3SpaceId,
-  spaces,
+  plugin,
 }: MembershipExitFormProps) => {
   const { person, isLoading: isPersonLoading } = useMe();
 
@@ -48,8 +48,9 @@ export const MembershipExitForm = ({
       description: '',
       leadImage: undefined,
       attachments: undefined,
+      spaceId: spaceId ?? undefined,
       creatorId: person?.id,
-      spaceId: web3SpaceId ?? undefined,
+      space: web3SpaceId ?? undefined,
       member: undefined,
     },
   });
@@ -72,11 +73,11 @@ export const MembershipExitForm = ({
     isError,
     isPending,
     progress,
-  } = useMembershipExitOrchestrator({ authToken: jwt, config, spaces });
+  } = useMembershipExitOrchestrator({ authToken: jwt, config });
 
   const handleCreate = React.useCallback(
     async (data: FormValues) => {
-      if (!data.spaceId || !data.member) {
+      if (!data.space || !data.member) {
         return;
       }
 
@@ -136,10 +137,8 @@ export const MembershipExitForm = ({
             label="Membership Exit"
             progress={progress}
           />
-          {children}
-
+          {plugin}
           <Separator />
-
           <div className="flex justify-end w-full">
             <Button type="submit">Publish</Button>
           </div>
