@@ -18,6 +18,8 @@ export const MembershipExitPlugin = ({
         members={members}
         spaces={spaces}
         defaultRecipientType="member"
+        emptyMembersMessage="No members found."
+        emptySpacesMessage="No member spaces found."
         name="member"
         label="Exiting Member"
       />
