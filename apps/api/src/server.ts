@@ -12,6 +12,7 @@ import dbService from '@plugins/db';
 import { Network } from 'alchemy-sdk';
 import uploadthing from '@plugins/uploadthing';
 import sensible, { HttpError } from '@fastify/sensible';
+import privyClient from '@plugins/privy-client';
 
 const app = Fastify();
 app.register(cors);
@@ -76,6 +77,11 @@ const start = async () => {
         }
       },
       logger: app.log,
+    });
+
+    await app.register(privyClient, {
+      appId: app.getEnvs<Environment>().PRIVY_APP_ID,
+      appSecret: app.getEnvs<Environment>().PRIVY_APP_SECRET,
     });
 
     // Register v1 API
