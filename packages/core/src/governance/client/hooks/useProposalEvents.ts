@@ -176,6 +176,9 @@ export const useProposalEvents = ({
           }
         }
       },
+      onError: (error) => {
+        console.error('Error watching ProposalExecuted event:', error);
+      },
     });
 
     const unwatchRejected = publicClient.watchContractEvent({
@@ -202,6 +205,9 @@ export const useProposalEvents = ({
             console.error('Error handling ProposalRejected event:', error);
           }
         }
+      },
+      onError: (error) => {
+        console.error('Error watching ProposalRejected event:', error);
       },
     });
 
@@ -230,6 +236,9 @@ export const useProposalEvents = ({
           }
         }
       },
+      onError: (error) => {
+        console.error('Error watching ProposalExpired event:', error);
+      },
     });
 
     const unwatchMemberJoined = publicClient.watchContractEvent({
@@ -248,6 +257,9 @@ export const useProposalEvents = ({
             console.error('Error handling MemberJoined event:', error);
           }
         }
+      },
+      onError: (error) => {
+        console.error('Error watching MemberJoined event:', error);
       },
     });
 
@@ -274,6 +286,9 @@ export const useProposalEvents = ({
             console.error('Error handling ProposalCreated event:', error);
           }
         }
+      },
+      onError: (error) => {
+        console.error('Error watching ProposalCreated event:', error);
       },
     });
 
