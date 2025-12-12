@@ -270,7 +270,7 @@ export function decodeTransaction(tx: Tx) {
     {
       abi: daoSpaceFactoryImplementationAbi,
       handler: (decoded) =>
-        decoded.functionName === 'membershipExit'
+        decoded.functionName === 'removeMember'
           ? {
               type: 'membershipExit',
               data: {
