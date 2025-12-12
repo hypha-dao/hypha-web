@@ -3,6 +3,7 @@ import { schema, type Schema } from './schema';
 import { erc20Abi, formatUnits, isAddress } from 'viem';
 import tokenRoutes from './token';
 import receiveRoutes from './receive';
+import pregenerateRoutes from './receive';
 import type { UtilityToken, VoiceToken, OwnershipToken } from '@schemas/token';
 
 export default async function walletRoutes(app: FastifyInstance) {
@@ -17,6 +18,10 @@ export default async function walletRoutes(app: FastifyInstance) {
 
   await app.register(receiveRoutes, {
     prefix: 'receive',
+  });
+
+  await app.register(pregenerateRoutes, {
+    prefix: 'pregenerate',
   });
 
   /**
