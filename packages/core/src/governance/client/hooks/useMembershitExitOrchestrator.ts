@@ -94,11 +94,9 @@ type MembershipExitArg = z.infer<typeof schemaMembershipExit> & {
 export const useMembershipExitOrchestrator = ({
   authToken,
   config,
-  spaces,
 }: {
   authToken?: string | null;
   config?: Config;
-  spaces?: Space[];
 }) => {
   const web2 = useAgreementMutationsWeb2Rsc(authToken);
   const web3 = useMembershipExitWeb3Rpc({
@@ -154,7 +152,7 @@ export const useMembershipExitOrchestrator = ({
   }, []);
 
   const { trigger: membershipExitAction } = useSWRMutation(
-    'activateSpacesOrchestration',
+    'membershipExitOrchestration',
     async (_: string, { arg }: { arg: MembershipExitArg }) => {
       startTask('CREATE_WEB2_AGREEMENT');
       const inputWeb2 = schemaCreateAgreementWeb2.parse({
