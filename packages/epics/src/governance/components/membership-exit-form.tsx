@@ -36,7 +36,7 @@ export const MembershipExitForm = ({
   web3SpaceId,
   spaces,
 }: MembershipExitFormProps) => {
-  const { person } = useMe();
+  const { person, isLoading: isPersonLoading } = useMe();
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
@@ -54,6 +54,13 @@ export const MembershipExitForm = ({
     },
   });
 
+  React.useEffect(() => {
+    if (isPersonLoading || !person) {
+      return;
+    }
+    form.setValue('creatorId', person.id);
+  }, [isPersonLoading, person, form]);
+
   useScrollToErrors(form, formRef);
 
   const { jwt } = useJwt();
@@ -67,21 +74,24 @@ export const MembershipExitForm = ({
     progress,
   } = useMembershipExitOrchestrator({ authToken: jwt, config, spaces });
 
-  const handleCreate = async (data: FormValues) => {
-    if (!data.spaceId || !data.member) {
-      return;
-    }
+  const handleCreate = React.useCallback(
+    async (data: FormValues) => {
+      if (!data.spaceId || !data.member) {
+        return;
+      }
 
-    try {
-      await membershipExitAction({
-        ...data,
-        web3SpaceId: data.spaceId,
-        member: data.member,
-      });
-    } catch (error) {
-      console.error('Error creating membership exit proposal:', error);
-    }
-  };
+      try {
+        await membershipExitAction({
+          ...data,
+          web3SpaceId: data.spaceId,
+          member: data.member,
+        });
+      } catch (error) {
+        console.error('Error creating membership exit proposal:', error);
+      }
+    },
+    [membershipExitAction],
+  );
 
   const handleInvalid = async (err?: any) => {
     console.warn('Error on Member Exit:', err);
