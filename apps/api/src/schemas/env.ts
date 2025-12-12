@@ -20,6 +20,8 @@ export const environment = Type.Object({
   UPLOADTHING_TOKEN: Type.String({
     description: 'A token for interacting with the SDK',
   }),
+  PRIVY_APP_ID: Type.String(),
+  PRIVY_APP_SECRET: Type.String(),
 });
 
 export type Environment = Static<typeof environment>;
