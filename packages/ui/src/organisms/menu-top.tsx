@@ -54,7 +54,7 @@ export const MenuTop = ({ children, logoHref, hrefTarget }: MenuTopProps) => {
 
         {/* Mobile Full Screen Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden fixed inset-0 top-9 z-40 flex flex-col items-center p-4 bg-page-background overflow-y-auto">
+          <div className="md:hidden fixed inset-0 top-9 z-40 flex flex-col items-center px-5 py-4 bg-page-background overflow-y-auto">
             <div className="flex flex-col space-y-8 items-center">
               {children}
             </div>
