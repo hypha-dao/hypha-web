@@ -13,7 +13,13 @@ interface IOwnershipTokenFactory {
     string memory name,
     string memory symbol,
     uint256 maxSupply,
-    bool isVotingToken
+    bool fixedMaxSupply,
+    bool autoMinting,
+    uint256 priceInUSD,
+    bool useTransferWhitelist,
+    bool useReceiveWhitelist,
+    address[] memory initialTransferWhitelist,
+    address[] memory initialReceiveWhitelist
   ) external returns (address);
 
   function getSpaceToken(
