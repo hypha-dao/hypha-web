@@ -742,7 +742,7 @@ contract EnergyDistributionImplementation is
 
   // Helper function to update community balance with treasury integration
   function _adjustCommunityBalance(int256 adjustment) internal {
-    address treasury = 0xD86e25d230D1dB17BC573399FB7f14c8d8c685Ae;
+    address treasury = 0xf048f5Cad727DD972619c360e00d371a9ef68658;
     int256 newBalance = communityCashCreditBalance + adjustment;
 
     // If balance goes from non-positive to positive, transfer tokens to treasury
@@ -777,7 +777,7 @@ contract EnergyDistributionImplementation is
   ) external view override returns (int256, address) {
     return (
       _getCashCreditBalance(member),
-      0xEa6FC1ff9C204E7b40073cCB091Ca8ac30B0B80a
+      0x2f4903bEeFbE23c057Bd26587Cd3f0bd6e337136
     );
   }
 

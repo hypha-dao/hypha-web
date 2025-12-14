@@ -17,6 +17,22 @@ contract RegularSpaceToken is
   uint256 public spaceId;
   uint256 public maxSupply;
   bool public transferable;
+  address public executor;
+  address public transferHelper;
+
+  // New configuration options
+  bool public fixedMaxSupply; // If true, maxSupply cannot be changed
+  bool public autoMinting; // If true, executor can mint on transfer; if false, must mint separately
+  uint256 public priceInUSD; // Token price in USD (with 6 decimals, e.g., 1000000 = $1)
+
+  // Transfer whitelists
+  mapping(address => bool) public canTransfer; // Who can send tokens
+  mapping(address => bool) public canReceive; // Who can receive tokens
+  bool public useTransferWhitelist; // If true, enforce transfer whitelist
+  bool public useReceiveWhitelist; // If true, enforce receive whitelist
+
+  // Archive status - MUST BE AT THE END FOR UPGRADEABILITY
+  bool public archived; // If true, minting and transfers are disabled
 
   // Mapping to track authorized addresses (like EnergyDistribution contract)
   mapping(address => bool) public authorized;
