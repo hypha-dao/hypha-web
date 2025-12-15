@@ -1,6 +1,5 @@
 'use client';
 
-import useSWR from 'swr';
 import { Config } from '@wagmi/core';
 import { z } from 'zod';
 import { produce } from 'immer';
@@ -11,13 +10,15 @@ import { useSpaceMutationsWeb3Rpc } from './useSpaceMutations.web3.rpc';
 import useSWRMutation from 'swr/mutation';
 import {
   schemaCreateSpace,
-  schemaCreateSpaceFiles,
   schemaCreateSpaceWeb2,
   schemaCreateSpaceWeb3,
 } from '../../validation';
-import { useSpaceFileUploads } from './useSpaceFileUploads';
 import { useCreateEvent } from '../../../events';
 import { useMe } from '../../../people';
+import { publicClient } from '@hypha-platform/core/client';
+import { getSpaceFromLogs } from '../web3/dao-space-factory/get-space-created-event';
+import { useImageUpload } from '../../../assets/client';
+import { CreateSpaceInput } from '../../types';
 
 type UseCreateSpaceOrchestratorInput = {
   authToken?: string | null;
@@ -25,10 +26,9 @@ type UseCreateSpaceOrchestratorInput = {
 };
 
 export type TaskName =
-  | 'CREATE_WEB2_SPACE'
-  | 'CREATE_WEB3_SPACE'
   | 'UPLOAD_FILES'
-  | 'LINK_WEB2_AND_WEB3_SPACE';
+  | 'CREATE_WEB3_SPACE'
+  | 'CREATE_WEB2_SPACE';
 
 export type TaskState = {
   [K in TaskName]: {
@@ -45,10 +45,9 @@ export enum TaskStatus {
 }
 
 const taskActionDescriptions: Record<TaskName, string> = {
-  CREATE_WEB2_SPACE: 'Creating Web2 space...',
-  CREATE_WEB3_SPACE: 'Creating Web3 space...',
   UPLOAD_FILES: 'Uploading Space Images...',
-  LINK_WEB2_AND_WEB3_SPACE: 'Linking Web2 and Web3 spaces...',
+  CREATE_WEB3_SPACE: 'Creating Web3 space...',
+  CREATE_WEB2_SPACE: 'Creating Web2 space...',
 };
 
 export type ProgressAction =
@@ -58,10 +57,9 @@ export type ProgressAction =
   | { type: 'RESET' };
 
 const initialTaskState: TaskState = {
-  CREATE_WEB2_SPACE: { status: TaskStatus.IDLE },
-  CREATE_WEB3_SPACE: { status: TaskStatus.IDLE },
   UPLOAD_FILES: { status: TaskStatus.IDLE },
-  LINK_WEB2_AND_WEB3_SPACE: { status: TaskStatus.IDLE },
+  CREATE_WEB3_SPACE: { status: TaskStatus.IDLE },
+  CREATE_WEB2_SPACE: { status: TaskStatus.IDLE },
 };
 
 export const progressStateReducer = (
@@ -114,11 +112,8 @@ export const useCreateSpaceOrchestrator = ({
   const { person } = useMe();
   const web2 = useSpaceMutationsWeb2Rsc(authToken);
   const web3 = useSpaceMutationsWeb3Rpc();
-  const spaceFiles = useSpaceFileUploads(authToken, (uploadedFiles, id) => {
-    web2.updateSpaceById({
-      id,
-      ...uploadedFiles,
-    });
+  const { upload: uploadImage } = useImageUpload({
+    authorizationToken: authToken ?? undefined,
   });
 
   const [taskState, dispatch] = React.useReducer(
@@ -162,99 +157,137 @@ export const useCreateSpaceOrchestrator = ({
   const { trigger: createSpace } = useSWRMutation(
     'createSpaceOrchestration',
     async (_, { arg }: { arg: z.infer<typeof schemaCreateSpace> }) => {
-      startTask('CREATE_WEB2_SPACE');
-      const inputCreateSpaceWeb2 = schemaCreateSpaceWeb2.parse(arg);
-      const createdSpace = await web2.createSpace(inputCreateSpaceWeb2);
-      if (person?.address && createdSpace?.id) {
-        await createEvent({
-          type: 'joinSpace',
-          referenceEntity: 'space',
-          referenceId: createdSpace.id,
-          parameters: { memberAddress: person.address },
-        });
-      }
-      completeTask('CREATE_WEB2_SPACE');
+      const web3SpaceId = (arg as any).web3SpaceId;
+      let web3SpaceIdResult: number | undefined = undefined;
+      let web3Executor: string | undefined = undefined;
+      let web2SpaceId: number | undefined = undefined;
+      let uploadedFileUrls: {
+        logoUrl?: string;
+        leadImage?: string;
+      } = {};
 
-      startTask('CREATE_WEB3_SPACE');
-      const inputCreateSpaceWeb3 = schemaCreateSpaceWeb3.parse({
-        quorum: 50,
-        unity: 80,
-        votingPowerSource: 2,
-        joinMethod: 2,
-        exitMethod: 0,
-      });
-      await web3.createSpace(inputCreateSpaceWeb3);
-      completeTask('CREATE_WEB3_SPACE');
-
-      const files = schemaCreateSpaceFiles.parse(arg);
-      if (Object.values(files).some((file) => file)) {
-        startTask('UPLOAD_FILES');
-        await spaceFiles.upload(files, createdSpace?.id);
-        completeTask('UPLOAD_FILES');
-      } else {
-        startTask('UPLOAD_FILES');
-        completeTask('UPLOAD_FILES');
-      }
-    },
-  );
-
-  const { data: updatedWeb2Space } = useSWR(
-    web2.createdSpace?.slug &&
-      taskState.CREATE_WEB3_SPACE.status === TaskStatus.IS_DONE &&
-      taskState.UPLOAD_FILES.status === TaskStatus.IS_DONE
-      ? [
-          web2.createdSpace.slug,
-          web3.createdSpace?.spaceId,
-          web3.createdSpace?.executor,
-          'linkingWeb2AndWeb3Space',
-        ]
-      : null,
-    async ([slug, web3SpaceId, address]) => {
       try {
-        startTask('LINK_WEB2_AND_WEB3_SPACE');
-        const result = await web2.updateSpaceBySlug({
-          slug,
-          web3SpaceId: Number(web3SpaceId),
-          address: address,
-        });
-        completeTask('LINK_WEB2_AND_WEB3_SPACE');
-        return result;
-      } catch (error) {
-        if (error instanceof Error) {
-          errorTask('LINK_WEB2_AND_WEB3_SPACE', error.message);
+        const logoUrl = (arg as any).logoUrl;
+        const leadImage = (arg as any).leadImage;
+
+        if (logoUrl || leadImage) {
+          startTask('UPLOAD_FILES');
+
+          const uploadPromises: Promise<void>[] = [];
+
+          if (logoUrl instanceof File) {
+            uploadPromises.push(
+              uploadImage([logoUrl]).then((result) => {
+                if (result?.[0]?.ufsUrl) {
+                  uploadedFileUrls.logoUrl = result[0].ufsUrl;
+                }
+              }),
+            );
+          } else if (typeof logoUrl === 'string' && logoUrl) {
+            uploadedFileUrls.logoUrl = logoUrl;
+          }
+
+          if (leadImage instanceof File) {
+            uploadPromises.push(
+              uploadImage([leadImage]).then((result) => {
+                if (result?.[0]?.ufsUrl) {
+                  uploadedFileUrls.leadImage = result[0].ufsUrl;
+                }
+              }),
+            );
+          } else if (typeof leadImage === 'string' && leadImage) {
+            uploadedFileUrls.leadImage = leadImage;
+          }
+
+          await Promise.all(uploadPromises);
+          completeTask('UPLOAD_FILES');
+        } else {
+          startTask('UPLOAD_FILES');
+          completeTask('UPLOAD_FILES');
         }
-        throw error;
+
+        startTask('CREATE_WEB3_SPACE');
+        const inputCreateSpaceWeb3 = schemaCreateSpaceWeb3.parse({
+          quorum: 50,
+          unity: 80,
+          votingPowerSource: 2,
+          joinMethod: 2,
+          exitMethod: 0,
+        });
+
+        const txHash = await web3.createSpace(inputCreateSpaceWeb3);
+
+        const receipt = await publicClient.waitForTransactionReceipt({
+          hash: txHash as `0x${string}`,
+        });
+
+        const spaceData = getSpaceFromLogs(receipt.logs);
+        if (!spaceData?.spaceId || !spaceData?.executor) {
+          throw new Error(
+            'Failed to extract spaceId and executor from transaction logs',
+          );
+        }
+
+        web3SpaceIdResult = Number(spaceData.spaceId);
+        web3Executor = spaceData.executor as string;
+        completeTask('CREATE_WEB3_SPACE');
+
+        startTask('CREATE_WEB2_SPACE');
+        const inputCreateSpaceWeb2 = schemaCreateSpaceWeb2.parse({
+          ...arg,
+          web3SpaceId: web3SpaceIdResult,
+          address: web3Executor,
+        });
+        const createSpaceInput: CreateSpaceInput = {
+          ...inputCreateSpaceWeb2,
+          logoUrl: uploadedFileUrls.logoUrl,
+          leadImage: uploadedFileUrls.leadImage,
+        };
+        const createdSpace = await web2.createSpace(createSpaceInput);
+        web2SpaceId = createdSpace?.id;
+
+        if (person?.address && createdSpace?.id) {
+          await createEvent({
+            type: 'joinSpace',
+            referenceEntity: 'space',
+            referenceId: createdSpace.id,
+            parameters: { memberAddress: person.address },
+          });
+        }
+        completeTask('CREATE_WEB2_SPACE');
+      } catch (err) {
+        if (web2SpaceId && !web3SpaceIdResult) {
+          try {
+            const spaceToDelete = web2.createdSpace;
+            if (spaceToDelete?.slug) {
+              await web2.deleteSpaceBySlug({ slug: spaceToDelete.slug });
+            }
+          } catch (deleteError) {
+            console.error('Failed to cleanup Web2 space:', deleteError);
+          }
+        }
+        throw err;
       }
-    },
-    {
-      revalidateOnMount: true,
-      shouldRetryOnError: false,
     },
   );
 
   const errors = React.useMemo(() => {
     return [
       web2.errorCreateSpaceMutation,
-      web2.errorUpdateSpaceBySlugMutation,
       web3.errorCreateSpace,
       web3.errorWaitSpaceFromTransaction,
-      spaceFiles.error,
     ].filter(Boolean);
   }, [
     web2.errorCreateSpaceMutation,
-    web2.errorUpdateSpaceBySlugMutation,
     web3.errorCreateSpace,
     web3.errorWaitSpaceFromTransaction,
-    spaceFiles.error,
   ]);
 
   const reset = useCallback(() => {
     resetTasks();
     web2.resetCreateSpaceMutation();
-    web2.resetUpdateSpaceBySlugMutation();
     web3.resetCreateSpaceMutation();
-    spaceFiles.reset();
-  }, [resetTasks, web2, web3, spaceFiles]);
+  }, [resetTasks, web2, web3]);
 
   return {
     reset,
@@ -262,7 +295,6 @@ export const useCreateSpaceOrchestrator = ({
     space: {
       ...web2.createdSpace,
       ...web3.createdSpace,
-      ...updatedWeb2Space,
     },
     taskState,
     currentAction,
