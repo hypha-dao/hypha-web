@@ -6,6 +6,7 @@ import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
+import './interfaces/IDAOSpaceFactory.sol';
 
 contract RegularSpaceToken is
   Initializable,
@@ -34,6 +35,15 @@ contract RegularSpaceToken is
   // Archive status - MUST BE AT THE END FOR UPGRADEABILITY
   bool public archived; // If true, minting and transfers are disabled
 
+  // Space-based whitelisting (added for upgradeability - at end of storage)
+  // Hardcoded spaces contract address for membership checks
+  address public constant spacesContract =
+    0xc8B8454D2F9192FeCAbc2C6F5d88F6434A2a9cd9;
+  uint256[] internal _transferWhitelistedSpaceIds; // Space IDs whose members can transfer
+  uint256[] internal _receiveWhitelistedSpaceIds; // Space IDs whose members can receive
+  mapping(uint256 => bool) public isTransferWhitelistedSpace; // Quick lookup for transfer whitelist
+  mapping(uint256 => bool) public isReceiveWhitelistedSpace; // Quick lookup for receive whitelist
+
   // Events
   event MaxSupplyUpdated(uint256 oldMaxSupply, uint256 newMaxSupply);
   event TransferableUpdated(bool transferable);
@@ -49,6 +59,10 @@ contract RegularSpaceToken is
     address indexed from,
     uint256 amount
   );
+  event TransferWhitelistSpaceAdded(uint256 indexed spaceId);
+  event TransferWhitelistSpaceRemoved(uint256 indexed spaceId);
+  event ReceiveWhitelistSpaceAdded(uint256 indexed spaceId);
+  event ReceiveWhitelistSpaceRemoved(uint256 indexed spaceId);
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -130,17 +144,23 @@ contract RegularSpaceToken is
 
     // Executor always bypasses whitelist checks
     if (sender != executor) {
-      // Check transfer whitelist
+      // Check transfer whitelist (direct or space-based)
       if (useTransferWhitelist) {
-        require(canTransfer[sender], 'Sender not whitelisted to transfer');
+        require(
+          canTransfer[sender] || _isInTransferWhitelistedSpace(sender),
+          'Sender not whitelisted to transfer'
+        );
       }
     }
 
     // Executor can always receive tokens
     if (to != executor) {
-      // Check receive whitelist
+      // Check receive whitelist (direct or space-based)
       if (useReceiveWhitelist) {
-        require(canReceive[to], 'Recipient not whitelisted to receive');
+        require(
+          canReceive[to] || _isInReceiveWhitelistedSpace(to),
+          'Recipient not whitelisted to receive'
+        );
       }
     }
 
@@ -171,17 +191,23 @@ contract RegularSpaceToken is
 
     // Executor always bypasses whitelist checks
     if (from != executor) {
-      // Check transfer whitelist
+      // Check transfer whitelist (direct or space-based)
       if (useTransferWhitelist) {
-        require(canTransfer[from], 'Sender not whitelisted to transfer');
+        require(
+          canTransfer[from] || _isInTransferWhitelistedSpace(from),
+          'Sender not whitelisted to transfer'
+        );
       }
     }
 
     // Executor can always receive tokens
     if (to != executor) {
-      // Check receive whitelist
+      // Check receive whitelist (direct or space-based)
       if (useReceiveWhitelist) {
-        require(canReceive[to], 'Recipient not whitelisted to receive');
+        require(
+          canReceive[to] || _isInReceiveWhitelistedSpace(to),
+          'Recipient not whitelisted to receive'
+        );
       }
     }
 
@@ -352,5 +378,197 @@ contract RegularSpaceToken is
       super.burnFrom(from, amount);
       emit TokensBurned(msg.sender, from, amount);
     }
+  }
+
+  /**
+   * @dev Batch add spaces to transfer whitelist
+   * @param spaceIds Array of space IDs to add
+   */
+  function batchAddTransferWhitelistSpaces(
+    uint256[] calldata spaceIds
+  ) external virtual {
+    require(msg.sender == executor, 'Only executor can update whitelist');
+
+    for (uint256 i = 0; i < spaceIds.length; i++) {
+      if (!isTransferWhitelistedSpace[spaceIds[i]]) {
+        isTransferWhitelistedSpace[spaceIds[i]] = true;
+        _transferWhitelistedSpaceIds.push(spaceIds[i]);
+        emit TransferWhitelistSpaceAdded(spaceIds[i]);
+      }
+    }
+  }
+
+  /**
+   * @dev Batch add spaces to receive whitelist
+   * @param spaceIds Array of space IDs to add
+   */
+  function batchAddReceiveWhitelistSpaces(
+    uint256[] calldata spaceIds
+  ) external virtual {
+    require(msg.sender == executor, 'Only executor can update whitelist');
+
+    for (uint256 i = 0; i < spaceIds.length; i++) {
+      if (!isReceiveWhitelistedSpace[spaceIds[i]]) {
+        isReceiveWhitelistedSpace[spaceIds[i]] = true;
+        _receiveWhitelistedSpaceIds.push(spaceIds[i]);
+        emit ReceiveWhitelistSpaceAdded(spaceIds[i]);
+      }
+    }
+  }
+
+  /**
+   * @dev Batch remove spaces from transfer whitelist
+   * @param spaceIds Array of space IDs to remove
+   */
+  function batchRemoveTransferWhitelistSpaces(
+    uint256[] calldata spaceIds
+  ) external virtual {
+    require(msg.sender == executor, 'Only executor can update whitelist');
+
+    for (uint256 j = 0; j < spaceIds.length; j++) {
+      uint256 _spaceId = spaceIds[j];
+      if (isTransferWhitelistedSpace[_spaceId]) {
+        isTransferWhitelistedSpace[_spaceId] = false;
+        // Remove from array (swap and pop)
+        for (uint256 i = 0; i < _transferWhitelistedSpaceIds.length; i++) {
+          if (_transferWhitelistedSpaceIds[i] == _spaceId) {
+            _transferWhitelistedSpaceIds[i] = _transferWhitelistedSpaceIds[
+              _transferWhitelistedSpaceIds.length - 1
+            ];
+            _transferWhitelistedSpaceIds.pop();
+            break;
+          }
+        }
+        emit TransferWhitelistSpaceRemoved(_spaceId);
+      }
+    }
+  }
+
+  /**
+   * @dev Batch remove spaces from receive whitelist
+   * @param spaceIds Array of space IDs to remove
+   */
+  function batchRemoveReceiveWhitelistSpaces(
+    uint256[] calldata spaceIds
+  ) external virtual {
+    require(msg.sender == executor, 'Only executor can update whitelist');
+
+    for (uint256 j = 0; j < spaceIds.length; j++) {
+      uint256 _spaceId = spaceIds[j];
+      if (isReceiveWhitelistedSpace[_spaceId]) {
+        isReceiveWhitelistedSpace[_spaceId] = false;
+        // Remove from array (swap and pop)
+        for (uint256 i = 0; i < _receiveWhitelistedSpaceIds.length; i++) {
+          if (_receiveWhitelistedSpaceIds[i] == _spaceId) {
+            _receiveWhitelistedSpaceIds[i] = _receiveWhitelistedSpaceIds[
+              _receiveWhitelistedSpaceIds.length - 1
+            ];
+            _receiveWhitelistedSpaceIds.pop();
+            break;
+          }
+        }
+        emit ReceiveWhitelistSpaceRemoved(_spaceId);
+      }
+    }
+  }
+
+  /**
+   * @dev Get all transfer whitelisted space IDs
+   * @return Array of space IDs
+   */
+  function getTransferWhitelistedSpaces()
+    external
+    view
+    returns (uint256[] memory)
+  {
+    return _transferWhitelistedSpaceIds;
+  }
+
+  /**
+   * @dev Get all receive whitelisted space IDs
+   * @return Array of space IDs
+   */
+  function getReceiveWhitelistedSpaces()
+    external
+    view
+    returns (uint256[] memory)
+  {
+    return _receiveWhitelistedSpaceIds;
+  }
+
+  /**
+   * @dev Check if an address is a member of any transfer-whitelisted space
+   * @param account The address to check
+   * @return True if account is member of any whitelisted space
+   */
+  function _isInTransferWhitelistedSpace(
+    address account
+  ) internal view returns (bool) {
+    for (uint256 i = 0; i < _transferWhitelistedSpaceIds.length; i++) {
+      uint256 whitelistedSpaceId = _transferWhitelistedSpaceIds[i];
+      if (
+        isTransferWhitelistedSpace[whitelistedSpaceId] &&
+        IDAOSpaceFactory(spacesContract).isMember(whitelistedSpaceId, account)
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * @dev Check if an address is a member of any receive-whitelisted space
+   * @param account The address to check
+   * @return True if account is member of any whitelisted space
+   */
+  function _isInReceiveWhitelistedSpace(
+    address account
+  ) internal view returns (bool) {
+    for (uint256 i = 0; i < _receiveWhitelistedSpaceIds.length; i++) {
+      uint256 whitelistedSpaceId = _receiveWhitelistedSpaceIds[i];
+      if (
+        isReceiveWhitelistedSpace[whitelistedSpaceId] &&
+        IDAOSpaceFactory(spacesContract).isMember(whitelistedSpaceId, account)
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * @dev Check if an address can transfer tokens (either directly whitelisted or member of whitelisted space)
+   * @param account The address to check
+   * @return True if account can transfer
+   */
+  function canAccountTransfer(address account) public view returns (bool) {
+    // Executor always bypasses
+    if (account == executor) {
+      return true;
+    }
+    // Check direct whitelist
+    if (canTransfer[account]) {
+      return true;
+    }
+    // Check space-based whitelist
+    return _isInTransferWhitelistedSpace(account);
+  }
+
+  /**
+   * @dev Check if an address can receive tokens (either directly whitelisted or member of whitelisted space)
+   * @param account The address to check
+   * @return True if account can receive
+   */
+  function canAccountReceive(address account) public view returns (bool) {
+    // Executor always bypasses
+    if (account == executor) {
+      return true;
+    }
+    // Check direct whitelist
+    if (canReceive[account]) {
+      return true;
+    }
+    // Check space-based whitelist
+    return _isInReceiveWhitelistedSpace(account);
   }
 }

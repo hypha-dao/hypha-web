@@ -77,6 +77,8 @@ npx nx run storage-evm:script ./scripts/energy-token.manual-upgrade.ts --network
 
 
 npx nx run storage-evm:script ./scripts/rndao-decaying-space-token.upgrade.ts --network base-mainnet
+npx nx run storage-evm:script ./scripts/upgrade-all-token-factories.ts --network base-mainnet
+
 
 ```
 

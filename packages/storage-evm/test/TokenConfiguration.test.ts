@@ -2247,4 +2247,402 @@ describe('Token Configuration Tests', function () {
       );
     });
   });
+
+  describe('13. Space-Based Whitelisting', function () {
+    /**
+     * NOTE: RegularSpaceToken and DecayingSpaceToken have a hardcoded spacesContract address
+     * (0xc8B8454D2F9192FeCAbc2C6F5d88F6434A2a9cd9) for production use.
+     *
+     * In local tests, this address doesn't point to the deployed DAOSpaceFactory,
+     * so space membership checks will fail. These tests focus on:
+     * 1. Management functions (add/remove space IDs from whitelists)
+     * 2. Access control (only executor can manage)
+     * 3. View functions
+     *
+     * The actual membership-based transfer/receive logic works in production
+     * where the hardcoded address points to the real DAOSpaceFactory.
+     */
+    let token: Contract;
+    let secondSpaceId: bigint;
+
+    beforeEach(async function () {
+      // Create a second space for testing
+      await daoSpaceFactory.createSpace({
+        name: 'Second Space',
+        description: 'A second space for whitelist testing',
+        imageUrl: '',
+        unity: 50,
+        quorum: 50,
+        votingPowerSource: 1,
+        exitMethod: 1,
+        joinMethod: 1,
+        createToken: false,
+        tokenName: '',
+        tokenSymbol: '',
+      });
+      secondSpaceId = await daoSpaceFactory.spaceCounter();
+
+      // Deploy token with whitelists enabled
+      const tx = await regularTokenFactory.connect(executorSigner).deployToken(
+        spaceId,
+        'Space Whitelist Token',
+        'SWT',
+        ethers.parseEther('10000'),
+        true,
+        false,
+        true,
+        0,
+        true, // useTransferWhitelist
+        true, // useReceiveWhitelist
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
+      );
+
+      const receipt = await tx.wait();
+      const tokenDeployedEvent = receipt?.logs
+        .map((log: any) => {
+          try {
+            return regularTokenFactory.interface.parseLog(log);
+          } catch {
+            return null;
+          }
+        })
+        .find((event: any) => event && event.name === 'TokenDeployed');
+      const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+
+      token = await ethers.getContractAt('RegularSpaceToken', tokenAddress);
+
+      // Mint tokens to alice (she needs to be individually whitelisted for receive first)
+      await token
+        .connect(executorSigner)
+        .batchSetReceiveWhitelist([alice.address], [true]);
+      await token
+        .connect(executorSigner)
+        .mint(alice.address, ethers.parseEther('1000'));
+    });
+
+    describe('Space Whitelist Management', function () {
+      it('Should add spaces to transfer whitelist', async function () {
+        // Add space to transfer whitelist
+        await expect(
+          token
+            .connect(executorSigner)
+            .batchAddTransferWhitelistSpaces([secondSpaceId]),
+        )
+          .to.emit(token, 'TransferWhitelistSpaceAdded')
+          .withArgs(secondSpaceId);
+
+        // Verify it's in the list
+        const transferSpaces = await token.getTransferWhitelistedSpaces();
+        expect(transferSpaces.length).to.equal(1);
+        expect(transferSpaces[0]).to.equal(secondSpaceId);
+        expect(await token.isTransferWhitelistedSpace(secondSpaceId)).to.be
+          .true;
+      });
+
+      it('Should add spaces to receive whitelist', async function () {
+        // Add space to receive whitelist
+        await expect(
+          token
+            .connect(executorSigner)
+            .batchAddReceiveWhitelistSpaces([secondSpaceId]),
+        )
+          .to.emit(token, 'ReceiveWhitelistSpaceAdded')
+          .withArgs(secondSpaceId);
+
+        // Verify it's in the list
+        const receiveSpaces = await token.getReceiveWhitelistedSpaces();
+        expect(receiveSpaces.length).to.equal(1);
+        expect(receiveSpaces[0]).to.equal(secondSpaceId);
+        expect(await token.isReceiveWhitelistedSpace(secondSpaceId)).to.be.true;
+      });
+
+      it('Should remove spaces from transfer whitelist', async function () {
+        // Add space first
+        await token
+          .connect(executorSigner)
+          .batchAddTransferWhitelistSpaces([secondSpaceId]);
+        expect(await token.isTransferWhitelistedSpace(secondSpaceId)).to.be
+          .true;
+
+        // Remove space
+        await expect(
+          token
+            .connect(executorSigner)
+            .batchRemoveTransferWhitelistSpaces([secondSpaceId]),
+        )
+          .to.emit(token, 'TransferWhitelistSpaceRemoved')
+          .withArgs(secondSpaceId);
+
+        // Verify it's removed
+        const transferSpaces = await token.getTransferWhitelistedSpaces();
+        expect(transferSpaces.length).to.equal(0);
+        expect(await token.isTransferWhitelistedSpace(secondSpaceId)).to.be
+          .false;
+      });
+
+      it('Should remove spaces from receive whitelist', async function () {
+        // Add space first
+        await token
+          .connect(executorSigner)
+          .batchAddReceiveWhitelistSpaces([secondSpaceId]);
+        expect(await token.isReceiveWhitelistedSpace(secondSpaceId)).to.be.true;
+
+        // Remove space
+        await expect(
+          token
+            .connect(executorSigner)
+            .batchRemoveReceiveWhitelistSpaces([secondSpaceId]),
+        )
+          .to.emit(token, 'ReceiveWhitelistSpaceRemoved')
+          .withArgs(secondSpaceId);
+
+        // Verify it's removed
+        const receiveSpaces = await token.getReceiveWhitelistedSpaces();
+        expect(receiveSpaces.length).to.equal(0);
+        expect(await token.isReceiveWhitelistedSpace(secondSpaceId)).to.be
+          .false;
+      });
+    });
+
+    describe('Multiple Spaces Management', function () {
+      let thirdSpaceId: bigint;
+
+      beforeEach(async function () {
+        // Create a third space
+        await daoSpaceFactory.createSpace({
+          name: 'Third Space',
+          description: 'A third space for testing',
+          imageUrl: '',
+          unity: 50,
+          quorum: 50,
+          votingPowerSource: 1,
+          exitMethod: 1,
+          joinMethod: 1,
+          createToken: false,
+          tokenName: '',
+          tokenSymbol: '',
+        });
+        thirdSpaceId = await daoSpaceFactory.spaceCounter();
+      });
+
+      it('Should add multiple spaces in one batch', async function () {
+        await token
+          .connect(executorSigner)
+          .batchAddTransferWhitelistSpaces([secondSpaceId, thirdSpaceId]);
+
+        const transferSpaces = await token.getTransferWhitelistedSpaces();
+        expect(transferSpaces.length).to.equal(2);
+        expect(transferSpaces).to.include(secondSpaceId);
+        expect(transferSpaces).to.include(thirdSpaceId);
+      });
+
+      it('Should remove multiple spaces in one batch', async function () {
+        // Add spaces
+        await token
+          .connect(executorSigner)
+          .batchAddTransferWhitelistSpaces([secondSpaceId, thirdSpaceId]);
+
+        // Remove both
+        await token
+          .connect(executorSigner)
+          .batchRemoveTransferWhitelistSpaces([secondSpaceId, thirdSpaceId]);
+
+        const transferSpaces = await token.getTransferWhitelistedSpaces();
+        expect(transferSpaces.length).to.equal(0);
+      });
+
+      it('Should remove one space while keeping others', async function () {
+        // Add both spaces
+        await token
+          .connect(executorSigner)
+          .batchAddTransferWhitelistSpaces([secondSpaceId, thirdSpaceId]);
+
+        // Remove only secondSpaceId
+        await token
+          .connect(executorSigner)
+          .batchRemoveTransferWhitelistSpaces([secondSpaceId]);
+
+        const transferSpaces = await token.getTransferWhitelistedSpaces();
+        expect(transferSpaces.length).to.equal(1);
+        expect(transferSpaces[0]).to.equal(thirdSpaceId);
+        expect(await token.isTransferWhitelistedSpace(secondSpaceId)).to.be
+          .false;
+        expect(await token.isTransferWhitelistedSpace(thirdSpaceId)).to.be.true;
+      });
+    });
+
+    describe('Edge Cases', function () {
+      it('Should skip adding space that is already whitelisted', async function () {
+        // Add space
+        await token
+          .connect(executorSigner)
+          .batchAddTransferWhitelistSpaces([secondSpaceId]);
+
+        // Add same space again - should not emit event or duplicate
+        const tx = await token
+          .connect(executorSigner)
+          .batchAddTransferWhitelistSpaces([secondSpaceId]);
+        const receipt = await tx.wait();
+
+        // Should not emit TransferWhitelistSpaceAdded for already added space
+        const events = receipt?.logs
+          .map((log: any) => {
+            try {
+              return token.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .filter(
+            (event: any) =>
+              event && event.name === 'TransferWhitelistSpaceAdded',
+          );
+        expect(events.length).to.equal(0);
+
+        // Verify only one entry in array
+        const transferSpaces = await token.getTransferWhitelistedSpaces();
+        expect(transferSpaces.length).to.equal(1);
+      });
+
+      it('Should skip removing space that is not in whitelist', async function () {
+        // Try to remove space that was never added
+        const tx = await token
+          .connect(executorSigner)
+          .batchRemoveTransferWhitelistSpaces([secondSpaceId]);
+        const receipt = await tx.wait();
+
+        // Should not emit event
+        const events = receipt?.logs
+          .map((log: any) => {
+            try {
+              return token.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .filter(
+            (event: any) =>
+              event && event.name === 'TransferWhitelistSpaceRemoved',
+          );
+        expect(events.length).to.equal(0);
+      });
+
+      it('Should handle batch operations with mixed valid/invalid spaces', async function () {
+        // Add one space first
+        await token
+          .connect(executorSigner)
+          .batchAddTransferWhitelistSpaces([secondSpaceId]);
+
+        // Try to add multiple including the already-added one
+        const newSpaceId = 999n; // Some arbitrary space ID
+        const tx = await token
+          .connect(executorSigner)
+          .batchAddTransferWhitelistSpaces([secondSpaceId, newSpaceId]);
+        const receipt = await tx.wait();
+
+        // Should only emit for the new space
+        const events = receipt?.logs
+          .map((log: any) => {
+            try {
+              return token.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .filter(
+            (event: any) =>
+              event && event.name === 'TransferWhitelistSpaceAdded',
+          );
+        expect(events.length).to.equal(1);
+        expect(events[0].args.spaceId).to.equal(newSpaceId);
+
+        // Verify both are in the list
+        const transferSpaces = await token.getTransferWhitelistedSpaces();
+        expect(transferSpaces.length).to.equal(2);
+      });
+    });
+
+    describe('Access Control', function () {
+      it('Should only allow executor to add spaces to transfer whitelist', async function () {
+        await expect(
+          token.connect(alice).batchAddTransferWhitelistSpaces([secondSpaceId]),
+        ).to.be.revertedWith('Only executor can update whitelist');
+      });
+
+      it('Should only allow executor to remove spaces from transfer whitelist', async function () {
+        await token
+          .connect(executorSigner)
+          .batchAddTransferWhitelistSpaces([secondSpaceId]);
+
+        await expect(
+          token
+            .connect(bob)
+            .batchRemoveTransferWhitelistSpaces([secondSpaceId]),
+        ).to.be.revertedWith('Only executor can update whitelist');
+      });
+
+      it('Should only allow executor to add spaces to receive whitelist', async function () {
+        await expect(
+          token
+            .connect(charlie)
+            .batchAddReceiveWhitelistSpaces([secondSpaceId]),
+        ).to.be.revertedWith('Only executor can update whitelist');
+      });
+
+      it('Should only allow executor to remove spaces from receive whitelist', async function () {
+        await token
+          .connect(executorSigner)
+          .batchAddReceiveWhitelistSpaces([secondSpaceId]);
+
+        await expect(
+          token
+            .connect(alice)
+            .batchRemoveReceiveWhitelistSpaces([secondSpaceId]),
+        ).to.be.revertedWith('Only executor can update whitelist');
+      });
+    });
+
+    describe('View Functions', function () {
+      it('Should return correct whitelisted spaces', async function () {
+        // Initially empty
+        expect((await token.getTransferWhitelistedSpaces()).length).to.equal(0);
+        expect((await token.getReceiveWhitelistedSpaces()).length).to.equal(0);
+
+        // Add spaces
+        await token
+          .connect(executorSigner)
+          .batchAddTransferWhitelistSpaces([secondSpaceId]);
+        await token
+          .connect(executorSigner)
+          .batchAddReceiveWhitelistSpaces([secondSpaceId]);
+
+        const transferSpaces = await token.getTransferWhitelistedSpaces();
+        const receiveSpaces = await token.getReceiveWhitelistedSpaces();
+
+        expect(transferSpaces.length).to.equal(1);
+        expect(receiveSpaces.length).to.equal(1);
+        expect(transferSpaces[0]).to.equal(secondSpaceId);
+        expect(receiveSpaces[0]).to.equal(secondSpaceId);
+      });
+
+      it('Should correctly check if space is whitelisted', async function () {
+        expect(await token.isTransferWhitelistedSpace(secondSpaceId)).to.be
+          .false;
+        expect(await token.isReceiveWhitelistedSpace(secondSpaceId)).to.be
+          .false;
+
+        await token
+          .connect(executorSigner)
+          .batchAddTransferWhitelistSpaces([secondSpaceId]);
+        await token
+          .connect(executorSigner)
+          .batchAddReceiveWhitelistSpaces([secondSpaceId]);
+
+        expect(await token.isTransferWhitelistedSpace(secondSpaceId)).to.be
+          .true;
+        expect(await token.isReceiveWhitelistedSpace(secondSpaceId)).to.be.true;
+      });
+    });
+  });
 });

@@ -18,9 +18,11 @@ interface IEscrowCreatorQuery {
  * @title OwnershipSpaceToken
  * @dev A space token that can only be transferred between space members and only by the executor
  * Special exceptions are made for escrow contract interactions
+ * Note: This contract has its own spacesContract that shadows the parent's constant
  */
 contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
-  address public spacesContract;
+  // Configurable spaces contract address (shadows parent's constant for membership checks)
+  address public ownershipSpacesContract;
 
   // Hardcoded escrow contract address
   address public constant escrowContract =
@@ -51,6 +53,10 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
     address[] memory _initialTransferWhitelist,
     address[] memory _initialReceiveWhitelist
   ) public initializer {
+    require(
+      _spacesContract != address(0),
+      'Spaces contract cannot be zero address'
+    );
     RegularSpaceToken.initialize(
       name,
       symbol,
@@ -66,11 +72,7 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
       _initialTransferWhitelist,
       _initialReceiveWhitelist
     );
-    require(
-      _spacesContract != address(0),
-      'Spaces contract cannot be zero address'
-    );
-    spacesContract = _spacesContract;
+    ownershipSpacesContract = _spacesContract;
   }
 
   /**
@@ -84,17 +86,23 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
 
     // Executor always bypasses whitelist checks
     if (sender != executor) {
-      // Check transfer whitelist (if enabled)
+      // Check transfer whitelist (direct or space-based, if enabled)
       if (useTransferWhitelist) {
-        require(canTransfer[sender], 'Sender not whitelisted to transfer');
+        require(
+          canTransfer[sender] || _isInTransferWhitelistedSpace(sender),
+          'Sender not whitelisted to transfer'
+        );
       }
     }
 
     // Executor can always receive tokens
     if (to != executor) {
-      // Check receive whitelist (if enabled)
+      // Check receive whitelist (direct or space-based, if enabled)
       if (useReceiveWhitelist) {
-        require(canReceive[to], 'Recipient not whitelisted to receive');
+        require(
+          canReceive[to] || _isInReceiveWhitelistedSpace(to),
+          'Recipient not whitelisted to receive'
+        );
       }
     }
 
@@ -170,17 +178,23 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
 
     // Executor always bypasses whitelist checks
     if (from != executor) {
-      // Check transfer whitelist (if enabled)
+      // Check transfer whitelist (direct or space-based, if enabled)
       if (useTransferWhitelist) {
-        require(canTransfer[from], 'Sender not whitelisted to transfer');
+        require(
+          canTransfer[from] || _isInTransferWhitelistedSpace(from),
+          'Sender not whitelisted to transfer'
+        );
       }
     }
 
     // Executor can always receive tokens
     if (to != executor) {
-      // Check receive whitelist (if enabled)
+      // Check receive whitelist (direct or space-based, if enabled)
       if (useReceiveWhitelist) {
-        require(canReceive[to], 'Recipient not whitelisted to receive');
+        require(
+          canReceive[to] || _isInReceiveWhitelistedSpace(to),
+          'Recipient not whitelisted to receive'
+        );
       }
     }
 
@@ -219,7 +233,7 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
    * @dev Check if an address is a member of the space
    */
   function _isSpaceMember(address account) internal view returns (bool) {
-    return IDAOSpaceFactory(spacesContract).isMember(spaceId, account);
+    return IDAOSpaceFactory(ownershipSpacesContract).isMember(spaceId, account);
   }
 
   /**
