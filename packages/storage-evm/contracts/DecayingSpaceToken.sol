@@ -203,17 +203,23 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
 
     // Executor always bypasses whitelist checks
     if (sender != executor) {
-      // Check transfer whitelist
+      // Check transfer whitelist (direct or space-based)
       if (useTransferWhitelist) {
-        require(canTransfer[sender], 'Sender not whitelisted to transfer');
+        require(
+          canTransfer[sender] || _isInTransferWhitelistedSpace(sender),
+          'Sender not whitelisted to transfer'
+        );
       }
     }
 
     // Executor can always receive tokens
     if (to != executor) {
-      // Check receive whitelist
+      // Check receive whitelist (direct or space-based)
       if (useReceiveWhitelist) {
-        require(canReceive[to], 'Recipient not whitelisted to receive');
+        require(
+          canReceive[to] || _isInReceiveWhitelistedSpace(to),
+          'Recipient not whitelisted to receive'
+        );
       }
     }
 
@@ -252,17 +258,23 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
 
     // Executor always bypasses whitelist checks
     if (from != executor) {
-      // Check transfer whitelist
+      // Check transfer whitelist (direct or space-based)
       if (useTransferWhitelist) {
-        require(canTransfer[from], 'Sender not whitelisted to transfer');
+        require(
+          canTransfer[from] || _isInTransferWhitelistedSpace(from),
+          'Sender not whitelisted to transfer'
+        );
       }
     }
 
     // Executor can always receive tokens
     if (to != executor) {
-      // Check receive whitelist
+      // Check receive whitelist (direct or space-based)
       if (useReceiveWhitelist) {
-        require(canReceive[to], 'Recipient not whitelisted to receive');
+        require(
+          canReceive[to] || _isInReceiveWhitelistedSpace(to),
+          'Recipient not whitelisted to receive'
+        );
       }
     }
 

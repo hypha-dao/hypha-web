@@ -9,6 +9,19 @@ import './DecayingSpaceToken.sol';
  */
 contract RNDAODecayingSpaceToken is DecayingSpaceToken {
   /**
+   * @dev Set whether the token is transferable (executor or owner)
+   * @param _transferable Whether transfers are enabled
+   */
+  function setTransferable(bool _transferable) external override {
+    require(
+      msg.sender == executor || msg.sender == owner(),
+      'Only executor or owner can update transferable'
+    );
+    transferable = _transferable;
+    emit TransferableUpdated(_transferable);
+  }
+
+  /**
    * @dev Batch update transfer whitelist (executor or owner)
    * @param accounts Array of addresses to update
    * @param allowed Array of corresponding permission values
@@ -74,5 +87,109 @@ contract RNDAODecayingSpaceToken is DecayingSpaceToken {
     );
     useReceiveWhitelist = enabled;
     emit UseReceiveWhitelistUpdated(enabled);
+  }
+
+  /**
+   * @dev Batch add spaces to transfer whitelist (executor or owner)
+   * @param spaceIds Array of space IDs to add
+   */
+  function batchAddTransferWhitelistSpaces(
+    uint256[] calldata spaceIds
+  ) external override {
+    require(
+      msg.sender == executor || msg.sender == owner(),
+      'Only executor or owner can update whitelist'
+    );
+
+    for (uint256 i = 0; i < spaceIds.length; i++) {
+      if (!isTransferWhitelistedSpace[spaceIds[i]]) {
+        isTransferWhitelistedSpace[spaceIds[i]] = true;
+        _transferWhitelistedSpaceIds.push(spaceIds[i]);
+        emit TransferWhitelistSpaceAdded(spaceIds[i]);
+      }
+    }
+  }
+
+  /**
+   * @dev Batch add spaces to receive whitelist (executor or owner)
+   * @param spaceIds Array of space IDs to add
+   */
+  function batchAddReceiveWhitelistSpaces(
+    uint256[] calldata spaceIds
+  ) external override {
+    require(
+      msg.sender == executor || msg.sender == owner(),
+      'Only executor or owner can update whitelist'
+    );
+
+    for (uint256 i = 0; i < spaceIds.length; i++) {
+      if (!isReceiveWhitelistedSpace[spaceIds[i]]) {
+        isReceiveWhitelistedSpace[spaceIds[i]] = true;
+        _receiveWhitelistedSpaceIds.push(spaceIds[i]);
+        emit ReceiveWhitelistSpaceAdded(spaceIds[i]);
+      }
+    }
+  }
+
+  /**
+   * @dev Batch remove spaces from transfer whitelist (executor or owner)
+   * @param spaceIds Array of space IDs to remove
+   */
+  function batchRemoveTransferWhitelistSpaces(
+    uint256[] calldata spaceIds
+  ) external override {
+    require(
+      msg.sender == executor || msg.sender == owner(),
+      'Only executor or owner can update whitelist'
+    );
+
+    for (uint256 j = 0; j < spaceIds.length; j++) {
+      uint256 _spaceId = spaceIds[j];
+      if (isTransferWhitelistedSpace[_spaceId]) {
+        isTransferWhitelistedSpace[_spaceId] = false;
+        // Remove from array (swap and pop)
+        for (uint256 i = 0; i < _transferWhitelistedSpaceIds.length; i++) {
+          if (_transferWhitelistedSpaceIds[i] == _spaceId) {
+            _transferWhitelistedSpaceIds[i] = _transferWhitelistedSpaceIds[
+              _transferWhitelistedSpaceIds.length - 1
+            ];
+            _transferWhitelistedSpaceIds.pop();
+            break;
+          }
+        }
+        emit TransferWhitelistSpaceRemoved(_spaceId);
+      }
+    }
+  }
+
+  /**
+   * @dev Batch remove spaces from receive whitelist (executor or owner)
+   * @param spaceIds Array of space IDs to remove
+   */
+  function batchRemoveReceiveWhitelistSpaces(
+    uint256[] calldata spaceIds
+  ) external override {
+    require(
+      msg.sender == executor || msg.sender == owner(),
+      'Only executor or owner can update whitelist'
+    );
+
+    for (uint256 j = 0; j < spaceIds.length; j++) {
+      uint256 _spaceId = spaceIds[j];
+      if (isReceiveWhitelistedSpace[_spaceId]) {
+        isReceiveWhitelistedSpace[_spaceId] = false;
+        // Remove from array (swap and pop)
+        for (uint256 i = 0; i < _receiveWhitelistedSpaceIds.length; i++) {
+          if (_receiveWhitelistedSpaceIds[i] == _spaceId) {
+            _receiveWhitelistedSpaceIds[i] = _receiveWhitelistedSpaceIds[
+              _receiveWhitelistedSpaceIds.length - 1
+            ];
+            _receiveWhitelistedSpaceIds.pop();
+            break;
+          }
+        }
+        emit ReceiveWhitelistSpaceRemoved(_spaceId);
+      }
+    }
   }
 }
