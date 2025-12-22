@@ -26,3 +26,6 @@ export * from './space-search';
 export * from './subspace-section';
 export * from './sales-banner';
 export * from './subscription-badge';
+export * from './transparency-level';
+export * from './space-discoverability-field';
+export * from './space-activity-access-field';
