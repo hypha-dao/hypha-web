@@ -8,3 +8,4 @@ export * from './components/common/recipient-field';
 export * from './components/common/token-payout-field-array';
 export * from './activate-spaces/plugin';
 export * from './space-to-space-membership/plugin';
+export * from './space-transparency-settings/plugin';
