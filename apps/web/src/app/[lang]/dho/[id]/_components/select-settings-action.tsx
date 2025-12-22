@@ -44,6 +44,15 @@ export const SelectSettingsAction = ({
     },
     {
       group: 'Overview',
+      title: 'Space Transparency Configuration',
+      description:
+        'Define the level of transparency you collectively want to apply to your space.',
+      href: 'create/space-settings-transparency',
+      icon: <GearIcon />,
+      baseTab: 'agreements',
+    },
+    {
+      group: 'Overview',
       title: 'Add Space',
       description:
         'Create a new space within your organisation for activities, teams, or projects.',

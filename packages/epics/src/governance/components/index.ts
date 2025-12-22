@@ -22,3 +22,4 @@ export * from './vote-proposal-button';
 export * from './mint-tokens-to-space-treasury-form';
 export * from './membership-exit-form';
 export * from './proposal-membership-exit-data';
+export * from './create-proposal-change-space-transparency-settings-form';
