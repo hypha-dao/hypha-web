@@ -10,10 +10,10 @@ import clsx from 'clsx';
 import { PlusCircledIcon } from '@radix-ui/react-icons';
 
 export enum TransparencyLevel {
-  PUBLIC = 1,
-  ORGANISATION = 2,
-  NETWORK = 3,
-  SPACE = 4,
+  PUBLIC = 0,
+  ORGANISATION = 1,
+  NETWORK = 2,
+  SPACE = 3,
 }
 
 type TransparencyLevelComponentProps = {
