@@ -4,12 +4,16 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   schemaChangeSpaceTransparencySettings,
   useMe,
+  useChangeSpaceTransparencySettingsOrchestrator,
+  useJwt,
 } from '@hypha-platform/core/client';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
+import { useRouter } from 'next/navigation';
+import { useConfig } from 'wagmi';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useScrollToErrors } from '../../hooks';
 import { TransparencyLevel } from '../../spaces/components/transparency-level';
@@ -31,7 +35,24 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
   web3SpaceId,
   plugin,
 }: CreateProposalChangeSpaceTransparencySettingsFormProps) => {
+  const router = useRouter();
   const { person } = useMe();
+  const { jwt } = useJwt();
+  const config = useConfig();
+  const {
+    createChangeSpaceTransparencySettings,
+    reset,
+    currentAction,
+    isError,
+    isPending,
+    progress,
+    changeSpaceTransparencySettings: agreement,
+  } = useChangeSpaceTransparencySettingsOrchestrator({
+    authToken: jwt,
+    config,
+  });
+
+  const agreementSlug = agreement?.slug;
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
@@ -51,9 +72,18 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
 
   useScrollToErrors(form, formRef);
 
+  React.useEffect(() => {
+    if (progress === 100 && agreementSlug) {
+      router.push(successfulUrl);
+    }
+  }, [progress, agreementSlug, router, successfulUrl]);
+
   const handleCreate = async (data: FormValues) => {
-    // TODO: Implement orchestrator logic here
-    console.log('Form data:', data);
+    await createChangeSpaceTransparencySettings({
+      ...data,
+      spaceId: spaceId as number,
+      ...(typeof web3SpaceId === 'number' ? { web3SpaceId } : {}),
+    });
   };
 
   const onInvalid = async (err: any) => {
@@ -64,9 +94,18 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
     <LoadingBackdrop
       showKeepWindowOpenMessage={true}
       fullHeight={true}
-      progress={0}
-      isLoading={false}
-      // message={null}
+      progress={progress}
+      isLoading={isPending}
+      message={
+        isError ? (
+          <div className="flex flex-col">
+            <div>Ouh Snap. There was an error</div>
+            <Button onClick={reset}>Reset</Button>
+          </div>
+        ) : (
+          <div>{currentAction}</div>
+        )
+      }
     >
       <Form {...form}>
         <form
@@ -84,13 +123,15 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
             backUrl={backUrl}
             backLabel="Back to Settings"
             closeUrl={successfulUrl}
-            isLoading={false}
+            isLoading={isPending}
             label="Space Transparency Configuration"
-            progress={0}
+            progress={progress}
           />
           {plugin}
           <div className="flex justify-end w-full">
-            <Button type="submit">Publish</Button>
+            <Button type="submit" disabled={isPending}>
+              Publish
+            </Button>
           </div>
         </form>
       </Form>
