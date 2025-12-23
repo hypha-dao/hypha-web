@@ -8,6 +8,13 @@ interface IDAOSpaceFactory {
     uint256 votingPowerSource;
     uint256 exitMethod;
     uint256 joinMethod;
+    uint256 access; // 0 = Public, 1 = Network, 2 = Org, 3 = Space
+    uint256 discoverability; // 0 = Public, 1 = Network, 2 = Org, 3 = Space
+  }
+
+  struct SpaceVisibility {
+    uint256 discoverability;
+    uint256 access;
   }
 
   function initialize(address initialOwner) external;
@@ -82,6 +89,17 @@ interface IDAOSpaceFactory {
     uint256 _newQuorum
   ) external;
 
+  function setSpaceAccess(uint256 _spaceId, uint256 _access) external;
+
+  function setSpaceDiscoverability(
+    uint256 _spaceId,
+    uint256 _discoverability
+  ) external;
+
+  function getSpaceVisibility(
+    uint256 _spaceId
+  ) external view returns (SpaceVisibility memory);
+
   event SpaceCreated(
     uint256 indexed spaceId,
     uint256 unity,
@@ -115,5 +133,17 @@ interface IDAOSpaceFactory {
     uint256 indexed spaceId,
     uint256 oldJoinMethod,
     uint256 newJoinMethod
+  );
+
+  event SpaceAccessChanged(
+    uint256 indexed spaceId,
+    uint256 oldAccess,
+    uint256 newAccess
+  );
+
+  event SpaceDiscoverabilityChanged(
+    uint256 indexed spaceId,
+    uint256 oldDiscoverability,
+    uint256 newDiscoverability
   );
 }
