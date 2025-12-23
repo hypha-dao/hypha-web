@@ -3,13 +3,15 @@
 import { SelectAction } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { SpaceVisualization } from './space-visualization';
+import { VisibleSpacesList } from './visible-spaces-list';
 import {
   useOrganisationSpacesBySingleSlug,
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import { Space } from '@hypha-platform/core/client';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@hypha-platform/ui';
-import { useState } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { Separator } from '@hypha-platform/ui';
 
 type SelectNavigationActionProps = {
   daoSlug: string;
@@ -21,9 +23,22 @@ type HierarchyNode = {
   name: string;
   logoUrl?: string | null;
   id: number;
+  slug?: string;
   value?: number;
   children?: HierarchyNode[];
 };
+
+function findRootSpace(space: Space, allSpaces: Space[]): Space {
+  let current = space;
+
+  while (current.parentId) {
+    const parent = allSpaces.find((s) => s.id === current.parentId);
+    if (!parent) break;
+    current = parent;
+  }
+
+  return current;
+}
 
 function buildHierarchy(
   currentSpace: Space,
@@ -43,10 +58,20 @@ function buildHierarchy(
     name: currentSpace.title,
     logoUrl: currentSpace.logoUrl,
     id: currentSpace.id,
+    slug: currentSpace.slug,
     value: value,
     children: childrenNodes.length > 0 ? childrenNodes : undefined,
   };
 }
+
+type VisibleSpace = {
+  id: number;
+  name: string;
+  slug?: string;
+  logoUrl?: string | null;
+  parentId?: number | null;
+  root: boolean;
+};
 
 export const SelectNavigationAction = ({
   daoSlug,
@@ -54,6 +79,8 @@ export const SelectNavigationAction = ({
   children,
 }: SelectNavigationActionProps) => {
   const [activeTab, setActiveTab] = useState('nested-spaces');
+  const [visibleSpaces, setVisibleSpaces] = useState<VisibleSpace[]>([]);
+  const previousSpacesRef = useRef<string>('');
   const { space: currentSpace, isLoading: isLoadingSpace } =
     useSpaceBySlug(daoSlug);
   const { spaces: allSpaces, isLoading: isLoadingSpaces } =
@@ -61,8 +88,33 @@ export const SelectNavigationAction = ({
 
   const isLoading = isLoadingSpace || isLoadingSpaces;
 
-  const hierarchyData: HierarchyNode | null =
-    currentSpace && allSpaces ? buildHierarchy(currentSpace, allSpaces) : null;
+  const hierarchyData: HierarchyNode | null = useMemo(() => {
+    if (!currentSpace || !allSpaces) return null;
+
+    const rootSpace = findRootSpace(currentSpace, allSpaces);
+    return buildHierarchy(rootSpace, allSpaces);
+  }, [currentSpace, allSpaces]);
+
+  const handleVisibleSpacesChange = useCallback((spaces: VisibleSpace[]) => {
+    const spacesKey = JSON.stringify(spaces.map((s) => s.id).sort());
+    if (previousSpacesRef.current !== spacesKey) {
+      previousSpacesRef.current = spacesKey;
+      setVisibleSpaces(spaces);
+    }
+  }, []);
+
+  const currentSpaceId = currentSpace?.id;
+  const allSpacesLength = allSpaces?.length;
+  const isInitialMount = useRef(true);
+
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    previousSpacesRef.current = '';
+  }, [currentSpaceId, allSpacesLength]);
 
   return (
     <SelectAction
@@ -71,12 +123,13 @@ export const SelectNavigationAction = ({
       actions={[]}
       isLoading={isLoading}
     >
+      <Separator />
       {children}
       <div className="mt-2">
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
-          className="w-full bg-primary-foreground py-4 rounded-lg"
+          className="w-full bg-primary-foreground p-4 rounded-[6px]"
         >
           <div className="w-full flex justify-center">
             <TabsList triggerVariant="switch">
@@ -92,7 +145,23 @@ export const SelectNavigationAction = ({
             </TabsList>
           </div>
           <TabsContent value="nested-spaces" className="mt-4">
-            {hierarchyData && <SpaceVisualization data={hierarchyData} />}
+            <div className="flex flex-col gap-6">
+              {hierarchyData && (
+                <SpaceVisualization
+                  data={hierarchyData}
+                  currentSpaceId={currentSpace?.id}
+                  onVisibleSpacesChange={handleVisibleSpacesChange}
+                />
+              )}
+              {visibleSpaces.length > 0 && allSpaces && (
+                <VisibleSpacesList
+                  visibleSpaces={visibleSpaces}
+                  allSpaces={allSpaces}
+                  lang={lang}
+                  entrySpaceId={currentSpace?.id}
+                />
+              )}
+            </div>
           </TabsContent>
           <TabsContent value="space-to-space" className="mt-4">
             <div className="text-center text-neutral-11 py-8">

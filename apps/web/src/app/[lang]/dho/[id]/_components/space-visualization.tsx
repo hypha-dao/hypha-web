@@ -6,6 +6,7 @@ import * as d3 from 'd3';
 type SpaceNode = {
   id: number;
   name: string;
+  slug?: string;
   logoUrl?: string | null;
   children?: SpaceNode[];
 };
@@ -14,8 +15,19 @@ type SpaceHierarchyNode = d3.HierarchyNode<SpaceNode> & {
   r?: number;
 };
 
+type VisibleSpace = {
+  id: number;
+  name: string;
+  slug?: string;
+  logoUrl?: string | null;
+  parentId?: number | null;
+  root: boolean;
+};
+
 type Props = {
   data: SpaceNode;
+  currentSpaceId?: number;
+  onVisibleSpacesChange?: (spaces: VisibleSpace[]) => void;
 };
 
 const DEFAULT_LOGO = '/placeholder/space-avatar-image.svg';
@@ -26,8 +38,22 @@ const ORBIT_RATIO = 0.9;
 const LOGO_RATIO = 0.25;
 const ZOOM_DURATION = 800;
 
-export function SpaceVisualization({ data }: Props) {
+export function SpaceVisualization({
+  data,
+  currentSpaceId,
+  onVisibleSpacesChange,
+}: Props) {
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const previousVisibleSpacesRef = useRef<string>('');
+  const onVisibleSpacesChangeRef = useRef(onVisibleSpacesChange);
+
+  useEffect(() => {
+    onVisibleSpacesChangeRef.current = onVisibleSpacesChange;
+  }, [onVisibleSpacesChange]);
+
+  useEffect(() => {
+    previousVisibleSpacesRef.current = '';
+  }, [data, currentSpaceId]);
 
   useEffect(() => {
     if (!svgRef.current) return;
@@ -75,7 +101,28 @@ export function SpaceVisualization({ data }: Props) {
     });
 
     let focus = root;
-    let view: [number, number, number] = [0, 0, root.r! * 2];
+    if (currentSpaceId) {
+      const findNodeById = (
+        node: SpaceHierarchyNode,
+        id: number,
+      ): SpaceHierarchyNode | null => {
+        if (node.data.id === id) {
+          return node;
+        }
+        if (node.children) {
+          for (const child of node.children) {
+            const found = findNodeById(child as SpaceHierarchyNode, id);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      const currentSpaceNode = findNodeById(root, currentSpaceId);
+      if (currentSpaceNode) {
+        focus = currentSpaceNode;
+      }
+    }
+    let view: [number, number, number] = [focus.x!, focus.y!, focus.r! * 2];
 
     const svg = d3
       .select(svgRef.current)
@@ -92,7 +139,7 @@ export function SpaceVisualization({ data }: Props) {
       .join('circle')
       .attr('class', 'orbit')
       .attr('fill', 'transparent')
-      .attr('stroke', '#ffffff')
+      .attr('stroke', '#8F8F8F')
       .attr('stroke-width', 1.2)
       .style('pointer-events', (d) => (d.children ? 'all' : 'none'))
       .on('click', (event, d) => {
@@ -136,6 +183,46 @@ export function SpaceVisualization({ data }: Props) {
       return d === focus || isDescendantOf(d, focus);
     }
 
+    function getVisibleSpaces(focusNode: SpaceHierarchyNode): VisibleSpace[] {
+      const visibleSpaces: VisibleSpace[] = [
+        {
+          id: focusNode.data.id,
+          name: focusNode.data.name,
+          slug: focusNode.data.slug,
+          logoUrl: focusNode.data.logoUrl,
+          parentId: focusNode.parent?.data.id ?? null,
+          root: true,
+        },
+      ];
+
+      if (focusNode.children) {
+        focusNode.children.forEach((child) => {
+          visibleSpaces.push({
+            id: child.data.id,
+            name: child.data.name,
+            slug: child.data.slug,
+            logoUrl: child.data.logoUrl,
+            parentId: child.parent?.data.id ?? null,
+            root: false,
+          });
+        });
+      }
+
+      return visibleSpaces;
+    }
+
+    function notifyVisibleSpaces(focusNode: SpaceHierarchyNode) {
+      const callback = onVisibleSpacesChangeRef.current;
+      if (callback) {
+        const visibleSpaces = getVisibleSpaces(focusNode);
+        const spacesKey = JSON.stringify(visibleSpaces.map((s) => s.id).sort());
+        if (previousVisibleSpacesRef.current !== spacesKey) {
+          previousVisibleSpacesRef.current = spacesKey;
+          callback(visibleSpaces);
+        }
+      }
+    }
+
     orbits.style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0));
     logos.style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0));
     orbits.style('display', (d: SpaceHierarchyNode) =>
@@ -146,6 +233,8 @@ export function SpaceVisualization({ data }: Props) {
     );
 
     zoomTo(view);
+    previousVisibleSpacesRef.current = '';
+    notifyVisibleSpaces(focus);
 
     function zoom(target: SpaceHierarchyNode) {
       focus = target;
@@ -175,6 +264,10 @@ export function SpaceVisualization({ data }: Props) {
             (this as SVGElement).style.display = 'none';
           }
         });
+
+      transition.on('end', () => {
+        notifyVisibleSpaces(focus);
+      });
     }
 
     function zoomTo(v: [number, number, number]) {
@@ -209,7 +302,7 @@ export function SpaceVisualization({ data }: Props) {
             .style('clip-path', `circle(${r}px at ${r}px ${r}px)`);
         });
     }
-  }, [data]);
+  }, [data, currentSpaceId]);
 
   return <svg ref={svgRef} className="w-full h-auto" />;
 }
