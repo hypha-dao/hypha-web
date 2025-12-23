@@ -107,8 +107,8 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
   function balanceOf(address account) public view override returns (uint256) {
     uint256 currentBalance = super.balanceOf(account);
 
-    // If token is archived, decay is paused - return actual balance without decay
-    if (archived) {
+    // If token is archived or decay is not configured, return actual balance without decay
+    if (archived || decayRate == 0) {
       return currentBalance;
     }
 
@@ -144,9 +144,8 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
    * @param account The address to apply decay to
    */
   function applyDecay(address account) public {
-    // If token is archived, update lastApplied to prevent decay accumulation during archived period
-    // but don't actually apply any decay
-    if (archived) {
+    // If token is archived or decay is not configured, update lastApplied but don't apply decay
+    if (archived || decayRate == 0) {
       lastApplied[account] = block.timestamp;
       return;
     }
