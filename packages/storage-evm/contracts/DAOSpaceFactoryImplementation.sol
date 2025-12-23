@@ -61,6 +61,8 @@ contract DAOSpaceFactoryImplementation is
       !(params.quorum == 0 && params.unity == 0),
       'Both quorum and unity cannot be zero'
     );
+    require(params.access <= 3, 'Invalid access value');
+    require(params.discoverability <= 3, 'Invalid discoverability value');
 
     spaceCounter++;
 
@@ -76,6 +78,10 @@ contract DAOSpaceFactoryImplementation is
     newSpace.createdAt = block.timestamp;
     newSpace.creator = msg.sender;
     newSpace.executor = address(executor);
+
+    // Set visibility settings
+    spaceAccess[spaceCounter] = params.access;
+    spaceDiscoverability[spaceCounter] = params.discoverability;
 
     // Initialize arrays
     newSpace.tokenAddresses = new address[](0);
@@ -466,5 +472,51 @@ contract DAOSpaceFactoryImplementation is
     uint256 lastInvite = memberLastInviteTime[_spaceId][_memberAddress];
 
     return (lastInvite, activeProposalId != 0);
+  }
+
+  // Set space access level (0 = Public, 1 = Network, 2 = Org, 3 = Space)
+  function setSpaceAccess(uint256 _spaceId, uint256 _access) external {
+    require(
+      msg.sender == spaces[_spaceId].executor || msg.sender == owner(),
+      'Not authorized: only executor or owner'
+    );
+    require(_access <= 3, 'Invalid access value');
+
+    uint256 oldAccess = spaceAccess[_spaceId];
+    spaceAccess[_spaceId] = _access;
+
+    emit SpaceAccessChanged(_spaceId, oldAccess, _access);
+  }
+
+  // Set space discoverability level (0 = Public, 1 = Network, 2 = Org, 3 = Space)
+  function setSpaceDiscoverability(
+    uint256 _spaceId,
+    uint256 _discoverability
+  ) external {
+    require(
+      msg.sender == spaces[_spaceId].executor || msg.sender == owner(),
+      'Not authorized: only executor or owner'
+    );
+    require(_discoverability <= 3, 'Invalid discoverability value');
+
+    uint256 oldDiscoverability = spaceDiscoverability[_spaceId];
+    spaceDiscoverability[_spaceId] = _discoverability;
+
+    emit SpaceDiscoverabilityChanged(
+      _spaceId,
+      oldDiscoverability,
+      _discoverability
+    );
+  }
+
+  // Get space visibility settings
+  function getSpaceVisibility(
+    uint256 _spaceId
+  ) external view returns (SpaceVisibility memory) {
+    return
+      SpaceVisibility({
+        discoverability: spaceDiscoverability[_spaceId],
+        access: spaceAccess[_spaceId]
+      });
   }
 }
