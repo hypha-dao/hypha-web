@@ -69,7 +69,7 @@ export function VisibleSpacesList({
 
   const getCreateSpacePath = (spaceId: number, spaceSlug?: string) => {
     if (!spaceSlug) return '#';
-    return `/${lang}/dho/${spaceSlug}/overview/space/create`;
+    return `/${lang}/dho/${spaceSlug}/space/create`;
   };
 
   return (

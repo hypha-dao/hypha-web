@@ -26,7 +26,7 @@ export const SubspaceSection = ({
       <div className="justify-between items-center flex">
         <Text className="text-4">Organisation Spaces | {spaces.length}</Text>
         <div className="flex items-center">
-          <AuthenticatedLinkButton href="overview/space/create">
+          <AuthenticatedLinkButton href="space/create">
             <PlusIcon />
             Add Space
           </AuthenticatedLinkButton>

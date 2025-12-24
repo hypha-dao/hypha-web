@@ -49,7 +49,7 @@ export const SelectSettingsAction = ({
         'Create a new space within your organisation for activities, teams, or projects.',
       href: 'space/create',
       icon: <PlusCircledIcon />,
-      baseTab: 'overview',
+      // No baseTab - this is an aside route, not a tab route
     },
     {
       group: 'Overview',
@@ -197,14 +197,19 @@ export const SelectSettingsAction = ({
     if (!action?.href) {
       return '';
     }
-    const href = isAbsoluteUrl(action.href)
-      ? action.href
-      : `/${lang}/dho/${daoSlug}/${action.baseTab || activeTab}/${
-          action.href
-        }`.replaceAll(
-          'THIS_PAGE',
-          `/${lang}/dho/${daoSlug}/agreements/select-settings-action`,
-        );
+    if (isAbsoluteUrl(action.href)) {
+      return action.href;
+    }
+    // Special case: space/create is an aside route, not a tab route
+    if (action.href === 'space/create') {
+      return `/${lang}/dho/${daoSlug}/space/create`;
+    }
+    const href = `/${lang}/dho/${daoSlug}/${action.baseTab || activeTab}/${
+      action.href
+    }`.replaceAll(
+      'THIS_PAGE',
+      `/${lang}/dho/${daoSlug}/agreements/select-settings-action`,
+    );
     return href;
   };
 

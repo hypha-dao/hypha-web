@@ -10,7 +10,7 @@ import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { Button } from '@hypha-platform/ui';
 import { useMe } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
-import { getDhoPathOverview } from '../../common';
+import { getDhoPathAgreements } from '../../common';
 
 interface CreateSpaceFormProps {
   parentSpaceId: number | null;
@@ -42,7 +42,7 @@ export const CreateSubspaceForm = ({
 
   React.useEffect(() => {
     if (progress === 100 && spaceSlug) {
-      router.push(getDhoPathOverview(lang as Locale, spaceSlug));
+      router.push(getDhoPathAgreements(lang as Locale, spaceSlug));
     }
   }, [progress, spaceSlug]);
 
