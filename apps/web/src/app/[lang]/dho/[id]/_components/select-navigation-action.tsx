@@ -12,6 +12,7 @@ import { Space } from '@hypha-platform/core/client';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@hypha-platform/ui';
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Separator } from '@hypha-platform/ui';
+import type { VisibleSpace } from './types';
 
 type SelectNavigationActionProps = {
   daoSlug: string;
@@ -63,15 +64,6 @@ function buildHierarchy(
     children: childrenNodes.length > 0 ? childrenNodes : undefined,
   };
 }
-
-type VisibleSpace = {
-  id: number;
-  name: string;
-  slug?: string;
-  logoUrl?: string | null;
-  parentId?: number | null;
-  root: boolean;
-};
 
 export const SelectNavigationAction = ({
   daoSlug,

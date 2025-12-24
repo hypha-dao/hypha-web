@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
+import { DEFAULT_SPACE_AVATAR_IMAGE } from '@hypha-platform/core/client';
+import type { VisibleSpace } from './types';
 
 type SpaceNode = {
   id: number;
@@ -15,28 +17,21 @@ type SpaceHierarchyNode = d3.HierarchyNode<SpaceNode> & {
   r?: number;
 };
 
-type VisibleSpace = {
-  id: number;
-  name: string;
-  slug?: string;
-  logoUrl?: string | null;
-  parentId?: number | null;
-  root: boolean;
-};
-
 type Props = {
   data: SpaceNode;
   currentSpaceId?: number;
   onVisibleSpacesChange?: (spaces: VisibleSpace[]) => void;
 };
 
-const DEFAULT_LOGO = '/placeholder/space-avatar-image.svg';
-
-const BASE_RADIUS = 420;
-const DEPTH_SCALE = 0.45;
-const ORBIT_RATIO = 0.9;
-const LOGO_RATIO = 0.25;
-const ZOOM_DURATION = 800;
+const VISUALIZATION_CONFIG = {
+  BASE_RADIUS: 420,
+  DEPTH_SCALE: 0.45,
+  ORBIT_RATIO: 0.9,
+  LOGO_RATIO: 0.25,
+  ZOOM_DURATION: 800,
+  WIDTH: 900,
+  HEIGHT: 900,
+} as const;
 
 export function SpaceVisualization({
   data,
@@ -58,14 +53,14 @@ export function SpaceVisualization({
   useEffect(() => {
     if (!svgRef.current) return;
 
-    const width = 900;
-    const height = 900;
+    const { WIDTH: width, HEIGHT: height } = VISUALIZATION_CONFIG;
 
     const root = d3.hierarchy<SpaceNode>(data) as SpaceHierarchyNode;
 
     root.each((d) => {
       (d as SpaceHierarchyNode).r =
-        BASE_RADIUS * Math.pow(DEPTH_SCALE, d.depth);
+        VISUALIZATION_CONFIG.BASE_RADIUS *
+        Math.pow(VISUALIZATION_CONFIG.DEPTH_SCALE, d.depth);
     });
 
     root.x = 0;
@@ -77,7 +72,7 @@ export function SpaceVisualization({
       const step = (2 * Math.PI) / d.children.length;
       const node = d as SpaceHierarchyNode;
 
-      const parentLogoRadius = node.r! * LOGO_RATIO;
+      const parentLogoRadius = node.r! * VISUALIZATION_CONFIG.LOGO_RATIO;
 
       d.children.forEach((child, i) => {
         const angle = i * step;
@@ -93,7 +88,8 @@ export function SpaceVisualization({
         }
 
         const availableOrbit = maxOrbit - minOrbitRadius;
-        const orbitRadius = minOrbitRadius + availableOrbit * ORBIT_RATIO;
+        const orbitRadius =
+          minOrbitRadius + availableOrbit * VISUALIZATION_CONFIG.ORBIT_RATIO;
 
         child.x = d.x! + Math.cos(angle) * orbitRadius;
         child.y = d.y! + Math.sin(angle) * orbitRadius;
@@ -160,8 +156,9 @@ export function SpaceVisualization({
 
     logos
       .append('image')
-      .attr('href', (d) => d.data.logoUrl || DEFAULT_LOGO)
-      .attr('preserveAspectRatio', 'xMidYMid slice');
+      .attr('href', (d) => d.data.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE)
+      .attr('preserveAspectRatio', 'xMidYMid slice')
+      .attr('alt', (d) => `${d.data.name} logo`);
 
     svg.on('click', () => {
       if (focus.parent) zoom(focus.parent);
@@ -241,7 +238,7 @@ export function SpaceVisualization({
 
       const transition = svg
         .transition()
-        .duration(ZOOM_DURATION)
+        .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
         .tween('zoom', () => {
           const i = d3.interpolateZoom(view, [
             focus.x!,
@@ -289,7 +286,7 @@ export function SpaceVisualization({
             `translate(${(d.x! - v[0]) * k}, ${(d.y! - v[1]) * k})`,
         )
         .each(function (d: SpaceHierarchyNode) {
-          const r = d.r! * k * LOGO_RATIO;
+          const r = d.r! * k * VISUALIZATION_CONFIG.LOGO_RATIO;
 
           d3.select(this).select('circle').attr('r', r);
 
@@ -304,5 +301,12 @@ export function SpaceVisualization({
     }
   }, [data, currentSpaceId]);
 
-  return <svg ref={svgRef} className="w-full h-auto" />;
+  return (
+    <svg
+      ref={svgRef}
+      className="w-full h-auto"
+      role="img"
+      aria-label="Space hierarchy visualization"
+    />
+  );
 }

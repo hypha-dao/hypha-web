@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { Locale } from '@hypha-platform/i18n';
-import { Space } from '@hypha-platform/core/client';
+import { Space, DEFAULT_SPACE_AVATAR_IMAGE } from '@hypha-platform/core/client';
 import {
   Card,
   Button,
@@ -14,15 +14,7 @@ import {
 import { PlusIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
 import { getDhoPathAgreements } from '@hypha-platform/epics';
-
-type VisibleSpace = {
-  id: number;
-  name: string;
-  slug?: string;
-  logoUrl?: string | null;
-  parentId?: number | null;
-  root: boolean;
-};
+import type { VisibleSpace } from './types';
 
 type VisibleSpacesListProps = {
   visibleSpaces: VisibleSpace[];
@@ -30,8 +22,6 @@ type VisibleSpacesListProps = {
   lang: Locale;
   entrySpaceId?: number;
 };
-
-const DEFAULT_LOGO = '/placeholder/space-avatar-image.svg';
 
 function buildNestedPath(space: VisibleSpace, allSpaces: Space[]): string {
   if (space.root) {
@@ -96,8 +86,8 @@ export function VisibleSpacesList({
               <div className="flex items-center gap-4">
                 <Avatar className="w-12 h-12 flex-shrink-0">
                   <AvatarImage
-                    src={space.logoUrl || DEFAULT_LOGO}
-                    alt={space.name}
+                    src={space.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
+                    alt={`${space.name} logo`}
                   />
                 </Avatar>
 
