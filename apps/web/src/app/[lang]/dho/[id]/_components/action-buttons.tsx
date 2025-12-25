@@ -54,11 +54,11 @@ export const ActionButtons = ({ web3SpaceId }: ActionButtonsProps) => {
             ? `${cleanPath(pathname)}${PATH_SELECT_NAVIGATION_ACTION}`
             : {}
         }
-        title={tooltipMessage || 'Open Space Navigation'}
+        title={tooltipMessage || 'Navigate Nested Spaces'}
       >
         <Button colorVariant="accent" variant="outline" disabled={isDisabled}>
           <GearIcon className="sm:hidden" width={16} height={16} />
-          <span className="hidden sm:flex">Open Space Navigation</span>
+          <span className="hidden sm:flex">Navigate Nested Spaces</span>
         </Button>
       </Link>
       <Link

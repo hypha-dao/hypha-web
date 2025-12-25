@@ -126,7 +126,7 @@ export const SelectNavigationAction = ({
           <div className="w-full flex justify-center">
             <TabsList triggerVariant="switch">
               <TabsTrigger variant="switch" value="nested-spaces">
-                Nested spaces
+                Nested Spaces
               </TabsTrigger>
               <TabsTrigger variant="switch" value="space-to-space">
                 Space-to-Space
