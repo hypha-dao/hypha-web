@@ -113,7 +113,7 @@ export function VisibleSpacesList({
                       colorVariant="accent"
                     >
                       <PlusIcon className="w-4 h-4" />
-                      New Space
+                      Add Space
                     </Button>
                   </Link>
                   <Link href={visitSpacePath}>
