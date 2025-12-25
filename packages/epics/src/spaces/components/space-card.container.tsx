@@ -3,8 +3,7 @@
 import { Locale } from '@hypha-platform/i18n';
 import { Space } from '@hypha-platform/core/client';
 import { getDhoPathAgreements } from '../../common';
-import { SpaceCard } from './space-card';
-import Link from 'next/link';
+import { SpaceCardWithDiscoverability } from './space-card-with-discoverability';
 
 type SpaceCardContainerProps = {
   lang: Locale;
@@ -17,6 +16,8 @@ export const SpaceCardContainer = ({
   spaces,
   showExitButton,
 }: SpaceCardContainerProps) => {
+  const getHref = (slug: string) => getDhoPathAgreements(lang, slug);
+
   return (
     <div
       data-testid="member-spaces-container"
@@ -25,28 +26,11 @@ export const SpaceCardContainer = ({
       {spaces.map((space) =>
         space.slug ? (
           <div key={space.id}>
-            <Link
-              href={getDhoPathAgreements(lang, space.slug)}
-              aria-label={`View agreements for ${space.title}`}
-            >
-              <SpaceCard
-                description={space.description || ''}
-                icon={space.logoUrl || ''}
-                leadImage={space.leadImage || ''}
-                members={space.memberCount}
-                agreements={space.documentCount}
-                title={space.title || ''}
-                isSandbox={space.flags?.includes('sandbox') ?? false}
-                isDemo={space.flags?.includes('demo') ?? false}
-                web3SpaceId={space.web3SpaceId as number}
-                configPath={`${getDhoPathAgreements(
-                  lang,
-                  space.slug,
-                )}/space-configuration`}
-                createdAt={space.createdAt}
-                showExitButton={showExitButton}
-              />
-            </Link>
+            <SpaceCardWithDiscoverability
+              space={space}
+              getHref={getHref}
+              isLoading={false}
+            />
           </div>
         ) : null,
       )}
