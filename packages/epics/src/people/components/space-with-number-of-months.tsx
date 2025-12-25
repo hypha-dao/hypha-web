@@ -11,6 +11,7 @@ import {
 } from '@hypha-platform/ui';
 import { DEFAULT_SPACE_AVATAR_IMAGE, Space } from '@hypha-platform/core/client';
 import { useFormContext } from 'react-hook-form';
+import { useFilterSpacesListWithDiscoverability } from '../../spaces/hooks/use-spaces-discoverability-batch';
 
 type SpaceWithMonthsValue = {
   spaceId: number;
@@ -39,34 +40,44 @@ export const SpaceWithNumberOfMonthsField = ({
 
   const { setValue, trigger } = useFormContext();
 
+  const { filteredSpaces } = useFilterSpacesListWithDiscoverability({
+    spaces,
+  });
+  const { filteredSpaces: filteredOrganisationSpaces } =
+    useFilterSpacesListWithDiscoverability({
+      spaces: organisationSpaces,
+    });
+
   useEffect(() => {
     if (value) {
       const found =
-        organisationSpaces.find((s) => s.web3SpaceId === value.spaceId) ||
-        spaces.find((s) => s.web3SpaceId === value.spaceId) ||
+        filteredOrganisationSpaces.find(
+          (s) => s.web3SpaceId === value.spaceId,
+        ) ||
+        filteredSpaces.find((s) => s.web3SpaceId === value.spaceId) ||
         null;
       setSelected(found);
       setMonths(String(value.months ?? ''));
     }
-  }, [value, spaces, organisationSpaces]);
+  }, [value, filteredSpaces, filteredOrganisationSpaces]);
 
   const options = useMemo(() => {
-    if (organisationSpaces.length === 0) {
-      return spaces.map((space) => ({
+    if (filteredOrganisationSpaces.length === 0) {
+      return filteredSpaces.map((space) => ({
         value: String(space.web3SpaceId),
         label: space.title,
         avatarUrl: space.logoUrl,
       }));
     }
-    const organisationOptions = organisationSpaces.map((space) => ({
+    const organisationOptions = filteredOrganisationSpaces.map((space) => ({
       avatarUrl: space.logoUrl,
       value: String(space.web3SpaceId),
       label: space.title,
     }));
-    const mySpacesOptions = spaces
+    const mySpacesOptions = filteredSpaces
       .filter(
         (space) =>
-          !organisationSpaces.find(
+          !filteredOrganisationSpaces.find(
             (orgSpace) => space.web3SpaceId === orgSpace.web3SpaceId,
           ),
       )
@@ -97,7 +108,7 @@ export const SpaceWithNumberOfMonthsField = ({
       );
     }
     return result;
-  }, [spaces, organisationSpaces]);
+  }, [filteredSpaces, filteredOrganisationSpaces]);
 
   const handleSpaceChange = useCallback(
     (selectedId: string | null) => {
@@ -123,7 +134,11 @@ export const SpaceWithNumberOfMonthsField = ({
 
       const selectedWeb3Id = Number(selectedId);
       const foundSpace =
-        spaces.find((s) => s.web3SpaceId === selectedWeb3Id) || null;
+        filteredOrganisationSpaces.find(
+          (s) => s.web3SpaceId === selectedWeb3Id,
+        ) ||
+        filteredSpaces.find((s) => s.web3SpaceId === selectedWeb3Id) ||
+        null;
 
       setSelected(foundSpace);
 

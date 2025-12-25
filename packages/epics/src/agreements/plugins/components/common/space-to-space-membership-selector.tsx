@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Image, Combobox } from '@hypha-platform/ui';
 import { Space, Person } from '@hypha-platform/core/client';
+import { useFilterSpacesListWithDiscoverability } from '@hypha-platform/epics';
 
 type SpaceToSpaceMembershipSelectorProps = {
   memberOptions?: Person[];
@@ -19,14 +20,18 @@ export const SpaceToSpaceMembershipSelector = ({
 }: SpaceToSpaceMembershipSelectorProps) => {
   const [selected, setSelected] = useState<Person | Space | null>(null);
 
+  const { filteredSpaces } = useFilterSpacesListWithDiscoverability({
+    spaces: spaceOptions,
+  });
+
   useEffect(() => {
     if (value) {
       const foundMember = memberOptions.find((r) => r.address === value);
-      const foundSpace = spaceOptions.find((s) => s.address === value);
+      const foundSpace = filteredSpaces.find((s) => s.address === value);
       setSelected(foundMember || foundSpace || null);
     }
-  }, [value, memberOptions, spaceOptions]);
-  const isSpace = spaceOptions.length > 0 && memberOptions.length === 0;
+  }, [value, memberOptions, filteredSpaces]);
+  const isSpace = filteredSpaces.length > 0 && memberOptions.length === 0;
   const placeholder = isSpace ? 'Find Space' : 'Find Member';
   const title = isSpace ? 'Space to join' : 'Delegated Voting Member';
 
@@ -39,7 +44,7 @@ export const SpaceToSpaceMembershipSelector = ({
       address: member.address,
     }));
 
-    const spaceItems = spaceOptions.map((space) => ({
+    const spaceItems = filteredSpaces.map((space) => ({
       value: String(space.address),
       label: space.title,
       searchText: space.title.toLowerCase(),
@@ -48,13 +53,13 @@ export const SpaceToSpaceMembershipSelector = ({
     }));
 
     return [...spaceItems, ...memberItems];
-  }, [memberOptions, spaceOptions]);
+  }, [memberOptions, filteredSpaces]);
 
   const handleChange = useCallback(
     (value: string) => {
       const found = options.find((option) => option.value === value);
       if (found) {
-        const source = [...memberOptions, ...spaceOptions];
+        const source = [...memberOptions, ...filteredSpaces];
         const originalItem = source.find(
           (item) => item.address === found.value,
         );
@@ -65,7 +70,7 @@ export const SpaceToSpaceMembershipSelector = ({
         onChange?.(null);
       }
     },
-    [options, memberOptions, spaceOptions, onChange],
+    [options, memberOptions, filteredSpaces, onChange],
   );
 
   return (
