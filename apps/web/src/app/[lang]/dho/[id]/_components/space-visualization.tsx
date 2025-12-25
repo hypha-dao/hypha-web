@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
+import { useTheme } from 'next-themes';
 import { DEFAULT_SPACE_AVATAR_IMAGE } from '@hypha-platform/core/client';
 import type { VisibleSpace } from './types';
 
@@ -38,9 +39,17 @@ export function SpaceVisualization({
   currentSpaceId,
   onVisibleSpacesChange,
 }: Props) {
+  const { resolvedTheme } = useTheme();
   const svgRef = useRef<SVGSVGElement | null>(null);
   const previousVisibleSpacesRef = useRef<string>('');
   const onVisibleSpacesChangeRef = useRef(onVisibleSpacesChange);
+  const focusRef = useRef<d3.HierarchyNode<SpaceNode> | null>(null);
+  const themeRef = useRef(resolvedTheme);
+  const savedFocusIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    themeRef.current = resolvedTheme;
+  }, [resolvedTheme]);
 
   useEffect(() => {
     onVisibleSpacesChangeRef.current = onVisibleSpacesChange;
@@ -51,7 +60,28 @@ export function SpaceVisualization({
   }, [data, currentSpaceId]);
 
   useEffect(() => {
+    if (!svgRef.current || !focusRef.current) return;
+
+    const getOrbitFillColor = () =>
+      themeRef.current === 'dark' ? '#2A2A2A' : '#E5E5E5';
+
+    const svg = d3.select(svgRef.current);
+    const orbits = svg.selectAll<SVGCircleElement, SpaceHierarchyNode>(
+      'circle.orbit',
+    );
+
+    orbits.each(function (d: SpaceHierarchyNode) {
+      if (d === focusRef.current) {
+        d3.select(this).style('fill', getOrbitFillColor());
+      }
+    });
+  }, [resolvedTheme]);
+
+  useEffect(() => {
     if (!svgRef.current) return;
+
+    const getOrbitFillColor = () =>
+      themeRef.current === 'dark' ? '#2A2A2A' : '#E5E5E5';
 
     const { WIDTH: width, HEIGHT: height } = VISUALIZATION_CONFIG;
 
@@ -96,28 +126,52 @@ export function SpaceVisualization({
       });
     });
 
-    let focus = root;
-    if (currentSpaceId) {
-      const findNodeById = (
-        node: SpaceHierarchyNode,
-        id: number,
-      ): SpaceHierarchyNode | null => {
-        if (node.data.id === id) {
-          return node;
+    const findNodeById = (
+      node: SpaceHierarchyNode,
+      id: number,
+    ): SpaceHierarchyNode | null => {
+      if (node.data.id === id) {
+        return node;
+      }
+      if (node.children) {
+        for (const child of node.children) {
+          const found = findNodeById(child as SpaceHierarchyNode, id);
+          if (found) return found;
         }
-        if (node.children) {
-          for (const child of node.children) {
-            const found = findNodeById(child as SpaceHierarchyNode, id);
-            if (found) return found;
+      }
+      return null;
+    };
+
+    let focus = root;
+
+    if (currentSpaceId && currentSpaceId !== savedFocusIdRef.current) {
+      const currentSpaceNode = findNodeById(root, currentSpaceId);
+      if (currentSpaceNode) {
+        focus = currentSpaceNode;
+        savedFocusIdRef.current = null;
+      }
+    } else if (savedFocusIdRef.current) {
+      const savedNode = findNodeById(root, savedFocusIdRef.current);
+      if (savedNode) {
+        focus = savedNode;
+      } else {
+        savedFocusIdRef.current = null;
+        if (currentSpaceId) {
+          const currentSpaceNode = findNodeById(root, currentSpaceId);
+          if (currentSpaceNode) {
+            focus = currentSpaceNode;
           }
         }
-        return null;
-      };
+      }
+    } else if (currentSpaceId) {
       const currentSpaceNode = findNodeById(root, currentSpaceId);
       if (currentSpaceNode) {
         focus = currentSpaceNode;
       }
     }
+
+    focusRef.current = focus;
+    savedFocusIdRef.current = focus.data.id;
     let view: [number, number, number] = [focus.x!, focus.y!, focus.r! * 2];
 
     const svg = d3
@@ -134,7 +188,9 @@ export function SpaceVisualization({
       .data(root.descendants() as SpaceHierarchyNode[])
       .join('circle')
       .attr('class', 'orbit')
-      .attr('fill', 'transparent')
+      .style('fill', (d: SpaceHierarchyNode) =>
+        d === focus ? getOrbitFillColor() : 'transparent',
+      )
       .attr('stroke', '#8F8F8F')
       .attr('stroke-width', 1.2)
       .style('pointer-events', 'all')
@@ -256,6 +312,8 @@ export function SpaceVisualization({
 
     function zoom(target: SpaceHierarchyNode) {
       focus = target;
+      focusRef.current = focus;
+      savedFocusIdRef.current = focus.data.id;
 
       const transition = svg
         .transition()
@@ -282,6 +340,13 @@ export function SpaceVisualization({
             (this as SVGElement).style.display = 'none';
           }
         });
+
+      orbits
+        .transition()
+        .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
+        .style('fill', (d: SpaceHierarchyNode) =>
+          d === focus ? getOrbitFillColor() : 'transparent',
+        );
 
       logos.each(function (d: SpaceHierarchyNode) {
         d3.select(this)
@@ -311,7 +376,10 @@ export function SpaceVisualization({
           (d: SpaceHierarchyNode) =>
             `translate(${(d.x! - v[0]) * k}, ${(d.y! - v[1]) * k})`,
         )
-        .attr('r', (d: SpaceHierarchyNode) => d.r! * k);
+        .attr('r', (d: SpaceHierarchyNode) => d.r! * k)
+        .style('fill', (d: SpaceHierarchyNode) =>
+          d === focus ? getOrbitFillColor() : 'transparent',
+        );
 
       logos
         .attr(
@@ -337,7 +405,7 @@ export function SpaceVisualization({
             .style('filter', d === focus ? 'none' : 'grayscale(100%)');
         });
     }
-  }, [data, currentSpaceId]);
+  }, [data, currentSpaceId, resolvedTheme]);
 
   return (
     <svg
