@@ -152,13 +152,20 @@ export function SpaceVisualization({
       .attr('class', 'logo')
       .style('pointer-events', 'none');
 
-    logos.append('circle').attr('fill', '#000');
+    logos
+      .append('circle')
+      .attr('fill', (d: SpaceHierarchyNode) =>
+        d === focus ? '#808080' : '#000',
+      );
 
     logos
       .append('image')
       .attr('href', (d) => d.data.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE)
       .attr('preserveAspectRatio', 'xMidYMid slice')
-      .attr('alt', (d) => `${d.data.name} logo`);
+      .attr('alt', (d) => `${d.data.name} logo`)
+      .style('filter', (d: SpaceHierarchyNode) =>
+        d === focus ? 'none' : 'grayscale(100%)',
+      );
 
     svg.on('click', () => {
       if (focus.parent) zoom(focus.parent);
@@ -234,6 +241,15 @@ export function SpaceVisualization({
       isVisible(d) ? 'block' : 'none',
     );
 
+    logos.each(function (d: SpaceHierarchyNode) {
+      d3.select(this)
+        .select('circle')
+        .attr('fill', d === focus ? '#808080' : '#000');
+      d3.select(this)
+        .select('image')
+        .style('filter', d === focus ? 'none' : 'grayscale(100%)');
+    });
+
     zoomTo(view);
     previousVisibleSpacesRef.current = '';
     notifyVisibleSpaces(focus);
@@ -254,7 +270,7 @@ export function SpaceVisualization({
         });
 
       transition
-        .selectAll<SVGElement, SpaceHierarchyNode>('circle, g.logo')
+        .selectAll<SVGElement, SpaceHierarchyNode>('circle.orbit, g.logo')
         .style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0))
         .on('start', function (d: SpaceHierarchyNode) {
           if (isVisible(d) && this instanceof SVGElement) {
@@ -266,6 +282,19 @@ export function SpaceVisualization({
             (this as SVGElement).style.display = 'none';
           }
         });
+
+      logos.each(function (d: SpaceHierarchyNode) {
+        d3.select(this)
+          .select('circle')
+          .transition()
+          .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
+          .attr('fill', d === focus ? '#808080' : '#000');
+        d3.select(this)
+          .select('image')
+          .transition()
+          .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
+          .style('filter', d === focus ? 'none' : 'grayscale(100%)');
+      });
 
       transition.on('end', () => {
         notifyVisibleSpaces(focus);
@@ -293,7 +322,10 @@ export function SpaceVisualization({
         .each(function (d: SpaceHierarchyNode) {
           const r = d.r! * k * VISUALIZATION_CONFIG.LOGO_RATIO;
 
-          d3.select(this).select('circle').attr('r', r);
+          d3.select(this)
+            .select('circle')
+            .attr('r', r)
+            .attr('fill', d === focus ? '#808080' : '#000');
 
           d3.select(this)
             .select('image')
@@ -301,7 +333,8 @@ export function SpaceVisualization({
             .attr('y', -r)
             .attr('width', r * 2)
             .attr('height', r * 2)
-            .style('clip-path', `circle(${r}px at ${r}px ${r}px)`);
+            .style('clip-path', `circle(${r}px at ${r}px ${r}px)`)
+            .style('filter', d === focus ? 'none' : 'grayscale(100%)');
         });
     }
   }, [data, currentSpaceId]);
