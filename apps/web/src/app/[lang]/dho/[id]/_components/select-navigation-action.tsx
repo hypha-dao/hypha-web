@@ -12,6 +12,7 @@ import { Space } from '@hypha-platform/core/client';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@hypha-platform/ui';
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Separator } from '@hypha-platform/ui';
+import { useTheme } from 'next-themes';
 import type { VisibleSpace } from './types';
 
 type SelectNavigationActionProps = {
@@ -70,6 +71,7 @@ export const SelectNavigationAction = ({
   lang,
   children,
 }: SelectNavigationActionProps) => {
+  const { resolvedTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('nested-spaces');
   const [visibleSpaces, setVisibleSpaces] = useState<VisibleSpace[]>([]);
   const previousSpacesRef = useRef<string>('');
@@ -121,7 +123,9 @@ export const SelectNavigationAction = ({
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
-          className="w-full bg-primary-foreground p-4 rounded-[6px]"
+          className={`w-full p-4 rounded-[6px] ${
+            resolvedTheme === 'dark' ? 'bg-primary-foreground' : 'bg-neutral-3'
+          }`}
         >
           <div className="w-full flex justify-center">
             <TabsList triggerVariant="switch">
