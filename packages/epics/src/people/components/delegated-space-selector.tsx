@@ -3,6 +3,7 @@
 import { useMemo, useCallback } from 'react';
 import { Image, Combobox } from '@hypha-platform/ui';
 import { Space } from '@hypha-platform/core/client';
+import { useFilterSpacesListWithDiscoverability } from '../../spaces/hooks/use-spaces-discoverability-batch';
 
 type DelegatedSpaceSelectorProps = {
   spaces?: Space[];
@@ -19,15 +20,19 @@ export const DelegatedSpaceSelector = ({
 }: DelegatedSpaceSelectorProps) => {
   const placeholder = 'Find Space';
 
+  const { filteredSpaces } = useFilterSpacesListWithDiscoverability({
+    spaces,
+  });
+
   const spaceOptions = useMemo(
     () =>
-      spaces.map((space) => ({
+      filteredSpaces.map((space) => ({
         value: String(space.web3SpaceId),
         label: space.title,
         searchText: space.title.toLowerCase(),
         avatarUrl: space.logoUrl,
       })),
-    [spaces],
+    [filteredSpaces],
   );
 
   const handleChange = useCallback(
@@ -45,10 +50,12 @@ export const DelegatedSpaceSelector = ({
         return;
       }
 
-      const originalItem = spaces.find((item) => item.web3SpaceId === id);
+      const originalItem = filteredSpaces.find(
+        (item) => item.web3SpaceId === id,
+      );
       onChange?.(originalItem ?? null);
     },
-    [spaces, onChange, readOnly],
+    [filteredSpaces, onChange, readOnly],
   );
 
   return (

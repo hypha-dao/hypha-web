@@ -47,6 +47,7 @@ import {
   ParentSpaceSelector,
   useMemberWeb3SpaceIds,
   useScrollToErrors,
+  useFilterSpacesListWithDiscoverability,
 } from '@hypha-platform/epics';
 import slugify from 'slugify';
 import { cn } from '@hypha-platform/ui-utils';
@@ -225,12 +226,22 @@ export const SpaceForm = ({
   const { spaces: mySpaces, isLoading: isMyLoading } = useSpacesByWeb3Ids(
     web3SpaceIds ?? [],
   );
+
+  const { filteredSpaces: filteredMySpaces } =
+    useFilterSpacesListWithDiscoverability({
+      spaces: mySpaces,
+    });
+  const { filteredSpaces: filteredOrganisationSpaces } =
+    useFilterSpacesListWithDiscoverability({
+      spaces: organisationSpaces ?? [],
+    });
+
   const parentOptions = React.useMemo((): ParentOption[] => {
     if (isOrganisationLoading || isMyLoading) {
       return [];
     }
     const organisationOptions =
-      organisationSpaces
+      filteredOrganisationSpaces
         ?.filter((orgSpace) => (values ? orgSpace.slug !== values.slug : true))
         .map((space) => {
           return {
@@ -239,10 +250,12 @@ export const SpaceForm = ({
             label: space.title,
           };
         }) ?? [];
-    const mySpacesOptions = mySpaces
+    const mySpacesOptions = filteredMySpaces
       .filter(
         (mySpace) =>
-          !organisationSpaces?.find((orgSpace) => mySpace.id === orgSpace.id),
+          !filteredOrganisationSpaces?.find(
+            (orgSpace) => mySpace.id === orgSpace.id,
+          ),
       )
       .map((space) => {
         return {
@@ -271,7 +284,13 @@ export const SpaceForm = ({
       );
     }
     return result;
-  }, [organisationSpaces, isOrganisationLoading, mySpaces, isMyLoading]);
+  }, [
+    filteredOrganisationSpaces,
+    isOrganisationLoading,
+    filteredMySpaces,
+    isMyLoading,
+    values?.slug,
+  ]);
 
   const flags = form.watch('flags');
   const isSandbox = React.useMemo(
