@@ -137,7 +137,7 @@ export function SpaceVisualization({
       .attr('fill', 'transparent')
       .attr('stroke', '#8F8F8F')
       .attr('stroke-width', 1.2)
-      .style('pointer-events', (d) => (d.children ? 'all' : 'none'))
+      .style('pointer-events', 'all')
       .on('click', (event, d) => {
         if (focus !== d) {
           event.stopPropagation();
