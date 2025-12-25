@@ -10,6 +10,7 @@ import {
   Input,
   Avatar,
   AvatarImage,
+  Separator,
 } from '@hypha-platform/ui';
 import { PlusIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
@@ -46,24 +47,86 @@ export function VisibleSpacesList({
 }: VisibleSpacesListProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
+  const { rootSpace, descendantSpaces } = useMemo(() => {
+    const root = visibleSpaces.find((space) => space.root);
+    const descendants = visibleSpaces.filter((space) => !space.root);
+    return { rootSpace: root, descendantSpaces: descendants };
+  }, [visibleSpaces]);
+
   const filteredSpaces = useMemo(() => {
     if (!searchQuery.trim()) {
-      return visibleSpaces;
+      return descendantSpaces;
     }
 
     const query = searchQuery.toLowerCase();
-    return visibleSpaces.filter((space) =>
+    return descendantSpaces.filter((space) =>
       space.name.toLowerCase().includes(query),
     );
-  }, [visibleSpaces, searchQuery]);
+  }, [descendantSpaces, searchQuery]);
 
   const getCreateSpacePath = (spaceId: number, spaceSlug?: string) => {
     if (!spaceSlug) return '#';
     return `/${lang}/dho/${spaceSlug}/space/create`;
   };
 
+  if (!rootSpace) {
+    return null;
+  }
+
+  const rootNestedPath = buildNestedPath(rootSpace, allSpaces);
+  const rootCreateSpacePath = getCreateSpacePath(rootSpace.id, rootSpace.slug);
+  const rootVisitSpacePath = rootSpace.slug
+    ? getDhoPathAgreements(lang, rootSpace.slug)
+    : '#';
+
   return (
     <div className="flex flex-col gap-4">
+      <Card className="p-4">
+        <div className="flex items-center gap-4">
+          <Avatar className="w-12 h-12 flex-shrink-0">
+            <AvatarImage
+              src={rootSpace.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
+              alt={`${rootSpace.name} logo`}
+            />
+          </Avatar>
+
+          <div className="flex-1 min-w-0">
+            <div className="text-base font-medium text-foreground mb-1">
+              {rootSpace.name}
+            </div>
+            <Badge
+              variant="outline"
+              size={1}
+              colorVariant="neutral"
+              className="w-fit"
+            >
+              {rootNestedPath}
+            </Badge>
+          </div>
+
+          <div className="flex gap-2 flex-shrink-0">
+            <Link href={rootCreateSpacePath}>
+              <Button variant="default" size="default" colorVariant="accent">
+                <PlusIcon className="w-4 h-4" />
+                Add Space
+              </Button>
+            </Link>
+            <Link href={rootVisitSpacePath}>
+              <Button
+                colorVariant="neutral"
+                variant="outline"
+                size="default"
+                disabled={rootSpace.id === entrySpaceId}
+              >
+                Visit Space
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </Card>
+
+      <Separator />
+
       <div className="flex gap-2">
         <Input
           placeholder="Search spaces"

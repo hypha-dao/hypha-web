@@ -192,18 +192,23 @@ export function SpaceVisualization({
         },
       ];
 
-      if (focusNode.children) {
-        focusNode.children.forEach((child) => {
-          visibleSpaces.push({
-            id: child.data.id,
-            name: child.data.name,
-            slug: child.data.slug,
-            logoUrl: child.data.logoUrl,
-            parentId: child.parent?.data.id ?? null,
-            root: false,
+      function collectDescendants(node: SpaceHierarchyNode) {
+        if (node.children) {
+          node.children.forEach((child) => {
+            visibleSpaces.push({
+              id: child.data.id,
+              name: child.data.name,
+              slug: child.data.slug,
+              logoUrl: child.data.logoUrl,
+              parentId: child.parent?.data.id ?? null,
+              root: false,
+            });
+            collectDescendants(child as SpaceHierarchyNode);
           });
-        });
+        }
       }
+
+      collectDescendants(focusNode);
 
       return visibleSpaces;
     }
