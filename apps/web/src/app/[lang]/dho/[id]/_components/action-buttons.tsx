@@ -8,7 +8,6 @@ import { cleanPath } from './clean-path';
 import {
   PATH_SELECT_CREATE_ACTION,
   PATH_SELECT_SETTINGS_ACTION,
-  PATH_SELECT_NAVIGATION_ACTION,
 } from '@web/app/constants';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useSpaceMember } from '@hypha-platform/epics';
@@ -45,20 +44,6 @@ export const ActionButtons = ({ web3SpaceId }: ActionButtonsProps) => {
         <Button colorVariant="accent" variant="outline" disabled={isDisabled}>
           <GearIcon className="sm:hidden" width={16} height={16} />
           <span className="hidden sm:flex">Space Settings</span>
-        </Button>
-      </Link>
-      <Link
-        className={isDisabled ? 'cursor-not-allowed' : ''}
-        href={
-          isAuthenticated && (isMember || isDelegate)
-            ? `${cleanPath(pathname)}${PATH_SELECT_NAVIGATION_ACTION}`
-            : {}
-        }
-        title={tooltipMessage || 'Navigate Nested Spaces'}
-      >
-        <Button colorVariant="accent" variant="outline" disabled={isDisabled}>
-          <GearIcon className="sm:hidden" width={16} height={16} />
-          <span className="hidden sm:flex">Navigate Nested Spaces</span>
         </Button>
       </Link>
       <Link
