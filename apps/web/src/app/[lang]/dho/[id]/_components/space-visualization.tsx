@@ -97,32 +97,94 @@ export function SpaceVisualization({
     root.y = 0;
 
     root.eachBefore((d) => {
-      if (!d.children) return;
+      if (!d.children || d.children.length === 0) return;
 
-      const step = (2 * Math.PI) / d.children.length;
       const node = d as SpaceHierarchyNode;
-
       const parentLogoRadius = node.r! * VISUALIZATION_CONFIG.LOGO_RATIO;
+      const children = d.children.map((child) => child as SpaceHierarchyNode);
+      const n = children.length;
 
-      d.children.forEach((child, i) => {
-        const angle = i * step;
-        const childNode = child as SpaceHierarchyNode;
+      const calculateMinOrbitRadius = (childRadii: number[]): number => {
+        const maxChildRadius = Math.max(...childRadii);
+        const baseMinOrbitRadius = parentLogoRadius + maxChildRadius;
 
-        let minOrbitRadius = parentLogoRadius + childNode.r!;
-        let maxOrbit = node.r! - childNode.r!;
+        if (n <= 1) {
+          return baseMinOrbitRadius;
+        }
+
+        const minOrbitRadiusForSpacing = maxChildRadius / Math.sin(Math.PI / n);
+
+        return Math.max(baseMinOrbitRadius, minOrbitRadiusForSpacing);
+      };
+
+      children.forEach((childNode) => {
+        const minOrbitRadius = parentLogoRadius + childNode.r!;
+        const maxOrbit = node.r! - childNode.r!;
 
         if (minOrbitRadius > maxOrbit) {
           childNode.r = (node.r! - parentLogoRadius) / 2;
-          minOrbitRadius = parentLogoRadius + childNode.r!;
-          maxOrbit = node.r! - childNode.r!;
+        }
+      });
+
+      const childRadii = children.map((c) => c.r!);
+      let minOrbitRadius = calculateMinOrbitRadius(childRadii);
+      let maxOrbit = node.r! - Math.max(...childRadii);
+
+      if (minOrbitRadius > maxOrbit) {
+        let minChildRadius = 0;
+        let maxChildRadius = Math.max(...childRadii);
+        let bestChildRadius = maxChildRadius;
+        const tolerance = 0.1;
+
+        while (maxChildRadius - minChildRadius > tolerance) {
+          const testChildRadius = (minChildRadius + maxChildRadius) / 2;
+          const testRadii = children.map(() => testChildRadius);
+          const testMinOrbitRadius = calculateMinOrbitRadius(testRadii);
+          const testMaxOrbit = node.r! - testChildRadius;
+
+          if (testMinOrbitRadius <= testMaxOrbit) {
+            bestChildRadius = testChildRadius;
+            minChildRadius = testChildRadius;
+          } else {
+            maxChildRadius = testChildRadius;
+          }
         }
 
-        const availableOrbit = maxOrbit - minOrbitRadius;
-        const orbitRadius =
-          minOrbitRadius + availableOrbit * VISUALIZATION_CONFIG.ORBIT_RATIO;
+        children.forEach((childNode) => {
+          childNode.r = bestChildRadius;
+        });
 
-        child.x = d.x! + Math.cos(angle) * orbitRadius;
-        child.y = d.y! + Math.sin(angle) * orbitRadius;
+        const adjustedRadii = children.map((c) => c.r!);
+        minOrbitRadius = calculateMinOrbitRadius(adjustedRadii);
+      }
+
+      const maxChildRadius = Math.max(...children.map((c) => c.r!));
+      maxOrbit = node.r! - maxChildRadius;
+
+      const availableOrbit = Math.max(0, maxOrbit - minOrbitRadius);
+      let orbitRadius =
+        minOrbitRadius + availableOrbit * VISUALIZATION_CONFIG.ORBIT_RATIO;
+
+      if (n > 1) {
+        const minDistanceBetweenCenters =
+          2 * orbitRadius * Math.sin(Math.PI / n);
+        const requiredDistance = 2 * maxChildRadius;
+
+        if (minDistanceBetweenCenters < requiredDistance) {
+          const safeOrbitRadius = maxChildRadius / Math.sin(Math.PI / n);
+          orbitRadius = Math.max(
+            safeOrbitRadius,
+            parentLogoRadius + maxChildRadius,
+            orbitRadius,
+          );
+        }
+      }
+
+      const step = (2 * Math.PI) / n;
+      children.forEach((childNode, i) => {
+        const angle = i * step;
+        childNode.x = d.x! + Math.cos(angle) * orbitRadius;
+        childNode.y = d.y! + Math.sin(angle) * orbitRadius;
       });
     });
 
