@@ -32,6 +32,8 @@ const VISUALIZATION_CONFIG = {
   ZOOM_DURATION: 800,
   WIDTH: 900,
   HEIGHT: 900,
+  LOGO_STROKE_WIDTH: 20,
+  STROKE_WIDTH_SCALE: 0.7,
 } as const;
 
 export function SpaceVisualization({
@@ -76,13 +78,22 @@ export function SpaceVisualization({
       }
     });
 
+    const getStrokeWidth = (depth: number): number => {
+      return (
+        VISUALIZATION_CONFIG.LOGO_STROKE_WIDTH *
+        Math.pow(VISUALIZATION_CONFIG.STROKE_WIDTH_SCALE, depth)
+      );
+    };
+
     const logos = svg.selectAll<SVGGElement, SpaceHierarchyNode>('g.logo');
     logos.each(function (d: SpaceHierarchyNode) {
+      const circle = d3.select(this).select('circle');
       if (d === focusRef.current) {
-        d3.select(this)
-          .select('circle')
-          .attr('fill', getSelectedSpaceFillColor());
+        circle.attr('fill', getSelectedSpaceFillColor());
       }
+      circle
+        .attr('stroke', getSelectedSpaceFillColor())
+        .attr('stroke-width', getStrokeWidth(d.depth));
     });
   }, [resolvedTheme]);
 
@@ -91,6 +102,13 @@ export function SpaceVisualization({
 
     const getSelectedSpaceFillColor = () =>
       themeRef.current === 'dark' ? '#1a1a1a' : '#ffffff';
+
+    const getStrokeWidth = (depth: number): number => {
+      return (
+        VISUALIZATION_CONFIG.LOGO_STROKE_WIDTH *
+        Math.pow(VISUALIZATION_CONFIG.STROKE_WIDTH_SCALE, depth)
+      );
+    };
 
     const { WIDTH: width, HEIGHT: height } = VISUALIZATION_CONFIG;
 
@@ -110,33 +128,55 @@ export function SpaceVisualization({
 
       const node = d as SpaceHierarchyNode;
       const parentLogoRadius = node.r! * VISUALIZATION_CONFIG.LOGO_RATIO;
+      const parentStrokeWidth = getStrokeWidth(node.depth);
+      const parentLogoRadiusWithStroke =
+        parentLogoRadius + parentStrokeWidth / 2;
       const children = d.children.map((child) => child as SpaceHierarchyNode);
       const n = children.length;
 
-      const calculateMinOrbitRadius = (childRadii: number[]): number => {
-        const maxChildRadius = Math.max(...childRadii);
-        const baseMinOrbitRadius = parentLogoRadius + maxChildRadius;
+      const calculateMinOrbitRadius = (
+        childRadii: number[],
+        childNodes: SpaceHierarchyNode[],
+      ): number => {
+        let maxChildRadiusWithStroke = 0;
+        childRadii.forEach((radius, index) => {
+          const childNode = childNodes[index];
+          if (childNode) {
+            const childStrokeWidth = getStrokeWidth(childNode.depth);
+            const childRadiusWithStroke = radius + childStrokeWidth / 2;
+            maxChildRadiusWithStroke = Math.max(
+              maxChildRadiusWithStroke,
+              childRadiusWithStroke,
+            );
+          }
+        });
+        const baseMinOrbitRadius =
+          parentLogoRadiusWithStroke + maxChildRadiusWithStroke;
 
         if (n <= 1) {
           return baseMinOrbitRadius;
         }
 
-        const minOrbitRadiusForSpacing = maxChildRadius / Math.sin(Math.PI / n);
+        const minOrbitRadiusForSpacing =
+          maxChildRadiusWithStroke / Math.sin(Math.PI / n);
 
         return Math.max(baseMinOrbitRadius, minOrbitRadiusForSpacing);
       };
 
       children.forEach((childNode) => {
-        const minOrbitRadius = parentLogoRadius + childNode.r!;
+        const childStrokeWidth = getStrokeWidth(childNode.depth);
+        const childRadiusWithStroke = childNode.r! + childStrokeWidth / 2;
+        const minOrbitRadius =
+          parentLogoRadiusWithStroke + childRadiusWithStroke;
         const maxOrbit = node.r! - childNode.r!;
 
         if (minOrbitRadius > maxOrbit) {
-          childNode.r = (node.r! - parentLogoRadius) / 2;
+          childNode.r = (node.r! - parentLogoRadiusWithStroke) / 2;
         }
       });
 
       const childRadii = children.map((c) => c.r!);
-      let minOrbitRadius = calculateMinOrbitRadius(childRadii);
+      let minOrbitRadius = calculateMinOrbitRadius(childRadii, children);
       let maxOrbit = node.r! - Math.max(...childRadii);
 
       if (minOrbitRadius > maxOrbit) {
@@ -148,7 +188,10 @@ export function SpaceVisualization({
         while (maxChildRadius - minChildRadius > tolerance) {
           const testChildRadius = (minChildRadius + maxChildRadius) / 2;
           const testRadii = children.map(() => testChildRadius);
-          const testMinOrbitRadius = calculateMinOrbitRadius(testRadii);
+          const testMinOrbitRadius = calculateMinOrbitRadius(
+            testRadii,
+            children,
+          );
           const testMaxOrbit = node.r! - testChildRadius;
 
           if (testMinOrbitRadius <= testMaxOrbit) {
@@ -164,7 +207,7 @@ export function SpaceVisualization({
         });
 
         const adjustedRadii = children.map((c) => c.r!);
-        minOrbitRadius = calculateMinOrbitRadius(adjustedRadii);
+        minOrbitRadius = calculateMinOrbitRadius(adjustedRadii, children);
       }
 
       const maxChildRadius = Math.max(...children.map((c) => c.r!));
@@ -180,10 +223,20 @@ export function SpaceVisualization({
         const requiredDistance = 2 * maxChildRadius;
 
         if (minDistanceBetweenCenters < requiredDistance) {
-          const safeOrbitRadius = maxChildRadius / Math.sin(Math.PI / n);
+          let maxChildRadiusWithStroke = 0;
+          children.forEach((childNode) => {
+            const childStrokeWidth = getStrokeWidth(childNode.depth);
+            const childRadiusWithStroke = childNode.r! + childStrokeWidth / 2;
+            maxChildRadiusWithStroke = Math.max(
+              maxChildRadiusWithStroke,
+              childRadiusWithStroke,
+            );
+          });
+          const safeOrbitRadius =
+            maxChildRadiusWithStroke / Math.sin(Math.PI / n);
           orbitRadius = Math.max(
             safeOrbitRadius,
-            parentLogoRadius + maxChildRadius,
+            parentLogoRadiusWithStroke + maxChildRadiusWithStroke,
             orbitRadius,
           );
         }
@@ -283,7 +336,9 @@ export function SpaceVisualization({
       .append('circle')
       .attr('fill', (d: SpaceHierarchyNode) =>
         d === focus ? getSelectedSpaceFillColor() : '#000',
-      );
+      )
+      .attr('stroke', getSelectedSpaceFillColor())
+      .attr('stroke-width', (d: SpaceHierarchyNode) => getStrokeWidth(d.depth));
 
     logos
       .append('image')
@@ -371,7 +426,9 @@ export function SpaceVisualization({
     logos.each(function (d: SpaceHierarchyNode) {
       d3.select(this)
         .select('circle')
-        .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000');
+        .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000')
+        .attr('stroke', getSelectedSpaceFillColor())
+        .attr('stroke-width', getStrokeWidth(d.depth));
       d3.select(this)
         .select('image')
         .style('filter', d === focus ? 'none' : 'grayscale(100%)');
@@ -424,7 +481,9 @@ export function SpaceVisualization({
           .select('circle')
           .transition()
           .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
-          .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000');
+          .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000')
+          .attr('stroke', getSelectedSpaceFillColor())
+          .attr('stroke-width', getStrokeWidth(d.depth));
         d3.select(this)
           .select('image')
           .transition()
@@ -464,7 +523,9 @@ export function SpaceVisualization({
           d3.select(this)
             .select('circle')
             .attr('r', r)
-            .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000');
+            .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000')
+            .attr('stroke', getSelectedSpaceFillColor())
+            .attr('stroke-width', getStrokeWidth(d.depth));
 
           d3.select(this)
             .select('image')
