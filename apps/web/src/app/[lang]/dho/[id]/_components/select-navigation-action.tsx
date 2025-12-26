@@ -112,8 +112,8 @@ export const SelectNavigationAction = ({
 
   return (
     <SelectAction
-      title="Space Visualization"
-      content="Explore how your spaces relate to each other in a single interactive view. Use the map to zoom into nested spaces, see connections between spaces, and follow value flows across your organisation."
+      title="Space Navigation"
+      content="Navigate all your spaces in a single interactive map to see how they connect to each other. Easily visit nested spaces, explore space-to-space memberships, and follow value flows across your direct ecosystem."
       actions={[]}
       isLoading={isLoading}
     >
