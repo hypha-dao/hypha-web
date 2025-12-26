@@ -365,8 +365,27 @@ export function SpaceVisualization({
       return false;
     }
 
+    function isDescendantOfOrSelf(
+      node: SpaceHierarchyNode,
+      ancestor: SpaceHierarchyNode,
+    ): boolean {
+      if (node === ancestor) return true;
+
+      let current = node.parent;
+      while (current) {
+        if (current === ancestor) return true;
+        current = current.parent;
+      }
+      return false;
+    }
+
     function isVisible(d: SpaceHierarchyNode): boolean {
-      return d === focus || isDescendantOf(d, focus);
+      if (!focus) return false;
+
+      if (focus.parent) {
+        return isDescendantOfOrSelf(d, focus.parent);
+      }
+      return true;
     }
 
     function getVisibleSpaces(focusNode: SpaceHierarchyNode): VisibleSpace[] {
