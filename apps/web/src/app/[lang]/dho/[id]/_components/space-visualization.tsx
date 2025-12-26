@@ -62,8 +62,8 @@ export function SpaceVisualization({
   useEffect(() => {
     if (!svgRef.current || !focusRef.current) return;
 
-    const getOrbitFillColor = () =>
-      themeRef.current === 'dark' ? '#2A2A2A' : '#E5E5E5';
+    const getSelectedSpaceFillColor = () =>
+      themeRef.current === 'dark' ? '#1a1a1a' : '#ffffff';
 
     const svg = d3.select(svgRef.current);
     const orbits = svg.selectAll<SVGCircleElement, SpaceHierarchyNode>(
@@ -72,7 +72,16 @@ export function SpaceVisualization({
 
     orbits.each(function (d: SpaceHierarchyNode) {
       if (d === focusRef.current) {
-        d3.select(this).style('fill', getOrbitFillColor());
+        d3.select(this).style('fill', getSelectedSpaceFillColor());
+      }
+    });
+
+    const logos = svg.selectAll<SVGGElement, SpaceHierarchyNode>('g.logo');
+    logos.each(function (d: SpaceHierarchyNode) {
+      if (d === focusRef.current) {
+        d3.select(this)
+          .select('circle')
+          .attr('fill', getSelectedSpaceFillColor());
       }
     });
   }, [resolvedTheme]);
@@ -80,8 +89,8 @@ export function SpaceVisualization({
   useEffect(() => {
     if (!svgRef.current) return;
 
-    const getOrbitFillColor = () =>
-      themeRef.current === 'dark' ? '#2A2A2A' : '#E5E5E5';
+    const getSelectedSpaceFillColor = () =>
+      themeRef.current === 'dark' ? '#1a1a1a' : '#ffffff';
 
     const { WIDTH: width, HEIGHT: height } = VISUALIZATION_CONFIG;
 
@@ -251,7 +260,7 @@ export function SpaceVisualization({
       .join('circle')
       .attr('class', 'orbit')
       .style('fill', (d: SpaceHierarchyNode) =>
-        d === focus ? getOrbitFillColor() : 'transparent',
+        d === focus ? getSelectedSpaceFillColor() : 'transparent',
       )
       .attr('stroke', '#8F8F8F')
       .attr('stroke-width', 1.2)
@@ -273,7 +282,7 @@ export function SpaceVisualization({
     logos
       .append('circle')
       .attr('fill', (d: SpaceHierarchyNode) =>
-        d === focus ? '#808080' : '#000',
+        d === focus ? getSelectedSpaceFillColor() : '#000',
       );
 
     logos
@@ -362,7 +371,7 @@ export function SpaceVisualization({
     logos.each(function (d: SpaceHierarchyNode) {
       d3.select(this)
         .select('circle')
-        .attr('fill', d === focus ? '#808080' : '#000');
+        .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000');
       d3.select(this)
         .select('image')
         .style('filter', d === focus ? 'none' : 'grayscale(100%)');
@@ -407,7 +416,7 @@ export function SpaceVisualization({
         .transition()
         .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
         .style('fill', (d: SpaceHierarchyNode) =>
-          d === focus ? getOrbitFillColor() : 'transparent',
+          d === focus ? getSelectedSpaceFillColor() : 'transparent',
         );
 
       logos.each(function (d: SpaceHierarchyNode) {
@@ -415,7 +424,7 @@ export function SpaceVisualization({
           .select('circle')
           .transition()
           .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
-          .attr('fill', d === focus ? '#808080' : '#000');
+          .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000');
         d3.select(this)
           .select('image')
           .transition()
@@ -440,7 +449,7 @@ export function SpaceVisualization({
         )
         .attr('r', (d: SpaceHierarchyNode) => d.r! * k)
         .style('fill', (d: SpaceHierarchyNode) =>
-          d === focus ? getOrbitFillColor() : 'transparent',
+          d === focus ? getSelectedSpaceFillColor() : 'transparent',
         );
 
       logos
@@ -455,7 +464,7 @@ export function SpaceVisualization({
           d3.select(this)
             .select('circle')
             .attr('r', r)
-            .attr('fill', d === focus ? '#808080' : '#000');
+            .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000');
 
           d3.select(this)
             .select('image')
