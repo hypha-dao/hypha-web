@@ -82,6 +82,32 @@
                                                                                            "production-quick"
                                                                                        ]
                                                                        }
-                                                       }
+                                                       },
+                    "e2e-production-create-contribution":  {
+                                                               "outputs":  [
+                                                                               "{workspaceRoot}/apps/web-e2e/playwright-report-production"
+                                                                           ],
+                                                               "executor":  "@nx/playwright:playwright",
+                                                               "options":  {
+                                                                               "config":  "apps/web-e2e/playwright.production.config.ts",
+                                                                               "grep": "should propose a contribution with title and description",
+                                                                               "project":  [
+                                                                                               "production-quick"
+                                                                                           ]
+                                                                           }
+                                                           },
+                    "e2e-production-create-expense":  {
+                                                          "outputs":  [
+                                                                          "{workspaceRoot}/apps/web-e2e/playwright-report-production"
+                                                                      ],
+                                                          "executor":  "@nx/playwright:playwright",
+                                                          "options":  {
+                                                                          "config":  "apps/web-e2e/playwright.production.config.ts",
+                                                                          "grep": "should create an expense proposal with title and description",
+                                                                          "project":  [
+                                                                                          "production-quick"
+                                                                                      ]
+                                                                      }
+                                                      }
                 }
 }
