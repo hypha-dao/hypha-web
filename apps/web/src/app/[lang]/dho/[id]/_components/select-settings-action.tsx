@@ -44,12 +44,11 @@ export const SelectSettingsAction = ({
     },
     {
       group: 'Overview',
-      title: 'Add Space (Under Maintenance)',
+      title: 'Add Space',
       description:
         'Create a new space within your organisation for activities, teams, or projects.',
       href: 'space/create',
       icon: <PlusCircledIcon />,
-      // No baseTab - this is an aside route, not a tab route
     },
     {
       group: 'Overview',
