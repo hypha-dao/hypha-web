@@ -4,10 +4,11 @@ import { FC } from 'react';
 import { Text } from '@radix-ui/themes';
 import { Coherence } from '../types';
 import { useSignalsSection } from '../hooks';
-import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui';
+import { Button, SectionFilter, SectionLoadMore } from '@hypha-platform/ui';
 import { Empty } from '../../common';
 import { SignalGridContainer } from './signal-grid.container';
 import { DirectionType } from '@hypha-platform/core/client';
+import { RocketIcon } from '@radix-ui/react-icons';
 
 type SignalSectionProps = {
   signals: Coherence[];
@@ -48,7 +49,12 @@ export const SignalSection: FC<SignalSectionProps> = ({
         searchPlaceholder="Search documents"
         onChangeSearch={onUpdateSearch}
         inlineLabel={true}
-      ></SectionFilter>
+      >
+        <Button variant="ghost" colorVariant="accent">
+          <RocketIcon />
+          Improve AI signals
+        </Button>
+      </SectionFilter>
 
       {pagination?.totalPages === 0 ? (
         <Empty>

@@ -13,4 +13,12 @@ export type Coherence = {
   description: string;
   roomId?: string;
   creatorAddress?: `0x${string}`;
+  archived: boolean;
 };
+
+export const COHERENCE_ORDERS = [
+  'mostviews',
+  'mostmessages',
+  'mostrecent',
+] as const;
+export type CoherenceOrder = (typeof COHERENCE_ORDERS)[number];
