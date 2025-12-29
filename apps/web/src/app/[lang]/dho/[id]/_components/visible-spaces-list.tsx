@@ -107,17 +107,15 @@ export function VisibleSpacesList({
           </div>
 
           <div className="flex gap-2 flex-shrink-0 md:flex-shrink-0">
-            <Link href={{}} className="flex-1 md:flex-none cursor-not-allowed">
+            <Link href={rootCreateSpacePath} className="flex-1 md:flex-none">
               <Button
                 variant="default"
                 size="default"
                 colorVariant="accent"
                 className="w-full md:w-auto"
-                disabled={true}
-                title="Under Maintenance"
               >
                 <PlusIcon className="w-4 h-4" />
-                Add Space (Under Maintenance)
+                Add Space
               </Button>
             </Link>
             <Link href={rootVisitSpacePath} className="flex-1 md:flex-none">
@@ -181,20 +179,15 @@ export function VisibleSpacesList({
                 </div>
 
                 <div className="flex gap-2 flex-shrink-0 md:flex-shrink-0">
-                  <Link
-                    href={{}}
-                    className="flex-1 md:flex-none cursor-not-allowed"
-                  >
+                  <Link href={createSpacePath} className="flex-1 md:flex-none">
                     <Button
                       variant="default"
                       size="default"
                       colorVariant="accent"
                       className="w-full md:w-auto"
-                      disabled={true}
-                      title="Under Maintenance"
                     >
                       <PlusIcon className="w-4 h-4" />
-                      Add Space (Under Maintenance)
+                      Add Space
                     </Button>
                   </Link>
                   <Link href={visitSpacePath} className="flex-1 md:flex-none">
