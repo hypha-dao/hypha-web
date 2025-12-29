@@ -84,16 +84,14 @@ export function SpaceCardList({
                 </Button>
               </Link>
               <Link
-                className={!isAuthenticated ? 'cursor-not-allowed' : ''}
-                title={
-                  !isAuthenticated ? 'Please sign in to use this feature.' : ''
-                }
-                href={isAuthenticated ? `/${lang}/my-spaces/create` : {}}
+                className="cursor-not-allowed"
+                title="Under Maintenance"
+                href={{}}
                 scroll={false}
               >
-                <Button disabled={!isAuthenticated} className="gap-2">
+                <Button disabled={true} className="gap-2">
                   <PlusIcon />
-                  Create Space
+                  Create Space (Under Maintenance)
                 </Button>
               </Link>
             </div>

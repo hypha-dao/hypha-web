@@ -54,12 +54,9 @@ export default async function Index(props: PageProps) {
         <div className="flex justify-center">
           <SpaceSearch />
           {mySpaces?.length > 0 ? (
-            <AuthenticatedLinkButton
-              hideInsteadDisabled
-              href={`/${lang}/my-spaces/create`}
-            >
+            <AuthenticatedLinkButton hideInsteadDisabled href="#">
               <PlusIcon />
-              Create Space
+              Create Space (Under Maintenance)
             </AuthenticatedLinkButton>
           ) : null}
         </div>

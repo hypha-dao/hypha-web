@@ -317,14 +317,14 @@ export function ExploreSpaces({
           />
         </div>
         <Link
-          className={!isAuthenticated ? 'cursor-not-allowed' : ''}
-          title={!isAuthenticated ? 'Please sign in to use this feature.' : ''}
-          href={isAuthenticated ? `/${lang}/network/create` : {}}
+          className="cursor-not-allowed"
+          title="Under Maintenance"
+          href={{}}
           scroll={false}
         >
-          <Button disabled={!isAuthenticated} className="ml-2">
+          <Button disabled={true} className="ml-2">
             <PlusIcon />
-            Create Space
+            Create Space (Under Maintenance)
           </Button>
         </Link>
       </div>
