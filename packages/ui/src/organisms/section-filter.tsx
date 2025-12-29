@@ -49,7 +49,7 @@ export const SectionFilter: FC<SectionFilterProps> = ({
         </>
       ) : (
         <>
-          <div className="w-fit h-fit flex flex-col gap-4">
+          <div className="w-full flex flex-col gap-4">
             <div className="flex flex-row w-full">
               <Text className="text-4 capitalize text-nowrap">
                 {label} {count ? <>| {count}</> : null}

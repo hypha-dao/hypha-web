@@ -60,7 +60,7 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
     referenceEntity: 'document',
     referenceId: documentId,
   });
-  const event = !isLoadingEvents && events instanceof Array ? events[0] : null;
+  const event = !isLoadingEvents && Array.isArray(events) ? events[0] : null;
   return (
     <Card className="h-full w-full space-y-5">
       <CardHeader className="p-0 rounded-tl-md rounded-tr-md overflow-hidden h-[150px]">

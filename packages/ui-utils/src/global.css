@@ -145,6 +145,9 @@
 
   /* Warning Colors */
   --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-contrast: var(--color-gray-900);
+  --color-warning-surface: var(--warning-surface);
   --color-warning-1: var(--warning-1);
   --color-warning-2: var(--warning-2);
   --color-warning-3: var(--warning-3);
