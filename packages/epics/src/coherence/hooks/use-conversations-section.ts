@@ -6,10 +6,12 @@ export const useConversationsSection = ({
   conversations,
   firstPageSize = 3,
   pageSize = 3,
+  hideArchived = true,
 }: {
   conversations: Coherence[];
   firstPageSize?: number;
   pageSize?: number;
+  hideArchived?: boolean;
 }) => {
   if (firstPageSize <= 0 || pageSize <= 0) {
     throw new Error('firstPageSize and pageSize must be positive numbers');
@@ -35,9 +37,10 @@ export const useConversationsSection = ({
         ),
       );
     }
+    result = result.filter((conv) => (hideArchived ? !conv.archived : true));
 
     return result;
-  }, [conversations, searchTerm]);
+  }, [conversations, searchTerm, hideArchived]);
 
   const pagination = React.useMemo(() => {
     const total = filteredConversations.length;
