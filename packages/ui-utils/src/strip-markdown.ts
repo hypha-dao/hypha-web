@@ -29,11 +29,11 @@ export const stripMarkdown = (
   }
   // Remove images ![alt](url)
   if (config.images !== false) {
-    output = output.replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1');
+    output = output.replace(/!\[([^\]]*?)\]\([^)]*?\)/g, '$1');
   }
   // Remove links [text](url)
   if (config.links !== false) {
-    output = output.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1');
+    output = output.replace(/\[([^\]]*?)\]\([^)]*?\)/g, '$1');
   }
   // Remove emphasis (bold, italic, strikethrough)
   if (config.emphasis !== false) {
