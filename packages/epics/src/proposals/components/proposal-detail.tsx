@@ -28,6 +28,7 @@ import {
   ProposalBuyHyphaTokensData,
   ProposalDelegatesData,
   MembershipExitData,
+  ProposalTransparencySettingsInfo,
 } from '../../governance';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
 import { ButtonClose, ExpireProposalBanner } from '@hypha-platform/epics';
@@ -36,6 +37,7 @@ import { ProposalActivateSpacesData } from '../../governance/components/proposal
 import { useSpaceDocumentsWithStatuses } from '../../governance';
 import { isPast } from 'date-fns';
 import { useState, useEffect } from 'react';
+import { TransparencyLevel } from '../../spaces/components/transparency-level';
 
 type ProposalDetailProps = ProposalHeadProps & {
   documentId?: number;
@@ -377,6 +379,28 @@ export const ProposalDetail = ({
         <MembershipExitData
           member={proposalDetails?.membershipExitData.member}
           space={proposalDetails?.membershipExitData.space}
+        />
+      ) : null}
+      {proposalDetails?.transparencySettingsData &&
+      (proposalDetails.transparencySettingsData.spaceDiscoverability !==
+        undefined ||
+        proposalDetails.transparencySettingsData.spaceActivityAccess !==
+          undefined) ? (
+        <ProposalTransparencySettingsInfo
+          spaceDiscoverability={
+            proposalDetails.transparencySettingsData.spaceDiscoverability !==
+            undefined
+              ? (proposalDetails.transparencySettingsData
+                  .spaceDiscoverability as TransparencyLevel)
+              : undefined
+          }
+          spaceActivityAccess={
+            proposalDetails.transparencySettingsData.spaceActivityAccess !==
+            undefined
+              ? (proposalDetails.transparencySettingsData
+                  .spaceActivityAccess as TransparencyLevel)
+              : undefined
+          }
         />
       ) : null}
       <FormVoting
