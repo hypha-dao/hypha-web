@@ -82,41 +82,49 @@ export function VisibleSpacesList({
   return (
     <div className="flex flex-col gap-4">
       <Card className="p-4">
-        <div className="flex items-center gap-4">
-          <Avatar className="w-12 h-12 flex-shrink-0">
-            <AvatarImage
-              src={rootSpace.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
-              alt={`${rootSpace.name} logo`}
-            />
-          </Avatar>
+        <div className="flex flex-col md:flex-row md:items-center gap-4">
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            <Avatar className="w-12 h-12 flex-shrink-0">
+              <AvatarImage
+                src={rootSpace.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
+                alt={`${rootSpace.name} logo`}
+              />
+            </Avatar>
 
-          <div className="flex-1 min-w-0">
-            <div className="text-base font-medium text-foreground mb-1">
-              {rootSpace.name}
+            <div className="flex-1 min-w-0">
+              <div className="text-base font-medium text-foreground mb-1">
+                {rootSpace.name}
+              </div>
+              <Badge
+                variant="outline"
+                size={1}
+                colorVariant="neutral"
+                className="w-fit"
+              >
+                {rootNestedPath}
+              </Badge>
             </div>
-            <Badge
-              variant="outline"
-              size={1}
-              colorVariant="neutral"
-              className="w-fit"
-            >
-              {rootNestedPath}
-            </Badge>
           </div>
 
-          <div className="flex gap-2 flex-shrink-0">
-            <Link href={rootCreateSpacePath}>
-              <Button variant="default" size="default" colorVariant="accent">
+          <div className="flex gap-2 flex-shrink-0 md:flex-shrink-0">
+            <Link href={rootCreateSpacePath} className="flex-1 md:flex-none">
+              <Button
+                variant="default"
+                size="default"
+                colorVariant="accent"
+                className="w-full md:w-auto"
+              >
                 <PlusIcon className="w-4 h-4" />
                 Add Space
               </Button>
             </Link>
-            <Link href={rootVisitSpacePath}>
+            <Link href={rootVisitSpacePath} className="flex-1 md:flex-none">
               <Button
                 colorVariant="neutral"
                 variant="outline"
                 size="default"
                 disabled={rootSpace.id === entrySpaceId}
+                className="w-full md:w-auto"
               >
                 Visit Space
               </Button>
@@ -146,45 +154,49 @@ export function VisibleSpacesList({
 
           return (
             <Card key={space.id} className="p-4">
-              <div className="flex items-center gap-4">
-                <Avatar className="w-12 h-12 flex-shrink-0">
-                  <AvatarImage
-                    src={space.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
-                    alt={`${space.name} logo`}
-                  />
-                </Avatar>
+              <div className="flex flex-col md:flex-row md:items-center gap-4">
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <Avatar className="w-12 h-12 flex-shrink-0">
+                    <AvatarImage
+                      src={space.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
+                      alt={`${space.name} logo`}
+                    />
+                  </Avatar>
 
-                <div className="flex-1 min-w-0">
-                  <div className="text-base font-medium text-foreground mb-1">
-                    {space.name}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-base font-medium text-foreground mb-1">
+                      {space.name}
+                    </div>
+                    <Badge
+                      variant="outline"
+                      size={1}
+                      colorVariant="neutral"
+                      className="w-fit"
+                    >
+                      {nestedPath}
+                    </Badge>
                   </div>
-                  <Badge
-                    variant="outline"
-                    size={1}
-                    colorVariant="neutral"
-                    className="w-fit"
-                  >
-                    {nestedPath}
-                  </Badge>
                 </div>
 
-                <div className="flex gap-2 flex-shrink-0">
-                  <Link href={createSpacePath}>
+                <div className="flex gap-2 flex-shrink-0 md:flex-shrink-0">
+                  <Link href={createSpacePath} className="flex-1 md:flex-none">
                     <Button
                       variant="default"
                       size="default"
                       colorVariant="accent"
+                      className="w-full md:w-auto"
                     >
                       <PlusIcon className="w-4 h-4" />
                       Add Space
                     </Button>
                   </Link>
-                  <Link href={visitSpacePath}>
+                  <Link href={visitSpacePath} className="flex-1 md:flex-none">
                     <Button
                       colorVariant="neutral"
                       variant="outline"
                       size="default"
                       disabled={space.id === entrySpaceId}
+                      className="w-full md:w-auto"
                     >
                       Visit Space
                     </Button>
