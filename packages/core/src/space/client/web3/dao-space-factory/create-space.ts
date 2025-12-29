@@ -12,6 +12,8 @@ export type CreateSpaceWeb3Input = {
   votingPowerSource?: bigint;
   exitMethod?: bigint;
   joinMethod?: bigint;
+  access?: bigint;
+  discoverability?: bigint;
 };
 
 export type CreateSpaceWeb3Config = {
@@ -26,6 +28,9 @@ export const mapToCreateSpaceWeb3Input = (
   votingPowerSource: BigInt(d.votingPowerSource ?? 0),
   exitMethod: BigInt(d.exitMethod ?? 0),
   joinMethod: BigInt(d.joinMethod ?? 0),
+  access: d.access !== undefined ? BigInt(d.access) : 2n,
+  discoverability:
+    d.discoverability !== undefined ? BigInt(d.discoverability) : 0n,
 });
 
 export const createSpaceWeb3 = (
@@ -35,6 +40,8 @@ export const createSpaceWeb3 = (
     votingPowerSource = 0n,
     exitMethod = 0n,
     joinMethod = 2n,
+    access = 2n,
+    discoverability = 0n,
   }: CreateSpaceWeb3Input,
   { chain = base.id }: CreateSpaceWeb3Config = {},
 ) => {
@@ -51,6 +58,8 @@ export const createSpaceWeb3 = (
         votingPowerSource,
         exitMethod,
         joinMethod,
+        access,
+        discoverability,
       },
     ] as const,
   };

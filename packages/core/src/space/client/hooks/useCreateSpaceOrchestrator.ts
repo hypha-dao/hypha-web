@@ -207,12 +207,31 @@ export const useCreateSpaceOrchestrator = ({
         }
 
         startTask('CREATE_WEB3_SPACE');
+
+        const flags = (arg as any).flags ?? [];
+        const isSandbox = flags.includes('sandbox');
+        const isDemo = flags.includes('demo');
+        const isLive = !isDemo && !isSandbox;
+
+        let discoverability: number;
+        if (isSandbox) {
+          discoverability = 3;
+        } else if (isDemo) {
+          discoverability = 1;
+        } else {
+          discoverability = 0;
+        }
+
+        const access = 2;
+
         const inputCreateSpaceWeb3 = schemaCreateSpaceWeb3.parse({
           quorum: 50,
           unity: 80,
           votingPowerSource: 2,
           joinMethod: 2,
           exitMethod: 0,
+          access,
+          discoverability,
         });
 
         const txHash = await web3.createSpace(inputCreateSpaceWeb3);

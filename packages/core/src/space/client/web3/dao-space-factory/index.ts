@@ -25,3 +25,4 @@ export * from './get-space-min-proposal-duration';
 export * from './get-voice-tokens-voting-power';
 export * from './get-delegators';
 export * from './remove-member';
+export * from './get-space-visibility';

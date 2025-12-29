@@ -53,6 +53,8 @@ const createSpaceWeb3Props = {
   votingPowerSource: z.number().min(0).max(100).optional(),
   joinMethod: z.number().min(0).max(100).optional(),
   exitMethod: z.number().min(0).max(100).optional(),
+  access: z.number().int().min(0).max(3).optional(),
+  discoverability: z.number().int().min(0).max(3).optional(),
 };
 export const schemaCreateSpaceWeb3 = z.object(createSpaceWeb3Props);
 
