@@ -50,7 +50,7 @@ export function SpaceCardWithDiscoverability({
           isDemo={space.flags?.includes('demo') ?? false}
           web3SpaceId={space.web3SpaceId as number}
           configPath={`${getHref(space.slug).replace(
-            /\/*$/,
+            /\/+$/,
             '',
           )}/space-configuration`}
           createdAt={space.createdAt}
@@ -80,7 +80,7 @@ export function SpaceCardWithDiscoverability({
           isDemo={space.flags?.includes('demo') ?? false}
           web3SpaceId={space.web3SpaceId as number}
           configPath={`${getHref(space.slug).replace(
-            /\/*$/,
+            /\/+$/,
             '',
           )}/space-configuration`}
           createdAt={space.createdAt}
@@ -107,7 +107,7 @@ export function SpaceCardWithDiscoverability({
         isDemo={space.flags?.includes('demo') ?? false}
         web3SpaceId={space.web3SpaceId as number}
         configPath={`${getHref(space.slug).replace(
-          /\/*$/,
+          /\/+$/,
           '',
         )}/space-configuration`}
         createdAt={space.createdAt}
