@@ -12,6 +12,9 @@ type StripMarkdownConfig = {
   extraNewlines?: boolean;
 };
 
+const MAX_MATCH_LENGTH = 500; // Reasonable max for a markdown link
+const MAX_IMAGE_LENGTH = 1000; // Reasonable max for an image tag
+
 export const stripMarkdown = (
   markdown?: string,
   config: StripMarkdownConfig = {},
@@ -29,11 +32,32 @@ export const stripMarkdown = (
   }
   // Remove images ![alt](url)
   if (config.images !== false) {
-    output = output.replace(/!\[([^\]]*?)\]\([^)]*?\)/g, '$1');
+    // Process in chunks or validate length first
+    if (output.length < MAX_IMAGE_LENGTH * 10) {
+      // Arbitrary safety factor
+      output = output.replace(/!\[([^\]]{0,200})\]\([^)]{0,200}\)/g, '$1');
+    } else {
+      // Fallback to safer method for large inputs
+      output = output
+        .split('\n')
+        .map(
+          (line) =>
+            line.length < MAX_IMAGE_LENGTH
+              ? line.replace(/!\[([^\]]{0,200})\]\([^)]{0,200}\)/g, '$1')
+              : line, // Skip processing suspiciously long lines
+        )
+        .join('\n');
+    }
   }
   // Remove links [text](url)
   if (config.links !== false) {
-    output = output.replace(/\[([^\]]*?)\]\([^)]*?\)/g, '$1');
+    // Pattern with length limits
+    const pattern = new RegExp(
+      `\\[([^\\]]{0,${MAX_MATCH_LENGTH}}?)\\]\\([^)]{0,${MAX_MATCH_LENGTH}}?\\)`,
+      'g',
+    );
+
+    output = output.replace(pattern, '$1');
   }
   // Remove emphasis (bold, italic, strikethrough)
   if (config.emphasis !== false) {
