@@ -46,18 +46,10 @@ export const ActionButtons = ({ web3SpaceId }: ActionButtonsProps) => {
           <span className="hidden sm:flex">Space Settings</span>
         </Button>
       </Link>
-      <Link
-        className={isDisabled ? 'cursor-not-allowed' : ''}
-        title={tooltipMessage || ''}
-        href={
-          isAuthenticated && (isMember || isDelegate)
-            ? `${cleanPath(pathname)}${PATH_SELECT_CREATE_ACTION}`
-            : {}
-        }
-      >
-        <Button disabled={isDisabled} colorVariant="accent">
+      <Link className="cursor-not-allowed" title="Under Maintenance" href={{}}>
+        <Button disabled={true} colorVariant="accent">
           <PlusIcon />
-          Create
+          Create (Under Maintenance)
         </Button>
       </Link>
     </>
