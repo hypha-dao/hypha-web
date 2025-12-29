@@ -250,6 +250,22 @@ export function decodeTransaction(tx: Tx) {
                 spaceId: decoded.args[0],
               },
             }
+          : decoded.functionName === 'setSpaceDiscoverability'
+          ? {
+              type: 'setSpaceDiscoverability',
+              data: {
+                spaceId: decoded.args[0],
+                discoverability: decoded.args[1],
+              },
+            }
+          : decoded.functionName === 'setSpaceAccess'
+          ? {
+              type: 'setSpaceAccess',
+              data: {
+                spaceId: decoded.args[0],
+                access: decoded.args[1],
+              },
+            }
           : null;
       },
     },

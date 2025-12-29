@@ -99,6 +99,14 @@ const getDocumentBadges = (document: Document) => {
         colorVariant: 'accent',
       });
       break;
+    case 'Space Transparency Configuration':
+      badges.push({
+        label: 'Space Transparency Configuration',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
     case 'Treasury Minting':
       badges.push({
         label: 'Treasury Minting',
