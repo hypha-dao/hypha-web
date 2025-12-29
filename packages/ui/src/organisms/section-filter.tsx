@@ -12,21 +12,23 @@ export type FilterOption = {
 type SectionFilterProps = {
   count?: number | string;
   label: string;
-  children?: React.ReactNode;
   hasSearch?: boolean;
   searchPlaceholder?: string;
-  onChangeSearch?: (term: string) => void;
   inlineLabel?: boolean;
+  className?: string;
+  onChangeSearch?: (term: string) => void;
+  children?: React.ReactNode;
 };
 
 export const SectionFilter: FC<SectionFilterProps> = ({
   count,
   label,
-  children,
   hasSearch,
   searchPlaceholder = 'Search',
-  onChangeSearch,
   inlineLabel = true,
+  className,
+  onChangeSearch,
+  children,
 }) => {
   return (
     <div className="flex justify-between items-center w-full gap-4">
@@ -44,7 +46,9 @@ export const SectionFilter: FC<SectionFilterProps> = ({
             />
           ) : null}
           {children && (
-            <div className="flex items-center text-nowrap">{children}</div>
+            <div className={cn('flex items-center text-nowrap', className)}>
+              {children}
+            </div>
           )}
         </>
       ) : (
@@ -55,7 +59,9 @@ export const SectionFilter: FC<SectionFilterProps> = ({
                 {label} {count ? <>| {count}</> : null}
               </Text>
               {children && (
-                <div className="flex items-center text-nowrap">{children}</div>
+                <div className={cn('flex items-center text-nowrap', className)}>
+                  {children}
+                </div>
               )}
             </div>
             <div className="flex flex-row w-full">
