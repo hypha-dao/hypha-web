@@ -1096,6 +1096,31 @@ export const daoSpaceFactoryImplementationAbi = [
         indexed: true,
       },
       {
+        name: 'oldAccess',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'newAccess',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'SpaceAccessChanged',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
         name: 'unity',
         internalType: 'uint256',
         type: 'uint256',
@@ -1139,6 +1164,31 @@ export const daoSpaceFactoryImplementationAbi = [
       },
     ],
     name: 'SpaceCreated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'oldDiscoverability',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'newDiscoverability',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'SpaceDiscoverabilityChanged',
   },
   {
     type: 'event',
@@ -1262,6 +1312,8 @@ export const daoSpaceFactoryImplementationAbi = [
           },
           { name: 'exitMethod', internalType: 'uint256', type: 'uint256' },
           { name: 'joinMethod', internalType: 'uint256', type: 'uint256' },
+          { name: 'access', internalType: 'uint256', type: 'uint256' },
+          { name: 'discoverability', internalType: 'uint256', type: 'uint256' },
         ],
       },
     ],
@@ -1351,6 +1403,23 @@ export const daoSpaceFactoryImplementationAbi = [
     inputs: [{ name: '_spaceId', internalType: 'uint256', type: 'uint256' }],
     name: 'getSpaceMembers',
     outputs: [{ name: '', internalType: 'address[]', type: 'address[]' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_spaceId', internalType: 'uint256', type: 'uint256' }],
+    name: 'getSpaceVisibility',
+    outputs: [
+      {
+        name: '',
+        internalType: 'struct IDAOSpaceFactory.SpaceVisibility',
+        type: 'tuple',
+        components: [
+          { name: 'discoverability', internalType: 'uint256', type: 'uint256' },
+          { name: 'access', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+    ],
     stateMutability: 'view',
   },
   {
@@ -1498,8 +1567,42 @@ export const daoSpaceFactoryImplementationAbi = [
   },
   {
     type: 'function',
+    inputs: [
+      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: '_access', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'setSpaceAccess',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: '_discoverability', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'setSpaceDiscoverability',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    name: 'spaceAccess',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     inputs: [],
     name: 'spaceCounter',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    name: 'spaceDiscoverability',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
@@ -1786,6 +1889,32 @@ export const decayingSpaceTokenAbi = [
     anonymous: false,
     inputs: [
       {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+    ],
+    name: 'ReceiveWhitelistSpaceAdded',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+    ],
+    name: 'ReceiveWhitelistSpaceRemoved',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
         name: 'account',
         internalType: 'address',
         type: 'address',
@@ -1834,6 +1963,32 @@ export const decayingSpaceTokenAbi = [
       },
     ],
     name: 'Transfer',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+    ],
+    name: 'TransferWhitelistSpaceAdded',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+    ],
+    name: 'TransferWhitelistSpaceRemoved',
   },
   {
     type: 'event',
@@ -1954,6 +2109,42 @@ export const decayingSpaceTokenAbi = [
   {
     type: 'function',
     inputs: [
+      { name: 'spaceIds', internalType: 'uint256[]', type: 'uint256[]' },
+    ],
+    name: 'batchAddReceiveWhitelistSpaces',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'spaceIds', internalType: 'uint256[]', type: 'uint256[]' },
+    ],
+    name: 'batchAddTransferWhitelistSpaces',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'spaceIds', internalType: 'uint256[]', type: 'uint256[]' },
+    ],
+    name: 'batchRemoveReceiveWhitelistSpaces',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'spaceIds', internalType: 'uint256[]', type: 'uint256[]' },
+    ],
+    name: 'batchRemoveTransferWhitelistSpaces',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
       { name: 'accounts', internalType: 'address[]', type: 'address[]' },
       { name: 'allowed', internalType: 'bool[]', type: 'bool[]' },
     ],
@@ -1987,6 +2178,20 @@ export const decayingSpaceTokenAbi = [
     name: 'burnFrom',
     outputs: [],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'canAccountReceive',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'canAccountTransfer',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -2042,6 +2247,20 @@ export const decayingSpaceTokenAbi = [
     inputs: [],
     name: 'getDecayedTotalSupply',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getReceiveWhitelistedSpaces',
+    outputs: [{ name: '', internalType: 'uint256[]', type: 'uint256[]' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getTransferWhitelistedSpaces',
+    outputs: [{ name: '', internalType: 'uint256[]', type: 'uint256[]' }],
     stateMutability: 'view',
   },
   {
@@ -2103,6 +2322,20 @@ export const decayingSpaceTokenAbi = [
     name: 'initialize',
     outputs: [],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    name: 'isReceiveWhitelistedSpace',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    name: 'isTransferWhitelistedSpace',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -2228,6 +2461,13 @@ export const decayingSpaceTokenAbi = [
     inputs: [],
     name: 'spaceId',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'spacesContract',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
     stateMutability: 'view',
   },
   {

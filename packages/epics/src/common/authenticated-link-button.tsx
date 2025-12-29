@@ -17,29 +17,16 @@ export function AuthenticatedLinkButton({
   hideInsteadDisabled = false,
 }: AuthLinkButtonProps) {
   const { isAuthenticated } = useAuthentication();
-  const isMaintenanceMode = href === '#';
 
   if (hideInsteadDisabled && !isAuthenticated) {
     return null;
   }
 
   return (
-    <Link
-      href={isMaintenanceMode ? {} : isAuthenticated ? href : '#'}
-      scroll={false}
-      className={isMaintenanceMode ? 'cursor-not-allowed' : ''}
-    >
+    <Link href={isAuthenticated ? href : '#'} scroll={false}>
       <Button
-        title={
-          isMaintenanceMode
-            ? 'Under Maintenance'
-            : !isAuthenticated
-            ? 'Please sign in to use this feature.'
-            : ''
-        }
-        disabled={
-          isMaintenanceMode || (!isAuthenticated && !hideInsteadDisabled)
-        }
+        title={!isAuthenticated ? 'Please sign in to use this feature.' : ''}
+        disabled={!isAuthenticated && !hideInsteadDisabled}
         className="ml-2"
       >
         {children}
