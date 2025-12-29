@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { getDhoPathAgreements } from '../@tab/agreements/constants';
 import { getDhoPathMembers } from '../@tab/members/constants';
 import { getDhoPathTreasury } from '../@tab/treasury/constants';
-import { getDhoPathOverview } from '../@tab/overview/constants';
+// import { getDhoPathOverview } from '../@tab/overview/constants'; // Overview tab removed
 import { ScrollArea, ScrollBar } from '@hypha-platform/ui';
 import { getActiveTabFromPath } from '@hypha-platform/epics';
 
@@ -16,11 +16,12 @@ export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
   const activeTab = getActiveTabFromPath(pathname);
 
   const tabs = [
-    {
-      title: 'Overview',
-      name: 'overview',
-      href: getDhoPathOverview(lang, id),
-    },
+    // Overview tab removed - functionality replaced by space-visualization
+    // {
+    //   title: 'Overview',
+    //   name: 'overview',
+    //   href: getDhoPathOverview(lang, id),
+    // },
     {
       title: 'Agreements',
       name: 'agreements',

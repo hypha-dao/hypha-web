@@ -21,6 +21,7 @@ import Link from 'next/link';
 import { getAllSpaces, findSpaceBySlug } from '@hypha-platform/core/server';
 import { getDhoPathAgreements } from './@tab/agreements/constants';
 import { ActionButtons } from './_components/action-buttons';
+import { NestedSpacesButton } from './_components/nested-spaces-button';
 import {
   DEFAULT_SPACE_AVATAR_IMAGE,
   DEFAULT_SPACE_LEAD_IMAGE,
@@ -93,6 +94,13 @@ export default async function DhoLayout({
       <Container className="flex-grow min-w-0">
         <div className="mb-6 flex items-center">
           <Breadcrumbs spaceId={spaceFromDb.id} />
+        </div>
+        <div className="relative flex justify-end mb-2">
+          {typeof spaceFromDb.web3SpaceId === 'number' && (
+            <NestedSpacesButton
+              web3SpaceId={spaceFromDb.web3SpaceId as number}
+            />
+          )}
         </div>
         <Card className="relative">
           <Image
