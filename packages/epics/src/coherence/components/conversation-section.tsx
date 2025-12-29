@@ -2,12 +2,18 @@
 
 import { FC } from 'react';
 import { Text } from '@radix-ui/themes';
-import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui';
-import { Coherence } from '../types';
+import {
+  Checkbox,
+  Combobox,
+  SectionFilter,
+  SectionLoadMore,
+} from '@hypha-platform/ui';
+import { Coherence, COHERENCE_ORDERS, CoherenceOrder } from '../types';
 import { ConversationGridContainer } from './conversation-grid.container';
 import { useConversationsSection } from '../hooks/use-conversations-section';
 import { Empty } from '../../common';
 import { DirectionType } from '@hypha-platform/core/client';
+import React from 'react';
 
 type ConversationSectionProps = {
   conversations: Coherence[];
@@ -18,6 +24,28 @@ type ConversationSectionProps = {
   pageSize?: number;
 };
 
+const orderOptions: {
+  value: CoherenceOrder;
+  label: string;
+  searchText: string;
+}[] = [
+  {
+    value: 'mostviews',
+    label: 'Most Views',
+    searchText: 'Most Members',
+  },
+  {
+    value: 'mostmessages',
+    label: 'Most Messages',
+    searchText: 'Most Agreements',
+  },
+  {
+    value: 'mostrecent',
+    label: 'Most Recent',
+    searchText: 'Most Recent',
+  },
+];
+
 export const ConversationSection: FC<ConversationSectionProps> = ({
   conversations,
   label,
@@ -26,6 +54,9 @@ export const ConversationSection: FC<ConversationSectionProps> = ({
   firstPageSize = 3,
   pageSize = 3,
 }) => {
+  const [order, setOrder] = React.useState<CoherenceOrder>('mostrecent');
+  const [hideArchived, setHideArchived] = React.useState(true);
+
   const {
     pages,
     loadMore,
@@ -37,10 +68,19 @@ export const ConversationSection: FC<ConversationSectionProps> = ({
     conversations,
     firstPageSize,
     pageSize,
+    hideArchived,
   });
 
+  const updateOrder = (rawOrder: string) => {
+    setOrder(
+      COHERENCE_ORDERS.includes(rawOrder as CoherenceOrder)
+        ? (rawOrder as CoherenceOrder)
+        : 'mostrecent',
+    );
+  };
+
   return (
-    <div className="flex flex-col justify-around items-center gap-4">
+    <div className="flex flex-col justify-around items-center gap-4 w-full">
       <SectionFilter
         count={pagination?.total || 0}
         label={label || ''}
@@ -48,7 +88,35 @@ export const ConversationSection: FC<ConversationSectionProps> = ({
         searchPlaceholder="Search conversation"
         onChangeSearch={onUpdateSearch}
         inlineLabel={false}
-      ></SectionFilter>
+        className="w-full items-end"
+      >
+        <div className="flex grow-1"></div>
+        <div className="flex grow-0">
+          <Combobox
+            options={orderOptions}
+            initialValue={order}
+            className="border-0 md:w-40"
+            onChange={updateOrder}
+            allowEmptyChoice={false}
+          />
+        </div>
+        <div className="flex flex-row gap-2 h-full">
+          <Checkbox
+            id="hideArchivedCheckbox"
+            className="self-center"
+            checked={hideArchived}
+            onCheckedChange={(value) => {
+              setHideArchived(value === true);
+            }}
+          />
+          <label
+            className="text-[14px] self-center"
+            htmlFor="hideArchivedCheckbox"
+          >
+            Hide archived
+          </label>
+        </div>
+      </SectionFilter>
 
       {pagination?.totalPages === 0 ? (
         <Empty>
