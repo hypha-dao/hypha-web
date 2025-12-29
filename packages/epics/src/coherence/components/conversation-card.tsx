@@ -1,9 +1,21 @@
-import { Card, CardContent, CardTitle, Skeleton } from '@hypha-platform/ui';
+import {
+  Button,
+  Card,
+  CardContent,
+  CardTitle,
+  Input,
+  Skeleton,
+} from '@hypha-platform/ui';
 import { Coherence } from '../types';
 import { PersonLabel } from '../../people/components/person-label';
 import { stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
-import { ChatBubbleIcon, EyeOpenIcon } from '@radix-ui/react-icons';
+import {
+  ChatBubbleIcon,
+  EyeOpenIcon,
+  PaperPlaneIcon,
+} from '@radix-ui/react-icons';
 import { usePersonByWeb3Address } from '../../governance';
+import React from 'react';
 
 type ConversationCardProps = { isLoading: boolean };
 
@@ -13,13 +25,26 @@ export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
   description,
   creatorAddress,
 }) => {
+  const [message, setMessage] = React.useState<string>('');
   const { isLoading: isPersonLoading, person: creator } =
     usePersonByWeb3Address(creatorAddress ?? '0x0');
   const views = 59; //TODO: compute number of conversation view
   const messages = 16; //TODO: compute number of conversation messages
+
+  const sendMessage = React.useCallback(() => {
+    console.log('Send message into chat:', message);
+    //TODO
+    setMessage('');
+  }, [message]);
+
+  const proposeAgreement = () => {
+    console.log('Propose agreement');
+    //TODO
+  };
+
   return (
     <Card className="h-full w-full space-y-5 pt-5">
-      <CardContent className="relative space-y-4">
+      <CardContent className="relative space-y-3">
         <div className="flex flex-col items-start space-y-2">
           <Skeleton
             className="min-w-full"
@@ -77,7 +102,53 @@ export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
             </div>
           </div>
         </div>
-        <div className="flex flex-grow text-1 text-neutral-11"></div>
+        <div className="w-full space-y-2">
+          <div className="flex flex-grow text-1 text-neutral-11">
+            <Input
+              className="w-full"
+              placeholder="Say something..."
+              value={message}
+              rightIcon={
+                <Button
+                  variant="ghost"
+                  colorVariant="neutral"
+                  className="w-6 h-6 p-0 pointer-events-auto!"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    sendMessage();
+                  }}
+                >
+                  <PaperPlaneIcon />
+                </Button>
+              }
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  sendMessage();
+                }
+              }}
+              onChange={(e) => setMessage(e.target.value)}
+            />
+          </div>
+          <div className="flex flex-grow text-1 text-neutral-11">
+            <Button
+              variant="outline"
+              colorVariant="accent"
+              className="w-full"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                proposeAgreement();
+              }}
+            >
+              Propose Agreement
+            </Button>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

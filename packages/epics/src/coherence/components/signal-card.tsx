@@ -37,6 +37,16 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       })(),
     },
   ];
+
+  const allowConversation = () => {
+    console.log('Worth Conversation');
+    //TODO
+  };
+  const declineConversation = () => {
+    console.log('Not Relevant');
+    //TODO
+  };
+
   return (
     <Card className="h-full w-full space-y-5 pt-5">
       <CardContent className="relative space-y-4">
@@ -71,7 +81,15 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           </Skeleton>
         </div>
         <div className="flex flex-grow text-1 text-neutral-11 gap-3">
-          <Button variant="outline" colorVariant="accent">
+          <Button
+            variant="outline"
+            colorVariant="accent"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              allowConversation();
+            }}
+          >
             <CheckIcon />
             Worth Conversation
           </Button>
@@ -79,6 +97,11 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             variant="outline"
             colorVariant="neutral"
             className="bg-transparent text-neutral-11"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              declineConversation();
+            }}
           >
             <Cross2Icon />
             Not Relevant
