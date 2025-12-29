@@ -9,7 +9,11 @@ import { Image } from '@hypha-platform/ui';
 import { PersonLabel } from '../../people/components/person-label';
 import { type Creator } from '../../people/components/person-label';
 import { type BadgeItem, BadgesList } from '@hypha-platform/ui';
-import { formatDate, stripMarkdown } from '@hypha-platform/ui-utils';
+import {
+  formatDate,
+  stripDescription,
+  stripMarkdown,
+} from '@hypha-platform/ui-utils';
 import { DocumentStatus, useEvents } from '@hypha-platform/core/client';
 import React from 'react';
 
@@ -27,24 +31,6 @@ interface DocumentCardProps {
   creator?: Creator;
   badges?: BadgeItem[];
   interactions?: React.ReactNode;
-}
-
-function stripDescription(description: string): string {
-  if (!description) return '';
-  return description
-    .replace(/\\([\[\]\(\)\{\}])/g, '$1')
-    .replace(/&#x([0-9A-Fa-f]+);/gi, (full, hex) => {
-      const codePoint = Number.parseInt(hex, 16);
-      if (!Number.isFinite(codePoint) || codePoint < 0 || codePoint > 0x10ffff)
-        return full;
-      return String.fromCodePoint(codePoint);
-    })
-    .replace(/&#(\d+);/g, (full, dec) => {
-      const codePoint = Number.parseInt(dec, 10);
-      if (!Number.isFinite(codePoint) || codePoint < 0 || codePoint > 0x10ffff)
-        return full;
-      return String.fromCodePoint(codePoint);
-    });
 }
 
 export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
