@@ -19,6 +19,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cva } from 'class-variance-authority';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { useFilterSpacesListWithDiscoverability } from '../hooks/use-spaces-discoverability-batch';
 
 interface ExploreSpacesProps {
   lang: Locale;
@@ -110,7 +111,7 @@ export function ExploreSpaces({
   const searchParams = useSearchParams();
   const { replace } = useRouter();
 
-  const selectedSpaces = React.useMemo(
+  const categoryFilteredSpaces = React.useMemo(
     () =>
       categories && categories.length > 0
         ? spaces.filter((space) =>
@@ -119,6 +120,14 @@ export function ExploreSpaces({
         : spaces,
     [spaces, categories],
   );
+
+  const {
+    filteredSpaces: selectedSpaces,
+    isLoading: isDiscoverabilityLoading,
+  } = useFilterSpacesListWithDiscoverability({
+    spaces: categoryFilteredSpaces,
+    useGeneralState: true,
+  });
 
   const agreementCount = React.useMemo(() => {
     return selectedSpaces.reduce(
