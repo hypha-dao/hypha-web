@@ -5,9 +5,11 @@ import { DirectionType, Order } from '@hypha-platform/core/client';
 import { Coherence } from '../types';
 import { isUndefined } from 'swr/_internal';
 
-const MOCK_RECORDS: Coherence[] = [
+export const MOCK_RECORDS: Coherence[] = [
   {
     id: 1,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Opportunity',
     labelType: 'opportunity',
     title:
@@ -21,6 +23,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 2,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Opportunity',
     labelType: 'opportunity',
     title:
@@ -34,6 +38,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 3,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Tensions',
     labelType: 'tensions',
     title:
@@ -47,6 +53,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 4,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Tensions',
     labelType: 'tensions',
     title:
@@ -60,6 +68,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 5,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Opportunity',
     labelType: 'opportunity',
     title:
@@ -73,6 +83,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 6,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Opportunity',
     labelType: 'opportunity',
     title:
@@ -86,6 +98,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 7,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Tensions',
     labelType: 'tensions',
     title:
@@ -99,6 +113,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 8,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Tensions',
     labelType: 'tensions',
     title:
@@ -112,6 +128,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 9,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Opportunity',
     labelType: 'opportunity',
     title:
@@ -125,6 +143,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 10,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Opportunity',
     labelType: 'opportunity',
     title:
@@ -138,6 +158,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 11,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Tensions',
     labelType: 'tensions',
     title:
@@ -151,6 +173,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 12,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Tensions',
     labelType: 'tensions',
     title:
@@ -164,6 +188,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 13,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Opportunity',
     labelType: 'opportunity',
     title:
@@ -177,6 +203,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 14,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Opportunity',
     labelType: 'opportunity',
     title:
@@ -190,6 +218,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 15,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Tensions',
     labelType: 'tensions',
     title:
@@ -203,6 +233,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 16,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Tensions',
     labelType: 'tensions',
     title:
@@ -216,6 +248,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 17,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Opportunity',
     labelType: 'opportunity',
     title:
@@ -229,6 +263,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 18,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Opportunity',
     labelType: 'opportunity',
     title:
@@ -242,6 +278,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 19,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Tensions',
     labelType: 'tensions',
     title:
@@ -255,6 +293,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 20,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Tensions',
     labelType: 'tensions',
     title:
@@ -268,6 +308,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 21,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Opportunity',
     labelType: 'opportunity',
     title:
@@ -281,6 +323,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 22,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Opportunity',
     labelType: 'opportunity',
     title:
@@ -294,6 +338,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 23,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Tensions',
     labelType: 'tensions',
     title:
@@ -307,6 +353,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 24,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Tensions',
     labelType: 'tensions',
     title:
@@ -320,6 +368,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 25,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Opportunity',
     labelType: 'opportunity',
     title:
@@ -333,6 +383,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 26,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Opportunity',
     labelType: 'opportunity',
     title:
@@ -346,6 +398,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 27,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Tensions',
     labelType: 'tensions',
     title:
@@ -359,6 +413,8 @@ const MOCK_RECORDS: Coherence[] = [
   },
   {
     id: 28,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     label: 'Tensions',
     labelType: 'tensions',
     title:
