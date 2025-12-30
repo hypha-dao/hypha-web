@@ -3,6 +3,7 @@ import { ConversationGrid } from './conversation-grid';
 import { Coherence } from '../types';
 
 type ConversationGridContainerProps = {
+  basePath: string;
   pagination: {
     page: number;
     firstPageSize: number;
@@ -14,6 +15,7 @@ type ConversationGridContainerProps = {
 };
 
 export const ConversationGridContainer = ({
+  basePath,
   pagination,
   conversations,
 }: ConversationGridContainerProps) => {
@@ -28,6 +30,7 @@ export const ConversationGridContainer = ({
   return (
     <ConversationGrid
       isLoading={false}
+      basePath={basePath}
       conversations={paginatedConversations.map((conversation) => ({
         ...conversation,
       }))}
