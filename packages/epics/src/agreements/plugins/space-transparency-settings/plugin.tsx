@@ -31,9 +31,7 @@ export const SpaceTransparencySettingsPlugin = ({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <FormLabel className="text-2 w-full">
-          Space Transparency
-        </FormLabel>
+        <FormLabel className="text-2 w-full">Space Transparency</FormLabel>
         <p className="text-2 text-neutral-11">
           Define the level of transparency you collectively want to apply to
           your space. Please note that, regardless of the choice you make below,
