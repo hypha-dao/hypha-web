@@ -5,6 +5,7 @@ import { useCoherenceRecords } from '../hooks';
 import { ConversationSection } from './conversation-section';
 import { SignalSection } from './signal-section';
 import { Empty } from '../../common/empty';
+import { DirectionType } from '@hypha-platform/core/client';
 
 type CoherenceBlockProps = {};
 
@@ -13,7 +14,14 @@ export function CoherenceBlock({}: CoherenceBlockProps) {
   const {
     records: { signals, conversations },
     isLoading,
-  } = useCoherenceRecords({});
+  } = useCoherenceRecords({
+    order: [
+      {
+        name: 'id',
+        dir: DirectionType.DESC,
+      },
+    ],
+  });
 
   return (
     <div className="flex flex-col gap-6 py-4">
