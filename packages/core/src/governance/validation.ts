@@ -611,6 +611,6 @@ export const schemaSpaceToSpaceMembership = z.object({
 export const schemaChangeSpaceTransparencySettings = z.object({
   ...createAgreementWeb2Props,
   ...createAgreementFiles,
-  spaceDiscoverability: z.number().int().min(1).max(4),
-  spaceActivityAccess: z.number().int().min(1).max(4),
+  spaceDiscoverability: z.number().int().min(0).max(3),
+  spaceActivityAccess: z.number().int().min(0).max(3),
 });
