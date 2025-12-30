@@ -75,7 +75,7 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
       creatorId: person?.id,
       spaceDiscoverability: discoverability ?? TransparencyLevel.PUBLIC,
       spaceActivityAccess: access ?? TransparencyLevel.ORGANISATION,
-      label: 'Space Transparency Configuration',
+      label: 'Space Transparency',
     },
   });
 
@@ -146,7 +146,7 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
             backLabel="Back to Settings"
             closeUrl={successfulUrl}
             isLoading={isPending}
-            label="Space Transparency Configuration"
+            label="Space Transparency"
             progress={progress}
           />
           {plugin}

@@ -99,9 +99,9 @@ const getDocumentBadges = (document: Document) => {
         colorVariant: 'accent',
       });
       break;
-    case 'Space Transparency Configuration':
+    case 'Space Transparency':
       badges.push({
-        label: 'Space Transparency Configuration',
+        label: 'Space Transparency',
         className: 'capitalize',
         variant: 'solid',
         colorVariant: 'accent',
