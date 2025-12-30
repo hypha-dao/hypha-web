@@ -8,7 +8,8 @@ import {
   usePersonByWeb3Address,
 } from '@hypha-platform/epics';
 import { LoadingBackdrop } from '@hypha-platform/ui';
-import { useParams, usePathname } from 'next/navigation';
+import { useParams } from 'next/navigation';
+import { getDhoPathCoherence } from '../../../../@tab/coherence/constants';
 
 export default function ChatPage() {
   const { lang, id: spaceId, chatId } = useParams<ChatPageParams>();
@@ -22,8 +23,7 @@ export default function ChatPage() {
   const { isLoading: isPersonLoading, person: creator } =
     usePersonByWeb3Address(conversation?.creatorAddress ?? '0x0');
 
-  const pathname = usePathname();
-  const closeUrl = pathname.replace(/\/chat\/.+$/, '');
+  const closeUrl = getDhoPathCoherence(lang, spaceId);
 
   return (
     <SidePanel>
