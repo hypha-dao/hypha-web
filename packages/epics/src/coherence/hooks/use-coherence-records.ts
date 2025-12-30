@@ -1,8 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Order } from '@hypha-platform/core/client';
+import { useCallback, useMemo, useState } from 'react';
+import { DirectionType, Order } from '@hypha-platform/core/client';
 import { Coherence } from '../types';
+import { isUndefined } from 'swr/_internal';
 
 const MOCK_RECORDS: Coherence[] = [
   {
@@ -367,7 +368,7 @@ const MOCK_RECORDS: Coherence[] = [
     status: 'conversation',
     creatorAddress: '0x822Bf2Fd502d7EaA679BDCe365cb620A05924E2C',
     roomId: 'conv-28',
-    archived: false,
+    archived: true,
   },
 ];
 
@@ -378,14 +379,53 @@ export const useCoherenceRecords = ({
 }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
+  const compare = useCallback(
+    (a: Coherence, b: Coherence) => {
+      if (!order) {
+        return 0;
+      }
+      for (const o of order) {
+        const left = a[o.name];
+        const right = b[o.name];
+        if (left === right || (isUndefined(left) && isUndefined(right))) {
+          continue;
+        }
+        switch (o.dir) {
+          case DirectionType.ASC:
+            if (isUndefined(left)) {
+              return -1;
+            } else if (isUndefined(right)) {
+              return 1;
+            }
+            return left < right ? -1 : 1;
+          case DirectionType.DESC:
+            if (isUndefined(left)) {
+              return 1;
+            } else if (isUndefined(right)) {
+              return -1;
+            }
+            return left < right ? 1 : -1;
+          default:
+            break;
+        }
+      }
+      return 0;
+    },
+    [order],
+  );
+
   const response = useMemo(() => {
     /*return {
       signals: [] as Coherence[],
       conversations: [] as Coherence[],
     };*/
 
-    const signals = MOCK_RECORDS.filter((record) => record.status === 'signal');
-    const conversations = MOCK_RECORDS.filter(
+    const sortedRecords = compare ? MOCK_RECORDS.sort(compare) : MOCK_RECORDS;
+
+    const signals = sortedRecords.filter(
+      (record) => record.status === 'signal',
+    );
+    const conversations = sortedRecords.filter(
       (record) => record.status === 'conversation',
     );
 
@@ -393,7 +433,7 @@ export const useCoherenceRecords = ({
       signals,
       conversations,
     };
-  }, []);
+  }, [compare]);
 
   return {
     records: response,
