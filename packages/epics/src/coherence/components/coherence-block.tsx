@@ -27,6 +27,8 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
     ],
   });
 
+  const basePath = `/${lang}/dho/${spaceSlug}/coherence`;
+
   return (
     <div className="flex flex-col gap-6 py-4">
       {isAuthenticated ? (
@@ -40,6 +42,7 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
             pageSize={3}
           />
           <ConversationSection
+            basePath={`${basePath}/chat`}
             label="Conversations"
             hasSearch={true}
             conversations={conversations}

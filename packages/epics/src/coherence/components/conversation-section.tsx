@@ -16,6 +16,7 @@ import { DirectionType } from '@hypha-platform/core/client';
 import React from 'react';
 
 type ConversationSectionProps = {
+  basePath: string;
   conversations: Coherence[];
   label?: string;
   hasSearch?: boolean;
@@ -47,6 +48,7 @@ const orderOptions: {
 ];
 
 export const ConversationSection: FC<ConversationSectionProps> = ({
+  basePath,
   conversations,
   label,
   hasSearch = false,
@@ -127,6 +129,7 @@ export const ConversationSection: FC<ConversationSectionProps> = ({
           {Array.from({ length: pages }).map((_, index) => (
             <ConversationGridContainer
               key={index}
+              basePath={basePath}
               conversations={filteredConversations}
               pagination={{
                 page: index + 1,
