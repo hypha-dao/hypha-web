@@ -6,10 +6,14 @@ import { ConversationSection } from './conversation-section';
 import { SignalSection } from './signal-section';
 import { Empty } from '../../common/empty';
 import { DirectionType } from '@hypha-platform/core/client';
+import { Locale } from '@hypha-platform/i18n';
 
-type CoherenceBlockProps = {};
+type CoherenceBlockProps = {
+  lang: Locale;
+  spaceSlug: string;
+};
 
-export function CoherenceBlock({}: CoherenceBlockProps) {
+export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
   const { isAuthenticated } = useAuthentication();
   const {
     records: { signals, conversations },
@@ -17,7 +21,7 @@ export function CoherenceBlock({}: CoherenceBlockProps) {
   } = useCoherenceRecords({
     order: [
       {
-        name: 'id',
+        name: 'createdAt',
         dir: DirectionType.DESC,
       },
     ],
