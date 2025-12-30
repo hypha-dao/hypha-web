@@ -9,6 +9,7 @@ import { UserSpaceState } from './use-user-space-state';
 import { useMemo } from 'react';
 import useSWR from 'swr';
 import { publicClient, getSpaceVisibility } from '@hypha-platform/core/client';
+import { useAuthentication } from '@hypha-platform/authentication';
 
 export function useSpacesDiscoverabilityBatch({
   spaces,
@@ -73,17 +74,34 @@ export function useSpacesDiscoverabilityBatch({
   };
 }
 
+function useGeneralUserState(): UserSpaceState {
+  const { isAuthenticated } = useAuthentication();
+  return useMemo(() => {
+    if (!isAuthenticated) {
+      return UserSpaceState.NOT_LOGGED_IN;
+    }
+    return UserSpaceState.LOGGED_IN;
+  }, [isAuthenticated]);
+}
+
 export function useFilterSpacesListWithDiscoverability({
   spaces,
+  useGeneralState = false,
 }: {
   spaces: Space[];
+  useGeneralState?: boolean;
 }): {
   filteredSpaces: Space[];
   isLoading: boolean;
 } {
-  const { userState, isLoading: isUserStateLoading } = useUserSpaceState({
-    spaceSlug: spaces[0]?.slug,
-  });
+  const generalUserState = useGeneralUserState();
+  const { userState: spaceSpecificUserState, isLoading: isUserStateLoading } =
+    useUserSpaceState({
+      spaceSlug: useGeneralState ? undefined : spaces[0]?.slug,
+      space: useGeneralState ? undefined : spaces[0],
+    });
+
+  const userState = useGeneralState ? generalUserState : spaceSpecificUserState;
 
   const { discoverabilityMap, isLoading: isDiscoverabilityLoading } =
     useSpacesDiscoverabilityBatch({ spaces });
@@ -98,6 +116,8 @@ export function useFilterSpacesListWithDiscoverability({
 
   return {
     filteredSpaces,
-    isLoading: isUserStateLoading || isDiscoverabilityLoading,
+    isLoading: useGeneralState
+      ? isDiscoverabilityLoading
+      : isUserStateLoading || isDiscoverabilityLoading,
   };
 }
