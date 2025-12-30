@@ -1,3 +1,5 @@
+export * from './chat-detail';
+export * from './chat-head';
 export * from './coherence-block';
 export * from './conversation-card';
 export * from './conversation-grid';
