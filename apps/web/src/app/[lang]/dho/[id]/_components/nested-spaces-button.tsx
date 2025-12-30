@@ -40,10 +40,9 @@ export const NestedSpacesButton = ({
       title={tooltipMessage || 'Space Navigation'}
     >
       <Button
-        colorVariant="accent"
         variant="link"
         disabled={isDisabled}
-        className="flex items-center gap-2"
+        className="flex items-center gap-2 text-accent-11"
       >
         <Eye className="w-4 h-4" />
         <span>Space Navigation</span>
