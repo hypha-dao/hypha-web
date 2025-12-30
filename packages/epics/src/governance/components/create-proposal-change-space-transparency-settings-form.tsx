@@ -17,6 +17,7 @@ import { useConfig } from 'wagmi';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useScrollToErrors } from '../../hooks';
 import { TransparencyLevel } from '../../spaces/components/transparency-level';
+import { useSpaceDiscoverability } from '../../spaces/hooks/use-space-discoverability';
 
 type FormValues = z.infer<typeof schemaChangeSpaceTransparencySettings>;
 
@@ -54,6 +55,14 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
 
   const agreementSlug = agreement?.slug;
 
+  const {
+    discoverability,
+    access,
+    isLoading: isLoadingDiscoverability,
+  } = useSpaceDiscoverability({
+    spaceId: (web3SpaceId ?? spaceId ?? undefined) as number | undefined,
+  });
+
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(schemaChangeSpaceTransparencySettings),
@@ -64,11 +73,24 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
       attachments: undefined,
       spaceId: spaceId ?? undefined,
       creatorId: person?.id,
-      spaceDiscoverability: TransparencyLevel.PUBLIC,
-      spaceActivityAccess: TransparencyLevel.ORGANISATION,
+      spaceDiscoverability: discoverability ?? TransparencyLevel.PUBLIC,
+      spaceActivityAccess: access ?? TransparencyLevel.ORGANISATION,
       label: 'Space Transparency Configuration',
     },
   });
+
+  React.useEffect(() => {
+    if (!isLoadingDiscoverability) {
+      if (discoverability !== undefined) {
+        form.setValue('spaceDiscoverability', discoverability, {
+          shouldDirty: false,
+        });
+      }
+      if (access !== undefined) {
+        form.setValue('spaceActivityAccess', access, { shouldDirty: false });
+      }
+    }
+  }, [discoverability, access, isLoadingDiscoverability, form]);
 
   useScrollToErrors(form, formRef);
 
