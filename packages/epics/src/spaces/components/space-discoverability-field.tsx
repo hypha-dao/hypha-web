@@ -21,16 +21,16 @@ const discoverabilityOptions: TransparencyOption[] = [
     disabled: false,
   },
   {
+    id: TransparencyLevel.NETWORK,
+    title: 'Network',
+    description: 'Your space is only discoverable by Hypha Network Members.',
+    disabled: false,
+  },
+  {
     id: TransparencyLevel.ORGANISATION,
     title: 'Organisation',
     description:
       'Your space is only discoverable by members of your organisation.',
-    disabled: false,
-  },
-  {
-    id: TransparencyLevel.NETWORK,
-    title: 'Network',
-    description: 'Your space is only discoverable by Hypha Network Members.',
     disabled: false,
   },
   {

@@ -22,17 +22,17 @@ const activityAccessOptions: TransparencyOption[] = [
     disabled: false,
   },
   {
-    id: TransparencyLevel.ORGANISATION,
-    title: 'Organisation',
-    description:
-      'Access to your space activity is restricted to members of your organisation.',
-    disabled: false,
-  },
-  {
     id: TransparencyLevel.NETWORK,
     title: 'Network',
     description:
       'Access to your spaces activity is restricted to Hypha Network members.',
+    disabled: false,
+  },
+  {
+    id: TransparencyLevel.ORGANISATION,
+    title: 'Organisation',
+    description:
+      'Access to your space activity is restricted to members of your organisation.',
     disabled: false,
   },
   {
