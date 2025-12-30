@@ -6,6 +6,7 @@ import { SpaceCardList, useMemberWeb3SpaceIds } from '@hypha-platform/epics';
 import { useMe } from '@hypha-platform/core/client';
 import React from 'react';
 import { Text } from '@radix-ui/themes';
+import { useFilterSpacesListWithDiscoverability } from '../hooks/use-spaces-discoverability-batch';
 
 export function filterSpaces(
   spaces: Space[],
@@ -36,10 +37,16 @@ export function MyFilteredSpaces({
     personAddress: person?.address as Address | undefined,
   });
 
-  const filteredSpaces = React.useMemo(
+  const memberFilteredSpaces = React.useMemo(
     () => filterSpaces(spaces, person?.slug, web3SpaceIds),
     [spaces, person, web3SpaceIds],
   );
+
+  const { filteredSpaces, isLoading: isDiscoverabilityLoading } =
+    useFilterSpacesListWithDiscoverability({
+      spaces: memberFilteredSpaces,
+      useGeneralState: false,
+    });
 
   return (
     <div className="space-y-6">
