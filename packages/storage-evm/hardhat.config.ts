@@ -6,6 +6,7 @@ import 'hardhat-deploy';
 import '@nomiclabs/hardhat-solhint';
 import 'hardhat-deploy';
 import 'solidity-coverage';
+import 'hardhat-contract-sizer';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -31,6 +32,22 @@ const config: HardhatUserConfig = {
     ],
   },
   networks: {
+    hardhat: {
+      forking: {
+        url: process.env.RPC_URL || 'https://mainnet.base.org',
+        enabled: true,
+      },
+      chains: {
+        8453: {
+          hardforkHistory: {
+            london: 0,
+            merge: 0,
+            shanghai: 0,
+            cancun: 0,
+          },
+        },
+      },
+    },
     'base-mainnet': {
       url: process.env.RPC_URL || '',
       accounts:
