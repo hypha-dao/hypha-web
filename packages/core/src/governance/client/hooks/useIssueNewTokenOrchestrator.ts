@@ -304,10 +304,7 @@ export const useCreateIssueTokenOrchestrator = ({
   );
 
   const { data: updatedWeb2Agreement } = useSWR(
-    web2.createdAgreement?.slug &&
-      taskState.UPLOAD_FILES.status === TaskStatus.IS_DONE &&
-      taskState.CREATE_WEB3_AGREEMENT.status === TaskStatus.IS_DONE &&
-      web3.createdToken?.proposalId
+    web2.createdAgreement?.slug && web3.createdToken?.proposalId
       ? [
           web2.createdAgreement.slug,
           web3.createdToken.proposalId,
@@ -315,12 +312,21 @@ export const useCreateIssueTokenOrchestrator = ({
         ]
       : null,
     async ([slug, web3ProposalId]) => {
+      console.log('Starting LINK_WEB2_AND_WEB3_AGREEMENT', {
+        slug,
+        web3ProposalId,
+        agreementId: web2.createdAgreement?.id,
+      });
+
       try {
         startTask('LINK_WEB2_AND_WEB3_AGREEMENT');
+
         const result = await web2.updateAgreementBySlug({
           slug,
           web3ProposalId: Number(web3ProposalId),
         });
+
+        console.log('Agreement updated, now updating token...');
 
         const updatedToken = await updateTokenAction(
           {
@@ -330,9 +336,11 @@ export const useCreateIssueTokenOrchestrator = ({
           { authToken: authToken! },
         );
 
+        console.log('Token updated successfully:', updatedToken);
         completeTask('LINK_WEB2_AND_WEB3_AGREEMENT');
         return result;
       } catch (error) {
+        console.error('LINK_WEB2_AND_WEB3_AGREEMENT failed:', error);
         if (error instanceof Error) {
           errorTask('LINK_WEB2_AND_WEB3_AGREEMENT', error.message);
         }
