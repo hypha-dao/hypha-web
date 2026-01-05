@@ -33,7 +33,7 @@ export const useJoinSpaceProposalHandler = ({
 }) => {
   const { id: currentSpaceSlug } = useParams();
   const { space: currentSpace } = useSpaceBySlug(currentSpaceSlug as string);
-  const spacesEndpoint = '/api/v1/spaces';
+  const spacesEndpoint = '/api/v1/spaces?parentOnly=false';
   const { jwt } = useJwt();
   const {
     data: allSpaces,
