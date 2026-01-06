@@ -23,6 +23,8 @@ type ConversationSectionProps = {
   isLoading: boolean;
   firstPageSize?: number;
   pageSize?: number;
+  hideArchived: boolean;
+  setHideArchived: (checked: boolean) => void;
 };
 
 const orderOptions: {
@@ -55,9 +57,10 @@ export const ConversationSection: FC<ConversationSectionProps> = ({
   isLoading,
   firstPageSize = 3,
   pageSize = 3,
+  hideArchived,
+  setHideArchived,
 }) => {
   const [order, setOrder] = React.useState<CoherenceOrder>('mostrecent');
-  const [hideArchived, setHideArchived] = React.useState(true);
 
   const {
     pages,
@@ -70,7 +73,6 @@ export const ConversationSection: FC<ConversationSectionProps> = ({
     conversations,
     firstPageSize,
     pageSize,
-    hideArchived,
   });
 
   const updateOrder = (rawOrder: string) => {
