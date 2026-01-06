@@ -198,13 +198,11 @@ export const CreateSignalForm = ({
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-foreground gap-1">
-                      Title <RequirementMark />
-                    </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Fill title..."
+                        placeholder="Signal title..."
                         className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
+                        rightIcon={<RequirementMark className="text-4" />}
                         {...field}
                       />
                     </FormControl>

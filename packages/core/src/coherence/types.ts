@@ -4,6 +4,7 @@ import { CoherenceType } from './coherence-types';
 
 export interface CreateCoherenceInput {
   creatorId: number;
+  spaceId: number;
   status: CoherenceStatus;
   type: CoherenceType;
   title: string;
