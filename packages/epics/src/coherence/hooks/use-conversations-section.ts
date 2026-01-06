@@ -1,6 +1,6 @@
 import { useDebouncedCallback } from 'use-debounce';
-import { Coherence } from '../types';
 import React from 'react';
+import { Coherence } from '@hypha-platform/core/client';
 
 export const useConversationsSection = ({
   conversations,

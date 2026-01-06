@@ -3,9 +3,9 @@ import { Text } from '@radix-ui/themes';
 import { ButtonClose } from '../../common';
 import { MarkdownSuspense, Separator } from '@hypha-platform/ui';
 import { CreatorType } from '../../proposals';
-import { Coherence } from '../types';
 import { ChatHead } from './chat-head';
 import { formatDate } from '@hypha-platform/ui-utils';
+import { Coherence } from '@hypha-platform/core/server';
 
 type ChatDetailProps = {
   closeUrl: string;

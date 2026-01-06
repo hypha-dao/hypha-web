@@ -8,11 +8,11 @@ import {
   SectionFilter,
   SectionLoadMore,
 } from '@hypha-platform/ui';
-import { Coherence, COHERENCE_ORDERS, CoherenceOrder } from '../types';
+import { COHERENCE_ORDERS, CoherenceOrder } from '../types';
 import { ConversationGridContainer } from './conversation-grid.container';
 import { useConversationsSection } from '../hooks/use-conversations-section';
 import { Empty } from '../../common';
-import { DirectionType } from '@hypha-platform/core/client';
+import { Coherence, DirectionType } from '@hypha-platform/core/client';
 import React from 'react';
 
 type ConversationSectionProps = {
