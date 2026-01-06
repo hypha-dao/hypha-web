@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   Coherence,
   DirectionType,
@@ -431,12 +431,18 @@ export const MOCK_RECORDS: Coherence[] = [
   },
 ];
 
+const USE_MOCK = process.env.USE_MOCK === 'true';
+
 export const useCoherenceRecords = ({
   order,
+  spaceId,
 }: {
   order?: Order<Coherence>;
+  spaceId?: number;
 }) => {
-  const { coherences, isLoading, error } = useFindCoherences({});
+  const { coherences, isLoading, error } = useFindCoherences({
+    spaceId,
+  });
 
   const compare = useCallback(
     (a: Coherence, b: Coherence) => {
@@ -474,12 +480,18 @@ export const useCoherenceRecords = ({
   );
 
   const response = useMemo(() => {
-    /*return {
-      signals: [] as Coherence[],
-      conversations: [] as Coherence[],
-    };*/
+    if (isLoading) {
+      return {
+        signals: [] as Coherence[],
+        conversations: [] as Coherence[],
+      };
+    }
 
-    const raw = [...(coherences ? coherences : []), ...MOCK_RECORDS];
+    const raw = USE_MOCK
+      ? [...(coherences ? coherences : []), ...MOCK_RECORDS]
+      : coherences
+      ? coherences
+      : [];
     const sortedRecords = compare ? raw.sort(compare) : raw;
 
     const signals = sortedRecords.filter(
@@ -493,7 +505,7 @@ export const useCoherenceRecords = ({
       signals,
       conversations,
     };
-  }, [coherences, compare]);
+  }, [coherences, isLoading, compare]);
 
   return {
     records: response,
