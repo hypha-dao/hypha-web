@@ -6,7 +6,6 @@
     "generate": "drizzle-kit generate",
     "push": "drizzle-kit push",
     "migrate": "drizzle-kit migrate",
-    "migrate:dev": "npx tsx ./migrate.ts",
     "seed": "tsx src/seed.ts",
     "studio": "drizzle-kit studio"
   },
