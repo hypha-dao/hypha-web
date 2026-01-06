@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { Coherence } from '../types';
 import { SignalCard } from './signal-card';
+import { Coherence } from '@hypha-platform/core/client';
 
 type SignalGridProps = {
   isLoading: boolean;
