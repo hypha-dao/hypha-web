@@ -23,8 +23,10 @@ export async function getAllCoherences(
     const coherences = await findAllCoherences({ db }, props);
 
     return coherences.map(
-      ({ status, roomId, archived, slug, ...rest }): Coherence => ({
-        status: status ?? 'signal',
+      ({ status, type, roomId, archived, slug, tags, ...rest }): Coherence => ({
+        type: type as CoherenceType,
+        status: (status as CoherenceStatus) ?? 'signal',
+        tags: tags as CoherenceTag[],
         roomId: roomId ?? undefined,
         archived: archived ?? false,
         slug: slug!,
