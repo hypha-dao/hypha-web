@@ -2,13 +2,15 @@
 
 import { FC } from 'react';
 import { Text } from '@radix-ui/themes';
-import { Coherence } from '../types';
 import { useSignalsSection } from '../hooks';
 import { Button, SectionFilter, SectionLoadMore } from '@hypha-platform/ui';
 import { Empty } from '../../common';
 import { SignalGridContainer } from './signal-grid.container';
-import { DirectionType } from '@hypha-platform/core/client';
-import { RocketIcon } from '@radix-ui/react-icons';
+import { Coherence, DirectionType } from '@hypha-platform/core/client';
+import { PlusIcon, RocketIcon } from '@radix-ui/react-icons';
+import { useParams } from 'next/navigation';
+import { Locale } from '@hypha-platform/i18n';
+import Link from 'next/link';
 
 type SignalSectionProps = {
   signals: Coherence[];
@@ -27,6 +29,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
   firstPageSize = 3,
   pageSize = 3,
 }) => {
+  const { lang, id } = useParams<{ lang: Locale; id: string }>();
   const {
     pages,
     loadMore,
@@ -40,6 +43,8 @@ export const SignalSection: FC<SignalSectionProps> = ({
     pageSize,
   });
 
+  const createSignalHref = `/${lang}/dho/${id}/coherence/new-signal`;
+
   return (
     <div className="flex flex-col justify-around items-center gap-4">
       <SectionFilter
@@ -50,10 +55,18 @@ export const SignalSection: FC<SignalSectionProps> = ({
         onChangeSearch={onUpdateSearch}
         inlineLabel={true}
       >
-        <Button variant="ghost" colorVariant="accent">
-          <RocketIcon />
-          Improve AI signals
-        </Button>
+        <div className="flex flex-row gap-2">
+          <Button variant="ghost" colorVariant="accent" disabled={true}>
+            <RocketIcon />
+            Improve AI signals
+          </Button>
+          <Link href={createSignalHref}>
+            <Button variant="default" colorVariant="accent">
+              <PlusIcon />
+              New Signal
+            </Button>
+          </Link>
+        </div>
       </SectionFilter>
 
       {pagination?.totalPages === 0 ? (

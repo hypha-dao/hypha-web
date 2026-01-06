@@ -7,3 +7,4 @@ export * from './space';
 export * from './transaction';
 export * from './events';
 export * from './notifications';
+export * from './coherence';
