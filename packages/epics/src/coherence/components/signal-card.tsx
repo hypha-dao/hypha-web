@@ -18,7 +18,7 @@ import { stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
 import { CheckIcon, Cross2Icon } from '@radix-ui/react-icons';
 import React from 'react';
 
-type SignalCardProps = { isLoading: boolean; refresh: () => void };
+type SignalCardProps = { isLoading: boolean; refresh: () => Promise<void> };
 
 export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   isLoading,
@@ -29,13 +29,8 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   refresh,
 }) => {
   const { jwt: authToken } = useJwt();
-  const {
-    updateCoherenceBySlug,
-    isUpdatingCoherence,
-    updatedCoherence,
-    errorUpdateCoherenceBySlugMutation,
-    resetUpdateCoherenceBySlugMutation,
-  } = useCoherenceMutationsWeb2Rsc(authToken);
+  const { updateCoherenceBySlug, isUpdatingCoherence } =
+    useCoherenceMutationsWeb2Rsc(authToken);
 
   const badges: BadgeItem[] = [
     {
@@ -58,7 +53,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     console.log('Start Conversation');
     //TODO
     await updateCoherenceBySlug({ slug, status: 'conversation' });
-    refresh();
+    await refresh();
   }, [updateCoherenceBySlug, slug, refresh]);
   const declineConversation = async () => {
     console.log('Not Relevant');

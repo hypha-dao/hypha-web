@@ -5,7 +5,7 @@ import { Coherence } from '@hypha-platform/core/client';
 type SignalGridProps = {
   isLoading: boolean;
   signals: Coherence[];
-  refresh: () => void;
+  refresh: () => Promise<void>;
 };
 
 export function SignalGrid({ isLoading, signals, refresh }: SignalGridProps) {

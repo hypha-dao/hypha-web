@@ -3,17 +3,27 @@ import { DbConfig } from '../../server';
 import { and, arrayOverlaps, desc, eq, sql } from 'drizzle-orm';
 import { CoherenceType } from '../coherence-types';
 import { CoherenceTag } from '../coherence-tags';
+import { CoherenceStatus } from '../coherence-statuses';
 
 type FindAllCoherencesInput = {
   spaceId?: number;
   search?: string;
   type?: CoherenceType;
   tags?: CoherenceTag[];
+  status?: CoherenceStatus;
+  includeArchived?: boolean;
 };
 
 export const findAllCoherences = async (
   { db }: DbConfig,
-  { spaceId, search, type, tags }: FindAllCoherencesInput,
+  {
+    spaceId,
+    search,
+    type,
+    tags,
+    status,
+    includeArchived = false,
+  }: FindAllCoherencesInput,
 ) => {
   if (spaceId === undefined) {
     return [];
@@ -24,7 +34,7 @@ export const findAllCoherences = async (
     .where(
       and(
         eq(coherences.spaceId, spaceId),
-        eq(coherences.archived, false),
+        includeArchived ? undefined : eq(coherences.archived, false),
         search
           ? sql`(
               -- Full-text search for exact word matches (highest priority)
@@ -40,6 +50,7 @@ export const findAllCoherences = async (
           : undefined,
         type ? eq(coherences.type, type) : undefined,
         tags ? arrayOverlaps(coherences.tags, tags) : undefined,
+        status ? eq(coherences.status, status) : undefined,
       ),
     )
     .orderBy(desc(coherences.createdAt));

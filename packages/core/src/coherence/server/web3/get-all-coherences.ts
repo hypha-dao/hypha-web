@@ -5,12 +5,15 @@ import { CoherenceType } from '../../coherence-types';
 import { CoherenceTag } from '../../coherence-tags';
 import { findAllCoherences } from '../queries';
 import { Coherence } from '../../types';
+import { CoherenceStatus } from '../../coherence-statuses';
 
 type GetAllCoherencesInput = {
   spaceId?: number;
   search?: string;
   type?: CoherenceType;
   tags?: CoherenceTag[];
+  status?: CoherenceStatus;
+  includeArchived?: boolean;
 };
 
 export async function getAllCoherences(

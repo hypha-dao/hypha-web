@@ -19,7 +19,7 @@ type SignalSectionProps = {
   isLoading: boolean;
   firstPageSize?: number;
   pageSize?: number;
-  refresh: () => void;
+  refresh: () => Promise<void>;
 };
 
 export const SignalSection: FC<SignalSectionProps> = ({
