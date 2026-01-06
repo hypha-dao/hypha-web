@@ -1,7 +1,7 @@
 'use client';
 
+import { Coherence } from '@hypha-platform/core/client';
 import React from 'react';
-import { Coherence } from '../types';
 import { useDebouncedCallback } from 'use-debounce';
 
 export const useSignalsSection = ({
