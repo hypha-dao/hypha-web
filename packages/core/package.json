@@ -24,6 +24,7 @@
     "./space/server/actions": "./src/space/server/actions.ts",
     "./people/server/actions": "./src/people/server/actions.ts",
     "./governance/server/actions": "./src/governance/server/actions.ts",
+    "./coherence/server/actions": "./src/coherence/server/actions.ts",
     "./generated": "./src/generated.ts"
   }
 }
