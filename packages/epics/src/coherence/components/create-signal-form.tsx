@@ -26,12 +26,11 @@ import {
   CoherenceTag,
   CoherenceType,
   schemaCreateCoherenceForm,
-  useCreateCoherenceOrchestrator,
+  useCoherenceMutationsWeb2Rsc,
   useJwt,
   useMe,
 } from '@hypha-platform/core/client';
 import React from 'react';
-import { useConfig } from 'wagmi';
 import { useScrollToErrors } from '../../hooks';
 import { ButtonClose } from '../../common';
 import { useRouter } from 'next/navigation';
@@ -50,17 +49,19 @@ export const CreateSignalForm = ({
   closeUrl,
 }: CreateSignalFormProps) => {
   const { person } = useMe();
-  const { jwt } = useJwt();
-  const config = useConfig();
+  const { jwt: authToken } = useJwt();
   const router = useRouter();
   const {
     createCoherence,
-    reset,
-    currentAction,
-    isError,
-    isPending,
-    progress,
-  } = useCreateCoherenceOrchestrator({ authToken: jwt, config });
+    isCreatingCoherence,
+    createdCoherence,
+    errorCreateCoherenceMutation,
+    resetCreateCoherenceMutation,
+  } = useCoherenceMutationsWeb2Rsc(authToken);
+
+  const progress = React.useMemo(() => {
+    return isCreatingCoherence ? 50 : createdCoherence ? 100 : 0;
+  }, [isCreatingCoherence, createdCoherence]);
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
@@ -140,18 +141,15 @@ export const CreateSignalForm = ({
     }
   }, [spaceId, form]);
 
-  React.useEffect(() => {
-    if (progress < 100) {
-      return;
-    }
-    router.push(successfulUrl);
-  }, [successfulUrl, progress]);
-
-  const handleCreate = async (data: FormValues) => {
-    await createCoherence({
-      ...data,
-    });
-  };
+  const handleCreate = React.useCallback(
+    async (data: FormValues) => {
+      await createCoherence({
+        ...data,
+      });
+      router.push(successfulUrl);
+    },
+    [router, successfulUrl],
+  );
 
   const handleInvalid = async (err?: any) => {
     console.log('form errors:', err);
@@ -161,16 +159,16 @@ export const CreateSignalForm = ({
     <LoadingBackdrop
       showKeepWindowOpenMessage={true}
       progress={progress}
-      isLoading={isPending}
+      isLoading={isCreatingCoherence}
       fullHeight={true}
       message={
-        isError ? (
+        errorCreateCoherenceMutation ? (
           <div className="flex flex-col">
             <div>Ouh Snap. There was an error</div>
-            <Button onClick={reset}>Reset</Button>
+            <Button onClick={resetCreateCoherenceMutation}>Reset</Button>
           </div>
         ) : (
-          <div>{currentAction}</div>
+          <div>Creating new signal</div>
         )
       }
     >
