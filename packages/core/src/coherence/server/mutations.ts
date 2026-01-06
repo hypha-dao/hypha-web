@@ -8,6 +8,7 @@ import { eq } from 'drizzle-orm';
 export const createCoherence = async (
   {
     creatorId,
+    spaceId,
     slug: maybeSlug,
     status: maybeStatus,
     ...rest
@@ -17,6 +18,9 @@ export const createCoherence = async (
   if (creatorId === undefined) {
     throw new Error('creatorId is required to create coherence');
   }
+  if (spaceId === undefined) {
+    throw new Error('spaceId is required to create coherence');
+  }
   const slug = maybeSlug || `coh-${uuidv4().slice(0, 8)}`;
   const status = maybeStatus || 'signal';
 
@@ -24,6 +28,7 @@ export const createCoherence = async (
     .insert(coherences)
     .values({
       creatorId,
+      spaceId,
       slug,
       status,
       ...rest,
