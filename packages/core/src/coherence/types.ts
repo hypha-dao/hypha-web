@@ -17,6 +17,8 @@ export interface CreateCoherenceInput {
 
 export interface UpdateCoherenceInput {
   slug?: string;
+  archived?: boolean;
+  status?: CoherenceStatus;
   //TODO
 }
 
@@ -33,6 +35,7 @@ export type Coherence = {
   type: CoherenceType;
   title: string;
   description: string;
+  slug: string;
   roomId?: string;
   archived: boolean;
   tags: CoherenceTag[];
