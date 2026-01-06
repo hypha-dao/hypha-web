@@ -2,8 +2,7 @@
 
 import React from 'react';
 import useSWR from 'swr';
-import { MOCK_RECORDS } from './use-coherence-records';
-import { Coherence } from '@hypha-platform/core/client';
+import { getCoherenceBySlug } from '../../../../core/src/coherence/server/web3';
 
 type UseConversationProps = {
   chatId: string;
@@ -13,20 +12,12 @@ export const useConversation = ({ chatId }: UseConversationProps) => {
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  const loadConversation = async (chatId: string): Promise<Coherence> => {
-    const record = MOCK_RECORDS.find((rec) => rec.roomId === chatId);
-    if (!record) {
-      throw new Error('Chat not found');
-    }
-    return record;
-  };
-
   const { data: conversation } = useSWR(
     [chatId, 'loadConversation'],
     async ([chatId]) => {
       setIsLoading(true);
       try {
-        return await loadConversation(chatId);
+        return await getCoherenceBySlug({ slug: chatId });
       } catch (error) {
         setError(error instanceof Error ? error.message : `${error}`);
       } finally {

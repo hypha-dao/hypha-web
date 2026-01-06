@@ -19,6 +19,7 @@ type SignalSectionProps = {
   isLoading: boolean;
   firstPageSize?: number;
   pageSize?: number;
+  refresh: () => void;
 };
 
 export const SignalSection: FC<SignalSectionProps> = ({
@@ -28,6 +29,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
   isLoading,
   firstPageSize = 3,
   pageSize = 3,
+  refresh,
 }) => {
   const { lang, id } = useParams<{ lang: Locale; id: string }>();
   const {
@@ -91,6 +93,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
                 ],
               }}
               signals={filteredSignals}
+              refresh={refresh}
             />
           ))}
         </div>

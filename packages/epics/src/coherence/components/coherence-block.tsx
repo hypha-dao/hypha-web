@@ -19,6 +19,7 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
   const {
     records: { signals, conversations },
     isLoading: isRecordsLoading,
+    refresh,
   } = useCoherenceRecords({
     spaceId: space?.id,
     order: [
@@ -42,6 +43,7 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
             isLoading={isSpaceLoading || isRecordsLoading}
             firstPageSize={3}
             pageSize={3}
+            refresh={refresh}
           />
           <ConversationSection
             basePath={`${basePath}/chat`}

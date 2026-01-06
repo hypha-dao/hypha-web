@@ -20,6 +20,7 @@ export const useFindCoherences = ({
     data: coherences,
     isLoading,
     error,
+    mutate: refresh,
   } = useSWR(
     [{ spaceId, search, type, tags }, 'getAllCoherences'],
     async ([{ search, type, tags }]) =>
@@ -40,5 +41,6 @@ export const useFindCoherences = ({
     coherences,
     isLoading,
     error,
+    refresh,
   };
 };

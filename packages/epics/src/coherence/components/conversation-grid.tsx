@@ -20,7 +20,7 @@ export function ConversationGrid({
       {conversations.map((conversation, index) => (
         <Link
           key={`conversation-card-${index}`}
-          href={`${basePath}/${conversation.roomId}`}
+          href={`${basePath}/${conversation.slug}`}
         >
           <ConversationCard {...conversation} isLoading={isLoading} />
         </Link>

@@ -10,11 +10,13 @@ type SignalGridContainerProps = {
     order?: Order<Coherence>;
   };
   signals: Coherence[];
+  refresh: () => void;
 };
 
 export const SignalGridContainer = ({
   pagination,
   signals,
+  refresh,
 }: SignalGridContainerProps) => {
   const { page, firstPageSize, pageSize } = pagination;
   const startIndex = page <= 1 ? 0 : firstPageSize + (page - 2) * pageSize;
@@ -30,6 +32,7 @@ export const SignalGridContainer = ({
       signals={paginatedSignals.map((signal) => ({
         ...signal,
       }))}
+      refresh={refresh}
     />
   );
 };

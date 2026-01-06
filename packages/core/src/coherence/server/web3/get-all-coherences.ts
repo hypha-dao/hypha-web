@@ -20,10 +20,11 @@ export async function getAllCoherences(
     const coherences = await findAllCoherences({ db }, props);
 
     return coherences.map(
-      ({ status, roomId, archived, ...rest }): Coherence => ({
+      ({ status, roomId, archived, slug, ...rest }): Coherence => ({
         status: status ?? 'signal',
         roomId: roomId ?? undefined,
         archived: archived ?? false,
+        slug: slug!,
         ...rest,
       }),
     );
