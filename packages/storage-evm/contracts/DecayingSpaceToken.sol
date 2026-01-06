@@ -40,6 +40,13 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
     uint256 _spaceId,
     uint256 _maxSupply,
     bool _transferable,
+    bool _fixedMaxSupply,
+    bool _autoMinting,
+    uint256 _priceInUSD,
+    bool _useTransferWhitelist,
+    bool _useReceiveWhitelist,
+    address[] memory _initialTransferWhitelist,
+    address[] memory _initialReceiveWhitelist,
     uint256 _decayPercentage,
     uint256 _decayInterval
   ) public initializer {
@@ -49,7 +56,14 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
       _executor,
       _spaceId,
       _maxSupply,
-      _transferable
+      _transferable,
+      _fixedMaxSupply,
+      _autoMinting,
+      _priceInUSD,
+      _useTransferWhitelist,
+      _useReceiveWhitelist,
+      _initialTransferWhitelist,
+      _initialReceiveWhitelist
     );
     require(
       _decayPercentage <= 10000,
@@ -92,6 +106,12 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
    */
   function balanceOf(address account) public view override returns (uint256) {
     uint256 currentBalance = super.balanceOf(account);
+
+    // If token is archived or decay is not configured, return actual balance without decay
+    if (archived || decayRate == 0) {
+      return currentBalance;
+    }
+
     if (currentBalance == 0 || lastApplied[account] == 0) {
       return currentBalance;
     }
@@ -124,6 +144,12 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
    * @param account The address to apply decay to
    */
   function applyDecay(address account) public {
+    // If token is archived or decay is not configured, update lastApplied but don't apply decay
+    if (archived || decayRate == 0) {
+      lastApplied[account] = block.timestamp;
+      return;
+    }
+
     uint256 oldBalance = super.balanceOf(account);
     uint256 newBalance = balanceOf(account);
 
@@ -148,13 +174,22 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
    */
   function mint(address to, uint256 amount) public override {
     require(msg.sender == executor, 'Only executor can mint');
+    require(!archived, 'Token is archived');
     if (lastApplied[to] == 0) {
       lastApplied[to] = block.timestamp;
     } else {
       applyDecay(to); // Apply any pending decay first
     }
     _addTokenHolder(to);
-    super.mint(to, amount);
+    // Call RegularSpaceToken's mint but skip the archived check since we already did it
+    require(msg.sender == executor, 'Only executor can mint');
+    // Check against maximum supply
+    require(
+      maxSupply == 0 || totalSupply() + amount <= maxSupply,
+      'Mint max supply problemchik blet'
+    );
+
+    _mint(to, amount);
   }
 
   /**
@@ -162,9 +197,33 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
    */
   function transfer(address to, uint256 amount) public override returns (bool) {
     address sender = _msgSender();
+    require(!archived, 'Token is archived');
     require(transferable || sender == executor, 'Token transfers are disabled');
+
+    // Executor always bypasses whitelist checks
+    if (sender != executor) {
+      // Check transfer whitelist (direct or space-based)
+      if (useTransferWhitelist) {
+        require(
+          canTransfer[sender] || _isInTransferWhitelistedSpace(sender),
+          'Sender not whitelisted to transfer'
+        );
+      }
+    }
+
+    // Executor can always receive tokens
+    if (to != executor) {
+      // Check receive whitelist (direct or space-based)
+      if (useReceiveWhitelist) {
+        require(
+          canReceive[to] || _isInReceiveWhitelistedSpace(to),
+          'Recipient not whitelisted to receive'
+        );
+      }
+    }
+
     applyDecay(sender);
-    if (sender == executor) {
+    if (sender == executor && autoMinting) {
       if (super.balanceOf(sender) < amount) {
         uint256 amountToMint = amount - super.balanceOf(sender);
         mint(sender, amountToMint);
@@ -190,13 +249,36 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
     uint256 amount
   ) public override returns (bool) {
     address spender = _msgSender();
+    require(!archived, 'Token is archived');
     require(
       transferable || spender == executor,
       'Token transfers are disabled'
     );
 
+    // Executor always bypasses whitelist checks
+    if (from != executor) {
+      // Check transfer whitelist (direct or space-based)
+      if (useTransferWhitelist) {
+        require(
+          canTransfer[from] || _isInTransferWhitelistedSpace(from),
+          'Sender not whitelisted to transfer'
+        );
+      }
+    }
+
+    // Executor can always receive tokens
+    if (to != executor) {
+      // Check receive whitelist (direct or space-based)
+      if (useReceiveWhitelist) {
+        require(
+          canReceive[to] || _isInReceiveWhitelistedSpace(to),
+          'Recipient not whitelisted to receive'
+        );
+      }
+    }
+
     applyDecay(from);
-    if (from == executor) {
+    if (from == executor && autoMinting) {
       if (super.balanceOf(from) < amount) {
         uint256 amountToMint = amount - super.balanceOf(from);
         mint(from, amountToMint);
@@ -234,5 +316,27 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
     }
 
     return totalDecayedSupply;
+  }
+
+  /**
+   * @dev Override setArchived to update all token holders' lastApplied timestamps when unarchiving
+   * This prevents decay from accumulating during the archived period
+   */
+  function setArchived(bool _archived) external override {
+    require(msg.sender == executor, 'Only executor can update archived status');
+
+    // If we're unarchiving (going from true to false), update all holders' timestamps
+    if (archived && !_archived) {
+      // Update lastApplied for all token holders to prevent retroactive decay
+      for (uint256 i = 0; i < _tokenHolders.length; i++) {
+        address holder = _tokenHolders[i];
+        if (_isTokenHolder[holder] && lastApplied[holder] > 0) {
+          lastApplied[holder] = block.timestamp;
+        }
+      }
+    }
+
+    archived = _archived;
+    emit ArchivedStatusUpdated(_archived);
   }
 }

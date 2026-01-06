@@ -74,6 +74,12 @@ npx nx run storage-evm:script ./scripts/energy-distribution.upgrade.ts --network
 npx nx run storage-evm:script ./scripts/energy-token.deploy.ts --network base-mainnet
 
 npx nx run storage-evm:script ./scripts/energy-token.manual-upgrade.ts --network base-mainnet
+
+
+npx nx run storage-evm:script ./scripts/rndao-decaying-space-token.upgrade.ts --network base-mainnet
+npx nx run storage-evm:script ./scripts/upgrade-all-token-factories.ts --network base-mainnet
+
+
 ```
 
 ### exit-method-directory-proxy.deploy
@@ -105,6 +111,10 @@ npx nx run storage-evm:script ./scripts/join-method-open-join.deploy.ts --networ
 ```bash
 npx nx run storage-evm:script ./scripts/no-exit.deploy.ts --network base-mainnet
 npx nx run storage-evm:script ./scripts/regular-space-token-proxy.deploy.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/regular-token-factory-proxy.upgrade.ts --network base-mainnet
+
+regular-token-factory-proxy.upgrade.ts
 
 regular-space-token-proxy.deploy.ts
 ```
@@ -193,13 +203,19 @@ npx nx run storage-evm:test ./test/EnergySettlementMultiCycle.test.ts
 
 npx nx run storage-evm:test ./test/TransferHelper.test.ts
 
+npx nx run storage-evm:test ./test/TokenConfiguration.test.ts
+
+
 
 ```
 
 ### Upgrade Space Factory
 
 ```bash
-npx nx run storage-evm:script ./scripts/dao-space-factory.upgrade.ts --network base-mainnet
+npx nx run storage-evm:script ./scripts/upgrade-multiple-tokens.ts --network base-mainnet
+npx nx run storage-evm:script ./scripts/upgrade-multiple-tokens.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/set-transfer-helper-multiple-tokens.ts --network base-mainnet
 ```
 
 ### Upgrade DAO Proposals
@@ -212,6 +228,15 @@ npx nx run storage-evm:script ./scripts/dao-proposals.upgrade.ts --network base-
 
 ```bash
 npx nx run storage-evm:script ./scripts/token-factory.upgrade.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/ownership-space-token-proxy.deploy.ts --network base-mainnet
+
+
+npx nx run storage-evm:script ./scripts/dao-space-factory.upgrade.ts --network base-mainnet
+
+dao-space-factory.upgrade.ts
+
+ownership-space-token-proxy.deploy.ts
 ```
 
 ### Upgrade Token Voting Power

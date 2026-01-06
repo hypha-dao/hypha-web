@@ -1,0 +1,15 @@
+{
+  "tokenType": "Regular",
+  "dryRun": false,
+  "timestamp": "2025-11-14T09:31:57.539Z",
+  "totalTime": "11.92",
+  "results": [
+    {
+      "tokenAddress": "0x16a9565fd64786840bc495fF67093718aEeB93A8",
+      "success": true,
+      "oldImplementation": "0xeF88947ee8FC7Fb418d043ce65a67A4891B9FDF0",
+      "newImplementation": "0x8b89e59b3e621cb7f806238C160b229025D229EC",
+      "error": null
+    }
+  ]
+}

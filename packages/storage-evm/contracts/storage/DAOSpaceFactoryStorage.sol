@@ -57,4 +57,9 @@ contract DAOSpaceFactoryStorage is Initializable {
   // Track active invite proposals for each space and member
   mapping(uint256 => mapping(address => uint256))
     public memberActiveInviteProposal;
+
+  // Space visibility settings
+  // 0 = Public, 1 = Network, 2 = Org, 3 = Space
+  mapping(uint256 => uint256) public spaceAccess;
+  mapping(uint256 => uint256) public spaceDiscoverability;
 }
