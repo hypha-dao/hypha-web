@@ -13,13 +13,16 @@ const ADDRESSES_TO_CHECK = [
   '0x8d249FDf6E2d716F9219D889f826e5EFa786D83d',
   '0x9ed9f6a5a1c09150E5Bf5bD33ed7F5855222402c',
   '0x335C371524dEeCF4dfCA1AcF405F2100955c64f2',
+  '0x57A54C957499b9fA6c76Fe35EE59318A6F4089d2',
+  '0x57Acf39D147fEf8de8640f48f87c1127F162Fb79',
+  '0x18f1c7D98a5166653275D61093796c3ea77c4107',
 ];
 
 const rndaoDecayingSpaceTokenAbi = [
   // Read functions
   {
-    inputs: [{ internalType: 'address', name: '', type: 'address' }],
-    name: 'canReceive',
+    inputs: [{ internalType: 'address', name: 'account', type: 'address' }],
+    name: 'canAccountReceive',
     outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
     stateMutability: 'view',
     type: 'function',
@@ -56,15 +59,25 @@ async function main(): Promise<void> {
   );
 
   // Check which addresses need to be whitelisted
+  // Uses canAccountReceive() which checks both direct whitelist AND space-based membership
   console.log('=== Checking receive whitelist status ===');
   const addressesToWhitelist: string[] = [];
 
   for (const address of ADDRESSES_TO_CHECK) {
-    const canReceive = await contract.canReceive(address);
-    if (canReceive) {
-      console.log(`✅ ${address} - already whitelisted`);
-    } else {
-      console.log(`❌ ${address} - NOT whitelisted, will add`);
+    try {
+      const canReceive = await contract.canAccountReceive(address);
+      if (canReceive) {
+        console.log(
+          `✅ ${address} - already whitelisted (direct or via space membership)`,
+        );
+      } else {
+        console.log(`❌ ${address} - NOT whitelisted, will add`);
+        addressesToWhitelist.push(address);
+      }
+    } catch {
+      // canAccountReceive may revert if space membership check fails (not a member)
+      // In this case, treat as not whitelisted
+      console.log(`❌ ${address} - NOT whitelisted (check reverted), will add`);
       addressesToWhitelist.push(address);
     }
   }
@@ -103,11 +116,16 @@ async function main(): Promise<void> {
   let allVerified = true;
 
   for (const address of addressesToWhitelist) {
-    const canReceive = await contract.canReceive(address);
-    if (canReceive) {
-      console.log(`✅ ${address} - verified`);
-    } else {
-      console.log(`❌ ${address} - verification FAILED`);
+    try {
+      const canReceive = await contract.canAccountReceive(address);
+      if (canReceive) {
+        console.log(`✅ ${address} - verified`);
+      } else {
+        console.log(`❌ ${address} - verification FAILED`);
+        allVerified = false;
+      }
+    } catch {
+      console.log(`❌ ${address} - verification FAILED (check reverted)`);
       allVerified = false;
     }
   }
