@@ -336,8 +336,13 @@ export const MultiSelect = React.forwardRef<
                   const isSelected = selectedValues.includes(option.value);
                   const isDelimiter =
                     option.value.length === 0 || option.value === '---';
+                  const isGroupTitle = option.value === '===';
                   return isDelimiter ? (
                     <CommandSeparator key={`sep-${index}`} />
+                  ) : isGroupTitle ? (
+                    <CommandItem key={`title-${index}`}>
+                      <span>{option.label}</span>
+                    </CommandItem>
                   ) : (
                     <CommandItem
                       key={`${option.value}-${index}`}

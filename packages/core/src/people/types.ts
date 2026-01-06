@@ -16,6 +16,10 @@ export interface Person {
   updatedAt: Date;
 }
 
+export interface GetPersonByIdInput {
+  id?: number;
+}
+
 export interface EditPersonInput {
   avatarUrl?: string;
   name?: string;
