@@ -12,16 +12,6 @@ import {
 import { InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
 import { commonDateFields } from './shared';
 import { spaces } from './space';
-import { COHERENCE_STATUSES } from './coherence-statuses';
-import { COHERENCE_TAGS } from './coherence-tags';
-import { COHERENCE_TYPES } from './coherence-types';
-
-export const coherenceStatusEnum = pgEnum(
-  'coherence_status',
-  COHERENCE_STATUSES,
-);
-export const coherenceTagsEnum = pgEnum('coherence_tags', COHERENCE_TAGS);
-export const coherenceTypeEnum = pgEnum('coherence_type', COHERENCE_TYPES);
 
 export const coherences = pgTable(
   'coherences',
@@ -31,15 +21,12 @@ export const coherences = pgTable(
     spaceId: integer('space_id').references(() => spaces.id),
     title: text('title').notNull(),
     description: text('description').notNull(),
-    status: coherenceStatusEnum('status').default('signal'),
-    type: coherenceTypeEnum('type').notNull(),
+    status: text('status').default('signal'),
+    type: text('type').notNull(),
     slug: varchar('slug', { length: 255 }),
     roomId: text('room_id'),
     archived: boolean().default(false),
-    tags: jsonb('tags')
-      .$type<Array<(typeof coherenceTagsEnum.enumValues)[number]>>()
-      .notNull()
-      .default([]),
+    tags: jsonb('tags').$type<Array<string>>().notNull().default([]),
     ...commonDateFields,
   },
   (table) => [
