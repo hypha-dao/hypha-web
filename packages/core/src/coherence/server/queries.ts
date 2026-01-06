@@ -26,7 +26,7 @@ export const findAllCoherences = async (
   }: FindAllCoherencesInput,
 ) => {
   if (spaceId === undefined) {
-    return [];
+    return [] as Coherence[];
   }
   const results = await db
     .select()
