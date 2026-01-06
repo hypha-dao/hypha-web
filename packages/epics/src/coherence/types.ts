@@ -1,8 +1,9 @@
+import {
+  CoherenceTag,
+  CoherenceStatus,
+  CoherenceType,
+} from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
-
-export type CoherenceType = 'signal' | 'conversation';
-
-export type LabelType = 'opportunity' | 'tensions';
 
 export type ChatCreatorType = {
   avatar?: string;
@@ -10,20 +11,6 @@ export type ChatCreatorType = {
   surname?: string;
   type?: 'person' | 'space';
   address?: string;
-};
-
-export type Coherence = {
-  id: number;
-  createdAt: Date;
-  updatedAt: Date;
-  status: CoherenceType;
-  label: string;
-  labelType: LabelType;
-  title: string;
-  description: string;
-  roomId?: string;
-  creatorAddress?: `0x${string}`;
-  archived: boolean;
 };
 
 export const COHERENCE_ORDERS = [

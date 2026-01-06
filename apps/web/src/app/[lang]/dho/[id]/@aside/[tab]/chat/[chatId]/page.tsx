@@ -10,6 +10,7 @@ import {
 import { LoadingBackdrop } from '@hypha-platform/ui';
 import { useParams } from 'next/navigation';
 import { getDhoPathCoherence } from '../../../../@tab/coherence/constants';
+import { usePersonById } from '@hypha-platform/core/client';
 
 export default function ChatPage() {
   const { lang, id: spaceId, chatId } = useParams<ChatPageParams>();
@@ -20,8 +21,9 @@ export default function ChatPage() {
   } = useConversation({
     chatId,
   });
-  const { isLoading: isPersonLoading, person: creator } =
-    usePersonByWeb3Address(conversation?.creatorAddress ?? '0x0');
+  const { isLoading: isPersonLoading, person: creator } = usePersonById({
+    id: conversation?.creatorId,
+  });
 
   const closeUrl = getDhoPathCoherence(lang, spaceId);
 

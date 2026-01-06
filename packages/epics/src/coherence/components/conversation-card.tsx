@@ -14,8 +14,8 @@ import {
   EyeOpenIcon,
   PaperPlaneIcon,
 } from '@radix-ui/react-icons';
-import { usePersonByWeb3Address } from '../../governance';
 import React from 'react';
+import { usePersonById } from '@hypha-platform/core/client';
 
 type ConversationCardProps = { isLoading: boolean };
 
@@ -23,11 +23,12 @@ export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
   isLoading,
   title,
   description,
-  creatorAddress,
+  creatorId,
 }) => {
   const [message, setMessage] = React.useState<string>('');
-  const { isLoading: isPersonLoading, person: creator } =
-    usePersonByWeb3Address(creatorAddress ?? '0x0');
+  const { isLoading: isPersonLoading, person: creator } = usePersonById({
+    id: creatorId,
+  });
   const views = 59; //TODO: compute number of conversation view
   const messages = 16; //TODO: compute number of conversation messages
 
