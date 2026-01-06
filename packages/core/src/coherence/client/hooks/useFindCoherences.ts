@@ -29,7 +29,11 @@ export const useFindCoherences = ({
         type,
         tags,
       }),
-    { revalidateOnFocus: true },
+    {
+      refreshInterval: 5000,
+      keepPreviousData: true,
+      revalidateOnFocus: true,
+    },
   );
 
   return {
