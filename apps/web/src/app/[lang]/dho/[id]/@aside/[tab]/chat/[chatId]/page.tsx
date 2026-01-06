@@ -5,7 +5,6 @@ import {
   ChatPageParams,
   SidePanel,
   useConversation,
-  usePersonByWeb3Address,
 } from '@hypha-platform/epics';
 import { LoadingBackdrop } from '@hypha-platform/ui';
 import { useParams } from 'next/navigation';
