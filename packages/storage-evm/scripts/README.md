@@ -231,6 +231,11 @@ npx nx run storage-evm:script ./scripts/token-factory.upgrade.ts --network base-
 
 npx nx run storage-evm:script ./scripts/ownership-space-token-proxy.deploy.ts --network base-mainnet
 
+
+npx nx run storage-evm:script ./scripts/dao-space-factory.upgrade.ts --network base-mainnet
+
+dao-space-factory.upgrade.ts
+
 ownership-space-token-proxy.deploy.ts
 ```
 

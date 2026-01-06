@@ -304,7 +304,8 @@ contract DAOProposalsImplementation is
 
   function checkAndExecuteProposal(uint256 _proposalId) internal {
     ProposalCore storage proposal = proposalsCoreData[_proposalId];
-    if (proposal.executed || proposal.expired) return;
+    if (proposal.executed || proposal.expired || proposalWithdrawn[_proposalId])
+      return;
 
     (uint256 u, uint256 q, , , , , , , , ) = spaceFactory.getSpaceDetails(
       proposal.spaceId
@@ -637,13 +638,23 @@ contract DAOProposalsImplementation is
     require(address(spaceFactory) != address(0), 'Contracts not initialized');
     ProposalCore storage proposal = proposalsCoreData[_proposalId];
 
-    require(proposal.creator == msg.sender, 'Only creator can withdraw');
+    require(
+      proposal.creator == msg.sender || msg.sender == owner(),
+      'Only creator or owner can withdraw'
+    );
     require(!proposal.executed, 'Proposal already executed');
     require(!proposal.expired, 'Proposal has expired');
     require(!proposalWithdrawn[_proposalId], 'Proposal already withdrawn');
 
     proposalWithdrawn[_proposalId] = true;
     spaceWithdrawnProposals[proposal.spaceId].push(_proposalId);
+
+    // If withdrawn by owner (not creator), also mark as rejected
+    if (msg.sender == owner() && msg.sender != proposal.creator) {
+      proposal.expired = true;
+      spaceRejectedProposals[proposal.spaceId].push(_proposalId);
+      emit ProposalRejected(_proposalId, proposal.yesVotes, proposal.noVotes);
+    }
 
     emit ProposalWithdrawn(_proposalId, proposal.spaceId, msg.sender);
   }
