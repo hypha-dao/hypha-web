@@ -3,6 +3,7 @@
 import React from 'react';
 import useSWR from 'swr';
 import { useJwt, Person } from '@hypha-platform/core/client';
+import { isAddress } from 'ethers';
 
 type UsePersonByWeb3AddressReturn = {
   person?: Person | null;
@@ -20,7 +21,7 @@ export const usePersonByWeb3Address = (
   );
 
   const { data: person, isLoading } = useSWR(
-    jwt ? [endpoint, jwt] : null,
+    isAddress(address) && address !== '0x0' && jwt ? [endpoint, jwt] : null,
     ([endpoint]) =>
       fetch(endpoint, {
         headers: {
