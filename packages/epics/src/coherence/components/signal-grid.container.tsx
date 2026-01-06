@@ -10,7 +10,7 @@ type SignalGridContainerProps = {
     order?: Order<Coherence>;
   };
   signals: Coherence[];
-  refresh: () => void;
+  refresh: () => Promise<void>;
 };
 
 export const SignalGridContainer = ({
