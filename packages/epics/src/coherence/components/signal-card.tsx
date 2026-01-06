@@ -1,3 +1,4 @@
+import { Coherence } from '@hypha-platform/core/client';
 import {
   BadgeItem,
   BadgeProps,
@@ -8,7 +9,6 @@ import {
   CardTitle,
   Skeleton,
 } from '@hypha-platform/ui';
-import { Coherence } from '../types';
 import { stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
 import { CheckIcon, Cross2Icon } from '@radix-ui/react-icons';
 
