@@ -5,7 +5,7 @@ import { useCoherenceRecords } from '../hooks';
 import { ConversationSection } from './conversation-section';
 import { SignalSection } from './signal-section';
 import { Empty } from '../../common/empty';
-import { DirectionType } from '@hypha-platform/core/client';
+import { DirectionType, useSpaceBySlug } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 
 type CoherenceBlockProps = {
@@ -15,10 +15,12 @@ type CoherenceBlockProps = {
 
 export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
   const { isAuthenticated } = useAuthentication();
+  const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
   const {
     records: { signals, conversations },
-    isLoading,
+    isLoading: isRecordsLoading,
   } = useCoherenceRecords({
+    spaceId: space?.id,
     order: [
       {
         name: 'createdAt',
@@ -37,7 +39,7 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
             label="AI Signals"
             hasSearch={false}
             signals={signals}
-            isLoading={isLoading}
+            isLoading={isSpaceLoading || isRecordsLoading}
             firstPageSize={3}
             pageSize={3}
           />
@@ -46,7 +48,7 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
             label="Conversations"
             hasSearch={true}
             conversations={conversations}
-            isLoading={isLoading}
+            isLoading={isSpaceLoading || isRecordsLoading}
             firstPageSize={4}
             pageSize={2}
           />
