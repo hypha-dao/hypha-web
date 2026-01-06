@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { ConversationCard } from './conversation-card';
-import { Coherence } from '../types';
+import { Coherence } from '@hypha-platform/core/client';
 
 type ConversationGridProps = {
   isLoading: boolean;

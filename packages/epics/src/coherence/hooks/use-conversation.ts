@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Coherence } from '../types';
 import useSWR from 'swr';
 import { MOCK_RECORDS } from './use-coherence-records';
+import { Coherence } from '@hypha-platform/core/client';
 
 type UseConversationProps = {
   chatId: string;

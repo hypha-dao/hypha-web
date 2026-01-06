@@ -6,7 +6,6 @@ import {
   Input,
   Skeleton,
 } from '@hypha-platform/ui';
-import { Coherence } from '../types';
 import { PersonLabel } from '../../people/components/person-label';
 import { stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
 import {
@@ -15,7 +14,7 @@ import {
   PaperPlaneIcon,
 } from '@radix-ui/react-icons';
 import React from 'react';
-import { usePersonById } from '@hypha-platform/core/client';
+import { Coherence, usePersonById } from '@hypha-platform/core/client';
 
 type ConversationCardProps = { isLoading: boolean };
 

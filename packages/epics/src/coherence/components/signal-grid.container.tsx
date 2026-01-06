@@ -1,5 +1,4 @@
-import { Order } from '@hypha-platform/core/client';
-import { Coherence } from '../types';
+import { Coherence, Order } from '@hypha-platform/core/client';
 import { SignalGrid } from './signal-grid';
 
 type SignalGridContainerProps = {

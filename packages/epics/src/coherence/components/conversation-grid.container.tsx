@@ -1,6 +1,5 @@
-import { Order } from '@hypha-platform/core/client';
+import { Coherence, Order } from '@hypha-platform/core/client';
 import { ConversationGrid } from './conversation-grid';
-import { Coherence } from '../types';
 
 type ConversationGridContainerProps = {
   basePath: string;
