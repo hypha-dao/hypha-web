@@ -6,10 +6,12 @@ import { CoherenceType } from '../../coherence-types';
 import { CoherenceTag } from '../../coherence-tags';
 
 export const useFindCoherences = ({
+  spaceId,
   search,
   type,
   tags,
 }: {
+  spaceId?: number;
   search?: string;
   type?: CoherenceType;
   tags?: CoherenceTag[];
@@ -19,9 +21,10 @@ export const useFindCoherences = ({
     isLoading,
     error,
   } = useSWR(
-    [{ search, type, tags }, 'getAllCoherences'],
+    [{ spaceId, search, type, tags }, 'getAllCoherences'],
     async ([{ search, type, tags }]) =>
       await getAllCoherences({
+        spaceId,
         search,
         type,
         tags,
