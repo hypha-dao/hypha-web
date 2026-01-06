@@ -153,27 +153,102 @@ export const useJoinSpaceProposalHandler = ({
 
         const maxAttempts = 10;
         const retryDelay = 500;
+        const pollInterval = 200;
+        const maxPollTime = 3000;
+
+        const fetchAndFindSpace = async (): Promise<Space | null> => {
+          if (!jwt) return null;
+
+          try {
+            const res = await fetch(spacesEndpoint, {
+              headers: {
+                Authorization: `Bearer ${jwt}`,
+              },
+            });
+            if (!res.ok) {
+              console.warn(
+                `Failed to fetch spaces: ${res.status} ${res.statusText}`,
+              );
+              return null;
+            }
+            const spaces: Space[] = await res.json();
+            return spaces.find((s) => s.web3SpaceId === targetSpaceId) ?? null;
+          } catch (error) {
+            console.warn('Error fetching spaces directly:', error);
+            return null;
+          }
+        };
 
         const waitForSpace = async (): Promise<Space> => {
           for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-            await mutateSpaces();
+            try {
+              await mutateSpaces();
+            } catch (error) {
+              console.warn(
+                `Error during mutateSpaces on attempt ${attempt}:`,
+                error,
+              );
+            }
+            let targetSpace: Space | undefined = undefined;
 
-            await new Promise((resolve) => setTimeout(resolve, retryDelay));
+            const pollStartTime = Date.now();
+            while (Date.now() - pollStartTime < maxPollTime) {
+              targetSpace = findSpaceByWeb3Id(targetSpaceId);
+              if (targetSpace) {
+                console.log(
+                  `Space ${targetSpaceId} found in cache on attempt ${attempt}/${maxAttempts}`,
+                );
+                return targetSpace;
+              }
 
-            const targetSpace = findSpaceByWeb3Id(targetSpaceId);
-            if (targetSpace) {
-              return targetSpace;
+              await new Promise((resolve) => setTimeout(resolve, pollInterval));
             }
 
+            const directlyFetchedSpace = await fetchAndFindSpace();
+            if (directlyFetchedSpace) {
+              console.log(
+                `Space ${targetSpaceId} found via direct fetch on attempt ${attempt}/${maxAttempts}`,
+              );
+              await mutateSpaces();
+              return directlyFetchedSpace;
+            }
+
+            const spacesCount = allSpaces?.length ?? 0;
+            const web3Ids = allSpaces?.map((s: Space) => s.web3SpaceId) ?? [];
             console.log(
-              `Space ${targetSpaceId} not found, attempt ${attempt}/${maxAttempts}...`,
+              `Space ${targetSpaceId} not found, attempt ${attempt}/${maxAttempts}. ` +
+                `Spaces loaded: ${spacesCount}, Loading: ${isLoadingSpaces}, ` +
+                `Error: ${spacesError ? String(spacesError) : 'none'}, ` +
+                `Available web3Ids: [${web3Ids.slice(0, 10).join(', ')}${
+                  web3Ids.length > 10 ? '...' : ''
+                }]`,
             );
+
+            if (attempt < maxAttempts) {
+              await new Promise((resolve) => setTimeout(resolve, retryDelay));
+            }
           }
 
+          const finalDirectFetch = await fetchAndFindSpace();
+          if (finalDirectFetch) {
+            await mutateSpaces();
+            return finalDirectFetch;
+          }
+
+          const finalSpace = findSpaceByWeb3Id(targetSpaceId);
+          if (finalSpace) {
+            return finalSpace;
+          }
+
+          const spacesCount = allSpaces?.length ?? 0;
+          const web3Ids = allSpaces?.map((s: Space) => s.web3SpaceId) ?? [];
           throw new Error(
-            `Space with web3Id ${targetSpaceId} not found after ${maxAttempts} attempts. Spaces loaded: ${!!allSpaces}, Loading: ${isLoadingSpaces}, Error: ${
-              spacesError ? String(spacesError) : 'none'
-            }`,
+            `Space with web3Id ${targetSpaceId} not found after ${maxAttempts} attempts. ` +
+              `Spaces loaded: ${spacesCount}, Loading: ${isLoadingSpaces}, ` +
+              `Error: ${spacesError ? String(spacesError) : 'none'}, ` +
+              `Available web3Ids: [${web3Ids.slice(0, 20).join(', ')}${
+                web3Ids.length > 20 ? '...' : ''
+              }]`,
           );
         };
 
