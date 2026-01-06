@@ -5,6 +5,7 @@ import { CoherenceType } from '../coherence-types';
 import { CoherenceTag } from '../coherence-tags';
 
 type FindAllCoherencesInput = {
+  spaceId?: number;
   search?: string;
   type?: CoherenceType;
   tags?: CoherenceTag[];
@@ -12,13 +13,17 @@ type FindAllCoherencesInput = {
 
 export const findAllCoherences = async (
   { db }: DbConfig,
-  { search, type, tags }: FindAllCoherencesInput,
+  { spaceId, search, type, tags }: FindAllCoherencesInput,
 ) => {
+  if (spaceId === undefined) {
+    return [];
+  }
   const results = await db
     .select()
     .from(coherences)
     .where(
       and(
+        eq(coherences.spaceId, spaceId),
         eq(coherences.archived, false),
         search
           ? sql`(

@@ -38,21 +38,15 @@ import { useRouter } from 'next/navigation';
 
 type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
 
-type Creator = { avatar: string; name: string; surname: string };
-
 interface CreateSignalFormProps {
   spaceId: number;
-  // creator?: Creator;
   successfulUrl: string;
-  // backUrl?: string;
   closeUrl?: string;
 }
 
 export const CreateSignalForm = ({
   spaceId,
-  // creator,
   successfulUrl,
-  // backUrl,
   closeUrl,
 }: CreateSignalFormProps) => {
   const { person } = useMe();
@@ -134,6 +128,17 @@ export const CreateSignalForm = ({
       });
     }
   }, [person, form]);
+
+  React.useEffect(() => {
+    const { isDirty } = form.getFieldState('spaceId');
+    if (!isDirty && spaceId) {
+      form.setValue('spaceId', spaceId, {
+        shouldDirty: false,
+        shouldTouch: false,
+        shouldValidate: true,
+      });
+    }
+  }, [spaceId, form]);
 
   React.useEffect(() => {
     if (progress < 100) {

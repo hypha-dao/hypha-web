@@ -7,6 +7,7 @@ import { findAllCoherences } from '../queries';
 import { Coherence } from '../../types';
 
 type GetAllCoherencesInput = {
+  spaceId?: number;
   search?: string;
   type?: CoherenceType;
   tags?: CoherenceTag[];
