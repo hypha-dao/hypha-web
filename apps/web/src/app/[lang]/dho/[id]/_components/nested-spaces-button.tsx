@@ -6,38 +6,55 @@ import { Button } from '@hypha-platform/ui';
 import { usePathname } from 'next/navigation';
 import { cleanPath } from './clean-path';
 import { PATH_SELECT_NAVIGATION_ACTION } from '@web/app/constants';
-import { useAuthentication } from '@hypha-platform/authentication';
-import { useSpaceMember } from '@hypha-platform/epics';
-import { useIsDelegate } from '@hypha-platform/core/client';
+import { useSpaceDiscoverability } from '@hypha-platform/epics';
+import { useUserSpaceState } from '@hypha-platform/epics';
+import { checkDiscoverability } from '@hypha-platform/epics';
+import { useSpaceBySlug } from '@hypha-platform/core/client';
 
 interface NestedSpacesButtonProps {
   web3SpaceId?: number;
+  spaceSlug?: string;
 }
 
 export const NestedSpacesButton = ({
   web3SpaceId,
+  spaceSlug,
 }: NestedSpacesButtonProps) => {
   const pathname = usePathname();
-  const { isAuthenticated } = useAuthentication();
-  const { isMember } = useSpaceMember({ spaceId: web3SpaceId as number });
-  const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
+  const { space } = useSpaceBySlug(spaceSlug || '');
+  const effectiveSpaceId = web3SpaceId || space?.web3SpaceId || undefined;
+  const effectiveSpaceSlug = spaceSlug || space?.slug;
 
-  const isDisabled = !isAuthenticated || (!isMember && !isDelegate);
-  const tooltipMessage = !isAuthenticated
-    ? 'Please sign in to use this feature.'
-    : !isMember && !isDelegate
-    ? 'Please join this space to use this feature.'
-    : '';
+  const { discoverability, isLoading: isDiscoverabilityLoading } =
+    useSpaceDiscoverability({
+      spaceId: effectiveSpaceId ? BigInt(effectiveSpaceId) : undefined,
+    });
+
+  const { userState, isLoading: isUserStateLoading } = useUserSpaceState({
+    spaceId: effectiveSpaceId,
+    spaceSlug: effectiveSpaceSlug,
+    space,
+  });
+
+  const hasAccess = checkDiscoverability(discoverability, userState);
+  const isLoading = isDiscoverabilityLoading || isUserStateLoading;
+  const isDisabled = isLoading || !hasAccess;
+
+  const tooltipMessage = isLoading
+    ? 'Loading...'
+    : !hasAccess
+    ? 'You do not have access to view this space navigation.'
+    : 'Space Navigation';
 
   return (
     <Link
       className={isDisabled ? 'cursor-not-allowed' : ''}
       href={
-        isAuthenticated && (isMember || isDelegate)
+        hasAccess && !isLoading
           ? `${cleanPath(pathname)}${PATH_SELECT_NAVIGATION_ACTION}`
           : {}
       }
-      title={tooltipMessage || 'Space Navigation'}
+      title={tooltipMessage}
     >
       <Button
         variant="link"

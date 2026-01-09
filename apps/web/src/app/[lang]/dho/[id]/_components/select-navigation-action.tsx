@@ -14,6 +14,7 @@ import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Separator } from '@hypha-platform/ui';
 import { useTheme } from 'next-themes';
 import type { VisibleSpace } from './types';
+import { useFilterSpacesListWithDiscoverability } from '@hypha-platform/epics';
 
 type SelectNavigationActionProps = {
   daoSlug: string;
@@ -80,14 +81,27 @@ export const SelectNavigationAction = ({
   const { spaces: allSpaces, isLoading: isLoadingSpaces } =
     useOrganisationSpacesBySingleSlug(daoSlug);
 
-  const isLoading = isLoadingSpace || isLoadingSpaces;
+  const { filteredSpaces, isLoading: isFilteringSpaces } =
+    useFilterSpacesListWithDiscoverability({
+      spaces: allSpaces || [],
+      useGeneralState: false,
+    });
+
+  const isLoading = isLoadingSpace || isLoadingSpaces || isFilteringSpaces;
 
   const hierarchyData: HierarchyNode | null = useMemo(() => {
-    if (!currentSpace || !allSpaces) return null;
+    if (!currentSpace || !filteredSpaces) return null;
 
-    const rootSpace = findRootSpace(currentSpace, allSpaces);
-    return buildHierarchy(rootSpace, allSpaces);
-  }, [currentSpace, allSpaces]);
+    const spacesWithCurrent = filteredSpaces.some(
+      (s) => s.id === currentSpace.id,
+    )
+      ? filteredSpaces
+      : [...filteredSpaces, currentSpace];
+
+    const rootSpace = findRootSpace(currentSpace, spacesWithCurrent);
+    if (!rootSpace) return null;
+    return buildHierarchy(rootSpace, spacesWithCurrent);
+  }, [currentSpace, filteredSpaces]);
 
   const handleVisibleSpacesChange = useCallback((spaces: VisibleSpace[]) => {
     const spacesKey = JSON.stringify(spaces.map((s) => s.id).sort());
@@ -149,10 +163,10 @@ export const SelectNavigationAction = ({
                   onVisibleSpacesChange={handleVisibleSpacesChange}
                 />
               )}
-              {visibleSpaces.length > 0 && allSpaces && (
+              {visibleSpaces.length > 0 && filteredSpaces && (
                 <VisibleSpacesList
                   visibleSpaces={visibleSpaces}
-                  allSpaces={allSpaces}
+                  allSpaces={filteredSpaces}
                   lang={lang}
                   entrySpaceId={currentSpace?.id}
                 />

@@ -99,6 +99,7 @@ export default async function DhoLayout({
           {typeof spaceFromDb.web3SpaceId === 'number' && (
             <NestedSpacesButton
               web3SpaceId={spaceFromDb.web3SpaceId as number}
+              spaceSlug={daoSlug}
             />
           )}
         </div>
