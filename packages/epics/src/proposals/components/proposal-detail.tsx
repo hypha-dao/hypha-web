@@ -27,6 +27,7 @@ import {
   ProposalEntryInfo,
   ProposalBuyHyphaTokensData,
   ProposalDelegatesData,
+  MembershipExitData,
 } from '../../governance';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
 import { ButtonClose, ExpireProposalBanner } from '@hypha-platform/epics';
@@ -368,6 +369,12 @@ export const ProposalDetail = ({
         <ProposalDelegatesData
           member={proposalDetails?.delegatesData.member}
           space={proposalDetails?.delegatesData.space}
+        />
+      ) : null}
+      {proposalDetails?.membershipExitData?.member ? (
+        <MembershipExitData
+          member={proposalDetails?.membershipExitData.member}
+          space={proposalDetails?.membershipExitData.space}
         />
       ) : null}
       <FormVoting

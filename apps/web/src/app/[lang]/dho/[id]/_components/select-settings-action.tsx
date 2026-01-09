@@ -91,7 +91,8 @@ export const SelectSettingsAction = ({
       baseTab: 'agreements',
       disabled: isPaymentExpired,
     },
-    {
+    //TODO: will be uncommented later
+    /*{
       group: 'Members',
       title: 'Exit Method (Coming Soon)',
       description:
@@ -99,15 +100,16 @@ export const SelectSettingsAction = ({
       href: '#',
       icon: <ExitIcon />,
       disabled: true,
-    },
+    },*/
     {
       group: 'Members',
-      title: 'Membership Removal (Coming Soon)',
+      title: 'Membership Exit',
       description:
         'Remove a member from your space if they infringe upon agreed rules and policies.',
-      href: '#',
+      href: 'create/membership-exit',
       icon: <CrossCircledIcon />,
-      disabled: true,
+      baseTab: 'agreements',
+      disabled: isPaymentExpired,
     },
     {
       group: 'Members',
