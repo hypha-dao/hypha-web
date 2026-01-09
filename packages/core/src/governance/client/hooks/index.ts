@@ -3,6 +3,7 @@ export * from './useAgreementFileUploads';
 export * from './useAgreementMutations.web2.rsc';
 export * from './useChangeEntryMethodMutations.web3.rpc';
 export * from './useChangeEntryMethodOrchestrator';
+export * from './useChangeSpaceTransparencySettingsOrchestrator';
 export * from './useChangeVotingMethodOrchestrator';
 export * from './useCreateAgreementOrchestrator';
 export * from './useCreateDeployFundsOrchestrator';

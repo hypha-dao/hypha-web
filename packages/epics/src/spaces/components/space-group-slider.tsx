@@ -9,6 +9,7 @@ import {
 } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { SpaceCard } from './space-card';
+import { SpaceCardWithDiscoverability } from './space-card-with-discoverability';
 // TODO: #594 declare UI interface separately
 import {
   DEFAULT_SPACE_AVATAR_IMAGE,
@@ -70,28 +71,11 @@ export const SpaceGroupSlider = ({
               key={space.title}
               className="w-full sm:w-[454px] max-w-[454px] flex-shrink-0"
             >
-              <Link
-                className="flex flex-col flex-1"
-                href={getHref(space.slug as string)}
-              >
-                <SpaceCard
-                  description={space.description as string}
-                  icon={space.logoUrl ?? DEFAULT_SPACE_AVATAR_IMAGE}
-                  leadImage={space.leadImage || DEFAULT_SPACE_LEAD_IMAGE}
-                  title={space.title as string}
-                  isLoading={isLoading}
-                  members={space.memberCount}
-                  agreements={space.documentCount}
-                  isSandbox={space.flags?.includes('sandbox') ?? false}
-                  isDemo={space.flags?.includes('demo') ?? false}
-                  web3SpaceId={space.web3SpaceId as number}
-                  configPath={`${getHref(space.slug).replace(
-                    /\/*$/,
-                    '',
-                  )}/space-configuration`}
-                  createdAt={space.createdAt}
-                />
-              </Link>
+              <SpaceCardWithDiscoverability
+                space={space}
+                getHref={getHref}
+                isLoading={isLoading}
+              />
             </CarouselItem>
           ))}
         </CarouselContent>

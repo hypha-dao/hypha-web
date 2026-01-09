@@ -607,3 +607,10 @@ export const schemaSpaceToSpaceMembership = z.object({
     .min(1)
     .refine(isAddress, { message: 'Invalid Ethereum address' }),
 });
+
+export const schemaChangeSpaceTransparencySettings = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  spaceDiscoverability: z.number().int().min(0).max(3),
+  spaceActivityAccess: z.number().int().min(0).max(3),
+});

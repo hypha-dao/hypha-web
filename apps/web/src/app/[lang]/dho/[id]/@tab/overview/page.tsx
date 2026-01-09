@@ -6,6 +6,7 @@ import {
 } from '@hypha-platform/core/server';
 import { notFound } from 'next/navigation';
 import { SubspaceSectionWrapper } from '../../_components/subspace-section-wrapper';
+import { SpaceTabAccessWrapper } from '@hypha-platform/epics';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -33,10 +34,15 @@ export default async function OrganisationPage(props: PageProps) {
   }
 
   return (
-    <SubspaceSectionWrapper
-      lang={lang}
-      spaces={spaces}
-      currentSpaceId={spaceFromDb.id}
-    />
+    <SpaceTabAccessWrapper
+      spaceId={spaceFromDb.web3SpaceId as number}
+      spaceSlug={id}
+    >
+      <SubspaceSectionWrapper
+        lang={lang}
+        spaces={spaces}
+        currentSpaceId={spaceFromDb.id}
+      />
+    </SpaceTabAccessWrapper>
   );
 }
