@@ -3,7 +3,16 @@
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useSpaceMember } from './use-space-member';
 import { useIsDelegate } from '@hypha-platform/core/client';
-import { useSpaceBySlug, Space } from '@hypha-platform/core/client';
+import {
+  useSpaceBySlug,
+  Space,
+  useOrganisationSpacesBySingleSlug,
+  publicClient,
+  isMember as isMemberConfig,
+  getDelegatesForSpace,
+  getDelegators,
+  getSpaceDetails,
+} from '@hypha-platform/core/client';
 import { useMemo } from 'react';
 import useSWR from 'swr';
 
@@ -40,26 +49,101 @@ export function useUserSpaceState({
     userAddress: user?.wallet?.address,
   });
 
-  const parentSpaceId = effectiveSpace?.parentId;
-  const { data: parentSpace, isLoading: isParentSpaceLoading } = useSWR(
-    parentSpaceId ? [`/api/v1/spaces/${parentSpaceId}`, 'parentSpace'] : null,
-    async ([url]) => {
-      const res = await fetch(url);
-      if (!res.ok) return null;
-      return (await res.json()) as Space | null;
+  const effectiveSpaceSlug = spaceSlug || effectiveSpace?.slug || '';
+  const { spaces: organisationSpaces, isLoading: isOrganisationSpacesLoading } =
+    useOrganisationSpacesBySingleSlug(effectiveSpaceSlug);
+
+  const organisationSpaceIds = useMemo(() => {
+    if (!organisationSpaces || !effectiveSpaceId) return [];
+    return organisationSpaces
+      .filter(
+        (s) =>
+          s.web3SpaceId &&
+          s.web3SpaceId !== effectiveSpaceId &&
+          typeof s.web3SpaceId === 'number',
+      )
+      .map((s) => s.web3SpaceId as number);
+  }, [organisationSpaces, effectiveSpaceId]);
+
+  const orgMembershipResults = useSWR(
+    user?.wallet?.address && organisationSpaceIds.length > 0 && isAuthenticated
+      ? ['orgMembership', user.wallet.address, ...organisationSpaceIds.sort()]
+      : null,
+    async () => {
+      if (!user?.wallet?.address || organisationSpaceIds.length === 0) {
+        return { isOrgMember: false, isOrgDelegate: false };
+      }
+
+      const userAddress = user.wallet.address as `0x${string}`;
+
+      const membershipChecks = await Promise.all(
+        organisationSpaceIds.map(async (spaceId) => {
+          try {
+            const [isMemberResult, delegates, spaceDetails] = await Promise.all(
+              [
+                publicClient.readContract(
+                  isMemberConfig({
+                    spaceId: BigInt(spaceId),
+                    memberAddress: userAddress,
+                  }),
+                ),
+                publicClient.readContract(
+                  getDelegatesForSpace({ spaceId: BigInt(spaceId) }),
+                ),
+                publicClient.readContract(
+                  getSpaceDetails({ spaceId: BigInt(spaceId) }),
+                ),
+              ],
+            );
+
+            const isInDelegates = delegates.some(
+              (delegate) =>
+                delegate.toLowerCase() === userAddress.toLowerCase(),
+            );
+
+            let isDelegate = false;
+            if (isInDelegates) {
+              const [, , , , members] = spaceDetails;
+              const delegators = await publicClient.readContract(
+                getDelegators({
+                  user: userAddress,
+                  spaceId: BigInt(spaceId),
+                }),
+              );
+
+              const membersLower = members.map((member: string) =>
+                member?.toLowerCase(),
+              );
+              isDelegate = delegators.some((delegator: `0x${string}`) =>
+                membersLower.includes(delegator?.toLowerCase()),
+              );
+            }
+
+            return {
+              isMember: isMemberResult,
+              isDelegate,
+            };
+          } catch (error) {
+            console.error(
+              `Error checking membership for space ${spaceId}:`,
+              error,
+            );
+            return { isMember: false, isDelegate: false };
+          }
+        }),
+      );
+
+      const isOrgMember = membershipChecks.some((check) => check.isMember);
+      const isOrgDelegate = membershipChecks.some((check) => check.isDelegate);
+
+      return { isOrgMember, isOrgDelegate };
     },
   );
 
-  const { isMember: isOrgMember, isMemberLoading: isOrgMemberLoading } =
-    useSpaceMember({
-      spaceId: parentSpace?.web3SpaceId as number,
-    });
-
-  const { isDelegate: isOrgDelegate, isLoading: isOrgDelegateLoading } =
-    useIsDelegate({
-      spaceId: parentSpace?.web3SpaceId as number,
-      userAddress: user?.wallet?.address,
-    });
+  const { data: orgMembershipData, isLoading: isOrgMembershipLoading } =
+    orgMembershipResults;
+  const isOrgMember = orgMembershipData?.isOrgMember ?? false;
+  const isOrgDelegate = orgMembershipData?.isOrgDelegate ?? false;
 
   const userState = useMemo(() => {
     if (!isAuthenticated || !user) {
@@ -80,9 +164,8 @@ export function useUserSpaceState({
   const isLoading =
     isMemberLoading ||
     isDelegateLoading ||
-    isParentSpaceLoading ||
-    isOrgMemberLoading ||
-    isOrgDelegateLoading ||
+    isOrganisationSpacesLoading ||
+    isOrgMembershipLoading ||
     spaceFromHook.isLoading;
 
   return {
