@@ -141,16 +141,22 @@ export function useFilterSpacesListWithDiscoverability({
         if (userMemberSpaceIdsSet.has(space.web3SpaceId)) {
           return true;
         }
-        
+
         const parentSpaceId = parentSpaceIdsMap.get(space.web3SpaceId);
         if (parentSpaceId && userMemberSpaceIdsSet.has(parentSpaceId)) {
           return true;
         }
       }
-      
+
       return shouldShowSpace(space, discoverability, userState);
     });
-  }, [spaces, discoverabilityMap, userState, useGeneralState, userMemberSpaceIdsSet]);
+  }, [
+    spaces,
+    discoverabilityMap,
+    userState,
+    useGeneralState,
+    userMemberSpaceIdsSet,
+  ]);
 
   return {
     filteredSpaces,

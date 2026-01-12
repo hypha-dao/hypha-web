@@ -30,6 +30,7 @@ export const SpaceCardContainer = ({
               space={space}
               getHref={getHref}
               isLoading={false}
+              showExitButton={showExitButton}
             />
           </div>
         ) : null,

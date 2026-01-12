@@ -12,12 +12,14 @@ type SpaceCardWithDiscoverabilityProps = {
   space: Space;
   getHref: (slug: string) => string;
   isLoading?: boolean;
+  showExitButton?: boolean;
 };
 
 export function SpaceCardWithDiscoverability({
   space,
   getHref,
   isLoading,
+  showExitButton,
 }: SpaceCardWithDiscoverabilityProps) {
   return (
     <Link className="flex flex-col flex-1" href={getHref(space.slug as string)}>
@@ -37,6 +39,7 @@ export function SpaceCardWithDiscoverability({
           '',
         )}/space-configuration`}
         createdAt={space.createdAt}
+        showExitButton={showExitButton}
       />
     </Link>
   );
