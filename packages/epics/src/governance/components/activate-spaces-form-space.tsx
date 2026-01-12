@@ -61,10 +61,9 @@ export const ActivateSpacesFormSpace = ({
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({
     spaceId: web3SpaceId as number,
   });
-  const { assets } = useAssets({ filter: { type: 'all' } });
-  const paymentAsset = assets.find(
-    (a) => a.symbol === 'USDC' || a.symbol === 'HYPHA',
-  );
+  const { assets, isLoading: isAssetsLoading } = useAssets({
+    filter: { type: 'all' },
+  });
   const [insufficientFunds, setInsufficientFunds] = React.useState(false);
   const [paymentTokenForTopUp, setPaymentTokenForTopUp] = React.useState('');
 
@@ -117,10 +116,26 @@ export const ActivateSpacesFormSpace = ({
   const watchedPaymentToken = form.watch('paymentToken');
   const total = watchedPaymentToken === 'USDC' ? totalUSDC : totalHYPHA;
 
+  const paymentAsset = React.useMemo(() => {
+    if (!watchedPaymentToken || isAssetsLoading) return undefined;
+    return assets.find((a) => a.symbol === watchedPaymentToken);
+  }, [assets, watchedPaymentToken, isAssetsLoading]);
+
   const handleCreate = async (data: FormValues) => {
     if (!web3SpaceId || spaceId === undefined) return;
 
-    const walletBalance = parseFloat((paymentAsset?.value ?? 0).toString());
+    if (isAssetsLoading) {
+      return;
+    }
+
+    if (!paymentAsset) {
+      console.error(
+        `Payment asset not found for token: ${watchedPaymentToken}`,
+      );
+      return;
+    }
+
+    const walletBalance = parseFloat((paymentAsset.value ?? 0).toString());
 
     if (total > walletBalance) {
       setInsufficientFunds(true);
@@ -139,6 +154,20 @@ export const ActivateSpacesFormSpace = ({
       });
     } catch (error) {
       console.error('Error creating activate spaces proposal:', error);
+
+      if (error instanceof Error) {
+        if (
+          error.message.includes('ERC20: transfer amount exceeds balance') ||
+          error.message.includes('Insufficient HYPHA balance') ||
+          error.message.includes('insufficient balance')
+        ) {
+          setInsufficientFunds(true);
+          setPaymentTokenForTopUp(watchedPaymentToken);
+          return;
+        }
+      }
+
+      throw error;
     }
   };
 
@@ -217,7 +246,9 @@ export const ActivateSpacesFormSpace = ({
           {children}
           <Separator />
           <div className="flex justify-end w-full">
-            <Button type="submit">Publish</Button>
+            <Button type="submit" disabled={isAssetsLoading || !paymentAsset}>
+              Publish
+            </Button>
           </div>
         </form>
       </Form>
