@@ -1,7 +1,6 @@
 'use client';
 
 import { Space } from '@hypha-platform/core/client';
-import { useSpaceDiscoverability } from './use-space-discoverability';
 import { useUserSpaceState } from './use-user-space-state';
 import { shouldShowSpace } from './use-filter-spaces-by-discoverability';
 import { TransparencyLevel } from '../components/transparency-level';
@@ -10,6 +9,7 @@ import { useMemo } from 'react';
 import useSWR from 'swr';
 import { publicClient, getSpaceVisibility } from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { useMemberWeb3SpaceIds } from './use-member-web3-space-ids';
 
 export function useSpacesDiscoverabilityBatch({
   spaces,
@@ -106,18 +106,56 @@ export function useFilterSpacesListWithDiscoverability({
   const { discoverabilityMap, isLoading: isDiscoverabilityLoading } =
     useSpacesDiscoverabilityBatch({ spaces });
 
+  const { user } = useAuthentication();
+  const { web3SpaceIds: userMemberSpaceIds, isLoading: isMemberSpacesLoading } =
+    useMemberWeb3SpaceIds({
+      personAddress: user?.wallet?.address,
+    });
+
+  const userMemberSpaceIdsSet = useMemo(() => {
+    if (!userMemberSpaceIds) return new Set<number>();
+    return new Set(
+      userMemberSpaceIds.map((id) => Number(id)).filter((id) => !isNaN(id)),
+    );
+  }, [userMemberSpaceIds]);
+
   const filteredSpaces = useMemo(() => {
+    const parentSpaceIdsMap = new Map<number, number>();
+    spaces.forEach((space) => {
+      if (space.web3SpaceId && space.parentId) {
+        const parentSpace = spaces.find((s) => s.id === space.parentId);
+        if (parentSpace?.web3SpaceId) {
+          parentSpaceIdsMap.set(space.web3SpaceId, parentSpace.web3SpaceId);
+        }
+      }
+    });
+
     return spaces.filter((space) => {
       if (!space.web3SpaceId) return true;
       const discoverability = discoverabilityMap.get(space.web3SpaceId);
+
+      if (
+        useGeneralState &&
+        discoverability === TransparencyLevel.ORGANISATION
+      ) {
+        if (userMemberSpaceIdsSet.has(space.web3SpaceId)) {
+          return true;
+        }
+        
+        const parentSpaceId = parentSpaceIdsMap.get(space.web3SpaceId);
+        if (parentSpaceId && userMemberSpaceIdsSet.has(parentSpaceId)) {
+          return true;
+        }
+      }
+      
       return shouldShowSpace(space, discoverability, userState);
     });
-  }, [spaces, discoverabilityMap, userState]);
+  }, [spaces, discoverabilityMap, userState, useGeneralState, userMemberSpaceIdsSet]);
 
   return {
     filteredSpaces,
     isLoading: useGeneralState
-      ? isDiscoverabilityLoading
+      ? isDiscoverabilityLoading || isMemberSpacesLoading
       : isUserStateLoading || isDiscoverabilityLoading,
   };
 }
