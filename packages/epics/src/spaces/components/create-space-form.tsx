@@ -230,7 +230,7 @@ export const SpaceForm = ({
   const { filteredSpaces: filteredMySpaces } =
     useFilterSpacesListWithDiscoverability({
       spaces: mySpaces,
-      useGeneralState: true,
+      useGeneralState: false,
     });
   const { filteredSpaces: filteredOrganisationSpaces } =
     useFilterSpacesListWithDiscoverability({
