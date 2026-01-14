@@ -229,7 +229,7 @@ export const useCreateSpaceOrchestrator = ({
           unity: 80,
           votingPowerSource: 2,
           joinMethod: 2,
-          exitMethod: 0,
+          exitMethod: 1,
           access,
           discoverability,
         });
