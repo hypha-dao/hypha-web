@@ -373,6 +373,8 @@ export function SpaceVisualization({
         }
       });
 
+    const defs = svg.append('defs');
+
     const logos = g
       .selectAll<SVGGElement, SpaceHierarchyNode>('g.logo')
       .data(root.descendants() as SpaceHierarchyNode[])
@@ -410,19 +412,28 @@ export function SpaceVisualization({
         }
       });
 
-    logos
-      .append('circle')
-      .attr('fill', (d: SpaceHierarchyNode) =>
-        d === focus ? getSelectedSpaceFillColor() : '#000',
-      )
-      .attr('stroke', getSelectedSpaceFillColor())
-      .attr('stroke-width', (d: SpaceHierarchyNode) => getStrokeWidth(d.depth));
+    logos.each(function (d: SpaceHierarchyNode) {
+      const logoGroup = d3.select(this);
+      const clipId = `clip-${d.data.id}`;
 
-    logos
-      .append('image')
-      .attr('href', (d) => d.data.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE)
-      .attr('preserveAspectRatio', 'xMidYMid slice')
-      .attr('alt', (d) => `${d.data.name} logo`);
+      const clipPath = defs.append('clipPath').attr('id', clipId);
+
+      clipPath.append('circle').attr('r', 1);
+
+      logoGroup
+        .append('circle')
+        .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000')
+        .attr('stroke', getSelectedSpaceFillColor())
+        .attr('stroke-width', getStrokeWidth(d.depth));
+
+      logoGroup
+        .append('image')
+        .attr('href', d.data.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE)
+        .attr('preserveAspectRatio', 'xMidYMid slice')
+        .attr('alt', `${d.data.name} logo`)
+        .attr('clip-path', `url(#${clipId})`)
+        .style('filter', d === focus ? 'none' : 'grayscale(100%)');
+    });
 
     svg.on('click', () => {
       if (focus.parent) zoom(focus.parent);
@@ -632,6 +643,7 @@ export function SpaceVisualization({
         )
         .each(function (d: SpaceHierarchyNode) {
           const r = d.r! * k * VISUALIZATION_CONFIG.LOGO_RATIO;
+          const clipId = `clip-${d.data.id}`;
 
           d3.select(this)
             .select('circle')
@@ -640,13 +652,15 @@ export function SpaceVisualization({
             .attr('stroke', getSelectedSpaceFillColor())
             .attr('stroke-width', getStrokeWidth(d.depth));
 
+          defs.select(`#${clipId} circle`).attr('r', r);
+
           d3.select(this)
             .select('image')
             .attr('x', -r)
             .attr('y', -r)
             .attr('width', r * 2)
             .attr('height', r * 2)
-            .style('clip-path', `circle(50% at 50% 50%)`);
+            .style('filter', d === focus ? 'none' : 'grayscale(100%)');
         });
     }
   }, [data, currentSpaceId, resolvedTheme]);
