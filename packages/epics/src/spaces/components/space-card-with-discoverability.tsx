@@ -7,6 +7,7 @@ import {
   DEFAULT_SPACE_LEAD_IMAGE,
 } from '@hypha-platform/core/client';
 import Link from 'next/link';
+import { useSpaceMember } from '../hooks';
 
 type SpaceCardWithDiscoverabilityProps = {
   space: Space;
@@ -21,6 +22,12 @@ export function SpaceCardWithDiscoverability({
   isLoading,
   showExitButton,
 }: SpaceCardWithDiscoverabilityProps) {
+  const { isMember } = useSpaceMember({
+    spaceId: space.web3SpaceId ?? undefined,
+  });
+
+  const shouldShowExitButton = showExitButton && isMember === true;
+
   return (
     <Link className="flex flex-col flex-1" href={getHref(space.slug as string)}>
       <SpaceCard
@@ -39,7 +46,7 @@ export function SpaceCardWithDiscoverability({
           '',
         )}/space-configuration`}
         createdAt={space.createdAt}
-        showExitButton={showExitButton}
+        showExitButton={shouldShowExitButton}
       />
     </Link>
   );
