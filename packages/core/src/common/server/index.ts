@@ -15,3 +15,7 @@ export * from './webhooks';
 export * from './route-handlers';
 
 export * from './extract-revert-reason';
+
+export * from './encrypt-aes';
+export * from './encrypt-matrix-token';
+export * from './decrypt-matrix-token';
