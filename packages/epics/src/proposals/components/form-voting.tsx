@@ -1,6 +1,12 @@
 'use client';
 
-import { Button, Skeleton, Separator, Image } from '@hypha-platform/ui';
+import {
+  Button,
+  Skeleton,
+  Separator,
+  Image,
+  ConfirmDialog,
+} from '@hypha-platform/ui';
 import { ProgressLine } from './progress-line';
 import { intervalToDuration, isPast } from 'date-fns';
 import { VoterList } from '../../governance/components/voter-list';
@@ -8,12 +14,15 @@ import {
   useMyVote,
   useIsDelegate,
   type SpaceDetails,
+  useMe,
+  useWithdrawProposal,
 } from '@hypha-platform/core/client';
 import { useSpaceMember } from '../../spaces';
 import { useSpaceMinProposalDuration } from '@hypha-platform/core/client';
 import { formatDuration } from '@hypha-platform/ui-utils';
 import { useTheme } from 'next-themes';
 import { useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 
 function formatTimeRemaining(
   endTime: string,
@@ -58,6 +67,15 @@ export const FormVoting = ({
   spaceDetails,
   proposalStatus,
   hideDurationData,
+  proposalId,
+  proposalCreator,
+  onWithdrawSuccess,
+  documentTitle,
+  documentDescription,
+  documentLeadImage,
+  documentAttachments,
+  spaceSlug,
+  closeUrl,
 }: {
   unity: number;
   quorum: number;
@@ -75,13 +93,94 @@ export const FormVoting = ({
   spaceDetails?: SpaceDetails;
   proposalStatus?: string | null;
   hideDurationData?: boolean;
+  proposalId?: number | null;
+  proposalCreator?: `0x${string}` | null;
+  onWithdrawSuccess?: () => void;
+  documentTitle?: string;
+  documentDescription?: string;
+  documentLeadImage?: string;
+  documentAttachments?: (string | { name: string; url: string })[];
+  spaceSlug?: string;
+  closeUrl?: string;
 }) => {
   const { myVote } = useMyVote(documentSlug);
   const { isMember } = useSpaceMember({ spaceId: web3SpaceId as number });
   const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
   const { theme } = useTheme();
+  const { person } = useMe();
+  const router = useRouter();
+  const params = useParams();
+  const lang = params?.lang as string;
+  const { withdrawProposal, isWithdrawing } = useWithdrawProposal({
+    proposalId: proposalId ?? null,
+  });
 
   const [localVote, setLocalVote] = useState<'no' | 'yes' | null>(null);
+
+  const isCreator = Boolean(
+    proposalCreator &&
+      person?.address &&
+      proposalCreator.toLowerCase() === person.address.toLowerCase(),
+  );
+
+  const showWithdrawBlock =
+    isCreator &&
+    !executed &&
+    !expired &&
+    !isPast(new Date(endTime)) &&
+    proposalStatus === 'onVoting';
+
+  const handleWithdraw = async () => {
+    try {
+      await withdrawProposal();
+      onWithdrawSuccess?.();
+      if (closeUrl) {
+        router.push(closeUrl);
+      } else {
+        router.refresh();
+      }
+    } catch (error) {
+      console.error('Error withdrawing proposal:', error);
+    }
+  };
+
+  const handleResubmit = async () => {
+    try {
+      const proposalData = {
+        title: documentTitle || '',
+        description: documentDescription || '',
+        leadImage: documentLeadImage || undefined,
+        attachments: documentAttachments || undefined,
+      };
+
+      console.log('Saving resubmit data:', proposalData);
+
+      sessionStorage.setItem(
+        'resubmitProposalData',
+        JSON.stringify(proposalData),
+      );
+
+      const saved = sessionStorage.getItem('resubmitProposalData');
+      if (!saved) {
+        console.error('Failed to save resubmit data to sessionStorage');
+      }
+
+      await withdrawProposal();
+      onWithdrawSuccess?.();
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      if (spaceSlug && lang) {
+        router.push(`/${lang}/dho/${spaceSlug}/agreements/create`);
+      } else {
+        router.refresh();
+      }
+    } catch (error) {
+      console.error('Error resubmitting proposal:', error);
+      sessionStorage.removeItem('resubmitProposalData');
+      sessionStorage.removeItem('resubmitFormData');
+    }
+  };
 
   const isDisabled =
     isVoting ||
@@ -281,6 +380,45 @@ export const FormVoting = ({
           )}
         </Skeleton>
       </div>
+      {showWithdrawBlock && (
+        <div className="flex flex-col gap-3 p-4 border border-neutral-6 rounded-lg bg-neutral-2">
+          <div className="text-2 text-neutral-11">
+            Withdraw your proposal or edit and submit again?
+          </div>
+          <div className="flex gap-2">
+            <ConfirmDialog
+              title="Withdraw Proposal"
+              description="Are you sure you want to withdraw this proposal? It will no longer appear on the Proposal screen and cannot be recovered."
+              customAcceptButtonText="Withdraw"
+              customRejectButtonText="Cancel"
+              onAcceptClicked={handleWithdraw}
+            >
+              <Button
+                variant="outline"
+                colorVariant="accent"
+                disabled={isWithdrawing}
+              >
+                {isWithdrawing ? 'Withdrawing...' : 'Withdraw'}
+              </Button>
+            </ConfirmDialog>
+            <ConfirmDialog
+              title="Resubmit Proposal"
+              description="Are you sure you want to resubmit this proposal? The current proposal will be withdrawn, a new one will be created with your content, and votes will be reset."
+              customAcceptButtonText="Resubmit"
+              customRejectButtonText="Cancel"
+              onAcceptClicked={handleResubmit}
+            >
+              <Button
+                variant="outline"
+                colorVariant="accent"
+                disabled={isWithdrawing}
+              >
+                {isWithdrawing ? 'Processing...' : 'Resubmit'}
+              </Button>
+            </ConfirmDialog>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

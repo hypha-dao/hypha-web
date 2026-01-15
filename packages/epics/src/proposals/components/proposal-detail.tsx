@@ -54,6 +54,7 @@ type ProposalDetailProps = ProposalHeadProps & {
   onCheckProposalExpiration?: () => Promise<void>;
   isCheckingExpiration?: boolean;
   isVoting?: boolean;
+  onWithdrawSuccess?: () => Promise<void>;
 };
 
 type DocumentsArrays = {
@@ -84,6 +85,7 @@ export const ProposalDetail = ({
   onCheckProposalExpiration,
   isCheckingExpiration: externalIsCheckingExpiration,
   isVoting: externalIsVoting,
+  onWithdrawSuccess,
 }: ProposalDetailProps) => {
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: proposalId as number,
@@ -394,6 +396,15 @@ export const ProposalDetail = ({
         spaceDetails={spaceDetails as unknown as SpaceDetails}
         proposalStatus={proposalStatus}
         hideDurationData={hideDurationData()}
+        proposalId={proposalId ?? null}
+        proposalCreator={proposalDetails?.creator ?? null}
+        documentTitle={title}
+        documentDescription={content}
+        documentLeadImage={leadImage}
+        documentAttachments={attachments}
+        spaceSlug={spaceSlug}
+        closeUrl={closeUrl}
+        onWithdrawSuccess={onWithdrawSuccess}
       />
     </div>
   );
