@@ -305,17 +305,13 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
     const { unity, quorum, memberCount, name = 'Test Space' } = params;
 
     const spaceParams = {
-      name,
-      description: `Test space with ${memberCount} members, ${unity}% unity, ${quorum}% quorum`,
-      imageUrl: 'https://test.com/image.png',
       unity,
       quorum,
       votingPowerSource: 1, // Space membership voting only
       exitMethod: 1,
       joinMethod: 1,
-      createToken: false,
-      tokenName: '',
-      tokenSymbol: '',
+      access: 0, // 0 = Public
+      discoverability: 0, // 0 = Public
     };
 
     await daoSpaceFactory.createSpace(spaceParams);
@@ -1198,17 +1194,13 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         console.log('\n--- Testing Space Creation: Unity=0, Quorum>0 ---');
 
         const spaceParams = {
-          name: 'Zero Unity Test',
-          description: 'Test space with unity=0 and quorum=50',
-          imageUrl: 'https://test.com/image.png',
           unity: 0, // Zero unity
           quorum: 50, // Normal quorum
           votingPowerSource: 1,
           exitMethod: 1,
           joinMethod: 1,
-          createToken: false,
-          tokenName: '',
-          tokenSymbol: '',
+          access: 0,
+          discoverability: 0,
         };
 
         await expect(daoSpaceFactory.createSpace(spaceParams)).to.not.be
@@ -1226,17 +1218,13 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         console.log('\n--- Testing Space Creation: Quorum=0, Unity>0 ---');
 
         const spaceParams = {
-          name: 'Zero Quorum Test',
-          description: 'Test space with quorum=0 and unity=60',
-          imageUrl: 'https://test.com/image.png',
           unity: 60, // Normal unity
           quorum: 0, // Zero quorum
           votingPowerSource: 1,
           exitMethod: 1,
           joinMethod: 1,
-          createToken: false,
-          tokenName: '',
-          tokenSymbol: '',
+          access: 0,
+          discoverability: 0,
         };
 
         await expect(daoSpaceFactory.createSpace(spaceParams)).to.not.be
@@ -1256,17 +1244,13 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         );
 
         const spaceParams = {
-          name: 'Both Zero Test',
-          description: 'Test space with both unity=0 and quorum=0',
-          imageUrl: 'https://test.com/image.png',
           unity: 0, // Zero unity
           quorum: 0, // Zero quorum
           votingPowerSource: 1,
           exitMethod: 1,
           joinMethod: 1,
-          createToken: false,
-          tokenName: '',
-          tokenSymbol: '',
+          access: 0,
+          discoverability: 0,
         };
 
         await expect(
@@ -1319,17 +1303,13 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
 
         // Create space with unity=0, quorum=15 (< 20 to trigger minimum duration)
         const spaceParams = {
-          name: 'Unity Zero Duration Test',
-          description: 'Test space requiring minimum duration',
-          imageUrl: 'https://test.com/image.png',
           unity: 0,
           quorum: 15, // Low quorum < 20 triggers minimum duration
           votingPowerSource: 1,
           exitMethod: 1,
           joinMethod: 1,
-          createToken: false,
-          tokenName: '',
-          tokenSymbol: '',
+          access: 0,
+          discoverability: 0,
         };
 
         await daoSpaceFactory.createSpace(spaceParams);
@@ -1381,17 +1361,13 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
 
         // Create space with unity=60, quorum=15 (<20%)
         const spaceParams = {
-          name: 'Low Quorum Duration Test',
-          description: 'Test space with low quorum requiring minimum duration',
-          imageUrl: 'https://test.com/image.png',
           unity: 60,
           quorum: 15, // Less than 20%
           votingPowerSource: 1,
           exitMethod: 1,
           joinMethod: 1,
-          createToken: false,
-          tokenName: '',
-          tokenSymbol: '',
+          access: 0,
+          discoverability: 0,
         };
 
         await daoSpaceFactory.createSpace(spaceParams);
@@ -1521,17 +1497,13 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
 
         // Create space with quorum=0, unity=50
         const spaceParams = {
-          name: 'Democratic Timing Test',
-          description: 'Any participation triggers process, majority decides',
-          imageUrl: 'https://test.com/image.png',
           unity: 50,
           quorum: 0, // No participation threshold
           votingPowerSource: 1,
           exitMethod: 1,
           joinMethod: 1,
-          createToken: false,
-          tokenName: '',
-          tokenSymbol: '',
+          access: 0,
+          discoverability: 0,
         };
 
         await daoSpaceFactory.createSpace(spaceParams);
@@ -1584,17 +1556,13 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
 
         // Create space with unity=0, quorum=50
         const spaceParams = {
-          name: 'First Vote Wins Test',
-          description: 'Need participation threshold, first vote type wins',
-          imageUrl: 'https://test.com/image.png',
           unity: 0, // Any vote percentage wins
           quorum: 50, // Need 50% participation
           votingPowerSource: 1,
           exitMethod: 1,
           joinMethod: 1,
-          createToken: false,
-          tokenName: '',
-          tokenSymbol: '',
+          access: 0,
+          discoverability: 0,
         };
 
         await daoSpaceFactory.createSpace(spaceParams);
@@ -1673,18 +1641,13 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
 
         // Create space with unity=0, quorum=30
         const spaceParams = {
-          name: 'Complex Voting Test',
-          description:
-            'Testing minimum duration protection in complex scenarios',
-          imageUrl: 'https://test.com/image.png',
           unity: 0,
           quorum: 30,
           votingPowerSource: 1,
           exitMethod: 1,
           joinMethod: 1,
-          createToken: false,
-          tokenName: '',
-          tokenSymbol: '',
+          access: 0,
+          discoverability: 0,
         };
 
         await daoSpaceFactory.createSpace(spaceParams);
@@ -2831,17 +2794,13 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
 
       // 1. Create a space (without a token initially)
       const spaceParams = {
-        name: 'Executor Transfer Test Space',
-        description: 'A space for testing executor token transfer logic',
-        imageUrl: 'https://test.com/image.png',
         unity: 60,
         quorum: 50,
         votingPowerSource: 1, // Does not matter for this test
         exitMethod: 1,
         joinMethod: 1,
-        createToken: false, // Token will be created manually
-        tokenName: '',
-        tokenSymbol: '',
+        access: 0,
+        discoverability: 0,
       };
 
       await daoSpaceFactory.createSpace(spaceParams);
@@ -3109,17 +3068,13 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       beforeEach(async function () {
         // 1. Create a space
         await daoSpaceFactory.createSpace({
-          name: 'Ownership Token Test Space',
-          description: 'A space for testing OwnershipSpaceToken',
-          imageUrl: '',
           unity: 60,
           quorum: 50,
           votingPowerSource: 1,
           exitMethod: 1,
           joinMethod: 1,
-          createToken: false,
-          tokenName: '',
-          tokenSymbol: '',
+          access: 0,
+          discoverability: 0,
         });
         spaceId = await daoSpaceFactory.spaceCounter();
 
@@ -3339,17 +3294,13 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       beforeEach(async function () {
         // 1. Create a space
         await daoSpaceFactory.createSpace({
-          name: 'Decaying Token Test Space',
-          description: 'A space for testing DecayingSpaceToken',
-          imageUrl: '',
           unity: 60,
           quorum: 50,
           votingPowerSource: 1,
           exitMethod: 1,
           joinMethod: 1,
-          createToken: false,
-          tokenName: '',
-          tokenSymbol: '',
+          access: 0,
+          discoverability: 0,
         });
         spaceId = await daoSpaceFactory.spaceCounter();
 
@@ -4029,17 +3980,13 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
 
         // Create a space with token-based voting
         const spaceParams = {
-          name: 'Token Voting Test',
-          description: 'Testing token voting power calculation',
-          imageUrl: 'https://test.com/image.png',
           unity: 60,
           quorum: 50,
           votingPowerSource: 2, // Token-based voting
           exitMethod: 1,
           joinMethod: 1,
-          createToken: false,
-          tokenName: '',
-          tokenSymbol: '',
+          access: 0,
+          discoverability: 0,
         };
 
         await daoSpaceFactory.createSpace(spaceParams);
@@ -4164,17 +4111,13 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
 
         // Create space with token voting
         const spaceParams = {
-          name: 'Quorum Test',
-          description: 'Testing quorum calculation',
-          imageUrl: '',
           unity: 60,
           quorum: 50, // 50% quorum
           votingPowerSource: 2,
           exitMethod: 1,
           joinMethod: 1,
-          createToken: false,
-          tokenName: '',
-          tokenSymbol: '',
+          access: 0,
+          discoverability: 0,
         };
 
         await daoSpaceFactory.createSpace(spaceParams);
@@ -4308,17 +4251,13 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
 
         // Create space with decay token voting
         const spaceParams = {
-          name: 'Decay Token Test',
-          description: 'Testing decay token voting',
-          imageUrl: '',
           unity: 60,
           quorum: 50,
           votingPowerSource: 3, // Decay token voting (if ID 3 exists)
           exitMethod: 1,
           joinMethod: 1,
-          createToken: false,
-          tokenName: '',
-          tokenSymbol: '',
+          access: 0,
+          discoverability: 0,
         };
 
         await daoSpaceFactory.createSpace(spaceParams);
@@ -4437,17 +4376,13 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         );
 
         const spaceParams = {
-          name: 'Decay with Time',
-          description: 'Testing decay over time',
-          imageUrl: '',
           unity: 60,
           quorum: 50,
           votingPowerSource: 3,
           exitMethod: 1,
           joinMethod: 1,
-          createToken: false,
-          tokenName: '',
-          tokenSymbol: '',
+          access: 0,
+          discoverability: 0,
         };
 
         await daoSpaceFactory.createSpace(spaceParams);
@@ -4561,17 +4496,13 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
 
         // Create space with token-based voting
         const spaceParams = {
-          name: 'Votes Exceed Snapshot Test',
-          description: 'Testing auto-resolution when votes exceed snapshot',
-          imageUrl: 'https://test.com/image.png',
           unity: 60, // 60% unity threshold
           quorum: 50,
           votingPowerSource: 2, // Token-based voting
           exitMethod: 1,
           joinMethod: 1,
-          createToken: false,
-          tokenName: '',
-          tokenSymbol: '',
+          access: 0,
+          discoverability: 0,
         };
 
         await daoSpaceFactory.createSpace(spaceParams);
@@ -4733,17 +4664,13 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         );
 
         const spaceParams = {
-          name: 'Auto-Reject Test',
-          description: 'Testing auto-rejection when votes exceed snapshot',
-          imageUrl: '',
           unity: 70, // 70% unity threshold
           quorum: 50,
           votingPowerSource: 2,
           exitMethod: 1,
           joinMethod: 1,
-          createToken: false,
-          tokenName: '',
-          tokenSymbol: '',
+          access: 0,
+          discoverability: 0,
         };
 
         await daoSpaceFactory.createSpace(spaceParams);
@@ -4874,17 +4801,13 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         console.log('\n--- Testing Boundary: Votes Exactly Equal Snapshot ---');
 
         const spaceParams = {
-          name: 'Exact Boundary Test',
-          description: 'Testing when votes exactly equal snapshot',
-          imageUrl: '',
           unity: 60,
           quorum: 100, // 100% quorum to ensure all must vote
           votingPowerSource: 2,
           exitMethod: 1,
           joinMethod: 1,
-          createToken: false,
-          tokenName: '',
-          tokenSymbol: '',
+          access: 0,
+          discoverability: 0,
         };
 
         await daoSpaceFactory.createSpace(spaceParams);
@@ -5006,17 +4929,13 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         );
 
         const spaceParams = {
-          name: 'Underflow Prevention Test',
-          description: 'Testing _shouldRejectEarly does not underflow',
-          imageUrl: '',
           unity: 80, // High unity to test early rejection logic
           quorum: 30,
           votingPowerSource: 2,
           exitMethod: 1,
           joinMethod: 1,
-          createToken: false,
-          tokenName: '',
-          tokenSymbol: '',
+          access: 0,
+          discoverability: 0,
         };
 
         await daoSpaceFactory.createSpace(spaceParams);
@@ -5167,17 +5086,13 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         );
 
         const spaceParams = {
-          name: 'Min Duration Respect Test',
-          description: 'Testing min duration with exceeded snapshot',
-          imageUrl: '',
           unity: 60,
           quorum: 50,
           votingPowerSource: 2,
           exitMethod: 1,
           joinMethod: 1,
-          createToken: false,
-          tokenName: '',
-          tokenSymbol: '',
+          access: 0,
+          discoverability: 0,
         };
 
         await daoSpaceFactory.createSpace(spaceParams);
@@ -5476,17 +5391,13 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         console.log('\n--- Testing Extreme: Single Vote 10x Over Snapshot ---');
 
         const spaceParams = {
-          name: 'Extreme Surplus Test',
-          description: 'Testing single vote 10x over snapshot',
-          imageUrl: '',
           unity: 50,
           quorum: 10,
           votingPowerSource: 2,
           exitMethod: 1,
           joinMethod: 1,
-          createToken: false,
-          tokenName: '',
-          tokenSymbol: '',
+          access: 0,
+          discoverability: 0,
         };
 
         await daoSpaceFactory.createSpace(spaceParams);
@@ -5607,17 +5518,13 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         );
 
         const spaceParams = {
-          name: 'Auto Resolution Verify',
-          description: 'Verifying auto-resolution behavior',
-          imageUrl: '',
           unity: 60,
           quorum: 50,
           votingPowerSource: 2,
           exitMethod: 1,
           joinMethod: 1,
-          createToken: false,
-          tokenName: '',
-          tokenSymbol: '',
+          access: 0,
+          discoverability: 0,
         };
 
         await daoSpaceFactory.createSpace(spaceParams);
