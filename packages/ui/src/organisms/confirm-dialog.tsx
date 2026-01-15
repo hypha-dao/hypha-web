@@ -19,7 +19,7 @@ export type ConfirmDialogProps = {
   description: string;
   customAcceptButtonText?: string;
   customRejectButtonText?: string;
-  onAcceptClicked?: () => void;
+  onAcceptClicked?: () => void | Promise<void>;
   onRejectClicked?: () => void;
   children?: React.ReactNode;
 };
@@ -68,7 +68,13 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
               <Button
                 variant="outline"
                 colorVariant="neutral"
-                onClick={onAcceptClicked}
+                onClick={async (e) => {
+                  e.preventDefault();
+                  if (onAcceptClicked) {
+                    await onAcceptClicked();
+                  }
+                  setOpen(false);
+                }}
               >
                 {customAcceptButtonText ?? 'OK'}
               </Button>
