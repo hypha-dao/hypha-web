@@ -240,8 +240,8 @@ contract DAOSpaceFactoryImplementation is
 
     // If not owner and not self-removal, check exit method authorization
     if (!isOwner && !isSelfRemoval) {
-      // If exit method is 1, only executor can remove members
-      if (space.exitMethod == 1) {
+      // If exit method is 0 or 1, only executor can remove members
+      if (space.exitMethod == 0 || space.exitMethod == 1) {
         require(
           msg.sender == space.executor,
           'Only executor can remove members'
@@ -249,7 +249,7 @@ contract DAOSpaceFactoryImplementation is
       }
 
       // Check if exit is allowed through exit method directory
-      if (space.exitMethod != 1) {
+      if (space.exitMethod != 0 && space.exitMethod != 1) {
         require(
           IExitMethodDirectory(exitMethodDirectoryAddress).exitcheck(
             _spaceId,
@@ -280,6 +280,16 @@ contract DAOSpaceFactoryImplementation is
     // Remove from regular members array
     space.members[memberIndex] = space.members[space.members.length - 1];
     space.members.pop();
+
+    // Remove space from member's list of spaces
+    uint256[] storage memberSpaceList = memberSpaces[_memberToRemove];
+    for (uint256 i = 0; i < memberSpaceList.length; i++) {
+      if (memberSpaceList[i] == _spaceId) {
+        memberSpaceList[i] = memberSpaceList[memberSpaceList.length - 1];
+        memberSpaceList.pop();
+        break;
+      }
+    }
 
     emit MemberRemoved(_spaceId, _memberToRemove);
   }
