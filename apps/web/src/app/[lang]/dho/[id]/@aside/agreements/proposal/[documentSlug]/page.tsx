@@ -181,6 +181,9 @@ export default function Agreements() {
           label={document?.label || ''}
           documentSlug={documentSlug}
           dbTokens={tokens || []}
+          onWithdrawSuccess={async () => {
+            await update();
+          }}
         />
       </LoadingBackdrop>
     </SidePanel>
