@@ -1,6 +1,6 @@
 'use client';
 
-import { useFormContext } from 'react-hook-form';
+import { useFormContext, useWatch } from 'react-hook-form';
 import {
   Input,
   FormControl,
@@ -82,6 +82,27 @@ export function CreateAgreementBaseFields({
   if (!form) {
     return <div>Form context is missing!</div>;
   }
+
+  const [resubmitFormData, setResubmitFormData] = React.useState<{
+    leadImage?: string;
+    attachments?: (string | { name: string; url: string })[];
+  } | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const data = sessionStorage.getItem('resubmitFormData');
+      if (data) {
+        const parsed = JSON.parse(data);
+        setResubmitFormData(parsed);
+        sessionStorage.removeItem('resubmitFormData');
+      }
+    } catch (error) {
+      console.error('Error reading resubmit form data:', error);
+      sessionStorage.removeItem('resubmitFormData');
+    }
+  }, []);
 
   const { space } = useSpaceBySlug(spaceSlug as string);
 
@@ -327,6 +348,13 @@ export function CreateAgreementBaseFields({
                 onChange={field.onChange}
                 maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
                 enableImageResizer={true}
+                defaultImage={
+                  resubmitFormData?.leadImage || field.value
+                    ? typeof field.value === 'string'
+                      ? field.value
+                      : resubmitFormData?.leadImage
+                    : undefined
+                }
               />
             </FormControl>
             <FormMessage />
@@ -336,23 +364,28 @@ export function CreateAgreementBaseFields({
       <FormField
         control={form.control}
         name="description"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel className="text-foreground gap-1">
-              Proposal Content <RequirementMark />
-            </FormLabel>
-            <FormControl>
-              <RichTextEditor
-                editorRef={null}
-                markdown={field.value}
-                placeholder="Type your proposal content here..."
-                {...field}
-              />
-            </FormControl>
-            <FormDescription />
-            <FormMessage />
-          </FormItem>
-        )}
+        render={({ field }) => {
+          const descriptionValue = field.value || '';
+
+          return (
+            <FormItem>
+              <FormLabel className="text-foreground gap-1">
+                Proposal Content <RequirementMark />
+              </FormLabel>
+              <FormControl>
+                <RichTextEditor
+                  key={`description-${descriptionValue || 'empty'}`}
+                  editorRef={null}
+                  markdown={descriptionValue}
+                  placeholder="Type your proposal content here..."
+                  onChange={(markdown) => field.onChange(markdown)}
+                />
+              </FormControl>
+              <FormDescription />
+              <FormMessage />
+            </FormItem>
+          );
+        }}
       />
       <FormField
         control={form.control}

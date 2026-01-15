@@ -54,6 +54,9 @@ export const CreateAgreementForm = ({
   } = useCreateAgreementOrchestrator({ authToken: jwt, config });
 
   const formRef = React.useRef<HTMLFormElement>(null);
+
+  const [resubmitKey, setResubmitKey] = React.useState(0);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(fullSchemaCreateSpaceForm),
     defaultValues: {
@@ -67,6 +70,76 @@ export const CreateAgreementForm = ({
   });
 
   useScrollToErrors(form, formRef);
+
+  const hasAppliedResubmitData = React.useRef(false);
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (hasAppliedResubmitData.current) return;
+
+    const applyResubmitData = () => {
+      try {
+        const data = sessionStorage.getItem('resubmitProposalData');
+        if (data) {
+          const parsed = JSON.parse(data);
+          console.log('Resubmit data found:', parsed);
+
+          if (parsed.leadImage || parsed.attachments) {
+            sessionStorage.setItem(
+              'resubmitFormData',
+              JSON.stringify({
+                leadImage: parsed.leadImage,
+                attachments: parsed.attachments,
+              }),
+            );
+          }
+
+          form.reset(
+            {
+              title: parsed.title || '',
+              description: parsed.description || '',
+              leadImage: undefined,
+              attachments: undefined,
+              spaceId: spaceId ?? undefined,
+              creatorId: person?.id,
+            },
+            {
+              keepDefaultValues: false,
+            },
+          );
+
+          form.setValue('title', parsed.title || '', {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+          form.setValue('description', parsed.description || '', {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+
+          form.trigger(['title', 'description']);
+
+          setResubmitKey((prev) => prev + 1);
+
+          hasAppliedResubmitData.current = true;
+
+          sessionStorage.removeItem('resubmitProposalData');
+
+          console.log('Form reset with resubmit data. Current values:', {
+            title: form.getValues('title'),
+            description: form.getValues('description'),
+          });
+        }
+      } catch (error) {
+        console.error('Error reading resubmit data:', error);
+        sessionStorage.removeItem('resubmitProposalData');
+        sessionStorage.removeItem('resubmitFormData');
+      }
+    };
+
+    const timeoutId = setTimeout(applyResubmitData, 200);
+
+    return () => clearTimeout(timeoutId);
+  }, [form, spaceId, person?.id]);
 
   const handleCreate = async (data: FormValues) => {
     await createAgreement({
@@ -105,6 +178,7 @@ export const CreateAgreementForm = ({
           className="flex flex-col gap-5"
         >
           <CreateAgreementBaseFields
+            key={resubmitKey}
             creator={{
               avatar: person?.avatarUrl || '',
               name: person?.name || '',
