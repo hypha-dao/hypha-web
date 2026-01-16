@@ -23,6 +23,7 @@ export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
   title,
   description,
   creatorId,
+  archived,
 }) => {
   const [message, setMessage] = React.useState<string>('');
   const { isLoading: isPersonLoading, person: creator } = usePersonById({
@@ -135,18 +136,33 @@ export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
             />
           </div>
           <div className="flex flex-grow text-1 text-neutral-11">
-            <Button
-              variant="outline"
-              colorVariant="accent"
-              className="w-full"
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                proposeAgreement();
-              }}
-            >
-              Propose Agreement
-            </Button>
+            {archived ? (
+              <Button
+                variant="outline"
+                colorVariant="accent"
+                className="w-full"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  //TODO: unarchive
+                }}
+              >
+                Unarchive
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                colorVariant="accent"
+                className="w-full"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  proposeAgreement();
+                }}
+              >
+                Propose Agreement
+              </Button>
+            )}
           </div>
         </div>
       </CardContent>
