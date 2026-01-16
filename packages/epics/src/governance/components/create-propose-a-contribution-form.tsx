@@ -74,6 +74,12 @@ export const CreateProposeAContributionForm = ({
 
   useScrollToErrors(form, formRef);
 
+  React.useEffect(() => {
+    if (progress === 100 && successfulUrl) {
+      router.push(successfulUrl);
+    }
+  }, [progress, successfulUrl, router]);
+
   const handleCreate = async (data: FormValues) => {
     if (!data.recipient || !data.payouts || data.payouts.length === 0) {
       console.error('Recipient or payouts are missing');
