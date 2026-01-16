@@ -6,6 +6,7 @@ import { CreatorType } from '../../proposals';
 import { ChatHead } from './chat-head';
 import { formatDate } from '@hypha-platform/ui-utils';
 import { Coherence } from '@hypha-platform/core/server';
+import { ChatRoom } from './chat-room';
 
 type ChatDetailProps = {
   closeUrl: string;
@@ -43,7 +44,7 @@ export const ChatDetail = ({
         <MarkdownSuspense>{conversation?.description}</MarkdownSuspense>
       </div>
       <Separator />
-      {/* <MatrixChatIframe /> */}
+      <ChatRoom roomId={conversation?.roomId ?? ''} />
     </div>
   );
 };

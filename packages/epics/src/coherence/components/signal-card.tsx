@@ -2,8 +2,10 @@
 
 import {
   Coherence,
+  RoomPreset,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
+  useMatrix,
 } from '@hypha-platform/core/client';
 import {
   BadgeItem,
@@ -29,6 +31,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   refresh,
 }) => {
   const { jwt: authToken } = useJwt();
+  const { client } = useMatrix();
   const { updateCoherenceBySlug, isUpdatingCoherence } =
     useCoherenceMutationsWeb2Rsc(authToken);
 
@@ -51,9 +54,22 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
 
   const allowConversation = React.useCallback(async () => {
     console.log('Start Conversation');
-    //TODO
-    await updateCoherenceBySlug({ slug, status: 'conversation' });
-    await refresh();
+    if (!client) {
+      console.warn(
+        'Cannot create conversation since Matrix client is unavailable',
+      );
+      return;
+    }
+    try {
+      const { room_id: roomId } = await client.createRoom({
+        preset: RoomPreset.PublicChat,
+        topic: title,
+      });
+      await updateCoherenceBySlug({ slug, status: 'conversation', roomId });
+      await refresh();
+    } catch (error) {
+      console.warn('Could not create conversation:', error);
+    }
   }, [updateCoherenceBySlug, slug, refresh]);
   const declineConversation = async () => {
     console.log('Not Relevant');
