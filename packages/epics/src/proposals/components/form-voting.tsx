@@ -1,12 +1,7 @@
 'use client';
 
-import {
-  Button,
-  Skeleton,
-  Separator,
-  Image,
-  ConfirmDialog,
-} from '@hypha-platform/ui';
+import { Button, Skeleton, Separator, Image } from '@hypha-platform/ui';
+import { WithdrawResubmitBanner } from './withdraw-resubmit-banner';
 import { ProgressLine } from './progress-line';
 import { intervalToDuration, isPast } from 'date-fns';
 import { VoterList } from '../../governance/components/voter-list';
@@ -133,7 +128,8 @@ export const FormVoting = ({
   const handleWithdraw = async () => {
     try {
       await withdrawProposal();
-      onWithdrawSuccess?.();
+      await onWithdrawSuccess?.();
+      await new Promise((resolve) => setTimeout(resolve, 200));
       if (closeUrl) {
         router.push(closeUrl);
       } else {
@@ -153,8 +149,6 @@ export const FormVoting = ({
         attachments: documentAttachments || undefined,
       };
 
-      console.log('Saving resubmit data:', proposalData);
-
       sessionStorage.setItem(
         'resubmitProposalData',
         JSON.stringify(proposalData),
@@ -163,12 +157,13 @@ export const FormVoting = ({
       const saved = sessionStorage.getItem('resubmitProposalData');
       if (!saved) {
         console.error('Failed to save resubmit data to sessionStorage');
+        return;
       }
 
       await withdrawProposal();
-      onWithdrawSuccess?.();
+      await onWithdrawSuccess?.();
 
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
       if (spaceSlug && lang) {
         router.push(`/${lang}/dho/${spaceSlug}/agreements/create`);
@@ -381,43 +376,11 @@ export const FormVoting = ({
         </Skeleton>
       </div>
       {showWithdrawBlock && (
-        <div className="flex flex-col gap-3 p-4 border border-neutral-6 rounded-lg bg-neutral-2">
-          <div className="text-2 text-neutral-11">
-            Withdraw your proposal or edit and submit again?
-          </div>
-          <div className="flex gap-2">
-            <ConfirmDialog
-              title="Withdraw Proposal"
-              description="Are you sure you want to withdraw this proposal? It will no longer appear on the Proposal screen and cannot be recovered."
-              customAcceptButtonText="Withdraw"
-              customRejectButtonText="Cancel"
-              onAcceptClicked={handleWithdraw}
-            >
-              <Button
-                variant="outline"
-                colorVariant="accent"
-                disabled={isWithdrawing}
-              >
-                {isWithdrawing ? 'Withdrawing...' : 'Withdraw'}
-              </Button>
-            </ConfirmDialog>
-            <ConfirmDialog
-              title="Resubmit Proposal"
-              description="Are you sure you want to resubmit this proposal? The current proposal will be withdrawn, a new one will be created with your content, and votes will be reset."
-              customAcceptButtonText="Resubmit"
-              customRejectButtonText="Cancel"
-              onAcceptClicked={handleResubmit}
-            >
-              <Button
-                variant="outline"
-                colorVariant="accent"
-                disabled={isWithdrawing}
-              >
-                {isWithdrawing ? 'Processing...' : 'Resubmit'}
-              </Button>
-            </ConfirmDialog>
-          </div>
-        </div>
+        <WithdrawResubmitBanner
+          onWithdraw={handleWithdraw}
+          onResubmit={handleResubmit}
+          isWithdrawing={isWithdrawing}
+        />
       )}
     </div>
   );

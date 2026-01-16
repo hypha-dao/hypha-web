@@ -136,7 +136,7 @@ export const CreateAgreementForm = ({
       }
     };
 
-    const timeoutId = setTimeout(applyResubmitData, 200);
+    const timeoutId = setTimeout(applyResubmitData, 300);
 
     return () => clearTimeout(timeoutId);
   }, [form, spaceId, person?.id]);
