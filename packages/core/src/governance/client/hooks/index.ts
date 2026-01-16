@@ -25,3 +25,5 @@ export * from './useJoinSpaceProposalHandler';
 export * from './useProposalEvents';
 export * from './useMintTokensToSpaceTreasuryMutations.web3.rsc';
 export * from './useMintTokensToSpaceTreasuryOrchestrator';
+export * from './useMembershipExitOrchestrator';
+export * from './useMembershipExitMutations.web.rpc';
