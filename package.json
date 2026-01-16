@@ -33,6 +33,7 @@
     "@next/env": "^15.1.6",
     "@openzeppelin/contracts": "^5.2.0",
     "@privy-io/react-auth": "^2.20.0",
+    "@privy-io/server-auth": "^1.32.5",
     "@privy-io/wagmi": "^1.0.5",
     "@radix-ui/react-aspect-ratio": "^1.1.2",
     "@radix-ui/react-avatar": "^1.1.2",

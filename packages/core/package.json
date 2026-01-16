@@ -16,7 +16,8 @@
     "@hypha-platform/storage-postgres": "workspace:*",
     "@hypha-platform/ui": "workspace:*",
     "@hypha-platform/ui-utils": "workspace:*",
-    "@wagmi/cli": "^2.2.0"
+    "@wagmi/cli": "^2.2.0",
+    "matrix-js-sdk": "^40.0.0"
   },
   "exports": {
     "./client": "./src/client.ts",
