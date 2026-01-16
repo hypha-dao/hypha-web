@@ -374,7 +374,6 @@ export function CreateAgreementBaseFields({
               </FormLabel>
               <FormControl>
                 <RichTextEditor
-                  key={`description-${descriptionValue || 'empty'}`}
                   editorRef={null}
                   markdown={descriptionValue}
                   placeholder="Type your proposal content here..."
