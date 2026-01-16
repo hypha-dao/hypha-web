@@ -8,3 +8,4 @@ export * from './transaction';
 export * from './events';
 export * from './notifications';
 export * from './coherence';
+export * from './matrix';

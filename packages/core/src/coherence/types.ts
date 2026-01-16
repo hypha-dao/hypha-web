@@ -19,6 +19,7 @@ export interface UpdateCoherenceInput {
   slug?: string;
   archived?: boolean;
   status?: CoherenceStatus;
+  roomId?: string;
   //TODO
 }
 
