@@ -32,9 +32,11 @@ export const ChatHead = ({
         />
         <div className="flex justify-between items-center w-full">
           <div className="flex-col gap-y-2">
-            <div className="font-medium text-[14px] text-ellipsis overflow-hidden ">
-              {displayName}
-            </div>
+            <Skeleton height="14px" width="80px" loading={isLoading}>
+              <div className="font-medium text-[14px] text-ellipsis overflow-hidden ">
+                {displayName}
+              </div>
+            </Skeleton>
             <div className="flex gap-x-1">
               <Skeleton height="16px" width="80px" loading={isLoading}>
                 <Text className="text-1 text-gray-500">

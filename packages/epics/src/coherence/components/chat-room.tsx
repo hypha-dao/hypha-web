@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  EventType,
-  MsgType,
-  RoomEvent,
-  useMatrix,
-} from '@hypha-platform/core/client';
+import { EventType, RoomEvent, useMatrix } from '@hypha-platform/core/client';
 import { Button, Input, ScrollArea } from '@hypha-platform/ui';
 import { PaperPlaneIcon } from '@radix-ui/react-icons';
 import React from 'react';
@@ -19,14 +14,14 @@ export const ChatRoom = ({
   roomId: string;
   isLoading: boolean;
 }) => {
-  const { client } = useMatrix();
+  const { client, sendMessage: sendMatrixMessage } = useMatrix();
   const [messages, setMessages] = React.useState<Message[]>([]);
   const [input, setInput] = React.useState('');
   const [isMessagesLoading, setIsMessagesLoading] = React.useState(false);
 
   React.useEffect(() => {
     if (!client) {
-      console.log('Matric client is not initialized');
+      console.log('Matrix client is not initialized');
       return;
     }
 
@@ -75,19 +70,13 @@ export const ChatRoom = ({
   }, [client, roomId]);
 
   const sendMessage = React.useCallback(async () => {
-    if (!client || !input.trim()) {
-      return;
+    try {
+      await sendMatrixMessage({ roomId, message: input.trim() });
+      setInput('');
+    } catch (error) {
+      console.warn(error);
     }
-
-    if (roomId) {
-      await client.sendEvent(roomId, EventType.RoomMessage, {
-        msgtype: MsgType.Text,
-        body: input,
-      });
-    }
-
-    setInput('');
-  }, [client, input, roomId]);
+  }, [client, input, roomId, sendMatrixMessage]);
 
   return (
     <div className="flex flex-col h-[600px]">
@@ -95,7 +84,7 @@ export const ChatRoom = ({
         <ScrollArea>
           <ChatMessageContainer
             messages={messages}
-            isLoading={isMessagesLoading}
+            isLoading={isLoading || isMessagesLoading}
           />
         </ScrollArea>
       </div>

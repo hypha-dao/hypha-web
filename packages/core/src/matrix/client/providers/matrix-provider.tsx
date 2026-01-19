@@ -5,11 +5,17 @@ import * as MatrixSdk from 'matrix-js-sdk';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { MatrixTokenData, useMatrixToken } from '../hooks';
 
+interface SendMessageInput {
+  roomId: string;
+  message: string;
+}
+
 interface MatrixContextType {
   client: MatrixSdk.MatrixClient | null;
   isAuthenticated: boolean;
   login: () => Promise<void>;
   logout: () => Promise<void>;
+  sendMessage: (params: SendMessageInput) => Promise<void>;
 }
 
 const MatrixContext = React.createContext<MatrixContextType | null>(null);
@@ -71,6 +77,22 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     initalizeMatrixClient(matrixToken!);
   }, [user, matrixToken, isMatrixTokenLoading, matrixTokenError]);
 
+  const sendMessage = React.useCallback(
+    async ({ roomId, message }: SendMessageInput) => {
+      if (!client || !message.trim()) {
+        throw new Error('Client and message showld be specified');
+      }
+
+      if (roomId) {
+        await client.sendEvent(roomId, EventType.RoomMessage, {
+          msgtype: MsgType.Text,
+          body: message,
+        });
+      }
+    },
+    [client],
+  );
+
   const value: MatrixContextType = {
     client,
     isAuthenticated,
@@ -80,6 +102,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     logout: async () => {
       console.log('logout');
     },
+    sendMessage,
   };
   return (
     <MatrixContext.Provider value={value}>{children}</MatrixContext.Provider>
