@@ -18,3 +18,21 @@ export const findLinkByPrivyUserId = async (
     ...response,
   };
 };
+
+export const findLinkByMatrixUserId = async (
+  { matrixUserId }: { matrixUserId: string },
+  { db }: DbConfig,
+): Promise<MatrixUserLink | null> => {
+  const response = await db.query.matrixUserLinks.findFirst({
+    where: (matrixUserLinks, { eq }) =>
+      eq(matrixUserLinks.matrixUserId, matrixUserId),
+  });
+
+  if (!response) {
+    return null;
+  }
+
+  return {
+    ...response,
+  };
+};

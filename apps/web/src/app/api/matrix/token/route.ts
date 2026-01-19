@@ -32,14 +32,9 @@ export async function GET(request: NextRequest) {
 
   try {
     const authToken = authHeader.replace('Bearer ', '');
-    const claims = await privy.verifyAuthToken(authToken);
+    const { userId: privyUserId } = await privy.verifyAuthToken(authToken);
 
-    const matrixUsername = getDecoratedPrivyId(claims.userId);
-
-    const existing = await getLinkByPrivyUserId({
-      privyUserId: matrixUsername,
-    });
-
+    const existing = await getLinkByPrivyUserId({ privyUserId });
     if (existing) {
       const accessToken = decryptMatrixToken(existing.encryptedAccessToken);
       return NextResponse.json({
@@ -54,6 +49,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    const matrixUsername = getDecoratedPrivyId(privyUserId);
     const {
       accessToken: encryptedAccessToken,
       deviceId,
@@ -65,7 +61,7 @@ export async function GET(request: NextRequest) {
         encryptedAccessToken,
         deviceId,
         matrixUserId,
-        privyUserId: matrixUsername,
+        privyUserId,
       },
       { authToken },
     );
