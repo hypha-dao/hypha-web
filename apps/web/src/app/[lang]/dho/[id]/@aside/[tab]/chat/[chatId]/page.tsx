@@ -6,7 +6,6 @@ import {
   SidePanel,
   useConversation,
 } from '@hypha-platform/epics';
-import { LoadingBackdrop } from '@hypha-platform/ui';
 import { useParams } from 'next/navigation';
 import { getDhoPathCoherence } from '../../../../@tab/coherence/constants';
 import { usePersonById } from '@hypha-platform/core/client';
@@ -28,20 +27,21 @@ export default function ChatPage() {
 
   return (
     <SidePanel>
-      <ChatDetail
-        creator={{
-          avatar: creator?.avatarUrl || '',
-          name: creator?.name || '',
-          surname: creator?.surname || '',
-          address: creator?.address || '',
-        }}
-        isLoading={isConversationLoading || isPersonLoading}
-        conversation={conversation}
-        closeUrl={closeUrl}
-        lang={lang}
-        spaceSlug={spaceId}
-        chatSlug={chatId}
-      />
+      {error ? (
+        <div className="text-error">{error}</div>
+      ) : (
+        <ChatDetail
+          creator={{
+            avatar: creator?.avatarUrl || '',
+            name: creator?.name || '',
+            surname: creator?.surname || '',
+            address: creator?.address || '',
+          }}
+          isLoading={isConversationLoading || isPersonLoading}
+          conversation={conversation}
+          closeUrl={closeUrl}
+        />
+      )}
     </SidePanel>
   );
 }

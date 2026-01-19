@@ -21,10 +21,12 @@ export const ChatMessageContainer = ({
             message={{ id: '', content: '', sender: '', timestamp: new Date() }}
             isLoading={true}
           />
+          <Separator />
           <ChatMessage
             message={{ id: '', content: '', sender: '', timestamp: new Date() }}
             isLoading={true}
           />
+          <Separator />
           <ChatMessage
             message={{ id: '', content: '', sender: '', timestamp: new Date() }}
             isLoading={true}
