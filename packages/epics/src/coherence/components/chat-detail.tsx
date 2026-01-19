@@ -40,11 +40,11 @@ export const ChatDetail = ({
       </div>
       <Separator />
       <div className="flex flex-col gap-3">
-        <Text>{conversation?.title}</Text>
+        <Text className="text-2">{conversation?.title}</Text>
         <MarkdownSuspense>{conversation?.description}</MarkdownSuspense>
       </div>
       <Separator />
-      <ChatRoom roomId={conversation?.roomId ?? ''} />
+      <ChatRoom roomId={conversation?.roomId ?? ''} isLoading={isLoading} />
     </div>
   );
 };

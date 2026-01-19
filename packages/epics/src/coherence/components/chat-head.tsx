@@ -25,7 +25,7 @@ export const ChatHead = ({
     <div className="flex gap-3 w-full">
       <div className="flex items-center space-x-3">
         <PersonAvatar
-          size="lg"
+          size="md"
           isLoading={isLoading}
           avatarSrc={creator?.avatar}
           userName={displayName}

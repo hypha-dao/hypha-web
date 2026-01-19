@@ -6,21 +6,23 @@ import {
   RoomEvent,
   useMatrix,
 } from '@hypha-platform/core/client';
-import { Button, Input, ScrollArea, Separator } from '@hypha-platform/ui';
+import { Button, Input, ScrollArea } from '@hypha-platform/ui';
 import { PaperPlaneIcon } from '@radix-ui/react-icons';
 import React from 'react';
+import { Message } from '../types';
+import { ChatMessageContainer } from './chat-message.container';
 
-interface Message {
-  id: string;
-  sender: string;
-  content: string;
-  timestamp: Date;
-}
-
-export const ChatRoom = ({ roomId }: { roomId: string }) => {
+export const ChatRoom = ({
+  roomId,
+  isLoading,
+}: {
+  roomId: string;
+  isLoading: boolean;
+}) => {
   const { client } = useMatrix();
   const [messages, setMessages] = React.useState<Message[]>([]);
   const [input, setInput] = React.useState('');
+  const [isMessagesLoading, setIsMessagesLoading] = React.useState(false);
 
   React.useEffect(() => {
     if (!client) {
@@ -33,6 +35,7 @@ export const ChatRoom = ({ roomId }: { roomId: string }) => {
         event.getRoomId() === roomId &&
         event.getType() === EventType.RoomMessage
       ) {
+        setIsMessagesLoading(true);
         setMessages((prev) => [
           ...prev,
           {
@@ -42,6 +45,7 @@ export const ChatRoom = ({ roomId }: { roomId: string }) => {
             timestamp: new Date(event.getTs()),
           },
         ]);
+        setIsMessagesLoading(false);
       }
     };
 
@@ -49,6 +53,7 @@ export const ChatRoom = ({ roomId }: { roomId: string }) => {
 
     const room = client.getRoom(roomId);
     if (room) {
+      setIsMessagesLoading(true);
       setMessages(
         room
           .getLiveTimeline()
@@ -61,6 +66,7 @@ export const ChatRoom = ({ roomId }: { roomId: string }) => {
             timestamp: new Date(event.getTs()),
           })),
       );
+      setIsMessagesLoading(false);
     }
 
     return () => {
@@ -87,16 +93,12 @@ export const ChatRoom = ({ roomId }: { roomId: string }) => {
     <div className="flex flex-col h-[600px]">
       <div className="flex grow">
         <ScrollArea>
-          {messages.map((msg) => (
-            <div key={msg.id} className="mb-3">
-              <div className="text-sm font-medium">{msg.sender}</div>
-              <div className="text-gray-700">{msg.content}</div>
-            </div>
-          ))}
+          <ChatMessageContainer
+            messages={messages}
+            isLoading={isMessagesLoading}
+          />
         </ScrollArea>
       </div>
-
-      <Separator />
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-grow text-1 text-neutral-11 gap-3">
