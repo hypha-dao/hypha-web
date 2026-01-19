@@ -63,7 +63,11 @@ export const SignalSection: FC<SignalSectionProps> = ({
             Improve AI signals
           </Button>
           <Link href={createSignalHref}>
-            <Button variant="default" colorVariant="accent">
+            <Button
+              variant="default"
+              colorVariant="accent"
+              disabled={isLoading}
+            >
               <PlusIcon />
               New Signal
             </Button>

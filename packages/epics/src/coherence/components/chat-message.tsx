@@ -21,7 +21,6 @@ export const ChatMessage = ({ message, isLoading }: ChatMessageProps) => {
   const { person, isLoading: isLoadingPerson } = usePersonBySub({
     sub: privyUserId,
   });
-  console.log('Person:', message.sender, privyUserId, person);
   const displayName = React.useMemo(() => {
     if (isLoadingPerson || !person) {
       return '';
