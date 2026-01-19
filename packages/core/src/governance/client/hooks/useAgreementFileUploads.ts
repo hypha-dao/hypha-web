@@ -50,18 +50,44 @@ export const useAgreementFileUploads = (
           if (!fileOrFiles) return;
 
           try {
-            if (key === 'leadImage' && fileOrFiles instanceof File) {
-              const result = await uploadImage([fileOrFiles]);
-              if (result?.[0]?.ufsUrl) {
-                uploadedFiles.leadImage = result[0].ufsUrl;
+            if (key === 'leadImage') {
+              if (fileOrFiles instanceof File) {
+                const result = await uploadImage([fileOrFiles]);
+                if (result?.[0]?.ufsUrl) {
+                  uploadedFiles.leadImage = result[0].ufsUrl;
+                }
+              } else if (typeof fileOrFiles === 'string') {
+                uploadedFiles.leadImage = fileOrFiles;
               }
             } else if (key === 'attachments' && Array.isArray(fileOrFiles)) {
-              const result = await uploadAttachment(fileOrFiles);
-              if (result?.every((item) => item.ufsUrl)) {
-                uploadedFiles.attachments = result.map((item) => ({
-                  name: item.name,
-                  url: item.ufsUrl,
-                }));
+              const areUrls = fileOrFiles.every(
+                (item) =>
+                  typeof item === 'string' ||
+                  (typeof item === 'object' && item !== null && 'url' in item),
+              );
+
+              if (areUrls) {
+                uploadedFiles.attachments = fileOrFiles.map((item) =>
+                  typeof item === 'string'
+                    ? item
+                    : {
+                        name: (item as any).name || '',
+                        url: (item as any).url,
+                      },
+                ) as (string | Attachment)[];
+              } else {
+                const fileArray = fileOrFiles.filter(
+                  (item) => item instanceof File,
+                ) as File[];
+                if (fileArray.length > 0) {
+                  const result = await uploadAttachment(fileArray);
+                  if (result?.every((item) => item.ufsUrl)) {
+                    uploadedFiles.attachments = result.map((item) => ({
+                      name: item.name,
+                      url: item.ufsUrl,
+                    }));
+                  }
+                }
               }
             }
           } catch (error) {

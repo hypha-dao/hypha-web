@@ -116,6 +116,20 @@ export const CreateAgreementForm = ({
             shouldValidate: true,
           });
 
+          if (parsed.attachments && parsed.attachments.length > 0) {
+            form.setValue('attachments', parsed.attachments as any, {
+              shouldDirty: true,
+              shouldValidate: false,
+            });
+          }
+
+          if (parsed.leadImage && typeof parsed.leadImage === 'string') {
+            form.setValue('leadImage', parsed.leadImage as any, {
+              shouldDirty: true,
+              shouldValidate: false,
+            });
+          }
+
           form.trigger(['title', 'description']);
 
           setResubmitKey((prev) => prev + 1);

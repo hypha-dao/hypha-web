@@ -87,6 +87,9 @@ export function CreateAgreementBaseFields({
     leadImage?: string;
     attachments?: (string | { name: string; url: string })[];
   } | null>(null);
+  const [existingAttachments, setExistingAttachments] = React.useState<
+    (string | { name: string; url: string })[]
+  >([]);
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -96,6 +99,9 @@ export function CreateAgreementBaseFields({
       if (data) {
         const parsed = JSON.parse(data);
         setResubmitFormData(parsed);
+        if (parsed.attachments && parsed.attachments.length > 0) {
+          setExistingAttachments(parsed.attachments);
+        }
         sessionStorage.removeItem('resubmitFormData');
       }
     } catch (error) {
@@ -389,15 +395,46 @@ export function CreateAgreementBaseFields({
       <FormField
         control={form.control}
         name="attachments"
-        render={({ field }) => (
-          <FormItem>
-            <FormControl>
-              <AddAttachment onChange={field.onChange} />
-            </FormControl>
-            <FormDescription />
-            <FormMessage />
-          </FormItem>
-        )}
+        render={({ field }) => {
+          const fieldValue = field.value || [];
+          const newFiles = Array.isArray(fieldValue)
+            ? fieldValue.filter((item) => item instanceof File)
+            : [];
+          const allAttachments = [...existingAttachments, ...newFiles];
+
+          return (
+            <FormItem>
+              <FormControl>
+                <AddAttachment
+                  onChange={(files) => {
+                    field.onChange(files);
+                    form.setValue(
+                      'attachments',
+                      [...existingAttachments, ...files] as any,
+                      { shouldValidate: false },
+                    );
+                  }}
+                  onExistingAttachmentsChange={(updated) => {
+                    setExistingAttachments(updated);
+                    form.setValue(
+                      'attachments',
+                      [...updated, ...newFiles] as any,
+                      { shouldValidate: false },
+                    );
+                  }}
+                  value={allAttachments.length > 0 ? allAttachments : undefined}
+                  defaultAttachments={
+                    existingAttachments.length > 0
+                      ? existingAttachments
+                      : undefined
+                  }
+                />
+              </FormControl>
+              <FormDescription />
+              <FormMessage />
+            </FormItem>
+          );
+        }}
       />
     </>
   );
