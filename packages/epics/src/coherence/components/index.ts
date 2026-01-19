@@ -1,5 +1,7 @@
 export * from './chat-detail';
 export * from './chat-head';
+export * from './chat-message';
+export * from './chat-message.container';
 export * from './coherence-block';
 export * from './conversation-card';
 export * from './conversation-grid';

@@ -1,8 +1,3 @@
-import {
-  CoherenceTag,
-  CoherenceStatus,
-  CoherenceType,
-} from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 
 export type ChatCreatorType = {
@@ -25,3 +20,10 @@ export type ChatPageParams = {
   lang: Locale;
   chatId: string;
 };
+
+export interface Message {
+  id: string;
+  sender: string;
+  content: string;
+  timestamp: Date;
+}

@@ -28,26 +28,20 @@ export default function ChatPage() {
 
   return (
     <SidePanel>
-      <LoadingBackdrop
-        showKeepWindowOpenMessage={true}
-        fullHeight={true}
+      <ChatDetail
+        creator={{
+          avatar: creator?.avatarUrl || '',
+          name: creator?.name || '',
+          surname: creator?.surname || '',
+          address: creator?.address || '',
+        }}
         isLoading={isConversationLoading || isPersonLoading}
-      >
-        <ChatDetail
-          creator={{
-            avatar: creator?.avatarUrl || '',
-            name: creator?.name || '',
-            surname: creator?.surname || '',
-            address: creator?.address || '',
-          }}
-          isLoading={isConversationLoading || isPersonLoading}
-          conversation={conversation}
-          closeUrl={closeUrl}
-          lang={lang}
-          spaceSlug={spaceId}
-          chatSlug={chatId}
-        />
-      </LoadingBackdrop>
+        conversation={conversation}
+        closeUrl={closeUrl}
+        lang={lang}
+        spaceSlug={spaceId}
+        chatSlug={chatId}
+      />
     </SidePanel>
   );
 }
