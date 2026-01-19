@@ -14,7 +14,11 @@ import {
   PaperPlaneIcon,
 } from '@radix-ui/react-icons';
 import React from 'react';
-import { Coherence, usePersonById } from '@hypha-platform/core/client';
+import {
+  Coherence,
+  useMatrix,
+  usePersonById,
+} from '@hypha-platform/core/client';
 
 type ConversationCardProps = { isLoading: boolean };
 
@@ -24,19 +28,21 @@ export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
   description,
   creatorId,
   archived,
+  roomId,
 }) => {
   const [message, setMessage] = React.useState<string>('');
   const { isLoading: isPersonLoading, person: creator } = usePersonById({
     id: creatorId,
   });
+  const { sendMessage: sendMatrixMessage } = useMatrix();
   const views = 59; //TODO: compute number of conversation view
   const messages = 16; //TODO: compute number of conversation messages
 
-  const sendMessage = React.useCallback(() => {
+  const sendMessage = React.useCallback(async () => {
     console.log('Send message into chat:', message);
-    //TODO
+    await sendMatrixMessage({ roomId: roomId!, message });
     setMessage('');
-  }, [message]);
+  }, [message, roomId, sendMatrixMessage]);
 
   const proposeAgreement = () => {
     console.log('Propose agreement');

@@ -102,6 +102,7 @@ export const ConversationSection: FC<ConversationSectionProps> = ({
             className="border-0 md:w-40"
             onChange={updateOrder}
             allowEmptyChoice={false}
+            disabled={isLoading}
           />
         </div>
         <div className="flex flex-row gap-2 h-full">
@@ -112,6 +113,7 @@ export const ConversationSection: FC<ConversationSectionProps> = ({
             onCheckedChange={(value) => {
               setHideArchived(value === true);
             }}
+            disabled={isLoading}
           />
           <label
             className="text-[14px] self-center"
