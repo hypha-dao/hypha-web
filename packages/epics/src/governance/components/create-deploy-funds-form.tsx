@@ -15,7 +15,7 @@ import { useCreateDeployFundsOrchestrator } from '@hypha-platform/core/client';
 import { useRouter } from 'next/navigation';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useConfig } from 'wagmi';
-import { useScrollToErrors } from '../../hooks';
+import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 
 const fullSchemaCreateDeployFundsForm =
@@ -72,6 +72,7 @@ export const CreateDeployFundsForm = ({
   });
 
   useScrollToErrors(form, formRef);
+  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
 
   const handleCreate = async (data: FormValues) => {
     if (!data.recipient || !data.payouts || data.payouts.length === 0) {
@@ -129,6 +130,7 @@ export const CreateDeployFundsForm = ({
           className="flex flex-col gap-5"
         >
           <CreateAgreementBaseFields
+            key={resubmitKey}
             creator={{
               avatar: person?.avatarUrl || '',
               name: person?.name || '',

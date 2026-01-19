@@ -405,6 +405,7 @@ export const ProposalDetail = ({
         spaceSlug={spaceSlug}
         closeUrl={closeUrl}
         onWithdrawSuccess={onWithdrawSuccess}
+        label={label}
       />
     </div>
   );

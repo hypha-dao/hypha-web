@@ -17,7 +17,11 @@ import React from 'react';
 import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter } from 'next/navigation';
-import { useDbTokens, useScrollToErrors } from '../../hooks';
+import {
+  useDbTokens,
+  useScrollToErrors,
+  useResubmitProposalData,
+} from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 
 const extendedBaseSchema = baseSchemaIssueNewToken.merge(
@@ -148,6 +152,7 @@ export const IssueNewTokenForm = ({
   });
 
   useScrollToErrors(form, formRef);
+  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
 
   const { tokens: dbTokens, refetchDbTokens } = useDbTokens();
 
@@ -219,6 +224,7 @@ export const IssueNewTokenForm = ({
           className="flex flex-col gap-5"
         >
           <CreateAgreementBaseFields
+            key={resubmitKey}
             creator={{
               avatar: person?.avatarUrl || '',
               name: person?.name || '',

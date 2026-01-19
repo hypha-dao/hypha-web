@@ -45,6 +45,27 @@ function formatTimeRemaining(
     : 'Vote closing soon';
 }
 
+const getCreateRouteForLabel = (label: string | undefined): string => {
+  if (!label) return '';
+
+  const labelToRoute: Record<string, string> = {
+    Contribution: 'propose-contribution',
+    'Collective Agreement': '',
+    Expenses: 'pay-for-expenses',
+    Funding: 'deploy-funds',
+    'Voting Method': 'change-voting-method',
+    'Entry Method': 'change-entry-method',
+    'Issue New Token': 'issue-new-token',
+    'Buy Hypha Tokens': 'buy-hypha-tokens',
+    'Activate Spaces': 'activate-spaces',
+    'Space To Space': 'space-to-space-membership',
+    'Treasury Minting': 'mint-tokens-to-space-treasury',
+    'Membership Exit': 'membership-exit',
+  };
+
+  return labelToRoute[label] || '';
+};
+
 export const FormVoting = ({
   unity,
   quorum,
@@ -71,6 +92,7 @@ export const FormVoting = ({
   documentAttachments,
   spaceSlug,
   closeUrl,
+  label,
 }: {
   unity: number;
   quorum: number;
@@ -97,6 +119,7 @@ export const FormVoting = ({
   documentAttachments?: (string | { name: string; url: string })[];
   spaceSlug?: string;
   closeUrl?: string;
+  label?: string;
 }) => {
   const { myVote } = useMyVote(documentSlug);
   const { isMember } = useSpaceMember({ spaceId: web3SpaceId as number });
@@ -166,7 +189,16 @@ export const FormVoting = ({
       await new Promise((resolve) => setTimeout(resolve, 200));
 
       if (spaceSlug && lang) {
-        router.push(`/${lang}/dho/${spaceSlug}/agreements/create`);
+        const routePath = getCreateRouteForLabel(label);
+
+        let createPath: string;
+        if (routePath === '') {
+          createPath = `/${lang}/dho/${spaceSlug}/agreements/create`;
+        } else {
+          createPath = `/${lang}/dho/${spaceSlug}/agreements/create/${routePath}`;
+        }
+
+        router.push(createPath);
       } else {
         router.refresh();
       }

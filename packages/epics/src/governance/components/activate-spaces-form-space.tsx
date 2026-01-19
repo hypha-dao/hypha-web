@@ -94,6 +94,7 @@ export const ActivateSpacesFormSpace = ({
   });
 
   useScrollToErrors(form, formRef);
+  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
 
   React.useEffect(() => {
     if (spaceDetails?.executor && web3SpaceId) {
@@ -201,6 +202,7 @@ export const ActivateSpacesFormSpace = ({
           className="flex flex-col gap-5"
         >
           <CreateAgreementBaseFields
+            key={resubmitKey}
             creator={{
               avatar: person?.avatarUrl || '',
               name: person?.name || '',
