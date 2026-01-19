@@ -11,6 +11,8 @@ import {
   type SpaceDetails,
   useMe,
   useWithdrawProposal,
+  useJwt,
+  useAgreementMutationsWeb2Rsc,
 } from '@hypha-platform/core/client';
 import { useSpaceMember } from '../../spaces';
 import { useSpaceMinProposalDuration } from '@hypha-platform/core/client';
@@ -126,12 +128,14 @@ export const FormVoting = ({
   const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
   const { theme } = useTheme();
   const { person } = useMe();
+  const { jwt } = useJwt();
   const router = useRouter();
   const params = useParams();
   const lang = params?.lang as string;
   const { withdrawProposal, isWithdrawing } = useWithdrawProposal({
     proposalId: proposalId ?? null,
   });
+  const { deleteAgreementBySlug } = useAgreementMutationsWeb2Rsc(jwt);
 
   const [localVote, setLocalVote] = useState<'no' | 'yes' | null>(null);
 
@@ -148,9 +152,20 @@ export const FormVoting = ({
     !isPast(new Date(endTime)) &&
     proposalStatus === 'onVoting';
 
+  const deleteDocument = async () => {
+    if (!documentSlug || !jwt) return;
+
+    try {
+      await deleteAgreementBySlug({ slug: documentSlug });
+    } catch (error) {
+      console.error('Error deleting document:', error);
+    }
+  };
+
   const handleWithdraw = async () => {
     try {
       await withdrawProposal();
+      await deleteDocument();
       await onWithdrawSuccess?.();
       await new Promise((resolve) => setTimeout(resolve, 200));
       if (closeUrl) {
@@ -184,6 +199,7 @@ export const FormVoting = ({
       }
 
       await withdrawProposal();
+      await deleteDocument();
       await onWithdrawSuccess?.();
 
       await new Promise((resolve) => setTimeout(resolve, 200));
