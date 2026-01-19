@@ -21,7 +21,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useActivateSpaces } from '../../people/hooks/use-activate-hypha-spaces';
 import { isAddress } from 'ethers';
-import { useScrollToErrors } from '../../hooks';
+import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { Locale } from '@hypha-platform/i18n';
 
 const RECIPIENT_SPACE_ADDRESS = '0x695f21B04B22609c4ab9e5886EB0F65cDBd464B6';
