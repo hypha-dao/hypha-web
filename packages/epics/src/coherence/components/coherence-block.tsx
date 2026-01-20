@@ -68,6 +68,7 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
             pageSize={2}
             hideArchived={hideArchived}
             setHideArchived={setHideArchived}
+            refresh={refresh}
           />
         </>
       ) : (

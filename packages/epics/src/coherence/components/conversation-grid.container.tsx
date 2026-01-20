@@ -11,12 +11,14 @@ type ConversationGridContainerProps = {
     order?: Order<Coherence>;
   };
   conversations: Coherence[];
+  refresh: () => Promise<void>;
 };
 
 export const ConversationGridContainer = ({
   basePath,
   pagination,
   conversations,
+  refresh,
 }: ConversationGridContainerProps) => {
   const { page, firstPageSize, pageSize } = pagination;
   const startIndex = page <= 1 ? 0 : firstPageSize + (page - 2) * pageSize;
@@ -33,6 +35,7 @@ export const ConversationGridContainer = ({
       conversations={paginatedConversations.map((conversation) => ({
         ...conversation,
       }))}
+      refresh={refresh}
     />
   );
 };
