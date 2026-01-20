@@ -34,10 +34,10 @@ export const ChatMessageContainer = ({
         </>
       ) : (
         messages.map((msg, index) => (
-          <>
+          <div key={msg.id} className="w-full">
             {index !== 0 && <Separator />}
             <ChatMessage message={msg} isLoading={false} />
-          </>
+          </div>
         ))
       )}
     </div>
