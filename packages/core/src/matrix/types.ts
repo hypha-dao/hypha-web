@@ -21,3 +21,10 @@ export interface UpdateEncryptedAccessTokenInput {
   privyUserId: string;
   encryptedAccessToken: string;
 }
+
+export interface Message {
+  id: string;
+  sender: string;
+  content: string;
+  timestamp: Date;
+}
