@@ -31,7 +31,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   refresh,
 }) => {
   const { jwt: authToken } = useJwt();
-  const { client } = useMatrix();
+  const { isMatrixAvailable, createRoom } = useMatrix();
   const { updateCoherenceBySlug, isUpdatingCoherence } =
     useCoherenceMutationsWeb2Rsc(authToken);
 
@@ -54,23 +54,20 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
 
   const allowConversation = React.useCallback(async () => {
     console.log('Start Conversation');
-    if (!client) {
+    if (!isMatrixAvailable) {
       console.warn(
         'Cannot create conversation since Matrix client is unavailable',
       );
       return;
     }
     try {
-      const { room_id: roomId } = await client.createRoom({
-        preset: RoomPreset.PublicChat,
-        topic: title,
-      });
+      const { roomId } = await createRoom(title);
       await updateCoherenceBySlug({ slug, status: 'conversation', roomId });
       await refresh();
     } catch (error) {
       console.warn('Could not create conversation:', error);
     }
-  }, [updateCoherenceBySlug, slug, refresh]);
+  }, [createRoom, updateCoherenceBySlug, slug, refresh]);
   const declineConversation = async () => {
     console.log('Not Relevant');
     //TODO
