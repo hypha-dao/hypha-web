@@ -25,6 +25,7 @@ interface MatrixContextType {
   client: MatrixSdk.MatrixClient | null;
   isMatrixAvailable: boolean;
   isAuthenticated: boolean;
+  createRoom: (title: string) => Promise<{ roomId: string }>;
   sendMessage: (params: SendMessageInput) => Promise<void>;
   getRoomMessages: (roomId: string) => Message[] | null;
   registerRoomListener: (roomId: string, listener: RoomMessageListener) => void;
@@ -94,6 +95,20 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     }
     initalizeMatrixClient(matrixToken!);
   }, [user, matrixToken, isMatrixTokenLoading, matrixTokenError]);
+
+  const createRoom = React.useCallback(
+    async (title: string) => {
+      if (!client) {
+        throw new Error('Client should be specified');
+      }
+      const { room_id: roomId } = await client.createRoom({
+        preset: RoomPreset.PublicChat,
+        topic: title,
+      });
+      return { roomId };
+    },
+    [client],
+  );
 
   const sendMessage = React.useCallback(
     async ({ roomId, message }: SendMessageInput) => {
@@ -193,6 +208,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     client,
     isMatrixAvailable,
     isAuthenticated,
+    createRoom,
     sendMessage,
     getRoomMessages,
     registerRoomListener,
