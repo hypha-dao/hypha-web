@@ -25,6 +25,7 @@ type ConversationSectionProps = {
   pageSize?: number;
   hideArchived: boolean;
   setHideArchived: (checked: boolean) => void;
+  refresh: () => Promise<void>;
 };
 
 const orderOptions: {
@@ -59,6 +60,7 @@ export const ConversationSection: FC<ConversationSectionProps> = ({
   pageSize = 3,
   hideArchived,
   setHideArchived,
+  refresh,
 }) => {
   const [order, setOrder] = React.useState<CoherenceOrder>('mostrecent');
 
@@ -147,6 +149,7 @@ export const ConversationSection: FC<ConversationSectionProps> = ({
                   },
                 ],
               }}
+              refresh={refresh}
             />
           ))}
         </div>

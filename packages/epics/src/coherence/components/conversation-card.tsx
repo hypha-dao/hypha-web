@@ -3,6 +3,7 @@ import {
   Card,
   CardContent,
   CardTitle,
+  ConfirmDialog,
   Input,
   Skeleton,
 } from '@hypha-platform/ui';
@@ -16,11 +17,16 @@ import {
 import React from 'react';
 import {
   Coherence,
+  useCoherenceMutationsWeb2Rsc,
+  useJwt,
   useMatrix,
   usePersonById,
 } from '@hypha-platform/core/client';
 
-type ConversationCardProps = { isLoading: boolean };
+type ConversationCardProps = {
+  isLoading: boolean;
+  refresh: () => Promise<void>;
+};
 
 export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
   isLoading,
@@ -29,12 +35,16 @@ export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
   creatorId,
   archived,
   roomId,
+  slug,
+  refresh,
 }) => {
   const [message, setMessage] = React.useState<string>('');
   const { isLoading: isPersonLoading, person: creator } = usePersonById({
     id: creatorId,
   });
   const { sendMessage: sendMatrixMessage } = useMatrix();
+  const { jwt: authToken } = useJwt();
+  const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
   const views = 59; //TODO: compute number of conversation view
   const messages = 16; //TODO: compute number of conversation messages
 
@@ -48,6 +58,16 @@ export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
     console.log('Propose agreement');
     //TODO
   };
+
+  const handleUnarchive = React.useCallback(async () => {
+    console.log('Unarchive conversation');
+    try {
+      await updateCoherenceBySlug({ slug, archived: false });
+      await refresh();
+    } catch (error) {
+      console.warn('Could not unarchive conversation:', error);
+    }
+  }, [slug, refresh]);
 
   return (
     <Card className="h-full w-full space-y-5 pt-5">
@@ -110,51 +130,63 @@ export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
           </div>
         </div>
         <div className="w-full space-y-2">
-          <div className="flex flex-grow text-1 text-neutral-11">
-            <Input
-              className="w-full"
-              placeholder="Say something..."
-              value={message}
-              rightIcon={
-                <Button
-                  variant="ghost"
-                  colorVariant="neutral"
-                  className="w-6 h-6 p-0 pointer-events-auto!"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    sendMessage();
-                  }}
-                >
-                  <PaperPlaneIcon />
-                </Button>
-              }
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  sendMessage();
-                }
-              }}
-              onChange={(e) => setMessage(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-grow text-1 text-neutral-11">
-            {archived ? (
-              <Button
-                variant="outline"
-                colorVariant="accent"
+          {!archived && (
+            <div className="flex flex-grow text-1 text-neutral-11">
+              <Input
                 className="w-full"
+                placeholder="Say something..."
+                value={message}
+                rightIcon={
+                  <Button
+                    variant="ghost"
+                    colorVariant="neutral"
+                    className="w-6 h-6 p-0 pointer-events-auto!"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      sendMessage();
+                    }}
+                  >
+                    <PaperPlaneIcon />
+                  </Button>
+                }
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
-                  //TODO: unarchive
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    sendMessage();
+                  }
+                }}
+                onChange={(e) => setMessage(e.target.value)}
+              />
+            </div>
+          )}
+          <div className="flex flex-grow text-1 text-neutral-11">
+            {archived ? (
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
                 }}
               >
-                Unarchive
-              </Button>
+                <ConfirmDialog
+                  title="Unarchive Conversation"
+                  description="Do you really want to unarchive this conversation?"
+                  customAcceptButtonText="Yes, unarchive"
+                  customRejectButtonText="No, leave"
+                  onAcceptClicked={handleUnarchive}
+                >
+                  <Button
+                    variant="outline"
+                    colorVariant="accent"
+                    className="w-full"
+                  >
+                    Unarchive
+                  </Button>
+                </ConfirmDialog>
+              </div>
             ) : (
               <Button
                 variant="outline"
