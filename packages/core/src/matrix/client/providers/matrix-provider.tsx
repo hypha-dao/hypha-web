@@ -4,18 +4,32 @@ import React from 'react';
 import * as MatrixSdk from 'matrix-js-sdk';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { MatrixTokenData, useMatrixToken } from '../hooks';
+import { Message } from '../../types';
 
 interface SendMessageInput {
   roomId: string;
   message: string;
 }
 
+export type MatrixEventListener = (
+  event: MatrixSdk.MatrixEvent,
+) => Promise<void>;
+export type RoomMessageListener = (message: Message) => Promise<void>;
+
+interface RoomMessageListenerRecord {
+  roomId: string;
+  listener: MatrixEventListener;
+}
+
 interface MatrixContextType {
   client: MatrixSdk.MatrixClient | null;
+  isMatrixAvailable: boolean;
   isAuthenticated: boolean;
-  login: () => Promise<void>;
-  logout: () => Promise<void>;
   sendMessage: (params: SendMessageInput) => Promise<void>;
+  getRoomMessages: (roomId: string) => Message[] | null;
+  registerRoomListener: (roomId: string, listener: RoomMessageListener) => void;
+  unregisterRoomListerner: (roomId: string) => void;
+  registeredRoomListeners: RoomMessageListenerRecord[];
 }
 
 const MatrixContext = React.createContext<MatrixContextType | null>(null);
@@ -29,7 +43,11 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   const [client, setClient] = React.useState<MatrixSdk.MatrixClient | null>(
     null,
   );
+  const [isMatrixAvailable, setIsMatrixAvailable] = React.useState(false);
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+  const [registeredRoomListeners, setRegisteredRoomListeners] = React.useState<
+    RoomMessageListenerRecord[]
+  >([]);
   const {
     matrixToken,
     isLoading: isMatrixTokenLoading,
@@ -42,7 +60,6 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         return;
       }
       try {
-        console.log('Matrix token:', matrixToken);
         const { accessToken, userId, homeserverUrl, deviceId } = matrixToken;
         const matrixClient = MatrixSdk.createClient({
           baseUrl: homeserverUrl,
@@ -50,6 +67,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           userId,
           deviceId,
         });
+        setIsMatrixAvailable(matrixClient !== null);
 
         await matrixClient.startClient();
 
@@ -80,7 +98,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   const sendMessage = React.useCallback(
     async ({ roomId, message }: SendMessageInput) => {
       if (!client || !message.trim()) {
-        throw new Error('Client and message showld be specified');
+        throw new Error('Client and message should be specified');
       }
 
       if (roomId) {
@@ -93,16 +111,93 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     [client],
   );
 
+  const getRoomMessages = React.useCallback(
+    (roomId: string): Message[] | null => {
+      if (!client) {
+        throw new Error('Client and room ID should be specified');
+      }
+
+      const room = client.getRoom(roomId);
+      const messages = room
+        ? room
+            .getLiveTimeline()
+            .getEvents()
+            .filter((event) => event.getType() === EventType.RoomMessage)
+            .map((event) => ({
+              id: event.getId()!,
+              sender: event.getSender()!,
+              content: event.getContent().body,
+              timestamp: new Date(event.getTs()),
+            }))
+        : null;
+      return messages;
+    },
+    [client],
+  );
+
+  const registerRoomListener = React.useCallback(
+    (roomId: string, listener: RoomMessageListener) => {
+      if (!client) {
+        console.warn('Matrix client is not initialized');
+        return;
+      }
+      unregisterRoomListerner(roomId);
+      const eventListener: MatrixEventListener = async (
+        event: MatrixSdk.MatrixEvent,
+      ) => {
+        if (
+          event.getRoomId() === roomId &&
+          event.getType() === EventType.RoomMessage
+        ) {
+          const message: Message = {
+            id: event.getId()!,
+            sender: event.getSender()!,
+            content: event.getContent().body,
+            timestamp: new Date(event.getTs()),
+          };
+          await listener(message);
+        }
+      };
+      client.addListener(RoomEvent.Timeline, eventListener);
+      setRegisteredRoomListeners((prev) => [
+        ...prev,
+        { roomId, listener: eventListener },
+      ]);
+    },
+    [client],
+  );
+
+  const unregisterRoomListerner = React.useCallback(
+    (roomId: string) => {
+      if (!client) {
+        console.warn('Matrix client is not initialized');
+        return;
+      }
+      const found = registeredRoomListeners.filter(
+        (item) => item.roomId === roomId,
+      );
+      const rest = registeredRoomListeners.filter(
+        (item) => item.roomId !== roomId,
+      );
+      for (const item of found) {
+        if (item) {
+          client.removeListener(RoomEvent.Timeline, item.listener);
+        }
+      }
+      setRegisteredRoomListeners(rest);
+    },
+    [registeredRoomListeners, client],
+  );
+
   const value: MatrixContextType = {
     client,
+    isMatrixAvailable,
     isAuthenticated,
-    login: async () => {
-      console.log('login');
-    },
-    logout: async () => {
-      console.log('logout');
-    },
     sendMessage,
+    getRoomMessages,
+    registerRoomListener,
+    unregisterRoomListerner,
+    registeredRoomListeners,
   };
   return (
     <MatrixContext.Provider value={value}>{children}</MatrixContext.Provider>

@@ -1,8 +1,8 @@
 'use client';
 
 import { Separator } from '@hypha-platform/ui';
-import { Message } from '../types';
 import { ChatMessage } from './chat-message';
+import { Message } from '@hypha-platform/core/client';
 
 type ChatMessageContainerProps = {
   messages: Message[];

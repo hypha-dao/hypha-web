@@ -20,10 +20,3 @@ export type ChatPageParams = {
   lang: Locale;
   chatId: string;
 };
-
-export interface Message {
-  id: string;
-  sender: string;
-  content: string;
-  timestamp: Date;
-}
