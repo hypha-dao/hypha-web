@@ -153,34 +153,49 @@ export const schemaCreateAgreementWeb2FileUrls = z.object(
 const isBrowserFile = (v: unknown): v is File =>
   typeof File !== 'undefined' && v instanceof File;
 
+const leadImageFileSchema = z
+  .custom<File>(isBrowserFile, { message: 'Please upload a valid file' })
+  .refine(
+    (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
+    'Your file is too large and exceeds the 4MB limit. Please upload a smaller file.',
+  )
+  .refine(
+    (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
+    'File must be an image (JPEG, PNG, GIF, WEBP).',
+  );
+
+const attachmentFileSchema = z
+  .custom<File>(isBrowserFile, { message: 'Please upload a valid file' })
+  .refine(
+    (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
+    (file) => ({
+      message: `Your file "${file.name}" is too large and exceeds the 4MB limit. Please upload a smaller file.`,
+    }),
+  )
+  .refine(
+    (file) => DEFAULT_FILE_ACCEPT.includes(file.type),
+    (file) => ({
+      message: `This file "${file.name}" format isn’t supported. Please upload a JPEG, PNG, WebP, or PDF (up to 4MB).`,
+    }),
+  );
+
 export const createAgreementFiles = {
   leadImage: z
-    .custom<File>(isBrowserFile, { message: 'Please upload a valid file' })
-    .refine(
-      (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-      'Your file is too large and exceeds the 4MB limit. Please upload a smaller file.',
-    )
-    .refine(
-      (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
-      'File must be an image (JPEG, PNG, GIF, WEBP).',
-    )
+    .union([
+      leadImageFileSchema,
+      z.string().url('Lead Image URL must be a valid URL'),
+    ])
     .optional(),
   attachments: z
     .array(
-      z
-        .custom<File>(isBrowserFile, { message: 'Please upload a valid file' })
-        .refine(
-          (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-          (file) => ({
-            message: `Your file "${file.name}" is too large and exceeds the 4MB limit. Please upload a smaller file.`,
-          }),
-        )
-        .refine(
-          (file) => DEFAULT_FILE_ACCEPT.includes(file.type),
-          (file) => ({
-            message: `This file "${file.name}" format isn’t supported. Please upload a JPEG, PNG, WebP, or PDF (up to 4MB).`,
-          }),
-        ),
+      z.union([
+        attachmentFileSchema,
+        z.string().url('Attachment URL must be a valid URL'),
+        z.object({
+          name: z.string().min(1, 'Attachment name is required'),
+          url: z.string().url('Attachment URL must be a valid URL'),
+        }),
+      ]),
     )
     .max(3, {
       message:
