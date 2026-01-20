@@ -46,13 +46,15 @@ function findRootSpace(space: Space, allSpaces: Space[]): Space {
 function buildHierarchy(
   currentSpace: Space,
   allSpaces: Space[],
+  accessibleSpaceIds: Set<number>,
 ): HierarchyNode {
   const children = allSpaces.filter(
-    (space) => space.parentId === currentSpace.id,
+    (space) =>
+      space.parentId === currentSpace.id && accessibleSpaceIds.has(space.id),
   );
 
   const childrenNodes: HierarchyNode[] = children.map((child) =>
-    buildHierarchy(child, allSpaces),
+    buildHierarchy(child, allSpaces, accessibleSpaceIds),
   );
 
   const value = currentSpace.memberCount || currentSpace.documentCount || 1;
@@ -84,7 +86,7 @@ export const SelectNavigationAction = ({
   const { filteredSpaces, isLoading: isFilteringSpaces } =
     useFilterSpacesListWithDiscoverability({
       spaces: allSpaces || [],
-      useGeneralState: false,
+      useGeneralState: true,
     });
 
   const isLoading = isLoadingSpace || isLoadingSpaces || isFilteringSpaces;
@@ -98,9 +100,11 @@ export const SelectNavigationAction = ({
       ? filteredSpaces
       : [...filteredSpaces, currentSpace];
 
+    const accessibleSpaceIds = new Set(spacesWithCurrent.map((s) => s.id));
+
     const rootSpace = findRootSpace(currentSpace, spacesWithCurrent);
     if (!rootSpace) return null;
-    return buildHierarchy(rootSpace, spacesWithCurrent);
+    return buildHierarchy(rootSpace, spacesWithCurrent, accessibleSpaceIds);
   }, [currentSpace, filteredSpaces]);
 
   const handleVisibleSpacesChange = useCallback((spaces: VisibleSpace[]) => {
