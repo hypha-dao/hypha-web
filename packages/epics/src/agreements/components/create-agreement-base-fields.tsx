@@ -96,14 +96,32 @@ export function CreateAgreementBaseFields({
 
     try {
       const data = sessionStorage.getItem('resubmitFormData');
-      if (data) {
-        const parsed = JSON.parse(data);
-        setResubmitFormData(parsed);
-        if (parsed.attachments && parsed.attachments.length > 0) {
-          setExistingAttachments(parsed.attachments);
-        }
+      if (!data) return;
+
+      const parsed = JSON.parse(data) as {
+        leadImage?: string;
+        attachments?: (string | { name: string; url: string })[];
+        applied?: boolean;
+        [key: string]: any;
+      };
+
+      if (parsed.applied) {
         sessionStorage.removeItem('resubmitFormData');
+        return;
       }
+
+      setResubmitFormData(parsed);
+      if (parsed.attachments && parsed.attachments.length > 0) {
+        setExistingAttachments(parsed.attachments);
+      }
+
+      sessionStorage.setItem(
+        'resubmitFormData',
+        JSON.stringify({
+          ...parsed,
+          applied: true,
+        }),
+      );
     } catch (error) {
       console.error('Error reading resubmit form data:', error);
       sessionStorage.removeItem('resubmitFormData');
