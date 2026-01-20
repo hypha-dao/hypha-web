@@ -1,10 +1,10 @@
 'use client';
 
 import {
+  Message,
   usePersonBySub,
   useUserPrivyIdByMatrixId,
 } from '@hypha-platform/core/client';
-import { Message } from '../types';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import React from 'react';
 import { Skeleton } from '@hypha-platform/ui';
