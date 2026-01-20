@@ -61,7 +61,16 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       return;
     }
     try {
-      const { roomId } = await createRoom(title);
+      //TODO: may be changed after demo
+      const roomId = await (async () => {
+        if (process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL) {
+          const { roomId } = await createRoom(title);
+          return roomId;
+        } else {
+          console.warn('Matrix homeserver is not configured');
+          return '';
+        }
+      })();
       await updateCoherenceBySlug({ slug, status: 'conversation', roomId });
       await refresh();
     } catch (error) {
