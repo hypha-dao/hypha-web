@@ -12,9 +12,12 @@ export function SignalGrid({ isLoading, signals, refresh }: SignalGridProps) {
   return (
     <div className="w-full grid grid-cols-1 gap-2">
       {signals.map((signal, index) => (
-        <Link key={`signal-card-${index}`} href="#">
-          <SignalCard {...signal} isLoading={isLoading} refresh={refresh} />
-        </Link>
+        <SignalCard
+          key={`signal-card-${index}`}
+          {...signal}
+          isLoading={isLoading}
+          refresh={refresh}
+        />
       ))}
     </div>
   );
