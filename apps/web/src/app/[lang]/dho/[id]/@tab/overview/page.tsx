@@ -42,6 +42,8 @@ export default async function OrganisationPage(props: PageProps) {
         lang={lang}
         spaces={spaces}
         currentSpaceId={spaceFromDb.id}
+        currentSpaceWeb3Id={spaceFromDb.web3SpaceId as number}
+        currentSpaceSlug={id}
       />
     </SpaceTabAccessWrapper>
   );
