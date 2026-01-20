@@ -1,8 +1,6 @@
 'use client';
 
 import { EventType, RoomEvent, useMatrix } from '@hypha-platform/core/client';
-import { Button, Input, ScrollArea } from '@hypha-platform/ui';
-import { PaperPlaneIcon } from '@radix-ui/react-icons';
 import React from 'react';
 import { Message } from '../types';
 import { ChatMessageContainer } from './chat-message.container';
@@ -14,9 +12,8 @@ export const ChatRoom = ({
   roomId: string;
   isLoading: boolean;
 }) => {
-  const { client, sendMessage: sendMatrixMessage } = useMatrix();
+  const { client } = useMatrix();
   const [messages, setMessages] = React.useState<Message[]>([]);
-  const [input, setInput] = React.useState('');
   const [isMessagesLoading, setIsMessagesLoading] = React.useState(false);
 
   React.useEffect(() => {
@@ -69,79 +66,12 @@ export const ChatRoom = ({
     };
   }, [client, roomId]);
 
-  const sendMessage = React.useCallback(async () => {
-    try {
-      await sendMatrixMessage({ roomId, message: input.trim() });
-      setInput('');
-    } catch (error) {
-      console.warn(error);
-    }
-  }, [client, input, roomId, sendMatrixMessage]);
-
   return (
-    <div className="flex flex-col h-[600px]">
-      <div className="flex grow">
-        <ScrollArea>
-          <ChatMessageContainer
-            messages={messages}
-            isLoading={isLoading || isMessagesLoading}
-          />
-        </ScrollArea>
-      </div>
-
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-grow text-1 text-neutral-11 gap-3">
-          <Button
-            variant="outline"
-            colorVariant="neutral"
-            className="bg-transparent text-neutral-11"
-            onClick={(e) => {
-              console.log('Archive Conversation clicked');
-              //TODO
-            }}
-          >
-            Archive Conversation
-          </Button>
-          <Button
-            variant="outline"
-            colorVariant="accent"
-            className="grow"
-            onClick={(e) => {
-              console.log('Propose Agreement clicked');
-              //TODO
-            }}
-          >
-            Propose Agreement
-          </Button>
-        </div>
-        <div className="w-full space-y-2">
-          <div className="flex flex-grow text-1 text-neutral-11">
-            <Input
-              className="w-full"
-              placeholder="Say something..."
-              value={input}
-              rightIcon={
-                <Button
-                  variant="ghost"
-                  colorVariant="neutral"
-                  className="w-6 h-6 p-0 pointer-events-auto!"
-                  onClick={(e) => {
-                    sendMessage();
-                  }}
-                >
-                  <PaperPlaneIcon />
-                </Button>
-              }
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  sendMessage();
-                }
-              }}
-              onChange={(e) => setInput(e.target.value)}
-            />
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-col">
+      <ChatMessageContainer
+        messages={messages}
+        isLoading={isLoading || isMessagesLoading}
+      />
     </div>
   );
 };

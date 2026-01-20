@@ -24,6 +24,7 @@ export const useConversation = ({ chatId }: UseConversationProps) => {
         setIsLoading(false);
       }
     },
+    { keepPreviousData: true, revalidateOnFocus: false },
   );
 
   return {
