@@ -8,12 +8,14 @@ type ConversationGridProps = {
   isLoading: boolean;
   basePath: string;
   conversations: Coherence[];
+  refresh: () => Promise<void>;
 };
 
 export function ConversationGrid({
   isLoading = true,
   basePath,
   conversations,
+  refresh,
 }: ConversationGridProps) {
   return (
     <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -22,7 +24,11 @@ export function ConversationGrid({
           key={`conversation-card-${index}`}
           href={`${basePath}/${conversation.slug}`}
         >
-          <ConversationCard {...conversation} isLoading={isLoading} />
+          <ConversationCard
+            {...conversation}
+            isLoading={isLoading}
+            refresh={refresh}
+          />
         </Link>
       ))}
     </div>

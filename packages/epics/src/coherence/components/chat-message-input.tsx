@@ -1,13 +1,29 @@
 'use client';
 
 import React from 'react';
-import { useMatrix } from '@hypha-platform/core/client';
-import { Button, Input } from '@hypha-platform/ui';
+import {
+  useCoherenceMutationsWeb2Rsc,
+  useJwt,
+  useMatrix,
+} from '@hypha-platform/core/client';
+import { Button, ConfirmDialog, Input } from '@hypha-platform/ui';
 import { PaperPlaneIcon } from '@radix-ui/react-icons';
+import { useRouter } from 'next/navigation';
 
-export const ChatMessageInput = ({ roomId }: { roomId: string }) => {
+export const ChatMessageInput = ({
+  roomId,
+  coherenceSlug,
+  closeUrl,
+}: {
+  roomId: string;
+  coherenceSlug: string;
+  closeUrl: string;
+}) => {
   const { client, sendMessage: sendMatrixMessage } = useMatrix();
   const [input, setInput] = React.useState('');
+  const { jwt: authToken } = useJwt();
+  const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
+  const router = useRouter();
 
   const sendMessage = React.useCallback(async () => {
     try {
@@ -18,20 +34,33 @@ export const ChatMessageInput = ({ roomId }: { roomId: string }) => {
     }
   }, [client, input, roomId, sendMatrixMessage]);
 
+  const handleArchive = React.useCallback(async () => {
+    try {
+      await updateCoherenceBySlug({ slug: coherenceSlug, archived: true });
+      router.push(closeUrl);
+    } catch (error) {
+      console.warn('Could not archive conversation:', error);
+    }
+  }, [coherenceSlug, router, closeUrl]);
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-grow text-1 text-neutral-11 gap-3">
-        <Button
-          variant="outline"
-          colorVariant="neutral"
-          className="bg-transparent text-neutral-11"
-          onClick={(e) => {
-            console.log('Archive Conversation clicked');
-            //TODO
-          }}
+        <ConfirmDialog
+          title="Archive Conversation"
+          description="Do you really want to archive this conversation?"
+          customAcceptButtonText="Yes, archive"
+          customRejectButtonText="No, leave"
+          onAcceptClicked={handleArchive}
         >
-          Archive Conversation
-        </Button>
+          <Button
+            variant="outline"
+            colorVariant="neutral"
+            className="bg-transparent text-neutral-11"
+          >
+            Archive Conversation
+          </Button>
+        </ConfirmDialog>
         <Button
           variant="outline"
           colorVariant="accent"

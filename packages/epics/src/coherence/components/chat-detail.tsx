@@ -46,7 +46,11 @@ export const ChatDetail = ({
         <ChatRoom roomId={conversation?.roomId ?? ''} isLoading={isLoading} />
       </div>
       <div className="fixed bottom-0 right-4 pt-1 pl-4 md:pl-7 pr-4 md:pr-9 pb-4 md:pb-7 w-full md:w-[calc(var(--spacing-container-sm)_-_var(--spacing)_*_4)] bg-neutral-2 z-100">
-        <ChatMessageInput roomId={conversation?.roomId ?? ''} />
+        <ChatMessageInput
+          roomId={conversation?.roomId ?? ''}
+          coherenceSlug={conversation?.slug ?? ''}
+          closeUrl={closeUrl}
+        />
       </div>
     </div>
   );
