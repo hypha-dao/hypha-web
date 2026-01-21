@@ -188,11 +188,17 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         console.warn('Matrix client is not initialized');
         return;
       }
-      const found = registeredRoomListeners.filter(
-        (item) => item.roomId === roomId,
-      );
-      const rest = registeredRoomListeners.filter(
-        (item) => item.roomId !== roomId,
+      type Records = RoomMessageListenerRecord[];
+      const { found, rest } = registeredRoomListeners.reduce(
+        (acc, item) => {
+          if (item.roomId === roomId) {
+            acc.found.push(item);
+          } else {
+            acc.rest.push(item);
+          }
+          return acc;
+        },
+        { found: [] as Records, rest: [] as Records },
       );
       for (const item of found) {
         if (item) {
