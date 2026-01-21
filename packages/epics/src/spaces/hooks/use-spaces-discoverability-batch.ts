@@ -121,6 +121,8 @@ export function useFilterSpacesListWithDiscoverability({
 
   const filteredSpaces = useMemo(() => {
     const parentSpaceIdsMap = new Map<number, number>();
+    const orgSpacesMap = new Map<number, Set<number>>();
+
     spaces.forEach((space) => {
       if (space.web3SpaceId && space.parentId) {
         const parentSpace = spaces.find((s) => s.id === space.parentId);
@@ -130,21 +132,61 @@ export function useFilterSpacesListWithDiscoverability({
       }
     });
 
+    spaces.forEach((space) => {
+      if (!space.web3SpaceId) return;
+
+      let rootId = space.web3SpaceId;
+      let currentId = space.web3SpaceId;
+      const visited = new Set<number>();
+
+      while (parentSpaceIdsMap.has(currentId) && !visited.has(currentId)) {
+        visited.add(currentId);
+        currentId = parentSpaceIdsMap.get(currentId)!;
+        rootId = currentId;
+      }
+
+      if (!orgSpacesMap.has(rootId)) {
+        orgSpacesMap.set(rootId, new Set());
+      }
+      orgSpacesMap.get(rootId)!.add(space.web3SpaceId);
+
+      visited.forEach((visitedId) => {
+        orgSpacesMap.get(rootId)!.add(visitedId);
+      });
+      orgSpacesMap.get(rootId)!.add(rootId);
+    });
+
     return spaces.filter((space) => {
       if (!space.web3SpaceId) return true;
       const discoverability = discoverabilityMap.get(space.web3SpaceId);
 
-      if (
-        useGeneralState &&
-        discoverability === TransparencyLevel.ORGANISATION
-      ) {
-        if (userMemberSpaceIdsSet.has(space.web3SpaceId)) {
-          return true;
+      if (useGeneralState) {
+        if (discoverability === TransparencyLevel.SPACE) {
+          return userMemberSpaceIdsSet.has(space.web3SpaceId);
         }
 
-        const parentSpaceId = parentSpaceIdsMap.get(space.web3SpaceId);
-        if (parentSpaceId && userMemberSpaceIdsSet.has(parentSpaceId)) {
-          return true;
+        if (discoverability === TransparencyLevel.ORGANISATION) {
+          if (userMemberSpaceIdsSet.has(space.web3SpaceId)) {
+            return true;
+          }
+
+          let orgGroup: Set<number> | undefined;
+          for (const [, spaceIds] of orgSpacesMap) {
+            if (spaceIds.has(space.web3SpaceId)) {
+              orgGroup = spaceIds;
+              break;
+            }
+          }
+
+          if (orgGroup) {
+            for (const orgSpaceId of orgGroup) {
+              if (userMemberSpaceIdsSet.has(orgSpaceId)) {
+                return true;
+              }
+            }
+          }
+
+          return false;
         }
       }
 
