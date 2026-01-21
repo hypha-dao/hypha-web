@@ -12,7 +12,7 @@ import {
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { useScrollToErrors } from '../../hooks';
+import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { useConfig } from 'wagmi';
 import { Button, Form, LoadingBackdrop, Separator } from '@hypha-platform/ui';
 import { CreateAgreementBaseFields } from '../../agreements';
@@ -63,6 +63,7 @@ export const MembershipExitForm = ({
   }, [isPersonLoading, person, form]);
 
   useScrollToErrors(form, formRef);
+  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
 
   const { jwt } = useJwt();
   const config = useConfig();
@@ -124,6 +125,7 @@ export const MembershipExitForm = ({
           className="flex flex-col gap-5"
         >
           <CreateAgreementBaseFields
+            key={resubmitKey}
             creator={{
               avatar: person?.avatarUrl || '',
               name: person?.name || '',

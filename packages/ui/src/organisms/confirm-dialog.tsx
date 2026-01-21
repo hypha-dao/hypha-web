@@ -19,9 +19,10 @@ export type ConfirmDialogProps = {
   description: string;
   customAcceptButtonText?: string;
   customRejectButtonText?: string;
-  onAcceptClicked?: () => void;
+  onAcceptClicked?: () => void | Promise<void>;
   onRejectClicked?: () => void;
   children?: React.ReactNode;
+  isLoading?: boolean;
 };
 
 export const ConfirmDialog: FC<ConfirmDialogProps> = ({
@@ -33,11 +34,42 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
   onAcceptClicked,
   onRejectClicked,
   children,
+  isLoading = false,
 }) => {
   const [open, setOpen] = React.useState(false);
+  const [isProcessing, setIsProcessing] = React.useState(false);
+
+  const handleAccept = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    if (onAcceptClicked && !isProcessing) {
+      setIsProcessing(true);
+      try {
+        await onAcceptClicked();
+        if (!isLoading) {
+          setOpen(false);
+        }
+      } finally {
+        setIsProcessing(false);
+      }
+    }
+  };
+
+  React.useEffect(() => {
+    if (!isLoading && isProcessing) {
+      setOpen(false);
+      setIsProcessing(false);
+    }
+  }, [isLoading, isProcessing]);
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
+    <AlertDialog
+      open={open}
+      onOpenChange={(newOpen) => {
+        if (!isProcessing && !isLoading) {
+          setOpen(newOpen);
+        }
+      }}
+    >
       <AlertDialogTrigger asChild>
         {children ? (
           children
@@ -60,6 +92,7 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
                 variant="outline"
                 colorVariant="neutral"
                 onClick={onRejectClicked}
+                disabled={isProcessing || isLoading}
               >
                 {customRejectButtonText ?? 'Cancel'}
               </Button>
@@ -68,9 +101,12 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
               <Button
                 variant="outline"
                 colorVariant="neutral"
-                onClick={onAcceptClicked}
+                onClick={handleAccept}
+                disabled={isProcessing || isLoading}
               >
-                {customAcceptButtonText ?? 'OK'}
+                {isProcessing || isLoading
+                  ? 'Processing...'
+                  : customAcceptButtonText ?? 'OK'}
               </Button>
             </AlertDialogAction>
           </div>

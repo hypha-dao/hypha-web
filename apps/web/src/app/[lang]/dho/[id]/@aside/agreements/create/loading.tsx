@@ -1,6 +1,6 @@
 'use client';
 
-import { CreateAgreementForm, SidePanel } from '@hypha-platform/epics';
+import { SidePanel } from '@hypha-platform/epics';
 import React from 'react';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 
@@ -14,11 +14,7 @@ export default function AsideCreateAgreementPage() {
         isLoading={true}
         message={<></>}
       >
-        <CreateAgreementForm
-          spaceId={undefined}
-          successfulUrl=""
-          web3SpaceId={undefined}
-        />
+        <div className="h-[200px]" />
       </LoadingBackdrop>
     </SidePanel>
   );

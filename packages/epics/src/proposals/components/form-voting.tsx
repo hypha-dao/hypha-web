@@ -1,6 +1,7 @@
 'use client';
 
 import { Button, Skeleton, Separator, Image } from '@hypha-platform/ui';
+import { WithdrawResubmitBanner } from './withdraw-resubmit-banner';
 import { ProgressLine } from './progress-line';
 import { intervalToDuration, isPast } from 'date-fns';
 import { VoterList } from '../../governance/components/voter-list';
@@ -8,12 +9,17 @@ import {
   useMyVote,
   useIsDelegate,
   type SpaceDetails,
+  useMe,
+  useWithdrawProposal,
+  useJwt,
+  useAgreementMutationsWeb2Rsc,
 } from '@hypha-platform/core/client';
 import { useSpaceMember } from '../../spaces';
 import { useSpaceMinProposalDuration } from '@hypha-platform/core/client';
 import { formatDuration } from '@hypha-platform/ui-utils';
 import { useTheme } from 'next-themes';
 import { useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 
 function formatTimeRemaining(
   endTime: string,
@@ -41,6 +47,27 @@ function formatTimeRemaining(
     : 'Vote closing soon';
 }
 
+const getCreateRouteForLabel = (label: string | undefined): string => {
+  if (!label) return '';
+
+  const labelToRoute: Record<string, string> = {
+    Contribution: 'propose-contribution',
+    'Collective Agreement': '',
+    Expenses: 'pay-for-expenses',
+    Funding: 'deploy-funds',
+    'Voting Method': 'change-voting-method',
+    'Entry Method': 'change-entry-method',
+    'Issue New Token': 'issue-new-token',
+    'Buy Hypha Tokens': 'buy-hypha-tokens',
+    'Activate Spaces': 'activate-spaces',
+    'Space To Space': 'space-to-space-membership',
+    'Treasury Minting': 'mint-tokens-to-space-treasury',
+    'Membership Exit': 'membership-exit',
+  };
+
+  return labelToRoute[label] || '';
+};
+
 export const FormVoting = ({
   unity,
   quorum,
@@ -58,6 +85,16 @@ export const FormVoting = ({
   spaceDetails,
   proposalStatus,
   hideDurationData,
+  proposalId,
+  proposalCreator,
+  onWithdrawSuccess,
+  documentTitle,
+  documentDescription,
+  documentLeadImage,
+  documentAttachments,
+  spaceSlug,
+  closeUrl,
+  label,
 }: {
   unity: number;
   quorum: number;
@@ -75,13 +112,118 @@ export const FormVoting = ({
   spaceDetails?: SpaceDetails;
   proposalStatus?: string | null;
   hideDurationData?: boolean;
+  proposalId?: number | null;
+  proposalCreator?: `0x${string}` | null;
+  onWithdrawSuccess?: () => void;
+  documentTitle?: string;
+  documentDescription?: string;
+  documentLeadImage?: string;
+  documentAttachments?: (string | { name: string; url: string })[];
+  spaceSlug?: string;
+  closeUrl?: string;
+  label?: string;
 }) => {
   const { myVote } = useMyVote(documentSlug);
   const { isMember } = useSpaceMember({ spaceId: web3SpaceId as number });
   const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
   const { theme } = useTheme();
+  const { person } = useMe();
+  const { jwt } = useJwt();
+  const router = useRouter();
+  const params = useParams();
+  const lang = params?.lang as string;
+  const { withdrawProposal, isWithdrawing } = useWithdrawProposal({
+    proposalId: proposalId ?? null,
+  });
+  const { deleteAgreementBySlug } = useAgreementMutationsWeb2Rsc(jwt);
 
   const [localVote, setLocalVote] = useState<'no' | 'yes' | null>(null);
+
+  const isCreator = Boolean(
+    proposalCreator &&
+      person?.address &&
+      proposalCreator.toLowerCase() === person.address.toLowerCase(),
+  );
+
+  const showWithdrawBlock =
+    isCreator &&
+    !executed &&
+    !expired &&
+    !isPast(new Date(endTime)) &&
+    proposalStatus === 'onVoting';
+
+  const deleteDocument = async () => {
+    if (!documentSlug || !jwt) return;
+
+    try {
+      await deleteAgreementBySlug({ slug: documentSlug });
+    } catch (error) {
+      console.error('Error deleting document:', error);
+    }
+  };
+
+  const handleWithdraw = async () => {
+    try {
+      await withdrawProposal();
+      await deleteDocument();
+      await onWithdrawSuccess?.();
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      if (closeUrl) {
+        router.push(closeUrl);
+      } else {
+        router.refresh();
+      }
+    } catch (error) {
+      console.error('Error withdrawing proposal:', error);
+    }
+  };
+
+  const handleResubmit = async () => {
+    try {
+      const proposalData = {
+        title: documentTitle || '',
+        description: documentDescription || '',
+        leadImage: documentLeadImage || undefined,
+        attachments: documentAttachments || undefined,
+      };
+
+      sessionStorage.setItem(
+        'resubmitProposalData',
+        JSON.stringify(proposalData),
+      );
+
+      const saved = sessionStorage.getItem('resubmitProposalData');
+      if (!saved) {
+        console.error('Failed to save resubmit data to sessionStorage');
+        return;
+      }
+
+      await withdrawProposal();
+      await deleteDocument();
+      await onWithdrawSuccess?.();
+
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      if (spaceSlug && lang) {
+        const routePath = getCreateRouteForLabel(label);
+
+        let createPath: string;
+        if (routePath === '') {
+          createPath = `/${lang}/dho/${spaceSlug}/agreements/create`;
+        } else {
+          createPath = `/${lang}/dho/${spaceSlug}/agreements/create/${routePath}`;
+        }
+
+        router.push(createPath);
+      } else {
+        router.refresh();
+      }
+    } catch (error) {
+      console.error('Error resubmitting proposal:', error);
+      sessionStorage.removeItem('resubmitProposalData');
+      sessionStorage.removeItem('resubmitFormData');
+    }
+  };
 
   const isDisabled =
     isVoting ||
@@ -281,6 +423,13 @@ export const FormVoting = ({
           )}
         </Skeleton>
       </div>
+      {showWithdrawBlock && (
+        <WithdrawResubmitBanner
+          onWithdraw={handleWithdraw}
+          onResubmit={handleResubmit}
+          isWithdrawing={isWithdrawing}
+        />
+      )}
     </div>
   );
 };

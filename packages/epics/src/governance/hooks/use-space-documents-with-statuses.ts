@@ -3,7 +3,10 @@
 import React from 'react';
 import useSWR from 'swr';
 
-import { useSpaceProposalsWeb3Rpc } from '@hypha-platform/core/client';
+import {
+  useSpaceProposalsWeb3Rpc,
+  useWithdrawnProposalsWeb3Rpc,
+} from '@hypha-platform/core/client';
 import { Document } from '@hypha-platform/core/client';
 import { DirectionType, Order, OrderField } from '@hypha-platform/core/client';
 import queryString from 'query-string';
@@ -149,6 +152,9 @@ export const useSpaceDocumentsWithStatuses = ({
   order?: Order<Document>;
 }) => {
   const { spaceProposalsIds } = useSpaceProposalsWeb3Rpc({ spaceId: spaceId });
+  const { withdrawnProposalsIds } = useWithdrawnProposalsWeb3Rpc({
+    spaceId: spaceId,
+  });
 
   const getDirection = (dir: DirectionType) => {
     return `${dir === DirectionType.DESC ? '-' : '+'}`;
@@ -195,10 +201,15 @@ export const useSpaceDocumentsWithStatuses = ({
       };
     }
 
+    const withdrawnIdsSet = new Set(
+      Array.from(withdrawnProposalsIds ?? []).map((id) => Number(id)),
+    );
+
     const acceptedDocuments = (documentsFromDb as Document[])
       .filter(
         (doc: { web3ProposalId: number | null }) =>
           doc.web3ProposalId != null &&
+          !withdrawnIdsSet.has(doc.web3ProposalId) &&
           Array.from(spaceProposalsIds?.accepted ?? []).includes(
             BigInt(doc.web3ProposalId),
           ),
@@ -215,6 +226,7 @@ export const useSpaceDocumentsWithStatuses = ({
       .filter(
         (doc: { web3ProposalId: number | null }) =>
           doc.web3ProposalId != null &&
+          !withdrawnIdsSet.has(doc.web3ProposalId) &&
           Array.from(spaceProposalsIds?.rejected ?? []).includes(
             BigInt(doc.web3ProposalId),
           ),
@@ -231,6 +243,7 @@ export const useSpaceDocumentsWithStatuses = ({
       .filter(
         (doc: { web3ProposalId: number | null }) =>
           doc.web3ProposalId != null &&
+          !withdrawnIdsSet.has(doc.web3ProposalId) &&
           !Array.from(spaceProposalsIds?.accepted ?? []).includes(
             BigInt(doc.web3ProposalId),
           ) &&
@@ -250,7 +263,7 @@ export const useSpaceDocumentsWithStatuses = ({
       rejected: rejectedDocuments,
       onVoting: onVotingDocuments,
     };
-  }, [documentsFromDb, spaceProposalsIds]);
+  }, [documentsFromDb, spaceProposalsIds, withdrawnProposalsIds]);
   return {
     documents: response,
     isLoading,
