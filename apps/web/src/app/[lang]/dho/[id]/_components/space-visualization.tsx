@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from 'next-themes';
 import { DEFAULT_SPACE_AVATAR_IMAGE } from '@hypha-platform/core/client';
@@ -43,11 +43,18 @@ export function SpaceVisualization({
 }: Props) {
   const { resolvedTheme } = useTheme();
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const previousVisibleSpacesRef = useRef<string>('');
   const onVisibleSpacesChangeRef = useRef(onVisibleSpacesChange);
   const focusRef = useRef<d3.HierarchyNode<SpaceNode> | null>(null);
   const themeRef = useRef(resolvedTheme);
   const savedFocusIdRef = useRef<number | null>(null);
+  const [tooltip, setTooltip] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    text: string;
+  }>({ visible: false, x: 0, y: 0, text: '' });
 
   useEffect(() => {
     themeRef.current = resolvedTheme;
@@ -305,6 +312,16 @@ export function SpaceVisualization({
 
     svg.selectAll('*').remove();
 
+    // Add SVG filter definition for grayscale effect (Safari compatible)
+    const defs = svg.append('defs');
+    const grayscaleFilter = defs
+      .append('filter')
+      .attr('id', 'grayscale-filter');
+    grayscaleFilter
+      .append('feColorMatrix')
+      .attr('type', 'saturate')
+      .attr('values', '0');
+
     const g = svg.append('g');
 
     const orbits = g
@@ -330,7 +347,30 @@ export function SpaceVisualization({
       .data(root.descendants() as SpaceHierarchyNode[])
       .join('g')
       .attr('class', 'logo')
-      .style('pointer-events', 'none');
+      .style('pointer-events', 'all')
+      .style('cursor', 'pointer')
+      .on('mouseenter', function (event, d: SpaceHierarchyNode) {
+        if (!containerRef.current) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        setTooltip({
+          visible: true,
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top,
+          text: d.data.name,
+        });
+      })
+      .on('mousemove', function (event) {
+        if (!containerRef.current) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        setTooltip((prev) => ({
+          ...prev,
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top,
+        }));
+      })
+      .on('mouseleave', function () {
+        setTooltip((prev) => ({ ...prev, visible: false }));
+      });
 
     logos
       .append('circle')
@@ -345,8 +385,8 @@ export function SpaceVisualization({
       .attr('href', (d) => d.data.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE)
       .attr('preserveAspectRatio', 'xMidYMid slice')
       .attr('alt', (d) => `${d.data.name} logo`)
-      .style('filter', (d: SpaceHierarchyNode) =>
-        d === focus ? 'none' : 'grayscale(100%)',
+      .attr('filter', (d: SpaceHierarchyNode) =>
+        d === focus ? null : 'url(#grayscale-filter)',
       );
 
     svg.on('click', () => {
@@ -477,7 +517,7 @@ export function SpaceVisualization({
         .attr('stroke-width', getStrokeWidth(d.depth));
       d3.select(this)
         .select('image')
-        .style('filter', d === focus ? 'none' : 'grayscale(100%)');
+        .attr('filter', d === focus ? null : 'url(#grayscale-filter)');
     });
 
     zoomTo(view);
@@ -534,7 +574,7 @@ export function SpaceVisualization({
           .select('image')
           .transition()
           .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
-          .style('filter', d === focus ? 'none' : 'grayscale(100%)');
+          .attr('filter', d === focus ? null : 'url(#grayscale-filter)');
       });
 
       transition.on('end', () => {
@@ -579,18 +619,40 @@ export function SpaceVisualization({
             .attr('y', -r)
             .attr('width', r * 2)
             .attr('height', r * 2)
-            .style('clip-path', `circle(${r}px at ${r}px ${r}px)`)
-            .style('filter', d === focus ? 'none' : 'grayscale(100%)');
+            .style('clip-path', `circle(50% at 50% 50%)`)
+            .attr('filter', d === focus ? null : 'url(#grayscale-filter)');
         });
     }
   }, [data, currentSpaceId, resolvedTheme]);
 
   return (
-    <svg
-      ref={svgRef}
-      className="w-full h-auto"
-      role="img"
-      aria-label="Space hierarchy visualization"
-    />
+    <div ref={containerRef} className="relative w-full">
+      <svg
+        ref={svgRef}
+        className="w-full h-auto"
+        role="img"
+        aria-label="Space hierarchy visualization"
+      />
+      {tooltip.visible && (
+        <div
+          className="absolute z-50 px-3 py-2 text-sm font-medium text-card-foreground bg-popover border-2 border-border rounded-lg shadow-lg pointer-events-none whitespace-nowrap"
+          style={{
+            left: `${tooltip.x + 10}px`,
+            top: `${tooltip.y + 10}px`,
+            transform: 'translate(0, -50%)',
+          }}
+        >
+          {tooltip.text}
+          <div
+            className="absolute w-2 h-2 bg-popover border-l-2 border-b-2 border-border"
+            style={{
+              left: '-5px',
+              top: '50%',
+              transform: 'translateY(-50%) rotate(45deg)',
+            }}
+          />
+        </div>
+      )}
+    </div>
   );
 }
