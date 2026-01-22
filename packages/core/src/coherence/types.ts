@@ -13,6 +13,8 @@ export interface CreateCoherenceInput {
   roomId?: string;
   archived: boolean;
   tags: CoherenceTag[];
+  messages?: number;
+  views?: number;
 }
 
 export interface UpdateCoherenceInput {
@@ -20,7 +22,8 @@ export interface UpdateCoherenceInput {
   archived?: boolean;
   status?: CoherenceStatus;
   roomId?: string;
-  //TODO
+  messages?: number;
+  views?: number;
 }
 
 export type UpdateCoherenceBySlugInput = {
@@ -40,4 +43,6 @@ export type Coherence = {
   roomId?: string;
   archived: boolean;
   tags: CoherenceTag[];
+  messages?: number;
+  views?: number;
 };

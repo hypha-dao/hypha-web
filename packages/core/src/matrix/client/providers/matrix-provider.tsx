@@ -68,11 +68,11 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           userId,
           deviceId,
         });
-        setIsMatrixAvailable(matrixClient !== null);
 
         await matrixClient.startClient();
 
         setClient(matrixClient);
+        setIsMatrixAvailable(matrixClient !== null);
         setIsAuthenticated(true);
       } catch (error) {
         console.error('Failed to initialize Matrix client:', error);

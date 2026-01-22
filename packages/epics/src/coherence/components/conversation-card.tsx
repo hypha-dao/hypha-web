@@ -36,6 +36,8 @@ export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
   archived,
   roomId,
   slug,
+  views = 0,
+  messages = 0,
   refresh,
 }) => {
   const [message, setMessage] = React.useState<string>('');
@@ -45,8 +47,6 @@ export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
   const { sendMessage: sendMatrixMessage } = useMatrix();
   const { jwt: authToken } = useJwt();
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
-  const views = 59; //TODO: compute number of conversation view
-  const messages = 16; //TODO: compute number of conversation messages
 
   const sendMessage = React.useCallback(async () => {
     console.log('Send message into chat:', message);
