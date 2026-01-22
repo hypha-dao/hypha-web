@@ -19,6 +19,7 @@ type SignalSectionProps = {
   isLoading: boolean;
   firstPageSize?: number;
   pageSize?: number;
+  order?: string;
   refresh: () => Promise<void>;
 };
 

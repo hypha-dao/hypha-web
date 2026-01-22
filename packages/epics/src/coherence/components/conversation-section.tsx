@@ -14,6 +14,7 @@ import { useConversationsSection } from '../hooks/use-conversations-section';
 import { Empty } from '../../common';
 import { Coherence, DirectionType } from '@hypha-platform/core/client';
 import React from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 type ConversationSectionProps = {
   basePath: string;
@@ -24,6 +25,7 @@ type ConversationSectionProps = {
   firstPageSize?: number;
   pageSize?: number;
   hideArchived: boolean;
+  order?: CoherenceOrder;
   setHideArchived: (checked: boolean) => void;
   refresh: () => Promise<void>;
 };
@@ -59,10 +61,13 @@ export const ConversationSection: FC<ConversationSectionProps> = ({
   firstPageSize = 3,
   pageSize = 3,
   hideArchived,
+  order = 'mostrecent',
   setHideArchived,
   refresh,
 }) => {
-  const [order, setOrder] = React.useState<CoherenceOrder>('mostrecent');
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { replace } = useRouter();
 
   const {
     pages,
@@ -77,13 +82,21 @@ export const ConversationSection: FC<ConversationSectionProps> = ({
     pageSize,
   });
 
-  const updateOrder = (rawOrder: string) => {
-    setOrder(
-      COHERENCE_ORDERS.includes(rawOrder as CoherenceOrder)
-        ? (rawOrder as CoherenceOrder)
-        : 'mostrecent',
-    );
-  };
+  const setOrder = React.useCallback(
+    (rawOrder: string) => {
+      const params = new URLSearchParams(searchParams);
+      if (rawOrder) {
+        const order = COHERENCE_ORDERS.includes(rawOrder as CoherenceOrder)
+          ? (rawOrder as CoherenceOrder)
+          : 'mostrecent';
+        params.set('order_conv', order);
+      } else {
+        params.delete('order_conv');
+      }
+      replace(`${pathname}?${params.toString()}`);
+    },
+    [searchParams, pathname, replace],
+  );
 
   return (
     <div className="flex flex-col justify-around items-center gap-4 w-full">
@@ -102,7 +115,7 @@ export const ConversationSection: FC<ConversationSectionProps> = ({
             options={orderOptions}
             initialValue={order}
             className="border-0 md:w-40"
-            onChange={updateOrder}
+            onChange={setOrder}
             allowEmptyChoice={false}
             disabled={isLoading}
           />

@@ -13,6 +13,7 @@ export const useFindCoherences = ({
   tags,
   status,
   includeArchived,
+  orderBy,
 }: {
   spaceId?: number;
   search?: string;
@@ -20,6 +21,7 @@ export const useFindCoherences = ({
   tags?: CoherenceTag[];
   status?: CoherenceStatus;
   includeArchived?: boolean;
+  orderBy?: string;
 }) => {
   const {
     data: coherences,
@@ -39,6 +41,7 @@ export const useFindCoherences = ({
         tags,
         status,
         includeArchived,
+        orderBy,
       }),
     {
       refreshInterval: 5000,
