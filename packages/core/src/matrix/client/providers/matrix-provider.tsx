@@ -112,8 +112,11 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
 
   const sendMessage = React.useCallback(
     async ({ roomId, message }: SendMessageInput) => {
-      if (!client || !message.trim()) {
-        throw new Error('Client and message should be specified');
+      if (!client) {
+        throw new Error('Client should be specified');
+      }
+      if (!message.trim()) {
+        return;
       }
 
       if (roomId) {

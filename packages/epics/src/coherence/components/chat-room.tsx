@@ -9,6 +9,11 @@ import {
 import React from 'react';
 import { ChatMessageContainer } from './chat-message.container';
 
+const scrollToSection = (id: string) => {
+  const element = document.getElementById(id);
+  element?.scrollIntoView({ behavior: 'smooth' });
+};
+
 export const ChatRoom = ({
   roomId,
   isLoading,
@@ -25,6 +30,7 @@ export const ChatRoom = ({
     unregisterRoomListerner,
   } = useMatrix();
   const { jwt: authToken } = useJwt();
+  const bottomId = React.useId();
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
   const [messages, setMessages] = React.useState<Message[]>([]);
   const [isMessagesLoading, setIsMessagesLoading] = React.useState(false);
@@ -64,12 +70,20 @@ export const ChatRoom = ({
     );
   }, [isMatrixAvailable, roomId, messages, slug]);
 
+  React.useEffect(() => {
+    if (!isMatrixAvailable || !messages) {
+      return;
+    }
+    scrollToSection(`message-list-bottom-${bottomId}`);
+  }, [isMatrixAvailable, messages, bottomId]);
+
   return (
     <div className="flex flex-col">
       <ChatMessageContainer
         messages={messages}
         isLoading={isLoading || isMessagesLoading}
       />
+      <div id={`message-list-bottom-${bottomId}`}></div>
     </div>
   );
 };
