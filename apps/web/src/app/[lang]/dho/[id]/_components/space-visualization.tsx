@@ -97,8 +97,15 @@ export function SpaceVisualization({
       adjustedY = tooltipRect.height / 2;
     }
 
-    if (adjustedX !== tooltip.x + 10 || adjustedY !== tooltip.y) {
-      setTooltip((prev) => ({ ...prev, x: adjustedX - 10, y: adjustedY }));
+    if (
+      Math.abs(adjustedX - 10 - tooltip.x) > 0.5 ||
+      Math.abs(adjustedY - tooltip.y) > 0.5
+    ) {
+      setTooltip((prev) => ({
+        ...prev,
+        x: adjustedX - 10,
+        y: adjustedY,
+      }));
     }
   }, [tooltip.visible, tooltip.x, tooltip.y]);
 
@@ -376,12 +383,13 @@ export function SpaceVisualization({
       .on('mouseenter', function (event, d: SpaceHierarchyNode) {
         if (!containerRef.current) return;
         const rect = containerRef.current.getBoundingClientRect();
-        setTooltip({
+        setTooltip((prev) => ({
+          ...prev,
           visible: true,
           x: event.clientX - rect.left,
           y: event.clientY - rect.top,
           text: d.data.name,
-        });
+        }));
       })
       .on('mousemove', function (event) {
         if (!containerRef.current) return;
@@ -662,14 +670,6 @@ export function SpaceVisualization({
           }}
         >
           {tooltip.text}
-          <div
-            className="absolute w-2 h-2 bg-popover border-l-2 border-b-2 border-border"
-            style={{
-              left: '-5px',
-              top: '50%',
-              transform: 'translateY(-50%) rotate(45deg)',
-            }}
-          />
         </div>
       )}
     </div>
