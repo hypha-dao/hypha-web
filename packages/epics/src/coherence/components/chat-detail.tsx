@@ -7,6 +7,11 @@ import { ChatHead } from './chat-head';
 import { ButtonClose } from '../../common';
 import { CreatorType } from '../../proposals';
 import { ChatMessageInput } from './chat-message-input';
+import React from 'react';
+import {
+  useCoherenceMutationsWeb2Rsc,
+  useJwt,
+} from '@hypha-platform/core/client';
 
 type ChatDetailProps = {
   closeUrl: string;
@@ -21,6 +26,17 @@ export const ChatDetail = ({
   conversation,
   isLoading,
 }: ChatDetailProps) => {
+  const { jwt: authToken } = useJwt();
+  const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
+
+  React.useEffect(() => {
+    if (!conversation) {
+      return;
+    }
+    const { slug, views = 0 } = conversation;
+    updateCoherenceBySlug({ slug, views: views + 1 });
+  }, [conversation]);
+
   return (
     <div className="relative w-full h-full">
       <div className="flex flex-col gap-5 pb-[70px]">
@@ -43,7 +59,11 @@ export const ChatDetail = ({
           </Skeleton>
         </div>
         <Separator />
-        <ChatRoom roomId={conversation?.roomId ?? ''} isLoading={isLoading} />
+        <ChatRoom
+          roomId={conversation?.roomId ?? ''}
+          slug={conversation?.slug ?? ''}
+          isLoading={isLoading}
+        />
       </div>
       <div className="fixed bottom-0 right-4 pt-1 pl-4 md:pl-7 pr-4 md:pr-9 pb-4 md:pb-7 w-full md:w-[calc(var(--spacing-container-sm)_-_var(--spacing)_*_4)] bg-neutral-2 z-100">
         <ChatMessageInput

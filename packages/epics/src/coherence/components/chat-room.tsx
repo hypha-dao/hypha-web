@@ -1,15 +1,22 @@
 'use client';
 
-import { Message, useMatrix } from '@hypha-platform/core/client';
+import {
+  Message,
+  useCoherenceMutationsWeb2Rsc,
+  useJwt,
+  useMatrix,
+} from '@hypha-platform/core/client';
 import React from 'react';
 import { ChatMessageContainer } from './chat-message.container';
 
 export const ChatRoom = ({
   roomId,
   isLoading,
+  slug,
 }: {
   roomId: string;
   isLoading: boolean;
+  slug: string;
 }) => {
   const {
     isMatrixAvailable,
@@ -17,6 +24,8 @@ export const ChatRoom = ({
     registerRoomListener,
     unregisterRoomListerner,
   } = useMatrix();
+  const { jwt: authToken } = useJwt();
+  const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
   const [messages, setMessages] = React.useState<Message[]>([]);
   const [isMessagesLoading, setIsMessagesLoading] = React.useState(false);
 
@@ -43,6 +52,17 @@ export const ChatRoom = ({
       unregisterRoomListerner(roomId);
     };
   }, [isMatrixAvailable, roomId]);
+
+  React.useEffect(() => {
+    if (!isMatrixAvailable || !roomId || !slug) {
+      return;
+    }
+    updateCoherenceBySlug({ slug, messages: messages.length }).catch(
+      (error) => {
+        console.warn('Error due update conversation:', error);
+      },
+    );
+  }, [isMatrixAvailable, roomId, messages, slug]);
 
   return (
     <div className="flex flex-col">
