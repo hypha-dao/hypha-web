@@ -3,7 +3,6 @@ import {
   index,
   integer,
   jsonb,
-  pgEnum,
   pgTable,
   serial,
   text,
@@ -25,7 +24,9 @@ export const coherences = pgTable(
     type: text('type').notNull(),
     slug: varchar('slug', { length: 255 }),
     roomId: text('room_id'),
-    archived: boolean().default(false),
+    archived: boolean('archived').default(false),
+    views: integer('views').default(0),
+    messages: integer('messages').default(0),
     tags: jsonb('tags').$type<Array<string>>().notNull().default([]),
     ...commonDateFields,
   },
@@ -37,6 +38,14 @@ export const coherences = pgTable(
           setweight(to_tsvector('english', ${table.description}), 'B')
       )`,
     ),
+    index('search_status').on(table.status),
+    index('search_type').on(table.type),
+    index('search_slug').on(table.slug),
+    index('search_room_id').on(table.roomId),
+    index('search_archived').on(table.archived),
+    index('search_views').on(table.views),
+    index('search_messages').on(table.messages),
+    index('search_tags').on(table.tags),
   ],
 );
 
