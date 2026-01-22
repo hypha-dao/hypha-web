@@ -55,6 +55,7 @@ export function SpaceVisualization({
     y: number;
     text: string;
   }>({ visible: false, x: 0, y: 0, text: '' });
+  const tooltipRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     themeRef.current = resolvedTheme;
@@ -67,6 +68,39 @@ export function SpaceVisualization({
   useEffect(() => {
     previousVisibleSpacesRef.current = '';
   }, [data, currentSpaceId]);
+
+  useEffect(() => {
+    if (!tooltip.visible || !tooltipRef.current || !containerRef.current)
+      return;
+
+    const tooltipEl = tooltipRef.current;
+    const containerEl = containerRef.current;
+    const tooltipRect = tooltipEl.getBoundingClientRect();
+    const containerRect = containerEl.getBoundingClientRect();
+
+    let adjustedX = tooltip.x + 10;
+    let adjustedY = tooltip.y;
+
+    if (adjustedX + tooltipRect.width > containerRect.width) {
+      adjustedX = tooltip.x - tooltipRect.width - 10;
+    }
+
+    if (adjustedX < 0) {
+      adjustedX = 10;
+    }
+
+    if (adjustedY + tooltipRect.height / 2 > containerRect.height) {
+      adjustedY = containerRect.height - tooltipRect.height / 2;
+    }
+
+    if (adjustedY - tooltipRect.height / 2 < 0) {
+      adjustedY = tooltipRect.height / 2;
+    }
+
+    if (adjustedX !== tooltip.x + 10 || adjustedY !== tooltip.y) {
+      setTooltip((prev) => ({ ...prev, x: adjustedX - 10, y: adjustedY }));
+    }
+  }, [tooltip.visible, tooltip.x, tooltip.y]);
 
   useEffect(() => {
     if (!svgRef.current || !focusRef.current) return;
@@ -619,6 +653,7 @@ export function SpaceVisualization({
       />
       {tooltip.visible && (
         <div
+          ref={tooltipRef}
           className="absolute z-50 px-3 py-2 text-sm font-medium text-card-foreground bg-popover border-2 border-border rounded-lg shadow-lg pointer-events-none whitespace-nowrap"
           style={{
             left: `${tooltip.x + 10}px`,
