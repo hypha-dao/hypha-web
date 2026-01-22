@@ -370,6 +370,12 @@ export function SpaceVisualization({
       })
       .on('mouseleave', function () {
         setTooltip((prev) => ({ ...prev, visible: false }));
+      })
+      .on('click', (event, d) => {
+        if (focus !== d) {
+          event.stopPropagation();
+          zoom(d);
+        }
       });
 
     logos
