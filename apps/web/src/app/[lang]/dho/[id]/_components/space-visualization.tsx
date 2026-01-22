@@ -312,16 +312,6 @@ export function SpaceVisualization({
 
     svg.selectAll('*').remove();
 
-    // Add SVG filter definition for grayscale effect (Safari compatible)
-    const defs = svg.append('defs');
-    const grayscaleFilter = defs
-      .append('filter')
-      .attr('id', 'grayscale-filter');
-    grayscaleFilter
-      .append('feColorMatrix')
-      .attr('type', 'saturate')
-      .attr('values', '0');
-
     const g = svg.append('g');
 
     const orbits = g
@@ -390,10 +380,7 @@ export function SpaceVisualization({
       .append('image')
       .attr('href', (d) => d.data.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE)
       .attr('preserveAspectRatio', 'xMidYMid slice')
-      .attr('alt', (d) => `${d.data.name} logo`)
-      .attr('filter', (d: SpaceHierarchyNode) =>
-        d === focus ? null : 'url(#grayscale-filter)',
-      );
+      .attr('alt', (d) => `${d.data.name} logo`);
 
     svg.on('click', () => {
       if (focus.parent) zoom(focus.parent);
@@ -521,9 +508,6 @@ export function SpaceVisualization({
         .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000')
         .attr('stroke', getSelectedSpaceFillColor())
         .attr('stroke-width', getStrokeWidth(d.depth));
-      d3.select(this)
-        .select('image')
-        .attr('filter', d === focus ? null : 'url(#grayscale-filter)');
     });
 
     zoomTo(view);
@@ -576,11 +560,6 @@ export function SpaceVisualization({
           .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000')
           .attr('stroke', getSelectedSpaceFillColor())
           .attr('stroke-width', getStrokeWidth(d.depth));
-        d3.select(this)
-          .select('image')
-          .transition()
-          .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
-          .attr('filter', d === focus ? null : 'url(#grayscale-filter)');
       });
 
       transition.on('end', () => {
@@ -625,8 +604,7 @@ export function SpaceVisualization({
             .attr('y', -r)
             .attr('width', r * 2)
             .attr('height', r * 2)
-            .style('clip-path', `circle(50% at 50% 50%)`)
-            .attr('filter', d === focus ? null : 'url(#grayscale-filter)');
+            .style('clip-path', `circle(50% at 50% 50%)`);
         });
     }
   }, [data, currentSpaceId, resolvedTheme]);
