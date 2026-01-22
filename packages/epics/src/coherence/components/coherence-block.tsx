@@ -7,13 +7,21 @@ import { Empty } from '../../common/empty';
 import { useFindCoherences, useSpaceBySlug } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 import React from 'react';
+import { CoherenceOrder } from '../types';
 
 type CoherenceBlockProps = {
   lang: Locale;
   spaceSlug: string;
+  orderSignal?: CoherenceOrder;
+  orderConversation?: CoherenceOrder;
 };
 
-export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
+export function CoherenceBlock({
+  lang,
+  spaceSlug,
+  orderSignal,
+  orderConversation,
+}: CoherenceBlockProps) {
   const [hideArchived, setHideArchived] = React.useState(true);
   const { isAuthenticated } = useAuthentication();
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
@@ -67,6 +75,7 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
             firstPageSize={4}
             pageSize={2}
             hideArchived={hideArchived}
+            order={orderConversation}
             setHideArchived={setHideArchived}
             refresh={refresh}
           />

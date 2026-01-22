@@ -14,6 +14,7 @@ type GetAllCoherencesInput = {
   tags?: CoherenceTag[];
   status?: CoherenceStatus;
   includeArchived?: boolean;
+  orderBy?: string;
 };
 
 export async function getAllCoherences(
