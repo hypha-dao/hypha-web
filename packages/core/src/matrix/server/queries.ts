@@ -1,13 +1,17 @@
 import { MatrixUserLink } from '@hypha-platform/storage-postgres';
 import { DbConfig } from '../../server';
+import { and } from 'drizzle-orm';
 
 export const findLinkByPrivyUserId = async (
-  { privyUserId }: { privyUserId: string },
+  { privyUserId, environment }: { privyUserId: string; environment: string },
   { db }: DbConfig,
 ): Promise<MatrixUserLink | null> => {
   const response = await db.query.matrixUserLinks.findFirst({
-    where: (matrixUserLinks, { eq }) =>
-      eq(matrixUserLinks.privyUserId, privyUserId),
+    where: (matrixUserLinks, { eq, and }) =>
+      and(
+        eq(matrixUserLinks.privyUserId, privyUserId),
+        eq(matrixUserLinks.environment, environment),
+      ),
   });
 
   if (!response) {
@@ -20,12 +24,15 @@ export const findLinkByPrivyUserId = async (
 };
 
 export const findLinkByMatrixUserId = async (
-  { matrixUserId }: { matrixUserId: string },
+  { matrixUserId, environment }: { matrixUserId: string; environment: string },
   { db }: DbConfig,
 ): Promise<MatrixUserLink | null> => {
   const response = await db.query.matrixUserLinks.findFirst({
-    where: (matrixUserLinks, { eq }) =>
-      eq(matrixUserLinks.matrixUserId, matrixUserId),
+    where: (matrixUserLinks, { eq, and }) =>
+      and(
+        eq(matrixUserLinks.matrixUserId, matrixUserId),
+        eq(matrixUserLinks.environment, environment),
+      ),
   });
 
   if (!response) {

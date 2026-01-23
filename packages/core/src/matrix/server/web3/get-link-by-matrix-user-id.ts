@@ -6,15 +6,18 @@ import { findLinkByMatrixUserId } from '../queries';
 
 interface GetLinkByMatrixUserIdInput {
   matrixUserId: string;
+  environment: string;
 }
 
 export async function getLinkByMatrixUserId({
   matrixUserId,
+  environment,
 }: GetLinkByMatrixUserIdInput): Promise<MatrixUserLink | null> {
   try {
     const userLink = await findLinkByMatrixUserId(
       {
         matrixUserId,
+        environment,
       },
       { db },
     );

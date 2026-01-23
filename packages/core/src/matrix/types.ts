@@ -11,6 +11,7 @@ export type MatrixUserLink = {
 };
 
 export interface CreateMatrixUserLinkInput {
+  environment: string;
   privyUserId: string;
   matrixUserId: string;
   encryptedAccessToken: string;
@@ -20,6 +21,7 @@ export interface CreateMatrixUserLinkInput {
 export interface UpdateEncryptedAccessTokenInput {
   privyUserId: string;
   encryptedAccessToken: string;
+  environment: string;
 }
 
 export interface Message {

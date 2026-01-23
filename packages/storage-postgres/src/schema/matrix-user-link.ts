@@ -1,11 +1,12 @@
+import { InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
 import { index, pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
 import { commonDateFields } from './shared';
-import { InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
 
 export const matrixUserLinks = pgTable(
   'matrix_user_links',
   {
     id: serial('id').primaryKey(),
+    environment: text('environment').notNull(),
     privyUserId: text('privy_user_id').notNull(),
     matrixUserId: text('matrix_user_id').notNull(),
     encryptedAccessToken: text('encrypted_access_token').notNull(),
@@ -22,7 +23,8 @@ export const matrixUserLinks = pgTable(
       setweight(to_tsvector('english', ${table.matrixUserId}), 'B') ||
       setweight(to_tsvector('english', ${table.encryptedAccessToken}), 'C') ||
       setweight(to_tsvector('english', ${table.deviceId}), 'D') ||
-      setweight(to_tsvector('english', ${table.refreshToken}), 'E')
+      setweight(to_tsvector('english', ${table.refreshToken}), 'E') ||
+      setweight(to_tsvector('english', ${table.environment}), 'F')
     )`,
     ),
   ],
