@@ -16,17 +16,13 @@ export const matrixUserLinks = pgTable(
     tokenExpiresAt: timestamp('token_expires_at'),
   },
   (table) => [
-    index('search_index_matrix_user_links').using(
-      'gin',
-      sql`(
-      setweight(to_tsvector('english', ${table.privyUserId}), 'A') ||
-      setweight(to_tsvector('english', ${table.matrixUserId}), 'B') ||
-      setweight(to_tsvector('english', ${table.encryptedAccessToken}), 'C') ||
-      setweight(to_tsvector('english', ${table.deviceId}), 'D') ||
-      setweight(to_tsvector('english', ${table.refreshToken}), 'E') ||
-      setweight(to_tsvector('english', ${table.environment}), 'F')
-    )`,
-    ),
+    index('search_environment').on(table.environment),
+    index('search_privy_user_id').on(table.privyUserId),
+    index('search_matrix_user_id').on(table.matrixUserId),
+    index('search_encrypted_access_token').on(table.encryptedAccessToken),
+    index('search_device_id').on(table.deviceId),
+    index('search_refresh_token').on(table.refreshToken),
+    index('search_token_expires_at').on(table.tokenExpiresAt),
   ],
 );
 

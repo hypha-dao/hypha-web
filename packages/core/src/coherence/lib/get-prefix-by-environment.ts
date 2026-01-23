@@ -1,10 +1,12 @@
-export function getPrefixByEnvironment(environment: string) {
+import { Environment } from '../types';
+
+export function getPrefixByEnvironment(environment: Environment) {
   switch (environment) {
-    case 'delevopment':
+    case Environment.DEVELOPMENT:
       return 'dev';
-    case 'preview':
+    case Environment.PREVIEW:
       return 'prev';
-    case 'production':
+    case Environment.PRODUCTION:
       return 'prod';
     default:
       return 'prod';
