@@ -94,12 +94,6 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
 
   useScrollToErrors(form, formRef);
 
-  React.useEffect(() => {
-    if (progress === 100 && agreementSlug) {
-      router.push(successfulUrl);
-    }
-  }, [progress, agreementSlug, router, successfulUrl]);
-
   const handleCreate = async (data: FormValues) => {
     await createChangeSpaceTransparencySettings({
       ...data,
