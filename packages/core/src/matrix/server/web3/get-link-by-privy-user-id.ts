@@ -4,15 +4,18 @@ import { findLinkByPrivyUserId } from '../queries';
 
 interface GetLinkByPrivyUserIdInput {
   privyUserId: string;
+  environment: string;
 }
 
 export async function getLinkByPrivyUserId({
   privyUserId,
+  environment,
 }: GetLinkByPrivyUserIdInput): Promise<MatrixUserLink | null> {
   try {
     const userLink = await findLinkByPrivyUserId(
       {
         privyUserId,
+        environment,
       },
       { db },
     );

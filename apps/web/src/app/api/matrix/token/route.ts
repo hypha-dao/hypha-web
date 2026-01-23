@@ -1,6 +1,7 @@
 import {
   createMatrixUserLinkAction,
   decryptMatrixToken,
+  determineEnvironment,
   getDecoratedPrivyId,
   getLinkByPrivyUserId,
   MatrixSharedSecret,
@@ -33,8 +34,9 @@ export async function GET(request: NextRequest) {
   try {
     const authToken = authHeader.replace('Bearer ', '');
     const { userId: privyUserId } = await privy.verifyAuthToken(authToken);
+    const environment = determineEnvironment(request.url);
 
-    const existing = await getLinkByPrivyUserId({ privyUserId });
+    const existing = await getLinkByPrivyUserId({ privyUserId, environment });
     if (existing) {
       const accessToken = decryptMatrixToken(existing.encryptedAccessToken);
       return NextResponse.json({
@@ -49,7 +51,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const matrixUsername = getDecoratedPrivyId(privyUserId);
+    const matrixUsername = getDecoratedPrivyId(privyUserId, environment);
     const {
       accessToken: encryptedAccessToken,
       deviceId,
@@ -58,6 +60,7 @@ export async function GET(request: NextRequest) {
 
     await createMatrixUserLinkAction(
       {
+        environment,
         encryptedAccessToken,
         deviceId,
         matrixUserId,

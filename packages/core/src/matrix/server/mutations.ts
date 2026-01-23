@@ -4,7 +4,7 @@ import {
   CreateMatrixUserLinkInput,
   UpdateEncryptedAccessTokenInput,
 } from '../types';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 export const createMatrixUserLink = async (
   {
@@ -12,6 +12,7 @@ export const createMatrixUserLink = async (
     matrixUserId,
     encryptedAccessToken,
     deviceId,
+    environment,
   }: CreateMatrixUserLinkInput,
   { db }: { db: DatabaseInstance },
 ) => {
@@ -33,6 +34,7 @@ export const createMatrixUserLink = async (
       matrixUserId,
       encryptedAccessToken,
       deviceId,
+      environment,
     })
     .returning();
 
@@ -44,13 +46,22 @@ export const createMatrixUserLink = async (
 };
 
 export const updateMatrixUserLink = async (
-  { privyUserId, encryptedAccessToken }: UpdateEncryptedAccessTokenInput,
+  {
+    privyUserId,
+    environment,
+    encryptedAccessToken,
+  }: UpdateEncryptedAccessTokenInput,
   { db }: { db: DatabaseInstance },
 ) => {
   const [updatedMatrixUserLink] = await db
     .update(matrixUserLinks)
     .set({ privyUserId, encryptedAccessToken })
-    .where(eq(matrixUserLinks.privyUserId, privyUserId))
+    .where(
+      and(
+        eq(matrixUserLinks.environment, environment),
+        eq(matrixUserLinks.privyUserId, privyUserId),
+      ),
+    )
     .returning();
 
   if (!updatedMatrixUserLink) {

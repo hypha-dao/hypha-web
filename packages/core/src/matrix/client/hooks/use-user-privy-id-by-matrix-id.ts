@@ -1,6 +1,6 @@
 'use client';
 
-import { useJwt } from '@hypha-platform/core/client';
+import { determineEnvironment, useJwt } from '@hypha-platform/core/client';
 import React from 'react';
 import useSWR from 'swr';
 import { getLinkByMatrixUserId } from '../../server/web3/get-link-by-matrix-user-id';
@@ -15,16 +15,24 @@ export const useUserPrivyIdByMatrixId = ({
   const [error, setError] = React.useState<string | null>(null);
   const { jwt, isLoadingJwt } = useJwt();
 
-  const arg = isLoadingJwt ? null : matrixUserId;
+  const environment = determineEnvironment(window.location.href);
+  const arg = isLoadingJwt ? null : { matrixUserId, environment };
 
   const { data: privyUserId, isLoading } = useSWR(
     [jwt ? arg : null, 'getLinkByMatrixUserId'],
-    async ([matrixUserId]) => {
-      if (!matrixUserId) {
+    async ([arg]) => {
+      if (!arg) {
+        return undefined;
+      }
+      const { matrixUserId, environment } = arg;
+      if (!matrixUserId || !environment) {
         return undefined;
       }
       try {
-        const response = await getLinkByMatrixUserId({ matrixUserId });
+        const response = await getLinkByMatrixUserId({
+          matrixUserId,
+          environment,
+        });
         if (!response) {
           return undefined;
         }
