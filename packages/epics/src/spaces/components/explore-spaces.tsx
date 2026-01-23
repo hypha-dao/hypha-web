@@ -127,6 +127,7 @@ export function ExploreSpaces({
   } = useFilterSpacesListWithDiscoverability({
     spaces: categoryFilteredSpaces,
     useGeneralState: true,
+    excludeSpaceLevelFromNetwork: true,
   });
 
   const agreementCount = React.useMemo(() => {
