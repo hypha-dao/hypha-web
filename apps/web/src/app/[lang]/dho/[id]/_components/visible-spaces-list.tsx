@@ -15,6 +15,11 @@ import {
 import { PlusIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
 import { getDhoPathAgreements } from '@hypha-platform/epics';
+import {
+  useSpaceDiscoverability,
+  useUserSpaceState,
+  checkAccess,
+} from '@hypha-platform/epics';
 import type { VisibleSpace } from './types';
 
 type VisibleSpacesListProps = {
@@ -37,6 +42,75 @@ function buildNestedPath(space: VisibleSpace, allSpaces: Space[]): string {
   }
 
   return 'Nested';
+}
+
+type AddSpaceButtonProps = {
+  space: VisibleSpace;
+  allSpaces: Space[];
+  lang: Locale;
+};
+
+function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
+  const fullSpace = allSpaces.find((s) => s.id === space.id);
+  const web3SpaceId = fullSpace?.web3SpaceId;
+  const spaceSlug = fullSpace?.slug || space.slug;
+
+  if (!web3SpaceId || !spaceSlug) {
+    return (
+      <Button
+        variant="default"
+        size="default"
+        colorVariant="accent"
+        className="w-full md:w-auto"
+        disabled={true}
+        title="Space information not available"
+      >
+        <PlusIcon className="w-4 h-4" />
+        Add Space
+      </Button>
+    );
+  }
+
+  const { access, isLoading: isAccessLoading } = useSpaceDiscoverability({
+    spaceId: BigInt(web3SpaceId),
+  });
+
+  const { userState, isLoading: isUserStateLoading } = useUserSpaceState({
+    spaceId: web3SpaceId,
+    spaceSlug,
+    space: fullSpace,
+  });
+
+  const hasAccess = checkAccess(access, userState);
+  const isLoading = isAccessLoading || isUserStateLoading;
+  const isDisabled = isLoading || !hasAccess;
+
+  const createSpacePath = `/${lang}/dho/${spaceSlug}/space/create`;
+
+  return (
+    <Link
+      href={hasAccess && !isLoading ? createSpacePath : '#'}
+      className={isDisabled ? 'cursor-not-allowed' : 'flex-1 md:flex-none'}
+      title={
+        isLoading
+          ? 'Loading...'
+          : !hasAccess
+          ? 'You do not have access to add spaces to this organization.'
+          : 'Add Space'
+      }
+    >
+      <Button
+        variant="default"
+        size="default"
+        colorVariant="accent"
+        className="w-full md:w-auto"
+        disabled={isDisabled}
+      >
+        <PlusIcon className="w-4 h-4" />
+        Add Space
+      </Button>
+    </Link>
+  );
 }
 
 export function VisibleSpacesList({
@@ -107,17 +181,11 @@ export function VisibleSpacesList({
           </div>
 
           <div className="flex gap-2 flex-shrink-0 md:flex-shrink-0">
-            <Link href={rootCreateSpacePath} className="flex-1 md:flex-none">
-              <Button
-                variant="default"
-                size="default"
-                colorVariant="accent"
-                className="w-full md:w-auto"
-              >
-                <PlusIcon className="w-4 h-4" />
-                Add Space
-              </Button>
-            </Link>
+            <AddSpaceButton
+              space={rootSpace}
+              allSpaces={allSpaces}
+              lang={lang}
+            />
             <Link href={rootVisitSpacePath} className="flex-1 md:flex-none">
               <Button
                 colorVariant="neutral"
@@ -179,17 +247,11 @@ export function VisibleSpacesList({
                 </div>
 
                 <div className="flex gap-2 flex-shrink-0 md:flex-shrink-0">
-                  <Link href={createSpacePath} className="flex-1 md:flex-none">
-                    <Button
-                      variant="default"
-                      size="default"
-                      colorVariant="accent"
-                      className="w-full md:w-auto"
-                    >
-                      <PlusIcon className="w-4 h-4" />
-                      Add Space
-                    </Button>
-                  </Link>
+                  <AddSpaceButton
+                    space={space}
+                    allSpaces={allSpaces}
+                    lang={lang}
+                  />
                   <Link href={visitSpacePath} className="flex-1 md:flex-none">
                     <Button
                       colorVariant="neutral"

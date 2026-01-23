@@ -20,6 +20,7 @@ import {
   Person,
   Space,
 } from '@hypha-platform/core/client';
+import { useFilterSpacesListWithDiscoverability } from '@hypha-platform/epics';
 
 type WhitelistType = 'member' | 'space';
 
@@ -46,6 +47,10 @@ export const TransferWhitelistFieldArray = ({
 }: TransferWhitelistFieldArrayProps) => {
   const { control, setValue, watch } = useFormContext();
 
+  const { filteredSpaces } = useFilterSpacesListWithDiscoverability({
+    spaces,
+  });
+
   const memberOptions = useMemo(
     () =>
       members.map((member) => ({
@@ -59,13 +64,13 @@ export const TransferWhitelistFieldArray = ({
 
   const spaceOptions = useMemo(
     () =>
-      spaces.map((space) => ({
+      filteredSpaces.map((space) => ({
         value: space.address ?? space.slug ?? '',
         label: space.title,
         searchText: space.title.toLowerCase(),
         avatarUrl: space.logoUrl,
       })),
-    [spaces],
+    [filteredSpaces],
   );
 
   const entries = watch(name) ?? [];

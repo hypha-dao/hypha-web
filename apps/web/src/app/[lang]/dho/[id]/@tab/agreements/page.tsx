@@ -1,5 +1,8 @@
 import { Locale } from '@hypha-platform/i18n';
-import { DocumentsSections } from '@hypha-platform/epics';
+import {
+  DocumentsSections,
+  SpaceTabAccessWrapper,
+} from '@hypha-platform/epics';
 import { DirectionType } from '@hypha-platform/core/client';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { notFound } from 'next/navigation';
@@ -24,16 +27,18 @@ export default async function AgreementsPage(props: PageProps) {
   const web3SpaceId = spaceFromDb.web3SpaceId;
 
   return (
-    <DocumentsSections
-      lang={lang}
-      spaceSlug={id}
-      web3SpaceId={web3SpaceId as number}
-      order={[
-        {
-          name: 'createdAt',
-          dir: DirectionType.DESC,
-        },
-      ]}
-    />
+    <SpaceTabAccessWrapper spaceId={web3SpaceId as number} spaceSlug={id}>
+      <DocumentsSections
+        lang={lang}
+        spaceSlug={id}
+        web3SpaceId={web3SpaceId as number}
+        order={[
+          {
+            name: 'createdAt',
+            dir: DirectionType.DESC,
+          },
+        ]}
+      />
+    </SpaceTabAccessWrapper>
   );
 }
