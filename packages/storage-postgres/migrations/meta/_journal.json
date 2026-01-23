@@ -288,13 +288,6 @@
       "when": 1764157589485,
       "tag": "0040_empty_spot",
       "breakpoints": true
-    },
-    {
-      "idx": 41,
-      "version": "7",
-      "when": 1769166034241,
-      "tag": "0041_cold_hellfire_club",
-      "breakpoints": true
     }
   ]
 }
