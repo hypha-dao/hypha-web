@@ -64,7 +64,8 @@ jobs:
           database: ${{ env.NEON_DATABASE_NAME }}
           api_key: ${{ env.NEON_API_KEY }}
 
-      - name: Update variables
+      - name: Update branch variables
+        if: needs.detect-changes.outputs.has_migrations == 'true'
         run: |
           echo "BRANCH_DB_URL=${{ steps.create-branch.outputs.db_url_with_pooler }}" >> $GITHUB_ENV
 
@@ -132,7 +133,8 @@ jobs:
           database: ${{ env.NEON_DATABASE_NAME }}
           api_key: ${{ env.NEON_API_KEY }}
 
-      - name: Update variables
+      - name: Update branch variables
+        if: needs.detect-changes.outputs.has_migrations == 'true'
         run: |
           echo "BRANCH_DB_URL=${{ steps.create-branch.outputs.db_url_with_pooler }}" >> $GITHUB_ENV
 
