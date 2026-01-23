@@ -130,6 +130,33 @@ export class MatrixSharedSecret {
     return response;
   }
 
+  async validateToken(accessToken: string) {
+    try {
+      const version = await this.getEffectiveVersion();
+      const response = await fetch(
+        `${this.matrixHomeserverUrl}/_matrix/client/${version}/account/whoami`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      if (!response.ok) {
+        console.log('Token validation failed:', response.status);
+        return false;
+      }
+
+      const data = await response.json();
+      return data.user_id && data.user_id.includes('@');
+    } catch (error) {
+      console.error('Token validation error:', error);
+      return false;
+    }
+  }
+
   private async changePassword(accessToken: string, newPassword: string) {
     const version = await this.getEffectiveVersion();
     const endpoint = `/_matrix/client/${version}/account/password`;
