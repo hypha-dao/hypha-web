@@ -54,24 +54,14 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
 
   const allowConversation = React.useCallback(async () => {
     console.log('Start Conversation');
-    //TODO: uncomment after demo
-    /*if (!isMatrixAvailable) {
+    if (!isMatrixAvailable) {
       console.warn(
         'Cannot create conversation since Matrix client is unavailable',
       );
       return;
-    }*/
+    }
     try {
-      //TODO: may be changed after demo
-      const roomId = await (async () => {
-        if (isMatrixAvailable) {
-          const { roomId } = await createRoom(title);
-          return roomId;
-        } else {
-          console.warn('Matrix homeserver is not configured');
-          return '';
-        }
-      })();
+      const { roomId } = await createRoom(title);
       await updateCoherenceBySlug({ slug, status: 'conversation', roomId });
       await refresh();
     } catch (error) {
