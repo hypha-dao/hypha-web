@@ -39,16 +39,20 @@ export async function GET(request: NextRequest) {
     const existing = await getLinkByPrivyUserId({ privyUserId, environment });
     if (existing) {
       const accessToken = decryptMatrixToken(existing.encryptedAccessToken);
-      return NextResponse.json({
-        accessToken,
-        userId: existing.matrixUserId,
-        homeserverUrl: MATRIX_HOMESERVER_URL,
-        deviceId: existing.deviceId,
-        elementConfig: {
-          // defaultRoomId: DEFAULT_ROOM_ID,
-          theme: 'dark',
-        },
-      });
+      if (await matrixAuthClient.validateToken(accessToken)) {
+        return NextResponse.json({
+          accessToken,
+          userId: existing.matrixUserId,
+          homeserverUrl: MATRIX_HOMESERVER_URL,
+          deviceId: existing.deviceId,
+          elementConfig: {
+            // defaultRoomId: DEFAULT_ROOM_ID,
+            theme: 'dark',
+          },
+        });
+      } else {
+        //TODO: update access token
+      }
     }
 
     const matrixUsername = getDecoratedPrivyId(privyUserId, environment);
