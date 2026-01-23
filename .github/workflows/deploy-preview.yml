@@ -64,6 +64,10 @@ jobs:
           database: ${{ env.NEON_DATABASE_NAME }}
           api_key: ${{ env.NEON_API_KEY }}
 
+      - name: Update variables
+        run: |
+          echo "BRANCH_DB_URL=${{ steps.create-branch.outputs.db_url_with_pooler }}" >> $GITHUB_ENV
+
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
@@ -127,6 +131,10 @@ jobs:
           username: ${{ env.NEON_DATABASE_USERNAME }}
           database: ${{ env.NEON_DATABASE_NAME }}
           api_key: ${{ env.NEON_API_KEY }}
+
+      - name: Update variables
+        run: |
+          echo "BRANCH_DB_URL=${{ steps.create-branch.outputs.db_url_with_pooler }}" >> $GITHUB_ENV
 
       - name: Run Migrations
         if: needs.detect-changes.outputs.has_migrations == 'true'
