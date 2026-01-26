@@ -5,6 +5,7 @@ import useSWR, { mutate as mutateCache, type Key } from 'swr';
 import queryString from 'query-string';
 
 import { type UseMembers, type UseMembersReturn } from '@hypha-platform/epics';
+import { useAuthentication } from '@hypha-platform/authentication';
 
 type MemberItem = {
   name: string;
@@ -36,6 +37,8 @@ export const useMembers: UseMembers = ({
   refreshInterval?: number;
   paginationDisabled?: boolean;
 }): UseMembersReturn => {
+  const { getAccessToken } = useAuthentication();
+
   const queryParams = React.useMemo(() => {
     const effectiveFilter = paginationDisabled
       ? { ...(searchTerm ? { searchTerm } : {}) }
@@ -59,12 +62,18 @@ export const useMembers: UseMembers = ({
     mutate,
   } = useSWR(
     spaceSlug ? [endpoint] : null,
-    ([endpoint]) =>
-      fetch(endpoint, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }).then((res) => res.json()),
+    async ([endpoint]) => {
+      const token = await getAccessToken();
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      return fetch(endpoint, { headers }).then((res) => res.json());
+    },
     {
       refreshInterval: interval,
       keepPreviousData,
