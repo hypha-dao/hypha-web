@@ -21,7 +21,7 @@ export function SpaceAccessDenied({
   spaceId,
   spaceSlug,
 }: SpaceAccessDeniedProps) {
-  const { isAuthenticated } = useAuthentication();
+  const { isAuthenticated, login } = useAuthentication();
   const { lang } = useParams();
   const { space } = useSpaceBySlug(spaceSlug || '');
   const effectiveSpaceId = spaceId || space?.web3SpaceId;
@@ -41,12 +41,10 @@ export function SpaceAccessDenied({
             click Get Started to create one.
           </p>
           <div className="flex gap-4 items-center justify-center">
-            <Link href={`/${lang}/sign-in`}>
-              <Button variant="outline">Sign In</Button>
-            </Link>
-            <Link href={`/${lang}/get-started`}>
-              <Button>Get Started</Button>
-            </Link>
+            <Button variant="outline" onClick={login}>
+              Sign In
+            </Button>
+            <Button onClick={login}>Get Started</Button>
           </div>
         </div>
       </Empty>
