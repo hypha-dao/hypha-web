@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { findAllDocumentsBySpaceSlugWithoutPagination } from '@hypha-platform/core/server';
+import {
+  findAllDocumentsBySpaceSlugWithoutPagination,
+  findSpaceBySlug,
+} from '@hypha-platform/core/server';
 import { getOrder } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
+import { checkSpaceAccess } from '@web/utils/check-space-access';
 
 type Params = { spaceSlug: string };
 
@@ -13,13 +17,28 @@ export async function GET(
   const { spaceSlug } = await params;
 
   try {
+    const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
+    if (!space) {
+      return NextResponse.json({ error: 'Space not found' }, { status: 404 });
+    }
+
+    if (space.web3SpaceId) {
+      const { hasAccess, response } = await checkSpaceAccess(
+        request,
+        space.web3SpaceId as number,
+      );
+
+      if (!hasAccess && response) {
+        return response;
+      }
+    }
+
     // Get URL parameters for order
     const url = new URL(request.url);
     const orderString = url.searchParams.get('order') || undefined;
 
     const order = getOrder(orderString);
 
-    // TODO: implement authorization
     const documents = await findAllDocumentsBySpaceSlugWithoutPagination(
       {
         spaceSlug,

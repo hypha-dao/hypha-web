@@ -10,6 +10,7 @@ import {
 import { Document } from '@hypha-platform/core/client';
 import { DirectionType, Order, OrderField } from '@hypha-platform/core/client';
 import queryString from 'query-string';
+import { useAuthentication } from '@hypha-platform/authentication';
 
 const getDocumentBadges = (document: Document) => {
   const badges = [];
@@ -159,6 +160,7 @@ export const useSpaceDocumentsWithStatuses = ({
   spaceId: number;
   order?: Order<Document>;
 }) => {
+  const { getAccessToken } = useAuthentication();
   const { spaceProposalsIds } = useSpaceProposalsWeb3Rpc({ spaceId: spaceId });
   const { withdrawnProposalsIds } = useWithdrawnProposalsWeb3Rpc({
     spaceId: spaceId,
@@ -190,9 +192,25 @@ export const useSpaceDocumentsWithStatuses = ({
     data: documentsFromDb,
     isLoading,
     mutate,
+    error,
   } = useSWR(
     [endpoint],
-    ([endpoint]) => fetch(endpoint).then((res) => res.json()),
+    async ([endpoint]) => {
+      const token = await getAccessToken();
+      const headers: HeadersInit = {};
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const res = await fetch(endpoint, { headers });
+      if (!res.ok) {
+        throw new Error(
+          `Failed to fetch documents: ${res.status} ${res.statusText}`,
+        );
+      }
+      return res.json();
+    },
     {
       revalidateOnFocus: true,
       refreshInterval: 10000,
@@ -201,7 +219,11 @@ export const useSpaceDocumentsWithStatuses = ({
     },
   );
   const response = React.useMemo(() => {
-    if (!documentsFromDb || !spaceProposalsIds) {
+    if (
+      !documentsFromDb ||
+      !Array.isArray(documentsFromDb) ||
+      !spaceProposalsIds
+    ) {
       return {
         accepted: [],
         rejected: [],
@@ -276,5 +298,6 @@ export const useSpaceDocumentsWithStatuses = ({
     documents: response,
     isLoading,
     update: mutate,
+    error,
   };
 };
