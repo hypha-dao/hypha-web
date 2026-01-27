@@ -1,6 +1,5 @@
 import { MatrixUserLink } from '@hypha-platform/storage-postgres';
 import { DbConfig } from '../../server';
-import { and } from 'drizzle-orm';
 
 export const findLinkByPrivyUserId = async (
   { privyUserId, environment }: { privyUserId: string; environment: string },

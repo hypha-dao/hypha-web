@@ -24,6 +24,11 @@ export interface UpdateEncryptedAccessTokenInput {
   environment: string;
 }
 
+export interface GetMatrixUserLinkActionInput {
+  environment: string;
+  privyUserId: string;
+}
+
 export interface Message {
   id: string;
   sender: string;

@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
-import { encryptMatrixToken, hashHmacSha1Hex } from '../../server';
+import { hashHmacSha1Hex } from '../../common/server/encrypt-aes';
+import { encryptMatrixToken } from '../../common/server/encrypt-matrix-token';
 
 type VersionsResponse = {
   versions: Array<string>;
@@ -67,11 +68,10 @@ export class MatrixSharedSecret {
     return available.available;
   }
 
-  async registerUserNonce(username: string) {
+  async registerUserNonce(username: string, isAdmin: boolean = false) {
     const nonce = await this.getNonce();
     const endpoint = '/_synapse/admin/v1/register';
     const password = crypto.randomBytes(32).toString('hex');
-    const isAdmin = false;
     const admin = isAdmin ? 'admin' : 'notadmin';
     const text = `${nonce}\0${username}\0${password}\0${admin}`;
     const mac = hashHmacSha1Hex(text, this.registrationSharedSecret);
@@ -96,9 +96,24 @@ export class MatrixSharedSecret {
     return response;
   }
 
-  async registerUser(username: string): Promise<RegisterResponse> {
-    const response = await this.registerUserNonce(username);
+  async registerUser(
+    username: string,
+    isAdmin: boolean = false,
+  ): Promise<RegisterResponse> {
+    const response = await this.registerUserNonce(username, isAdmin);
     const data = await response.json();
+
+    if (!response.ok) {
+      console.warn('Cannot register user:', data);
+
+      if (data.errcode === 'M_USER_IN_USE') {
+        return {
+          accessToken: '',
+          userId: '',
+          deviceId: '',
+        };
+      }
+    }
 
     await this.changePassword(
       data.access_token,
@@ -110,6 +125,29 @@ export class MatrixSharedSecret {
       userId: data.user_id,
       deviceId: data.device_id,
     };
+  }
+
+  async resetPassword(username: string, adminAccessToken: string) {
+    const password = crypto.randomBytes(32).toString('hex');
+    const response = await fetch(
+      `${this.matrixHomeserverUrl}/_dendrite/admin/resetPassword/${username}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${adminAccessToken}`,
+        },
+        body: JSON.stringify({
+          password,
+          logout_devices: true,
+        }),
+      },
+    );
+    const data = await response.json();
+    if (!response.ok) {
+      console.warn('Cannot reset password', data);
+    }
+    return { ok: data.password_updated, password };
   }
 
   async removeUser(username: string) {
@@ -157,6 +195,37 @@ export class MatrixSharedSecret {
     }
   }
 
+  async loginUser(username: string, password: string) {
+    const version = await this.getEffectiveVersion();
+    const endpoint = `/_matrix/client/${version}/login`;
+
+    const response = await fetch(`${this.matrixHomeserverUrl}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        identifier: {
+          type: 'm.id.user',
+          user: username,
+        },
+        initial_device_display_name: `device_${Date.now()}`,
+        password,
+        type: 'm.login.password',
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      console.warn('Cannot login user', data);
+    }
+    console.log('Login data response:', data);
+    return {
+      accessToken: encryptMatrixToken(data.access_token),
+      userId: data.user_id,
+      deviceId: data.device_id,
+    };
+  }
+
   private async changePassword(accessToken: string, newPassword: string) {
     const version = await this.getEffectiveVersion();
     const endpoint = `/_matrix/client/${version}/account/password`;
@@ -173,5 +242,6 @@ export class MatrixSharedSecret {
       }),
     });
     const data = await response.json();
+    return data;
   }
 }
