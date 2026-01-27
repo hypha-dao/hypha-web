@@ -28,6 +28,7 @@ interface MatrixContextType {
   createRoom: (title: string) => Promise<{ roomId: string }>;
   sendMessage: (params: SendMessageInput) => Promise<void>;
   getRoomMessages: (roomId: string) => Message[] | null;
+  joinRoom: (roomId: string) => Promise<void>;
   registerRoomListener: (roomId: string, listener: RoomMessageListener) => void;
   unregisterRoomListerner: (roomId: string) => void;
   registeredRoomListeners: RoomMessageListenerRecord[];
@@ -132,7 +133,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   const getRoomMessages = React.useCallback(
     (roomId: string): Message[] | null => {
       if (!client) {
-        throw new Error('Client and room ID should be specified');
+        throw new Error('Client should be specified');
       }
 
       const room = client.getRoom(roomId);
@@ -149,6 +150,21 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             }))
         : null;
       return messages;
+    },
+    [client],
+  );
+
+  const joinRoom = React.useCallback(
+    async (roomId: string) => {
+      if (!client) {
+        throw new Error('Client should be specified');
+      }
+
+      try {
+        await client.joinRoom(roomId);
+      } catch (error) {
+        console.warn('Cannot join to room:', error);
+      }
     },
     [client],
   );
@@ -220,6 +236,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     createRoom,
     sendMessage,
     getRoomMessages,
+    joinRoom,
     registerRoomListener,
     unregisterRoomListerner,
     registeredRoomListeners,

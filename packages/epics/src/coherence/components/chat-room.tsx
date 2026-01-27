@@ -26,6 +26,7 @@ export const ChatRoom = ({
   const {
     isMatrixAvailable,
     getRoomMessages,
+    joinRoom,
     registerRoomListener,
     unregisterRoomListerner,
   } = useMatrix();
@@ -41,18 +42,29 @@ export const ChatRoom = ({
       return;
     }
 
-    registerRoomListener(roomId, async (message: Message) => {
-      setIsMessagesLoading(true);
-      setMessages((prev) => [...prev, message]);
-      setIsMessagesLoading(false);
-    });
+    const register = async (roomId: string) => {
+      try {
+        await joinRoom(roomId);
 
-    setIsMessagesLoading(true);
-    const msgs = getRoomMessages(roomId);
-    if (msgs) {
-      setMessages(msgs);
-    }
-    setIsMessagesLoading(false);
+        registerRoomListener(roomId, async (message: Message) => {
+          setIsMessagesLoading(true);
+          setMessages((prev) => [...prev, message]);
+          setIsMessagesLoading(false);
+        });
+
+        setIsMessagesLoading(true);
+        const msgs = getRoomMessages(roomId);
+        if (msgs) {
+          setMessages(msgs);
+        }
+        setIsMessagesLoading(false);
+      } catch (error) {
+        unregisterRoomListerner(roomId);
+        setIsMessagesLoading(false);
+      }
+    };
+
+    register(roomId);
 
     return () => {
       unregisterRoomListerner(roomId);
