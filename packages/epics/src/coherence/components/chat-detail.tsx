@@ -30,6 +30,7 @@ export const ChatDetail = ({
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
 
   React.useEffect(() => {
+    //TODO: improve compute views
     if (!conversation) {
       return;
     }
