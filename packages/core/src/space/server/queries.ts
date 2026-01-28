@@ -332,3 +332,42 @@ export const findSpaceByAddresses = async (
     },
   };
 };
+
+export const findAllDescendantSpaces = async (
+  { spaceId }: { spaceId: number },
+  { db }: DbConfig,
+): Promise<Space[]> => {
+  const columns = getTableColumns(spaces);
+  const columnEntries = Object.entries(columns);
+  const recordNames = columnEntries.map(([_, v]) => v.name);
+
+  const columnsSql = sql.raw(recordNames.join(', '));
+  const columnsWithAliasSql = sql.raw(
+    recordNames.map((name) => `child.${name}`).join(', '),
+  );
+
+  const query = sql`
+    WITH RECURSIVE descendants AS (
+      SELECT ${columnsSql}
+      FROM ${spaces}
+      WHERE ${spaces.parentId} = ${spaceId}
+      UNION ALL
+      SELECT ${columnsWithAliasSql}
+      FROM ${spaces} child
+      INNER JOIN descendants d
+        ON child.parent_id = d.id
+    )
+    SELECT * FROM descendants
+    ORDER BY id;
+  `;
+
+  const results = await db.execute(query);
+
+  return results.rows.map((record) => {
+    const space: Partial<Space> = {};
+    for (const [name, column] of columnEntries) {
+      space[name as keyof Space] = record[column.name] as any;
+    }
+    return space as Space;
+  });
+};
