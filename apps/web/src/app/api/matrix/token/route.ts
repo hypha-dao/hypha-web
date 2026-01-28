@@ -33,7 +33,29 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const privy = new PrivyClient(PRIVY_APP_ID, PRIVY_APP_SECRET);
+  const authToken = authHeader.replace('Bearer ', '');
+  const privyUserId = await (async (token: string) => {
+    try {
+      const privy = new PrivyClient(PRIVY_APP_ID, PRIVY_APP_SECRET);
+      const { userId } = await privy.verifyAuthToken(token);
+      return userId;
+    } catch (error) {
+      console.warn('Auth error:', error);
+      return null;
+    }
+  })(authToken);
+
+  if (!privyUserId) {
+    return NextResponse.json(
+      {
+        error: 'Unauthorized',
+      },
+      {
+        status: 401,
+      },
+    );
+  }
+
   const matrixAuthClient = new MatrixSharedSecret();
 
   const getAdminRecord = async (
@@ -66,8 +88,6 @@ export async function GET(request: NextRequest) {
   };
 
   try {
-    const authToken = authHeader.replace('Bearer ', '');
-    const { userId: privyUserId } = await privy.verifyAuthToken(authToken);
     const environment = determineEnvironment(request.url);
 
     const existing = await getLinkByPrivyUserId({ privyUserId, environment });
