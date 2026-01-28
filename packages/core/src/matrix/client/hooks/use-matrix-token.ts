@@ -44,6 +44,9 @@ export const useMatrixToken = () => {
         return undefined;
       }
     },
+    {
+      errorRetryInterval: 2000,
+    },
   );
 
   return {
