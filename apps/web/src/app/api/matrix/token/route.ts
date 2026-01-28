@@ -133,14 +133,7 @@ export async function GET(request: NextRequest) {
             });
           }
 
-          return NextResponse.json(
-            {
-              error: 'Token generation failed',
-            },
-            {
-              status: 500,
-            },
-          );
+          throw new Error('Matrix user link exists but cannot be updated');
         }
       }
     }
@@ -194,14 +187,8 @@ export async function GET(request: NextRequest) {
           },
         });
       }
-      return NextResponse.json(
-        {
-          error: 'Token generation failed',
-        },
-        {
-          status: 500,
-        },
-      );
+
+      throw new Error('Matrix user link exists but cannot be updated');
     }
 
     await createMatrixUserLinkAction(
@@ -226,6 +213,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    console.warn('Token generation failed:', error);
     return NextResponse.json(
       {
         error: 'Token generation failed',
