@@ -22,15 +22,15 @@ export const useMatrixToken = () => {
   const endpoint = isLoadingJwt ? null : '/api/matrix/token';
 
   const { data: matrixToken, isLoading } = useSWR(
-    [endpoint, 'getMatrixToken'],
-    async ([endpoint]) => {
-      if (!endpoint) {
+    [endpoint, jwt, 'getMatrixToken'],
+    async ([endpoint, authToken]) => {
+      if (!endpoint || !authToken) {
         return undefined;
       }
       try {
         const response = await fetch(endpoint, {
           headers: {
-            ...(jwt ? { Authorization: `Bearer ${jwt}` } : undefined),
+            Authorization: `Bearer ${authToken}`,
           },
         });
         if (!response.ok) {
