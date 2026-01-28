@@ -251,6 +251,32 @@
                                                                                          "production-quick"
                                                                                      ]
                                                                      }
-                                                     }
+                                                     },
+                   "e2e-production-membership-exit":  {
+                                                          "outputs":  [
+                                                                          "{workspaceRoot}/apps/web-e2e/playwright-report-production"
+                                                                      ],
+                                                          "executor":  "@nx/playwright:playwright",
+                                                          "options":  {
+                                                                          "config":  "apps/web-e2e/playwright.production.config.ts",
+                                                                          "grep": "should create membership exit proposal in QA TESTING space",
+                                                                          "project":  [
+                                                                                          "production-quick"
+                                                                                      ]
+                                                                      }
+                                                      },
+                   "e2e-production-exit-space":  {
+                                                     "outputs":  [
+                                                                     "{workspaceRoot}/apps/web-e2e/playwright-report-production"
+                                                                 ],
+                                                     "executor":  "@nx/playwright:playwright",
+                                                     "options":  {
+                                                                     "config":  "apps/web-e2e/playwright.production.config.ts",
+                                                                     "grep": "should create a space and then exit it",
+                                                                     "project":  [
+                                                                                     "production-quick"
+                                                                                 ]
+                                                                 }
+                                                 }
                 }
 }
