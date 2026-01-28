@@ -431,8 +431,7 @@ export function SpaceVisualization({
         .attr('href', d.data.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE)
         .attr('preserveAspectRatio', 'xMidYMid slice')
         .attr('alt', `${d.data.name} logo`)
-        .attr('clip-path', `url(#${clipId})`)
-        .style('filter', d === focus ? 'none' : 'grayscale(100%)');
+        .attr('clip-path', `url(#${clipId})`);
     });
 
     svg.on('click', () => {
@@ -659,8 +658,7 @@ export function SpaceVisualization({
             .attr('x', -r)
             .attr('y', -r)
             .attr('width', r * 2)
-            .attr('height', r * 2)
-            .style('filter', d === focus ? 'none' : 'grayscale(100%)');
+            .attr('height', r * 2);
         });
     }
   }, [data, currentSpaceId, resolvedTheme]);

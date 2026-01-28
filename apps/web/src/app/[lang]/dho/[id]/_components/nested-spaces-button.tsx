@@ -8,7 +8,7 @@ import { cleanPath } from './clean-path';
 import { PATH_SELECT_NAVIGATION_ACTION } from '@web/app/constants';
 import { useSpaceDiscoverability } from '@hypha-platform/epics';
 import { useUserSpaceState } from '@hypha-platform/epics';
-import { checkDiscoverability } from '@hypha-platform/epics';
+import { checkAccess } from '@hypha-platform/epics';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
 
 interface NestedSpacesButtonProps {
@@ -25,7 +25,7 @@ export const NestedSpacesButton = ({
   const effectiveSpaceId = web3SpaceId || space?.web3SpaceId || undefined;
   const effectiveSpaceSlug = spaceSlug || space?.slug;
 
-  const { discoverability, isLoading: isDiscoverabilityLoading } =
+  const { access, isLoading: isDiscoverabilityLoading } =
     useSpaceDiscoverability({
       spaceId: effectiveSpaceId ? BigInt(effectiveSpaceId) : undefined,
     });
@@ -36,14 +36,14 @@ export const NestedSpacesButton = ({
     space,
   });
 
-  const hasAccess = checkDiscoverability(discoverability, userState);
+  const hasAccess = checkAccess(access, userState);
   const isLoading = isDiscoverabilityLoading || isUserStateLoading;
   const isDisabled = isLoading || !hasAccess;
 
   const tooltipMessage = isLoading
     ? 'Loading...'
     : !hasAccess
-    ? 'You do not have access to view this space navigation.'
+    ? 'You do not have access to view space navigation.'
     : 'Space Navigation';
 
   return (

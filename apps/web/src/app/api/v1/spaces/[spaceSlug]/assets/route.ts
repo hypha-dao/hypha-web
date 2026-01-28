@@ -21,20 +21,29 @@ import {
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt, hasEmojiOrLink } from '@hypha-platform/ui-utils';
+import { checkSpaceAccess } from '@web/utils/check-space-access';
 
 const EVC_TOKEN_ADDRESS = '0xEa6FC1ff9C204E7b40073cCB091Ca8ac30B0B80a';
 
 export async function GET(
-  _: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ spaceSlug: string }> },
 ) {
   const { spaceSlug } = await params;
 
   try {
-    // TODO: implement authorization
     const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
     if (!space || !canConvertToBigInt(space.web3SpaceId)) {
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
+    }
+
+    const { hasAccess, response } = await checkSpaceAccess(
+      request,
+      space.web3SpaceId as number,
+    );
+
+    if (!hasAccess && response) {
+      return response;
     }
 
     const spaceId = BigInt(space.web3SpaceId as number);
