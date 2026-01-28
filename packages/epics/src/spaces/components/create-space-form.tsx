@@ -237,13 +237,52 @@ export const SpaceForm = ({
       spaces: organisationSpaces ?? [],
     });
 
+  const getAllDescendantIds = React.useCallback(
+    (spaceId: number, allSpaces: Space[]): Set<number> => {
+      const descendantIds = new Set<number>();
+      const visited = new Set<number>();
+
+      const collectDescendants = (id: number) => {
+        if (visited.has(id)) return;
+        visited.add(id);
+
+        const children = allSpaces.filter((s) => s.parentId === id);
+        children.forEach((child) => {
+          descendantIds.add(child.id);
+          collectDescendants(child.id);
+        });
+      };
+
+      collectDescendants(spaceId);
+      return descendantIds;
+    },
+    [],
+  );
+
   const parentOptions = React.useMemo((): ParentOption[] => {
     if (isOrganisationLoading || isMyLoading) {
       return [];
     }
+
+    const allSpacesForFiltering = [
+      ...(filteredOrganisationSpaces ?? []),
+      ...filteredMySpaces,
+    ];
+
+    const excludedIds = new Set<number>();
+    if (spaceId && spaceId !== -1 && allSpacesForFiltering.length > 0) {
+      const descendants = getAllDescendantIds(spaceId, allSpacesForFiltering);
+      descendants.forEach((id) => excludedIds.add(id));
+      excludedIds.add(spaceId);
+    }
+
     const organisationOptions =
       filteredOrganisationSpaces
-        ?.filter((orgSpace) => (values ? orgSpace.slug !== values.slug : true))
+        ?.filter((orgSpace) => {
+          if (values && orgSpace.slug === values.slug) return false;
+          if (excludedIds.has(orgSpace.id)) return false;
+          return true;
+        })
         .map((space) => {
           return {
             avatarUrl: space.logoUrl,
@@ -252,12 +291,18 @@ export const SpaceForm = ({
           };
         }) ?? [];
     const mySpacesOptions = filteredMySpaces
-      .filter(
-        (mySpace) =>
-          !filteredOrganisationSpaces?.find(
-            (orgSpace) => mySpace.id === orgSpace.id,
-          ),
-      )
+      .filter((mySpace) => {
+        // Exclude if already in organisation spaces
+        if (
+          filteredOrganisationSpaces?.find(
+            (orgSpace) => orgSpace.id === mySpace.id,
+          )
+        )
+          return false;
+        // Exclude descendants and self
+        if (excludedIds.has(mySpace.id)) return false;
+        return true;
+      })
       .map((space) => {
         return {
           avatarUrl: space.logoUrl,
@@ -291,6 +336,8 @@ export const SpaceForm = ({
     filteredMySpaces,
     isMyLoading,
     values?.slug,
+    spaceId,
+    getAllDescendantIds,
   ]);
 
   const flags = form.watch('flags');
