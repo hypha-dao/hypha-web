@@ -22,6 +22,7 @@ export const SpaceToSpaceMembershipSelector = ({
 
   const { filteredSpaces } = useFilterSpacesListWithDiscoverability({
     spaces: spaceOptions,
+    useGeneralState: true,
   });
 
   useEffect(() => {

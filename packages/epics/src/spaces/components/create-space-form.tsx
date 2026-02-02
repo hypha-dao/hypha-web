@@ -235,6 +235,7 @@ export const SpaceForm = ({
   const { filteredSpaces: filteredOrganisationSpaces } =
     useFilterSpacesListWithDiscoverability({
       spaces: organisationSpaces ?? [],
+      useGeneralState: true,
     });
 
   const parentOptions = React.useMemo((): ParentOption[] => {

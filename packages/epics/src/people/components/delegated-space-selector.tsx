@@ -22,6 +22,7 @@ export const DelegatedSpaceSelector = ({
 
   const { filteredSpaces } = useFilterSpacesListWithDiscoverability({
     spaces,
+    useGeneralState: true,
   });
 
   const spaceOptions = useMemo(
