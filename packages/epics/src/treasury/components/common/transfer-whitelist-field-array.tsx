@@ -49,6 +49,7 @@ export const TransferWhitelistFieldArray = ({
 
   const { filteredSpaces } = useFilterSpacesListWithDiscoverability({
     spaces,
+    useGeneralState: true,
   });
 
   const memberOptions = useMemo(

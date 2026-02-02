@@ -42,10 +42,12 @@ export const SpaceWithNumberOfMonthsField = ({
 
   const { filteredSpaces } = useFilterSpacesListWithDiscoverability({
     spaces,
+    useGeneralState: true,
   });
   const { filteredSpaces: filteredOrganisationSpaces } =
     useFilterSpacesListWithDiscoverability({
       spaces: organisationSpaces,
+      useGeneralState: true,
     });
 
   useEffect(() => {

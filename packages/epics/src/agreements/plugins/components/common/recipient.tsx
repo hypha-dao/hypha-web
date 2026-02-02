@@ -43,6 +43,7 @@ export const Recipient = ({
 
   const { filteredSpaces } = useFilterSpacesListWithDiscoverability({
     spaces,
+    useGeneralState: true,
   });
 
   useEffect(() => {
