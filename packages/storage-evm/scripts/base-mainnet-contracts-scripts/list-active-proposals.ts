@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const PROPOSALS = '0x001bA7a00a259Fb12d7936455e292a60FC2bef14';
-const SPACE_ID = 241;
+const SPACE_ID = 658;
 
 const abi = [
   'function proposalCounter() view returns (uint256)',

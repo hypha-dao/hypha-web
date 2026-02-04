@@ -517,12 +517,12 @@ describe('DAOSpaceFactoryImplementation', function () {
         0,
         true,
         false, // fixedMaxSupply
-        true,  // autoMinting
-        0,     // priceInUSD
+        true, // autoMinting
+        0, // priceInUSD
         false, // useTransferWhitelist
         false, // useReceiveWhitelist
-        [],    // initialTransferWhitelist
-        [],    // initialReceiveWhitelist
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
       await tx1.wait();
 
@@ -531,22 +531,20 @@ describe('DAOSpaceFactoryImplementation', function () {
       expect(tokensAfterFirst.length).to.equal(1);
 
       // Deploy second token
-      const tx2 = await regularTokenFactory
-        .connect(executorSigner)
-        .deployToken(
-          spaceId,
-          'Second Token',
-          'SECOND',
-          ethers.parseUnits('1000', 18),
-          false,
-          false, // fixedMaxSupply
-          true,  // autoMinting
-          0,     // priceInUSD
-          false, // useTransferWhitelist
-          false, // useReceiveWhitelist
-          [],    // initialTransferWhitelist
-          [],    // initialReceiveWhitelist
-        );
+      const tx2 = await regularTokenFactory.connect(executorSigner).deployToken(
+        spaceId,
+        'Second Token',
+        'SECOND',
+        ethers.parseUnits('1000', 18),
+        false,
+        false, // fixedMaxSupply
+        true, // autoMinting
+        0, // priceInUSD
+        false, // useTransferWhitelist
+        false, // useReceiveWhitelist
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
+      );
       await tx2.wait();
 
       // Deploy third token
@@ -557,12 +555,12 @@ describe('DAOSpaceFactoryImplementation', function () {
         0,
         true,
         false, // fixedMaxSupply
-        true,  // autoMinting
-        0,     // priceInUSD
+        true, // autoMinting
+        0, // priceInUSD
         false, // useTransferWhitelist
         false, // useReceiveWhitelist
-        [],    // initialTransferWhitelist
-        [],    // initialReceiveWhitelist
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
       await tx3.wait();
 
@@ -624,11 +622,37 @@ describe('DAOSpaceFactoryImplementation', function () {
       // Deploy two tokens
       void (await regularTokenFactory
         .connect(executorSigner)
-        .deployToken(spaceId, 'Token A', 'TKNA', 0, true, false, true, 0, false, false, [], []));
+        .deployToken(
+          spaceId,
+          'Token A',
+          'TKNA',
+          0,
+          true,
+          false,
+          true,
+          0,
+          false,
+          false,
+          [],
+          [],
+        ));
 
       void (await regularTokenFactory
         .connect(executorSigner)
-        .deployToken(spaceId, 'Token B', 'TKNB', 0, true, false, true, 0, false, false, [], []));
+        .deployToken(
+          spaceId,
+          'Token B',
+          'TKNB',
+          0,
+          true,
+          false,
+          true,
+          0,
+          false,
+          false,
+          [],
+          [],
+        ));
 
       // Should return array with 2 addresses
       const finalResult = await regularTokenFactory.getSpaceToken(spaceId);
@@ -688,12 +712,12 @@ describe('DAOSpaceFactoryImplementation', function () {
         0, // maxSupply (0 = unlimited)
         true, // transferable
         false, // fixedMaxSupply
-        true,  // autoMinting
-        0,     // priceInUSD
+        true, // autoMinting
+        0, // priceInUSD
         false, // useTransferWhitelist
         false, // useReceiveWhitelist
-        [],    // initialTransferWhitelist
-        [],    // initialReceiveWhitelist
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
 
       const receipt = await tx.wait();
@@ -778,12 +802,12 @@ describe('DAOSpaceFactoryImplementation', function () {
         0, // maxSupply (0 = unlimited)
         true, // transferable
         false, // fixedMaxSupply
-        true,  // autoMinting
-        0,     // priceInUSD
+        true, // autoMinting
+        0, // priceInUSD
         false, // useTransferWhitelist
         false, // useReceiveWhitelist
-        [],    // initialTransferWhitelist
-        [],    // initialReceiveWhitelist
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
 
       const receipt = await tx.wait();
@@ -879,12 +903,12 @@ describe('DAOSpaceFactoryImplementation', function () {
         0, // maxSupply (0 = unlimited)
         true, // transferable
         false, // fixedMaxSupply
-        true,  // autoMinting
-        0,     // priceInUSD
+        true, // autoMinting
+        0, // priceInUSD
         false, // useTransferWhitelist
         false, // useReceiveWhitelist
-        [],    // initialTransferWhitelist
-        [],    // initialReceiveWhitelist
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
 
       const receipt = await tx.wait();
@@ -1169,12 +1193,12 @@ describe('DAOSpaceFactoryImplementation', function () {
           0, // maxSupply (0 = unlimited)
           true, // transferable
           false, // fixedMaxSupply
-          true,  // autoMinting
-          0,     // priceInUSD
+          true, // autoMinting
+          0, // priceInUSD
           false, // useTransferWhitelist
           false, // useReceiveWhitelist
-          [],    // initialTransferWhitelist
-          [],    // initialReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
           decayPercentage,
           decayInterval,
         );
@@ -1269,12 +1293,12 @@ describe('DAOSpaceFactoryImplementation', function () {
           0, // maxSupply
           true, // transferable
           false, // fixedMaxSupply
-          true,  // autoMinting
-          0,     // priceInUSD
+          true, // autoMinting
+          0, // priceInUSD
           false, // useTransferWhitelist
           false, // useReceiveWhitelist
-          [],    // initialTransferWhitelist
-          [],    // initialReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
           decayPercentage,
           decayInterval,
         );
@@ -1412,12 +1436,12 @@ describe('DAOSpaceFactoryImplementation', function () {
           0, // maxSupply
           true, // transferable
           false, // fixedMaxSupply
-          true,  // autoMinting
-          0,     // priceInUSD
+          true, // autoMinting
+          0, // priceInUSD
           false, // useTransferWhitelist
           false, // useReceiveWhitelist
-          [],    // initialTransferWhitelist
-          [],    // initialReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
           decayPercentage,
           decayInterval,
         );
@@ -1600,12 +1624,12 @@ describe('DAOSpaceFactoryImplementation', function () {
           0, // maxSupply
           true, // transferable
           false, // fixedMaxSupply
-          true,  // autoMinting
-          0,     // priceInUSD
+          true, // autoMinting
+          0, // priceInUSD
           false, // useTransferWhitelist
           false, // useReceiveWhitelist
-          [],    // initialTransferWhitelist
-          [],    // initialReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
           decayPercentage,
           decayInterval,
         );
@@ -1933,12 +1957,12 @@ describe('DAOSpaceFactoryImplementation', function () {
           0, // maxSupply
           true, // transferable
           false, // fixedMaxSupply
-          true,  // autoMinting
-          0,     // priceInUSD
+          true, // autoMinting
+          0, // priceInUSD
           false, // useTransferWhitelist
           false, // useReceiveWhitelist
-          [],    // initialTransferWhitelist
-          [],    // initialReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
           decayPercentage,
           decayInterval,
         );
@@ -2388,12 +2412,12 @@ describe('DAOSpaceFactoryImplementation', function () {
           0, // maxSupply (0 = unlimited)
           true, // transferable
           false, // fixedMaxSupply
-          true,  // autoMinting
-          0,     // priceInUSD
+          true, // autoMinting
+          0, // priceInUSD
           false, // useTransferWhitelist
           false, // useReceiveWhitelist
-          [],    // initialTransferWhitelist
-          [],    // initialReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
         ]);
 
       // Create the proposal
@@ -2500,12 +2524,12 @@ describe('DAOSpaceFactoryImplementation', function () {
         0, // maxSupply (0 = unlimited)
         true, // transferable
         false, // fixedMaxSupply
-        true,  // autoMinting
-        0,     // priceInUSD
+        true, // autoMinting
+        0, // priceInUSD
         false, // useTransferWhitelist
         false, // useReceiveWhitelist
-        [],    // initialTransferWhitelist
-        [],    // initialReceiveWhitelist
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
 
       const receipt = await tx.wait();
@@ -2613,12 +2637,12 @@ describe('DAOSpaceFactoryImplementation', function () {
           0, // maxSupply
           true, // transferable
           false, // fixedMaxSupply
-          true,  // autoMinting
-          0,     // priceInUSD
+          true, // autoMinting
+          0, // priceInUSD
           false, // useTransferWhitelist
           false, // useReceiveWhitelist
-          [],    // initialTransferWhitelist
-          [],    // initialReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
           decayPercentage,
           decayInterval,
         );
@@ -2756,7 +2780,20 @@ describe('DAOSpaceFactoryImplementation', function () {
       // Deploy token with max supply
       const tx = await regularTokenFactory
         .connect(executorSigner)
-        .deployToken(spaceId, tokenName, tokenSymbol, maxSupply, true, true, true, 0, false, false, [], []);
+        .deployToken(
+          spaceId,
+          tokenName,
+          tokenSymbol,
+          maxSupply,
+          true,
+          true,
+          true,
+          0,
+          false,
+          false,
+          [],
+          [],
+        );
 
       const receipt = await tx.wait();
 
@@ -2859,12 +2896,12 @@ describe('DAOSpaceFactoryImplementation', function () {
         0, // maxSupply
         false, // non-transferable
         false, // fixedMaxSupply
-        true,  // autoMinting
-        0,     // priceInUSD
+        true, // autoMinting
+        0, // priceInUSD
         false, // useTransferWhitelist
         false, // useReceiveWhitelist
-        [],    // initialTransferWhitelist
-        [],    // initialReceiveWhitelist
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
 
       const receipt = await tx.wait();
@@ -3030,12 +3067,12 @@ describe('DAOSpaceFactoryImplementation', function () {
             'OWN',
             0, // maxSupply
             false, // fixedMaxSupply
-            true,  // autoMinting
-            0,     // priceInUSD
+            true, // autoMinting
+            0, // priceInUSD
             false, // useTransferWhitelist
             false, // useReceiveWhitelist
-            [],    // initialTransferWhitelist
-            [],    // initialReceiveWhitelist
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
           );
 
         const receipt = await deployTx.wait();
@@ -3119,12 +3156,12 @@ describe('DAOSpaceFactoryImplementation', function () {
           'MTKN',
           0, // maxSupply
           false, // fixedMaxSupply
-          true,  // autoMinting
-          0,     // priceInUSD
+          true, // autoMinting
+          0, // priceInUSD
           false, // useTransferWhitelist
           false, // useReceiveWhitelist
-          [],    // initialTransferWhitelist
-          [],    // initialReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
         );
 
       const receipt = await deployTx.wait();
@@ -3222,12 +3259,12 @@ describe('DAOSpaceFactoryImplementation', function () {
           'OWNTEST',
           0, // maxSupply
           false, // fixedMaxSupply
-          true,  // autoMinting
-          0,     // priceInUSD
+          true, // autoMinting
+          0, // priceInUSD
           false, // useTransferWhitelist
           false, // useReceiveWhitelist
-          [],    // initialTransferWhitelist
-          [],    // initialReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
         );
 
       const receipt = await deployTx.wait();
@@ -3542,12 +3579,12 @@ describe('DAOSpaceFactoryImplementation', function () {
             0, // No max supply
             true, // transferable
             false, // fixedMaxSupply
-            true,  // autoMinting
-            0,     // priceInUSD
+            true, // autoMinting
+            0, // priceInUSD
             false, // useTransferWhitelist
             false, // useReceiveWhitelist
-            [],    // initialTransferWhitelist
-            [],    // initialReceiveWhitelist
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
             decayPercentage,
             decayInterval,
           ],
@@ -3779,12 +3816,12 @@ describe('DAOSpaceFactoryImplementation', function () {
             0, // No max supply
             true, // transferable
             false, // fixedMaxSupply
-            true,  // autoMinting
-            0,     // priceInUSD
+            true, // autoMinting
+            0, // priceInUSD
             false, // useTransferWhitelist
             false, // useReceiveWhitelist
-            [],    // initialTransferWhitelist
-            [],    // initialReceiveWhitelist
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
             decayPercentage,
             decayInterval,
           ],
@@ -3820,12 +3857,12 @@ describe('DAOSpaceFactoryImplementation', function () {
           0,
           true,
           false, // fixedMaxSupply
-          true,  // autoMinting
-          0,     // priceInUSD
+          true, // autoMinting
+          0, // priceInUSD
           false, // useTransferWhitelist
           false, // useReceiveWhitelist
-          [],    // initialTransferWhitelist
-          [],    // initialReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
           decayPercentage,
           decayInterval,
         );
@@ -4088,12 +4125,12 @@ describe('DAOSpaceFactoryImplementation', function () {
           ethers.parseUnits('1000', 18),
           true,
           false, // fixedMaxSupply
-          true,  // autoMinting
-          0,     // priceInUSD
+          true, // autoMinting
+          0, // priceInUSD
           false, // useTransferWhitelist
           false, // useReceiveWhitelist
-          [],    // initialTransferWhitelist
-          [],    // initialReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
         ]);
 
       await this.daoProposals.connect(this.voter1).createProposal({
@@ -4148,12 +4185,12 @@ describe('DAOSpaceFactoryImplementation', function () {
           ethers.parseUnits('2000', 18),
           false, // Different parameters to avoid conflicts
           false, // fixedMaxSupply
-          true,  // autoMinting
-          0,     // priceInUSD
+          true, // autoMinting
+          0, // priceInUSD
           false, // useTransferWhitelist
           false, // useReceiveWhitelist
-          [],    // initialTransferWhitelist
-          [],    // initialReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
         ]);
 
       await this.daoProposals.connect(this.voter2).createProposal({
@@ -4390,12 +4427,12 @@ describe('DAOSpaceFactoryImplementation', function () {
           ethers.parseUnits('5000', 18),
           true,
           false, // fixedMaxSupply
-          true,  // autoMinting
-          0,     // priceInUSD
+          true, // autoMinting
+          0, // priceInUSD
           false, // useTransferWhitelist
           false, // useReceiveWhitelist
-          [],    // initialTransferWhitelist
-          [],    // initialReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
         ]);
 
       await this.daoProposals.connect(this.voter1).createProposal({
@@ -4504,12 +4541,12 @@ describe('DAOSpaceFactoryImplementation', function () {
           ethers.parseUnits('6000', 18),
           true,
           false, // fixedMaxSupply
-          true,  // autoMinting
-          0,     // priceInUSD
+          true, // autoMinting
+          0, // priceInUSD
           false, // useTransferWhitelist
           false, // useReceiveWhitelist
-          [],    // initialTransferWhitelist
-          [],    // initialReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
         ]);
 
       await this.daoProposals.connect(this.voter1).createProposal({
@@ -4588,12 +4625,12 @@ describe('DAOSpaceFactoryImplementation', function () {
             ethers.parseUnits(`${i}000`, 18),
             true,
             false, // fixedMaxSupply
-            true,  // autoMinting
-            0,     // priceInUSD
+            true, // autoMinting
+            0, // priceInUSD
             false, // useTransferWhitelist
             false, // useReceiveWhitelist
-            [],    // initialTransferWhitelist
-            [],    // initialReceiveWhitelist
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
           ],
         );
 
@@ -4933,12 +4970,12 @@ describe('DAOSpaceFactoryImplementation', function () {
           ethers.parseUnits('1000', 18),
           true,
           false, // fixedMaxSupply
-          true,  // autoMinting
-          0,     // priceInUSD
+          true, // autoMinting
+          0, // priceInUSD
           false, // useTransferWhitelist
           false, // useReceiveWhitelist
-          [],    // initialTransferWhitelist
-          [],    // initialReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
         ]);
 
       await this.daoProposals.connect(this.voter1).createProposal({
@@ -5497,12 +5534,12 @@ describe('DAOSpaceFactoryImplementation', function () {
           0, // maxSupply (0 = unlimited)
           true, // transferable
           false, // fixedMaxSupply
-          true,  // autoMinting
-          0,     // priceInUSD
+          true, // autoMinting
+          0, // priceInUSD
           false, // useTransferWhitelist
           false, // useReceiveWhitelist
-          [],    // initialTransferWhitelist
-          [],    // initialReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
         );
 
       const tokenBDeployTx = await regularTokenFactory
@@ -5514,12 +5551,12 @@ describe('DAOSpaceFactoryImplementation', function () {
           0, // maxSupply (0 = unlimited)
           true, // transferable
           false, // fixedMaxSupply
-          true,  // autoMinting
-          0,     // priceInUSD
+          true, // autoMinting
+          0, // priceInUSD
           false, // useTransferWhitelist
           false, // useReceiveWhitelist
-          [],    // initialTransferWhitelist
-          [],    // initialReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
         );
 
       // Get token addresses from events
@@ -6518,12 +6555,12 @@ describe('DAOSpaceFactoryImplementation', function () {
           'ETT',
           0, // maxSupply
           false, // fixedMaxSupply
-          true,  // autoMinting
-          0,     // priceInUSD
+          true, // autoMinting
+          0, // priceInUSD
           false, // useTransferWhitelist
           false, // useReceiveWhitelist
-          [],    // initialTransferWhitelist
-          [],    // initialReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
         );
 
       const receipt = await deployTx.wait();
@@ -6785,12 +6822,12 @@ describe('DAOSpaceFactoryImplementation', function () {
           'VTT',
           0, // maxSupply
           false, // fixedMaxSupply
-          true,  // autoMinting
-          0,     // priceInUSD
+          true, // autoMinting
+          0, // priceInUSD
           false, // useTransferWhitelist
           false, // useReceiveWhitelist
-          [],    // initialTransferWhitelist
-          [],    // initialReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
         );
 
       const receipt = await deployTx.wait();
