@@ -239,7 +239,7 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
   /**
    * @dev Override mint to ensure tokens can only be minted to space members or the executor
    */
-  function mint(address to, uint256 amount) public override {
+  function mint(address to, uint256 amount) public virtual override {
     require(msg.sender == executor, 'Only executor can mint');
     require(!archived, 'Token is archived');
     require(

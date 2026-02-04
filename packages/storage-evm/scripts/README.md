@@ -234,6 +234,14 @@ npx nx run storage-evm:script ./scripts/ownership-space-token-proxy.deploy.ts --
 
 npx nx run storage-evm:script ./scripts/dao-space-factory.upgrade.ts --network base-mainnet
 
+npx nx run storage-evm:script ./scripts/latam-decaying-space-token.upgrade.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/localscale-ownership-space-token.upgrade.ts --network base-mainnet
+
+
+
+cd /Users/vlad/hypha-web/packages/storage-evm && npx hardhat run scripts/latam-decaying-space-token.upgrade.ts --network base
+
 dao-space-factory.upgrade.ts
 
 ownership-space-token-proxy.deploy.ts
