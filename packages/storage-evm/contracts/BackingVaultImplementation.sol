@@ -29,9 +29,9 @@ interface IBurnableERC20 {
  * All functions use (spaceId, spaceToken) as the natural key.
  * Redeemed community tokens are permanently burned, reducing total supply.
  *
- * Minimal setup (single proposal):
- *   addBackingToken(spaceId, spaceTokenAddr, usdcAddr, 2_000_000)
- *   → vault auto-created + USDC added as backing at 2 USDC per token
+ * Minimal setup (single proposal, multiple backing tokens at once):
+ *   addBackingToken(spaceId, spaceToken, [usdc, hypha], [2e6, 500e15], [50_000e6, 10_000e18], 2000)
+ *   → vault auto-created + USDC & HYPHA added + funded + 20% min backing
  *
  * Exchange rate: backing token base units per 1e18 space token base units
  *   Example: 1 space token = 2 USDC  → exchangeRate = 2_000_000
@@ -76,50 +76,90 @@ contract BackingVaultImplementation is
   // ============================================================
 
   /**
-   * @dev Add a backing token to a space token's vault.
-   * If no vault exists yet for this (spaceId, spaceToken), it is auto-created.
+   * @dev Add one or more backing tokens to a space token's vault, optionally
+   * funding the reserve for each in the same transaction.
    *
-   * This is the only function needed to set up a vault — one proposal does it all.
+   * If no vault exists yet for this (spaceId, spaceToken), it is auto-created.
+   * Each fundingAmounts[i] > 0 deposits that amount; pass 0 to skip funding.
+   * minimumBackingBps > 0 sets a minimum backing floor (only on vault creation).
+   *
+   * Full setup (single proposal, multiple tokens):
+   *   addBackingToken(
+   *     spaceId, tokenAddr,
+   *     [usdc, hypha],            // backing tokens
+   *     [2_000_000, 500e15],      // exchange rates
+   *     [50_000e6, 10_000e18],    // funding amounts
+   *     2000                      // 20% minimum backing
+   *   )
+   *
+   * Add-only (fund separately later):
+   *   addBackingToken(spaceId, tokenAddr, [usdc], [2_000_000], [0], 0)
    *
    * @param spaceId The space this token belongs to
    * @param spaceToken The community/space token users will send IN
-   * @param backingToken The reserve token users can redeem for (e.g., USDC, HYPHA)
-   * @param exchangeRate Backing token base units per 1e18 space token base units
+   * @param backingTokens The reserve tokens users can redeem for
+   * @param exchangeRates Backing token base units per 1e18 space token base units (per token)
+   * @param fundingAmounts Amount of each backing token to deposit (0 = skip funding)
+   * @param minimumBackingBps Minimum backing % in basis points (0 = no floor, only applied on vault creation)
    * @return vaultId The internal vault ID (for reference)
    */
   function addBackingToken(
     uint256 spaceId,
     address spaceToken,
-    address backingToken,
-    uint256 exchangeRate
-  ) external returns (uint256 vaultId) {
+    address[] calldata backingTokens,
+    uint256[] calldata exchangeRates,
+    uint256[] calldata fundingAmounts,
+    uint256 minimumBackingBps
+  ) external nonReentrant returns (uint256 vaultId) {
     _requireExecutorOrOwner(spaceId);
 
     require(spaceToken != address(0), 'Invalid space token');
-    require(backingToken != address(0), 'Invalid backing token');
+    require(backingTokens.length > 0, 'No backing tokens specified');
     require(
-      backingToken != spaceToken,
-      'Backing token cannot be the space token'
+      backingTokens.length == exchangeRates.length &&
+        backingTokens.length == fundingAmounts.length,
+      'Array lengths must match'
     );
-    require(exchangeRate > 0, 'Exchange rate must be > 0');
+    require(
+      minimumBackingBps <= BASIS_POINTS,
+      'Min backing cannot exceed 100%'
+    );
 
     // Auto-create vault if it doesn't exist
-    vaultId = _getOrCreateVault(spaceId, spaceToken);
+    vaultId = _getOrCreateVault(spaceId, spaceToken, minimumBackingBps);
 
-    // Add the backing token
-    require(
-      !backingConfigs[vaultId][backingToken].enabled,
-      'Backing token already added'
-    );
+    for (uint256 i = 0; i < backingTokens.length; i++) {
+      address bt = backingTokens[i];
 
-    backingConfigs[vaultId][backingToken] = BackingTokenConfig({
-      exchangeRate: exchangeRate,
-      enabled: true
-    });
+      require(bt != address(0), 'Invalid backing token');
+      require(bt != spaceToken, 'Backing token cannot be the space token');
+      require(exchangeRates[i] > 0, 'Exchange rate must be > 0');
+      require(
+        !backingConfigs[vaultId][bt].enabled,
+        'Backing token already added'
+      );
 
-    backingTokenList[vaultId].push(backingToken);
+      backingConfigs[vaultId][bt] = BackingTokenConfig({
+        exchangeRate: exchangeRates[i],
+        enabled: true
+      });
 
-    emit BackingTokenAdded(vaultId, backingToken, exchangeRate);
+      backingTokenList[vaultId].push(bt);
+
+      emit BackingTokenAdded(vaultId, bt, exchangeRates[i]);
+
+      // Optionally fund the reserve in the same transaction
+      if (fundingAmounts[i] > 0) {
+        IERC20(bt).safeTransferFrom(
+          msg.sender,
+          address(this),
+          fundingAmounts[i]
+        );
+        vaultBackingBalance[vaultId][bt] += fundingAmounts[i];
+
+        emit BackingDeposited(vaultId, msg.sender, bt, fundingAmounts[i]);
+      }
+    }
 
     return vaultId;
   }
@@ -205,6 +245,26 @@ contract BackingVaultImplementation is
     emit MembersOnlyUpdated(vaultId, enabled);
   }
 
+  /**
+   * @dev Update the minimum backing threshold (basis points, 0-10000).
+   * When set > 0, redemptions are blocked if they would cause the aggregate
+   * coverage across ALL backing tokens to fall below this % of remaining supply.
+   */
+  function setMinimumBacking(
+    uint256 spaceId,
+    address spaceToken,
+    uint256 minimumBackingBps
+  ) external {
+    _requireExecutorOrOwner(spaceId);
+    uint256 vaultId = _requireVault(spaceId, spaceToken);
+    require(
+      minimumBackingBps <= BASIS_POINTS,
+      'Min backing cannot exceed 100%'
+    );
+    vaults[vaultId].minimumBackingBps = minimumBackingBps;
+    emit MinimumBackingUpdated(vaultId, minimumBackingBps);
+  }
+
   // ============================================================
   //                    FUNDING (add backing)
   // ============================================================
@@ -274,6 +334,16 @@ contract BackingVaultImplementation is
       'Insufficient backing in reserve'
     );
 
+    // Check aggregate minimum backing threshold (before state changes)
+    // Convert backing leaving the vault to space-token-equivalents
+    uint256 coverageRemoved = (backingOut * 1e18) / btConfig.exchangeRate;
+    _checkMinimumBacking(
+      vaultId,
+      spaceToken,
+      spaceTokenAmount,
+      coverageRemoved
+    );
+
     // Burn the user's space tokens (permanently reduces supply)
     IBurnableERC20(spaceToken).burnFrom(msg.sender, spaceTokenAmount);
 
@@ -330,11 +400,9 @@ contract BackingVaultImplementation is
     }
     require(totalBps == BASIS_POINTS, 'Proportions must sum to 10000');
 
-    // Burn the user's space tokens first (permanently reduces supply)
-    IBurnableERC20(spaceToken).burnFrom(msg.sender, spaceTokenAmount);
-
-    // Distribute each backing token
+    // Pre-compute all amounts and validate before state changes
     uint256[] memory backingAmounts = new uint256[](backingTokens.length);
+    uint256 totalCoverageRemoved = 0;
 
     for (uint256 i = 0; i < backingTokens.length; i++) {
       address bt = backingTokens[i];
@@ -354,10 +422,27 @@ contract BackingVaultImplementation is
         'Insufficient backing in reserve'
       );
 
-      vaultBackingBalance[vaultId][bt] -= backingOut;
-      IERC20(bt).safeTransfer(msg.sender, backingOut);
+      // Accumulate coverage being removed (in space-token-equivalents)
+      totalCoverageRemoved += (backingOut * 1e18) / btConfig.exchangeRate;
 
       backingAmounts[i] = backingOut;
+    }
+
+    // Check aggregate minimum backing threshold once for all tokens
+    _checkMinimumBacking(
+      vaultId,
+      spaceToken,
+      spaceTokenAmount,
+      totalCoverageRemoved
+    );
+
+    // Burn the user's space tokens (permanently reduces supply)
+    IBurnableERC20(spaceToken).burnFrom(msg.sender, spaceTokenAmount);
+
+    // Distribute each backing token
+    for (uint256 i = 0; i < backingTokens.length; i++) {
+      vaultBackingBalance[vaultId][backingTokens[i]] -= backingAmounts[i];
+      IERC20(backingTokens[i]).safeTransfer(msg.sender, backingAmounts[i]);
     }
 
     emit RedeemedMulti(
@@ -475,11 +560,13 @@ contract BackingVaultImplementation is
 
   /**
    * @dev Get existing vault or create a new one.
-   * Called by addBackingToken — this is the only way a vault is created.
+   * Called by addBackingToken — the only way a vault is created.
+   * @param minimumBackingBps Only applied when creating a new vault; ignored if vault exists.
    */
   function _getOrCreateVault(
     uint256 spaceId,
-    address spaceToken
+    address spaceToken,
+    uint256 minimumBackingBps
   ) internal returns (uint256 vaultId) {
     bytes32 key = _getVaultKey(spaceId, spaceToken);
     vaultId = vaultKeys[key];
@@ -492,13 +579,18 @@ contract BackingVaultImplementation is
         spaceId: spaceId,
         spaceToken: spaceToken,
         redeemEnabled: true, // sensible default: ready to use immediately
-        membersOnly: false // sensible default: open to all token holders
+        membersOnly: false, // sensible default: open to all token holders
+        minimumBackingBps: minimumBackingBps
       });
 
       vaultKeys[key] = vaultId;
       spaceVaultIds[spaceId].push(vaultId);
 
       emit VaultCreated(vaultId, spaceId, spaceToken);
+
+      if (minimumBackingBps > 0) {
+        emit MinimumBackingUpdated(vaultId, minimumBackingBps);
+      }
     }
   }
 
@@ -512,6 +604,66 @@ contract BackingVaultImplementation is
     bytes32 key = _getVaultKey(spaceId, spaceToken);
     vaultId = vaultKeys[key];
     require(vaultId != 0, 'Vault does not exist');
+  }
+
+  /**
+   * @dev Check that a redemption won't breach the minimum backing threshold.
+   * Computes AGGREGATE coverage across ALL backing tokens by converting each
+   * token's reserve to space-token-equivalents via its exchange rate:
+   *
+   *   coverage[i] = balance[i] * 1e18 / exchangeRate[i]
+   *   totalCoverage = sum(coverage[i])
+   *
+   * After subtracting the coverage being removed, the remaining coverage must
+   * still be >= minimumBackingBps % of the remaining space token supply.
+   *
+   * @param vaultId Internal vault ID
+   * @param spaceToken The space token (to read totalSupply)
+   * @param spaceTokensBurned How many space tokens will be burned in this redemption
+   * @param coverageRemoved Space-token-equivalent value of backing tokens leaving the vault
+   */
+  function _checkMinimumBacking(
+    uint256 vaultId,
+    address spaceToken,
+    uint256 spaceTokensBurned,
+    uint256 coverageRemoved
+  ) internal view {
+    uint256 minBps = vaults[vaultId].minimumBackingBps;
+    if (minBps == 0) return; // No minimum set — all redemptions allowed
+
+    uint256 currentSupply = IERC20(spaceToken).totalSupply();
+    uint256 remainingSupply = currentSupply - spaceTokensBurned;
+
+    if (remainingSupply == 0) return; // All tokens redeemed — no floor to enforce
+
+    // Sum coverage across ALL backing tokens
+    uint256 totalCoverage = _computeTotalCoverage(vaultId);
+    uint256 remainingCoverage = totalCoverage - coverageRemoved;
+
+    // remainingCoverage / remainingSupply >= minBps / BASIS_POINTS
+    // Rearranged to avoid division:
+    require(
+      remainingCoverage * BASIS_POINTS >= remainingSupply * minBps,
+      'Redemption would breach minimum backing threshold'
+    );
+  }
+
+  /**
+   * @dev Sum the space-token-equivalent coverage of all backing tokens in a vault.
+   * Each backing token's balance is converted: coverage = balance * 1e18 / exchangeRate
+   */
+  function _computeTotalCoverage(
+    uint256 vaultId
+  ) internal view returns (uint256 totalCoverage) {
+    address[] storage tokens = backingTokenList[vaultId];
+    for (uint256 i = 0; i < tokens.length; i++) {
+      address bt = tokens[i];
+      uint256 balance = vaultBackingBalance[vaultId][bt];
+      uint256 rate = backingConfigs[vaultId][bt].exchangeRate;
+      if (balance > 0 && rate > 0) {
+        totalCoverage += (balance * 1e18) / rate;
+      }
+    }
   }
 
   /**

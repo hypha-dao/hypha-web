@@ -32,37 +32,41 @@ Think of it like a currency reserve: the Space says _"our token is worth somethi
   Member sends in 10 DAO_TOKEN, picks USDC → gets 20 USDC
 ```
 
-**It's one-way only.** Members send community tokens IN (which are **burned permanently**) and get backing tokens OUT. They don't buy community tokens through the vault — those come from the Space's normal token distribution (minting, proposals, payments, etc.).
+**It's one-way only.** Members send community tokens IN (which are **burned permanently**) and get backing tokens OUT.
 
 ---
 
 ## How It Gets Set Up
 
-### Step 1: Space passes a proposal to add a backing token
+### One call does it all
 
-This is **the only step needed**. One proposal, one transaction:
+Everything happens through `addBackingToken`. A single proposal can create the vault, add **multiple** backing tokens with their exchange rates, fund each reserve, and set a minimum backing floor — all in one transaction:
 
-> _"Back our token with USDC at a rate of 2 USDC per token"_
+> _"Back our token with USDC at 2 USDC/token (deposit 50k) and HYPHA at 0.5 HYPHA/token (deposit 10k), with a 20% minimum backing floor"_
 
-Behind the scenes, this single call creates the vault automatically and adds USDC as a backing option.
+```
+addBackingToken(
+  spaceId, spaceToken,
+  [usdc, hypha],            // backing tokens
+  [2_000_000, 500e15],      // exchange rates
+  [50_000e6, 10_000e18],    // funding amounts (0 = skip)
+  2000                      // 20% minimum backing
+)
+```
 
-### Step 2: Fund the reserve
+Funding and minimum backing are optional — pass `0` to skip:
 
-Someone (the Space, a funder, a grant, anyone) deposits the actual backing tokens into the reserve:
+- **Full setup**: multiple tokens + funded + minimum floor, all in one proposal
+- **Add only**: `addBackingToken(spaceId, token, [usdc], [rate], [0], 0)` → just add USDC, fund later via `addBacking`
+- **Add later**: call `addBackingToken` again to add more backing tokens to an existing vault
 
-> _"Deposit 50,000 USDC into the vault reserve"_
+### After setup: Members can redeem
 
-### Step 3: Members can redeem
+Any token holder can now send their community tokens to the vault and receive their chosen backing token(s).
 
-Any token holder can now send their community tokens to the vault and receive USDC (or whichever backing token they choose).
+### Top up the reserve later
 
-### Optional: Add more backing tokens
-
-The Space can pass additional proposals to add other assets:
-
-> _"Also back our token with HYPHA at 0.5 HYPHA per token"_ > _"Also back our token with WETH at 0.001 WETH per token"_
-
-Now members have **a choice** when redeeming — they pick which asset they want.
+Anyone can deposit more backing tokens into the reserve at any time using `addBacking` — the Space, external donors, grants, etc.
 
 ---
 
@@ -87,15 +91,16 @@ _"I want to redeem 100 DAO_TOKEN — 60% in USDC and 40% in HYPHA"_
 
 ## Who Can Do What
 
-| Action                                  | Who                                                           |
-| --------------------------------------- | ------------------------------------------------------------- |
-| Add a backing token + set exchange rate | Space (via proposal through the executor)                     |
-| Remove a backing token                  | Space (via proposal)                                          |
-| Change the exchange rate                | Space (via proposal)                                          |
-| Fund the reserve with backing tokens    | **Anyone** (donors, grants, the Space itself)                 |
-| Redeem community tokens for backing     | **Any token holder** (optionally restricted to Space members) |
-| Withdraw reserves                       | Space (via proposal)                                          |
-| Pause/unpause redemptions               | Space (via proposal)                                          |
+| Action                                                 | Who                                                           |
+| ------------------------------------------------------ | ------------------------------------------------------------- |
+| Add backing token (+ optional funding & minimum floor) | Space (via proposal through the executor)                     |
+| Remove a backing token                                 | Space (via proposal)                                          |
+| Change the exchange rate                               | Space (via proposal)                                          |
+| Change the minimum backing threshold                   | Space (via proposal)                                          |
+| Fund the reserve with backing tokens                   | **Anyone** (donors, grants, the Space itself)                 |
+| Redeem community tokens for backing                    | **Any token holder** (optionally restricted to Space members) |
+| Withdraw reserves                                      | Space (via proposal)                                          |
+| Pause/unpause redemptions                              | Space (via proposal)                                          |
 
 ---
 
@@ -117,6 +122,23 @@ When a member redeems, their community tokens are **burned** — permanently rem
 
 If the reserve runs low, redemptions will fail until more backing is added. The vault never mints or creates backing tokens — it only holds and distributes what's been deposited.
 
+### Minimum backing threshold
+
+The Space can set a **minimum backing percentage** when creating the vault (via `addBackingToken`) or update it later (via `setMinimumBacking`). This is a safety floor that prevents reserves from being drained too low.
+
+**How it works:** Before each redemption, the contract computes the **aggregate coverage** across ALL backing tokens. Each token's reserve is converted to "space token equivalents" using its exchange rate, then summed. If the total coverage after the redemption would fall below the minimum percentage of the remaining supply, the redemption is blocked.
+
+Example: With a 20% minimum (2000 basis points) and 10,000 tokens outstanding:
+
+- USDC reserve: 6,000 USDC at rate 2 USDC/token → covers 3,000 space tokens
+- HYPHA reserve: 2,500 HYPHA at rate 0.5 HYPHA/token → covers 5,000 space tokens
+- **Total coverage = 8,000 space tokens** (80% of 10,000 supply)
+- Required coverage = 20% × 10,000 = 2,000 space tokens
+- A member can redeem up to ~6,000 space tokens worth before hitting the floor
+- Even if USDC runs low, HYPHA coverage still counts toward the total
+
+The minimum is set in basis points (0–10000, where 10000 = 100%). A value of 0 means no floor (unlimited redemptions as long as reserves last).
+
 ### Optional: Members-only mode
 
 The Space can restrict redemptions to Space members only (requires membership in the Space to redeem). By default, any token holder can redeem.
@@ -127,33 +149,31 @@ The Space can restrict redemptions to Space members only (requires membership in
 
 1. **Space "GreenDAO" creates a community token** called GREEN via the normal token factory
 
-2. **GreenDAO passes a proposal**: _"Add USDC backing at 1 USDC per GREEN token"_
+2. **GreenDAO passes a single proposal**: _"Back GREEN with USDC at 1 USDC/token (deposit $10,000) and HYPHA at 2 HYPHA/token (deposit 5,000 HYPHA), minimum 20% backing"_
 
-   - Backing Vault is auto-created
-   - USDC is added as a backing option at rate 1:1
+   - Backing Vault is auto-created with 20% minimum backing
+   - USDC added at rate 1:1, 10,000 USDC deposited
+   - HYPHA added at rate 2:1, 5,000 HYPHA deposited
+   - All in one transaction
 
-3. **GreenDAO receives a $10,000 grant** and deposits it into the vault reserve
+3. **Reserve now holds**: 10,000 USDC + 5,000 HYPHA
 
-   - Reserve now holds 10,000 USDC
-
-4. **GreenDAO passes another proposal**: _"Also add HYPHA backing at 2 HYPHA per GREEN token"_
-
-   - HYPHA is now a second redemption option
-
-5. **A HYPHA holder donates 5,000 HYPHA** to the GreenDAO vault
-
-   - Reserve now holds: 10,000 USDC + 5,000 HYPHA
-
-6. **Alice holds 50 GREEN tokens** and wants to cash out
+4. **Alice holds 50 GREEN tokens** and wants to cash out
 
    - She redeems 50 GREEN for USDC → receives 50 USDC
    - Reserve now: 9,950 USDC + 5,000 HYPHA
 
-7. **Bob holds 100 GREEN tokens** and wants a mix
+5. **Bob holds 100 GREEN tokens** and wants a mix
 
    - He redeems 100 GREEN: 70% USDC + 30% HYPHA
    - Gets: 70 USDC + 60 HYPHA
    - Reserve now: 9,880 USDC + 4,940 HYPHA
 
-8. **GreenDAO gets another grant** and tops up the reserve
+6. **Reserve gets low** — the 20% minimum kicks in
+
+   - The combined coverage across USDC + HYPHA (converted to space-token-equivalents) approaches 20% of remaining supply
+   - Once aggregate coverage would drop below 20%, ALL redemptions are blocked — regardless of which backing token is chosen
+   - GreenDAO can deposit more of any backing token to restore coverage and re-enable redemptions
+
+7. **GreenDAO gets another grant** and tops up the reserve
    - The cycle continues...

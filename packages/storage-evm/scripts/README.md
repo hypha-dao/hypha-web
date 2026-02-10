@@ -216,6 +216,16 @@ npx nx run storage-evm:script ./scripts/upgrade-multiple-tokens.ts --network bas
 npx nx run storage-evm:script ./scripts/upgrade-multiple-tokens.ts --network base-mainnet
 
 npx nx run storage-evm:script ./scripts/set-transfer-helper-multiple-tokens.ts --network base-mainnet
+
+npx hardhat run scripts/hypha-energy-credit.upgrade.ts --network base
+
+npx nx run storage-evm:script ./scripts/hypha-energy-credit.upgrade.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/hypha-ownership-token.upgrade.ts --network base-mainnet
+
+
+npx hardhat run scripts/hypha-ownership-token.upgrade.ts --network base
+
 ```
 
 ### Upgrade DAO Proposals
