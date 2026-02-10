@@ -9,6 +9,7 @@ interface IBackingVault {
     address spaceToken; // The community/space token users burn to redeem
     bool redeemEnabled; // Can users redeem space tokens for backing?
     bool membersOnly; // Restrict redemption to space members only?
+    uint256 minimumBackingBps; // Minimum backing % (basis points, 0-10000) required for redemptions
   }
 
   // Per backing token configuration within a vault
@@ -23,13 +24,15 @@ interface IBackingVault {
     address _spacesContract
   ) external;
 
-  // ── Primary entry point: adds a backing token (auto-creates vault if needed) ──
+  // ── Primary entry point: add backing tokens (auto-creates vault if needed) ──
 
   function addBackingToken(
     uint256 spaceId,
     address spaceToken,
-    address backingToken,
-    uint256 exchangeRate
+    address[] calldata backingTokens,
+    uint256[] calldata exchangeRates,
+    uint256[] calldata fundingAmounts,
+    uint256 minimumBackingBps
   ) external returns (uint256 vaultId);
 
   // ── Vault config (executor only) ──
@@ -57,6 +60,12 @@ interface IBackingVault {
     uint256 spaceId,
     address spaceToken,
     bool enabled
+  ) external;
+
+  function setMinimumBacking(
+    uint256 spaceId,
+    address spaceToken,
+    uint256 minimumBackingBps
   ) external;
 
   // ── Funding (anyone can add backing) ──
@@ -191,5 +200,9 @@ interface IBackingVault {
 
   event RedeemEnabledUpdated(uint256 indexed vaultId, bool enabled);
   event MembersOnlyUpdated(uint256 indexed vaultId, bool enabled);
+  event MinimumBackingUpdated(
+    uint256 indexed vaultId,
+    uint256 minimumBackingBps
+  );
 }
 
