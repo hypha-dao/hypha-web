@@ -68,7 +68,7 @@ interface IBackingVault {
     uint256 minimumBackingBps
   ) external;
 
-  // ── Funding (anyone can add backing) ──
+  // ── Funding (executor only) ──
 
   function addBacking(
     uint256 spaceId,

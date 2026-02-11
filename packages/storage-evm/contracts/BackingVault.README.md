@@ -66,7 +66,7 @@ Any token holder can now send their community tokens to the vault and receive th
 
 ### Top up the reserve later
 
-Anyone can deposit more backing tokens into the reserve at any time using `addBacking` — the Space, external donors, grants, etc.
+The Space can deposit more backing tokens into the reserve at any time via `addBacking` (requires a proposal through the executor).
 
 ---
 
@@ -97,7 +97,7 @@ _"I want to redeem 100 DAO_TOKEN — 60% in USDC and 40% in HYPHA"_
 | Remove a backing token                                 | Space (via proposal)                                          |
 | Change the exchange rate                               | Space (via proposal)                                          |
 | Change the minimum backing threshold                   | Space (via proposal)                                          |
-| Fund the reserve with backing tokens                   | **Anyone** (donors, grants, the Space itself)                 |
+| Fund the reserve with backing tokens                   | Space (via proposal)                                          |
 | Redeem community tokens for backing                    | **Any token holder** (optionally restricted to Space members) |
 | Withdraw reserves                                      | Space (via proposal)                                          |
 | Pause/unpause redemptions                              | Space (via proposal)                                          |
@@ -173,7 +173,7 @@ The Space can restrict redemptions to Space members only (requires membership in
 
    - The combined coverage across USDC + HYPHA (converted to space-token-equivalents) approaches 20% of remaining supply
    - Once aggregate coverage would drop below 20%, ALL redemptions are blocked — regardless of which backing token is chosen
-   - GreenDAO can deposit more of any backing token to restore coverage and re-enable redemptions
+   - GreenDAO can pass a proposal to deposit more of any backing token to restore coverage and re-enable redemptions
 
 7. **GreenDAO gets another grant** and tops up the reserve
    - The cycle continues...

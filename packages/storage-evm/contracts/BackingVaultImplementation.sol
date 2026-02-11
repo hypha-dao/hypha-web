@@ -270,7 +270,7 @@ contract BackingVaultImplementation is
   // ============================================================
 
   /**
-   * @dev Add backing tokens to the vault reserve. Anyone can call this.
+   * @dev Add backing tokens to the vault reserve. Only the space executor or owner can call this.
    * Caller must have approved this contract to spend the backing token.
    */
   function addBacking(
@@ -279,6 +279,7 @@ contract BackingVaultImplementation is
     address backingToken,
     uint256 amount
   ) external nonReentrant {
+    _requireExecutorOrOwner(spaceId);
     uint256 vaultId = _requireVault(spaceId, spaceToken);
 
     require(amount > 0, 'Amount must be > 0');
