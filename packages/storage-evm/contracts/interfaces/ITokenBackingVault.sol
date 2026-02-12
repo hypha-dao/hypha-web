@@ -1,36 +1,36 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-interface IPeggedVault {
+interface ITokenBackingVault {
   // Core vault configuration (one per space token, auto-created)
-  // 1 community token = 1 fiat unit (USD, EUR, JPY, etc.)
   // Redeemed community tokens are burned (permanently removed from supply)
   struct VaultConfig {
     uint256 spaceId;
-    address spaceToken; // The community/space token users burn to redeem
-    bool redeemEnabled; // Can users redeem space tokens for backing?
-    bool membersOnly; // Restrict redemption to space members only?
-    bool whitelistEnabled; // Restrict redemption to whitelisted addresses?
+    address spaceToken;
+    bool redeemEnabled;
+    bool membersOnly; // Restrict to space members
+    bool whitelistEnabled; // Restrict to whitelisted addresses (OR with membersOnly)
     uint256 minimumBackingBps; // Minimum backing % (basis points, 0-10000)
-    uint256 redemptionStartDate; // Unix timestamp from which redemptions are allowed (0 = no restriction)
-    address fiatPriceFeed; // Chainlink fiat/USD price feed (address(0) = USD peg)
+    uint256 redemptionStartDate; // Unix timestamp, 0 = no restriction
+    address fiatPriceFeed; // Chainlink fiat/USD feed, address(0) = USD peg
+    uint256 pegValue; // Fiat value of 1 community token (6 decimals, e.g., 1_000_000 = 1 fiat unit)
   }
 
-  // Per backing token configuration within a vault
-  // No exchangeRate — pricing comes from Chainlink oracles
+  // Per backing token configuration
+  // priceFeed != address(0) → oracle-priced token (USDC, EURC, WETH, WBTC)
+  // priceFeed == address(0) → Hypha token (price read from token.priceInUSD())
   struct BackingTokenConfig {
-    address priceFeed; // Chainlink price feed (e.g., ETH/USD, BTC/USD)
-    uint8 tokenDecimals; // Token decimals (6 for USDC/EURC, 18 for WETH, 8 for WBTC)
+    address priceFeed; // Chainlink feed or address(0) for Hypha tokens
+    uint8 tokenDecimals;
     bool enabled;
   }
 
-  // Initialize the contract
   function initialize(
     address initialOwner,
     address _spacesContract
   ) external;
 
-  // ── Primary entry point: add backing tokens (auto-creates vault if needed) ──
+  // ── Primary entry point ──
 
   function addBackingToken(
     uint256 spaceId,
@@ -40,6 +40,7 @@ interface IPeggedVault {
     uint8[] calldata tokenDecimals,
     uint256[] calldata fundingAmounts,
     address fiatPriceFeed,
+    uint256 pegValue,
     uint256 minimumBackingBps
   ) external returns (uint256 vaultId);
 
@@ -56,6 +57,12 @@ interface IPeggedVault {
     address spaceToken,
     address backingToken,
     address newPriceFeed
+  ) external;
+
+  function setPegValue(
+    uint256 spaceId,
+    address spaceToken,
+    uint256 pegValue
   ) external;
 
   function setRedeemEnabled(
@@ -187,7 +194,8 @@ interface IPeggedVault {
     uint256 indexed vaultId,
     uint256 indexed spaceId,
     address spaceToken,
-    address fiatPriceFeed
+    address fiatPriceFeed,
+    uint256 pegValue
   );
 
   event BackingTokenAdded(
@@ -207,6 +215,8 @@ interface IPeggedVault {
     address oldFeed,
     address newFeed
   );
+
+  event PegValueUpdated(uint256 indexed vaultId, uint256 pegValue);
 
   event BackingDeposited(
     uint256 indexed vaultId,
