@@ -1,9 +1,9 @@
 import { Type, Static } from 'typebox';
 
 export const userVote = Type.Union([
-  Type.Literal('yes'),
-  Type.Literal('no'),
-  Type.Literal('viewed'),
+  Type.String({
+    enum: ['yes', 'no', 'viewed'],
+  }),
   Type.Null(),
 ]);
 

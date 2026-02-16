@@ -1,8 +1,5 @@
 import { Type, Static } from 'typebox';
 
-export const commitment = Type.Union([
-  Type.Literal('one_time'),
-  Type.Literal('recurring'),
-]);
+export const commitment = Type.Enum(['one_time', 'recurring']);
 
 export type Commitment = Static<typeof commitment>;
