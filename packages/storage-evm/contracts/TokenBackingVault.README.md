@@ -2,23 +2,23 @@
 
 ## What Is It?
 
-The Token Backing Vault lets a Space **back its community token with real assets** and define a **fiat-referenced redemption value**. Token holders can redeem their community tokens for the backing assets at a price determined by Chainlink oracles (for external assets) or the token's own on-chain price (for Hypha tokens).
+The Token Backing Vault lets a Space **back its community token with real assets** so members can redeem their tokens for backing assets at any time.
 
-Think of it like: _"Each of our tokens is worth 2 USD of real assets, and members can cash out at any time."_
+The vault reads the token's **price and currency** directly from the token contract — no duplicate configuration needed. If the Space sets their token to "2 EUR" via `setPriceWithCurrency`, the vault automatically knows each token is worth 2 EUR.
 
 ---
 
 ## The Core Idea
 
 ```
-  1 COMMUNITY_TOKEN = pegValue of fiat currency
-  (e.g., 1 token = 2 USD, or 1 token = 150 JPY)
+  1 COMMUNITY_TOKEN = whatever the token's price says
+  (e.g., $2 USD, €1 EUR, ¥150 JPY — set on the token contract)
                         │
                         ▼
         ┌───────────────────────────────┐
         │      Token Backing Vault      │
         │                               │
-        │   Peg: 1 token = $2 USD       │
+        │   Token says: 1 GREEN = $2    │
         │                               │
         │   Reserves:                   │
         │     50,000 USDC  (oracle)     │
@@ -32,9 +32,9 @@ Think of it like: _"Each of our tokens is worth 2 USD of real assets, and member
         └───────────────────────────────┘
                         │
                         ▼
-  Member redeems 100 tokens (= $200 value)
-  Picks WETH → 200 / 2500 = 0.08 WETH
-  Picks HYPHA → 200 / 0.50 = 400 HYPHA
+  Member redeems 100 GREEN (= $200)
+  Picks WETH → $200 / $2,500 = 0.08 WETH
+  Picks HYPHA → $200 / $0.50 = 400 HYPHA
 ```
 
 **It's one-way only.** Members send community tokens IN (which are **burned permanently**) and get backing tokens OUT.
@@ -45,21 +45,57 @@ Think of it like: _"Each of our tokens is worth 2 USD of real assets, and member
 
 ### Oracle-priced tokens (external assets)
 
-**USDC, EURC, WETH, WBTC** — prices come from [Chainlink price feeds](https://docs.chain.link/data-feeds/price-feeds/addresses/?network=base) on Base. The contract reads live prices at redemption time.
-
-When adding these tokens, provide the Chainlink price feed address.
+**USDC, EURC, WETH, WBTC** — prices come from Chainlink price feeds. The contract reads live prices at redemption time.
 
 ### Hypha tokens (community tokens)
 
-**Any token created in Hypha** (RegularSpaceToken, etc.) can also be used as backing. Their price is read from the token contract's `price` field (set by the token's space via proposal).
+**Any token created in Hypha** can also be used as backing. Their price is read from the token contract's `priceInUSD` field (+ `priceCurrencyFeed` for non-USD currencies). The vault converts through USD automatically.
 
-When adding Hypha tokens, pass `address(0)` as the price feed — the contract reads the price directly from the token.
+---
+
+## How Pricing Works
+
+**Everything flows through USD as the common denominator.**
+
+```
+┌─────────────────────────────────────────────────┐
+│                 PRICE CHAIN                      │
+│                                                  │
+│  Space token (GREEN):                            │
+│    token.priceInUSD()        → 2,000,000 (2.00)  │
+│    token.priceCurrencyFeed() → EUR/USD feed      │
+│    → 2 EUR × $1.08/EUR = $2.16 USD per GREEN    │
+│                                                  │
+│  Oracle backing token (WETH):                    │
+│    Chainlink ETH/USD → $2,500 per ETH            │
+│                                                  │
+│  Hypha backing token (HYPHA_EARTH):              │
+│    token.priceInUSD()        → 1,000,000 (1.00)  │
+│    token.priceCurrencyFeed() → CAD/USD feed      │
+│    → 1 CAD × $0.73/CAD = $0.73 USD per HYPHA    │
+│                                                  │
+│  Redemption: 100 GREEN = $216 USD                │
+│    → WETH: $216 / $2,500 = 0.0864 WETH          │
+│    → HYPHA: $216 / $0.73 = 295.89 HYPHA         │
+└─────────────────────────────────────────────────┘
+```
 
 ---
 
 ## How It Gets Set Up
 
-### One call does it all
+### Step 1: Set the token's price (on the token contract)
+
+Before creating a vault, the Space sets the token's price via `setPriceWithCurrency`:
+
+```
+setPriceWithCurrency(2_000_000, eurUsdFeedAddress)
+→ "This token is worth 2 EUR"
+```
+
+Or for USD: `setPriceInUSD(2_000_000)` → "This token is worth $2 USD"
+
+### Step 2: Create the vault (one proposal)
 
 ```
 addBackingToken(
@@ -68,69 +104,17 @@ addBackingToken(
   [usdcFeed, ethFeed, address(0)],    // Chainlink feeds (0 = Hypha token)
   [6, 18, 18],                        // token decimals
   [50_000e6, 10e18, 5_000e18],        // funding (0 = skip)
-  address(0),                         // fiat peg (0 = USD)
-  2_000_000,                          // 1 token = 2 USD (6 decimals)
   2000                                // 20% minimum backing
 )
 ```
 
-**Peg value** (6 decimals): defines how much fiat currency 1 community token is worth.
-- `1_000_000` → 1 token = 1 fiat unit
-- `2_000_000` → 1 token = 2 fiat units
-- `500_000` → 1 token = 0.5 fiat units
-- `150_000_000` → 1 token = 150 fiat units (e.g., 150 JPY)
+That's it. The vault reads the peg value and currency from the token contract automatically.
 
-**Fiat peg selection:**
-- `address(0)` → USD
-- Chainlink EUR/USD feed → EUR
-- Chainlink JPY/USD feed → JPY
-- Any fiat with a Chainlink/USD feed
+### After setup
 
-### After setup: Configure access
-
-The Space can optionally:
-
-- **Set a whitelist** — only approved addresses can redeem
-- **Enable members-only** — only Space members can redeem
-- If both are active, either one is sufficient (OR logic)
-- **Set a redemption start date** — redemptions locked until a specific date
-
-### Top up reserves later
-
-The Space can deposit more backing tokens via `addBacking` (requires a proposal).
-
----
-
-## Redemption Options
-
-### Option A: Pick one token
-
-_"I want to redeem 100 tokens for USDC"_ (vault pegged at $2/token)
-
-→ Fiat value = 100 × $2 = $200
-→ Oracle: USDC = $1.00
-→ Member receives 200 USDC
-
-_"I want to redeem 100 tokens for WETH"_
-
-→ Fiat value = $200
-→ Oracle: WETH = $2,500
-→ Member receives 0.08 WETH
-
-_"I want to redeem 100 tokens for HYPHA"_
-
-→ Fiat value = $200
-→ On-chain price: HYPHA = $0.50
-→ Member receives 400 HYPHA
-
-### Option B: Split across multiple tokens
-
-_"Redeem 1000 tokens — 50% USDC, 30% WETH, 20% HYPHA"_
-
-→ Total fiat value = 1000 × $2 = $2,000
-→ 500 tokens ($1,000) → 1,000 USDC
-→ 300 tokens ($600) → 0.24 WETH
-→ 200 tokens ($400) → 800 HYPHA
+- **Change the peg?** → Update `setPriceWithCurrency` on the token contract. The vault reads it live.
+- **Add more reserves?** → `addBacking` (requires a proposal)
+- **Add more backing tokens?** → Call `addBackingToken` again
 
 ---
 
@@ -138,10 +122,10 @@ _"Redeem 1000 tokens — 50% USDC, 30% WETH, 20% HYPHA"_
 
 | Action                           | Who                                                               |
 | -------------------------------- | ----------------------------------------------------------------- |
+| Set token price / currency       | Token's Space (via `setPriceWithCurrency` on the token contract)  |
 | Add backing tokens + price feeds | Space (via proposal)                                              |
 | Remove a backing token           | Space (via proposal)                                              |
-| Update a price feed              | Space (via proposal)                                              |
-| Change peg value                 | Space (via proposal)                                              |
+| Update a Chainlink price feed    | Space (via proposal)                                              |
 | Change minimum backing threshold | Space (via proposal)                                              |
 | Set redemption start date        | Space (via proposal)                                              |
 | Manage whitelist                 | Space (via proposal)                                              |
@@ -154,19 +138,16 @@ _"Redeem 1000 tokens — 50% USDC, 30% WETH, 20% HYPHA"_
 
 ## Important Details
 
-### Oracle pricing for external assets
+### Price and currency come from the token
 
-USDC, EURC, WETH, and WBTC use [Chainlink price feeds](https://docs.chain.link/data-feeds/price-feeds/addresses/?network=base). The contract reads live prices at redemption time and rejects stale data (>24h old).
+The vault does NOT store the peg value or fiat currency. It reads `priceInUSD()` and `priceCurrencyFeed()` from the community token contract at redemption time. This means:
+- Updating the token's price automatically changes what redeemers receive
+- No separate vault update needed when the peg changes
+- The token's Space controls the price; the vault just reads it
 
-For non-USD pegs, a fiat/USD Chainlink feed converts the price to the target fiat currency.
+### All prices flow through USD
 
-### On-chain pricing for Hypha tokens
-
-Any Hypha community token (RegularSpaceToken, etc.) can be used as backing. The price is read from the token contract's `price` field (6 decimals). This price is assumed to be in the vault's fiat currency — the token admin is responsible for keeping it accurate.
-
-### Configurable peg
-
-The Space defines how much fiat currency each community token is worth. This can be changed later via `setPegValue`. The peg value uses 6 decimal precision.
+Whether a token's price is in EUR, CAD, or JPY, the vault converts it to USD using the token's `priceCurrencyFeed` (a Chainlink X/USD feed). Backing token prices are also in USD (from Chainlink or from `priceInUSD` on Hypha tokens). USD is the common denominator — no direct cross-currency math needed.
 
 ### Whitelist + membership (OR logic)
 
@@ -181,7 +162,7 @@ The Space can set a future date from which redemptions are allowed. Before that 
 
 ### Minimum backing threshold
 
-The contract computes **aggregate fiat coverage** across ALL backing tokens (using oracle prices for external assets and on-chain prices for Hypha tokens). If a redemption would push total coverage below the minimum percentage of the remaining fiat liability (supply × pegValue), it's blocked.
+The contract computes **aggregate USD coverage** across ALL backing tokens. If a redemption would push total coverage below the minimum percentage of the remaining USD liability (supply × token price in USD), it's blocked.
 
 ### What happens to redeemed community tokens?
 
@@ -191,35 +172,23 @@ Redeemed tokens are **burned permanently**, reducing total supply.
 
 ## Example: Full Lifecycle
 
-1. **Space "GreenDAO" creates a community token** called GREEN
+1. **Space "GreenDAO" creates GREEN token** and sets price to $2 USD via `setPriceInUSD(2_000_000)`
 
-2. **GreenDAO passes a proposal**: _"Back GREEN at $2/token with USDC, WETH, and HYPHA_EARTH (another Hypha token at $0.50), 20% minimum backing, whitelist required, redemptions start April 1st"_
-
-   - Token Backing Vault auto-created
-   - pegValue = 2_000_000 ($2 per GREEN)
-   - USDC added (Chainlink feed), funded with 50,000 USDC
-   - WETH added (Chainlink feed), funded with 10 WETH
-   - HYPHA_EARTH added (on-chain price), funded with 20,000 tokens
-   - 20% minimum backing, whitelist enabled, start date April 1st
+2. **GreenDAO passes a proposal** to create a backing vault with USDC, WETH, and HYPHA_EARTH:
+   - USDC + WETH use Chainlink feeds
+   - HYPHA_EARTH is a Hypha token (price from its contract: $0.50)
+   - 20% minimum backing, whitelist required, start date April 1st
 
 3. **GreenDAO whitelists contributors** — 100 addresses added
 
 4. **April 1st** — redemptions open
 
-5. **Alice redeems 500 GREEN for USDC**
-   - Fiat value = 500 × $2 = $1,000
-   - USDC at $1.00 → receives 1,000 USDC
+5. **Alice redeems 100 GREEN for USDC**: 100 × $2 = $200 → 200 USDC
 
-6. **Bob redeems 200 GREEN for WETH**
-   - Fiat value = 200 × $2 = $400
-   - ETH at $2,500 → receives 0.16 WETH
+6. **Bob redeems 200 GREEN for WETH**: 200 × $2 = $400; ETH at $2,500 → 0.16 WETH
 
-7. **Carol redeems 100 GREEN for HYPHA_EARTH**
-   - Fiat value = 100 × $2 = $200
-   - HYPHA_EARTH at $0.50 (on-chain) → receives 400 HYPHA_EARTH
+7. **Carol redeems 100 GREEN for HYPHA_EARTH**: 100 × $2 = $200; HYPHA at $0.50 → 400 HYPHA_EARTH
 
-8. **ETH price rises to $3,000** — redemption amount adjusts automatically
-   - Next user redeeming for WETH gets less WETH per token (same fiat value, higher ETH price)
+8. **GreenDAO updates token price to $3** via `setPriceInUSD(3_000_000)` — next redemptions automatically use $3
 
-9. **Aggregate reserve coverage approaches 20%** → redemptions blocked until topped up
-
+9. **Reserve coverage drops near 20%** → redemptions blocked until more backing is deposited
