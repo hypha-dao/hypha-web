@@ -4,6 +4,9 @@ pragma solidity ^0.8.0;
 interface ITokenBackingVault {
   // Core vault configuration (one per space token, auto-created)
   // Redeemed community tokens are burned (permanently removed from supply)
+  // Peg value and fiat currency are read from the space token contract at runtime:
+  //   spaceToken.priceInUSD()        → price value (6 decimals)
+  //   spaceToken.priceCurrencyFeed() → Chainlink X/USD feed (address(0) = USD)
   struct VaultConfig {
     uint256 spaceId;
     address spaceToken;
@@ -12,8 +15,6 @@ interface ITokenBackingVault {
     bool whitelistEnabled; // Restrict to whitelisted addresses (OR with membersOnly)
     uint256 minimumBackingBps; // Minimum backing % (basis points, 0-10000)
     uint256 redemptionStartDate; // Unix timestamp, 0 = no restriction
-    address fiatPriceFeed; // Chainlink fiat/USD feed, address(0) = USD peg
-    uint256 pegValue; // Fiat value of 1 community token (6 decimals, e.g., 1_000_000 = 1 fiat unit)
   }
 
   // Per backing token configuration
@@ -39,8 +40,6 @@ interface ITokenBackingVault {
     address[] calldata priceFeeds,
     uint8[] calldata tokenDecimals,
     uint256[] calldata fundingAmounts,
-    address fiatPriceFeed,
-    uint256 pegValue,
     uint256 minimumBackingBps
   ) external returns (uint256 vaultId);
 
@@ -57,12 +56,6 @@ interface ITokenBackingVault {
     address spaceToken,
     address backingToken,
     address newPriceFeed
-  ) external;
-
-  function setPegValue(
-    uint256 spaceId,
-    address spaceToken,
-    uint256 pegValue
   ) external;
 
   function setRedeemEnabled(
@@ -193,9 +186,7 @@ interface ITokenBackingVault {
   event VaultCreated(
     uint256 indexed vaultId,
     uint256 indexed spaceId,
-    address spaceToken,
-    address fiatPriceFeed,
-    uint256 pegValue
+    address spaceToken
   );
 
   event BackingTokenAdded(
@@ -215,8 +206,6 @@ interface ITokenBackingVault {
     address oldFeed,
     address newFeed
   );
-
-  event PegValueUpdated(uint256 indexed vaultId, uint256 pegValue);
 
   event BackingDeposited(
     uint256 indexed vaultId,

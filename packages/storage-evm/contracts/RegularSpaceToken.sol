@@ -44,11 +44,22 @@ contract RegularSpaceToken is
   mapping(uint256 => bool) public isTransferWhitelistedSpace; // Quick lookup for transfer whitelist
   mapping(uint256 => bool) public isReceiveWhitelistedSpace; // Quick lookup for receive whitelist
 
+  // Price currency — Chainlink X/USD feed address for the currency priceInUSD is denominated in.
+  // address(0) = USD (default, backward compatible).
+  // e.g., if price is set in CAD, this points to the Chainlink CAD/USD feed.
+  address public priceCurrencyFeed;
+
+  // Token price (6 decimals) + currency feed — the clean API.
+  // This is the canonical price field. priceCurrencyFeed above specifies the currency.
+  // tokenPrice and priceInUSD are kept in sync by all setter functions.
+  uint256 public tokenPrice;
+
   // Events
   event MaxSupplyUpdated(uint256 oldMaxSupply, uint256 newMaxSupply);
   event TransferableUpdated(bool transferable);
   event AutoMintingUpdated(bool autoMinting);
   event PriceInUSDUpdated(uint256 oldPrice, uint256 newPrice);
+  event PriceCurrencyUpdated(uint256 price, address currencyFeed);
   event ArchivedStatusUpdated(bool archived);
   event TransferWhitelistUpdated(address indexed account, bool canTransfer);
   event ReceiveWhitelistUpdated(address indexed account, bool canReceive);
@@ -78,7 +89,8 @@ contract RegularSpaceToken is
     bool _transferable,
     bool _fixedMaxSupply,
     bool _autoMinting,
-    uint256 _priceInUSD,
+    uint256 _tokenPrice,
+    address _priceCurrencyFeed,
     bool _useTransferWhitelist,
     bool _useReceiveWhitelist,
     address[] memory _initialTransferWhitelist,
@@ -95,10 +107,12 @@ contract RegularSpaceToken is
     transferable = _transferable;
     transferHelper = 0x479002F7602579203ffba3eE84ACC1BC5b0d6785;
 
-    // Initialize new configuration options
+    // Initialize configuration options
     fixedMaxSupply = _fixedMaxSupply;
     autoMinting = _autoMinting;
-    priceInUSD = _priceInUSD;
+    priceInUSD = _tokenPrice; // Legacy field — kept in sync
+    tokenPrice = _tokenPrice;
+    priceCurrencyFeed = _priceCurrencyFeed;
     useTransferWhitelist = _useTransferWhitelist;
     useReceiveWhitelist = _useReceiveWhitelist;
 
@@ -286,7 +300,29 @@ contract RegularSpaceToken is
     require(msg.sender == executor, 'Only executor can update price');
     uint256 oldPrice = priceInUSD;
     priceInUSD = newPrice;
+    tokenPrice = newPrice;
     emit PriceInUSDUpdated(oldPrice, newPrice);
+  }
+
+  /**
+   * @dev Update token price and specify which currency it's denominated in.
+   * @param newPrice The new price (with 6 decimals)
+   * @param currencyFeed Chainlink X/USD feed for the currency (address(0) = USD)
+   *
+   * Example: token worth 2 CAD → setPriceWithCurrency(2_000_000, cadUsdFeedAddress)
+   * Example: token worth 5 USD → setPriceWithCurrency(5_000_000, address(0))
+   */
+  function setPriceWithCurrency(
+    uint256 newPrice,
+    address currencyFeed
+  ) external virtual {
+    require(msg.sender == executor, 'Only executor can update price');
+    uint256 oldPrice = priceInUSD;
+    priceInUSD = newPrice;
+    tokenPrice = newPrice;
+    priceCurrencyFeed = currencyFeed;
+    emit PriceInUSDUpdated(oldPrice, newPrice);
+    emit PriceCurrencyUpdated(newPrice, currencyFeed);
   }
 
   /**

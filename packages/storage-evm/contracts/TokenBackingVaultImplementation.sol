@@ -37,42 +37,45 @@ interface AggregatorV3Interface {
 }
 
 /**
- * @dev Interface for reading price from Hypha space tokens (RegularSpaceToken, etc.).
- * The priceInUSD field is a general-purpose price (6 decimals).
- * For Token Backing Vault, it represents the token's price in the vault's fiat currency.
+ * @dev Interface for reading price + currency from Hypha space tokens.
+ * Used for BOTH the community token (to get peg value + fiat currency)
+ * and Hypha backing tokens (to get their price in some currency).
+ *
+ * tokenPrice: the price value (6 decimals). Currency specified by priceCurrencyFeed.
+ * priceCurrencyFeed: Chainlink X/USD feed for the currency (address(0) = USD).
+ *
+ * Falls back to priceInUSD() for tokens that haven't been upgraded yet.
  */
 interface ISpaceTokenPrice {
-  function priceInUSD() external view returns (uint256);
+  function tokenPrice() external view returns (uint256);
+
+  function priceCurrencyFeed() external view returns (address);
 }
 
 /**
  * @title TokenBackingVaultImplementation
- * @dev Fiat-referenced redemption vault for space tokens. Each community token
- * has a configurable peg value in a chosen fiat currency.
+ * @dev Fiat-referenced redemption vault for space tokens.
+ *
+ * The peg value and fiat currency are read directly from the space token
+ * contract (tokenPrice + priceCurrencyFeed), NOT stored on the vault.
+ * This means changing the token's price automatically changes what
+ * redeemers receive — no vault update needed.
  *
  * Two types of backing tokens:
  *   1. Oracle-priced (USDC, EURC, WETH, WBTC) — price from Chainlink feeds
- *   2. Hypha tokens (any RegularSpaceToken) — price from token.priceInUSD()
+ *   2. Hypha tokens (any RegularSpaceToken) — price from token.tokenPrice()
  *
- * Key features:
- *   - Configurable peg: 1 token = X fiat units (not limited to 1:1)
- *   - Oracle pricing for external assets (Chainlink)
- *   - On-chain pricing for Hypha tokens (from the token contract)
- *   - Any Hypha token can be used as backing alongside oracle-priced tokens
- *   - Whitelist + membership access control (OR logic)
- *   - Configurable redemption start date
- *   - Aggregate minimum backing threshold
+ * All prices flow through USD as the common denominator:
+ *   spaceToken.price (in token's currency) → USD → backing token USD price → amount
  *
  * Setup (single proposal):
  *   addBackingToken(
  *     spaceId, spaceToken,
- *     [usdc, weth, hyphaToken],         // backing tokens
+ *     [usdc, weth, hyphaToken],           // backing tokens
  *     [usdcUsdFeed, ethUsdFeed, addr(0)], // Chainlink feeds (0 = Hypha token)
- *     [6, 18, 18],                       // token decimals
- *     [50_000e6, 10e18, 1000e18],        // funding amounts
- *     address(0),                        // USD peg
- *     2_000_000,                         // 1 token = 2 USD (6 decimals)
- *     2000                               // 20% minimum backing
+ *     [6, 18, 18],                        // token decimals
+ *     [50_000e6, 10e18, 1000e18],         // funding amounts
+ *     2000                                // 20% minimum backing
  *   )
  */
 contract TokenBackingVaultImplementation is
@@ -86,8 +89,7 @@ contract TokenBackingVaultImplementation is
   using SafeERC20 for IERC20;
 
   uint256 public constant BASIS_POINTS = 10000;
-  uint256 public constant PEG_PRECISION = 1e6; // pegValue uses 6 decimals
-  uint256 public constant HYPHA_PRICE_PRECISION = 1e6; // priceInUSD uses 6 decimals
+  uint256 public constant PRICE_PRECISION = 1e6; // tokenPrice uses 6 decimals
   uint256 public constant PRICE_STALENESS_THRESHOLD = 24 hours;
 
   /// @custom:oz-upgrades-unsafe-allow constructor
@@ -118,16 +120,11 @@ contract TokenBackingVaultImplementation is
   /**
    * @dev Add one or more backing tokens, optionally funding each.
    *
-   * For oracle-priced tokens (USDC, EURC, WETH, WBTC): pass the Chainlink feed address.
-   * For Hypha tokens: pass address(0) as the price feed — price is read from token.priceInUSD().
+   * For oracle-priced tokens: pass the Chainlink feed address.
+   * For Hypha tokens: pass address(0) — price is read from token.tokenPrice().
    *
-   * @param backingTokens The reserve tokens
-   * @param priceFeeds Chainlink feed per token; address(0) = Hypha token
-   * @param tokenDecimals Decimals per token
-   * @param fundingAmounts Deposit per token (0 = skip)
-   * @param fiatPriceFeed Chainlink fiat/USD feed; address(0) = USD peg
-   * @param pegValue Fiat value of 1 community token (6 decimals)
-   * @param minimumBackingBps Minimum backing % (only on vault creation)
+   * The peg value and fiat currency are read from the space token contract
+   * (spaceToken.tokenPrice() and spaceToken.priceCurrencyFeed()).
    */
   function addBackingToken(
     uint256 spaceId,
@@ -136,8 +133,6 @@ contract TokenBackingVaultImplementation is
     address[] calldata priceFeeds,
     uint8[] calldata tokenDecimals,
     uint256[] calldata fundingAmounts,
-    address fiatPriceFeed,
-    uint256 pegValue,
     uint256 minimumBackingBps
   ) external nonReentrant returns (uint256 vaultId) {
     _requireExecutorOrOwner(spaceId);
@@ -150,19 +145,16 @@ contract TokenBackingVaultImplementation is
         backingTokens.length == fundingAmounts.length,
       'Array lengths must match'
     );
-    require(pegValue > 0, 'Peg value must be > 0');
     require(
       minimumBackingBps <= BASIS_POINTS,
       'Min backing cannot exceed 100%'
     );
 
-    vaultId = _getOrCreateVault(
-      spaceId,
-      spaceToken,
-      fiatPriceFeed,
-      pegValue,
-      minimumBackingBps
-    );
+    // Validate the space token has a price set
+    uint256 pegPrice = ISpaceTokenPrice(spaceToken).tokenPrice();
+    require(pegPrice > 0, 'Space token price must be > 0');
+
+    vaultId = _getOrCreateVault(spaceId, spaceToken, minimumBackingBps);
 
     for (uint256 i = 0; i < backingTokens.length; i++) {
       address bt = backingTokens[i];
@@ -178,7 +170,7 @@ contract TokenBackingVaultImplementation is
       if (priceFeeds[i] != address(0)) {
         _getOraclePrice(priceFeeds[i]);
       } else {
-        uint256 hp = ISpaceTokenPrice(bt).priceInUSD();
+        uint256 hp = ISpaceTokenPrice(bt).tokenPrice();
         require(hp > 0, 'Hypha token price must be > 0');
       }
 
@@ -262,21 +254,6 @@ contract TokenBackingVaultImplementation is
     config.priceFeed = newPriceFeed;
 
     emit PriceFeedUpdated(vaultId, backingToken, oldFeed, newPriceFeed);
-  }
-
-  /**
-   * @dev Update the peg value (fiat value of 1 community token, 6 decimals).
-   */
-  function setPegValue(
-    uint256 spaceId,
-    address spaceToken,
-    uint256 pegValue
-  ) external {
-    _requireExecutorOrOwner(spaceId);
-    uint256 vaultId = _requireVault(spaceId, spaceToken);
-    require(pegValue > 0, 'Peg value must be > 0');
-    vaults[vaultId].pegValue = pegValue;
-    emit PegValueUpdated(vaultId, pegValue);
   }
 
   function setRedeemEnabled(
@@ -399,7 +376,7 @@ contract TokenBackingVaultImplementation is
 
   /**
    * @dev Redeem space tokens for a single backing token.
-   * The user receives backing tokens worth (spaceTokenAmount × pegValue) in fiat.
+   * Peg value and fiat currency are read from the space token contract.
    */
   function redeem(
     uint256 spaceId,
@@ -411,18 +388,16 @@ contract TokenBackingVaultImplementation is
     _requireRedemptionAllowed(vaultId, spaceId);
     require(spaceTokenAmount > 0, 'Amount must be > 0');
 
-    VaultConfig storage vault = vaults[vaultId];
     BackingTokenConfig storage btConfig = backingConfigs[vaultId][backingToken];
     require(btConfig.enabled, 'Backing token not active');
 
-    // Convert space tokens to fiat value: fiatAmount = spaceTokenAmount * pegValue / PEG_PRECISION
-    uint256 fiatAmount = (spaceTokenAmount * vault.pegValue) / PEG_PRECISION;
+    // Read peg from space token: convert spaceTokenAmount to USD value
+    uint256 usdAmount = _spaceTokensToUsd(spaceToken, spaceTokenAmount);
 
     uint256 backingOut = _calculateBackingOut(
-      fiatAmount,
+      usdAmount,
       backingToken,
-      btConfig,
-      vault.fiatPriceFeed
+      btConfig
     );
     require(backingOut > 0, 'Output amount too small');
     require(
@@ -431,13 +406,17 @@ contract TokenBackingVaultImplementation is
     );
 
     // Check aggregate minimum backing
-    uint256 coverageRemoved = _tokenCoverage(
+    uint256 coverageRemoved = _tokenCoverageUsd(
       backingOut,
       backingToken,
-      btConfig,
-      vault.fiatPriceFeed
+      btConfig
     );
-    _checkMinimumBacking(vaultId, spaceToken, spaceTokenAmount, coverageRemoved);
+    _checkMinimumBacking(
+      vaultId,
+      spaceToken,
+      spaceTokenAmount,
+      coverageRemoved
+    );
 
     // Burn the user's space tokens
     ITokenBackingBurnableERC20(spaceToken).burnFrom(
@@ -485,11 +464,8 @@ contract TokenBackingVaultImplementation is
     }
     require(totalBps == BASIS_POINTS, 'Proportions must sum to 10000');
 
-    VaultConfig storage vault = vaults[vaultId];
-
-    // Total fiat value = spaceTokenAmount * pegValue / PEG_PRECISION
-    uint256 totalFiatAmount = (spaceTokenAmount * vault.pegValue) /
-      PEG_PRECISION;
+    // Read peg from space token: total USD value
+    uint256 totalUsdAmount = _spaceTokensToUsd(spaceToken, spaceTokenAmount);
 
     uint256[] memory backingAmounts = new uint256[](backingTokens.length);
     uint256 totalCoverageRemoved = 0;
@@ -499,26 +475,16 @@ contract TokenBackingVaultImplementation is
       BackingTokenConfig storage btConfig = backingConfigs[vaultId][bt];
       require(btConfig.enabled, 'Backing token not active');
 
-      uint256 fiatPortion = (totalFiatAmount * proportions[i]) / BASIS_POINTS;
+      uint256 usdPortion = (totalUsdAmount * proportions[i]) / BASIS_POINTS;
 
-      uint256 backingOut = _calculateBackingOut(
-        fiatPortion,
-        bt,
-        btConfig,
-        vault.fiatPriceFeed
-      );
+      uint256 backingOut = _calculateBackingOut(usdPortion, bt, btConfig);
       require(backingOut > 0, 'Output amount too small');
       require(
         vaultBackingBalance[vaultId][bt] >= backingOut,
         'Insufficient backing in reserve'
       );
 
-      totalCoverageRemoved += _tokenCoverage(
-        backingOut,
-        bt,
-        btConfig,
-        vault.fiatPriceFeed
-      );
+      totalCoverageRemoved += _tokenCoverageUsd(backingOut, bt, btConfig);
 
       backingAmounts[i] = backingOut;
     }
@@ -626,15 +592,8 @@ contract TokenBackingVaultImplementation is
     uint256 vaultId = _requireVault(spaceId, spaceToken);
     BackingTokenConfig storage btConfig = backingConfigs[vaultId][backingToken];
     require(btConfig.enabled, 'Backing token not active');
-    uint256 fiatAmount = (spaceTokenAmount * vaults[vaultId].pegValue) /
-      PEG_PRECISION;
-    return
-      _calculateBackingOut(
-        fiatAmount,
-        backingToken,
-        btConfig,
-        vaults[vaultId].fiatPriceFeed
-      );
+    uint256 usdAmount = _spaceTokensToUsd(spaceToken, spaceTokenAmount);
+    return _calculateBackingOut(usdAmount, backingToken, btConfig);
   }
 
   function vaultExists(
@@ -667,18 +626,12 @@ contract TokenBackingVaultImplementation is
   function _getOrCreateVault(
     uint256 spaceId,
     address spaceToken,
-    address fiatPriceFeed,
-    uint256 pegValue,
     uint256 minimumBackingBps
   ) internal returns (uint256 vaultId) {
     bytes32 key = _getVaultKey(spaceId, spaceToken);
     vaultId = vaultKeys[key];
 
     if (vaultId == 0) {
-      if (fiatPriceFeed != address(0)) {
-        _getOraclePrice(fiatPriceFeed);
-      }
-
       vaultCounter++;
       vaultId = vaultCounter;
 
@@ -689,15 +642,13 @@ contract TokenBackingVaultImplementation is
         membersOnly: false,
         whitelistEnabled: false,
         minimumBackingBps: minimumBackingBps,
-        redemptionStartDate: 0,
-        fiatPriceFeed: fiatPriceFeed,
-        pegValue: pegValue
+        redemptionStartDate: 0
       });
 
       vaultKeys[key] = vaultId;
       spaceVaultIds[spaceId].push(vaultId);
 
-      emit VaultCreated(vaultId, spaceId, spaceToken, fiatPriceFeed, pegValue);
+      emit VaultCreated(vaultId, spaceId, spaceToken);
 
       if (minimumBackingBps > 0) {
         emit MinimumBackingUpdated(vaultId, minimumBackingBps);
@@ -714,9 +665,6 @@ contract TokenBackingVaultImplementation is
     require(vaultId != 0, 'Vault does not exist');
   }
 
-  /**
-   * @dev Validate redemption prerequisites: enabled, date, membership/whitelist (OR logic).
-   */
   function _requireRedemptionAllowed(
     uint256 vaultId,
     uint256 spaceId
@@ -741,11 +689,29 @@ contract TokenBackingVaultImplementation is
     }
   }
 
-  // ── Price helpers ──
+  // ── Space token peg helpers ──
 
   /**
-   * @dev Read a Chainlink price feed. Reverts if stale or invalid.
+   * @dev Convert space token amount to USD value (1e18 precision).
+   * Reads tokenPrice() and priceCurrencyFeed() from the space token.
+   *
+   * Example: 100 tokens, price = 2 EUR, EUR/USD = 1.08
+   *   → 100e18 * 2e6 / 1e6 = 200e18 (in EUR × 1e18)
+   *   → 200e18 * 1.08e8 / 1e8 = 216e18 (in USD × 1e18)
    */
+  function _spaceTokensToUsd(
+    address spaceToken,
+    uint256 spaceTokenAmount
+  ) internal view returns (uint256) {
+    uint256 priceInUsd = _getHyphaTokenPriceInUsd(spaceToken);
+    require(priceInUsd > 0, 'Space token price is 0');
+
+    // spaceTokenAmount (1e18) * priceInUsd (6 dec) / PRICE_PRECISION (1e6) = USD value (1e18)
+    return (spaceTokenAmount * priceInUsd) / PRICE_PRECISION;
+  }
+
+  // ── Oracle helpers ──
+
   function _getOraclePrice(
     address feed
   ) internal view returns (uint256 price, uint8 feedDecimals) {
@@ -760,41 +726,50 @@ contract TokenBackingVaultImplementation is
     feedDecimals = AggregatorV3Interface(feed).decimals();
   }
 
-  function _getFiatPrice(
-    address fiatPriceFeed
-  ) internal view returns (uint256 price, uint8 feedDecimals) {
-    if (fiatPriceFeed == address(0)) {
-      return (1e8, 8); // 1 USD = 1 USD
+  /**
+   * @dev Get a Hypha token's price in USD (6 decimals).
+   * Reads tokenPrice() and priceCurrencyFeed() from the token contract.
+   * If priceCurrencyFeed is address(0), the price is already in USD.
+   * Otherwise, converts: priceInUsd = price × currencyToUsdRate / 10^feedDec
+   */
+  function _getHyphaTokenPriceInUsd(
+    address token
+  ) internal view returns (uint256) {
+    uint256 rawPrice = ISpaceTokenPrice(token).tokenPrice();
+    address currencyFeed = ISpaceTokenPrice(token).priceCurrencyFeed();
+
+    if (currencyFeed == address(0)) {
+      return rawPrice; // Already in USD
     }
-    return _getOraclePrice(fiatPriceFeed);
+
+    (uint256 currencyRate, uint8 feedDec) = _getOraclePrice(currencyFeed);
+    return (rawPrice * currencyRate) / (10 ** feedDec);
   }
 
   // ── Backing-out calculation ──
 
   /**
-   * @dev Calculate how many backing tokens a user receives for a given fiat amount.
-   * Dispatches to oracle or Hypha pricing based on the config.
+   * @dev Calculate how many backing tokens a user receives for a given USD amount.
+   * All amounts flow through USD as the common denominator.
    *
-   * @param fiatAmount Fiat value in 1e18 precision (spaceTokenAmount * pegValue / PEG_PRECISION)
+   * @param usdAmount USD value in 1e18 precision
    */
   function _calculateBackingOut(
-    uint256 fiatAmount,
+    uint256 usdAmount,
     address backingToken,
-    BackingTokenConfig storage config,
-    address fiatPriceFeed
+    BackingTokenConfig storage config
   ) internal view returns (uint256) {
     if (config.priceFeed != address(0)) {
       return
         _calculateOracleBackingOut(
-          fiatAmount,
+          usdAmount,
           config.priceFeed,
-          config.tokenDecimals,
-          fiatPriceFeed
+          config.tokenDecimals
         );
     } else {
       return
         _calculateHyphaBackingOut(
-          fiatAmount,
+          usdAmount,
           backingToken,
           config.tokenDecimals
         );
@@ -802,125 +777,101 @@ contract TokenBackingVaultImplementation is
   }
 
   /**
-   * @dev Oracle path: backingOut = fiatAmount × (fiatPrice / backingPrice) × 10^tokenDec / 1e18
+   * @dev Oracle path: backingOut = usdAmount × 10^tokenDec / (backingPriceUsd × 1e18)
+   * Adjusted for Chainlink feed decimals.
    */
   function _calculateOracleBackingOut(
-    uint256 fiatAmount,
+    uint256 usdAmount,
     address backingPriceFeed,
-    uint8 backingTokenDecimals,
-    address fiatPriceFeed
+    uint8 backingTokenDecimals
   ) internal view returns (uint256) {
     (uint256 backingPrice, uint8 bpDec) = _getOraclePrice(backingPriceFeed);
-    (uint256 fiatPrice, uint8 fpDec) = _getFiatPrice(fiatPriceFeed);
 
-    uint256 numerator = fiatAmount * fiatPrice;
-    uint256 denominator = backingPrice * 1e18;
-
-    if (bpDec > fpDec) {
-      numerator *= 10 ** (bpDec - fpDec);
-    } else if (fpDec > bpDec) {
-      denominator *= 10 ** (fpDec - bpDec);
-    }
-
-    return (numerator * (10 ** backingTokenDecimals)) / denominator;
+    // backingOut = usdAmount * 10^tokenDec / (backingPrice * 1e18 / 10^bpDec)
+    //           = usdAmount * 10^tokenDec * 10^bpDec / (backingPrice * 1e18)
+    return
+      (usdAmount * (10 ** backingTokenDecimals) * (10 ** bpDec)) /
+      (backingPrice * 1e18);
   }
 
   /**
-   * @dev Hypha path: price from token.priceInUSD() (6 decimals, in vault's fiat currency).
-   * backingOut = fiatAmount × HYPHA_PRICE_PRECISION × 10^tokenDec / (hyphaPrice × 1e18)
+   * @dev Hypha path: backingOut = usdAmount × PRICE_PRECISION × 10^tokenDec / (priceInUsd × 1e18)
    */
   function _calculateHyphaBackingOut(
-    uint256 fiatAmount,
+    uint256 usdAmount,
     address backingToken,
     uint8 backingTokenDecimals
   ) internal view returns (uint256) {
-    uint256 hyphaPrice = ISpaceTokenPrice(backingToken).priceInUSD();
-    require(hyphaPrice > 0, 'Hypha token price is 0');
+    uint256 priceInUsd = _getHyphaTokenPriceInUsd(backingToken);
+    require(priceInUsd > 0, 'Hypha token price is 0');
 
     return
-      (fiatAmount * HYPHA_PRICE_PRECISION * (10 ** backingTokenDecimals)) /
-      (hyphaPrice * 1e18);
+      (usdAmount * PRICE_PRECISION * (10 ** backingTokenDecimals)) /
+      (priceInUsd * 1e18);
   }
 
-  // ── Coverage calculation ──
+  // ── Coverage calculation (all in USD) ──
 
   /**
-   * @dev Fiat value (× 1e18) of a backing token amount. Dispatches based on price source.
+   * @dev USD value (× 1e18) of a backing token amount.
    */
-  function _tokenCoverage(
+  function _tokenCoverageUsd(
     uint256 balance,
     address backingToken,
-    BackingTokenConfig storage config,
-    address fiatPriceFeed
+    BackingTokenConfig storage config
   ) internal view returns (uint256) {
     if (balance == 0) return 0;
 
     if (config.priceFeed != address(0)) {
       return
-        _oracleCoverage(
-          balance,
-          config.priceFeed,
-          config.tokenDecimals,
-          fiatPriceFeed
-        );
+        _oracleCoverageUsd(balance, config.priceFeed, config.tokenDecimals);
     } else {
-      return _hyphaCoverage(balance, backingToken, config.tokenDecimals);
+      return _hyphaCoverageUsd(balance, backingToken, config.tokenDecimals);
     }
   }
 
   /**
-   * @dev Oracle coverage: fiatValue = balance × backingPrice / (10^tokenDec × fiatPrice)
-   * Returns fiat value × 1e18.
+   * @dev Oracle coverage in USD: balance × backingPrice / (10^tokenDec × 10^feedDec) × 1e18
    */
-  function _oracleCoverage(
+  function _oracleCoverageUsd(
     uint256 balance,
     address backingPriceFeed,
-    uint8 backingTokenDecimals,
-    address fiatPriceFeed
+    uint8 backingTokenDecimals
   ) internal view returns (uint256) {
     (uint256 backingPrice, uint8 bpDec) = _getOraclePrice(backingPriceFeed);
-    (uint256 fiatPrice, uint8 fpDec) = _getFiatPrice(fiatPriceFeed);
 
-    uint256 numerator = balance * backingPrice;
-    uint256 denominator = (10 ** backingTokenDecimals) * fiatPrice;
-
-    if (fpDec > bpDec) {
-      numerator *= 10 ** (fpDec - bpDec);
-    } else if (bpDec > fpDec) {
-      denominator *= 10 ** (bpDec - fpDec);
-    }
-
-    return (numerator * 1e18) / denominator;
+    return
+      (balance * backingPrice * 1e18) /
+      ((10 ** backingTokenDecimals) * (10 ** bpDec));
   }
 
   /**
-   * @dev Hypha coverage: fiatValue = balance × hyphaPrice / (10^tokenDec × HYPHA_PRICE_PRECISION)
-   * Returns fiat value × 1e18.
+   * @dev Hypha coverage in USD: balance × priceInUsd / (10^tokenDec × PRICE_PRECISION) × 1e18
    */
-  function _hyphaCoverage(
+  function _hyphaCoverageUsd(
     uint256 balance,
     address backingToken,
     uint8 backingTokenDecimals
   ) internal view returns (uint256) {
-    uint256 hyphaPrice = ISpaceTokenPrice(backingToken).priceInUSD();
-    if (hyphaPrice == 0) return 0;
+    uint256 priceInUsd = _getHyphaTokenPriceInUsd(backingToken);
+    if (priceInUsd == 0) return 0;
 
     return
-      (balance * hyphaPrice * 1e18) /
-      ((10 ** backingTokenDecimals) * HYPHA_PRICE_PRECISION);
+      (balance * priceInUsd * 1e18) /
+      ((10 ** backingTokenDecimals) * PRICE_PRECISION);
   }
 
   // ── Minimum backing check ──
 
   /**
-   * @dev Aggregate check: remaining fiat coverage must be >= minBps % of remaining fiat liability.
-   * Fiat liability = remainingSupply × pegValue / PEG_PRECISION.
+   * @dev Aggregate check: remaining USD coverage must be >= minBps % of remaining USD liability.
+   * USD liability = remainingSupply × spaceTokenPriceInUsd / PRICE_PRECISION.
    */
   function _checkMinimumBacking(
     uint256 vaultId,
     address spaceToken,
     uint256 spaceTokensBurned,
-    uint256 coverageRemoved
+    uint256 coverageRemovedUsd
   ) internal view {
     uint256 minBps = vaults[vaultId].minimumBackingBps;
     if (minBps == 0) return;
@@ -930,24 +881,24 @@ contract TokenBackingVaultImplementation is
 
     if (remainingSupply == 0) return;
 
-    uint256 totalCoverage = _computeTotalCoverage(vaultId);
-    uint256 remainingCoverage = totalCoverage - coverageRemoved;
+    uint256 totalCoverageUsd = _computeTotalCoverageUsd(vaultId);
+    uint256 remainingCoverageUsd = totalCoverageUsd - coverageRemovedUsd;
 
-    uint256 pegValue = vaults[vaultId].pegValue;
+    // Remaining USD liability = remainingSupply × priceInUsd / PRICE_PRECISION
+    uint256 priceInUsd = _getHyphaTokenPriceInUsd(spaceToken);
+    uint256 remainingLiabilityUsd = (remainingSupply * priceInUsd) /
+      PRICE_PRECISION;
 
-    // remainingCoverage (fiat × 1e18) × PEG_PRECISION × BASIS_POINTS
-    //   >= remainingSupply (1e18) × pegValue (1e6) × minBps
+    // remainingCoverageUsd × BASIS_POINTS >= remainingLiabilityUsd × minBps
     require(
-      remainingCoverage * PEG_PRECISION * BASIS_POINTS >=
-        remainingSupply * pegValue * minBps,
+      remainingCoverageUsd * BASIS_POINTS >= remainingLiabilityUsd * minBps,
       'Redemption would breach minimum backing threshold'
     );
   }
 
-  function _computeTotalCoverage(
+  function _computeTotalCoverageUsd(
     uint256 vaultId
   ) internal view returns (uint256 totalCoverage) {
-    address fiatFeed = vaults[vaultId].fiatPriceFeed;
     address[] storage tokens = backingTokenList[vaultId];
 
     for (uint256 i = 0; i < tokens.length; i++) {
@@ -955,7 +906,7 @@ contract TokenBackingVaultImplementation is
       uint256 balance = vaultBackingBalance[vaultId][bt];
       if (balance > 0) {
         BackingTokenConfig storage btConfig = backingConfigs[vaultId][bt];
-        totalCoverage += _tokenCoverage(balance, bt, btConfig, fiatFeed);
+        totalCoverage += _tokenCoverageUsd(balance, bt, btConfig);
       }
     }
   }
@@ -979,4 +930,3 @@ contract TokenBackingVaultImplementation is
     );
   }
 }
-

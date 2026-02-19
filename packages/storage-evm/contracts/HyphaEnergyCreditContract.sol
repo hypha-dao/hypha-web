@@ -27,3 +27,4 @@ contract HyphaEnergyCreditContract is RegularSpaceToken {
   }
 }
 
+

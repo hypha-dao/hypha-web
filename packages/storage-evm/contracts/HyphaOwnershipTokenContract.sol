@@ -59,3 +59,4 @@ contract HyphaOwnershipTokenContract is OwnershipSpaceToken {
   }
 }
 
+

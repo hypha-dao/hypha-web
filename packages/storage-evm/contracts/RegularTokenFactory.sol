@@ -74,7 +74,8 @@ contract RegularTokenFactory is
    * @param transferable Whether the token can be transferred
    * @param fixedMaxSupply If true, maxSupply cannot be changed later
    * @param autoMinting If true, executor can auto-mint on transfer; if false, must mint separately
-   * @param priceInUSD Token price in USD (with 6 decimals, e.g., 1000000 = $1)
+   * @param tokenPrice Token price (6 decimals, e.g., 1_000_000 = 1.00)
+   * @param priceCurrencyFeed Chainlink X/USD feed for the currency (address(0) = USD)
    * @param useTransferWhitelist If true, enforce transfer whitelist
    * @param useReceiveWhitelist If true, enforce receive whitelist
    * @param initialTransferWhitelist Initial addresses that can send tokens
@@ -89,7 +90,8 @@ contract RegularTokenFactory is
     bool transferable,
     bool fixedMaxSupply,
     bool autoMinting,
-    uint256 priceInUSD,
+    uint256 tokenPrice,
+    address priceCurrencyFeed,
     bool useTransferWhitelist,
     bool useReceiveWhitelist,
     address[] memory initialTransferWhitelist,
@@ -120,7 +122,8 @@ contract RegularTokenFactory is
       transferable,
       fixedMaxSupply,
       autoMinting,
-      priceInUSD,
+      tokenPrice,
+      priceCurrencyFeed,
       useTransferWhitelist,
       useReceiveWhitelist,
       initialTransferWhitelist,

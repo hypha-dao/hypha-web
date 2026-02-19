@@ -3491,7 +3491,7 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       // Try to withdraw as a different member
       await expect(
         daoProposals.connect(members[0]).withdrawProposal(proposalId),
-      ).to.be.revertedWith('Only creator can withdraw');
+      ).to.be.revertedWith('Only creator or owner can withdraw');
 
       console.log('✅ Non-creator correctly prevented from withdrawing');
     });
