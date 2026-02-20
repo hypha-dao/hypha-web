@@ -139,17 +139,13 @@ describe('Token Configuration Tests', function () {
 
     // Create a space and get its executor
     await daoSpaceFactory.createSpace({
-      name: 'Test Space',
-      description: 'A space for testing',
-      imageUrl: '',
       unity: 50,
       quorum: 50,
       votingPowerSource: 1,
       exitMethod: 1,
       joinMethod: 1,
-      createToken: false,
-      tokenName: '',
-      tokenSymbol: '',
+      access: 0,
+      discoverability: 0,
     });
     const spaceId = await daoSpaceFactory.spaceCounter();
     const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
@@ -201,7 +197,8 @@ describe('Token Configuration Tests', function () {
         true, // transferable
         false, // fixedMaxSupply = false (adjustable)
         true, // autoMinting
-        0, // priceInUSD
+        0, // tokenPrice
+        ethers.ZeroAddress, // priceCurrencyFeed (USD)
         false, // useTransferWhitelist
         false, // useReceiveWhitelist
         [], // initialTransferWhitelist
@@ -250,6 +247,7 @@ describe('Token Configuration Tests', function () {
         true, // fixedMaxSupply = true
         true,
         0,
+        ethers.ZeroAddress, // priceCurrencyFeed (USD)
         false,
         false,
         [], // initialTransferWhitelist
@@ -291,6 +289,7 @@ describe('Token Configuration Tests', function () {
         false, // adjustable
         true,
         0,
+        ethers.ZeroAddress, // priceCurrencyFeed (USD)
         false,
         false,
         [], // initialTransferWhitelist
@@ -339,6 +338,7 @@ describe('Token Configuration Tests', function () {
         false,
         true, // autoMinting = true
         0,
+        ethers.ZeroAddress, // priceCurrencyFeed (USD)
         false,
         false,
         [], // initialTransferWhitelist
@@ -385,6 +385,7 @@ describe('Token Configuration Tests', function () {
         false,
         false, // autoMinting = false
         0,
+        ethers.ZeroAddress, // priceCurrencyFeed (USD)
         false,
         false,
         [], // initialTransferWhitelist
@@ -443,6 +444,7 @@ describe('Token Configuration Tests', function () {
         false,
         true, // start with autoMinting = true
         0,
+        ethers.ZeroAddress, // priceCurrencyFeed (USD)
         false,
         false,
         [], // initialTransferWhitelist
@@ -498,6 +500,7 @@ describe('Token Configuration Tests', function () {
         false,
         true,
         0,
+        ethers.ZeroAddress, // priceCurrencyFeed (USD)
         true, // useTransferWhitelist = true
         true, // useReceiveWhitelist = true
         [], // initialTransferWhitelist
@@ -667,6 +670,7 @@ describe('Token Configuration Tests', function () {
         false,
         true,
         priceInUSD,
+        ethers.ZeroAddress, // priceCurrencyFeed (USD)
         false,
         false,
         [], // initialTransferWhitelist
@@ -703,6 +707,7 @@ describe('Token Configuration Tests', function () {
         false,
         true,
         1000000n, // $1.00
+        ethers.ZeroAddress, // priceCurrencyFeed (USD)
         false,
         false,
         [], // initialTransferWhitelist
@@ -746,6 +751,7 @@ describe('Token Configuration Tests', function () {
         false,
         true,
         1000000n,
+        ethers.ZeroAddress, // priceCurrencyFeed (USD)
         false,
         false,
         [], // initialTransferWhitelist
@@ -786,6 +792,7 @@ describe('Token Configuration Tests', function () {
         false,
         true,
         0,
+        ethers.ZeroAddress, // priceCurrencyFeed (USD)
         false,
         false,
         [], // initialTransferWhitelist
@@ -850,6 +857,7 @@ describe('Token Configuration Tests', function () {
         false,
         true,
         0,
+        ethers.ZeroAddress, // priceCurrencyFeed (USD)
         false,
         false,
         [], // initialTransferWhitelist
@@ -943,6 +951,7 @@ describe('Token Configuration Tests', function () {
           true, // fixedMaxSupply
           false, // autoMinting = false
           priceInUSD,
+          ethers.ZeroAddress, // priceCurrencyFeed (USD)
           true, // useTransferWhitelist
           false, // useReceiveWhitelist
           [], // initialTransferWhitelist
@@ -994,6 +1003,7 @@ describe('Token Configuration Tests', function () {
           false, // adjustable max supply
           true, // autoMinting
           priceInUSD,
+          ethers.ZeroAddress, // priceCurrencyFeed (USD)
           false, // useTransferWhitelist
           true, // useReceiveWhitelist
           [], // initialTransferWhitelist
@@ -1044,6 +1054,7 @@ describe('Token Configuration Tests', function () {
             false,
             true,
             0,
+            ethers.ZeroAddress, // priceCurrencyFeed (USD)
             false,
             false,
             [], // initialTransferWhitelist
@@ -1112,6 +1123,7 @@ describe('Token Configuration Tests', function () {
             false,
             true,
             0,
+            ethers.ZeroAddress, // priceCurrencyFeed (USD)
             false,
             false,
             [], // initialTransferWhitelist
@@ -1172,6 +1184,7 @@ describe('Token Configuration Tests', function () {
             false,
             false, // autoMinting = false
             0,
+            ethers.ZeroAddress, // priceCurrencyFeed (USD)
             false,
             false,
             [], // initialTransferWhitelist
@@ -1240,6 +1253,7 @@ describe('Token Configuration Tests', function () {
             false,
             true,
             0,
+            ethers.ZeroAddress, // priceCurrencyFeed (USD)
             false,
             false,
             [], // initialTransferWhitelist
@@ -1350,6 +1364,7 @@ describe('Token Configuration Tests', function () {
             false,
             true,
             0,
+            ethers.ZeroAddress, // priceCurrencyFeed (USD)
             false,
             false,
             [], // initialTransferWhitelist
@@ -1465,6 +1480,7 @@ describe('Token Configuration Tests', function () {
         false,
         true,
         1000000n,
+        ethers.ZeroAddress, // priceCurrencyFeed (USD)
         false,
         false,
         [], // initialTransferWhitelist
@@ -1531,6 +1547,7 @@ describe('Token Configuration Tests', function () {
             false,
             true,
             0,
+            ethers.ZeroAddress, // priceCurrencyFeed (USD)
             false,
             false,
             [], // initialTransferWhitelist
@@ -1728,6 +1745,7 @@ describe('Token Configuration Tests', function () {
             false,
             true,
             0,
+            ethers.ZeroAddress, // priceCurrencyFeed (USD)
             false,
             false,
             [], // initialTransferWhitelist
@@ -1892,6 +1910,7 @@ describe('Token Configuration Tests', function () {
             false,
             true,
             0,
+            ethers.ZeroAddress, // priceCurrencyFeed (USD)
             false,
             false,
             [], // initialTransferWhitelist
@@ -1996,6 +2015,7 @@ describe('Token Configuration Tests', function () {
             false,
             true, // autoMinting enabled
             0,
+            ethers.ZeroAddress, // priceCurrencyFeed (USD)
             false,
             false,
             [], // initialTransferWhitelist
@@ -2059,6 +2079,7 @@ describe('Token Configuration Tests', function () {
             false,
             true,
             0,
+            ethers.ZeroAddress, // priceCurrencyFeed (USD)
             true, // useTransferWhitelist
             true, // useReceiveWhitelist
             [], // initialTransferWhitelist
@@ -2131,6 +2152,7 @@ describe('Token Configuration Tests', function () {
         true, // fixed supply
         true, // autoMinting
         0,
+        ethers.ZeroAddress, // priceCurrencyFeed (USD)
         false,
         true, // only whitelisted can receive
         [], // initialTransferWhitelist
@@ -2191,6 +2213,7 @@ describe('Token Configuration Tests', function () {
         false,
         true,
         0,
+        ethers.ZeroAddress, // priceCurrencyFeed (USD)
         true, // only whitelisted can send
         true, // only whitelisted can receive
         [], // initialTransferWhitelist
@@ -2268,17 +2291,13 @@ describe('Token Configuration Tests', function () {
     beforeEach(async function () {
       // Create a second space for testing
       await daoSpaceFactory.createSpace({
-        name: 'Second Space',
-        description: 'A second space for whitelist testing',
-        imageUrl: '',
         unity: 50,
         quorum: 50,
         votingPowerSource: 1,
         exitMethod: 1,
         joinMethod: 1,
-        createToken: false,
-        tokenName: '',
-        tokenSymbol: '',
+        access: 0,
+        discoverability: 0,
       });
       secondSpaceId = await daoSpaceFactory.spaceCounter();
 
@@ -2292,6 +2311,7 @@ describe('Token Configuration Tests', function () {
         false,
         true,
         0,
+        ethers.ZeroAddress, // priceCurrencyFeed (USD)
         true, // useTransferWhitelist
         true, // useReceiveWhitelist
         [], // initialTransferWhitelist
@@ -2411,17 +2431,13 @@ describe('Token Configuration Tests', function () {
       beforeEach(async function () {
         // Create a third space
         await daoSpaceFactory.createSpace({
-          name: 'Third Space',
-          description: 'A third space for testing',
-          imageUrl: '',
           unity: 50,
           quorum: 50,
           votingPowerSource: 1,
           exitMethod: 1,
           joinMethod: 1,
-          createToken: false,
-          tokenName: '',
-          tokenSymbol: '',
+          access: 0,
+          discoverability: 0,
         });
         thirdSpaceId = await daoSpaceFactory.spaceCounter();
       });
@@ -2643,6 +2659,366 @@ describe('Token Configuration Tests', function () {
           .true;
         expect(await token.isReceiveWhitelistedSpace(secondSpaceId)).to.be.true;
       });
+    });
+  });
+
+  describe('14. Price with Currency Feed', function () {
+    let token: Contract;
+
+    beforeEach(async function () {
+      const tx = await regularTokenFactory.connect(executorSigner).deployToken(
+        spaceId,
+        'Currency Token',
+        'CUR',
+        ethers.parseEther('10000'),
+        true,
+        false,
+        true,
+        1000000n, // $1.00
+        ethers.ZeroAddress, // priceCurrencyFeed (USD)
+        false,
+        false,
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
+      );
+
+      const receipt = await tx.wait();
+      const tokenDeployedEvent = receipt?.logs
+        .map((log: any) => {
+          try {
+            return regularTokenFactory.interface.parseLog(log);
+          } catch {
+            return null;
+          }
+        })
+        .find((event: any) => event && event.name === 'TokenDeployed');
+      const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+
+      token = await ethers.getContractAt('RegularSpaceToken', tokenAddress);
+    });
+
+    it('Should initialize with USD (zero address) as default currency feed', async function () {
+      expect(await token.priceCurrencyFeed()).to.equal(ethers.ZeroAddress);
+      expect(await token.tokenPrice()).to.equal(1000000n);
+      expect(await token.priceInUSD()).to.equal(1000000n);
+    });
+
+    it('Should allow executor to set price with a currency feed', async function () {
+      const newPrice = 2000000n; // 2.00 in new currency
+      // Use a non-zero address to simulate a Chainlink feed
+      const fakeCurrencyFeed = alice.address;
+
+      await expect(
+        token
+          .connect(executorSigner)
+          .setPriceWithCurrency(newPrice, fakeCurrencyFeed),
+      )
+        .to.emit(token, 'PriceInUSDUpdated')
+        .withArgs(1000000n, newPrice)
+        .and.to.emit(token, 'PriceCurrencyUpdated')
+        .withArgs(newPrice, fakeCurrencyFeed);
+
+      expect(await token.tokenPrice()).to.equal(newPrice);
+      expect(await token.priceInUSD()).to.equal(newPrice);
+      expect(await token.priceCurrencyFeed()).to.equal(fakeCurrencyFeed);
+    });
+
+    it('Should allow switching back to USD (zero address)', async function () {
+      const fakeCurrencyFeed = alice.address;
+
+      // Set to non-USD currency
+      await token
+        .connect(executorSigner)
+        .setPriceWithCurrency(2000000n, fakeCurrencyFeed);
+      expect(await token.priceCurrencyFeed()).to.equal(fakeCurrencyFeed);
+
+      // Switch back to USD
+      await token
+        .connect(executorSigner)
+        .setPriceWithCurrency(5000000n, ethers.ZeroAddress);
+
+      expect(await token.tokenPrice()).to.equal(5000000n);
+      expect(await token.priceInUSD()).to.equal(5000000n);
+      expect(await token.priceCurrencyFeed()).to.equal(ethers.ZeroAddress);
+    });
+
+    it('Should only allow executor to set price with currency', async function () {
+      await expect(
+        token.connect(alice).setPriceWithCurrency(2000000n, alice.address),
+      ).to.be.revertedWith('Only executor can update price');
+    });
+
+    it('Should keep tokenPrice and priceInUSD in sync', async function () {
+      const newPrice = 3500000n;
+      const fakeCurrencyFeed = bob.address;
+
+      await token
+        .connect(executorSigner)
+        .setPriceWithCurrency(newPrice, fakeCurrencyFeed);
+
+      expect(await token.tokenPrice()).to.equal(newPrice);
+      expect(await token.priceInUSD()).to.equal(newPrice);
+
+      // Also test setPriceInUSD keeps them in sync
+      const anotherPrice = 7000000n;
+      await token.connect(executorSigner).setPriceInUSD(anotherPrice);
+
+      expect(await token.tokenPrice()).to.equal(anotherPrice);
+      expect(await token.priceInUSD()).to.equal(anotherPrice);
+    });
+
+    it('Should deploy token with non-USD currency feed', async function () {
+      const fakeCurrencyFeed = charlie.address;
+      const cadPrice = 1500000n; // 1.50 CAD
+
+      const tx = await regularTokenFactory.connect(executorSigner).deployToken(
+        spaceId,
+        'CAD Token',
+        'CAD',
+        ethers.parseEther('10000'),
+        true,
+        false,
+        true,
+        cadPrice,
+        fakeCurrencyFeed, // non-zero currency feed
+        false,
+        false,
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
+      );
+
+      const receipt = await tx.wait();
+      const tokenDeployedEvent = receipt?.logs
+        .map((log: any) => {
+          try {
+            return regularTokenFactory.interface.parseLog(log);
+          } catch {
+            return null;
+          }
+        })
+        .find((event: any) => event && event.name === 'TokenDeployed');
+      const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+
+      const cadToken = await ethers.getContractAt(
+        'RegularSpaceToken',
+        tokenAddress,
+      );
+
+      expect(await cadToken.tokenPrice()).to.equal(cadPrice);
+      expect(await cadToken.priceInUSD()).to.equal(cadPrice);
+      expect(await cadToken.priceCurrencyFeed()).to.equal(fakeCurrencyFeed);
+    });
+  });
+
+  describe('15. Token Name and Symbol Change', function () {
+    let token: Contract;
+
+    beforeEach(async function () {
+      const tx = await regularTokenFactory.connect(executorSigner).deployToken(
+        spaceId,
+        'Original Name',
+        'ORIG',
+        ethers.parseEther('10000'),
+        true,
+        false,
+        true,
+        0,
+        ethers.ZeroAddress, // priceCurrencyFeed (USD)
+        false,
+        false,
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
+      );
+
+      const receipt = await tx.wait();
+      const tokenDeployedEvent = receipt?.logs
+        .map((log: any) => {
+          try {
+            return regularTokenFactory.interface.parseLog(log);
+          } catch {
+            return null;
+          }
+        })
+        .find((event: any) => event && event.name === 'TokenDeployed');
+      const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+
+      token = await ethers.getContractAt('RegularSpaceToken', tokenAddress);
+    });
+
+    it('Should return initial name and symbol', async function () {
+      expect(await token.name()).to.equal('Original Name');
+      expect(await token.symbol()).to.equal('ORIG');
+    });
+
+    it('Should allow executor to change token name', async function () {
+      await expect(
+        token.connect(executorSigner).setTokenName('Updated Name'),
+      )
+        .to.emit(token, 'TokenNameUpdated')
+        .withArgs('Original Name', 'Updated Name');
+
+      expect(await token.name()).to.equal('Updated Name');
+    });
+
+    it('Should allow executor to change token symbol', async function () {
+      await expect(
+        token.connect(executorSigner).setTokenSymbol('UPD'),
+      )
+        .to.emit(token, 'TokenSymbolUpdated')
+        .withArgs('ORIG', 'UPD');
+
+      expect(await token.symbol()).to.equal('UPD');
+    });
+
+    it('Should allow changing name and symbol multiple times', async function () {
+      await token.connect(executorSigner).setTokenName('Name V2');
+      expect(await token.name()).to.equal('Name V2');
+
+      await token.connect(executorSigner).setTokenName('Name V3');
+      expect(await token.name()).to.equal('Name V3');
+
+      await token.connect(executorSigner).setTokenSymbol('V2');
+      expect(await token.symbol()).to.equal('V2');
+
+      await token.connect(executorSigner).setTokenSymbol('V3');
+      expect(await token.symbol()).to.equal('V3');
+    });
+
+    it('Should not allow non-executor to change name', async function () {
+      await expect(
+        token.connect(alice).setTokenName('Hacked Name'),
+      ).to.be.revertedWith('Only executor can update token name');
+    });
+
+    it('Should not allow non-executor to change symbol', async function () {
+      await expect(
+        token.connect(bob).setTokenSymbol('HACK'),
+      ).to.be.revertedWith('Only executor can update token symbol');
+    });
+
+    it('Should not allow setting empty name', async function () {
+      await expect(
+        token.connect(executorSigner).setTokenName(''),
+      ).to.be.revertedWith('Name cannot be empty');
+    });
+
+    it('Should not allow setting empty symbol', async function () {
+      await expect(
+        token.connect(executorSigner).setTokenSymbol(''),
+      ).to.be.revertedWith('Symbol cannot be empty');
+    });
+
+    it('Should emit correct old values in events after multiple changes', async function () {
+      await token.connect(executorSigner).setTokenName('Second Name');
+
+      await expect(
+        token.connect(executorSigner).setTokenName('Third Name'),
+      )
+        .to.emit(token, 'TokenNameUpdated')
+        .withArgs('Second Name', 'Third Name');
+
+      await token.connect(executorSigner).setTokenSymbol('SYM2');
+
+      await expect(
+        token.connect(executorSigner).setTokenSymbol('SYM3'),
+      )
+        .to.emit(token, 'TokenSymbolUpdated')
+        .withArgs('SYM2', 'SYM3');
+    });
+
+    it('Should work for decaying tokens as well', async function () {
+      const tx = await decayingTokenFactory
+        .connect(executorSigner)
+        .deployDecayingToken(
+          spaceId,
+          'Decay Original',
+          'DORIG',
+          ethers.parseEther('5000'),
+          true,
+          false,
+          true,
+          0,
+          ethers.ZeroAddress, // priceCurrencyFeed (USD)
+          false,
+          false,
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
+          100, // 1% decay
+          3600, // 1 hour
+        );
+
+      const receipt = await tx.wait();
+      const tokenDeployedEvent = receipt?.logs
+        .map((log: any) => {
+          try {
+            return decayingTokenFactory.interface.parseLog(log);
+          } catch {
+            return null;
+          }
+        })
+        .find((event: any) => event && event.name === 'TokenDeployed');
+      const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+
+      const decayingToken = await ethers.getContractAt(
+        'DecayingSpaceToken',
+        tokenAddress,
+      );
+
+      expect(await decayingToken.name()).to.equal('Decay Original');
+      expect(await decayingToken.symbol()).to.equal('DORIG');
+
+      await decayingToken.connect(executorSigner).setTokenName('Decay Updated');
+      await decayingToken.connect(executorSigner).setTokenSymbol('DUPD');
+
+      expect(await decayingToken.name()).to.equal('Decay Updated');
+      expect(await decayingToken.symbol()).to.equal('DUPD');
+    });
+
+    it('Should work for ownership tokens as well', async function () {
+      const tx = await ownershipTokenFactory
+        .connect(executorSigner)
+        .deployOwnershipToken(
+          spaceId,
+          'Ownership Original',
+          'OORIG',
+          ethers.parseEther('100'),
+          false,
+          true,
+          0,
+          ethers.ZeroAddress, // priceCurrencyFeed (USD)
+          false,
+          false,
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
+        );
+
+      const receipt = await tx.wait();
+      const tokenDeployedEvent = receipt?.logs
+        .map((log: any) => {
+          try {
+            return ownershipTokenFactory.interface.parseLog(log);
+          } catch {
+            return null;
+          }
+        })
+        .find((event: any) => event && event.name === 'TokenDeployed');
+      const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+
+      const ownershipToken = await ethers.getContractAt(
+        'OwnershipSpaceToken',
+        tokenAddress,
+      );
+
+      expect(await ownershipToken.name()).to.equal('Ownership Original');
+      expect(await ownershipToken.symbol()).to.equal('OORIG');
+
+      await ownershipToken
+        .connect(executorSigner)
+        .setTokenName('Ownership Updated');
+      await ownershipToken.connect(executorSigner).setTokenSymbol('OUPD');
+
+      expect(await ownershipToken.name()).to.equal('Ownership Updated');
+      expect(await ownershipToken.symbol()).to.equal('OUPD');
     });
   });
 });

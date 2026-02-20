@@ -54,6 +54,11 @@ contract RegularSpaceToken is
   // tokenPrice and priceInUSD are kept in sync by all setter functions.
   uint256 public tokenPrice;
 
+  // Custom name/symbol overrides — allows renaming the token after deployment.
+  // When set (non-empty), these override the ERC20 name() and symbol() return values.
+  string private _customName;
+  string private _customSymbol;
+
   // Events
   event MaxSupplyUpdated(uint256 oldMaxSupply, uint256 newMaxSupply);
   event TransferableUpdated(bool transferable);
@@ -61,6 +66,8 @@ contract RegularSpaceToken is
   event PriceInUSDUpdated(uint256 oldPrice, uint256 newPrice);
   event PriceCurrencyUpdated(uint256 price, address currencyFeed);
   event ArchivedStatusUpdated(bool archived);
+  event TokenNameUpdated(string oldName, string newName);
+  event TokenSymbolUpdated(string oldSymbol, string newSymbol);
   event TransferWhitelistUpdated(address indexed account, bool canTransfer);
   event ReceiveWhitelistUpdated(address indexed account, bool canReceive);
   event UseTransferWhitelistUpdated(bool enabled);
@@ -277,6 +284,52 @@ contract RegularSpaceToken is
     require(msg.sender == executor, 'Only executor can update archived status');
     archived = _archived;
     emit ArchivedStatusUpdated(_archived);
+  }
+
+  /**
+   * @dev Returns the name of the token.
+   * If a custom name has been set, it overrides the original ERC20 name.
+   */
+  function name() public view virtual override returns (string memory) {
+    if (bytes(_customName).length > 0) {
+      return _customName;
+    }
+    return super.name();
+  }
+
+  /**
+   * @dev Returns the symbol of the token.
+   * If a custom symbol has been set, it overrides the original ERC20 symbol.
+   */
+  function symbol() public view virtual override returns (string memory) {
+    if (bytes(_customSymbol).length > 0) {
+      return _customSymbol;
+    }
+    return super.symbol();
+  }
+
+  /**
+   * @dev Update the token name
+   * @param newName The new token name
+   */
+  function setTokenName(string memory newName) external virtual {
+    require(msg.sender == executor, 'Only executor can update token name');
+    require(bytes(newName).length > 0, 'Name cannot be empty');
+    string memory oldName = name();
+    _customName = newName;
+    emit TokenNameUpdated(oldName, newName);
+  }
+
+  /**
+   * @dev Update the token symbol
+   * @param newSymbol The new token symbol
+   */
+  function setTokenSymbol(string memory newSymbol) external virtual {
+    require(msg.sender == executor, 'Only executor can update token symbol');
+    require(bytes(newSymbol).length > 0, 'Symbol cannot be empty');
+    string memory oldSymbol = symbol();
+    _customSymbol = newSymbol;
+    emit TokenSymbolUpdated(oldSymbol, newSymbol);
   }
 
   /**
