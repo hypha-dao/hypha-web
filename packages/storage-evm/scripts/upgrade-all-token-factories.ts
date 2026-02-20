@@ -359,6 +359,16 @@ async function main(): Promise<void> {
     ),
   };
 
+  const allFactoriesUpgraded = Object.values(factoryUpgrades).every(
+    (r) => r.success,
+  );
+  if (!allFactoriesUpgraded) {
+    console.error(
+      '\n❌ Some factory upgrades failed. Aborting before setting token implementations.',
+    );
+    process.exit(1);
+  }
+
   // ============== STEP 4: SET TOKEN IMPLEMENTATIONS IN FACTORIES ==============
   console.log(
     '\n═══════════════════════════════════════════════════════════════',
