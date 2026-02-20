@@ -185,11 +185,11 @@ contract DAOProposalsImplementation is
     require(address(spaceFactory) != address(0), 'Contracts not initialized');
     ProposalCore storage proposal = proposalsCoreData[_proposalId];
 
+    require(!proposalWithdrawn[_proposalId], 'Proposal has been withdrawn');
     checkProposalExpiration(_proposalId);
     require(block.timestamp >= proposal.startTime, 'Proposal not started');
     require(!proposal.expired, 'Proposal has expired');
     require(!proposal.executed, 'Proposal already executed');
-    require(!proposalWithdrawn[_proposalId], 'Proposal has been withdrawn');
 
     // Skip subscription check if proposal targets HyphaToken (payment/investment functions)
     if (
@@ -400,6 +400,7 @@ contract DAOProposalsImplementation is
     uint256 _proposalId,
     ProposalCore storage proposal
   ) internal {
+    require(!proposalWithdrawn[_proposalId], 'Proposal has been withdrawn');
     proposal.executed = true;
     spaceExecutedProposals[proposal.spaceId].push(_proposalId);
     allExecutedProposals.push(_proposalId);
@@ -434,6 +435,9 @@ contract DAOProposalsImplementation is
   function checkProposalExpiration(
     uint256 _proposalId
   ) public override returns (bool) {
+    // Withdrawn is a terminal state — cannot transition to expired/rejected
+    if (proposalWithdrawn[_proposalId]) return false;
+
     ProposalCore storage proposal = proposalsCoreData[_proposalId];
 
     require(address(spaceFactory) != address(0), 'Contracts not initialized');
@@ -469,6 +473,7 @@ contract DAOProposalsImplementation is
 
   function triggerExecutionCheck(uint256 _proposalId) external {
     require(address(spaceFactory) != address(0), 'Contracts not initialized');
+    require(!proposalWithdrawn[_proposalId], 'Proposal has been withdrawn');
     checkAndExecuteProposal(_proposalId);
 
     ProposalCore storage proposal = proposalsCoreData[_proposalId];

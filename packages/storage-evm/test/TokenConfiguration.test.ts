@@ -657,6 +657,222 @@ describe('Token Configuration Tests', function () {
     });
   });
 
+  describe('3b. canAccountTransfer & canAccountReceive View Functions', function () {
+    describe('When whitelists are disabled', function () {
+      let token: Contract;
+
+      beforeEach(async function () {
+        const tx = await regularTokenFactory
+          .connect(executorSigner)
+          .deployToken(
+            spaceId,
+            'No Whitelist Token',
+            'NWL',
+            ethers.parseEther('10000'),
+            true,
+            false,
+            true,
+            0,
+            ethers.ZeroAddress,
+            false, // useTransferWhitelist = false
+            false, // useReceiveWhitelist = false
+            [],
+            [],
+          );
+
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return regularTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+
+        token = await ethers.getContractAt('RegularSpaceToken', tokenAddress);
+      });
+
+      it('canAccountTransfer should return true for executor', async function () {
+        expect(await token.canAccountTransfer(executorSigner.address)).to.be
+          .true;
+      });
+
+      it('canAccountTransfer should return true for non-whitelisted account when enforcement is off', async function () {
+        expect(await token.canAccountTransfer(alice.address)).to.be.true;
+        expect(await token.canAccountTransfer(bob.address)).to.be.true;
+      });
+
+      it('canAccountReceive should return true for executor', async function () {
+        expect(await token.canAccountReceive(executorSigner.address)).to.be
+          .true;
+      });
+
+      it('canAccountReceive should return true for non-whitelisted account when enforcement is off', async function () {
+        expect(await token.canAccountReceive(alice.address)).to.be.true;
+        expect(await token.canAccountReceive(bob.address)).to.be.true;
+      });
+    });
+
+    describe('When whitelists are enabled', function () {
+      let token: Contract;
+
+      beforeEach(async function () {
+        const tx = await regularTokenFactory
+          .connect(executorSigner)
+          .deployToken(
+            spaceId,
+            'Whitelist Token',
+            'WL',
+            ethers.parseEther('10000'),
+            true,
+            false,
+            true,
+            0,
+            ethers.ZeroAddress,
+            true, // useTransferWhitelist = true
+            true, // useReceiveWhitelist = true
+            [],
+            [],
+          );
+
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return regularTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+
+        token = await ethers.getContractAt('RegularSpaceToken', tokenAddress);
+      });
+
+      it('canAccountTransfer should return true for executor', async function () {
+        expect(await token.canAccountTransfer(executorSigner.address)).to.be
+          .true;
+      });
+
+      it('canAccountTransfer should return false for non-whitelisted account when enforcement is on', async function () {
+        expect(await token.canAccountTransfer(alice.address)).to.be.false;
+        expect(await token.canAccountTransfer(bob.address)).to.be.false;
+      });
+
+      it('canAccountTransfer should return true for directly whitelisted account', async function () {
+        await token
+          .connect(executorSigner)
+          .batchSetTransferWhitelist([alice.address], [true]);
+
+        expect(await token.canAccountTransfer(alice.address)).to.be.true;
+        expect(await token.canAccountTransfer(bob.address)).to.be.false;
+      });
+
+      it('canAccountReceive should return true for executor', async function () {
+        expect(await token.canAccountReceive(executorSigner.address)).to.be
+          .true;
+      });
+
+      it('canAccountReceive should return false for non-whitelisted account when enforcement is on', async function () {
+        expect(await token.canAccountReceive(alice.address)).to.be.false;
+        expect(await token.canAccountReceive(bob.address)).to.be.false;
+      });
+
+      it('canAccountReceive should return true for directly whitelisted account', async function () {
+        await token
+          .connect(executorSigner)
+          .batchSetReceiveWhitelist([bob.address], [true]);
+
+        expect(await token.canAccountReceive(bob.address)).to.be.true;
+        expect(await token.canAccountReceive(charlie.address)).to.be.false;
+      });
+    });
+
+    describe('Toggling enforcement flags', function () {
+      let token: Contract;
+
+      beforeEach(async function () {
+        const tx = await regularTokenFactory
+          .connect(executorSigner)
+          .deployToken(
+            spaceId,
+            'Toggle Whitelist Token',
+            'TWL',
+            ethers.parseEther('10000'),
+            true,
+            false,
+            true,
+            0,
+            ethers.ZeroAddress,
+            true, // useTransferWhitelist = true
+            true, // useReceiveWhitelist = true
+            [],
+            [],
+          );
+
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return regularTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+
+        token = await ethers.getContractAt('RegularSpaceToken', tokenAddress);
+      });
+
+      it('canAccountTransfer should change from false to true when enforcement is disabled', async function () {
+        // With enforcement on, non-whitelisted account returns false
+        expect(await token.canAccountTransfer(alice.address)).to.be.false;
+
+        // Disable transfer whitelist enforcement
+        await token.connect(executorSigner).setUseTransferWhitelist(false);
+
+        // Now should return true
+        expect(await token.canAccountTransfer(alice.address)).to.be.true;
+      });
+
+      it('canAccountReceive should change from false to true when enforcement is disabled', async function () {
+        // With enforcement on, non-whitelisted account returns false
+        expect(await token.canAccountReceive(bob.address)).to.be.false;
+
+        // Disable receive whitelist enforcement
+        await token.connect(executorSigner).setUseReceiveWhitelist(false);
+
+        // Now should return true
+        expect(await token.canAccountReceive(bob.address)).to.be.true;
+      });
+
+      it('canAccountTransfer should change from true to false when enforcement is re-enabled', async function () {
+        // Disable enforcement
+        await token.connect(executorSigner).setUseTransferWhitelist(false);
+        expect(await token.canAccountTransfer(alice.address)).to.be.true;
+
+        // Re-enable enforcement
+        await token.connect(executorSigner).setUseTransferWhitelist(true);
+        expect(await token.canAccountTransfer(alice.address)).to.be.false;
+      });
+
+      it('canAccountReceive should change from true to false when enforcement is re-enabled', async function () {
+        // Disable enforcement
+        await token.connect(executorSigner).setUseReceiveWhitelist(false);
+        expect(await token.canAccountReceive(bob.address)).to.be.true;
+
+        // Re-enable enforcement
+        await token.connect(executorSigner).setUseReceiveWhitelist(true);
+        expect(await token.canAccountReceive(bob.address)).to.be.false;
+      });
+    });
+  });
+
   describe('4. USD Pricing', function () {
     it('Should set initial price in USD', async function () {
       const priceInUSD = 5000000n; // $5.00 (6 decimals)

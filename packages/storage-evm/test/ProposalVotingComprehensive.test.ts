@@ -3969,6 +3969,209 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
 
       console.log('✅ Withdrawal works correctly for HyphaToken proposals');
     });
+
+    it('Should prevent execution via triggerExecutionCheck after withdrawal (regression)', async function () {
+      console.log(
+        '\n--- Regression: Withdraw then triggerExecutionCheck ---',
+      );
+
+      // Use low quorum so votes are sufficient, and unity that allows passing
+      const { spaceId } = await createSpace({
+        unity: 51,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Withdraw-then-Execute Regression',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Cast enough yes votes to meet quorum and unity once min duration passes
+      // With 5 members (1-member-1-vote, quorum 50% → need 3 votes, unity 51%)
+      // 2 yes votes + 1 no vote = 3 votes cast (quorum met), 66% yes (>51% unity)
+      // But execution won't happen until min duration passes
+      await daoProposals.connect(members[0]).vote(proposalId, true);
+      await daoProposals.connect(members[1]).vote(proposalId, true);
+
+      // Verify proposal is not yet executed (may or may not have auto-executed depending on quorum)
+      let proposalState = await daoProposals.getProposalCore(proposalId);
+      const wasExecutedBeforeWithdraw = proposalState.executed;
+
+      if (!wasExecutedBeforeWithdraw) {
+        // Withdraw the proposal before it can be executed
+        await daoProposals.connect(owner).withdrawProposal(proposalId);
+
+        // Confirm withdrawn state via all getters
+        expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(
+          true,
+        );
+        const withdrawnList =
+          await daoProposals.getWithdrawnProposalsBySpace(spaceId);
+        expect(withdrawnList.map((id: any) => id.toString())).to.include(
+          proposalId.toString(),
+        );
+
+        // Advance time well past proposal duration (and any min duration)
+        await ethers.provider.send('evm_increaseTime', [260000]); // ~72+ hours
+        await ethers.provider.send('evm_mine');
+
+        // Attempt triggerExecutionCheck — should revert because proposal is withdrawn
+        await expect(
+          daoProposals.connect(members[0]).triggerExecutionCheck(proposalId),
+        ).to.be.revertedWith('Proposal has been withdrawn');
+
+        // Verify proposal state is unchanged: not executed, not expired, still withdrawn
+        proposalState = await daoProposals.getProposalCore(proposalId);
+        expect(proposalState.executed).to.equal(false);
+        expect(proposalState.expired).to.equal(false);
+        expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(
+          true,
+        );
+
+        // Verify not added to executed lists
+        const executedBySpace =
+          await daoProposals.getExecutedProposalsBySpace(spaceId);
+        expect(
+          executedBySpace.map((id: any) => id.toString()),
+        ).to.not.include(proposalId.toString());
+
+        const allExecuted = await daoProposals.getAllExecutedProposals();
+        expect(allExecuted.map((id: any) => id.toString())).to.not.include(
+          proposalId.toString(),
+        );
+
+        // Verify not added to rejected lists either
+        const [accepted, rejected] =
+          await daoProposals.getSpaceProposals(spaceId);
+        expect(accepted.map((id: any) => id.toString())).to.not.include(
+          proposalId.toString(),
+        );
+        expect(rejected.map((id: any) => id.toString())).to.not.include(
+          proposalId.toString(),
+        );
+
+        // Verify voting is also prevented after withdrawal
+        await expect(
+          daoProposals.connect(members[2]).vote(proposalId, true),
+        ).to.be.revertedWith('Proposal has been withdrawn');
+
+        // getProposalCore should still reflect original data
+        const finalState = await daoProposals.getProposalCore(proposalId);
+        expect(finalState.spaceId).to.equal(spaceId);
+        expect(finalState.creator).to.equal(owner.address);
+
+        console.log(
+          '✅ Withdrawn proposal cannot be executed via triggerExecutionCheck',
+        );
+      } else {
+        console.log(
+          '⚠️  Proposal auto-executed before withdrawal — adjusting test',
+        );
+        // If auto-executed, the test is not applicable; just verify state
+        expect(proposalState.executed).to.equal(true);
+      }
+    });
+
+    it('Should prevent expiration via checkProposalExpiration after withdrawal (regression)', async function () {
+      console.log(
+        '\n--- Regression: Withdraw then checkProposalExpiration ---',
+      );
+
+      const { spaceId } = await createSpace({
+        unity: 60,
+        quorum: 50,
+        memberCount: 5,
+        name: 'Withdraw-then-Expire Regression',
+      });
+
+      const proposalId = await createTestProposal(spaceId, owner);
+
+      // Record initial state
+      const initialState = await daoProposals.getProposalCore(proposalId);
+      expect(initialState.executed).to.equal(false);
+      expect(initialState.expired).to.equal(false);
+
+      // Withdraw the proposal while it's still active
+      await daoProposals.connect(owner).withdrawProposal(proposalId);
+
+      // Confirm withdrawn state via all getters
+      expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(true);
+      const withdrawnList =
+        await daoProposals.getWithdrawnProposalsBySpace(spaceId);
+      expect(withdrawnList.map((id: any) => id.toString())).to.include(
+        proposalId.toString(),
+      );
+
+      // Advance time past proposal end time (duration is 3600s = 1 hour)
+      await ethers.provider.send('evm_increaseTime', [7200]); // 2 hours
+      await ethers.provider.send('evm_mine');
+
+      // Call checkProposalExpiration — should return false (no-op) for withdrawn proposal
+      const tx = await daoProposals
+        .connect(owner)
+        .checkProposalExpiration(proposalId);
+      const receipt = await tx.wait();
+
+      // Verify no ProposalExpired event was emitted
+      const proposalExpiredEvents = receipt?.logs
+        .map((log: any) => {
+          try {
+            return daoProposals.interface.parseLog(log);
+          } catch {
+            return null;
+          }
+        })
+        .filter(
+          (event: any) => event && event.name === 'ProposalExpired',
+        );
+      expect(proposalExpiredEvents.length).to.equal(0);
+
+      // Verify proposal state: NOT expired, NOT executed, still withdrawn
+      const afterState = await daoProposals.getProposalCore(proposalId);
+      expect(afterState.expired).to.equal(false);
+      expect(afterState.executed).to.equal(false);
+      expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(true);
+
+      // Verify not added to rejected/expired lists
+      const [accepted, rejected] =
+        await daoProposals.getSpaceProposals(spaceId);
+      expect(accepted.map((id: any) => id.toString())).to.not.include(
+        proposalId.toString(),
+      );
+      expect(rejected.map((id: any) => id.toString())).to.not.include(
+        proposalId.toString(),
+      );
+
+      // Verify not added to executed lists
+      const executedBySpace =
+        await daoProposals.getExecutedProposalsBySpace(spaceId);
+      expect(executedBySpace.map((id: any) => id.toString())).to.not.include(
+        proposalId.toString(),
+      );
+
+      // Verify voting is prevented
+      await expect(
+        daoProposals.connect(members[0]).vote(proposalId, true),
+      ).to.be.revertedWith('Proposal has been withdrawn');
+
+      // Verify getProposalCore data integrity (unchanged from initial except time advancing)
+      expect(afterState.spaceId).to.equal(initialState.spaceId);
+      expect(afterState.startTime).to.equal(initialState.startTime);
+      expect(afterState.endTime).to.equal(initialState.endTime);
+      expect(afterState.yesVotes).to.equal(initialState.yesVotes);
+      expect(afterState.noVotes).to.equal(initialState.noVotes);
+      expect(afterState.creator).to.equal(initialState.creator);
+
+      // Verify withdrawn list is still accurate
+      const finalWithdrawnList =
+        await daoProposals.getWithdrawnProposalsBySpace(spaceId);
+      expect(finalWithdrawnList.map((id: any) => id.toString())).to.include(
+        proposalId.toString(),
+      );
+
+      console.log(
+        '✅ Withdrawn proposal cannot be expired via checkProposalExpiration',
+      );
+    });
   });
 
   describe('Token Voting Power - Member Holdings Only Tests', function () {

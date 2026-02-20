@@ -25,14 +25,13 @@ const FEEDS_RAW: { name: string; address: string }[] = [
   { name: 'USDC/USD', address: '0x7e860098F58bBFC8648a4311b374B1D669a2bc6B' },
 
   // FX / USD — these are the fiat currencies for the vault's priceCurrencyFeed
-  // ⚠️  REPLACE these with the actual addresses from:
-  // https://docs.chain.link/data-feeds/price-feeds/addresses?network=base&page=1
-  { name: 'EUR/USD', address: '0xc91D87E7F8F91d06FD36975f3507436E92701FE1' },
-  { name: 'GBP/USD', address: '0xAcCF48e139F4e5eA5e7a0A19E2098E41a4b53476' },
-  { name: 'JPY/USD', address: '0xfE2e567e5b3a5E2f5Fc1a7843587CE4E1F7A5320' },
-  { name: 'AUD/USD', address: '0xe1F1FBa3c7c4b197F143b766e0Db3E72b2B8B00F' },
-  { name: 'CAD/USD', address: '0xF8Ce3167319CDA552aeC49b32E65E0F77e889C79' },
-  { name: 'CHF/USD', address: '0x449Bf614E73a15F67bCa3A18F0550b6ab8F53Ab8' },
+  // Source: https://docs.chain.link/data-feeds/price-feeds/addresses?network=base
+  // Note: JPY/USD is not available on Base mainnet
+  { name: 'EUR/USD', address: '0xc91D87E81faB8f93699ECf7Ee9B44D11e1D53F0F' },
+  { name: 'GBP/USD', address: '0xCceA6576904C118037695eB71195a5425E69Fa15' },
+  { name: 'AUD/USD', address: '0x46e51B8cA41d709928EdA9Ae43e42193E6CDf229' },
+  { name: 'CAD/USD', address: '0xA840145F87572E82519d578b1F36340368a25D5d' },
+  { name: 'CHF/USD', address: '0x3A1d6444fb6a402470098E23DaD0B7E86E14252F' },
 ];
 
 // Normalize addresses to proper checksums

@@ -635,6 +635,10 @@ contract RegularSpaceToken is
     if (account == executor) {
       return true;
     }
+    // If transfer whitelist is not enforced, everyone can transfer
+    if (!useTransferWhitelist) {
+      return true;
+    }
     // Check direct whitelist
     if (canTransfer[account]) {
       return true;
@@ -651,6 +655,10 @@ contract RegularSpaceToken is
   function canAccountReceive(address account) public view returns (bool) {
     // Executor always bypasses
     if (account == executor) {
+      return true;
+    }
+    // If receive whitelist is not enforced, everyone can receive
+    if (!useReceiveWhitelist) {
       return true;
     }
     // Check direct whitelist
