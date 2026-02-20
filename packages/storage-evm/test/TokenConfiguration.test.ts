@@ -3067,9 +3067,7 @@ describe('Token Configuration Tests', function () {
     });
 
     it('Should allow executor to change token name', async function () {
-      await expect(
-        token.connect(executorSigner).setTokenName('Updated Name'),
-      )
+      await expect(token.connect(executorSigner).setTokenName('Updated Name'))
         .to.emit(token, 'TokenNameUpdated')
         .withArgs('Original Name', 'Updated Name');
 
@@ -3077,9 +3075,7 @@ describe('Token Configuration Tests', function () {
     });
 
     it('Should allow executor to change token symbol', async function () {
-      await expect(
-        token.connect(executorSigner).setTokenSymbol('UPD'),
-      )
+      await expect(token.connect(executorSigner).setTokenSymbol('UPD'))
         .to.emit(token, 'TokenSymbolUpdated')
         .withArgs('ORIG', 'UPD');
 
@@ -3127,17 +3123,13 @@ describe('Token Configuration Tests', function () {
     it('Should emit correct old values in events after multiple changes', async function () {
       await token.connect(executorSigner).setTokenName('Second Name');
 
-      await expect(
-        token.connect(executorSigner).setTokenName('Third Name'),
-      )
+      await expect(token.connect(executorSigner).setTokenName('Third Name'))
         .to.emit(token, 'TokenNameUpdated')
         .withArgs('Second Name', 'Third Name');
 
       await token.connect(executorSigner).setTokenSymbol('SYM2');
 
-      await expect(
-        token.connect(executorSigner).setTokenSymbol('SYM3'),
-      )
+      await expect(token.connect(executorSigner).setTokenSymbol('SYM3'))
         .to.emit(token, 'TokenSymbolUpdated')
         .withArgs('SYM2', 'SYM3');
     });

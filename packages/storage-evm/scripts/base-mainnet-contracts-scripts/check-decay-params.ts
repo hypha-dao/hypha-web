@@ -148,7 +148,11 @@ async function main(): Promise<void> {
   const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
 
   // Get the contract instance
-  const token = new ethers.Contract(tokenAddress, decayingSpaceTokenAbi, provider);
+  const token = new ethers.Contract(
+    tokenAddress,
+    decayingSpaceTokenAbi,
+    provider,
+  );
 
   // Basic token info
   try {
@@ -175,7 +179,9 @@ async function main(): Promise<void> {
       console.log(
         '  ⚠️  WARNING: decayRate is 0! This will cause division by zero errors!',
       );
-      console.log('  This likely means the token was not properly initialized.');
+      console.log(
+        '  This likely means the token was not properly initialized.',
+      );
     } else {
       // Convert to human readable time
       const seconds = Number(decayRate);
@@ -188,13 +194,18 @@ async function main(): Promise<void> {
       } else if (hours >= 1) {
         console.log(`  Decay Rate (human readable): ${hours.toFixed(2)} hours`);
       } else if (minutes >= 1) {
-        console.log(`  Decay Rate (human readable): ${minutes.toFixed(2)} minutes`);
+        console.log(
+          `  Decay Rate (human readable): ${minutes.toFixed(2)} minutes`,
+        );
       } else {
         console.log(`  Decay Rate (human readable): ${seconds} seconds`);
       }
     }
 
-    console.log('  Decay Percentage (basis points):', decayPercentage.toString());
+    console.log(
+      '  Decay Percentage (basis points):',
+      decayPercentage.toString(),
+    );
     console.log(
       '  Decay Percentage (%):',
       (Number(decayPercentage) / 100).toFixed(2) + '%',
@@ -255,4 +266,3 @@ main()
     console.error(error);
     process.exit(1);
   });
-

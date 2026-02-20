@@ -74,7 +74,9 @@ async function validateStorageLayout(
   }
 }
 
-async function deployImplementation(contractName: string): Promise<DeployResult> {
+async function deployImplementation(
+  contractName: string,
+): Promise<DeployResult> {
   console.log(`\n  Deploying ${contractName} implementation...`);
 
   try {
@@ -85,7 +87,9 @@ async function deployImplementation(contractName: string): Promise<DeployResult>
       { kind: 'uups' },
     )) as string;
 
-    console.log(`  ✅ ${contractName} implementation deployed at: ${implementationAddress}`);
+    console.log(
+      `  ✅ ${contractName} implementation deployed at: ${implementationAddress}`,
+    );
 
     return {
       name: contractName,
@@ -120,7 +124,9 @@ async function upgradeFactory(
 
   try {
     // Get current implementation
-    result.oldImplementation = await upgrades.erc1967.getImplementationAddress(proxyAddress);
+    result.oldImplementation = await upgrades.erc1967.getImplementationAddress(
+      proxyAddress,
+    );
     console.log(`  Current implementation: ${result.oldImplementation}`);
 
     const ContractFactory = await ethers.getContractFactory(factoryName);
@@ -128,18 +134,26 @@ async function upgradeFactory(
     let upgradedContract;
 
     try {
-      upgradedContract = await upgrades.upgradeProxy(proxyAddress, ContractFactory, {
-        unsafeSkipStorageCheck: CONFIG.unsafeSkipStorageCheck,
-      });
+      upgradedContract = await upgrades.upgradeProxy(
+        proxyAddress,
+        ContractFactory,
+        {
+          unsafeSkipStorageCheck: CONFIG.unsafeSkipStorageCheck,
+        },
+      );
     } catch (error: any) {
       if (error.message.includes('is not registered')) {
         console.log(`  ⚠️  Proxy not registered. Importing...`);
         await upgrades.forceImport(proxyAddress, ContractFactory);
         console.log(`  ✅ Proxy imported. Retrying upgrade...`);
 
-        upgradedContract = await upgrades.upgradeProxy(proxyAddress, ContractFactory, {
-          unsafeSkipStorageCheck: CONFIG.unsafeSkipStorageCheck,
-        });
+        upgradedContract = await upgrades.upgradeProxy(
+          proxyAddress,
+          ContractFactory,
+          {
+            unsafeSkipStorageCheck: CONFIG.unsafeSkipStorageCheck,
+          },
+        );
       } else {
         throw error;
       }
@@ -147,11 +161,18 @@ async function upgradeFactory(
 
     await upgradedContract.waitForDeployment();
 
-    result.newImplementation = await upgrades.erc1967.getImplementationAddress(proxyAddress);
+    result.newImplementation = await upgrades.erc1967.getImplementationAddress(
+      proxyAddress,
+    );
     console.log(`  New implementation: ${result.newImplementation}`);
 
-    if (result.oldImplementation.toLowerCase() === result.newImplementation.toLowerCase()) {
-      console.log(`  ⚠️  Implementation address unchanged (may already be up to date)`);
+    if (
+      result.oldImplementation.toLowerCase() ===
+      result.newImplementation.toLowerCase()
+    ) {
+      console.log(
+        `  ⚠️  Implementation address unchanged (may already be up to date)`,
+      );
     } else {
       console.log(`  ✅ ${factoryName} upgraded successfully!`);
     }
@@ -178,7 +199,9 @@ async function setTokenImplementation(
   try {
     const abi = [
       {
-        inputs: [{ internalType: 'address', name: '_implementation', type: 'address' }],
+        inputs: [
+          { internalType: 'address', name: '_implementation', type: 'address' },
+        ],
         name: setterFunctionName,
         outputs: [],
         stateMutability: 'nonpayable',
@@ -200,7 +223,9 @@ async function setTokenImplementation(
     const currentImpl = await factory[getterFunctionName]();
     console.log(`  Current token implementation: ${currentImpl}`);
 
-    if (currentImpl.toLowerCase() === tokenImplementationAddress.toLowerCase()) {
+    if (
+      currentImpl.toLowerCase() === tokenImplementationAddress.toLowerCase()
+    ) {
       console.log(`  ✅ Already using the correct implementation`);
       return true;
     }
@@ -230,9 +255,15 @@ async function setTokenImplementation(
 async function main(): Promise<void> {
   const [deployer] = await ethers.getSigners();
 
-  console.log('╔══════════════════════════════════════════════════════════════╗');
-  console.log('║     COMPREHENSIVE TOKEN FACTORY UPGRADE SCRIPT               ║');
-  console.log('╚══════════════════════════════════════════════════════════════╝');
+  console.log(
+    '╔══════════════════════════════════════════════════════════════╗',
+  );
+  console.log(
+    '║     COMPREHENSIVE TOKEN FACTORY UPGRADE SCRIPT               ║',
+  );
+  console.log(
+    '╚══════════════════════════════════════════════════════════════╝',
+  );
   console.log('');
   console.log(`Deployer: ${deployer.address}`);
   console.log(`Dry Run: ${CONFIG.dryRun}`);
@@ -240,9 +271,13 @@ async function main(): Promise<void> {
   console.log('');
 
   // ============== STEP 1: VALIDATE STORAGE LAYOUTS ==============
-  console.log('═══════════════════════════════════════════════════════════════');
+  console.log(
+    '═══════════════════════════════════════════════════════════════',
+  );
   console.log('STEP 1: Validating Storage Layouts');
-  console.log('═══════════════════════════════════════════════════════════════');
+  console.log(
+    '═══════════════════════════════════════════════════════════════',
+  );
 
   const validations = {
     regularFactory: await validateStorageLayout(
@@ -262,19 +297,27 @@ async function main(): Promise<void> {
   const allValid = Object.values(validations).every((v) => v);
   if (!allValid && !CONFIG.unsafeSkipStorageCheck) {
     console.error('\n❌ Storage validation failed. Aborting upgrade.');
-    console.error('   Set CONFIG.unsafeSkipStorageCheck = true to force upgrade (dangerous!)');
+    console.error(
+      '   Set CONFIG.unsafeSkipStorageCheck = true to force upgrade (dangerous!)',
+    );
     process.exit(1);
   }
 
   if (CONFIG.dryRun) {
-    console.log('\n🔍 DRY RUN: Storage validation complete. Exiting without changes.');
+    console.log(
+      '\n🔍 DRY RUN: Storage validation complete. Exiting without changes.',
+    );
     return;
   }
 
   // ============== STEP 2: DEPLOY TOKEN IMPLEMENTATIONS ==============
-  console.log('\n═══════════════════════════════════════════════════════════════');
+  console.log(
+    '\n═══════════════════════════════════════════════════════════════',
+  );
   console.log('STEP 2: Deploying New Token Implementations');
-  console.log('═══════════════════════════════════════════════════════════════');
+  console.log(
+    '═══════════════════════════════════════════════════════════════',
+  );
 
   const tokenDeployments = {
     regular: await deployImplementation('RegularSpaceToken'),
@@ -282,27 +325,48 @@ async function main(): Promise<void> {
     ownership: await deployImplementation('OwnershipSpaceToken'),
   };
 
-  const allTokensDeployed = Object.values(tokenDeployments).every((d) => d.success);
+  const allTokensDeployed = Object.values(tokenDeployments).every(
+    (d) => d.success,
+  );
   if (!allTokensDeployed) {
-    console.error('\n❌ Some token implementations failed to deploy. Aborting.');
+    console.error(
+      '\n❌ Some token implementations failed to deploy. Aborting.',
+    );
     process.exit(1);
   }
 
   // ============== STEP 3: UPGRADE FACTORIES ==============
-  console.log('\n═══════════════════════════════════════════════════════════════');
+  console.log(
+    '\n═══════════════════════════════════════════════════════════════',
+  );
   console.log('STEP 3: Upgrading Token Factories');
-  console.log('═══════════════════════════════════════════════════════════════');
+  console.log(
+    '═══════════════════════════════════════════════════════════════',
+  );
 
   const factoryUpgrades = {
-    regular: await upgradeFactory('RegularTokenFactory', CONFIG.factories.regular),
-    decaying: await upgradeFactory('DecayingTokenFactory', CONFIG.factories.decaying),
-    ownership: await upgradeFactory('OwnershipTokenFactory', CONFIG.factories.ownership),
+    regular: await upgradeFactory(
+      'RegularTokenFactory',
+      CONFIG.factories.regular,
+    ),
+    decaying: await upgradeFactory(
+      'DecayingTokenFactory',
+      CONFIG.factories.decaying,
+    ),
+    ownership: await upgradeFactory(
+      'OwnershipTokenFactory',
+      CONFIG.factories.ownership,
+    ),
   };
 
   // ============== STEP 4: SET TOKEN IMPLEMENTATIONS IN FACTORIES ==============
-  console.log('\n═══════════════════════════════════════════════════════════════');
+  console.log(
+    '\n═══════════════════════════════════════════════════════════════',
+  );
   console.log('STEP 4: Setting Token Implementations in Factories');
-  console.log('═══════════════════════════════════════════════════════════════');
+  console.log(
+    '═══════════════════════════════════════════════════════════════',
+  );
 
   const implUpdates = {
     regular: await setTokenImplementation(
@@ -329,20 +393,33 @@ async function main(): Promise<void> {
   };
 
   // ============== SUMMARY ==============
-  console.log('\n═══════════════════════════════════════════════════════════════');
+  console.log(
+    '\n═══════════════════════════════════════════════════════════════',
+  );
   console.log('SUMMARY');
-  console.log('═══════════════════════════════════════════════════════════════');
+  console.log(
+    '═══════════════════════════════════════════════════════════════',
+  );
 
   console.log('\n📦 Token Implementations Deployed:');
-  console.log(`   RegularSpaceToken:    ${tokenDeployments.regular.implementationAddress}`);
-  console.log(`   DecayingSpaceToken:   ${tokenDeployments.decaying.implementationAddress}`);
-  console.log(`   OwnershipSpaceToken:  ${tokenDeployments.ownership.implementationAddress}`);
+  console.log(
+    `   RegularSpaceToken:    ${tokenDeployments.regular.implementationAddress}`,
+  );
+  console.log(
+    `   DecayingSpaceToken:   ${tokenDeployments.decaying.implementationAddress}`,
+  );
+  console.log(
+    `   OwnershipSpaceToken:  ${tokenDeployments.ownership.implementationAddress}`,
+  );
 
   console.log('\n🏭 Factory Upgrades:');
   Object.entries(factoryUpgrades).forEach(([name, result]) => {
     const status = result.success ? '✅' : '❌';
     console.log(`   ${status} ${result.name}`);
-    if (result.success && result.oldImplementation !== result.newImplementation) {
+    if (
+      result.success &&
+      result.oldImplementation !== result.newImplementation
+    ) {
       console.log(`      Old: ${result.oldImplementation}`);
       console.log(`      New: ${result.newImplementation}`);
     }
@@ -358,7 +435,12 @@ async function main(): Promise<void> {
     Object.values(factoryUpgrades).every((r) => r.success) &&
     Object.values(implUpdates).every((r) => r);
 
-  console.log('\n' + (allSuccess ? '✅ All upgrades completed successfully!' : '⚠️  Some upgrades failed. Check logs above.'));
+  console.log(
+    '\n' +
+      (allSuccess
+        ? '✅ All upgrades completed successfully!'
+        : '⚠️  Some upgrades failed. Check logs above.'),
+  );
 }
 
 main()
@@ -367,4 +449,3 @@ main()
     console.error(error);
     process.exit(1);
   });
-

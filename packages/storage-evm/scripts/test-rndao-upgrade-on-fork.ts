@@ -63,8 +63,9 @@ function compareStates(before: ContractState, after: ContractState): boolean {
   for (const key of keys) {
     const beforeVal = before[key];
     const afterVal = after[key];
-    const match = beforeVal === afterVal || beforeVal.toString() === afterVal.toString();
-    
+    const match =
+      beforeVal === afterVal || beforeVal.toString() === afterVal.toString();
+
     if (!match) {
       console.log(`  ❌ ${key}: ${beforeVal} -> ${afterVal}`);
       allMatch = false;
@@ -85,16 +86,22 @@ async function main(): Promise<void> {
   // Check if we're on a fork
   const chainId = (await ethers.provider.getNetwork()).chainId;
   console.log('Chain ID:', chainId.toString());
-  
+
   // Fork Base mainnet if not already forked
   if (chainId !== 31337n) {
-    console.log('❌ This script must be run on a local fork. Use --network hardhat');
+    console.log(
+      '❌ This script must be run on a local fork. Use --network hardhat',
+    );
     console.log('');
-    console.log('First, make sure your hardhat.config.ts has forking configured:');
+    console.log(
+      'First, make sure your hardhat.config.ts has forking configured:',
+    );
     console.log('');
     console.log('  hardhat: {');
     console.log('    forking: {');
-    console.log('      url: process.env.BASE_MAINNET_RPC_URL || "https://mainnet.base.org",');
+    console.log(
+      '      url: process.env.BASE_MAINNET_RPC_URL || "https://mainnet.base.org",',
+    );
     console.log('    },');
     console.log('  },');
     console.log('');
@@ -119,7 +126,9 @@ async function main(): Promise<void> {
   console.log('');
 
   // Get current contract with DecayingSpaceToken ABI
-  const DecayingSpaceToken = await ethers.getContractFactory('DecayingSpaceToken');
+  const DecayingSpaceToken = await ethers.getContractFactory(
+    'DecayingSpaceToken',
+  );
   const currentContract = DecayingSpaceToken.attach(PROXY_ADDRESS);
 
   const stateBefore = await getContractState(currentContract);
@@ -129,7 +138,9 @@ async function main(): Promise<void> {
   }
 
   // Get current implementation address
-  const implBefore = await upgrades.erc1967.getImplementationAddress(PROXY_ADDRESS);
+  const implBefore = await upgrades.erc1967.getImplementationAddress(
+    PROXY_ADDRESS,
+  );
   console.log('');
   console.log('Current implementation:', implBefore);
 
@@ -185,11 +196,16 @@ async function main(): Promise<void> {
     console.log('✅ Upgrade completed!');
 
     // Get new implementation address
-    const implAfter = await upgrades.erc1967.getImplementationAddress(PROXY_ADDRESS);
+    const implAfter = await upgrades.erc1967.getImplementationAddress(
+      PROXY_ADDRESS,
+    );
     console.log('');
     console.log('Previous implementation:', implBefore);
     console.log('New implementation:', implAfter);
-    console.log('Implementation changed:', implBefore !== implAfter ? '✅ Yes' : '⚠️  No');
+    console.log(
+      'Implementation changed:',
+      implBefore !== implAfter ? '✅ Yes' : '⚠️  No',
+    );
 
     console.log('');
     console.log('=== Step 3: Verifying state preservation ===');
@@ -214,7 +230,7 @@ async function main(): Promise<void> {
     // Test batchSetTransferWhitelist
     console.log('Testing batchSetTransferWhitelist...');
     const allowedArray = TEST_ADDRESSES.map(() => true);
-    
+
     const txTransfer = await upgradedContract.batchSetTransferWhitelist(
       TEST_ADDRESSES,
       allowedArray,
@@ -235,7 +251,7 @@ async function main(): Promise<void> {
     // Test batchSetReceiveWhitelist
     console.log('');
     console.log('Testing batchSetReceiveWhitelist...');
-    
+
     const txReceive = await upgradedContract.batchSetReceiveWhitelist(
       TEST_ADDRESSES,
       allowedArray,
@@ -259,9 +275,10 @@ async function main(): Promise<void> {
     console.log('='.repeat(60));
     console.log('');
     console.log('You can now run the actual upgrade on mainnet:');
-    console.log('npx nx run storage-evm:script ./scripts/rndao-decaying-space-token.upgrade.ts --network base-mainnet');
+    console.log(
+      'npx nx run storage-evm:script ./scripts/rndao-decaying-space-token.upgrade.ts --network base-mainnet',
+    );
     console.log('');
-
   } catch (error) {
     console.error('');
     console.error('❌ UPGRADE FAILED!');
@@ -282,4 +299,3 @@ main()
     console.error(error);
     process.exit(1);
   });
-

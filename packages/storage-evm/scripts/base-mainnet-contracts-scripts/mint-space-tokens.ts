@@ -134,16 +134,23 @@ async function main(): Promise<void> {
   const token = new ethers.Contract(tokenAddress, spaceTokenAbi, wallet);
 
   // Fetch token info
-  const [decimalsRaw, totalSupply, maxSupplyRaw, contractOwner, contractExecutor, name, symbol] =
-    await Promise.all([
-      token.decimals(),
-      token.totalSupply(),
-      token.maxSupply(),
-      token.owner(),
-      token.executor(),
-      token.name(),
-      token.symbol(),
-    ]);
+  const [
+    decimalsRaw,
+    totalSupply,
+    maxSupplyRaw,
+    contractOwner,
+    contractExecutor,
+    name,
+    symbol,
+  ] = await Promise.all([
+    token.decimals(),
+    token.totalSupply(),
+    token.maxSupply(),
+    token.owner(),
+    token.executor(),
+    token.name(),
+    token.symbol(),
+  ]);
   const decimals =
     typeof decimalsRaw === 'bigint' ? Number(decimalsRaw) : decimalsRaw;
   const maxSupply = maxSupplyRaw as bigint;
@@ -170,25 +177,45 @@ async function main(): Promise<void> {
   console.log(`  Contract:     ${tokenAddress}`);
   console.log(`  Owner:        ${contractOwner}`);
   console.log(`  Executor:     ${contractExecutor}`);
-  console.log(`  Total Supply: ${ethers.formatUnits(totalSupply, decimals)} ${symbol}`);
   console.log(
-    `  Max Supply:   ${maxSupply === 0n ? 'Unlimited' : ethers.formatUnits(maxSupply, decimals) + ' ' + symbol}`,
+    `  Total Supply: ${ethers.formatUnits(totalSupply, decimals)} ${symbol}`,
+  );
+  console.log(
+    `  Max Supply:   ${
+      maxSupply === 0n
+        ? 'Unlimited'
+        : ethers.formatUnits(maxSupply, decimals) + ' ' + symbol
+    }`,
   );
 
   console.log(`\n=== Mint Details ===`);
   console.log(`  To:     ${toAddress}`);
   console.log(`  Amount: ${ethers.formatUnits(amountWei, decimals)} ${symbol}`);
-  console.log(`  Balance before: ${ethers.formatUnits(targetBalance, decimals)} ${symbol}`);
   console.log(
-    `  Balance after:  ${ethers.formatUnits(targetBalance + amountWei, decimals)} ${symbol}`,
+    `  Balance before: ${ethers.formatUnits(
+      targetBalance,
+      decimals,
+    )} ${symbol}`,
   );
   console.log(
-    `  Total supply after: ${ethers.formatUnits(totalSupply + amountWei, decimals)} ${symbol}`,
+    `  Balance after:  ${ethers.formatUnits(
+      targetBalance + amountWei,
+      decimals,
+    )} ${symbol}`,
+  );
+  console.log(
+    `  Total supply after: ${ethers.formatUnits(
+      totalSupply + amountWei,
+      decimals,
+    )} ${symbol}`,
   );
 
   if (maxSupply > 0n && totalSupply + amountWei > maxSupply) {
     console.error(
-      `\n❌ Error: Mint would exceed max supply. Max: ${ethers.formatUnits(maxSupply, decimals)}, after mint: ${ethers.formatUnits(totalSupply + amountWei, decimals)}`,
+      `\n❌ Error: Mint would exceed max supply. Max: ${ethers.formatUnits(
+        maxSupply,
+        decimals,
+      )}, after mint: ${ethers.formatUnits(totalSupply + amountWei, decimals)}`,
     );
     process.exit(1);
   }
@@ -237,7 +264,10 @@ async function main(): Promise<void> {
 
   // Execute the mint
   console.log(
-    `\n🪙 Minting ${ethers.formatUnits(amountWei, decimals)} ${symbol} to ${toAddress}...`,
+    `\n🪙 Minting ${ethers.formatUnits(
+      amountWei,
+      decimals,
+    )} ${symbol} to ${toAddress}...`,
   );
 
   const tx = await token.mint(toAddress, amountWei);
@@ -252,10 +282,16 @@ async function main(): Promise<void> {
   ]);
   console.log(`\n✅ Mint successful!`);
   console.log(
-    `  Final balance of ${toAddress}: ${ethers.formatUnits(finalBalance, decimals)} ${symbol}`,
+    `  Final balance of ${toAddress}: ${ethers.formatUnits(
+      finalBalance,
+      decimals,
+    )} ${symbol}`,
   );
   console.log(
-    `  New total supply: ${ethers.formatUnits(finalTotalSupply, decimals)} ${symbol}`,
+    `  New total supply: ${ethers.formatUnits(
+      finalTotalSupply,
+      decimals,
+    )} ${symbol}`,
   );
 }
 
@@ -263,5 +299,3 @@ main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
-
-

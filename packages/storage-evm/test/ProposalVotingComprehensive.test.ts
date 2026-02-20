@@ -3971,9 +3971,7 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
     });
 
     it('Should prevent execution via triggerExecutionCheck after withdrawal (regression)', async function () {
-      console.log(
-        '\n--- Regression: Withdraw then triggerExecutionCheck ---',
-      );
+      console.log('\n--- Regression: Withdraw then triggerExecutionCheck ---');
 
       // Use low quorum so votes are sufficient, and unity that allows passing
       const { spaceId } = await createSpace({
@@ -4004,8 +4002,9 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(
           true,
         );
-        const withdrawnList =
-          await daoProposals.getWithdrawnProposalsBySpace(spaceId);
+        const withdrawnList = await daoProposals.getWithdrawnProposalsBySpace(
+          spaceId,
+        );
         expect(withdrawnList.map((id: any) => id.toString())).to.include(
           proposalId.toString(),
         );
@@ -4028,11 +4027,12 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         );
 
         // Verify not added to executed lists
-        const executedBySpace =
-          await daoProposals.getExecutedProposalsBySpace(spaceId);
-        expect(
-          executedBySpace.map((id: any) => id.toString()),
-        ).to.not.include(proposalId.toString());
+        const executedBySpace = await daoProposals.getExecutedProposalsBySpace(
+          spaceId,
+        );
+        expect(executedBySpace.map((id: any) => id.toString())).to.not.include(
+          proposalId.toString(),
+        );
 
         const allExecuted = await daoProposals.getAllExecutedProposals();
         expect(allExecuted.map((id: any) => id.toString())).to.not.include(
@@ -4040,8 +4040,9 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         );
 
         // Verify not added to rejected lists either
-        const [accepted, rejected] =
-          await daoProposals.getSpaceProposals(spaceId);
+        const [accepted, rejected] = await daoProposals.getSpaceProposals(
+          spaceId,
+        );
         expect(accepted.map((id: any) => id.toString())).to.not.include(
           proposalId.toString(),
         );
@@ -4095,8 +4096,9 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
 
       // Confirm withdrawn state via all getters
       expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(true);
-      const withdrawnList =
-        await daoProposals.getWithdrawnProposalsBySpace(spaceId);
+      const withdrawnList = await daoProposals.getWithdrawnProposalsBySpace(
+        spaceId,
+      );
       expect(withdrawnList.map((id: any) => id.toString())).to.include(
         proposalId.toString(),
       );
@@ -4120,9 +4122,7 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
             return null;
           }
         })
-        .filter(
-          (event: any) => event && event.name === 'ProposalExpired',
-        );
+        .filter((event: any) => event && event.name === 'ProposalExpired');
       expect(proposalExpiredEvents.length).to.equal(0);
 
       // Verify proposal state: NOT expired, NOT executed, still withdrawn
@@ -4132,8 +4132,9 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(true);
 
       // Verify not added to rejected/expired lists
-      const [accepted, rejected] =
-        await daoProposals.getSpaceProposals(spaceId);
+      const [accepted, rejected] = await daoProposals.getSpaceProposals(
+        spaceId,
+      );
       expect(accepted.map((id: any) => id.toString())).to.not.include(
         proposalId.toString(),
       );
@@ -4142,8 +4143,9 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       );
 
       // Verify not added to executed lists
-      const executedBySpace =
-        await daoProposals.getExecutedProposalsBySpace(spaceId);
+      const executedBySpace = await daoProposals.getExecutedProposalsBySpace(
+        spaceId,
+      );
       expect(executedBySpace.map((id: any) => id.toString())).to.not.include(
         proposalId.toString(),
       );

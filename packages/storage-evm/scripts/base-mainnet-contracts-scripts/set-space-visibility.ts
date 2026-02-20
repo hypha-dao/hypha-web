@@ -181,7 +181,10 @@ async function main(): Promise<void> {
   const batchSize =
     batchSizeIndex !== -1 ? parseInt(args[batchSizeIndex + 1], 10) : 10;
 
-  if (categoryFilter && !['Sandbox', 'Pilot', 'Live'].includes(categoryFilter)) {
+  if (
+    categoryFilter &&
+    !['Sandbox', 'Pilot', 'Live'].includes(categoryFilter)
+  ) {
     console.error(
       `Invalid category: ${categoryFilter}. Must be Sandbox, Pilot, or Live.`,
     );
@@ -256,7 +259,11 @@ async function main(): Promise<void> {
     console.log('');
     console.log(`📁 Processing ${category} spaces (${ids.length} total)`);
     console.log(
-      `   Target: discoverability=${config.discoverability} (${getDiscoverabilityName(config.discoverability)}), access=${config.access} (${getAccessName(config.access)})`,
+      `   Target: discoverability=${
+        config.discoverability
+      } (${getDiscoverabilityName(config.discoverability)}), access=${
+        config.access
+      } (${getAccessName(config.access)})`,
     );
     console.log('-'.repeat(60));
 
@@ -266,7 +273,9 @@ async function main(): Promise<void> {
     for (let i = 0; i < ids.length; i += batchSize) {
       const batch = ids.slice(i, i + batchSize);
       console.log(
-        `\n   Batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(ids.length / batchSize)}: spaces ${batch[0]} to ${batch[batch.length - 1]}`,
+        `\n   Batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(
+          ids.length / batchSize,
+        )}: spaces ${batch[0]} to ${batch[batch.length - 1]}`,
       );
 
       for (const spaceId of batch) {
@@ -274,7 +283,9 @@ async function main(): Promise<void> {
           // Check current visibility
           let currentVisibility: { discoverability: bigint; access: bigint };
           try {
-            currentVisibility = await daoSpaceFactory.getSpaceVisibility(spaceId);
+            currentVisibility = await daoSpaceFactory.getSpaceVisibility(
+              spaceId,
+            );
           } catch {
             console.log(
               `   ⚠️  Space ${spaceId}: Could not fetch current visibility, skipping...`,
@@ -283,7 +294,9 @@ async function main(): Promise<void> {
             continue;
           }
 
-          const currentDiscoverability = Number(currentVisibility.discoverability);
+          const currentDiscoverability = Number(
+            currentVisibility.discoverability,
+          );
           const currentAccess = Number(currentVisibility.access);
 
           const discoverabilityMatches =
@@ -301,7 +314,11 @@ async function main(): Promise<void> {
 
           if (dryRun) {
             console.log(
-              `   🔍 Space ${spaceId}: Would set: discoverability=${config.discoverability} (${getDiscoverabilityName(config.discoverability)}), access=${config.access} (${getAccessName(config.access)})` +
+              `   🔍 Space ${spaceId}: Would set: discoverability=${
+                config.discoverability
+              } (${getDiscoverabilityName(config.discoverability)}), access=${
+                config.access
+              } (${getAccessName(config.access)})` +
                 ` [current: d=${currentDiscoverability}, a=${currentAccess}]`,
             );
             summary.processed++;
@@ -328,7 +345,8 @@ async function main(): Promise<void> {
           console.log(`   ✅ Space ${spaceId}: Updated successfully`);
           summary.processed++;
         } catch (error: any) {
-          const errorMsg = error?.shortMessage || error?.message || String(error);
+          const errorMsg =
+            error?.shortMessage || error?.message || String(error);
           console.error(`   ❌ Space ${spaceId}: Failed - ${errorMsg}`);
           summary.failed++;
           summary.errors.push({ spaceId, error: errorMsg });
@@ -366,4 +384,3 @@ main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
-
