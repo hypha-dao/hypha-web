@@ -33,7 +33,11 @@ describe('TokenBackingVault', function () {
 
     // ── Community token (the token being backed) — price set to $2 USD ──
     const Community = await ethers.getContractFactory('MockSpaceToken');
-    const communityToken = await Community.deploy('Community', 'COM', 2_000_000); // $2
+    const communityToken = await Community.deploy(
+      'Community',
+      'COM',
+      2_000_000,
+    ); // $2
 
     // ── Oracle-priced backing tokens ──
     const MockERC20 = await ethers.getContractFactory('MockERC20');
@@ -166,15 +170,17 @@ describe('TokenBackingVault', function () {
         .connect(executor)
         .approve(await vault.getAddress(), ethers.parseEther('10000'));
 
-      await vault.connect(executor).addBackingToken(
-        SPACE_ID,
-        await communityToken.getAddress(),
-        [await hyphaToken.getAddress()],
-        [ethers.ZeroAddress],
-        [18],
-        [ethers.parseEther('10000')],
-        0,
-      );
+      await vault
+        .connect(executor)
+        .addBackingToken(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          [await hyphaToken.getAddress()],
+          [ethers.ZeroAddress],
+          [18],
+          [ethers.parseEther('10000')],
+          0,
+        );
 
       const config = await vault.getBackingTokenConfig(
         SPACE_ID,
@@ -186,23 +192,26 @@ describe('TokenBackingVault', function () {
     });
 
     it('Should reject if space token has no price set', async function () {
-      const { vault, usdc, usdcFeed, executor, SPACE_ID } =
-        await loadFixture(deployFixture);
+      const { vault, usdc, usdcFeed, executor, SPACE_ID } = await loadFixture(
+        deployFixture,
+      );
 
       // Deploy a community token with price = 0
       const Community = await ethers.getContractFactory('MockSpaceToken');
       const zeroPriceToken = await Community.deploy('Zero', 'ZERO', 0);
 
       await expect(
-        vault.connect(executor).addBackingToken(
-          SPACE_ID,
-          await zeroPriceToken.getAddress(),
-          [await usdc.getAddress()],
-          [await usdcFeed.getAddress()],
-          [6],
-          [0],
-          0,
-        ),
+        vault
+          .connect(executor)
+          .addBackingToken(
+            SPACE_ID,
+            await zeroPriceToken.getAddress(),
+            [await usdc.getAddress()],
+            [await usdcFeed.getAddress()],
+            [6],
+            [0],
+            0,
+          ),
       ).to.be.revertedWith('Space token price must be > 0');
     });
   });
@@ -300,15 +309,17 @@ describe('TokenBackingVault', function () {
         .approve(await vault.getAddress(), ethers.parseEther('100000'));
 
       // Community token is $2 USD (set in fixture)
-      await vault.connect(executor).addBackingToken(
-        SPACE_ID,
-        await communityToken.getAddress(),
-        [await hyphaToken.getAddress()],
-        [ethers.ZeroAddress],
-        [18],
-        [ethers.parseEther('100000')],
-        0,
-      );
+      await vault
+        .connect(executor)
+        .addBackingToken(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          [await hyphaToken.getAddress()],
+          [ethers.ZeroAddress],
+          [18],
+          [ethers.parseEther('100000')],
+          0,
+        );
 
       await communityToken.mint(alice.address, ethers.parseEther('1000'));
       await communityToken
@@ -363,15 +374,17 @@ describe('TokenBackingVault', function () {
         .connect(executor)
         .approve(await vault.getAddress(), ethers.parseEther('100000'));
 
-      await vault.connect(executor).addBackingToken(
-        SPACE_ID,
-        await communityToken.getAddress(),
-        [await hyphaToken.getAddress()],
-        [ethers.ZeroAddress],
-        [18],
-        [ethers.parseEther('100000')],
-        0,
-      );
+      await vault
+        .connect(executor)
+        .addBackingToken(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          [await hyphaToken.getAddress()],
+          [ethers.ZeroAddress],
+          [18],
+          [ethers.parseEther('100000')],
+          0,
+        );
 
       // HYPHA = $0.50 → 100 tokens ($100) = 200 HYPHA
       let out = await vault.calculateBackingOut(
@@ -394,8 +407,15 @@ describe('TokenBackingVault', function () {
     });
 
     it('Should work with non-USD peg (EUR community token via priceCurrencyFeed)', async function () {
-      const { vault, communityToken, usdc, usdcFeed, eurUsdFeed, executor, SPACE_ID } =
-        await loadFixture(deployFixture);
+      const {
+        vault,
+        communityToken,
+        usdc,
+        usdcFeed,
+        eurUsdFeed,
+        executor,
+        SPACE_ID,
+      } = await loadFixture(deployFixture);
 
       // Set community token to 1 EUR (using setPriceWithCurrency)
       await communityToken.setPriceWithCurrency(
@@ -406,15 +426,17 @@ describe('TokenBackingVault', function () {
       await usdc.mint(executor.address, 500_000e6);
       await usdc.connect(executor).approve(await vault.getAddress(), 500_000e6);
 
-      await vault.connect(executor).addBackingToken(
-        SPACE_ID,
-        await communityToken.getAddress(),
-        [await usdc.getAddress()],
-        [await usdcFeed.getAddress()],
-        [6],
-        [500_000e6],
-        0,
-      );
+      await vault
+        .connect(executor)
+        .addBackingToken(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          [await usdc.getAddress()],
+          [await usdcFeed.getAddress()],
+          [6],
+          [500_000e6],
+          0,
+        );
 
       // 100 tokens × 1 EUR × $1.08/EUR = $108; USDC = $1 → 108 USDC
       const out = await vault.calculateBackingOut(
@@ -760,23 +782,31 @@ describe('TokenBackingVault', function () {
     });
 
     it('Should reject setting a feed on a Hypha token', async function () {
-      const { vault, communityToken, hyphaToken, usdcFeed, executor, SPACE_ID } =
-        await loadFixture(deployFixture);
+      const {
+        vault,
+        communityToken,
+        hyphaToken,
+        usdcFeed,
+        executor,
+        SPACE_ID,
+      } = await loadFixture(deployFixture);
 
       await hyphaToken.mint(executor.address, ethers.parseEther('1000'));
       await hyphaToken
         .connect(executor)
         .approve(await vault.getAddress(), ethers.parseEther('1000'));
 
-      await vault.connect(executor).addBackingToken(
-        SPACE_ID,
-        await communityToken.getAddress(),
-        [await hyphaToken.getAddress()],
-        [ethers.ZeroAddress],
-        [18],
-        [ethers.parseEther('1000')],
-        0,
-      );
+      await vault
+        .connect(executor)
+        .addBackingToken(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          [await hyphaToken.getAddress()],
+          [ethers.ZeroAddress],
+          [18],
+          [ethers.parseEther('1000')],
+          0,
+        );
 
       await expect(
         vault

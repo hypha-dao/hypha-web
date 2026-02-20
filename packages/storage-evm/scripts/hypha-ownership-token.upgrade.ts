@@ -74,13 +74,9 @@ async function main(): Promise<void> {
       );
 
       try {
-        await upgrades.forceImport(
-          PROXY_ADDRESS,
-          HyphaOwnershipTokenContract,
-          {
-            kind: 'uups',
-          },
-        );
+        await upgrades.forceImport(PROXY_ADDRESS, HyphaOwnershipTokenContract, {
+          kind: 'uups',
+        });
         console.log('✅ Proxy successfully imported. Retrying upgrade...');
 
         upgradedContract = await upgrades.upgradeProxy(
@@ -133,5 +129,3 @@ main()
     console.error(error);
     process.exit(1);
   });
-
-

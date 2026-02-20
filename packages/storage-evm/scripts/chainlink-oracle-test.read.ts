@@ -75,29 +75,31 @@ async function main() {
       const decimals = Number(result.decimals);
       const staleSec = Number(result.stalenessSeconds);
 
-      const priceFormatted = (
-        Number(price) / Math.pow(10, decimals)
-      ).toFixed(decimals > 4 ? 6 : 4);
+      const priceFormatted = (Number(price) / Math.pow(10, decimals)).toFixed(
+        decimals > 4 ? 6 : 4,
+      );
 
       const staleStr =
         staleSec < 60
           ? `${staleSec}s ago`
           : staleSec < 3600
-            ? `${Math.floor(staleSec / 60)}m ago`
-            : `${Math.floor(staleSec / 3600)}h ${Math.floor((staleSec % 3600) / 60)}m ago`;
+          ? `${Math.floor(staleSec / 60)}m ago`
+          : `${Math.floor(staleSec / 3600)}h ${Math.floor(
+              (staleSec % 3600) / 60,
+            )}m ago`;
 
       const status = result.isStale ? '⚠️  STALE' : '✅';
 
       console.log(
-        `  ${status}  ${feed.name.padEnd(10)} ${priceFormatted.padStart(14)}  (${decimals} dec, updated ${staleStr})  [${result.description}]`,
+        `  ${status}  ${feed.name.padEnd(10)} ${priceFormatted.padStart(
+          14,
+        )}  (${decimals} dec, updated ${staleStr})  [${result.description}]`,
       );
 
       if (!result.isStale && price > 0n) passCount++;
       else failCount++;
     } catch (err: any) {
-      console.log(
-        `  ❌  ${feed.name.padEnd(10)} FAILED  (${feed.address})`,
-      );
+      console.log(`  ❌  ${feed.name.padEnd(10)} FAILED  (${feed.address})`);
       console.log(`      Error: ${err.message?.slice(0, 100)}`);
       failCount++;
     }
@@ -108,9 +110,7 @@ async function main() {
   console.log('----------------------------------------------------');
 
   if (failCount > 0) {
-    console.log(
-      '\n⚠️  Some feeds failed or are stale. Verify addresses at:',
-    );
+    console.log('\n⚠️  Some feeds failed or are stale. Verify addresses at:');
     console.log(
       '   https://docs.chain.link/data-feeds/price-feeds/addresses?network=base&page=1',
     );

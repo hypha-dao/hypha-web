@@ -135,8 +135,9 @@ async function main(): Promise<void> {
 
   // Check specific space 530
   try {
-    const is530TransferWhitelisted =
-      await contract.isTransferWhitelistedSpace(530);
+    const is530TransferWhitelisted = await contract.isTransferWhitelistedSpace(
+      530,
+    );
     console.log('Space 530 is transfer whitelisted:', is530TransferWhitelisted);
   } catch (e: any) {
     console.log('Error checking space 530:', e.message);
@@ -151,4 +152,3 @@ main()
     console.error(error);
     process.exit(1);
   });
-
