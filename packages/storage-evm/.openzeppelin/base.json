@@ -187,6 +187,11 @@
       "address": "0x349C44bCb11A5bd51Ef7D96B75e156654788C656",
       "txHash": "0x3032c326f343d3efe3f0adcc0a5e71678ed89c0343f4bd1fdcd687c7b803dfa8",
       "kind": "uups"
+    },
+    {
+      "address": "0x9997C22f06F0aC67dF07C8Cb2A08562C53dD4E9f",
+      "txHash": "0x76cbcd831ae8dcc389375363f1e2cf5a877e8ae3757c3e77040145299d1da4f6",
+      "kind": "uups"
     }
   ],
   "impls": {
@@ -43821,6 +43826,327 @@
               "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:40",
               "offset": 0,
               "slot": "4"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
+    },
+    "e318235812b16f7a14dff2a449b4e5c2f8ca21385051e6d4fcc9456c90adcc17": {
+      "address": "0xAf0210FAAD4Ef581706fDC1eb71084E5aa184c49",
+      "txHash": "0xf4c0243c9287f67ca02b096595d51fb7bdf3923babeda048366d3ee8be7ed9af",
+      "layout": {
+        "solcVersion": "0.8.28",
+        "storage": [
+          {
+            "label": "vaultCounter",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint256",
+            "contract": "TokenBackingVaultStorage",
+            "src": "contracts/storage/TokenBackingVaultStorage.sol:8"
+          },
+          {
+            "label": "vaults",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_mapping(t_uint256,t_struct(VaultConfig)23090_storage)",
+            "contract": "TokenBackingVaultStorage",
+            "src": "contracts/storage/TokenBackingVaultStorage.sol:10"
+          },
+          {
+            "label": "backingConfigs",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_struct(BackingTokenConfig)23097_storage))",
+            "contract": "TokenBackingVaultStorage",
+            "src": "contracts/storage/TokenBackingVaultStorage.sol:11"
+          },
+          {
+            "label": "backingTokenList",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_mapping(t_uint256,t_array(t_address)dyn_storage)",
+            "contract": "TokenBackingVaultStorage",
+            "src": "contracts/storage/TokenBackingVaultStorage.sol:13"
+          },
+          {
+            "label": "vaultBackingBalance",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_uint256))",
+            "contract": "TokenBackingVaultStorage",
+            "src": "contracts/storage/TokenBackingVaultStorage.sol:14"
+          },
+          {
+            "label": "spacesContract",
+            "offset": 0,
+            "slot": "5",
+            "type": "t_address",
+            "contract": "TokenBackingVaultStorage",
+            "src": "contracts/storage/TokenBackingVaultStorage.sol:17"
+          },
+          {
+            "label": "spaceVaultIds",
+            "offset": 0,
+            "slot": "6",
+            "type": "t_mapping(t_uint256,t_array(t_uint256)dyn_storage)",
+            "contract": "TokenBackingVaultStorage",
+            "src": "contracts/storage/TokenBackingVaultStorage.sol:19"
+          },
+          {
+            "label": "vaultKeys",
+            "offset": 0,
+            "slot": "7",
+            "type": "t_mapping(t_bytes32,t_uint256)",
+            "contract": "TokenBackingVaultStorage",
+            "src": "contracts/storage/TokenBackingVaultStorage.sol:20"
+          },
+          {
+            "label": "whitelist",
+            "offset": 0,
+            "slot": "8",
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_bool))",
+            "contract": "TokenBackingVaultStorage",
+            "src": "contracts/storage/TokenBackingVaultStorage.sol:23"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "9",
+            "type": "t_array(t_uint256)42_storage",
+            "contract": "TokenBackingVaultStorage",
+            "src": "contracts/storage/TokenBackingVaultStorage.sol:25"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)73_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(OwnableStorage)13_storage": {
+            "label": "struct OwnableUpgradeable.OwnableStorage",
+            "members": [
+              {
+                "label": "_owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(ReentrancyGuardStorage)452_storage": {
+            "label": "struct ReentrancyGuardUpgradeable.ReentrancyGuardStorage",
+            "members": [
+              {
+                "label": "_status",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)42_storage": {
+            "label": "uint256[42]",
+            "numberOfBytes": "1344"
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]",
+            "numberOfBytes": "32"
+          },
+          "t_bytes32": {
+            "label": "bytes32",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(BackingTokenConfig)23097_storage)": {
+            "label": "mapping(address => struct ITokenBackingVault.BackingTokenConfig)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_bytes32,t_uint256)": {
+            "label": "mapping(bytes32 => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_array(t_address)dyn_storage)": {
+            "label": "mapping(uint256 => address[])",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_array(t_uint256)dyn_storage)": {
+            "label": "mapping(uint256 => uint256[])",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_mapping(t_address,t_bool))": {
+            "label": "mapping(uint256 => mapping(address => bool))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_mapping(t_address,t_struct(BackingTokenConfig)23097_storage))": {
+            "label": "mapping(uint256 => mapping(address => struct ITokenBackingVault.BackingTokenConfig))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_mapping(t_address,t_uint256))": {
+            "label": "mapping(uint256 => mapping(address => uint256))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(VaultConfig)23090_storage)": {
+            "label": "mapping(uint256 => struct ITokenBackingVault.VaultConfig)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(BackingTokenConfig)23097_storage": {
+            "label": "struct ITokenBackingVault.BackingTokenConfig",
+            "members": [
+              {
+                "label": "priceFeed",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "tokenDecimals",
+                "type": "t_uint8",
+                "offset": 20,
+                "slot": "0"
+              },
+              {
+                "label": "enabled",
+                "type": "t_bool",
+                "offset": 21,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(VaultConfig)23090_storage": {
+            "label": "struct ITokenBackingVault.VaultConfig",
+            "members": [
+              {
+                "label": "spaceId",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "spaceToken",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "redeemEnabled",
+                "type": "t_bool",
+                "offset": 20,
+                "slot": "1"
+              },
+              {
+                "label": "membersOnly",
+                "type": "t_bool",
+                "offset": 21,
+                "slot": "1"
+              },
+              {
+                "label": "whitelistEnabled",
+                "type": "t_bool",
+                "offset": 22,
+                "slot": "1"
+              },
+              {
+                "label": "minimumBackingBps",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "redemptionStartDate",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "3"
+              }
+            ],
+            "numberOfBytes": "128"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.ReentrancyGuard": [
+            {
+              "contract": "ReentrancyGuardUpgradeable",
+              "label": "_status",
+              "type": "t_uint256",
+              "src": "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol:43",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Ownable": [
+            {
+              "contract": "OwnableUpgradeable",
+              "label": "_owner",
+              "type": "t_address",
+              "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:24",
+              "offset": 0,
+              "slot": "0"
             }
           ],
           "erc7201:openzeppelin.storage.Initializable": [
