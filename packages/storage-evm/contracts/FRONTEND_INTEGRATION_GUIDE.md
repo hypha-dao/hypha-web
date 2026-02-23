@@ -15,9 +15,13 @@ All prices flow through **USD as the common denominator**: space token price (in
 
 ---
 
-## Network
+## Network & Contract Address
 
 **Base Mainnet** (Chain ID: `8453`)
+
+| Contract | Address |
+|---|---|
+| **TokenBackingVault (Proxy)** | [`0x9997C22f06F0aC67dF07C8Cb2A08562C53dD4E9f`](https://basescan.org/address/0x9997C22f06F0aC67dF07C8Cb2A08562C53dD4E9f) |
 
 ---
 
