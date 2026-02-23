@@ -73,20 +73,13 @@ interface IBackingVault {
   function addBacking(
     uint256 spaceId,
     address spaceToken,
-    address backingToken,
-    uint256 amount
+    address[] calldata backingTokens,
+    uint256[] calldata amounts
   ) external;
 
   // ── User Redemption ──
 
   function redeem(
-    uint256 spaceId,
-    address spaceToken,
-    uint256 spaceTokenAmount,
-    address backingToken
-  ) external;
-
-  function redeemMulti(
     uint256 spaceId,
     address spaceToken,
     uint256 spaceTokenAmount,
@@ -177,14 +170,6 @@ interface IBackingVault {
   );
 
   event Redeemed(
-    uint256 indexed vaultId,
-    address indexed user,
-    uint256 spaceTokensIn,
-    address backingToken,
-    uint256 backingOut
-  );
-
-  event RedeemedMulti(
     uint256 indexed vaultId,
     address indexed user,
     uint256 spaceTokensIn,

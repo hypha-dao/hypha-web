@@ -294,7 +294,8 @@ describe('TokenBackingVault', function () {
             SPACE_ID,
             await communityToken.getAddress(),
             ethers.parseEther('10'),
-            await weth.getAddress(),
+            [await weth.getAddress()],
+            [10000],
           ),
       ).to.be.revertedWith('Stale oracle price');
     });
@@ -466,7 +467,8 @@ describe('TokenBackingVault', function () {
           SPACE_ID,
           await communityToken.getAddress(),
           ethers.parseEther('100'),
-          await usdc.getAddress(),
+          [await usdc.getAddress()],
+          [10000],
         );
 
       expect(await usdc.balanceOf(alice.address)).to.equal(200_000_000);
@@ -485,7 +487,8 @@ describe('TokenBackingVault', function () {
           SPACE_ID,
           await communityToken.getAddress(),
           ethers.parseEther('500'),
-          await weth.getAddress(),
+          [await weth.getAddress()],
+          [10000],
         );
 
       expect(await weth.balanceOf(alice.address)).to.equal(
@@ -493,13 +496,13 @@ describe('TokenBackingVault', function () {
       );
     });
 
-    it('Should redeemMulti across USDC + WETH', async function () {
+    it('Should redeem across USDC + WETH', async function () {
       const f = await setupVault();
       const { vault, communityToken, usdc, weth, alice, SPACE_ID } = f;
 
       await vault
         .connect(alice)
-        .redeemMulti(
+        .redeem(
           SPACE_ID,
           await communityToken.getAddress(),
           ethers.parseEther('1000'),
@@ -526,7 +529,8 @@ describe('TokenBackingVault', function () {
             SPACE_ID,
             await communityToken.getAddress(),
             ethers.parseEther('60000'),
-            await usdc.getAddress(),
+            [await usdc.getAddress()],
+            [10000],
           ),
       ).to.be.revertedWith('Insufficient backing in reserve');
     });
@@ -550,7 +554,8 @@ describe('TokenBackingVault', function () {
             SPACE_ID,
             await communityToken.getAddress(),
             ethers.parseEther('1000'),
-            await usdc.getAddress(),
+            [await usdc.getAddress()],
+            [10000],
           ),
       ).to.be.revertedWith('Redemption would breach minimum backing threshold');
     });
@@ -566,7 +571,8 @@ describe('TokenBackingVault', function () {
             SPACE_ID,
             await communityToken.getAddress(),
             ethers.parseEther('100'),
-            await usdc.getAddress(),
+            [await usdc.getAddress()],
+            [10000],
           ),
       ).to.not.be.reverted;
     });
@@ -597,7 +603,8 @@ describe('TokenBackingVault', function () {
             SPACE_ID,
             await communityToken.getAddress(),
             ethers.parseEther('10'),
-            await usdc.getAddress(),
+            [await usdc.getAddress()],
+            [10000],
           ),
       ).to.be.revertedWith('Not authorized to redeem');
     });
@@ -630,7 +637,8 @@ describe('TokenBackingVault', function () {
             SPACE_ID,
             await communityToken.getAddress(),
             ethers.parseEther('10'),
-            await usdc.getAddress(),
+            [await usdc.getAddress()],
+            [10000],
           ),
       ).to.not.be.reverted;
     });
@@ -653,7 +661,8 @@ describe('TokenBackingVault', function () {
             SPACE_ID,
             await communityToken.getAddress(),
             ethers.parseEther('10'),
-            await usdc.getAddress(),
+            [await usdc.getAddress()],
+            [10000],
           ),
       ).to.not.be.reverted;
     });
@@ -684,7 +693,8 @@ describe('TokenBackingVault', function () {
             SPACE_ID,
             await communityToken.getAddress(),
             ethers.parseEther('10'),
-            await usdc.getAddress(),
+            [await usdc.getAddress()],
+            [10000],
           ),
       ).to.be.revertedWith('Redemptions not yet active');
     });
@@ -711,7 +721,8 @@ describe('TokenBackingVault', function () {
             SPACE_ID,
             await communityToken.getAddress(),
             ethers.parseEther('10'),
-            await usdc.getAddress(),
+            [await usdc.getAddress()],
+            [10000],
           ),
       ).to.not.be.reverted;
     });
@@ -855,10 +866,1657 @@ describe('TokenBackingVault', function () {
           .addBacking(
             SPACE_ID,
             await communityToken.getAddress(),
+            [await usdc.getAddress()],
+            [1000],
+          ),
+      ).to.be.revertedWith('Not authorized: only executor or owner');
+    });
+
+    it('Should reject removeBackingToken from non-executor', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, alice, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(alice)
+          .removeBackingToken(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            await usdc.getAddress(),
+          ),
+      ).to.be.revertedWith('Not authorized: only executor or owner');
+    });
+
+    it('Should reject updatePriceFeed from non-executor', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, weth, usdcFeed, alice, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(alice)
+          .updatePriceFeed(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            await weth.getAddress(),
+            await usdcFeed.getAddress(),
+          ),
+      ).to.be.revertedWith('Not authorized: only executor or owner');
+    });
+
+    it('Should reject setRedeemEnabled from non-executor', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, alice, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(alice)
+          .setRedeemEnabled(SPACE_ID, await communityToken.getAddress(), false),
+      ).to.be.revertedWith('Not authorized: only executor or owner');
+    });
+
+    it('Should reject setMembersOnly from non-executor', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, alice, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(alice)
+          .setMembersOnly(SPACE_ID, await communityToken.getAddress(), true),
+      ).to.be.revertedWith('Not authorized: only executor or owner');
+    });
+
+    it('Should reject setWhitelistEnabled from non-executor', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, alice, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(alice)
+          .setWhitelistEnabled(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            true,
+          ),
+      ).to.be.revertedWith('Not authorized: only executor or owner');
+    });
+
+    it('Should reject setMinimumBacking from non-executor', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, alice, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(alice)
+          .setMinimumBacking(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            5000,
+          ),
+      ).to.be.revertedWith('Not authorized: only executor or owner');
+    });
+
+    it('Should reject setRedemptionStartDate from non-executor', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, alice, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(alice)
+          .setRedemptionStartDate(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            9999999999,
+          ),
+      ).to.be.revertedWith('Not authorized: only executor or owner');
+    });
+
+    it('Should reject addToWhitelist from non-executor', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, alice, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(alice)
+          .addToWhitelist(SPACE_ID, await communityToken.getAddress(), [
+            alice.address,
+          ]),
+      ).to.be.revertedWith('Not authorized: only executor or owner');
+    });
+
+    it('Should reject removeFromWhitelist from non-executor', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, alice, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(alice)
+          .removeFromWhitelist(SPACE_ID, await communityToken.getAddress(), [
+            alice.address,
+          ]),
+      ).to.be.revertedWith('Not authorized: only executor or owner');
+    });
+
+    it('Should reject withdrawBacking from non-executor', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, alice, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(alice)
+          .withdrawBacking(
+            SPACE_ID,
+            await communityToken.getAddress(),
             await usdc.getAddress(),
             1000,
           ),
       ).to.be.revertedWith('Not authorized: only executor or owner');
+    });
+
+    it('Should allow contract owner to call executor-only functions', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, owner, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(owner)
+          .setRedeemEnabled(SPACE_ID, await communityToken.getAddress(), false),
+      ).to.not.be.reverted;
+
+      await expect(
+        vault
+          .connect(owner)
+          .setRedeemEnabled(SPACE_ID, await communityToken.getAddress(), true),
+      ).to.not.be.reverted;
+    });
+  });
+
+  // ================================================================
+  //              VAULT CREATION — EDGE CASES
+  // ================================================================
+
+  describe('Vault Creation — Edge Cases', function () {
+    it('Should reject zero-address space token', async function () {
+      const { vault, usdc, usdcFeed, executor, SPACE_ID } =
+        await loadFixture(deployFixture);
+
+      await expect(
+        vault
+          .connect(executor)
+          .addBackingToken(
+            SPACE_ID,
+            ethers.ZeroAddress,
+            [await usdc.getAddress()],
+            [await usdcFeed.getAddress()],
+            [6],
+            [0],
+            0,
+          ),
+      ).to.be.revertedWith('Invalid space token');
+    });
+
+    it('Should reject empty backing tokens array', async function () {
+      const { vault, communityToken, executor, SPACE_ID } =
+        await loadFixture(deployFixture);
+
+      await expect(
+        vault
+          .connect(executor)
+          .addBackingToken(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            [],
+            [],
+            [],
+            [],
+            0,
+          ),
+      ).to.be.revertedWith('No backing tokens specified');
+    });
+
+    it('Should reject mismatched array lengths', async function () {
+      const { vault, communityToken, usdc, usdcFeed, executor, SPACE_ID } =
+        await loadFixture(deployFixture);
+
+      await expect(
+        vault
+          .connect(executor)
+          .addBackingToken(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            [await usdc.getAddress()],
+            [await usdcFeed.getAddress()],
+            [6, 18],
+            [0],
+            0,
+          ),
+      ).to.be.revertedWith('Array lengths must match');
+    });
+
+    it('Should reject minimumBackingBps > 100%', async function () {
+      const { vault, communityToken, usdc, usdcFeed, executor, SPACE_ID } =
+        await loadFixture(deployFixture);
+
+      await expect(
+        vault
+          .connect(executor)
+          .addBackingToken(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            [await usdc.getAddress()],
+            [await usdcFeed.getAddress()],
+            [6],
+            [0],
+            10001,
+          ),
+      ).to.be.revertedWith('Min backing cannot exceed 100%');
+    });
+
+    it('Should reject backing token == space token', async function () {
+      const { vault, communityToken, usdcFeed, executor, SPACE_ID } =
+        await loadFixture(deployFixture);
+
+      await expect(
+        vault
+          .connect(executor)
+          .addBackingToken(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            [await communityToken.getAddress()],
+            [await usdcFeed.getAddress()],
+            [18],
+            [0],
+            0,
+          ),
+      ).to.be.revertedWith('Backing token cannot be the space token');
+    });
+
+    it('Should reject zero-address backing token', async function () {
+      const { vault, communityToken, usdcFeed, executor, SPACE_ID } =
+        await loadFixture(deployFixture);
+
+      await expect(
+        vault
+          .connect(executor)
+          .addBackingToken(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            [ethers.ZeroAddress],
+            [await usdcFeed.getAddress()],
+            [6],
+            [0],
+            0,
+          ),
+      ).to.be.revertedWith('Invalid backing token');
+    });
+
+    it('Should reject adding duplicate backing token', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, usdcFeed, executor, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(executor)
+          .addBackingToken(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            [await usdc.getAddress()],
+            [await usdcFeed.getAddress()],
+            [6],
+            [0],
+            0,
+          ),
+      ).to.be.revertedWith('Backing token already added');
+    });
+
+    it('Should create vault without funding (zero amounts)', async function () {
+      const { vault, communityToken, usdc, usdcFeed, executor, SPACE_ID } =
+        await loadFixture(deployFixture);
+
+      await vault
+        .connect(executor)
+        .addBackingToken(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          [await usdc.getAddress()],
+          [await usdcFeed.getAddress()],
+          [6],
+          [0],
+          0,
+        );
+
+      expect(
+        await vault.vaultExists(SPACE_ID, await communityToken.getAddress()),
+      ).to.be.true;
+      expect(
+        await vault.getBackingBalance(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          await usdc.getAddress(),
+        ),
+      ).to.equal(0);
+    });
+
+    it('Should add more backing tokens to an existing vault', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, wbtc, btcFeed, executor, SPACE_ID } = f;
+
+      await wbtc.mint(executor.address, 2_0000_0000); // 2 BTC (8 decimals)
+      await wbtc
+        .connect(executor)
+        .approve(await vault.getAddress(), 2_0000_0000);
+
+      await vault
+        .connect(executor)
+        .addBackingToken(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          [await wbtc.getAddress()],
+          [await btcFeed.getAddress()],
+          [8],
+          [2_0000_0000],
+          0,
+        );
+
+      const tokens = await vault.getBackingTokens(
+        SPACE_ID,
+        await communityToken.getAddress(),
+      );
+      expect(tokens.length).to.equal(3);
+    });
+
+    it('Should re-use existing vault when calling addBackingToken again', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, wbtc, btcFeed, executor, SPACE_ID } = f;
+
+      await wbtc.mint(executor.address, 1_0000_0000);
+      await wbtc
+        .connect(executor)
+        .approve(await vault.getAddress(), 1_0000_0000);
+
+      const tx = vault
+        .connect(executor)
+        .addBackingToken(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          [await wbtc.getAddress()],
+          [await btcFeed.getAddress()],
+          [8],
+          [1_0000_0000],
+          0,
+        );
+
+      await expect(tx).to.not.emit(vault, 'VaultCreated');
+      await expect(tx).to.emit(vault, 'BackingTokenAdded');
+    });
+  });
+
+  // ================================================================
+  //              REDEMPTION — EDGE CASES
+  // ================================================================
+
+  describe('Redemption — Edge Cases', function () {
+    it('Should reject redeeming zero amount', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, alice, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(alice)
+          .redeem(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            0,
+            [await usdc.getAddress()],
+            [10000],
+          ),
+      ).to.be.revertedWith('Amount must be > 0');
+    });
+
+    it('Should reject redemption when disabled', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, executor, alice, SPACE_ID } = f;
+
+      await vault
+        .connect(executor)
+        .setRedeemEnabled(SPACE_ID, await communityToken.getAddress(), false);
+
+      await expect(
+        vault
+          .connect(alice)
+          .redeem(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            ethers.parseEther('10'),
+            [await usdc.getAddress()],
+            [10000],
+          ),
+      ).to.be.revertedWith('Redemptions are disabled');
+    });
+
+    it('Should reject redemption for disabled backing token', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, executor, alice, SPACE_ID } = f;
+
+      await vault
+        .connect(executor)
+        .removeBackingToken(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          await usdc.getAddress(),
+        );
+
+      await expect(
+        vault
+          .connect(alice)
+          .redeem(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            ethers.parseEther('10'),
+            [await usdc.getAddress()],
+            [10000],
+          ),
+      ).to.be.revertedWith('Backing token not active');
+    });
+
+    it('Should reject redemption for a non-existent vault', async function () {
+      const { vault, communityToken, usdc, alice, SPACE_ID } =
+        await loadFixture(deployFixture);
+
+      await expect(
+        vault
+          .connect(alice)
+          .redeem(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            ethers.parseEther('10'),
+            [await usdc.getAddress()],
+            [10000],
+          ),
+      ).to.be.revertedWith('Vault does not exist');
+    });
+
+    it('Should emit Redeemed event with correct parameters', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, alice, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(alice)
+          .redeem(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            ethers.parseEther('100'),
+            [await usdc.getAddress()],
+            [10000],
+          ),
+      )
+        .to.emit(vault, 'Redeemed')
+        .withArgs(
+          1,
+          alice.address,
+          ethers.parseEther('100'),
+          [await usdc.getAddress()],
+          [200_000_000],
+        );
+    });
+
+    it('Should handle sequential redemptions correctly', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, alice, SPACE_ID } = f;
+
+      await vault
+        .connect(alice)
+        .redeem(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          ethers.parseEther('50'),
+          [await usdc.getAddress()],
+          [10000],
+        );
+
+      expect(await usdc.balanceOf(alice.address)).to.equal(100_000_000);
+
+      await vault
+        .connect(alice)
+        .redeem(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          ethers.parseEther('50'),
+          [await usdc.getAddress()],
+          [10000],
+        );
+
+      expect(await usdc.balanceOf(alice.address)).to.equal(200_000_000);
+
+      const remaining = await vault.getBackingBalance(
+        SPACE_ID,
+        await communityToken.getAddress(),
+        await usdc.getAddress(),
+      );
+      expect(remaining).to.equal(100_000e6 - 200_000_000);
+    });
+
+    it('Should allow full supply burn even with min backing (remaining supply = 0)', async function () {
+      const { vault, communityToken, usdc, usdcFeed, executor, alice, SPACE_ID } =
+        await loadFixture(deployFixture);
+
+      await usdc.mint(executor.address, 100_000e6);
+      await usdc.connect(executor).approve(await vault.getAddress(), 100_000e6);
+
+      await vault.connect(executor).addBackingToken(
+        SPACE_ID,
+        await communityToken.getAddress(),
+        [await usdc.getAddress()],
+        [await usdcFeed.getAddress()],
+        [6],
+        [100_000e6],
+        5000, // 50% min backing
+      );
+
+      const mintAmount = ethers.parseEther('1000');
+      await communityToken.mint(alice.address, mintAmount);
+      await communityToken
+        .connect(alice)
+        .approve(await vault.getAddress(), ethers.MaxUint256);
+
+      await expect(
+        vault
+          .connect(alice)
+          .redeem(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            mintAmount,
+            [await usdc.getAddress()],
+            [10000],
+          ),
+      ).to.not.be.reverted;
+
+      expect(await communityToken.totalSupply()).to.equal(0);
+    });
+
+    it('Should allow multiple users to redeem from the same vault', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, alice, bob, SPACE_ID } = f;
+
+      await communityToken.mint(bob.address, ethers.parseEther('5000'));
+      await communityToken
+        .connect(bob)
+        .approve(await vault.getAddress(), ethers.MaxUint256);
+
+      await vault
+        .connect(alice)
+        .redeem(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          ethers.parseEther('100'),
+          [await usdc.getAddress()],
+          [10000],
+        );
+      await vault
+        .connect(bob)
+        .redeem(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          ethers.parseEther('200'),
+          [await usdc.getAddress()],
+          [10000],
+        );
+
+      expect(await usdc.balanceOf(alice.address)).to.equal(200_000_000);
+      expect(await usdc.balanceOf(bob.address)).to.equal(400_000_000);
+    });
+  });
+
+  // ================================================================
+  //              REDEEM MULTI — EDGE CASES
+  // ================================================================
+
+  describe('Redeem — Edge Cases', function () {
+    it('Should reject proportions that do not sum to 10000', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, weth, alice, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(alice)
+          .redeem(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            ethers.parseEther('100'),
+            [await usdc.getAddress(), await weth.getAddress()],
+            [5000, 3000],
+          ),
+      ).to.be.revertedWith('Proportions must sum to 10000');
+    });
+
+    it('Should reject proportions exceeding 10000', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, weth, alice, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(alice)
+          .redeem(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            ethers.parseEther('100'),
+            [await usdc.getAddress(), await weth.getAddress()],
+            [7000, 5000],
+          ),
+      ).to.be.revertedWith('Proportions must sum to 10000');
+    });
+
+    it('Should reject zero proportion', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, weth, alice, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(alice)
+          .redeem(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            ethers.parseEther('100'),
+            [await usdc.getAddress(), await weth.getAddress()],
+            [0, 10000],
+          ),
+      ).to.be.revertedWith('Proportion must be > 0');
+    });
+
+    it('Should reject empty backing tokens in redeem', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, alice, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(alice)
+          .redeem(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            ethers.parseEther('100'),
+            [],
+            [],
+          ),
+      ).to.be.revertedWith('No backing tokens specified');
+    });
+
+    it('Should reject mismatched arrays in redeem', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, weth, alice, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(alice)
+          .redeem(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            ethers.parseEther('100'),
+            [await usdc.getAddress(), await weth.getAddress()],
+            [10000],
+          ),
+      ).to.be.revertedWith('Array lengths must match');
+    });
+
+    it('Should reject zero amount in redeem', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, weth, alice, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(alice)
+          .redeem(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            0,
+            [await usdc.getAddress(), await weth.getAddress()],
+            [5000, 5000],
+          ),
+      ).to.be.revertedWith('Amount must be > 0');
+    });
+
+    it('Should emit RedeemedMulti event', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, weth, alice, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(alice)
+          .redeem(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            ethers.parseEther('100'),
+            [await usdc.getAddress(), await weth.getAddress()],
+            [5000, 5000],
+          ),
+      ).to.emit(vault, 'Redeemed');
+    });
+
+    it('Should redeem with 100% to a single token', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, alice, SPACE_ID } = f;
+
+      await vault
+        .connect(alice)
+        .redeem(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          ethers.parseEther('100'),
+          [await usdc.getAddress()],
+          [10000],
+        );
+
+      expect(await usdc.balanceOf(alice.address)).to.equal(200_000_000);
+    });
+  });
+
+  // ================================================================
+  //          MINIMUM BACKING — ADVANCED TESTS
+  // ================================================================
+
+  describe('Minimum Backing — Advanced', function () {
+    it('Should allow any redemption when minimumBacking is 0', async function () {
+      const { vault, communityToken, usdc, usdcFeed, executor, alice, SPACE_ID } =
+        await loadFixture(deployFixture);
+
+      await usdc.mint(executor.address, 10_000e6);
+      await usdc.connect(executor).approve(await vault.getAddress(), 10_000e6);
+
+      await vault.connect(executor).addBackingToken(
+        SPACE_ID,
+        await communityToken.getAddress(),
+        [await usdc.getAddress()],
+        [await usdcFeed.getAddress()],
+        [6],
+        [10_000e6],
+        0, // no min backing
+      );
+
+      await communityToken.mint(alice.address, ethers.parseEther('5000'));
+      await communityToken
+        .connect(alice)
+        .approve(await vault.getAddress(), ethers.MaxUint256);
+
+      await expect(
+        vault
+          .connect(alice)
+          .redeem(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            ethers.parseEther('5000'),
+            [await usdc.getAddress()],
+            [10000],
+          ),
+      ).to.not.be.reverted;
+    });
+
+    it('Should allow executor to update minimumBacking', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, executor, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(executor)
+          .setMinimumBacking(SPACE_ID, await communityToken.getAddress(), 5000),
+      )
+        .to.emit(vault, 'MinimumBackingUpdated')
+        .withArgs(1, 5000);
+
+      const config = await vault.getVaultConfig(
+        SPACE_ID,
+        await communityToken.getAddress(),
+      );
+      expect(config.minimumBackingBps).to.equal(5000);
+    });
+
+    it('Should reject setMinimumBacking > 100%', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, executor, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(executor)
+          .setMinimumBacking(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            10001,
+          ),
+      ).to.be.revertedWith('Min backing cannot exceed 100%');
+    });
+
+    it('Should enforce min backing on redeem', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, weth, alice, SPACE_ID } = f;
+
+      await communityToken.mint(alice.address, ethers.parseEther('500000'));
+
+      await expect(
+        vault
+          .connect(alice)
+          .redeem(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            ethers.parseEther('1000'),
+            [await usdc.getAddress(), await weth.getAddress()],
+            [5000, 5000],
+          ),
+      ).to.be.revertedWith('Redemption would breach minimum backing threshold');
+    });
+  });
+
+  // ================================================================
+  //          ACCESS CONTROL — EXTENDED
+  // ================================================================
+
+  describe('Access Control — Extended', function () {
+    it('Should block non-whitelisted when only whitelist is on (no membersOnly)', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, executor, nonMember, SPACE_ID } = f;
+
+      await vault
+        .connect(executor)
+        .setWhitelistEnabled(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          true,
+        );
+
+      await communityToken.mint(nonMember.address, ethers.parseEther('100'));
+      await communityToken
+        .connect(nonMember)
+        .approve(await vault.getAddress(), ethers.MaxUint256);
+
+      await expect(
+        vault
+          .connect(nonMember)
+          .redeem(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            ethers.parseEther('10'),
+            [await usdc.getAddress()],
+            [10000],
+          ),
+      ).to.be.revertedWith('Not authorized to redeem');
+    });
+
+    it('Should block after removing from whitelist', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, executor, nonMember, SPACE_ID } = f;
+
+      await vault
+        .connect(executor)
+        .setWhitelistEnabled(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          true,
+        );
+      await vault
+        .connect(executor)
+        .addToWhitelist(SPACE_ID, await communityToken.getAddress(), [
+          nonMember.address,
+        ]);
+
+      await communityToken.mint(nonMember.address, ethers.parseEther('100'));
+      await communityToken
+        .connect(nonMember)
+        .approve(await vault.getAddress(), ethers.MaxUint256);
+
+      await expect(
+        vault
+          .connect(nonMember)
+          .redeem(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            ethers.parseEther('5'),
+            [await usdc.getAddress()],
+            [10000],
+          ),
+      ).to.not.be.reverted;
+
+      await vault
+        .connect(executor)
+        .removeFromWhitelist(SPACE_ID, await communityToken.getAddress(), [
+          nonMember.address,
+        ]);
+
+      await expect(
+        vault
+          .connect(nonMember)
+          .redeem(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            ethers.parseEther('5'),
+            [await usdc.getAddress()],
+            [10000],
+          ),
+      ).to.be.revertedWith('Not authorized to redeem');
+    });
+
+    it('Should allow anyone when neither membersOnly nor whitelist is active', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, nonMember, SPACE_ID } = f;
+
+      await communityToken.mint(nonMember.address, ethers.parseEther('100'));
+      await communityToken
+        .connect(nonMember)
+        .approve(await vault.getAddress(), ethers.MaxUint256);
+
+      await expect(
+        vault
+          .connect(nonMember)
+          .redeem(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            ethers.parseEther('10'),
+            [await usdc.getAddress()],
+            [10000],
+          ),
+      ).to.not.be.reverted;
+    });
+
+    it('Should block non-member, non-whitelisted user when both flags on', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, executor, nonMember, SPACE_ID } = f;
+
+      await vault
+        .connect(executor)
+        .setMembersOnly(SPACE_ID, await communityToken.getAddress(), true);
+      await vault
+        .connect(executor)
+        .setWhitelistEnabled(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          true,
+        );
+
+      await communityToken.mint(nonMember.address, ethers.parseEther('100'));
+      await communityToken
+        .connect(nonMember)
+        .approve(await vault.getAddress(), ethers.MaxUint256);
+
+      await expect(
+        vault
+          .connect(nonMember)
+          .redeem(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            ethers.parseEther('10'),
+            [await usdc.getAddress()],
+            [10000],
+          ),
+      ).to.be.revertedWith('Not authorized to redeem');
+    });
+  });
+
+  // ================================================================
+  //              FUNDING & WITHDRAWALS
+  // ================================================================
+
+  describe('Funding & Withdrawals', function () {
+    it('Should add backing and increase vault balance', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, executor, SPACE_ID } = f;
+
+      const before = await vault.getBackingBalance(
+        SPACE_ID,
+        await communityToken.getAddress(),
+        await usdc.getAddress(),
+      );
+
+      await usdc.mint(executor.address, 10_000e6);
+      await usdc.connect(executor).approve(await vault.getAddress(), 10_000e6);
+
+      await expect(
+        vault
+          .connect(executor)
+          .addBacking(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            [await usdc.getAddress()],
+            [10_000e6],
+          ),
+      )
+        .to.emit(vault, 'BackingDeposited')
+        .withArgs(1, executor.address, await usdc.getAddress(), 10_000e6);
+
+      const after = await vault.getBackingBalance(
+        SPACE_ID,
+        await communityToken.getAddress(),
+        await usdc.getAddress(),
+      );
+      expect(after - before).to.equal(10_000e6);
+    });
+
+    it('Should reject addBacking with zero amount', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, executor, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(executor)
+          .addBacking(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            [await usdc.getAddress()],
+            [0],
+          ),
+      ).to.be.revertedWith('Amount must be > 0');
+    });
+
+    it('Should reject addBacking for inactive backing token', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, wbtc, executor, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(executor)
+          .addBacking(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            [await wbtc.getAddress()],
+            [1000],
+          ),
+      ).to.be.revertedWith('Backing token not active');
+    });
+
+    it('Should withdraw backing and decrease vault balance', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, executor, SPACE_ID } = f;
+
+      const before = await vault.getBackingBalance(
+        SPACE_ID,
+        await communityToken.getAddress(),
+        await usdc.getAddress(),
+      );
+
+      await expect(
+        vault
+          .connect(executor)
+          .withdrawBacking(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            await usdc.getAddress(),
+            10_000e6,
+          ),
+      )
+        .to.emit(vault, 'BackingWithdrawn')
+        .withArgs(1, await usdc.getAddress(), 10_000e6);
+
+      const after = await vault.getBackingBalance(
+        SPACE_ID,
+        await communityToken.getAddress(),
+        await usdc.getAddress(),
+      );
+      expect(before - after).to.equal(10_000e6);
+
+      expect(await usdc.balanceOf(executor.address)).to.equal(10_000e6);
+    });
+
+    it('Should reject withdraw with zero amount', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, executor, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(executor)
+          .withdrawBacking(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            await usdc.getAddress(),
+            0,
+          ),
+      ).to.be.revertedWith('Amount must be > 0');
+    });
+
+    it('Should reject withdraw exceeding balance', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, executor, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(executor)
+          .withdrawBacking(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            await usdc.getAddress(),
+            200_000e6,
+          ),
+      ).to.be.revertedWith('Insufficient backing balance');
+    });
+  });
+
+  // ================================================================
+  //              REMOVE BACKING TOKEN
+  // ================================================================
+
+  describe('Remove Backing Token', function () {
+    it('Should remove a backing token and update the list', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, executor, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(executor)
+          .removeBackingToken(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            await usdc.getAddress(),
+          ),
+      )
+        .to.emit(vault, 'BackingTokenRemoved')
+        .withArgs(1, await usdc.getAddress());
+
+      const tokens = await vault.getBackingTokens(
+        SPACE_ID,
+        await communityToken.getAddress(),
+      );
+      expect(tokens.length).to.equal(1);
+
+      const config = await vault.getBackingTokenConfig(
+        SPACE_ID,
+        await communityToken.getAddress(),
+        await usdc.getAddress(),
+      );
+      expect(config.enabled).to.be.false;
+    });
+
+    it('Should reject removing an already removed token', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, executor, SPACE_ID } = f;
+
+      await vault
+        .connect(executor)
+        .removeBackingToken(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          await usdc.getAddress(),
+        );
+
+      await expect(
+        vault
+          .connect(executor)
+          .removeBackingToken(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            await usdc.getAddress(),
+          ),
+      ).to.be.revertedWith('Backing token not active');
+    });
+
+    it('Should block redemption for removed backing token', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, executor, alice, SPACE_ID } = f;
+
+      await vault
+        .connect(executor)
+        .removeBackingToken(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          await usdc.getAddress(),
+        );
+
+      await expect(
+        vault
+          .connect(alice)
+          .redeem(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            ethers.parseEther('10'),
+            [await usdc.getAddress()],
+            [10000],
+          ),
+      ).to.be.revertedWith('Backing token not active');
+    });
+  });
+
+  // ================================================================
+  //       VIEW FUNCTIONS, MULTI-VAULT, OWNER & EDGE CASES
+  // ================================================================
+
+  describe('View Functions & Multi-vault', function () {
+    it('Should return correct vault config', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, SPACE_ID } = f;
+
+      const config = await vault.getVaultConfig(
+        SPACE_ID,
+        await communityToken.getAddress(),
+      );
+      expect(config.spaceId).to.equal(SPACE_ID);
+      expect(config.spaceToken).to.equal(await communityToken.getAddress());
+      expect(config.redeemEnabled).to.be.true;
+      expect(config.membersOnly).to.be.false;
+      expect(config.whitelistEnabled).to.be.false;
+      expect(config.minimumBackingBps).to.equal(2000);
+      expect(config.redemptionStartDate).to.equal(0);
+    });
+
+    it('Should return false for non-existent vault', async function () {
+      const { vault, SPACE_ID } = await loadFixture(deployFixture);
+
+      expect(
+        await vault.vaultExists(SPACE_ID, ethers.ZeroAddress),
+      ).to.be.false;
+    });
+
+    it('Should track vaults per space via getSpaceVaults', async function () {
+      const { vault, communityToken, usdc, usdcFeed, executor, SPACE_ID } =
+        await loadFixture(deployFixture);
+
+      expect((await vault.getSpaceVaults(SPACE_ID)).length).to.equal(0);
+
+      await vault
+        .connect(executor)
+        .addBackingToken(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          [await usdc.getAddress()],
+          [await usdcFeed.getAddress()],
+          [6],
+          [0],
+          0,
+        );
+
+      const vaultIds = await vault.getSpaceVaults(SPACE_ID);
+      expect(vaultIds.length).to.equal(1);
+    });
+
+    it('Should create separate vaults for different space tokens in the same space', async function () {
+      const { vault, communityToken, usdc, usdcFeed, executor, SPACE_ID } =
+        await loadFixture(deployFixture);
+
+      const Community2 = await ethers.getContractFactory('MockSpaceToken');
+      const communityToken2 = await Community2.deploy('Token2', 'TK2', 3_000_000);
+
+      await vault
+        .connect(executor)
+        .addBackingToken(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          [await usdc.getAddress()],
+          [await usdcFeed.getAddress()],
+          [6],
+          [0],
+          0,
+        );
+
+      await vault
+        .connect(executor)
+        .addBackingToken(
+          SPACE_ID,
+          await communityToken2.getAddress(),
+          [await usdc.getAddress()],
+          [await usdcFeed.getAddress()],
+          [6],
+          [0],
+          0,
+        );
+
+      const vaultIds = await vault.getSpaceVaults(SPACE_ID);
+      expect(vaultIds.length).to.equal(2);
+
+      expect(
+        await vault.vaultExists(SPACE_ID, await communityToken.getAddress()),
+      ).to.be.true;
+      expect(
+        await vault.vaultExists(SPACE_ID, await communityToken2.getAddress()),
+      ).to.be.true;
+    });
+
+    it('Should report whitelist status correctly', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, executor, alice, nonMember, SPACE_ID } = f;
+
+      expect(
+        await vault.isWhitelisted(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          alice.address,
+        ),
+      ).to.be.false;
+
+      await vault
+        .connect(executor)
+        .addToWhitelist(SPACE_ID, await communityToken.getAddress(), [
+          alice.address,
+        ]);
+
+      expect(
+        await vault.isWhitelisted(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          alice.address,
+        ),
+      ).to.be.true;
+
+      expect(
+        await vault.isWhitelisted(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          nonMember.address,
+        ),
+      ).to.be.false;
+    });
+  });
+
+  // ================================================================
+  //           BTC (8 decimals) & CROSS-DECIMAL PRECISION
+  // ================================================================
+
+  describe('Cross-Decimal Precision (BTC 8 decimals)', function () {
+    it('Should calculate correct BTC output (100 tokens × $2 = $200 → BTC at $60k)', async function () {
+      const { vault, communityToken, wbtc, btcFeed, usdcFeed, usdc, executor, alice, SPACE_ID } =
+        await loadFixture(deployFixture);
+
+      await wbtc.mint(executor.address, 10_0000_0000); // 10 BTC
+      await wbtc
+        .connect(executor)
+        .approve(await vault.getAddress(), 10_0000_0000);
+
+      await vault
+        .connect(executor)
+        .addBackingToken(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          [await wbtc.getAddress()],
+          [await btcFeed.getAddress()],
+          [8],
+          [10_0000_0000],
+          0,
+        );
+
+      await communityToken.mint(alice.address, ethers.parseEther('1000'));
+      await communityToken
+        .connect(alice)
+        .approve(await vault.getAddress(), ethers.MaxUint256);
+
+      // 100 tokens × $2 = $200; BTC = $60,000 → 200/60000 = 0.00333333 BTC
+      const out = await vault.calculateBackingOut(
+        SPACE_ID,
+        await communityToken.getAddress(),
+        ethers.parseEther('100'),
+        await wbtc.getAddress(),
+      );
+      // 200 / 60000 * 1e8 = 333333
+      expect(out).to.equal(333333n);
+    });
+
+    it('Should redeem BTC correctly', async function () {
+      const { vault, communityToken, wbtc, btcFeed, executor, alice, SPACE_ID } =
+        await loadFixture(deployFixture);
+
+      await wbtc.mint(executor.address, 10_0000_0000);
+      await wbtc
+        .connect(executor)
+        .approve(await vault.getAddress(), 10_0000_0000);
+
+      await vault
+        .connect(executor)
+        .addBackingToken(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          [await wbtc.getAddress()],
+          [await btcFeed.getAddress()],
+          [8],
+          [10_0000_0000],
+          0,
+        );
+
+      await communityToken.mint(alice.address, ethers.parseEther('1000'));
+      await communityToken
+        .connect(alice)
+        .approve(await vault.getAddress(), ethers.MaxUint256);
+
+      await vault
+        .connect(alice)
+        .redeem(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          ethers.parseEther('100'),
+          [await wbtc.getAddress()],
+          [10000],
+        );
+
+      expect(await wbtc.balanceOf(alice.address)).to.equal(333333n);
+    });
+  });
+
+  // ================================================================
+  //           OWNER-LEVEL OPERATIONS
+  // ================================================================
+
+  describe('Owner Operations', function () {
+    it('Should allow owner to set spaces contract', async function () {
+      const { vault, owner } = await loadFixture(deployFixture);
+
+      const MockFactory = await ethers.getContractFactory('MockDAOSpaceFactory');
+      const newFactory = await MockFactory.deploy();
+
+      await vault.connect(owner).setSpacesContract(await newFactory.getAddress());
+    });
+
+    it('Should reject setSpacesContract with zero address', async function () {
+      const { vault, owner } = await loadFixture(deployFixture);
+
+      await expect(
+        vault.connect(owner).setSpacesContract(ethers.ZeroAddress),
+      ).to.be.revertedWith('Invalid spaces contract');
+    });
+
+    it('Should reject setSpacesContract from non-owner', async function () {
+      const { vault, alice } = await loadFixture(deployFixture);
+
+      const MockFactory = await ethers.getContractFactory('MockDAOSpaceFactory');
+      const newFactory = await MockFactory.deploy();
+
+      await expect(
+        vault.connect(alice).setSpacesContract(await newFactory.getAddress()),
+      ).to.be.reverted;
+    });
+  });
+
+  // ================================================================
+  //           NON-USD PEG — EUR COMMUNITY TOKEN WITH HYPHA BACKING
+  // ================================================================
+
+  describe('Non-USD Peg — Complex Cross-Currency', function () {
+    it('Should correctly calculate EUR-priced community → USD-priced Hypha backing', async function () {
+      const {
+        vault,
+        communityToken,
+        hyphaToken,
+        eurUsdFeed,
+        executor,
+        alice,
+        SPACE_ID,
+      } = await loadFixture(deployFixture);
+
+      // Community token = 2 EUR; EUR/USD = 1.08 → $2.16 per token
+      await communityToken.setPriceWithCurrency(
+        2_000_000,
+        await eurUsdFeed.getAddress(),
+      );
+
+      // Hypha backing token = $0.50 USD
+      await hyphaToken.mint(executor.address, ethers.parseEther('100000'));
+      await hyphaToken
+        .connect(executor)
+        .approve(await vault.getAddress(), ethers.parseEther('100000'));
+
+      await vault
+        .connect(executor)
+        .addBackingToken(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          [await hyphaToken.getAddress()],
+          [ethers.ZeroAddress],
+          [18],
+          [ethers.parseEther('100000')],
+          0,
+        );
+
+      await communityToken.mint(alice.address, ethers.parseEther('1000'));
+      await communityToken
+        .connect(alice)
+        .approve(await vault.getAddress(), ethers.MaxUint256);
+
+      // 100 tokens × $2.16 = $216; HYPHA = $0.50 → 432 HYPHA
+      const out = await vault.calculateBackingOut(
+        SPACE_ID,
+        await communityToken.getAddress(),
+        ethers.parseEther('100'),
+        await hyphaToken.getAddress(),
+      );
+      expect(out).to.equal(ethers.parseEther('432'));
+    });
+
+    it('Should handle EUR community with EUR-denominated Hypha backing', async function () {
+      const {
+        vault,
+        communityToken,
+        eurUsdFeed,
+        executor,
+        alice,
+        SPACE_ID,
+      } = await loadFixture(deployFixture);
+
+      // Community token = 5 EUR
+      await communityToken.setPriceWithCurrency(
+        5_000_000,
+        await eurUsdFeed.getAddress(),
+      );
+
+      // EUR-denominated Hypha backing token = 2 EUR
+      const HyphaEur = await ethers.getContractFactory('MockSpaceToken');
+      const hyphaEur = await HyphaEur.deploy('HYPHA_EUR', 'HEUR', 2_000_000);
+      await hyphaEur.setPriceWithCurrency(
+        2_000_000,
+        await eurUsdFeed.getAddress(),
+      );
+
+      await hyphaEur.mint(executor.address, ethers.parseEther('100000'));
+      await hyphaEur
+        .connect(executor)
+        .approve(await vault.getAddress(), ethers.parseEther('100000'));
+
+      await vault
+        .connect(executor)
+        .addBackingToken(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          [await hyphaEur.getAddress()],
+          [ethers.ZeroAddress],
+          [18],
+          [ethers.parseEther('100000')],
+          0,
+        );
+
+      await communityToken.mint(alice.address, ethers.parseEther('1000'));
+      await communityToken
+        .connect(alice)
+        .approve(await vault.getAddress(), ethers.MaxUint256);
+
+      // 100 tokens × 5 EUR × $1.08 = $540
+      // HYPHA_EUR = 2 EUR × $1.08 = $2.16
+      // $540 / $2.16 = 250 HYPHA_EUR
+      const out = await vault.calculateBackingOut(
+        SPACE_ID,
+        await communityToken.getAddress(),
+        ethers.parseEther('100'),
+        await hyphaEur.getAddress(),
+      );
+      expect(out).to.equal(ethers.parseEther('250'));
+    });
+  });
+
+  // ================================================================
+  //           EVENT EMISSION — CONFIGURATION CHANGES
+  // ================================================================
+
+  describe('Configuration Events', function () {
+    it('Should emit RedeemEnabledUpdated', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, executor, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(executor)
+          .setRedeemEnabled(SPACE_ID, await communityToken.getAddress(), false),
+      )
+        .to.emit(vault, 'RedeemEnabledUpdated')
+        .withArgs(1, false);
+    });
+
+    it('Should emit MembersOnlyUpdated', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, executor, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(executor)
+          .setMembersOnly(SPACE_ID, await communityToken.getAddress(), true),
+      )
+        .to.emit(vault, 'MembersOnlyUpdated')
+        .withArgs(1, true);
+    });
+
+    it('Should emit WhitelistEnabledUpdated', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, executor, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(executor)
+          .setWhitelistEnabled(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            true,
+          ),
+      )
+        .to.emit(vault, 'WhitelistEnabledUpdated')
+        .withArgs(1, true);
+    });
+
+    it('Should emit RedemptionStartDateUpdated', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, executor, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(executor)
+          .setRedemptionStartDate(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            1700000000,
+          ),
+      )
+        .to.emit(vault, 'RedemptionStartDateUpdated')
+        .withArgs(1, 1700000000);
+    });
+
+    it('Should emit WhitelistUpdated on add and remove', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, executor, alice, bob, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(executor)
+          .addToWhitelist(SPACE_ID, await communityToken.getAddress(), [
+            alice.address,
+            bob.address,
+          ]),
+      )
+        .to.emit(vault, 'WhitelistUpdated')
+        .withArgs(1, [alice.address, bob.address], true);
+
+      await expect(
+        vault
+          .connect(executor)
+          .removeFromWhitelist(SPACE_ID, await communityToken.getAddress(), [
+            alice.address,
+          ]),
+      )
+        .to.emit(vault, 'WhitelistUpdated')
+        .withArgs(1, [alice.address], false);
     });
   });
 });

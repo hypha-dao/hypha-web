@@ -270,28 +270,46 @@ contract BackingVaultImplementation is
   // ============================================================
 
   /**
-   * @dev Add backing tokens to the vault reserve. Only the space executor or owner can call this.
-   * Caller must have approved this contract to spend the backing token.
+   * @dev Deposit additional backing tokens into the vault.
+   * Accepts arrays so one or more tokens can be funded in a single call.
+   * Caller must have approved this contract for each backing token.
    */
   function addBacking(
     uint256 spaceId,
     address spaceToken,
-    address backingToken,
-    uint256 amount
+    address[] calldata backingTokens,
+    uint256[] calldata amounts
   ) external nonReentrant {
     _requireExecutorOrOwner(spaceId);
     uint256 vaultId = _requireVault(spaceId, spaceToken);
 
-    require(amount > 0, 'Amount must be > 0');
+    require(backingTokens.length > 0, 'No backing tokens specified');
     require(
-      backingConfigs[vaultId][backingToken].enabled,
-      'Backing token not active'
+      backingTokens.length == amounts.length,
+      'Array lengths must match'
     );
 
-    IERC20(backingToken).safeTransferFrom(msg.sender, address(this), amount);
-    vaultBackingBalance[vaultId][backingToken] += amount;
+    for (uint256 i = 0; i < backingTokens.length; i++) {
+      require(amounts[i] > 0, 'Amount must be > 0');
+      require(
+        backingConfigs[vaultId][backingTokens[i]].enabled,
+        'Backing token not active'
+      );
 
-    emit BackingDeposited(vaultId, msg.sender, backingToken, amount);
+      IERC20(backingTokens[i]).safeTransferFrom(
+        msg.sender,
+        address(this),
+        amounts[i]
+      );
+      vaultBackingBalance[vaultId][backingTokens[i]] += amounts[i];
+
+      emit BackingDeposited(
+        vaultId,
+        msg.sender,
+        backingTokens[i],
+        amounts[i]
+      );
+    }
   }
 
   // ============================================================
@@ -299,76 +317,11 @@ contract BackingVaultImplementation is
   // ============================================================
 
   /**
-   * @dev Redeem space tokens for a single chosen backing token.
-   * User's space tokens are burned, and they receive backing tokens OUT.
-   * The user must have approved this contract to spend their space tokens (for burnFrom).
+   * @dev Redeem space tokens for one or more backing tokens in specified proportions.
+   * Proportions are in basis points (must sum to 10000).
+   * For a single backing token, pass a one-element array with proportion [10000].
    */
   function redeem(
-    uint256 spaceId,
-    address spaceToken,
-    uint256 spaceTokenAmount,
-    address backingToken
-  ) external nonReentrant {
-    uint256 vaultId = _requireVault(spaceId, spaceToken);
-    VaultConfig storage config = vaults[vaultId];
-
-    require(config.redeemEnabled, 'Redemptions are disabled');
-    require(spaceTokenAmount > 0, 'Amount must be > 0');
-
-    if (config.membersOnly) {
-      require(
-        IDAOSpaceFactory(spacesContract).isMember(spaceId, msg.sender),
-        'Only space members can redeem'
-      );
-    }
-
-    BackingTokenConfig storage btConfig = backingConfigs[vaultId][backingToken];
-    require(btConfig.enabled, 'Backing token not active');
-
-    uint256 backingOut = _calculateBackingOut(
-      spaceTokenAmount,
-      btConfig.exchangeRate
-    );
-    require(backingOut > 0, 'Output amount too small');
-    require(
-      vaultBackingBalance[vaultId][backingToken] >= backingOut,
-      'Insufficient backing in reserve'
-    );
-
-    // Check aggregate minimum backing threshold (before state changes)
-    // Convert backing leaving the vault to space-token-equivalents
-    uint256 coverageRemoved = (backingOut * 1e18) / btConfig.exchangeRate;
-    _checkMinimumBacking(
-      vaultId,
-      spaceToken,
-      spaceTokenAmount,
-      coverageRemoved
-    );
-
-    // Burn the user's space tokens (permanently reduces supply)
-    IBurnableERC20(spaceToken).burnFrom(msg.sender, spaceTokenAmount);
-
-    // Send backing tokens to user
-    vaultBackingBalance[vaultId][backingToken] -= backingOut;
-    IERC20(backingToken).safeTransfer(msg.sender, backingOut);
-
-    emit Redeemed(
-      vaultId,
-      msg.sender,
-      spaceTokenAmount,
-      backingToken,
-      backingOut
-    );
-  }
-
-  /**
-   * @dev Redeem space tokens for multiple backing tokens in specified proportions.
-   * User's space tokens are burned, and they receive multiple backing tokens OUT.
-   *
-   * Proportions are in basis points (out of 10000).
-   * Example: [6000, 4000] means 60% in first token, 40% in second token.
-   */
-  function redeemMulti(
     uint256 spaceId,
     address spaceToken,
     uint256 spaceTokenAmount,
@@ -393,7 +346,6 @@ contract BackingVaultImplementation is
       );
     }
 
-    // Validate proportions sum to 10000
     uint256 totalBps = 0;
     for (uint256 i = 0; i < proportions.length; i++) {
       require(proportions[i] > 0, 'Proportion must be > 0');
@@ -401,7 +353,6 @@ contract BackingVaultImplementation is
     }
     require(totalBps == BASIS_POINTS, 'Proportions must sum to 10000');
 
-    // Pre-compute all amounts and validate before state changes
     uint256[] memory backingAmounts = new uint256[](backingTokens.length);
     uint256 totalCoverageRemoved = 0;
 
@@ -423,13 +374,11 @@ contract BackingVaultImplementation is
         'Insufficient backing in reserve'
       );
 
-      // Accumulate coverage being removed (in space-token-equivalents)
       totalCoverageRemoved += (backingOut * 1e18) / btConfig.exchangeRate;
 
       backingAmounts[i] = backingOut;
     }
 
-    // Check aggregate minimum backing threshold once for all tokens
     _checkMinimumBacking(
       vaultId,
       spaceToken,
@@ -437,16 +386,14 @@ contract BackingVaultImplementation is
       totalCoverageRemoved
     );
 
-    // Burn the user's space tokens (permanently reduces supply)
     IBurnableERC20(spaceToken).burnFrom(msg.sender, spaceTokenAmount);
 
-    // Distribute each backing token
     for (uint256 i = 0; i < backingTokens.length; i++) {
       vaultBackingBalance[vaultId][backingTokens[i]] -= backingAmounts[i];
       IERC20(backingTokens[i]).safeTransfer(msg.sender, backingAmounts[i]);
     }
 
-    emit RedeemedMulti(
+    emit Redeemed(
       vaultId,
       msg.sender,
       spaceTokenAmount,
