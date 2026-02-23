@@ -82,6 +82,12 @@ npx nx run storage-evm:script ./scripts/upgrade-all-token-factories.ts --network
 
 ```
 
+### token-backing-vault-proxy.deploy
+
+```bash
+npx nx run storage-evm:script ./scripts/token-backing-vault-proxy.deploy.ts --network base-mainnet
+```
+
 ### exit-method-directory-proxy.deploy
 
 ```bash
