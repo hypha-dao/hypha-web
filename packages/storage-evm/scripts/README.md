@@ -205,6 +205,9 @@ npx nx run storage-evm:test ./test/TransferHelper.test.ts
 
 npx nx run storage-evm:test ./test/TokenConfiguration.test.ts
 
+npx nx run storage-evm:test ./test/TokenBackingVault.test.ts
+
+
 
 
 ```
