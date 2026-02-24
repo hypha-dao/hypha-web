@@ -71,9 +71,7 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
     pendingRewards === undefined;
 
   const hasNoRewards =
-    !isLoading &&
-    pendingRewards !== undefined &&
-    parsedRewardValue === 0;
+    !isLoading && pendingRewards !== undefined && parsedRewardValue === 0;
 
   const onHandleClaim = useCallback(async () => {
     try {
