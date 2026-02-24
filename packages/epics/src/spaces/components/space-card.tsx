@@ -25,6 +25,7 @@ type SpaceCardProps = {
   leadImage?: string;
   isSandbox?: boolean;
   isDemo?: boolean;
+  isArchived?: boolean;
   configPath?: string;
   web3SpaceId?: number;
   createdAt: Date;
@@ -46,6 +47,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
   leadImage,
   isSandbox = false,
   isDemo = false,
+  isArchived = false,
   configPath,
   web3SpaceId,
   createdAt,
@@ -156,6 +158,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
               web3SpaceId={web3SpaceId}
               isSandbox={isSandbox}
               isDemo={isDemo}
+              isArchived={isArchived}
               configPath={configPath}
               className="ml-2"
             />
