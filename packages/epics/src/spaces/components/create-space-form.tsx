@@ -300,16 +300,23 @@ export const SpaceForm = ({
     [flags],
   );
   const isDemo = React.useMemo(() => flags?.includes('demo') ?? false, [flags]);
+  const isArchived = React.useMemo(
+    () => flags?.includes('archived') ?? false,
+    [flags],
+  );
   const isLive = React.useMemo(
-    () => !isDemo && !isSandbox,
-    [isDemo, isSandbox],
+    () => !isDemo && !isSandbox && !isArchived,
+    [isDemo, isSandbox, isArchived],
   );
 
   const toggleSandbox = React.useCallback(() => {
     const current = form.getValues().flags ?? [];
     const next = current.includes('sandbox')
       ? current.filter((f) => f !== 'sandbox')
-      : (['sandbox', ...current.filter((f) => f !== 'demo')] as SpaceFlags[]);
+      : ([
+          'sandbox',
+          ...current.filter((f) => f !== 'demo' && f !== 'archived'),
+        ] as SpaceFlags[]);
     form.setValue('flags', next, { shouldDirty: true, shouldValidate: true });
     if (next.includes('sandbox')) {
       form.clearErrors('categories');
@@ -320,13 +327,29 @@ export const SpaceForm = ({
     const current = form.getValues().flags ?? [];
     const next = current.includes('demo')
       ? current.filter((f) => f !== 'demo')
-      : (['demo', ...current.filter((f) => f !== 'sandbox')] as SpaceFlags[]);
+      : ([
+          'demo',
+          ...current.filter((f) => f !== 'sandbox' && f !== 'archived'),
+        ] as SpaceFlags[]);
+    form.setValue('flags', next, { shouldDirty: true, shouldValidate: true });
+  }, [form]);
+
+  const toggleArchived = React.useCallback(() => {
+    const current = form.getValues().flags ?? [];
+    const next = current.includes('archived')
+      ? current.filter((f) => f !== 'archived')
+      : ([
+          'archived',
+          ...current.filter((f) => f !== 'demo' && f !== 'sandbox'),
+        ] as SpaceFlags[]);
     form.setValue('flags', next, { shouldDirty: true, shouldValidate: true });
   }, [form]);
 
   const toggleLive = React.useCallback(() => {
     const current = form.getValues().flags ?? [];
-    const next = current.filter((f) => f !== 'demo' && f !== 'sandbox');
+    const next = current.filter(
+      (f) => f !== 'demo' && f !== 'sandbox' && f !== 'archived',
+    );
     form.setValue('flags', next, { shouldDirty: true, shouldValidate: true });
   }, [form]);
 
@@ -363,6 +386,7 @@ export const SpaceForm = ({
           async (space) => {
             if (
               !space.flags?.includes('sandbox') &&
+              !space.flags?.includes('archived') &&
               space.categories.length === 0
             ) {
               showCategoriesError();
@@ -377,7 +401,11 @@ export const SpaceForm = ({
           (e) => {
             const flags = form.getValues()['flags'];
             const categories = form.getValues()['categories'];
-            if (!flags?.includes('sandbox') && categories.length === 0) {
+            if (
+              !flags?.includes('sandbox') &&
+              !flags?.includes('archived') &&
+              categories.length === 0
+            ) {
               showCategoriesError();
             }
             if (parentSpaceId === -1) {
@@ -678,6 +706,30 @@ export const SpaceForm = ({
               </span>
             </div>
           </Card>
+          {label === 'configure' && (
+            <Card
+              className={clsx(
+                'flex p-6 cursor-pointer space-x-4 items-center',
+                {
+                  'border-accent-9': isArchived,
+                  'hover:border-accent-5': !isArchived,
+                },
+              )}
+              onClick={toggleArchived}
+            >
+              <div className="flex flex-col">
+                <span className="text-2 font-medium">Archive Mode</span>
+                <span className="text-1 text-neutral-11">
+                  <span>
+                    Archive this space to temporarily pause activity or
+                    deactivate it while keeping all data and history safe. You
+                    can reactivate it anytime by selecting a different
+                    activation mode.
+                  </span>
+                </span>
+              </div>
+            </Card>
+          )}
         </div>
         <div className="flex justify-end w-full">
           <Button
