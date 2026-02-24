@@ -69,6 +69,12 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
     !(parsedRewardValue >= MIN_REWARD_CLAIM_VALUE) ||
     isClaiming ||
     pendingRewards === undefined;
+
+  const hasNoRewards =
+    !isLoading &&
+    pendingRewards !== undefined &&
+    parsedRewardValue === 0;
+
   const onHandleClaim = useCallback(async () => {
     try {
       const txHash = await claim();
@@ -80,6 +86,10 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
       console.error('Claim failed:', error);
     }
   }, [claim, waitForClaimReceipt, updatePendingRewards, updateUserAssets]);
+
+  if (hasNoRewards) {
+    return null;
+  }
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-3">
@@ -101,17 +111,18 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
         </Button>
       </div>
       <div className="w-full">
-        {!isAuthenticated ? (
+        {isLoading ? (
+          <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+            <AssetCard isLoading />
+          </div>
+        ) : !isAuthenticated ? (
           <Empty>
             <p>{tProfile('noRewardsFoundForUser')}</p>
           </Empty>
         ) : (
-          <>
-            <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
-              <AssetCard {...hyphaTokenAsset} isLoading={isLoadingAssets} />
-            </div>
-            {isLoading && <AssetCard isLoading />}
-          </>
+          <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+            <AssetCard {...hyphaTokenAsset} isLoading={isLoadingAssets} />
+          </div>
         )}
       </div>
     </div>
