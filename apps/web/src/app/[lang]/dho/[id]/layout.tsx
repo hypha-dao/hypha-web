@@ -165,6 +165,7 @@ export default async function DhoLayout({
             web3SpaceId={spaceFromDb.web3SpaceId as number}
             isSandbox={spaceFromDb.flags.includes('sandbox')}
             isDemo={spaceFromDb.flags.includes('demo')}
+            isArchived={spaceFromDb.flags.includes('archived')}
             configPath={`${getDhoPathAgreements(
               lang,
               daoSlug,
