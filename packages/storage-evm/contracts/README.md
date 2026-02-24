@@ -8,7 +8,7 @@ An Energy Community in Hypha is a collectively governed solar energy system wher
 
 In order to function, each energy community needs three types of tokens:
 
-### 1. Energy Ownership Token (EOT)
+### 1. Energy Rights Token (EOT)
 
 Gives the holder the right to pay for energy at a discounted rate and/or receive Energy Value Tokens. This structure supports nano PPAs (Power Purchase Agreements) at the individual member level and/or Space level. 
 
