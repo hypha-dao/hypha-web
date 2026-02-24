@@ -13,6 +13,7 @@ interface GetAllSpacesProps {
   search?: string;
   parentOnly?: boolean;
   omitSandbox?: boolean;
+  omitArchived?: boolean;
 }
 
 export async function getAllSpaces(
