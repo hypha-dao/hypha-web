@@ -23,9 +23,9 @@ type SpacePendingRewardsSectionProps = {
   web3SpaceId: number;
 };
 
-export const SpacePendingRewardsSection: FC<SpacePendingRewardsSectionProps> = ({
-  web3SpaceId,
-}) => {
+export const SpacePendingRewardsSection: FC<
+  SpacePendingRewardsSectionProps
+> = ({ web3SpaceId }) => {
   const { id: spaceSlug } = useParams<{ id: string }>();
   const { mutate } = useSWRConfig();
   const { isAuthenticated } = useAuthentication();
@@ -33,10 +33,7 @@ export const SpacePendingRewardsSection: FC<SpacePendingRewardsSectionProps> = (
   const { isMember } = useSpaceMember({ spaceId: web3SpaceId });
   const executor = spaceDetails?.executor as `0x${string}` | undefined;
 
-  const {
-    filteredAssets,
-    isLoading: isLoadingAssets,
-  } = useAssetsSection();
+  const { filteredAssets, isLoading: isLoadingAssets } = useAssetsSection();
 
   const {
     pendingRewards,
@@ -85,9 +82,7 @@ export const SpacePendingRewardsSection: FC<SpacePendingRewardsSectionProps> = (
   const canClaim = isAuthenticated && isMember;
 
   const hasNoRewards =
-    !isLoading &&
-    pendingRewards !== undefined &&
-    parsedRewardValue === 0;
+    !isLoading && pendingRewards !== undefined && parsedRewardValue === 0;
 
   const onHandleClaim = useCallback(async () => {
     if (!canClaim || !executor) return;
