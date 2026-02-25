@@ -4,7 +4,6 @@ import { SelectAction, useActionGating } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { isAbsoluteUrl } from '@hypha-platform/ui-utils';
 import {
-  ArchiveIcon,
   ArrowDownIcon,
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -67,16 +66,6 @@ export const SelectSettingsAction = ({
       href: 'create/activate-spaces',
       baseTab: 'agreements',
       icon: <ArrowRightIcon />,
-    },
-    {
-      group: 'Overview',
-      title: 'Archive Space (Coming Soon)',
-      description:
-        'Archive this space to disable activity while preserving its data and history.',
-      href: '#',
-      icon: <ArchiveIcon />,
-      baseTab: 'members',
-      disabled: true,
     },
     {
       defaultDurationDays: 4,

@@ -4,6 +4,7 @@ import {
   SpaceSearch,
   AuthenticatedLinkButton,
 } from '@hypha-platform/epics';
+import { isSpaceArchived } from '@hypha-platform/core/client';
 import Link from 'next/link';
 import { Locale } from '@hypha-platform/i18n';
 import {
@@ -91,6 +92,7 @@ export default async function Index(props: PageProps) {
                       title={space.title as string}
                       isSandbox={space.flags?.includes('sandbox') ?? false}
                       isDemo={space.flags?.includes('demo') ?? false}
+                      isArchived={isSpaceArchived(space)}
                       web3SpaceId={space.web3SpaceId as number}
                       createdAt={space.createdAt}
                       configPath={`${getDhoPathAgreements(

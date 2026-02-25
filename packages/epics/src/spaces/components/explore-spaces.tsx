@@ -1,6 +1,11 @@
 'use client';
 
-import { Category, Space, SpaceOrder } from '@hypha-platform/core/client';
+import {
+  Category,
+  Space,
+  SpaceOrder,
+  isSpaceArchived,
+} from '@hypha-platform/core/client';
 import { SpaceCardList, SpaceSearch } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { Text } from '@radix-ui/themes';
@@ -111,14 +116,19 @@ export function ExploreSpaces({
   const searchParams = useSearchParams();
   const { replace } = useRouter();
 
+  const nonArchivedSpaces = React.useMemo(
+    () => spaces.filter((space) => !isSpaceArchived(space)),
+    [spaces],
+  );
+
   const categoryFilteredSpaces = React.useMemo(
     () =>
       categories && categories.length > 0
-        ? spaces.filter((space) =>
+        ? nonArchivedSpaces.filter((space) =>
             categoriesIntersected(space.categories, categories),
           )
-        : spaces,
-    [spaces, categories],
+        : nonArchivedSpaces,
+    [nonArchivedSpaces, categories],
   );
 
   const {

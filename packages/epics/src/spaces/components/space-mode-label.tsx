@@ -3,13 +3,13 @@
 import { useAuthentication } from '@hypha-platform/authentication';
 import { Badge } from '@hypha-platform/ui';
 import clsx from 'clsx';
-import Link from 'next/link';
 import { useSpaceMember } from '../hooks';
 import { useRouter } from 'next/navigation';
 
 interface SpaceModeLabelProps {
   isSandbox: boolean;
   isDemo: boolean;
+  isArchived: boolean;
   configPath?: string;
   web3SpaceId?: number;
   className?: string;
@@ -18,15 +18,17 @@ interface SpaceModeLabelProps {
 const LabelButton = ({
   caption,
   configPath,
+  colorVariant = 'accent',
 }: {
   caption: string;
   configPath: string;
+  colorVariant?: 'accent' | 'error';
 }) => {
   const router = useRouter();
   return (
     <Badge
       className="flex cursor-pointer"
-      colorVariant="accent"
+      colorVariant={colorVariant}
       variant="outline"
       role="link"
       title="Change Space Configuration"
@@ -48,8 +50,14 @@ const LabelButton = ({
     </Badge>
   );
 };
-const LabelBadge = ({ caption }: { caption: string }) => (
-  <Badge className="flex" colorVariant="accent" variant="outline">
+const LabelBadge = ({
+  caption,
+  colorVariant = 'accent',
+}: {
+  caption: string;
+  colorVariant?: 'accent' | 'error';
+}) => (
+  <Badge className="flex" colorVariant={colorVariant} variant="outline">
     {caption}
   </Badge>
 );
@@ -58,32 +66,46 @@ const MemberLabel = ({
   caption,
   web3SpaceId,
   configPath,
+  colorVariant = 'accent',
 }: {
   caption: string;
   web3SpaceId: number;
   configPath: string;
+  colorVariant?: 'accent' | 'error';
 }) => {
   const { isMember } = useSpaceMember({ spaceId: web3SpaceId });
   return isMember ? (
-    <LabelButton caption={caption} configPath={configPath} />
+    <LabelButton
+      caption={caption}
+      configPath={configPath}
+      colorVariant={colorVariant}
+    />
   ) : (
-    <LabelBadge caption={caption} />
+    <LabelBadge caption={caption} colorVariant={colorVariant} />
   );
 };
 
 export const SpaceModeLabel = ({
   isSandbox,
   isDemo,
+  isArchived,
   configPath,
   web3SpaceId,
   className,
 }: SpaceModeLabelProps) => {
   const { isAuthenticated } = useAuthentication();
-  const isLive = !isSandbox && !isDemo;
+  const isLive = !isSandbox && !isDemo && !isArchived;
   if (isLive) {
     return null;
   }
-  const caption = isSandbox ? 'Sandbox' : isDemo ? 'Pilot' : '';
+  const caption = isSandbox
+    ? 'Sandbox'
+    : isDemo
+    ? 'Pilot'
+    : isArchived
+    ? 'Archived'
+    : '';
+  const colorVariant = isArchived ? 'error' : 'accent';
   return (
     <div className={clsx('flex', className)}>
       {isAuthenticated && !!configPath && Number.isFinite(web3SpaceId) ? (
@@ -91,9 +113,10 @@ export const SpaceModeLabel = ({
           caption={caption}
           web3SpaceId={web3SpaceId as number}
           configPath={configPath}
+          colorVariant={colorVariant}
         />
       ) : (
-        <LabelBadge caption={caption} />
+        <LabelBadge caption={caption} colorVariant={colorVariant} />
       )}
     </div>
   );

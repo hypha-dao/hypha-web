@@ -1,6 +1,6 @@
 'use client';
 
-import { Space } from '@hypha-platform/core/client';
+import { Space, isSpaceArchived } from '@hypha-platform/core/client';
 import { SpaceCard } from './space-card';
 import {
   DEFAULT_SPACE_AVATAR_IMAGE,
@@ -40,6 +40,7 @@ export function SpaceCardWithDiscoverability({
         agreements={space.documentCount}
         isSandbox={space.flags?.includes('sandbox') ?? false}
         isDemo={space.flags?.includes('demo') ?? false}
+        isArchived={isSpaceArchived(space)}
         web3SpaceId={space.web3SpaceId as number}
         configPath={`${getHref(space.slug).replace(
           /\/+$/,
