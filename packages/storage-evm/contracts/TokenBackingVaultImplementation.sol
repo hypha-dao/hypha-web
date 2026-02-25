@@ -56,17 +56,18 @@ interface ISpaceTokenPrice {
  * @title TokenBackingVaultImplementation
  * @dev Fiat-referenced redemption vault for space tokens.
  *
- * The peg value and fiat currency are read directly from the space token
- * contract (tokenPrice + priceCurrencyFeed), NOT stored on the vault.
- * This means changing the token's price automatically changes what
- * redeemers receive — no vault update needed.
+ * By default the peg value and fiat currency are read from the space token
+ * contract (tokenPrice + priceCurrencyFeed). Issuers may optionally set a
+ * separate redemption price on the vault (e.g. Berkshares model where
+ * redemption is at a discount to official price, or any other spread).
+ * When redemptionPrice == 0 (default), the official token price is used.
  *
  * Two types of backing tokens:
  *   1. Oracle-priced (USDC, EURC, WETH, WBTC) — price from Chainlink feeds
  *   2. Hypha tokens (any RegularSpaceToken) — price from token.tokenPrice()
  *
  * All prices flow through USD as the common denominator:
- *   spaceToken.price (in token's currency) → USD → backing token USD price → amount
+ *   redemptionPrice (or official price) → USD → backing token USD price → amount
  *
  * Setup (single proposal):
  *   addBackingToken(
@@ -89,6 +90,7 @@ contract TokenBackingVaultImplementation is
   using SafeERC20 for IERC20;
 
   uint256 public constant BASIS_POINTS = 10000;
+  uint256 public constant MAX_BACKING_BPS = 100000; // 10x overcollateralization
   uint256 public constant PRICE_PRECISION = 1e6; // tokenPrice uses 6 decimals
   uint256 public constant PRICE_STALENESS_THRESHOLD = 24 hours;
 
@@ -123,8 +125,9 @@ contract TokenBackingVaultImplementation is
    * For oracle-priced tokens: pass the Chainlink feed address.
    * For Hypha tokens: pass address(0) — price is read from token.tokenPrice().
    *
-   * The peg value and fiat currency are read from the space token contract
-   * (spaceToken.tokenPrice() and spaceToken.priceCurrencyFeed()).
+   * @param redemptionPrice Optional redemption price (6 decimals). 0 = use official token price.
+   * @param redemptionPriceCurrencyFeed Chainlink X/USD feed for the redemption price currency.
+   *        address(0) = USD. Ignored when redemptionPrice is 0.
    */
   function addBackingToken(
     uint256 spaceId,
@@ -133,7 +136,9 @@ contract TokenBackingVaultImplementation is
     address[] calldata priceFeeds,
     uint8[] calldata tokenDecimals,
     uint256[] calldata fundingAmounts,
-    uint256 minimumBackingBps
+    uint256 minimumBackingBps,
+    uint256 redemptionPrice,
+    address redemptionPriceCurrencyFeed
   ) external nonReentrant returns (uint256 vaultId) {
     _requireExecutorOrOwner(spaceId);
 
@@ -146,15 +151,21 @@ contract TokenBackingVaultImplementation is
       'Array lengths must match'
     );
     require(
-      minimumBackingBps <= BASIS_POINTS,
-      'Min backing cannot exceed 100%'
+      minimumBackingBps <= MAX_BACKING_BPS,
+      'Min backing cannot exceed 1000%'
     );
 
     // Validate the space token has a price set
     uint256 pegPrice = ISpaceTokenPrice(spaceToken).tokenPrice();
     require(pegPrice > 0, 'Space token price must be > 0');
 
-    vaultId = _getOrCreateVault(spaceId, spaceToken, minimumBackingBps);
+    vaultId = _getOrCreateVault(
+      spaceId,
+      spaceToken,
+      minimumBackingBps,
+      redemptionPrice,
+      redemptionPriceCurrencyFeed
+    );
 
     for (uint256 i = 0; i < backingTokens.length; i++) {
       address bt = backingTokens[i];
@@ -297,8 +308,8 @@ contract TokenBackingVaultImplementation is
     _requireExecutorOrOwner(spaceId);
     uint256 vaultId = _requireVault(spaceId, spaceToken);
     require(
-      minimumBackingBps <= BASIS_POINTS,
-      'Min backing cannot exceed 100%'
+      minimumBackingBps <= MAX_BACKING_BPS,
+      'Min backing cannot exceed 1000%'
     );
     vaults[vaultId].minimumBackingBps = minimumBackingBps;
     emit MinimumBackingUpdated(vaultId, minimumBackingBps);
@@ -313,6 +324,31 @@ contract TokenBackingVaultImplementation is
     uint256 vaultId = _requireVault(spaceId, spaceToken);
     vaults[vaultId].redemptionStartDate = startDate;
     emit RedemptionStartDateUpdated(vaultId, startDate);
+  }
+
+  /**
+   * @dev Set a redemption price that differs from the official token price.
+   * Pass price = 0 to revert to using the official token price.
+   * @param price Price in 6 decimals (same format as tokenPrice). 0 = use official.
+   * @param currencyFeed Chainlink X/USD feed for the price currency. address(0) = USD.
+   */
+  function setRedemptionPrice(
+    uint256 spaceId,
+    address spaceToken,
+    uint256 price,
+    address currencyFeed
+  ) external {
+    _requireExecutorOrOwner(spaceId);
+    uint256 vaultId = _requireVault(spaceId, spaceToken);
+
+    if (price > 0 && currencyFeed != address(0)) {
+      _getOraclePrice(currencyFeed);
+    }
+
+    vaultRedemptionPrice[vaultId] = price;
+    vaultRedemptionPriceCurrencyFeed[vaultId] = currencyFeed;
+
+    emit RedemptionPriceUpdated(vaultId, price, currencyFeed);
   }
 
   function addToWhitelist(
@@ -425,7 +461,11 @@ contract TokenBackingVaultImplementation is
     }
     require(totalBps == BASIS_POINTS, 'Proportions must sum to 10000');
 
-    uint256 totalUsdAmount = _spaceTokensToUsd(spaceToken, spaceTokenAmount);
+    uint256 totalUsdAmount = _spaceTokensToUsdForRedemption(
+      vaultId,
+      spaceToken,
+      spaceTokenAmount
+    );
 
     uint256[] memory backingAmounts = new uint256[](backingTokens.length);
     uint256 totalCoverageRemoved = 0;
@@ -552,7 +592,11 @@ contract TokenBackingVaultImplementation is
     uint256 vaultId = _requireVault(spaceId, spaceToken);
     BackingTokenConfig storage btConfig = backingConfigs[vaultId][backingToken];
     require(btConfig.enabled, 'Backing token not active');
-    uint256 usdAmount = _spaceTokensToUsd(spaceToken, spaceTokenAmount);
+    uint256 usdAmount = _spaceTokensToUsdForRedemption(
+      vaultId,
+      spaceToken,
+      spaceTokenAmount
+    );
     return _calculateBackingOut(usdAmount, backingToken, btConfig);
   }
 
@@ -568,6 +612,15 @@ contract TokenBackingVaultImplementation is
     uint256 spaceId
   ) external view returns (uint256[] memory) {
     return spaceVaultIds[spaceId];
+  }
+
+  function getRedemptionPrice(
+    uint256 spaceId,
+    address spaceToken
+  ) external view returns (uint256 price, address currencyFeed) {
+    uint256 vaultId = _requireVault(spaceId, spaceToken);
+    price = vaultRedemptionPrice[vaultId];
+    currencyFeed = vaultRedemptionPriceCurrencyFeed[vaultId];
   }
 
   function isWhitelisted(
@@ -586,7 +639,9 @@ contract TokenBackingVaultImplementation is
   function _getOrCreateVault(
     uint256 spaceId,
     address spaceToken,
-    uint256 minimumBackingBps
+    uint256 minimumBackingBps,
+    uint256 redemptionPrice,
+    address redemptionPriceCurrencyFeed
   ) internal returns (uint256 vaultId) {
     bytes32 key = _getVaultKey(spaceId, spaceToken);
     vaultId = vaultKeys[key];
@@ -612,6 +667,19 @@ contract TokenBackingVaultImplementation is
 
       if (minimumBackingBps > 0) {
         emit MinimumBackingUpdated(vaultId, minimumBackingBps);
+      }
+
+      if (redemptionPrice > 0) {
+        if (redemptionPriceCurrencyFeed != address(0)) {
+          _getOraclePrice(redemptionPriceCurrencyFeed);
+        }
+        vaultRedemptionPrice[vaultId] = redemptionPrice;
+        vaultRedemptionPriceCurrencyFeed[vaultId] = redemptionPriceCurrencyFeed;
+        emit RedemptionPriceUpdated(
+          vaultId,
+          redemptionPrice,
+          redemptionPriceCurrencyFeed
+        );
       }
     }
   }
@@ -668,6 +736,42 @@ contract TokenBackingVaultImplementation is
 
     // spaceTokenAmount (1e18) * priceInUsd (6 dec) / PRICE_PRECISION (1e6) = USD value (1e18)
     return (spaceTokenAmount * priceInUsd) / PRICE_PRECISION;
+  }
+
+  /**
+   * @dev Convert space tokens to USD using the vault's effective redemption price.
+   * Uses the vault-specific redemption price if set, otherwise the official token price.
+   */
+  function _spaceTokensToUsdForRedemption(
+    uint256 vaultId,
+    address spaceToken,
+    uint256 spaceTokenAmount
+  ) internal view returns (uint256) {
+    uint256 priceInUsd = _getEffectiveRedemptionPriceInUsd(vaultId, spaceToken);
+    require(priceInUsd > 0, 'Redemption price is 0');
+    return (spaceTokenAmount * priceInUsd) / PRICE_PRECISION;
+  }
+
+  /**
+   * @dev Returns the vault's redemption price in USD (6 decimals).
+   * If no redemption price override is set (== 0), falls back to the official token price.
+   */
+  function _getEffectiveRedemptionPriceInUsd(
+    uint256 vaultId,
+    address spaceToken
+  ) internal view returns (uint256) {
+    uint256 rPrice = vaultRedemptionPrice[vaultId];
+    if (rPrice == 0) {
+      return _getHyphaTokenPriceInUsd(spaceToken);
+    }
+
+    address rFeed = vaultRedemptionPriceCurrencyFeed[vaultId];
+    if (rFeed == address(0)) {
+      return rPrice; // Already in USD
+    }
+
+    (uint256 currencyRate, uint8 feedDec) = _getOraclePrice(rFeed);
+    return (rPrice * currencyRate) / (10 ** feedDec);
   }
 
   // ── Oracle helpers ──
@@ -844,8 +948,8 @@ contract TokenBackingVaultImplementation is
     uint256 totalCoverageUsd = _computeTotalCoverageUsd(vaultId);
     uint256 remainingCoverageUsd = totalCoverageUsd - coverageRemovedUsd;
 
-    // Remaining USD liability = remainingSupply × priceInUsd / PRICE_PRECISION
-    uint256 priceInUsd = _getHyphaTokenPriceInUsd(spaceToken);
+    // Remaining USD liability based on redemption price (or official if not set)
+    uint256 priceInUsd = _getEffectiveRedemptionPriceInUsd(vaultId, spaceToken);
     uint256 remainingLiabilityUsd = (remainingSupply * priceInUsd) /
       PRICE_PRECISION;
 
