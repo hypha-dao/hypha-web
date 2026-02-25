@@ -38,13 +38,21 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const badges: BadgeItem[] = [
     {
       label: type,
-      variant: 'solid',
+      variant: 'outline',
       colorVariant: (() => {
         switch (type) {
           case 'Opportunity':
-            return 'accent';
+            return 'success';
+          case 'Risk':
+            return 'error';
           case 'Tension':
+            return 'tension';
+          case 'Insight':
+            return 'insight';
+          case 'Trend':
             return 'warn';
+          case 'Proposal':
+            return 'accent';
           default:
             return 'accent';
         }

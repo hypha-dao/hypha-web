@@ -1,0 +1,18 @@
+@import '../../colors/orange.css';
+
+:root, .light, .light-theme, .dark, .dark-theme {
+  --tension-1: var(--orange-1);
+  --tension-2: var(--orange-2);
+  --tension-3: var(--orange-3);
+  --tension-4: var(--orange-4);
+  --tension-5: var(--orange-5);
+  --tension-6: var(--orange-6);
+  --tension-7: var(--orange-7);
+  --tension-8: var(--orange-8);
+  --tension-9: var(--orange-9);
+  --tension-10: var(--orange-10);
+  --tension-11: var(--orange-11);
+  --tension-12: var(--orange-12);
+
+  --tension: var(--tension-1);
+}
