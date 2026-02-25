@@ -13,6 +13,14 @@ import { Empty } from '../../../common';
 const HYPHA_TOKEN_ADDRESS = '0x8b93862835C36e9689E9bb1Ab21De3982e266CD3';
 const MIN_REWARD_CLAIM_VALUE = 0.01;
 
+const HYPHA_REWARDS_FALLBACK = {
+  icon: '/placeholder/hypha-token-icon.svg',
+  name: 'Hypha',
+  symbol: 'HYPHA',
+  value: 0,
+  address: HYPHA_TOKEN_ADDRESS,
+};
+
 type PendingRewardsSectionProps = {
   person: Person;
   isMyProfile?: boolean;
@@ -50,11 +58,10 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
     pendingRewards !== undefined ? Number(pendingRewards / 10n ** 18n) : 0;
 
   const hyphaTokenAsset =
-    originalAsset && pendingRewards !== undefined
-      ? {
-          ...originalAsset,
-          value: parsedRewardValue,
-        }
+    pendingRewards !== undefined
+      ? originalAsset
+        ? { ...originalAsset, value: parsedRewardValue }
+        : { ...HYPHA_REWARDS_FALLBACK, value: parsedRewardValue }
       : undefined;
   useEffect(() => {
     if (parsedRewardValue >= MIN_REWARD_CLAIM_VALUE) {
@@ -68,9 +75,6 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
     isClaiming ||
     pendingRewards === undefined;
 
-  const hasNoRewards =
-    !isLoading && pendingRewards !== undefined && parsedRewardValue === 0;
-
   const onHandleClaim = useCallback(async () => {
     try {
       const txHash = await claim();
@@ -82,10 +86,6 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
       console.error('Claim failed:', error);
     }
   }, [claim, waitForClaimReceipt, updatePendingRewards, updateUserAssets]);
-
-  if (hasNoRewards) {
-    return null;
-  }
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-3">
@@ -117,7 +117,13 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
           </Empty>
         ) : (
           <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
-            <AssetCard {...hyphaTokenAsset} isLoading={isLoadingAssets} />
+            <AssetCard
+              {...(hyphaTokenAsset ?? {
+                ...HYPHA_REWARDS_FALLBACK,
+                value: 0,
+              })}
+              isLoading={isLoadingAssets}
+            />
           </div>
         )}
       </div>

@@ -7,7 +7,7 @@ import {
   useSpaceDetailsWeb3Rpc,
 } from '@hypha-platform/core/client';
 import { AssetCard } from './asset-card';
-import { useAssetsSection } from '../../hooks';
+import { useAssetsSection, useTokenSupply } from '../../hooks';
 import { Button } from '@hypha-platform/ui';
 import { Loader2 } from 'lucide-react';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -18,6 +18,14 @@ import { useSWRConfig } from 'swr';
 
 const HYPHA_TOKEN_ADDRESS = '0x8b93862835C36e9689E9bb1Ab21De3982e266CD3';
 const MIN_REWARD_CLAIM_VALUE = 0.01;
+
+const HYPHA_REWARDS_FALLBACK = {
+  icon: '/placeholder/hypha-token-icon.svg',
+  name: 'Hypha',
+  symbol: 'HYPHA',
+  value: 0,
+  address: HYPHA_TOKEN_ADDRESS,
+};
 
 type SpacePendingRewardsSectionProps = {
   web3SpaceId: number;
@@ -34,6 +42,9 @@ export const SpacePendingRewardsSection: FC<
   const executor = spaceDetails?.executor as `0x${string}` | undefined;
 
   const { filteredAssets, isLoading: isLoadingAssets } = useAssetsSection();
+  const { supply: hyphaTotalSupply } = useTokenSupply(
+    HYPHA_TOKEN_ADDRESS as `0x${string}`,
+  );
 
   const {
     pendingRewards,
@@ -53,13 +64,18 @@ export const SpacePendingRewardsSection: FC<
   const parsedRewardValue =
     pendingRewards !== undefined ? Number(pendingRewards / 10n ** 18n) : 0;
 
+  const baseHyphaAsset = originalAsset
+    ? { ...originalAsset, value: parsedRewardValue }
+    : { ...HYPHA_REWARDS_FALLBACK, value: parsedRewardValue };
+
+  const supplyFromAsset = (originalAsset as { supply?: { total: number } })
+    ?.supply;
+  const supply =
+    supplyFromAsset ??
+    (hyphaTotalSupply !== undefined ? { total: hyphaTotalSupply } : undefined);
+
   const hyphaTokenAsset =
-    originalAsset && pendingRewards !== undefined
-      ? {
-          ...originalAsset,
-          value: parsedRewardValue,
-        }
-      : undefined;
+    pendingRewards !== undefined ? { ...baseHyphaAsset, supply } : undefined;
 
   useEffect(() => {
     if (parsedRewardValue >= MIN_REWARD_CLAIM_VALUE) {
@@ -81,9 +97,6 @@ export const SpacePendingRewardsSection: FC<
 
   const canClaim = isAuthenticated && isMember;
 
-  const hasNoRewards =
-    !isLoading && pendingRewards !== undefined && parsedRewardValue === 0;
-
   const onHandleClaim = useCallback(async () => {
     if (!canClaim || !executor) return;
     try {
@@ -103,10 +116,6 @@ export const SpacePendingRewardsSection: FC<
     updatePendingRewards,
     updateSpaceAssets,
   ]);
-
-  if (hasNoRewards) {
-    return null;
-  }
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-3">
@@ -140,7 +149,17 @@ export const SpacePendingRewardsSection: FC<
           </Empty>
         ) : (
           <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
-            <AssetCard {...hyphaTokenAsset} isLoading={isLoadingAssets} />
+            <AssetCard
+              {...(hyphaTokenAsset ?? {
+                ...HYPHA_REWARDS_FALLBACK,
+                value: 0,
+                supply:
+                  hyphaTotalSupply !== undefined
+                    ? { total: hyphaTotalSupply }
+                    : undefined,
+              })}
+              isLoading={isLoadingAssets}
+            />
           </div>
         )}
       </div>
