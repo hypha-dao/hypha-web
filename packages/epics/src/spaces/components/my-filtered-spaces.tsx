@@ -1,7 +1,7 @@
 'use client';
 
 import { Locale } from '@hypha-platform/i18n';
-import { Address, Space } from '@hypha-platform/core/client';
+import { Address, Space, isSpaceArchived } from '@hypha-platform/core/client';
 import { SpaceCardList, useMemberWeb3SpaceIds } from '@hypha-platform/epics';
 import { useMe } from '@hypha-platform/core/client';
 import React from 'react';
@@ -52,9 +52,7 @@ export function MyFilteredSpaces({
 
   const displayedSpaces = React.useMemo(() => {
     if (hideArchivedSpaces) {
-      return filteredSpaces.filter(
-        (space) => !space.flags?.includes('archived'),
-      );
+      return filteredSpaces.filter((space) => !isSpaceArchived(space));
     }
     return filteredSpaces;
   }, [filteredSpaces, hideArchivedSpaces]);

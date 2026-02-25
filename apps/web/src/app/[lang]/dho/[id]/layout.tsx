@@ -27,6 +27,7 @@ import {
   DEFAULT_SPACE_LEAD_IMAGE,
   fetchSpaceDetails,
   fetchSpaceProposalsIds,
+  isSpaceArchived,
 } from '@hypha-platform/core/client';
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
@@ -165,7 +166,9 @@ export default async function DhoLayout({
             web3SpaceId={spaceFromDb.web3SpaceId as number}
             isSandbox={spaceFromDb.flags.includes('sandbox')}
             isDemo={spaceFromDb.flags.includes('demo')}
-            isArchived={spaceFromDb.flags.includes('archived')}
+            isArchived={
+              spaceFromDb.flags.includes('archived') || spaceMembers === 0
+            }
             configPath={`${getDhoPathAgreements(
               lang,
               daoSlug,
@@ -203,6 +206,7 @@ export default async function DhoLayout({
                         title={space.title as string}
                         isSandbox={space.flags?.includes('sandbox') ?? false}
                         isDemo={space.flags?.includes('demo') ?? false}
+                        isArchived={isSpaceArchived(space)}
                         web3SpaceId={space.web3SpaceId as number}
                         configPath={`${getDhoPathAgreements(
                           lang,

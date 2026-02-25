@@ -2,7 +2,7 @@
 
 import { db } from '@hypha-platform/storage-postgres';
 import { findAllSpaces } from '@hypha-platform/core/server';
-import { Space } from '@hypha-platform/core/client';
+import { Space, isSpaceArchived } from '@hypha-platform/core/client';
 import {
   fetchSpaceDetails,
   fetchSpaceProposalsIds,
@@ -36,9 +36,10 @@ export async function getAllSpaces(
     const details = formMap(web3details);
     const proposalsIds = formMap(web3proposalsIds);
 
-    return spaces.map((space) => {
+    const enrichedSpaces = spaces.map((space) => {
       if (space.web3SpaceId === null) {
-        return space;
+        // No web3 data = no on-chain members, treat as archived when filtering
+        return { ...space, memberCount: 0 };
       }
 
       const spaceDetails = details.get(BigInt(space.web3SpaceId));
@@ -55,6 +56,12 @@ export async function getAllSpaces(
         documentCount: spaceProposals?.accepted.length ?? 0,
       };
     });
+
+    if (props.omitArchived) {
+      return enrichedSpaces.filter((space) => !isSpaceArchived(space));
+    }
+
+    return enrichedSpaces;
   } catch (error) {
     throw new Error('Failed to get spaces', {
       cause: error instanceof Error ? error : new Error(String(error)),
