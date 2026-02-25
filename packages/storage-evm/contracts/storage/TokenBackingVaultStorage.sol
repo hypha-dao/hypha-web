@@ -22,6 +22,10 @@ contract TokenBackingVaultStorage is Initializable {
   // Whitelist: vault ID => address => whitelisted
   mapping(uint256 => mapping(address => bool)) internal whitelist;
 
-  uint256[42] private __gap;
+  // Redemption price override (0 = use official token price)
+  mapping(uint256 => uint256) internal vaultRedemptionPrice;
+  mapping(uint256 => address) internal vaultRedemptionPriceCurrencyFeed;
+
+  uint256[40] private __gap;
 }
 

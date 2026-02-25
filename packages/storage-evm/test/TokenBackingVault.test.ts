@@ -114,6 +114,8 @@ describe('TokenBackingVault', function () {
       [6, 18],
       [100_000e6, ethers.parseEther('40')],
       2000, // 20% min backing
+      0,
+      ethers.ZeroAddress,
     );
 
     // Mint community tokens to alice (she will redeem)
@@ -146,6 +148,8 @@ describe('TokenBackingVault', function () {
           [6],
           [50_000e6],
           0, // no min backing
+          0,
+          ethers.ZeroAddress,
         ),
       ).to.emit(vault, 'VaultCreated');
 
@@ -180,6 +184,8 @@ describe('TokenBackingVault', function () {
           [18],
           [ethers.parseEther('10000')],
           0,
+          0,
+          ethers.ZeroAddress,
         );
 
       const config = await vault.getBackingTokenConfig(
@@ -211,6 +217,8 @@ describe('TokenBackingVault', function () {
             [6],
             [0],
             0,
+            0,
+            ethers.ZeroAddress,
           ),
       ).to.be.revertedWith('Space token price must be > 0');
     });
@@ -320,6 +328,8 @@ describe('TokenBackingVault', function () {
           [18],
           [ethers.parseEther('100000')],
           0,
+          0,
+          ethers.ZeroAddress,
         );
 
       await communityToken.mint(alice.address, ethers.parseEther('1000'));
@@ -385,6 +395,8 @@ describe('TokenBackingVault', function () {
           [18],
           [ethers.parseEther('100000')],
           0,
+          0,
+          ethers.ZeroAddress,
         );
 
       // HYPHA = $0.50 → 100 tokens ($100) = 200 HYPHA
@@ -437,6 +449,8 @@ describe('TokenBackingVault', function () {
           [6],
           [500_000e6],
           0,
+          0,
+          ethers.ZeroAddress,
         );
 
       // 100 tokens × 1 EUR × $1.08/EUR = $108; USDC = $1 → 108 USDC
@@ -817,6 +831,8 @@ describe('TokenBackingVault', function () {
           [18],
           [ethers.parseEther('1000')],
           0,
+          0,
+          ethers.ZeroAddress,
         );
 
       await expect(
@@ -852,6 +868,8 @@ describe('TokenBackingVault', function () {
             [6],
             [0],
             0,
+            0,
+            ethers.ZeroAddress,
           ),
       ).to.be.revertedWith('Not authorized: only executor or owner');
     });
@@ -1050,6 +1068,8 @@ describe('TokenBackingVault', function () {
             [6],
             [0],
             0,
+            0,
+            ethers.ZeroAddress,
           ),
       ).to.be.revertedWith('Invalid space token');
     });
@@ -1069,6 +1089,8 @@ describe('TokenBackingVault', function () {
             [],
             [],
             0,
+            0,
+            ethers.ZeroAddress,
           ),
       ).to.be.revertedWith('No backing tokens specified');
     });
@@ -1088,11 +1110,13 @@ describe('TokenBackingVault', function () {
             [6, 18],
             [0],
             0,
+            0,
+            ethers.ZeroAddress,
           ),
       ).to.be.revertedWith('Array lengths must match');
     });
 
-    it('Should reject minimumBackingBps > 100%', async function () {
+    it('Should reject minimumBackingBps > 1000%', async function () {
       const { vault, communityToken, usdc, usdcFeed, executor, SPACE_ID } =
         await loadFixture(deployFixture);
 
@@ -1106,9 +1130,32 @@ describe('TokenBackingVault', function () {
             [await usdcFeed.getAddress()],
             [6],
             [0],
-            10001,
+            100001,
+            0,
+            ethers.ZeroAddress,
           ),
-      ).to.be.revertedWith('Min backing cannot exceed 100%');
+      ).to.be.revertedWith('Min backing cannot exceed 1000%');
+    });
+
+    it('Should allow minimumBackingBps up to 1000% (overcollateralization)', async function () {
+      const { vault, communityToken, usdc, usdcFeed, executor, SPACE_ID } =
+        await loadFixture(deployFixture);
+
+      await expect(
+        vault
+          .connect(executor)
+          .addBackingToken(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            [await usdc.getAddress()],
+            [await usdcFeed.getAddress()],
+            [6],
+            [0],
+            50000,
+            0,
+            ethers.ZeroAddress,
+          ),
+      ).to.not.be.reverted;
     });
 
     it('Should reject backing token == space token', async function () {
@@ -1126,6 +1173,8 @@ describe('TokenBackingVault', function () {
             [18],
             [0],
             0,
+            0,
+            ethers.ZeroAddress,
           ),
       ).to.be.revertedWith('Backing token cannot be the space token');
     });
@@ -1145,6 +1194,8 @@ describe('TokenBackingVault', function () {
             [6],
             [0],
             0,
+            0,
+            ethers.ZeroAddress,
           ),
       ).to.be.revertedWith('Invalid backing token');
     });
@@ -1164,6 +1215,8 @@ describe('TokenBackingVault', function () {
             [6],
             [0],
             0,
+            0,
+            ethers.ZeroAddress,
           ),
       ).to.be.revertedWith('Backing token already added');
     });
@@ -1182,6 +1235,8 @@ describe('TokenBackingVault', function () {
           [6],
           [0],
           0,
+          0,
+          ethers.ZeroAddress,
         );
 
       expect(
@@ -1215,6 +1270,8 @@ describe('TokenBackingVault', function () {
           [8],
           [2_0000_0000],
           0,
+          0,
+          ethers.ZeroAddress,
         );
 
       const tokens = await vault.getBackingTokens(
@@ -1243,6 +1300,8 @@ describe('TokenBackingVault', function () {
           [8],
           [1_0000_0000],
           0,
+          0,
+          ethers.ZeroAddress,
         );
 
       await expect(tx).to.not.emit(vault, 'VaultCreated');
@@ -1411,6 +1470,8 @@ describe('TokenBackingVault', function () {
         [6],
         [100_000e6],
         5000, // 50% min backing
+        0,
+        ethers.ZeroAddress,
       );
 
       const mintAmount = ethers.parseEther('1000');
@@ -1629,6 +1690,8 @@ describe('TokenBackingVault', function () {
         [6],
         [10_000e6],
         0, // no min backing
+        0,
+        ethers.ZeroAddress,
       );
 
       await communityToken.mint(alice.address, ethers.parseEther('5000'));
@@ -1668,7 +1731,7 @@ describe('TokenBackingVault', function () {
       expect(config.minimumBackingBps).to.equal(5000);
     });
 
-    it('Should reject setMinimumBacking > 100%', async function () {
+    it('Should reject setMinimumBacking > 1000%', async function () {
       const f = await setupVault();
       const { vault, communityToken, executor, SPACE_ID } = f;
 
@@ -1678,9 +1741,9 @@ describe('TokenBackingVault', function () {
           .setMinimumBacking(
             SPACE_ID,
             await communityToken.getAddress(),
-            10001,
+            100001,
           ),
-      ).to.be.revertedWith('Min backing cannot exceed 100%');
+      ).to.be.revertedWith('Min backing cannot exceed 1000%');
     });
 
     it('Should enforce min backing on redeem', async function () {
@@ -2114,6 +2177,8 @@ describe('TokenBackingVault', function () {
           [6],
           [0],
           0,
+          0,
+          ethers.ZeroAddress,
         );
 
       const vaultIds = await vault.getSpaceVaults(SPACE_ID);
@@ -2137,6 +2202,8 @@ describe('TokenBackingVault', function () {
           [6],
           [0],
           0,
+          0,
+          ethers.ZeroAddress,
         );
 
       await vault
@@ -2149,6 +2216,8 @@ describe('TokenBackingVault', function () {
           [6],
           [0],
           0,
+          0,
+          ethers.ZeroAddress,
         );
 
       const vaultIds = await vault.getSpaceVaults(SPACE_ID);
@@ -2222,6 +2291,8 @@ describe('TokenBackingVault', function () {
           [8],
           [10_0000_0000],
           0,
+          0,
+          ethers.ZeroAddress,
         );
 
       await communityToken.mint(alice.address, ethers.parseEther('1000'));
@@ -2259,6 +2330,8 @@ describe('TokenBackingVault', function () {
           [8],
           [10_0000_0000],
           0,
+          0,
+          ethers.ZeroAddress,
         );
 
       await communityToken.mint(alice.address, ethers.parseEther('1000'));
@@ -2352,6 +2425,8 @@ describe('TokenBackingVault', function () {
           [18],
           [ethers.parseEther('100000')],
           0,
+          0,
+          ethers.ZeroAddress,
         );
 
       await communityToken.mint(alice.address, ethers.parseEther('1000'));
@@ -2408,6 +2483,8 @@ describe('TokenBackingVault', function () {
           [18],
           [ethers.parseEther('100000')],
           0,
+          0,
+          ethers.ZeroAddress,
         );
 
       await communityToken.mint(alice.address, ethers.parseEther('1000'));
@@ -2517,6 +2594,460 @@ describe('TokenBackingVault', function () {
       )
         .to.emit(vault, 'WhitelistUpdated')
         .withArgs(1, [alice.address], false);
+    });
+
+    it('Should emit RedemptionPriceUpdated', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, executor, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(executor)
+          .setRedemptionPrice(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            1_500_000,
+            ethers.ZeroAddress,
+          ),
+      )
+        .to.emit(vault, 'RedemptionPriceUpdated')
+        .withArgs(1, 1_500_000, ethers.ZeroAddress);
+    });
+  });
+
+  // ================================================================
+  //           REDEMPTION PRICE — SEPARATE FROM OFFICIAL PRICE
+  // ================================================================
+
+  describe('Redemption Price', function () {
+    it('Should default to 0 (use official price)', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, SPACE_ID } = f;
+
+      const [price, feed] = await vault.getRedemptionPrice(
+        SPACE_ID,
+        await communityToken.getAddress(),
+      );
+      expect(price).to.equal(0);
+      expect(feed).to.equal(ethers.ZeroAddress);
+    });
+
+    it('Should allow executor to set a redemption price (USD)', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, executor, SPACE_ID } = f;
+
+      await vault
+        .connect(executor)
+        .setRedemptionPrice(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          1_500_000,
+          ethers.ZeroAddress,
+        );
+
+      const [price, feed] = await vault.getRedemptionPrice(
+        SPACE_ID,
+        await communityToken.getAddress(),
+      );
+      expect(price).to.equal(1_500_000);
+      expect(feed).to.equal(ethers.ZeroAddress);
+    });
+
+    it('Should reject setRedemptionPrice from non-executor', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, alice, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(alice)
+          .setRedemptionPrice(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            1_000_000,
+            ethers.ZeroAddress,
+          ),
+      ).to.be.revertedWith('Not authorized: only executor or owner');
+    });
+
+    it('Should redeem at discount when redemption price < official (Berkshares model)', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, executor, alice, SPACE_ID } = f;
+
+      // Official price = $2, set redemption price = $1.50
+      await vault
+        .connect(executor)
+        .setRedemptionPrice(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          1_500_000,
+          ethers.ZeroAddress,
+        );
+
+      // 100 tokens × $1.50 = $150 → 150 USDC (not $200)
+      const out = await vault.calculateBackingOut(
+        SPACE_ID,
+        await communityToken.getAddress(),
+        ethers.parseEther('100'),
+        await usdc.getAddress(),
+      );
+      expect(out).to.equal(150_000_000);
+
+      await vault
+        .connect(alice)
+        .redeem(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          ethers.parseEther('100'),
+          [await usdc.getAddress()],
+          [10000],
+        );
+
+      expect(await usdc.balanceOf(alice.address)).to.equal(150_000_000);
+    });
+
+    it('Should redeem at premium when redemption price > official', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, executor, alice, SPACE_ID } = f;
+
+      // Official price = $2, set redemption price = $3
+      await vault
+        .connect(executor)
+        .setRedemptionPrice(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          3_000_000,
+          ethers.ZeroAddress,
+        );
+
+      // 100 tokens × $3 = $300 → 300 USDC
+      const out = await vault.calculateBackingOut(
+        SPACE_ID,
+        await communityToken.getAddress(),
+        ethers.parseEther('100'),
+        await usdc.getAddress(),
+      );
+      expect(out).to.equal(300_000_000);
+    });
+
+    it('Should revert to official price when redemption price is reset to 0', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, executor, SPACE_ID } = f;
+
+      // Set redemption price to $1.50
+      await vault
+        .connect(executor)
+        .setRedemptionPrice(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          1_500_000,
+          ethers.ZeroAddress,
+        );
+
+      let out = await vault.calculateBackingOut(
+        SPACE_ID,
+        await communityToken.getAddress(),
+        ethers.parseEther('100'),
+        await usdc.getAddress(),
+      );
+      expect(out).to.equal(150_000_000);
+
+      // Reset to 0 → falls back to official price ($2)
+      await vault
+        .connect(executor)
+        .setRedemptionPrice(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          0,
+          ethers.ZeroAddress,
+        );
+
+      out = await vault.calculateBackingOut(
+        SPACE_ID,
+        await communityToken.getAddress(),
+        ethers.parseEther('100'),
+        await usdc.getAddress(),
+      );
+      expect(out).to.equal(200_000_000);
+    });
+
+    it('Should support non-USD redemption price via currency feed', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, usdc, eurUsdFeed, executor, SPACE_ID } = f;
+
+      // Set redemption price = 1 EUR (EUR/USD = 1.08 → $1.08)
+      await vault
+        .connect(executor)
+        .setRedemptionPrice(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          1_000_000,
+          await eurUsdFeed.getAddress(),
+        );
+
+      // 100 tokens × 1 EUR × $1.08/EUR = $108 → 108 USDC
+      const out = await vault.calculateBackingOut(
+        SPACE_ID,
+        await communityToken.getAddress(),
+        ethers.parseEther('100'),
+        await usdc.getAddress(),
+      );
+      expect(out).to.equal(108_000_000);
+    });
+
+    it('Should use redemption price for minimum backing liability calculation', async function () {
+      const {
+        vault,
+        communityToken,
+        usdc,
+        usdcFeed,
+        executor,
+        alice,
+        SPACE_ID,
+      } = await loadFixture(deployFixture);
+
+      await usdc.mint(executor.address, 100_000e6);
+      await usdc.connect(executor).approve(await vault.getAddress(), 100_000e6);
+
+      // Create vault with 50% min backing, community token = $2
+      await vault.connect(executor).addBackingToken(
+        SPACE_ID,
+        await communityToken.getAddress(),
+        [await usdc.getAddress()],
+        [await usdcFeed.getAddress()],
+        [6],
+        [100_000e6],
+        5000, // 50% min backing
+        0,
+        ethers.ZeroAddress,
+      );
+
+      await communityToken.mint(alice.address, ethers.parseEther('100000'));
+      await communityToken
+        .connect(alice)
+        .approve(await vault.getAddress(), ethers.MaxUint256);
+
+      // With official price $2: liability = 100k tokens × $2 = $200k
+      // 50% min backing = $100k coverage needed
+      // Vault has $100k USDC → borderline
+      // Redeeming 1000 tokens ($2k) would remove $2k coverage and $2k liability
+      // Remaining: $98k coverage, $198k liability → 98k/198k = 49.5% < 50% → blocked
+      await expect(
+        vault
+          .connect(alice)
+          .redeem(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            ethers.parseEther('1000'),
+            [await usdc.getAddress()],
+            [10000],
+          ),
+      ).to.be.revertedWith('Redemption would breach minimum backing threshold');
+
+      // Now set redemption price to $0.50 (4x lower)
+      // Liability = 100k tokens × $0.50 = $50k
+      // 50% min = $25k coverage needed (vault has $100k → plenty of room)
+      await vault
+        .connect(executor)
+        .setRedemptionPrice(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          500_000,
+          ethers.ZeroAddress,
+        );
+
+      // Same redemption should now succeed
+      await expect(
+        vault
+          .connect(alice)
+          .redeem(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            ethers.parseEther('1000'),
+            [await usdc.getAddress()],
+            [10000],
+          ),
+      ).to.not.be.reverted;
+
+      // Alice gets 1000 × $0.50 = $500 → 500 USDC
+      expect(await usdc.balanceOf(alice.address)).to.equal(500_000_000);
+    });
+
+    it('Should allow owner to set redemption price', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, owner, SPACE_ID } = f;
+
+      await expect(
+        vault
+          .connect(owner)
+          .setRedemptionPrice(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            1_000_000,
+            ethers.ZeroAddress,
+          ),
+      ).to.not.be.reverted;
+    });
+
+    it('Should work with Hypha backing token and redemption price', async function () {
+      const {
+        vault,
+        communityToken,
+        hyphaToken,
+        executor,
+        alice,
+        SPACE_ID,
+      } = await loadFixture(deployFixture);
+
+      await hyphaToken.mint(executor.address, ethers.parseEther('100000'));
+      await hyphaToken
+        .connect(executor)
+        .approve(await vault.getAddress(), ethers.parseEther('100000'));
+
+      await vault
+        .connect(executor)
+        .addBackingToken(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          [await hyphaToken.getAddress()],
+          [ethers.ZeroAddress],
+          [18],
+          [ethers.parseEther('100000')],
+          0,
+          0,
+          ethers.ZeroAddress,
+        );
+
+      // Set redemption price = $1 (official = $2)
+      await vault
+        .connect(executor)
+        .setRedemptionPrice(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          1_000_000,
+          ethers.ZeroAddress,
+        );
+
+      await communityToken.mint(alice.address, ethers.parseEther('1000'));
+      await communityToken
+        .connect(alice)
+        .approve(await vault.getAddress(), ethers.MaxUint256);
+
+      // 100 tokens × $1 = $100; HYPHA = $0.50 → 200 HYPHA (not 400)
+      const out = await vault.calculateBackingOut(
+        SPACE_ID,
+        await communityToken.getAddress(),
+        ethers.parseEther('100'),
+        await hyphaToken.getAddress(),
+      );
+      expect(out).to.equal(ethers.parseEther('200'));
+    });
+
+    it('Should set redemption price during addBackingToken (vault creation)', async function () {
+      const { vault, communityToken, usdc, usdcFeed, executor, alice, SPACE_ID } =
+        await loadFixture(deployFixture);
+
+      await usdc.mint(executor.address, 100_000e6);
+      await usdc.connect(executor).approve(await vault.getAddress(), 100_000e6);
+
+      // Create vault with redemption price = $1.50 (official = $2)
+      await vault.connect(executor).addBackingToken(
+        SPACE_ID,
+        await communityToken.getAddress(),
+        [await usdc.getAddress()],
+        [await usdcFeed.getAddress()],
+        [6],
+        [100_000e6],
+        0,
+        1_500_000,
+        ethers.ZeroAddress,
+      );
+
+      const [price, feed] = await vault.getRedemptionPrice(
+        SPACE_ID,
+        await communityToken.getAddress(),
+      );
+      expect(price).to.equal(1_500_000);
+      expect(feed).to.equal(ethers.ZeroAddress);
+
+      await communityToken.mint(alice.address, ethers.parseEther('1000'));
+      await communityToken
+        .connect(alice)
+        .approve(await vault.getAddress(), ethers.MaxUint256);
+
+      // 100 tokens × $1.50 = $150 → 150 USDC
+      const out = await vault.calculateBackingOut(
+        SPACE_ID,
+        await communityToken.getAddress(),
+        ethers.parseEther('100'),
+        await usdc.getAddress(),
+      );
+      expect(out).to.equal(150_000_000);
+    });
+
+    it('Should ignore redemption price on subsequent addBackingToken calls (vault already exists)', async function () {
+      const { vault, communityToken, usdc, usdcFeed, weth, ethFeed, executor, SPACE_ID } =
+        await loadFixture(deployFixture);
+
+      await usdc.mint(executor.address, 100_000e6);
+      await usdc.connect(executor).approve(await vault.getAddress(), 100_000e6);
+
+      // Create vault with redemption price = $1.50
+      await vault.connect(executor).addBackingToken(
+        SPACE_ID,
+        await communityToken.getAddress(),
+        [await usdc.getAddress()],
+        [await usdcFeed.getAddress()],
+        [6],
+        [100_000e6],
+        0,
+        1_500_000,
+        ethers.ZeroAddress,
+      );
+
+      // Add another backing token — passing a different redemption price should be ignored
+      await weth.mint(executor.address, ethers.parseEther('10'));
+      await weth
+        .connect(executor)
+        .approve(await vault.getAddress(), ethers.parseEther('10'));
+
+      await vault.connect(executor).addBackingToken(
+        SPACE_ID,
+        await communityToken.getAddress(),
+        [await weth.getAddress()],
+        [await ethFeed.getAddress()],
+        [18],
+        [ethers.parseEther('10')],
+        0,
+        3_000_000,
+        ethers.ZeroAddress,
+      );
+
+      // Redemption price should still be $1.50, not $3
+      const [price] = await vault.getRedemptionPrice(
+        SPACE_ID,
+        await communityToken.getAddress(),
+      );
+      expect(price).to.equal(1_500_000);
+    });
+
+    it('Should not affect official price when redemption price is set', async function () {
+      const f = await setupVault();
+      const { vault, communityToken, executor, SPACE_ID } = f;
+
+      // Set redemption price = $1.50
+      await vault
+        .connect(executor)
+        .setRedemptionPrice(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          1_500_000,
+          ethers.ZeroAddress,
+        );
+
+      // Official price should still be $2 (unchanged on the token)
+      const MockSpaceToken = await ethers.getContractFactory('MockSpaceToken');
+      const token = MockSpaceToken.attach(await communityToken.getAddress());
+      expect(await token.tokenPrice()).to.equal(2_000_000);
     });
   });
 });

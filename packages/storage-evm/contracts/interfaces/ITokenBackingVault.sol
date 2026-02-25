@@ -40,7 +40,9 @@ interface ITokenBackingVault {
     address[] calldata priceFeeds,
     uint8[] calldata tokenDecimals,
     uint256[] calldata fundingAmounts,
-    uint256 minimumBackingBps
+    uint256 minimumBackingBps,
+    uint256 redemptionPrice,
+    address redemptionPriceCurrencyFeed
   ) external returns (uint256 vaultId);
 
   // ── Vault config (executor only) ──
@@ -86,6 +88,13 @@ interface ITokenBackingVault {
     uint256 spaceId,
     address spaceToken,
     uint256 startDate
+  ) external;
+
+  function setRedemptionPrice(
+    uint256 spaceId,
+    address spaceToken,
+    uint256 price,
+    address currencyFeed
   ) external;
 
   function addToWhitelist(
@@ -168,6 +177,11 @@ interface ITokenBackingVault {
     uint256 spaceId
   ) external view returns (uint256[] memory);
 
+  function getRedemptionPrice(
+    uint256 spaceId,
+    address spaceToken
+  ) external view returns (uint256 price, address currencyFeed);
+
   function isWhitelisted(
     uint256 spaceId,
     address spaceToken,
@@ -231,6 +245,11 @@ interface ITokenBackingVault {
   event RedemptionStartDateUpdated(
     uint256 indexed vaultId,
     uint256 startDate
+  );
+  event RedemptionPriceUpdated(
+    uint256 indexed vaultId,
+    uint256 price,
+    address currencyFeed
   );
   event WhitelistUpdated(
     uint256 indexed vaultId,
