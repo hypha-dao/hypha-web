@@ -3,11 +3,12 @@
 import { db } from '@hypha-platform/storage-postgres';
 import {
   CreateMatrixUserLinkInput,
+  GetAdminUserNameActionInput,
   GetMatrixUserLinkActionInput,
   UpdateEncryptedAccessTokenInput,
 } from '../types';
 import { createMatrixUserLink, updateMatrixUserLink } from './mutations';
-import { findLinkByPrivyUserId } from './queries';
+import { findLinkByPrivyUserId, findAdminUserName } from './queries';
 
 export async function createMatrixUserLinkAction(
   data: CreateMatrixUserLinkInput,
@@ -39,4 +40,14 @@ export async function getMatrixUserLinkAction(
     throw new Error('authToken is required to get Matrix user link');
   }
   return await findLinkByPrivyUserId(data, { db });
+}
+
+export async function getAdminUserNameAction(
+  data: GetAdminUserNameActionInput,
+  { authToken }: { authToken?: string },
+) {
+  if (!authToken) {
+    throw new Error('authToken is required to get admin user name');
+  }
+  return await findAdminUserName(data, { db });
 }

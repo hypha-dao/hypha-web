@@ -17,6 +17,7 @@ export class MatrixSharedSecret {
   private registrationSharedSecret =
     process.env.MATRIX_REGISTRATION_SHARED_SECRET!;
   private matrixHomeserverUrl = process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL!;
+  private matrixDomain = process.env.MATRIX_DOMAIN!;
   private versions: VersionsResponse = { versions: [], unstable_features: {} };
 
   private async getVersions(): Promise<VersionsResponse> {
@@ -66,6 +67,22 @@ export class MatrixSharedSecret {
     }
     const available = await response.json();
     return available.available;
+  }
+
+  async getUser(userName: string, adminAccessToken: string) {
+    const version = await this.getEffectiveVersion();
+    const matrixUserName = `@${userName}:${this.matrixDomain}`;
+    const endpoint = `/_matrix/client/${version}/admin/whois/${matrixUserName}`;
+    const response = await fetch(`${this.matrixHomeserverUrl}${endpoint}`, {
+      headers: {
+        Authorization: `Bearer ${adminAccessToken}`,
+      },
+    });
+    const result = await response.json();
+    return {
+      userId: result.user_id,
+      devices: result.devices,
+    };
   }
 
   async registerUserNonce(username: string, isAdmin: boolean = false) {

@@ -5,20 +5,21 @@ import {
   Environment,
   getDecoratedPrivyId,
   getLinkByPrivyUserId,
+  getAdminUserNameAction,
   MatrixSharedSecret,
   MatrixUserLink,
   updateEncryptedAccessTokenAction,
-  updateMatrixUserLink,
 } from '@hypha-platform/core/server';
 import { PrivyClient } from '@privy-io/server-auth';
 import { NextRequest, NextResponse } from 'next/server';
+import { randomUUID } from 'node:crypto';
 
 const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? '';
 const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET ?? '';
 const MATRIX_HOMESERVER_URL =
   process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL ?? '';
 const DEFAULT_ROOM_ID = process.env.DEFAULT_ROOM_ID ?? '';
-const ADMIN_SUFFIX = 'hypha_admin';
+const ADMIN_BASE_NAME = 'hypha_admin';
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('Authorization');
@@ -57,6 +58,17 @@ export async function GET(request: NextRequest) {
   }
 
   const matrixAuthClient = new MatrixSharedSecret();
+
+  const getAdminMatrixUserName = async (
+    environment: Environment,
+  ): Promise<string> => {
+    const adminUsername =
+      (await getAdminUserNameAction(
+        { baseName: ADMIN_BASE_NAME, environment },
+        { authToken },
+      )) ?? `${ADMIN_BASE_NAME}_${randomUUID()}`;
+    return adminUsername;
+  };
 
   const getAdminRecord = async (
     adminUsername: string,
@@ -105,10 +117,7 @@ export async function GET(request: NextRequest) {
           },
         });
       } else {
-        const adminMatrixUsername = getDecoratedPrivyId(
-          ADMIN_SUFFIX,
-          environment,
-        );
+        const adminMatrixUsername = await getAdminMatrixUserName(environment);
         const admin = await getAdminRecord(
           adminMatrixUsername,
           environment,
@@ -166,18 +175,20 @@ export async function GET(request: NextRequest) {
     } = await matrixAuthClient.registerUser(matrixUsername);
 
     if (!encryptedAccessToken) {
-      const adminMatrixUsername = getDecoratedPrivyId(
-        ADMIN_SUFFIX,
-        environment,
-      );
+      const adminMatrixUsername = await getAdminMatrixUserName(environment);
       const admin = await getAdminRecord(
         adminMatrixUsername,
         environment,
         authToken,
       );
       const adminAccessToken = decryptMatrixToken(admin.encryptedAccessToken);
+      const userInfo = await matrixAuthClient.getUser(
+        matrixUsername,
+        adminAccessToken,
+      );
+
       const { ok, password } = await matrixAuthClient.resetPassword(
-        matrixUserId,
+        userInfo.userId,
         adminAccessToken,
       );
       if (ok) {
@@ -185,13 +196,15 @@ export async function GET(request: NextRequest) {
           accessToken: encryptedAccessToken,
           deviceId,
           userId,
-        } = await matrixAuthClient.loginUser(matrixUserId, password);
+        } = await matrixAuthClient.loginUser(userInfo.userId, password);
 
-        await updateEncryptedAccessTokenAction(
+        await createMatrixUserLinkAction(
           {
-            privyUserId,
             environment,
             encryptedAccessToken,
+            deviceId,
+            matrixUserId: userId,
+            privyUserId,
           },
           { authToken },
         );

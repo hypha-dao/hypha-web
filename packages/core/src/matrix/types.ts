@@ -29,6 +29,11 @@ export interface GetMatrixUserLinkActionInput {
   privyUserId: string;
 }
 
+export interface GetAdminUserNameActionInput {
+  baseName: string;
+  environment: string;
+}
+
 export interface Message {
   id: string;
   sender: string;

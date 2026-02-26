@@ -42,3 +42,22 @@ export const findLinkByMatrixUserId = async (
     ...response,
   };
 };
+
+export const findAdminUserName = async (
+  { baseName, environment }: { baseName: string; environment: string },
+  { db }: DbConfig,
+): Promise<string | null> => {
+  const response = await db.query.matrixUserLinks.findFirst({
+    where: (matrixUserLinks, { eq, and, like }) =>
+      and(
+        eq(matrixUserLinks.environment, environment),
+        like(matrixUserLinks.privyUserId, `%${baseName}%`),
+      ),
+  });
+
+  if (!response) {
+    return null;
+  }
+
+  return response.privyUserId;
+};
