@@ -2,6 +2,7 @@ import { Coherence, Order } from '@hypha-platform/core/client';
 import { SignalGrid } from './signal-grid';
 
 type SignalGridContainerProps = {
+  basePath: string;
   pagination: {
     page: number;
     firstPageSize: number;
@@ -14,6 +15,7 @@ type SignalGridContainerProps = {
 };
 
 export const SignalGridContainer = ({
+  basePath,
   pagination,
   signals,
   refresh,
@@ -29,6 +31,7 @@ export const SignalGridContainer = ({
   return (
     <SignalGrid
       isLoading={false}
+      basePath={basePath}
       signals={paginatedSignals.map((signal) => ({
         ...signal,
       }))}

@@ -1,13 +1,14 @@
 'use client';
 
 import { useAuthentication } from '@hypha-platform/authentication';
-import { ConversationSection } from './conversation-section';
-import { SignalSection } from './signal-section';
 import { Empty } from '../../common/empty';
 import { useFindCoherences, useSpaceBySlug } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 import React from 'react';
 import { CoherenceOrder } from '../types';
+import { Coherence, DirectionType } from '@hypha-platform/core/client';
+import { SignalSection } from './signal-section';
+import { ConversationSection } from './conversation-section';
 
 type CoherenceBlockProps = {
   lang: Locale;
@@ -31,22 +32,12 @@ export function CoherenceBlock({
     refresh: refreshSignals,
   } = useFindCoherences({
     spaceId: space?.id,
-    status: 'signal',
-  });
-  const {
-    coherences: conversations,
-    isLoading: isConversationLoading,
-    refresh: refreshConversations,
-  } = useFindCoherences({
-    spaceId: space?.id,
-    status: 'conversation',
     includeArchived: !hideArchived,
   });
 
   const refresh = React.useCallback(async () => {
     await refreshSignals();
-    await refreshConversations();
-  }, [refreshSignals, refreshConversations]);
+  }, [refreshSignals]);
 
   const chatBasePath = React.useMemo(
     () => `/${lang}/dho/${spaceSlug}/coherence/chat`,
@@ -58,25 +49,13 @@ export function CoherenceBlock({
       {isAuthenticated ? (
         <>
           <SignalSection
-            label="AI Signals"
-            hasSearch={false}
+            basePath={chatBasePath}
+            label="Signals"
+            hasSearch={true}
             signals={signals ?? []}
             isLoading={isSpaceLoading || isSignalsLoading}
-            firstPageSize={3}
+            firstPageSize={6}
             pageSize={3}
-            refresh={refresh}
-          />
-          <ConversationSection
-            basePath={chatBasePath}
-            label="Conversations"
-            hasSearch={true}
-            conversations={conversations ?? []}
-            isLoading={isSpaceLoading || isConversationLoading}
-            firstPageSize={4}
-            pageSize={2}
-            hideArchived={hideArchived}
-            order={orderConversation}
-            setHideArchived={setHideArchived}
             refresh={refresh}
           />
         </>
