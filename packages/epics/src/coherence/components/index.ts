@@ -4,6 +4,8 @@ export * from './chat-message';
 export * from './chat-message.container';
 export * from './chat-message-input';
 export * from './coherence-block';
+export * from './coherence-type-button';
+export * from './coherence-priority-button';
 export * from './conversation-card';
 export * from './conversation-grid';
 export * from './conversation-section';

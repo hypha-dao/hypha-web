@@ -25,7 +25,7 @@ const cardButtonVariants = cva(
       {
         colorVariant: 'accent',
         selected: true,
-        className: 'border-accent-9',
+        className: 'border-accent-9 bg-accent-3',
       },
       {
         colorVariant: 'accent',
@@ -36,7 +36,7 @@ const cardButtonVariants = cva(
       {
         colorVariant: 'error',
         selected: true,
-        className: 'border-error-9',
+        className: 'border-error-9 bg-error-3',
       },
       {
         colorVariant: 'error',
@@ -47,7 +47,7 @@ const cardButtonVariants = cva(
       {
         colorVariant: 'warn',
         selected: true,
-        className: 'border-warning-10',
+        className: 'border-warning-10 bg-warning-3',
       },
       {
         colorVariant: 'warn',
@@ -58,7 +58,7 @@ const cardButtonVariants = cva(
       {
         colorVariant: 'neutral',
         selected: true,
-        className: 'border-neutral-9',
+        className: 'border-neutral-9 bg-neutral-3',
       },
       {
         colorVariant: 'neutral',
@@ -69,7 +69,7 @@ const cardButtonVariants = cva(
       {
         colorVariant: 'success',
         selected: true,
-        className: 'border-success-11',
+        className: 'border-success-11 bg-success-3',
       },
       {
         colorVariant: 'success',
@@ -80,7 +80,7 @@ const cardButtonVariants = cva(
       {
         colorVariant: 'tension',
         selected: true,
-        className: 'border-tension-10',
+        className: 'border-tension-10 bg-tension-3',
       },
       {
         colorVariant: 'tension',
@@ -91,7 +91,7 @@ const cardButtonVariants = cva(
       {
         colorVariant: 'insight',
         selected: true,
-        className: 'border-insight-9',
+        className: 'border-insight-9 bg-insight-3',
       },
       {
         colorVariant: 'insight',
@@ -115,6 +115,8 @@ export interface CardButtonProps
   className?: string;
   onClick: () => void;
 }
+
+export type CardButtonColorVariant = CardButtonProps['colorVariant'];
 
 export const CardButton = ({
   title,

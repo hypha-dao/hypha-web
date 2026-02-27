@@ -3,7 +3,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Button,
-  Combobox,
   Form,
   FormControl,
   FormDescription,
@@ -13,6 +12,7 @@ import {
   FormMessage,
   Input,
   LoadingBackdrop,
+  LucideReactIcon,
   MultiSelect,
   RequirementMark,
   RichTextEditor,
@@ -21,19 +21,23 @@ import { Text } from '@radix-ui/themes';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import {
+  COHERENCE_PRIORITY_OPTIONS,
   COHERENCE_TAGS,
-  COHERENCE_TYPES,
-  CoherenceTag,
+  COHERENCE_TYPE_OPTIONS,
   CoherenceType,
   schemaCreateCoherenceForm,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
+  useMatrix,
   useMe,
 } from '@hypha-platform/core/client';
 import React from 'react';
 import { useScrollToErrors } from '../../hooks';
-import { ButtonClose } from '../../common';
 import { useRouter } from 'next/navigation';
+import { CoherenceTypeButton } from './coherence-type-button';
+import { CoherencePriorityButton } from './coherence-priority-button';
+import { ButtonClose } from '../../common/button-close';
+import { CardButtonColorVariant } from '../../common/card-button';
 
 type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
 
@@ -57,7 +61,10 @@ export const CreateSignalForm = ({
     createdCoherence,
     errorCreateCoherenceMutation,
     resetCreateCoherenceMutation,
+    updateCoherenceBySlug,
+    isUpdatingCoherence,
   } = useCoherenceMutationsWeb2Rsc(authToken);
+  const { isMatrixAvailable, createRoom } = useMatrix();
 
   const progress = React.useMemo(() => {
     return isCreatingCoherence ? 50 : createdCoherence ? 100 : 0;
@@ -71,7 +78,6 @@ export const CreateSignalForm = ({
       description: '',
       creatorId: person?.id,
       spaceId,
-      status: 'signal',
       archived: false,
     },
   });
@@ -79,44 +85,37 @@ export const CreateSignalForm = ({
   useScrollToErrors(form, formRef);
 
   const typeOptions = React.useMemo(() => {
-    return COHERENCE_TYPES.map((type) => ({
-      value: type,
-      label: type,
-    }));
+    const computeColor = (colorVariant: string) => {
+      return `var(--${colorVariant}-10)`;
+    };
+    return COHERENCE_TYPE_OPTIONS.map(
+      ({ icon, title, description, type, colorVariant }) => ({
+        icon: icon as LucideReactIcon,
+        title,
+        description,
+        type,
+        colorVariant: colorVariant as CardButtonColorVariant,
+        titleColor: computeColor(colorVariant),
+      }),
+    );
+  }, []);
+
+  const priorityOptions = React.useMemo(() => {
+    return COHERENCE_PRIORITY_OPTIONS.map(
+      ({ title, priority, description, colorVariant }) => ({
+        title,
+        priority,
+        description,
+        colorVariant: colorVariant as CardButtonColorVariant,
+      }),
+    );
   }, []);
 
   const tagOptions = React.useMemo(() => {
-    const initial: Record<string, CoherenceTag[]> = {};
-    const grouped: Record<string, CoherenceTag[]> = COHERENCE_TAGS.reduce(
-      (tree, tag) => {
-        const [group] = tag.split('/');
-        if (group) {
-          tree[group] = tree[group] ? [...tree[group], tag] : [tag];
-        }
-        return tree;
-      },
-      initial,
-    );
-    const tags: { value: string; label: string }[] = [];
-    for (const [group, values] of Object.entries(grouped)) {
-      tags.push(
-        {
-          label: '---',
-          value: '---',
-        },
-        {
-          label: group,
-          value: '===',
-        },
-      );
-      tags.push(
-        ...values.map((value) => ({
-          label: value.split('/')[1] ?? '',
-          value: value,
-        })),
-      );
-    }
-    return tags;
+    return COHERENCE_TAGS.map((type) => ({
+      value: type,
+      label: type,
+    }));
   }, []);
 
   React.useEffect(() => {
@@ -143,12 +142,29 @@ export const CreateSignalForm = ({
 
   const handleCreate = React.useCallback(
     async (data: FormValues) => {
-      await createCoherence({
-        ...data,
-      });
+      console.log('Start Conversation');
+      if (!isMatrixAvailable) {
+        console.warn(
+          'Cannot create conversation since Matrix client is unavailable',
+        );
+        return;
+      }
+      try {
+        const coherence = await createCoherence({ ...data });
+        const { roomId } = await createRoom(coherence.title);
+        await updateCoherenceBySlug({ slug: coherence.slug!, roomId });
+      } catch (error) {
+        console.warn('Could not create conversation:', error);
+      }
       router.push(successfulUrl);
     },
-    [router, successfulUrl],
+    [
+      createRoom,
+      updateCoherenceBySlug,
+      isMatrixAvailable,
+      router,
+      successfulUrl,
+    ],
   );
 
   const handleInvalid = async (err?: any) => {
@@ -214,25 +230,72 @@ export const CreateSignalForm = ({
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <div className="w-full flex flex-row gap-1">
+                    <div className="w-full flex flex-col gap-3">
                       <FormLabel className="text-foreground">
                         Type <RequirementMark />
                       </FormLabel>
-                      <span className="flex grow"></span>
-                      <span className="flex flex-row gap-1">
-                        <FormControl>
-                          <Combobox
-                            options={typeOptions ?? []}
-                            initialValue={field.value}
-                            onChange={(value: string) => {
-                              form.setValue('type', value as CoherenceType, {
-                                shouldDirty: true,
-                              });
-                            }}
-                            allowEmptyChoice={false}
-                          />
-                        </FormControl>
-                      </span>
+                      <FormControl>
+                        <span className="w-full grid grid-cols-2 gap-2">
+                          {typeOptions &&
+                            typeOptions.map((option, index) => {
+                              return (
+                                <CoherenceTypeButton
+                                  key={`type-option-${index}`}
+                                  icon={option.icon}
+                                  title={option.title}
+                                  description={option.description}
+                                  colorVariant={option.colorVariant}
+                                  selected={field.value === option.type}
+                                  onClick={() => {
+                                    form.setValue(
+                                      'type',
+                                      option.type as CoherenceType,
+                                      {
+                                        shouldDirty: true,
+                                      },
+                                    );
+                                  }}
+                                />
+                              );
+                            })}
+                        </span>
+                      </FormControl>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="w-full flex flex-col gap-3">
+                      <FormLabel className="text-foreground">
+                        Priority <RequirementMark />
+                      </FormLabel>
+                      <FormControl>
+                        <span className="w-full flex flex-row gap-2">
+                          {priorityOptions &&
+                            priorityOptions.map((option, index) => {
+                              return (
+                                <CoherencePriorityButton
+                                  key={`priority-option-${index}`}
+                                  className="w-full"
+                                  title={option.title}
+                                  description={option.description}
+                                  colorVariant={option.colorVariant}
+                                  selected={field.value === option.priority}
+                                  onClick={() => {
+                                    form.setValue('priority', option.priority, {
+                                      shouldDirty: true,
+                                    });
+                                  }}
+                                />
+                              );
+                            })}
+                        </span>
+                      </FormControl>
                     </div>
                     <FormMessage />
                   </FormItem>
@@ -243,9 +306,7 @@ export const CreateSignalForm = ({
                 name="tags"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-foreground">
-                      Tags <RequirementMark />
-                    </FormLabel>
+                    <FormLabel className="text-foreground">Tags</FormLabel>
                     <FormControl>
                       <MultiSelect
                         placeholder={'Select one or more'}
