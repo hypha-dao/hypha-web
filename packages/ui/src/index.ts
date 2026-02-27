@@ -23,6 +23,7 @@ export * from './container';
 export * from './date-picker';
 export * from './disposable-label';
 export * from './dropdown-menu';
+export * from './dynamic-icon';
 export * from './error-alert';
 export * from './form';
 export * from './image';
