@@ -10,7 +10,7 @@ export const createCoherence = async (
     creatorId,
     spaceId,
     slug: maybeSlug,
-    status: maybeStatus,
+    priority: maybePriority,
     ...rest
   }: CreateCoherenceInput,
   { db }: { db: DatabaseInstance },
@@ -22,7 +22,7 @@ export const createCoherence = async (
     throw new Error('spaceId is required to create coherence');
   }
   const slug = maybeSlug || `coh-${uuidv4().slice(0, 8)}`;
-  const status = maybeStatus || 'signal';
+  const priority = maybePriority || 'low';
 
   const [newSignal] = await db
     .insert(coherences)
@@ -30,7 +30,7 @@ export const createCoherence = async (
       creatorId,
       spaceId,
       slug,
-      status,
+      priority,
       ...rest,
     })
     .returning();

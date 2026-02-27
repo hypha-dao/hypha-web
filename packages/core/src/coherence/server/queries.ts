@@ -3,14 +3,14 @@ import { DbConfig } from '../../server';
 import { and, arrayOverlaps, desc, eq, SQL, sql } from 'drizzle-orm';
 import { CoherenceType } from '../coherence-types';
 import { CoherenceTag } from '../coherence-tags';
-import { CoherenceStatus } from '../coherence-statuses';
+import { CoherencePriority } from '../coherence-priorities';
 
 type FindAllCoherencesInput = {
   spaceId?: number;
   search?: string;
   type?: CoherenceType;
   tags?: CoherenceTag[];
-  status?: CoherenceStatus;
+  priority?: CoherencePriority;
   includeArchived?: boolean;
   orderBy?: string;
 };
@@ -22,7 +22,7 @@ export const findAllCoherences = async (
     search,
     type,
     tags,
-    status,
+    priority,
     includeArchived = false,
     orderBy,
   }: FindAllCoherencesInput,
@@ -64,7 +64,7 @@ export const findAllCoherences = async (
           : undefined,
         type ? eq(coherences.type, type) : undefined,
         tags ? arrayOverlaps(coherences.tags, tags) : undefined,
-        status ? eq(coherences.status, status) : undefined,
+        priority ? eq(coherences.priority, priority) : undefined,
       ),
     )
     .orderBy(order);

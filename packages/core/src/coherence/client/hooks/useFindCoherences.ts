@@ -4,14 +4,23 @@ import useSWR from 'swr';
 import { getAllCoherences } from '../../server/web3';
 import { CoherenceType } from '../../coherence-types';
 import { CoherenceTag } from '../../coherence-tags';
-import { CoherenceStatus } from '../../coherence-statuses';
+import { CoherencePriority } from '../../coherence-priorities';
+
+export interface CoherenceQuery {
+  spaceId?: number;
+  search?: string;
+  type?: CoherenceType;
+  tags?: CoherenceTag[];
+  priority?: CoherencePriority;
+  includeArchived?: boolean;
+}
 
 export const useFindCoherences = ({
   spaceId,
   search,
   type,
   tags,
-  status,
+  priority,
   includeArchived,
   orderBy,
 }: {
@@ -19,7 +28,7 @@ export const useFindCoherences = ({
   search?: string;
   type?: CoherenceType;
   tags?: CoherenceTag[];
-  status?: CoherenceStatus;
+  priority?: CoherencePriority;
   includeArchived?: boolean;
   orderBy?: string;
 }) => {
@@ -30,16 +39,16 @@ export const useFindCoherences = ({
     mutate: refresh,
   } = useSWR(
     [
-      { spaceId, search, type, tags, status, includeArchived },
+      { spaceId, search, type, tags, priority, includeArchived },
       'getAllCoherences',
     ],
-    async ([{ search, type, tags, status, includeArchived }]) =>
+    async ([{ search, type, tags, priority, includeArchived }]) =>
       await getAllCoherences({
         spaceId,
         search,
         type,
         tags,
-        status,
+        priority,
         includeArchived,
         orderBy,
       }),

@@ -3,16 +3,16 @@
 import { db } from '@hypha-platform/storage-postgres';
 import { CoherenceType } from '../../coherence-types';
 import { CoherenceTag } from '../../coherence-tags';
+import { CoherencePriority } from '../../coherence-priorities';
 import { findAllCoherences } from '../queries';
 import { Coherence } from '../../types';
-import { CoherenceStatus } from '../../coherence-statuses';
 
 type GetAllCoherencesInput = {
   spaceId?: number;
   search?: string;
   type?: CoherenceType;
   tags?: CoherenceTag[];
-  status?: CoherenceStatus;
+  priority?: CoherencePriority;
   includeArchived?: boolean;
   orderBy?: string;
 };
@@ -25,7 +25,7 @@ export async function getAllCoherences(
 
     return coherences.map(
       ({
-        status,
+        priority,
         type,
         roomId,
         archived,
@@ -36,7 +36,7 @@ export async function getAllCoherences(
         ...rest
       }): Coherence => ({
         type: type as CoherenceType,
-        status: (status as CoherenceStatus) ?? 'signal',
+        priority: (priority as CoherencePriority) ?? 'low',
         tags: tags as CoherenceTag[],
         roomId: roomId ?? undefined,
         archived: archived ?? false,

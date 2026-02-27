@@ -1,11 +1,11 @@
 import { z } from 'zod';
-import { COHERENCE_STATUSES } from './coherence-statuses';
 import { COHERENCE_TYPES } from './coherence-types';
 import { COHERENCE_TAGS } from './coherence-tags';
+import { COHERENCE_PRIORITIES } from './coherence-priorities';
 
 export const createCoherenceWeb2Props = {
-  status: z.enum(COHERENCE_STATUSES),
   type: z.enum(COHERENCE_TYPES),
+  priority: z.enum(COHERENCE_PRIORITIES),
   title: z
     .string()
     .trim()

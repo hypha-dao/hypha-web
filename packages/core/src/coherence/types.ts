@@ -1,12 +1,12 @@
-import { CoherenceStatus } from './coherence-statuses';
+import { CoherencePriority } from './coherence-priorities';
 import { CoherenceTag } from './coherence-tags';
 import { CoherenceType } from './coherence-types';
 
 export interface CreateCoherenceInput {
   creatorId: number;
   spaceId: number;
-  status: CoherenceStatus;
   type: CoherenceType;
+  priority: CoherencePriority;
   title: string;
   description: string;
   slug?: string;
@@ -20,7 +20,6 @@ export interface CreateCoherenceInput {
 export interface UpdateCoherenceInput {
   slug?: string;
   archived?: boolean;
-  status?: CoherenceStatus;
   roomId?: string;
   messages?: number;
   views?: number;
@@ -35,8 +34,8 @@ export type Coherence = {
   creatorId?: number;
   createdAt: Date;
   updatedAt: Date;
-  status: CoherenceStatus;
   type: CoherenceType;
+  priority: CoherencePriority;
   title: string;
   description: string;
   slug: string;
