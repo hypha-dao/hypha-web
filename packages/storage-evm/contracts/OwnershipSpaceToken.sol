@@ -82,7 +82,7 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
    * Allows space members to transfer to escrow contract only if the escrow was created by the space executor
    * Only the executor can initiate other transfers between space members
    */
-  function transfer(address to, uint256 amount) public override returns (bool) {
+  function transfer(address to, uint256 amount) public virtual override returns (bool) {
     address sender = _msgSender();
     require(!archived, 'Token is archived');
 
@@ -174,7 +174,7 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
     address from,
     address to,
     uint256 amount
-  ) public override returns (bool) {
+  ) public virtual override returns (bool) {
     address spender = _msgSender();
     require(!archived, 'Token is archived');
 
