@@ -102,7 +102,7 @@ jobs:
         id: deploy
         env:
           BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}
-        run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }}) >> $GITHUB_OUTPUT
+        run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }} --env BRANCH_DB_URL=${{ env.BRANCH_DB_URL }}) >> $GITHUB_OUTPUT
 
   main:
     needs: [detect-changes]
