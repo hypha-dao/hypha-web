@@ -37,7 +37,7 @@ export function AiLeftPanel({ onClose, className }: AiLeftPanelProps) {
   return (
     <div
       className={cn(
-        'flex h-full flex-col border-r border-border bg-background-2',
+        'flex h-full min-w-0 flex-col overflow-hidden border-r border-border bg-background-2',
         className,
       )}
     >

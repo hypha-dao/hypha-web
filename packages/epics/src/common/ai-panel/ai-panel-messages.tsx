@@ -22,7 +22,7 @@ export function AiPanelMessages({
   const endRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="narrow-scrollbar flex flex-1 flex-col overflow-y-auto px-3 py-3">
+    <div className="narrow-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto px-3 py-3">
       <div className="flex flex-col gap-4">
         {messages.map((msg) => (
           <AiPanelMessageBubble key={msg.id} message={msg} />
