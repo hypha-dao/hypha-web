@@ -1,6 +1,11 @@
 'use client';
 
-import { Coherence, COHERENCE_TYPE_OPTIONS } from '@hypha-platform/core/client';
+import {
+  Coherence,
+  COHERENCE_TYPE_OPTIONS,
+  useCoherenceMutationsWeb2Rsc,
+  useJwt,
+} from '@hypha-platform/core/client';
 import {
   BadgeItem,
   BadgesList,
@@ -8,6 +13,7 @@ import {
   Card,
   CardContent,
   CardTitle,
+  ConfirmDialog,
   LucideReactIcon,
   Separator,
   Skeleton,
@@ -35,10 +41,16 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   description,
   type,
   priority,
+  slug,
   createdAt,
   tags,
+  archived,
   messages = 0,
+  refresh,
 }) => {
+  const { jwt: authToken } = useJwt();
+  const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
+
   const coherenceType = React.useMemo(
     () => COHERENCE_TYPE_OPTIONS.find((option) => option.type === type),
     [type],
@@ -59,6 +71,16 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     variant: 'solid',
     colorVariant: 'neutral',
   }));
+
+  const handleUnarchive = React.useCallback(async () => {
+    console.log('Unarchive conversation');
+    try {
+      await updateCoherenceBySlug({ slug, archived: false });
+      await refresh();
+    } catch (error) {
+      console.warn('Could not unarchive conversation:', error);
+    }
+  }, [slug, refresh]);
 
   return (
     <Card className="h-full w-full space-y-5 pt-5">
@@ -133,18 +155,44 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         </div>
         <Separator />
         <div className="flex gap-3">
-          <Button
-            variant="outline"
-            colorVariant="accent"
-            disabled={isLoading}
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-            }}
-          >
-            <ChatBubbleIcon />
-            Open conversation
-          </Button>
+          {archived ? (
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+            >
+              <ConfirmDialog
+                title="Unarchive Conversation"
+                description="Do you really want to unarchive this conversation?"
+                customAcceptButtonText="Yes, unarchive"
+                customRejectButtonText="No, leave"
+                onAcceptClicked={handleUnarchive}
+              >
+                <Button
+                  variant="outline"
+                  colorVariant="accent"
+                  className="w-full"
+                >
+                  Unarchive
+                </Button>
+              </ConfirmDialog>
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              colorVariant="accent"
+              disabled={isLoading}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+            >
+              <ChatBubbleIcon />
+              Open conversation
+            </Button>
+          )}
+
           <div className="flex-grow"></div>
           <Button
             variant="ghost"
