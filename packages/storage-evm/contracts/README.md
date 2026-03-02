@@ -6,6 +6,8 @@ An Energy Community in Hypha is a collectively governed solar energy system wher
 
 ## Token Model
 
+NOTE: Important to differentiate between ENERGY VALUE flows and ENERGY flows. NanoPPA = energy flows. 
+
 In order to function, each energy community needs two types of tokens:
 
 ### 1. Energy System Ownership Token (ESOT)
