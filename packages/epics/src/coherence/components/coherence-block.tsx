@@ -13,15 +13,13 @@ import { ConversationSection } from './conversation-section';
 type CoherenceBlockProps = {
   lang: Locale;
   spaceSlug: string;
-  orderSignal?: CoherenceOrder;
-  orderConversation?: CoherenceOrder;
+  order?: CoherenceOrder;
 };
 
 export function CoherenceBlock({
   lang,
   spaceSlug,
-  orderSignal,
-  orderConversation,
+  order,
 }: CoherenceBlockProps) {
   const [hideArchived, setHideArchived] = React.useState(true);
   const { isAuthenticated } = useAuthentication();
@@ -33,6 +31,7 @@ export function CoherenceBlock({
   } = useFindCoherences({
     spaceId: space?.id,
     includeArchived: !hideArchived,
+    orderBy: order,
   });
 
   const refresh = React.useCallback(async () => {

@@ -8,8 +8,8 @@ import { Locale } from '@hypha-platform/i18n';
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
   searchParams?: Promise<{
-    order_sig?: string;
-    order_conv?: string;
+    order?: string;
+    type?: string;
   }>;
 };
 
@@ -19,25 +19,11 @@ export default async function CoherencePage(props: PageProps) {
 
   const { lang, id } = params;
 
-  const orderSignalRaw = searchParams?.order_sig;
-  const orderSignal: CoherenceOrder =
-    orderSignalRaw &&
-    COHERENCE_ORDERS.includes(orderSignalRaw as CoherenceOrder)
-      ? (orderSignalRaw as CoherenceOrder)
-      : 'mostrecent';
-  const orderConversationRaw = searchParams?.order_conv;
-  const orderConversation: CoherenceOrder =
-    orderConversationRaw &&
-    COHERENCE_ORDERS.includes(orderConversationRaw as CoherenceOrder)
-      ? (orderConversationRaw as CoherenceOrder)
+  const orderRaw = searchParams?.order;
+  const order: CoherenceOrder =
+    orderRaw && COHERENCE_ORDERS.includes(orderRaw as CoherenceOrder)
+      ? (orderRaw as CoherenceOrder)
       : 'mostrecent';
 
-  return (
-    <CoherenceBlock
-      lang={lang}
-      spaceSlug={id}
-      orderSignal={orderSignal}
-      orderConversation={orderConversation}
-    />
-  );
+  return <CoherenceBlock lang={lang} spaceSlug={id} order={order} />;
 }

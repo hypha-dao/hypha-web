@@ -15,6 +15,7 @@ import { SignalGridContainer } from './signal-grid.container';
 import {
   Coherence,
   COHERENCE_TYPE_OPTIONS,
+  CoherenceType,
   DirectionType,
 } from '@hypha-platform/core/client';
 import { PlusIcon, RocketIcon } from '@radix-ui/react-icons';
@@ -56,6 +57,19 @@ export const SignalSection: FC<SignalSectionProps> = ({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
+  const typeRaw = React.useMemo(() => {
+    return searchParams.get('type');
+  }, [searchParams]);
+  const type = React.useMemo(() => {
+    return typeRaw ? (typeRaw as CoherenceType) : undefined;
+  }, [typeRaw]);
+  const chosenSignals = React.useMemo(() => {
+    if (!type) {
+      return signals;
+    }
+    const result = signals.filter((signal) => signal.type === type);
+    return result;
+  }, [signals, type]);
   const {
     pages,
     loadMore,
@@ -64,27 +78,22 @@ export const SignalSection: FC<SignalSectionProps> = ({
     searchTerm,
     filteredSignals,
   } = useSignalsSection({
-    signals,
+    signals: chosenSignals,
     firstPageSize,
     pageSize,
   });
-  const selectedTags = React.useMemo(() => {
-    return searchParams.getAll('tags');
-  }, [searchParams]);
 
   const onTagClick = React.useCallback(
-    (tag: string) => {
-      const newTags =
-        tag === 'all' ? [] : selectedTags.includes(tag) ? [] : [tag];
+    (type: string) => {
       const params = new URLSearchParams(searchParams);
-      if (newTags.length === 0) {
-        params.delete('tags');
+      if (type === 'all') {
+        params.delete('type');
       } else {
-        params.set('tags', newTags.join(','));
+        params.set('type', type);
       }
       replace(`${pathname}?${params.toString()}`);
     },
-    [selectedTags, searchParams, pathname],
+    [searchParams, pathname],
   );
 
   const multiSelectVariants = cva(
@@ -124,7 +133,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
       count: typeMap[option.type],
     }));
     const typeOptions = [
-      { label: 'All', value: 'all', count: pagination.total || 0 },
+      { label: 'All', value: 'all', count: signals.length },
       ...coherenceTypes,
     ];
     return typeOptions;
@@ -164,9 +173,8 @@ export const SignalSection: FC<SignalSectionProps> = ({
             className={cn(
               multiSelectVariants({
                 variant:
-                  selectedTags.length === 0 && typeOption.value === 'all'
-                    ? 'secondary'
-                    : selectedTags.includes(typeOption.value)
+                  typeRaw === typeOption.value ||
+                  (typeOption.value === 'all' && typeRaw === null)
                     ? 'secondary'
                     : 'default',
               }),
