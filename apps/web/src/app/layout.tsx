@@ -14,7 +14,7 @@ import {
   ConnectedButtonProfile,
 } from '@hypha-platform/epics';
 import { EvmProvider } from '@hypha-platform/evm';
-import { useMe } from '@hypha-platform/core/client';
+import { MatrixProvider, useMe } from '@hypha-platform/core/client';
 import { fileRouter } from '@hypha-platform/core/server';
 import { HYPHA_LOCALE } from '@hypha-platform/cookie';
 import { i18nConfig } from '@hypha-platform/i18n';
@@ -113,35 +113,39 @@ export default async function RootLayout({
               safariWebId={safariWebId}
               serviceWorkerPath={serviceWorkerPath}
             >
-              <div className="flex h-screen flex-col overflow-hidden">
-                <MenuTop logoHref={ROOT_URL}>
-                  <ConnectedButtonProfile
-                    useAuthentication={useAuthentication}
-                    useMe={useMe}
-                    newUserRedirectPath="/profile/signup"
-                    baseRedirectPath="/my-spaces"
-                    navItems={[
-                      {
-                        label: 'Network',
-                        href: `/${lang}/network`,
-                      },
-                      {
-                        label: 'My Spaces',
-                        href: `/${lang}/my-spaces`,
-                      },
-                    ]}
+              <MatrixProvider>
+                <div className="flex h-screen flex-col overflow-hidden">
+                  <MenuTop logoHref={ROOT_URL}>
+                    <ConnectedButtonProfile
+                      useAuthentication={useAuthentication}
+                      useMe={useMe}
+                      newUserRedirectPath="/profile/signup"
+                      baseRedirectPath="/my-spaces"
+                      navItems={[
+                        {
+                          label: 'Network',
+                          href: `/${lang}/network`,
+                        },
+                        {
+                          label: 'My Spaces',
+                          href: `/${lang}/my-spaces`,
+                        },
+                      ]}
+                    />
+                  </MenuTop>
+                  <NextSSRPlugin
+                    routerConfig={extractRouterConfig(fileRouter)}
                   />
-                </MenuTop>
-                <NextSSRPlugin routerConfig={extractRouterConfig(fileRouter)} />
-                <div className="flex min-h-0 flex-1 flex-col overflow-hidden pt-9">
-                  <AiLeftPanelLayout>
-                    <>
-                      <div className="w-full shrink-0 pb-8">{children}</div>
-                      <Footer />
-                    </>
-                  </AiLeftPanelLayout>
+                  <div className="flex min-h-0 flex-1 flex-col overflow-hidden pt-9">
+                    <AiLeftPanelLayout>
+                      <>
+                        <div className="w-full shrink-0 pb-8">{children}</div>
+                        <Footer />
+                      </>
+                    </AiLeftPanelLayout>
+                  </div>
                 </div>
-              </div>
+              </MatrixProvider>
             </NotificationSubscriber>
           </EvmProvider>
         </ThemeProvider>

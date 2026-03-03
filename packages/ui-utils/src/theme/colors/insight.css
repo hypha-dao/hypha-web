@@ -1,0 +1,18 @@
+@import '../../colors/purple.css';
+
+:root, .light, .light-theme, .dark, .dark-theme {
+  --insight-1: var(--purple-1);
+  --insight-2: var(--purple-2);
+  --insight-3: var(--purple-3);
+  --insight-4: var(--purple-4);
+  --insight-5: var(--purple-5);
+  --insight-6: var(--purple-6);
+  --insight-7: var(--purple-7);
+  --insight-8: var(--purple-8);
+  --insight-9: var(--purple-9);
+  --insight-10: var(--purple-10);
+  --insight-11: var(--purple-11);
+  --insight-12: var(--purple-12);
+
+  --insight: var(--insight-1);
+}
