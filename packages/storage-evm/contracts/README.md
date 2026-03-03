@@ -14,7 +14,7 @@ In order to function, each energy community needs two types of tokens:
 
 Represents ownership of the community's physical infrastructure — treasury, solar panels, batteries, and other equipment. Holding ESOT gives the right to a proportional share of the energy value produced by the system.
 
-### 2. Energy Credit Token (ECT)
+### 2. Energy Credits (EC)
 
 An ERC-20 token (`EnergyToken.sol`) that represents positive cash credit balances within the energy distribution system. ECT tokens can be converted to stablecoins (USDC/EURC) through the settlement process. The token uses 6 decimals to match stablecoin precision.
 
