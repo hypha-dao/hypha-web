@@ -77,8 +77,10 @@ jobs:
 
       - name: Run Migrations
         if: needs.detect-changes.outputs.has_migrations == 'true'
+        env:
+          BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}
         run: |
-          echo "BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}" >> apps/web/.env
+          vercel env pull --environment=preview --token=${{ env.VERCEL_TOKEN }}
           pnpm run migrate
 
       - name: Post Schema Diff Comment to PR
@@ -90,11 +92,17 @@ jobs:
           api_key: ${{ secrets.NEON_API_KEY }}
 
       - name: Build Project Artifacts
-        run: vercel build --token=${{ env.VERCEL_TOKEN }}
+        env:
+          BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}
+        run: |
+          vercel env pull --environment=preview --token=${{ env.VERCEL_TOKEN }}
+          vercel build --token=${{ env.VERCEL_TOKEN }}
 
       - name: Deploy Preview to Vercel
         id: deploy
-        run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }}) >> $GITHUB_OUTPUT
+        env:
+          BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}
+        run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }} --env BRANCH_DB_URL=${{ env.BRANCH_DB_URL }}) >> $GITHUB_OUTPUT
 
   main:
     needs: [detect-changes]

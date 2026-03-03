@@ -24,6 +24,7 @@ export * from './date-picker';
 export * from './drawer';
 export * from './disposable-label';
 export * from './dropdown-menu';
+export * from './dynamic-icon';
 export * from './error-alert';
 export * from './form';
 export * from './image';
