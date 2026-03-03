@@ -58,8 +58,8 @@ export function AiLeftPanelLayout({ children }: AiLeftPanelLayoutProps) {
         <>
           <div
             className={cn(
-              'relative flex h-full flex-shrink-0 flex-col transition-all duration-300',
-              panelOpen ? '' : 'w-0 overflow-hidden',
+              'relative flex h-full min-w-0 flex-shrink-0 flex-col overflow-hidden transition-all duration-300',
+              panelOpen ? '' : 'w-0',
             )}
             style={panelOpen ? { width: panelWidth } : undefined}
           >
