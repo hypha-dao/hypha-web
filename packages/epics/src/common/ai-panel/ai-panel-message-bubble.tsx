@@ -4,23 +4,29 @@ import { Bot, Copy, RefreshCw, ThumbsDown, ThumbsUp } from 'lucide-react';
 
 import { cn } from '@hypha-platform/ui-utils';
 
-type UIMessagePart = { type: 'text'; text: string } | { type: string; [k: string]: unknown }
+type UIMessagePart =
+  | { type: 'text'; text: string }
+  | { type: string; [k: string]: unknown };
 
 type AiPanelMessageBubbleProps = {
   message: {
-    id: string
-    role: 'user' | 'assistant' | 'system'
-    parts?: UIMessagePart[]
-  }
-  isStreaming?: boolean
+    id: string;
+    role: 'user' | 'assistant' | 'system';
+    parts?: UIMessagePart[];
+  };
+  isStreaming?: boolean;
 };
 
-export function AiPanelMessageBubble({ message, isStreaming }: AiPanelMessageBubbleProps) {
-  const isUser = message.role === 'user'
-  const textContent = message.parts
-    ?.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
-    .map((p) => p.text)
-    .join('') ?? ''
+export function AiPanelMessageBubble({
+  message,
+  isStreaming,
+}: AiPanelMessageBubbleProps) {
+  const isUser = message.role === 'user';
+  const textContent =
+    message.parts
+      ?.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+      .map((p) => p.text)
+      .join('') ?? '';
 
   return (
     <div className={cn('flex gap-2.5', isUser && 'flex-row-reverse')}>
