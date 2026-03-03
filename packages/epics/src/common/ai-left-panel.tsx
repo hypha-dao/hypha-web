@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -8,9 +10,8 @@ import {
   AiPanelHeader,
   AiPanelMessages,
   AiPanelChatBar,
-  MOCK_MODEL_OPTIONS,
+  MODEL_OPTIONS,
   MOCK_SUGGESTIONS,
-  MOCK_WELCOME_MESSAGE,
 } from './ai-panel';
 
 type AiLeftPanelProps = {
@@ -20,18 +21,43 @@ type AiLeftPanelProps = {
 
 export function AiLeftPanel({ onClose, className }: AiLeftPanelProps) {
   const [input, setInput] = useState('');
-  const [selectedModel, setSelectedModel] = useState(MOCK_MODEL_OPTIONS[0]!);
-  const [messages, setMessages] = useState([MOCK_WELCOME_MESSAGE]);
+  const [selectedModel, setSelectedModel] = useState(MODEL_OPTIONS[0]!);
   const [showSuggestions, setShowSuggestions] = useState(true);
-  const [isStreaming, setIsStreaming] = useState(false);
+
+  const {
+    messages,
+    sendMessage,
+    status,
+    stop,
+    setMessages,
+  } = useChat({
+    transport: new DefaultChatTransport({
+      api: '/api/chat',
+    }),
+  });
+
+  const isStreaming = status === 'streaming' || status === 'submitted';
 
   const handleSend = () => {
-    // Placeholder - no business logic
+    const text = input.trim()
+    if (!text || isStreaming) return
+    sendMessage({ text }, { body: { modelId: selectedModel.id } })
+    setInput('')
+    setShowSuggestions(false)
   };
 
   const handleSuggestionSelect = (text: string) => {
     setShowSuggestions(false);
     setInput(text);
+  };
+
+  const handleResetChat = () => {
+    setMessages([]);
+    setShowSuggestions(true);
+  };
+
+  const handleStop = () => {
+    stop();
   };
 
   return (
@@ -43,9 +69,10 @@ export function AiLeftPanel({ onClose, className }: AiLeftPanelProps) {
     >
       <AiPanelHeader
         onClose={onClose}
-        modelOptions={MOCK_MODEL_OPTIONS}
+        modelOptions={MODEL_OPTIONS}
         selectedModel={selectedModel}
         onModelSelect={setSelectedModel}
+        onResetChat={handleResetChat}
       />
 
       <AiPanelMessages
@@ -53,12 +80,14 @@ export function AiLeftPanel({ onClose, className }: AiLeftPanelProps) {
         suggestions={MOCK_SUGGESTIONS}
         showSuggestions={showSuggestions}
         onSuggestionSelect={handleSuggestionSelect}
+        isStreaming={isStreaming}
       />
 
       <AiPanelChatBar
         value={input}
         onChange={setInput}
         onSend={handleSend}
+        onStop={handleStop}
         isStreaming={isStreaming}
       />
     </div>

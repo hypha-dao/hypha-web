@@ -17,6 +17,7 @@ type AiPanelChatBarProps = {
   value: string;
   onChange: (value: string) => void;
   onSend: () => void;
+  onStop?: () => void;
   isStreaming?: boolean;
   placeholder?: string;
 };
@@ -25,6 +26,7 @@ export function AiPanelChatBar({
   value,
   onChange,
   onSend,
+  onStop,
   isStreaming = false,
   placeholder = 'Ask Hypha AI anything...',
 }: AiPanelChatBarProps) {
@@ -126,11 +128,11 @@ export function AiPanelChatBar({
           </span>
           <button
             type="button"
-            onClick={onSend}
-            disabled={!canSend}
+            onClick={isStreaming ? onStop : onSend}
+            disabled={!canSend && !isStreaming}
             className={cn(
               'flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-all duration-200',
-              canSend
+              canSend || isStreaming
                 ? 'bg-primary text-primary-foreground hover:opacity-90'
                 : 'cursor-not-allowed bg-muted text-muted-foreground',
             )}
