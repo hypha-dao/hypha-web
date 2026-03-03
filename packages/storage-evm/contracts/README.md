@@ -6,11 +6,11 @@ An Energy Community in Hypha is a collectively governed solar energy system wher
 
 ## Token Model
 
-NOTE: Important to differentiate between ENERGY VALUE flows and ENERGY flows. NanoPPA = energy flows. 
+It is important to differentiate between **energy value flows** and **physical energy flows**. The smart contracts and tokens described below handle energy value flows — the financial accounting of who owns, owes, and earns what. Physical energy flows (who actually receives electricity) are governed by nano PPAs (see [Nano PPAs](#nano-ppas-power-purchase-agreements)).
 
 In order to function, each energy community needs two types of tokens:
 
-### 1. Energy System Ownership Token (ESOT)
+### 1. Energy System Ownership Token (ESOT/Epart)
 
 Represents ownership of the community's physical infrastructure — treasury, solar panels, batteries, and other equipment. Holding ESOT gives the right to a proportional share of the energy value produced by the system.
 
@@ -22,25 +22,30 @@ ESOT holders who do not consume their full energy allocation accumulate ECT, whi
 
 ## Participant Types
 
-There are three types of participants in an energy community. The flow diagrams below show what happens during a single distribution and consumption cycle.
+There are three types of participants in an energy community. The flow diagrams below show the **energy value flows** — how money and credits move — during a single distribution and consumption cycle.
 
 ### 1. Investor
 
-Holds ESOT but does not consume energy. Their share of locally produced energy enters the collective pool and is purchased by other consumers. The investor accumulates ECT.
+Holds ESOT but does not consume energy. Their proportional share of energy value enters the collective pool and is purchased by other consumers. The investor accumulates ECT.
 
 ```
-Distribution                          Consumption
-───────────                           ───────────
+ENERGY VALUE FLOW — Investor
+─────────────────────────────
 
-  Solar Production                    Consumer buys investor's
-       │                              allocation from the pool
-       ▼                                     │
-┌──────────────┐                             ▼
-│ Collective   │                    ┌──────────────────┐
-│ Pool         │                    │ Consumer pays     │
-│ [Investor's  │ ──────────────▶    │ production price  │
-│  allocation] │                    └────────┬─────────┘
-└──────────────┘                             │
+  Value Distribution                  Value Settlement
+  ──────────────────                  ──────────────────
+
+  Solar production value              Another participant
+  allocated by ESOT %                 consumed energy
+       │                                     │
+       ▼                                     ▼
+┌──────────────┐                    ┌──────────────────┐
+│ Collective   │                    │ Consumer pays     │
+│ Value Pool   │                    │ production price  │
+│ [Investor's  │ ──────────────▶    │ for investor's    │
+│  share]      │                    │ allocation        │
+└──────────────┘                    └────────┬─────────┘
+                                             │
                                              ▼
                                    ┌──────────────────┐
                                    │ Investor receives │
@@ -56,20 +61,24 @@ Distribution                          Consumption
 
 ### 2. Internal Consumer (no ESOT)
 
-Does not hold ESOT and has no ownership percentage. Receives no allocation during distribution. All consumption is purchased from the collective pool — first from any remaining owner tokens at production price, then from grid imports at import price (typically more expensive). Always ends with a negative balance (debt) that must be settled via EURC.
+Does not hold ESOT and has no ownership percentage. Receives no value allocation during distribution. After consuming energy, the value owed is purchased from the collective pool — first from any remaining owner allocations at production price, then from grid imports at import price (typically more expensive). Always ends with a negative balance (debt) that must be settled via EURC.
 
 ```
-Distribution                          Consumption
-───────────                           ───────────
+ENERGY VALUE FLOW — Internal Consumer (no ESOT)
+─────────────────────────────────────────────────
 
-  No allocation                       Consumer needs energy
+  Value Distribution                  Value Settlement
+  ──────────────────                  ──────────────────
+
+  No value allocated                  Consumer consumed energy
   (0% ownership)                             │
                                              ▼
                                     ┌──────────────────┐
-                                    │ Buy from pool     │
-                                    │ (cheapest first)  │
+                                    │ Owes value to     │
+                                    │ pool (cheapest    │
+                                    │ sources first)    │
                                     │                   │
-                                    │ 1. Owner tokens   │
+                                    │ 1. Owner shares   │
                                     │    @ local price  │
                                     │ 2. Import pool    │
                                     │    @ import price │
@@ -91,30 +100,35 @@ Distribution                          Consumption
 
 ### 3. Member (holds ESOT and consumes)
 
-Holds ESOT and also consumes energy. During distribution, receives a proportional allocation. During consumption, self-consumes own allocation first at local production cost — that payment goes to the community treasury (which they partially own). If they consume less than allocated, the surplus is sold to others and the member accumulates ECT. If they consume more, they buy the remainder from the pool at whatever price is available.
+Holds ESOT and also consumes energy. During distribution, receives a proportional value allocation. When they consume energy, they first use their own allocation at local production cost — that payment goes to the community treasury (which they partially own). If they consumed less value than allocated, the surplus is sold to others and the member accumulates ECT. If they consumed more, they owe the remainder at whatever pool price is available.
 
 ```
-Distribution                          Consumption
-───────────                           ───────────
+ENERGY VALUE FLOW — Member (holds ESOT + consumes)
+────────────────────────────────────────────────────
 
-  Solar Production                    Member consumes energy
-       │                                     │
-       ▼                                     ▼
-┌──────────────┐                    ┌──────────────────┐
-│ Collective   │                    │ PASS 1: Self-     │
-│ Pool         │                    │ consume own       │
-│ [Member's    │ ──────────────▶    │ tokens @ local    │
-│  allocation] │                    │ production price  │
-└──────────────┘                    └────────┬─────────┘
-                                             │
+  Value Distribution                  Value Settlement
+  ──────────────────                  ──────────────────
+
+  Solar production value              Member consumed energy
+  allocated by ESOT %                        │
+       │                                     ▼
+       ▼                            ┌──────────────────┐
+┌──────────────┐                    │ PASS 1: Own       │
+│ Collective   │                    │ allocation used   │
+│ Value Pool   │                    │ first @ local     │
+│ [Member's    │ ──────────────▶    │ production price  │
+│  share]      │                    └────────┬─────────┘
+└──────────────┘                             │
                               ┌──────────────┴──────────────┐
                               │                             │
-                     Under-consumed                Over-consumed
+                   Consumed less than              Consumed more than
+                   allocated value                 allocated value
                               │                             │
                               ▼                             ▼
                     ┌─────────────────┐          ┌─────────────────┐
-                    │ Surplus sold to │          │ PASS 2: Buy     │
-                    │ other consumers │          │ from pool       │
+                    │ Surplus value   │          │ PASS 2: Owes    │
+                    │ sold to other   │          │ remaining value │
+                    │ consumers       │          │ to pool         │
                     │       │         │          │ (others/imports)│
                     │       ▼         │          └────────┬────────┘
                     │ Member receives │                   │
@@ -138,9 +152,8 @@ A nano PPA is a small-scale Power Purchase Agreement between the energy communit
 
 ### Relationship to the smart contract
 
-The nano PPA is the off-chain (or on-chain via Hypha Agreements) legal/governance layer. The smart contract is the execution layer:
 
-| Nano PPA (agreement) | Smart contract (execution) |
+| Nano PPA (agreement) | Zek reads who are eligible to receive energy and at what price passes to EMS. Combines it with the actual consumption/production data and sends back into the contract.
 |---|---|
 | Defines who receives energy | `addMember(address, deviceIds, ownershipPercentage)` registers the recipient |
 | Defines price terms | Pool prices and self-consumption priority enforce discounted rates for owners |
