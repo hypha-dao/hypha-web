@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { Zap, Brain, Globe } from 'lucide-react';
+import { Zap } from 'lucide-react';
 
 export type ModelOption = {
   id: string;
@@ -7,10 +7,8 @@ export type ModelOption = {
   icon: LucideIcon;
 };
 
-export const MOCK_MODEL_OPTIONS: ModelOption[] = [
-  { id: 'gemini-flash', label: 'Gemini 2.5 Flash', icon: Zap },
-  { id: 'gpt5', label: 'GPT-5', icon: Brain },
-  { id: 'gemini-pro', label: 'Gemini Pro', icon: Globe },
+export const MODEL_OPTIONS: ModelOption[] = [
+  { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', icon: Zap },
 ];
 
 export const MOCK_SUGGESTIONS = [
