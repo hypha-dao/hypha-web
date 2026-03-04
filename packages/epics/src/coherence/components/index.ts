@@ -1,5 +1,7 @@
 export * from './chat-detail';
 export * from './chat-head';
+export * from './chat-member';
+export * from './chat-member.container';
 export * from './chat-members';
 export * from './chat-message';
 export * from './chat-message.container';

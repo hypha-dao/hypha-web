@@ -28,7 +28,7 @@ export const ChatRoom = ({
     getRoomMessages,
     joinRoom,
     registerRoomListener,
-    unregisterRoomListerner,
+    unregisterRoomListener,
   } = useMatrix();
   const { jwt: authToken } = useJwt();
   const bottomId = React.useId();
@@ -59,7 +59,7 @@ export const ChatRoom = ({
         }
         setIsMessagesLoading(false);
       } catch (error) {
-        unregisterRoomListerner(roomId);
+        unregisterRoomListener(roomId);
         setIsMessagesLoading(false);
       }
     };
@@ -67,7 +67,7 @@ export const ChatRoom = ({
     register(roomId);
 
     return () => {
-      unregisterRoomListerner(roomId);
+      unregisterRoomListener(roomId);
     };
   }, [isMatrixAvailable, roomId]);
 

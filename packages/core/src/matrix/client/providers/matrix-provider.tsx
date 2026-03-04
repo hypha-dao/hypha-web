@@ -21,6 +21,11 @@ interface RoomMessageListenerRecord {
   listener: MatrixEventListener;
 }
 
+export interface ChatMember {
+  userId: string;
+  presence: boolean;
+}
+
 interface MatrixContextType {
   client: MatrixSdk.MatrixClient | null;
   isMatrixAvailable: boolean;
@@ -28,9 +33,10 @@ interface MatrixContextType {
   createRoom: (title: string) => Promise<{ roomId: string }>;
   sendMessage: (params: SendMessageInput) => Promise<void>;
   getRoomMessages: (roomId: string) => Message[] | null;
+  getRoomMembers: (roomId: string) => Promise<ChatMember[]>;
   joinRoom: (roomId: string) => Promise<void>;
   registerRoomListener: (roomId: string, listener: RoomMessageListener) => void;
-  unregisterRoomListerner: (roomId: string) => void;
+  unregisterRoomListener: (roomId: string) => void;
   registeredRoomListeners: RoomMessageListenerRecord[];
 }
 
@@ -72,12 +78,15 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
 
         await matrixClient.startClient();
 
+        await matrixClient.setPresence({ presence: 'online' });
+
         setClient(matrixClient);
         setIsMatrixAvailable(matrixClient !== null);
         setIsAuthenticated(true);
         console.log('Matrix client initialized');
       } catch (error) {
         console.error('Failed to initialize Matrix client:', error);
+        setClient(null);
       }
     },
     [],
@@ -96,6 +105,15 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       return;
     }
     initalizeMatrixClient(matrixToken!);
+
+    return () => {
+      if (client) {
+        const matrixClient = client as MatrixSdk.MatrixClient;
+        matrixClient.setPresence({ presence: 'offline' });
+        matrixClient.stopClient();
+        setClient(null);
+      }
+    };
   }, [user, matrixToken, isMatrixTokenLoading, matrixTokenError]);
 
   const createRoom = React.useCallback(
@@ -155,6 +173,29 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     [client],
   );
 
+  const getRoomMembers = React.useCallback(
+    async (roomId: string): Promise<ChatMember[]> => {
+      if (!client) {
+        throw new Error('Client should be specified');
+      }
+
+      const room = client.getRoom(roomId);
+      const members = room ? room.getJoinedMembers() : null;
+      const memberObjects =
+        members?.map(
+          async (member) =>
+            ({
+              userId: member.userId,
+              presence:
+                (await client.getPresence(member.userId)).currently_active ??
+                false,
+            } as ChatMember),
+        ) ?? null;
+      return memberObjects ? await Promise.all(memberObjects) : [];
+    },
+    [client],
+  );
+
   const joinRoom = React.useCallback(
     async (roomId: string) => {
       if (!client) {
@@ -176,7 +217,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         console.warn('Matrix client is not initialized');
         return;
       }
-      unregisterRoomListerner(roomId);
+      unregisterRoomListener(roomId);
       const eventListener: MatrixEventListener = async (
         event: MatrixSdk.MatrixEvent,
       ) => {
@@ -202,7 +243,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     [client],
   );
 
-  const unregisterRoomListerner = React.useCallback(
+  const unregisterRoomListener = React.useCallback(
     (roomId: string) => {
       if (!client) {
         console.warn('Matrix client is not initialized');
@@ -237,9 +278,10 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     createRoom,
     sendMessage,
     getRoomMessages,
+    getRoomMembers,
     joinRoom,
     registerRoomListener,
-    unregisterRoomListerner,
+    unregisterRoomListener,
     registeredRoomListeners,
   };
   return (
