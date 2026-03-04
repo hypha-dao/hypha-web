@@ -5,7 +5,7 @@ import {
   usePersonBySub,
   useUserPrivyIdByMatrixId,
 } from '@hypha-platform/core/client';
-import { Skeleton, Card } from '@hypha-platform/ui';
+import { Skeleton, Card, MarkdownSuspense } from '@hypha-platform/ui';
 import { PinIcon } from 'lucide-react';
 import React from 'react';
 
@@ -36,9 +36,9 @@ export const ChatPin = ({ message, isLoading }: ChatPinProps) => {
               Pinned by {displayName}
             </div>
           </Skeleton>
-          <Skeleton height="12px" width="80px" loading={isLoading}>
-            <div className="text-1 text-neutral-11 font-regular">
-              {message.content}
+          <Skeleton height="14px" width="80px" loading={isLoading}>
+            <div className="text-1 text-neutral-11 font-regular overflow-hidden">
+              <MarkdownSuspense>{message.content}</MarkdownSuspense>
             </div>
           </Skeleton>
         </div>

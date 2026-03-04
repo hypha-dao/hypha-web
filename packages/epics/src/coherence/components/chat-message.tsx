@@ -7,7 +7,7 @@ import {
 } from '@hypha-platform/core/client';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import React from 'react';
-import { Button, Skeleton } from '@hypha-platform/ui';
+import { Button, MarkdownSuspense, Skeleton } from '@hypha-platform/ui';
 import { formatDate } from '@hypha-platform/ui-utils';
 import { PinIcon } from 'lucide-react';
 
@@ -62,12 +62,12 @@ export const ChatMessage = ({
         </div>
         <Skeleton height="12px" width="80px" loading={isLoading}>
           <div className="text-1 text-neutral-11 font-regular">
-            {message.content}
+            <MarkdownSuspense>{message.content}</MarkdownSuspense>
           </div>
         </Skeleton>
       </div>
       <div className="flex flex-col gap-y-2">
-        <Skeleton height="12px" width="80px" loading={isLoading}>
+        <Skeleton height="14px" width="80px" loading={isLoading}>
           <div className="text-1 text-neutral-11 font-regular">
             <Button variant="ghost" onClick={togglePinned}>
               <PinIcon size={16} />
