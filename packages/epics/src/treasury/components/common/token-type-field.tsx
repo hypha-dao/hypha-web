@@ -15,7 +15,7 @@ import {
   RequirementMark,
 } from '@hypha-platform/ui';
 
-const TOKEN_TYPE_OPTIONS = [
+export const TOKEN_TYPE_OPTIONS = [
   {
     value: 'utility',
     label: 'Utility Token',
@@ -43,7 +43,17 @@ const TOKEN_TYPE_OPTIONS = [
     description:
       'provides a voice in management or decision making within the space',
   },
+  {
+    value: 'community_currency',
+    label: 'Community Currency',
+    description:
+      'local currency used for transactions and value exchange within the community',
+  },
 ];
+
+export function getTokenTypeLabel(type: string): string {
+  return TOKEN_TYPE_OPTIONS.find((o) => o.value === type)?.label ?? type;
+}
 
 type TokenTypeFieldProps = {
   onValueChange?: (value: string) => void;

@@ -101,7 +101,13 @@ type CreateIssueTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
   name: string;
   symbol: string;
   maxSupply: number;
-  type: 'utility' | 'credits' | 'ownership' | 'voice' | 'impact';
+  type:
+    | 'utility'
+    | 'credits'
+    | 'ownership'
+    | 'voice'
+    | 'impact'
+    | 'community_currency';
   iconUrl?: string | File;
   transferable: boolean;
   isVotingToken: boolean;
