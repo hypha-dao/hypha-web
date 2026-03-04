@@ -63,6 +63,7 @@ export async function GET(
         | 'credits'
         | 'ownership'
         | 'voice'
+        | 'impact'
         | 'community_currency',
       iconUrl: token.iconUrl ?? undefined,
       transferable: token.transferable,
