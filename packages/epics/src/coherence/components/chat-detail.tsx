@@ -1,4 +1,5 @@
-import { Coherence } from '@hypha-platform/core/server';
+'use client';
+
 import { CreatorType } from '../../proposals/components/proposal-head';
 import { ButtonClose } from '../../common';
 import React from 'react';
@@ -10,8 +11,12 @@ import { ChatRoom } from './chat-room';
 import { ChatMembers } from './chat-members';
 import { ChatPins } from './chat-pins';
 import {
+  ChatMember,
+  Coherence,
+  Message,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
+  useMatrix,
 } from '@hypha-platform/core/client';
 
 export interface ChatDetailProps {
@@ -30,6 +35,89 @@ export const ChatDetail = ({
   const [activeTab, setActiveTab] = React.useState('chat');
   const { jwt: authToken } = useJwt();
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
+  const [members, setMembers] = React.useState<ChatMember[]>([]);
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [isMessagesLoading, setIsMessagesLoading] = React.useState(false);
+
+  const {
+    isMatrixAvailable,
+    getRoomMessages,
+    joinRoom,
+    registerRoomListener,
+    unregisterRoomListener,
+    togglePinnedMessage,
+    getRoomMembers,
+  } = useMatrix();
+
+  React.useEffect(() => {
+    if (!isMatrixAvailable) {
+      console.log('Matrix client is not initialized');
+      return;
+    }
+
+    console.log('Conversation:', conversation);
+
+    if (!conversation || !conversation.roomId) {
+      console.log('Conversation roomId is not specified');
+      return;
+    }
+
+    const register = async (roomId: string) => {
+      try {
+        await joinRoom(roomId);
+
+        registerRoomListener(
+          roomId,
+          async (message: Message) => {
+            setIsMessagesLoading(true);
+            setMessages((prev) => [...prev, message]);
+            const members = await getRoomMembers(roomId);
+            setMembers(members);
+            setIsMessagesLoading(false);
+          },
+          async (pinned: string[]) => {
+            setIsMessagesLoading(true);
+            setMessages((prev) =>
+              prev.map((message) => ({
+                ...message,
+                pinned: pinned.includes(message.id),
+              })),
+            );
+            setIsMessagesLoading(false);
+          },
+        );
+
+        setIsMessagesLoading(true);
+        const msgs = getRoomMessages(roomId);
+        if (msgs) {
+          setMessages(msgs);
+        }
+        const roomMembers = await getRoomMembers(roomId);
+        setMembers(roomMembers);
+        setIsMessagesLoading(false);
+      } catch (error) {
+        unregisterRoomListener(roomId);
+        setIsMessagesLoading(false);
+      }
+    };
+
+    const rootId = conversation.roomId ?? '';
+    register(rootId);
+
+    return () => {
+      unregisterRoomListener(rootId);
+    };
+  }, [isMatrixAvailable, conversation?.roomId]);
+
+  const toggleChatPinnedMessage = React.useCallback(
+    async (messageId: string) => {
+      if (!conversation) {
+        return;
+      }
+      await togglePinnedMessage(conversation.roomId ?? '', messageId);
+    },
+    [conversation, togglePinnedMessage],
+  );
 
   React.useEffect(() => {
     //TODO: improve compute views
@@ -37,7 +125,13 @@ export const ChatDetail = ({
       return;
     }
     const { slug, views = 0 } = conversation;
-    updateCoherenceBySlug({ slug, views: views + 1 });
+    (async (slug: string, views: number) => {
+      try {
+        await updateCoherenceBySlug({ slug, views: views + 1 });
+      } catch (error) {
+        console.error(error);
+      }
+    })(slug, views);
   }, [conversation]);
 
   return (
@@ -78,19 +172,21 @@ export const ChatDetail = ({
       <div className="fixed top-[calc(var(--spacing-9)+15vh+var(--spacing-9))] right-0 bottom-24 md:bottom-29 pl-4 md:pl-7 pr-4 md:pr-7 gap-5 w-[calc(100vw)] md:w-[calc(var(--spacing-container-sm)_-_var(--spacing-4))]">
         <div className="flex flex-col w-full h-full">
           {activeTab === 'chat' && (
-            <div className="w-full bg-yellow-600 overflow-auto">
+            <div className="w-full overflow-auto">
               <ChatRoom
                 roomId={conversation?.roomId ?? ''}
                 slug={conversation?.slug ?? ''}
-                isLoading={isLoading}
+                isLoading={isLoading || isMessagesLoading}
+                messages={messages}
+                toggleChatPinnedMessage={toggleChatPinnedMessage}
               />
             </div>
           )}
           {activeTab === 'members' && (
             <div className="w-full">
               <ChatMembers
-                roomId={conversation?.roomId ?? ''}
-                isLoading={isLoading}
+                isLoading={isLoading || isMessagesLoading}
+                members={members}
               />
             </div>
           )}

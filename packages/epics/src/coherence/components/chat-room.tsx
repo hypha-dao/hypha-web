@@ -18,58 +18,19 @@ export const ChatRoom = ({
   roomId,
   isLoading,
   slug,
+  messages,
+  toggleChatPinnedMessage,
 }: {
   roomId: string;
   isLoading: boolean;
   slug: string;
+  messages: Message[];
+  toggleChatPinnedMessage: (messageId: string) => Promise<void>;
 }) => {
-  const {
-    isMatrixAvailable,
-    getRoomMessages,
-    joinRoom,
-    registerRoomListener,
-    unregisterRoomListener,
-  } = useMatrix();
+  const { isMatrixAvailable } = useMatrix();
   const { jwt: authToken } = useJwt();
   const bottomId = React.useId();
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
-  const [messages, setMessages] = React.useState<Message[]>([]);
-  const [isMessagesLoading, setIsMessagesLoading] = React.useState(false);
-
-  React.useEffect(() => {
-    if (!isMatrixAvailable) {
-      console.log('Matrix client is not initialized');
-      return;
-    }
-
-    const register = async (roomId: string) => {
-      try {
-        await joinRoom(roomId);
-
-        registerRoomListener(roomId, async (message: Message) => {
-          setIsMessagesLoading(true);
-          setMessages((prev) => [...prev, message]);
-          setIsMessagesLoading(false);
-        });
-
-        setIsMessagesLoading(true);
-        const msgs = getRoomMessages(roomId);
-        if (msgs) {
-          setMessages(msgs);
-        }
-        setIsMessagesLoading(false);
-      } catch (error) {
-        unregisterRoomListener(roomId);
-        setIsMessagesLoading(false);
-      }
-    };
-
-    register(roomId);
-
-    return () => {
-      unregisterRoomListener(roomId);
-    };
-  }, [isMatrixAvailable, roomId]);
 
   React.useEffect(() => {
     if (!isMatrixAvailable || !roomId || !slug) {
@@ -93,7 +54,8 @@ export const ChatRoom = ({
     <div className="flex flex-col">
       <ChatMessageContainer
         messages={messages}
-        isLoading={isLoading || isMessagesLoading}
+        isLoading={isLoading}
+        togglePinnedMessage={toggleChatPinnedMessage}
       />
       <div id={`message-list-bottom-${bottomId}`}></div>
     </div>
