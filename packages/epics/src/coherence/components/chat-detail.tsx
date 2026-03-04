@@ -1,24 +1,21 @@
-import { Text } from '@radix-ui/themes';
-import { MarkdownSuspense, Separator, Skeleton } from '@hypha-platform/ui';
-import { formatDate } from '@hypha-platform/ui-utils';
 import { Coherence } from '@hypha-platform/core/server';
-import { ChatRoom } from './chat-room';
-import { ChatHead } from './chat-head';
+import { CreatorType } from '../../proposals/components/proposal-head';
 import { ButtonClose } from '../../common';
-import { CreatorType } from '../../proposals';
-import { ChatMessageInput } from './chat-message-input';
 import React from 'react';
-import {
-  useCoherenceMutationsWeb2Rsc,
-  useJwt,
-} from '@hypha-platform/core/client';
+import { MarkdownSuspense, Skeleton } from '@hypha-platform/ui';
+import { Text } from '@radix-ui/themes';
+import { ChatTabs } from './chat-tabs';
+import { ChatMessageInput } from './chat-message-input';
+import { ChatRoom } from './chat-room';
+import { ChatMembers } from './chat-members';
+import { ChatPins } from './chat-pins';
 
-type ChatDetailProps = {
+export interface ChatDetailProps {
   closeUrl: string;
   creator?: CreatorType;
   conversation?: Coherence;
   isLoading: boolean;
-};
+}
 
 export const ChatDetail = ({
   closeUrl,
@@ -26,59 +23,72 @@ export const ChatDetail = ({
   conversation,
   isLoading,
 }: ChatDetailProps) => {
-  const { jwt: authToken } = useJwt();
-  const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
-
-  React.useEffect(() => {
-    //TODO: improve compute views
-    if (!conversation) {
-      return;
-    }
-    const { slug, views = 0 } = conversation;
-    updateCoherenceBySlug({ slug, views: views + 1 });
-  }, [conversation]);
-
+  const [activeTab, setActiveTab] = React.useState('chat');
   return (
     <div className="relative w-full h-full">
-      <div className="fixed top-9 right-4 pt-5 pb-1 pl-4 md:pl-7 pr-4 md:pr-9 w-full md:w-[calc(var(--spacing-container-sm)_-_var(--spacing)_*_4)] bg-neutral-2 z-100">
-        <div className="flex flex-col gap-5 w-full h-full">
-          <div className="flex gap-2 justify-between">
-            <ChatHead
-              creator={creator}
-              isLoading={isLoading}
-              createDate={formatDate(
-                conversation?.createdAt ?? new Date(),
-                true,
-              )}
-            />
-            <div></div>
-            <ButtonClose closeUrl={closeUrl} />
+      <div className="fixed top-9 right-0 pt-5 pb-1 pl-4 md:pl-7 pr-4 md:pr-7 w-[calc(100vw)] md:w-[calc(var(--spacing-container-sm)_-_var(--spacing-4))] h-[calc(15vh+var(--spacing-7))] max-h-[calc(15vh+var(--spacing-7))] bg-neutral-2 overflow-hidden">
+        <div className="flex flex-col w-full h-full bg-red-600">
+          <div className="flex flex-row">
+            <div className="flex flex-col grow">
+              <div className="flex-1 min-w-0">
+                <Skeleton width="80px" height="24px" loading={isLoading}>
+                  <Text className="text-5 truncate">
+                    # {conversation?.title}
+                  </Text>
+                </Skeleton>
+              </div>
+              <div className="h-[calc(15vh-var(--spacing-7))] bg-blue-600 overflow-y-auto">
+                <Skeleton
+                  width="80px"
+                  height="calc(15vh-var(--spacing-7))"
+                  loading={isLoading}
+                >
+                  <MarkdownSuspense>
+                    {conversation?.description}
+                  </MarkdownSuspense>
+                </Skeleton>
+              </div>
+            </div>
+            <div className="flex flex-col">
+              <ButtonClose closeUrl={closeUrl} narrow />
+            </div>
           </div>
-          <Separator />
+          <div className="flex flex-row bg-fuchsia-600 h-6 w-full">
+            <ChatTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+          </div>
         </div>
       </div>
-      <div className="flex flex-col gap-5 pt-[70px] pb-[80px]">
-        <div className="flex flex-col gap-3">
-          <Skeleton width="80px" height="16px" loading={isLoading}>
-            <Text className="text-3">{conversation?.title}</Text>
-          </Skeleton>
-          <Skeleton width="80px" height="16px" loading={isLoading}>
-            <MarkdownSuspense>{conversation?.description}</MarkdownSuspense>
-          </Skeleton>
+      <div className="fixed top-[calc(var(--spacing-9)+15vh+var(--spacing-8))] right-0 bottom-24 md:bottom-29 pl-4 md:pl-7 pr-4 md:pr-7 gap-5 w-[calc(100vw)] md:w-[calc(var(--spacing-container-sm)_-_var(--spacing-4))]">
+        <div className="flex flex-col w-full h-full">
+          {activeTab === 'chat' && (
+            <div className="w-full bg-yellow-600 overflow-auto">
+              <ChatRoom
+                roomId={conversation?.roomId ?? ''}
+                slug={conversation?.slug ?? ''}
+                isLoading={isLoading}
+              />
+            </div>
+          )}
+          {activeTab === 'members' && (
+            <div className="w-full bg-purple-600">
+              <ChatMembers />
+            </div>
+          )}
+          {activeTab === 'pins' && (
+            <div className="w-full bg-pink-600">
+              <ChatPins />
+            </div>
+          )}
         </div>
-        <Separator />
-        <ChatRoom
-          roomId={conversation?.roomId ?? ''}
-          slug={conversation?.slug ?? ''}
-          isLoading={isLoading}
-        />
       </div>
-      <div className="fixed bottom-0 right-4 pt-1 pl-4 md:pl-7 pr-4 md:pr-9 pb-4 md:pb-7 w-full md:w-[calc(var(--spacing-container-sm)_-_var(--spacing)_*_4)] bg-neutral-2 z-100">
-        <ChatMessageInput
-          roomId={conversation?.roomId ?? ''}
-          coherenceSlug={conversation?.slug ?? ''}
-          closeUrl={closeUrl}
-        />
+      <div className="fixed bottom-0 right-0 pt-1 pl-4 md:pl-7 pr-4 md:pr-7 pb-4 md:pb-7 w-[calc(100vw)] md:w-[calc(var(--spacing-container-sm)_-_var(--spacing-4))] h-24 md:h-29 bg-neutral-2">
+        <div className="flex flex-col w-full h-full bg-green-600">
+          <ChatMessageInput
+            roomId={conversation?.roomId ?? ''}
+            coherenceSlug={conversation?.slug ?? ''}
+            closeUrl={closeUrl}
+          />
+        </div>
       </div>
     </div>
   );
