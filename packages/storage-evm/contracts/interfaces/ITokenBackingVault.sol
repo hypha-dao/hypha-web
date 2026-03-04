@@ -42,7 +42,9 @@ interface ITokenBackingVault {
     uint256[] calldata fundingAmounts,
     uint256 minimumBackingBps,
     uint256 redemptionPrice,
-    address redemptionPriceCurrencyFeed
+    address redemptionPriceCurrencyFeed,
+    uint256 maxRedemptionBps,
+    uint256 maxRedemptionPeriodDays
   ) external returns (uint256 vaultId);
 
   // ── Vault config (executor only) ──
@@ -97,6 +99,13 @@ interface ITokenBackingVault {
     address currencyFeed
   ) external;
 
+  function setMaxRedemptionPercentage(
+    uint256 spaceId,
+    address spaceToken,
+    uint256 maxRedemptionBps,
+    uint256 periodDays
+  ) external;
+
   function addToWhitelist(
     uint256 spaceId,
     address spaceToken,
@@ -107,6 +116,18 @@ interface ITokenBackingVault {
     uint256 spaceId,
     address spaceToken,
     address[] calldata accounts
+  ) external;
+
+  function addWhitelistedSpaces(
+    uint256 spaceId,
+    address spaceToken,
+    uint256[] calldata whitelistedSpaceIds
+  ) external;
+
+  function removeWhitelistedSpaces(
+    uint256 spaceId,
+    address spaceToken,
+    uint256[] calldata whitelistedSpaceIds
   ) external;
 
   // ── Funding (executor only) ──
@@ -188,6 +209,27 @@ interface ITokenBackingVault {
     address account
   ) external view returns (bool);
 
+  function getWhitelistedSpaces(
+    uint256 spaceId,
+    address spaceToken
+  ) external view returns (uint256[] memory);
+
+  function isSpaceWhitelisted(
+    uint256 spaceId,
+    address spaceToken,
+    uint256 whitelistedSpaceId
+  ) external view returns (bool);
+
+  function getMaxRedemptionPercentage(
+    uint256 spaceId,
+    address spaceToken
+  ) external view returns (uint256 maxRedemptionBps, uint256 periodDays);
+
+  function getRedemptionUsage(
+    uint256 spaceId,
+    address spaceToken
+  ) external view returns (uint256 redeemedInPeriod, uint256 maxRedeemable);
+
   // ── Events ──
 
   event VaultCreated(
@@ -255,6 +297,19 @@ interface ITokenBackingVault {
     uint256 indexed vaultId,
     address[] accounts,
     bool added
+  );
+  event MaxRedemptionPercentageUpdated(
+    uint256 indexed vaultId,
+    uint256 maxRedemptionBps,
+    uint256 periodDays
+  );
+  event WhitelistSpaceAdded(
+    uint256 indexed vaultId,
+    uint256 indexed whitelistedSpaceId
+  );
+  event WhitelistSpaceRemoved(
+    uint256 indexed vaultId,
+    uint256 indexed whitelistedSpaceId
   );
 }
 
