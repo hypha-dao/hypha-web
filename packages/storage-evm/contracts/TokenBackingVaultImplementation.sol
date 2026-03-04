@@ -128,6 +128,8 @@ contract TokenBackingVaultImplementation is
    * @param redemptionPrice Optional redemption price (6 decimals). 0 = use official token price.
    * @param redemptionPriceCurrencyFeed Chainlink X/USD feed for the redemption price currency.
    *        address(0) = USD. Ignored when redemptionPrice is 0.
+   * @param maxRedemptionBps Max % of supply redeemable in rolling period (basis points). 0 = unlimited.
+   * @param maxRedemptionPeriodDays Rolling window in days. Must be > 0 when maxRedemptionBps > 0.
    */
   function addBackingToken(
     uint256 spaceId,
@@ -138,7 +140,9 @@ contract TokenBackingVaultImplementation is
     uint256[] calldata fundingAmounts,
     uint256 minimumBackingBps,
     uint256 redemptionPrice,
-    address redemptionPriceCurrencyFeed
+    address redemptionPriceCurrencyFeed,
+    uint256 maxRedemptionBps,
+    uint256 maxRedemptionPeriodDays
   ) external nonReentrant returns (uint256 vaultId) {
     _requireExecutorOrOwner(spaceId);
 
@@ -154,6 +158,11 @@ contract TokenBackingVaultImplementation is
       minimumBackingBps <= MAX_BACKING_BPS,
       'Min backing cannot exceed 1000%'
     );
+    require(maxRedemptionBps <= BASIS_POINTS, 'Cannot exceed 100%');
+    require(
+      maxRedemptionBps == 0 || maxRedemptionPeriodDays > 0,
+      'Period must be > 0 when cap is set'
+    );
 
     // Validate the space token has a price set
     uint256 pegPrice = ISpaceTokenPrice(spaceToken).tokenPrice();
@@ -164,7 +173,9 @@ contract TokenBackingVaultImplementation is
       spaceToken,
       minimumBackingBps,
       redemptionPrice,
-      redemptionPriceCurrencyFeed
+      redemptionPriceCurrencyFeed,
+      maxRedemptionBps,
+      maxRedemptionPeriodDays
     );
 
     for (uint256 i = 0; i < backingTokens.length; i++) {
@@ -327,6 +338,31 @@ contract TokenBackingVaultImplementation is
   }
 
   /**
+   * @dev Set maximum redemption percentage within a rolling period.
+   * @param maxRedemptionBps Max percentage of total supply redeemable (basis points). 0 = unlimited.
+   * @param periodDays Rolling window in days. Must be > 0 when maxRedemptionBps > 0.
+   */
+  function setMaxRedemptionPercentage(
+    uint256 spaceId,
+    address spaceToken,
+    uint256 maxRedemptionBps,
+    uint256 periodDays
+  ) external {
+    _requireExecutorOrOwner(spaceId);
+    uint256 vaultId = _requireVault(spaceId, spaceToken);
+    require(maxRedemptionBps <= BASIS_POINTS, 'Cannot exceed 100%');
+    require(
+      maxRedemptionBps == 0 || periodDays > 0,
+      'Period must be > 0 when cap is set'
+    );
+
+    vaultMaxRedemptionBps[vaultId] = maxRedemptionBps;
+    vaultRedemptionPeriodDays[vaultId] = periodDays;
+
+    emit MaxRedemptionPercentageUpdated(vaultId, maxRedemptionBps, periodDays);
+  }
+
+  /**
    * @dev Set a redemption price that differs from the official token price.
    * Pass price = 0 to revert to using the official token price.
    * @param price Price in 6 decimals (same format as tokenPrice). 0 = use official.
@@ -379,6 +415,49 @@ contract TokenBackingVaultImplementation is
     }
 
     emit WhitelistUpdated(vaultId, accounts, false);
+  }
+
+  function addWhitelistedSpaces(
+    uint256 spaceId,
+    address spaceToken,
+    uint256[] calldata _whitelistedSpaceIds
+  ) external {
+    _requireExecutorOrOwner(spaceId);
+    uint256 vaultId = _requireVault(spaceId, spaceToken);
+
+    for (uint256 i = 0; i < _whitelistedSpaceIds.length; i++) {
+      uint256 wsId = _whitelistedSpaceIds[i];
+      if (!isWhitelistedSpace[vaultId][wsId]) {
+        isWhitelistedSpace[vaultId][wsId] = true;
+        whitelistedSpaceIds[vaultId].push(wsId);
+        emit WhitelistSpaceAdded(vaultId, wsId);
+      }
+    }
+  }
+
+  function removeWhitelistedSpaces(
+    uint256 spaceId,
+    address spaceToken,
+    uint256[] calldata _whitelistedSpaceIds
+  ) external {
+    _requireExecutorOrOwner(spaceId);
+    uint256 vaultId = _requireVault(spaceId, spaceToken);
+
+    for (uint256 j = 0; j < _whitelistedSpaceIds.length; j++) {
+      uint256 wsId = _whitelistedSpaceIds[j];
+      if (isWhitelistedSpace[vaultId][wsId]) {
+        isWhitelistedSpace[vaultId][wsId] = false;
+        uint256[] storage list = whitelistedSpaceIds[vaultId];
+        for (uint256 i = 0; i < list.length; i++) {
+          if (list[i] == wsId) {
+            list[i] = list[list.length - 1];
+            list.pop();
+            break;
+          }
+        }
+        emit WhitelistSpaceRemoved(vaultId, wsId);
+      }
+    }
   }
 
   // ============================================================
@@ -496,10 +575,15 @@ contract TokenBackingVaultImplementation is
       totalCoverageRemoved
     );
 
+    _checkMaxRedemptionPercentage(vaultId, spaceToken, spaceTokenAmount);
+
     ITokenBackingBurnableERC20(spaceToken).burnFrom(
       msg.sender,
       spaceTokenAmount
     );
+
+    uint256 today = block.timestamp / 1 days;
+    vaultDailyRedemptions[vaultId][today] += spaceTokenAmount;
 
     for (uint256 i = 0; i < backingTokens.length; i++) {
       vaultBackingBalance[vaultId][backingTokens[i]] -= backingAmounts[i];
@@ -632,6 +716,53 @@ contract TokenBackingVaultImplementation is
     return whitelist[vaultId][account];
   }
 
+  function getWhitelistedSpaces(
+    uint256 spaceId,
+    address spaceToken
+  ) external view returns (uint256[] memory) {
+    uint256 vaultId = _requireVault(spaceId, spaceToken);
+    return whitelistedSpaceIds[vaultId];
+  }
+
+  function isSpaceWhitelisted(
+    uint256 spaceId,
+    address spaceToken,
+    uint256 whitelistedSpaceId
+  ) external view returns (bool) {
+    uint256 vaultId = _requireVault(spaceId, spaceToken);
+    return isWhitelistedSpace[vaultId][whitelistedSpaceId];
+  }
+
+  function getMaxRedemptionPercentage(
+    uint256 spaceId,
+    address spaceToken
+  ) external view returns (uint256 maxRedemptionBps, uint256 periodDays) {
+    uint256 vaultId = _requireVault(spaceId, spaceToken);
+    maxRedemptionBps = vaultMaxRedemptionBps[vaultId];
+    periodDays = vaultRedemptionPeriodDays[vaultId];
+  }
+
+  /**
+   * @dev Returns how many space tokens have been redeemed in the current rolling
+   * period and the maximum that can be redeemed (based on current total supply).
+   * Returns (0, 0) when no cap is configured.
+   */
+  function getRedemptionUsage(
+    uint256 spaceId,
+    address spaceToken
+  ) external view returns (uint256 redeemedInPeriod, uint256 maxRedeemable) {
+    uint256 vaultId = _requireVault(spaceId, spaceToken);
+
+    uint256 maxBps = vaultMaxRedemptionBps[vaultId];
+    if (maxBps == 0) return (0, 0);
+
+    uint256 periodDays = vaultRedemptionPeriodDays[vaultId];
+    redeemedInPeriod = _getRedeemedInPeriod(vaultId, periodDays);
+    maxRedeemable =
+      (IERC20(spaceToken).totalSupply() * maxBps) /
+      BASIS_POINTS;
+  }
+
   // ============================================================
   //                     INTERNAL HELPERS
   // ============================================================
@@ -641,7 +772,9 @@ contract TokenBackingVaultImplementation is
     address spaceToken,
     uint256 minimumBackingBps,
     uint256 redemptionPrice,
-    address redemptionPriceCurrencyFeed
+    address redemptionPriceCurrencyFeed,
+    uint256 maxRedemptionBps,
+    uint256 maxRedemptionPeriodDays
   ) internal returns (uint256 vaultId) {
     bytes32 key = _getVaultKey(spaceId, spaceToken);
     vaultId = vaultKeys[key];
@@ -681,6 +814,16 @@ contract TokenBackingVaultImplementation is
           redemptionPriceCurrencyFeed
         );
       }
+
+      if (maxRedemptionBps > 0) {
+        vaultMaxRedemptionBps[vaultId] = maxRedemptionBps;
+        vaultRedemptionPeriodDays[vaultId] = maxRedemptionPeriodDays;
+        emit MaxRedemptionPercentageUpdated(
+          vaultId,
+          maxRedemptionBps,
+          maxRedemptionPeriodDays
+        );
+      }
     }
   }
 
@@ -711,10 +854,31 @@ contract TokenBackingVaultImplementation is
     if (config.membersOnly || config.whitelistEnabled) {
       bool isMember = config.membersOnly &&
         IDAOSpaceFactory(spacesContract).isMember(spaceId, msg.sender);
-      bool isWl = config.whitelistEnabled && whitelist[vaultId][msg.sender];
+      bool isWl = config.whitelistEnabled &&
+        (whitelist[vaultId][msg.sender] ||
+          _isInWhitelistedSpace(vaultId, msg.sender));
 
       require(isMember || isWl, 'Not authorized to redeem');
     }
+  }
+
+  /**
+   * @dev Check if an address is a member of any space that is whitelisted for this vault.
+   */
+  function _isInWhitelistedSpace(
+    uint256 vaultId,
+    address account
+  ) internal view returns (bool) {
+    uint256[] storage spaceIds = whitelistedSpaceIds[vaultId];
+    for (uint256 i = 0; i < spaceIds.length; i++) {
+      if (
+        isWhitelistedSpace[vaultId][spaceIds[i]] &&
+        IDAOSpaceFactory(spacesContract).isMember(spaceIds[i], account)
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 
   // ── Space token peg helpers ──
@@ -958,6 +1122,44 @@ contract TokenBackingVaultImplementation is
       remainingCoverageUsd * BASIS_POINTS >= remainingLiabilityUsd * minBps,
       'Redemption would breach minimum backing threshold'
     );
+  }
+
+  /**
+   * @dev Enforce the maximum redemption percentage within the rolling period.
+   * totalSupply is read BEFORE the burn, so it includes the tokens being redeemed.
+   */
+  function _checkMaxRedemptionPercentage(
+    uint256 vaultId,
+    address spaceToken,
+    uint256 spaceTokenAmount
+  ) internal view {
+    uint256 maxBps = vaultMaxRedemptionBps[vaultId];
+    if (maxBps == 0) return;
+
+    uint256 periodDays = vaultRedemptionPeriodDays[vaultId];
+    uint256 totalSupply = IERC20(spaceToken).totalSupply();
+    uint256 maxRedeemable = (totalSupply * maxBps) / BASIS_POINTS;
+
+    uint256 redeemedInPeriod = _getRedeemedInPeriod(vaultId, periodDays);
+    require(
+      redeemedInPeriod + spaceTokenAmount <= maxRedeemable,
+      'Exceeds maximum redemption percentage for period'
+    );
+  }
+
+  /**
+   * @dev Sum space tokens redeemed in the last `periodDays` days (inclusive of today).
+   */
+  function _getRedeemedInPeriod(
+    uint256 vaultId,
+    uint256 periodDays
+  ) internal view returns (uint256 total) {
+    uint256 today = block.timestamp / 1 days;
+    uint256 startDay = today >= periodDays ? today - periodDays + 1 : 0;
+
+    for (uint256 d = startDay; d <= today; d++) {
+      total += vaultDailyRedemptions[vaultId][d];
+    }
   }
 
   function _computeTotalCoverageUsd(

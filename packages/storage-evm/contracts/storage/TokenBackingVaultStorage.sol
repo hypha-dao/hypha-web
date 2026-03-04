@@ -26,6 +26,19 @@ contract TokenBackingVaultStorage is Initializable {
   mapping(uint256 => uint256) internal vaultRedemptionPrice;
   mapping(uint256 => address) internal vaultRedemptionPriceCurrencyFeed;
 
-  uint256[40] private __gap;
+  // Maximum redemption percentage (basis points, 0 = unlimited)
+  mapping(uint256 => uint256) internal vaultMaxRedemptionBps;
+  // Rolling period in days for the max redemption cap (0 = unlimited)
+  mapping(uint256 => uint256) internal vaultRedemptionPeriodDays;
+  // Daily redemption tracking: vaultId => dayNumber => totalRedeemed (space token units)
+  mapping(uint256 => mapping(uint256 => uint256))
+    internal vaultDailyRedemptions;
+
+  // Space-based whitelisting: vaultId => array of whitelisted space IDs
+  mapping(uint256 => uint256[]) internal whitelistedSpaceIds;
+  // Quick lookup: vaultId => spaceId => whitelisted
+  mapping(uint256 => mapping(uint256 => bool)) internal isWhitelistedSpace;
+
+  uint256[35] private __gap;
 }
 

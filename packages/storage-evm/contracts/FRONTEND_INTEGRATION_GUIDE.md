@@ -36,6 +36,9 @@ All prices flow through **USD as the common denominator**: space token price (in
 | **priceCurrencyFeed** | Chainlink X/USD feed for non-USD currencies. `address(0)` means USD. |
 | **Vault ID** | Internal identifier; lookups use `(spaceId, spaceToken)` pair |
 | **Minimum Backing** | Percentage (basis points, 0–10000) — redemptions blocked if reserve coverage drops below this |
+| **Redemption Price** | Optional fixed redemption price that overrides the official token price. Can be denominated in any currency via a Chainlink feed. 0 = use official token price. |
+| **Max Redemption %** | Limits the percentage of total supply that can be redeemed within a rolling period (in days). Protects against rapid vault depletion. |
+| **Space Whitelist** | Entire spaces can be whitelisted — all members of a whitelisted space can redeem. Works alongside address-level whitelisting (OR logic). |
 
 ---
 
@@ -45,16 +48,20 @@ All prices flow through **USD as the common denominator**: space token price (in
 
 | Function | Description |
 |---|---|
-| `addBackingToken(spaceId, spaceToken, backingTokens[], priceFeeds[], tokenDecimals[], fundingAmounts[], minimumBackingBps)` | Create a vault (if not exists) and register one or more backing tokens with optional initial funding. Chainlink feed for oracle-priced tokens, `address(0)` for Hypha tokens. |
+| `addBackingToken(spaceId, spaceToken, backingTokens[], priceFeeds[], tokenDecimals[], fundingAmounts[], minimumBackingBps, redemptionPrice, redemptionPriceCurrencyFeed, maxRedemptionBps, maxRedemptionPeriodDays)` | Create a vault (if not exists) and register one or more backing tokens with optional initial funding. Chainlink feed for oracle-priced tokens, `address(0)` for Hypha tokens. Also sets redemption price and max redemption percentage on vault creation (ignored on subsequent calls). |
 | `removeBackingToken(spaceId, spaceToken, backingToken)` | Disable a backing token from the vault. |
 | `updatePriceFeed(spaceId, spaceToken, backingToken, newPriceFeed)` | Change the Chainlink feed for an oracle-priced backing token. Cannot be used on Hypha tokens. |
 | `setRedeemEnabled(spaceId, spaceToken, enabled)` | Enable or disable all redemptions for this vault. |
 | `setMembersOnly(spaceId, spaceToken, enabled)` | Restrict redemptions to Space members only. |
-| `setWhitelistEnabled(spaceId, spaceToken, enabled)` | Restrict redemptions to whitelisted addresses. |
+| `setWhitelistEnabled(spaceId, spaceToken, enabled)` | Restrict redemptions to whitelisted addresses (address-level or space-level). |
 | `setMinimumBacking(spaceId, spaceToken, minimumBackingBps)` | Set the minimum backing threshold (basis points). |
 | `setRedemptionStartDate(spaceId, spaceToken, startDate)` | Set a future Unix timestamp from which redemptions are allowed. `0` = no restriction. |
+| `setRedemptionPrice(spaceId, spaceToken, price, currencyFeed)` | Set a fixed redemption price that overrides the official token price. `price = 0` reverts to official. `currencyFeed = address(0)` = USD. |
+| `setMaxRedemptionPercentage(spaceId, spaceToken, maxRedemptionBps, periodDays)` | Limit redemptions to X% of total supply within a rolling period. `maxRedemptionBps = 0` disables the cap. |
 | `addToWhitelist(spaceId, spaceToken, accounts[])` | Add addresses to the redemption whitelist. |
 | `removeFromWhitelist(spaceId, spaceToken, accounts[])` | Remove addresses from the redemption whitelist. |
+| `addWhitelistedSpaces(spaceId, spaceToken, spaceIds[])` | Whitelist entire spaces — all members of the given spaces can redeem. |
+| `removeWhitelistedSpaces(spaceId, spaceToken, spaceIds[])` | Remove spaces from the whitelist. |
 
 ### Funding & Withdrawals (executor/proposal only)
 
@@ -80,7 +87,12 @@ All prices flow through **USD as the common denominator**: space token price (in
 | `getBackingBalance(spaceId, spaceToken, backingToken)` | `uint256` | Current balance of a backing token held in the vault. |
 | `calculateBackingOut(spaceId, spaceToken, spaceTokenAmount, backingToken)` | `uint256` | Preview: how many backing tokens would be received for the given space token amount. |
 | `getSpaceVaults(spaceId)` | `uint256[]` | All vault IDs associated with a space. |
-| `isWhitelisted(spaceId, spaceToken, account)` | `bool` | Whether an address is on the vault whitelist. |
+| `isWhitelisted(spaceId, spaceToken, account)` | `bool` | Whether an address is on the vault's address whitelist. |
+| `getRedemptionPrice(spaceId, spaceToken)` | `(uint256 price, address currencyFeed)` | The vault's redemption price override. `price = 0` means official token price is used. |
+| `getMaxRedemptionPercentage(spaceId, spaceToken)` | `(uint256 maxRedemptionBps, uint256 periodDays)` | Max redemption cap config. Both `0` = no limit. |
+| `getRedemptionUsage(spaceId, spaceToken)` | `(uint256 redeemedInPeriod, uint256 maxRedeemable)` | How many tokens have been redeemed in the current rolling window vs the max allowed. Returns `(0, 0)` if no cap. |
+| `getWhitelistedSpaces(spaceId, spaceToken)` | `uint256[]` | All space IDs that are whitelisted for this vault. |
+| `isSpaceWhitelisted(spaceId, spaceToken, whitelistedSpaceId)` | `bool` | Whether a specific space is whitelisted. |
 
 ---
 
@@ -285,7 +297,32 @@ const backingOut: bigint = await vault.calculateBackingOut(
 #### Check whitelist status
 
 ```typescript
+// Address-level
 const isWl: boolean = await vault.isWhitelisted(spaceId, spaceTokenAddress, userAddress);
+
+// Space-level
+const whitelistedSpaces: bigint[] = await vault.getWhitelistedSpaces(spaceId, spaceTokenAddress);
+const isSpaceWl: boolean = await vault.isSpaceWhitelisted(spaceId, spaceTokenAddress, otherSpaceId);
+```
+
+#### Get redemption price override
+
+```typescript
+const [price, currencyFeed] = await vault.getRedemptionPrice(spaceId, spaceTokenAddress);
+// price = 0 means official token price is used
+// currencyFeed = address(0) means USD
+```
+
+#### Get max redemption percentage config and current usage
+
+```typescript
+const [maxBps, periodDays] = await vault.getMaxRedemptionPercentage(spaceId, spaceTokenAddress);
+// maxBps = 0 means no limit
+
+// Get current usage within the rolling window
+const [redeemedInPeriod, maxRedeemable] = await vault.getRedemptionUsage(spaceId, spaceTokenAddress);
+// Both 0 when no cap is configured
+// remaining = maxRedeemable - redeemedInPeriod
 ```
 
 #### Get all vault IDs for a space
@@ -346,9 +383,15 @@ await vault.addBackingToken(
   [USDC_USD_FEED, ETH_USD_FEED],            // Chainlink asset feeds (NOT currency feeds)
   [6, 18],                                  // token decimals
   [ethers.parseUnits("50000", 6), ethers.parseEther("10")],  // funding amounts
-  2000                                      // 20% minimum backing (basis points)
+  2000,                                     // 20% minimum backing (basis points)
+  0,                                        // redemptionPrice: 0 = use official token price
+  ethers.ZeroAddress,                       // redemptionPriceCurrencyFeed (ignored when price = 0)
+  1000,                                     // maxRedemptionBps: 10% cap
+  7                                         // maxRedemptionPeriodDays: 7-day rolling window
 );
 ```
+
+> **Note:** `redemptionPrice`, `redemptionPriceCurrencyFeed`, `maxRedemptionBps`, and `maxRedemptionPeriodDays` are only applied when the vault is first created. On subsequent `addBackingToken` calls (to add more backing tokens to an existing vault), these values are ignored. Use `setRedemptionPrice` and `setMaxRedemptionPercentage` to modify them later.
 
 #### Deposit more backing
 
@@ -384,9 +427,45 @@ await vault.setRedemptionStartDate(spaceId, spaceTokenAddress, unixTimestamp);
 ```typescript
 await vault.setMembersOnly(spaceId, spaceTokenAddress, true);
 await vault.setWhitelistEnabled(spaceId, spaceTokenAddress, true);
+
+// Address-level whitelist
 await vault.addToWhitelist(spaceId, spaceTokenAddress, [addr1, addr2, addr3]);
 await vault.removeFromWhitelist(spaceId, spaceTokenAddress, [addr1]);
+
+// Space-level whitelist — all members of these spaces can redeem
+await vault.addWhitelistedSpaces(spaceId, spaceTokenAddress, [otherSpaceId1, otherSpaceId2]);
+await vault.removeWhitelistedSpaces(spaceId, spaceTokenAddress, [otherSpaceId1]);
 ```
+
+> When `whitelistEnabled` is true, a user can redeem if they are on the address whitelist **OR** are a member of any whitelisted space. When `membersOnly` is also true, the user passes if they satisfy **either** the membersOnly check or the whitelist check (OR logic across all three: space membership, address whitelist, space whitelist).
+
+#### Set redemption price
+
+```typescript
+// Set a fixed redemption price of $1.50 USD (overrides official token price)
+await vault.setRedemptionPrice(spaceId, spaceTokenAddress, 1_500_000, ethers.ZeroAddress);
+
+// Set a fixed redemption price of 2.00 EUR (converted to USD via Chainlink at redemption time)
+const EUR_USD_FEED = "0xc91D87E81faB8f93699ECf7Ee9B44D11e1D53F0F";
+await vault.setRedemptionPrice(spaceId, spaceTokenAddress, 2_000_000, EUR_USD_FEED);
+
+// Reset to official token price
+await vault.setRedemptionPrice(spaceId, spaceTokenAddress, 0, ethers.ZeroAddress);
+```
+
+> The redemption price is the value at which tokens are redeemed — it can differ from the official token price. The `currencyFeed` specifies what currency the price is denominated in (e.g., EUR/USD feed for EUR prices). It is **not** a dynamic price oracle — the price value itself is fixed; only the forex conversion is live.
+
+#### Set maximum redemption percentage
+
+```typescript
+// Limit to 10% of total supply redeemable per 7-day rolling window
+await vault.setMaxRedemptionPercentage(spaceId, spaceTokenAddress, 1000, 7);
+
+// Disable the cap
+await vault.setMaxRedemptionPercentage(spaceId, spaceTokenAddress, 0, 0);
+```
+
+> The cap is **global** (across all users, not per-user). Within any rolling N-day window, the total tokens redeemed cannot exceed X% of the current total supply. The check uses daily buckets (`block.timestamp / 1 days`) and sums the last N days. Typical period values: 1, 7, 14, 30, 90 days.
 
 #### Remove a backing token
 
@@ -423,8 +502,12 @@ await vault.updatePriceFeed(spaceId, spaceTokenAddress, backingTokenAddress, new
 | `WhitelistEnabledUpdated(vaultId, enabled)` | Whitelist toggled |
 | `MinimumBackingUpdated(vaultId, minimumBackingBps)` | Minimum backing threshold changed |
 | `RedemptionStartDateUpdated(vaultId, startDate)` | Redemption start date changed |
-| `WhitelistUpdated(vaultId, accounts, added)` | Whitelist entries added/removed |
+| `WhitelistUpdated(vaultId, accounts, added)` | Address whitelist entries added/removed |
+| `WhitelistSpaceAdded(vaultId, whitelistedSpaceId)` | A space added to the whitelist |
+| `WhitelistSpaceRemoved(vaultId, whitelistedSpaceId)` | A space removed from the whitelist |
 | `PriceFeedUpdated(vaultId, backingToken, oldFeed, newFeed)` | Price feed changed |
+| `RedemptionPriceUpdated(vaultId, price, currencyFeed)` | Redemption price override changed |
+| `MaxRedemptionPercentageUpdated(vaultId, maxRedemptionBps, periodDays)` | Max redemption cap changed |
 
 ---
 
@@ -441,19 +524,33 @@ await vault.updatePriceFeed(spaceId, spaceTokenAddress, backingTokenAddress, new
 
 3. Check user eligibility (if restrictions are active)
    → If membersOnly: check isMember on DAOSpaceFactory
-   → If whitelistEnabled: isWhitelisted(spaceId, spaceToken, userAddress)
-   → User passes if EITHER check succeeds
+   → If whitelistEnabled:
+       - isWhitelisted(spaceId, spaceToken, userAddress)     (address whitelist)
+       - OR: user is member of any whitelisted space
+         → getWhitelistedSpaces(spaceId, spaceToken) → check isMember for each
+   → User passes if ANY check succeeds (OR logic)
 
-4. Get available backing tokens
+4. Check max redemption cap (if configured)
+   → getRedemptionUsage(spaceId, spaceToken)
+   → Returns (redeemedInPeriod, maxRedeemable)
+   → If maxRedeemable > 0: remaining = maxRedeemable - redeemedInPeriod
+   → Show user the remaining redeemable amount
+
+5. Get available backing tokens
    → getBackingTokens(spaceId, spaceToken)
    → For each: getBackingBalance(spaceId, spaceToken, bt)
 
-5. Let user pick backing token(s) and input amount
+6. Check redemption price
+   → getRedemptionPrice(spaceId, spaceToken)
+   → If price > 0: vault uses this fixed price instead of official token price
+   → Display to user so they know the redemption rate
 
-6. Preview the output
+7. Let user pick backing token(s) and input amount
+
+8. Preview the output
    → calculateBackingOut(spaceId, spaceToken, amount, backingToken)
 
-7. Execute
+9. Execute
    → User approves vault to spend their space tokens
    → Call redeem() with backing token(s) and proportions
 ```
@@ -489,3 +586,11 @@ await vault.updatePriceFeed(spaceId, spaceTokenAddress, backingTokenAddress, new
 8. **Hypha backing tokens use `address(0)` as their price feed** in `addBackingToken`. Their price is read from `tokenPrice()` + `priceCurrencyFeed()` on the token contract, not from Chainlink.
 
 9. **Currency feeds vs asset feeds are different things.** Currency feeds (EUR/USD, GBP/USD, etc.) are used on the token contract to define what currency the token is denominated in. Asset feeds (ETH/USD, USDC/USD, etc.) are used in the vault to price backing assets. Don't mix them up.
+
+10. **Redemption price is a fixed override, not a dynamic oracle.** When you set `setRedemptionPrice(spaceId, token, 1_500_000, eurUsdFeed)`, you're saying "redeem at 1.50 EUR." The 1.50 is fixed; only the EUR→USD conversion is dynamic. Set `price = 0` to revert to the official token price.
+
+11. **Max redemption percentage is global, not per-user.** The rolling window cap applies to ALL redemptions across all users. If the cap is 10% over 7 days and Alice redeems 8%, Bob can only redeem up to 2% until the window rolls forward.
+
+12. **`addBackingToken` creation params are ignored for existing vaults.** The `redemptionPrice`, `redemptionPriceCurrencyFeed`, `maxRedemptionBps`, and `maxRedemptionPeriodDays` parameters in `addBackingToken` only take effect when a vault is first created. To modify them later, use `setRedemptionPrice` and `setMaxRedemptionPercentage`.
+
+13. **Space whitelist requires `whitelistEnabled = true`.** Adding whitelisted spaces has no effect unless `setWhitelistEnabled` is turned on. When enabled, a user can redeem if they are address-whitelisted OR a member of any whitelisted space.
