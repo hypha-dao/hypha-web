@@ -197,10 +197,6 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         ? room
             .getLiveTimeline()
             .getEvents()
-            .map((event) => {
-              console.log('>>', event);
-              return event;
-            })
             .filter((event) => event.getType() === EventType.RoomMessage)
             .map((event) => ({
               id: event.getId()!,

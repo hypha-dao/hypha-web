@@ -191,8 +191,11 @@ export const ChatDetail = ({
             </div>
           )}
           {activeTab === 'pins' && (
-            <div className="w-full bg-pink-600">
-              <ChatPins />
+            <div className="w-full">
+              <ChatPins
+                isLoading={isLoading || isMessagesLoading}
+                messages={messages}
+              />
             </div>
           )}
         </div>

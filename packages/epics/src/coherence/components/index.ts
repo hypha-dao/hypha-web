@@ -6,6 +6,7 @@ export * from './chat-members';
 export * from './chat-message';
 export * from './chat-message.container';
 export * from './chat-message-input';
+export * from './chat-pin';
 export * from './chat-pins';
 export * from './chat-tabs';
 export * from './coherence-block';
