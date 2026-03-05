@@ -644,6 +644,55 @@ export const schemaMembershipExit = z.object({
     .refine(isAddress, { message: 'Invalid Ethereum address' }),
 });
 
+const backingCollateralEntrySchema = z.object({
+  token: z
+    .string()
+    .min(1, { message: 'Please select a backing collateral' })
+    .refine((v) => isAddress(v), { message: 'Invalid token address' }),
+  amount: z
+    .string()
+    .min(1, { message: 'Please enter amount' })
+    .refine((v) => parseFloat(v) > 0, {
+      message: 'Amount must be greater than 0',
+    }),
+});
+
+const whitelistEntrySchema = z.object({
+  type: z.enum(['member', 'space']),
+  address: z
+    .string()
+    .min(1)
+    .refine((v) => isAddress(v), { message: 'Invalid address' }),
+  includeSpaceMembers: z.boolean().optional(),
+});
+
+export const schemaTokenBackingVault = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  label: z.literal('Backing Vault').optional(),
+  tokenBackingVault: z.object({
+    spaceToken: z
+      .string()
+      .min(1, { message: 'Please select a token' })
+      .refine((v) => isAddress(v), { message: 'Invalid token address' }),
+    activateVault: z.boolean().default(true),
+    enableRedemption: z.boolean().default(false),
+    addCollaterals: z.array(backingCollateralEntrySchema).optional(),
+    removeCollaterals: z.array(backingCollateralEntrySchema).optional(),
+    referenceCurrency: z.string().optional(),
+    tokenPrice: z
+      .string()
+      .optional()
+      .transform((v) => (v === '' || v === undefined ? undefined : v)),
+    minimumBackingPercent: z.number().min(0).max(100).optional().default(0),
+    maxRedemptionPercent: z.number().min(0).max(100).optional(),
+    maxRedemptionPeriodDays: z.number().min(0).optional(),
+    redemptionStartDate: z.date().optional().nullable(),
+    enableAdvancedRedemptionControls: z.boolean().default(false),
+    redemptionWhitelist: z.array(whitelistEntrySchema).optional(),
+  }),
+});
+
 export const schemaChangeSpaceTransparencySettings = z.object({
   ...createAgreementWeb2Props,
   ...createAgreementFiles,
