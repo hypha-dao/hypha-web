@@ -101,6 +101,10 @@
         "title": "Tokens in die Space-Schatzkammer prägen",
         "description": "Prägen Sie Tokens in Ihre Space-Schatzkammer, um den Betrieb zu finanzieren, Belohnungen zu verteilen oder Liquidität bereitzustellen."
       },
+      "tokenBackingVault": {
+        "title": "Token-Sicherungsvault",
+        "description": "Erstellen Sie einen Token-Sicherungsvault, definieren Sie Rücknahmeregeln und -beschränkungen, legen Sie das Startdatum und den Rücknahmepreis fest und autorisieren Sie die Hinzufügung oder den Abzug von Sicherheiten zum Vault."
+      },
       "buyHyphaTokensRewards": {
         "title": "Hypha-Tokens kaufen (Belohnungen)",
         "description": "Kaufen Sie Hypha-Tokens, um am Netzwerk teilzunehmen und Belohnungen zu erhalten."
