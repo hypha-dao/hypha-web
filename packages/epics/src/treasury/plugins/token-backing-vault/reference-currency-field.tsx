@@ -11,7 +11,7 @@ import {
   SelectItem,
 } from '@hypha-platform/ui';
 import { useFormContext } from 'react-hook-form';
-import { CURRENCY_FEED_OPTIONS } from '@hypha-platform/core/client';
+import { CURRENCY_FEED_OPTIONS } from './constants';
 
 export function ReferenceCurrencyField() {
   const { control } = useFormContext();
