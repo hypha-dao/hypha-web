@@ -13,6 +13,7 @@ import {
   Share1Icon,
   ArrowLeftIcon,
   ArrowRightIcon,
+  ArrowUpIcon,
   LoopIcon,
 } from '@radix-ui/react-icons';
 import { useMemberBySlug } from '@web/hooks/use-member-by-slug';
@@ -43,6 +44,13 @@ export default function ProfileWallet() {
         'Send tokens from your personal wallet to a member, space, or custom address.',
       href: 'transfer-funds',
       icon: <Share1Icon />,
+    },
+    {
+      title: 'Redeem Tokens',
+      description:
+        'Convert your tokens into their equivalent fiat value held in the vault.',
+      href: 'redeem-tokens',
+      icon: <ArrowUpIcon />,
     },
     {
       title: 'Buy Hypha Tokens (Rewards)',
