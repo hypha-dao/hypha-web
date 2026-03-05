@@ -140,6 +140,40 @@ export const personTransfer = z.object({
   memo: z.string().optional(),
 });
 
+export const personRedeem = z.object({
+  //TODO: fix missing fields
+  // Redemption tokens and amounts (array)
+  redemptions: z
+    .array(
+      z.object({
+        token: z.string().min(1, { message: 'Token is required' }),
+        amount: z.string().refine((value) => parseFloat(value) > 0, {
+          message: 'Amount must be greater than 0',
+        }),
+      }),
+    )
+    .min(1, { message: 'At least one redemption is required' }),
+  // Target assets and percentages (optional array)
+  conversions: z
+    .array(
+      z.object({
+        asset: z
+          .string()
+          .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' }),
+        percentage: z
+          .string()
+          .refine(
+            (value) => parseFloat(value) >= 0 && parseFloat(value) <= 100,
+            {
+              message: 'Amount must be between 0 and 100',
+            },
+          ),
+      }),
+    )
+    .min(1, { message: 'At least one conversation is required' }),
+  memo: z.string().optional(),
+});
+
 export type PersonFiles = z.infer<typeof editPersonFiles>;
 
 export const schemaEditPersonWeb2 = z.object(editPersonWeb2Props);

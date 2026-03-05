@@ -13,6 +13,7 @@ import {
   Share1Icon,
   ArrowLeftIcon,
   ArrowRightIcon,
+  ArrowUpIcon,
   LoopIcon,
 } from '@radix-ui/react-icons';
 import { useMemberBySlug } from '@web/hooks/use-member-by-slug';
@@ -46,6 +47,14 @@ export default function ProfileWallet() {
       description: tActions('actions.transferFunds.description'),
       href: 'transfer-funds',
       icon: <Share1Icon />,
+    },
+    {
+      id: 'redeemTokens',
+      title: 'Redeem Tokens',
+      description:
+        'Convert your tokens into their equivalent fiat value held in the vault.',
+      href: 'redeem-tokens',
+      icon: <ArrowUpIcon />,
     },
     {
       id: 'buyHyphaTokensRewards',

@@ -12,6 +12,8 @@ export * from './person-head';
 export * from './signup-panel';
 export * from './people-transfer-form';
 export * from './people-transfer-funds';
+export * from './people-redeem-form';
+export * from './people-redeem-tokens';
 export * from './profile-member-spaces';
 export * from './people-purchase-hypha-tokens';
 export * from './space-with-number-of-months';
