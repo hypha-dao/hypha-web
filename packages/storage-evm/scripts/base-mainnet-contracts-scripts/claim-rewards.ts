@@ -108,12 +108,8 @@ async function main(): Promise<void> {
   console.log(
     `HYPHA balance:      ${ethers.formatEther(currentBalance)} HYPHA`,
   );
-  console.log(
-    `Pending rewards:    ${ethers.formatEther(pending)} HYPHA`,
-  );
-  console.log(
-    `Unclaimed rewards:  ${ethers.formatEther(unclaimed)} HYPHA`,
-  );
+  console.log(`Pending rewards:    ${ethers.formatEther(pending)} HYPHA`);
+  console.log(`Unclaimed rewards:  ${ethers.formatEther(unclaimed)} HYPHA`);
   console.log('='.repeat(60));
 
   if (pending === 0n) {
@@ -124,7 +120,9 @@ async function main(): Promise<void> {
   if (dryRun) {
     console.log(`\n[DRY RUN] Would claim ${ethers.formatEther(pending)} HYPHA`);
     console.log(
-      `[DRY RUN] Expected balance after claim: ${ethers.formatEther(currentBalance + pending)} HYPHA`,
+      `[DRY RUN] Expected balance after claim: ${ethers.formatEther(
+        currentBalance + pending,
+      )} HYPHA`,
     );
     return;
   }
@@ -171,11 +169,11 @@ async function main(): Promise<void> {
   console.log('After Claim');
   console.log('='.repeat(60));
   console.log(`HYPHA balance:      ${ethers.formatEther(newBalance)} HYPHA`);
+  console.log(`Pending rewards:    ${ethers.formatEther(newPending)} HYPHA`);
   console.log(
-    `Pending rewards:    ${ethers.formatEther(newPending)} HYPHA`,
-  );
-  console.log(
-    `HYPHA received:     ${ethers.formatEther(newBalance - currentBalance)} HYPHA`,
+    `HYPHA received:     ${ethers.formatEther(
+      newBalance - currentBalance,
+    )} HYPHA`,
   );
   console.log('='.repeat(60));
 }
