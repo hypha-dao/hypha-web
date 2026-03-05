@@ -357,9 +357,19 @@ export const baseSchemaIssueNewToken = z.object({
     ])
     .transform((val) => (val === '' || val === null ? undefined : val)),
 
-  type: z.enum(['utility', 'credits', 'ownership', 'voice', 'impact'], {
-    required_error: 'Please select a token type',
-  }),
+  type: z.enum(
+    [
+      'utility',
+      'credits',
+      'ownership',
+      'voice',
+      'impact',
+      'community_currency',
+    ],
+    {
+      required_error: 'Please select a token type',
+    },
+  ),
 
   maxSupply: z.preprocess(
     (val) => Number(val),

@@ -124,7 +124,7 @@ export const SelectSettingsAction = ({
       group: 'Treasury',
       title: 'Issue New Token',
       description:
-        'Create a new token for utility, ownership, impact, cash credits, or voice within your space.',
+        'Create a new token for utility, ownership, impact, cash credits, voice, or community currency within your space.',
       href: 'create/issue-new-token',
       icon: <RadiobuttonIcon />,
       disabled: isPaymentExpired,

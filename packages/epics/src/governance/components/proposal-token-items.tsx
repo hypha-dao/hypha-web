@@ -10,6 +10,7 @@ import { formatDecayInterval } from '@hypha-platform/ui-utils';
 import { usePersonByWeb3Address } from '../hooks';
 import { useDbSpaces } from '../../hooks';
 import { PersonAvatar } from '../../people/components/person-avatar';
+import { getTokenTypeLabel } from '../../treasury/components/common/token-type-field';
 
 interface ProposalTokenItemProps {
   name?: string;
@@ -116,9 +117,7 @@ export const ProposalTokenItem = ({
 
   const referencePrice = dbToken?.referencePrice;
 
-  const tokenType = dbToken?.type
-    ? dbToken.type.charAt(0).toUpperCase() + dbToken.type.slice(1)
-    : '';
+  const tokenType = dbToken?.type ? getTokenTypeLabel(dbToken.type) : '';
 
   return (
     <div className="flex flex-col gap-5">

@@ -2,6 +2,7 @@ import { Text } from '@radix-ui/themes';
 import { Card, Skeleton, Image, Badge } from '@hypha-platform/ui';
 import { formatCurrencyValue, formatDate } from '@hypha-platform/ui-utils';
 import { getDhoPathAgreements } from '@hypha-platform/epics';
+import { getTokenTypeLabel } from '../common/token-type-field';
 import { Locale } from '@hypha-platform/i18n';
 import Link from 'next/link';
 
@@ -75,9 +76,9 @@ export const AssetCard: React.FC<AssetCardProps> = ({
                   <Badge
                     colorVariant="accent"
                     variant="outline"
-                    className="w-fit capitalize h-fit"
+                    className="w-fit h-fit"
                   >
-                    {type}
+                    {getTokenTypeLabel(type)}
                   </Badge>
                 )}
               </span>

@@ -42,7 +42,13 @@ export type DbToken = {
   name: string;
   symbol: string;
   maxSupply: number;
-  type: 'utility' | 'credits' | 'ownership' | 'voice' | 'impact';
+  type:
+    | 'utility'
+    | 'credits'
+    | 'ownership'
+    | 'voice'
+    | 'impact'
+    | 'community_currency';
   iconUrl?: string;
   transferable: boolean;
   isVotingToken: boolean;
