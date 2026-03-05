@@ -61,7 +61,7 @@ export const TokenPayoutField = ({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 md:justify-end items-end">
+    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 md:justify-end items-end w-full">
       <div className="flex top-0 m-0 p-0 flex-1 min-w-0">
         <Input
           value={value.amount ?? ''}
