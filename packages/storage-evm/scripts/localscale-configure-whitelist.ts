@@ -30,9 +30,7 @@ async function main(): Promise<void> {
 
   // ── Step 1: Enable transfer whitelist ──
   const currentUseTransferWhitelist = await token.useTransferWhitelist();
-  console.log(
-    `Current useTransferWhitelist: ${currentUseTransferWhitelist}`,
-  );
+  console.log(`Current useTransferWhitelist: ${currentUseTransferWhitelist}`);
 
   if (!currentUseTransferWhitelist) {
     console.log('Enabling transfer whitelist...');
@@ -68,8 +66,9 @@ async function main(): Promise<void> {
 
   const finalUseTransferWhitelist = await token.useTransferWhitelist();
   const finalCanTransfer = await token.canTransfer(ADDRESS_TO_WHITELIST);
-  const canAccountTransferResult =
-    await token.canAccountTransfer(ADDRESS_TO_WHITELIST);
+  const canAccountTransferResult = await token.canAccountTransfer(
+    ADDRESS_TO_WHITELIST,
+  );
 
   console.log(`useTransferWhitelist: ${finalUseTransferWhitelist}`);
   console.log(`canTransfer(${ADDRESS_TO_WHITELIST}): ${finalCanTransfer}`);
