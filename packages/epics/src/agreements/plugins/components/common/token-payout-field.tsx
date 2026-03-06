@@ -29,8 +29,13 @@ interface TokenPayoutFieldProps {
   value: {
     amount: string;
     token: string;
+    spaceSlug?: string;
   };
-  onChange: (val: { amount: string; token: string }) => void;
+  onChange: (val: {
+    amount: string;
+    token: string;
+    spaceSlug?: string;
+  }) => void;
   tokens: Token[];
   readOnlyDropdown?: boolean;
 }
@@ -44,12 +49,16 @@ export const TokenPayoutField = ({
   const selectedToken = tokens.find((t) => t.address === value.token);
 
   const handleTokenChange = (token: Token) => {
-    onChange({ amount: value.amount, token: token.address });
+    onChange({
+      amount: value.amount,
+      token: token.address,
+      spaceSlug: token.space?.slug,
+    });
   };
 
   const handleAmountChange = (amount: string) => {
     if (amount === '') {
-      onChange({ amount: '', token: value.token });
+      onChange({ amount: '', token: value.token, spaceSlug: value.spaceSlug });
       return;
     }
 
