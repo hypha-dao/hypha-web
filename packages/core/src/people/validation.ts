@@ -4,6 +4,14 @@ import { z } from 'zod';
 
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
+const parsePercentage = (value: string) => {
+  const parsed = parseFloat(value) * 100;
+  if (isNaN(parsed)) {
+    return 0;
+  }
+  return parsed;
+};
+
 const signupPersonWeb2Props = {
   name: z.string().trim().min(1, { message: 'Please enter your first name' }),
   surname: z.string().trim().min(1, { message: 'Please enter your last name' }),
@@ -141,8 +149,6 @@ export const personTransfer = z.object({
 });
 
 export const personRedeem = z.object({
-  //TODO: fix missing fields
-  // Redemption tokens and amounts (array)
   redemptions: z
     .array(
       z.object({
@@ -152,8 +158,7 @@ export const personRedeem = z.object({
         }),
       }),
     )
-    .min(1, { message: 'At least one redemption is required' }),
-  // Target assets and percentages (optional array)
+    .length(1, { message: 'Only one redemption is required' }),
   conversions: z
     .array(
       z.object({
@@ -173,8 +178,10 @@ export const personRedeem = z.object({
     .min(1, { message: 'At least one conversation is required' })
     .refine(
       (value) =>
-        value.reduce((acc, curr) => acc + parseFloat(curr.percentage), 0) ===
-        100,
+        value.reduce(
+          (acc, curr) => acc + parsePercentage(curr.percentage),
+          0,
+        ) === 10000,
       {
         message: 'Summary percentage must be 100%',
       },

@@ -137,18 +137,41 @@ export const PeopleRedeemForm = ({
     }
   };
 
+  const handleError = (baseField: keyof FormValues, error: any) => {
+    console.error(error);
+    if ('root' in error) {
+      form.setError(baseField, { message: error.root.message });
+    }
+    for (let i = 0; i < error.length; i++) {
+      for (const field of Object.keys(error[i])) {
+        form.setError(`${baseField}.${i}.${field}` as keyof FormValues, {
+          message: error.message,
+        });
+      }
+    }
+  };
+
+  const handleInvalid = (error: any) => {
+    console.error(error);
+    for (const field of Object.keys(error)) {
+      console.error('>>', field, error[field]);
+      handleError(field as keyof FormValues, error[field]);
+    }
+  };
+
   return (
     <>
       <Form {...form}>
         <form
           ref={formRef}
-          onSubmit={form.handleSubmit(handleRedeem)}
+          onSubmit={form.handleSubmit(handleRedeem, handleInvalid)}
           className="flex flex-col gap-5"
         >
           <TokenPayoutFieldArray
             label="Redemption Amount"
             tokens={tokens}
             name="redemptions"
+            allowAddOrRemove={false}
           />
           <TokenPercentageFieldArray
             label="Converted into"
