@@ -10,20 +10,20 @@ import {
   FormMessage,
   RequirementMark,
 } from '@hypha-platform/ui';
-import { TokenConversionField } from './token-conversion-field';
+import { TokenPercentageField } from './token-percentage-field';
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
 
-export interface TokenConversionFieldArrayProps {
+export interface TokenPercentageFieldArrayProps {
   assets: AssetItem[];
   name?: string;
   label?: string;
 }
 
-export const TokenConversionFieldArray = ({
+export const TokenPercentageFieldArray = ({
   assets,
   name = 'conversions',
   label = 'Converted into',
-}: TokenConversionFieldArrayProps) => {
+}: TokenPercentageFieldArrayProps) => {
   const { control } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     control,
@@ -61,7 +61,7 @@ export const TokenConversionFieldArray = ({
                   render={({ field: { value, onChange } }) => (
                     <FormItem>
                       <FormControl>
-                        <TokenConversionField
+                        <TokenPercentageField
                           value={value}
                           onChange={onChange}
                           assets={assets}
