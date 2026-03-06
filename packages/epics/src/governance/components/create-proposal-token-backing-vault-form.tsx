@@ -6,13 +6,15 @@ import {
   schemaTokenBackingVault,
   createAgreementFiles,
   useMe,
+  useJwt,
+  useCreateTokenBackingVaultOrchestrator,
 } from '@hypha-platform/core/client';
-import { useCreateTokenBackingVaultOrchestratorStub } from './useTokenBackingVaultOrchestratorStub';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter } from 'next/navigation';
+import { useConfig } from 'wagmi';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 
@@ -40,6 +42,8 @@ export const CreateProposalTokenBackingVaultForm = ({
 }: CreateProposalTokenBackingVaultFormProps) => {
   const router = useRouter();
   const { person } = useMe();
+  const { jwt } = useJwt();
+  const config = useConfig();
   const {
     createTokenBackingVault,
     reset,
@@ -47,7 +51,10 @@ export const CreateProposalTokenBackingVaultForm = ({
     isError,
     isPending,
     progress,
-  } = useCreateTokenBackingVaultOrchestratorStub();
+  } = useCreateTokenBackingVaultOrchestrator({
+    authToken: jwt,
+    config,
+  });
 
   const [formError, setFormError] = React.useState<string | null>(null);
 
