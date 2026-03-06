@@ -11,7 +11,7 @@ import {
   SelectItem,
 } from '@hypha-platform/ui';
 import { useFormContext } from 'react-hook-form';
-import { MAX_REDEMPTION_PERIOD_OPTIONS } from './constants';
+import { MAX_REDEMPTION_PERIOD_OPTIONS } from '@hypha-platform/core/client';
 
 export function MaxRedemptionPeriodDaysField() {
   const { control } = useFormContext();
