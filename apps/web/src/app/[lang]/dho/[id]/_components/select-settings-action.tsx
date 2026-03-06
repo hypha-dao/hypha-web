@@ -139,6 +139,17 @@ export const SelectSettingsAction = ({
       disabled: isPaymentExpired,
     },
     {
+      defaultDurationDays: 4,
+      group: 'Treasury',
+      title: 'Token Backing Vault',
+      description:
+        'Create a token backing vault, define redemption rules and restrictions, set the start date and redemption price, and authorise the addition or withdrawal of collateral to the vault.',
+      href: 'create/token-backing-vault',
+      icon: <RadiobuttonIcon />,
+      baseTab: 'agreements',
+      disabled: isPaymentExpired,
+    },
+    {
       group: 'Treasury',
       title: 'Buy Hypha Tokens (Rewards)',
       description:
