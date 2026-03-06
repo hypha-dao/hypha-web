@@ -7,15 +7,21 @@ import {
   getTokenDecimals,
   ERC20_TOKEN_TRANSFER_ADDRESSES,
 } from '@hypha-platform/core/client';
-import { transferHelperAbi, transferHelperAddress } from '../../../generated';
+import {
+  tokenBackingVaultImplementationAddress,
+  tokenBackingVaultImplementationAbi,
+  transferHelperAbi,
+  transferHelperAddress,
+} from '../../../generated';
 import { CreateTransferInput } from '@hypha-platform/core/client';
 import { createTransferAction } from '../../../transaction/server/actions';
 
 interface RedeemTokensInput {
-  redemptions: {
+  redemption: {
+    web3SpaceId: number;
     token: string;
     amount: string;
-  }[];
+  };
   conversions?: {
     asset?: string;
     percentage?: string;
@@ -57,45 +63,48 @@ export const useRedeemTokensMutation = ({
         throw new Error('Smart wallet client not available');
       }
 
-      // TODO: Replace with actual redeem contract function when available
-      // For now, simulate transfers to a vault address (placeholder)
-      const vaultAddress = '0x0000000000000000000000000000000000000000'; // placeholder
-      const results = [];
+      const backingTokens: `0x${string}`[] = [];
+      const proportions: bigint[] = [];
 
-      for (const redemption of arg.redemptions) {
-        const decimals = await getTokenDecimals(redemption.token);
-        const amount = parseUnits(redemption.amount, decimals);
-        // let txHash: string;
-        let txHash: string = '0x0000000000000000000000000000000000000000'; //TODO: replace with actual txHash
-
-        if (ERC20_TOKEN_TRANSFER_ADDRESSES.includes(redemption.token)) {
-          /*txHash = await client.writeContract({
-            address: redemption.token as `0x${string}`,
-            abi: erc20Abi,
-            functionName: 'transfer',
-            args: [vaultAddress as `0x${string}`, amount],
-          });*/
-        } else {
-          /*txHash = await client.writeContract({
-            address: transferHelperAddress[8453],
-            abi: transferHelperAbi,
-            functionName: 'transferToken',
-            args: [
-              redemption.token as `0x${string}`,
-              vaultAddress as `0x${string}`,
-              amount,
-            ],
-          });*/
+      for (const conversion of arg.conversions ?? []) {
+        if (!conversion.asset || !conversion.percentage) {
+          continue;
         }
-
-        results.push({ token: redemption.token, txHash });
+        backingTokens.push(conversion.asset as `0x${string}`);
+        const percentage = parseFloat(conversion.percentage) * 100; //TODO: replace with actual percentage
+        proportions.push(BigInt(percentage));
       }
+
+      const token = arg.redemption.token;
+      const decimals = await getTokenDecimals(token);
+      const amount = parseUnits(arg.redemption.amount, decimals);
+      /*const txHash: string = await client.writeContract({
+        address: tokenBackingVaultImplementationAddress[8453],
+        abi: tokenBackingVaultImplementationAbi,
+        functionName: 'redeem',
+        args: [
+          BigInt(arg.redemption.web3SpaceId),
+          token as `0x${string}`,
+          BigInt(amount),
+          backingTokens,
+          proportions,
+        ],
+      });*/
+      const txHash: string = '0x0x0000000000000000000000000000000000000000';
+      console.log('redeem params:', [
+        BigInt(arg.redemption.web3SpaceId),
+        token as `0x${string}`,
+        BigInt(amount),
+        backingTokens,
+        proportions,
+      ]);
+      const result = { token, txHash };
 
       if (arg.memo && authToken) {
         try {
           // Create a single transfer record for the first transaction (or all?)
           await createTransferMutation({
-            transactionHash: results[0]?.txHash || '',
+            transactionHash: result?.txHash || '',
             memo: arg.memo,
           });
         } catch (error) {
@@ -103,7 +112,7 @@ export const useRedeemTokensMutation = ({
         }
       }
 
-      return results;
+      return result;
     },
   );
 

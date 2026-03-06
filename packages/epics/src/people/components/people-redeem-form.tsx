@@ -5,15 +5,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form } from '@hypha-platform/ui';
 import { Separator, Button } from '@hypha-platform/ui';
-import { Space } from '../../../../core/src/space';
 import { Loader2 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   extractRevertReason,
-  Person,
   personRedeem,
   useMe,
   useRedeemTokensMutation,
+  useSpacesBySlugs,
 } from '@hypha-platform/core/client';
 import {
   TokenPercentageFieldArray,
@@ -77,6 +76,10 @@ export const PeopleRedeemForm = ({
   const { assets } = useUserAssets({
     personSlug: person?.slug,
   });
+  const assetSlugs = React.useMemo(() => {
+    return assets.map((asset) => asset.slug);
+  }, [assets]);
+  const { spaces, isLoading } = useSpacesBySlugs(assetSlugs);
 
   useScrollToErrors(form, formRef);
 
@@ -84,14 +87,24 @@ export const PeopleRedeemForm = ({
 
   const handleRedeem = async (data: FormValues) => {
     try {
-      // Check balance (optional)
-      // For now, we'll skip balance check as redeem may have different logic
-      // TODO: Adapt to redeem contract function when available
+      const [redemption] = data.redemptions;
+      if (!redemption) {
+        return;
+      }
+      const spaceSlug = redemption.spaceSlug;
+      if (!spaceSlug) {
+        return;
+      }
+      const space = spaces?.find((space) => space.slug === spaceSlug);
+      if (!space?.web3SpaceId) {
+        return;
+      }
       const redeemInput = {
-        redemptions: data.redemptions.map((r) => ({
-          token: r.token,
-          amount: r.amount,
-        })),
+        redemption: {
+          web3SpaceId: space.web3SpaceId,
+          token: redemption.token,
+          amount: redemption.amount,
+        },
         conversions: data.conversions,
         memo: data.memo,
       };

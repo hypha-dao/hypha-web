@@ -152,6 +152,7 @@ export const personRedeem = z.object({
   redemptions: z
     .array(
       z.object({
+        spaceSlug: z.string().min(1, { message: 'Space is required' }),
         token: z.string().min(1, { message: 'Token is required' }),
         amount: z.string().refine((value) => parseFloat(value) > 0, {
           message: 'Amount must be greater than 0',
