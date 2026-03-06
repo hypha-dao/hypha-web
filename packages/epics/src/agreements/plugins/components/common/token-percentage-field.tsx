@@ -12,17 +12,17 @@ import {
 import { AssetItem, getTokenTypeLabel } from '../../../../treasury';
 import { ChevronDownIcon } from '@radix-ui/themes';
 
-export interface TokenConversionFieldProps {
+export interface TokenPercentageFieldProps {
   value: { asset: string; percentage: string };
   onChange: (val: { asset: string; percentage: string }) => void;
   assets: AssetItem[];
 }
 
-export const TokenConversionField = ({
+export const TokenPercentageField = ({
   value,
   onChange,
   assets,
-}: TokenConversionFieldProps) => {
+}: TokenPercentageFieldProps) => {
   const selectedAsset = assets.find((t) => t.address === value.asset);
 
   const handlePercentageChange = (percentage: string) => {

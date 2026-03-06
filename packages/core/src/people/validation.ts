@@ -170,7 +170,15 @@ export const personRedeem = z.object({
           ),
       }),
     )
-    .min(1, { message: 'At least one conversation is required' }),
+    .min(1, { message: 'At least one conversation is required' })
+    .refine(
+      (value) =>
+        value.reduce((acc, curr) => acc + parseFloat(curr.percentage), 0) ===
+        100,
+      {
+        message: 'Summary percentage must be 100%',
+      },
+    ),
   memo: z.string().optional(),
 });
 
