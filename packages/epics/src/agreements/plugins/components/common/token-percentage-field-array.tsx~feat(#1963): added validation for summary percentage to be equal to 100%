@@ -32,7 +32,7 @@ export const TokenPercentageFieldArray = ({
 
   const handleAddField = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    append({ percentage: '', asset: '' });
+    append({ percentage: '0.00', asset: '' });
   };
 
   const handleRemoveField = (
@@ -58,7 +58,7 @@ export const TokenPercentageFieldArray = ({
                 <FormField
                   control={control}
                   name={`${name}.${index}`}
-                  render={({ field: { value, onChange } }) => (
+                  render={({ field: { value, onChange }, formState }) => (
                     <FormItem>
                       <FormControl>
                         <TokenPercentageField
@@ -67,7 +67,12 @@ export const TokenPercentageFieldArray = ({
                           assets={assets}
                         />
                       </FormControl>
-                      <FormMessage custom="Please enter a percentage and select an asset." />
+                      <FormMessage
+                        custom={
+                          formState.errors?.percentage?.message?.toString() ||
+                          'Please enter a percentage and select an asset.'
+                        }
+                      />
                     </FormItem>
                   )}
                 />

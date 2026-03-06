@@ -5,6 +5,14 @@ import { percentageStringToBigInt } from '../common';
 
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
+const parsePercentage = (value: string) => {
+  const parsed = parseFloat(value) * 100;
+  if (isNaN(parsed)) {
+    return 0;
+  }
+  return parsed;
+};
+
 const signupPersonWeb2Props = {
   name: z.string().trim().min(1, { message: 'Please enter your first name' }),
   surname: z.string().trim().min(1, { message: 'Please enter your last name' }),
