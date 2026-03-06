@@ -29,6 +29,10 @@ interface Token {
   icon: string;
   symbol: string;
   address: `0x${string}`;
+  space?: {
+    title: string;
+    slug: string;
+  };
 }
 
 interface PeopleRedeemFormType {
@@ -59,6 +63,7 @@ export const PeopleRedeemForm = ({
     defaultValues: {
       redemptions: [
         {
+          spaceSlug: '',
           amount: '',
           token: '',
         },
@@ -76,10 +81,12 @@ export const PeopleRedeemForm = ({
   const { assets } = useUserAssets({
     personSlug: person?.slug,
   });
-  const assetSlugs = React.useMemo(() => {
-    return assets.map((asset) => asset.slug);
-  }, [assets]);
-  const { spaces, isLoading } = useSpacesBySlugs(assetSlugs);
+  const tokenSlugs = React.useMemo(() => {
+    return tokens
+      .filter((token) => token.space?.slug)
+      .map((token) => token.space?.slug!);
+  }, [tokens]);
+  const { spaces } = useSpacesBySlugs(tokenSlugs);
 
   useScrollToErrors(form, formRef);
 
@@ -89,14 +96,17 @@ export const PeopleRedeemForm = ({
     try {
       const [redemption] = data.redemptions;
       if (!redemption) {
+        console.error('No redemption found');
         return;
       }
       const spaceSlug = redemption.spaceSlug;
       if (!spaceSlug) {
+        console.error('No space slug found');
         return;
       }
       const space = spaces?.find((space) => space.slug === spaceSlug);
       if (!space?.web3SpaceId) {
+        console.error('No web3SpaceId found');
         return;
       }
       const redeemInput = {

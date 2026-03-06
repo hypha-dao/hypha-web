@@ -78,6 +78,7 @@ export const useRedeemTokensMutation = ({
       const token = arg.redemption.token;
       const decimals = await getTokenDecimals(token);
       const amount = parseUnits(arg.redemption.amount, decimals);
+      //TODO: uncomment before final testing
       /*const txHash: string = await client.writeContract({
         address: tokenBackingVaultImplementationAddress[8453],
         abi: tokenBackingVaultImplementationAbi,

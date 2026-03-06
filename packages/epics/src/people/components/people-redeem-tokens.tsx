@@ -8,7 +8,6 @@ import {
   useUserAssets,
 } from '@hypha-platform/epics';
 import { PeopleRedeemForm } from './people-redeem-form';
-import { Person } from '../../../../core/src/people';
 import { Separator } from '@hypha-platform/ui';
 import { ERC20_TOKEN_TRANSFER_ADDRESSES } from '@hypha-platform/core/client';
 
@@ -39,9 +38,8 @@ export const ProfileRedeemTokens = ({
   const tokens: Token[] = assets
     .filter(
       (asset) =>
-        (asset.type != null && !['ownership', 'voice'].includes(asset.type)) ||
-        (asset.type == null &&
-          ERC20_TOKEN_TRANSFER_ADDRESSES.includes(asset.address)),
+        asset.space != null &&
+        !ERC20_TOKEN_TRANSFER_ADDRESSES.includes(asset.address),
     )
     .map((asset) => ({
       icon: asset.icon,
