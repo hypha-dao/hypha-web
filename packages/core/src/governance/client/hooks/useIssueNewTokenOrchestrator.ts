@@ -18,6 +18,7 @@ import { useTokenMutationsWeb2Rsc } from './useTokenMutationWeb2.rsc';
 import { Config } from '@wagmi/core';
 import { updateTokenAction } from '../../server/actions';
 import { ReferenceCurrency } from '../../types';
+import { getPriceCurrencyFeed } from '../../../common/web3/token-backing-vault';
 
 type TaskName =
   | 'CREATE_WEB2_AGREEMENT'
@@ -235,9 +236,10 @@ export const useCreateIssueTokenOrchestrator = ({
           const fixedMaxSupply =
             arg.maxSupplyType?.value === 'immutable' ? true : false;
           const autoMinting = arg.enableProposalAutoMinting ?? true;
-          const priceInUSD = arg.referencePrice
-            ? Math.round(arg.referencePrice * 100)
+          const tokenPrice = arg.referencePrice
+            ? Math.round(arg.referencePrice * 1_000_000)
             : 0;
+          const priceCurrencyFeed = getPriceCurrencyFeed(arg.referenceCurrency);
           const useTransferWhitelist =
             arg.enableAdvancedTransferControls &&
             arg.transferWhitelist?.from &&
@@ -283,7 +285,8 @@ export const useCreateIssueTokenOrchestrator = ({
                 : undefined,
             fixedMaxSupply,
             autoMinting,
-            priceInUSD,
+            tokenPrice,
+            priceCurrencyFeed,
             useTransferWhitelist,
             useReceiveWhitelist,
             initialTransferWhitelist,
