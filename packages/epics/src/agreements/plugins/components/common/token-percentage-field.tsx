@@ -33,7 +33,7 @@ export const TokenPercentageField = ({
 
     const normalizedPercentage = percentage.replace(',', '.');
 
-    if (/^\d+(\.\d{1,2})?$/.test(normalizedPercentage)) {
+    if (/^\d+(\.\d{0,2})?$/.test(normalizedPercentage)) {
       onChange({ percentage: normalizedPercentage, asset: value.asset });
     }
   };
