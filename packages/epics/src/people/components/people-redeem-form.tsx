@@ -16,7 +16,7 @@ import {
   useRedeemTokensMutation,
 } from '@hypha-platform/core/client';
 import {
-  TokenConversionFieldArray,
+  TokenPercentageFieldArray,
   TokenPayoutFieldArray,
 } from '../../agreements';
 import { useScrollToErrors } from '../../hooks';
@@ -66,7 +66,7 @@ export const PeopleRedeemForm = ({
       ],
       conversions: [
         {
-          percentage: '',
+          percentage: '100.00',
           asset: '',
         },
       ],
@@ -150,7 +150,7 @@ export const PeopleRedeemForm = ({
             tokens={tokens}
             name="redemptions"
           />
-          <TokenConversionFieldArray
+          <TokenPercentageFieldArray
             label="Converted into"
             assets={assets}
             name="conversions"
