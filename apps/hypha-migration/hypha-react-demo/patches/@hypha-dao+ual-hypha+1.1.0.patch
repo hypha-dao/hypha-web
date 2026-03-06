@@ -1,0 +1,12 @@
+diff --git a/node_modules/@hypha-dao/ual-hypha/config/index.js b/node_modules/@hypha-dao/ual-hypha/config/index.js
+index e81d244..6319651 100644
+--- a/node_modules/@hypha-dao/ual-hypha/config/index.js
++++ b/node_modules/@hypha-dao/ual-hypha/config/index.js
+@@ -1,6 +1,6 @@
+ export const AUTHENTICATOR_NAME = "Hypha Wallet";
+ export const BUTTON_BACKGROUND_COLOR = "#1D2946";
+ export const BUTTON_TEXT_COLOR = "white";
+-export const CALLBACK_HOST = "https://api-payment.hypha.earth";
++export const CALLBACK_HOST = "https://hypha-migration-api-vladislav-hramtsovs-projects.vercel.app";
+ export const DEFAULT_RPC_ENDPOINT =
+   process.env.DEFAULT_RPC_ENDPOINT || "https://telos.greymass.com";

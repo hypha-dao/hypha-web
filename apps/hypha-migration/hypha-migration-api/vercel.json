@@ -1,4 +1,14 @@
 {
+  "rewrites": [
+    {
+      "source": "/transaction/:uid",
+      "destination": "/api/transaction?uid=:uid"
+    },
+    {
+      "source": "/transaction",
+      "destination": "/api/transaction"
+    }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
@@ -14,6 +24,23 @@
         {
           "key": "Access-Control-Allow-Headers",
           "value": "Content-Type, Authorization"
+        }
+      ]
+    },
+    {
+      "source": "/transaction/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type"
         }
       ]
     }
