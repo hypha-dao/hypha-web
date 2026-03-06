@@ -24,7 +24,10 @@ export const TokenPercentageFieldArray = ({
   name = 'conversions',
   label = 'Converted into',
 }: TokenPercentageFieldArrayProps) => {
-  const { control } = useFormContext();
+  const {
+    control,
+    formState: { errors: formErrors },
+  } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     control,
     name,
@@ -32,7 +35,7 @@ export const TokenPercentageFieldArray = ({
 
   const handleAddField = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    append({ percentage: '0.00', asset: '' });
+    append({ percentage: '0.00', asset: '' as `0x${string}` });
   };
 
   const handleRemoveField = (
@@ -86,6 +89,11 @@ export const TokenPercentageFieldArray = ({
               </Button>
             </div>
           ))}
+          {formErrors.conversions?.root?.message && (
+            <FormMessage>
+              {formErrors.conversions?.root?.message?.toString()}
+            </FormMessage>
+          )}
         </div>
       </div>
       <div className="flex justify-end w-full">
