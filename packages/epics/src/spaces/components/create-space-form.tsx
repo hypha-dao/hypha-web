@@ -48,6 +48,7 @@ import {
   useMemberWeb3SpaceIds,
   useScrollToErrors,
   useFilterSpacesListWithDiscoverability,
+  CardButton,
 } from '@hypha-platform/epics';
 import slugify from 'slugify';
 import { cn } from '@hypha-platform/ui-utils';
@@ -652,83 +653,35 @@ export const SpaceForm = ({
         />
         <FormLabel>Activation Mode</FormLabel>
         <div className="flex flex-col gap-2">
-          <Card
-            className={clsx('flex p-6 cursor-pointer space-x-4 items-center', {
-              'border-accent-9': isSandbox,
-              'hover:border-accent-5': !isSandbox,
-            })}
+          <CardButton
+            title="Sandbox Mode"
+            description="Use Sandbox Mode to configure and test your space only on My Spaces, sharing it with your team via URL while laying the foundation for regenerative purpose."
+            selected={isSandbox}
+            colorVariant={'accent'}
             onClick={toggleSandbox}
-          >
-            <div className="flex flex-col">
-              <span className="text-2 font-medium">Sandbox Mode</span>
-              <span className="text-1 text-neutral-11">
-                <span>
-                  Use Sandbox Mode to configure and test your space only on My
-                  Spaces, sharing it with your team via URL while laying the
-                  foundation for regenerative purpose.
-                </span>
-              </span>
-            </div>
-          </Card>
-          <Card
-            className={clsx('flex p-6 cursor-pointer space-x-4 items-center', {
-              'border-accent-9': isDemo,
-              'hover:border-accent-5': !isDemo,
-            })}
+          />
+          <CardButton
+            title="Pilot Mode"
+            description="Use Pilot Mode to share your space for demos, use case validation, or as a replicable template. Expand your reach, activate member participation, and gather feedback."
+            selected={isDemo}
+            colorVariant={'accent'}
             onClick={toggleDemo}
-          >
-            <div className="flex flex-col">
-              <span className="text-2 font-medium">Pilot Mode</span>
-              <span className="text-1 text-neutral-11">
-                <span>
-                  Use Pilot Mode to share your space for demos, use case
-                  validation, or as a replicable template. Expand your reach,
-                  activate member participation, and gather feedback.
-                </span>
-              </span>
-            </div>
-          </Card>
-          <Card
-            className={clsx('flex p-6 cursor-pointer space-x-4 items-center', {
-              'border-accent-9': isLive,
-              'hover:border-accent-5': !isLive,
-            })}
+          />
+          <CardButton
+            title="Live Mode"
+            description="Use Live Mode to make your space fully operational and publicly discoverable, generating sustainable value and turning your purpose into regenerative impact."
+            selected={isLive}
+            colorVariant={'accent'}
             onClick={toggleLive}
-          >
-            <div className="flex flex-col">
-              <span className="text-2 font-medium">Live Mode</span>
-              <span className="text-1 text-neutral-11">
-                <span>
-                  Use Live Mode to make your space fully operational and
-                  publicly discoverable, generating sustainable value and
-                  turning your purpose into regenerative impact.
-                </span>
-              </span>
-            </div>
-          </Card>
+          />
           {label === 'configure' && (
-            <Card
-              className={clsx(
-                'flex p-6 cursor-pointer space-x-4 items-center',
-                {
-                  'border-accent-9': isArchived,
-                  'hover:border-accent-5': !isArchived,
-                },
-              )}
+            <CardButton
+              title="Archive Mode"
+              description="Archive this space to temporarily pause activity or deactivate it while keeping all data and history safe. You can reactivate it anytime by selecting a different activation mode."
+              selected={isArchived}
+              colorVariant={'accent'}
               onClick={toggleArchived}
-            >
-              <div className="flex flex-col">
-                <span className="text-2 font-medium">Archive Mode</span>
-                <span className="text-1 text-neutral-11">
-                  <span>
-                    Archive this space to temporarily pause activity or
-                    deactivate it while keeping all data and history safe. You
-                    can reactivate it anytime by selecting a different
-                    activation mode.
-                  </span>
-                </span>
-              </div>
-            </Card>
+            />
           )}
         </div>
         <div className="flex justify-end w-full">

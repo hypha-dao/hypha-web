@@ -41,6 +41,7 @@ export function cspMiddleware(): NextMiddlewareFunction {
   const imageHosts = process.env.NEXT_PUBLIC_IMAGE_HOSTS?.split(', ') ?? [];
   const connectSources =
     process.env.NEXT_PUBLIC_CONNECT_SOURCES?.split(', ') ?? [];
+  const elementUrl = process.env.NEXT_PUBLIC_ELEMENT_URL ?? '';
 
   const imageSrc = [
     'data:',
@@ -49,6 +50,7 @@ export function cspMiddleware(): NextMiddlewareFunction {
   const connectSrc = [
     ...connectSources,
     process.env.NEXT_PUBLIC_RPC_URL ?? '',
+    process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL ?? '',
   ].join(' ');
 
   return (request: NextRequest) => {
@@ -71,9 +73,9 @@ export function cspMiddleware(): NextMiddlewareFunction {
         "object-src 'none'",
         "base-uri 'self'",
         "form-action 'self'",
-        "frame-ancestors 'none'",
-        'child-src https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org',
-        'frame-src https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com',
+        "frame-ancestors 'self'",
+        `child-src 'self' https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org ${elementUrl}`,
+        `frame-src 'self' https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com ${elementUrl}`,
         `connect-src 'self' ${connectSrc}`,
         "worker-src 'self'",
         "manifest-src 'self'",

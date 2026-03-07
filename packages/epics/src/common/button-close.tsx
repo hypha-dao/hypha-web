@@ -8,12 +8,14 @@ import { RxCross1 } from 'react-icons/rx';
 type ButtonCloseProps = {
   closeUrl?: string;
   dropSegment?: string;
+  narrow?: boolean;
   className?: string;
 };
 
 export const ButtonClose = ({
   closeUrl,
   dropSegment,
+  narrow = false,
   className,
 }: ButtonCloseProps) => {
   const pathname = usePathname();
@@ -27,15 +29,18 @@ export const ButtonClose = ({
     }
   }
 
+  const title = 'Close';
+
   return (
     <Button
       asChild
       variant="ghost"
       colorVariant="neutral"
       className={className}
+      title={title}
     >
       <Link href={closeUrl} scroll={false}>
-        Close
+        {narrow ? null : title}
         <RxCross1 />
       </Link>
     </Button>
