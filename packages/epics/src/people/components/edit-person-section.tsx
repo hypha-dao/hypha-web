@@ -48,6 +48,7 @@ export type EditPersonSectionProps = {
   onEdit: (values: z.infer<typeof schemaEditPersonForm>) => Promise<void>;
   onUpdate: () => void;
   error?: string | null;
+  cannotChangeEmail?: boolean;
 };
 
 type FormData = z.infer<typeof schemaEditPersonForm>;
@@ -59,6 +60,7 @@ export const EditPersonSection = ({
   onEdit,
   onUpdate,
   error,
+  cannotChangeEmail = false,
 }: EditPersonSectionProps) => {
   const formRef = useRef<HTMLFormElement>(null);
   const form = useForm<FormData>({
@@ -242,7 +244,7 @@ export const EditPersonSection = ({
                       <FormItem>
                         <FormControl>
                           <Input
-                            disabled={isLoading}
+                            disabled={isLoading || cannotChangeEmail}
                             placeholder="Email"
                             className="w-60"
                             {...field}
@@ -254,6 +256,18 @@ export const EditPersonSection = ({
                   />
                 </span>
               </div>
+              {cannotChangeEmail && (
+                <div className="bg-neutral-3 border border-neutral-6 rounded-lg p-4">
+                  <Text className={cn('text-2', 'text-neutral-11')}>
+                    You cannot change the email address on your Privy account
+                    directly if you log in with Google SSO, because the email is
+                    managed by Google. You must update the email address within
+                    your Google Account settings first. If you log in to Privy
+                    with a standard account (not Google SSO), you can change the
+                    email directly in your Privy profile settings.
+                  </Text>
+                </div>
+              )}
               <div className="flex justify-between">
                 <Text className={cn('text-2', 'text-neutral-11')}>
                   Location

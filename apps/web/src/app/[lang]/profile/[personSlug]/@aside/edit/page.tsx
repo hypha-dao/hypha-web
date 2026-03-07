@@ -17,6 +17,7 @@ import {
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
+import { useUpdateAccount, usePrivy } from '@privy-io/react-auth';
 
 export default function EditProfilePage() {
   const { lang, personSlug: personSlugRaw } = useParams<ProfilePageParams>();
@@ -32,16 +33,76 @@ export default function EditProfilePage() {
     reset,
   } = useEditProfile();
   const router = useRouter();
+  const { user: privyUser, authenticated } = usePrivy();
+
+  const hasEmailAccount = !!privyUser?.email?.address;
+  const currentPrivyEmail = privyUser?.email?.address;
+
+  const hasOAuthAccount = !!(privyUser?.google || privyUser?.apple);
+  const cannotChangeEmail =
+    authenticated && hasOAuthAccount && !hasEmailAccount;
 
   const schemaEditPersonForm = schemaEditPersonWeb2.extend(
     editPersonFiles.shape,
   );
   type EditPersonFormData = z.infer<typeof schemaEditPersonForm>;
 
+  const pendingFormDataRef = React.useRef<EditPersonFormData | null>(null);
+
+  const { updateEmail } = useUpdateAccount({
+    onSuccess: async () => {
+      if (pendingFormDataRef.current) {
+        try {
+          await editProfile(pendingFormDataRef.current);
+          pendingFormDataRef.current = null;
+          router.push('/profile');
+        } catch (err) {
+          console.log(err);
+          pendingFormDataRef.current = null;
+        }
+      }
+    },
+    onError: (error, details) => {
+      console.error('Error updating email in Privy:', error, details);
+      if (
+        error?.includes('does not have an email linked') ||
+        error?.includes('email account')
+      ) {
+        if (pendingFormDataRef.current) {
+          editProfile(pendingFormDataRef.current)
+            .then(() => {
+              router.push('/profile');
+            })
+            .catch((err) => {
+              console.log(err);
+            })
+            .finally(() => {
+              pendingFormDataRef.current = null;
+            });
+        }
+      } else {
+        pendingFormDataRef.current = null;
+      }
+    },
+  });
+
   const onEdit = async (data: EditPersonFormData) => {
     try {
-      await editProfile(data);
-      router.push('/profile');
+      const newEmail = data.email?.trim();
+      const emailChanged =
+        authenticated &&
+        hasEmailAccount &&
+        currentPrivyEmail &&
+        newEmail &&
+        newEmail !== currentPrivyEmail;
+
+      if (emailChanged) {
+        pendingFormDataRef.current = data;
+        updateEmail();
+      } else {
+        await editProfile(data);
+        router.push('/profile');
+      }
     } catch (err) {
       console.log(err);
     }
@@ -72,6 +133,7 @@ export default function EditProfilePage() {
           onEdit={onEdit}
           onUpdate={revalidate}
           error={error}
+          cannotChangeEmail={cannotChangeEmail}
         />
       </LoadingBackdrop>
     </SidePanel>
