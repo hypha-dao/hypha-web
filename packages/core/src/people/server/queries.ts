@@ -161,6 +161,23 @@ export const findPersonByWeb3Address = async (
   return mapToDomainPerson(person);
 };
 
+export type FindPersonBySubInput = {
+  sub: string;
+};
+export const findPersonBySub = async (
+  { sub }: FindPersonBySubInput,
+  { db }: DbConfig,
+) => {
+  const [person] = await db
+    .select()
+    .from(people)
+    .where(eq(people.sub, sub))
+    .limit(1);
+  if (!person) return null;
+
+  return mapToDomainPerson(person);
+};
+
 export type FindPeopleByWeb3AddressesInput = {
   addresses: string[];
 };

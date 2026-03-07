@@ -2,7 +2,7 @@
 
 import type { Notification } from '@onesignal/node-onesignal';
 import { sdkClient } from './client';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 
 export async function notify(notification: Notification): Promise<string> {
   if (!notification.app_id)

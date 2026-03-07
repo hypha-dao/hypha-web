@@ -1,10 +1,10 @@
 'use server';
 
-import { TOKENS, Token, DbToken, TokenType } from '@hypha-platform/core/client';
-import { findSpaceById } from '../../../server';
 import { erc20Abi } from 'viem';
-import { web3Client } from './client';
 import { db } from '@hypha-platform/storage-postgres';
+import { web3Client } from './client';
+import { DbToken, findSpaceById } from '../../../server';
+import { Token, TOKENS, TokenType } from '../../web3/tokens';
 
 function getIconForHyphaTokens(symbol: string, fallback: string): string {
   switch (symbol.toUpperCase()) {

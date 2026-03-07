@@ -1,7 +1,13 @@
-import { Badge, type BadgeProps } from '@hypha-platform/ui';
+import {
+  Badge,
+  DynamicIcon,
+  LucideReactIcon,
+  type BadgeProps,
+} from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
 export interface BadgeItem extends BadgeProps {
+  icon?: LucideReactIcon;
   label: string | number;
 }
 
@@ -26,7 +32,10 @@ export const BadgesList = ({
           variant={badge.variant}
           colorVariant={badge.colorVariant}
         >
-          {badge.label}
+          <span className="flex gap-1">
+            {badge.icon && <DynamicIcon name={badge.icon} size={16} />}
+            {badge.label}
+          </span>
         </Badge>
       ))}
     </div>
