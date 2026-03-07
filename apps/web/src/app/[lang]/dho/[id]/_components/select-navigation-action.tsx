@@ -33,10 +33,21 @@ type HierarchyNode = {
 
 function findRootSpace(space: Space, allSpaces: Space[]): Space {
   let current = space;
+  const visited = new Set<number>();
 
   while (current.parentId) {
+    if (visited.has(current.id)) {
+      break;
+    }
+    visited.add(current.id);
+
     const parent = allSpaces.find((s) => s.id === current.parentId);
     if (!parent) break;
+
+    if (visited.has(parent.id)) {
+      break;
+    }
+
     current = parent;
   }
 
@@ -47,14 +58,28 @@ function buildHierarchy(
   currentSpace: Space,
   allSpaces: Space[],
   accessibleSpaceIds: Set<number>,
+  visited: Set<number> = new Set(),
 ): HierarchyNode {
+  if (visited.has(currentSpace.id)) {
+    return {
+      name: currentSpace.title,
+      logoUrl: currentSpace.logoUrl,
+      id: currentSpace.id,
+      slug: currentSpace.slug,
+      value: currentSpace.memberCount || currentSpace.documentCount || 1,
+      children: undefined,
+    };
+  }
+
+  visited.add(currentSpace.id);
+
   const children = allSpaces.filter(
     (space) =>
       space.parentId === currentSpace.id && accessibleSpaceIds.has(space.id),
   );
 
   const childrenNodes: HierarchyNode[] = children.map((child) =>
-    buildHierarchy(child, allSpaces, accessibleSpaceIds),
+    buildHierarchy(child, allSpaces, accessibleSpaceIds, new Set(visited)),
   );
 
   const value = currentSpace.memberCount || currentSpace.documentCount || 1;
