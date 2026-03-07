@@ -1,0 +1,54 @@
+import { CoherenceStatus } from './coherence-statuses';
+import { CoherenceTag } from './coherence-tags';
+import { CoherenceType } from './coherence-types';
+
+export interface CreateCoherenceInput {
+  creatorId: number;
+  spaceId: number;
+  status: CoherenceStatus;
+  type: CoherenceType;
+  title: string;
+  description: string;
+  slug?: string;
+  roomId?: string;
+  archived: boolean;
+  tags: CoherenceTag[];
+  messages?: number;
+  views?: number;
+}
+
+export interface UpdateCoherenceInput {
+  slug?: string;
+  archived?: boolean;
+  status?: CoherenceStatus;
+  roomId?: string;
+  messages?: number;
+  views?: number;
+}
+
+export type UpdateCoherenceBySlugInput = {
+  slug: string;
+} & UpdateCoherenceInput;
+
+export type Coherence = {
+  id: number;
+  creatorId?: number;
+  createdAt: Date;
+  updatedAt: Date;
+  status: CoherenceStatus;
+  type: CoherenceType;
+  title: string;
+  description: string;
+  slug: string;
+  roomId?: string;
+  archived: boolean;
+  tags: CoherenceTag[];
+  messages?: number;
+  views?: number;
+};
+
+export enum Environment {
+  DEVELOPMENT = 'development',
+  PREVIEW = 'preview',
+  PRODUCTION = 'production',
+}
