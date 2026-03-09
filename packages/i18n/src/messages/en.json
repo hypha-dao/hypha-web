@@ -11,6 +11,24 @@
     "signIn": "Please sign in to use this feature.",
     "joinSpaceToUse": "Please join this space to use this feature."
   },
+  "Navigation": {
+    "network": "Network",
+    "mySpaces": "My Spaces",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "selectLanguage": "Select language",
+    "myProfile": "My Profile",
+    "notificationCentre": "Notification Centre",
+    "switchToLightMode": "Switch to light mode",
+    "switchToDarkMode": "Switch to dark mode",
+    "updateMfa": "Update funds protection (MFA)",
+    "protectMfa": "Protect funds (MFA)",
+    "logout": "Logout",
+    "viewProfile": "View profile",
+    "delete": "Delete",
+    "signIn": "Sign in",
+    "getStarted": "Get started"
+  },
   "DHO": {
     "Dashboard": "DHO Dashboard"
   },

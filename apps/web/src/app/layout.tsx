@@ -6,7 +6,7 @@ import clsx from 'clsx';
 import type { Metadata } from 'next';
 
 import { NextIntlClientProvider } from 'next-intl';
-import { getLocale, getMessages } from 'next-intl/server';
+import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 
 import { Footer, Html, ThemeProvider } from '@hypha-platform/ui/server';
 import { AuthProvider } from '@hypha-platform/authentication';
@@ -86,6 +86,7 @@ export default async function RootLayout({
   const shouldInjectToolbar = process.env.NODE_ENV === 'development';
   const locale = await getLocale();
   const messages = await getMessages();
+  const tNav = await getTranslations('Navigation');
   const notificationAppId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '';
   const safariWebId = process.env.NEXT_PUBLIC_ONESIGNAL_SAFARI_WEB_ID ?? '';
   const serviceWorkerPath = 'onesignal/OneSignalSDKWorker.js';
@@ -112,7 +113,11 @@ export default async function RootLayout({
                 safariWebId={safariWebId}
                 serviceWorkerPath={serviceWorkerPath}
               >
-                <MenuTop logoHref={ROOT_URL}>
+                <MenuTop
+                  logoHref={ROOT_URL}
+                  openMenuLabel={tNav('openMenu')}
+                  closeMenuLabel={tNav('closeMenu')}
+                >
                   <ConnectedButtonProfile
                     useAuthentication={useAuthentication}
                     useMe={useMe}
@@ -120,11 +125,11 @@ export default async function RootLayout({
                     baseRedirectPath="/my-spaces"
                     navItems={[
                       {
-                        label: 'Network',
+                        label: tNav('network'),
                         href: `/${locale}/network`,
                       },
                       {
-                        label: 'My Spaces',
+                        label: tNav('mySpaces'),
                         href: `/${locale}/my-spaces`,
                       },
                     ]}

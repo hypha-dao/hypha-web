@@ -11,6 +11,24 @@
     "signIn": "Bitte melden Sie sich an, um diese Funktion zu nutzen.",
     "joinSpaceToUse": "Bitte treten Sie diesem Space bei, um diese Funktion zu nutzen."
   },
+  "Navigation": {
+    "network": "Netzwerk",
+    "mySpaces": "Meine Spaces",
+    "openMenu": "Menü öffnen",
+    "closeMenu": "Menü schließen",
+    "selectLanguage": "Sprache auswählen",
+    "myProfile": "Mein Profil",
+    "notificationCentre": "Benachrichtigungszentrale",
+    "switchToLightMode": "Zum hellen Modus wechseln",
+    "switchToDarkMode": "Zum dunklen Modus wechseln",
+    "updateMfa": "Fondschutz aktualisieren (MFA)",
+    "protectMfa": "Fonds schützen (MFA)",
+    "logout": "Abmelden",
+    "viewProfile": "Profil anzeigen",
+    "delete": "Löschen",
+    "signIn": "Anmelden",
+    "getStarted": "Loslegen"
+  },
   "DHO": {
     "Dashboard": "DHO \u00dcbersicht"
   },
