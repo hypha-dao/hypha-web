@@ -21,6 +21,7 @@ import { NotificationSubscriber } from '@hypha-platform/notifications/client';
 
 import '@hypha-platform/ui-utils/global.css';
 import 'react-tooltip/dist/react-tooltip.css';
+import { ConnectedLanguageSelect } from '@web/components/connected-language-select';
 import ScrollUp from '@web/components/scroll-up';
 import SeamlessScrollPolyfill from '@web/components/seamless-scroll-polyfill';
 import '@web/utils/initialize-proxy';
@@ -90,7 +91,7 @@ export default async function RootLayout({
   const serviceWorkerPath = 'onesignal/OneSignalSDKWorker.js';
 
   return (
-    <Html className={clsx(lato.variable, sourceSans.variable)}>
+    <Html lang={locale} className={clsx(lato.variable, sourceSans.variable)}>
       <ScrollUp />
       <SeamlessScrollPolyfill />
       <AuthProvider
@@ -128,6 +129,7 @@ export default async function RootLayout({
                       },
                     ]}
                   />
+                  <ConnectedLanguageSelect />
                 </MenuTop>
                 <NextSSRPlugin routerConfig={extractRouterConfig(fileRouter)} />
                 <div className="mb-auto pb-8">

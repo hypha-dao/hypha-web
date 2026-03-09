@@ -6,3 +6,4 @@ export {
   useRouter,
   getPathname,
 } from './navigation';
+export { localeMetadata, type LocaleMetadata } from './locale-metadata';
