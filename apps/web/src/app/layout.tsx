@@ -112,7 +112,6 @@ export default async function RootLayout({
               serviceWorkerPath={serviceWorkerPath}
             >
               <MenuTop logoHref={ROOT_URL}>
-                <ConnectedLanguageSelect />
                 <ConnectedButtonProfile
                   useAuthentication={useAuthentication}
                   useMe={useMe}
@@ -129,6 +128,7 @@ export default async function RootLayout({
                     },
                   ]}
                 />
+                <ConnectedLanguageSelect />
               </MenuTop>
               <NextSSRPlugin routerConfig={extractRouterConfig(fileRouter)} />
               <div className="mb-auto pb-8">
