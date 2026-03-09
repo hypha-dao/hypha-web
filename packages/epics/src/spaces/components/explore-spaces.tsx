@@ -114,6 +114,8 @@ export function ExploreSpaces({
   uniqueCategories,
 }: ExploreSpacesProps) {
   const t = useTranslations('Network');
+  const tCommon = useTranslations('Common');
+  const tSpaces = useTranslations('Spaces');
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
@@ -340,13 +342,13 @@ export function ExploreSpaces({
         </div>
         <Link
           className={!isAuthenticated ? 'cursor-not-allowed' : ''}
-          title={!isAuthenticated ? 'Please sign in to use this feature.' : ''}
+          title={!isAuthenticated ? tCommon('signIn') : ''}
           href={isAuthenticated ? `/${lang}/network/create` : {}}
           scroll={false}
         >
           <Button disabled={!isAuthenticated} className="ml-2">
             <PlusIcon />
-            Create Space
+            {tSpaces('createSpace')}
           </Button>
         </Link>
       </div>
@@ -360,7 +362,7 @@ export function ExploreSpaces({
             {selectedSpaces.length}
           </div>
           <div className="flex justify-center text-1 mt-2 text-neutral-500">
-            Spaces
+            {tCommon('Spaces')}
           </div>
         </div>
         <div className="flex flex-col">
@@ -368,7 +370,7 @@ export function ExploreSpaces({
             {uniqueMemberAddresses.size}
           </div>
           <div className="flex justify-center text-1 mt-2 text-neutral-500">
-            Members
+            {tCommon('Members')}
           </div>
         </div>
         <div className="flex flex-col">
@@ -376,7 +378,7 @@ export function ExploreSpaces({
             {agreementCount}
           </div>
           <div className="flex justify-center text-1 mt-2 text-neutral-500">
-            Agreements
+            {tCommon('Agreements')}
           </div>
         </div>
       </div>

@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useSpaceDetailsWeb3Rpc } from '@hypha-platform/core/client';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { JoinSpace } from './join-space';
+import { useTranslations } from 'next-intl';
 
 type SpaceAccessDeniedProps = {
   userState: UserSpaceState;
@@ -21,6 +22,7 @@ export function SpaceAccessDenied({
   spaceId,
   spaceSlug,
 }: SpaceAccessDeniedProps) {
+  const t = useTranslations('Spaces');
   const { isAuthenticated, login } = useAuthentication();
   const { lang } = useParams();
   const { space } = useSpaceBySlug(spaceSlug || '');
@@ -36,15 +38,12 @@ export function SpaceAccessDenied({
     return (
       <Empty>
         <div className="flex flex-col gap-7">
-          <p>
-            You need an active account to access this section. Please sign in or
-            click Get Started to create one.
-          </p>
+          <p>{t('accessDeniedNotLoggedIn')}</p>
           <div className="flex gap-4 items-center justify-center">
             <Button variant="outline" onClick={login}>
-              Sign In
+              {t('signIn')}
             </Button>
-            <Button onClick={login}>Get Started</Button>
+            <Button onClick={login}>{t('getStarted')}</Button>
           </div>
         </div>
       </Empty>
@@ -58,10 +57,7 @@ export function SpaceAccessDenied({
     return (
       <Empty>
         <div className="flex flex-col gap-7">
-          <p>
-            You need to become a member to access this feature. Join the space
-            now to view the activity of this space.
-          </p>
+          <p>{t('accessDeniedNotMember')}</p>
           {effectiveSpaceId && space?.id ? (
             <div className="flex gap-4 items-center justify-center">
               <JoinSpace spaceId={space.id} web3SpaceId={effectiveSpaceId} />
@@ -70,8 +66,8 @@ export function SpaceAccessDenied({
             <div className="flex gap-4 items-center justify-center">
               <Button disabled>
                 {isInviteOnly
-                  ? 'Request invite'
-                  : 'Become a member or request invite'}
+                  ? t('requestInvite')
+                  : t('becomeMemberOrRequestInvite')}
               </Button>
             </div>
           )}
@@ -82,7 +78,7 @@ export function SpaceAccessDenied({
 
   return (
     <Empty>
-      <p>Access denied</p>
+      <p>{t('accessDenied')}</p>
     </Empty>
   );
 }

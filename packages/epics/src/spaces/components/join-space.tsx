@@ -5,6 +5,7 @@ import { useJoinSpace } from '../hooks/use-join-space';
 import { PersonIcon } from '@radix-ui/react-icons';
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import {
   useSpaceDetailsWeb3Rpc,
   useMe,
@@ -28,6 +29,7 @@ function isBaseError(error: any): error is BaseError {
 }
 
 export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
+  const t = useTranslations('Spaces');
   const { lang } = useParams();
   const config = useConfig();
   const { jwt } = useJwt();
@@ -179,13 +181,13 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
   }, [isInviteOnly, inviteRequested, lastInviteTime]);
 
   const buttonTitle = useMemo(() => {
-    if (isMember || justJoined) return 'Already member';
+    if (isMember || justJoined) return t('alreadyMember');
     if (isInviteOnly) {
-      if (isInvitePending) return 'Invite pending';
-      return 'Request Invite';
+      if (isInvitePending) return t('invitePending');
+      return t('requestInvite');
     }
-    return 'Become member';
-  }, [isMember, justJoined, isInviteOnly, isInvitePending]);
+    return t('becomeMember');
+  }, [isMember, justJoined, isInviteOnly, isInvitePending, t]);
 
   const showLoader = isProcessing || isJoiningSpace || isCreating;
   const isButtonDisabled =
@@ -221,18 +223,11 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
       {isInviteOnly && isInviteError && (
         <ErrorAlert
           bgColor="bg-neutral-9"
-          lines={[
-            'You’ve already submitted your invite request. Your proposal is now visible to space members for review. If needed, you’ll be able to resubmit 24 hours after your last submission.',
-          ]}
+          lines={[t('inviteAlreadySubmitted')]}
         />
       )}
       {isTokenBased && joinError && (
-        <ErrorAlert
-          bgColor="bg-neutral-9"
-          lines={[
-            'You’re not able to join just yet. Fulfil the token requirements to gain access.',
-          ]}
-        />
+        <ErrorAlert bgColor="bg-neutral-9" lines={[t('tokenRequirements')]} />
       )}
     </div>
   );

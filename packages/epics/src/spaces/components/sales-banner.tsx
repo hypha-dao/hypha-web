@@ -9,6 +9,7 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import Link from 'next/link';
 import { useIsDelegate } from '@hypha-platform/core/client';
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
+import { useTranslations } from 'next-intl';
 
 interface BannerState {
   title: string;
@@ -23,6 +24,8 @@ interface SalesBannerProps {
 const PATH_SELECT_ACTIVATE_ACTION = '/select-activate-action';
 
 export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
+  const t = useTranslations('Spaces');
+  const tCommon = useTranslations('Common');
   const pathname = usePathname();
   const { status, daysLeft, onClose, isLoading } = useSalesBanner({
     spaceId: web3SpaceId,
@@ -37,9 +40,9 @@ export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
 
   const isDisabled = !isAuthenticated || (!isMember && !isDelegate);
   const tooltipMessage = !isAuthenticated
-    ? 'Please sign in to use this feature.'
+    ? tCommon('signIn')
     : !isMember && !isDelegate
-    ? 'Please join this space to use this feature.'
+    ? tCommon('joinSpaceToUse')
     : '';
 
   const bannerStates: Record<
@@ -47,24 +50,19 @@ export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
     BannerState
   > = {
     trial: {
-      title: `Only ${daysLeft} days left in your free trial!`,
-      subtitle:
-        'Contribute $11 per month in USDC or Hypha tokens to the Hypha Network to unlock full access for your Space and keep your progress going!',
-      actionText: 'Activate Now',
+      title: t('trialBannerTitle', { daysLeft }),
+      subtitle: t('trialBannerSubtitle'),
+      actionText: t('activateNow'),
     },
     beforeExpiry: {
-      title: `Only ${daysLeft} days left before your Hypha Network contribution expires!`,
-      subtitle:
-        'Don’t lose access to your Space features! Renew now by contributing $11 per month in USDC or Hypha tokens to the Hypha Network.',
-      actionText: 'Renew Now',
+      title: t('beforeExpiryBannerTitle', { daysLeft }),
+      subtitle: t('beforeExpiryBannerSubtitle'),
+      actionText: t('renewNow'),
     },
     expired: {
-      title: `Your Hypha Network contribution expired ${Math.abs(
-        daysLeft,
-      )} days ago!`,
-      subtitle:
-        'Reactivate now by contributing $11 per month in USDC or Hypha tokens to the Hypha Network and regain access to all your Space features.',
-      actionText: 'Reactivate Now',
+      title: t('expiredBannerTitle', { daysAgo: Math.abs(daysLeft) }),
+      subtitle: t('expiredBannerSubtitle'),
+      actionText: t('reactivateNow'),
     },
   };
 

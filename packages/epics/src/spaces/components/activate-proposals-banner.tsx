@@ -7,6 +7,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter } from 'next/navigation';
 import { cleanPath } from '../utils/cleanPath';
 import React from 'react';
+import { useTranslations } from 'next-intl';
 
 interface ActivateProposalsBannerProps {
   spaceSlug: string;
@@ -27,6 +28,7 @@ export const ActivateProposalsBanner = ({
   } = useSalesBanner({
     spaceId: space?.web3SpaceId ?? undefined,
   });
+  const t = useTranslations('Spaces');
   const pathname = usePathname();
   const router = useRouter();
 
@@ -43,7 +45,6 @@ export const ActivateProposalsBanner = ({
     return null;
   }
 
-  //NOTE: later should be taken from locale
   const absDays = Math.abs(daysLeft);
   const expiredElapsed =
     daysLeft === 0
@@ -52,9 +53,9 @@ export const ActivateProposalsBanner = ({
   const dict = {
     banners: {
       activateProposals: {
-        title: 'Proposal creation disabled',
-        subtitle: `Your Hypha Network contribution expired ${expiredElapsed}. Please reactivate your space before submitting a new proposal.`,
-        buttonText: 'Reactivate Now',
+        title: t('proposalCreationDisabled'),
+        subtitle: t('proposalExpiredSubtitle', { expiredElapsed }),
+        buttonText: t('reactivateNow'),
       },
     },
   };

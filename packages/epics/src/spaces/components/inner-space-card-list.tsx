@@ -5,6 +5,7 @@ import type { Space } from '@hypha-platform/core/client';
 import { useSpaceCardList } from '../hooks/use-space-card-list';
 import { SectionLoadMore } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
+import { useTranslations } from 'next-intl';
 import type { UseMembers } from '../hooks';
 import { InnerSpaceCardContainer } from './inner-space-card.container';
 import { Empty } from '../../common';
@@ -28,6 +29,8 @@ export function InnerSpaceCardList({
   currentSpaceId,
   useMembers,
 }: InnerSpaceCardListProps) {
+  const t = useTranslations('Spaces');
+  const tCommon = useTranslations('Common');
   const effectivePageSize =
     Number.isFinite(pageSize) && pageSize > 0
       ? Math.floor(pageSize)
@@ -74,14 +77,18 @@ export function InnerSpaceCardList({
               onClick={loadMore}
               disabled={!pagination?.hasNextPage}
             >
-              <Text>{pagination?.hasNextPage ? 'Load more' : 'No more'}</Text>
+              <Text>
+                {pagination?.hasNextPage
+                  ? tCommon('loadMore')
+                  : tCommon('noMore')}
+              </Text>
             </SectionLoadMore>
           )}
         </div>
       ) : (
         <Empty>
           <div className="flex flex-col gap-7">
-            <p>No spaces</p>
+            <p>{t('noSpaces')}</p>
           </div>
         </Empty>
       )}
