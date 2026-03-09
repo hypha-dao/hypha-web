@@ -1,9 +1,10 @@
 export const Html: React.FC<{
   children: React.ReactNode;
   className?: string;
-}> = ({ children, className }) => {
+  lang?: string;
+}> = ({ children, className, lang = 'en' }) => {
   return (
-    <html lang="en" suppressHydrationWarning className={className}>
+    <html lang={lang} suppressHydrationWarning className={className}>
       <head>
         <link
           rel="icon"
