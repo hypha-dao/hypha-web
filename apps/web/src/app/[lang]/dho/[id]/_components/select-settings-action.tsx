@@ -123,7 +123,7 @@ export const SelectSettingsAction = ({
       defaultDurationDays: 4,
       group: 'Treasury',
       // title: 'Issue New Token',
-      title: 'Issue New Token (Coming Soon)',
+      title: 'Issue New Token (maintenance on the PR that disables)',
       description:
         'Create a new token for utility, ownership, impact, cash credits, voice, or community currency within your space.',
       href: 'create/issue-new-token',
