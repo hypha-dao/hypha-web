@@ -34,16 +34,13 @@ export function LanguageSelect({
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          size="icon"
+          size="sm"
           aria-label="Select language"
-          className="relative"
+          className="gap-1.5"
         >
           <Globe className="size-4" />
           <span className="sr-only">{currentMeta?.label ?? currentLocale}</span>
-          <span
-            className="absolute -bottom-0.5 text-[10px] font-semibold leading-none"
-            aria-hidden
-          >
+          <span className="text-xs font-semibold" aria-hidden>
             {currentMeta?.shortLabel ?? currentLocale.toUpperCase()}
           </span>
         </Button>
