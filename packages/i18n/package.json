@@ -9,11 +9,12 @@
   "devDependencies": {
     "@hypha-platform/config-typescript": "workspace:*"
   },
-  "dependencies": {
-    "@hypha-platform/cookie": "workspace:*"
-  },
+  "dependencies": {},
   "exports": {
     ".": "./src/index.ts",
-    "./client": "./src/client.ts"
+    "./client": "./src/client.ts",
+    "./request": "./src/request.ts",
+    "./routing": "./src/routing.ts",
+    "./navigation": "./src/navigation.ts"
   }
 }
