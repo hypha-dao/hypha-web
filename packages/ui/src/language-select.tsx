@@ -33,7 +33,7 @@ export function LanguageSelect({
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
           aria-label="Select language"
           className="gap-1.5"
