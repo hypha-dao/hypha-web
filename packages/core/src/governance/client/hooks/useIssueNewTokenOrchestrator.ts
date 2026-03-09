@@ -235,9 +235,10 @@ export const useCreateIssueTokenOrchestrator = ({
           const fixedMaxSupply =
             arg.maxSupplyType?.value === 'immutable' ? true : false;
           const autoMinting = arg.enableProposalAutoMinting ?? true;
-          const priceInUSD = arg.referencePrice
+          const tokenPrice = arg.referencePrice
             ? Math.round(arg.referencePrice * 100)
             : 0;
+          const priceCurrencyFeed = undefined;
           const useTransferWhitelist =
             arg.enableAdvancedTransferControls &&
             arg.transferWhitelist?.from &&
@@ -283,7 +284,8 @@ export const useCreateIssueTokenOrchestrator = ({
                 : undefined,
             fixedMaxSupply,
             autoMinting,
-            priceInUSD,
+            tokenPrice,
+            priceCurrencyFeed,
             useTransferWhitelist,
             useReceiveWhitelist,
             initialTransferWhitelist,
