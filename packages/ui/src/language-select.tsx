@@ -34,7 +34,7 @@ export function LanguageSelect({
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
-          size="sm"
+          size="default"
           aria-label="Select language"
           className="gap-1.5"
         >
