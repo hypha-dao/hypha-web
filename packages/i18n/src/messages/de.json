@@ -7,6 +7,10 @@
   "DHO": {
     "Dashboard": "DHO Übersicht"
   },
+  "Network": {
+    "manySpaces": "Viele Spaces,",
+    "oneVibrantNetwork": "Ein lebendiges Netzwerk"
+  },
   "Proposals": {
     "CreateNew": "Neuen Vorschlag erstellen",
     "Create": "Neuer Vorschlag"

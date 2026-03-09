@@ -8,6 +8,7 @@ import {
 } from '@hypha-platform/core/client';
 import { SpaceCardList, SpaceSearch } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
+import { useTranslations } from 'next-intl';
 import { Text } from '@radix-ui/themes';
 import {
   Badge,
@@ -112,6 +113,7 @@ export function ExploreSpaces({
   order,
   uniqueCategories,
 }: ExploreSpacesProps) {
+  const t = useTranslations('Network');
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
@@ -258,8 +260,8 @@ export function ExploreSpaces({
         align="center"
         className="flex flex-col mb-16"
       >
-        <span>Many Spaces,</span>
-        <span>One Vibrant Network</span>
+        <span>{t('manySpaces')}</span>
+        <span>{t('oneVibrantNetwork')}</span>
       </Heading>
       <div className="flex justify-center">
         <SpaceSearch value={query} />
