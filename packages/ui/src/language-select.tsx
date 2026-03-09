@@ -5,8 +5,7 @@ import { Button } from './button';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from './dropdown-menu';
 
@@ -46,16 +45,16 @@ export function LanguageSelect({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" side="bottom">
-        <DropdownMenuRadioGroup
-          value={currentLocale}
-          onValueChange={onLocaleChange}
-        >
-          {locales.map((locale) => (
-            <DropdownMenuRadioItem key={locale.code} value={locale.code}>
+        {locales
+          .filter((locale) => locale.code !== currentLocale)
+          .map((locale) => (
+            <DropdownMenuItem
+              key={locale.code}
+              onClick={() => onLocaleChange(locale.code)}
+            >
               {locale.label}
-            </DropdownMenuRadioItem>
+            </DropdownMenuItem>
           ))}
-        </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );
