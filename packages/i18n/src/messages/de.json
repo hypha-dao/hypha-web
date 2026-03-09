@@ -9,7 +9,8 @@
   },
   "Network": {
     "manySpaces": "Viele Spaces,",
-    "oneVibrantNetwork": "Ein lebendiges Netzwerk"
+    "oneVibrantNetwork": "Ein lebendiges Netzwerk",
+    "findASpace": "Einen Space finden"
   },
   "Proposals": {
     "CreateNew": "Neuen Vorschlag erstellen",
