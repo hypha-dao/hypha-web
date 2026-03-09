@@ -7,6 +7,7 @@ import { Button, Heading } from '@hypha-platform/ui';
 import { PlusIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { useTranslations } from 'next-intl';
 
 export function NetworkAll({
   lang,
@@ -23,23 +24,25 @@ export function NetworkAll({
     return getPathHelper(lang, id);
   };
   const { isAuthenticated } = useAuthentication();
+  const t = useTranslations('Network');
+  const tCommon = useTranslations('Common');
 
   return (
     <>
       <Heading size="9" color="secondary" weight="medium" align="center">
-        Explore the Hypha Network
+        {t('exploreNetwork')}
       </Heading>
       <div className="flex justify-center">
         <SpaceSearch />
         <Link
           className={!isAuthenticated ? 'cursor-not-allowed' : ''}
-          title={!isAuthenticated ? 'Please sign in to use this feature.' : ''}
+          title={!isAuthenticated ? tCommon('signIn') : ''}
           href={isAuthenticated ? `/${lang}/network/create` : {}}
           scroll={false}
         >
           <Button disabled={!isAuthenticated} className="ml-2">
             <PlusIcon />
-            Create Space
+            {t('createSpace')}
           </Button>
         </Link>
       </div>
@@ -55,7 +58,7 @@ export function NetworkAll({
       ))}
       <SpaceGroupSlider
         spaces={spaces.filter((space) => space.categories?.length === 0)}
-        type={'No Category'}
+        type={t('noCategory')}
         getHref={getHref}
       />
     </>

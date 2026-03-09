@@ -41,28 +41,6 @@ const categoriesIntersected = (
   categories2: Category[],
 ) => categories1.some((category) => categories2.includes(category));
 
-const orderOptions: {
-  value: SpaceOrder;
-  label: string;
-  searchText: string;
-}[] = [
-  {
-    value: 'mostmembers',
-    label: 'Most Members',
-    searchText: 'Most Members',
-  },
-  {
-    value: 'mostagreements',
-    label: 'Most Agreements',
-    searchText: 'Most Agreements',
-  },
-  {
-    value: 'mostrecent',
-    label: 'Most Recent',
-    searchText: 'Most Recent',
-  },
-];
-
 function toLowerHex<A extends `0x${string}`>(a: A): Lowercase<A> {
   return a.toLowerCase() as Lowercase<A>;
 }
@@ -70,10 +48,12 @@ function toLowerHex<A extends `0x${string}`>(a: A): Lowercase<A> {
 const CategoryLabel = ({
   selectedSpaces,
   categories,
+  allLabel,
   className,
 }: {
   selectedSpaces: Space[];
   categories?: Category[];
+  allLabel: string;
   className?: string | undefined;
 }) => {
   return (
@@ -96,7 +76,7 @@ const CategoryLabel = ({
         </Text>
       ) : (
         <Text className="text-4 text-left">
-          <Text className="text-4 ml-1 capitalize">All</Text>
+          <Text className="text-4 ml-1 capitalize">{allLabel}</Text>
           <Text className="text-4 ml-1 mr-1">|</Text>
           {selectedSpaces?.length}
         </Text>
@@ -116,6 +96,29 @@ export function ExploreSpaces({
   const t = useTranslations('Network');
   const tCommon = useTranslations('Common');
   const tSpaces = useTranslations('Spaces');
+
+  const orderOptions: {
+    value: SpaceOrder;
+    label: string;
+    searchText: string;
+  }[] = [
+    {
+      value: 'mostmembers',
+      label: t('mostMembers'),
+      searchText: t('mostMembers'),
+    },
+    {
+      value: 'mostagreements',
+      label: t('mostAgreements'),
+      searchText: t('mostAgreements'),
+    },
+    {
+      value: 'mostrecent',
+      label: t('mostRecent'),
+      searchText: t('mostRecent'),
+    },
+  ];
+
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
@@ -329,6 +332,7 @@ export function ExploreSpaces({
         <CategoryLabel
           selectedSpaces={selectedSpaces}
           categories={categories}
+          allLabel={t('all')}
           className="flex grow"
         />
         <div className="flex flex-col grow-0">

@@ -18,6 +18,7 @@ import {
 } from '@hypha-platform/core/client';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
+import { useTranslations } from 'next-intl';
 
 type SpaceGroupSliderProps = {
   spaces?: Space[];
@@ -35,6 +36,7 @@ export const SpaceGroupSlider = ({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
+  const t = useTranslations('Network');
 
   const seeAllSpaces = useDebouncedCallback((category: string) => {
     const params = new URLSearchParams(searchParams);
@@ -61,7 +63,7 @@ export const SpaceGroupSlider = ({
             }
           }}
         >
-          See all
+          {t('seeAll')}
         </Button>
       </div>
       <Carousel className="my-6">

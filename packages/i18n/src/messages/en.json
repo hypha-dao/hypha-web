@@ -9,7 +9,15 @@
     "noMore": "No more",
     "createdOn": "Created on {date}",
     "signIn": "Please sign in to use this feature.",
-    "joinSpaceToUse": "Please join this space to use this feature."
+    "joinSpaceToUse": "Please join this space to use this feature.",
+    "back": "Back",
+    "home": "Home",
+    "remove": "Remove",
+    "by": "by",
+    "otherMembers": "+ other {count} members",
+    "exploreSpaces": "Explore Spaces",
+    "findCategory": "Find a Category",
+    "noSpacesYet": "No spaces created or joined yet. Explore our network and join some Space, or create your own"
   },
   "Navigation": {
     "network": "Network",
@@ -39,7 +47,11 @@
     "createSpace": "Create Space",
     "mostMembers": "Most Members",
     "mostAgreements": "Most Agreements",
-    "mostRecent": "Most Recent"
+    "mostRecent": "Most Recent",
+    "all": "All",
+    "exploreNetwork": "Explore the Hypha Network",
+    "seeAll": "See all",
+    "noCategory": "No Category"
   },
   "Proposals": {
     "CreateNew": "Create a new Proposal",
@@ -117,6 +129,12 @@
     "proposalExpiredSubtitle": "Your Hypha Network contribution expired {expiredElapsed}. Please reactivate your space before submitting a new proposal.",
     "allYourSpaces": "All your Spaces,",
     "inOnePlace": "in One Place",
-    "spacesYouMightLike": "Spaces you might like"
+    "spacesYouMightLike": "Spaces you might like",
+    "mySpacesLabel": "My Spaces",
+    "hideArchivedSpaces": "Hide archived spaces",
+    "creating": "Creating Space...",
+    "expiredToday": "today",
+    "expiredDayAgo": "day ago",
+    "expiredDaysAgo": "{count} days ago"
   }
 }

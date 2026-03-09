@@ -112,15 +112,22 @@ export const SpaceForm = ({
     ...DEFAULT_VALUES,
     parentId: initialParentSpaceId || null,
   },
-  submitLabel = 'Create',
-  submitLoadingLabel = 'Creating Space...',
+  submitLabel,
+  submitLoadingLabel,
   label = 'create',
   spaceId = -1,
-  slugIncorrectMessage = 'Space ID already exists',
+  slugIncorrectMessage,
 }: CreateSpaceFormProps) => {
   if (process.env.NODE_ENV !== 'production') {
     console.debug('SpaceForm', { defaultValues });
   }
+
+  const tSpaces = useTranslations('Spaces');
+
+  const resolvedSubmitLabel = submitLabel ?? tSpaces('createSpace');
+  const resolvedSubmitLoadingLabel = submitLoadingLabel ?? tSpaces('creating');
+  const resolvedSlugIncorrectMessage =
+    slugIncorrectMessage ?? tSpaces('slugAlreadyExists');
 
   const [slugDuplicated, setSlugDuplicated] = React.useState(false);
 
@@ -134,12 +141,9 @@ export const SpaceForm = ({
       .string()
       .min(1, '')
       .max(50)
-      .regex(
-        /^[a-z0-9'-]+$/,
-        'This field can only contain lowercase letters, numbers, hyphens, and apostrophes.',
-      )
+      .regex(/^[a-z0-9'-]+$/, tSpaces('slugFieldRegex'))
       .optional()
-      .refine(resolveSlug, { message: slugIncorrectMessage }),
+      .refine(resolveSlug, { message: resolvedSlugIncorrectMessage }),
   });
 
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -270,7 +274,7 @@ export const SpaceForm = ({
     const result: ParentOption[] = [];
     if (organisationOptions.length > 0) {
       result.push(
-        { value: COMBOBOX_TITLE, label: t('organisationSpaces') },
+        { value: COMBOBOX_TITLE, label: tSpaces('organisationSpaces') },
         ...organisationOptions,
       );
     }
@@ -282,7 +286,7 @@ export const SpaceForm = ({
     }
     if (mySpacesOptions.length > 0) {
       result.push(
-        { value: COMBOBOX_TITLE, label: t('myOtherSpaces') },
+        { value: COMBOBOX_TITLE, label: tSpaces('myOtherSpaces') },
         ...mySpacesOptions,
       );
     }
@@ -354,32 +358,30 @@ export const SpaceForm = ({
     form.setValue('flags', next, { shouldDirty: true, shouldValidate: true });
   }, [form]);
 
-  const t = useTranslations('Spaces');
-
   const showCategoriesError = React.useCallback(() => {
     form.setError('categories', {
-      message: t('selectCategoryError'),
+      message: tSpaces('selectCategoryError'),
       type: 'validate',
     });
-  }, [form, t]);
+  }, [form, tSpaces]);
 
   const showUnsetParentIdError = React.useCallback(() => {
     form.setError('parentId', {
-      message: t('selectParentError'),
+      message: tSpaces('selectParentError'),
       type: 'validate',
     });
-  }, [form, t]);
+  }, [form, tSpaces]);
 
   const labelText = React.useMemo(() => {
     switch (label) {
       case 'add':
-        return t('addSpace');
+        return tSpaces('addSpace');
       case 'create':
-        return t('createSpace');
+        return tSpaces('createSpace');
       case 'configure':
-        return t('configureSpace');
+        return tSpaces('configureSpace');
     }
-  }, [label, t]);
+  }, [label, tSpaces]);
 
   return (
     <Form {...form}>
@@ -466,7 +468,7 @@ export const SpaceForm = ({
                         <FormControl>
                           <Input
                             rightIcon={!field.value && <RequirementMark />}
-                            placeholder={t('nameYourSpace')}
+                            placeholder={tSpaces('nameYourSpace')}
                             className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
                             disabled={isLoading}
                             {...field}
@@ -495,7 +497,7 @@ export const SpaceForm = ({
                   )}
                   <span className="flex items-center">
                     <Text className="text-1 text-foreground mr-1">
-                      {t('createdBy')}
+                      {tSpaces('createdBy')}
                     </Text>
                     <Text className="text-1 text-neutral-11">
                       {creator?.name} {creator?.surname}
@@ -525,9 +527,9 @@ export const SpaceForm = ({
                   uploadText={
                     <>
                       <span className="text-accent-11 gap-1">
-                        {t('uploadSpaceBanner')}
+                        {tSpaces('uploadSpaceBanner')}
                       </span>{' '}
-                      {t('spaceBanner')} <RequirementMark />
+                      {tSpaces('spaceBanner')} <RequirementMark />
                     </>
                   }
                   enableImageResizer={true}
@@ -543,12 +545,12 @@ export const SpaceForm = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-foreground gap-1">
-                {t('purpose')} <RequirementMark />
+                {tSpaces('purpose')} <RequirementMark />
               </FormLabel>
               <FormControl>
                 <Textarea
                   disabled={isLoading}
-                  placeholder={t('purposePlaceholder')}
+                  placeholder={tSpaces('purposePlaceholder')}
                   {...field}
                 />
               </FormControl>
@@ -563,7 +565,7 @@ export const SpaceForm = ({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-foreground">
-                  {t('organisationLevel')}
+                  {tSpaces('organisationLevel')}
                 </FormLabel>
                 <FormControl>
                   <ParentSpaceSelector
@@ -589,10 +591,12 @@ export const SpaceForm = ({
           name="categories"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-foreground">{t('tags')}</FormLabel>
+              <FormLabel className="text-foreground">
+                {tSpaces('tags')}
+              </FormLabel>
               <FormControl>
                 <MultiSelect
-                  placeholder={t('selectOneOrMore')}
+                  placeholder={tSpaces('selectOneOrMore')}
                   options={categoryOptions}
                   value={field.value}
                   allowToggleAll={false}
@@ -610,13 +614,13 @@ export const SpaceForm = ({
             render={({ field, fieldState: { error } }) => (
               <FormItem>
                 <FormLabel className="text-foreground">
-                  {t('spaceUniqueLink')}
+                  {tSpaces('spaceUniqueLink')}
                 </FormLabel>
                 <FormControl>
                   <Input
                     leftIcon={<div className="text-2">/</div>}
                     rightIcon={!field.value && <RequirementMark />}
-                    placeholder={t('spaceUniqueLink')}
+                    placeholder={tSpaces('spaceUniqueLink')}
                     className={cn(
                       'text-2 pl-4',
                       error &&
@@ -628,7 +632,7 @@ export const SpaceForm = ({
                 </FormControl>
                 <FormMessage className="mt-1" />
                 <span className="text-1 text-neutral-11">
-                  <span>{t('spaceLinkDescription')}</span>
+                  <span>{tSpaces('spaceLinkDescription')}</span>
                 </span>
               </FormItem>
             )}
@@ -639,7 +643,7 @@ export const SpaceForm = ({
           name="links"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('channels')}</FormLabel>
+              <FormLabel>{tSpaces('channels')}</FormLabel>
               <FormControl>
                 <Links
                   links={field.value}
@@ -651,7 +655,7 @@ export const SpaceForm = ({
             </FormItem>
           )}
         />
-        <FormLabel>{t('activationMode')}</FormLabel>
+        <FormLabel>{tSpaces('activationMode')}</FormLabel>
         <div className="flex flex-col gap-2">
           <Card
             className={clsx('flex p-6 cursor-pointer space-x-4 items-center', {
@@ -661,9 +665,11 @@ export const SpaceForm = ({
             onClick={toggleSandbox}
           >
             <div className="flex flex-col">
-              <span className="text-2 font-medium">{t('sandboxMode')}</span>
+              <span className="text-2 font-medium">
+                {tSpaces('sandboxMode')}
+              </span>
               <span className="text-1 text-neutral-11">
-                <span>{t('sandboxDescription')}</span>
+                <span>{tSpaces('sandboxDescription')}</span>
               </span>
             </div>
           </Card>
@@ -675,9 +681,9 @@ export const SpaceForm = ({
             onClick={toggleDemo}
           >
             <div className="flex flex-col">
-              <span className="text-2 font-medium">{t('pilotMode')}</span>
+              <span className="text-2 font-medium">{tSpaces('pilotMode')}</span>
               <span className="text-1 text-neutral-11">
-                <span>{t('pilotDescription')}</span>
+                <span>{tSpaces('pilotDescription')}</span>
               </span>
             </div>
           </Card>
@@ -689,9 +695,9 @@ export const SpaceForm = ({
             onClick={toggleLive}
           >
             <div className="flex flex-col">
-              <span className="text-2 font-medium">{t('liveMode')}</span>
+              <span className="text-2 font-medium">{tSpaces('liveMode')}</span>
               <span className="text-1 text-neutral-11">
-                <span>{t('liveDescription')}</span>
+                <span>{tSpaces('liveDescription')}</span>
               </span>
             </div>
           </Card>
@@ -707,9 +713,11 @@ export const SpaceForm = ({
               onClick={toggleArchived}
             >
               <div className="flex flex-col">
-                <span className="text-2 font-medium">{t('archiveMode')}</span>
+                <span className="text-2 font-medium">
+                  {tSpaces('archiveMode')}
+                </span>
                 <span className="text-1 text-neutral-11">
-                  <span>{t('archiveDescription')}</span>
+                  <span>{tSpaces('archiveDescription')}</span>
                 </span>
               </div>
             </Card>
@@ -721,7 +729,7 @@ export const SpaceForm = ({
             variant={isLoading ? 'outline' : 'default'}
             disabled={isLoading}
           >
-            {isLoading ? submitLoadingLabel : submitLabel}
+            {isLoading ? resolvedSubmitLoadingLabel : resolvedSubmitLabel}
           </Button>
         </div>
       </form>

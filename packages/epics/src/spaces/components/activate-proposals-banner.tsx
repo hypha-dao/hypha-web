@@ -48,8 +48,10 @@ export const ActivateProposalsBanner = ({
   const absDays = Math.abs(daysLeft);
   const expiredElapsed =
     daysLeft === 0
-      ? 'today'
-      : `${absDays} ${absDays === 1 ? 'day' : 'days'} ago`;
+      ? t('expiredToday')
+      : absDays === 1
+      ? t('expiredDayAgo')
+      : t('expiredDaysAgo', { count: absDays });
   const dict = {
     banners: {
       activateProposals: {

@@ -9,7 +9,15 @@
     "noMore": "Keine weiteren",
     "createdOn": "Erstellt am {date}",
     "signIn": "Bitte melden Sie sich an, um diese Funktion zu nutzen.",
-    "joinSpaceToUse": "Bitte treten Sie diesem Space bei, um diese Funktion zu nutzen."
+    "joinSpaceToUse": "Bitte treten Sie diesem Space bei, um diese Funktion zu nutzen.",
+    "back": "Zurück",
+    "home": "Startseite",
+    "remove": "Entfernen",
+    "by": "von",
+    "otherMembers": "+ {count} weitere Mitglieder",
+    "exploreSpaces": "Spaces erkunden",
+    "findCategory": "Kategorie suchen",
+    "noSpacesYet": "Noch keine Spaces erstellt oder beigetreten. Erkunden Sie unser Netzwerk und treten Sie einem Space bei oder erstellen Sie Ihren eigenen"
   },
   "Navigation": {
     "network": "Netzwerk",
@@ -39,7 +47,11 @@
     "createSpace": "Space erstellen",
     "mostMembers": "Meiste Mitglieder",
     "mostAgreements": "Meiste Vereinbarungen",
-    "mostRecent": "Neueste"
+    "mostRecent": "Neueste",
+    "all": "Alle",
+    "exploreNetwork": "Das Hypha-Netzwerk erkunden",
+    "seeAll": "Alle anzeigen",
+    "noCategory": "Keine Kategorie"
   },
   "Proposals": {
     "CreateNew": "Neuen Vorschlag erstellen",
@@ -117,6 +129,12 @@
     "proposalExpiredSubtitle": "Ihr Hypha-Netzwerk-Beitrag ist {expiredElapsed} abgelaufen. Bitte reaktivieren Sie Ihren Space, bevor Sie einen neuen Vorschlag einreichen.",
     "allYourSpaces": "Alle Ihre Spaces,",
     "inOnePlace": "an einem Ort",
-    "spacesYouMightLike": "Spaces, die Ihnen gefallen k\u00f6nnten"
+    "spacesYouMightLike": "Spaces, die Ihnen gefallen könnten",
+    "mySpacesLabel": "Meine Spaces",
+    "hideArchivedSpaces": "Archivierte Spaces ausblenden",
+    "creating": "Space wird erstellt...",
+    "expiredToday": "heute",
+    "expiredDayAgo": "vor einem Tag",
+    "expiredDaysAgo": "vor {count} Tagen"
   }
 }
