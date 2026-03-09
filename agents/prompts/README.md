@@ -23,6 +23,7 @@ _library/{category}/*.md   -- Reusable building blocks
 | **Product Owner**           | `product-owner.md`           | Requirements, priorities, acceptance criteria                            |
 | **Team Orchestrator**       | `team-orchestrator.md`       | Multi-agent coordination and task delegation                             |
 | **Prompt Engineer**         | `prompt-engineer.md`         | Prompt design and optimization                                           |
+| **i18n Engineer**           | `i18n-engineer.md`           | Locale routing, dictionaries, translation infrastructure                 |
 | **Laconic Executor**        | `senior-laconic-executor.md` | Minimal-output task executor                                             |
 
 ## Library Categories
@@ -49,6 +50,7 @@ Lead Engineer (architecture, review, delegation)
   |-- QA Engineer (testing, quality gates, bug reports)
   |-- Database Engineer (schema, migrations, queries)
   |-- Smart Contract Engineer (Solidity, deployment, on-chain)
+  |-- i18n Engineer (locale routing, dictionaries, translations)
 ```
 
 Product Owner provides requirements. Team Orchestrator coordinates across roles.
