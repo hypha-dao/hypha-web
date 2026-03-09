@@ -1,0 +1,14 @@
+{
+  "Common": {
+    "Assignments": "Zuweisungen",
+    "Members": "Mitglieder",
+    "Treasury": "Schatzkammer"
+  },
+  "DHO": {
+    "Dashboard": "DHO Übersicht"
+  },
+  "Proposals": {
+    "CreateNew": "Neuen Vorschlag erstellen",
+    "Create": "Neuer Vorschlag"
+  }
+}

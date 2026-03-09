@@ -1,0 +1,14 @@
+{
+  "Common": {
+    "Assignments": "Assignments",
+    "Members": "Members",
+    "Treasury": "Treasury"
+  },
+  "DHO": {
+    "Dashboard": "DHO Dashboard"
+  },
+  "Proposals": {
+    "CreateNew": "Create a new Proposal",
+    "Create": "Create Proposal"
+  }
+}
