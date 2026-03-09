@@ -79,21 +79,31 @@ export const AssetsSection: FC<AssetSectionProps> = ({
         </label>
       </SectionFilter>
       <div className="flex gap-2 justify-end">
+        {/*
+          Original link button preserved for reference. Uncomment to re-enable navigation:
+        
         <Link
-          className={isDisabled ? 'cursor-not-allowed' : ''}
-          href={
-            isAuthenticated && (isMember || isDelegate)
-              ? `${basePath}/create/issue-new-token?hideBack=true`
-              : {}
-          }
+          href={`${basePath}/create/issue-new-token?hideBack=true`}
           scroll={false}
           title={tooltipMessage || ''}
         >
-          <Button colorVariant="accent" variant="outline" disabled={isDisabled}>
+          <Button colorVariant="accent" variant="outline">
             <RadiobuttonIcon />
             New Token
           </Button>
         </Link>
+        */}
+        {/* Disabled duplicate as requested */}
+        <Button
+          colorVariant="accent"
+          variant="outline"
+          disabled
+          title={tooltipMessage || ''}
+          className="cursor-not-allowed"
+        >
+          <RadiobuttonIcon />
+          New Token
+        </Button>
         <Button
           className={cn(isDisabled && 'cursor-not-allowed')}
           title={tooltipMessage || ''}
