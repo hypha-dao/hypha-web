@@ -147,6 +147,14 @@ export const SelectSettingsAction = ({
       icon: <ArrowLeftIcon />,
     },
     {
+      group: 'Treasury',
+      title: 'Space Token Purchase',
+      description: "Allow your members to purchase your space's native tokens.",
+      href: 'create/space-token-purchase',
+      icon: <ArrowLeftIcon />,
+      disabled: isPaymentExpired,
+    },
+    {
       group: t('groups.treasury'),
       title: t('actions.depositFunds.title'),
       description: t('actions.depositFunds.description'),
