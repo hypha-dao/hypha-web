@@ -17,7 +17,7 @@
     "otherMembers": "+ other {count} members",
     "exploreSpaces": "Explore Spaces",
     "findCategory": "Find a Category",
-    "noSpacesYet": "No spaces created or joined yet. Explore our network and join some Space, or create your own"
+    "noSpacesYet": "No spaces created or joined yet. Explore our network and join a Space, or create your own."
   },
   "Navigation": {
     "network": "Network",
@@ -102,14 +102,14 @@
     "exitSpaceConfirmDescription": "Do you really want to exit this space?",
     "exitSpaceConfirmYes": "Yes, leave",
     "exitSpaceConfirmNo": "No, stay",
-    "exitSpaceDisabledTooltip": "You need to be authorized and to be a member of current space to be able to exit",
+    "exitSpaceDisabledTooltip": "You need to be authorized and to be a member of the current space to be able to exit",
     "accessDeniedNotLoggedIn": "You need an active account to access this section. Please sign in or click Get Started to create one.",
     "signIn": "Sign In",
     "getStarted": "Get Started",
     "accessDeniedNotMember": "You need to become a member to access this feature. Join the space now to view the activity of this space.",
     "accessDenied": "Access denied",
     "noSpaces": "No spaces",
-    "errorOhSnap": "Ouh Snap. There was an error",
+    "errorOhSnap": "Oh snap! There was an error",
     "reset": "Reset",
     "backToSettings": "Back to Settings",
     "sandbox": "Sandbox",
