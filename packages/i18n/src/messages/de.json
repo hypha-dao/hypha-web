@@ -40,6 +40,80 @@
   "DHO": {
     "Dashboard": "DHO \u00dcbersicht"
   },
+  "SpaceSettingsAction": {
+    "title": "Space-Einstellungen",
+    "content": "Greifen Sie auf die Einstellungen Ihres Spaces zu und verwalten Sie sie, einschließlich Erscheinungsbild, Struktur, Methoden, Mitgliedschaft und Schatzkammer.",
+    "groups": {
+      "overview": "Überblick",
+      "agreements": "Vereinbarungen",
+      "members": "Mitglieder",
+      "treasury": "Schatzkammer",
+      "extensionsPlugins": "Erweiterungen & Plug-ins",
+      "ecosystemVerticals": "Ökosystem-Vertikalen"
+    },
+    "actions": {
+      "spaceConfiguration": {
+        "title": "Space-Konfiguration",
+        "description": "Passen Sie Ihren Space an, indem Sie seinen Zweck festlegen, Branding-Elemente hinzufügen und soziale Medien verknüpfen."
+      },
+      "spaceTransparencyConfiguration": {
+        "title": "Space-Transparenz konfigurieren",
+        "description": "Legen Sie den Transparenzgrad fest, den Sie gemeinsam in Ihrem Space anwenden möchten."
+      },
+      "addSpace": {
+        "title": "Space hinzufügen",
+        "description": "Erstellen Sie einen neuen Space innerhalb Ihrer Organisation für Aktivitäten, Teams oder Projekte."
+      },
+      "activateSpaces": {
+        "title": "Space(s) aktivieren",
+        "description": "Tragen Sie HYPHA oder USDC bei, um Ihren/Ihre Space(s) zu aktivieren und das Hypha-Netzwerk zu unterstützen."
+      },
+      "votingMethod": {
+        "title": "Abstimmungsmethode",
+        "description": "Wählen und konfigurieren Sie die Abstimmungsmethode für die Entscheidungsfindung in Ihrem Space."
+      },
+      "entryMethod": {
+        "title": "Beitrittsmethode",
+        "description": "Wählen und konfigurieren Sie den Prozess, über den neue Mitglieder Ihrem Space beitreten."
+      },
+      "membershipExit": {
+        "title": "Mitgliedschaft beenden",
+        "description": "Entfernen Sie ein Mitglied aus Ihrem Space, wenn es gegen vereinbarte Regeln und Richtlinien verstößt."
+      },
+      "spaceToSpaceMembership": {
+        "title": "Space-zu-Space-Mitgliedschaft",
+        "description": "Erlauben Sie Ihrem Space, einem anderen Space als Mitglied beizutreten, um an der Governance teilzunehmen und über Vorschläge abzustimmen."
+      },
+      "issueNewToken": {
+        "title": "Neuen Token ausgeben",
+        "description": "Erstellen Sie einen neuen Token für Nutzbarkeit, Eigentum, Wirkung, Gutschriften, Stimme oder Gemeinschaftswährung innerhalb Ihres Spaces."
+      },
+      "mintTokensToSpaceTreasury": {
+        "title": "Tokens in die Space-Schatzkammer prägen",
+        "description": "Prägen Sie Tokens in Ihre Space-Schatzkammer, um den Betrieb zu finanzieren, Belohnungen zu verteilen oder Liquidität bereitzustellen."
+      },
+      "buyHyphaTokensRewards": {
+        "title": "Hypha-Tokens kaufen (Belohnungen)",
+        "description": "Kaufen Sie Hypha-Tokens, um am Netzwerk teilzunehmen und Belohnungen zu erhalten."
+      },
+      "depositFunds": {
+        "title": "Mittel einzahlen",
+        "description": "Zahlen Sie Mittel in Ihre Schatzkammer ein, indem Sie die Schatzkammer-Adresse kopieren oder den QR-Code scannen."
+      },
+      "integrateSmartContractInSpace": {
+        "title": "Smart Contract im Space integrieren (Fortgeschritten)",
+        "description": "Ermöglichen Sie Ihrem Space, Multisig-Eigentum an Ihren Smart Contracts zu übernehmen, damit Ihre Community Wertflüsse (Tokenomics) direkt aus Ihrem Space steuern kann."
+      },
+      "exploreExtensionsMarketplaceComingSoon": {
+        "title": "Erweiterungen & Plug-in-Marktplatz erkunden (Bald verfügbar)",
+        "description": "Entdecken Sie ein wachsendes Ökosystem an Tools und Integrationen, um die Fähigkeiten Ihres Spaces zu erweitern."
+      },
+      "hyphaEnergy": {
+        "title": "Hypha Energy",
+        "description": "Eine dedizierte Plattform für Ihre Community oder Ihren Hub für erneuerbare Energien, die lokales Energy Sharing, gemeinsames Eigentum an Energieanlagen, Governance und faire Wertverteilung zwischen Mitgliedern ermöglicht."
+      }
+    }
+  },
   "Network": {
     "manySpaces": "Viele Spaces,",
     "oneVibrantNetwork": "Ein lebendiges Netzwerk",
