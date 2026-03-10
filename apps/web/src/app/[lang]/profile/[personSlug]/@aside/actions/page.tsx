@@ -52,6 +52,13 @@ export default function ProfileWallet() {
       icon: <ArrowLeftIcon />,
     },
     {
+      title: 'Buy Space Tokens',
+      description:
+        "Purchase your space's native tokens using the configured payment currency.",
+      href: 'buy-space-tokens',
+      icon: <ArrowLeftIcon />,
+    },
+    {
       title: 'Activate Space(s)',
       description:
         'Sponsor and activate your favourite space(s) by contributing HYPHA or USDC, supporting the Hypha Network.',
