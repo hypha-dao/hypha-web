@@ -9,7 +9,9 @@
   "devDependencies": {
     "@hypha-platform/config-typescript": "workspace:*"
   },
-  "dependencies": {},
+  "dependencies": {
+    "next-intl": "^4.8.3"
+  },
   "exports": {
     ".": "./src/index.ts",
     "./client": "./src/client.ts",

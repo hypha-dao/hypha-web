@@ -790,6 +790,9 @@ importers:
       next:
         specifier: ^15.4.8
         version: 15.4.8(@babel/core@7.26.10)(@playwright/test@1.52.0)(babel-plugin-macros@3.1.0)(react-dom@19.1.2(react@19.1.2))(react@19.1.2)(sass@1.86.3)
+      next-intl:
+        specifier: ^4.8.3
+        version: 4.8.3(@swc/helpers@0.5.17)(next@15.4.8(@babel/core@7.26.10)(@playwright/test@1.52.0)(babel-plugin-macros@3.1.0)(react-dom@19.1.2(react@19.1.2))(react@19.1.2)(sass@1.86.3))(react@19.1.2)(typescript@5.8.3)
       react:
         specifier: ^19.1.2
         version: 19.1.2
@@ -930,6 +933,9 @@ importers:
       '@hypha-platform/ui-utils':
         specifier: workspace:*
         version: link:../ui-utils
+      next-intl:
+        specifier: ^4.8.3
+        version: 4.8.3(@swc/helpers@0.5.17)(next@15.4.8(@babel/core@7.26.10)(@playwright/test@1.52.0)(babel-plugin-macros@3.1.0)(react-dom@19.1.2(react@19.1.2))(react@19.1.2)(sass@1.86.3))(react@19.1.2)(typescript@5.8.3)
     devDependencies:
       '@hypha-platform/config-eslint':
         specifier: workspace:*
@@ -961,6 +967,10 @@ importers:
         version: link:../../config/typescript
 
   packages/i18n:
+    dependencies:
+      next-intl:
+        specifier: ^4.8.3
+        version: 4.8.3(@swc/helpers@0.5.17)(next@15.4.8(@babel/core@7.26.10)(@playwright/test@1.52.0)(babel-plugin-macros@3.1.0)(react-dom@19.1.2(react@19.1.2))(react@19.1.2)(sass@1.86.3))(react@19.1.2)(typescript@5.8.3)
     devDependencies:
       '@hypha-platform/config-typescript':
         specifier: workspace:*
