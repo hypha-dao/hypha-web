@@ -1,10 +1,10 @@
 {
   "version": 1,
   "skills": {
-    "shadcn": {
-      "source": "shadcn/ui",
+    "create-skill": {
+      "source": "siviter-xyz/dot-agent",
       "sourceType": "github",
-      "computedHash": "91c02eb706f046fb9d6a061efbb96496e4be751b5b14c283cf82baaa50f3a985"
+      "computedHash": "117464d5a01acfbf3c7d3939a90df78e2196025f545bdded831aa4aa63a80080"
     }
   }
 }
