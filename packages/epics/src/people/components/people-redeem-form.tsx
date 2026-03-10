@@ -81,6 +81,13 @@ export const PeopleRedeemForm = ({
   const { assets } = useUserAssets({
     personSlug: person?.slug,
   });
+  const restingAssets = React.useMemo(
+    () =>
+      assets.filter(
+        (asset) => !tokens.find((token) => token.address === asset.address),
+      ),
+    [tokens, assets],
+  );
   const tokenSlugs = React.useMemo(() => {
     return tokens
       .filter((token) => token.space?.slug)
@@ -180,7 +187,7 @@ export const PeopleRedeemForm = ({
           />
           <TokenPercentageFieldArray
             label="Converted into"
-            assets={assets}
+            assets={restingAssets}
             name="conversions"
           />
           <Separator />
