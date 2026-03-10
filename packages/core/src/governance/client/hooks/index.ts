@@ -31,3 +31,4 @@ export * from './useTokenBackingVaultOrchestrator';
 export * from './useMembershipExitOrchestrator';
 export * from './useMembershipExitMutations.web.rpc';
 export * from './useWithdrawProposal';
+export * from './useSpaceTokenPurchaseOrchestrator';
