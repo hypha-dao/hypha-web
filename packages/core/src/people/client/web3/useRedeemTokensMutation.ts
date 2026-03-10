@@ -6,6 +6,7 @@ import { erc20Abi, parseUnits } from 'viem';
 import {
   getTokenDecimals,
   ERC20_TOKEN_TRANSFER_ADDRESSES,
+  percentageStringToBigInt,
 } from '@hypha-platform/core/client';
 import {
   tokenBackingVaultImplementationAddress,
@@ -71,8 +72,8 @@ export const useRedeemTokensMutation = ({
           continue;
         }
         backingTokens.push(conversion.asset as `0x${string}`);
-        const percentage = parseFloat(conversion.percentage) * 100; //TODO: replace with actual percentage
-        proportions.push(BigInt(percentage));
+        const percentage = percentageStringToBigInt(conversion.percentage);
+        proportions.push(percentage);
       }
 
       const token = arg.redemption.token;
@@ -95,7 +96,7 @@ export const useRedeemTokensMutation = ({
       console.log('redeem params:', [
         BigInt(arg.redemption.web3SpaceId),
         token as `0x${string}`,
-        BigInt(amount),
+        amount,
         backingTokens,
         proportions,
       ]);

@@ -1,16 +1,9 @@
 import { ALLOWED_IMAGE_FILE_SIZE, DEFAULT_IMAGE_ACCEPT } from '../assets';
 
 import { z } from 'zod';
+import { percentageStringToBigInt } from '../common';
 
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
-
-const parsePercentage = (value: string) => {
-  const parsed = parseFloat(value) * 100;
-  if (isNaN(parsed)) {
-    return 0;
-  }
-  return parsed;
-};
 
 const signupPersonWeb2Props = {
   name: z.string().trim().min(1, { message: 'Please enter your first name' }),
@@ -180,9 +173,9 @@ export const personRedeem = z.object({
     .refine(
       (value) =>
         value.reduce(
-          (acc, curr) => acc + parsePercentage(curr.percentage),
-          0,
-        ) === 10000,
+          (acc, curr) => acc + percentageStringToBigInt(curr.percentage),
+          0n,
+        ) === 10000n,
       {
         message: 'Summary percentage must be 100%',
       },
