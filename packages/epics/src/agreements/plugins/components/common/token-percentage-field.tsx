@@ -54,6 +54,7 @@ export const TokenPercentageField = ({
           type="text"
           inputMode="decimal"
           placeholder="Percentage"
+          rightIcon={<>%</>}
           onChange={(e) => handlePercentageChange(e.target.value)}
         />
       </div>
