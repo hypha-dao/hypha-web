@@ -4,8 +4,6 @@ import { Button } from '@hypha-platform/ui';
 import { Empty } from '../../common/empty';
 import { UserSpaceState } from '../hooks/use-user-space-state';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useParams } from 'next/navigation';
-import Link from 'next/link';
 import { useSpaceDetailsWeb3Rpc } from '@hypha-platform/core/client';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { JoinSpace } from './join-space';
@@ -23,8 +21,7 @@ export function SpaceAccessDenied({
   spaceSlug,
 }: SpaceAccessDeniedProps) {
   const t = useTranslations('Spaces');
-  const { isAuthenticated, login } = useAuthentication();
-  const { lang } = useParams();
+  const { login } = useAuthentication();
   const { space } = useSpaceBySlug(spaceSlug || '');
   const effectiveSpaceId = spaceId || space?.web3SpaceId;
 
