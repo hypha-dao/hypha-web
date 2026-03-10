@@ -1,6 +1,7 @@
 'use client';
 import { Input, Button } from '@hypha-platform/ui';
 import { SearchIcon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
 
@@ -14,6 +15,7 @@ type SpaceSearchProps = {
 };
 
 export const SpaceSearch = ({ suggestions, value }: SpaceSearchProps) => {
+  const t = useTranslations('Network');
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
@@ -34,7 +36,7 @@ export const SpaceSearch = ({ suggestions, value }: SpaceSearchProps) => {
     <div className="flex flex-col flex-grow gap-2">
       <Input
         type="search"
-        placeholder="Find a Space"
+        placeholder={t('findASpace')}
         leftIcon={<SearchIcon size="16px" />}
         defaultValue={value}
         onChange={(e) => handleSearch(e.target.value)}

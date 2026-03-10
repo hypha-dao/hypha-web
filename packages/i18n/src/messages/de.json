@@ -1,0 +1,19 @@
+{
+  "Common": {
+    "Assignments": "Zuweisungen",
+    "Members": "Mitglieder",
+    "Treasury": "Schatzkammer"
+  },
+  "DHO": {
+    "Dashboard": "DHO Übersicht"
+  },
+  "Network": {
+    "manySpaces": "Viele Spaces,",
+    "oneVibrantNetwork": "Ein lebendiges Netzwerk",
+    "findASpace": "Einen Space finden"
+  },
+  "Proposals": {
+    "CreateNew": "Neuen Vorschlag erstellen",
+    "Create": "Neuer Vorschlag"
+  }
+}

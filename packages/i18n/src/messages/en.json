@@ -1,0 +1,19 @@
+{
+  "Common": {
+    "Assignments": "Assignments",
+    "Members": "Members",
+    "Treasury": "Treasury"
+  },
+  "DHO": {
+    "Dashboard": "DHO Dashboard"
+  },
+  "Network": {
+    "manySpaces": "Many Spaces,",
+    "oneVibrantNetwork": "One Vibrant Network",
+    "findASpace": "Find a Space"
+  },
+  "Proposals": {
+    "CreateNew": "Create a new Proposal",
+    "Create": "Create Proposal"
+  }
+}
