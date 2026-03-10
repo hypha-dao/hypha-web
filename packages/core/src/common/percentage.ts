@@ -41,9 +41,6 @@ export function percentageStringToBigInt(value: string): bigint {
  */
 export function bigIntToPercentageString(value: bigint): string {
   const num = Number(value);
-  if (isNaN(num)) {
-    throw new Error(`Invalid bigint: ${value}`);
-  }
   const percentage = num / 100;
   // Ensure exactly two decimal places, strip trailing zeros? Keep two decimals.
   return percentage.toFixed(2);

@@ -96,23 +96,36 @@ export const PeopleRedeemForm = ({
 
   useScrollToErrors(form, formRef);
 
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  React.useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
   const { lang } = useParams();
 
   const handleRedeem = async (data: FormValues) => {
     try {
       const [redemption] = data.redemptions;
       if (!redemption) {
-        console.error('No redemption found');
+        form.setError('root', {
+          message: 'No redemption data found. Please fill in the form.',
+        });
         return;
       }
       const spaceSlug = redemption.spaceSlug;
       if (!spaceSlug) {
-        console.error('No space slug found');
+        form.setError('root', {
+          message: 'Please select a space for redemption.',
+        });
         return;
       }
       const space = spaces?.find((space) => space.slug === spaceSlug);
       if (!space?.web3SpaceId) {
-        console.error('No web3SpaceId found');
+        form.setError('root', {
+          message: 'Selected space is not configured for redemption.',
+        });
         return;
       }
       const redeemInput = {
@@ -125,8 +138,9 @@ export const PeopleRedeemForm = ({
       };
       const result = await redeemTokens(redeemInput);
       console.log('Redeem hashes:', result);
+
       setShowSuccessMessage(true);
-      setTimeout(() => {
+      timeoutRef.current = setTimeout(() => {
         setShowSuccessMessage(false);
       }, 3000);
       form.reset();
@@ -217,19 +231,6 @@ export const PeopleRedeemForm = ({
                   >
                     top up your account
                   </span>{' '}
-                  to proceed.
-                </>
-              ) : form.formState.errors.root.message ===
-                'insufficient_hypha' ? (
-                <>
-                  Your wallet balance is insufficient to complete this
-                  transaction. Please{' '}
-                  <Link
-                    href={`/${lang}/profile/${person?.slug}/actions/purchase-hypha-tokens`}
-                    className="font-bold cursor-pointer text-accent-9 underline"
-                  >
-                    top up your account with HYPHA
-                  </Link>{' '}
                   to proceed.
                 </>
               ) : (

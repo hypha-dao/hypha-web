@@ -61,7 +61,7 @@ export const TokenPercentageFieldArray = ({
                 <FormField
                   control={control}
                   name={`${name}.${index}`}
-                  render={({ field: { value, onChange }, formState }) => (
+                  render={({ field: { value, onChange }, fieldState }) => (
                     <FormItem>
                       <FormControl>
                         <TokenPercentageField
@@ -72,7 +72,7 @@ export const TokenPercentageFieldArray = ({
                       </FormControl>
                       <FormMessage
                         custom={
-                          formState.errors?.percentage?.message?.toString() ||
+                          fieldState.error?.message?.toString() ||
                           'Please enter a percentage and select an asset.'
                         }
                       />
@@ -89,9 +89,12 @@ export const TokenPercentageFieldArray = ({
               </Button>
             </div>
           ))}
-          {formErrors.conversions?.root?.message && (
+          {(formErrors[name] as { root?: { message?: string } })?.root
+            ?.message && (
             <FormMessage>
-              {formErrors.conversions?.root?.message?.toString()}
+              {(
+                formErrors[name] as { root?: { message?: string } }
+              )?.root?.message?.toString()}
             </FormMessage>
           )}
         </div>

@@ -18,15 +18,16 @@ export const useSpacesBySlugs = (
   const endpoint = React.useMemo(() => {
     const parentOnlyParam =
       typeof parentOnly === 'undefined' ? '' : `&parentOnly=${parentOnly}`;
+    const encodedSlugs = slugs.map(encodeURIComponent).join(',');
     return slugs.length > 0
-      ? `/api/v1/spaces?slugs=${slugs.join(',')}${parentOnlyParam}`
+      ? `/api/v1/spaces?slugs=${encodedSlugs}${parentOnlyParam}`
       : null;
   }, [slugs, parentOnly]);
 
   const { data: spaces, isLoading } = useSWR(endpoint, (endpoint) =>
     fetch(endpoint, {
       headers: {
-        'Content-Type': 'application/json',
+        Accept: 'application/json',
       },
     }).then((res) => res.json()),
   );

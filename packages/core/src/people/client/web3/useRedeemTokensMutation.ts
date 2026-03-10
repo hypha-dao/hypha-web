@@ -27,7 +27,6 @@ interface RedeemTokensInput {
     asset?: string;
     percentage?: string;
   }[];
-  memo?: string;
 }
 
 interface UseRedeemTokensProps {

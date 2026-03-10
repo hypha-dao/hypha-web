@@ -33,8 +33,12 @@ export const TokenPercentageField = ({
 
     const normalizedPercentage = percentage.replace(',', '.');
 
-    if (/^\d+(\.\d{0,2})?$/.test(normalizedPercentage)) {
-      onChange({ percentage: normalizedPercentage, asset: value.asset });
+    // Allow intermediate states like "12." or ".5" while typing
+    if (/^\d*\.?\d{0,2}$/.test(normalizedPercentage)) {
+      const numValue = parseFloat(normalizedPercentage);
+      if (isNaN(numValue) || (numValue >= 0 && numValue <= 100)) {
+        onChange({ percentage: normalizedPercentage, asset: value.asset });
+      }
     }
   };
 

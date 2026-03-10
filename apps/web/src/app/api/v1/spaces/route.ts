@@ -19,7 +19,9 @@ export async function GET(request: NextRequest) {
       : undefined;
 
     const slugs: Slugs = queryParams.has('slugs')
-      ? queryParams.get('slugs')?.split(',') ?? []
+      ? (queryParams.get('slugs')?.split(',') ?? [])
+          .map((slug) => slug.trim())
+          .filter(Boolean)
       : undefined;
 
     const parentOnlyParam = queryParams.get('parentOnly');

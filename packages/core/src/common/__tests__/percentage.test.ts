@@ -99,9 +99,11 @@ describe('bigIntToPercentageString', () => {
     expect(bigIntToPercentageString(9999n)).toBe('99.99');
   });
 
-  it('throws on non-bigint? (type safety)', () => {
-    // TypeScript will prevent non-bigint, but runtime could pass number
-    // We rely on Number conversion, which works for numbers but may produce NaN
-    expect(() => bigIntToPercentageString(123 as any)).not.toThrow();
+  it('handles number input at runtime without crashing', () => {
+    // TypeScript prevents non-bigint, but runtime JS could pass a number
+    // This documents current behavior - consider adding runtime validation if strict typing is needed
+    expect(() =>
+      bigIntToPercentageString(123 as unknown as bigint),
+    ).not.toThrow();
   });
 });

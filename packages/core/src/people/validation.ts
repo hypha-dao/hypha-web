@@ -164,12 +164,12 @@ export const personRedeem = z.object({
           .refine(
             (value) => parseFloat(value) >= 0 && parseFloat(value) <= 100,
             {
-              message: 'Amount must be between 0 and 100',
+              message: 'Percentage must be between 0 and 100',
             },
           ),
       }),
     )
-    .min(1, { message: 'At least one conversation is required' })
+    .min(1, { message: 'At least one conversion is required' })
     .refine(
       (value) =>
         value.reduce(

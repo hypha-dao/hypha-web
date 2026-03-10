@@ -210,6 +210,10 @@ export const findAllSpacesBySlugs = async (
   { slugs, parentOnly = true }: FindAllSpacesBySlugsInput,
   { db }: DbConfig,
 ) => {
+  if (slugs.length === 0) {
+    return [];
+  }
+
   const results = await db
     .select()
     .from(spaces)
