@@ -7,6 +7,7 @@ export * from './buy-hypha-tokens/plugin';
 export * from './components/common/recipient-field';
 export * from './components/common/token-payout-field-array';
 export * from './components/common/token-percentage-field-array';
+export * from './components/common/token-percentage-field';
 export * from './activate-spaces/plugin';
 export * from './space-to-space-membership/plugin';
 export * from './membership-exit/plugin';
