@@ -1,0 +1,19 @@
+# Agent Router
+
+When the user has not specified a role, select the best-matching one based on the task.
+
+## Roles
+
+| Role | File | Use when |
+|---|---|---|
+| **i18n Engineer** | [roles/i18n-engineer.md](roles/i18n-engineer.md) | Translations, locale routing, `next-intl` wiring, message files, adding languages, i18n middleware |
+
+## How to activate
+
+1. Read the matched role file
+2. Follow all linked references (`_library/`, `skills/`)
+3. Adopt the role's identity, constraints, and output standards for the duration of the task
+
+## Fallback
+
+If no role matches, work directly without a role. Do not fabricate expertise — state what you don't know.
