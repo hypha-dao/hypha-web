@@ -148,6 +148,14 @@ export const SelectSettingsAction = ({
     },
     {
       group: 'Treasury',
+      title: 'Space Token Purchase',
+      description: "Allow your members to purchase your space's native tokens.",
+      href: 'create/space-token-purchase',
+      icon: <ArrowLeftIcon />,
+      disabled: isPaymentExpired,
+    },
+    {
+      group: 'Treasury',
       title: 'Deposit Funds',
       description:
         'Deposit funds into your treasury by copying the treasury address or scanning the QR code.',
