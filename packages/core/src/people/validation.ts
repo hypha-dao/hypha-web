@@ -180,7 +180,6 @@ export const personRedeem = z.object({
         message: 'Summary percentage must be 100%',
       },
     ),
-  memo: z.string().optional(),
 });
 
 export type PersonFiles = z.infer<typeof editPersonFiles>;

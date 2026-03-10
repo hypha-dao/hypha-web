@@ -79,42 +79,20 @@ export const useRedeemTokensMutation = ({
       const token = arg.redemption.token;
       const decimals = await getTokenDecimals(token);
       const amount = parseUnits(arg.redemption.amount, decimals);
-      //TODO: uncomment before final testing
-      /*const txHash: string = await client.writeContract({
+      const txHash: string = await client.writeContract({
         address: tokenBackingVaultImplementationAddress[8453],
         abi: tokenBackingVaultImplementationAbi,
         functionName: 'redeem',
         args: [
           BigInt(arg.redemption.web3SpaceId),
           token as `0x${string}`,
-          BigInt(amount),
+          amount,
           backingTokens,
           proportions,
         ],
-      });*/
-      const txHash: string = '0x0x0000000000000000000000000000000000000000';
-      console.log('redeem params:', [
-        BigInt(arg.redemption.web3SpaceId),
-        token as `0x${string}`,
-        amount,
-        backingTokens,
-        proportions,
-      ]);
-      const result = { token, txHash };
+      });
 
-      if (arg.memo && authToken) {
-        try {
-          // Create a single transfer record for the first transaction (or all?)
-          await createTransferMutation({
-            transactionHash: result?.txHash || '',
-            memo: arg.memo,
-          });
-        } catch (error) {
-          console.error('Failed to create transfer record:', error);
-        }
-      }
-
-      return result;
+      return { token, txHash };
     },
   );
 

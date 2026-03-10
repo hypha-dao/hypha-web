@@ -74,7 +74,6 @@ export const PeopleRedeemForm = ({
           asset: '',
         },
       ],
-      memo: undefined,
     },
   });
 
@@ -123,7 +122,6 @@ export const PeopleRedeemForm = ({
           amount: redemption.amount,
         },
         conversions: data.conversions,
-        memo: data.memo,
       };
       const result = await redeemTokens(redeemInput);
       console.log('Redeem hashes:', result);
