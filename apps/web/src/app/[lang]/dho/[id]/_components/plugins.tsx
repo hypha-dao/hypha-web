@@ -13,6 +13,7 @@ import {
   MintTokensToSpaceTreasuryPlugin,
   MembershipExitPlugin,
   SpaceTransparencySettingsPlugin,
+  RedeemTokensPlugin,
 } from '@hypha-platform/epics';
 import { useMembers } from '@web/hooks/use-members';
 import { Person, Space } from '@hypha-platform/core/client';
@@ -30,6 +31,7 @@ export const PLUGINS = {
   'mint-tokens-to-space-treasury': MintTokensToSpaceTreasuryPlugin,
   'membership-exit': MembershipExitPlugin,
   'space-transparency-settings': SpaceTransparencySettingsPlugin,
+  'redeem-tokens': RedeemTokensPlugin,
 };
 
 type PluginProps = {

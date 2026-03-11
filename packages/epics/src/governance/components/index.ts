@@ -1,5 +1,6 @@
 export * from './create-agreement-form';
 export * from './create-deploy-funds-form';
+export * from './create-redeem-tokens-form';
 export * from './create-pay-for-expenses-form';
 export * from './create-proposal-change-entry-method-form';
 export * from './create-proposal-change-voting-method-form';
