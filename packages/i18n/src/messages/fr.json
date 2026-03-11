@@ -255,6 +255,48 @@
     "actions": "Actions",
     "noAssetsFoundForUser": "Aucun actif trouvé pour cet utilisateur"
   },
+  "ProfileActions": {
+    "content": "Gérez vos fonds personnels, interagissez avec le réseau Hypha et contribuez directement avec votre portefeuille.",
+    "backToActions": "Retour aux actions",
+    "actions": {
+      "depositFunds": {
+        "title": "Déposer des fonds",
+        "description": "Ajoutez des tokens à votre portefeuille personnel en copiant l'adresse de votre portefeuille ou en scannant le QR code."
+      },
+      "transferFunds": {
+        "title": "Transférer des fonds",
+        "description": "Envoyez des tokens de votre portefeuille personnel à un membre, un espace ou une adresse personnalisée."
+      },
+      "buyHyphaTokensRewards": {
+        "title": "Acheter des tokens Hypha (récompenses)",
+        "description": "Achetez des tokens Hypha pour participer au réseau et obtenir des récompenses"
+      },
+      "activateSpaces": {
+        "title": "Activer le(s) espace(s)",
+        "description": "Parrainez et activez vos espaces préférés en contribuant en HYPHA ou en USDC, pour soutenir le réseau Hypha."
+      },
+      "migrateHyphaTokens": {
+        "title": "Migrer les tokens Hypha (Telos → Base)",
+        "description": "Déplacez vos tokens Hypha de la blockchain Telos vers le réseau Base. Lance l'expérience de migration."
+      }
+    },
+    "purchaseHypha": {
+      "title": "Acheter des tokens Hypha (récompenses)",
+      "content": "Utilisez l'USDC pour acheter des tokens Hypha, gagner des récompenses et participer à la gouvernance si vous le souhaitez."
+    },
+    "activateSpaces": {
+      "title": "Activer le(s) espace(s)",
+      "contentPrefix": "Parrainez et activez vos espaces préférés en contribuant en HYPHA ou en USDC, pour soutenir le réseau Hypha. Plus de détails dans",
+      "contentSuffix": "."
+    },
+    "transferFunds": {
+      "title": "Transférer des fonds",
+      "content": "Envoyez facilement des fonds depuis votre portefeuille vers un membre ou un espace."
+    },
+    "errors": {
+      "loadSpaces": "Impossible de charger les espaces. Veuillez réessayer plus tard."
+    }
+  },
   "Network": {
     "manySpaces": "De nombreux espaces,",
     "oneVibrantNetwork": "Un réseau dynamique",

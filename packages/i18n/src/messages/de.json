@@ -255,6 +255,48 @@
     "actions": "Aktionen",
     "noAssetsFoundForUser": "Keine Assets für diesen Benutzer gefunden"
   },
+  "ProfileActions": {
+    "content": "Verwalten Sie Ihre persönlichen Mittel, interagieren Sie mit dem Hypha-Netzwerk und tragen Sie direkt mit Ihrer Wallet bei.",
+    "backToActions": "Zurück zu den Aktionen",
+    "actions": {
+      "depositFunds": {
+        "title": "Mittel einzahlen",
+        "description": "Fügen Sie Ihrer persönlichen Wallet Tokens hinzu, indem Sie Ihre Wallet-Adresse kopieren oder den QR-Code scannen."
+      },
+      "transferFunds": {
+        "title": "Mittel übertragen",
+        "description": "Senden Sie Tokens aus Ihrer persönlichen Wallet an ein Mitglied, einen Space oder eine benutzerdefinierte Adresse."
+      },
+      "buyHyphaTokensRewards": {
+        "title": "Hypha-Tokens kaufen (Belohnungen)",
+        "description": "Kaufen Sie Hypha-Tokens, um am Netzwerk teilzunehmen und Belohnungen zu erhalten"
+      },
+      "activateSpaces": {
+        "title": "Space(s) aktivieren",
+        "description": "Sponsern und aktivieren Sie Ihre bevorzugten Spaces, indem Sie HYPHA oder USDC beitragen und so das Hypha-Netzwerk unterstützen."
+      },
+      "migrateHyphaTokens": {
+        "title": "Hypha-Tokens migrieren (Telos → Base)",
+        "description": "Verschieben Sie Ihre Hypha-Tokens von der Telos-Blockchain in das Base-Netzwerk. Startet die Migration."
+      }
+    },
+    "purchaseHypha": {
+      "title": "Hypha-Tokens kaufen (Belohnungen)",
+      "content": "Verwenden Sie USDC, um Hypha zu kaufen, Belohnungen zu erhalten und auf Wunsch an der Governance teilzunehmen."
+    },
+    "activateSpaces": {
+      "title": "Space(s) aktivieren",
+      "contentPrefix": "Sponsern und aktivieren Sie Ihre bevorzugten Spaces, indem Sie HYPHA oder USDC beitragen und so das Hypha-Netzwerk unterstützen. Weitere Details in",
+      "contentSuffix": "."
+    },
+    "transferFunds": {
+      "title": "Mittel übertragen",
+      "content": "Senden Sie ganz einfach Mittel aus Ihrer Wallet an ein Mitglied oder einen Space."
+    },
+    "errors": {
+      "loadSpaces": "Spaces konnten nicht geladen werden. Bitte versuchen Sie es später erneut."
+    }
+  },
   "Network": {
     "manySpaces": "Viele Spaces,",
     "oneVibrantNetwork": "Ein lebendiges Netzwerk",

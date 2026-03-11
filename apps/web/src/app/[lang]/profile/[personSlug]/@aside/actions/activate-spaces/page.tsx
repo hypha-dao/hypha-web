@@ -9,6 +9,7 @@ import {
 import { Separator } from '@hypha-platform/ui';
 import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 
 type PageProps = {
   params: Promise<ProfilePageParams>;
@@ -16,10 +17,12 @@ type PageProps = {
 
 export default async function ActivateSpacesProfile(props: PageProps) {
   const { lang, personSlug: personSlugRaw } = await props.params;
+  const tActions = await getTranslations('ProfileActions');
+  const tFooter = await getTranslations('Footer');
   const personSlug = tryDecodeUriPart(personSlugRaw);
 
   let spaces = [] as Space[];
-  let error = null;
+  let hasError = false;
 
   try {
     spaces = await getAllSpaces({
@@ -28,7 +31,7 @@ export default async function ActivateSpacesProfile(props: PageProps) {
     });
   } catch (err) {
     console.error('Failed to fetch spaces:', err);
-    error = err instanceof Error ? err.message : 'Failed to load spaces';
+    hasError = true;
   }
 
   const filteredSpaces = spaces?.filter(
@@ -40,19 +43,18 @@ export default async function ActivateSpacesProfile(props: PageProps) {
       <div className="flex flex-col gap-5">
         <div className="flex gap-5 justify-between">
           <h2 className="text-4 text-secondary-foreground justify-start items-center">
-            Activate Space(s)
+            {tActions('activateSpaces.title')}
           </h2>
           <div className="flex gap-5 justify-end items-center">
             <ButtonBack
-              label="Back to actions"
+              label={tActions('backToActions')}
               backUrl={`/${lang}/profile/${personSlug}/actions`}
             />
             <ButtonClose closeUrl={`/${lang}/profile/${personSlug}`} />
           </div>
         </div>
         <span className="text-2 text-neutral-11">
-          Sponsor and activate your favourite space(s) by contributing HYPHA or
-          USDC, supporting the Hypha Network. More details in{' '}
+          {tActions('activateSpaces.contentPrefix')}{' '}
           <Link
             className="text-accent-9 underline"
             href={
@@ -61,14 +63,12 @@ export default async function ActivateSpacesProfile(props: PageProps) {
             }
             target="_blank"
           >
-            Hypha Tokenomics
+            {tFooter('hyphaTokenomics')}
           </Link>
-          .
+          {tActions('activateSpaces.contentSuffix')}
         </span>
-        {error ? (
-          <div className="text-error text-sm">
-            {error}. Please try again later.
-          </div>
+        {hasError ? (
+          <div className="text-error text-sm">{tActions('errors.loadSpaces')}</div>
         ) : null}
         <Separator />
         <ActivateSpacesForm spaces={filteredSpaces} />

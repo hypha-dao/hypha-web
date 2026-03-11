@@ -255,6 +255,48 @@
     "actions": "Actions",
     "noAssetsFoundForUser": "No assets found for this user"
   },
+  "ProfileActions": {
+    "content": "Manage your personal funds, interact with the Hypha network, and contribute directly using your wallet.",
+    "backToActions": "Back to actions",
+    "actions": {
+      "depositFunds": {
+        "title": "Deposit Funds",
+        "description": "Add tokens to your personal wallet by copying your wallet address or scanning the QR code."
+      },
+      "transferFunds": {
+        "title": "Transfer Funds",
+        "description": "Send tokens from your personal wallet to a member, space, or custom address."
+      },
+      "buyHyphaTokensRewards": {
+        "title": "Buy Hypha Tokens (Rewards)",
+        "description": "Purchase Hypha tokens to participate in the network and earn rewards"
+      },
+      "activateSpaces": {
+        "title": "Activate Space(s)",
+        "description": "Sponsor and activate your favourite space(s) by contributing HYPHA or USDC, supporting the Hypha Network."
+      },
+      "migrateHyphaTokens": {
+        "title": "Migrate Hypha Tokens (Telos → Base)",
+        "description": "Move your Hypha tokens from the Telos blockchain to the Base network. Initiates the migration experience."
+      }
+    },
+    "purchaseHypha": {
+      "title": "Buy Hypha Tokens (Rewards)",
+      "content": "Use USDC to buy Hypha, earn rewards, and take part in governance if you choose."
+    },
+    "activateSpaces": {
+      "title": "Activate Space(s)",
+      "contentPrefix": "Sponsor and activate your favourite space(s) by contributing HYPHA or USDC, supporting the Hypha Network. More details in",
+      "contentSuffix": "."
+    },
+    "transferFunds": {
+      "title": "Transfer Funds",
+      "content": "Easily send funds from your wallet to a member or a space."
+    },
+    "errors": {
+      "loadSpaces": "Failed to load spaces. Please try again later."
+    }
+  },
   "Network": {
     "manySpaces": "Many Spaces,",
     "oneVibrantNetwork": "One Vibrant Network",

@@ -12,6 +12,7 @@ import { Person } from '../../../../core/src/people';
 import { Space } from '../../../../core/src/space';
 import { Separator } from '@hypha-platform/ui';
 import { ERC20_TOKEN_TRANSFER_ADDRESSES } from '@hypha-platform/core/client';
+import { useTranslations } from 'next-intl';
 
 interface Token {
   icon: string;
@@ -37,6 +38,7 @@ export const ProfileTransferFunds = ({
   peoples,
   personSlug,
 }: ProfileTransferFundsProps) => {
+  const tActions = useTranslations('ProfileActions');
   const { assets, manualUpdate } = useUserAssets({
     personSlug,
     refreshInterval: 10000,
@@ -61,18 +63,18 @@ export const ProfileTransferFunds = ({
       <div className="flex flex-col gap-5">
         <div className="flex gap-5 justify-between">
           <h2 className="text-4 text-secondary-foreground justify-start items-center">
-            Transfer Funds
+            {tActions('transferFunds.title')}
           </h2>
           <div className="flex gap-5 justify-end items-center">
             <ButtonBack
-              label="Back to actions"
+              label={tActions('backToActions')}
               backUrl={`/${lang}/profile/${personSlug}/actions`}
             />
             <ButtonClose closeUrl={`/${lang}/profile/${personSlug}`} />
           </div>
         </div>
         <span className="text-2 text-neutral-11">
-          Easily send funds from your wallet to a member or a space.
+          {tActions('transferFunds.content')}
         </span>
         <Separator />
         <PeopleTransferForm

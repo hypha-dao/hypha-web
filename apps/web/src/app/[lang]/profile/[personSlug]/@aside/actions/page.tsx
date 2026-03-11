@@ -18,10 +18,13 @@ import {
 import { useMemberBySlug } from '@web/hooks/use-member-by-slug';
 import { useFundWallet } from '@hypha-platform/epics';
 import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
+import { useTranslations } from 'next-intl';
 
 const MIGRATE_HYPHA_TOKENS_URL = 'https://hypha-react-demo.vercel.app';
 
 export default function ProfileWallet() {
+  const tProfile = useTranslations('Profile');
+  const tActions = useTranslations('ProfileActions');
   const { lang, personSlug: personSlugRaw } = useParams<ProfilePageParams>();
   const personSlug = tryDecodeUriPart(personSlugRaw);
   const { person } = useMemberBySlug(personSlug);
@@ -29,39 +32,39 @@ export default function ProfileWallet() {
 
   const WALLET_ACTIONS = [
     {
-      title: 'Deposit Funds',
-      description:
-        'Add tokens to your personal wallet by copying your wallet address or scanning the QR code.',
+      id: 'depositFunds',
+      title: tActions('actions.depositFunds.title'),
+      description: tActions('actions.depositFunds.description'),
       icon: <PlusCircledIcon />,
       onAction: () => {
         fundWallet();
       },
     },
     {
-      title: 'Transfer Funds',
-      description:
-        'Send tokens from your personal wallet to a member, space, or custom address.',
+      id: 'transferFunds',
+      title: tActions('actions.transferFunds.title'),
+      description: tActions('actions.transferFunds.description'),
       href: 'transfer-funds',
       icon: <Share1Icon />,
     },
     {
-      title: 'Buy Hypha Tokens (Rewards)',
-      description:
-        'Purchase Hypha tokens to participate in the network and earn rewards',
+      id: 'buyHyphaTokensRewards',
+      title: tActions('actions.buyHyphaTokensRewards.title'),
+      description: tActions('actions.buyHyphaTokensRewards.description'),
       href: 'purchase-hypha-tokens',
       icon: <ArrowLeftIcon />,
     },
     {
-      title: 'Activate Space(s)',
-      description:
-        'Sponsor and activate your favourite space(s) by contributing HYPHA or USDC, supporting the Hypha Network.',
+      id: 'activateSpaces',
+      title: tActions('actions.activateSpaces.title'),
+      description: tActions('actions.activateSpaces.description'),
       href: 'activate-spaces',
       icon: <ArrowRightIcon />,
     },
     {
-      title: 'Migrate Hypha Tokens (Telos → Base)',
-      description:
-        'Move your Hypha tokens from the Telos blockchain to the Base network. Initiates the migration experience.',
+      id: 'migrateHyphaTokens',
+      title: tActions('actions.migrateHyphaTokens.title'),
+      description: tActions('actions.migrateHyphaTokens.description'),
       href: 'migrate-hypha-tokens',
       icon: <LoopIcon />,
       disabled: !person?.address,
@@ -76,14 +79,16 @@ export default function ProfileWallet() {
           <ButtonClose closeUrl={`/${lang}/profile/${personSlug}`} />
         </div>
         <SelectAction
-          title="Actions"
-          content="Manage your personal funds, interact with the Hypha network, and contribute directly using your wallet."
+          title={tProfile('actions')}
+          content={tActions('content')}
           actions={WALLET_ACTIONS.map((action) => ({
             ...action,
             href:
-              action.title === 'Migrate Hypha Tokens (Telos → Base)'
-                ? `${MIGRATE_HYPHA_TOKENS_URL}/${person?.address}`
-                : `/${lang}/profile/${personSlug}/actions/${action.href}`,
+              action.id === 'migrateHyphaTokens'
+                ? `${MIGRATE_HYPHA_TOKENS_URL}/${person?.address ?? ''}`
+                : action.href
+                ? `/${lang}/profile/${personSlug}/actions/${action.href}`
+                : undefined,
             target: action.target || undefined,
           }))}
         />
