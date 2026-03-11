@@ -209,7 +209,7 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
         colorVariant={isMember || justJoined ? 'neutral' : 'accent'}
         variant={isMember || justJoined ? 'outline' : 'default'}
         title={
-          !isAuthenticated ? 'Please sign in to use this feature.' : buttonTitle
+          !isAuthenticated ? t('signIn') : buttonTitle
         }
       >
         {showLoader ? (
