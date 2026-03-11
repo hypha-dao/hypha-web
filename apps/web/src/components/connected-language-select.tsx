@@ -1,6 +1,6 @@
 'use client';
 
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { LanguageSelect } from '@hypha-platform/ui';
 import { routing, localeMetadata } from '@hypha-platform/i18n/client';
@@ -8,6 +8,7 @@ import { routing, localeMetadata } from '@hypha-platform/i18n/client';
 export function ConnectedLanguageSelect() {
   const pathname = usePathname();
   const activeLocale = useLocale();
+  const tNav = useTranslations('Navigation');
 
   const locales = routing.locales.map((code) => localeMetadata[code]);
 
@@ -29,6 +30,7 @@ export function ConnectedLanguageSelect() {
       currentLocale={activeLocale}
       locales={locales}
       onLocaleChange={handleLocaleChange}
+      ariaLabel={tNav('selectLanguage')}
     />
   );
 }

@@ -19,12 +19,14 @@ type LanguageSelectProps = {
   currentLocale: string;
   locales: LocaleOption[];
   onLocaleChange: (locale: string) => void;
+  ariaLabel?: string;
 };
 
 export function LanguageSelect({
   currentLocale,
   locales,
   onLocaleChange,
+  ariaLabel = 'Select language',
 }: LanguageSelectProps) {
   const currentMeta = locales.find((l) => l.code === currentLocale);
 
@@ -34,7 +36,7 @@ export function LanguageSelect({
         <Button
           variant="outline"
           size="default"
-          aria-label="Select language"
+          aria-label={ariaLabel}
           className="gap-1.5"
         >
           <Globe className="size-4" />
