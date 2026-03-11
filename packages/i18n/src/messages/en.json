@@ -152,6 +152,24 @@
       }
     }
   },
+  "SelectActivateAction": {
+    "title": "Activate Space",
+    "content": "Choose one of the options below to activate your Space and unlock all the features available on the Hypha Network.",
+    "actions": {
+      "depositFunds": {
+        "title": "Deposit Funds",
+        "description": "Deposit funds into your treasury by copying the treasury address or scanning the QR code."
+      },
+      "buyHyphaTokensRewards": {
+        "title": "Buy Hypha Tokens (Rewards)",
+        "description": "Purchase Hypha tokens to participate in the network and earn rewards."
+      },
+      "activateSpaces": {
+        "title": "Activate Space(s)",
+        "description": "Contribute HYPHA or USDC to activate your space(s) and support the Hypha Network."
+      }
+    }
+  },
   "Network": {
     "manySpaces": "Many Spaces,",
     "oneVibrantNetwork": "One Vibrant Network",

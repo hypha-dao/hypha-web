@@ -152,6 +152,24 @@
       }
     }
   },
+  "SelectActivateAction": {
+    "title": "Space aktivieren",
+    "content": "Wählen Sie eine der untenstehenden Optionen, um Ihren Space zu aktivieren und alle im Hypha-Netzwerk verfügbaren Funktionen freizuschalten.",
+    "actions": {
+      "depositFunds": {
+        "title": "Mittel einzahlen",
+        "description": "Zahlen Sie Mittel in Ihre Schatzkammer ein, indem Sie die Schatzkammer-Adresse kopieren oder den QR-Code scannen."
+      },
+      "buyHyphaTokensRewards": {
+        "title": "Hypha-Tokens kaufen (Belohnungen)",
+        "description": "Kaufen Sie Hypha-Tokens, um am Netzwerk teilzunehmen und Belohnungen zu erhalten."
+      },
+      "activateSpaces": {
+        "title": "Space(s) aktivieren",
+        "description": "Tragen Sie HYPHA oder USDC bei, um Ihren/Ihre Space(s) zu aktivieren und das Hypha-Netzwerk zu unterstützen."
+      }
+    }
+  },
   "Network": {
     "manySpaces": "Viele Spaces,",
     "oneVibrantNetwork": "Ein lebendiges Netzwerk",
