@@ -118,6 +118,40 @@
       }
     }
   },
+  "SelectCreateAction": {
+    "title": "Vorschlag erstellen",
+    "content": "Wählen Sie eine Aktion aus, um in Ihrem Space beizutragen, zusammenzuarbeiten, Entscheidungen zu treffen oder Ressourcen zu verwalten.",
+    "actions": {
+      "makeCollectiveAgreement": {
+        "title": "Eine kollektive Vereinbarung treffen",
+        "description": "Definieren und formalisieren Sie ein gemeinsames Verständnis, eine Richtlinie oder eine Entscheidung unter den Mitgliedern des Spaces."
+      },
+      "proposeContribution": {
+        "title": "Einen Beitrag vorschlagen",
+        "description": "Schlagen Sie einen neuen Beitrag vor, z. B. Arbeit, Wissen, Kapital oder Ressourcen, den der Space prüfen kann."
+      },
+      "payExpenses": {
+        "title": "Ausgaben für Produkte oder Dienstleistungen bezahlen",
+        "description": "Leisten Sie Zahlungen für Produkte und Dienstleistungen, indem Sie Mittel aus der Schatzkammer Ihres Spaces an einen anderen Space, eine Organisation oder eine individuelle Wallet übertragen."
+      },
+      "acceptInvestmentComingSoon": {
+        "title": "Investition annehmen (Bald verfügbar)",
+        "description": "Erhalten Sie Kapital von Investoren, Mitgliedern oder ausgerichteten Spaces im Austausch für native Space-Token."
+      },
+      "exchangeOwnershipComingSoon": {
+        "title": "Eigentum austauschen (Bald verfügbar)",
+        "description": "Tauschen Sie Eigentum zwischen Mitgliedern oder Spaces aus, sei es durch den Verkauf eines Anteils oder den Austausch von Vermögenswerten."
+      },
+      "deployFunds": {
+        "title": "Mittel einsetzen",
+        "description": "Weisen Sie Schatzkammermittel für Investitionen in andere Spaces im Netzwerk oder für die Verteilung von Ressourcen über Spaces innerhalb Ihrer Organisation zu."
+      },
+      "depositFunds": {
+        "title": "Mittel einzahlen",
+        "description": "Zahlen Sie Mittel in Ihre Schatzkammer ein, indem Sie die Schatzkammer-Adresse kopieren oder den QR-Code scannen."
+      }
+    }
+  },
   "Network": {
     "manySpaces": "Viele Spaces,",
     "oneVibrantNetwork": "Ein lebendiges Netzwerk",

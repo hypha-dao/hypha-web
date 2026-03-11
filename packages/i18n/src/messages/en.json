@@ -118,6 +118,40 @@
       }
     }
   },
+  "SelectCreateAction": {
+    "title": "Create a Proposal",
+    "content": "Select an action to contribute, collaborate, make decisions or manage resources within your space.",
+    "actions": {
+      "makeCollectiveAgreement": {
+        "title": "Make a Collective Agreement",
+        "description": "Define and formalise a mutual understanding, policy, or decision among members of the space."
+      },
+      "proposeContribution": {
+        "title": "Propose a Contribution",
+        "description": "Propose a new contribution, such as work, knowledge, capital, or resources, for the space to consider."
+      },
+      "payExpenses": {
+        "title": "Pay Expenses for Products or Services",
+        "description": "Make payments for products and services by transferring funds from your space treasury to another space, entity, or individual wallet."
+      },
+      "acceptInvestmentComingSoon": {
+        "title": "Accept Investment (Coming Soon)",
+        "description": "Receive capital from investors, members, or aligned spaces in exchange for native space tokens."
+      },
+      "exchangeOwnershipComingSoon": {
+        "title": "Exchange Ownership (Coming Soon)",
+        "description": "Swap ownership between members or spaces, whether selling a stake or exchanging assets."
+      },
+      "deployFunds": {
+        "title": "Deploy Funds",
+        "description": "Allocate treasury funds for investments in other spaces in the network or for distributing resources across spaces within your organisation."
+      },
+      "depositFunds": {
+        "title": "Deposit Funds",
+        "description": "Deposit funds into your treasury by copying the treasury address or scanning the QR code."
+      }
+    }
+  },
   "Network": {
     "manySpaces": "Many Spaces,",
     "oneVibrantNetwork": "One Vibrant Network",
