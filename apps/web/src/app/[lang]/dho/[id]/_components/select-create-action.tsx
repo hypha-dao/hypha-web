@@ -79,7 +79,7 @@ export const SelectCreateAction = ({
       defaultDurationDays: 7,
       title: 'Redeem Tokens',
       description:
-        'Convert tokens in the treasury into their equivalent fiat value held in the Space Token Issuer vault.',
+        'Convert your tokens into their equivalent fiat value held in the vault.',
       href: 'agreements/create/redeem-tokens',
       icon: <ArrowUpIcon />,
       disabled: isPaymentExpired,
