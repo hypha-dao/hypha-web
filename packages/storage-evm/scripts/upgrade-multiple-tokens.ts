@@ -31,6 +31,7 @@ const DRY_RUN = false; // Start with dry run for testing
 
 // Wait time between upgrades (in milliseconds) to avoid rate limiting
 const WAIT_TIME_BETWEEN_UPGRADES = 5000;
+const SPACES_CONTRACT = '0xc8B8454D2F9192FeCAbc2C6F5d88F6434A2a9cd9';
 
 // ============================================
 
@@ -87,6 +88,9 @@ async function upgradeToken(
   };
 
   try {
+    let maxFeePerGas: bigint | undefined;
+    let maxPriorityFeePerGas: bigint | undefined;
+
     // Get current implementation address
     result.oldImplementation = await upgrades.erc1967.getImplementationAddress(
       tokenAddress,
@@ -137,10 +141,10 @@ async function upgradeToken(
 
       // Increase gas price by 200% (3x) to avoid underpriced transactions
       // This is necessary when there are stuck/pending transactions in mempool
-      const maxFeePerGas = feeData.maxFeePerGas
+      maxFeePerGas = feeData.maxFeePerGas
         ? (feeData.maxFeePerGas * 300n) / 100n
         : undefined;
-      const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas
+      maxPriorityFeePerGas = feeData.maxPriorityFeePerGas
         ? (feeData.maxPriorityFeePerGas * 300n) / 100n
         : undefined;
 
@@ -242,38 +246,64 @@ async function upgradeToken(
       console.log('  ✅ Successfully upgraded!');
     }
 
-    // Post-upgrade configuration: Enable autoMinting for backward compatibility
-    // This runs whether or not the implementation changed
+    // Post-upgrade configuration for backward compatibility and safety.
     console.log('  🔧 Configuring post-upgrade settings...');
     try {
-      const tokenContract = await ethers.getContractAt(
-        'RegularSpaceToken',
-        tokenAddress,
-      );
+      if (TOKEN_TYPE === 'Ownership') {
+        const ownershipToken = await ethers.getContractAt(
+          'OwnershipSpaceToken',
+          tokenAddress,
+        );
+        const currentSpacesContract =
+          await ownershipToken.ownershipSpacesContract();
+        console.log(
+          `  Current ownershipSpacesContract: ${currentSpacesContract}`,
+        );
 
-      // Check current autoMinting status
-      const currentAutoMinting = await tokenContract.autoMinting();
-      console.log(`  Current autoMinting: ${currentAutoMinting}`);
-
-      if (!currentAutoMinting) {
-        console.log('  Setting autoMinting to true...');
-        const configTx = await tokenContract.setAutoMinting(true);
-        await configTx.wait();
-        console.log('  ✅ AutoMinting enabled (backward compatibility)');
+        if (
+          currentSpacesContract.toLowerCase() !== SPACES_CONTRACT.toLowerCase()
+        ) {
+          console.log(
+            `  Setting ownershipSpacesContract to ${SPACES_CONTRACT}...`,
+          );
+          const setSpacesTx = await (
+            ownershipToken as any
+          ).setOwnershipSpacesContract(SPACES_CONTRACT);
+          await setSpacesTx.wait();
+          console.log('  ✅ ownershipSpacesContract configured');
+        } else {
+          console.log('  ℹ️  ownershipSpacesContract already configured');
+        }
       } else {
-        console.log('  ℹ️  AutoMinting already enabled, skipping');
+        const tokenContract = await ethers.getContractAt(
+          'RegularSpaceToken',
+          tokenAddress,
+        );
+
+        // Check current autoMinting status
+        const currentAutoMinting = await tokenContract.autoMinting();
+        console.log(`  Current autoMinting: ${currentAutoMinting}`);
+
+        if (!currentAutoMinting) {
+          console.log('  Setting autoMinting to true...');
+          const configTx = await tokenContract.setAutoMinting(true);
+          await configTx.wait();
+          console.log('  ✅ AutoMinting enabled (backward compatibility)');
+        } else {
+          console.log('  ℹ️  AutoMinting already enabled, skipping');
+        }
       }
 
       result.success = true;
     } catch (configError: any) {
       console.log(
-        `  ⚠️  Warning: Could not configure autoMinting: ${configError.message}`,
+        `  ⚠️  Warning: Could not configure post-upgrade settings: ${configError.message}`,
       );
-      console.log('  ℹ️  You may need to call setAutoMinting(true) manually');
       // Mark as success if implementation changed, otherwise keep as false
       result.success = implementationChanged;
       if (!result.success) {
-        result.error = 'Implementation unchanged and autoMinting config failed';
+        result.error =
+          'Implementation unchanged and post-upgrade config failed';
       }
     }
   } catch (error: any) {

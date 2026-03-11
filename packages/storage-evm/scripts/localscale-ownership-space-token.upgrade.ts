@@ -2,6 +2,7 @@ import { ethers, upgrades } from 'hardhat';
 
 // LocalScale token proxy address
 const PROXY_ADDRESS = '0x085a2bd60b5c786aDdf1cF87D72735ae4974D90b';
+const SPACES_CONTRACT = '0xc8B8454D2F9192FeCAbc2C6F5d88F6434A2a9cd9';
 
 async function main(): Promise<void> {
   // Get the deployer's address
@@ -129,6 +130,24 @@ async function main(): Promise<void> {
     'LocalScaleOwnershipToken proxy address (unchanged):',
     await upgradedContract.getAddress(),
   );
+
+  // Ensure ownership membership contract is configured after upgrade.
+  const currentSpacesContract =
+    await upgradedContract.ownershipSpacesContract();
+  if (currentSpacesContract.toLowerCase() !== SPACES_CONTRACT.toLowerCase()) {
+    console.log(
+      `Updating ownershipSpacesContract from ${currentSpacesContract} to ${SPACES_CONTRACT}...`,
+    );
+    const setSpacesTx = await upgradedContract.setOwnershipSpacesContract(
+      SPACES_CONTRACT,
+    );
+    await setSpacesTx.wait();
+    const updatedSpacesContract =
+      await upgradedContract.ownershipSpacesContract();
+    console.log('ownershipSpacesContract updated to:', updatedSpacesContract);
+  } else {
+    console.log('ownershipSpacesContract already configured:', SPACES_CONTRACT);
+  }
 
   // Wait for a few more confirmations to ensure the upgrade is fully propagated
   console.log('Waiting for additional confirmations...');

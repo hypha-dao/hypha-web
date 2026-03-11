@@ -1,6 +1,7 @@
 import { ethers, upgrades } from 'hardhat';
 
 const PROXY_ADDRESS = '0x5d3394CAa6D09214aB86CF048e39dea058eC1921';
+const SPACES_CONTRACT = '0xc8B8454D2F9192FeCAbc2C6F5d88F6434A2a9cd9';
 
 async function main(): Promise<void> {
   const [deployer] = await ethers.getSigners();
@@ -116,6 +117,24 @@ async function main(): Promise<void> {
     'HyphaOwnershipTokenContract proxy address (unchanged):',
     await upgradedContract.getAddress(),
   );
+
+  // Ensure ownership membership contract is configured after upgrade.
+  const currentSpacesContract =
+    await upgradedContract.ownershipSpacesContract();
+  if (currentSpacesContract.toLowerCase() !== SPACES_CONTRACT.toLowerCase()) {
+    console.log(
+      `Updating ownershipSpacesContract from ${currentSpacesContract} to ${SPACES_CONTRACT}...`,
+    );
+    const setSpacesTx = await upgradedContract.setOwnershipSpacesContract(
+      SPACES_CONTRACT,
+    );
+    await setSpacesTx.wait();
+    const updatedSpacesContract =
+      await upgradedContract.ownershipSpacesContract();
+    console.log('ownershipSpacesContract updated to:', updatedSpacesContract);
+  } else {
+    console.log('ownershipSpacesContract already configured:', SPACES_CONTRACT);
+  }
 
   console.log('Waiting for additional confirmations...');
   await new Promise((resolve) => setTimeout(resolve, 10000));

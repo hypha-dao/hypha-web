@@ -32,6 +32,10 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
    * @dev Emitted when a transfer is rejected due to membership requirements
    */
   event TransferRejected(address from, address to, string reason);
+  event OwnershipSpacesContractUpdated(
+    address indexed oldSpacesContract,
+    address indexed newSpacesContract
+  );
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -75,6 +79,25 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
       _initialReceiveWhitelist
     );
     ownershipSpacesContract = _spacesContract;
+  }
+
+  /**
+   * @dev Sets the spaces contract used for ownership membership checks.
+   * Allows recovering older upgraded proxies where this field was never initialized.
+   */
+  function setOwnershipSpacesContract(address _spacesContract) external virtual {
+    require(
+      msg.sender == executor || msg.sender == owner(),
+      'Only executor or owner can update spaces contract'
+    );
+    require(
+      _spacesContract != address(0),
+      'Spaces contract cannot be zero address'
+    );
+
+    address oldSpacesContract = ownershipSpacesContract;
+    ownershipSpacesContract = _spacesContract;
+    emit OwnershipSpacesContractUpdated(oldSpacesContract, _spacesContract);
   }
 
   /**
@@ -235,7 +258,13 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
    * @dev Check if an address is a member of the space
    */
   function _isSpaceMember(address account) internal view returns (bool) {
-    return IDAOSpaceFactory(ownershipSpacesContract).isMember(spaceId, account);
+    // Backward compatibility:
+    // Some older proxies were upgraded without initializing ownershipSpacesContract.
+    // Fallback to the canonical parent spaces contract in that case.
+    address membershipSpacesContract = ownershipSpacesContract == address(0)
+      ? spacesContract
+      : ownershipSpacesContract;
+    return IDAOSpaceFactory(membershipSpacesContract).isMember(spaceId, account);
   }
 
   /**
