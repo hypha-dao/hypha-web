@@ -650,3 +650,23 @@ export const schemaChangeSpaceTransparencySettings = z.object({
   spaceDiscoverability: z.number().int().min(0).max(3),
   spaceActivityAccess: z.number().int().min(0).max(3),
 });
+
+export const schemaSpaceTokenPurchase = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  tokenAddress: z
+    .string({ message: 'Please select a token' })
+    .min(1, 'Please select a token'),
+  activatePurchase: z.boolean().default(false),
+  purchasePrice: z.preprocess(
+    (val) =>
+      val === '' || val === null || val === undefined ? undefined : Number(val),
+    z.number().positive('Purchase price must be greater than 0').optional(),
+  ),
+  purchaseCurrency: z.enum(REFERENCE_CURRENCIES).optional(),
+  tokensAvailableForPurchase: z.preprocess(
+    (val) =>
+      val === '' || val === null || val === undefined ? undefined : Number(val),
+    z.number().positive('Available amount must be greater than 0').optional(),
+  ),
+});
