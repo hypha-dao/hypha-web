@@ -200,6 +200,43 @@
       "noSpacesFound": "Keine Spaces gefunden"
     }
   },
+  "AgreementsTab": {
+    "onVoting": "In Abstimmung",
+    "accepted": "Akzeptiert",
+    "rejected": "Abgelehnt",
+    "searchDocuments": "Dokumente suchen",
+    "listIsEmpty": "Liste ist leer"
+  },
+  "MembersTab": {
+    "searchMembers": "Mitglieder suchen",
+    "delegateVoting": "Stimmrecht delegieren",
+    "listIsEmpty": "Liste ist leer",
+    "loading": "Wird geladen...",
+    "noMoreMembers": "Keine weiteren Mitglieder",
+    "loadMoreMembers": "Mehr Mitglieder laden"
+  },
+  "TreasuryTab": {
+    "balance": "Kontostand",
+    "searchTokens": "Tokens suchen",
+    "hideSmallBalances": "Kleine Guthaben ausblenden",
+    "newToken": "Neuer Token",
+    "depositFunds": "Mittel einzahlen",
+    "listIsEmpty": "Liste ist leer",
+    "loadMoreAssets": "Mehr Assets laden",
+    "transactions": "Transaktionen",
+    "searchTransactions": "Transaktionen suchen",
+    "noTransactionsFound": "Keine Transaktionen gefunden",
+    "loadMoreTransactions": "Mehr Transaktionen laden"
+  },
+  "Footer": {
+    "network": "NETZWERK",
+    "legal": "RECHTLICHES",
+    "hyphaServices": "Hypha Services",
+    "hyphaTokenomics": "Hypha Tokenomics",
+    "licensingPolicy": "Lizenzierungsrichtlinie",
+    "termsAndConditions": "Allgemeine Geschäftsbedingungen",
+    "privacyPolicy": "Datenschutzrichtlinie"
+  },
   "Network": {
     "manySpaces": "Viele Spaces,",
     "oneVibrantNetwork": "Ein lebendiges Netzwerk",

@@ -87,6 +87,7 @@ export default async function RootLayout({
   const locale = await getLocale();
   const messages = await getMessages();
   const tNav = await getTranslations('Navigation');
+  const tFooter = await getTranslations('Footer');
   const notificationAppId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '';
   const safariWebId = process.env.NEXT_PUBLIC_ONESIGNAL_SAFARI_WEB_ID ?? '';
   const serviceWorkerPath = 'onesignal/OneSignalSDKWorker.js';
@@ -142,7 +143,15 @@ export default async function RootLayout({
                     <div className="w-full h-full">{children}</div>
                   </div>
                 </div>
-                <Footer />
+                <Footer
+                  networkLabel={tFooter('network')}
+                  legalLabel={tFooter('legal')}
+                  hyphaServicesLabel={tFooter('hyphaServices')}
+                  hyphaTokenomicsLabel={tFooter('hyphaTokenomics')}
+                  licensingPolicyLabel={tFooter('licensingPolicy')}
+                  termsAndConditionsLabel={tFooter('termsAndConditions')}
+                  privacyPolicyLabel={tFooter('privacyPolicy')}
+                />
               </NotificationSubscriber>
             </NextIntlClientProvider>
           </EvmProvider>

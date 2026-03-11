@@ -200,6 +200,43 @@
       "noSpacesFound": "No spaces found"
     }
   },
+  "AgreementsTab": {
+    "onVoting": "On Voting",
+    "accepted": "Accepted",
+    "rejected": "Rejected",
+    "searchDocuments": "Search documents",
+    "listIsEmpty": "List is empty"
+  },
+  "MembersTab": {
+    "searchMembers": "Search members",
+    "delegateVoting": "Delegate Voting",
+    "listIsEmpty": "List is empty",
+    "loading": "Loading...",
+    "noMoreMembers": "No more members",
+    "loadMoreMembers": "Load more members"
+  },
+  "TreasuryTab": {
+    "balance": "Balance",
+    "searchTokens": "Search tokens",
+    "hideSmallBalances": "Hide small balances",
+    "newToken": "New Token",
+    "depositFunds": "Deposit funds",
+    "listIsEmpty": "List is empty",
+    "loadMoreAssets": "Load more assets",
+    "transactions": "Transactions",
+    "searchTransactions": "Search transactions",
+    "noTransactionsFound": "No transactions found",
+    "loadMoreTransactions": "Load more transactions"
+  },
+  "Footer": {
+    "network": "NETWORK",
+    "legal": "LEGAL",
+    "hyphaServices": "Hypha Services",
+    "hyphaTokenomics": "Hypha Tokenomics",
+    "licensingPolicy": "Licensing policy",
+    "termsAndConditions": "Terms & Conditions",
+    "privacyPolicy": "Privacy Policy"
+  },
   "Network": {
     "manySpaces": "Many Spaces,",
     "oneVibrantNetwork": "One Vibrant Network",

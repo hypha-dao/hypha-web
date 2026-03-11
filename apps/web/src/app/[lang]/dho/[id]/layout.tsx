@@ -48,6 +48,7 @@ export default async function DhoLayout({
 }) {
   const { id: daoSlug, lang } = await params;
   const tCommon = await getTranslations('Common');
+  const tSpaces = await getTranslations('Spaces');
 
   const spaceFromDb = await findSpaceBySlug({ slug: daoSlug }, { db });
   if (!spaceFromDb) {
@@ -190,7 +191,7 @@ export default async function DhoLayout({
           <Separator />
           <div className="border-primary-foreground">
             <Text className="text-4 font-medium pb-4 pt-4">
-              Spaces you might like
+              {tSpaces('spacesYouMightLike')}
             </Text>
             <Carousel className="my-6 mt-6">
               <CarouselContent className="pb-5" showScrollbar>
