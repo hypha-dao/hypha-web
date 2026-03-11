@@ -96,7 +96,7 @@ export default async function DhoLayout({
     <div className="flex max-w-container-2xl mx-auto">
       <Container className="flex-grow min-w-0">
         <div className="mb-6 flex items-center">
-          <Breadcrumbs spaceId={spaceFromDb.id} />
+          <Breadcrumbs spaceId={spaceFromDb.id} lang={lang} />
         </div>
         <div className="relative flex justify-end mb-2">
           {typeof spaceFromDb.web3SpaceId === 'number' && (

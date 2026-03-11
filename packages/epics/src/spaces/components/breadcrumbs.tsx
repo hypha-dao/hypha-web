@@ -13,13 +13,21 @@ type SpaceBreadcrumb = {
   title: string;
 };
 
-export function SpaceBreadcrumb({ children }: { children: React.ReactNode }) {
+export function SpaceBreadcrumb({
+  children,
+  rootHref = '/my-spaces',
+  rootLabel = 'My Spaces',
+}: {
+  children: React.ReactNode;
+  rootHref?: string;
+  rootLabel?: string;
+}) {
   return (
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
-          <BreadcrumbLink href="/my-spaces" className="flex items-center">
-            My Spaces
+          <BreadcrumbLink href={rootHref} className="flex items-center">
+            {rootLabel}
           </BreadcrumbLink>
         </BreadcrumbItem>
         {children}
@@ -30,8 +38,10 @@ export function SpaceBreadcrumb({ children }: { children: React.ReactNode }) {
 
 export const SpaceBreadcrumbItem = ({
   breadcrumb,
+  lang,
 }: {
   breadcrumb: SpaceBreadcrumb;
+  lang?: string;
 }) => {
   return (
     <Fragment key={breadcrumb.slug}>
@@ -40,7 +50,7 @@ export const SpaceBreadcrumbItem = ({
       </BreadcrumbSeparator>
       <BreadcrumbItem>
         <BreadcrumbLink
-          href={`/dho/${breadcrumb.slug}/agreements`}
+          href={`${lang ? `/${lang}` : ''}/dho/${breadcrumb.slug}/agreements`}
           className="flex items-center"
         >
           {breadcrumb.title}
