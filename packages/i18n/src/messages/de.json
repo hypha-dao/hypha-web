@@ -237,6 +237,24 @@
     "termsAndConditions": "Allgemeine Geschäftsbedingungen",
     "privacyPolicy": "Datenschutzrichtlinie"
   },
+  "Profile": {
+    "profilePage": "Profilseite",
+    "personNotFound": "Person nicht gefunden",
+    "redirectingToProfile": "Weiterleitung zum Profil...",
+    "exportKeys": "Schlüssel exportieren",
+    "copyUserId": "Benutzer-ID kopieren",
+    "copied": "Kopiert!",
+    "editProfile": "Profil bearbeiten",
+    "hyphaMemberSince": "Hypha-Mitglied seit {date}",
+    "rewards": "Belohnungen",
+    "claim": "Einlösen",
+    "claimOnlyOnPersonalPage": "Das Einlösen ist nur auf Ihrer persönlichen Seite verfügbar",
+    "rewardValueMustBeGreaterThanZero": "Der Belohnungswert muss größer als 0 sein",
+    "noRewardsFoundForUser": "Für diesen Benutzer wurden keine Belohnungen gefunden",
+    "buyHypha": "HYPHA kaufen",
+    "actions": "Aktionen",
+    "noAssetsFoundForUser": "Keine Assets für diesen Benutzer gefunden"
+  },
   "Network": {
     "manySpaces": "Viele Spaces,",
     "oneVibrantNetwork": "Ein lebendiges Netzwerk",

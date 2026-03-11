@@ -9,6 +9,7 @@ import { Button } from '@hypha-platform/ui';
 import { Loader2 } from 'lucide-react';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { Empty } from '../../../common';
+import { useTranslations } from 'next-intl';
 
 const HYPHA_TOKEN_ADDRESS = '0x8b93862835C36e9689E9bb1Ab21De3982e266CD3';
 const MIN_REWARD_CLAIM_VALUE = 0.01;
@@ -22,6 +23,7 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
   person,
   isMyProfile,
 }) => {
+  const tProfile = useTranslations('Profile');
   const { isAuthenticated } = useAuthentication();
   const {
     filteredAssets,
@@ -82,26 +84,26 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
   return (
     <div className="flex flex-col w-full justify-center items-center gap-3">
       <div className="w-full flex justify-between">
-        <SectionFilter label="Rewards" />
+        <SectionFilter label={tProfile('rewards')} />
         <Button
           title={
             !isMyProfile
-              ? 'Claim is only available on your personal page'
+              ? tProfile('claimOnlyOnPersonalPage')
               : disableClaimButton
-              ? 'The reward value must be greater than 0'
+              ? tProfile('rewardValueMustBeGreaterThanZero')
               : ''
           }
           disabled={!isMyProfile || disableClaimButton}
           onClick={onHandleClaim}
         >
           {isClaiming && <Loader2 className="animate-spin w-4 h-4" />}
-          Claim
+          {tProfile('claim')}
         </Button>
       </div>
       <div className="w-full">
         {!isAuthenticated ? (
           <Empty>
-            <p>No rewards found for this user</p>
+            <p>{tProfile('noRewardsFoundForUser')}</p>
           </Empty>
         ) : (
           <>

@@ -10,6 +10,7 @@ import { useParams } from 'next/navigation';
 import { Empty } from '@hypha-platform/epics';
 import { ExitIcon, GlobeIcon, PlusIcon } from '@radix-ui/react-icons';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { useTranslations } from 'next-intl';
 
 export type ProfileMemberSpacesProps = {
   person: Person;
@@ -24,6 +25,8 @@ export const ProfileMemberSpaces = ({
   isLoading,
   profileView = false,
 }: ProfileMemberSpacesProps) => {
+  const tCommon = useTranslations('Common');
+  const tSpaces = useTranslations('Spaces');
   const { lang } = useParams();
 
   const { isMe } = useMe();
@@ -38,27 +41,24 @@ export const ProfileMemberSpaces = ({
         <Empty>
           <div className="flex flex-col gap-7">
             <p>
-              No spaces created or joined yet. Explore our network and join some
-              Space, or create your own
+              {tCommon('noSpacesYet')}
             </p>
             <div className="flex gap-4 items-center justify-center">
               <Link href={`/${lang}/network`}>
                 <Button variant="outline" className="gap-2">
                   <GlobeIcon />
-                  Explore Spaces
+                  {tCommon('exploreSpaces')}
                 </Button>
               </Link>
               <Link
                 className={!isAuthenticated ? 'cursor-not-allowed' : ''}
-                title={
-                  !isAuthenticated ? 'Please sign in to use this feature.' : ''
-                }
+                title={!isAuthenticated ? tCommon('signIn') : ''}
                 href={isAuthenticated ? `/${lang}/my-spaces/create` : {}}
                 scroll={false}
               >
                 <Button disabled={!isAuthenticated} className="gap-2">
                   <PlusIcon />
-                  Create Space
+                  {tSpaces('createSpace')}
                 </Button>
               </Link>
             </div>
@@ -74,7 +74,7 @@ export const ProfileMemberSpaces = ({
               className="rounded-lg"
             />
           ) : !profileView ? (
-            <div className="text-4 mr-4">Spaces</div>
+            <div className="text-4 mr-4">{tCommon('Spaces')}</div>
           ) : null}
           {isLoading ? (
             <div className="flex flex-row gap-3 overflow-x-auto">
@@ -138,7 +138,7 @@ export const ProfileMemberSpaces = ({
                               variant="outline"
                               colorVariant="neutral"
                               className="border-0 w-[20px] h-[20px]"
-                              title="Exit Space"
+                              title={tSpaces('exitSpace')}
                             >
                               <ExitIcon width={12} height={12} />
                             </Button>

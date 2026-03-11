@@ -237,6 +237,24 @@
     "termsAndConditions": "Terms & Conditions",
     "privacyPolicy": "Privacy Policy"
   },
+  "Profile": {
+    "profilePage": "Profile Page",
+    "personNotFound": "Person not found",
+    "redirectingToProfile": "Redirecting to profile...",
+    "exportKeys": "Export Keys",
+    "copyUserId": "Copy user ID",
+    "copied": "Copied!",
+    "editProfile": "Edit profile",
+    "hyphaMemberSince": "Hypha member since {date}",
+    "rewards": "Rewards",
+    "claim": "Claim",
+    "claimOnlyOnPersonalPage": "Claim is only available on your personal page",
+    "rewardValueMustBeGreaterThanZero": "The reward value must be greater than 0",
+    "noRewardsFoundForUser": "No rewards found for this user",
+    "buyHypha": "Buy HYPHA",
+    "actions": "Actions",
+    "noAssetsFoundForUser": "No assets found for this user"
+  },
   "Network": {
     "manySpaces": "Many Spaces,",
     "oneVibrantNetwork": "One Vibrant Network",

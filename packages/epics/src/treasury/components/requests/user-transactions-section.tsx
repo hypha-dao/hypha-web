@@ -5,6 +5,7 @@ import { Text } from '@radix-ui/themes';
 import { useUserTransfersSection } from '../../hooks';
 import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 import { Empty } from '../../../common';
+import { useTranslations } from 'next-intl';
 
 type TransactionsSectionProps = {
   personSlug?: string;
@@ -15,6 +16,7 @@ export const UserTransactionsSection: FC<TransactionsSectionProps> = ({
   personSlug,
   pageSize = 4,
 }) => {
+  const tTreasury = useTranslations('TreasuryTab');
   const {
     transfers,
     activeSort,
@@ -29,15 +31,15 @@ export const UserTransactionsSection: FC<TransactionsSectionProps> = ({
   return (
     <div className="flex flex-col w-full justify-center items-center gap-4">
       <SectionFilter
-        label="Transactions"
+        label={tTreasury('transactions')}
         hasSearch
-        searchPlaceholder="Search transactions"
+        searchPlaceholder={tTreasury('searchTransactions')}
         onChangeSearch={setSearchTerm}
       />
 
       {transfers.length === 0 && !isLoading ? (
         <Empty>
-          <p>No transactions found</p>
+          <p>{tTreasury('noTransactionsFound')}</p>
         </Empty>
       ) : (
         <TransactionsList
@@ -53,7 +55,7 @@ export const UserTransactionsSection: FC<TransactionsSectionProps> = ({
           disabled={!hasMore}
           isLoading={isLoading}
         >
-          <Text>Load more transactions</Text>
+          <Text>{tTreasury('loadMoreTransactions')}</Text>
         </SectionLoadMore>
       )}
     </div>
