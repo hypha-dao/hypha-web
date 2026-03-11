@@ -10,6 +10,7 @@ import { useSpaceMember } from '../hooks';
 import { useAuthentication } from '@hypha-platform/authentication';
 import Link from 'next/link';
 import { useIsDelegate } from '@hypha-platform/core/client';
+import { useLocale, useTranslations } from 'next-intl';
 
 interface SubscriptionBadgeProps extends Omit<BadgeProps, 'isLoading'> {
   web3SpaceId: number;
@@ -22,6 +23,9 @@ export function SubscriptionBadge({
   className,
   ...props
 }: SubscriptionBadgeProps) {
+  const tCommon = useTranslations('Common');
+  const tSpaces = useTranslations('Spaces');
+  const locale = useLocale();
   const pathname = usePathname();
   const { payments, isLoading } = useSpacePayments({
     spaceId: BigInt(web3SpaceId),
@@ -35,9 +39,9 @@ export function SubscriptionBadge({
 
   const isDisabled = !isAuthenticated || (!isMember && !isDelegate);
   const tooltipMessage = !isAuthenticated
-    ? 'Please sign in to use this feature.'
+    ? tCommon('signIn')
     : !isMember && !isDelegate
-    ? 'Please join this space to use this feature.'
+    ? tCommon('joinSpaceToUse')
     : '';
 
   let expiryTime: bigint = BigInt(0);
@@ -55,7 +59,7 @@ export function SubscriptionBadge({
 
   const formatDate = (timestamp: bigint) => {
     const date = new Date(Number(timestamp) * 1000);
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
@@ -77,16 +81,24 @@ export function SubscriptionBadge({
 
   if (!hasSpacePaid && freeTrialUsed && daysLeft > 0) {
     status = daysLeft <= 14 ? 'activeFreeTrialExpiring' : 'activeFreeTrial';
-    label = `Active on free trial until ${formatDate(expiryTime)}`;
+    label = tSpaces('subscriptionBadgeActiveFreeTrialUntil', {
+      date: formatDate(expiryTime),
+    });
   } else if (hasSpacePaid && daysLeft > 0 && daysLeft <= 14) {
     status = 'activate';
-    label = `Renew before ${formatDate(expiryTime)}`;
+    label = tSpaces('subscriptionBadgeRenewBefore', {
+      date: formatDate(expiryTime),
+    });
   } else if (hasSpacePaid && daysLeft > 0) {
     status = 'active';
-    label = `Active until ${formatDate(expiryTime)}`;
+    label = tSpaces('subscriptionBadgeActiveUntil', {
+      date: formatDate(expiryTime),
+    });
   } else if (daysLeft <= 0 && expiryTime > 0) {
     status = 'expired';
-    label = `Expired since ${formatDate(expiryTime)}`;
+    label = tSpaces('subscriptionBadgeExpiredSince', {
+      date: formatDate(expiryTime),
+    });
   }
 
   if (!status) {
