@@ -15,6 +15,7 @@ import { Separator } from '@hypha-platform/ui';
 import { useTheme } from 'next-themes';
 import type { VisibleSpace } from './types';
 import { useFilterSpacesListWithDiscoverability } from '@hypha-platform/epics';
+import { useTranslations } from 'next-intl';
 
 type SelectNavigationActionProps = {
   daoSlug: string;
@@ -74,6 +75,7 @@ export const SelectNavigationAction = ({
   lang,
   children,
 }: SelectNavigationActionProps) => {
+  const t = useTranslations('SelectNavigationAction');
   const { resolvedTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('nested-spaces');
   const [visibleSpaces, setVisibleSpaces] = useState<VisibleSpace[]>([]);
@@ -130,8 +132,8 @@ export const SelectNavigationAction = ({
 
   return (
     <SelectAction
-      title="Space Navigation"
-      content="Navigate all your spaces in a single interactive map to see how they connect to each other. Easily visit nested spaces, explore space-to-space memberships, and follow value flows across your direct ecosystem."
+      title={t('title')}
+      content={t('content')}
       actions={[]}
       isLoading={isLoading}
     >
@@ -148,13 +150,13 @@ export const SelectNavigationAction = ({
           <div className="w-full flex justify-center">
             <TabsList triggerVariant="switch">
               <TabsTrigger variant="switch" value="nested-spaces">
-                Nested Spaces
+                {t('tabs.nestedSpaces')}
               </TabsTrigger>
               <TabsTrigger variant="switch" value="space-to-space">
-                Space-to-Space
+                {t('tabs.spaceToSpace')}
               </TabsTrigger>
               <TabsTrigger variant="switch" value="values-flows">
-                Values Flows
+                {t('tabs.valuesFlows')}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -179,12 +181,12 @@ export const SelectNavigationAction = ({
           </TabsContent>
           <TabsContent value="space-to-space" className="mt-4">
             <div className="text-center text-neutral-11 py-8">
-              Space-to-Space visualization coming soon
+              {t('comingSoon.spaceToSpaceVisualization')}
             </div>
           </TabsContent>
           <TabsContent value="values-flows" className="mt-4">
             <div className="text-center text-neutral-11 py-8">
-              Values Flows visualization coming soon
+              {t('comingSoon.valuesFlowsVisualization')}
             </div>
           </TabsContent>
         </Tabs>

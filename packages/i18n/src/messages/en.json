@@ -42,6 +42,11 @@
     "actionButtons": {
       "spaceSettings": "Space Settings",
       "create": "Create"
+    },
+    "nestedSpacesButton": {
+      "label": "Space Navigation",
+      "loading": "Loading...",
+      "noAccess": "You do not have access to view space navigation."
     }
   },
   "SpaceSettingsAction": {
@@ -168,6 +173,31 @@
         "title": "Activate Space(s)",
         "description": "Contribute HYPHA or USDC to activate your space(s) and support the Hypha Network."
       }
+    }
+  },
+  "SelectNavigationAction": {
+    "title": "Space Navigation",
+    "content": "Navigate all your spaces in a single interactive map to see how they connect to each other. Easily visit nested spaces, explore space-to-space memberships, and follow value flows across your direct ecosystem.",
+    "tabs": {
+      "nestedSpaces": "Nested Spaces",
+      "spaceToSpace": "Space-to-Space",
+      "valuesFlows": "Values Flows"
+    },
+    "comingSoon": {
+      "spaceToSpaceVisualization": "Space-to-Space visualization coming soon",
+      "valuesFlowsVisualization": "Values Flows visualization coming soon"
+    },
+    "visibleSpaces": {
+      "nestedRoot": "Root",
+      "nestedIn": "Nested in {parent}",
+      "nested": "Nested",
+      "spaceInfoNotAvailable": "Space information not available",
+      "addSpace": "Add Space",
+      "loading": "Loading...",
+      "noAccessAddSpace": "You do not have access to add spaces to this organization.",
+      "visitSpace": "Visit Space",
+      "searchSpaces": "Search spaces",
+      "noSpacesFound": "No spaces found"
     }
   },
   "Network": {

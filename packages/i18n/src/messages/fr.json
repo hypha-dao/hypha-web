@@ -42,6 +42,11 @@
     "actionButtons": {
       "spaceSettings": "Paramètres de l'espace",
       "create": "Créer"
+    },
+    "nestedSpacesButton": {
+      "label": "Navigation des espaces",
+      "loading": "Chargement...",
+      "noAccess": "Vous n'avez pas accès à la navigation des espaces."
     }
   },
   "SpaceSettingsAction": {
@@ -168,6 +173,31 @@
         "title": "Activer le(s) espace(s)",
         "description": "Contribuez en HYPHA ou en USDC pour activer votre/vos espace(s) et soutenir le réseau Hypha."
       }
+    }
+  },
+  "SelectNavigationAction": {
+    "title": "Navigation des espaces",
+    "content": "Naviguez dans tous vos espaces sur une seule carte interactive pour voir comment ils sont connectés les uns aux autres. Visitez facilement les espaces imbriqués, explorez les adhésions espace-à-espace et suivez les flux de valeur dans votre écosystème direct.",
+    "tabs": {
+      "nestedSpaces": "Espaces imbriqués",
+      "spaceToSpace": "Espace-à-espace",
+      "valuesFlows": "Flux de valeur"
+    },
+    "comingSoon": {
+      "spaceToSpaceVisualization": "Visualisation espace-à-espace bientôt disponible",
+      "valuesFlowsVisualization": "Visualisation des flux de valeur bientôt disponible"
+    },
+    "visibleSpaces": {
+      "nestedRoot": "Racine",
+      "nestedIn": "Imbriqué dans {parent}",
+      "nested": "Imbriqué",
+      "spaceInfoNotAvailable": "Informations de l'espace indisponibles",
+      "addSpace": "Ajouter un espace",
+      "loading": "Chargement...",
+      "noAccessAddSpace": "Vous n'avez pas accès pour ajouter des espaces à cette organisation.",
+      "visitSpace": "Visiter l'espace",
+      "searchSpaces": "Rechercher des espaces",
+      "noSpacesFound": "Aucun espace trouvé"
     }
   },
   "Network": {

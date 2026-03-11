@@ -42,6 +42,11 @@
     "actionButtons": {
       "spaceSettings": "Space-Einstellungen",
       "create": "Erstellen"
+    },
+    "nestedSpacesButton": {
+      "label": "Space-Navigation",
+      "loading": "Wird geladen...",
+      "noAccess": "Sie haben keinen Zugriff, um die Space-Navigation anzuzeigen."
     }
   },
   "SpaceSettingsAction": {
@@ -168,6 +173,31 @@
         "title": "Space(s) aktivieren",
         "description": "Tragen Sie HYPHA oder USDC bei, um Ihren/Ihre Space(s) zu aktivieren und das Hypha-Netzwerk zu unterstützen."
       }
+    }
+  },
+  "SelectNavigationAction": {
+    "title": "Space-Navigation",
+    "content": "Navigieren Sie durch all Ihre Spaces in einer einzigen interaktiven Karte, um zu sehen, wie sie miteinander verbunden sind. Besuchen Sie verschachtelte Spaces, erkunden Sie Space-zu-Space-Mitgliedschaften und verfolgen Sie Wertflüsse in Ihrem direkten Ökosystem.",
+    "tabs": {
+      "nestedSpaces": "Verschachtelte Spaces",
+      "spaceToSpace": "Space-zu-Space",
+      "valuesFlows": "Wertflüsse"
+    },
+    "comingSoon": {
+      "spaceToSpaceVisualization": "Space-zu-Space-Visualisierung bald verfügbar",
+      "valuesFlowsVisualization": "Wertfluss-Visualisierung bald verfügbar"
+    },
+    "visibleSpaces": {
+      "nestedRoot": "Wurzel",
+      "nestedIn": "Verschachtelt in {parent}",
+      "nested": "Verschachtelt",
+      "spaceInfoNotAvailable": "Space-Informationen nicht verfügbar",
+      "addSpace": "Space hinzufügen",
+      "loading": "Wird geladen...",
+      "noAccessAddSpace": "Sie haben keinen Zugriff, um Spaces zu dieser Organisation hinzuzufügen.",
+      "visitSpace": "Space besuchen",
+      "searchSpaces": "Spaces durchsuchen",
+      "noSpacesFound": "Keine Spaces gefunden"
     }
   },
   "Network": {
