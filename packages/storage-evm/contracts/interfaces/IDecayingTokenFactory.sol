@@ -16,7 +16,14 @@ interface IDecayingTokenFactory {
     string memory symbol,
     uint256 maxSupply,
     bool transferable,
-    bool isVotingToken,
+    bool fixedMaxSupply,
+    bool autoMinting,
+    uint256 tokenPrice,
+    address priceCurrencyFeed,
+    bool useTransferWhitelist,
+    bool useReceiveWhitelist,
+    address[] memory initialTransferWhitelist,
+    address[] memory initialReceiveWhitelist,
     uint256 decayPercentage,
     uint256 decayInterval
   ) external returns (address);

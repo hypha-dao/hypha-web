@@ -279,22 +279,18 @@ describe('DAOSpaceFactoryImplementation', function () {
       const { spaceHelper } = await loadFixture(deployFixture);
 
       const spaceParams = {
-        name: 'Test Space',
-        description: 'Test Description',
-        imageUrl: 'https://test.com/image.png',
         unity: 101, // Invalid: > 100
         quorum: 51,
         votingPowerSource: 1,
         exitMethod: 1,
         joinMethod: 1,
-        createToken: false,
-        tokenName: '',
-        tokenSymbol: '',
+        access: 0,
+        discoverability: 0,
       };
 
       await expect(
         spaceHelper.contract.createSpace(spaceParams),
-      ).to.be.revertedWith('unity');
+      ).to.be.revertedWith('Invalid unity range');
     });
   });
 
@@ -402,17 +398,13 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // Create a space with join method 2
       const spaceParams = {
-        name: 'Join By Proposal Space',
-        description: 'Test Description',
-        imageUrl: 'https://test.com/image.png',
         unity: 51,
         quorum: 10,
         votingPowerSource: 1,
         exitMethod: 1,
         joinMethod: 2, // Join requires proposal approval
-        createToken: false,
-        tokenName: '',
-        tokenSymbol: '',
+        access: 0,
+        discoverability: 0,
       };
 
       await daoSpaceFactory.createSpace(spaceParams);
@@ -453,17 +445,13 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // Create space with exit method 1 (only executor can remove members)
       const spaceParams = {
-        name: 'Space for Member Removal',
-        description: 'Test Description',
-        imageUrl: 'https://test.com/test.png',
         unity: 51,
         quorum: 51,
         votingPowerSource: 1,
         exitMethod: 1, // Using exit method 1 where only executor can remove
         joinMethod: 1,
-        createToken: false,
-        tokenName: '',
-        tokenSymbol: '',
+        access: 0,
+        discoverability: 0,
       };
 
       await spaceHelper.contract.createSpace(spaceParams);
@@ -528,7 +516,13 @@ describe('DAOSpaceFactoryImplementation', function () {
         'FIRST',
         0,
         true,
-        false, // not a voting token to avoid conflicts
+        false, // fixedMaxSupply
+        true, // autoMinting
+        0, // priceInUSD
+        false, // useTransferWhitelist
+        false, // useReceiveWhitelist
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
       await tx1.wait();
 
@@ -537,16 +531,20 @@ describe('DAOSpaceFactoryImplementation', function () {
       expect(tokensAfterFirst.length).to.equal(1);
 
       // Deploy second token
-      const tx2 = await regularTokenFactory
-        .connect(executorSigner)
-        .deployToken(
-          spaceId,
-          'Second Token',
-          'SECOND',
-          ethers.parseUnits('1000', 18),
-          false,
-          false,
-        );
+      const tx2 = await regularTokenFactory.connect(executorSigner).deployToken(
+        spaceId,
+        'Second Token',
+        'SECOND',
+        ethers.parseUnits('1000', 18),
+        false,
+        false, // fixedMaxSupply
+        true, // autoMinting
+        0, // priceInUSD
+        false, // useTransferWhitelist
+        false, // useReceiveWhitelist
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
+      );
       await tx2.wait();
 
       // Deploy third token
@@ -556,7 +554,13 @@ describe('DAOSpaceFactoryImplementation', function () {
         'THIRD',
         0,
         true,
-        true, // this one can be voting token
+        false, // fixedMaxSupply
+        true, // autoMinting
+        0, // priceInUSD
+        false, // useTransferWhitelist
+        false, // useReceiveWhitelist
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
       await tx3.wait();
 
@@ -618,11 +622,37 @@ describe('DAOSpaceFactoryImplementation', function () {
       // Deploy two tokens
       void (await regularTokenFactory
         .connect(executorSigner)
-        .deployToken(spaceId, 'Token A', 'TKNA', 0, true, false));
+        .deployToken(
+          spaceId,
+          'Token A',
+          'TKNA',
+          0,
+          true,
+          false,
+          true,
+          0,
+          false,
+          false,
+          [],
+          [],
+        ));
 
       void (await regularTokenFactory
         .connect(executorSigner)
-        .deployToken(spaceId, 'Token B', 'TKNB', 0, true, false));
+        .deployToken(
+          spaceId,
+          'Token B',
+          'TKNB',
+          0,
+          true,
+          false,
+          true,
+          0,
+          false,
+          false,
+          [],
+          [],
+        ));
 
       // Should return array with 2 addresses
       const finalResult = await regularTokenFactory.getSpaceToken(spaceId);
@@ -647,17 +677,13 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // Create space first
       const spaceParams = {
-        name: 'Token Space',
-        description: 'Space with Token',
-        imageUrl: 'https://test.com/image.png',
         unity: 51,
         quorum: 51,
         votingPowerSource: 1,
         exitMethod: 1,
         joinMethod: 1,
-        createToken: false,
-        tokenName: '',
-        tokenSymbol: '',
+        access: 0,
+        discoverability: 0,
       };
 
       await spaceHelper.contract.createSpace(spaceParams);
@@ -685,7 +711,13 @@ describe('DAOSpaceFactoryImplementation', function () {
         'STKN',
         0, // maxSupply (0 = unlimited)
         true, // transferable
-        true, // isVotingToken
+        false, // fixedMaxSupply
+        true, // autoMinting
+        0, // priceInUSD
+        false, // useTransferWhitelist
+        false, // useReceiveWhitelist
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
 
       const receipt = await tx.wait();
@@ -769,7 +801,13 @@ describe('DAOSpaceFactoryImplementation', function () {
         'STKN',
         0, // maxSupply (0 = unlimited)
         true, // transferable
-        true, // isVotingToken
+        false, // fixedMaxSupply
+        true, // autoMinting
+        0, // priceInUSD
+        false, // useTransferWhitelist
+        false, // useReceiveWhitelist
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
 
       const receipt = await tx.wait();
@@ -864,7 +902,13 @@ describe('DAOSpaceFactoryImplementation', function () {
         'TEST',
         0, // maxSupply (0 = unlimited)
         true, // transferable
-        false, // not a voting token to avoid conflicts
+        false, // fixedMaxSupply
+        true, // autoMinting
+        0, // priceInUSD
+        false, // useTransferWhitelist
+        false, // useReceiveWhitelist
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
 
       const receipt = await tx.wait();
@@ -1106,17 +1150,13 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // Create space
       const spaceParams = {
-        name: 'Decay Token Space',
-        description: 'Space for testing decay tokens',
-        imageUrl: 'https://test.com/image.png',
         unity: 51,
         quorum: 51,
         votingPowerSource: 1,
         exitMethod: 1,
         joinMethod: 1,
-        createToken: false,
-        tokenName: '',
-        tokenSymbol: '',
+        access: 0,
+        discoverability: 0,
       };
 
       await spaceHelper.contract.createSpace(spaceParams);
@@ -1152,7 +1192,13 @@ describe('DAOSpaceFactoryImplementation', function () {
           'DECAY',
           0, // maxSupply (0 = unlimited)
           true, // transferable
-          true, // isVotingToken
+          false, // fixedMaxSupply
+          true, // autoMinting
+          0, // priceInUSD
+          false, // useTransferWhitelist
+          false, // useReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
           decayPercentage,
           decayInterval,
         );
@@ -1204,17 +1250,13 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // Create space
       const spaceParams = {
-        name: 'Decay Test Space',
-        description: 'Testing token decay',
-        imageUrl: 'https://test.com/image.png',
         unity: 51,
         quorum: 51,
         votingPowerSource: 1,
         exitMethod: 1,
         joinMethod: 1,
-        createToken: false,
-        tokenName: '',
-        tokenSymbol: '',
+        access: 0,
+        discoverability: 0,
       };
 
       await spaceHelper.contract.createSpace(spaceParams);
@@ -1250,7 +1292,13 @@ describe('DAOSpaceFactoryImplementation', function () {
           'FDECAY',
           0, // maxSupply
           true, // transferable
-          true, // isVotingToken
+          false, // fixedMaxSupply
+          true, // autoMinting
+          0, // priceInUSD
+          false, // useTransferWhitelist
+          false, // useReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
           decayPercentage,
           decayInterval,
         );
@@ -1345,17 +1393,13 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // Create space
       const spaceParams = {
-        name: 'Transfer Decay',
-        description: 'Testing transfer with decay',
-        imageUrl: 'https://test.com/image.png',
         unity: 51,
         quorum: 51,
         votingPowerSource: 1,
         exitMethod: 1,
         joinMethod: 1,
-        createToken: false,
-        tokenName: '',
-        tokenSymbol: '',
+        access: 0,
+        discoverability: 0,
       };
 
       await spaceHelper.contract.createSpace(spaceParams);
@@ -1391,7 +1435,13 @@ describe('DAOSpaceFactoryImplementation', function () {
           'TDECAY',
           0, // maxSupply
           true, // transferable
-          true, // isVotingToken
+          false, // fixedMaxSupply
+          true, // autoMinting
+          0, // priceInUSD
+          false, // useTransferWhitelist
+          false, // useReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
           decayPercentage,
           decayInterval,
         );
@@ -1527,17 +1577,13 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // Create space
       const spaceParams = {
-        name: 'Detailed Decay Test Space',
-        description: 'Demonstrating precise token decay',
-        imageUrl: 'https://test.com/image.png',
         unity: 51,
         quorum: 51,
         votingPowerSource: 1,
         exitMethod: 1,
         joinMethod: 1,
-        createToken: false,
-        tokenName: '',
-        tokenSymbol: '',
+        access: 0,
+        discoverability: 0,
       };
 
       await spaceHelper.contract.createSpace(spaceParams);
@@ -1577,7 +1623,13 @@ describe('DAOSpaceFactoryImplementation', function () {
           'PDECAY',
           0, // maxSupply
           true, // transferable
-          true, // isVotingToken
+          false, // fixedMaxSupply
+          true, // autoMinting
+          0, // priceInUSD
+          false, // useTransferWhitelist
+          false, // useReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
           decayPercentage,
           decayInterval,
         );
@@ -1904,7 +1956,13 @@ describe('DAOSpaceFactoryImplementation', function () {
           'MUDECAY',
           0, // maxSupply
           true, // transferable
-          true, // isVotingToken
+          false, // fixedMaxSupply
+          true, // autoMinting
+          0, // priceInUSD
+          false, // useTransferWhitelist
+          false, // useReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
           decayPercentage,
           decayInterval,
         );
@@ -2325,17 +2383,13 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // 1. Create a space with space voting power
       const spaceParams = {
-        name: 'Proposal Token Test Space',
-        description: 'Test Description',
-        imageUrl: 'https://test.com/image.png',
         unity: 51,
         quorum: 10,
         votingPowerSource: 1,
         exitMethod: 1,
         joinMethod: 1,
-        createToken: false,
-        tokenName: '',
-        tokenSymbol: '',
+        access: 0,
+        discoverability: 0,
       };
 
       await daoSpaceFactory.createSpace(spaceParams);
@@ -2357,7 +2411,13 @@ describe('DAOSpaceFactoryImplementation', function () {
           'REG',
           0, // maxSupply (0 = unlimited)
           true, // transferable
-          true, // isVotingToken
+          false, // fixedMaxSupply
+          true, // autoMinting
+          0, // priceInUSD
+          false, // useTransferWhitelist
+          false, // useReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
         ]);
 
       // Create the proposal
@@ -2463,7 +2523,13 @@ describe('DAOSpaceFactoryImplementation', function () {
         'VOTE',
         0, // maxSupply (0 = unlimited)
         true, // transferable
-        true, // isVotingToken
+        false, // fixedMaxSupply
+        true, // autoMinting
+        0, // priceInUSD
+        false, // useTransferWhitelist
+        false, // useReceiveWhitelist
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
 
       const receipt = await tx.wait();
@@ -2570,7 +2636,13 @@ describe('DAOSpaceFactoryImplementation', function () {
           'DVOTE',
           0, // maxSupply
           true, // transferable
-          true, // isVotingToken
+          false, // fixedMaxSupply
+          true, // autoMinting
+          0, // priceInUSD
+          false, // useTransferWhitelist
+          false, // useReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
           decayPercentage,
           decayInterval,
         );
@@ -2673,17 +2745,13 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // Create space first
       const spaceParams = {
-        name: 'Max Supply Space',
-        description: 'Space with token max supply',
-        imageUrl: 'https://test.com/image.png',
         unity: 51,
         quorum: 51,
         votingPowerSource: 1,
         exitMethod: 1,
         joinMethod: 1,
-        createToken: false,
-        tokenName: '',
-        tokenSymbol: '',
+        access: 0,
+        discoverability: 0,
       };
 
       await spaceHelper.contract.createSpace(spaceParams);
@@ -2712,7 +2780,20 @@ describe('DAOSpaceFactoryImplementation', function () {
       // Deploy token with max supply
       const tx = await regularTokenFactory
         .connect(executorSigner)
-        .deployToken(spaceId, tokenName, tokenSymbol, maxSupply, true, true);
+        .deployToken(
+          spaceId,
+          tokenName,
+          tokenSymbol,
+          maxSupply,
+          true,
+          true,
+          true,
+          0,
+          false,
+          false,
+          [],
+          [],
+        );
 
       const receipt = await tx.wait();
 
@@ -2780,17 +2861,13 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // Create space first
       const spaceParams = {
-        name: 'Non-Transferable Token Space',
-        description: 'Space with locked token',
-        imageUrl: 'https://test.com/image.png',
         unity: 51,
         quorum: 51,
         votingPowerSource: 1,
         exitMethod: 1,
         joinMethod: 1,
-        createToken: false,
-        tokenName: '',
-        tokenSymbol: '',
+        access: 0,
+        discoverability: 0,
       };
 
       await spaceHelper.contract.createSpace(spaceParams);
@@ -2818,7 +2895,13 @@ describe('DAOSpaceFactoryImplementation', function () {
         'NTTKN',
         0, // maxSupply
         false, // non-transferable
-        true, // isVotingToken
+        false, // fixedMaxSupply
+        true, // autoMinting
+        0, // priceInUSD
+        false, // useTransferWhitelist
+        false, // useReceiveWhitelist
+        [], // initialTransferWhitelist
+        [], // initialReceiveWhitelist
       );
 
       const receipt = await tx.wait();
@@ -2983,7 +3066,13 @@ describe('DAOSpaceFactoryImplementation', function () {
             'Ownership Token',
             'OWN',
             0, // maxSupply
-            true, // isVotingToken
+            false, // fixedMaxSupply
+            true, // autoMinting
+            0, // priceInUSD
+            false, // useTransferWhitelist
+            false, // useReceiveWhitelist
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
           );
 
         const receipt = await deployTx.wait();
@@ -3061,7 +3150,19 @@ describe('DAOSpaceFactoryImplementation', function () {
       // Deploy through the factory
       const deployTx = await testTokenFactory
         .connect(executorSigner)
-        .deployOwnershipToken(spaceId, 'Membership Token', 'MTKN', 0, true);
+        .deployOwnershipToken(
+          spaceId,
+          'Membership Token',
+          'MTKN',
+          0, // maxSupply
+          false, // fixedMaxSupply
+          true, // autoMinting
+          0, // priceInUSD
+          false, // useTransferWhitelist
+          false, // useReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
+        );
 
       const receipt = await deployTx.wait();
       const tokenDeployedEvent = receipt?.logs
@@ -3157,7 +3258,13 @@ describe('DAOSpaceFactoryImplementation', function () {
           'Test Ownership Token',
           'OWNTEST',
           0, // maxSupply
-          false, // not a voting token to avoid conflicts
+          false, // fixedMaxSupply
+          true, // autoMinting
+          0, // priceInUSD
+          false, // useTransferWhitelist
+          false, // useReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
         );
 
       const receipt = await deployTx.wait();
@@ -3424,17 +3531,13 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // Create a space
       const spaceParams = {
-        name: 'Multi-Transaction Test Space',
-        description: 'Testing multi-transaction proposals',
-        imageUrl: 'https://test.com/image.png',
         unity: 51, // Simple majority
         quorum: 10, // Low quorum for testing
         votingPowerSource: 1, // Space membership for voting power
         exitMethod: 1,
         joinMethod: 1,
-        createToken: false,
-        tokenName: '',
-        tokenSymbol: '',
+        access: 0,
+        discoverability: 0,
       };
 
       await daoSpaceFactory.createSpace(spaceParams);
@@ -3475,7 +3578,13 @@ describe('DAOSpaceFactoryImplementation', function () {
             'VOICE',
             0, // No max supply
             true, // transferable
-            true, // isVotingToken
+            false, // fixedMaxSupply
+            true, // autoMinting
+            0, // priceInUSD
+            false, // useTransferWhitelist
+            false, // useReceiveWhitelist
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
             decayPercentage,
             decayInterval,
           ],
@@ -3662,18 +3771,13 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // Create a space
       const spaceParams = {
-        name: 'Combined Transactions Test Space',
-        description:
-          'Testing combined token creation and minting in one proposal',
-        imageUrl: 'https://test.com/image.png',
         unity: 51,
         quorum: 10,
         votingPowerSource: 1,
         exitMethod: 1,
         joinMethod: 1,
-        createToken: false,
-        tokenName: '',
-        tokenSymbol: '',
+        access: 0,
+        discoverability: 0,
       };
 
       await daoSpaceFactory.createSpace(spaceParams);
@@ -3711,7 +3815,13 @@ describe('DAOSpaceFactoryImplementation', function () {
             'VOICE',
             0, // No max supply
             true, // transferable
-            true, // isVotingToken
+            false, // fixedMaxSupply
+            true, // autoMinting
+            0, // priceInUSD
+            false, // useTransferWhitelist
+            false, // useReceiveWhitelist
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
             decayPercentage,
             decayInterval,
           ],
@@ -3746,7 +3856,13 @@ describe('DAOSpaceFactoryImplementation', function () {
           'TEST',
           0,
           true,
-          false, // Don't register this test token as voting token
+          false, // fixedMaxSupply
+          true, // autoMinting
+          0, // priceInUSD
+          false, // useTransferWhitelist
+          false, // useReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
           decayPercentage,
           decayInterval,
         );
@@ -3959,17 +4075,13 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // Create a space with specific settings for testing rejection logic
       const spaceParams = {
-        name: 'Rejection Test Space',
-        description: 'Testing proposal rejection and storage tracking',
-        imageUrl: 'https://test.com/image.png',
         unity: 60, // 60% unity threshold
         quorum: 40, // 40% quorum threshold (low for easier testing)
         votingPowerSource: 1, // Space membership voting
         exitMethod: 1,
         joinMethod: 1,
-        createToken: false,
-        tokenName: '',
-        tokenSymbol: '',
+        access: 0,
+        discoverability: 0,
       };
 
       await daoSpaceFactory.createSpace(spaceParams);
@@ -4012,7 +4124,13 @@ describe('DAOSpaceFactoryImplementation', function () {
           'ACC',
           ethers.parseUnits('1000', 18),
           true,
-          true,
+          false, // fixedMaxSupply
+          true, // autoMinting
+          0, // priceInUSD
+          false, // useTransferWhitelist
+          false, // useReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
         ]);
 
       await this.daoProposals.connect(this.voter1).createProposal({
@@ -4066,7 +4184,13 @@ describe('DAOSpaceFactoryImplementation', function () {
           'REJ',
           ethers.parseUnits('2000', 18),
           false, // Different parameters to avoid conflicts
-          false,
+          false, // fixedMaxSupply
+          true, // autoMinting
+          0, // priceInUSD
+          false, // useTransferWhitelist
+          false, // useReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
         ]);
 
       await this.daoProposals.connect(this.voter2).createProposal({
@@ -4302,7 +4426,13 @@ describe('DAOSpaceFactoryImplementation', function () {
           'NOREJ',
           ethers.parseUnits('5000', 18),
           true,
-          true,
+          false, // fixedMaxSupply
+          true, // autoMinting
+          0, // priceInUSD
+          false, // useTransferWhitelist
+          false, // useReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
         ]);
 
       await this.daoProposals.connect(this.voter1).createProposal({
@@ -4410,7 +4540,13 @@ describe('DAOSpaceFactoryImplementation', function () {
           'EDGE',
           ethers.parseUnits('6000', 18),
           true,
-          true,
+          false, // fixedMaxSupply
+          true, // autoMinting
+          0, // priceInUSD
+          false, // useTransferWhitelist
+          false, // useReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
         ]);
 
       await this.daoProposals.connect(this.voter1).createProposal({
@@ -4488,7 +4624,13 @@ describe('DAOSpaceFactoryImplementation', function () {
             `PERS${i}`,
             ethers.parseUnits(`${i}000`, 18),
             true,
-            true,
+            false, // fixedMaxSupply
+            true, // autoMinting
+            0, // priceInUSD
+            false, // useTransferWhitelist
+            false, // useReceiveWhitelist
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
           ],
         );
 
@@ -4583,17 +4725,13 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // Create a separate space for this specific test (not using the beforeEach space)
       const spaceParams = {
-        name: 'Quorum Rounding Test Space',
-        description: 'Testing quorum rounding error fix with 2 members',
-        imageUrl: 'https://test.com/image.png',
         unity: 80, // 80% unity threshold
         quorum: 51, // 51% quorum threshold - this is where rounding error could occur
         votingPowerSource: 1, // Space membership voting (1 member = 1 vote)
         exitMethod: 1,
         joinMethod: 1,
-        createToken: false,
-        tokenName: '',
-        tokenSymbol: '',
+        access: 0,
+        discoverability: 0,
       };
 
       await this.daoSpaceFactory.createSpace(spaceParams);
@@ -4794,17 +4932,13 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // Create a separate space for this test with high quorum to prevent immediate execution
       const voterTestSpaceParams = {
-        name: 'Voter Tracking Test Space',
-        description: 'Space specifically for testing voter address tracking',
-        imageUrl: 'https://test.com/image.png',
         unity: 60, // 60% unity threshold
         quorum: 80, // 80% quorum threshold - high to prevent immediate execution
         votingPowerSource: 1, // Space membership voting (1 member = 1 vote)
         exitMethod: 1,
         joinMethod: 1,
-        createToken: false,
-        tokenName: '',
-        tokenSymbol: '',
+        access: 0,
+        discoverability: 0,
       };
 
       await this.daoSpaceFactory.createSpace(voterTestSpaceParams);
@@ -4835,7 +4969,13 @@ describe('DAOSpaceFactoryImplementation', function () {
           'VOTE',
           ethers.parseUnits('1000', 18),
           true,
-          true,
+          false, // fixedMaxSupply
+          true, // autoMinting
+          0, // priceInUSD
+          false, // useTransferWhitelist
+          false, // useReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
         ]);
 
       await this.daoProposals.connect(this.voter1).createProposal({
@@ -5221,17 +5361,13 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // Create a space
       const spaceParams = {
-        name: 'Method Change Proposal Space',
-        description: 'Testing method change via proposal',
-        imageUrl: 'https://test.com/image.png',
         unity: 51,
         quorum: 10,
         votingPowerSource: 1,
         exitMethod: 1,
         joinMethod: 1,
-        createToken: false,
-        tokenName: '',
-        tokenSymbol: '',
+        access: 0,
+        discoverability: 0,
       };
 
       await daoSpaceFactory.createSpace(spaceParams);
@@ -5397,7 +5533,13 @@ describe('DAOSpaceFactoryImplementation', function () {
           'ETKA',
           0, // maxSupply (0 = unlimited)
           true, // transferable
-          true, // isVotingToken - this one will be the voting token
+          false, // fixedMaxSupply
+          true, // autoMinting
+          0, // priceInUSD
+          false, // useTransferWhitelist
+          false, // useReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
         );
 
       const tokenBDeployTx = await regularTokenFactory
@@ -5408,7 +5550,13 @@ describe('DAOSpaceFactoryImplementation', function () {
           'ETKB',
           0, // maxSupply (0 = unlimited)
           true, // transferable
-          false, // isVotingToken - set to false to avoid the conflict
+          false, // fixedMaxSupply
+          true, // autoMinting
+          0, // priceInUSD
+          false, // useTransferWhitelist
+          false, // useReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
         );
 
       // Get token addresses from events
@@ -6401,7 +6549,19 @@ describe('DAOSpaceFactoryImplementation', function () {
       // Deploy ownership token through the factory
       const deployTx = await ownershipTokenFactory
         .connect(executorSigner)
-        .deployOwnershipToken(spaceId, 'Escrow Test Token', 'ETT', 0, true);
+        .deployOwnershipToken(
+          spaceId,
+          'Escrow Test Token',
+          'ETT',
+          0, // maxSupply
+          false, // fixedMaxSupply
+          true, // autoMinting
+          0, // priceInUSD
+          false, // useTransferWhitelist
+          false, // useReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
+        );
 
       const receipt = await deployTx.wait();
       const tokenDeployedEvent = receipt?.logs
@@ -6656,7 +6816,19 @@ describe('DAOSpaceFactoryImplementation', function () {
       // Deploy ownership token
       const deployTx = await ownershipTokenFactory
         .connect(executorSigner)
-        .deployOwnershipToken(spaceId, 'Validation Test Token', 'VTT', 0, true);
+        .deployOwnershipToken(
+          spaceId,
+          'Validation Test Token',
+          'VTT',
+          0, // maxSupply
+          false, // fixedMaxSupply
+          true, // autoMinting
+          0, // priceInUSD
+          false, // useTransferWhitelist
+          false, // useReceiveWhitelist
+          [], // initialTransferWhitelist
+          [], // initialReceiveWhitelist
+        );
 
       const receipt = await deployTx.wait();
       const tokenDeployedEvent = receipt?.logs

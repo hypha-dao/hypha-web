@@ -72,7 +72,14 @@ contract RegularTokenFactory is
    * @param symbol The token symbol
    * @param maxSupply The maximum token supply (0 for unlimited)
    * @param transferable Whether the token can be transferred
-   * @param isVotingToken Whether to register this as the space's voting token
+   * @param fixedMaxSupply If true, maxSupply cannot be changed later
+   * @param autoMinting If true, executor can auto-mint on transfer; if false, must mint separately
+   * @param tokenPrice Token price (6 decimals, e.g., 1_000_000 = 1.00)
+   * @param priceCurrencyFeed Chainlink X/USD feed for the currency (address(0) = USD)
+   * @param useTransferWhitelist If true, enforce transfer whitelist
+   * @param useReceiveWhitelist If true, enforce receive whitelist
+   * @param initialTransferWhitelist Initial addresses that can send tokens
+   * @param initialReceiveWhitelist Initial addresses that can receive tokens
    * @return The address of the deployed token
    */
   function deployToken(
@@ -81,8 +88,15 @@ contract RegularTokenFactory is
     string memory symbol,
     uint256 maxSupply,
     bool transferable,
-    bool isVotingToken
-  ) public override returns (address) {
+    bool fixedMaxSupply,
+    bool autoMinting,
+    uint256 tokenPrice,
+    address priceCurrencyFeed,
+    bool useTransferWhitelist,
+    bool useReceiveWhitelist,
+    address[] memory initialTransferWhitelist,
+    address[] memory initialReceiveWhitelist
+  ) public returns (address) {
     require(spacesContract != address(0), 'Spaces contract not set');
     require(
       spaceTokenImplementation != address(0),
@@ -105,7 +119,15 @@ contract RegularTokenFactory is
       spaceExecutor,
       spaceId,
       maxSupply,
-      transferable
+      transferable,
+      fixedMaxSupply,
+      autoMinting,
+      tokenPrice,
+      priceCurrencyFeed,
+      useTransferWhitelist,
+      useReceiveWhitelist,
+      initialTransferWhitelist,
+      initialReceiveWhitelist
     );
 
     address tokenAddress = address(
@@ -129,7 +151,7 @@ contract RegularTokenFactory is
    */
   function getSpaceToken(
     uint256 spaceId
-  ) public view override returns (address[] memory) {
+  ) public view returns (address[] memory) {
     return allSpaceTokens[spaceId];
   }
 }

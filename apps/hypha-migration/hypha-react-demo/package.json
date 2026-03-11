@@ -7,14 +7,15 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "patch-package"
   },
   "dependencies": {
+    "@hypha-dao/ual-hypha": "^1.0.14",
+    "eosjs": "21.0.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "@hypha-dao/ual-hypha": "^1.0.14",
-    "universal-authenticator-library": "^0.3.0",
-    "eosjs": "21.0.4"
+    "universal-authenticator-library": "^0.3.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",
@@ -24,7 +25,8 @@
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
+    "patch-package": "^8.0.1",
     "vite": "^5.0.8",
     "vite-plugin-node-polyfills": "^0.17.0"
   }
-} 
+}

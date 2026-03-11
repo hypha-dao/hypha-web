@@ -2,17 +2,13 @@ import { ethers } from 'hardhat';
 import type { DAOSpaceFactoryImplementation } from '../../typechain-types';
 
 export interface SpaceParams {
-  name: string;
-  description: string;
-  imageUrl: string;
   unity: number;
   quorum: number;
   votingPowerSource: number;
   exitMethod: number;
   joinMethod: number;
-  createToken: boolean;
-  tokenName: string;
-  tokenSymbol: string;
+  access: number;
+  discoverability: number;
 }
 
 export class SpaceHelper {
@@ -20,17 +16,13 @@ export class SpaceHelper {
 
   async createDefaultSpace() {
     const spaceParams = {
-      name: 'Test Space',
-      description: 'Test Description',
-      imageUrl: 'https://test.com/image.png',
       unity: 51,
       quorum: 51,
       votingPowerSource: 1,
       exitMethod: 1,
       joinMethod: 1,
-      createToken: false,
-      tokenName: '',
-      tokenSymbol: '',
+      access: 0,
+      discoverability: 0,
     };
 
     return this.contract.createSpace(spaceParams);

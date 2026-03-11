@@ -59,6 +59,12 @@ These contracts implement different strategies for calculating a user's voting p
 - `InviteSystemImplementation.sol`: A system for inviting new members to a space.
 - `NoExit.sol`: A contract that doesn't allow members to exit.
 
+### Token Backing Vault
+
+- `TokenBackingVaultImplementation.sol`: Fiat-referenced redemption vault for space tokens. Allows issuers to deposit backing tokens (oracle-priced or Hypha tokens) and lets holders redeem space tokens for proportional backing.
+  - **Redemption Price**: By default, redeemers receive backing based on the official token price (`tokenPrice()`). Issuers may set a separate **redemption price** either during vault creation (via the `redemptionPrice` and `redemptionPriceCurrencyFeed` parameters in `addBackingToken`) or later via `setRedemptionPrice(spaceId, spaceToken, price, currencyFeed)`. Useful for models like Berkshares where redemption occurs at a discount, or any other spread between official and redemption value. Pass `price = 0` to use the official token price (default).
+  - **Overcollateralization**: `minimumBackingBps` supports values up to 100,000 (10x), allowing issuers to enforce overcollateralization requirements.
+
 ### Other Contracts
 
 - `SpacePaymentTracker.sol`: Tracks payments for Spaces, which is required to keep them active.
