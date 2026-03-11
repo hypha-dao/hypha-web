@@ -7,6 +7,7 @@ import {
   createAgreementFiles,
   useJwt,
   useMe,
+  extractRevertReason,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
@@ -81,6 +82,12 @@ export const CreateRedeemTokensForm = ({
   useScrollToErrors(form, formRef);
   const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
 
+  React.useEffect(() => {
+    if (person?.id) {
+      form.setValue('creatorId', person.id);
+    }
+  }, [person]);
+
   const handleCreate = async (data: FormValues) => {
     if (!data.redemptions || data.redemptions.length === 0) {
       console.error('Redemptions are missing');
@@ -112,20 +119,42 @@ export const CreateRedeemTokensForm = ({
       return;
     }
 
-    await createRedeemTokens({
-      ...data,
-      spaceId: spaceId as number,
-      web3SpaceId: web3SpaceId as number,
-      redemption: {
-        amount: redemption.amount ?? '0',
-        token: redemption.token ?? '',
-      },
-      conversions: data.conversions.map(({ asset, percentage }) => ({
-        asset: asset ?? '',
-        percentage: percentage ?? '0',
-      })),
-      label: 'Redeem Tokens',
-    });
+    try {
+      await createRedeemTokens({
+        ...data,
+        spaceId: spaceId as number,
+        web3SpaceId: web3SpaceId as number,
+        redemption: {
+          amount: redemption.amount ?? '0',
+          token: redemption.token ?? '',
+        },
+        conversions: data.conversions.map(({ asset, percentage }) => ({
+          asset: asset ?? '',
+          percentage: percentage ?? '0',
+        })),
+        label: 'Redeem Tokens',
+      });
+    } catch (error) {
+      console.error('Redeem tokens failed:', error);
+      let errorMessage: string =
+        'An error occurred while processing your redeem tokens. Please try again.';
+
+      if (error instanceof Error) {
+        if (error.message.includes('Execution reverted with reason:')) {
+          const match = error.message.match(
+            /Execution reverted with reason: (.*?)\./,
+          );
+          errorMessage =
+            match && match[1]
+              ? extractRevertReason(match[1])
+              : 'Contract execution failed.';
+        }
+
+        console.error(errorMessage);
+      }
+
+      form.setError('root', { message: errorMessage });
+    }
   };
 
   console.log('form errors:', form.formState.errors);
@@ -140,6 +169,11 @@ export const CreateRedeemTokensForm = ({
         isError ? (
           <div className="flex flex-col">
             <div>Ouh Snap. There was an error</div>
+            {form.formState.errors.root?.message && (
+              <div className="text-destructive">
+                {form.formState.errors.root.message}
+              </div>
+            )}
             <Button onClick={reset}>Reset</Button>
           </div>
         ) : (
