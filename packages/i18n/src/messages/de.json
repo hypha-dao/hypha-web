@@ -38,7 +38,11 @@
     "getStarted": "Loslegen"
   },
   "DHO": {
-    "Dashboard": "DHO \u00dcbersicht"
+    "Dashboard": "DHO \u00dcbersicht",
+    "actionButtons": {
+      "spaceSettings": "Space-Einstellungen",
+      "create": "Erstellen"
+    }
   },
   "SpaceSettingsAction": {
     "title": "Space-Einstellungen",

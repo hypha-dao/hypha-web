@@ -38,7 +38,11 @@
     "getStarted": "Get started"
   },
   "DHO": {
-    "Dashboard": "DHO Dashboard"
+    "Dashboard": "DHO Dashboard",
+    "actionButtons": {
+      "spaceSettings": "Space Settings",
+      "create": "Create"
+    }
   },
   "SpaceSettingsAction": {
     "title": "Space Settings",
