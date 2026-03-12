@@ -408,7 +408,11 @@
       "issueNewToken": "Émettre un nouveau token",
       "treasuryMinting": "Frappe de trésorerie",
       "buyHyphaTokensRewards": "Acheter des tokens Hypha (récompenses)",
-      "spaceTransparency": "Transparence de l'espace"
+      "spaceTransparency": "Transparence de l'espace",
+      "collectiveAgreement": "Accord collectif",
+      "contribution": "Contribution",
+      "expenses": "Dépenses",
+      "funding": "Financement"
     },
     "buttons": {
       "publish": "Publier"
@@ -597,7 +601,31 @@
         "numberOfMonths": "Nombre de mois",
         "typeAmount": "Saisir un montant",
         "otherSpaces": "Autres espaces"
+      },
+      "tokenPayoutFieldArray": {
+        "paymentRequest": "Demande de paiement",
+        "enterAmountAndToken": "Veuillez saisir un montant et sélectionner un token.",
+        "add": "Ajouter"
+      },
+      "paymentSchedule": {
+        "label": "Calendrier de paiement",
+        "immediately": "Immédiatement",
+        "futurePayment": "Paiement futur",
+        "milestones": "Jalons",
+        "date": "Date",
+        "selectDate": "Sélectionner une date",
+        "add": "Ajouter"
+      },
+      "milestoneField": {
+        "milestone": "Jalon {index}",
+        "percentageRequired": "Le pourcentage est requis",
+        "percentageMin": "Le pourcentage doit être au moins de 0",
+        "percentageMax": "Le pourcentage doit être au maximum de 100",
+        "typePercentage": "Saisir un pourcentage"
       }
+    },
+    "createActionForms": {
+      "defaultAgreement": "Accord"
     }
   }
 }
