@@ -57,7 +57,8 @@ export const TokenBackingVaultPlugin = ({
   const spaceToken = vault?.spaceToken;
   const activateVault = vault?.activateVault ?? true;
   const enableRedemption = vault?.enableRedemption ?? false;
-  const showCollateralSections =
+  const showCollateralSections = spaceToken && activateVault;
+  const showRedemptionSections =
     spaceToken && activateVault && enableRedemption;
   const enableAdvancedControls =
     vault?.enableAdvancedRedemptionControls ?? false;
@@ -109,45 +110,47 @@ export const TokenBackingVaultPlugin = ({
               isLoadingSupply={isLoadingSupply}
             />
             <ActivateVaultField />
+            {showCollateralSections && (
+              <>
+                <Separator />
+                <AddCollateralsFieldArray filteredTokens={filteredTokens} />
+                <RemoveCollateralsFieldArray filteredTokens={filteredTokens} />
+              </>
+            )}
             <EnableRedemptionField />
-          </>
-        )}
+            {showRedemptionSections && (
+              <>
+                <Separator />
+                <div className="flex flex-col gap-4">
+                  <FormLabel>Set Redemption Price</FormLabel>
+                  <ReferenceCurrencyField />
+                  <TokenPriceField />
+                </div>
 
-        {showCollateralSections && (
-          <>
-            <Separator />
-            <AddCollateralsFieldArray filteredTokens={filteredTokens} />
-            <RemoveCollateralsFieldArray filteredTokens={filteredTokens} />
+                <MinimumBackingPercentField />
+                <MaxRedemptionPercentField />
+                <MaxRedemptionPeriodDaysField />
+                <RedemptionStartDateField />
+                <EnableAdvancedRedemptionControlsField />
 
-            <Separator />
-            <div className="flex flex-col gap-4">
-              <FormLabel>Set Redemption Price</FormLabel>
-              <ReferenceCurrencyField />
-              <TokenPriceField />
-            </div>
-
-            <MinimumBackingPercentField />
-            <MaxRedemptionPercentField />
-            <MaxRedemptionPeriodDaysField />
-            <RedemptionStartDateField />
-            <EnableAdvancedRedemptionControlsField />
-
-            {enableAdvancedControls && (
-              <FormField
-                control={control}
-                name="tokenBackingVault.redemptionWhitelist"
-                render={() => (
-                  <FormItem>
-                    <TransferWhitelistFieldArray
-                      name="tokenBackingVault.redemptionWhitelist"
-                      label="Redemption Whitelist"
-                      description="Specify which members or spaces are authorised to redeem tokens."
-                      members={members}
-                      spaces={spaces}
-                    />
-                  </FormItem>
+                {enableAdvancedControls && (
+                  <FormField
+                    control={control}
+                    name="tokenBackingVault.redemptionWhitelist"
+                    render={() => (
+                      <FormItem>
+                        <TransferWhitelistFieldArray
+                          name="tokenBackingVault.redemptionWhitelist"
+                          label="Redemption Whitelist"
+                          description="Specify which members or spaces are authorised to redeem tokens."
+                          members={members}
+                          spaces={spaces}
+                        />
+                      </FormItem>
+                    )}
+                  />
                 )}
-              />
+              </>
             )}
           </>
         )}
