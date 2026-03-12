@@ -9,11 +9,17 @@ import {
   SelectValue,
   SelectContent,
   SelectItem,
+  RequirementMark,
+  FormMessage,
 } from '@hypha-platform/ui';
 import { useFormContext } from 'react-hook-form';
 import { MAX_REDEMPTION_PERIOD_OPTIONS } from '@hypha-platform/core/client';
 
-export function MaxRedemptionPeriodDaysField() {
+type MaxRedemptionPeriodDaysFieldProps = {
+  isRequired?: boolean;
+};
+
+export function MaxRedemptionPeriodDaysField({ isRequired = false }: MaxRedemptionPeriodDaysFieldProps) {
   const { control } = useFormContext();
 
   return (
@@ -23,8 +29,9 @@ export function MaxRedemptionPeriodDaysField() {
       render={({ field }) => (
         <FormItem>
           <div className="flex justify-between items-center w-full">
-            <span className="text-2 text-neutral-11 whitespace-nowrap items-center w-full">
+            <span className="text-2 text-neutral-11 whitespace-nowrap items-center w-full flex gap-1">
               Period (days)
+              {isRequired && <RequirementMark className="text-2" />}
             </span>
             <FormControl className="w-full">
               <Select
@@ -40,12 +47,13 @@ export function MaxRedemptionPeriodDaysField() {
                       {opt.label}
                     </SelectItem>
                   ))}
-                </SelectContent>
-              </Select>
-            </FormControl>
-          </div>
-        </FormItem>
-      )}
-    />
-  );
+              </SelectContent>
+            </Select>
+          </FormControl>
+        </div>
+        <FormMessage />
+      </FormItem>
+    )}
+  />
+);
 }

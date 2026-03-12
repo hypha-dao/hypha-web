@@ -9,11 +9,16 @@ import {
   SelectValue,
   SelectContent,
   SelectItem,
+  RequirementMark,
 } from '@hypha-platform/ui';
 import { useFormContext } from 'react-hook-form';
 import { CURRENCY_FEED_OPTIONS } from '@hypha-platform/core/client';
 
-export function ReferenceCurrencyField() {
+type ReferenceCurrencyFieldProps = {
+  isRequired?: boolean;
+};
+
+export function ReferenceCurrencyField({ isRequired = false }: ReferenceCurrencyFieldProps) {
   const { control } = useFormContext();
 
   return (
@@ -23,8 +28,9 @@ export function ReferenceCurrencyField() {
       render={({ field }) => (
         <FormItem>
           <div className="flex justify-between items-center w-full">
-            <span className="text-2 text-neutral-11 whitespace-nowrap items-center w-full">
+            <span className="text-2 text-neutral-11 whitespace-nowrap items-center w-full flex gap-1">
               Reference Currency
+              {isRequired && <RequirementMark className="text-2" />}
             </span>
             <FormControl className="w-full">
               <Select

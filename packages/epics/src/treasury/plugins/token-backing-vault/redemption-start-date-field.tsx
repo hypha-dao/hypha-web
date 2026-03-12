@@ -6,10 +6,15 @@ import {
   FormControl,
   FormMessage,
   Input,
+  RequirementMark,
 } from '@hypha-platform/ui';
 import { useFormContext } from 'react-hook-form';
 
-export function RedemptionStartDateField() {
+type RedemptionStartDateFieldProps = {
+  isRequired?: boolean;
+};
+
+export function RedemptionStartDateField({ isRequired = false }: RedemptionStartDateFieldProps) {
   const { control } = useFormContext();
 
   return (
@@ -19,8 +24,9 @@ export function RedemptionStartDateField() {
       render={({ field }) => (
         <FormItem>
           <div className="flex justify-between items-center w-full">
-            <span className="text-2 text-neutral-11 whitespace-nowrap items-center w-full">
+            <span className="text-2 text-neutral-11 whitespace-nowrap items-center w-full flex gap-1">
               Authorise Redemption from
+              {isRequired && <RequirementMark className="text-2" />}
             </span>
             <FormControl className="w-full">
               <Input

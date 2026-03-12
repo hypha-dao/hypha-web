@@ -123,14 +123,18 @@ export const TokenBackingVaultPlugin = ({
                 <Separator />
                 <div className="flex flex-col gap-4">
                   <FormLabel>Set Redemption Price</FormLabel>
-                  <ReferenceCurrencyField />
-                  <TokenPriceField />
+                  <ReferenceCurrencyField isRequired />
+                  <TokenPriceField
+                    tokenReferencePrice={selectedToken?.referencePrice}
+                    tokenReferenceCurrency={selectedToken?.referenceCurrency}
+                    isRequired
+                  />
                 </div>
 
-                <MinimumBackingPercentField />
-                <MaxRedemptionPercentField />
-                <MaxRedemptionPeriodDaysField />
-                <RedemptionStartDateField />
+                <MinimumBackingPercentField isRequired />
+                <MaxRedemptionPercentField isRequired />
+                <MaxRedemptionPeriodDaysField isRequired />
+                <RedemptionStartDateField isRequired />
                 <EnableAdvancedRedemptionControlsField />
 
                 {enableAdvancedControls && (
