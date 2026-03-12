@@ -16,6 +16,7 @@ import Link from 'next/link';
 import { Person } from '@hypha-platform/core/client';
 import { Text } from '@radix-ui/themes';
 import { usePrivy, useMfaEnrollment } from '@privy-io/react-auth';
+import { useTranslations } from 'next-intl';
 
 export type ButtonProfileProps = {
   address?: string;
@@ -44,6 +45,7 @@ export const ButtonProfile = ({
   onChangeThemeMode,
   resolvedTheme,
 }: ButtonProfileProps) => {
+  const t = useTranslations('Navigation');
   const { user } = usePrivy();
   const { showMfaEnrollmentModal } = useMfaEnrollment();
   const hasMfaMethods = user && user.mfaMethods && user.mfaMethods.length > 0;
@@ -76,12 +78,12 @@ export const ButtonProfile = ({
             ))}
 
             {profileUrl && (
-              <ButtonNavItem href={profileUrl} label="My Profile" />
+              <ButtonNavItem href={profileUrl} label={t('myProfile')} />
             )}
 
             {notificationCentrePath && (
               <ButtonNavItem
-                label="Notification Centre"
+                label={t('notificationCentre')}
                 href={notificationCentrePath}
               />
             )}
@@ -99,27 +101,27 @@ export const ButtonProfile = ({
               onClick={onChangeThemeMode}
               label={
                 resolvedTheme === 'dark'
-                  ? 'Switch to light mode'
-                  : 'Switch to dark mode'
+                  ? t('switchToLightMode')
+                  : t('switchToDarkMode')
               }
             />
 
             {hasMfaMethods ? (
               <ButtonNavItem
                 onClick={showMfaEnrollmentModal}
-                label={'Update funds protection (MFA)'}
+                label={t('updateMfa')}
               />
             ) : (
               <ButtonNavItem
                 onClick={showMfaEnrollmentModal}
-                label={'Protect funds (MFA)'}
+                label={t('protectMfa')}
               />
             )}
 
             <ButtonNavItem
               onClick={onLogout}
               classNames="text-error-11"
-              label="Logout"
+              label={t('logout')}
             />
           </div>
 
@@ -154,7 +156,7 @@ export const ButtonProfile = ({
                 {profileUrl && (
                   <DropdownMenuItem className="px-0 text-1">
                     <Link className="text-accent-11" href={profileUrl}>
-                      View profile
+                      {t('viewProfile')}
                     </Link>
                   </DropdownMenuItem>
                 )}
@@ -166,7 +168,7 @@ export const ButtonProfile = ({
                         className="text-accent-11"
                         href={notificationCentrePath}
                       >
-                        Notification Centre
+                        {t('notificationCentre')}
                       </Link>
                     </DropdownMenuItem>
                   </>
@@ -178,8 +180,8 @@ export const ButtonProfile = ({
                     className="px-0 text-1 flex justify-between"
                   >
                     {resolvedTheme === 'dark'
-                      ? 'Switch to light mode'
-                      : 'Switch to dark mode'}
+                      ? t('switchToLightMode')
+                      : t('switchToDarkMode')}
                     <Repeat className="icon-sm" />
                   </DropdownMenuItem>
                 )}
@@ -190,7 +192,7 @@ export const ButtonProfile = ({
                       onClick={showMfaEnrollmentModal}
                       className="px-0 text-1"
                     >
-                      Update funds protection (MFA)
+                      {t('updateMfa')}
                       <Shield className="icon-sm" />
                     </DropdownMenuItem>
                   </>
@@ -201,7 +203,7 @@ export const ButtonProfile = ({
                       onClick={showMfaEnrollmentModal}
                       className="px-0 text-1 flex justify-between"
                     >
-                      Protect funds (MFA)
+                      {t('protectMfa')}
                       <Shield className="icon-sm" />
                     </DropdownMenuItem>
                   </>
@@ -213,7 +215,7 @@ export const ButtonProfile = ({
                     className="px-0 text-1 flex justify-between"
                     disabled
                   >
-                    Delete
+                    {t('delete')}
                     <TrashIcon className="icon-sm" />
                   </DropdownMenuItem>
                 )}
@@ -222,7 +224,7 @@ export const ButtonProfile = ({
                   onClick={onLogout}
                   className="px-0 text-1 text-error-11 flex justify-between"
                 >
-                  Logout
+                  {t('logout')}
                   <LogOutIcon className="icon-sm" />
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -238,13 +240,13 @@ export const ButtonProfile = ({
               label={item.label}
             />
           ))}
-          <Button onClick={onLogin}>Sign in</Button>
+          <Button onClick={onLogin}>{t('signIn')}</Button>
           <Button
             className="hidden md:flex"
             variant="outline"
             onClick={onLogin}
           >
-            Get started
+            {t('getStarted')}
           </Button>
         </div>
       )}

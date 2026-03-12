@@ -1,10 +1,12 @@
 import { VercelToolbar } from '@vercel/toolbar/next';
 import { NextSSRPlugin } from '@uploadthing/react/next-ssr-plugin';
 import { extractRouterConfig } from 'uploadthing/server';
-import { cookies } from 'next/headers';
 import { Lato, Source_Sans_3 } from 'next/font/google';
 import clsx from 'clsx';
 import type { Metadata } from 'next';
+
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 
 import { Footer, Html, ThemeProvider } from '@hypha-platform/ui/server';
 import { AuthProvider } from '@hypha-platform/authentication';
@@ -13,14 +15,14 @@ import { ConnectedButtonProfile } from '@hypha-platform/epics';
 import { EvmProvider } from '@hypha-platform/evm';
 import { useMe } from '@hypha-platform/core/client';
 import { fileRouter } from '@hypha-platform/core/server';
-import { HYPHA_LOCALE } from '@hypha-platform/cookie';
-import { i18nConfig } from '@hypha-platform/i18n';
 import { MenuTop } from '@hypha-platform/ui';
 import { ROOT_URL } from './constants';
 import { NotificationSubscriber } from '@hypha-platform/notifications/client';
 
 import '@hypha-platform/ui-utils/global.css';
 import 'react-tooltip/dist/react-tooltip.css';
+import { ConnectedLanguageSelect } from '@web/components/connected-language-select';
+import { showLanguageSelect } from '@hypha-platform/feature-flags';
 import ScrollUp from '@web/components/scroll-up';
 import SeamlessScrollPolyfill from '@web/components/seamless-scroll-polyfill';
 import '@web/utils/initialize-proxy';
@@ -83,14 +85,17 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const shouldInjectToolbar = process.env.NODE_ENV === 'development';
-  const cookieStore = await cookies();
-  const lang = cookieStore.get(HYPHA_LOCALE)?.value || i18nConfig.defaultLocale;
+  const isLanguageSelectVisible = await showLanguageSelect();
+  const locale = await getLocale();
+  const messages = await getMessages();
+  const tNav = await getTranslations('Navigation');
+  const tFooter = await getTranslations('Footer');
   const notificationAppId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '';
   const safariWebId = process.env.NEXT_PUBLIC_ONESIGNAL_SAFARI_WEB_ID ?? '';
   const serviceWorkerPath = 'onesignal/OneSignalSDKWorker.js';
 
   return (
-    <Html className={clsx(lato.variable, sourceSans.variable)}>
+    <Html lang={locale} className={clsx(lato.variable, sourceSans.variable)}>
       <ScrollUp />
       <SeamlessScrollPolyfill />
       <AuthProvider
@@ -105,37 +110,52 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <EvmProvider>
-            <NotificationSubscriber
-              appId={notificationAppId}
-              safariWebId={safariWebId}
-              serviceWorkerPath={serviceWorkerPath}
-            >
-              <MenuTop logoHref={ROOT_URL}>
-                <ConnectedButtonProfile
-                  useAuthentication={useAuthentication}
-                  useMe={useMe}
-                  newUserRedirectPath="/profile/signup"
-                  baseRedirectPath="/my-spaces"
-                  navItems={[
-                    {
-                      label: 'Network',
-                      href: `/${lang}/network`,
-                    },
-                    {
-                      label: 'My Spaces',
-                      href: `/${lang}/my-spaces`,
-                    },
-                  ]}
-                />
-              </MenuTop>
-              <NextSSRPlugin routerConfig={extractRouterConfig(fileRouter)} />
-              <div className="mb-auto pb-8">
-                <div className="pt-9 h-full flex justify-normal">
-                  <div className="w-full h-full">{children}</div>
+            <NextIntlClientProvider messages={messages}>
+              <NotificationSubscriber
+                appId={notificationAppId}
+                safariWebId={safariWebId}
+                serviceWorkerPath={serviceWorkerPath}
+              >
+                <MenuTop
+                  logoHref={ROOT_URL}
+                  openMenuLabel={tNav('openMenu')}
+                  closeMenuLabel={tNav('closeMenu')}
+                >
+                  <ConnectedButtonProfile
+                    useAuthentication={useAuthentication}
+                    useMe={useMe}
+                    newUserRedirectPath="/profile/signup"
+                    baseRedirectPath="/my-spaces"
+                    navItems={[
+                      {
+                        label: tNav('network'),
+                        href: `/${locale}/network`,
+                      },
+                      {
+                        label: tNav('mySpaces'),
+                        href: `/${locale}/my-spaces`,
+                      },
+                    ]}
+                  />
+                  {isLanguageSelectVisible && <ConnectedLanguageSelect />}
+                </MenuTop>
+                <NextSSRPlugin routerConfig={extractRouterConfig(fileRouter)} />
+                <div className="mb-auto pb-8">
+                  <div className="pt-9 h-full flex justify-normal">
+                    <div className="w-full h-full">{children}</div>
+                  </div>
                 </div>
-              </div>
-              <Footer />
-            </NotificationSubscriber>
+                <Footer
+                  networkLabel={tFooter('network')}
+                  legalLabel={tFooter('legal')}
+                  hyphaServicesLabel={tFooter('hyphaServices')}
+                  hyphaTokenomicsLabel={tFooter('hyphaTokenomics')}
+                  licensingPolicyLabel={tFooter('licensingPolicy')}
+                  termsAndConditionsLabel={tFooter('termsAndConditions')}
+                  privacyPolicyLabel={tFooter('privacyPolicy')}
+                />
+              </NotificationSubscriber>
+            </NextIntlClientProvider>
           </EvmProvider>
         </ThemeProvider>
       </AuthProvider>

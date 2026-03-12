@@ -21,6 +21,7 @@ import {
   checkAccess,
 } from '@hypha-platform/epics';
 import type { VisibleSpace } from './types';
+import { useTranslations } from 'next-intl';
 
 type VisibleSpacesListProps = {
   visibleSpaces: VisibleSpace[];
@@ -29,21 +30,6 @@ type VisibleSpacesListProps = {
   entrySpaceId?: number;
 };
 
-function buildNestedPath(space: VisibleSpace, allSpaces: Space[]): string {
-  if (space.root) {
-    return 'Root';
-  }
-
-  if (space.parentId) {
-    const parent = allSpaces.find((s) => s.id === space.parentId);
-    if (parent) {
-      return `Nested in ${parent.title}`;
-    }
-  }
-
-  return 'Nested';
-}
-
 type AddSpaceButtonProps = {
   space: VisibleSpace;
   allSpaces: Space[];
@@ -51,6 +37,7 @@ type AddSpaceButtonProps = {
 };
 
 function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
+  const t = useTranslations('SelectNavigationAction');
   const fullSpace = allSpaces.find((s) => s.id === space.id);
   const web3SpaceId = fullSpace?.web3SpaceId;
   const spaceSlug = fullSpace?.slug || space.slug;
@@ -63,10 +50,10 @@ function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
         colorVariant="accent"
         className="w-full md:w-auto"
         disabled={true}
-        title="Space information not available"
+        title={t('visibleSpaces.spaceInfoNotAvailable')}
       >
         <PlusIcon className="w-4 h-4" />
-        Add Space
+        {t('visibleSpaces.addSpace')}
       </Button>
     );
   }
@@ -93,10 +80,10 @@ function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
       className={isDisabled ? 'cursor-not-allowed' : 'flex-1 md:flex-none'}
       title={
         isLoading
-          ? 'Loading...'
+          ? t('visibleSpaces.loading')
           : !hasAccess
-          ? 'You do not have access to add spaces to this organization.'
-          : 'Add Space'
+          ? t('visibleSpaces.noAccessAddSpace')
+          : t('visibleSpaces.addSpace')
       }
     >
       <Button
@@ -107,7 +94,7 @@ function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
         disabled={isDisabled}
       >
         <PlusIcon className="w-4 h-4" />
-        Add Space
+        {t('visibleSpaces.addSpace')}
       </Button>
     </Link>
   );
@@ -119,7 +106,22 @@ export function VisibleSpacesList({
   lang,
   entrySpaceId,
 }: VisibleSpacesListProps) {
+  const t = useTranslations('SelectNavigationAction');
   const [searchQuery, setSearchQuery] = useState('');
+  const buildNestedPath = (space: VisibleSpace): string => {
+    if (space.root) {
+      return t('visibleSpaces.nestedRoot');
+    }
+
+    if (space.parentId) {
+      const parent = allSpaces.find((s) => s.id === space.parentId);
+      if (parent) {
+        return t('visibleSpaces.nestedIn', { parent: parent.title });
+      }
+    }
+
+    return t('visibleSpaces.nested');
+  };
 
   const { rootSpace, descendantSpaces } = useMemo(() => {
     const root = visibleSpaces.find((space) => space.root);
@@ -147,7 +149,7 @@ export function VisibleSpacesList({
     return null;
   }
 
-  const rootNestedPath = buildNestedPath(rootSpace, allSpaces);
+  const rootNestedPath = buildNestedPath(rootSpace);
   const rootCreateSpacePath = getCreateSpacePath(rootSpace.id, rootSpace.slug);
   const rootVisitSpacePath = rootSpace.slug
     ? getDhoPathAgreements(lang, rootSpace.slug)
@@ -194,7 +196,7 @@ export function VisibleSpacesList({
                 disabled={rootSpace.id === entrySpaceId}
                 className="w-full md:w-auto"
               >
-                Visit Space
+                {t('visibleSpaces.visitSpace')}
               </Button>
             </Link>
           </div>
@@ -205,7 +207,7 @@ export function VisibleSpacesList({
 
       <div className="flex gap-2">
         <Input
-          placeholder="Search spaces"
+          placeholder={t('visibleSpaces.searchSpaces')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="flex-1"
@@ -214,7 +216,7 @@ export function VisibleSpacesList({
 
       <div className="flex flex-col gap-3">
         {filteredSpaces.map((space) => {
-          const nestedPath = buildNestedPath(space, allSpaces);
+          const nestedPath = buildNestedPath(space);
           const createSpacePath = getCreateSpacePath(space.id, space.slug);
           const visitSpacePath = space.slug
             ? getDhoPathAgreements(lang, space.slug)
@@ -260,7 +262,7 @@ export function VisibleSpacesList({
                       disabled={space.id === entrySpaceId}
                       className="w-full md:w-auto"
                     >
-                      Visit Space
+                      {t('visibleSpaces.visitSpace')}
                     </Button>
                   </Link>
                 </div>
@@ -271,7 +273,9 @@ export function VisibleSpacesList({
       </div>
 
       {filteredSpaces.length === 0 && (
-        <div className="text-center text-neutral-11 py-8">No spaces found</div>
+        <div className="text-center text-neutral-11 py-8">
+          {t('visibleSpaces.noSpacesFound')}
+        </div>
       )}
     </div>
   );

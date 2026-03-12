@@ -11,6 +11,7 @@ import {
 import { SearchIcon } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import React from 'react';
+import { useTranslations } from 'next-intl';
 
 type Suggestion = {
   title: string;
@@ -24,6 +25,7 @@ export function CategorySearch({ suggestions }: CategorySearchProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
+  const tCommon = useTranslations('Common');
 
   const currentCategories = React.useMemo(() => {
     const categories = searchParams.has('category')
@@ -71,13 +73,13 @@ export function CategorySearch({ suggestions }: CategorySearchProps) {
         <DisposableLabel
           key={category}
           label={category}
-          closeTooltip="Remove"
+          closeTooltip={tCommon('remove')}
           onClose={() => handleRemoveCategory(category)}
         />
       ))}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Input className="border-0" placeholder="Find a Category" />
+          <Input className="border-0" placeholder={tCommon('findCategory')} />
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           {availableSuggestions?.map((suggestion) => (

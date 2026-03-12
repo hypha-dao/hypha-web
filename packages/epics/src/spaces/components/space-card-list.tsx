@@ -10,6 +10,7 @@ import { useSpaceCardList } from '../hooks/use-space-card-list';
 import { SectionLoadMore } from '@hypha-platform/ui/server';
 import { Text } from '@radix-ui/themes';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { useTranslations } from 'next-intl';
 
 type SpaceCardListProps = {
   lang: Locale;
@@ -31,6 +32,8 @@ export function SpaceCardList({
     pageSize,
   });
   const { isAuthenticated } = useAuthentication();
+  const tCommon = useTranslations('Common');
+  const tSpaces = useTranslations('Spaces');
 
   return (
     <>
@@ -65,35 +68,34 @@ export function SpaceCardList({
               onClick={loadMore}
               disabled={!pagination?.hasNextPage}
             >
-              <Text>{pagination?.hasNextPage ? 'Load more' : 'No more'}</Text>
+              <Text>
+                {pagination?.hasNextPage
+                  ? tCommon('loadMore')
+                  : tCommon('noMore')}
+              </Text>
             </SectionLoadMore>
           )}
         </div>
       ) : (
         <Empty>
           <div className="flex flex-col gap-7">
-            <p>
-              No spaces created or joined yet. Explore our network and join some
-              Space, or create your own
-            </p>
+            <p>{tCommon('noSpacesYet')}</p>
             <div className="flex gap-4 items-center justify-center">
               <Link href={`/${lang}/network`}>
                 <Button variant="outline" className="gap-2">
                   <GlobeIcon />
-                  Explore Spaces
+                  {tCommon('exploreSpaces')}
                 </Button>
               </Link>
               <Link
                 className={!isAuthenticated ? 'cursor-not-allowed' : ''}
-                title={
-                  !isAuthenticated ? 'Please sign in to use this feature.' : ''
-                }
+                title={!isAuthenticated ? tCommon('signIn') : ''}
                 href={isAuthenticated ? `/${lang}/my-spaces/create` : {}}
                 scroll={false}
               >
                 <Button disabled={!isAuthenticated} className="gap-2">
                   <PlusIcon />
-                  Create Space
+                  {tSpaces('createSpace')}
                 </Button>
               </Link>
             </div>

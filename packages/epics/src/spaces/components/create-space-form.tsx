@@ -23,6 +23,7 @@ import {
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import React from 'react';
+import { useTranslations } from 'next-intl';
 
 import { z } from 'zod';
 import clsx from 'clsx';
@@ -111,15 +112,22 @@ export const SpaceForm = ({
     ...DEFAULT_VALUES,
     parentId: initialParentSpaceId || null,
   },
-  submitLabel = 'Create',
-  submitLoadingLabel = 'Creating Space...',
+  submitLabel,
+  submitLoadingLabel,
   label = 'create',
   spaceId = -1,
-  slugIncorrectMessage = 'Space ID already exists',
+  slugIncorrectMessage,
 }: CreateSpaceFormProps) => {
   if (process.env.NODE_ENV !== 'production') {
     console.debug('SpaceForm', { defaultValues });
   }
+
+  const tSpaces = useTranslations('Spaces');
+
+  const resolvedSubmitLabel = submitLabel ?? tSpaces('createSpace');
+  const resolvedSubmitLoadingLabel = submitLoadingLabel ?? tSpaces('creating');
+  const resolvedSlugIncorrectMessage =
+    slugIncorrectMessage ?? tSpaces('slugAlreadyExists');
 
   const [slugDuplicated, setSlugDuplicated] = React.useState(false);
 
@@ -133,12 +141,9 @@ export const SpaceForm = ({
       .string()
       .min(1, '')
       .max(50)
-      .regex(
-        /^[a-z0-9'-]+$/,
-        'This field can only contain lowercase letters, numbers, hyphens, and apostrophes.',
-      )
+      .regex(/^[a-z0-9'-]+$/, tSpaces('slugFieldRegex'))
       .optional()
-      .refine(resolveSlug, { message: slugIncorrectMessage }),
+      .refine(resolveSlug, { message: resolvedSlugIncorrectMessage }),
   });
 
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -269,7 +274,7 @@ export const SpaceForm = ({
     const result: ParentOption[] = [];
     if (organisationOptions.length > 0) {
       result.push(
-        { value: COMBOBOX_TITLE, label: 'Organisation Spaces' },
+        { value: COMBOBOX_TITLE, label: tSpaces('organisationSpaces') },
         ...organisationOptions,
       );
     }
@@ -281,7 +286,7 @@ export const SpaceForm = ({
     }
     if (mySpacesOptions.length > 0) {
       result.push(
-        { value: COMBOBOX_TITLE, label: 'My Other Spaces' },
+        { value: COMBOBOX_TITLE, label: tSpaces('myOtherSpaces') },
         ...mySpacesOptions,
       );
     }
@@ -355,28 +360,28 @@ export const SpaceForm = ({
 
   const showCategoriesError = React.useCallback(() => {
     form.setError('categories', {
-      message: 'Please select at least one tag category.',
+      message: tSpaces('selectCategoryError'),
       type: 'validate',
     });
-  }, [form]);
+  }, [form, tSpaces]);
 
   const showUnsetParentIdError = React.useCallback(() => {
     form.setError('parentId', {
-      message: 'Please select a linked space or enable "Root Space"',
+      message: tSpaces('selectParentError'),
       type: 'validate',
     });
-  }, [form]);
+  }, [form, tSpaces]);
 
   const labelText = React.useMemo(() => {
     switch (label) {
       case 'add':
-        return 'Add Space';
+        return tSpaces('addSpace');
       case 'create':
-        return 'Create Space';
+        return tSpaces('createSpace');
       case 'configure':
-        return 'Configure Space';
+        return tSpaces('configureSpace');
     }
-  }, [label]);
+  }, [label, tSpaces]);
 
   return (
     <Form {...form}>
@@ -463,7 +468,7 @@ export const SpaceForm = ({
                         <FormControl>
                           <Input
                             rightIcon={!field.value && <RequirementMark />}
-                            placeholder="Name your space..."
+                            placeholder={tSpaces('nameYourSpace')}
                             className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
                             disabled={isLoading}
                             {...field}
@@ -492,7 +497,7 @@ export const SpaceForm = ({
                   )}
                   <span className="flex items-center">
                     <Text className="text-1 text-foreground mr-1">
-                      Created by
+                      {tSpaces('createdBy')}
                     </Text>
                     <Text className="text-1 text-neutral-11">
                       {creator?.name} {creator?.surname}
@@ -521,8 +526,10 @@ export const SpaceForm = ({
                   }
                   uploadText={
                     <>
-                      <span className="text-accent-11 gap-1">Upload</span> space
-                      banner <RequirementMark />
+                      <span className="text-accent-11 gap-1">
+                        {tSpaces('uploadSpaceBanner')}
+                      </span>{' '}
+                      {tSpaces('spaceBanner')} <RequirementMark />
                     </>
                   }
                   enableImageResizer={true}
@@ -538,12 +545,12 @@ export const SpaceForm = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-foreground gap-1">
-                Purpose <RequirementMark />
+                {tSpaces('purpose')} <RequirementMark />
               </FormLabel>
               <FormControl>
                 <Textarea
                   disabled={isLoading}
-                  placeholder="Type your space purpose here..."
+                  placeholder={tSpaces('purposePlaceholder')}
                   {...field}
                 />
               </FormControl>
@@ -558,7 +565,7 @@ export const SpaceForm = ({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-foreground">
-                  Organisation Level
+                  {tSpaces('organisationLevel')}
                 </FormLabel>
                 <FormControl>
                   <ParentSpaceSelector
@@ -584,10 +591,12 @@ export const SpaceForm = ({
           name="categories"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-foreground">Tags</FormLabel>
+              <FormLabel className="text-foreground">
+                {tSpaces('tags')}
+              </FormLabel>
               <FormControl>
                 <MultiSelect
-                  placeholder={'Select one or more'}
+                  placeholder={tSpaces('selectOneOrMore')}
                   options={categoryOptions}
                   value={field.value}
                   allowToggleAll={false}
@@ -605,13 +614,13 @@ export const SpaceForm = ({
             render={({ field, fieldState: { error } }) => (
               <FormItem>
                 <FormLabel className="text-foreground">
-                  Space Unique Link
+                  {tSpaces('spaceUniqueLink')}
                 </FormLabel>
                 <FormControl>
                   <Input
                     leftIcon={<div className="text-2">/</div>}
                     rightIcon={!field.value && <RequirementMark />}
-                    placeholder="Space Unique Link"
+                    placeholder={tSpaces('spaceUniqueLink')}
                     className={cn(
                       'text-2 pl-4',
                       error &&
@@ -623,11 +632,7 @@ export const SpaceForm = ({
                 </FormControl>
                 <FormMessage className="mt-1" />
                 <span className="text-1 text-neutral-11">
-                  <span>
-                    Your space name is automatically added to the end of your
-                    space link. You can edit it if needed, but it must remain
-                    unique.
-                  </span>
+                  <span>{tSpaces('spaceLinkDescription')}</span>
                 </span>
               </FormItem>
             )}
@@ -638,7 +643,7 @@ export const SpaceForm = ({
           name="links"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Channels</FormLabel>
+              <FormLabel>{tSpaces('channels')}</FormLabel>
               <FormControl>
                 <Links
                   links={field.value}
@@ -650,7 +655,7 @@ export const SpaceForm = ({
             </FormItem>
           )}
         />
-        <FormLabel>Activation Mode</FormLabel>
+        <FormLabel>{tSpaces('activationMode')}</FormLabel>
         <div className="flex flex-col gap-2">
           <Card
             className={clsx('flex p-6 cursor-pointer space-x-4 items-center', {
@@ -660,13 +665,11 @@ export const SpaceForm = ({
             onClick={toggleSandbox}
           >
             <div className="flex flex-col">
-              <span className="text-2 font-medium">Sandbox Mode</span>
+              <span className="text-2 font-medium">
+                {tSpaces('sandboxMode')}
+              </span>
               <span className="text-1 text-neutral-11">
-                <span>
-                  Use Sandbox Mode to configure and test your space only on My
-                  Spaces, sharing it with your team via URL while laying the
-                  foundation for regenerative purpose.
-                </span>
+                <span>{tSpaces('sandboxDescription')}</span>
               </span>
             </div>
           </Card>
@@ -678,13 +681,9 @@ export const SpaceForm = ({
             onClick={toggleDemo}
           >
             <div className="flex flex-col">
-              <span className="text-2 font-medium">Pilot Mode</span>
+              <span className="text-2 font-medium">{tSpaces('pilotMode')}</span>
               <span className="text-1 text-neutral-11">
-                <span>
-                  Use Pilot Mode to share your space for demos, use case
-                  validation, or as a replicable template. Expand your reach,
-                  activate member participation, and gather feedback.
-                </span>
+                <span>{tSpaces('pilotDescription')}</span>
               </span>
             </div>
           </Card>
@@ -696,13 +695,9 @@ export const SpaceForm = ({
             onClick={toggleLive}
           >
             <div className="flex flex-col">
-              <span className="text-2 font-medium">Live Mode</span>
+              <span className="text-2 font-medium">{tSpaces('liveMode')}</span>
               <span className="text-1 text-neutral-11">
-                <span>
-                  Use Live Mode to make your space fully operational and
-                  publicly discoverable, generating sustainable value and
-                  turning your purpose into regenerative impact.
-                </span>
+                <span>{tSpaces('liveDescription')}</span>
               </span>
             </div>
           </Card>
@@ -718,14 +713,11 @@ export const SpaceForm = ({
               onClick={toggleArchived}
             >
               <div className="flex flex-col">
-                <span className="text-2 font-medium">Archive Mode</span>
+                <span className="text-2 font-medium">
+                  {tSpaces('archiveMode')}
+                </span>
                 <span className="text-1 text-neutral-11">
-                  <span>
-                    Archive this space to temporarily pause activity or
-                    deactivate it while keeping all data and history safe. You
-                    can reactivate it anytime by selecting a different
-                    activation mode.
-                  </span>
+                  <span>{tSpaces('archiveDescription')}</span>
                 </span>
               </div>
             </Card>
@@ -737,7 +729,7 @@ export const SpaceForm = ({
             variant={isLoading ? 'outline' : 'default'}
             disabled={isLoading}
           >
-            {isLoading ? submitLoadingLabel : submitLabel}
+            {isLoading ? resolvedSubmitLoadingLabel : resolvedSubmitLabel}
           </Button>
         </div>
       </form>

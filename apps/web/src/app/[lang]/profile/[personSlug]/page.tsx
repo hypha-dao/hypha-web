@@ -19,6 +19,7 @@ import { ProfileTabs } from './_components/profile-tabs';
 import { web3Client } from '@hypha-platform/core/server';
 import { Hex, zeroAddress } from 'viem';
 import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
+import { getTranslations } from 'next-intl/server';
 
 type PageProps = {
   params: Promise<ProfilePageParams>;
@@ -35,6 +36,8 @@ export default async function ProfilePage(props: PageProps) {
   const params = await props.params;
 
   const { lang, personSlug: personSlugRaw } = params;
+  const tNav = await getTranslations('Navigation');
+  const tProfile = await getTranslations('Profile');
   const personSlug = tryDecodeUriPart(personSlugRaw);
 
   const person = await findPersonBySlug({ slug: personSlug }, { db });
@@ -59,9 +62,11 @@ export default async function ProfilePage(props: PageProps) {
           className="cursor-pointer flex items-center"
         >
           <ChevronLeftIcon width={16} height={16} />
-          <Text className="text-sm">My Spaces</Text>
+          <Text className="text-sm">{tNav('mySpaces')}</Text>
         </Link>
-        <Text className="text-sm text-neutral-11 ml-1">/ Profile Page</Text>
+        <Text className="text-sm text-neutral-11 ml-1">
+          / {tProfile('profilePage')}
+        </Text>
       </div>
       {person ? (
         <div className="flex flex-col gap-5">
@@ -88,7 +93,7 @@ export default async function ProfilePage(props: PageProps) {
           <ProfileTabs person={person} lang={lang} />
         </div>
       ) : (
-        <p>Person not found</p>
+        <p>{tProfile('personNotFound')}</p>
       )}
     </Container>
   );

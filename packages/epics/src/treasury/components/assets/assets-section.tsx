@@ -17,6 +17,7 @@ import {
   useIsDelegate,
 } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
+import { useTranslations } from 'next-intl';
 
 type AssetSectionProps = {
   basePath: string;
@@ -27,6 +28,8 @@ export const AssetsSection: FC<AssetSectionProps> = ({
   basePath,
   web3SpaceId,
 }) => {
+  const tCommon = useTranslations('Common');
+  const tTreasury = useTranslations('TreasuryTab');
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({
     spaceId: web3SpaceId as number,
   });
@@ -54,18 +57,18 @@ export const AssetsSection: FC<AssetSectionProps> = ({
 
   const isDisabled = !(isAuthenticated || isMember || isDelegate);
   const tooltipMessage = !isAuthenticated
-    ? 'Please sign in to use this feature.'
+    ? tCommon('signIn')
     : !isMember && !isDelegate
-    ? 'Please join this space to use this feature.'
+    ? tCommon('joinSpaceToUse')
     : '';
 
   const renderFilterAndButtons = () => (
     <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-2">
       <SectionFilter
         count={totalBalance || 0}
-        label="Balance"
+        label={tTreasury('balance')}
         hasSearch
-        searchPlaceholder="Search tokens"
+        searchPlaceholder={tTreasury('searchTokens')}
         onChangeSearch={setSearchTerm}
       >
         <label className="flex items-center gap-1">
@@ -75,7 +78,7 @@ export const AssetsSection: FC<AssetSectionProps> = ({
             onChange={(e) => setHideSmallBalances(e.target.checked)}
             className="h-4 w-4"
           />
-          <span>Hide small balances</span>
+          <span>{tTreasury('hideSmallBalances')}</span>
         </label>
       </SectionFilter>
       <div className="flex gap-2 justify-end">
@@ -88,7 +91,7 @@ export const AssetsSection: FC<AssetSectionProps> = ({
             className="cursor-not-allowed"
           >
             <RadiobuttonIcon />
-            New Token
+            {tTreasury('newToken')}
           </Button>
         ) : (
           <Link
@@ -98,7 +101,7 @@ export const AssetsSection: FC<AssetSectionProps> = ({
           >
             <Button colorVariant="accent" variant="outline">
               <RadiobuttonIcon />
-              New Token
+              {tTreasury('newToken')}
             </Button>
           </Link>
         )}
@@ -109,7 +112,7 @@ export const AssetsSection: FC<AssetSectionProps> = ({
           disabled={isDisabled}
         >
           <CopyIcon />
-          Deposit funds
+          {tTreasury('depositFunds')}
         </Button>
       </div>
     </div>
@@ -120,7 +123,7 @@ export const AssetsSection: FC<AssetSectionProps> = ({
       <div className="w-full">{renderFilterAndButtons()}</div>
       {filteredAssets.length === 0 && !isLoading ? (
         <Empty>
-          <p>List is empty</p>
+          <p>{tTreasury('listIsEmpty')}</p>
         </Empty>
       ) : (
         <AssetsList
@@ -138,7 +141,7 @@ export const AssetsSection: FC<AssetSectionProps> = ({
             disabled={!hasMore}
             isLoading={isLoading}
           >
-            <Text>Load more assets</Text>
+            <Text>{tTreasury('loadMoreAssets')}</Text>
           </SectionLoadMore>
         )}
     </div>

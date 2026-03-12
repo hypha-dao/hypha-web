@@ -7,6 +7,7 @@ import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Text } from '@radix-ui/themes';
 import Link from 'next/link';
 import React from 'react';
+import { useTranslations } from 'next-intl';
 
 const categoriesIntersected = (
   categories1: Category[],
@@ -24,6 +25,7 @@ export function NetworkSelected({
   categories: Category[];
   uniqueCategories: Category[];
 }) {
+  const tCommon = useTranslations('Common');
   const selectedSpaces = React.useMemo(
     () =>
       spaces.filter((space) =>
@@ -46,7 +48,7 @@ export function NetworkSelected({
           className="cursor-pointer flex items-center"
         >
           <ChevronLeftIcon width={16} height={16} />
-          <Text className="text-sm">Home</Text>
+          <Text className="text-sm">{tCommon('home')}</Text>
         </Link>
         <Text className="text-sm text-gray-400 ml-1 font-medium"> / </Text>
         {categories.map((category, index) => (

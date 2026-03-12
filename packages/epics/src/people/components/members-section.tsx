@@ -16,6 +16,7 @@ import {
 } from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 type MemberSectionProps = {
   basePath: string;
@@ -30,6 +31,8 @@ export const MembersSection: FC<MemberSectionProps> = ({
   spaceSlug,
   refreshInterval,
 }) => {
+  const tCommon = useTranslations('Common');
+  const tMembers = useTranslations('MembersTab');
   const { pages, isLoading, loadMore, pagination, onUpdateSearch, searchTerm } =
     useMembersSection({
       useMembers,
@@ -48,9 +51,9 @@ export const MembersSection: FC<MemberSectionProps> = ({
   });
   const isDisabled = !isAuthenticated || !isMember;
   const tooltipMessage = !isAuthenticated
-    ? 'Please sign in to use this feature.'
+    ? tCommon('signIn')
     : !isMember
-    ? 'Please join this space to use this feature.'
+    ? tCommon('joinSpaceToUse')
     : '';
 
   return (
@@ -58,9 +61,9 @@ export const MembersSection: FC<MemberSectionProps> = ({
       <span className="w-full flex gap-4">
         <SectionFilter
           count={pagination?.total || 0}
-          label="Members"
+          label={tCommon('Members')}
           hasSearch
-          searchPlaceholder="Search members"
+          searchPlaceholder={tMembers('searchMembers')}
           onChangeSearch={onUpdateSearch}
         >
           <ExitSpace web3SpaceId={space?.web3SpaceId as number} />
@@ -73,14 +76,14 @@ export const MembersSection: FC<MemberSectionProps> = ({
             scroll={false}
           >
             <Button disabled={isDisabled || isMemberLoading}>
-              Delegate Voting
+              {tMembers('delegateVoting')}
             </Button>
           </Link>
         )}
       </span>
       {pagination?.total === 0 ? (
         <Empty>
-          <p>List is empty</p>
+          <p>{tMembers('listIsEmpty')}</p>
         </Empty>
       ) : (
         Array.from({ length: pages }).map((_, index) => (
@@ -108,11 +111,11 @@ export const MembersSection: FC<MemberSectionProps> = ({
         >
           <Text>
             {isLoading
-              ? 'Loading…'
+              ? tMembers('loading')
               : pagination &&
                 (pagination.totalPages === pages || !pagination.hasNextPage)
-              ? 'No more members'
-              : 'Load more members'}
+              ? tMembers('noMoreMembers')
+              : tMembers('loadMoreMembers')}
           </Text>
         </SectionLoadMore>
       )}

@@ -15,7 +15,25 @@ const customLabelStyles: React.CSSProperties = {
   marginBottom: '12px',
 };
 
-export const Footer = () => {
+type FooterProps = {
+  networkLabel?: string;
+  legalLabel?: string;
+  hyphaServicesLabel?: string;
+  hyphaTokenomicsLabel?: string;
+  licensingPolicyLabel?: string;
+  termsAndConditionsLabel?: string;
+  privacyPolicyLabel?: string;
+};
+
+export const Footer = ({
+  networkLabel = 'NETWORK',
+  legalLabel = 'LEGAL',
+  hyphaServicesLabel = 'Hypha Services',
+  hyphaTokenomicsLabel = 'Hypha Tokenomics',
+  licensingPolicyLabel = 'Licensing policy',
+  termsAndConditionsLabel = 'Terms & Conditions',
+  privacyPolicyLabel = 'Privacy Policy',
+}: FooterProps) => {
   return (
     <div className="bg-background-2">
       <Container>
@@ -24,7 +42,7 @@ export const Footer = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-0 py-8">
           <div className="flex flex-col items-start space-y-4 md:space-y-0">
-            <Text style={customLabelStyles}>NETWORK</Text>
+            <Text style={customLabelStyles}>{networkLabel}</Text>
             <Button
               asChild
               variant="ghost"
@@ -34,9 +52,9 @@ export const Footer = () => {
                 rel="noopener noreferrer"
                 style={customLinkStyles}
                 target="_blank"
-                href="https://discord.gg/Um9vASx8a8"
+                href="https://hypha.services/"
               >
-                Hypha Services
+                {hyphaServicesLabel}
               </Link>
             </Button>
             {/* NOTE: Turned off until a new constitution is provided,
@@ -69,13 +87,13 @@ export const Footer = () => {
                   'https://assets.hypha.earth/files/Tokenomics_Paper.pdf'
                 }
               >
-                Hypha Tokenomics
+                {hyphaTokenomicsLabel}
               </Link>
             </Button>
           </div>
 
           <div className="flex flex-col items-start space-y-4 md:space-y-0">
-            <Text style={customLabelStyles}>LEGAL</Text>
+            <Text style={customLabelStyles}>{legalLabel}</Text>
             <Button
               asChild
               variant="ghost"
@@ -90,7 +108,7 @@ export const Footer = () => {
                   'https://assets.hypha.earth/files/Hypha_Licensing_Policy.pdf'
                 }
               >
-                Licensing policy
+                {licensingPolicyLabel}
               </Link>
             </Button>
             <Button
@@ -107,7 +125,7 @@ export const Footer = () => {
                   'https://assets.hypha.earth/files/Hypha_Terms_And_Conditions.pdf'
                 }
               >
-                Terms & Conditions
+                {termsAndConditionsLabel}
               </Link>
             </Button>
             <Button
@@ -124,7 +142,7 @@ export const Footer = () => {
                   'https://assets.hypha.earth/files/Hypha_Privacy_Policy.pdf'
                 }
               >
-                Privacy Policy
+                {privacyPolicyLabel}
               </Link>
             </Button>
             {/* <Button

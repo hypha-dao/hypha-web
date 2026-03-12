@@ -7,6 +7,7 @@ import {
 } from '@hypha-platform/epics';
 import { PeoplePurchaseHyphaTokens } from '@hypha-platform/epics';
 import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
+import { getTranslations } from 'next-intl/server';
 
 type PageProps = {
   params: Promise<ProfilePageParams>;
@@ -14,10 +15,11 @@ type PageProps = {
 
 export default async function PurchaseHyphaTokensProfile(props: PageProps) {
   const { lang, personSlug: personSlugRaw } = await props.params;
+  const tActions = await getTranslations('ProfileActions');
   const personSlug = tryDecodeUriPart(personSlugRaw);
 
   let spaces = [] as Space[];
-  let error = null;
+  let hasError = false;
 
   try {
     spaces = await getAllSpaces({
@@ -26,7 +28,7 @@ export default async function PurchaseHyphaTokensProfile(props: PageProps) {
     });
   } catch (err) {
     console.error('Failed to fetch spaces:', err);
-    error = err instanceof Error ? err.message : 'Failed to load spaces';
+    hasError = true;
   }
 
   const filteredSpaces = spaces?.filter(
@@ -38,23 +40,22 @@ export default async function PurchaseHyphaTokensProfile(props: PageProps) {
       <div className="flex flex-col gap-5">
         <div className="flex gap-5 justify-between">
           <h2 className="text-4 text-secondary-foreground justify-start items-center">
-            Buy Hypha Tokens (Rewards)
+            {tActions('purchaseHypha.title')}
           </h2>
           <div className="flex gap-5 justify-end items-center">
             <ButtonBack
-              label="Back to actions"
+              label={tActions('backToActions')}
               backUrl={`/${lang}/profile/${personSlug}/actions`}
             />
             <ButtonClose closeUrl={`/${lang}/profile/${personSlug}`} />
           </div>
         </div>
         <span className="text-2 text-neutral-11">
-          Use USDC to buy Hypha, earn rewards, and take part in governance if
-          you choose.
+          {tActions('purchaseHypha.content')}
         </span>
-        {error ? (
+        {hasError ? (
           <div className="text-error text-sm">
-            {error}. Please try again later.
+            {tActions('errors.loadSpaces')}
           </div>
         ) : (
           <PeoplePurchaseHyphaTokens

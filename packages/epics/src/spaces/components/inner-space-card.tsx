@@ -14,6 +14,7 @@ import {
 import { Text } from '@radix-ui/themes';
 import { cn, formatDate } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 type Member = {
   avatar: string;
@@ -48,6 +49,7 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
 }) => {
   const avatarSize = 'w-[24px] h-[24px]';
   const skeletonSize = '24px';
+  const tCommon = useTranslations('Common');
   return (
     <Card className={cn('h-full w-full', className)}>
       <CardHeader className="p-0 rounded-tl-md rounded-tr-md overflow-hidden h-[150px]">
@@ -78,7 +80,7 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
                   href={parentPath || '#'}
                 >
                   {' '}
-                  by {parentTitle}
+                  {tCommon('by')} {parentTitle}
                 </Link>
               ) : null}
             </CardTitle>
@@ -129,7 +131,7 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
           <Skeleton width="106px" height={skeletonSize} loading={isLoading}>
             {members && members.length > 3 ? (
               <Text className="ml-2 flex items-center text-1 text-action-light text-nowrap">
-                + other {members.length - 3} members
+                {tCommon('otherMembers', { count: members.length - 3 })}
               </Text>
             ) : null}
           </Skeleton>
@@ -138,7 +140,7 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
           <div className="flex flex-row">
             <Skeleton loading={isLoading} height="16px" width="80px">
               <div className="text-neutral-11 text-1">
-                Created on {formatDate(createdAt, true)}
+                {tCommon('createdOn', { date: formatDate(createdAt, true) })}
               </div>
             </Skeleton>
           </div>

@@ -4,6 +4,7 @@ import { Locale } from '@hypha-platform/i18n';
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { getDhoPathAgreements } from '../@tab/agreements/constants';
 import { getDhoPathMembers } from '../@tab/members/constants';
 import { getDhoPathTreasury } from '../@tab/treasury/constants';
@@ -12,28 +13,29 @@ import { ScrollArea, ScrollBar } from '@hypha-platform/ui';
 import { getActiveTabFromPath } from '@hypha-platform/epics';
 
 export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
+  const t = useTranslations('Common');
   const pathname = usePathname();
   const activeTab = getActiveTabFromPath(pathname);
 
   const tabs = [
     // Overview tab removed - functionality replaced by space-visualization
     // {
-    //   title: 'Overview',
+    //   title: t('Overview'),
     //   name: 'overview',
     //   href: getDhoPathOverview(lang, id),
     // },
     {
-      title: 'Agreements',
+      title: t('Agreements'),
       name: 'agreements',
       href: getDhoPathAgreements(lang, id),
     },
     {
-      title: 'Members',
+      title: t('Members'),
       name: 'members',
       href: getDhoPathMembers(lang as Locale, id as string),
     },
     {
-      title: 'Treasury',
+      title: t('Treasury'),
       name: 'treasury',
       href: getDhoPathTreasury(lang as Locale, id as string),
     },
@@ -44,13 +46,8 @@ export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
       <ScrollArea>
         <div className="w-full relative h-10 mb-4">
           <TabsList className="flex absolute h-10 md:w-full">
-            {tabs.map(({ name, href, title }, index) => (
-              <TabsTrigger
-                asChild
-                key={`tab-${index}`}
-                value={name}
-                variant="ghost"
-              >
+            {tabs.map(({ name, href, title }) => (
+              <TabsTrigger asChild key={name} value={name} variant="ghost">
                 <Link href={href} className="w-full" passHref>
                   {title}
                 </Link>

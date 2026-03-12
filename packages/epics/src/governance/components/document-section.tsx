@@ -7,6 +7,7 @@ import { Document } from '@hypha-platform/core/client';
 import { DocumentGridContainer } from './document-grid.container';
 import { DirectionType } from '@hypha-platform/core/client';
 import { Empty } from '../../common';
+import { useTranslations } from 'next-intl';
 
 type DocumentSectionProps = {
   basePath: string;
@@ -31,6 +32,8 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
   firstPageSize = 3,
   pageSize = 3,
 }) => {
+  const tAgreements = useTranslations('AgreementsTab');
+  const tCommon = useTranslations('Common');
   const {
     pages,
     loadMore,
@@ -50,7 +53,7 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
         count={pagination?.total || 0}
         label={label || ''}
         hasSearch={hasSearch}
-        searchPlaceholder="Search documents"
+        searchPlaceholder={tAgreements('searchDocuments')}
         onChangeSearch={onUpdateSearch}
       >
         {headSectionButton}
@@ -58,7 +61,7 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
 
       {pagination?.totalPages === 0 ? (
         <Empty>
-          <p>List is empty</p>
+          <p>{tAgreements('listIsEmpty')}</p>
         </Empty>
       ) : (
         <div className="w-full space-y-2">
@@ -91,7 +94,9 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
           isLoading={isLoading}
         >
           <Text>
-            {pagination?.totalPages === pages ? 'No more' : 'Load more'}
+            {pagination?.totalPages === pages
+              ? tCommon('noMore')
+              : tCommon('loadMore')}
           </Text>
         </SectionLoadMore>
       )}
