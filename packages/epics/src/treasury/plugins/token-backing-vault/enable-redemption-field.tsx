@@ -2,9 +2,8 @@
 
 import { FormField, FormItem, FormControl, Switch } from '@hypha-platform/ui';
 import { useFormContext } from 'react-hook-form';
-
 export function EnableRedemptionField() {
-  const { control } = useFormContext();
+  const { control, setValue } = useFormContext();
 
   return (
     <FormField
@@ -17,7 +16,28 @@ export function EnableRedemptionField() {
             <FormControl>
               <Switch
                 checked={field.value}
-                onCheckedChange={field.onChange}
+                onCheckedChange={(checked) => {
+                  if (!checked) {
+                    setValue('tokenBackingVault.referenceCurrency', undefined);
+                    setValue('tokenBackingVault.tokenPrice', undefined);
+                    setValue('tokenBackingVault.minimumBackingPercent', 0);
+                    setValue(
+                      'tokenBackingVault.maxRedemptionPercent',
+                      undefined,
+                    );
+                    setValue(
+                      'tokenBackingVault.maxRedemptionPeriodDays',
+                      undefined,
+                    );
+                    setValue('tokenBackingVault.redemptionStartDate', null);
+                    setValue(
+                      'tokenBackingVault.enableAdvancedRedemptionControls',
+                      false,
+                    );
+                    setValue('tokenBackingVault.redemptionWhitelist', []);
+                  }
+                  field.onChange(checked);
+                }}
                 className="ml-2"
               />
             </FormControl>
