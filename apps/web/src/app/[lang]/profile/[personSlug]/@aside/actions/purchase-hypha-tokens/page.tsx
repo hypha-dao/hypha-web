@@ -54,7 +54,9 @@ export default async function PurchaseHyphaTokensProfile(props: PageProps) {
           {tActions('purchaseHypha.content')}
         </span>
         {hasError ? (
-          <div className="text-error text-sm">{tActions('errors.loadSpaces')}</div>
+          <div className="text-error text-sm">
+            {tActions('errors.loadSpaces')}
+          </div>
         ) : (
           <PeoplePurchaseHyphaTokens
             spaces={filteredSpaces}

@@ -68,7 +68,9 @@ export default async function ActivateSpacesProfile(props: PageProps) {
           {tActions('activateSpaces.contentSuffix')}
         </span>
         {hasError ? (
-          <div className="text-error text-sm">{tActions('errors.loadSpaces')}</div>
+          <div className="text-error text-sm">
+            {tActions('errors.loadSpaces')}
+          </div>
         ) : null}
         <Separator />
         <ActivateSpacesForm spaces={filteredSpaces} />

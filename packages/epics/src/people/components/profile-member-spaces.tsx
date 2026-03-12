@@ -40,9 +40,7 @@ export const ProfileMemberSpaces = ({
       {!spaces?.length ? (
         <Empty>
           <div className="flex flex-col gap-7">
-            <p>
-              {tCommon('noSpacesYet')}
-            </p>
+            <p>{tCommon('noSpacesYet')}</p>
             <div className="flex gap-4 items-center justify-center">
               <Link href={`/${lang}/network`}>
                 <Button variant="outline" className="gap-2">

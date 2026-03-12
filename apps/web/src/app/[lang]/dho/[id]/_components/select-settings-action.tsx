@@ -160,7 +160,9 @@ export const SelectSettingsAction = ({
     {
       group: t('groups.extensionsPlugins'),
       title: t('actions.exploreExtensionsMarketplaceComingSoon.title'),
-      description: t('actions.exploreExtensionsMarketplaceComingSoon.description'),
+      description: t(
+        'actions.exploreExtensionsMarketplaceComingSoon.description',
+      ),
       href: '#',
       icon: <RadiobuttonIcon />,
       baseTab: 'agreements',

@@ -208,9 +208,7 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
         className="rounded-lg min-w-[120px]"
         colorVariant={isMember || justJoined ? 'neutral' : 'accent'}
         variant={isMember || justJoined ? 'outline' : 'default'}
-        title={
-          !isAuthenticated ? t('signIn') : buttonTitle
-        }
+        title={!isAuthenticated ? t('signIn') : buttonTitle}
       >
         {showLoader ? (
           <Loader2 className="animate-spin" width={16} height={16} />
