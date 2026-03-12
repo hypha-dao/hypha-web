@@ -172,6 +172,15 @@ export async function GET(
       address: token.address ?? undefined,
     }));
 
+    const referencePriceByAddress: Record<string, number> = {};
+    rawDbTokens.forEach((t) => {
+      if (t.address && t.referencePrice != null) {
+        referencePriceByAddress[t.address.toLowerCase()] = Number(
+          t.referencePrice,
+        );
+      }
+    });
+
     const assets = await Promise.all(
       allTokens.map(async (token) => {
         try {
@@ -201,11 +210,15 @@ export async function GET(
               `Failed to fetch supply for token ${token.address}: ${err}`,
             );
           }
-          const rate = isEnergyToken ? 1 : prices[token.address] || 0;
+          let rate = isEnergyToken ? 1 : prices[token.address] || 0;
+          if (rate === 0) {
+            rate = referencePriceByAddress[token.address.toLowerCase()] ?? 0;
+          }
           return {
             ...meta,
             address: token.address,
             value: amount,
+            tokenPrice: rate,
             usdEqual: rate * amount,
             chartData: [],
             transactions: [],
