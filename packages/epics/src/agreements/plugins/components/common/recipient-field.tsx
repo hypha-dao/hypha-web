@@ -10,6 +10,7 @@ import {
   Textarea,
 } from '@hypha-platform/ui';
 import { Space, Person } from '@hypha-platform/core/client';
+import { useTranslations } from 'next-intl';
 
 export function RecipientField({
   members,
@@ -34,6 +35,7 @@ export function RecipientField({
   name?: string;
   withMemoField?: boolean;
 }) {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { control } = useFormContext();
   return (
     <>
@@ -68,11 +70,13 @@ export function RecipientField({
           name="memo"
           render={({ field }) => (
             <FormItem>
-              <label className="text-2 text-neutral-11">Memo (Optional)</label>
+              <label className="text-2 text-neutral-11">
+                {tAgreementFlow('plugins.recipient.memoOptional')}
+              </label>
               <FormControl>
                 <Textarea
                   {...field}
-                  placeholder="Add any relevant notes or details about this transaction"
+                  placeholder={tAgreementFlow('plugins.recipient.memoPlaceholder')}
                   value={field.value || ''}
                   onChange={field.onChange}
                 />

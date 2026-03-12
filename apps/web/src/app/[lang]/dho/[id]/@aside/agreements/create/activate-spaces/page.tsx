@@ -10,12 +10,14 @@ import {
 import { Plugin } from '../../../../_components/plugins';
 import { db } from '@hypha-platform/storage-postgres';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
 };
 
 export default async function ActivateSpacesPage({ params }: PageProps) {
+  const tAgreementFlow = await getTranslations('AgreementFlow');
   const { lang, id } = await params;
   const successfulUrl = getDhoPathAgreements(lang as Locale, id);
 
@@ -45,7 +47,7 @@ export default async function ActivateSpacesPage({ params }: PageProps) {
     <SidePanel>
       {error ? (
         <div className="text-error text-sm">
-          {error}. Please try again later.
+          {tAgreementFlow('pageErrors.loadSpaces')}
         </div>
       ) : (
         <ActivateSpacesFormSpace

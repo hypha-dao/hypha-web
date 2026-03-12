@@ -38,7 +38,7 @@
     "getStarted": "Loslegen"
   },
   "DHO": {
-    "Dashboard": "DHO \u00dcbersicht",
+    "Dashboard": "DHO Übersicht",
     "actionButtons": {
       "spaceSettings": "Space-Einstellungen",
       "create": "Erstellen"
@@ -316,7 +316,7 @@
   },
   "Spaces": {
     "createSpace": "Space erstellen",
-    "addSpace": "Space hinzuf\u00fcgen",
+    "addSpace": "Space hinzufügen",
     "configureSpace": "Space konfigurieren",
     "nameYourSpace": "Benennen Sie Ihren Space...",
     "createdBy": "Erstellt von",
@@ -326,59 +326,59 @@
     "purposePlaceholder": "Geben Sie hier den Zweck Ihres Spaces ein...",
     "organisationLevel": "Organisationsebene",
     "tags": "Tags",
-    "selectOneOrMore": "W\u00e4hlen Sie eine oder mehrere",
+    "selectOneOrMore": "Wählen Sie eine oder mehrere",
     "spaceUniqueLink": "Einzigartiger Space-Link",
-    "spaceLinkDescription": "Ihr Space-Name wird automatisch am Ende Ihres Space-Links hinzugef\u00fcgt. Sie k\u00f6nnen ihn bei Bedarf bearbeiten, aber er muss eindeutig bleiben.",
-    "channels": "Kan\u00e4le",
+    "spaceLinkDescription": "Ihr Space-Name wird automatisch am Ende Ihres Space-Links hinzugefügt. Sie können ihn bei Bedarf bearbeiten, aber er muss eindeutig bleiben.",
+    "channels": "Kanäle",
     "activationMode": "Aktivierungsmodus",
     "sandboxMode": "Sandbox-Modus",
-    "sandboxDescription": "Verwenden Sie den Sandbox-Modus, um Ihren Space nur unter \u201eMeine Spaces\u201c zu konfigurieren und zu testen. Teilen Sie ihn per URL mit Ihrem Team und legen Sie die Grundlage f\u00fcr einen regenerativen Zweck.",
+    "sandboxDescription": "Verwenden Sie den Sandbox-Modus, um Ihren Space nur unter „Meine Spaces“ zu konfigurieren und zu testen. Teilen Sie ihn per URL mit Ihrem Team und legen Sie die Grundlage für einen regenerativen Zweck.",
     "pilotMode": "Pilot-Modus",
-    "pilotDescription": "Verwenden Sie den Pilot-Modus, um Ihren Space f\u00fcr Demos, Anwendungsfall-Validierung oder als reproduzierbare Vorlage zu teilen. Erweitern Sie Ihre Reichweite, aktivieren Sie die Mitgliederbeteiligung und sammeln Sie Feedback.",
+    "pilotDescription": "Verwenden Sie den Pilot-Modus, um Ihren Space für Demos, Anwendungsfall-Validierung oder als reproduzierbare Vorlage zu teilen. Erweitern Sie Ihre Reichweite, aktivieren Sie die Mitgliederbeteiligung und sammeln Sie Feedback.",
     "liveMode": "Live-Modus",
-    "liveDescription": "Verwenden Sie den Live-Modus, um Ihren Space voll funktionsf\u00e4hig und \u00f6ffentlich auffindbar zu machen, nachhaltigen Wert zu generieren und Ihren Zweck in regenerative Wirkung umzuwandeln.",
+    "liveDescription": "Verwenden Sie den Live-Modus, um Ihren Space voll funktionsfähig und öffentlich auffindbar zu machen, nachhaltigen Wert zu generieren und Ihren Zweck in regenerative Wirkung umzuwandeln.",
     "archiveMode": "Archiv-Modus",
-    "archiveDescription": "Archivieren Sie diesen Space, um die Aktivit\u00e4t vor\u00fcbergehend zu pausieren oder zu deaktivieren, w\u00e4hrend alle Daten und der Verlauf sicher aufbewahrt werden. Sie k\u00f6nnen ihn jederzeit reaktivieren, indem Sie einen anderen Aktivierungsmodus w\u00e4hlen.",
+    "archiveDescription": "Archivieren Sie diesen Space, um die Aktivität vorübergehend zu pausieren oder zu deaktivieren, während alle Daten und der Verlauf sicher aufbewahrt werden. Sie können ihn jederzeit reaktivieren, indem Sie einen anderen Aktivierungsmodus wählen.",
     "organisationSpaces": "Organisations-Spaces",
     "myOtherSpaces": "Meine anderen Spaces",
-    "selectCategoryError": "Bitte w\u00e4hlen Sie mindestens eine Tag-Kategorie.",
-    "selectParentError": "Bitte w\u00e4hlen Sie einen verkn\u00fcpften Space oder aktivieren Sie \u201eRoot Space\u201c",
+    "selectCategoryError": "Bitte wählen Sie mindestens eine Tag-Kategorie.",
+    "selectParentError": "Bitte wählen Sie einen verknüpften Space oder aktivieren Sie „Root Space“",
     "slugFieldRegex": "Dieses Feld darf nur Kleinbuchstaben, Zahlen, Bindestriche und Apostrophe enthalten.",
     "slugAlreadyExists": "Space-ID existiert bereits",
-    "slugAlreadyExistsLong": "Ein Space mit diesem Namen existiert bereits. Bitte w\u00e4hlen Sie einen anderen Namen f\u00fcr Ihren Space.",
+    "slugAlreadyExistsLong": "Ein Space mit diesem Namen existiert bereits. Bitte wählen Sie einen anderen Namen für Ihren Space.",
     "alreadyMember": "Bereits Mitglied",
     "invitePending": "Einladung ausstehend",
     "requestInvite": "Einladung anfordern",
     "becomeMember": "Mitglied werden",
     "becomeMemberOrRequestInvite": "Mitglied werden oder Einladung anfordern",
-    "inviteAlreadySubmitted": "Sie haben Ihre Einladungsanfrage bereits eingereicht. Ihr Vorschlag ist jetzt f\u00fcr Space-Mitglieder zur \u00dcberpr\u00fcfung sichtbar. Bei Bedarf k\u00f6nnen Sie 24 Stunden nach Ihrer letzten Einreichung erneut einreichen.",
-    "tokenRequirements": "Sie k\u00f6nnen noch nicht beitreten. Erf\u00fcllen Sie die Token-Anforderungen, um Zugang zu erhalten.",
+    "inviteAlreadySubmitted": "Sie haben Ihre Einladungsanfrage bereits eingereicht. Ihr Vorschlag ist jetzt für Space-Mitglieder zur Überprüfung sichtbar. Bei Bedarf können Sie 24 Stunden nach Ihrer letzten Einreichung erneut einreichen.",
+    "tokenRequirements": "Sie können noch nicht beitreten. Erfüllen Sie die Token-Anforderungen, um Zugang zu erhalten.",
     "exitSpace": "Space verlassen",
     "couldNotExitSpace": "Space konnte nicht verlassen werden",
     "exitSpaceConfirmTitle": "Space verlassen",
-    "exitSpaceConfirmDescription": "M\u00f6chten Sie diesen Space wirklich verlassen?",
+    "exitSpaceConfirmDescription": "Möchten Sie diesen Space wirklich verlassen?",
     "exitSpaceConfirmYes": "Ja, verlassen",
     "exitSpaceConfirmNo": "Nein, bleiben",
-    "exitSpaceDisabledTooltip": "Sie m\u00fcssen autorisiert und Mitglied des aktuellen Spaces sein, um ihn verlassen zu k\u00f6nnen",
-    "accessDeniedNotLoggedIn": "Sie ben\u00f6tigen ein aktives Konto, um auf diesen Bereich zugreifen zu k\u00f6nnen. Bitte melden Sie sich an oder klicken Sie auf \u201eLoslegen\u201c, um eines zu erstellen.",
+    "exitSpaceDisabledTooltip": "Sie müssen autorisiert und Mitglied des aktuellen Spaces sein, um ihn verlassen zu können",
+    "accessDeniedNotLoggedIn": "Sie benötigen ein aktives Konto, um auf diesen Bereich zugreifen zu können. Bitte melden Sie sich an oder klicken Sie auf „Loslegen“, um eines zu erstellen.",
     "signIn": "Anmelden",
     "getStarted": "Loslegen",
-    "accessDeniedNotMember": "Sie m\u00fcssen Mitglied werden, um auf diese Funktion zugreifen zu k\u00f6nnen. Treten Sie dem Space jetzt bei, um die Aktivit\u00e4t dieses Spaces zu sehen.",
+    "accessDeniedNotMember": "Sie müssen Mitglied werden, um auf diese Funktion zugreifen zu können. Treten Sie dem Space jetzt bei, um die Aktivität dieses Spaces zu sehen.",
     "accessDenied": "Zugriff verweigert",
     "noSpaces": "Keine Spaces",
     "errorOhSnap": "Oh nein. Es ist ein Fehler aufgetreten",
-    "reset": "Zur\u00fccksetzen",
-    "backToSettings": "Zur\u00fcck zu den Einstellungen",
+    "reset": "Zurücksetzen",
+    "backToSettings": "Zurück zu den Einstellungen",
     "sandbox": "Sandbox",
     "pilot": "Pilot",
     "archived": "Archiviert",
-    "changeSpaceConfiguration": "Space-Konfiguration \u00e4ndern",
+    "changeSpaceConfiguration": "Space-Konfiguration ändern",
     "trialBannerTitle": "Nur noch {daysLeft} Tage in Ihrer kostenlosen Testphase!",
-    "trialBannerSubtitle": "Tragen Sie 11 $ pro Monat in USDC oder Hypha-Token zum Hypha-Netzwerk bei, um vollen Zugang f\u00fcr Ihren Space freizuschalten und Ihren Fortschritt beizubehalten!",
+    "trialBannerSubtitle": "Tragen Sie 11 $ pro Monat in USDC oder Hypha-Token zum Hypha-Netzwerk bei, um vollen Zugang für Ihren Space freizuschalten und Ihren Fortschritt beizubehalten!",
     "activateNow": "Jetzt aktivieren",
-    "beforeExpiryBannerTitle": "Nur noch {daysLeft} Tage, bevor Ihr Hypha-Netzwerk-Beitrag abl\u00e4uft!",
-    "beforeExpiryBannerSubtitle": "Verlieren Sie nicht den Zugang zu Ihren Space-Funktionen! Verl\u00e4ngern Sie jetzt, indem Sie 11 $ pro Monat in USDC oder Hypha-Token zum Hypha-Netzwerk beitragen.",
-    "renewNow": "Jetzt verl\u00e4ngern",
+    "beforeExpiryBannerTitle": "Nur noch {daysLeft} Tage, bevor Ihr Hypha-Netzwerk-Beitrag abläuft!",
+    "beforeExpiryBannerSubtitle": "Verlieren Sie nicht den Zugang zu Ihren Space-Funktionen! Verlängern Sie jetzt, indem Sie 11 $ pro Monat in USDC oder Hypha-Token zum Hypha-Netzwerk beitragen.",
+    "renewNow": "Jetzt verlängern",
     "expiredBannerTitle": "Ihr Hypha-Netzwerk-Beitrag ist vor {daysAgo} Tagen abgelaufen!",
     "expiredBannerSubtitle": "Reaktivieren Sie jetzt, indem Sie 11 $ pro Monat in USDC oder Hypha-Token zum Hypha-Netzwerk beitragen, und erhalten Sie wieder Zugang zu allen Ihren Space-Funktionen.",
     "reactivateNow": "Jetzt reaktivieren",
@@ -397,5 +397,207 @@
     "expiredToday": "heute",
     "expiredDayAgo": "vor einem Tag",
     "expiredDaysAgo": "vor {count} Tagen"
+  },
+  "AgreementFlow": {
+    "labels": {
+      "activateSpaces": "Spaces aktivieren",
+      "votingMethod": "Abstimmungsmethode",
+      "entryMethod": "Beitrittsmethode",
+      "membershipExit": "Mitgliedschaft beenden",
+      "spaceToSpace": "Space-zu-Space",
+      "issueNewToken": "Neuen Token ausgeben",
+      "treasuryMinting": "Treasury Minting",
+      "buyHyphaTokensRewards": "Hypha-Tokens kaufen (Belohnungen)",
+      "spaceTransparency": "Space-Transparenz"
+    },
+    "buttons": {
+      "publish": "Veröffentlichen"
+    },
+    "pageErrors": {
+      "loadSpaces": "Spaces konnten nicht geladen werden. Bitte versuchen Sie es später erneut."
+    },
+    "spaceConfiguration": {
+      "update": "Aktualisieren",
+      "updating": "Wird aktualisiert..."
+    },
+    "activateSpacesForm": {
+      "insufficientFunds": {
+        "spaceWalletBalanceInsufficient": "Das Guthaben der Space-Wallet reicht nicht aus, um diese Transaktion abzuschließen.",
+        "please": "Bitte",
+        "topUpWith": "laden Sie Ihr Konto mit {token} auf",
+        "buyHyphaTokens": "Hypha-Tokens kaufen",
+        "toProceed": "um fortzufahren."
+      }
+    },
+    "buyHyphaTokensForm": {
+      "insufficientFunds": {
+        "walletBalanceInsufficient": "Ihr Wallet-Guthaben reicht nicht aus, um diese Transaktion abzuschließen.",
+        "please": "Bitte",
+        "topUpWith": "laden Sie Ihr Konto mit {token} auf",
+        "toProceed": "um fortzufahren."
+      }
+    },
+    "issueNewTokenForm": {
+      "duplicateToken": "Ein Token mit demselben Namen und Symbol existiert bereits in Ihrem Space. Bitte ändern Sie entweder den Namen oder das Symbol, um fortzufahren."
+    },
+    "createAgreementBaseFields": {
+      "agreementLabel": "Vereinbarung",
+      "backToCreate": "Zurück zum Erstellen",
+      "formContextMissing": "Formular-Kontext fehlt!",
+      "delegate": "Delegierter",
+      "proposalTitlePlaceholder": "Vorschlagstitel...",
+      "proposalMinimumVotingIconAlt": "Symbol für minimale Abstimmungsdauer",
+      "autoExecution": "Automatische Ausführung",
+      "toVote": "{duration} zum Abstimmen",
+      "proposalContent": "Vorschlagsinhalt",
+      "proposalContentPlaceholder": "Geben Sie hier Ihren Vorschlagsinhalt ein..."
+    },
+    "plugins": {
+      "activateSpaces": {
+        "checkOut": "Übersicht",
+        "totalContribution": "Gesamtbeitrag:",
+        "payWith": "Bezahlen mit:",
+        "totalAmountIn": "Gesamtbetrag in {token}:",
+        "paidBy": "Bezahlt von",
+        "paidTo": "Bezahlt an"
+      },
+      "buyHyphaTokens": {
+        "purchaseAmount": "Kaufbetrag",
+        "receiveHyphaTokens": "Unser Space erhält {amount} HYPHA-Token (1 HYPHA = {price} USD)",
+        "hyphaSentTo": "HYPHA gesendet an",
+        "usdcPaidTo": "USDC gezahlt an"
+      },
+      "quorumAndUnity": {
+        "title": "Abstimmungsmethode",
+        "description": "Wählen Sie eine Abstimmungsmethoden-Vorlage oder passen Sie Quorum- und Unity-Werte mit den Reglern an.",
+        "votingPeriod": "Abstimmungszeitraum",
+        "autoExecutionWhenConditionsMet": "Automatische Ausführung (wenn Bedingungen erfüllt sind)",
+        "autoExecutionDisabled": "Die automatische Ausführung ist deaktiviert, wenn das Quorum unter 20 % liegt, um Treasury-Vermögenswerte zu schützen.",
+        "minimumVotingDuration": "Minimale Abstimmungsdauer",
+        "durationPlaceholder": "Dauer",
+        "votingPower": "Stimmkraft",
+        "votingTokenAllocation": "Abstimmungs-Token-Zuteilung",
+        "cannotBothZero": "Quorum und Unity können nicht beide auf 0 % gesetzt werden",
+        "durations": {
+          "h6": "6 Stunden",
+          "h12": "12 Stunden",
+          "h24": "24 Stunden",
+          "d2": "2 Tage",
+          "d3": "3 Tage",
+          "d5": "5 Tage",
+          "d7": "7 Tage",
+          "d10": "10 Tage",
+          "d14": "14 Tage",
+          "d21": "21 Tage",
+          "d30": "30 Tage"
+        }
+      },
+      "recipient": {
+        "recipient": "Empfänger",
+        "member": "Mitglied",
+        "space": "Space",
+        "selectMemberPlaceholder": "Mitglied auswählen...",
+        "selectSpacePlaceholder": "Space auswählen...",
+        "walletAddress": "Wallet-Adresse",
+        "enterWalletAddress": "Wallet-Adresse eingeben",
+        "memoOptional": "Notiz (optional)",
+        "memoPlaceholder": "Fügen Sie relevante Notizen oder Details zu dieser Transaktion hinzu"
+      },
+      "membershipExit": {
+        "noMembersFound": "Keine Mitglieder gefunden.",
+        "noMemberSpacesFound": "Keine Mitglieds-Spaces gefunden.",
+        "exitingMember": "Austretendes Mitglied"
+      },
+      "spaceToSpaceMembershipSelector": {
+        "findSpace": "Space finden",
+        "findMember": "Mitglied finden",
+        "spaceToJoin": "Beitretender Space",
+        "delegatedVotingMember": "Delegiertes Abstimmungsmitglied"
+      },
+      "tokenPayoutField": {
+        "amount": "Betrag",
+        "selectToken": "Token auswählen",
+        "noTokensFound": "Keine Token gefunden",
+        "by": "von"
+      },
+      "spaceToSpaceMembership": {
+        "space": "Space",
+        "delegationRules": "Delegationsregeln",
+        "delegatedVotingMemberDescription": "Das delegierte Abstimmungsmitglied ist die Person aus Ihrem Space, die formal berechtigt ist, im beitretenden Space im Namen Ihres Spaces abzustimmen."
+      },
+      "spaceTransparencySettings": {
+        "title": "Space-Transparenz",
+        "description": "Definieren Sie den Grad der Transparenz, den Sie gemeinsam auf Ihren Space anwenden möchten. Bitte beachten Sie: Unabhängig von Ihrer Auswahl können nur direkte Mitglieder im Space handeln.",
+        "discoverability": "Sichtbarkeit des Spaces",
+        "activityAccess": "Zugriff auf Space-Aktivitäten"
+      },
+      "votingMethodSelector": {
+        "oneMemberOneVoteTitle": "1 Mitglied 1 Stimme",
+        "oneMemberOneVoteDescription": "Jedes Mitglied hat bei Entscheidungen die gleiche Stimme, ohne Gewichtung nach Rolle, Token oder Anteil. Häufig in Community- oder Ökosystem-Spaces genutzt.",
+        "oneVoiceOneVoteTitle": "1 Voice 1 Stimme",
+        "oneVoiceOneVoteDescription": "Jede Stimme ist an verdiente Voice-Token gebunden und spiegelt Beiträge, Reputation und Engagement wider, nimmt aber bei Inaktivität ab. Häufig in Kernteams oder Beitragsgruppen genutzt.",
+        "oneTokenOneVoteTitle": "1 Token 1 Stimme",
+        "oneTokenOneVoteDescription": "Die Stimmkraft ist proportional zur Anzahl gehaltener Token und richtet Einfluss am Anteil aus. Häufig in Value-Flows-, Treasury- oder Investment-Spaces genutzt.",
+        "clickHere": "Hier klicken",
+        "voiceTokenTooltipPrefix": "Um diese Abstimmungsmethode auszuwählen, müssen Sie zuerst Ihren Voice Token ausgeben.",
+        "voiceTokenTooltipSuffix": "um Ihren Voice Token zu erstellen",
+        "tokenTooltipPrefix": "Um diese Abstimmungsmethode auszuwählen, müssen Sie zuerst einen Token ausgeben.",
+        "tokenTooltipSuffix": "um Ihren Token zu erstellen"
+      },
+      "entryMethod": {
+        "label": "Beitrittsmethode",
+        "openAccessTitle": "Offener Zugang",
+        "openAccessDescription": "Neue Mitglieder können sofort beitreten. Teilnahme ist für alle offen und vollständig transparent.",
+        "inviteRequestTitle": "Einladungsanfrage",
+        "inviteRequestDescription": "Neue Mitglieder können durch eine Beitrittsanfrage teilnehmen. Bestehende Mitglieder stimmen über Anfragen ab. Teilnahme ist nur für eingeladene Mitglieder offen, bleibt aber vollständig transparent.",
+        "tokenBasedTitle": "Token-basiert",
+        "tokenBasedDescription": "Neue Mitglieder können beitreten, wenn sie die Token-Anforderungen erfüllen. Teilnahme ist nur für berechtigte Mitglieder offen, bleibt aber vollständig transparent."
+      },
+      "entryMethodTokenField": {
+        "requiredMinTokenNumberOptional": "Erforderliche Mindestanzahl Token (optional)",
+        "typeAmount": "Betrag eingeben",
+        "selectToken": "Token auswählen"
+      },
+      "transparency": {
+        "publicTitle": "Öffentlich",
+        "networkTitle": "Netzwerk",
+        "organisationTitle": "Organisation",
+        "spaceTitle": "Space",
+        "discoverabilityPublic": "Ihr Space ist öffentlich auffindbar.",
+        "discoverabilityNetwork": "Ihr Space ist nur für Mitglieder des Hypha-Netzwerks auffindbar.",
+        "discoverabilityOrganisation": "Ihr Space ist nur für Mitglieder Ihrer Organisation auffindbar.",
+        "discoverabilitySpace": "Ihr Space ist nur für Space-Mitglieder auffindbar.",
+        "activityPublic": "Der Zugriff auf die Aktivitäten Ihres Spaces ist nicht eingeschränkt und öffentlich sichtbar.",
+        "activityNetwork": "Der Zugriff auf die Aktivitäten Ihres Spaces ist auf Mitglieder des Hypha-Netzwerks beschränkt.",
+        "activityOrganisation": "Der Zugriff auf die Aktivitäten Ihres Spaces ist auf Mitglieder Ihrer Organisation beschränkt.",
+        "activitySpace": "Der Zugriff auf die Aktivitäten Ihres Spaces ist auf Space-Mitglieder beschränkt."
+      },
+      "mintTokens": {
+        "mintToSpaceTreasury": "Token in die Space-Treasury prägen",
+        "description": "Prägen Sie Token in die Treasury Ihres Spaces, um den Betrieb zu finanzieren, Belohnungen zu verteilen oder Liquidität bereitzustellen.",
+        "selectToken": "Token auswählen",
+        "tokenSupply": "Token-Angebot",
+        "unlimitedSupply": "Unbegrenztes Angebot",
+        "issuanceToDate": "Bisherige Ausgabe",
+        "mintAmountLimit": "Präge-Limit",
+        "exceedsLimit": "Die angeforderte Anzahl an Token überschreitet das Präge-Limit. Bitte geben Sie einen Wert bis {limit} ein",
+        "noTokensPrefix": "Ihr Space hat noch keinen Token erstellt,",
+        "clickHere": "hier klicken",
+        "noTokensSuffix": "um zuerst einen Token auszugeben"
+      },
+      "spaceWithMonths": {
+        "spaces": "Space(s)",
+        "contribution": "Beitrag:",
+        "contributionPerMonthPerSpace": "$11 pro Monat pro Space",
+        "removeSpace": "Space entfernen",
+        "addSpace": "Space hinzufügen",
+        "selectSpace": "Space auswählen",
+        "selectSpacePlaceholder": "Space auswählen...",
+        "findSpace": "Space finden",
+        "numberOfMonths": "Anzahl Monate",
+        "typeAmount": "Betrag eingeben",
+        "otherSpaces": "Weitere Spaces"
+      }
+    }
   }
 }

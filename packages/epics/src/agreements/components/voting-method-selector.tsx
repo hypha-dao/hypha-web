@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { VotingMethodType } from '@hypha-platform/core/client';
 import { Tooltip } from 'react-tooltip';
+import { useTranslations } from 'next-intl';
 
 type VotingMethod = {
   id: VotingMethodType;
@@ -17,30 +18,6 @@ type VotingMethod = {
   disabled?: boolean;
   disabledTooltip?: React.ReactNode;
 };
-
-const votingMethods: VotingMethod[] = [
-  {
-    id: '1m1v',
-    title: '1 Member 1 Vote',
-    description:
-      'Each member has an equal say in decisions, with no weighting by role, tokens, or stake, ensuring equality and shared power. Commonly used in community or ecosystem spaces.',
-    icon: <PlusCircledIcon />,
-  },
-  {
-    id: '1v1v',
-    title: '1 Voice 1 Vote',
-    description:
-      'Each vote is tied to earned voice tokens, reflecting contributions, reputation, and commitment, but decays with inactivity to encourage engagement. Commonly used in core teams or contributor groups.',
-    icon: <PlusCircledIcon />,
-  },
-  {
-    id: '1t1v',
-    title: '1 Token 1 Vote',
-    description:
-      'Voting power is proportional to the number of tokens held, aligning influence with stake. Commonly used in value flows, treasury, or investment spaces.',
-    icon: <PlusCircledIcon />,
-  },
-];
 
 type VotingMethodSelectorProps = {
   value?: VotingMethodType | null;
@@ -55,12 +32,40 @@ export const VotingMethodSelector = ({
   web3SpaceId,
   hasVotingTokens,
 }: VotingMethodSelectorProps) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { lang, id } = useParams();
   const { hasVoiceToken } = useSpaceHasVoiceToken({
     spaceId: web3SpaceId ? BigInt(web3SpaceId) : BigInt(0),
   });
 
   if (!web3SpaceId) return null;
+
+  const votingMethods: VotingMethod[] = [
+    {
+      id: '1m1v',
+      title: tAgreementFlow('plugins.votingMethodSelector.oneMemberOneVoteTitle'),
+      description: tAgreementFlow(
+        'plugins.votingMethodSelector.oneMemberOneVoteDescription',
+      ),
+      icon: <PlusCircledIcon />,
+    },
+    {
+      id: '1v1v',
+      title: tAgreementFlow('plugins.votingMethodSelector.oneVoiceOneVoteTitle'),
+      description: tAgreementFlow(
+        'plugins.votingMethodSelector.oneVoiceOneVoteDescription',
+      ),
+      icon: <PlusCircledIcon />,
+    },
+    {
+      id: '1t1v',
+      title: tAgreementFlow('plugins.votingMethodSelector.oneTokenOneVoteTitle'),
+      description: tAgreementFlow(
+        'plugins.votingMethodSelector.oneTokenOneVoteDescription',
+      ),
+      icon: <PlusCircledIcon />,
+    },
+  ];
 
   const updatedVotingMethods = votingMethods
     .map((method) => {
@@ -76,16 +81,15 @@ export const VotingMethodSelector = ({
           disabled: method.disabled || !hasVoiceToken,
           disabledTooltip: !hasVoiceToken ? (
             <div className="p-2">
-              To select this voting method you first need to issue your Voice
-              Token.{' '}
+              {tAgreementFlow('plugins.votingMethodSelector.voiceTokenTooltipPrefix')}{' '}
               <Link
                 href={`/${lang}/dho/${id}/agreements/create/issue-new-token`}
                 className="text-accent-9 underline"
                 onClick={(e) => e.stopPropagation()}
               >
-                Click here
+                {tAgreementFlow('plugins.votingMethodSelector.clickHere')}
               </Link>{' '}
-              to create your Voice Token
+              {tAgreementFlow('plugins.votingMethodSelector.voiceTokenTooltipSuffix')}
             </div>
           ) : undefined,
         };
@@ -97,15 +101,15 @@ export const VotingMethodSelector = ({
           disabled: method.disabled || !hasVotingTokens,
           disabledTooltip: !hasVotingTokens ? (
             <div className="p-2">
-              To select this voting method, you first need to issue a token.{' '}
+              {tAgreementFlow('plugins.votingMethodSelector.tokenTooltipPrefix')}{' '}
               <Link
                 href={`/${lang}/dho/${id}/agreements/create/issue-new-token`}
                 className="text-accent-9 underline"
                 onClick={(e) => e.stopPropagation()}
               >
-                Click here
+                {tAgreementFlow('plugins.votingMethodSelector.clickHere')}
               </Link>{' '}
-              to create your token
+              {tAgreementFlow('plugins.votingMethodSelector.tokenTooltipSuffix')}
             </div>
           ) : undefined,
         };

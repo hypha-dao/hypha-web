@@ -13,7 +13,6 @@ import {
   type Space,
 } from '@hypha-platform/core/client';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { useConfig } from 'wagmi';
 import { z } from 'zod';
@@ -22,6 +21,7 @@ import React from 'react';
 import { useSpaceTokenRequirementsByAddress } from '../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+import { useTranslations } from 'next-intl';
 
 const schemaCreateProposalChangeEntryMethod =
   schemaChangeEntryMethod.extend(createAgreementFiles);
@@ -51,7 +51,8 @@ export const CreateProposalChangeEntryMethodForm = ({
   plugin,
   spaces,
 }: CreateProposalChangeEntryMethodFormProps) => {
-  const router = useRouter();
+  const tSpaces = useTranslations('Spaces');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
@@ -85,7 +86,7 @@ export const CreateProposalChangeEntryMethodForm = ({
         ? (Number(spaceDetails.joinMethod) as EntryMethodType)
         : EntryMethodType.OPEN_ACCESS,
       tokenBase: undefined,
-      label: 'Entry Method',
+      label: tAgreementFlow('labels.entryMethod'),
     };
   }, [spaceId, person, spaceDetails]);
 
@@ -157,8 +158,8 @@ export const CreateProposalChangeEntryMethodForm = ({
       message={
         isError ? (
           <div className="flex flex-col">
-            <div>Ouh Snap. There was an error</div>
-            <Button onClick={reset}>Reset</Button>
+            <div>{tSpaces('errorOhSnap')}</div>
+            <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (
           <div>{currentAction}</div>
@@ -180,16 +181,16 @@ export const CreateProposalChangeEntryMethodForm = ({
             }}
             successfulUrl={successfulUrl}
             backUrl={backUrl}
-            backLabel="Back to Settings"
+            backLabel={tSpaces('backToSettings')}
             closeUrl={successfulUrl}
             isLoading={false}
-            label="Entry Method"
+            label={tAgreementFlow('labels.entryMethod')}
             progress={progress}
           />
           {plugin}
           <Separator />
           <div className="flex justify-end w-full">
-            <Button type="submit">Publish</Button>
+            <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>
           </div>
         </form>
       </Form>
