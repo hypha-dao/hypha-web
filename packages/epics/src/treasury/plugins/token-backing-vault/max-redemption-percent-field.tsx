@@ -1,9 +1,20 @@
 'use client';
 
-import { FormField, FormItem, FormControl, Input } from '@hypha-platform/ui';
+import {
+  FormField,
+  FormItem,
+  FormControl,
+  Input,
+  FormMessage,
+  RequirementMark,
+} from '@hypha-platform/ui';
 import { useFormContext } from 'react-hook-form';
 
-export function MaxRedemptionPercentField() {
+type MaxRedemptionPercentFieldProps = {
+  isRequired?: boolean;
+};
+
+export function MaxRedemptionPercentField({ isRequired = false }: MaxRedemptionPercentFieldProps) {
   const { control } = useFormContext();
 
   return (
@@ -13,8 +24,9 @@ export function MaxRedemptionPercentField() {
       render={({ field }) => (
         <FormItem>
           <div className="flex justify-between items-center w-full">
-            <span className="text-2 text-neutral-11 whitespace-nowrap items-center w-full">
+            <span className="text-2 text-neutral-11 whitespace-nowrap items-center w-full flex gap-1">
               Maximum Redemption %
+              {isRequired && <RequirementMark className="text-2" />}
             </span>
             <FormControl className="w-full">
               <Input
@@ -32,6 +44,7 @@ export function MaxRedemptionPercentField() {
               />
             </FormControl>
           </div>
+          <FormMessage />
         </FormItem>
       )}
     />

@@ -8,6 +8,7 @@ import {
   useMe,
   useJwt,
   useCreateTokenBackingVaultOrchestrator,
+  CURRENCY_FEED_OPTIONS,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
@@ -75,7 +76,7 @@ export const CreateProposalTokenBackingVaultForm = ({
         enableRedemption: false,
         addCollaterals: [],
         removeCollaterals: [],
-        referenceCurrency: undefined,
+        referenceCurrency: CURRENCY_FEED_OPTIONS[0].value,
         tokenPrice: undefined,
         minimumBackingPercent: 0,
         maxRedemptionPercent: undefined,
