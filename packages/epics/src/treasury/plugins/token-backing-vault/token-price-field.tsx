@@ -30,8 +30,10 @@ export function TokenPriceField({
   const placeholder = isRequired
     ? 'Enter redemption price'
     : tokenReferencePrice != null
-      ? `Leave blank to use token price (${formatCurrencyValue(tokenReferencePrice)} ${tokenReferenceCurrency ?? 'USD'})`
-      : 'Leave blank for token contract price';
+    ? `Leave blank to use token price (${formatCurrencyValue(
+        tokenReferencePrice,
+      )} ${tokenReferenceCurrency ?? 'USD'})`
+    : 'Leave blank for token contract price';
 
   return (
     <FormField

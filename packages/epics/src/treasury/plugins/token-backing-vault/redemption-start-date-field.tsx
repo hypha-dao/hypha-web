@@ -5,7 +5,7 @@ import {
   FormItem,
   FormControl,
   FormMessage,
-  Input,
+  DatePicker,
   RequirementMark,
 } from '@hypha-platform/ui';
 import { useFormContext } from 'react-hook-form';
@@ -14,7 +14,9 @@ type RedemptionStartDateFieldProps = {
   isRequired?: boolean;
 };
 
-export function RedemptionStartDateField({ isRequired = false }: RedemptionStartDateFieldProps) {
+export function RedemptionStartDateField({
+  isRequired = false,
+}: RedemptionStartDateFieldProps) {
   const { control } = useFormContext();
 
   return (
@@ -29,18 +31,13 @@ export function RedemptionStartDateField({ isRequired = false }: RedemptionStart
               {isRequired && <RequirementMark className="text-2" />}
             </span>
             <FormControl className="w-full">
-              <Input
-                type="datetime-local"
-                className="w-full"
-                value={
-                  field.value
-                    ? new Date(field.value).toISOString().slice(0, 16)
-                    : ''
-                }
-                onChange={(e) =>
-                  field.onChange(
-                    e.target.value ? new Date(e.target.value) : null,
-                  )
+              <DatePicker
+                mode="single"
+                value={field.value ?? undefined}
+                placeholder="Select a date"
+                className="w-fit"
+                onChange={(val) =>
+                  field.onChange(val instanceof Date ? val : null)
                 }
               />
             </FormControl>
