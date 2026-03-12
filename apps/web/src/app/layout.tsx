@@ -121,6 +121,7 @@ export default async function RootLayout({
                   openMenuLabel={tNav('openMenu')}
                   closeMenuLabel={tNav('closeMenu')}
                 >
+                  {isLanguageSelectVisible && <ConnectedLanguageSelect />}
                   <ConnectedButtonProfile
                     useAuthentication={useAuthentication}
                     useMe={useMe}
@@ -137,7 +138,6 @@ export default async function RootLayout({
                       },
                     ]}
                   />
-                  {isLanguageSelectVisible && <ConnectedLanguageSelect />}
                 </MenuTop>
                 <NextSSRPlugin routerConfig={extractRouterConfig(fileRouter)} />
                 <div className="mb-auto pb-8">
