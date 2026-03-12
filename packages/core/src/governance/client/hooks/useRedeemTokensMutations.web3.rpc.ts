@@ -72,6 +72,12 @@ export const useRedeemTokensMutationsWeb3Rpc = ({
         proportions.push(percentage);
       }
 
+      if (backingTokens.length === 0) {
+        throw new Error(
+          'At least one valid conversion with asset and percentage is required',
+        );
+      }
+
       const decimals = await getTokenDecimals(arg.redemption.token);
       const amount = parseUnits(arg.redemption.amount, decimals);
 

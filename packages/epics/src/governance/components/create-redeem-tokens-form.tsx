@@ -41,7 +41,6 @@ export const CreateRedeemTokensForm = ({
   web3SpaceId,
   plugin,
 }: CreateRedeemTokensFormProps) => {
-  const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
@@ -108,7 +107,7 @@ export const CreateRedeemTokensForm = ({
       })),
     });
 
-    if (web3SpaceId === undefined) {
+    if (web3SpaceId == null) {
       console.error('Web3 space ID is missing');
       return;
     }

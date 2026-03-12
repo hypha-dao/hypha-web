@@ -404,7 +404,8 @@ export const ProposalDetail = ({
           }
         />
       ) : null}
-      {proposalDetails?.redeemTokensData ? (
+      {proposalDetails?.redeemTokensData.amount &&
+      proposalDetails?.redeemTokensData.token ? (
         <ProposalRedeemTokensData
           amount={proposalDetails.redeemTokensData.amount}
           token={proposalDetails.redeemTokensData.token}

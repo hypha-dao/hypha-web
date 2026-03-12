@@ -8,8 +8,6 @@ import { useAssets, useTokens } from '../../../treasury';
 
 export const RedeemTokensPlugin = ({
   spaceSlug,
-  members,
-  spaces,
 }: {
   spaceSlug: string;
   members: Person[];

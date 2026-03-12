@@ -53,9 +53,9 @@ export const ProposalRedeemTokensData = ({
       <div className="flex flex-row text-1 text-neutral-11 w-full">
         Conversions:
       </div>
-      {conversions.map((conversion) => (
+      {conversions.map((conversion, index) => (
         <div
-          key={conversion.asset}
+          key={conversion.asset ?? index}
           className="flex flex-row text-1 text-neutral-11 w-full"
         >
           {tokenLabel(conversion.asset ?? '')}:{' '}

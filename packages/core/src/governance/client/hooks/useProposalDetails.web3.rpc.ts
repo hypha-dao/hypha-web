@@ -253,9 +253,12 @@ export const useProposalDetailsWeb3Rpc = ({
           redeemTokensData.amount = decoded.data.amount as bigint;
           redeemTokensData.token = decoded.data.token as `0x${string}`;
           redeemTokensData.web3SpaceId = decoded.data.web3SpaceId as bigint;
-          for (let i = 0; i < decoded.data.backingTokens.length; i++) {
-            const asset = decoded.data.backingTokens[i] as `0x${string}`;
-            const percentage = decoded.data.proportions[i] as bigint;
+          const backingTokens = decoded.data.backingTokens as `0x${string}`[];
+          const proportions = decoded.data.proportions as bigint[];
+          const len = Math.min(backingTokens.length, proportions.length);
+          for (let i = 0; i < len; i++) {
+            const asset = backingTokens[i]!;
+            const percentage = proportions[i]!;
             redeemTokensData.conversions.push({ asset, percentage });
           }
           break;

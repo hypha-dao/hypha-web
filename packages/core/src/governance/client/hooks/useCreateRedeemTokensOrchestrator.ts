@@ -117,12 +117,16 @@ export const useCreateRedeemTokensOrchestrator = ({
   });
   const agreementFiles = useAgreementFileUploads(
     authToken,
-    (uploadedFiles, slug) => {
-      web2.updateAgreementBySlug({
-        slug: slug ?? '',
-        attachments: uploadedFiles?.attachments,
-        leadImage: uploadedFiles?.leadImage,
-      });
+    async (uploadedFiles, slug) => {
+      try {
+        await web2.updateAgreementBySlug({
+          slug: slug ?? '',
+          attachments: uploadedFiles?.attachments,
+          leadImage: uploadedFiles?.leadImage,
+        });
+      } catch (error) {
+        console.error('Failed to update agreement with uploaded files:', error);
+      }
     },
   );
 

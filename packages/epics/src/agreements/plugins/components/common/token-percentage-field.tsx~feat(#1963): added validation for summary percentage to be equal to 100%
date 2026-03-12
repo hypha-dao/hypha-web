@@ -92,9 +92,9 @@ export const TokenPercentageField = ({
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-full max-h-[200px] overflow-y-scroll">
             {assets.length > 0 ? (
-              assets.map((asset) => (
+              assets.map((asset, index) => (
                 <DropdownMenuItem
-                  key={asset.address}
+                  key={asset.address ?? `asset-${index}`}
                   onSelect={() => handleAssetChange(asset)}
                 >
                   <Image
