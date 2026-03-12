@@ -24,8 +24,7 @@ import { RemoveCollateralsFieldArray } from './remove-collaterals-field-array';
 import { ReferenceCurrencyField } from './reference-currency-field';
 import { TokenPriceField } from './token-price-field';
 import { MinimumBackingPercentField } from './minimum-backing-percent-field';
-import { MaxRedemptionPercentField } from './max-redemption-percent-field';
-import { MaxRedemptionPeriodDaysField } from './max-redemption-period-days-field';
+import { MaxRedemptionField } from './max-redemption-field';
 import { RedemptionStartDateField } from './redemption-start-date-field';
 import { EnableAdvancedRedemptionControlsField } from './enable-advanced-redemption-controls-field';
 
@@ -132,8 +131,7 @@ export const TokenBackingVaultPlugin = ({
                 </div>
 
                 <MinimumBackingPercentField isRequired />
-                <MaxRedemptionPercentField isRequired />
-                <MaxRedemptionPeriodDaysField isRequired />
+                <MaxRedemptionField isRequired />
                 <RedemptionStartDateField isRequired />
                 <EnableAdvancedRedemptionControlsField />
 

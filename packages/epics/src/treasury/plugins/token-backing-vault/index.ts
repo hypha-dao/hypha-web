@@ -8,7 +8,6 @@ export { RemoveCollateralsFieldArray } from './remove-collaterals-field-array';
 export { ReferenceCurrencyField } from './reference-currency-field';
 export { TokenPriceField } from './token-price-field';
 export { MinimumBackingPercentField } from './minimum-backing-percent-field';
-export { MaxRedemptionPercentField } from './max-redemption-percent-field';
-export { MaxRedemptionPeriodDaysField } from './max-redemption-period-days-field';
+export { MaxRedemptionField } from './max-redemption-field';
 export { RedemptionStartDateField } from './redemption-start-date-field';
 export { EnableAdvancedRedemptionControlsField } from './enable-advanced-redemption-controls-field';
