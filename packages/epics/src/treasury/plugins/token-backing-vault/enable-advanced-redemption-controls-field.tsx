@@ -4,7 +4,7 @@ import { FormField, FormItem, FormControl, Switch } from '@hypha-platform/ui';
 import { useFormContext } from 'react-hook-form';
 
 export function EnableAdvancedRedemptionControlsField() {
-  const { control } = useFormContext();
+  const { control, setValue } = useFormContext();
 
   return (
     <FormField
@@ -19,7 +19,12 @@ export function EnableAdvancedRedemptionControlsField() {
             <FormControl>
               <Switch
                 checked={field.value}
-                onCheckedChange={field.onChange}
+                onCheckedChange={(checked) => {
+                  if (!checked) {
+                    setValue('tokenBackingVault.redemptionWhitelist', []);
+                  }
+                  field.onChange(checked);
+                }}
                 className="ml-2"
               />
             </FormControl>
