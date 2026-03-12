@@ -58,7 +58,9 @@ export const SpaceWithNumberOfMonthsFieldArray = ({
           {tAgreementFlow('plugins.spaceWithMonths.contribution')}
         </span>
         <span className="text-2 text-neutral-11 text-nowrap">
-          {tAgreementFlow('plugins.spaceWithMonths.contributionPerMonthPerSpace')}
+          {tAgreementFlow(
+            'plugins.spaceWithMonths.contributionPerMonthPerSpace',
+          )}
         </span>
       </div>
       <div className="flex flex-col gap-4">

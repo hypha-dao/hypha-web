@@ -20,7 +20,9 @@ export const MembershipExitPlugin = ({
         members={members}
         spaces={spaces}
         defaultRecipientType="member"
-        emptyMembersMessage={tAgreementFlow('plugins.membershipExit.noMembersFound')}
+        emptyMembersMessage={tAgreementFlow(
+          'plugins.membershipExit.noMembersFound',
+        )}
         emptySpacesMessage={tAgreementFlow(
           'plugins.membershipExit.noMemberSpacesFound',
         )}

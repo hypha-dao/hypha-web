@@ -71,7 +71,7 @@ export const CreateProposeAContributionForm = ({
           token: undefined,
         },
       ],
-      label: tAgreementFlow('labels.contribution'),
+      label: 'Contribution',
     },
   });
 

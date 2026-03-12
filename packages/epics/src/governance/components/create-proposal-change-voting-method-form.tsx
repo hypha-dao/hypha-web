@@ -75,7 +75,7 @@ export const CreateProposalChangeVotingMethodForm = ({
         unity: 0,
       },
       votingMethod: undefined,
-      label: tAgreementFlow('labels.votingMethod'),
+      label: 'Voting Method',
       votingDuration: undefined,
     },
     mode: 'onChange',

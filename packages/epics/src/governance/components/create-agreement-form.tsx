@@ -118,7 +118,9 @@ export const CreateAgreementForm = ({
             closeUrl={closeUrl || successfulUrl}
             backUrl={backUrl}
             isLoading={false}
-            label={label ?? tAgreementFlow('createActionForms.defaultAgreement')}
+            label={
+              label ?? tAgreementFlow('createActionForms.defaultAgreement')
+            }
             progress={progress}
           />
           <div className="flex justify-end w-full">

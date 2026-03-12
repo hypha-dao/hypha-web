@@ -101,7 +101,7 @@ export const CreateDeployFundsForm = ({
         amount: amount ?? '0',
         token: token ?? '',
       })),
-      label: tAgreementFlow('labels.funding'),
+      label: 'Funding',
     });
   };
 

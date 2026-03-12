@@ -43,7 +43,9 @@ export const SpaceTransparencySettingsPlugin = ({
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-4">
           <FormLabel className="text-2 w-full">
-            {tAgreementFlow('plugins.spaceTransparencySettings.discoverability')}
+            {tAgreementFlow(
+              'plugins.spaceTransparencySettings.discoverability',
+            )}
           </FormLabel>
           <SpaceDiscoverabilityField
             value={spaceDiscoverability as TransparencyLevel}

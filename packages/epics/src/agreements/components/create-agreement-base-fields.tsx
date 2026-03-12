@@ -86,7 +86,11 @@ export function CreateAgreementBaseFields({
     label ?? tAgreementFlow('createAgreementBaseFields.agreementLabel');
 
   if (!form) {
-    return <div>{tAgreementFlow('createAgreementBaseFields.formContextMissing')}</div>;
+    return (
+      <div>
+        {tAgreementFlow('createAgreementBaseFields.formContextMissing')}
+      </div>
+    );
   }
 
   const [resubmitFormData, setResubmitFormData] = React.useState<{
@@ -281,7 +285,7 @@ export function CreateAgreementBaseFields({
                 <div className="flex grow"></div>
                 {backUrl && (
                   <ButtonBack
-                      label={resolvedBackLabel}
+                    label={resolvedBackLabel}
                     backUrl={backUrl}
                     className="px-0 md:px-3 align-top"
                   />
@@ -334,7 +338,9 @@ export function CreateAgreementBaseFields({
                     />
                     <div className="flex flex-col">
                       <span className="text-3 text-accent-11 text-nowrap font-medium">
-                        {tAgreementFlow('createAgreementBaseFields.autoExecution')}
+                        {tAgreementFlow(
+                          'createAgreementBaseFields.autoExecution',
+                        )}
                       </span>
                       <span className="text-[9px] text-accent-11 text-nowrap font-medium">
                         {spaceDetails?.quorum}% Quorum | {spaceDetails?.unity}%
