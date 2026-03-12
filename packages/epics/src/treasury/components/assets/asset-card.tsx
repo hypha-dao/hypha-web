@@ -13,6 +13,7 @@ type AssetCardProps = {
   value?: number;
   /** Override value display (e.g. for small reward amounts) */
   valueDisplay?: string;
+  tokenPrice?: number;
   usdEqual?: number;
   type?: string;
   isLoading?: boolean;
@@ -33,6 +34,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   symbol,
   value,
   valueDisplay,
+  tokenPrice,
   usdEqual,
   isLoading,
   supply,
@@ -99,6 +101,11 @@ export const AssetCard: React.FC<AssetCardProps> = ({
       </div>
       <div className="w-full flex flex-row gap-1">
         <Text className="text-1">{name}</Text>
+        {tokenPrice !== undefined && tokenPrice > 0 && (
+          <Text className="text-1 text-neutral-11">
+            {`${formatCurrencyValue(tokenPrice)} USD`}
+          </Text>
+        )}
         {supply?.total !== undefined && (
           <Text className="text-1 text-neutral-11">
             {`Total Issuance: ${formatCurrencyValue(supply.total)}`}

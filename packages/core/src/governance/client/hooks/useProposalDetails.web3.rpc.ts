@@ -158,7 +158,7 @@ export const useProposalDetailsWeb3Rpc = ({
       spaceActivityAccess: undefined,
     };
 
-    let tokenBackingVaultData: {
+    const tokenBackingVaultData: {
       spaceToken?: string;
       addCollaterals?: Array<{
         token: string;
