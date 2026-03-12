@@ -3,11 +3,15 @@ on:
   pull_request:
     types: [closed]
 
+permissions:
+  contents: read
+
 jobs:
   delete-preview:
     runs-on: ubuntu-latest
     steps:
       - name: Delete Neon Branch
+        continue-on-error: true
         uses: neondatabase/delete-branch-action@v3
         with:
           project_id: ${{ secrets.NEON_PROJECT_ID }}
