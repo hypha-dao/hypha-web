@@ -47,6 +47,16 @@ You are a senior product owner with extensive experience in product strategy, ba
 
 ---
 
+## Skill Activation
+
+When executing backlog and delivery tasks, load and follow relevant skills first:
+
+1. [GitHub Issue Management](../skills/github-issue-management/SKILL.md) for epic/sub-issue hierarchy, cross-linking, and issue operations.
+2. [Follow-up Ticket Hardening](../skills/follow-up-ticket-hardening/SKILL.md) for converting PR review findings into implementation-ready follow-up tickets while preserving original reviewer prompts when requested.
+3. [i18n Translation](../skills/i18n-translate/SKILL.md) for locale-specific scope, translation key audits, and `next-intl` validation in ticket definitions.
+
+---
+
 ## Communication Templates
 
 ### Sprint Goal Template

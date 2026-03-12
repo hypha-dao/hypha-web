@@ -17,6 +17,58 @@ Auth precheck:
 gh auth status
 ```
 
+## GraphQL-first workflow (recommended)
+
+### A) Resolve issue node IDs (required for GraphQL mutations)
+
+```bash
+EPIC_NODE_ID="$(gh api graphql -f query='query($owner:String!, $repo:String!, $number:Int!){ repository(owner:$owner,name:$repo){ issue(number:$number){ id } } }' -F owner="$OWNER" -F repo="$REPO" -F number="$EPIC_NUMBER" --jq '.data.repository.issue.id')"
+TASK_NODE_ID="$(gh api graphql -f query='query($owner:String!, $repo:String!, $number:Int!){ repository(owner:$owner,name:$repo){ issue(number:$number){ id } } }' -F owner="$OWNER" -F repo="$REPO" -F number="$TASK_NUMBER" --jq '.data.repository.issue.id')"
+echo "EPIC_NODE_ID=$EPIC_NODE_ID"
+echo "TASK_NODE_ID=$TASK_NODE_ID"
+```
+
+### B) Attach task as native sub-issue
+
+```bash
+gh api graphql -f query='mutation($issueId:ID!, $subIssueId:ID!){ addSubIssue(input:{issueId:$issueId, subIssueId:$subIssueId}) { issue { number } subIssue { number } } }' -F issueId="$EPIC_NODE_ID" -F subIssueId="$TASK_NODE_ID"
+```
+
+Use `replaceParent:true` when intentionally moving a task to a different epic:
+
+```bash
+gh api graphql -f query='mutation($issueId:ID!, $subIssueId:ID!){ addSubIssue(input:{issueId:$issueId, subIssueId:$subIssueId, replaceParent:true}) { issue { number } subIssue { number } } }' -F issueId="$EPIC_NODE_ID" -F subIssueId="$TASK_NODE_ID"
+```
+
+### C) Verify sub-issues under an epic
+
+```bash
+gh api graphql -f query='query($owner:String!, $repo:String!, $number:Int!){ repository(owner:$owner,name:$repo){ issue(number:$number){ number title subIssues(first:100){ nodes { number title state } } } } }' -F owner="$OWNER" -F repo="$REPO" -F number="$EPIC_NUMBER"
+```
+
+### D) Verify parent epic from task issue
+
+```bash
+gh api graphql -f query='query($owner:String!, $repo:String!, $number:Int!){ repository(owner:$owner,name:$repo){ issue(number:$number){ number title parent { number title } } } }' -F owner="$OWNER" -F repo="$REPO" -F number="$TASK_NUMBER"
+```
+
+### E) Remove a sub-issue from an epic
+
+```bash
+gh api graphql -f query='mutation($issueId:ID!, $subIssueId:ID!){ removeSubIssue(input:{issueId:$issueId, subIssueId:$subIssueId}) { issue { number } subIssue { number } } }' -F issueId="$EPIC_NODE_ID" -F subIssueId="$TASK_NODE_ID"
+```
+
+### F) Reprioritize a sub-issue
+
+Move one sub-issue after another sub-issue:
+
+```bash
+AFTER_TASK_NUMBER="<another_sub_issue_number>"
+AFTER_NODE_ID="$(gh api graphql -f query='query($owner:String!, $repo:String!, $number:Int!){ repository(owner:$owner,name:$repo){ issue(number:$number){ id } } }' -F owner="$OWNER" -F repo="$REPO" -F number="$AFTER_TASK_NUMBER" --jq '.data.repository.issue.id')"
+
+gh api graphql -f query='mutation($issueId:ID!, $subIssueId:ID!, $afterId:ID!){ reprioritizeSubIssue(input:{issueId:$issueId, subIssueId:$subIssueId, afterId:$afterId}) { issue { number } } }' -F issueId="$EPIC_NODE_ID" -F subIssueId="$TASK_NODE_ID" -F afterId="$AFTER_NODE_ID"
+```
+
 ## 1) Ensure `epic` label exists
 
 ```bash
@@ -56,7 +108,7 @@ EOF
 )"
 ```
 
-## 3) Get numeric issue `id` for sub-issue API
+## 3) Get numeric issue `id` for sub-issue API (REST fallback)
 
 The sub-issue REST endpoints require `sub_issue_id` (numeric issue id), not issue number.
 
@@ -65,7 +117,7 @@ SUB_ISSUE_ID="$(gh api "/repos/$OWNER/$REPO/issues/$TASK_NUMBER" --jq '.id')"
 echo "$SUB_ISSUE_ID"
 ```
 
-## 4) Attach task as native sub-issue
+## 4) Attach task as native sub-issue (REST fallback)
 
 ```bash
 gh api \
@@ -78,7 +130,7 @@ gh api \
 
 Use `-F replace_parent=true` when intentionally moving a task from one epic to another.
 
-## 5) List sub-issues for an epic
+## 5) List sub-issues for an epic (REST fallback)
 
 ```bash
 gh api \
@@ -87,7 +139,7 @@ gh api \
   "/repos/$OWNER/$REPO/issues/$EPIC_NUMBER/sub_issues?per_page=100"
 ```
 
-## 6) Get parent of a task issue
+## 6) Get parent of a task issue (REST fallback)
 
 ```bash
 gh api \
@@ -96,7 +148,7 @@ gh api \
   "/repos/$OWNER/$REPO/issues/$TASK_NUMBER/parent"
 ```
 
-## 7) Remove a sub-issue
+## 7) Remove a sub-issue (REST fallback)
 
 ```bash
 gh api \
@@ -107,7 +159,7 @@ gh api \
   -F sub_issue_id=$SUB_ISSUE_ID
 ```
 
-## 8) Reprioritize sub-issues
+## 8) Reprioritize sub-issues (REST fallback)
 
 Move one sub-issue after another sub-issue in the same epic:
 
@@ -169,6 +221,7 @@ If output is `0`, the epic is ready to close.
 ## Common Errors
 
 - `404` / `403`: wrong repo, issue number, or missing permission.
+- GraphQL mutation errors like `Could not resolve to a node`: input value is not a node ID; fetch IDs from GraphQL `issue { id }`.
 - `422`: invalid `sub_issue_id`, duplicate relation, or cross-owner issue. Ensure `sub_issue_id` is fetched from REST issue payload (`.id`) and submitted with `-F`.
 - `no matches found`: shell interpreted unquoted `?` in endpoint; wrap endpoint in quotes.
 - Secondary rate limit: retry in smaller batches with delay.

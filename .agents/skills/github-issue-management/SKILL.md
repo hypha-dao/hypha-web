@@ -28,6 +28,7 @@ Standardize issue planning and execution in GitHub using an epic-first hierarchy
 - Run `gh auth status` before any `gh api` mutation.
 - If auth fails in restricted/sandbox mode, rerun with broader execution permissions.
 - Quote API endpoints that include `?` (e.g. `".../sub_issues?per_page=100"`) to avoid shell glob expansion errors.
+- Prefer `gh api graphql` for sub-issue workflows (uses stable node IDs end-to-end).
 
 ### 1) Intake and classification
 
@@ -49,7 +50,7 @@ Standardize issue planning and execution in GitHub using an epic-first hierarchy
 
 ### 4) Link tasks as native sub-issues
 
-- Add each task to the epic using native sub-issue APIs.
+- Add each task to the epic using native sub-issue APIs (GraphQL-first, REST fallback).
 - Verify parent/sub-issue links after each mutation.
 - Avoid duplicate links (same task under same epic twice).
 
@@ -82,7 +83,8 @@ Run these checks whenever hierarchy changes:
 ## Failure Handling
 
 - **404/403 from sub-issue API:** verify repo owner/name, permissions, and issue numbers.
-- **422 validation errors:** confirm `sub_issue_id` is the numeric REST issue `id` (not issue number or GraphQL node id), and submit numeric fields with `gh api -F` instead of `-f`.
+- **GraphQL mutation errors:** verify you are passing issue node IDs (`id` from GraphQL), not issue numbers.
+- **422 validation errors (REST):** confirm `sub_issue_id` is the numeric REST issue `id` (not issue number or GraphQL node id), and submit numeric fields with `gh api -F` instead of `-f`.
 - **Shell expansion errors (e.g. `no matches found`):** quote endpoint URLs that include query strings.
 - **Rate limiting:** batch operations, then retry with backoff.
 - **Legacy-only repos/processes:** still keep cross-links even if native linking is temporarily blocked.
