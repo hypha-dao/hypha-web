@@ -7,6 +7,7 @@ When the user has not specified a role, select the best-matching one based on th
 | Role | File | Use when |
 |---|---|---|
 | **Prompt Engineer** | [roles/prompt-engineer.md](roles/prompt-engineer.md) | Prompt design, prompt optimization, prompt evaluation, LLM output quality, prompt tooling |
+| **Product Owner** | [roles/product-owner.md](roles/product-owner.md) | Product strategy, backlog management, stakeholder alignment, delivery planning |
 | **i18n Engineer** | [roles/i18n-engineer.md](roles/i18n-engineer.md) | Translations, locale routing, `next-intl` wiring, message files, adding languages, i18n middleware |
 
 ## How to activate
