@@ -18,7 +18,9 @@ type ReferenceCurrencyFieldProps = {
   isRequired?: boolean;
 };
 
-export function ReferenceCurrencyField({ isRequired = false }: ReferenceCurrencyFieldProps) {
+export function ReferenceCurrencyField({
+  isRequired = false,
+}: ReferenceCurrencyFieldProps) {
   const { control } = useFormContext();
 
   return (

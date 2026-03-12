@@ -14,7 +14,9 @@ type MinimumBackingPercentFieldProps = {
   isRequired?: boolean;
 };
 
-export function MinimumBackingPercentField({ isRequired = false }: MinimumBackingPercentFieldProps) {
+export function MinimumBackingPercentField({
+  isRequired = false,
+}: MinimumBackingPercentFieldProps) {
   const { control } = useFormContext();
 
   return (

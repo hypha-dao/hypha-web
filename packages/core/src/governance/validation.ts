@@ -711,7 +711,8 @@ export const schemaTokenBackingVault = z.object({
         if (!data.referenceCurrency || data.referenceCurrency.trim() === '') {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: 'Reference currency is required when redemption is active.',
+            message:
+              'Reference currency is required when redemption is active.',
             path: ['referenceCurrency'],
           });
         }

@@ -20,7 +20,9 @@ type MaxRedemptionFieldProps = {
   isRequired?: boolean;
 };
 
-export function MaxRedemptionField({ isRequired = false }: MaxRedemptionFieldProps) {
+export function MaxRedemptionField({
+  isRequired = false,
+}: MaxRedemptionFieldProps) {
   const { control } = useFormContext();
 
   return (
@@ -46,7 +48,9 @@ export function MaxRedemptionField({ isRequired = false }: MaxRedemptionFieldPro
                     value={field.value ?? ''}
                     onChange={(e) =>
                       field.onChange(
-                        e.target.value === '' ? undefined : Number(e.target.value),
+                        e.target.value === ''
+                          ? undefined
+                          : Number(e.target.value),
                       )
                     }
                   />
