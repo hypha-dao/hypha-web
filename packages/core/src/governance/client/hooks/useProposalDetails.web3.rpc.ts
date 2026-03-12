@@ -158,6 +158,21 @@ export const useProposalDetailsWeb3Rpc = ({
       spaceActivityAccess: undefined,
     };
 
+    const redeemTokensData: {
+      token?: `0x${string}`;
+      amount?: bigint;
+      web3SpaceId?: bigint;
+      conversions: {
+        asset: `0x${string}`;
+        percentage: bigint;
+      }[];
+    } = {
+      token: undefined,
+      amount: undefined,
+      web3SpaceId: undefined,
+      conversions: [],
+    };
+
     (transactions as any[]).forEach((tx) => {
       const decoded = decodeTransaction(tx);
 
@@ -234,6 +249,17 @@ export const useProposalDetailsWeb3Rpc = ({
           );
           break;
 
+        case 'redeemTokens':
+          redeemTokensData.amount = decoded.data.amount as bigint;
+          redeemTokensData.token = decoded.data.token as `0x${string}`;
+          redeemTokensData.web3SpaceId = decoded.data.web3SpaceId as bigint;
+          for (let i = 0; i < decoded.data.backingTokens.length; i++) {
+            const asset = decoded.data.backingTokens[i] as `0x${string}`;
+            const percentage = decoded.data.proportions[i] as bigint;
+            redeemTokensData.conversions.push({ asset, percentage });
+          }
+          break;
+
         default:
           break;
       }
@@ -264,6 +290,7 @@ export const useProposalDetailsWeb3Rpc = ({
       minimumProposalDurationData,
       membershipExitData,
       transparencySettingsData,
+      redeemTokensData,
     };
   }, [data]);
 

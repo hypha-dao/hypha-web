@@ -29,6 +29,7 @@ import {
   ProposalDelegatesData,
   MembershipExitData,
   ProposalTransparencySettingsInfo,
+  ProposalRedeemTokensData,
 } from '../../governance';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
 import { ButtonClose, ExpireProposalBanner } from '@hypha-platform/epics';
@@ -401,6 +402,14 @@ export const ProposalDetail = ({
                   .spaceActivityAccess as TransparencyLevel)
               : undefined
           }
+        />
+      ) : null}
+      {proposalDetails?.redeemTokensData ? (
+        <ProposalRedeemTokensData
+          amount={proposalDetails.redeemTokensData.amount}
+          token={proposalDetails.redeemTokensData.token}
+          web3SpaceId={proposalDetails.redeemTokensData.web3SpaceId}
+          conversions={proposalDetails.redeemTokensData.conversions}
         />
       ) : null}
       <FormVoting

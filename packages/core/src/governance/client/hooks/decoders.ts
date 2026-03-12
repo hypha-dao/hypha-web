@@ -11,6 +11,7 @@ import {
   hyphaTokenAbi,
   votingPowerDelegationImplementationAbi,
   daoProposalsImplementationAbi,
+  tokenBackingVaultImplementationAbi,
 } from '@hypha-platform/core/generated';
 
 type Tx = {
@@ -292,6 +293,22 @@ export function decodeTransaction(tx: Tx) {
               data: {
                 space: decoded.args[0],
                 member: decoded.args[1],
+              },
+            }
+          : null,
+    },
+    {
+      abi: tokenBackingVaultImplementationAbi,
+      handler: (decoded) =>
+        decoded.functionName === 'redeem'
+          ? {
+              type: 'redeemTokens',
+              data: {
+                web3SpaceId: decoded.args[0],
+                token: decoded.args[1],
+                amount: decoded.args[2],
+                backingTokens: decoded.args[3],
+                proportions: decoded.args[4],
               },
             }
           : null,
