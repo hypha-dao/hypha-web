@@ -97,6 +97,10 @@
         "title": "Neuen Token ausgeben",
         "description": "Erstellen Sie einen neuen Token für Nutzbarkeit, Eigentum, Wirkung, Gutschriften, Stimme oder Gemeinschaftswährung innerhalb Ihres Spaces."
       },
+      "updateIssuedToken": {
+        "title": "Ausgegebenen Token aktualisieren",
+        "description": "Erweiterte Token-Einstellungen aktualisieren, einschließlich Token-Name, Symbol und Icon, Gesamtangebot, Auto-Minting-Optionen, Transferkontrollen, Voice-Decay-Parameter und dem im Treasury angezeigten Token-Wert."
+      },
       "mintTokensToSpaceTreasury": {
         "title": "Tokens in die Space-Schatzkammer prägen",
         "description": "Prägen Sie Tokens in Ihre Space-Schatzkammer, um den Betrieb zu finanzieren, Belohnungen zu verteilen oder Liquidität bereitzustellen."

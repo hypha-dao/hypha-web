@@ -15,6 +15,7 @@ import {
   PlusCircledIcon,
   RadiobuttonIcon,
   Link2Icon,
+  Pencil2Icon,
 } from '@radix-ui/react-icons';
 
 type SelectSettingsActionProps = {
@@ -119,6 +120,15 @@ export const SelectSettingsAction = ({
       description: t('actions.issueNewToken.description'),
       href: 'create/issue-new-token',
       icon: <RadiobuttonIcon />,
+      disabled: isPaymentExpired,
+    },
+    {
+      defaultDurationDays: 4,
+      group: t('groups.treasury'),
+      title: t('actions.updateIssuedToken.title'),
+      description: t('actions.updateIssuedToken.description'),
+      href: 'create/update-issued-token',
+      icon: <Pencil2Icon />,
       disabled: isPaymentExpired,
     },
     {

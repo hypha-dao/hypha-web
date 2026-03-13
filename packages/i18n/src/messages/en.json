@@ -97,6 +97,10 @@
         "title": "Issue New Token",
         "description": "Create a new token for utility, ownership, impact, cash credits, voice, or community currency within your space."
       },
+      "updateIssuedToken": {
+        "title": "Update Issued Token",
+        "description": "Update advanced token settings, including the token name, symbol and icon, total supply, auto-minting options, transfer controls, voice decay parameters, and the token value displayed in the treasury."
+      },
       "mintTokensToSpaceTreasury": {
         "title": "Mint Tokens to Space Treasury",
         "description": "Mint tokens into your space treasury to fund operations, distribute rewards, or provide liquidity."

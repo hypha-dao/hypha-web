@@ -97,6 +97,10 @@
         "title": "Émettre un nouveau token",
         "description": "Créez un nouveau token pour l'utilité, la propriété, l'impact, les crédits, la voix ou la monnaie communautaire au sein de votre espace."
       },
+      "updateIssuedToken": {
+        "title": "Mettre à jour le token émis",
+        "description": "Mettez à jour les paramètres avancés du token, y compris le nom, le symbole et l'icône du token, l'offre totale, les options de frappe automatique, les contrôles de transfert, les paramètres de décroissance de la voix et la valeur du token affichée dans la trésorerie."
+      },
       "mintTokensToSpaceTreasury": {
         "title": "Frapper des tokens pour la trésorerie de l'espace",
         "description": "Frappez des tokens dans la trésorerie de votre espace pour financer les opérations, distribuer des récompenses ou fournir de la liquidité."
