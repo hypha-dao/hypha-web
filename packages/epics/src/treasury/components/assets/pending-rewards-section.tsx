@@ -41,6 +41,11 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
     personSlug: person?.slug,
   });
 
+  const hyphaTokenAddress =
+    filteredAssets?.find(
+      (a) => a.symbol === 'HYPHA' || a.address === HYPHA_TOKEN_ADDRESS,
+    )?.address ?? HYPHA_TOKEN_ADDRESS;
+
   const {
     pendingRewards,
     isLoading,
@@ -48,12 +53,15 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
     waitForClaimReceipt,
     isClaiming,
     updatePendingRewards,
-  } = usePendingRewards({ user: person?.address as `0x${string}` });
+  } = usePendingRewards({
+    user: person?.address as `0x${string}`,
+    hyphaTokenAddress: hyphaTokenAddress as `0x${string}`,
+  });
 
   const [hasClaimed, setHasClaimed] = useState(false);
 
   const originalAsset = filteredAssets?.find(
-    (a) => a.address === HYPHA_TOKEN_ADDRESS,
+    (a) => a.address.toLowerCase() === hyphaTokenAddress.toLowerCase(),
   );
 
   const parsedRewardValue =
@@ -63,7 +71,11 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
     pendingRewards !== undefined
       ? originalAsset
         ? { ...originalAsset, value: parsedRewardValue }
-        : { ...HYPHA_REWARDS_FALLBACK, value: parsedRewardValue }
+        : {
+            ...HYPHA_REWARDS_FALLBACK,
+            address: hyphaTokenAddress,
+            value: parsedRewardValue,
+          }
       : undefined;
   useEffect(() => {
     if (parsedRewardValue >= MIN_REWARD_CLAIM_VALUE) {
@@ -122,6 +134,7 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
             <AssetCard
               {...(hyphaTokenAsset ?? {
                 ...HYPHA_REWARDS_FALLBACK,
+                address: hyphaTokenAddress,
                 value: 0,
               })}
               isLoading={isLoadingAssets}

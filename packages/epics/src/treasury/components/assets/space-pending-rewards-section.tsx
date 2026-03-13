@@ -42,8 +42,14 @@ export const SpacePendingRewardsSection: FC<
   const executor = spaceDetails?.executor as `0x${string}` | undefined;
 
   const { filteredAssets, isLoading: isLoadingAssets } = useAssetsSection();
+
+  const hyphaTokenAddress =
+    filteredAssets?.find(
+      (a) => a.symbol === 'HYPHA' || a.address === HYPHA_TOKEN_ADDRESS,
+    )?.address ?? HYPHA_TOKEN_ADDRESS;
+
   const { supply: hyphaTotalSupply } = useTokenSupply(
-    HYPHA_TOKEN_ADDRESS as `0x${string}`,
+    hyphaTokenAddress as `0x${string}`,
   );
 
   const {
@@ -53,12 +59,15 @@ export const SpacePendingRewardsSection: FC<
     waitForClaimReceipt,
     isClaiming,
     updatePendingRewards,
-  } = usePendingRewards({ user: executor });
+  } = usePendingRewards({
+    user: executor,
+    hyphaTokenAddress: hyphaTokenAddress as `0x${string}`,
+  });
 
   const [hasClaimed, setHasClaimed] = useState(false);
 
   const originalAsset = filteredAssets?.find(
-    (a) => a.address === HYPHA_TOKEN_ADDRESS,
+    (a) => a.address.toLowerCase() === hyphaTokenAddress.toLowerCase(),
   );
 
   const parsedRewardValue =
@@ -66,7 +75,11 @@ export const SpacePendingRewardsSection: FC<
 
   const baseHyphaAsset = originalAsset
     ? { ...originalAsset, value: parsedRewardValue }
-    : { ...HYPHA_REWARDS_FALLBACK, value: parsedRewardValue };
+    : {
+        ...HYPHA_REWARDS_FALLBACK,
+        address: hyphaTokenAddress,
+        value: parsedRewardValue,
+      };
 
   const supplyFromAsset = (originalAsset as { supply?: { total: number } })
     ?.supply;
@@ -152,6 +165,7 @@ export const SpacePendingRewardsSection: FC<
             <AssetCard
               {...(hyphaTokenAsset ?? {
                 ...HYPHA_REWARDS_FALLBACK,
+                address: hyphaTokenAddress,
                 value: 0,
                 supply:
                   hyphaTotalSupply !== undefined
