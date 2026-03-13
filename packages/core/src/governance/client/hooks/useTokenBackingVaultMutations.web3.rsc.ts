@@ -3,7 +3,12 @@
 import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
-import { encodeFunctionData } from 'viem';
+import {
+  decodeFunctionData,
+  encodeFunctionData,
+  erc20Abi,
+  maxUint256,
+} from 'viem';
 
 import { getProposalFromLogs } from '../web3';
 import {
@@ -95,6 +100,29 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
       }[] = [];
       const spaceId = BigInt(arg.spaceId);
       const spaceToken = arg.spaceToken;
+
+      // Approve Vault contract to spend tokens on behalf of the Space.
+      // Must be the first transactions executed so addBackingToken can transfer tokens.
+      if (arg.addCollaterals?.length) {
+        const uniqueTokens = new Map<string, `0x${string}`>();
+        for (const c of arg.addCollaterals) {
+          const key = c.token.toLowerCase();
+          if (!uniqueTokens.has(key)) {
+            uniqueTokens.set(key, c.token as `0x${string}`);
+          }
+        }
+        for (const token of uniqueTokens.values()) {
+          transactions.push({
+            target: token,
+            value: 0n,
+            data: encodeFunctionData({
+              abi: erc20Abi,
+              functionName: 'approve',
+              args: [vaultAddress as `0x${string}`, maxUint256],
+            }),
+          });
+        }
+      }
 
       if (
         arg.activateVault &&
