@@ -234,13 +234,12 @@ WITH RECURSIVE upward_tree AS (
 downward_tree AS (
   SELECT ${columnsSql}, 0 as level
   FROM upward_tree
-  WHERE parent_id IS NULL AND is_archived = false
+  WHERE parent_id IS NULL
   UNION ALL
   SELECT ${columnsWithAliasSql}, dt.level + 1
   FROM ${spaces} i
   INNER JOIN downward_tree dt
     ON i.parent_id = dt.id
-  WHERE i.is_archived = false
 )
 SELECT * FROM downward_tree
 ORDER BY level, id;

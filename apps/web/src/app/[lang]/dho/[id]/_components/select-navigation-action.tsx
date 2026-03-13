@@ -7,9 +7,16 @@ import { VisibleSpacesList } from './visible-spaces-list';
 import {
   useOrganisationSpacesBySingleSlug,
   useSpaceBySlug,
+  isSpaceArchived,
 } from '@hypha-platform/core/client';
 import { Space } from '@hypha-platform/core/client';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@hypha-platform/ui';
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  Input,
+} from '@hypha-platform/ui';
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Separator } from '@hypha-platform/ui';
 import { useTheme } from 'next-themes';
@@ -76,9 +83,11 @@ export const SelectNavigationAction = ({
   children,
 }: SelectNavigationActionProps) => {
   const t = useTranslations('SelectNavigationAction');
+  const tSpaces = useTranslations('Spaces');
   const { resolvedTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('nested-spaces');
   const [visibleSpaces, setVisibleSpaces] = useState<VisibleSpace[]>([]);
+  const [hideArchivedSpaces, setHideArchivedSpaces] = useState(true);
   const previousSpacesRef = useRef<string>('');
   const { space: currentSpace, isLoading: isLoadingSpace } =
     useSpaceBySlug(daoSlug);
@@ -91,23 +100,30 @@ export const SelectNavigationAction = ({
       useGeneralState: true,
     });
 
+  const displayedSpaces = useMemo(() => {
+    if (hideArchivedSpaces) {
+      return (filteredSpaces || []).filter((space) => !isSpaceArchived(space));
+    }
+    return filteredSpaces || [];
+  }, [filteredSpaces, hideArchivedSpaces]);
+
   const isLoading = isLoadingSpace || isLoadingSpaces || isFilteringSpaces;
 
   const hierarchyData: HierarchyNode | null = useMemo(() => {
-    if (!currentSpace || !filteredSpaces) return null;
+    if (!currentSpace || !displayedSpaces) return null;
 
-    const spacesWithCurrent = filteredSpaces.some(
+    const spacesWithCurrent = displayedSpaces.some(
       (s) => s.id === currentSpace.id,
     )
-      ? filteredSpaces
-      : [...filteredSpaces, currentSpace];
+      ? displayedSpaces
+      : [...displayedSpaces, currentSpace];
 
     const accessibleSpaceIds = new Set(spacesWithCurrent.map((s) => s.id));
 
     const rootSpace = findRootSpace(currentSpace, spacesWithCurrent);
     if (!rootSpace) return null;
     return buildHierarchy(rootSpace, spacesWithCurrent, accessibleSpaceIds);
-  }, [currentSpace, filteredSpaces]);
+  }, [currentSpace, displayedSpaces]);
 
   const handleVisibleSpacesChange = useCallback((spaces: VisibleSpace[]) => {
     const spacesKey = JSON.stringify(spaces.map((s) => s.id).sort());
@@ -162,6 +178,19 @@ export const SelectNavigationAction = ({
           </div>
           <TabsContent value="nested-spaces" className="mt-4">
             <div className="flex flex-col gap-6">
+              <label
+                htmlFor="hide-archived-spaces-nav"
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <Input
+                  id="hide-archived-spaces-nav"
+                  type="checkbox"
+                  checked={hideArchivedSpaces}
+                  onChange={(e) => setHideArchivedSpaces(e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <span>{tSpaces('hideArchivedSpaces')}</span>
+              </label>
               {hierarchyData && (
                 <SpaceVisualization
                   data={hierarchyData}
@@ -169,10 +198,10 @@ export const SelectNavigationAction = ({
                   onVisibleSpacesChange={handleVisibleSpacesChange}
                 />
               )}
-              {visibleSpaces.length > 0 && filteredSpaces && (
+              {visibleSpaces.length > 0 && displayedSpaces && (
                 <VisibleSpacesList
                   visibleSpaces={visibleSpaces}
-                  allSpaces={filteredSpaces}
+                  allSpaces={displayedSpaces}
                   lang={lang}
                   entrySpaceId={currentSpace?.id}
                 />
