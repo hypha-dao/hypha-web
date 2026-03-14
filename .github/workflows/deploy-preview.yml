@@ -15,7 +15,7 @@ env:
 
 jobs:
   detect-changes:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     outputs:
       has_migrations: ${{ steps.detect.outputs.has_migrations }}
     steps:
@@ -27,7 +27,7 @@ jobs:
   deploy-preview:
     needs: detect-changes
     permissions: write-all
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
 
     steps:
       - uses: actions/checkout@v4
@@ -98,7 +98,7 @@ jobs:
 
   main:
     needs: [detect-changes]
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
 
     steps:
       - uses: actions/checkout@v4
