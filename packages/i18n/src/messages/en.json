@@ -101,6 +101,10 @@
         "title": "Mint Tokens to Space Treasury",
         "description": "Mint tokens into your space treasury to fund operations, distribute rewards, or provide liquidity."
       },
+      "tokenBackingVault": {
+        "title": "Token Backing Vault",
+        "description": "Create a token backing vault, define redemption rules and restrictions, set the start date and redemption price, and authorise the addition or withdrawal of collateral to the vault."
+      },
       "buyHyphaTokensRewards": {
         "title": "Buy Hypha Tokens (Rewards)",
         "description": "Purchase Hypha tokens to participate in the network and earn rewards."

@@ -130,6 +130,16 @@ export const SelectSettingsAction = ({
       disabled: isPaymentExpired,
     },
     {
+      defaultDurationDays: 4,
+      group: t('groups.treasury'),
+      title: t('actions.tokenBackingVault.title'),
+      description: t('actions.tokenBackingVault.description'),
+      href: 'create/token-backing-vault',
+      icon: <RadiobuttonIcon />,
+      baseTab: 'agreements',
+      disabled: isPaymentExpired,
+    },
+    {
       group: t('groups.treasury'),
       title: t('actions.buyHyphaTokensRewards.title'),
       description: t('actions.buyHyphaTokensRewards.description'),

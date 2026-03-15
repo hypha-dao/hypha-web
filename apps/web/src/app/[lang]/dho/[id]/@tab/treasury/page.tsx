@@ -2,6 +2,7 @@ import { Locale } from '@hypha-platform/i18n';
 import {
   AssetsSection,
   TransactionsSection,
+  VaultsSection,
   SpaceTabAccessWrapper,
 } from '@hypha-platform/epics';
 import { getDhoPathTreasury } from './constants';
@@ -30,6 +31,7 @@ export default async function TreasuryPage(props: PageProps) {
           basePath={basePath}
           web3SpaceId={spaceFromDb?.web3SpaceId as number}
         />
+        <VaultsSection />
         <TransactionsSection spaceSlug={id} />
       </div>
     </SpaceTabAccessWrapper>
