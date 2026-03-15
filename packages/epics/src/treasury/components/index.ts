@@ -12,6 +12,7 @@ export * from './common/token-max-supply-field';
 export * from './assets/user-assets-section';
 export * from './requests/user-transactions-section';
 export * from './assets/pending-rewards-section';
+export * from './assets/space-pending-rewards-section';
 export * from './common/token-max-supply-type-field';
 export * from './common/transfer-whitelist-field-array';
 export * from './common/general-token-settings';

@@ -2,14 +2,19 @@
 
 import { FC, useCallback, useEffect, useState } from 'react';
 import { SectionFilter } from '@hypha-platform/ui/server';
-import { type Person, usePendingRewards } from '@hypha-platform/core/client';
+import {
+  usePendingRewards,
+  useSpaceDetailsWeb3Rpc,
+} from '@hypha-platform/core/client';
 import { AssetCard } from './asset-card';
-import { useUserAssetsSection } from '../../hooks';
+import { useAssetsSection, useTokenSupply } from '../../hooks';
 import { Button } from '@hypha-platform/ui';
 import { Loader2 } from 'lucide-react';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { Empty } from '../../../common';
-import { useTranslations } from 'next-intl';
+import { useSpaceMember } from '../../../spaces';
+import { useParams } from 'next/navigation';
+import { useSWRConfig } from 'swr';
 
 const HYPHA_TOKEN_ADDRESS = '0x8b93862835C36e9689E9bb1Ab21De3982e266CD3';
 const MIN_REWARD_CLAIM_VALUE = 0.01;
@@ -22,29 +27,30 @@ const HYPHA_REWARDS_FALLBACK = {
   address: HYPHA_TOKEN_ADDRESS,
 };
 
-type PendingRewardsSectionProps = {
-  person: Person;
-  isMyProfile?: boolean;
+type SpacePendingRewardsSectionProps = {
+  web3SpaceId: number;
 };
 
-export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
-  person,
-  isMyProfile,
-}) => {
-  const tProfile = useTranslations('Profile');
+export const SpacePendingRewardsSection: FC<
+  SpacePendingRewardsSectionProps
+> = ({ web3SpaceId }) => {
+  const { id: spaceSlug } = useParams<{ id: string }>();
+  const { mutate } = useSWRConfig();
   const { isAuthenticated } = useAuthentication();
-  const {
-    filteredAssets,
-    updateUserAssets,
-    isLoading: isLoadingAssets,
-  } = useUserAssetsSection({
-    personSlug: person?.slug,
-  });
+  const { spaceDetails } = useSpaceDetailsWeb3Rpc({ spaceId: web3SpaceId });
+  const { isMember } = useSpaceMember({ spaceId: web3SpaceId });
+  const executor = spaceDetails?.executor as `0x${string}` | undefined;
+
+  const { filteredAssets, isLoading: isLoadingAssets } = useAssetsSection();
 
   const hyphaTokenAddress =
     filteredAssets?.find(
       (a) => a.symbol === 'HYPHA' || a.address === HYPHA_TOKEN_ADDRESS,
     )?.address ?? HYPHA_TOKEN_ADDRESS;
+
+  const { supply: hyphaTotalSupply } = useTokenSupply(
+    hyphaTokenAddress as `0x${string}`,
+  );
 
   const {
     pendingRewards,
@@ -54,7 +60,7 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
     isClaiming,
     updatePendingRewards,
   } = usePendingRewards({
-    user: person?.address as `0x${string}`,
+    user: executor,
     hyphaTokenAddress: hyphaTokenAddress as `0x${string}`,
   });
 
@@ -67,21 +73,34 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
   const parsedRewardValue =
     pendingRewards !== undefined ? Number(pendingRewards / 10n ** 18n) : 0;
 
+  const baseHyphaAsset = originalAsset
+    ? { ...originalAsset, value: parsedRewardValue }
+    : {
+        ...HYPHA_REWARDS_FALLBACK,
+        address: hyphaTokenAddress,
+        value: parsedRewardValue,
+      };
+
+  const supplyFromAsset = (originalAsset as { supply?: { total: number } })
+    ?.supply;
+  const supply =
+    supplyFromAsset ??
+    (hyphaTotalSupply !== undefined ? { total: hyphaTotalSupply } : undefined);
+
   const hyphaTokenAsset =
-    pendingRewards !== undefined
-      ? originalAsset
-        ? { ...originalAsset, value: parsedRewardValue }
-        : {
-            ...HYPHA_REWARDS_FALLBACK,
-            address: hyphaTokenAddress,
-            value: parsedRewardValue,
-          }
-      : undefined;
+    pendingRewards !== undefined ? { ...baseHyphaAsset, supply } : undefined;
+
   useEffect(() => {
     if (parsedRewardValue >= MIN_REWARD_CLAIM_VALUE) {
       setHasClaimed(false);
     }
   }, [parsedRewardValue]);
+
+  const updateSpaceAssets = useCallback(() => {
+    if (spaceSlug) {
+      mutate([`/api/v1/spaces/${spaceSlug}/assets`]);
+    }
+  }, [mutate, spaceSlug]);
 
   const disableClaimButton =
     hasClaimed ||
@@ -89,45 +108,57 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
     isClaiming ||
     pendingRewards === undefined;
 
+  const canClaim = isAuthenticated && isMember;
+
   const onHandleClaim = useCallback(async () => {
+    if (!canClaim || !executor) return;
     try {
       const txHash = await claim();
       await waitForClaimReceipt(txHash as `0x${string}`);
       await updatePendingRewards();
-      await updateUserAssets();
+      await updateSpaceAssets();
       setHasClaimed(true);
     } catch (error) {
       console.error('Claim failed:', error);
     }
-  }, [claim, waitForClaimReceipt, updatePendingRewards, updateUserAssets]);
+  }, [
+    canClaim,
+    executor,
+    claim,
+    waitForClaimReceipt,
+    updatePendingRewards,
+    updateSpaceAssets,
+  ]);
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-3">
       <div className="w-full flex justify-between">
-        <SectionFilter label={tProfile('rewards')} />
+        <SectionFilter label="Rewards" />
         <Button
           title={
-            !isMyProfile
-              ? tProfile('claimOnlyOnPersonalPage')
+            !isAuthenticated
+              ? 'Please sign in to claim rewards'
+              : !isMember
+              ? 'Only space members can claim rewards'
               : disableClaimButton
-              ? tProfile('rewardValueMustBeGreaterThanZero')
+              ? 'The reward value must be greater than 0'
               : ''
           }
-          disabled={!isMyProfile || disableClaimButton}
+          disabled={!canClaim || disableClaimButton}
           onClick={onHandleClaim}
         >
           {isClaiming && <Loader2 className="animate-spin w-4 h-4" />}
-          {tProfile('claim')}
+          Claim
         </Button>
       </div>
       <div className="w-full">
-        {isLoading ? (
+        {isLoading || !executor ? (
           <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
             <AssetCard isLoading />
           </div>
         ) : !isAuthenticated ? (
           <Empty>
-            <p>{tProfile('noRewardsFoundForUser')}</p>
+            <p>Sign in to view space rewards</p>
           </Empty>
         ) : (
           <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
@@ -136,6 +167,10 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
                 ...HYPHA_REWARDS_FALLBACK,
                 address: hyphaTokenAddress,
                 value: 0,
+                supply:
+                  hyphaTotalSupply !== undefined
+                    ? { total: hyphaTotalSupply }
+                    : undefined,
               })}
               isLoading={isLoadingAssets}
             />
