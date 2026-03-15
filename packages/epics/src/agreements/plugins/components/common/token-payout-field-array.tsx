@@ -28,12 +28,14 @@ interface TokenPayoutFieldArrayProps {
   tokens: Token[];
   name?: string;
   label?: string;
+  allowAddOrRemove?: boolean;
 }
 
 export const TokenPayoutFieldArray = ({
   tokens,
   name = 'payouts',
   label = 'Payment Request',
+  allowAddOrRemove = true,
 }: TokenPayoutFieldArrayProps) => {
   const { control } = useFormContext();
   const { fields, append, remove } = useFieldArray({
@@ -83,23 +85,27 @@ export const TokenPayoutFieldArray = ({
                   )}
                 />
               </div>
-              <Button
-                variant="ghost"
-                onClick={(ev) => handleDeleteField(ev, index)}
-                className="px-2 md:px-3"
-              >
-                <Cross2Icon />
-              </Button>
+              {allowAddOrRemove && (
+                <Button
+                  variant="ghost"
+                  onClick={(ev) => handleDeleteField(ev, index)}
+                  className="px-2 md:px-3"
+                >
+                  <Cross2Icon />
+                </Button>
+              )}
             </div>
           ))}
         </div>
       </div>
-      <div className="flex justify-end w-full">
-        <Button className="w-fit" onClick={handleAddField} variant="ghost">
-          <PlusIcon />
-          Add
-        </Button>
-      </div>
+      {allowAddOrRemove && (
+        <div className="flex justify-end w-full">
+          <Button className="w-fit" onClick={handleAddField} variant="ghost">
+            <PlusIcon />
+            Add
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

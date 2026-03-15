@@ -202,6 +202,33 @@ export const findAllSpacesByWeb3SpaceIds = async (
   return results;
 };
 
+type FindAllSpacesBySlugsInput = {
+  slugs: string[];
+  parentOnly?: boolean;
+};
+export const findAllSpacesBySlugs = async (
+  { slugs, parentOnly = true }: FindAllSpacesBySlugsInput,
+  { db }: DbConfig,
+) => {
+  if (slugs.length === 0) {
+    return [];
+  }
+
+  const results = await db
+    .select()
+    .from(spaces)
+    .where(
+      and(
+        inArray(spaces.slug, slugs),
+        eq(spaces.isArchived, false),
+        parentOnly ? isNull(spaces.parentId) : undefined,
+      ),
+    )
+    .orderBy(asc(spaces.title));
+
+  return results;
+};
+
 type FindAllOrganizationSpacesForNodeByIdInput = {
   id?: number | null;
 };
