@@ -49,6 +49,7 @@ export function SpaceVisualization({
   const focusRef = useRef<d3.HierarchyNode<SpaceNode> | null>(null);
   const themeRef = useRef(resolvedTheme);
   const savedFocusIdRef = useRef<number | null>(null);
+  const previousViewRef = useRef<[number, number, number] | null>(null);
   const [tooltip, setTooltip] = useState<{
     visible: boolean;
     x: number;
@@ -344,7 +345,15 @@ export function SpaceVisualization({
 
     focusRef.current = focus;
     savedFocusIdRef.current = focus.data.id;
-    let view: [number, number, number] = [focus.x!, focus.y!, focus.r! * 2];
+    const targetView: [number, number, number] = [
+      focus.x!,
+      focus.y!,
+      focus.r! * 2,
+    ];
+    const shouldAnimateFromPrevious = previousViewRef.current !== null;
+    const startView: [number, number, number] = shouldAnimateFromPrevious
+      ? [targetView[0], targetView[1], targetView[2] * 1.15]
+      : targetView;
 
     const svg = d3
       .select(svgRef.current)
@@ -562,9 +571,28 @@ export function SpaceVisualization({
         .attr('stroke-width', getStrokeWidth(d.depth));
     });
 
-    zoomTo(view);
+    let view: [number, number, number] = targetView;
+    if (shouldAnimateFromPrevious) {
+      view = startView;
+      zoomTo(view);
+      const transition = svg
+        .transition()
+        .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
+        .tween('zoom', () => {
+          const i = d3.interpolateZoom(startView, targetView);
+          return (t) => zoomTo(i(t));
+        });
+      transition.on('end', () => {
+        view = targetView;
+        previousViewRef.current = targetView;
+        notifyVisibleSpaces(focus);
+      });
+    } else {
+      zoomTo(targetView);
+      previousViewRef.current = targetView;
+      notifyVisibleSpaces(focus);
+    }
     previousVisibleSpacesRef.current = '';
-    notifyVisibleSpaces(focus);
 
     function zoom(target: SpaceHierarchyNode) {
       focus = target;

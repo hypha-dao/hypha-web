@@ -42,44 +42,32 @@ function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
   const web3SpaceId = fullSpace?.web3SpaceId;
   const spaceSlug = fullSpace?.slug || space.slug;
 
-  if (!web3SpaceId || !spaceSlug) {
-    return (
-      <Button
-        variant="default"
-        size="default"
-        colorVariant="accent"
-        className="w-full md:w-auto"
-        disabled={true}
-        title={t('visibleSpaces.spaceInfoNotAvailable')}
-      >
-        <PlusIcon className="w-4 h-4" />
-        {t('visibleSpaces.addSpace')}
-      </Button>
-    );
-  }
-
   const { access, isLoading: isAccessLoading } = useSpaceDiscoverability({
-    spaceId: BigInt(web3SpaceId),
+    spaceId: web3SpaceId ?? undefined,
   });
 
   const { userState, isLoading: isUserStateLoading } = useUserSpaceState({
-    spaceId: web3SpaceId,
+    spaceId: web3SpaceId ?? undefined,
     spaceSlug,
     space: fullSpace,
   });
 
   const hasAccess = checkAccess(access, userState);
   const isLoading = isAccessLoading || isUserStateLoading;
-  const isDisabled = isLoading || !hasAccess;
+  const hasSpaceInfo = Boolean(web3SpaceId && spaceSlug);
+  const isDisabled = !hasSpaceInfo || isLoading || !hasAccess;
 
-  const createSpacePath = `/${lang}/dho/${spaceSlug}/space/create`;
+  const createSpacePath =
+    hasSpaceInfo && spaceSlug ? `/${lang}/dho/${spaceSlug}/space/create` : '#';
 
   return (
     <Link
-      href={hasAccess && !isLoading ? createSpacePath : '#'}
+      href={hasAccess && !isLoading && hasSpaceInfo ? createSpacePath : '#'}
       className={isDisabled ? 'cursor-not-allowed' : 'flex-1 md:flex-none'}
       title={
-        isLoading
+        !hasSpaceInfo
+          ? t('visibleSpaces.spaceInfoNotAvailable')
+          : isLoading
           ? t('visibleSpaces.loading')
           : !hasAccess
           ? t('visibleSpaces.noAccessAddSpace')

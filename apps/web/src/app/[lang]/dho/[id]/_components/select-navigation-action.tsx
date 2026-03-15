@@ -139,6 +139,21 @@ export const SelectNavigationAction = ({
     >
       <Separator />
       {children}
+      <label
+        htmlFor="hide-archived-spaces-nav"
+        className="inline-flex items-center gap-2 cursor-pointer mt-2 w-fit"
+      >
+        <Input
+          id="hide-archived-spaces-nav"
+          type="checkbox"
+          checked={hideArchivedSpaces}
+          onChange={(e) => setHideArchivedSpaces(e.target.checked)}
+          className="h-4 w-4 shrink-0"
+        />
+        <span className="whitespace-nowrap">
+          {tSpaces('hideArchivedSpaces')}
+        </span>
+      </label>
       <div className="mt-2">
         <Tabs
           value={activeTab}
@@ -160,7 +175,11 @@ export const SelectNavigationAction = ({
               </TabsTrigger>
             </TabsList>
           </div>
-          <TabsContent value="nested-spaces" className="mt-4">
+          <TabsContent
+            value="nested-spaces"
+            className="mt-4 data-[state=inactive]:hidden"
+            forceMount
+          >
             <div className="flex flex-col gap-6">
               {hierarchyData && (
                 <SpaceVisualization
