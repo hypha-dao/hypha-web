@@ -1,0 +1,19 @@
+# ===================
+# Obsidian
+# ===================
+
+# Workspace files (user-specific, change constantly)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+
+# Cache
+.obsidian/cache/
+
+# Plugin data that's user-specific or contains local paths
+.obsidian/plugins/*/data.json
+
+# Sync conflicts
+.obsidian/sync-conflicts/
+
+# Mobile-specific
+.obsidian/.mobile
