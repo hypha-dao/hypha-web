@@ -16,9 +16,9 @@ import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
 import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
-import { useRouter } from 'next/navigation';
 import { VOTING_METHOD_TYPES } from '../hooks';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+import { useTranslations } from 'next-intl';
 
 type FormValues = z.infer<typeof schemaCreateProposalChangeVotingMethod>;
 
@@ -37,7 +37,8 @@ export const CreateProposalChangeVotingMethodForm = ({
   web3SpaceId,
   plugin,
 }: CreateProposalChangeVotingMethodFormProps) => {
-  const router = useRouter();
+  const tSpaces = useTranslations('Spaces');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
@@ -151,8 +152,8 @@ export const CreateProposalChangeVotingMethodForm = ({
       message={
         isError ? (
           <div className="flex flex-col">
-            <div>Ouh Snap. There was an error</div>
-            <Button onClick={reset}>Reset</Button>
+            <div>{tSpaces('errorOhSnap')}</div>
+            <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (
           <div>{currentAction}</div>
@@ -175,16 +176,16 @@ export const CreateProposalChangeVotingMethodForm = ({
             successfulUrl={successfulUrl}
             closeUrl={successfulUrl}
             backUrl={backUrl}
-            backLabel="Back to Settings"
+            backLabel={tSpaces('backToSettings')}
             isLoading={false}
-            label="Voting Method"
+            label={tAgreementFlow('labels.votingMethod')}
             progress={progress}
           />
           {plugin}
           <Separator />
           <div className="flex justify-end w-full">
             <Button type="submit" disabled={isButtonDisabled}>
-              Publish
+              {tAgreementFlow('buttons.publish')}
             </Button>
           </div>
         </form>

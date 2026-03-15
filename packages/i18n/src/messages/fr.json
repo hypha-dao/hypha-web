@@ -397,5 +397,235 @@
     "expiredToday": "aujourd'hui",
     "expiredDayAgo": "il y a un jour",
     "expiredDaysAgo": "il y a {count} jours"
+  },
+  "AgreementFlow": {
+    "labels": {
+      "activateSpaces": "Activer les espaces",
+      "votingMethod": "Méthode de vote",
+      "entryMethod": "Méthode d'entrée",
+      "membershipExit": "Sortie de membre",
+      "spaceToSpace": "Espace-à-espace",
+      "issueNewToken": "Émettre un nouveau token",
+      "treasuryMinting": "Frappe de trésorerie",
+      "buyHyphaTokensRewards": "Acheter des tokens Hypha (récompenses)",
+      "spaceTransparency": "Transparence de l'espace",
+      "collectiveAgreement": "Accord collectif",
+      "contribution": "Contribution",
+      "expenses": "Dépenses",
+      "funding": "Financement"
+    },
+    "buttons": {
+      "publish": "Publier"
+    },
+    "pageErrors": {
+      "loadSpaces": "Impossible de charger les espaces. Veuillez réessayer plus tard."
+    },
+    "spaceConfiguration": {
+      "update": "Mettre à jour",
+      "updating": "Mise à jour..."
+    },
+    "activateSpacesForm": {
+      "insufficientFunds": {
+        "spaceWalletBalanceInsufficient": "Le solde du portefeuille de l'espace est insuffisant pour finaliser cette transaction.",
+        "please": "Veuillez",
+        "topUpWith": "approvisionner votre compte avec {token}",
+        "buyHyphaTokens": "acheter des tokens Hypha",
+        "toProceed": "pour continuer."
+      }
+    },
+    "buyHyphaTokensForm": {
+      "insufficientFunds": {
+        "walletBalanceInsufficient": "Le solde de votre portefeuille est insuffisant pour finaliser cette transaction.",
+        "please": "Veuillez",
+        "topUpWith": "approvisionner votre compte avec {token}",
+        "toProceed": "pour continuer."
+      }
+    },
+    "issueNewTokenForm": {
+      "duplicateToken": "Un token avec le même nom et symbole existe déjà dans votre espace. Veuillez modifier le nom ou le symbole pour continuer."
+    },
+    "createAgreementBaseFields": {
+      "agreementLabel": "Accord",
+      "backToCreate": "Retour à la création",
+      "formContextMissing": "Le contexte du formulaire est manquant !",
+      "delegate": "Délégué",
+      "proposalTitlePlaceholder": "Titre de la proposition...",
+      "proposalMinimumVotingIconAlt": "Icône de durée minimale de vote",
+      "autoExecution": "Exécution automatique",
+      "toVote": "{duration} pour voter",
+      "proposalContent": "Contenu de la proposition",
+      "proposalContentPlaceholder": "Saisissez ici le contenu de votre proposition..."
+    },
+    "plugins": {
+      "activateSpaces": {
+        "checkOut": "Récapitulatif",
+        "totalContribution": "Contribution totale :",
+        "payWith": "Payer avec :",
+        "totalAmountIn": "Montant total en {token} :",
+        "paidBy": "Payé par",
+        "paidTo": "Payé à"
+      },
+      "buyHyphaTokens": {
+        "purchaseAmount": "Montant d'achat",
+        "receiveHyphaTokens": "Notre espace recevra {amount} tokens HYPHA (1 HYPHA = {price} USD)",
+        "hyphaSentTo": "HYPHA envoyé à",
+        "usdcPaidTo": "USDC payé à"
+      },
+      "quorumAndUnity": {
+        "title": "Méthode de vote",
+        "description": "Sélectionnez un modèle de méthode de vote, ou ajustez les valeurs de quorum et d’unité avec les curseurs.",
+        "votingPeriod": "Période de vote",
+        "autoExecutionWhenConditionsMet": "Exécution automatique (si les conditions sont remplies)",
+        "autoExecutionDisabled": "L'exécution automatique est désactivée lorsque le quorum est inférieur à 20 % pour protéger les actifs de la trésorerie.",
+        "minimumVotingDuration": "Durée minimale de vote",
+        "durationPlaceholder": "Durée",
+        "votingPower": "Pouvoir de vote",
+        "votingTokenAllocation": "Allocation de tokens de vote",
+        "cannotBothZero": "Le quorum et l’unité ne peuvent pas tous deux être définis à 0 %",
+        "durations": {
+          "h6": "6 heures",
+          "h12": "12 heures",
+          "h24": "24 heures",
+          "d2": "2 jours",
+          "d3": "3 jours",
+          "d5": "5 jours",
+          "d7": "7 jours",
+          "d10": "10 jours",
+          "d14": "14 jours",
+          "d21": "21 jours",
+          "d30": "30 jours"
+        }
+      },
+      "recipient": {
+        "recipient": "Destinataire",
+        "member": "Membre",
+        "space": "Espace",
+        "selectMemberPlaceholder": "Sélectionner un membre...",
+        "selectSpacePlaceholder": "Sélectionner un espace...",
+        "walletAddress": "Adresse du portefeuille",
+        "enterWalletAddress": "Saisir l'adresse du portefeuille",
+        "memoOptional": "Mémo (optionnel)",
+        "memoPlaceholder": "Ajoutez des notes ou des détails pertinents sur cette transaction"
+      },
+      "membershipExit": {
+        "noMembersFound": "Aucun membre trouvé.",
+        "noMemberSpacesFound": "Aucun espace membre trouvé.",
+        "exitingMember": "Membre sortant"
+      },
+      "spaceToSpaceMembershipSelector": {
+        "findSpace": "Trouver un espace",
+        "findMember": "Trouver un membre",
+        "spaceToJoin": "Espace à rejoindre",
+        "delegatedVotingMember": "Membre de vote délégué"
+      },
+      "tokenPayoutField": {
+        "amount": "Montant",
+        "selectToken": "Sélectionner un token",
+        "noTokensFound": "Aucun token trouvé",
+        "by": "par"
+      },
+      "spaceToSpaceMembership": {
+        "space": "Espace",
+        "delegationRules": "Règles de délégation",
+        "delegatedVotingMemberDescription": "Le membre de vote délégué est la personne de votre espace officiellement autorisée à voter au nom de votre espace dans l’espace rejoint."
+      },
+      "spaceTransparencySettings": {
+        "title": "Transparence de l'espace",
+        "description": "Définissez le niveau de transparence que vous souhaitez appliquer collectivement à votre espace. Veuillez noter que, quel que soit votre choix ci-dessous, seuls les membres directs peuvent agir dans l'espace.",
+        "discoverability": "Découvrabilité de l'espace",
+        "activityAccess": "Accès à l'activité de l'espace"
+      },
+      "votingMethodSelector": {
+        "oneMemberOneVoteTitle": "1 membre 1 vote",
+        "oneMemberOneVoteDescription": "Chaque membre a une voix égale dans les décisions, sans pondération selon le rôle, les tokens ou la participation. Couramment utilisé dans les espaces communautaires ou écosystémiques.",
+        "oneVoiceOneVoteTitle": "1 voice 1 vote",
+        "oneVoiceOneVoteDescription": "Chaque vote est lié aux tokens voice gagnés, reflétant les contributions, la réputation et l’engagement, et décroît en cas d’inactivité pour encourager la participation. Couramment utilisé dans les équipes cœur ou groupes de contributeurs.",
+        "oneTokenOneVoteTitle": "1 token 1 vote",
+        "oneTokenOneVoteDescription": "Le pouvoir de vote est proportionnel au nombre de tokens détenus, alignant l’influence avec la participation. Couramment utilisé dans les flux de valeur, la trésorerie ou les espaces d’investissement.",
+        "clickHere": "Cliquez ici",
+        "voiceTokenTooltipPrefix": "Pour sélectionner cette méthode de vote, vous devez d’abord émettre votre Voice Token.",
+        "voiceTokenTooltipSuffix": "pour créer votre Voice Token",
+        "tokenTooltipPrefix": "Pour sélectionner cette méthode de vote, vous devez d’abord émettre un token.",
+        "tokenTooltipSuffix": "pour créer votre token"
+      },
+      "entryMethod": {
+        "label": "Méthode d'entrée",
+        "openAccessTitle": "Accès ouvert",
+        "openAccessDescription": "Les nouveaux membres peuvent rejoindre instantanément. La participation est ouverte à tous et totalement transparente.",
+        "inviteRequestTitle": "Demande d'invitation",
+        "inviteRequestDescription": "Les nouveaux membres peuvent participer en demandant une invitation. Les membres existants votent sur les demandes. La participation est réservée aux membres invités mais reste totalement transparente.",
+        "tokenBasedTitle": "Basé sur des tokens",
+        "tokenBasedDescription": "Les nouveaux membres peuvent rejoindre s’ils respectent les exigences en tokens. La participation est réservée aux membres éligibles mais reste totalement transparente."
+      },
+      "entryMethodTokenField": {
+        "requiredMinTokenNumberOptional": "Nombre minimum de tokens requis (optionnel)",
+        "typeAmount": "Saisir un montant",
+        "selectToken": "Sélectionner un token"
+      },
+      "transparency": {
+        "publicTitle": "Public",
+        "networkTitle": "Réseau",
+        "organisationTitle": "Organisation",
+        "spaceTitle": "Espace",
+        "discoverabilityPublic": "Votre espace est publiquement découvrable.",
+        "discoverabilityNetwork": "Votre espace est découvrable uniquement par les membres du réseau Hypha.",
+        "discoverabilityOrganisation": "Votre espace est découvrable uniquement par les membres de votre organisation.",
+        "discoverabilitySpace": "Votre espace est découvrable uniquement par les membres de l’espace.",
+        "activityPublic": "L'accès à l'activité de votre espace n'est pas restreint et est visible publiquement.",
+        "activityNetwork": "L'accès à l'activité de votre espace est réservé aux membres du réseau Hypha.",
+        "activityOrganisation": "L'accès à l'activité de votre espace est réservé aux membres de votre organisation.",
+        "activitySpace": "L'accès à l'activité de votre espace est réservé aux membres de l'espace."
+      },
+      "mintTokens": {
+        "mintToSpaceTreasury": "Frapper vers la trésorerie de l'espace",
+        "description": "Frappez des tokens dans la trésorerie de votre espace pour financer les opérations, distribuer des récompenses ou fournir de la liquidité.",
+        "selectToken": "Sélectionner un token",
+        "tokenSupply": "Offre de tokens",
+        "unlimitedSupply": "Offre illimitée",
+        "issuanceToDate": "Émis à ce jour",
+        "mintAmountLimit": "Limite de frappe",
+        "exceedsLimit": "Le nombre de tokens demandé dépasse la limite de frappe. Veuillez saisir une valeur jusqu’à {limit}",
+        "noTokensPrefix": "Votre espace n'a pas encore créé de token,",
+        "clickHere": "cliquez ici",
+        "noTokensSuffix": "pour émettre d’abord un token"
+      },
+      "spaceWithMonths": {
+        "spaces": "Espace(s)",
+        "contribution": "Contribution :",
+        "contributionPerMonthPerSpace": "$11 par mois par espace",
+        "removeSpace": "Retirer un espace",
+        "addSpace": "Ajouter un espace",
+        "selectSpace": "Sélectionner un espace",
+        "selectSpacePlaceholder": "Sélectionner un espace...",
+        "findSpace": "Trouver un espace",
+        "numberOfMonths": "Nombre de mois",
+        "typeAmount": "Saisir un montant",
+        "otherSpaces": "Autres espaces"
+      },
+      "tokenPayoutFieldArray": {
+        "paymentRequest": "Demande de paiement",
+        "enterAmountAndToken": "Veuillez saisir un montant et sélectionner un token.",
+        "add": "Ajouter"
+      },
+      "paymentSchedule": {
+        "label": "Calendrier de paiement",
+        "immediately": "Immédiatement",
+        "futurePayment": "Paiement futur",
+        "milestones": "Jalons",
+        "date": "Date",
+        "selectDate": "Sélectionner une date",
+        "add": "Ajouter"
+      },
+      "milestoneField": {
+        "milestone": "Jalon {index}",
+        "percentageRequired": "Le pourcentage est requis",
+        "percentageMin": "Le pourcentage doit être au moins de 0",
+        "percentageMax": "Le pourcentage doit être au maximum de 100",
+        "typePercentage": "Saisir un pourcentage"
+      }
+    },
+    "createActionForms": {
+      "defaultAgreement": "Accord"
+    }
   }
 }

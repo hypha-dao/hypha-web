@@ -16,6 +16,7 @@ import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { useConfig } from 'wagmi';
 import { Button, Form, LoadingBackdrop, Separator } from '@hypha-platform/ui';
 import { CreateAgreementBaseFields } from '../../agreements';
+import { useTranslations } from 'next-intl';
 
 const combinedSchemaMembershipExit =
   schemaMembershipExit.extend(createAgreementFiles);
@@ -36,6 +37,8 @@ export const MembershipExitForm = ({
   web3SpaceId,
   plugin,
 }: MembershipExitFormProps) => {
+  const tSpaces = useTranslations('Spaces');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { person, isLoading: isPersonLoading } = useMe();
 
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -109,8 +112,8 @@ export const MembershipExitForm = ({
         isError ? (
           <div>
             <div className="flex flex-col">
-              <div>Ouh Snap. There was an error</div>
-              <Button onClick={reset}>Reset</Button>
+              <div>{tSpaces('errorOhSnap')}</div>
+              <Button onClick={reset}>{tSpaces('reset')}</Button>
             </div>
           </div>
         ) : (
@@ -134,15 +137,15 @@ export const MembershipExitForm = ({
             successfulUrl={successfulUrl}
             closeUrl={successfulUrl}
             backUrl={backUrl}
-            backLabel="Back to Settings"
+            backLabel={tSpaces('backToSettings')}
             isLoading={false}
-            label="Membership Exit"
+            label={tAgreementFlow('labels.membershipExit')}
             progress={progress}
           />
           {plugin}
           <Separator />
           <div className="flex justify-end w-full">
-            <Button type="submit">Publish</Button>
+            <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>
           </div>
         </form>
       </Form>

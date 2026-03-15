@@ -15,7 +15,7 @@ import { z } from 'zod';
 import { LoadingBackdrop, Form, Separator, Button } from '@hypha-platform/ui';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useConfig } from 'wagmi';
-import { useRouter, useParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useAssets, useFundWallet } from '../../treasury';
 import React from 'react';
 import Link from 'next/link';
@@ -23,6 +23,7 @@ import { useActivateSpaces } from '../../people/hooks/use-activate-hypha-spaces'
 import { isAddress } from 'ethers';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { Locale } from '@hypha-platform/i18n';
+import { useTranslations } from 'next-intl';
 
 const RECIPIENT_SPACE_ADDRESS = '0x695f21B04B22609c4ab9e5886EB0F65cDBd464B6';
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
@@ -53,10 +54,11 @@ export const ActivateSpacesFormSpace = ({
   spaceId,
   web3SpaceId,
 }: ActivateSpacesFormProps) => {
+  const tSpaces = useTranslations('Spaces');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
-  const router = useRouter();
   const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({
     spaceId: web3SpaceId as number,
@@ -153,8 +155,11 @@ export const ActivateSpacesFormSpace = ({
         insufficientFunds ? (
           <div className="flex flex-col text-center gap-2 justify-center items-center">
             <span>
-              Space wallet balance is insufficient to complete this transaction.
-              <br /> Please{' '}
+              {tAgreementFlow(
+                'activateSpacesForm.insufficientFunds.spaceWalletBalanceInsufficient',
+              )}
+              <br />{' '}
+              {tAgreementFlow('activateSpacesForm.insufficientFunds.please')}{' '}
               {paymentTokenForTopUp === 'USDC' ? (
                 <span
                   onClick={() => {
@@ -163,17 +168,24 @@ export const ActivateSpacesFormSpace = ({
                   }}
                   className="font-bold cursor-pointer text-accent-9 underline"
                 >
-                  top up your account with {paymentTokenForTopUp}
+                  {tAgreementFlow(
+                    'activateSpacesForm.insufficientFunds.topUpWith',
+                    {
+                      token: paymentTokenForTopUp,
+                    },
+                  )}
                 </span>
               ) : (
                 <Link
                   href={`/${lang}/dho/${spaceSlug}/agreements/create/buy-hypha-tokens`}
                   className="font-bold cursor-pointer text-accent-9 underline"
                 >
-                  buy Hypha tokens
+                  {tAgreementFlow(
+                    'activateSpacesForm.insufficientFunds.buyHyphaTokens',
+                  )}
                 </Link>
               )}{' '}
-              to proceed.
+              {tAgreementFlow('activateSpacesForm.insufficientFunds.toProceed')}
             </span>
             <Button
               className="w-fit"
@@ -182,13 +194,13 @@ export const ActivateSpacesFormSpace = ({
                 reset();
               }}
             >
-              Reset
+              {tSpaces('reset')}
             </Button>
           </div>
         ) : isError ? (
           <div className="flex flex-col">
-            <div>Ouh Snap. There was an error</div>
-            <Button onClick={reset}>Reset</Button>
+            <div>{tSpaces('errorOhSnap')}</div>
+            <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (
           <div>{currentAction}</div>
@@ -211,15 +223,15 @@ export const ActivateSpacesFormSpace = ({
             successfulUrl={successfulUrl}
             closeUrl={successfulUrl}
             backUrl={backUrl}
-            backLabel="Back to Settings"
+            backLabel={tSpaces('backToSettings')}
             isLoading={false}
-            label="Activate Spaces"
+            label={tAgreementFlow('labels.activateSpaces')}
             progress={progress}
           />
           {children}
           <Separator />
           <div className="flex justify-end w-full">
-            <Button type="submit">Publish</Button>
+            <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>
           </div>
         </form>
       </Form>

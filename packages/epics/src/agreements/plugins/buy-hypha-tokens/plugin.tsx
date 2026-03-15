@@ -19,6 +19,7 @@ import {
 import { Token } from '../components/common/token-payout-field-array';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 
 type BuyHyphaTokensPluginProps = {
   spaces?: Space[];
@@ -29,6 +30,7 @@ const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
 const RECIPIENT_SPACE_ADDRESS = '0x3dEf11d005F8C85c93e3374B28fcC69B25a650Af';
 
 export const BuyHyphaTokensPlugin = ({ spaces }: BuyHyphaTokensPluginProps) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { control, setValue } = useFormContext();
 
   const payout = useWatch({
@@ -67,7 +69,7 @@ export const BuyHyphaTokensPlugin = ({ spaces }: BuyHyphaTokensPluginProps) => {
       <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
         <div className="flex gap-1">
           <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
-            Purchase Amount
+            {tAgreementFlow('plugins.buyHyphaTokens.purchaseAmount')}
           </label>
           <RequirementMark className="text-2" />
         </div>
@@ -100,12 +102,14 @@ export const BuyHyphaTokensPlugin = ({ spaces }: BuyHyphaTokensPluginProps) => {
         </div>
       </div>
       <div className="text-sm text-neutral-11">
-        Our space will receive {formatCurrencyValue(calculatedHypha)} HYPHA
-        tokens (1 HYPHA = {formatCurrencyValue(HYPHA_PRICE_USD)} USD)
+        {tAgreementFlow('plugins.buyHyphaTokens.receiveHyphaTokens', {
+          amount: formatCurrencyValue(calculatedHypha),
+          price: formatCurrencyValue(HYPHA_PRICE_USD),
+        })}
       </div>
       <Separator />
       <RecipientField
-        label="HYPHA sent to"
+        label={tAgreementFlow('plugins.buyHyphaTokens.hyphaSentTo')}
         members={[]}
         spaces={buyerSpace}
         defaultRecipientType="space"
@@ -115,7 +119,7 @@ export const BuyHyphaTokensPlugin = ({ spaces }: BuyHyphaTokensPluginProps) => {
       />
       <Separator />
       <RecipientField
-        label="USDC paid to"
+        label={tAgreementFlow('plugins.buyHyphaTokens.usdcPaidTo')}
         members={[]}
         spaces={recipientSpace}
         defaultRecipientType="space"

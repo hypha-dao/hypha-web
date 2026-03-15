@@ -11,6 +11,7 @@ import {
 import { PlusIcon, MinusIcon } from '@radix-ui/react-icons';
 import { Space } from '@hypha-platform/core/client';
 import { SpaceWithNumberOfMonthsField } from './space-with-number-of-months';
+import { useTranslations } from 'next-intl';
 
 interface SpaceWithNumberOfMonthsFieldArrayProps {
   spaces: Space[];
@@ -28,6 +29,7 @@ export const SpaceWithNumberOfMonthsFieldArray = ({
   organisationSpaces = [],
   name = 'spaces',
 }: SpaceWithNumberOfMonthsFieldArrayProps) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const {
     control,
     formState: { errors },
@@ -50,11 +52,15 @@ export const SpaceWithNumberOfMonthsFieldArray = ({
   };
   return (
     <div className="flex flex-col gap-4">
-      <Label>Space(s)</Label>
+      <Label>{tAgreementFlow('plugins.spaceWithMonths.spaces')}</Label>
       <div className="flex w-full justify-between items-center">
-        <span className="text-2 text-neutral-11 w-full">Contribution:</span>
+        <span className="text-2 text-neutral-11 w-full">
+          {tAgreementFlow('plugins.spaceWithMonths.contribution')}
+        </span>
         <span className="text-2 text-neutral-11 text-nowrap">
-          $11 per month per space
+          {tAgreementFlow(
+            'plugins.spaceWithMonths.contributionPerMonthPerSpace',
+          )}
         </span>
       </div>
       <div className="flex flex-col gap-4">
@@ -107,11 +113,11 @@ export const SpaceWithNumberOfMonthsFieldArray = ({
             colorVariant="error"
           >
             <MinusIcon />
-            Remove Space
+            {tAgreementFlow('plugins.spaceWithMonths.removeSpace')}
           </Button>
           <Button className="w-fit" onClick={handleAddField} variant="ghost">
             <PlusIcon />
-            Add space
+            {tAgreementFlow('plugins.spaceWithMonths.addSpace')}
           </Button>
         </div>
       </div>

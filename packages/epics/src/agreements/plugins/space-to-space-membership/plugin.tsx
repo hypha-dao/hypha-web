@@ -9,10 +9,10 @@ import {
   FormControl,
   FormLabel,
   FormMessage,
-  Label,
   RequirementMark,
 } from '@hypha-platform/ui';
 import { SpaceToSpaceMembershipSelector } from '../components/common/space-to-space-membership-selector';
+import { useTranslations } from 'next-intl';
 
 export interface SpaceToSpaceMembershipPluginProps {
   spaces?: Space[];
@@ -23,12 +23,14 @@ export const SpaceToSpaceMembershipPlugin = ({
   spaces,
   members,
 }: SpaceToSpaceMembershipPluginProps) => {
-  const { control, setValue } = useFormContext();
+  const tAgreementFlow = useTranslations('AgreementFlow');
+  const { control } = useFormContext();
 
   return (
     <div className="flex flex-col gap-5 w-full">
       <FormLabel className="text-2 text-neutral-11 w-full gap-1">
-        Space <RequirementMark className="text-2" />
+        {tAgreementFlow('plugins.spaceToSpaceMembership.space')}{' '}
+        <RequirementMark className="text-2" />
       </FormLabel>
       <FormField
         control={control}
@@ -50,7 +52,8 @@ export const SpaceToSpaceMembershipPlugin = ({
       />
       <Separator />
       <FormLabel className="text-2 text-neutral-11 w-full gap-1">
-        Delegation Rules <RequirementMark className="text-2" />
+        {tAgreementFlow('plugins.spaceToSpaceMembership.delegationRules')}{' '}
+        <RequirementMark className="text-2" />
       </FormLabel>
       <FormField
         control={control}
@@ -71,9 +74,9 @@ export const SpaceToSpaceMembershipPlugin = ({
         )}
       />
       <span className="text-neutral-11 text-2">
-        The Delegated Voting Member is the individual from your space who is
-        formally authorised to cast votes on behalf of your space within the
-        joining space.
+        {tAgreementFlow(
+          'plugins.spaceToSpaceMembership.delegatedVotingMemberDescription',
+        )}
       </span>
     </div>
   );

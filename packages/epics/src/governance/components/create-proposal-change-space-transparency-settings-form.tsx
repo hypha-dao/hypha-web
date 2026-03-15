@@ -10,14 +10,14 @@ import {
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Button, Form, Separator } from '@hypha-platform/ui';
+import { Button, Form } from '@hypha-platform/ui';
 import React from 'react';
-import { useRouter } from 'next/navigation';
 import { useConfig } from 'wagmi';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useScrollToErrors } from '../../hooks';
 import { TransparencyLevel } from '../../spaces/components/transparency-level';
 import { useSpaceDiscoverability } from '../../spaces/hooks/use-space-discoverability';
+import { useTranslations } from 'next-intl';
 
 type FormValues = z.infer<typeof schemaChangeSpaceTransparencySettings>;
 
@@ -36,7 +36,8 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
   web3SpaceId,
   plugin,
 }: CreateProposalChangeSpaceTransparencySettingsFormProps) => {
-  const router = useRouter();
+  const tSpaces = useTranslations('Spaces');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
@@ -47,13 +48,10 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
     isError,
     isPending,
     progress,
-    changeSpaceTransparencySettings: agreement,
   } = useChangeSpaceTransparencySettingsOrchestrator({
     authToken: jwt,
     config,
   });
-
-  const agreementSlug = agreement?.slug;
 
   const {
     discoverability,
@@ -115,8 +113,8 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
       message={
         isError ? (
           <div className="flex flex-col">
-            <div>Ouh Snap. There was an error</div>
-            <Button onClick={reset}>Reset</Button>
+            <div>{tSpaces('errorOhSnap')}</div>
+            <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (
           <div>{currentAction}</div>
@@ -137,16 +135,16 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
             }}
             successfulUrl={successfulUrl}
             backUrl={backUrl}
-            backLabel="Back to Settings"
+            backLabel={tSpaces('backToSettings')}
             closeUrl={successfulUrl}
             isLoading={isPending}
-            label="Space Transparency"
+            label={tAgreementFlow('labels.spaceTransparency')}
             progress={progress}
           />
           {plugin}
           <div className="flex justify-end w-full">
             <Button type="submit" disabled={isPending}>
-              Publish
+              {tAgreementFlow('buttons.publish')}
             </Button>
           </div>
         </form>

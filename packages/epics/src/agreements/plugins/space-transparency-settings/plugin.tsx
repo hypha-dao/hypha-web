@@ -5,15 +5,17 @@ import {
   SpaceActivityAccessField,
   TransparencyLevel,
 } from '@hypha-platform/epics';
-import { FormLabel, Label } from '@hypha-platform/ui';
+import { FormLabel } from '@hypha-platform/ui';
 import React from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
+import { useTranslations } from 'next-intl';
 
 export const SpaceTransparencySettingsPlugin = ({
   spaceSlug,
 }: {
   spaceSlug: string;
 }) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { setValue, control } = useFormContext();
 
   const spaceDiscoverability = useWatch({
@@ -31,16 +33,20 @@ export const SpaceTransparencySettingsPlugin = ({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <FormLabel className="text-2 w-full">Space Transparency</FormLabel>
+        <FormLabel className="text-2 w-full">
+          {tAgreementFlow('plugins.spaceTransparencySettings.title')}
+        </FormLabel>
         <p className="text-2 text-neutral-11">
-          Define the level of transparency you collectively want to apply to
-          your space. Please note that, regardless of the choice you make below,
-          only direct member can take action in the space.
+          {tAgreementFlow('plugins.spaceTransparencySettings.description')}
         </p>
       </div>
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-4">
-          <FormLabel className="text-2 w-full">Space Discoverability</FormLabel>
+          <FormLabel className="text-2 w-full">
+            {tAgreementFlow(
+              'plugins.spaceTransparencySettings.discoverability',
+            )}
+          </FormLabel>
           <SpaceDiscoverabilityField
             value={spaceDiscoverability as TransparencyLevel}
             onChange={(selected) => {
@@ -49,7 +55,9 @@ export const SpaceTransparencySettingsPlugin = ({
           />
         </div>
         <div className="flex flex-col gap-4">
-          <FormLabel className="text-2 w-full">Space Activity Access</FormLabel>
+          <FormLabel className="text-2 w-full">
+            {tAgreementFlow('plugins.spaceTransparencySettings.activityAccess')}
+          </FormLabel>
           <SpaceActivityAccessField
             value={spaceActivityAccess as TransparencyLevel}
             onChange={(selected) => {

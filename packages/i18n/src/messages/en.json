@@ -351,8 +351,8 @@
     "requestInvite": "Request Invite",
     "becomeMember": "Become member",
     "becomeMemberOrRequestInvite": "Become a member or request invite",
-    "inviteAlreadySubmitted": "You\u2019ve already submitted your invite request. Your proposal is now visible to space members for review. If needed, you\u2019ll be able to resubmit 24 hours after your last submission.",
-    "tokenRequirements": "You\u2019re not able to join just yet. Fulfil the token requirements to gain access.",
+    "inviteAlreadySubmitted": "You’ve already submitted your invite request. Your proposal is now visible to space members for review. If needed, you’ll be able to resubmit 24 hours after your last submission.",
+    "tokenRequirements": "You’re not able to join just yet. Fulfil the token requirements to gain access.",
     "exitSpace": "Exit Space",
     "couldNotExitSpace": "Could not exit space",
     "exitSpaceConfirmTitle": "Exit Space",
@@ -377,7 +377,7 @@
     "trialBannerSubtitle": "Contribute $11 per month in USDC or Hypha tokens to the Hypha Network to unlock full access for your Space and keep your progress going!",
     "activateNow": "Activate Now",
     "beforeExpiryBannerTitle": "Only {daysLeft} days left before your Hypha Network contribution expires!",
-    "beforeExpiryBannerSubtitle": "Don\u2019t lose access to your Space features! Renew now by contributing $11 per month in USDC or Hypha tokens to the Hypha Network.",
+    "beforeExpiryBannerSubtitle": "Don’t lose access to your Space features! Renew now by contributing $11 per month in USDC or Hypha tokens to the Hypha Network.",
     "renewNow": "Renew Now",
     "expiredBannerTitle": "Your Hypha Network contribution expired {daysAgo} days ago!",
     "expiredBannerSubtitle": "Reactivate now by contributing $11 per month in USDC or Hypha tokens to the Hypha Network and regain access to all your Space features.",
@@ -397,5 +397,235 @@
     "expiredToday": "today",
     "expiredDayAgo": "day ago",
     "expiredDaysAgo": "{count} days ago"
+  },
+  "AgreementFlow": {
+    "labels": {
+      "activateSpaces": "Activate Spaces",
+      "votingMethod": "Voting Method",
+      "entryMethod": "Entry Method",
+      "membershipExit": "Membership Exit",
+      "spaceToSpace": "Space to Space",
+      "issueNewToken": "Issue New Token",
+      "treasuryMinting": "Treasury Minting",
+      "buyHyphaTokensRewards": "Buy Hypha Tokens (Rewards)",
+      "spaceTransparency": "Space Transparency",
+      "collectiveAgreement": "Collective Agreement",
+      "contribution": "Contribution",
+      "expenses": "Expenses",
+      "funding": "Funding"
+    },
+    "buttons": {
+      "publish": "Publish"
+    },
+    "pageErrors": {
+      "loadSpaces": "Failed to load spaces. Please try again later."
+    },
+    "spaceConfiguration": {
+      "update": "Update",
+      "updating": "Updating..."
+    },
+    "activateSpacesForm": {
+      "insufficientFunds": {
+        "spaceWalletBalanceInsufficient": "Space wallet balance is insufficient to complete this transaction.",
+        "please": "Please",
+        "topUpWith": "top up your account with {token}",
+        "buyHyphaTokens": "buy Hypha tokens",
+        "toProceed": "to proceed."
+      }
+    },
+    "buyHyphaTokensForm": {
+      "insufficientFunds": {
+        "walletBalanceInsufficient": "Your wallet balance is insufficient to complete this transaction.",
+        "please": "Please",
+        "topUpWith": "top up your account with {token}",
+        "toProceed": "to proceed."
+      }
+    },
+    "issueNewTokenForm": {
+      "duplicateToken": "A token with the same name and symbol already exists in your space. Please modify either the name or symbol to proceed."
+    },
+    "createAgreementBaseFields": {
+      "agreementLabel": "Agreement",
+      "backToCreate": "Back to Create",
+      "formContextMissing": "Form context is missing!",
+      "delegate": "Delegate",
+      "proposalTitlePlaceholder": "Proposal title...",
+      "proposalMinimumVotingIconAlt": "Proposal minimum voting icon",
+      "autoExecution": "Auto-Execution",
+      "toVote": "{duration} to Vote",
+      "proposalContent": "Proposal Content",
+      "proposalContentPlaceholder": "Type your proposal content here..."
+    },
+    "plugins": {
+      "activateSpaces": {
+        "checkOut": "Check out",
+        "totalContribution": "Total Contribution:",
+        "payWith": "Pay with:",
+        "totalAmountIn": "Total amount in {token}:",
+        "paidBy": "Paid by",
+        "paidTo": "Paid to"
+      },
+      "buyHyphaTokens": {
+        "purchaseAmount": "Purchase Amount",
+        "receiveHyphaTokens": "Our space will receive {amount} HYPHA tokens (1 HYPHA = {price} USD)",
+        "hyphaSentTo": "HYPHA sent to",
+        "usdcPaidTo": "USDC paid to"
+      },
+      "quorumAndUnity": {
+        "title": "Voting Method",
+        "description": "Select a voting method template, or adjust Quorum and Unity values with the sliders.",
+        "votingPeriod": "Voting Period",
+        "autoExecutionWhenConditionsMet": "Auto-execution (when conditions are met)",
+        "autoExecutionDisabled": "Auto-execution is disabled when quorum is below 20% to protect treasury assets.",
+        "minimumVotingDuration": "Minimum Voting Duration",
+        "durationPlaceholder": "Duration",
+        "votingPower": "Voting Power",
+        "votingTokenAllocation": "Voting Token Allocation",
+        "cannotBothZero": "Quorum and unity cannot both be set to 0%",
+        "durations": {
+          "h6": "6 hours",
+          "h12": "12 hours",
+          "h24": "24 hours",
+          "d2": "2 days",
+          "d3": "3 days",
+          "d5": "5 days",
+          "d7": "7 days",
+          "d10": "10 days",
+          "d14": "14 days",
+          "d21": "21 days",
+          "d30": "30 days"
+        }
+      },
+      "recipient": {
+        "recipient": "Recipient",
+        "member": "Member",
+        "space": "Space",
+        "selectMemberPlaceholder": "Select member...",
+        "selectSpacePlaceholder": "Select space...",
+        "walletAddress": "Wallet Address",
+        "enterWalletAddress": "Enter wallet address",
+        "memoOptional": "Memo (Optional)",
+        "memoPlaceholder": "Add any relevant notes or details about this transaction"
+      },
+      "membershipExit": {
+        "noMembersFound": "No members found.",
+        "noMemberSpacesFound": "No member spaces found.",
+        "exitingMember": "Exiting Member"
+      },
+      "spaceToSpaceMembershipSelector": {
+        "findSpace": "Find Space",
+        "findMember": "Find Member",
+        "spaceToJoin": "Space to join",
+        "delegatedVotingMember": "Delegated Voting Member"
+      },
+      "tokenPayoutField": {
+        "amount": "Amount",
+        "selectToken": "Select a token",
+        "noTokensFound": "No tokens found",
+        "by": "by"
+      },
+      "spaceToSpaceMembership": {
+        "space": "Space",
+        "delegationRules": "Delegation Rules",
+        "delegatedVotingMemberDescription": "The Delegated Voting Member is the individual from your space who is formally authorised to cast votes on behalf of your space within the joining space."
+      },
+      "spaceTransparencySettings": {
+        "title": "Space Transparency",
+        "description": "Define the level of transparency you collectively want to apply to your space. Please note that, regardless of the choice you make below, only direct member can take action in the space.",
+        "discoverability": "Space Discoverability",
+        "activityAccess": "Space Activity Access"
+      },
+      "votingMethodSelector": {
+        "oneMemberOneVoteTitle": "1 Member 1 Vote",
+        "oneMemberOneVoteDescription": "Each member has an equal say in decisions, with no weighting by role, tokens, or stake, ensuring equality and shared power. Commonly used in community or ecosystem spaces.",
+        "oneVoiceOneVoteTitle": "1 Voice 1 Vote",
+        "oneVoiceOneVoteDescription": "Each vote is tied to earned voice tokens, reflecting contributions, reputation, and commitment, but decays with inactivity to encourage engagement. Commonly used in core teams or contributor groups.",
+        "oneTokenOneVoteTitle": "1 Token 1 Vote",
+        "oneTokenOneVoteDescription": "Voting power is proportional to the number of tokens held, aligning influence with stake. Commonly used in value flows, treasury, or investment spaces.",
+        "clickHere": "Click here",
+        "voiceTokenTooltipPrefix": "To select this voting method you first need to issue your Voice Token.",
+        "voiceTokenTooltipSuffix": "to create your Voice Token",
+        "tokenTooltipPrefix": "To select this voting method, you first need to issue a token.",
+        "tokenTooltipSuffix": "to create your token"
+      },
+      "entryMethod": {
+        "label": "Entry Method",
+        "openAccessTitle": "Open Access",
+        "openAccessDescription": "New members can join instantly. Participation is open to everyone and fully transparent.",
+        "inviteRequestTitle": "Invite Request",
+        "inviteRequestDescription": "New members can participate by requesting an invitation to join. Existing members vote on invite requests. Participation is only open to invited members but remains fully transparent to everyone.",
+        "tokenBasedTitle": "Token Based",
+        "tokenBasedDescription": "New members can join if they meet token requirements. Participation is only open to eligible members but remains fully transparent to everyone."
+      },
+      "entryMethodTokenField": {
+        "requiredMinTokenNumberOptional": "Required Min. Token Number (Optional)",
+        "typeAmount": "Type an amount",
+        "selectToken": "Select a token"
+      },
+      "transparency": {
+        "publicTitle": "Public",
+        "networkTitle": "Network",
+        "organisationTitle": "Organisation",
+        "spaceTitle": "Space",
+        "discoverabilityPublic": "Your space is publicly discoverable.",
+        "discoverabilityNetwork": "Your space is only discoverable by Hypha Network Members.",
+        "discoverabilityOrganisation": "Your space is only discoverable by members of your organisation.",
+        "discoverabilitySpace": "Your space is only discoverable by space members.",
+        "activityPublic": "Access to your space activity is not restricted and visible publicly.",
+        "activityNetwork": "Access to your spaces activity is restricted to Hypha Network members.",
+        "activityOrganisation": "Access to your space activity is restricted to members of your organisation.",
+        "activitySpace": "Access to your space activity is restricted to space members."
+      },
+      "mintTokens": {
+        "mintToSpaceTreasury": "Mint to Space Treasury",
+        "description": "Mint tokens into your space treasury to fund operations, distribute rewards, or provide liquidity.",
+        "selectToken": "Select Token",
+        "tokenSupply": "Token Supply",
+        "unlimitedSupply": "Unlimited Supply",
+        "issuanceToDate": "Issuance to Date",
+        "mintAmountLimit": "Mint Amount Limit",
+        "exceedsLimit": "The number of tokens requested exceeds the Mint Amount Limit. Please enter a value up to {limit}",
+        "noTokensPrefix": "Your space has not yet created a token,",
+        "clickHere": "click here",
+        "noTokensSuffix": "to first issue a token"
+      },
+      "spaceWithMonths": {
+        "spaces": "Space(s)",
+        "contribution": "Contribution:",
+        "contributionPerMonthPerSpace": "$11 per month per space",
+        "removeSpace": "Remove Space",
+        "addSpace": "Add space",
+        "selectSpace": "Select Space",
+        "selectSpacePlaceholder": "Select space...",
+        "findSpace": "Find Space",
+        "numberOfMonths": "Number of Months",
+        "typeAmount": "Type an amount",
+        "otherSpaces": "Other Spaces"
+      },
+      "tokenPayoutFieldArray": {
+        "paymentRequest": "Payment Request",
+        "enterAmountAndToken": "Please enter an amount and select a token.",
+        "add": "Add"
+      },
+      "paymentSchedule": {
+        "label": "Payment Schedule",
+        "immediately": "Immediately",
+        "futurePayment": "Future Payment",
+        "milestones": "Milestones",
+        "date": "Date",
+        "selectDate": "Select a date",
+        "add": "Add"
+      },
+      "milestoneField": {
+        "milestone": "Milestone {index}",
+        "percentageRequired": "Percentage is required",
+        "percentageMin": "Percentage must be at least 0",
+        "percentageMax": "Percentage must be at most 100",
+        "typePercentage": "Type a percentage"
+      }
+    },
+    "createActionForms": {
+      "defaultAgreement": "Agreement"
+    }
   }
 }

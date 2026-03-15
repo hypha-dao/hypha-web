@@ -12,6 +12,7 @@ import {
 import { DEFAULT_SPACE_AVATAR_IMAGE, Space } from '@hypha-platform/core/client';
 import { useFormContext } from 'react-hook-form';
 import { useFilterSpacesListWithDiscoverability } from '../../spaces/hooks/use-spaces-discoverability-batch';
+import { useTranslations } from 'next-intl';
 
 type SpaceWithMonthsValue = {
   spaceId: number;
@@ -35,6 +36,8 @@ export const SpaceWithNumberOfMonthsField = ({
   onChange,
   name,
 }: SpaceWithNumberOfMonthsFieldProps) => {
+  const tSpaces = useTranslations('Spaces');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const [selected, setSelected] = useState<Space | null>(null);
   const [months, setMonths] = useState<string>('');
 
@@ -93,7 +96,7 @@ export const SpaceWithNumberOfMonthsField = ({
     const result: SpaceOption[] = [];
     if (organisationOptions.length > 0) {
       result.push(
-        { value: COMBOBOX_TITLE, label: 'Organisation Spaces' },
+        { value: COMBOBOX_TITLE, label: tSpaces('organisationSpaces') },
         ...organisationOptions,
       );
     }
@@ -105,12 +108,15 @@ export const SpaceWithNumberOfMonthsField = ({
     }
     if (mySpacesOptions.length > 0) {
       result.push(
-        { value: COMBOBOX_TITLE, label: 'Other Spaces' },
+        {
+          value: COMBOBOX_TITLE,
+          label: tAgreementFlow('plugins.spaceWithMonths.otherSpaces'),
+        },
         ...mySpacesOptions,
       );
     }
     return result;
-  }, [filteredSpaces, filteredOrganisationSpaces]);
+  }, [filteredSpaces, filteredOrganisationSpaces, tAgreementFlow, tSpaces]);
 
   const handleSpaceChange = useCallback(
     (selectedId: string | null) => {
@@ -202,10 +208,14 @@ export const SpaceWithNumberOfMonthsField = ({
     <>
       <div className="flex flex-col gap-5 w-full">
         <div className="flex w-full justify-between items-center">
-          <span className="text-2 text-neutral-11 w-full">Select Space</span>
+          <span className="text-2 text-neutral-11 w-full">
+            {tAgreementFlow('plugins.spaceWithMonths.selectSpace')}
+          </span>
           <Combobox
             options={options}
-            placeholder="Select space..."
+            placeholder={tAgreementFlow(
+              'plugins.spaceWithMonths.selectSpacePlaceholder',
+            )}
             onChange={handleSpaceChange}
             renderOption={(option) => (
               <>
@@ -232,19 +242,19 @@ export const SpaceWithNumberOfMonthsField = ({
                   <span className="truncate">{option.label}</span>
                 </div>
               ) : (
-                'Find Space'
+                tAgreementFlow('plugins.spaceWithMonths.findSpace')
               )
             }
           />
         </div>
         <div className="flex w-full justify-between items-center">
           <span className="text-2 text-neutral-11 w-full">
-            Number of Months
+            {tAgreementFlow('plugins.spaceWithMonths.numberOfMonths')}
           </span>
           <Input
             type="text"
             inputMode="decimal"
-            placeholder="Type an amount"
+            placeholder={tAgreementFlow('plugins.spaceWithMonths.typeAmount')}
             value={months}
             onChange={(e) => handleMonthsChange(e.target.value)}
             min={0}

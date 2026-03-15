@@ -20,8 +20,11 @@ import { Button } from '@hypha-platform/ui';
 import { useRouter } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
 import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
+import { useTranslations } from 'next-intl';
 
 export default function SpaceConfiguration() {
+  const tSpaces = useTranslations('Spaces');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { person } = useMe();
   const { id: spaceSlug, lang } = useParams<{ id: string; lang: Locale }>();
   const { space, isLoading: isLoadingSpace } = useSpaceBySlug(spaceSlug);
@@ -95,8 +98,8 @@ export default function SpaceConfiguration() {
         message={
           isError ? (
             <div className="flex flex-col">
-              <div>Ouh Snap. There was an error</div>
-              <Button onClick={reset}>Reset</Button>
+              <div>{tSpaces('errorOhSnap')}</div>
+              <Button onClick={reset}>{tSpaces('reset')}</Button>
             </div>
           ) : (
             <div>{currentAction}</div>
@@ -104,18 +107,18 @@ export default function SpaceConfiguration() {
         }
       >
         <SpaceForm
-          submitLabel="Update"
-          submitLoadingLabel="Updating..."
+          submitLabel={tAgreementFlow('spaceConfiguration.update')}
+          submitLoadingLabel={tAgreementFlow('spaceConfiguration.updating')}
           isLoading={isBusy}
           closeUrl={closeUrl}
           backUrl={`${closeUrl}${PATH_SELECT_SETTINGS_ACTION}`}
-          backLabel="Back to Settings"
+          backLabel={tSpaces('backToSettings')}
           creator={{
             name: person?.name,
             surname: person?.surname,
           }}
           onSubmit={submitForm}
-          slugIncorrectMessage="A space with this link already exists. Please choose a different space name or unique link."
+          slugIncorrectMessage={tSpaces('slugAlreadyExistsLong')}
           values={{
             ...space,
             title: space?.title || '',

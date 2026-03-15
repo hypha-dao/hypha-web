@@ -12,11 +12,11 @@ import {
 import { z } from 'zod';
 import { Button, Form } from '@hypha-platform/ui';
 import React from 'react';
-import { useRouter } from 'next/navigation';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useConfig } from 'wagmi';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
+import { useTranslations } from 'next-intl';
 
 type FormValues = z.infer<typeof schemaCreateAgreementForm>;
 
@@ -38,9 +38,10 @@ export const CreateAgreementForm = ({
   closeUrl,
   spaceId,
   web3SpaceId,
-  label = 'Agreement',
+  label,
 }: CreateAgreementFormProps) => {
-  const router = useRouter();
+  const tSpaces = useTranslations('Spaces');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
@@ -92,8 +93,8 @@ export const CreateAgreementForm = ({
       message={
         isError ? (
           <div className="flex flex-col">
-            <div>Ouh Snap. There was an error</div>
-            <Button onClick={reset}>Reset</Button>
+            <div>{tSpaces('errorOhSnap')}</div>
+            <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (
           <div>{currentAction}</div>
@@ -117,11 +118,13 @@ export const CreateAgreementForm = ({
             closeUrl={closeUrl || successfulUrl}
             backUrl={backUrl}
             isLoading={false}
-            label={label}
+            label={
+              label ?? tAgreementFlow('createActionForms.defaultAgreement')
+            }
             progress={progress}
           />
           <div className="flex justify-end w-full">
-            <Button type="submit">Publish</Button>
+            <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>
           </div>
         </form>
       </Form>
