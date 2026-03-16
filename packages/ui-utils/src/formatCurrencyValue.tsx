@@ -1,6 +1,6 @@
 const DEFAULT_MIN_FRACTION_DIGITS = 2;
 const DEFAULT_MAX_FRACTION_DIGITS = 4;
-const MAX_DECIMAL_PLACES = 20;
+const SIGNIFICANT_DIGITS = 2;
 
 function getAdaptiveMaxFractionDigits(num: number): number {
   if (num === 0 || !Number.isFinite(num)) {
@@ -13,25 +13,11 @@ function getAdaptiveMaxFractionDigits(num: number): number {
     return DEFAULT_MAX_FRACTION_DIGITS;
   }
 
-  const expStr = num.toExponential();
-  const parts = expStr.split('e');
-  const mantissa = parts[0] ?? '';
-  const exp = parts[1] ?? '0';
-  const exponent = parseInt(exp, 10);
+  // Round to 2 significant digits: decimalPlaces = 2 - ceil(log10(|num|))
+  const exponent = Math.ceil(Math.log10(absNum));
+  const decimalPlaces = Math.max(0, SIGNIFICANT_DIGITS - exponent);
 
-  if (exponent >= 0) {
-    return DEFAULT_MAX_FRACTION_DIGITS;
-  }
-
-  const mantissaDecimals = mantissa.includes('.')
-    ? mantissa.split('.')[1]?.length ?? 0
-    : 0;
-  const decimalPlaces = Math.abs(exponent) + mantissaDecimals;
-
-  return Math.min(
-    Math.max(decimalPlaces, DEFAULT_MIN_FRACTION_DIGITS),
-    MAX_DECIMAL_PLACES,
-  );
+  return Math.max(decimalPlaces, DEFAULT_MIN_FRACTION_DIGITS);
 }
 
 export const formatCurrencyValue = (
