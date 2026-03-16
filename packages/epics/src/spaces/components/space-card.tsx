@@ -102,7 +102,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
           />
         </Skeleton>
       </CardHeader>
-      <CardContent className="flex flex-col flex-1 pt-5 relative">
+      <CardContent className="flex flex-col flex-1 pt-5 relative min-w-0">
         <div>
           <Avatar className="w-[64px] h-[64px] absolute top-[-54px]">
             <Skeleton width="64px" height="64px" loading={isLoading}>
@@ -110,10 +110,10 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
             </Skeleton>
           </Avatar>
         </div>
-        <div className="flex flex-col flex-1">
+        <div className="flex flex-col flex-1 min-w-0">
           <div className="mb-4 flex-shrink-0">
             <Skeleton loading={isLoading} width="40px" height="26px">
-              <CardTitle className="font-medium tracking-normal text-4">
+              <CardTitle className="font-medium tracking-normal text-4 truncate">
                 {title}
               </CardTitle>
             </Skeleton>
@@ -125,13 +125,16 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
               width="100%"
               height="26px"
             >
-              <div className="text-1 text-neutral-11 mb-4 line-clamp-2 min-h-[2.5rem]">
+              <div
+                className="text-1 text-neutral-11 mb-4 min-h-[2.5rem] truncate"
+                title={description}
+              >
                 {description}
               </div>
             </Skeleton>
           </div>
-          <div className="flex gap-2 text-xs items-center">
-            <div className="flex flex-col gap-y-2 gap-x-4 flex-wrap">
+          <div className="flex gap-2 text-xs items-center min-w-0">
+            <div className="flex flex-col gap-y-2 gap-x-4 flex-wrap min-w-0">
               <div className="flex flex-row gap-y-2 gap-x-4 flex-wrap">
                 <div className="flex flex-row">
                   <Skeleton loading={isLoading} height="16px" width="80px">
@@ -150,11 +153,11 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
                   </Skeleton>
                 </div>
               </div>
-              <div className="flex flex-row">
+              <div className="flex flex-row min-w-0">
                 {createdAt instanceof Date &&
                   !Number.isNaN(createdAt.getTime()) && (
                     <Skeleton loading={isLoading} height="16px" width="80px">
-                      <div className="text-neutral-11 text-1">
+                      <div className="text-neutral-11 text-1 truncate">
                         {tCommon('createdOn', {
                           date: format.dateTime(createdAt, {
                             year: 'numeric',

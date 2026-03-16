@@ -30,7 +30,7 @@ export function SpaceCardWithDiscoverability({
 
   return (
     <Link
-      className="flex flex-col flex-1 h-full"
+      className="flex flex-col flex-1 h-full min-w-0"
       href={getHref(space.slug as string)}
     >
       <SpaceCard
