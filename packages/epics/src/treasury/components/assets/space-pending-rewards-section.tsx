@@ -46,18 +46,15 @@ export const SpacePendingRewardsSection: FC<
   // Always use canonical HyphaToken for rewards (matches claim-rewards.ts script).
   // Assets API excludes HYPHA for spaces not in ALLOWED_SPACES, and space-specific
   // tokens from assets may point to wrong contract. Rewards are on main contract.
-  const rewardsHyphaTokenAddress = (
-    hyphaTokenAddress[8453] ?? HYPHA_TOKEN_ADDRESS
-  ) as `0x${string}`;
+  const rewardsHyphaTokenAddress = (hyphaTokenAddress[8453] ??
+    HYPHA_TOKEN_ADDRESS) as `0x${string}`;
 
   const hyphaTokenAddressForDisplay =
     filteredAssets?.find(
       (a) => a.symbol === 'HYPHA' || a.address === HYPHA_TOKEN_ADDRESS,
     )?.address ?? HYPHA_TOKEN_ADDRESS;
 
-  const { supply: hyphaTotalSupply } = useTokenSupply(
-    rewardsHyphaTokenAddress,
-  );
+  const { supply: hyphaTotalSupply } = useTokenSupply(rewardsHyphaTokenAddress);
 
   const {
     pendingRewards,
@@ -111,7 +108,9 @@ export const SpacePendingRewardsSection: FC<
           ? parsedRewardValue.toFixed(4)
           : parsedRewardValue.toFixed(18).replace(/\.?0+$/, '');
       console.log(
-        `[Space ${web3SpaceId}] Rewards: ${displayValue} HYPHA (raw: ${pendingRewards.toString()}) | executor: ${executor ?? 'loading'} | hyphaToken: ${rewardsHyphaTokenAddress}`,
+        `[Space ${web3SpaceId}] Rewards: ${displayValue} HYPHA (raw: ${pendingRewards.toString()}) | executor: ${
+          executor ?? 'loading'
+        } | hyphaToken: ${rewardsHyphaTokenAddress}`,
       );
     }
   }, [
