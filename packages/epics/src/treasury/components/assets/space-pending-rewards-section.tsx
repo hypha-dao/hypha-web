@@ -6,6 +6,7 @@ import {
   usePendingRewards,
   useSpaceDetailsWeb3Rpc,
 } from '@hypha-platform/core/client';
+import { hyphaTokenAddress } from '@hypha-platform/core/generated';
 import { AssetCard } from './asset-card';
 import { useAssetsSection, useTokenSupply } from '../../hooks';
 import { Button } from '@hypha-platform/ui';
@@ -17,7 +18,6 @@ import { useParams } from 'next/navigation';
 import { useSWRConfig } from 'swr';
 
 const HYPHA_TOKEN_ADDRESS = '0x8b93862835C36e9689E9bb1Ab21De3982e266CD3';
-const MIN_REWARD_CLAIM_VALUE = 0.01;
 
 const HYPHA_REWARDS_FALLBACK = {
   icon: '/placeholder/hypha-token-icon.svg',
@@ -43,13 +43,20 @@ export const SpacePendingRewardsSection: FC<
 
   const { filteredAssets, isLoading: isLoadingAssets } = useAssetsSection();
 
-  const hyphaTokenAddress =
+  // Always use canonical HyphaToken for rewards (matches claim-rewards.ts script).
+  // Assets API excludes HYPHA for spaces not in ALLOWED_SPACES, and space-specific
+  // tokens from assets may point to wrong contract. Rewards are on main contract.
+  const rewardsHyphaTokenAddress = (
+    hyphaTokenAddress[8453] ?? HYPHA_TOKEN_ADDRESS
+  ) as `0x${string}`;
+
+  const hyphaTokenAddressForDisplay =
     filteredAssets?.find(
       (a) => a.symbol === 'HYPHA' || a.address === HYPHA_TOKEN_ADDRESS,
     )?.address ?? HYPHA_TOKEN_ADDRESS;
 
   const { supply: hyphaTotalSupply } = useTokenSupply(
-    hyphaTokenAddress as `0x${string}`,
+    rewardsHyphaTokenAddress,
   );
 
   const {
@@ -61,13 +68,14 @@ export const SpacePendingRewardsSection: FC<
     updatePendingRewards,
   } = usePendingRewards({
     user: executor,
-    hyphaTokenAddress: hyphaTokenAddress as `0x${string}`,
+    hyphaTokenAddress: rewardsHyphaTokenAddress,
   });
 
   const [hasClaimed, setHasClaimed] = useState(false);
 
   const originalAsset = filteredAssets?.find(
-    (a) => a.address.toLowerCase() === hyphaTokenAddress.toLowerCase(),
+    (a) =>
+      a.address.toLowerCase() === hyphaTokenAddressForDisplay.toLowerCase(),
   );
 
   const parsedRewardValue =
@@ -77,7 +85,7 @@ export const SpacePendingRewardsSection: FC<
     ? { ...originalAsset, value: parsedRewardValue }
     : {
         ...HYPHA_REWARDS_FALLBACK,
-        address: hyphaTokenAddress,
+        address: hyphaTokenAddressForDisplay,
         value: parsedRewardValue,
       };
 
@@ -91,10 +99,28 @@ export const SpacePendingRewardsSection: FC<
     pendingRewards !== undefined ? { ...baseHyphaAsset, supply } : undefined;
 
   useEffect(() => {
-    if (parsedRewardValue >= MIN_REWARD_CLAIM_VALUE) {
+    if (parsedRewardValue > 0) {
       setHasClaimed(false);
     }
   }, [parsedRewardValue]);
+
+  useEffect(() => {
+    if (pendingRewards !== undefined) {
+      const displayValue =
+        parsedRewardValue >= 0.0001
+          ? parsedRewardValue.toFixed(4)
+          : parsedRewardValue.toFixed(18).replace(/\.?0+$/, '');
+      console.log(
+        `[Space ${web3SpaceId}] Rewards: ${displayValue} HYPHA (raw: ${pendingRewards.toString()}) | executor: ${executor ?? 'loading'} | hyphaToken: ${rewardsHyphaTokenAddress}`,
+      );
+    }
+  }, [
+    web3SpaceId,
+    pendingRewards,
+    parsedRewardValue,
+    executor,
+    rewardsHyphaTokenAddress,
+  ]);
 
   const updateSpaceAssets = useCallback(() => {
     if (spaceSlug) {
@@ -102,11 +128,9 @@ export const SpacePendingRewardsSection: FC<
     }
   }, [mutate, spaceSlug]);
 
+  const hasRewards = (pendingRewards ?? 0n) > 0n;
   const disableClaimButton =
-    hasClaimed ||
-    !(parsedRewardValue >= MIN_REWARD_CLAIM_VALUE) ||
-    isClaiming ||
-    pendingRewards === undefined;
+    hasClaimed || !hasRewards || isClaiming || pendingRewards === undefined;
 
   const canClaim = isAuthenticated && isMember;
 
@@ -140,8 +164,8 @@ export const SpacePendingRewardsSection: FC<
               ? 'Please sign in to claim rewards'
               : !isMember
               ? 'Only space members can claim rewards'
-              : disableClaimButton
-              ? 'The reward value must be greater than 0'
+              : !hasRewards
+              ? 'No rewards to claim'
               : ''
           }
           disabled={!canClaim || disableClaimButton}
@@ -165,8 +189,8 @@ export const SpacePendingRewardsSection: FC<
             <AssetCard
               {...(hyphaTokenAsset ?? {
                 ...HYPHA_REWARDS_FALLBACK,
-                address: hyphaTokenAddress,
-                value: 0,
+                address: hyphaTokenAddressForDisplay,
+                value: parsedRewardValue,
                 supply:
                   hyphaTotalSupply !== undefined
                     ? { total: hyphaTotalSupply }
