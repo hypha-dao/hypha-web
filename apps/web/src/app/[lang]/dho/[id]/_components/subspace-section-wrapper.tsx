@@ -1,9 +1,10 @@
 'use client';
 
-import type { Space } from '@hypha-platform/core/client';
+import { type Space, isSpaceArchived } from '@hypha-platform/core/client';
 import { SubspaceSection } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { useMembers } from '@web/hooks/use-members';
+import { useMemo } from 'react';
 
 interface SubspaceSectionWrapperProps {
   lang: Locale;
@@ -19,13 +20,20 @@ export const SubspaceSectionWrapper = ({
   currentSpaceId,
   currentSpaceWeb3Id,
   currentSpaceSlug,
-}: SubspaceSectionWrapperProps) => (
-  <SubspaceSection
-    spaces={spaces}
-    lang={lang}
-    currentSpaceId={currentSpaceId}
-    currentSpaceWeb3Id={currentSpaceWeb3Id}
-    currentSpaceSlug={currentSpaceSlug}
-    useMembers={useMembers}
-  />
-);
+}: SubspaceSectionWrapperProps) => {
+  const nonArchivedSpaces = useMemo(
+    () => spaces.filter((s) => !isSpaceArchived(s)),
+    [spaces],
+  );
+
+  return (
+    <SubspaceSection
+      spaces={nonArchivedSpaces}
+      lang={lang}
+      currentSpaceId={currentSpaceId}
+      currentSpaceWeb3Id={currentSpaceWeb3Id}
+      currentSpaceSlug={currentSpaceSlug}
+      useMembers={useMembers}
+    />
+  );
+};
