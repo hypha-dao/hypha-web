@@ -24,7 +24,7 @@ import { Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { RecipientField } from '../../agreements';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useFundWallet } from '../../treasury';
 import { z } from 'zod';
 import { isAddress } from 'ethers';
@@ -46,7 +46,11 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
   const tActions = useTranslations('ProfileActions');
   const tAgreementFlow = useTranslations('AgreementFlow');
   const { person, isLoading: isPersonLoading } = useMe();
-  const { lang } = useParams();
+  const router = useRouter();
+  const { lang, personSlug } = useParams<{
+    lang: string;
+    personSlug: string;
+  }>();
   const { fundWallet } = useFundWallet({
     address: person?.address as `0x${string}`,
   });
@@ -125,6 +129,9 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
     };
   }, [baseResolver, translateActivateSpacesError]);
 
+  const closePanelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const form = useForm<FormValues>({
     resolver,
     mode: 'onChange',
@@ -169,6 +176,18 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
     });
 
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const closePanelUrl = useMemo(
+    () => `/${lang}/profile/${personSlug}`,
+    [lang, personSlug],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (closePanelTimeoutRef.current) {
+        clearTimeout(closePanelTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const buyerMember = useMemo(() => {
     return !isPersonLoading && person ? [person] : [];
@@ -180,8 +199,11 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
       const tx = await submitActivation();
       console.log('Activation successful:', tx);
       setShowSuccessMessage(true);
-      setTimeout(() => {
-        setShowSuccessMessage(false);
+      if (closePanelTimeoutRef.current) {
+        clearTimeout(closePanelTimeoutRef.current);
+      }
+      closePanelTimeoutRef.current = setTimeout(() => {
+        router.push(closePanelUrl);
       }, 3000);
       form.reset();
     } catch (error) {
