@@ -84,6 +84,7 @@ export function MyFilteredSpaces({
         spaces={displayedSpaces}
         showLoadMore={showLoadMore}
         showExitButton={true}
+        fromParam="from=my-spaces"
       />
     </div>
   );

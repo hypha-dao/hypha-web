@@ -9,14 +9,20 @@ type SpaceCardContainerProps = {
   lang: Locale;
   spaces: Space[];
   showExitButton?: boolean;
+  /** Query string for breadcrumb origin (e.g. "from=network" or "from=profile&profileSlug=xxx") */
+  fromParam?: string;
 };
 
 export const SpaceCardContainer = ({
   lang,
   spaces,
   showExitButton,
+  fromParam,
 }: SpaceCardContainerProps) => {
-  const getHref = (slug: string) => getDhoPathAgreements(lang, slug);
+  const getHref = (slug: string) => {
+    const baseUrl = getDhoPathAgreements(lang, slug);
+    return fromParam ? `${baseUrl}?${fromParam}` : baseUrl;
+  };
 
   return (
     <div

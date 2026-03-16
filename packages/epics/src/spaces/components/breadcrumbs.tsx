@@ -39,20 +39,22 @@ export function SpaceBreadcrumb({
 export const SpaceBreadcrumbItem = ({
   breadcrumb,
   lang,
+  fromQuery,
 }: {
   breadcrumb: SpaceBreadcrumb;
   lang?: string;
+  /** Query string to append for breadcrumb origin (e.g. "from=network") */
+  fromQuery?: string;
 }) => {
+  const baseHref = `${lang ? `/${lang}` : ''}/dho/${breadcrumb.slug}/agreements`;
+  const href = fromQuery ? `${baseHref}?${fromQuery}` : baseHref;
   return (
     <Fragment key={breadcrumb.slug}>
       <BreadcrumbSeparator>
         <ChevronRightIcon width={16} height={16} />
       </BreadcrumbSeparator>
       <BreadcrumbItem>
-        <BreadcrumbLink
-          href={`${lang ? `/${lang}` : ''}/dho/${breadcrumb.slug}/agreements`}
-          className="flex items-center"
-        >
+        <BreadcrumbLink href={href} className="flex items-center">
           {breadcrumb.title}
         </BreadcrumbLink>
       </BreadcrumbItem>

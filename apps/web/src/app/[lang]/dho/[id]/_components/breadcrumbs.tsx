@@ -1,9 +1,9 @@
 import { findParentSpaceById } from '@hypha-platform/core/server';
-import { SpaceBreadcrumb, SpaceBreadcrumbItem } from '@hypha-platform/epics';
 import { db } from '@hypha-platform/storage-postgres';
 import { Locale } from '@hypha-platform/i18n';
-import { getTranslations } from 'next-intl/server';
 import { Fragment } from 'react';
+import { BreadcrumbsRootSelector } from './breadcrumbs-root-selector';
+import { BreadcrumbSpaceItem } from './breadcrumb-space-item';
 
 async function RecursiveBreadcrumbItem({
   spaceId,
@@ -16,7 +16,6 @@ async function RecursiveBreadcrumbItem({
   depth?: number;
   maxDepth?: number;
 }) {
-  console.debug('RecursiveBreadcrumbItem', { spaceId, depth, maxDepth });
   const space = await findParentSpaceById({ id: spaceId }, { db });
   if (!space || depth > maxDepth) return null;
 
@@ -30,7 +29,7 @@ async function RecursiveBreadcrumbItem({
           maxDepth={maxDepth}
         />
       )}
-      <SpaceBreadcrumbItem
+      <BreadcrumbSpaceItem
         lang={lang}
         breadcrumb={{ slug: space.slug, title: space.title }}
       />
@@ -45,14 +44,9 @@ export async function Breadcrumbs({
   spaceId: number;
   lang: Locale;
 }) {
-  const tNavigation = await getTranslations('Navigation');
-
   return (
-    <SpaceBreadcrumb
-      rootHref={`/${lang}/my-spaces`}
-      rootLabel={tNavigation('mySpaces')}
-    >
+    <BreadcrumbsRootSelector>
       <RecursiveBreadcrumbItem spaceId={spaceId} lang={lang} />
-    </SpaceBreadcrumb>
+    </BreadcrumbsRootSelector>
   );
 }
