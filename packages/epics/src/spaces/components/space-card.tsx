@@ -125,7 +125,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
               width="100%"
               height="26px"
             >
-              <div className="text-1 text-neutral-11 mb-4 line-clamp-2">
+              <div className="text-1 text-neutral-11 mb-4 line-clamp-2 min-h-[2.5rem]">
                 {description}
               </div>
             </Skeleton>
