@@ -7,6 +7,7 @@ When the user has not specified a role, select the best-matching one based on th
 | Role | File | Use when |
 |---|---|---|
 | **i18n Engineer** | [roles/i18n-engineer.md](roles/i18n-engineer.md) | Translations, locale routing, `next-intl` wiring, message files, adding languages, i18n middleware |
+| **Senior Product Owner** | [roles/senior-product-owner.base.md](roles/senior-product-owner.base.md) | Product strategy, backlog management, user stories, prioritization, stakeholder alignment, roadmaps, OKRs |
 
 ## How to activate
 
