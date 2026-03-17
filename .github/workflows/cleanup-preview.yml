@@ -3,13 +3,49 @@ on:
   pull_request:
     types: [closed]
 
+permissions:
+  contents: read
+
 jobs:
   delete-preview:
     runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
+      - name: Get branch name
+        id: branch-name
+        uses: tj-actions/branch-names@v8
+
+      - name: Check if Neon Branch Exists
+        id: check-branch
+        env:
+          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          BRANCH: preview/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
+        run: |
+          set -euo pipefail
+          response="$(
+            curl -sS --fail \
+              -H "Accept: application/json" \
+              -H "Authorization: Bearer ${NEON_API_KEY}" \
+              "https://console.neon.tech/api/v2/projects/${NEON_PROJECT_ID}/branches?search=${BRANCH}"
+          )"
+
+          # Preserve real API/parsing errors while treating missing branches as a benign skip.
+          if ! echo "${response}" | jq -e '.branches' >/dev/null; then
+            echo "::error::Unexpected Neon API response while checking branch existence."
+            exit 1
+          fi
+
+          if echo "${response}" | jq -e --arg branch "${BRANCH}" '.branches[]? | select(.name == $branch)' >/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Branch ${BRANCH} does not exist; skipping deletion."
+          fi
+
       - name: Delete Neon Branch
+        if: steps.check-branch.outputs.exists == 'true'
         uses: neondatabase/delete-branch-action@v3
         with:
           project_id: ${{ secrets.NEON_PROJECT_ID }}
-          branch: preview/pr-${{ github.event.number }}-${{ github.event.pull_request.head.ref }}
+          branch: preview/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
           api_key: ${{ secrets.NEON_API_KEY }}
