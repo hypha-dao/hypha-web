@@ -1,6 +1,6 @@
-import { getSpaceBySlug } from '@hypha-platform/core/server';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
+import { getSpaceBySlug } from '@hypha-platform/core/server';
 import { z } from 'zod';
 
 export const runtime = 'nodejs';
@@ -86,11 +86,23 @@ function createMcpServer(): McpServer {
           description: space.description ?? null,
           parentId: space.parentId ?? null,
           web3SpaceId: space.web3SpaceId ?? null,
-          memberCount: space.memberCount ?? 0,
-          documentCount: space.documentCount ?? 0,
-          subspaceCount: space.subspaces?.length ?? 0,
-          createdAt: space.createdAt.toISOString(),
-          updatedAt: space.updatedAt.toISOString(),
+          memberCount:
+            typeof space.memberCount === 'number'
+              ? space.memberCount
+              : Array.isArray(space.members)
+              ? space.members.length
+              : 0,
+          documentCount:
+            typeof space.documentCount === 'number'
+              ? space.documentCount
+              : Array.isArray(space.documents)
+              ? space.documents.length
+              : 0,
+          subspaceCount: Array.isArray(space.subspaces)
+            ? space.subspaces.length
+            : 0,
+          createdAt: new Date(space.createdAt).toISOString(),
+          updatedAt: new Date(space.updatedAt).toISOString(),
         },
       };
 
@@ -144,6 +156,20 @@ export async function POST(request: Request): Promise<Response> {
 }
 
 export async function GET(request: Request): Promise<Response> {
+  const isLikelyBrowserNavigation =
+    request.headers.get('mcp-protocol-version') === null &&
+    (request.headers.get('accept')?.includes('text/html') ?? false);
+
+  if (isLikelyBrowserNavigation) {
+    return Response.json({
+      ok: true,
+      message:
+        'This is an MCP endpoint. Use an MCP client (for example Cursor), not a browser tab navigation.',
+      endpoint: '/mcp',
+      methods: ['POST', 'GET', 'DELETE'],
+    });
+  }
+
   return handleMcpRequest(request);
 }
 
