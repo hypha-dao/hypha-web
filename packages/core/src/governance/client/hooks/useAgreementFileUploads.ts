@@ -71,11 +71,14 @@ export const useAgreementFileUploads = (
                   typeof item === 'string'
                     ? item
                     : 'url' in item
-                      ? {
-                          name: 'name' in item && typeof item.name === 'string' ? item.name : '',
-                          url: String(item.url),
-                        }
-                      : { name: '', url: '' },
+                    ? {
+                        name:
+                          'name' in item && typeof item.name === 'string'
+                            ? item.name
+                            : '',
+                        url: String(item.url),
+                      }
+                    : { name: '', url: '' },
                 ) as (string | Attachment)[];
               } else {
                 const fileArray = fileOrFiles.filter(

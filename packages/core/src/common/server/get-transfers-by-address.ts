@@ -45,15 +45,12 @@ export async function getTransfersByAddress(
     withMetadata: true,
   });
 
-  const allTransfers = [
-    ...fromTransfers.transfers,
-    ...toTransfers.transfers,
-  ];
+  const allTransfers = [...fromTransfers.transfers, ...toTransfers.transfers];
 
   const transfersWithData = await Promise.all(
     allTransfers.map(async (transfer) => {
-    const blockNumber = parseInt(transfer.blockNum, 16);
-    const timestamp = Date.parse(transfer.metadata.blockTimestamp) || 0;
+      const blockNumber = parseInt(transfer.blockNum, 16);
+      const timestamp = Date.parse(transfer.metadata.blockTimestamp) || 0;
 
       const tokenMetadata = transfer.rawContract.address
         ? await alchemy.core.getTokenMetadata(transfer.rawContract.address)
