@@ -144,6 +144,10 @@ contract RegularSpaceToken is
 
   function mint(address to, uint256 amount) public virtual {
     require(msg.sender == executor, 'Only executor can mint');
+    _mintWithSupplyChecks(to, amount);
+  }
+
+  function _mintWithSupplyChecks(address to, uint256 amount) internal virtual {
     require(!archived, 'Token is archived');
     // Check against maximum supply
     require(
@@ -187,9 +191,10 @@ contract RegularSpaceToken is
 
     // If executor is transferring and auto-minting is enabled, ensure they have enough balance, minting if necessary
     if (sender == executor && autoMinting) {
-      if (balanceOf(sender) < amount) {
-        uint256 amountToMint = amount - balanceOf(sender);
-        mint(sender, amountToMint);
+      uint256 senderBalance = balanceOf(sender);
+      if (senderBalance < amount) {
+        uint256 amountToMint = amount - senderBalance;
+        _mintWithSupplyChecks(sender, amountToMint);
       }
     }
 
@@ -234,9 +239,10 @@ contract RegularSpaceToken is
 
     // If executor is the one being transferred from and auto-minting is enabled, ensure they have enough balance, minting if necessary
     if (from == executor && autoMinting) {
-      if (balanceOf(from) < amount) {
-        uint256 amountToMint = amount - balanceOf(from);
-        mint(from, amountToMint);
+      uint256 fromBalance = balanceOf(from);
+      if (fromBalance < amount) {
+        uint256 amountToMint = amount - fromBalance;
+        _mintWithSupplyChecks(from, amountToMint);
       }
     }
 
