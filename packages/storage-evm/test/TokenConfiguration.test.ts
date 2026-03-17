@@ -1203,6 +1203,82 @@ describe('Token Configuration Tests', function () {
       expect(await token.decayPercentage()).to.equal(100);
       expect(await token.decayRate()).to.equal(3600);
     });
+
+    describe('Decay parameter updates', function () {
+      async function deployDecayingTokenForConfigTests() {
+        const tx = await decayingTokenFactory
+          .connect(executorSigner)
+          .deployDecayingToken(
+            spaceId,
+            'Decaying Config Update Token',
+            'DCUT',
+            ethers.parseEther('5000'),
+            true,
+            true,
+            false,
+            0,
+            ethers.ZeroAddress,
+            false,
+            false,
+            [],
+            [],
+            100, // 1%
+            3600, // 1 hour
+          );
+
+        const receipt = await tx.wait();
+        const tokenDeployedEvent = receipt?.logs
+          .map((log: any) => {
+            try {
+              return decayingTokenFactory.interface.parseLog(log);
+            } catch {
+              return null;
+            }
+          })
+          .find((event: any) => event && event.name === 'TokenDeployed');
+        const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+
+        return ethers.getContractAt('DecayingSpaceToken', tokenAddress);
+      }
+
+      it('Should allow executor to update decay percentage and interval', async function () {
+        const token = await deployDecayingTokenForConfigTests();
+
+        await expect(token.connect(executorSigner).setDecayPercentage(250))
+          .to.emit(token, 'DecayPercentageUpdated')
+          .withArgs(100, 250);
+
+        await expect(token.connect(executorSigner).setDecayInterval(7200))
+          .to.emit(token, 'DecayIntervalUpdated')
+          .withArgs(3600, 7200);
+
+        expect(await token.decayPercentage()).to.equal(250);
+        expect(await token.decayRate()).to.equal(7200);
+      });
+
+      it('Should reject decay parameter updates from non-executor', async function () {
+        const token = await deployDecayingTokenForConfigTests();
+
+        await expect(token.connect(alice).setDecayPercentage(250)).to.be.revertedWith(
+          'Only executor can update decay percentage',
+        );
+        await expect(token.connect(alice).setDecayInterval(7200)).to.be.revertedWith(
+          'Only executor can update decay interval',
+        );
+      });
+
+      it('Should validate new decay parameters', async function () {
+        const token = await deployDecayingTokenForConfigTests();
+
+        await expect(
+          token.connect(executorSigner).setDecayPercentage(10001),
+        ).to.be.revertedWith(
+          'DecayingSpaceToken: decay percentage cannot exceed 100%',
+        );
+        await expect(token.connect(executorSigner).setDecayInterval(0)).to.be
+          .revertedWith('DecayingSpaceToken: decay interval must be positive');
+      });
+    });
   });
 
   describe('8. Ownership Token Configuration', function () {

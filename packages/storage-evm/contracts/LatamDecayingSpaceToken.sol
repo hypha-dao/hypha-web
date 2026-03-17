@@ -9,7 +9,6 @@ import './DecayingSpaceToken.sol';
  */
 contract LatamDecayingSpaceToken is DecayingSpaceToken {
   event DecayRateUpdated(uint256 oldRate, uint256 newRate);
-  event DecayPercentageUpdated(uint256 oldPercentage, uint256 newPercentage);
 
   /**
    * @dev Set the decay rate (interval in seconds). Set to 0 to disable decay.
@@ -30,7 +29,9 @@ contract LatamDecayingSpaceToken is DecayingSpaceToken {
    * @dev Set the decay percentage
    * @param _decayPercentage New decay percentage in basis points (0-10000)
    */
-  function setDecayPercentage(uint256 _decayPercentage) external {
+  function setDecayPercentage(
+    uint256 _decayPercentage
+  ) external override {
     require(
       msg.sender == executor || msg.sender == owner(),
       'Only executor or owner can update decay percentage'

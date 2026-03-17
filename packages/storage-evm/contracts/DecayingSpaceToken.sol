@@ -27,6 +27,11 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
     uint256 newBalance,
     uint256 decayAmount
   );
+  event DecayPercentageUpdated(
+    uint256 oldDecayPercentage,
+    uint256 newDecayPercentage
+  );
+  event DecayIntervalUpdated(uint256 oldDecayInterval, uint256 newDecayInterval);
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -169,6 +174,43 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
 
     lastApplied[account] = block.timestamp;
     _updateTokenHolderStatus(account);
+  }
+
+  /**
+   * @dev Update decay percentage in basis points (0-10000)
+   * @param _decayPercentage New decay percentage
+   */
+  function setDecayPercentage(uint256 _decayPercentage) external virtual {
+    require(
+      msg.sender == executor,
+      'Only executor can update decay percentage'
+    );
+    require(
+      _decayPercentage <= 10000,
+      'DecayingSpaceToken: decay percentage cannot exceed 100%'
+    );
+
+    uint256 oldDecayPercentage = decayPercentage;
+    decayPercentage = _decayPercentage;
+
+    emit DecayPercentageUpdated(oldDecayPercentage, _decayPercentage);
+  }
+
+  /**
+   * @dev Update decay interval in seconds
+   * @param _decayInterval New decay interval
+   */
+  function setDecayInterval(uint256 _decayInterval) external virtual {
+    require(msg.sender == executor, 'Only executor can update decay interval');
+    require(
+      _decayInterval > 0,
+      'DecayingSpaceToken: decay interval must be positive'
+    );
+
+    uint256 oldDecayInterval = decayRate;
+    decayRate = _decayInterval;
+
+    emit DecayIntervalUpdated(oldDecayInterval, _decayInterval);
   }
 
   /**
