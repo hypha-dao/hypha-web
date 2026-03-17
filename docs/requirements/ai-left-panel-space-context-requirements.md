@@ -26,6 +26,7 @@ The assistant should generate useful new signals from:
 
 - proposals recorded in the current space
 - documents attached to proposals
+- documents uploaded directly in the left AI-panel
 - conversations held in that space
 
 ## 3. Current State (Prototype Findings)
