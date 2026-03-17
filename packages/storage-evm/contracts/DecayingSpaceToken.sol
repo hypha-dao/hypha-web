@@ -341,4 +341,49 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
     archived = _archived;
     emit ArchivedStatusUpdated(_archived);
   }
+
+  function _deliverPurchasedTokens(
+    address recipient,
+    uint256 tokenAmount
+  ) internal virtual override {
+    if (lastApplied[recipient] == 0) {
+      lastApplied[recipient] = block.timestamp;
+    } else {
+      applyDecay(recipient);
+    }
+    _addTokenHolder(recipient);
+
+    applyDecay(executor);
+
+    uint256 treasuryBalance = super.balanceOf(executor);
+    uint256 fromTreasury = treasuryBalance < tokenAmount
+      ? treasuryBalance
+      : tokenAmount;
+
+    if (fromTreasury > 0) {
+      _transfer(executor, recipient, fromTreasury);
+    }
+
+    uint256 toMint = tokenAmount - fromTreasury;
+    if (toMint > 0) {
+      require(
+        maxSupply == 0 || totalSupply() + toMint <= maxSupply,
+        'Exceeds max supply'
+      );
+      _mintPurchasedTokens(recipient, toMint);
+    }
+  }
+
+  function _mintPurchasedTokens(
+    address recipient,
+    uint256 amount
+  ) internal virtual override {
+    if (lastApplied[recipient] == 0) {
+      lastApplied[recipient] = block.timestamp;
+    } else {
+      applyDecay(recipient);
+    }
+    _addTokenHolder(recipient);
+    _mint(recipient, amount);
+  }
 }
