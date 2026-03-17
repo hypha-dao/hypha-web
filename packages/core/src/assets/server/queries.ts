@@ -1,4 +1,4 @@
-import { asc, eq, sql, and } from 'drizzle-orm';
+import { asc, eq, sql } from 'drizzle-orm';
 import { documents, tokens } from '@hypha-platform/storage-postgres';
 import { DbConfig } from '@hypha-platform/core/server';
 

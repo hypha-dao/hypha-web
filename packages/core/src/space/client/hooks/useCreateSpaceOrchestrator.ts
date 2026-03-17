@@ -108,6 +108,7 @@ export const useCreateSpaceOrchestrator = ({
   authToken,
   config,
 }: UseCreateSpaceOrchestratorInput) => {
+  void config;
   const { createEvent } = useCreateEvent({ authToken });
   const { person } = useMe();
   const web2 = useSpaceMutationsWeb2Rsc(authToken);
@@ -140,16 +141,6 @@ export const useCreateSpaceOrchestrator = ({
     [currentAction],
   );
 
-  const errorTask = useCallback(
-    (taskName: TaskName, error: string) => {
-      if (currentAction === taskActionDescriptions[taskName]) {
-        setCurrentAction(undefined);
-      }
-      dispatch({ type: 'SET_ERROR', taskName, message: error });
-    },
-    [currentAction],
-  );
-
   const resetTasks = useCallback(() => {
     dispatch({ type: 'RESET' });
   }, []);
@@ -157,7 +148,13 @@ export const useCreateSpaceOrchestrator = ({
   const { trigger: createSpace } = useSWRMutation(
     'createSpaceOrchestration',
     async (_, { arg }: { arg: z.infer<typeof schemaCreateSpace> }) => {
-      const web3SpaceId = (arg as any).web3SpaceId;
+      type CreateSpaceArg = z.infer<typeof schemaCreateSpace> & {
+        web3SpaceId?: number;
+        logoUrl?: string | File;
+        leadImage?: string | File;
+        flags?: string[];
+      };
+      const input = arg as CreateSpaceArg;
       let web3SpaceIdResult: number | undefined = undefined;
       let web3Executor: string | undefined = undefined;
       let web2SpaceId: number | undefined = undefined;
@@ -167,8 +164,7 @@ export const useCreateSpaceOrchestrator = ({
       } = {};
 
       try {
-        const logoUrl = (arg as any).logoUrl;
-        const leadImage = (arg as any).leadImage;
+        const { logoUrl, leadImage } = input;
 
         if (logoUrl || leadImage) {
           startTask('UPLOAD_FILES');
@@ -208,10 +204,9 @@ export const useCreateSpaceOrchestrator = ({
 
         startTask('CREATE_WEB3_SPACE');
 
-        const flags = (arg as any).flags ?? [];
+        const flags = input.flags ?? [];
         const isSandbox = flags.includes('sandbox');
         const isDemo = flags.includes('demo');
-        const isLive = !isDemo && !isSandbox;
 
         let discoverability: number;
         if (isSandbox) {
@@ -253,7 +248,7 @@ export const useCreateSpaceOrchestrator = ({
 
         startTask('CREATE_WEB2_SPACE');
         const inputCreateSpaceWeb2 = schemaCreateSpaceWeb2.parse({
-          ...arg,
+          ...input,
           web3SpaceId: web3SpaceIdResult,
           address: web3Executor,
         });

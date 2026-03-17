@@ -8,7 +8,6 @@ import {
 } from '../../validation';
 import { z } from 'zod';
 import { Config } from '@wagmi/core';
-import { Space } from '../../../space';
 import { useAgreementMutationsWeb2Rsc } from './useAgreementMutations.web2.rsc';
 import { useMembershipExitWeb3Rpc } from './useMembershipExitMutations.web.rpc';
 import { useAgreementFileUploads } from './useAgreementFileUploads';

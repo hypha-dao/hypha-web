@@ -3,7 +3,7 @@ import type { Middleware, Handler, HandlerContext } from './types';
 
 export function newHandlerWithMiddleware<
   Params extends Record<string, string>,
-  Y = {},
+  Y = unknown,
 >(middlewares: Middleware[], callback: Handler<Params, Y>): Handler<Params, Y> {
   return async (req: NextRequest, context: HandlerContext<Params, Y>) => {
     for (const middleware of middlewares) {

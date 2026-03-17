@@ -24,7 +24,7 @@ export type HandlerContext<Params extends Record<string, string>, T> = {
  * @param request Incoming request
  * @param context Context to get URI params or other predefined data
  */
-export type Handler<T extends Record<string, string>, Y = {}> = (
+export type Handler<T extends Record<string, string>, Y = unknown> = (
   request: NextRequest,
   context: HandlerContext<T, Y>,
 ) => Promise<NextResponse>;

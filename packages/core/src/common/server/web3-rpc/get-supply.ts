@@ -44,9 +44,10 @@ export async function getSupply(
     return {
       totalSupply: totalSupply,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     throw new Error(
-      `Failed to fetch supply for token ${address}: ${error.message}`,
+      `Failed to fetch supply for token ${address}: ${message}`,
     );
   }
 }

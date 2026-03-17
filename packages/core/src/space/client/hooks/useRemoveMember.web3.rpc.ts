@@ -18,7 +18,7 @@ export const useRemoveMemberWeb3Rpc = () => {
     isMutating: isRemovingMember,
     data: removeMemberHash,
     error: errorRemoveMember,
-  } = useSWRMutation<`0x${string}`, any, string[], RemoveMemberArgs>(
+  } = useSWRMutation<`0x${string}`, unknown, string[], RemoveMemberArgs>(
     ['removeMemberWeb3'],
     async (_key, { arg }) => {
       if (!client) throw new Error('Smart wallet client not available');

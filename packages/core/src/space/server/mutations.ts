@@ -93,7 +93,7 @@ export const deleteSpaceBySlug = async (
       .returning();
 
     return result.length > 0;
-  } catch (error) {
+  } catch {
     // Silent failure with return value
     return false;
   }

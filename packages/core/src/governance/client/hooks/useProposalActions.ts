@@ -7,6 +7,8 @@ import {
 } from '@hypha-platform/core/generated';
 import { decodeFunctionData } from 'viem';
 
+type ProposalTx = { data: `0x${string}` };
+
 export const useProposalActions = () => {
   const fetchProposalActions = useCallback(async (proposalId: number) => {
     try {
@@ -16,7 +18,7 @@ export const useProposalActions = () => {
       const transactions = data[9];
       const actions: string[] = [];
 
-      (transactions as any[]).forEach((tx) => {
+      (transactions as ProposalTx[]).forEach((tx) => {
         try {
           const decodedRegular = decodeFunctionData({
             abi: regularTokenFactoryAbi,
@@ -26,7 +28,9 @@ export const useProposalActions = () => {
             actions.push('deployToken');
             return;
           }
-        } catch {}
+        } catch (error) {
+          void error;
+        }
 
         try {
           const decodedOwnership = decodeFunctionData({
@@ -37,7 +41,9 @@ export const useProposalActions = () => {
             actions.push('deployOwnershipToken');
             return;
           }
-        } catch {}
+        } catch (error) {
+          void error;
+        }
 
         try {
           const decodedDecaying = decodeFunctionData({
@@ -48,7 +54,9 @@ export const useProposalActions = () => {
             actions.push('deployDecayingToken');
             return;
           }
-        } catch {}
+        } catch (error) {
+          void error;
+        }
       });
 
       return actions;

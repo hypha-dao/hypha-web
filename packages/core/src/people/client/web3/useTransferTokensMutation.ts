@@ -88,7 +88,7 @@ export const useTransferTokensMutation = ({
       if (arg.memo && authToken) {
         try {
           await Promise.all(
-            transactionHashes.map(({ token, txHash }) =>
+            transactionHashes.map(({ txHash }) =>
               createTransferMutation({
                 transactionHash: txHash,
                 memo: arg.memo!,
