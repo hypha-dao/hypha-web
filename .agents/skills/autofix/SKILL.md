@@ -184,11 +184,12 @@ If all deferred (no commit): Skip this step.
 
 ### Step 11: Post Summary
 
-**REQUIRED after all issues reviewed:**
+**If fixes were applied, post a fixes summary. If none were applied, post a neutral review-status summary:**
 
 ```bash
+# When fixes were applied:
 gh pr comment <pr-number> --body "$(cat <<'EOF'
-## Fixes Applied Successfully
+## Autofix Review Completed
 
 Fixed <file-count> file(s) based on <issue-count> unresolved review comment(s).
 
@@ -202,6 +203,11 @@ The latest autofix changes are on the `<branch-name>` branch.
 
 EOF
 )"
+
+# When no fixes were applied (all deferred or none required):
+gh pr comment <pr-number> --body "## Autofix Review Completed
+
+No fixes applied — all issues deferred or none required."
 ```
 
 See [github.md § 3](./github.md#3-post-summary-comment) for details.
