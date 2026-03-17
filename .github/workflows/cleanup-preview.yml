@@ -10,12 +10,16 @@ jobs:
   delete-preview:
     runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
+      - name: Get branch name
+        id: branch-name
+        uses: tj-actions/branch-names@v8
+
       - name: Check if Neon Branch Exists
         id: check-branch
         env:
           NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
           NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
-          BRANCH: preview/pr-${{ github.event.number }}-${{ github.event.pull_request.head.ref }}
+          BRANCH: preview/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
         run: |
           set -euo pipefail
           response="$(
@@ -43,5 +47,5 @@ jobs:
         uses: neondatabase/delete-branch-action@v3
         with:
           project_id: ${{ secrets.NEON_PROJECT_ID }}
-          branch: preview/pr-${{ github.event.number }}-${{ github.event.pull_request.head.ref }}
+          branch: preview/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
           api_key: ${{ secrets.NEON_API_KEY }}

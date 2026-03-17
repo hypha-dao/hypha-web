@@ -31,7 +31,7 @@ Copy this checklist into task notes and check items off while working.
 
 ### 4) Repo-specific checks
 
-- [ ] Extend `.github/actions/detect-changes/action.yml` beyond migrations when needed.
+- [ ] Review `.github/actions/detect-changes/action.yml` filters and extend them when additional expensive paths are introduced.
 - [ ] Gate migration steps behind migration-path changes.
 - [ ] Gate Vercel build/deploy behind frontend-affecting changes.
 
