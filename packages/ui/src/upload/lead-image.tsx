@@ -6,7 +6,7 @@ import clsx from 'clsx';
 import { PreviewOverlay } from './preview-overlay';
 import { PreviewImg } from './preview-img';
 import { AspectRatio } from '@radix-ui/react-aspect-ratio';
-import Cropper from 'react-easy-crop';
+import Cropper, { type Area } from 'react-easy-crop';
 import { getCroppedImg } from '@hypha-platform/ui-utils';
 import { Button } from '../button';
 
@@ -49,7 +49,9 @@ export const UploadLeadImage = ({
   const [imageSrc, setImageSrc] = React.useState<string | null>(null);
   const [crop, setCrop] = React.useState({ x: 0, y: 0 });
   const [zoom, setZoom] = React.useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = React.useState<any>(null);
+  const [croppedAreaPixels, setCroppedAreaPixels] = React.useState<Area | null>(
+    null,
+  );
   const [error, setError] = React.useState<string | null>(null);
 
   const onDrop = React.useCallback(
@@ -97,8 +99,8 @@ export const UploadLeadImage = ({
     [onChange],
   );
 
-  const onCropComplete = React.useCallback((_: any, croppedAreaPixels: any) => {
-    setCroppedAreaPixels(croppedAreaPixels);
+  const onCropComplete = React.useCallback((_: Area, croppedPixels: Area) => {
+    setCroppedAreaPixels(croppedPixels);
   }, []);
 
   const confirmCrop = React.useCallback(async () => {

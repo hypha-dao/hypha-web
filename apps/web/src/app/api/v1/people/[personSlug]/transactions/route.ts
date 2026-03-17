@@ -14,10 +14,22 @@ import {
   findSpaceByAddress,
 } from '@hypha-platform/core/server';
 import { findPersonBySlug, getDb } from '@hypha-platform/core/server';
-import { zeroAddress } from 'viem';
 import { hasEmojiOrLink, tryDecodeUriPart } from '@hypha-platform/ui-utils';
 import { ProfileRouteParams } from '@hypha-platform/epics';
 import { findAllTransfers } from '@hypha-platform/core/server';
+
+const getErrorMessage = (error: unknown) => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'object' && error !== null && 'shortMessage' in error) {
+    const shortMessage = (error as { shortMessage?: unknown }).shortMessage;
+    if (typeof shortMessage === 'string') {
+      return shortMessage;
+    }
+  }
+  return JSON.stringify(error);
+};
 
 /**
  * A route to get ERC20 transfers for a user.
@@ -163,9 +175,8 @@ export async function GET(
     const validTransfers = transfersWithEntityInfo.filter((t) => t !== null);
 
     return NextResponse.json(validTransfers);
-  } catch (error: any) {
-    const errorMessage =
-      error?.message || error?.shortMessage || JSON.stringify(error);
+  } catch (error: unknown) {
+    const errorMessage = getErrorMessage(error);
     if (errorMessage.includes('rate limit') || errorMessage.includes('429')) {
       console.warn('Rate limit exceeded calling blockchain:', errorMessage);
       return NextResponse.json(

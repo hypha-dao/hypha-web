@@ -28,17 +28,15 @@ export function QuorumAndUnityChanger({
   }, [unity]);
 
   const handleQuorumChange = (value: number[]) => {
-    // @ts-ignore TODO: fix types
-    setLocalQuorum(value[0]);
-    // @ts-ignore TODO: fix types
-    onChange({ quorum: value[0], unity: localUnity });
+    const nextQuorum = value[0] ?? 0;
+    setLocalQuorum(nextQuorum);
+    onChange({ quorum: nextQuorum, unity: localUnity });
   };
 
   const handleUnityChange = (value: number[]) => {
-    // @ts-ignore TODO: fix types
-    setLocalUnity(value[0]);
-    // @ts-ignore TODO: fix types
-    onChange({ quorum: localQuorum, unity: value[0] });
+    const nextUnity = value[0] ?? 0;
+    setLocalUnity(nextUnity);
+    onChange({ quorum: localQuorum, unity: nextUnity });
   };
 
   return (

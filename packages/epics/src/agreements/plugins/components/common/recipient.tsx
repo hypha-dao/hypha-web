@@ -36,9 +36,6 @@ export const Recipient = ({
 }: RecipientProps) => {
   const [recipientType, setRecipientType] =
     useState<RecipientType>(defaultRecipientType);
-  const [selected, setSelected] = useState<
-    Person | Space | { address: string } | null
-  >(null);
   const [manualAddress, setManualAddress] = useState(value || '');
 
   const { filteredSpaces } = useFilterSpacesListWithDiscoverability({
@@ -48,9 +45,6 @@ export const Recipient = ({
 
   useEffect(() => {
     if (value) {
-      const foundMember = members.find((r) => r.address === value);
-      const foundSpace = filteredSpaces.find((s) => s.address === value);
-      setSelected(foundMember || foundSpace || { address: value });
       setManualAddress(value);
     }
   }, [value, members, filteredSpaces]);
@@ -97,7 +91,6 @@ export const Recipient = ({
         );
 
         if (originalItem) {
-          setSelected(originalItem);
           setManualAddress(originalItem.address || '');
           onChange?.(originalItem);
         }
@@ -121,10 +114,8 @@ export const Recipient = ({
       const foundSpace = filteredSpaces.find((s) => s.address === address);
 
       if (foundMember || foundSpace) {
-        setSelected(foundMember || foundSpace || null);
         onChange?.(foundMember || foundSpace!);
       } else {
-        setSelected(null);
         onChange?.({ address });
       }
     },
@@ -169,7 +160,7 @@ export const Recipient = ({
             }
             renderOption={(option) => (
               <>
-                {option.avatarUrl && (
+                {typeof option.avatarUrl === 'string' && (
                   <Image
                     src={option.avatarUrl}
                     alt={option.label}
@@ -186,7 +177,7 @@ export const Recipient = ({
             renderValue={(option) =>
               option ? (
                 <div className="flex items-center gap-2 truncate">
-                  {option.avatarUrl && (
+                  {typeof option.avatarUrl === 'string' && (
                     <Image
                       src={option.avatarUrl}
                       alt={option.label}

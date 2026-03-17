@@ -35,7 +35,7 @@ export default function SpaceConfiguration() {
     if (progress === 100 && !isPending && newSpaceSlug) {
       router.push(getDhoPathAgreements(lang as Locale, newSpaceSlug));
     }
-  }, [progress, isPending, newSpaceSlug, lang]);
+  }, [progress, isPending, newSpaceSlug, lang, router]);
 
   const isBusy = isLoadingJwt || isLoadingSpace || isPending;
 

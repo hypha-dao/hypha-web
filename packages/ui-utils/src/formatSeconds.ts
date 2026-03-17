@@ -9,7 +9,6 @@ export const formatSeconds = (seconds: bigint | number): string => {
     return '0 seconds';
   }
 
-  const SECOND = 1;
   const MINUTE = 60;
   const HOUR = 3600;
   const DAY = 86400;

@@ -22,6 +22,7 @@ export async function createSpaceAction(
   data: CreateSpaceInput,
   { authToken }: { authToken?: string },
 ) {
+  void authToken;
   // TODO: #602 Define RLS Policies for Spaces Table
   // const db = getDb({ authToken });
   const { slug } = data;
@@ -33,6 +34,7 @@ export async function updateSpaceBySlugAction(
   data: UpdateSpaceBySlugInput,
   { authToken }: { authToken?: string },
 ) {
+  void authToken;
   // TODO: #602 Define RLS Policies for Spaces Table
   // const db = getDb({ authToken });
   const result = await updateSpaceBySlug(data, { db });
@@ -47,6 +49,7 @@ export async function updateSpaceByIdAction(
   data: UpdateSpaceByIdInput,
   { authToken }: { authToken?: string },
 ) {
+  void authToken;
   // TODO: #602 Define RLS Policies for Spaces Table
   // const db = getDb({ authToken });
   const { originalSpace, updatedSpace } = await updateSpaceById(data, { db });
@@ -65,6 +68,7 @@ export async function deleteSpaceBySlugAction(
   { slug }: DeleteSpaceBySlugInput,
   { authToken }: { authToken?: string },
 ) {
+  void authToken;
   // TODO: #602 Define RLS Policies for Spaces Table
   // const db = getDb({ authToken });
   return deleteSpaceBySlug({ slug }, { db });

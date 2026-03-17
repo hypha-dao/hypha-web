@@ -69,12 +69,25 @@ export function DatePicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">
-        <Calendar
-          mode={mode}
-          selected={selected as any}
-          onSelect={handleSelect as any}
-          initialFocus
-        />
+        {mode === 'single' ? (
+          <Calendar
+            mode="single"
+            selected={selected instanceof Date ? selected : undefined}
+            onSelect={handleSelect}
+            initialFocus
+          />
+        ) : (
+          <Calendar
+            mode="range"
+            selected={
+              selected && typeof selected === 'object' && 'from' in selected
+                ? selected
+                : undefined
+            }
+            onSelect={handleSelect}
+            initialFocus
+          />
+        )}
       </PopoverContent>
     </Popover>
   );

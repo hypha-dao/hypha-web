@@ -1,5 +1,4 @@
 import {
-  NotifyProposalCreatedInput,
   OnProposalCreatedInput,
   PostNotifyProposalCreatedInput,
   useHookRegistry,

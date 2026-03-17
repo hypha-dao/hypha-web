@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useMemo, useCallback } from 'react';
 import { Image, Combobox } from '@hypha-platform/ui';
 import { Space, Person } from '@hypha-platform/core/client';
 import { useFilterSpacesListWithDiscoverability } from '@hypha-platform/epics';
@@ -18,20 +18,11 @@ export const SpaceToSpaceMembershipSelector = ({
   onChange,
   value,
 }: SpaceToSpaceMembershipSelectorProps) => {
-  const [selected, setSelected] = useState<Person | Space | null>(null);
-
   const { filteredSpaces } = useFilterSpacesListWithDiscoverability({
     spaces: spaceOptions,
     useGeneralState: true,
   });
 
-  useEffect(() => {
-    if (value) {
-      const foundMember = memberOptions.find((r) => r.address === value);
-      const foundSpace = filteredSpaces.find((s) => s.address === value);
-      setSelected(foundMember || foundSpace || null);
-    }
-  }, [value, memberOptions, filteredSpaces]);
   const isSpace = filteredSpaces.length > 0 && memberOptions.length === 0;
   const placeholder = isSpace ? 'Find Space' : 'Find Member';
   const title = isSpace ? 'Space to join' : 'Delegated Voting Member';
@@ -64,10 +55,8 @@ export const SpaceToSpaceMembershipSelector = ({
         const originalItem = source.find(
           (item) => item.address === found.value,
         );
-        setSelected(originalItem || null);
         onChange?.(originalItem || null);
       } else {
-        setSelected(null);
         onChange?.(null);
       }
     },
@@ -86,7 +75,7 @@ export const SpaceToSpaceMembershipSelector = ({
             initialValue={value}
             renderOption={(option) => (
               <>
-                {option.avatarUrl && (
+                {typeof option.avatarUrl === 'string' && (
                   <Image
                     src={option.avatarUrl}
                     alt={option.label}
@@ -103,7 +92,7 @@ export const SpaceToSpaceMembershipSelector = ({
             renderValue={(option) =>
               option ? (
                 <div className="flex items-center gap-2 truncate">
-                  {option.avatarUrl && (
+                  {typeof option.avatarUrl === 'string' && (
                     <Image
                       src={option.avatarUrl}
                       alt={option.label}

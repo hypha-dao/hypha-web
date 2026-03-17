@@ -11,7 +11,6 @@ type TransactionsListProps = {
 
 export const TransactionsList: FC<TransactionsListProps> = ({
   transfers,
-  activeSort,
   isLoading,
 }) => {
   return (

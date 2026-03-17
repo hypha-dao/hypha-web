@@ -115,8 +115,6 @@ export const ProposalDetail = ({
     handleCheckProposalExpiration: internalHandleCheckProposalExpiration,
     isCheckingExpiration: internalIsCheckingExpiration,
     isVoting: internalIsVoting,
-    isDeletingToken,
-    isUpdatingToken,
   } = useVote({
     documentId,
     proposalId,

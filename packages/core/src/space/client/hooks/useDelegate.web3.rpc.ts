@@ -18,7 +18,7 @@ export const useDelegateWeb3Rpc = () => {
     isMutating: isDelegating,
     data: delegateHash,
     error: errorDelegate,
-  } = useSWRMutation<`0x${string}`, any, string[], DelegateArgs>(
+  } = useSWRMutation<`0x${string}`, unknown, string[], DelegateArgs>(
     ['delegateWeb3'],
     async (_key, { arg }) => {
       if (!client) throw new Error('Smart wallet client not available');

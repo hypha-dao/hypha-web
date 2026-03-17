@@ -39,9 +39,10 @@ export async function getBalance(
       amount: +formatUnits(amount, decimals),
       symbol,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     throw new Error(
-      `Failed to fetch balance of ${ownerAddress} for token ${tokenAddress}: ${error}`,
+      `Failed to fetch balance of ${ownerAddress} for token ${tokenAddress}: ${message}`,
     );
   }
 }

@@ -1,11 +1,6 @@
 'use client';
 import React, { ChangeEvent, useRef, useState } from 'react';
-import {
-  FileText,
-  Image as ImageIcon,
-  X,
-  File as FileIcon,
-} from 'lucide-react';
+import { FileText, X, File as FileIcon } from 'lucide-react';
 import { Button } from '../button';
 import { Separator } from '../separator';
 import { Link2Icon } from '@radix-ui/react-icons';

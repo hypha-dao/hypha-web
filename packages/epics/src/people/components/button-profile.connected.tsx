@@ -21,8 +21,8 @@ type ErrorUser = {
   error: string;
 };
 
-const isErrorUser = (obj: any): obj is ErrorUser => {
-  return obj && typeof obj === 'object' && 'error' in obj;
+const isErrorUser = (obj: unknown): obj is ErrorUser => {
+  return Boolean(obj && typeof obj === 'object' && 'error' in obj);
 };
 
 export const ConnectedButtonProfile = ({

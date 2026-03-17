@@ -138,14 +138,12 @@ export function ExploreSpaces({
     [nonArchivedSpaces, categories],
   );
 
-  const {
-    filteredSpaces: selectedSpaces,
-    isLoading: isDiscoverabilityLoading,
-  } = useFilterSpacesListWithDiscoverability({
-    spaces: categoryFilteredSpaces,
-    useGeneralState: true,
-    excludeSpaceLevelFromNetwork: true,
-  });
+  const { filteredSpaces: selectedSpaces } =
+    useFilterSpacesListWithDiscoverability({
+      spaces: categoryFilteredSpaces,
+      useGeneralState: true,
+      excludeSpaceLevelFromNetwork: true,
+    });
 
   const agreementCount = React.useMemo(() => {
     return selectedSpaces.reduce(

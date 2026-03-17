@@ -179,10 +179,11 @@ export const TransferWhitelistFieldArray = ({
                     <>
                       <Image
                         src={
-                          option.avatarUrl ||
-                          (currentType === 'member'
+                          (typeof option.avatarUrl === 'string'
+                            ? option.avatarUrl
+                            : currentType === 'member'
                             ? '/placeholder/default-profile.svg'
-                            : DEFAULT_SPACE_AVATAR_IMAGE)
+                            : DEFAULT_SPACE_AVATAR_IMAGE) as string
                         }
                         alt={option.label}
                         width={24}
@@ -199,10 +200,11 @@ export const TransferWhitelistFieldArray = ({
                       <div className="flex items-center gap-2 truncate">
                         <Image
                           src={
-                            option.avatarUrl ||
-                            (currentType === 'member'
+                            (typeof option.avatarUrl === 'string'
+                              ? option.avatarUrl
+                              : currentType === 'member'
                               ? '/placeholder/default-profile.svg'
-                              : DEFAULT_SPACE_AVATAR_IMAGE)
+                              : DEFAULT_SPACE_AVATAR_IMAGE) as string
                           }
                           alt={option.label}
                           width={24}

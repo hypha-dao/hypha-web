@@ -87,18 +87,7 @@ export const useJoinSpaceProposalHandler = ({
           getSpaceDetails({ spaceId: BigInt(spaceId) }),
         );
 
-        const [
-          unity,
-          quorum,
-          votingPowerSource,
-          tokenAdresses,
-          members,
-          exitMethod,
-          joinMethod,
-          createdAt,
-          creator,
-          executor,
-        ] = spaceDetails;
+        const [, , , , , , joinMethod] = spaceDetails;
 
         return joinMethod;
       } catch (error) {
@@ -141,11 +130,7 @@ export const useJoinSpaceProposalHandler = ({
   );
 
   const createInviteProposal = useCallback(
-    async (
-      targetSpaceId: number,
-      createdProposalId: number,
-      originalProposalId: number,
-    ) => {
+    async (targetSpaceId: number, createdProposalId: number) => {
       try {
         if (!jwt) {
           throw new Error('JWT token is not available');
@@ -338,11 +323,7 @@ export const useJoinSpaceProposalHandler = ({
                   return;
                 }
 
-                await createInviteProposal(
-                  targetSpaceId,
-                  createdProposalId,
-                  proposalId,
-                );
+                await createInviteProposal(targetSpaceId, createdProposalId);
 
                 console.log(
                   `JoinSpace created proposal ${createdProposalId} in space ${targetSpaceId}`,

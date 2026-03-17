@@ -8,5 +8,6 @@ export async function editPersonAction(
   data: EditPersonInput,
   { authToken }: { authToken?: string },
 ) {
+  void authToken;
   return updatePerson(data, { db });
 }

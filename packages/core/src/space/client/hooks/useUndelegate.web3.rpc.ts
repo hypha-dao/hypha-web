@@ -17,7 +17,7 @@ export const useUndelegateWeb3Rpc = () => {
     isMutating: isUndelegating,
     data: undelegateHash,
     error: errorUndelegate,
-  } = useSWRMutation<`0x${string}`, any, string[], UndelegateArgs>(
+  } = useSWRMutation<`0x${string}`, unknown, string[], UndelegateArgs>(
     ['delegateWeb3'],
     async (_key, { arg }) => {
       console.log('undelegate');

@@ -4,6 +4,7 @@ import { SelectAction, useActionGating } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { isAbsoluteUrl } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
+import { ReactNode } from 'react';
 import {
   ArrowDownIcon,
   ArrowLeftIcon,
@@ -24,6 +25,19 @@ type SelectSettingsActionProps = {
   children?: React.ReactNode;
 };
 
+type SettingsAction = {
+  group: string;
+  title: string;
+  description: string;
+  icon: ReactNode;
+  href?: string;
+  baseTab?: string;
+  defaultDurationDays?: number;
+  disabled?: boolean;
+  target?: string;
+  onAction?: () => void;
+};
+
 export const SelectSettingsAction = ({
   daoSlug,
   activeTab,
@@ -33,7 +47,7 @@ export const SelectSettingsAction = ({
   const { isPaymentExpired, fundWallet, space } = useActionGating(daoSlug);
   const t = useTranslations('SpaceSettingsAction');
 
-  const SETTINGS_ACTIONS = [
+  const SETTINGS_ACTIONS: SettingsAction[] = [
     {
       group: t('groups.overview'),
       title: t('actions.spaceConfiguration.title'),
@@ -180,7 +194,7 @@ export const SelectSettingsAction = ({
     },
   ];
 
-  const computeHref = (action: any) => {
+  const computeHref = (action: SettingsAction) => {
     if (!action?.href) {
       return '';
     }

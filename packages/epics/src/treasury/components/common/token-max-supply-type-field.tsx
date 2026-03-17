@@ -23,11 +23,6 @@ const OPTIONS = [
 
 export function TokenMaxSupplyTypeField() {
   const { control, trigger, formState } = useFormContext();
-  const maxSupply = useWatch({
-    control,
-    name: 'maxSupply',
-    defaultValue: 0,
-  });
   const enableLimitedSupply = useWatch({
     control,
     name: 'enableLimitedSupply',

@@ -36,7 +36,7 @@ type DecaySettingsProps = {
 export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
   const initialTimeFormat = value
     ? (Object.entries(TIME_FORMAT_TO_SECONDS).find(
-        ([_, seconds]) => (value.decayInterval as number) % seconds === 0,
+        ([, seconds]) => (value.decayInterval as number) % seconds === 0,
       )?.[0] as TimeFormat) || 'Weeks'
     : 'Weeks';
 

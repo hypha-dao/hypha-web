@@ -3,7 +3,6 @@
 import { useGetDelegate } from './useGetDelegate';
 import React from 'react';
 import useSWR from 'swr';
-import { useJwt } from '@hypha-platform/core/client';
 
 export const useSpaceDelegate = ({
   user,
@@ -12,8 +11,6 @@ export const useSpaceDelegate = ({
   user: `0x${string}`;
   spaceId?: number;
 }) => {
-  const { jwt } = useJwt();
-
   const {
     data: delegatorAddress,
     isLoading: isDelegatesLoading,

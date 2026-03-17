@@ -70,10 +70,15 @@ export const useAgreementFileUploads = (
                 uploadedFiles.attachments = fileOrFiles.map((item) =>
                   typeof item === 'string'
                     ? item
-                    : {
-                        name: (item as any).name || '',
-                        url: (item as any).url,
-                      },
+                    : 'url' in item
+                    ? {
+                        name:
+                          'name' in item && typeof item.name === 'string'
+                            ? item.name
+                            : '',
+                        url: String(item.url),
+                      }
+                    : { name: '', url: '' },
                 ) as (string | Attachment)[];
               } else {
                 const fileArray = fileOrFiles.filter(

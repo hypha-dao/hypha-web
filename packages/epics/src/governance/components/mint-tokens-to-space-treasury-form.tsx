@@ -14,7 +14,6 @@ import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
 import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
-import { useRouter } from 'next/navigation';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 
@@ -41,7 +40,6 @@ export const MintTokensToSpaceTreasuryForm = ({
   web3SpaceId,
   plugin,
 }: MintTokensToSpaceTreasuryFormProps) => {
-  const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();

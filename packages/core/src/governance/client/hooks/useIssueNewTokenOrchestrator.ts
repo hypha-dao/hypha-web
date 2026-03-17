@@ -220,7 +220,7 @@ export const useCreateIssueTokenOrchestrator = ({
       }
 
       startTask('CREATE_TOKEN');
-      const createdToken = await web2TokenMutations.createToken({
+      await web2TokenMutations.createToken({
         ...arg,
         agreementId: createdAgreement.id,
         iconUrl,
@@ -267,7 +267,7 @@ export const useCreateIssueTokenOrchestrator = ({
                   .filter((addr) => addr && addr.startsWith('0x'))
               : [];
 
-          const web3Result = await web3.createIssueToken({
+          await web3.createIssueToken({
             spaceId: arg.web3SpaceId,
             name: arg.name,
             symbol: arg.symbol,
@@ -331,7 +331,7 @@ export const useCreateIssueTokenOrchestrator = ({
           web3ProposalId: Number(web3ProposalId),
         });
 
-        const updatedToken = await updateTokenAction(
+        await updateTokenAction(
           {
             agreementId: web2.createdAgreement!.id,
             agreementWeb3IdUpdate: Number(web3ProposalId),

@@ -1,7 +1,6 @@
 'use client';
 
 import { Space } from '@hypha-platform/core/client';
-import { useSpaceDiscoverability } from './use-space-discoverability';
 import { useUserSpaceState, UserSpaceState } from './use-user-space-state';
 import { shouldShowSpace } from './use-filter-spaces-by-discoverability';
 import { useMemo } from 'react';
@@ -10,7 +9,7 @@ export function useFilterSpacesList({ spaces }: { spaces: Space[] }): {
   filteredSpaces: Space[];
   isLoading: boolean;
 } {
-  const { userState, isLoading: isUserStateLoading } = useUserSpaceState({
+  const { isLoading: isUserStateLoading } = useUserSpaceState({
     spaceSlug: spaces[0]?.slug,
   });
 

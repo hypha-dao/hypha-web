@@ -14,14 +14,6 @@ type ButtonSigninMobileProps = {
   mobileRedirectUrl: string;
 };
 
-type ErrorUser = {
-  error: string;
-};
-
-const isErrorUser = (obj: any): obj is ErrorUser => {
-  return obj && typeof obj === 'object' && 'error' in obj;
-};
-
 export const ButtonSigninMobile = ({
   useAuthentication,
   useMe,

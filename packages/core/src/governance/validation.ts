@@ -62,7 +62,7 @@ export const paymentScheduleSchema = z
 
       for (let i = 0; i < data.milestones.length; i++) {
         const milestone = data.milestones[i];
-        // @ts-ignore TODO: fix types
+        if (!milestone) continue;
         const { dateRange } = milestone;
 
         if (!dateRange?.from) {

@@ -10,8 +10,9 @@ export async function getTokenDecimals(tokenAddress: string): Promise<number> {
 
   try {
     return await contract.read.decimals();
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error(`Failed to fetch decimals for token ${tokenAddress}:`, error);
-    throw new Error(`Could not retrieve token decimals: ${error.message}`);
+    throw new Error(`Could not retrieve token decimals: ${message}`);
   }
 }

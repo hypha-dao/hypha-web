@@ -13,7 +13,6 @@ import {
   type Space,
 } from '@hypha-platform/core/client';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { useConfig } from 'wagmi';
 import { z } from 'zod';
@@ -51,7 +50,6 @@ export const CreateProposalChangeEntryMethodForm = ({
   plugin,
   spaces,
 }: CreateProposalChangeEntryMethodFormProps) => {
-  const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
@@ -144,7 +142,7 @@ export const CreateProposalChangeEntryMethodForm = ({
     }
   };
 
-  const onInvalid = async (err: any) => {
+  const onInvalid = async (err: unknown) => {
     console.log('Invalid form:', err);
   };
 

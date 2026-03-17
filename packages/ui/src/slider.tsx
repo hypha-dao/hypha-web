@@ -13,8 +13,7 @@ const Slider = React.forwardRef<
   const [value, setValue] = React.useState(props.defaultValue?.[0] || 0);
 
   const handleSliderChange = (newValue: number[]) => {
-    // @ts-ignore TODO: fix types
-    setValue(newValue[0]);
+    setValue(newValue[0] ?? value);
   };
 
   return (

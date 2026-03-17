@@ -1,7 +1,12 @@
 import { decodeErrorResult } from 'viem/utils';
 
-export function decodeRevertReason(hexReason: any): string | null {
+function isHexData(value: unknown): value is `0x${string}` {
+  return typeof value === 'string' && /^0x[0-9a-fA-F]+$/.test(value);
+}
+
+export function decodeRevertReason(hexReason: unknown): string | null {
   try {
+    if (!isHexData(hexReason)) return null;
     const decoded = decodeErrorResult({
       data: hexReason,
       abi: [
@@ -18,7 +23,7 @@ export function decodeRevertReason(hexReason: any): string | null {
   }
 }
 
-export function extractRevertReason(error: any): string {
+export function extractRevertReason(error: unknown): string {
   // Check different possible error structures
   const errorString =
     typeof error === 'string' ? error : error?.toString?.() || '';
@@ -33,13 +38,14 @@ export function extractRevertReason(error: any): string {
   }
 
   // Check error.data or error.reason
-  if (error?.data?.startsWith?.('0x08c379a0')) {
-    const decoded = decodeRevertReason(error.data);
+  const err = error as { data?: string; message?: string } | null | undefined;
+  if (typeof err?.data === 'string' && err.data.startsWith('0x08c379a0')) {
+    const decoded = decodeRevertReason(err.data);
     if (decoded) {
       return decoded;
     }
   }
 
   // Return original error message if no encoded reason found
-  return error?.message || errorString;
+  return err?.message || errorString;
 }

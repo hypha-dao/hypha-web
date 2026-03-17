@@ -6,6 +6,13 @@ import {
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@hypha-platform/storage-postgres';
 
+const getErrorMessage = (error: unknown) => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+};
+
 export async function GET(
   _: NextRequest,
   {
@@ -27,8 +34,8 @@ export async function GET(
     });
 
     return NextResponse.json(spaces);
-  } catch (err: any) {
-    const error = err instanceof Error ? err : new Error(String(err));
+  } catch (err: unknown) {
+    const error = new Error(getErrorMessage(err));
     return NextResponse.json(
       {
         error: 'Failed to get spaces',
