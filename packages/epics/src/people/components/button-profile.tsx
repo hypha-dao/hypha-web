@@ -11,7 +11,7 @@ import {
 import { PersonAvatar } from './person-avatar';
 import { EthAddress } from './eth-address';
 import { TrashIcon, LogOutIcon, Repeat, Shield } from 'lucide-react';
-import { ButtonNavItem, ButtonNavItemProps } from '@hypha-platform/ui';
+import { ButtonNavItem } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { Person } from '@hypha-platform/core/client';
 import { Text } from '@radix-ui/themes';
@@ -27,7 +27,6 @@ export type ButtonProfileProps = {
   onChangeThemeMode?: () => void;
   profileUrl?: string;
   notificationCentrePath?: string;
-  navItems: ButtonNavItemProps[];
   person?: Person;
   resolvedTheme?: string;
 };
@@ -41,7 +40,6 @@ export const ButtonProfile = ({
   onDelete,
   profileUrl,
   notificationCentrePath,
-  navItems,
   onChangeThemeMode,
   resolvedTheme,
 }: ButtonProfileProps) => {
@@ -68,14 +66,6 @@ export const ButtonProfile = ({
                 </div>
               )}
             </div>
-
-            {navItems.map((item) => (
-              <ButtonNavItem
-                key={item.href}
-                href={item.href}
-                label={item.label}
-              />
-            ))}
 
             {profileUrl && (
               <ButtonNavItem href={profileUrl} label={t('myProfile')} />
@@ -127,15 +117,6 @@ export const ButtonProfile = ({
 
           {/* Desktop */}
           <div className="hidden md:flex gap-2">
-            <div className="flex gap-2">
-              {navItems.map((item) => (
-                <ButtonNavItem
-                  key={item.href}
-                  href={item.href}
-                  label={item.label}
-                />
-              ))}
-            </div>
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger>
                 <PersonAvatar
@@ -233,13 +214,6 @@ export const ButtonProfile = ({
         </>
       ) : (
         <div className="flex flex-col md:flex-row gap-8 md:gap-2">
-          {navItems.map((item) => (
-            <ButtonNavItem
-              key={item.href}
-              href={item.href}
-              label={item.label}
-            />
-          ))}
           <Button onClick={onLogin}>{t('signIn')}</Button>
           <Button
             className="hidden md:flex"
