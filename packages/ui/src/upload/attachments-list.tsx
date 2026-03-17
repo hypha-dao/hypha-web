@@ -14,7 +14,7 @@ interface AttachmentListProps {
   attachments: (string | Attachment)[];
 }
 
-function isString(variable: any): variable is string {
+function isString(variable: unknown): variable is string {
   return typeof variable === 'string';
 }
 

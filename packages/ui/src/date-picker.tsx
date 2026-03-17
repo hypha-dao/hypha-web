@@ -71,8 +71,8 @@ export function DatePicker({
       <PopoverContent className="w-auto p-0">
         <Calendar
           mode={mode}
-          selected={selected as any}
-          onSelect={handleSelect as any}
+          selected={selected as Date | DateRange | undefined}
+          onSelect={handleSelect as (date: Date | DateRange | undefined) => void}
           initialFocus
         />
       </PopoverContent>

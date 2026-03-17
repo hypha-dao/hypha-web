@@ -30,7 +30,7 @@ export const ButtonNavItem = ({
         'hover:bg-neutral-3',
         classNames,
       )}
-      asChild={!!href}
+      asChild={Boolean(href)}
       onClick={onClick}
     >
       {href ? <Link href={href}>{label}</Link> : <span>{label}</span>}

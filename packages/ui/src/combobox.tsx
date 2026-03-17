@@ -21,7 +21,7 @@ type Option = {
   value: string;
   label: string;
   searchText?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 };
 
 type ComboboxProps = {
