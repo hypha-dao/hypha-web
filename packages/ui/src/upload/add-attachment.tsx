@@ -2,7 +2,6 @@
 import React, { ChangeEvent, useRef, useState } from 'react';
 import {
   FileText,
-  Image as ImageIcon,
   X,
   File as FileIcon,
 } from 'lucide-react';
