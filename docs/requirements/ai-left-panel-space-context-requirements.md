@@ -164,6 +164,9 @@ The assistant must have an explicit consultative bias:
   - treasury strategy/options
   - member governance/process
 - **FR-20:** Recommendations SHALL include "why this helps" and "next action in app" guidance.
+- **FR-20A:** Assistant SHALL provide guidance on how to run the space efficiently (operating cadence, decision flow, role clarity, execution bottlenecks, and resource allocation), grounded in current space context.
+- **FR-20B:** Assistant SHALL adapt recommendations to the space's business and industry context using purpose + tags as primary domain signals, and apply relevant real-world operating patterns where appropriate.
+- **FR-20C:** When purpose/tags indicate a specific industry domain, assistant SHALL explicitly connect recommendations to that domain context and expected organizational outcomes.
 
 ### 7.7 Security and Authorization
 
@@ -208,6 +211,7 @@ Chat request body should include:
 - **AC-1:** From a space route, assistant correctly identifies current space and references only that space's data.
 - **AC-2:** User can send text + file attachment in one turn; backend can consume persisted artifact references.
 - **AC-3:** Query "What should we prioritize next?" returns a ranked recommendation grounded in current space proposals/conversations.
+- **AC-3A:** Query "How can we run this space more efficiently?" returns a context-grounded operating plan (cadence, roles, priorities, and execution steps) tailored to space purpose and tags.
 - **AC-4:** Query "Draft a signal from recent discussions" returns a prefilled signal draft (title, description, type, priority, tags) and user can confirm creation.
 - **AC-4A:** Recommendations and signal drafts can reference evidence from Coherence, Agreements, Members, and Treasury context plus space metadata (purpose, tags, links), limited to data the user is authorized to access.
 - **AC-4B:** For signals with Matrix discussions, assistant can use those discussions as evidence and explicitly reference the related signal/chat context when proposing new signals.
