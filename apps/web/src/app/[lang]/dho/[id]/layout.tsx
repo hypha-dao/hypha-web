@@ -149,10 +149,7 @@ export default async function DhoLayout({
                 </div>
               </div>
               <div className="flex">
-                <div className="font-bold text-1">
-                  {/* @ts-expect-error TODO: infer types from relations */}
-                  {spaceAgreements}
-                </div>
+                <div className="font-bold text-1">{spaceAgreements}</div>
                 <div className="text-gray-500 ml-1 text-1">
                   {tCommon('Agreements')}
                 </div>

@@ -26,6 +26,7 @@ export const validateMilestones = (milestones: Milestone[]): true | string => {
 
   for (let i = 0; i < milestones.length; i++) {
     const milestone = milestones[i];
+    if (!milestone) continue;
     const { dateRange } = milestone;
 
     if (!dateRange?.from) return 'Each milestone must have a start date';

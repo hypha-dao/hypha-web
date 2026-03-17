@@ -279,16 +279,20 @@ export const DelegateVotingSection = ({
               Delegation completed successfully!
             </span>
           )}
-          {errorDelegateMember && (
+          {errorDelegateMember ? (
             <span className="text-red-600 text-sm">
-              {errorDelegateMember.message}
+              {errorDelegateMember instanceof Error
+                ? errorDelegateMember.message
+                : String(errorDelegateMember)}
             </span>
-          )}
-          {errorUndelegate && (
+          ) : null}
+          {errorUndelegate ? (
             <span className="text-red-600 text-sm">
-              {errorUndelegate.message}
+              {errorUndelegate instanceof Error
+                ? errorUndelegate.message
+                : String(errorUndelegate)}
             </span>
-          )}
+          ) : null}
         </form>
       </Form>
       <Separator />

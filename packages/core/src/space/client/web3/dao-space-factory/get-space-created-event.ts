@@ -1,4 +1,4 @@
-import { parseEventLogs } from 'viem';
+import { type Log, parseEventLogs } from 'viem';
 import { daoSpaceFactoryImplementationAbi } from '@hypha-platform/core/generated';
 
 /**
@@ -11,7 +11,7 @@ export const getSpaceCreatedEvent = (logs: unknown[]) => {
     // Parse logs for the specific event
     const spaceCreatedEvents = parseEventLogs({
       abi: daoSpaceFactoryImplementationAbi,
-      logs,
+      logs: logs as Log[],
       eventName: 'SpaceCreated',
     });
 
