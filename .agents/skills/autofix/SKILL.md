@@ -97,7 +97,7 @@ Filter to:
 
 **Display in CodeRabbit's original order** (already severity-ordered):
 
-```
+```text
 CodeRabbit Issues for PR #123: [PR Title]
 
 | # | Severity | Issue Title | Location & Details | Type | Action |
@@ -114,7 +114,7 @@ Use AskUserQuestion:
 - ❌ "Cancel" - Exit
 
 **Route based on choice:**
-- Review → Step 5
+- Review → Step 6
 - Auto-fix → Step 6
 - Cancel → EXIT
 
