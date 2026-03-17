@@ -23,20 +23,14 @@ export function useMemberWeb3SpaceIds({
   } = useSWR(
     personAddress ? [personAddress, 'getMemberAndDelegatedSpaces'] : null,
     async ([address]) => {
-      let memberSpaces;
-      let delegatedSpaces;
-      try {
-        [memberSpaces, delegatedSpaces] = await Promise.all([
-          publicClient.readContract(
-            getMemberSpaces({ memberAddress: address }),
-          ),
-          publicClient.readContract(
-            getSpacesForDelegate({ user: address as `0x${string}` }),
-          ),
-        ]);
-      } catch (fetchError) {
-        throw fetchError;
-      }
+      const [memberSpaces, delegatedSpaces] = await Promise.all([
+        publicClient.readContract(
+          getMemberSpaces({ memberAddress: address }),
+        ),
+        publicClient.readContract(
+          getSpacesForDelegate({ user: address as `0x${string}` }),
+        ),
+      ]);
 
       const filteredDelegated = (
         await Promise.all(
@@ -49,7 +43,7 @@ export function useMemberWeb3SpaceIds({
                   spaceId,
                 }),
               );
-            } catch (delegatorsError) {
+            } catch {
               return null;
             }
 
@@ -58,22 +52,11 @@ export function useMemberWeb3SpaceIds({
               spaceDetailsRaw = await publicClient.readContract(
                 getSpaceDetails({ spaceId }),
               );
-            } catch (detailsError) {
+            } catch {
               return null;
             }
 
-            const [
-              unity,
-              quorum,
-              votingPowerSource,
-              tokenAdresses,
-              members,
-              exitMethod,
-              joinMethod,
-              createdAt,
-              creator,
-              executor,
-            ] = spaceDetailsRaw;
+            const [, , , , members] = spaceDetailsRaw;
 
             const membersLower = members.map((member: string) =>
               member?.toLowerCase(),

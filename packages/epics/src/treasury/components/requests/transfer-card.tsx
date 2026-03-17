@@ -27,7 +27,6 @@ export const TransferCard: React.FC<TransferCardProps> = ({
   name,
   surname,
   title,
-  avatar,
   tokenIcon,
   value,
   symbol,

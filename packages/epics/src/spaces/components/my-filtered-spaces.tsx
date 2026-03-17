@@ -5,7 +5,6 @@ import { Address, Space, isSpaceArchived } from '@hypha-platform/core/client';
 import { SpaceCardList, useMemberWeb3SpaceIds } from '@hypha-platform/epics';
 import { useMe } from '@hypha-platform/core/client';
 import React from 'react';
-import { Text } from '@radix-ui/themes';
 import { useFilterSpacesListWithDiscoverability } from '../hooks/use-spaces-discoverability-batch';
 import { SectionFilter, Input } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
@@ -46,11 +45,10 @@ export function MyFilteredSpaces({
     [spaces, person, web3SpaceIds],
   );
 
-  const { filteredSpaces, isLoading: isDiscoverabilityLoading } =
-    useFilterSpacesListWithDiscoverability({
-      spaces: memberFilteredSpaces,
-      useGeneralState: false,
-    });
+  const { filteredSpaces } = useFilterSpacesListWithDiscoverability({
+    spaces: memberFilteredSpaces,
+    useGeneralState: false,
+  });
 
   const displayedSpaces = React.useMemo(() => {
     if (hideArchivedSpaces) {

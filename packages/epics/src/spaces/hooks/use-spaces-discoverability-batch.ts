@@ -27,7 +27,7 @@ export function useSpacesDiscoverabilityBatch({
 
   const { data, isLoading } = useSWR(
     spaceIds.length > 0 ? ['batch-discoverability', spaceIds] : null,
-    async ([_, ids]) => {
+    async ([, ids]) => {
       const results = await Promise.all(
         ids.map(async (spaceId) => {
           try {

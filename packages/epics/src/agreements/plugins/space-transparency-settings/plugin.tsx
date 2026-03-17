@@ -5,7 +5,7 @@ import {
   SpaceActivityAccessField,
   TransparencyLevel,
 } from '@hypha-platform/epics';
-import { FormLabel, Label } from '@hypha-platform/ui';
+import { FormLabel } from '@hypha-platform/ui';
 import React from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 
@@ -14,6 +14,7 @@ export const SpaceTransparencySettingsPlugin = ({
 }: {
   spaceSlug: string;
 }) => {
+  void spaceSlug;
   const { setValue, control } = useFormContext();
 
   const spaceDiscoverability = useWatch({

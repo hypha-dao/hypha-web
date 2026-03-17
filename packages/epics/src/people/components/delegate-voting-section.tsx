@@ -58,7 +58,7 @@ export const DelegateVotingSection = ({
   const { person } = useMe();
   const { space } = useSpaceBySlug(spaceSlug as string);
   const effectiveSpaceId = space?.web3SpaceId || web3SpaceId;
-  const { persons, spaces, updateMembers } = useMembers({
+  const { persons, updateMembers } = useMembers({
     spaceSlug,
     paginationDisabled: true,
   });

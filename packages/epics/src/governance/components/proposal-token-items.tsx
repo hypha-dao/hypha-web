@@ -1,6 +1,6 @@
 'use client';
 
-import { Image, Badge, Separator, Skeleton } from '@hypha-platform/ui';
+import { Image, Separator, Skeleton } from '@hypha-platform/ui';
 import { DbToken } from '@hypha-platform/core/server';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
@@ -89,13 +89,9 @@ export const ProposalTokenItem = ({
   symbol,
   initialSupply,
   dbTokens,
-  address,
   transferable,
   fixedMaxSupply,
   autoMinting,
-  priceInUSD,
-  useTransferWhitelist,
-  useReceiveWhitelist,
   initialTransferWhitelist,
   initialReceiveWhitelist,
   decayPercentage,

@@ -1,14 +1,12 @@
 'use client';
 
 import {
-  Separator,
   Skeleton,
   RequirementMark,
   FormField,
   FormItem,
   FormControl,
   FormMessage,
-  Input,
   FormLabel,
 } from '@hypha-platform/ui';
 import { TokenPayoutField } from '../../../agreements/plugins/components/common/token-payout-field';

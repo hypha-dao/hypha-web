@@ -30,7 +30,6 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   name,
   symbol,
   value,
-  usdEqual,
   isLoading,
   supply,
   space,

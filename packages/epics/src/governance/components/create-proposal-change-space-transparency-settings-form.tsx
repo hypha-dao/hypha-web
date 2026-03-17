@@ -10,9 +10,8 @@ import {
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Button, Form, Separator } from '@hypha-platform/ui';
+import { Button, Form } from '@hypha-platform/ui';
 import React from 'react';
-import { useRouter } from 'next/navigation';
 import { useConfig } from 'wagmi';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useScrollToErrors } from '../../hooks';
@@ -36,7 +35,6 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
   web3SpaceId,
   plugin,
 }: CreateProposalChangeSpaceTransparencySettingsFormProps) => {
-  const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
@@ -47,13 +45,10 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
     isError,
     isPending,
     progress,
-    changeSpaceTransparencySettings: agreement,
   } = useChangeSpaceTransparencySettingsOrchestrator({
     authToken: jwt,
     config,
   });
-
-  const agreementSlug = agreement?.slug;
 
   const {
     discoverability,
@@ -102,7 +97,7 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
     });
   };
 
-  const onInvalid = async (err: any) => {
+  const onInvalid = async (err: unknown) => {
     console.log('Invalid form:', err);
   };
 

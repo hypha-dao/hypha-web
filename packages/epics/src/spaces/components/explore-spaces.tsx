@@ -138,10 +138,7 @@ export function ExploreSpaces({
     [nonArchivedSpaces, categories],
   );
 
-  const {
-    filteredSpaces: selectedSpaces,
-    isLoading: isDiscoverabilityLoading,
-  } = useFilterSpacesListWithDiscoverability({
+  const { filteredSpaces: selectedSpaces } = useFilterSpacesListWithDiscoverability({
     spaces: categoryFilteredSpaces,
     useGeneralState: true,
     excludeSpaceLevelFromNetwork: true,

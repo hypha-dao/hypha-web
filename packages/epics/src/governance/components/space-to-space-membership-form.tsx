@@ -15,7 +15,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useConfig } from 'wagmi';
 import React from 'react';
-import { useRouter } from 'next/navigation';
 import { useSpaceTokenRequirementsByAddress } from '../hooks';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 
@@ -64,7 +63,6 @@ export const SpaceToSpaceMembershipForm = ({
 
   const { jwt } = useJwt();
   const config = useConfig();
-  const router = useRouter();
   const {
     spaceToSpaceAction,
     reset,

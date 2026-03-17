@@ -12,7 +12,6 @@ import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
 import { useCreatePayForExpensesOrchestrator } from '@hypha-platform/core/client';
-import { useRouter } from 'next/navigation';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useConfig } from 'wagmi';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
@@ -38,7 +37,6 @@ export const CreatePayForExpensesForm = ({
   web3SpaceId,
   plugin,
 }: CreatePayForExpensesFormProps) => {
-  const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
