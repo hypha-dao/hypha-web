@@ -129,8 +129,9 @@ export async function getTokenMeta(
       ...(space && { space: { slug: space.slug, title: space.title } }),
       ...(createdAt && { createdAt }),
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error(`Failed to fetch token info for ${tokenAddress}:`, error);
-    throw new Error(`Could not retrieve token info: ${error.message}`);
+    throw new Error(`Could not retrieve token info: ${message}`);
   }
 }

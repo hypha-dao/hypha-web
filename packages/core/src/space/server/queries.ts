@@ -213,7 +213,7 @@ export const findAllOrganizationSpacesForNodeById = async (
 
   const columns = getTableColumns(spaces);
   const columnEntires = Object.entries(columns);
-  const recordNames = columnEntires.map(([_, v]) => v.name);
+  const recordNames = columnEntires.map(([, v]) => v.name);
 
   const columnsSql = sql.raw(recordNames.join(', '));
   const columnsWithAliasSql = sql.raw(
@@ -249,7 +249,7 @@ ORDER BY level, id;
   return results.rows.map((record) => {
     const space: Partial<Space> = {};
     for (const [name, column] of columnEntires) {
-      space[name as keyof Space] = record[column.name] as any;
+      space[name as keyof Space] = record[column.name] as Space[keyof Space];
     }
     return space as Space;
   });
@@ -328,7 +328,8 @@ export const findSpaceByAddresses = async (
 
   return {
     data: result.map((row) => {
-      const { total, ...space } = row;
+      const { total: extractedTotal, ...space } = row;
+      void extractedTotal;
       return space as Space;
     }),
     pagination: {

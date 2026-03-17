@@ -6,7 +6,7 @@ import { daoProposalsImplementationAbi } from '@hypha-platform/core/generated';
  * @param logs - The transaction logs to parse
  * @returns The ProposalCreated event if found, undefined otherwise
  */
-export const getProposalCreatedEvent = (logs: any[]) => {
+export const getProposalCreatedEvent = (logs: unknown[]) => {
   try {
     // Parse logs for the specific event
     const ProposalCreatedEvents = parseEventLogs({
@@ -25,7 +25,7 @@ export const getProposalCreatedEvent = (logs: any[]) => {
   }
 };
 
-export const getProposalFromLogs = (logs: any[]) => {
+export const getProposalFromLogs = (logs: unknown[]) => {
   const event = getProposalCreatedEvent(logs);
   if (event) {
     return event.args;

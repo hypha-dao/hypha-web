@@ -34,6 +34,7 @@ export async function updateAgreementBySlugAction(
   data: UpdateAgreementBySlugInput,
   { authToken }: { authToken?: string },
 ) {
+  void authToken;
   // TODO: #602 Define RLS Policies for Spaces Table
   // const db = getDb({ authToken });
   return updateAgreementBySlug(data, { db });
@@ -43,6 +44,7 @@ export async function deleteAgreementBySlugAction(
   data: { slug: string },
   { authToken }: { authToken?: string },
 ) {
+  void authToken;
   // TODO: #602 Define RLS Policies for Spaces Table
   // const db = getDb({ authToken });
   return deleteAgreementBySlug(data, { db });
@@ -60,6 +62,7 @@ export async function updateChangeEntryMethodBySlugAction(
   data: UpdateChangeEntryMethodBySlugInput,
   { authToken }: { authToken?: string },
 ) {
+  void authToken;
   // TODO: #602 Define RLS Policies for Spaces Table
   // const db = getDb({ authToken });
   return updateAgreementBySlug(data, { db });
@@ -69,6 +72,7 @@ export async function deleteChangeEntryMethodBySlugAction(
   data: { slug: string },
   { authToken }: { authToken?: string },
 ) {
+  void authToken;
   // TODO: #602 Define RLS Policies for Spaces Table
   // const db = getDb({ authToken });
   return deleteAgreementBySlug(data, { db });

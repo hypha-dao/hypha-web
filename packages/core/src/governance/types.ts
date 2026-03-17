@@ -17,12 +17,6 @@ export enum EntryMethodType {
   INVITE_ONLY = 2,
 }
 
-interface Transaction {
-  target: string;
-  value: number;
-  data: string | Uint8Array;
-}
-
 export interface Attachment {
   name: string;
   url: string;

@@ -44,11 +44,12 @@ export async function getBalance(
       amount: +formatUnits(amount.result as bigint, decimals.result as number),
       symbol: symbol.result as string,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error(
       `Failed to fetch balance of ${ownerAddress} for token ${tokenAddress}:`,
       error,
     );
-    throw new Error(`Could not retrieve balance: ${error.message}`);
+    throw new Error(`Could not retrieve balance: ${message}`);
   }
 }

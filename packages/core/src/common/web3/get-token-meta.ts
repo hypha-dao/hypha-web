@@ -68,8 +68,9 @@ export async function getTokenMeta(
       icon,
       type: 'utility',
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error(`Failed to fetch token info for ${tokenAddress}:`, error);
-    throw new Error(`Could not retrieve token info: ${error.message}`);
+    throw new Error(`Could not retrieve token info: ${message}`);
   }
 }

@@ -1,6 +1,6 @@
 import { decodeErrorResult } from 'viem/utils';
 
-export function decodeRevertReason(hexReason: any): string | null {
+export function decodeRevertReason(hexReason: unknown): string | null {
   try {
     const decoded = decodeErrorResult({
       data: hexReason,
@@ -18,7 +18,7 @@ export function decodeRevertReason(hexReason: any): string | null {
   }
 }
 
-export function extractRevertReason(error: any): string {
+export function extractRevertReason(error: unknown): string {
   // Check different possible error structures
   const errorString =
     typeof error === 'string' ? error : error?.toString?.() || '';

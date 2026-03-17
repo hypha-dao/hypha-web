@@ -20,5 +20,5 @@ export interface Event {
   createdAt: Date;
   referenceId: number;
   referenceEntity: EventEntity;
-  parameters: any;
+  parameters: Record<string, unknown>;
 }
