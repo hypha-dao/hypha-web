@@ -484,7 +484,7 @@ describe('Space Voting Power with Delegation - Comprehensive Tests', function ()
       // Member1 votes with delegated power
       await daoProposals.connect(members[1]).vote(proposalId, true);
 
-      let proposal = await daoProposals.getProposalCore(proposalId);
+      const proposal = await daoProposals.getProposalCore(proposalId);
       expect(proposal.yesVotes).to.equal(2); // member1's own + delegated
 
       // Re-delegate: member0 -> member2 (should not affect already cast vote)

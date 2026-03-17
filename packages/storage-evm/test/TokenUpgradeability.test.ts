@@ -150,7 +150,7 @@ describe('Token Contract Upgradeability Tests', function () {
         .find((event: any) => event && event.name === 'TokenDeployed');
       const tokenAddress = tokenDeployedEvent.args.tokenAddress;
 
-      let spaceToken = await ethers.getContractAt(
+      const spaceToken = await ethers.getContractAt(
         'contracts/RegularSpaceToken.sol:SpaceToken',
         tokenAddress,
       );
@@ -215,7 +215,7 @@ describe('Token Contract Upgradeability Tests', function () {
         .find((event: any) => event && event.name === 'TokenDeployed');
       const tokenAddress = tokenDeployedEvent.args.tokenAddress;
 
-      let decayingToken = await ethers.getContractAt(
+      const decayingToken = await ethers.getContractAt(
         'DecayingSpaceToken',
         tokenAddress,
       );

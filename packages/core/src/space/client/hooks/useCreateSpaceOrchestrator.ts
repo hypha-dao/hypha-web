@@ -161,7 +161,7 @@ export const useCreateSpaceOrchestrator = ({
       let web3SpaceIdResult: number | undefined = undefined;
       let web3Executor: string | undefined = undefined;
       let web2SpaceId: number | undefined = undefined;
-      let uploadedFileUrls: {
+      const uploadedFileUrls: {
         logoUrl?: string;
         leadImage?: string;
       } = {};
