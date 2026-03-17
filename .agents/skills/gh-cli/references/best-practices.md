@@ -18,13 +18,13 @@
    gh pr list --json number,title --jq '.[] | select(.title | contains("fix"))'
    ```
 
-4. **Pagination**: Use --paginate for large result sets
+4. **Limiting Results**: Use --limit for gh issue list (--paginate applies only to gh api)
 
    ```bash
-   gh issue list --state all --paginate
+   gh issue list --state all --limit 200
    ```
 
-5. **Large responses**: Use --paginate for API endpoints that return many items
+5. **Large responses**: Use --paginate for gh api endpoints that return many items
 
    ```bash
    gh api /user/repos --paginate
