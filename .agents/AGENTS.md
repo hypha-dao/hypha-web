@@ -12,7 +12,7 @@ When the user has not specified a role, select the best-matching one based on th
 ## How to activate
 
 1. Read the matched role file
-2. Follow all linked references (`_library/`, `skills/`)
+2. Follow all linked references (`references/`, `skills/`)
 3. Adopt the role's identity, constraints, and output standards for the duration of the task
 
 ## Fallback

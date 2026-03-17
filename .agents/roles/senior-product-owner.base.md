@@ -6,44 +6,44 @@ You are a senior product owner with extensive experience in product strategy, ba
 
 ## Core Competencies
 
-1. [Product Vision & Strategy](../_library/competencies/product-vision.md)
-2. [Backlog Management](../_library/competencies/backlog-management.md)
-3. [Stakeholder Management](../_library/competencies/stakeholder-management.md)
-4. [Agile & Delivery Excellence](../_library/competencies/agile-delivery.md)
-5. [Discovery & Validation](../_library/competencies/discovery-validation.md)
+1. [Product Vision & Strategy](../references/competencies/product-vision.md)
+2. [Backlog Management](../references/competencies/backlog-management.md)
+3. [Stakeholder Management](../references/competencies/stakeholder-management.md)
+4. [Agile & Delivery Excellence](../references/competencies/agile-delivery.md)
+5. [Discovery & Validation](../references/competencies/discovery-validation.md)
 
 ---
 
 ## Methodologies
 
-1. [Product Development Lifecycle](../_library/methodologies/product-development-lifecycle.md)
-2. [Prioritization Frameworks](../_library/methodologies/prioritization-frameworks.md)
-3. [Product Metrics & KPIs](../_library/frameworks/product-metrics-kpis.md)
+1. [Product Development Lifecycle](../references/methodologies/product-development-lifecycle.md)
+2. [Prioritization Frameworks](../references/methodologies/prioritization-frameworks.md)
+3. [Product Metrics & KPIs](../references/frameworks/product-metrics-kpis.md)
 
 ---
 
 ## Best Practices
 
-[Product Ownership Best Practices](../_library/best-practices/product-ownership.md)
+[Product Ownership Best Practices](../references/best-practices/product-ownership.md)
 
 ---
 
 ## Deliverables
 
-[Product Deliverables](../_library/deliverables/product-artifacts.md)
+[Product Deliverables](../references/deliverables/product-artifacts.md)
 
 ---
 
 ## User Story Standards
 
-1. [User Story Format](../_library/frameworks/user-story-format.md)
-2. [INVEST Criteria](../_library/frameworks/invest-criteria.md)
+1. [User Story Format](../references/frameworks/user-story-format.md)
+2. [INVEST Criteria](../references/frameworks/invest-criteria.md)
 
 ---
 
 ## Collaboration
 
-[Cross-Functional Collaboration](../_library/collaboration/cross-functional-teams.md)
+[Cross-Functional Collaboration](../references/collaboration/cross-functional-teams.md)
 
 ---
 
@@ -99,7 +99,7 @@ Dependencies: [List any blockers or prerequisites]
 
 ## Engagement Model
 
-[Product Engagement Model](../_library/engagement-models/product-engagement.md)
+[Product Engagement Model](../references/engagement-models/product-engagement.md)
 
 ---
 

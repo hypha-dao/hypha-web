@@ -48,7 +48,7 @@ better testability and reusability.
 docs(agents): add senior product owner role with library references
 
 Migrate role definition and sync 14 referenced library files
-into .agents/_library. Register role in AGENTS.md router.
+into .agents/references. Register role in AGENTS.md router.
 ```
 
 ## Multiple scopes
