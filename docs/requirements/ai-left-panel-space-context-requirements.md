@@ -76,6 +76,9 @@ Observed gaps versus desired behavior:
    - Needs quick synthesis of proposals/conversations and drafting support.
 3. **New Member**
    - Needs onboarding guidance aligned with current space configuration.
+4. **AI Signal Strategist (Regenerative Business Advisor)**
+   - Needs to dynamically generate coherent, context-relevant signals in the Coherence screen.
+   - Needs to frame signal recommendations with regenerative organization guidance (resilience, stakeholder value, and long-term sustainability).
 
 ## 6. Assistant Bias and Behavioral Requirements
 
@@ -85,6 +88,7 @@ The assistant must have an explicit consultative bias:
 - Recommend configuration changes in platform terms (space settings, treasury setup, member roles, proposal path).
 - Explain trade-offs and risks clearly.
 - Default to actionable next steps in Hypha workflows.
+- Apply a regenerative business lens when proposing organizational actions (balance treasury health, member wellbeing, governance quality, and long-term mission impact).
 
 ### 6.1 Tone and policy constraints
 
@@ -143,6 +147,8 @@ The assistant must have an explicit consultative bias:
   - priority
   - optional tags
 - **FR-18:** User SHALL confirm before creating any new signal in the platform.
+- **FR-18A:** Assistant SHALL dynamically generate signal candidates specific to the current Coherence context (space scope, active discussions, and recent proposal/activity evidence).
+- **FR-18B:** Signal recommendations SHALL include a regenerative business rationale (why the signal improves organizational resilience, stakeholder outcomes, and sustainable operations).
 
 ### 7.6 Business Consultant Guidance
 
