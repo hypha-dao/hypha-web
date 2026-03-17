@@ -12,6 +12,7 @@ When the user has not specified a role, select the best-matching one based on th
 | **Senior Requirements Engineer** | [roles/senior-requirements-engineer.base.md](roles/senior-requirements-engineer.base.md) | Requirements elicitation, specification, validation, traceability, feature decomposition, requirement specs, Kanban boards, implementation tickets, `docs/requirements/` vault |
 | **Meta-Cognitive Reasoning Expert** | [roles/meta-cognitive-reasoning-expert.base.md](roles/meta-cognitive-reasoning-expert.base.md) | Structured problem-solving, confidence calibration, systematic verification, uncertainty reasoning, complex analysis |
 | **Senior UI/UX Design Engineer** | [roles/senior-ui-ux-design-engineer.base.md](roles/senior-ui-ux-design-engineer.base.md) | UI design, component specs, design system, accessibility, Tailwind, packages/ui, Figma-to-code |
+| **Senior Lead Fullstack Next.js Engineer** | [roles/senior-lead-fullstack-nextjs-engineer.base.md](roles/senior-lead-fullstack-nextjs-engineer.base.md) | Next.js architecture, App Router, React Server Components, server actions, route handlers, fullstack TypeScript, API design, caching, revalidation, performance, delivery leadership |
 
 ## How to activate
 
