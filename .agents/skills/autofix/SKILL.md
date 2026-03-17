@@ -8,14 +8,11 @@ triggers:
   - autofix.?coderabbit
   - coderabbit.?fix
   - fix.?coderabbit
-  - coderabbit.?review
-  - review.?coderabbit
   - coderabbit.?issues?
   - show.?coderabbit
   - get.?coderabbit
   - cr.?autofix
   - cr.?fix
-  - cr.?review
 ---
 
 # CodeRabbit Autofix
