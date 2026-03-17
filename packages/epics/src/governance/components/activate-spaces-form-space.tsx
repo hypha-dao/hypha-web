@@ -6,7 +6,6 @@ import {
   createAgreementFiles,
   schemaActivateSpaces,
   useMe,
-  TOKENS,
   useActivateSpacesOrchestrator,
   useJwt,
   useSpaceDetailsWeb3Rpc,
@@ -15,7 +14,7 @@ import { z } from 'zod';
 import { LoadingBackdrop, Form, Separator, Button } from '@hypha-platform/ui';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useConfig } from 'wagmi';
-import { useRouter, useParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useAssets, useFundWallet } from '../../treasury';
 import React from 'react';
 import Link from 'next/link';
@@ -25,7 +24,6 @@ import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { Locale } from '@hypha-platform/i18n';
 
 const RECIPIENT_SPACE_ADDRESS = '0x695f21B04B22609c4ab9e5886EB0F65cDBd464B6';
-const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
 
 const combinedSchemaActivateSpaces = schemaActivateSpaces
   .extend(createAgreementFiles)
@@ -56,7 +54,6 @@ export const ActivateSpacesFormSpace = ({
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
-  const router = useRouter();
   const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({
     spaceId: web3SpaceId as number,

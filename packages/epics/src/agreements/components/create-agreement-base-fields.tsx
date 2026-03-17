@@ -1,6 +1,6 @@
 'use client';
 
-import { useFormContext, useWatch } from 'react-hook-form';
+import { useFormContext } from 'react-hook-form';
 import {
   Input,
   FormControl,
@@ -44,10 +44,8 @@ import React from 'react';
 
 type Creator = { avatar: string; name: string; surname: string };
 
-const schemaCreateAgreementForm =
-  schemaCreateAgreement.extend(createAgreementFiles);
-
-export type CreateAgreementFormData = z.infer<typeof schemaCreateAgreementForm>;
+export type CreateAgreementFormData = z.infer<typeof schemaCreateAgreement> &
+  z.infer<typeof createAgreementFiles>;
 
 export type CreateAgreementFormProps = {
   creator?: Creator;
@@ -102,7 +100,7 @@ export function CreateAgreementBaseFields({
         leadImage?: string;
         attachments?: (string | { name: string; url: string })[];
         applied?: boolean;
-        [key: string]: any;
+        [key: string]: unknown;
       };
 
       if (parsed.applied) {
@@ -428,7 +426,7 @@ export function CreateAgreementBaseFields({
                     field.onChange(files);
                     form.setValue(
                       'attachments',
-                      [...existingAttachments, ...files] as any,
+                      [...existingAttachments, ...files] as CreateAgreementFormData['attachments'],
                       { shouldValidate: false },
                     );
                   }}
@@ -436,7 +434,7 @@ export function CreateAgreementBaseFields({
                     setExistingAttachments(updated);
                     form.setValue(
                       'attachments',
-                      [...updated, ...newFiles] as any,
+                      [...updated, ...newFiles] as CreateAgreementFormData['attachments'],
                       { shouldValidate: false },
                     );
                   }}

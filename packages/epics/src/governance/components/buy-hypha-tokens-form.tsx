@@ -15,7 +15,6 @@ import { z } from 'zod';
 import { LoadingBackdrop, Form, Separator, Button } from '@hypha-platform/ui';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useConfig } from 'wagmi';
-import { useRouter } from 'next/navigation';
 import { useAssets, useFundWallet } from '../../treasury';
 import React from 'react';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
@@ -46,7 +45,6 @@ export const BuyHyphaTokensForm = ({
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
-  const router = useRouter();
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({
     spaceId: web3SpaceId as number,
   });

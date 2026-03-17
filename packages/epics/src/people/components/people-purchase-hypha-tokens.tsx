@@ -58,8 +58,7 @@ export const PeoplePurchaseHyphaTokens = ({
     refreshInterval: 10000,
   });
 
-  const { investInHypha, isInvesting, investError } =
-    useInvestInHyphaMutation();
+  const { investInHypha, isInvesting } = useInvestInHyphaMutation();
 
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
@@ -189,7 +188,7 @@ export const PeoplePurchaseHyphaTokens = ({
                 <FormField
                   control={form.control}
                   name="payout.amount"
-                  render={({ field }) => (
+                  render={() => (
                     <FormItem>
                       <FormControl>
                         <TokenPayoutField

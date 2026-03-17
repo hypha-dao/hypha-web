@@ -403,7 +403,7 @@ export const SpaceForm = ({
             }
             await onSubmit(space, organisationSpaces);
           },
-          (e) => {
+          () => {
             const flags = form.getValues()['flags'];
             const categories = form.getValues()['categories'];
             if (
@@ -488,7 +488,7 @@ export const SpaceForm = ({
                     <FormField
                       control={form.control}
                       name="slug"
-                      render={({ field }) => (
+                      render={() => (
                         <FormItem>
                           <FormMessage className="mt-1" />
                         </FormItem>

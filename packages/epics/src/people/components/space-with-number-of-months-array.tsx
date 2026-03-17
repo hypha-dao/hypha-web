@@ -28,10 +28,7 @@ export const SpaceWithNumberOfMonthsFieldArray = ({
   organisationSpaces = [],
   name = 'spaces',
 }: SpaceWithNumberOfMonthsFieldArrayProps) => {
-  const {
-    control,
-    formState: { errors },
-  } = useFormContext();
+  const { control } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     control,
     name,

@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Skeleton, Separator, Image } from '@hypha-platform/ui';
+import { Button, Skeleton, Image } from '@hypha-platform/ui';
 import { WithdrawResubmitBanner } from './withdraw-resubmit-banner';
 import { ProgressLine } from './progress-line';
 import { intervalToDuration, isPast } from 'date-fns';

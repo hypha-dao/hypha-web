@@ -16,7 +16,6 @@ import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
 import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
-import { useRouter } from 'next/navigation';
 import { VOTING_METHOD_TYPES } from '../hooks';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 
@@ -37,7 +36,6 @@ export const CreateProposalChangeVotingMethodForm = ({
   web3SpaceId,
   plugin,
 }: CreateProposalChangeVotingMethodFormProps) => {
-  const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();

@@ -45,8 +45,12 @@ export const TransparencyLevelComponent = ({
     }
   };
 
-  const equalNumbers = (value1: any, value2: any, _default: any): boolean => {
-    return Number(value1 ?? _default) === Number(value2 ?? _default);
+  const equalNumbers = (
+    value1: unknown,
+    value2: unknown,
+    defaultValue: TransparencyLevel,
+  ): boolean => {
+    return Number(value1 ?? defaultValue) === Number(value2 ?? defaultValue);
   };
 
   return (

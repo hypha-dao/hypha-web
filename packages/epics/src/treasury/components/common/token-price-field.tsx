@@ -22,7 +22,7 @@ export const TokenPriceField = () => {
     <FormField
       control={control}
       name="tokenPrice"
-      render={({ field, fieldState }) => (
+      render={({ field }) => (
         <FormItem>
           <div className="flex w-full justify-between">
             <div className="flex gap-1 w-full">

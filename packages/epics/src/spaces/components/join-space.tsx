@@ -24,7 +24,7 @@ type JoinSpaceProps = {
   web3SpaceId: number;
 };
 
-function isBaseError(error: any): error is BaseError {
+function isBaseError(error: unknown): error is BaseError {
   return (error as BaseError).details !== undefined;
 }
 
@@ -55,7 +55,6 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
     requestInvite,
     isCreating,
     isError: isInviteError,
-    errors: inviteErrors,
     agreement,
   } = useAddMemberOrchestrator({
     authToken: jwt,

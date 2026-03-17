@@ -16,7 +16,6 @@ import {
   Separator,
   Skeleton,
 } from '@hypha-platform/ui';
-import { Text } from '@radix-ui/themes';
 import { useFieldArray, useForm } from 'react-hook-form';
 import React from 'react';
 import {
@@ -28,7 +27,6 @@ import { useRouter } from 'next/navigation';
 import { Person } from '@hypha-platform/core/client';
 import {
   NotificationCentreFormValues,
-  NotificationSubscription,
   schemaNotificationCentreForm,
   YesNo,
   yesNoEnum,
@@ -60,7 +58,7 @@ function parseYesNoValue(value: string, defaultValue: YesNo): YesNo {
   try {
     const val = yesNoEnum.parse(value);
     return val;
-  } catch (_) {
+  } catch {
     return defaultValue;
   }
 }
@@ -131,7 +129,7 @@ export const NotificationCentreForm = ({
     [saveConfigurations, router, closeUrl],
   );
 
-  const handleInvalid = async (err?: any) => {
+  const handleInvalid = async (err?: unknown) => {
     console.warn('Notification settings errors:', err);
   };
 
