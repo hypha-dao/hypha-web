@@ -1,12 +1,12 @@
 /** Chainlink asset price feeds for backing tokens (Base Mainnet) - by token address */
 export const ASSET_PRICE_FEED_BY_TOKEN: Record<string, `0x${string}`> = {
-  '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913':
+  '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913':
     '0x7e860098F58bBFC8648a4311b374B1D669a2bc6B' as `0x${string}`,
-  '0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42':
+  '0x60a3e35cc302bfa44cb288bc5a4f316fdb1adb42':
     '0xDAe398520e2B67cd3f27aeF9Cf14D93D927f8250' as `0x${string}`,
   '0x4200000000000000000000000000000000000006':
     '0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70' as `0x${string}`,
-  '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf':
+  '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf':
     '0x64c911996D3c6aC71f9b455B1E8E7266BcbD848F' as `0x${string}`,
 };
 

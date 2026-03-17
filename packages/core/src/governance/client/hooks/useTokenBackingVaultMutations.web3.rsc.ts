@@ -100,6 +100,14 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
       }[] = [];
       const spaceId = BigInt(arg.spaceId);
       const spaceToken = arg.spaceToken;
+      const willAddBacking =
+        arg.activateVault && Boolean(arg.addCollaterals?.length);
+      const vaultExists = await publicClient.readContract({
+        address: vaultAddress,
+        abi: tokenBackingVaultImplementationAbi,
+        functionName: 'vaultExists',
+        args: [spaceId, spaceToken],
+      });
 
       // Approve Vault contract to spend tokens on behalf of the Space.
       // Must be the first transactions executed so addBackingToken can transfer tokens.
@@ -124,11 +132,7 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
         }
       }
 
-      if (
-        arg.activateVault &&
-        arg.enableRedemption &&
-        arg.addCollaterals?.length
-      ) {
+      if (willAddBacking && arg.addCollaterals?.length) {
         const backingTokens = arg.addCollaterals.map(
           (c) => c.token as `0x${string}`,
         );
@@ -185,17 +189,19 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
         });
       }
 
-      transactions.push({
-        target: vaultAddress,
-        value: 0n,
-        data: encodeFunctionData({
-          abi: tokenBackingVaultImplementationAbi,
-          functionName: 'setRedeemEnabled',
-          args: [spaceId, spaceToken, arg.enableRedemption],
-        }),
-      });
+      if (willAddBacking || vaultExists) {
+        transactions.push({
+          target: vaultAddress,
+          value: 0n,
+          data: encodeFunctionData({
+            abi: tokenBackingVaultImplementationAbi,
+            functionName: 'setRedeemEnabled',
+            args: [spaceId, spaceToken, arg.enableRedemption],
+          }),
+        });
+      }
 
-      if (arg.redemptionStartDate) {
+      if (arg.redemptionStartDate && (willAddBacking || vaultExists)) {
         const startDate = BigInt(
           Math.floor(arg.redemptionStartDate.getTime() / 1000),
         );
