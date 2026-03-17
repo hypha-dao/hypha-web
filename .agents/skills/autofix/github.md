@@ -101,8 +101,8 @@ gh pr create --title '<title>' --body '<body>'
 - Exit skill
 
 **API failures:**
-- Log error and continue
-- Don't abort for comment posting failures
+- Fail fast for core data-fetching steps (PR lookup, unresolved thread retrieval)
+- Continue only for non-critical post actions (for example, summary comment posting)
 
 **Getting repo info:**
 ```bash
