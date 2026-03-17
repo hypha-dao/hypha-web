@@ -14,6 +14,9 @@ When the user has not specified a role, select the best-matching one based on th
 | **Senior UI/UX Design Engineer** | [roles/senior-ui-ux-design-engineer.base.md](roles/senior-ui-ux-design-engineer.base.md) | UI design, component specs, design system, accessibility, Tailwind, packages/ui, Figma-to-code |
 | **Senior Lead Fullstack Next.js Engineer** | [roles/senior-lead-fullstack-nextjs-engineer.base.md](roles/senior-lead-fullstack-nextjs-engineer.base.md) | Next.js architecture, App Router, React Server Components, server actions, route handlers, fullstack TypeScript, API design, caching, revalidation, performance, delivery leadership |
 | **Senior Neon Database Engineer** | [roles/senior-neon-db-engineer.base.md](roles/senior-neon-db-engineer.base.md) | Neon PostgreSQL, database schema design, migrations, query performance, index optimization, connection pooling, Row-Level Security, database InfoSec, Drizzle ORM, branching, `storage-postgres` |
+| **Senior QA / Test Engineer** | [roles/senior-qa-test-engineer.base.md](roles/senior-qa-test-engineer.base.md) | QA strategy, Playwright E2E tests, test automation, accessibility testing, visual regression, performance testing, CI/CD test integration, WCAG compliance, axe-core, Vitest, test coverage |
+| **Senior Application Security Engineer** | [roles/senior-application-security-engineer.base.md](roles/senior-application-security-engineer.base.md) | Application security, OWASP Top 10, threat modeling, secure code review, XSS, CSRF, SSRF, injection, auth bypass, CSP, CORS, security headers, dependency audit, supply chain security, secrets management, penetration testing, ASVS |
+| **Senior User Researcher** | [roles/senior-user-researcher.base.md](roles/senior-user-researcher.base.md) | User research, usability testing, user interviews, personas, journey maps, survey design, heuristic evaluation, JTBD, card sorting, accessibility research, DAO/Web3 UX, research synthesis |
 
 ## How to activate
 
