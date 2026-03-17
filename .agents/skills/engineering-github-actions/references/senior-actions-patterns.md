@@ -22,11 +22,11 @@ permissions:
 ### 3) Deterministic dependency install
 
 ```yaml
+- uses: pnpm/action-setup@v4
 - uses: actions/setup-node@v4
   with:
     node-version: 20
     cache: pnpm
-- uses: pnpm/action-setup@v4
 - run: pnpm install --frozen-lockfile
 ```
 
