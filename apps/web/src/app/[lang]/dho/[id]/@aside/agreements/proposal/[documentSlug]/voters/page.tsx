@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import {
   ButtonClose,
   FullVoterList,
@@ -16,7 +16,6 @@ import { Separator } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
 
 export default function VotersOverlay() {
-  const router = useRouter();
   const { documentSlug, lang, id } = useParams();
   const { document } = useDocumentBySlug(documentSlug as string);
   const { proposalDetails } = useProposalDetailsWeb3Rpc({

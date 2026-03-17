@@ -33,10 +33,8 @@ export default function EditProfilePage() {
   } = useEditProfile();
   const router = useRouter();
 
-  const schemaEditPersonForm = schemaEditPersonWeb2.extend(
-    editPersonFiles.shape,
-  );
-  type EditPersonFormData = z.infer<typeof schemaEditPersonForm>;
+  type EditPersonFormData = z.infer<typeof schemaEditPersonWeb2> &
+    z.infer<typeof editPersonFiles>;
 
   const onEdit = async (data: EditPersonFormData) => {
     try {

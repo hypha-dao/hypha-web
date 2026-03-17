@@ -16,10 +16,22 @@ import {
   web3Client,
   getDb,
 } from '@hypha-platform/core/server';
-import { zeroAddress } from 'viem';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt, hasEmojiOrLink } from '@hypha-platform/ui-utils';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
+
+const getErrorMessage = (error: unknown) => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'object' && error !== null && 'shortMessage' in error) {
+    const shortMessage = (error as { shortMessage?: unknown }).shortMessage;
+    if (typeof shortMessage === 'string') {
+      return shortMessage;
+    }
+  }
+  return JSON.stringify(error);
+};
 
 /**
  * @summary Route to get ERC20 transfers of a space
@@ -167,9 +179,8 @@ export async function GET(
     const validTransfers = transfersWithEntityInfo.filter((t) => t !== null);
 
     return NextResponse.json(validTransfers);
-  } catch (error: any) {
-    const errorMessage =
-      error?.message || error?.shortMessage || JSON.stringify(error);
+  } catch (error: unknown) {
+    const errorMessage = getErrorMessage(error);
     if (errorMessage.includes('rate limit') || errorMessage.includes('429')) {
       console.warn('Rate limit exceeded calling blockchain:', errorMessage);
       return NextResponse.json(

@@ -24,7 +24,14 @@ import { useEffect, useState } from 'react';
 
 function parseRevertReason(error: unknown): string {
   const message =
-    typeof error === 'string' ? error : (error as any)?.message || '';
+    typeof error === 'string'
+      ? error
+      : typeof error === 'object' &&
+          error !== null &&
+          'message' in error &&
+          typeof error.message === 'string'
+        ? error.message
+        : '';
 
   const start = message.indexOf('Execution reverted with reason:');
   const end = message.indexOf('Request Arguments');
@@ -83,7 +90,7 @@ export default function Agreements() {
     setCanRetry(false);
 
     try {
-      const txHash = await voteFn();
+      await voteFn();
       setProgress(25);
       setVoteMessage('Saving vote...');
       await update();
@@ -92,7 +99,7 @@ export default function Agreements() {
       await votersMutate();
       setProgress(100);
       setVoteMessage('Vote processed!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       const parsedMessage = parseRevertReason(err);
       console.error('Error during vote process:', parsedMessage);
       setProgress(70);

@@ -31,8 +31,6 @@ export default async function CreateChangeEntryMethodPage({
   const successfulUrl = getDhoPathAgreements(lang as Locale, id);
 
   let spaces = [] as Space[];
-  let error = null;
-
   try {
     spaces = await getAllSpaces({
       parentOnly: false,
@@ -40,7 +38,6 @@ export default async function CreateChangeEntryMethodPage({
     });
   } catch (err) {
     console.error('Failed to fetch spaces:', err);
-    error = err instanceof Error ? err.message : 'Failed to load spaces';
   }
 
   const filteredSpaces = spaces?.filter(

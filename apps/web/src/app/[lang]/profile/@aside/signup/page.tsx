@@ -21,7 +21,7 @@ export default function SignupPage() {
     }
   }, [user?.wallet?.address]);
 
-  const handleSave = async (values: any) => {
+  const handleSave = async (values: Parameters<typeof createProfile>[0]) => {
     try {
       if (!walletAddress) {
         throw new Error(

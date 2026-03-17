@@ -39,7 +39,7 @@ export default function AsideCreateSpacePage() {
     if (progress === 100 && spaceSlug) {
       router.push(getDhoPathAgreements(lang as Locale, spaceSlug));
     }
-  }, [progress, spaceSlug]);
+  }, [progress, spaceSlug, lang, router]);
 
   const tSpaces = useTranslations('Spaces');
   const tCommon = useTranslations('Common');

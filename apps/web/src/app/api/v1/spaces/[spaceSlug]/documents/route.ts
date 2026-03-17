@@ -37,7 +37,7 @@ export async function GET(
     const searchTerm = url.searchParams.get('searchTerm') || undefined;
     const orderString = url.searchParams.get('order') || undefined;
 
-    // @ts-ignore: TODO: fix this
+    // @ts-expect-error: TODO: fix this
     const order = getOrder(orderString);
 
     const filter = {
@@ -46,7 +46,7 @@ export async function GET(
 
     const paginatedDocuments = await findAllDocumentsBySpaceSlug(
       { spaceSlug },
-      // @ts-ignore: TODO: order type
+      // @ts-expect-error: TODO: order type
       { pagination: { page, pageSize, order }, filter, searchTerm, db },
     );
 
