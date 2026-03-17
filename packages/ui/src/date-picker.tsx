@@ -72,7 +72,9 @@ export function DatePicker({
         <Calendar
           mode={mode}
           selected={selected as Date | DateRange | undefined}
-          onSelect={handleSelect as (date: Date | DateRange | undefined) => void}
+          onSelect={
+            handleSelect as (date: Date | DateRange | undefined) => void
+          }
           initialFocus
         />
       </PopoverContent>

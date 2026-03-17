@@ -27,11 +27,11 @@ function parseRevertReason(error: unknown): string {
     typeof error === 'string'
       ? error
       : typeof error === 'object' &&
-          error !== null &&
-          'message' in error &&
-          typeof error.message === 'string'
-        ? error.message
-        : '';
+        error !== null &&
+        'message' in error &&
+        typeof error.message === 'string'
+      ? error.message
+      : '';
 
   const start = message.indexOf('Execution reverted with reason:');
   const end = message.indexOf('Request Arguments');

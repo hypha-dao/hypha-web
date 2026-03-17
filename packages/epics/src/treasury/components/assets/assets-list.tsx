@@ -60,10 +60,7 @@ type AssetsListProps = {
   isLoading?: boolean;
 };
 
-export const AssetsList: FC<AssetsListProps> = ({
-  assets,
-  isLoading,
-}) => {
+export const AssetsList: FC<AssetsListProps> = ({ assets, isLoading }) => {
   const { lang } = useParams<{ lang: Locale }>();
   return (
     <div className="w-full">

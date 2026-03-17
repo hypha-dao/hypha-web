@@ -13,9 +13,7 @@ import {
   TabsList,
   Label,
 } from '@hypha-platform/ui';
-import {
-  activateSpacesSchema,
-} from '../hooks/validation';
+import { activateSpacesSchema } from '../hooks/validation';
 import { extractRevertReason, Space, useMe } from '@hypha-platform/core/client';
 import { SpaceWithNumberOfMonthsFieldArray } from './space-with-number-of-months-array';
 import { useActivateSpaces } from '../hooks/use-activate-hypha-spaces';

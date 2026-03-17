@@ -24,9 +24,7 @@ export function useMemberWeb3SpaceIds({
     personAddress ? [personAddress, 'getMemberAndDelegatedSpaces'] : null,
     async ([address]) => {
       const [memberSpaces, delegatedSpaces] = await Promise.all([
-        publicClient.readContract(
-          getMemberSpaces({ memberAddress: address }),
-        ),
+        publicClient.readContract(getMemberSpaces({ memberAddress: address })),
         publicClient.readContract(
           getSpacesForDelegate({ user: address as `0x${string}` }),
         ),

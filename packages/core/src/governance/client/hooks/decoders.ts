@@ -27,7 +27,10 @@ type DecodedTx = {
 export function decodeTransaction(tx: Tx) {
   const decoders: Array<{
     abi: unknown;
-    handler: (decoded: DecodedTx, tx: Tx) => { type: string; data: unknown } | null;
+    handler: (
+      decoded: DecodedTx,
+      tx: Tx,
+    ) => { type: string; data: unknown } | null;
   }> = [
     {
       abi: erc20Abi,

@@ -33,6 +33,9 @@ export async function GET(
     return NextResponse.json({ supply: formattedSupply });
   } catch (error: unknown) {
     console.error(`Error fetching token supply for ${token}:`, error);
-    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
+    return NextResponse.json(
+      { error: getErrorMessage(error) },
+      { status: 500 },
+    );
   }
 }
