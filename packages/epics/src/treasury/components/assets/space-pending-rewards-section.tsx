@@ -78,7 +78,7 @@ export const SpacePendingRewardsSection: FC<
 
   const parsedRewardValue =
     pendingRewards !== undefined
-      ? Number(pendingRewards * 1_000_000n / 10n ** 18n) / 1_000_000
+      ? Number((pendingRewards * 1_000_000n) / 10n ** 18n) / 1_000_000
       : 0;
 
   const baseHyphaAsset = originalAsset
