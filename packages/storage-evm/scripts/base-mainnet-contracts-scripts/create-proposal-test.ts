@@ -655,7 +655,7 @@ async function testQuorumRoundingError(): Promise<void> {
 
     // Step 2: Add second member to the space (if join method allows)
     console.log('\n👥 Checking space membership...');
-    let members = await daoSpaceFactory.getSpaceMembers(spaceId);
+    const members = await daoSpaceFactory.getSpaceMembers(spaceId);
     console.log(`Initial members (${members.length}): ${members}`);
 
     if (members.length === 1) {

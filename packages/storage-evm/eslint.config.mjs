@@ -1,4 +1,10 @@
 import nx from '@nx/eslint-plugin';
-import baseConfig from '../../eslint.config.mjs';
+import { config as baseConfig } from '@hypha-platform/config-eslint/base';
 
-export default [...baseConfig, ...nx.configs['flat/react-typescript']];
+export default [
+  {
+    ignores: ['typechain-types/**'],
+  },
+  ...baseConfig,
+  ...nx.configs['flat/react-typescript'],
+];

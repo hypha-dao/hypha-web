@@ -150,7 +150,7 @@ export const useProposalDetailsWeb3Rpc = ({
       space: undefined,
     };
 
-    let transparencySettingsData: {
+    const transparencySettingsData: {
       spaceDiscoverability?: number;
       spaceActivityAccess?: number;
     } = {

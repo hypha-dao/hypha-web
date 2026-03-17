@@ -617,7 +617,7 @@ async function analyzeTransactionCosts(): Promise<void> {
     console.log(`Voting USD cost: $${deployVoteGasCost.usdCost}`);
 
     // Check proposal status immediately after voting (execution happens automatically)
-    let deployProposalData = await daoProposals.getProposalCore(
+    const deployProposalData = await daoProposals.getProposalCore(
       deployProposalId,
     );
     console.log('Proposal status after voting:');
@@ -668,7 +668,7 @@ async function analyzeTransactionCosts(): Promise<void> {
     console.log('Mint proposal already voted on, proceeding to execution...');
 
     // Check proposal status immediately after voting (execution happens automatically)
-    let mintProposalData = await daoProposals.getProposalCore(mintProposalId);
+    const mintProposalData = await daoProposals.getProposalCore(mintProposalId);
     console.log('Mint proposal status after voting:');
     console.log(`- Yes votes: ${mintProposalData.yesVotes}`);
     console.log(`- No votes: ${mintProposalData.noVotes}`);
