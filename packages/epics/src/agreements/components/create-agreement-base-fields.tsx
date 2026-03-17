@@ -426,7 +426,10 @@ export function CreateAgreementBaseFields({
                     field.onChange(files);
                     form.setValue(
                       'attachments',
-                      [...existingAttachments, ...files] as CreateAgreementFormData['attachments'],
+                      [
+                        ...existingAttachments,
+                        ...files,
+                      ] as CreateAgreementFormData['attachments'],
                       { shouldValidate: false },
                     );
                   }}
@@ -434,7 +437,10 @@ export function CreateAgreementBaseFields({
                     setExistingAttachments(updated);
                     form.setValue(
                       'attachments',
-                      [...updated, ...newFiles] as CreateAgreementFormData['attachments'],
+                      [
+                        ...updated,
+                        ...newFiles,
+                      ] as CreateAgreementFormData['attachments'],
                       { shouldValidate: false },
                     );
                   }}

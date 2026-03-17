@@ -49,8 +49,9 @@ export const UploadLeadImage = ({
   const [imageSrc, setImageSrc] = React.useState<string | null>(null);
   const [crop, setCrop] = React.useState({ x: 0, y: 0 });
   const [zoom, setZoom] = React.useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] =
-    React.useState<Area | null>(null);
+  const [croppedAreaPixels, setCroppedAreaPixels] = React.useState<Area | null>(
+    null,
+  );
   const [error, setError] = React.useState<string | null>(null);
 
   const onDrop = React.useCallback(
@@ -98,12 +99,9 @@ export const UploadLeadImage = ({
     [onChange],
   );
 
-  const onCropComplete = React.useCallback(
-    (_: Area, croppedPixels: Area) => {
-      setCroppedAreaPixels(croppedPixels);
-    },
-    [],
-  );
+  const onCropComplete = React.useCallback((_: Area, croppedPixels: Area) => {
+    setCroppedAreaPixels(croppedPixels);
+  }, []);
 
   const confirmCrop = React.useCallback(async () => {
     if (!imageSrc || !croppedAreaPixels) return;

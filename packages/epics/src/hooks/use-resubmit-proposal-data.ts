@@ -95,7 +95,10 @@ export const useResubmitProposalData = <T extends ResubmitFormValues>(
           },
         );
 
-        if (Array.isArray(parsed.attachments) && parsed.attachments.length > 0) {
+        if (
+          Array.isArray(parsed.attachments) &&
+          parsed.attachments.length > 0
+        ) {
           form.setValue(
             attachmentsField,
             parsed.attachments as PathValue<T, typeof attachmentsField>,
@@ -106,7 +109,10 @@ export const useResubmitProposalData = <T extends ResubmitFormValues>(
           );
         }
 
-        if (typeof parsed.leadImage === 'string' && parsed.leadImage.length > 0) {
+        if (
+          typeof parsed.leadImage === 'string' &&
+          parsed.leadImage.length > 0
+        ) {
           form.setValue(
             leadImageField,
             parsed.leadImage as PathValue<T, typeof leadImageField>,
