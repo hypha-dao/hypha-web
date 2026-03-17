@@ -3,8 +3,8 @@
 import { CURRENCY_FEED_OPTIONS } from '@hypha-platform/core/client';
 import type { DbToken } from '@hypha-platform/core/client';
 import { EthAddress } from '../../../people';
-import { useTokens } from '../../../treasury';
-import { formatDate } from '@hypha-platform/ui-utils';
+import { useTokens, useVaults } from '../../../treasury';
+import { formatDate, formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { getTokenSymbol } from './get-token-symbol';
 import { TokenBackingVaultDetailRow } from './token-backing-vault-detail-row';
 import { TokenBackingVaultAddCollaterals } from './token-backing-vault-add-collaterals';
@@ -49,9 +49,16 @@ export function ProposalTokenBackingVaultData({
   whitelistedAddresses,
 }: ProposalTokenBackingVaultDataProps) {
   const { tokens: spaceTokens } = useTokens({ spaceSlug });
+  const { vaults } = useVaults();
   const currencyLabel =
     currencyFeed &&
     (CURRENCY_FEED_BY_ADDRESS[currencyFeed.toLowerCase()] ?? 'USD');
+
+  const currentVault = spaceToken
+    ? vaults.find(
+        (v) => v.spaceToken.toLowerCase() === spaceToken.toLowerCase(),
+      )
+    : undefined;
 
   const hasData =
     spaceToken ||
@@ -82,6 +89,36 @@ export function ProposalTokenBackingVaultData({
               )
             }
           />
+        )}
+        {currentVault && currentVault.collaterals.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <div className="text-1 text-neutral-11">Current Backing Tokens</div>
+            {currentVault.collaterals.map((collateral, i) => (
+              <div
+                key={`${collateral.address}-${i}`}
+                className="flex justify-between items-center text-1"
+              >
+                <div className="flex items-center gap-2">
+                  {collateral.icon && (
+                    <img
+                      src={collateral.icon}
+                      alt={collateral.symbol}
+                      className="w-4 h-4 rounded-full"
+                    />
+                  )}
+                  <span>{collateral.symbol}</span>
+                </div>
+                <span>
+                  {formatCurrencyValue(collateral.value)} {collateral.symbol}
+                  {collateral.usdEqual > 0 && (
+                    <span className="text-neutral-9 ml-1">
+                      (${formatCurrencyValue(collateral.usdEqual)})
+                    </span>
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
         )}
         {addCollaterals && addCollaterals.length > 0 && (
           <TokenBackingVaultAddCollaterals
