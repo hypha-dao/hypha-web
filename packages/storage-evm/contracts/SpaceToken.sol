@@ -202,27 +202,6 @@ contract SpaceToken is
     _burn(from, amount);
   }
 
-  /**
-   * @dev Allows registered extensions to move treasury tokens to users while
-   * preserving all token transfer hooks and restrictions.
-   */
-  function extensionTransferFromExecutor(address to, uint256 amount) external {
-    require(isExtension[msg.sender], 'Not an extension');
-    require(amount > 0, 'Amount must be greater than zero');
-
-    _preTransferChecks(executor, to);
-    _callBeforeTransfer(executor, to, amount);
-    _transfer(executor, to, amount);
-    _callAfterTransfer(executor, to, amount);
-  }
-
-  /**
-   * @dev View helper for token-purchase style extensions.
-   */
-  function canPurchaseRecipient(address recipient) external view returns (bool) {
-    return _canPurchaseRecipient(recipient);
-  }
-
   /// @dev Raw ERC20 balance without extension adjustments (e.g., no decay).
   function rawBalanceOf(address account) public view returns (uint256) {
     return super.balanceOf(account);
@@ -591,15 +570,6 @@ contract SpaceToken is
     if (!useReceiveWhitelist) return true;
     if (canReceive[account]) return true;
     return _isInReceiveWhitelistedSpace(account);
-  }
-
-  function _canPurchaseRecipient(
-    address recipient
-  ) internal view returns (bool) {
-    if (ownershipRestricted && recipient != executor) {
-      return _isOwnershipMember(recipient);
-    }
-    return canAccountReceive(recipient);
   }
 
   // =========================================================================

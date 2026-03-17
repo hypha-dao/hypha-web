@@ -50,8 +50,6 @@ interface ISpaceTokenBase {
 
   function extensionBurn(address from, uint256 amount) external;
 
-  function extensionTransferFromExecutor(address to, uint256 amount) external;
-
   function rawBalanceOf(address account) external view returns (uint256);
 
   function executor() external view returns (address);
@@ -63,10 +61,4 @@ interface ISpaceTokenBase {
   function archived() external view returns (bool);
 
   function balanceOf(address account) external view returns (uint256);
-
-  function canPurchaseRecipient(address recipient) external view returns (bool);
-
-  function tokenPrice() external view returns (uint256);
-
-  function maxSupply() external view returns (uint256);
 }

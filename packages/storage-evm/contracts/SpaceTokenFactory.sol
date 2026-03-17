@@ -10,7 +10,6 @@ import './storage/SpaceTokenFactoryStorage.sol';
 import './SpaceToken.sol';
 import './extensions/DecayExtension.sol';
 import './extensions/MutualCreditExtension.sol';
-import './extensions/TokenPurchaseExtension.sol';
 import './interfaces/ISpaceTokenFactory.sol';
 import './interfaces/IDAOSpaceFactory.sol';
 
@@ -31,12 +30,10 @@ contract SpaceTokenFactory is
   address public spaceTokenImplementation;
   address public decayExtensionImplementation;
   address public mutualCreditExtensionImplementation;
-  address public tokenPurchaseExtensionImplementation;
 
   event SpaceTokenImplementationUpdated(address indexed impl);
   event DecayExtensionImplementationUpdated(address indexed impl);
   event MutualCreditExtensionImplementationUpdated(address indexed impl);
-  event TokenPurchaseExtensionImplementationUpdated(address indexed impl);
   event ExtensionDeployed(
     address indexed tokenAddress,
     address indexed extensionAddress,
@@ -50,10 +47,6 @@ contract SpaceTokenFactory is
     bool mutualCreditEnabled;
     uint256 defaultCreditLimit;
     uint256[] initialCreditWhitelistSpaceIds;
-    bool tokenPurchaseEnabled;
-    address purchaseUsdcToken;
-    uint256 purchaseCustomPrice;
-    uint256 purchaseMaxTokensForSale;
     bool ownershipRestricted;
     address escrowContract;
   }
@@ -94,14 +87,6 @@ contract SpaceTokenFactory is
     require(_impl != address(0), 'Zero address');
     mutualCreditExtensionImplementation = _impl;
     emit MutualCreditExtensionImplementationUpdated(_impl);
-  }
-
-  function setTokenPurchaseExtensionImplementation(
-    address _impl
-  ) external onlyOwner {
-    require(_impl != address(0), 'Zero address');
-    tokenPurchaseExtensionImplementation = _impl;
-    emit TokenPurchaseExtensionImplementationUpdated(_impl);
   }
 
   function setSpacesContract(address _spacesContract) external onlyOwner {
@@ -151,7 +136,6 @@ contract SpaceTokenFactory is
     uint256 extCount = 0;
     if (features.decayEnabled) extCount++;
     if (features.mutualCreditEnabled) extCount++;
-    if (features.tokenPurchaseEnabled) extCount++;
 
     address[] memory exts = new address[](extCount);
     address balMod = address(0);
@@ -184,22 +168,6 @@ contract SpaceTokenFactory is
       );
       exts[idx++] = credit;
       emit ExtensionDeployed(address(0), credit, 'mutualCredit');
-    }
-
-    if (features.tokenPurchaseEnabled) {
-      require(
-        tokenPurchaseExtensionImplementation != address(0),
-        'Purchase extension impl not set'
-      );
-      address purchase = Clones.clone(tokenPurchaseExtensionImplementation);
-      TokenPurchaseExtension(purchase).initialize(
-        features.purchaseUsdcToken,
-        true,
-        features.purchaseCustomPrice,
-        features.purchaseMaxTokensForSale
-      );
-      exts[idx++] = purchase;
-      emit ExtensionDeployed(address(0), purchase, 'tokenPurchase');
     }
 
     // --- Deploy token proxy ---
