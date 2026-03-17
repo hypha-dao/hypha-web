@@ -36,7 +36,7 @@ export default function Profile() {
     if (!isLoading && person?.slug && person.slug.trim() !== '') {
       router.replace(`/${lang}/profile/${person?.slug}`);
     }
-  }, [router, person, isLoading]);
+  }, [router, person, isLoading, lang]);
 
   if (!isLoading && person?.slug && person.slug.trim() !== '') {
     return (

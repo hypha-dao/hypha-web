@@ -22,6 +22,16 @@ import { hasEmojiOrLink, tryDecodeUriPart } from '@hypha-platform/ui-utils';
 import { ProfileRouteParams } from '@hypha-platform/epics';
 import { web3Client } from '@hypha-platform/core/server';
 
+type TokenBalanceLike = {
+  tokenAddress?: string;
+  symbol?: string;
+  name?: string;
+  logo?: string;
+};
+
+const isTokenBalanceLike = (value: unknown): value is TokenBalanceLike =>
+  typeof value === 'object' && value !== null;
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<ProfileRouteParams> },
@@ -63,9 +73,10 @@ export async function GET(
       console.warn('Failed to fetch energy balance:', error);
     }
 
-    let externalTokens: any[] = [];
+    let externalTokens: TokenBalanceLike[] = [];
     try {
-      externalTokens = await getTokenBalancesByAddress(address);
+      const tokenBalances = await getTokenBalancesByAddress(address);
+      externalTokens = tokenBalances.filter(isTokenBalanceLike);
     } catch (error) {
       console.warn('Failed to fetch external token balances:', error);
     }

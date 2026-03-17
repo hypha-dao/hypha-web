@@ -41,6 +41,22 @@ function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
   const fullSpace = allSpaces.find((s) => s.id === space.id);
   const web3SpaceId = fullSpace?.web3SpaceId;
   const spaceSlug = fullSpace?.slug || space.slug;
+  const isSpaceActionable = Boolean(web3SpaceId && spaceSlug && fullSpace);
+
+  const { access, isLoading: isAccessLoading } = useSpaceDiscoverability({
+    spaceId: web3SpaceId ? BigInt(web3SpaceId) : undefined,
+  });
+
+  const { userState, isLoading: isUserStateLoading } = useUserSpaceState({
+    spaceId: web3SpaceId,
+    spaceSlug,
+    space: fullSpace,
+  });
+
+  const hasAccess = isSpaceActionable && checkAccess(access, userState);
+  const isLoading = isAccessLoading || isUserStateLoading;
+  const isDisabled = !isSpaceActionable || isLoading || !hasAccess;
+  const createSpacePath = `/${lang}/dho/${spaceSlug}/space/create`;
 
   if (!web3SpaceId || !spaceSlug) {
     return (
@@ -57,22 +73,6 @@ function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
       </Button>
     );
   }
-
-  const { access, isLoading: isAccessLoading } = useSpaceDiscoverability({
-    spaceId: BigInt(web3SpaceId),
-  });
-
-  const { userState, isLoading: isUserStateLoading } = useUserSpaceState({
-    spaceId: web3SpaceId,
-    spaceSlug,
-    space: fullSpace,
-  });
-
-  const hasAccess = checkAccess(access, userState);
-  const isLoading = isAccessLoading || isUserStateLoading;
-  const isDisabled = isLoading || !hasAccess;
-
-  const createSpacePath = `/${lang}/dho/${spaceSlug}/space/create`;
 
   return (
     <Link
@@ -140,17 +140,11 @@ export function VisibleSpacesList({
     );
   }, [descendantSpaces, searchQuery]);
 
-  const getCreateSpacePath = (spaceId: number, spaceSlug?: string) => {
-    if (!spaceSlug) return '#';
-    return `/${lang}/dho/${spaceSlug}/space/create`;
-  };
-
   if (!rootSpace) {
     return null;
   }
 
   const rootNestedPath = buildNestedPath(rootSpace);
-  const rootCreateSpacePath = getCreateSpacePath(rootSpace.id, rootSpace.slug);
   const rootVisitSpacePath = rootSpace.slug
     ? getDhoPathAgreements(lang, rootSpace.slug)
     : '#';
@@ -217,7 +211,6 @@ export function VisibleSpacesList({
       <div className="flex flex-col gap-3">
         {filteredSpaces.map((space) => {
           const nestedPath = buildNestedPath(space);
-          const createSpacePath = getCreateSpacePath(space.id, space.slug);
           const visitSpacePath = space.slug
             ? getDhoPathAgreements(lang, space.slug)
             : '#';

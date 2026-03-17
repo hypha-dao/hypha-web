@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupply, getTokenDecimals } from '@hypha-platform/core/server';
 
+const getErrorMessage = (error: unknown) => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+};
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ token: `0x${string}` }> },
@@ -24,8 +31,8 @@ export async function GET(
     const formattedSupply = Number(totalSupply / 10n ** BigInt(decimals));
 
     return NextResponse.json({ supply: formattedSupply });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Error fetching token supply for ${token}:`, error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }
 }

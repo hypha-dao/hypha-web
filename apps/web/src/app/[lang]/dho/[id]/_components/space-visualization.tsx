@@ -438,18 +438,6 @@ export function SpaceVisualization({
       if (focus.parent) zoom(focus.parent);
     });
 
-    function isDescendantOf(
-      node: SpaceHierarchyNode,
-      ancestor: SpaceHierarchyNode,
-    ): boolean {
-      let current = node.parent;
-      while (current) {
-        if (current === ancestor) return true;
-        current = current.parent;
-      }
-      return false;
-    }
-
     function isDescendantOfOrSelf(
       node: SpaceHierarchyNode,
       ancestor: SpaceHierarchyNode,
