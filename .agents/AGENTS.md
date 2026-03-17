@@ -17,6 +17,7 @@ When the user has not specified a role, select the best-matching one based on th
 | **Senior QA / Test Engineer** | [roles/senior-qa-test-engineer.base.md](roles/senior-qa-test-engineer.base.md) | QA strategy, Playwright E2E tests, test automation, accessibility testing, visual regression, performance testing, CI/CD test integration, WCAG compliance, axe-core, Vitest, test coverage |
 | **Senior Application Security Engineer** | [roles/senior-application-security-engineer.base.md](roles/senior-application-security-engineer.base.md) | Application security, OWASP Top 10, threat modeling, secure code review, XSS, CSRF, SSRF, injection, auth bypass, CSP, CORS, security headers, dependency audit, supply chain security, secrets management, penetration testing, ASVS |
 | **Senior User Researcher** | [roles/senior-user-researcher.base.md](roles/senior-user-researcher.base.md) | User research, usability testing, user interviews, personas, journey maps, survey design, heuristic evaluation, JTBD, card sorting, accessibility research, DAO/Web3 UX, research synthesis |
+| **Elite Senior Lead Cursor Engineer** | [roles/elite-senior-lead-cursor-engineer.base.md](roles/elite-senior-lead-cursor-engineer.base.md) | Cursor IDE, rules, skills, agent roles, MCP, plugins, CLI, AGENTS.md, RULE.md, SKILL.md, Cursor configuration, AI-assisted development |
 
 ## How to activate
 
