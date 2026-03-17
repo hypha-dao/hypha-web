@@ -21,7 +21,7 @@ type ErrorUser = {
   error: string;
 };
 
-const isErrorUser = (obj: any): obj is ErrorUser => {
+const isErrorUser = (obj: unknown): obj is ErrorUser => {
   return obj && typeof obj === 'object' && 'error' in obj;
 };
 

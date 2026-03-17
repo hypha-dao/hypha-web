@@ -10,7 +10,6 @@ import {
   Image,
   Button,
 } from '@hypha-platform/ui';
-import { cn } from '@hypha-platform/ui-utils';
 import { TokenType } from '@hypha-platform/core/client';
 import { getTokenTypeLabel } from '../../../../treasury/components/common/token-type-field';
 
@@ -39,7 +38,6 @@ export const TokenPayoutField = ({
   value,
   onChange,
   tokens,
-  readOnlyDropdown,
 }: TokenPayoutFieldProps) => {
   const selectedToken = tokens.find((t) => t.address === value.token);
 

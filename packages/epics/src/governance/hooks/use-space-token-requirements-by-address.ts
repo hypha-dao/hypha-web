@@ -18,7 +18,7 @@ interface UseSpaceTokenRequirementsResult {
   hasTokenRequirements: boolean;
   hasEnoughTokens: boolean;
   missingTokenMessage: string | null;
-  spaceTokenRequirements: any;
+  spaceTokenRequirements: ReturnType<typeof useSpaceTokenRequirements>;
   selectedSpace: Space | undefined;
   loading: boolean;
   error: boolean;

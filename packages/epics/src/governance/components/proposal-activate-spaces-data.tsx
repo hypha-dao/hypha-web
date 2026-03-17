@@ -1,6 +1,5 @@
 'use client';
 
-import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { useSpacesByWeb3IdsClient } from '../hooks';
 import { Image, Separator, Input } from '@hypha-platform/ui';
 

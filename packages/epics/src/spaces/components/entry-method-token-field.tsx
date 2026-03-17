@@ -50,7 +50,7 @@ export const EntryMethodTokenField = ({
   const handleAmountChange = (next: string) => {
     // allow only digits with a single optional decimal point;
     // support intermediate states
-    if (!/^\d*(?:[\.\,]\d*)?$/.test(next)) return;
+    if (!/^\d*(?:[.,]\d*)?$/.test(next)) return;
     setDisplayAmount(next);
     // don't propagate while incomplete (empty or trailing '.')
     if (next === '' || next.endsWith('.') || next.endsWith(',')) return;

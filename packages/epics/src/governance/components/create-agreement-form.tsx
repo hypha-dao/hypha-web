@@ -12,7 +12,6 @@ import {
 import { z } from 'zod';
 import { Button, Form } from '@hypha-platform/ui';
 import React from 'react';
-import { useRouter } from 'next/navigation';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useConfig } from 'wagmi';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
@@ -40,7 +39,6 @@ export const CreateAgreementForm = ({
   web3SpaceId,
   label = 'Agreement',
 }: CreateAgreementFormProps) => {
-  const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
@@ -79,7 +77,7 @@ export const CreateAgreementForm = ({
     });
   };
 
-  const handleInvalid = async (err?: any) => {
+  const handleInvalid = async (err?: unknown) => {
     console.log('form errors:', err);
   };
 

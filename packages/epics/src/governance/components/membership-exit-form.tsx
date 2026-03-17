@@ -4,7 +4,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   createAgreementFiles,
   schemaMembershipExit,
-  Space,
   useJwt,
   useMe,
   useMembershipExitOrchestrator,
@@ -95,7 +94,7 @@ export const MembershipExitForm = ({
     [membershipExitAction],
   );
 
-  const handleInvalid = async (err?: any) => {
+  const handleInvalid = async (err?: unknown) => {
     console.warn('Error on Member Exit:', err);
   };
 

@@ -15,7 +15,6 @@ import {
 } from '@hypha-platform/ui';
 import {
   activateSpacesSchema,
-  ActivateSpacesFormValues,
 } from '../hooks/validation';
 import { extractRevertReason, Space, useMe } from '@hypha-platform/core/client';
 import { SpaceWithNumberOfMonthsFieldArray } from './space-with-number-of-months-array';
@@ -79,7 +78,6 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
   const {
     control,
     handleSubmit,
-    watch,
     setValue,
     setError,
     formState: { errors },
@@ -100,7 +98,7 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
     return !isPersonLoading && person ? [person] : [];
   }, [isPersonLoading, person]);
 
-  const onSubmit = async (data: ActivateSpacesFormValues) => {
+  const onSubmit = async () => {
     setShowSuccessMessage(false);
     try {
       const tx = await submitActivation();

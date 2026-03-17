@@ -4,8 +4,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   baseSchemaIssueNewToken,
-  schemaIssueNewToken,
-  createAgreementFiles,
   useMe,
   useCreateIssueTokenOrchestrator,
   DbToken,
@@ -155,8 +153,6 @@ export const IssueNewTokenForm = ({
   const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
 
   const { tokens: dbTokens, refetchDbTokens } = useDbTokens();
-
-  const tokenType = form.watch('type');
 
   React.useEffect(() => {
     refetchDbTokens();

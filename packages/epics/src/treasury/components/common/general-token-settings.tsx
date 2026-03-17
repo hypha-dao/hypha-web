@@ -7,7 +7,6 @@ import { TokenSymbolField } from './token-symbol-field';
 import { TokenIconField } from './token-icon-field';
 
 export const GeneralTokenSettings = ({
-  tokenType,
   setTokenType,
 }: {
   tokenType: string;
