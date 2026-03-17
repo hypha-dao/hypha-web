@@ -287,16 +287,4 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
 
     _mint(to, amount);
   }
-
-  function _canPurchaseRecipient(
-    address recipient
-  ) internal view virtual override returns (bool) {
-    if (recipient == executor) {
-      return true;
-    }
-    if (!_isSpaceMember(recipient)) {
-      return false;
-    }
-    return canAccountReceive(recipient);
-  }
 }
