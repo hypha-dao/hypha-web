@@ -1,4 +1,4 @@
-import { parseEventLogs } from 'viem';
+import { type Log, parseEventLogs } from 'viem';
 import { daoProposalsImplementationAbi } from '@hypha-platform/core/generated';
 
 /**
@@ -11,7 +11,7 @@ export const getProposalCreatedEvent = (logs: unknown[]) => {
     // Parse logs for the specific event
     const ProposalCreatedEvents = parseEventLogs({
       abi: daoProposalsImplementationAbi,
-      logs,
+      logs: logs as Log[],
       eventName: 'ProposalCreated',
     });
 

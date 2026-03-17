@@ -48,7 +48,7 @@ function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
   });
 
   const { userState, isLoading: isUserStateLoading } = useUserSpaceState({
-    spaceId: web3SpaceId,
+    spaceId: web3SpaceId ?? undefined,
     spaceSlug,
     space: fullSpace,
   });

@@ -70,7 +70,7 @@ export const DelegatedSpaceSelector = ({
           disabled={readOnly}
           renderOption={(option) => (
             <>
-              {option.avatarUrl && (
+              {typeof option.avatarUrl === 'string' && (
                 <Image
                   src={option.avatarUrl}
                   alt={option.label}
@@ -87,7 +87,7 @@ export const DelegatedSpaceSelector = ({
           renderValue={(option) =>
             option ? (
               <div className="flex items-center gap-2 truncate">
-                {option.avatarUrl && (
+                {typeof option.avatarUrl === 'string' && (
                   <Image
                     src={option.avatarUrl}
                     alt={option.label}

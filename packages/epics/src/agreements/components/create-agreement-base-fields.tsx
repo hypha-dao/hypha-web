@@ -22,8 +22,8 @@ import { PersonAvatar } from '../../people/components/person-avatar';
 import { z } from 'zod';
 import {
   ALLOWED_IMAGE_FILE_SIZE,
-  createAgreementFiles,
   schemaCreateAgreement,
+  schemaCreateAgreementFiles,
   useSpaceBySlug,
   useSpaceMinProposalDuration,
   useSpaceDetailsWeb3Rpc,
@@ -45,7 +45,7 @@ import React from 'react';
 type Creator = { avatar: string; name: string; surname: string };
 
 export type CreateAgreementFormData = z.infer<typeof schemaCreateAgreement> &
-  z.infer<typeof createAgreementFiles>;
+  z.infer<typeof schemaCreateAgreementFiles>;
 
 export type CreateAgreementFormProps = {
   creator?: Creator;

@@ -22,7 +22,7 @@ type ErrorUser = {
 };
 
 const isErrorUser = (obj: unknown): obj is ErrorUser => {
-  return obj && typeof obj === 'object' && 'error' in obj;
+  return Boolean(obj && typeof obj === 'object' && 'error' in obj);
 };
 
 export const ConnectedButtonProfile = ({

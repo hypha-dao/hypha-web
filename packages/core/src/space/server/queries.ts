@@ -247,9 +247,10 @@ ORDER BY level, id;
   const results = await db.execute(query);
 
   return results.rows.map((record) => {
-    const space: Partial<Space> = {};
+    const space: Record<string, unknown> = {};
     for (const [name, column] of columnEntires) {
-      space[name as keyof Space] = record[column.name] as Space[keyof Space];
+      const value = record[column.name];
+      space[name] = value === null ? undefined : value;
     }
     return space as Space;
   });

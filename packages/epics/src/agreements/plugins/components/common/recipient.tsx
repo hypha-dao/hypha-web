@@ -160,7 +160,7 @@ export const Recipient = ({
             }
             renderOption={(option) => (
               <>
-                {option.avatarUrl && (
+                {typeof option.avatarUrl === 'string' && (
                   <Image
                     src={option.avatarUrl}
                     alt={option.label}
@@ -177,7 +177,7 @@ export const Recipient = ({
             renderValue={(option) =>
               option ? (
                 <div className="flex items-center gap-2 truncate">
-                  {option.avatarUrl && (
+                  {typeof option.avatarUrl === 'string' && (
                     <Image
                       src={option.avatarUrl}
                       alt={option.label}

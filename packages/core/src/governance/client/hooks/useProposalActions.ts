@@ -18,7 +18,7 @@ export const useProposalActions = () => {
       const transactions = data[9];
       const actions: string[] = [];
 
-      (transactions as ProposalTx[]).forEach((tx) => {
+      (transactions as unknown as ProposalTx[]).forEach((tx) => {
         try {
           const decodedRegular = decodeFunctionData({
             abi: regularTokenFactoryAbi,

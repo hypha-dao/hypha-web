@@ -6,7 +6,11 @@ import { getProposalDetails } from '../web3';
 import React from 'react';
 import { decodeTransaction } from './decoders';
 
-type ProposalTx = { target: `0x${string}`; data: `0x${string}` };
+type ProposalTx = {
+  target: `0x${string}`;
+  data: `0x${string}`;
+  value: bigint;
+};
 
 export const useProposalDetailsWeb3Rpc = ({
   proposalId,
@@ -160,79 +164,92 @@ export const useProposalDetailsWeb3Rpc = ({
       spaceActivityAccess: undefined,
     };
 
-    (transactions as ProposalTx[]).forEach((tx) => {
+    (transactions as unknown as ProposalTx[]).forEach((tx) => {
       const decoded = decodeTransaction(tx);
 
       if (!decoded) return;
 
       switch (decoded.type) {
         case 'transfer':
-          transfers.push(decoded.data);
+          transfers.push(
+            decoded.data as {
+              recipient: string;
+              rawAmount: bigint;
+              token: string;
+              value: bigint;
+            },
+          );
           break;
 
         case 'token':
-          tokens.push(decoded.data);
+          tokens.push(decoded.data as (typeof tokens)[number]);
           break;
 
         case 'votingMethod':
-          votingMethods.push(decoded.data);
+          votingMethods.push(decoded.data as (typeof votingMethods)[number]);
           break;
 
         case 'entryMethod':
-          entryMethods.push(decoded.data);
+          entryMethods.push(decoded.data as (typeof entryMethods)[number]);
           break;
 
         case 'mint':
-          mintings.push({ ...decoded.data, token: tx.target });
+          mintings.push({
+            ...(decoded.data as Omit<(typeof mintings)[number], 'token'>),
+            token: tx.target,
+          });
           break;
 
         case 'tokenRequirement':
-          tokenRequirements.push(decoded.data);
+          tokenRequirements.push(
+            decoded.data as (typeof tokenRequirements)[number],
+          );
           break;
 
         case 'votingToken':
-          votingMethodsToken = decoded.data;
+          votingMethodsToken = decoded.data as typeof votingMethodsToken;
           break;
 
         case 'investInHypha':
-          buyHyphaTokensData = decoded.data;
+          buyHyphaTokensData = decoded.data as typeof buyHyphaTokensData;
           break;
 
         case 'payForSpaces':
           activateSpacesData = {
-            ...decoded.data,
+            ...(decoded.data as Omit<(typeof activateSpacesData), 'tokenSymbol'>),
             tokenSymbol: 'USDC',
           };
           break;
 
         case 'payInHypha':
           activateSpacesData = {
-            ...decoded.data,
+            ...(decoded.data as Omit<(typeof activateSpacesData), 'tokenSymbol'>),
             tokenSymbol: 'HYPHA',
           };
           break;
 
         case 'delegate':
-          delegatesData = decoded.data;
+          delegatesData = decoded.data as typeof delegatesData;
           break;
 
         case 'setMinimumProposalDuration':
-          minimumProposalDurationData = decoded.data;
+          minimumProposalDurationData =
+            decoded.data as typeof minimumProposalDurationData;
           break;
 
         case 'membershipExit':
-          membershipExitData = decoded.data;
+          membershipExitData = decoded.data as typeof membershipExitData;
           break;
 
         case 'setSpaceDiscoverability':
           transparencySettingsData.spaceDiscoverability = Number(
-            decoded.data.discoverability,
+            (decoded.data as { discoverability: number }).discoverability,
           );
           break;
 
         case 'setSpaceAccess':
           transparencySettingsData.spaceActivityAccess = Number(
-            decoded.data.access,
+            (decoded.data as { access: number }).access,
           );
           break;
 

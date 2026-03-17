@@ -1,4 +1,4 @@
-import { decodeFunctionData, erc20Abi } from 'viem';
+import { type Abi, decodeFunctionData, erc20Abi } from 'viem';
 import {
   regularTokenFactoryAbi,
   ownershipTokenFactoryAbi,
@@ -26,7 +26,7 @@ type DecodedTx = {
 
 export function decodeTransaction(tx: Tx) {
   const decoders: Array<{
-    abi: unknown;
+    abi: Abi;
     handler: (
       decoded: DecodedTx,
       tx: Tx,
