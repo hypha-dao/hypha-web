@@ -18,8 +18,6 @@ import {
 } from '@hypha-platform/core/client';
 
 import {
-  daoProposalsImplementationAbi,
-  daoProposalsImplementationAddress,
   daoSpaceFactoryImplementationAbi,
   daoSpaceFactoryImplementationAddress,
 } from '@hypha-platform/core/generated';

@@ -48,40 +48,29 @@ export async function getTransfersByAddress(
   const allTransfers = [
     ...fromTransfers.transfers,
     ...toTransfers.transfers,
-  ].map((transfer) => {
-    const blockNumber = parseInt(transfer.blockNum, 16);
-    const timestamp = Date.parse(transfer.metadata.blockTimestamp) || 0;
-
-    const getMetadata = async () => {
-      const tokenMetadata = transfer.rawContract.address
-        ? await alchemy.core.getTokenMetadata(transfer.rawContract.address)
-        : { decimals: 18, symbol: transfer.asset || 'UNKNOWN' };
-      return {
-        decimals: tokenMetadata.decimals ?? 18,
-        symbol: tokenMetadata.symbol ?? transfer.asset ?? 'UNKNOWN',
-      };
-    };
-
-    return {
-      from: transfer.from,
-      to: transfer.to ?? '',
-      value: transfer.value ? transfer.value.toString() : '0',
-      symbol: transfer.asset ?? 'UNKNOWN',
-      decimals: 18,
-      token: transfer.rawContract.address ?? '',
-      timestamp,
-      block_number: blockNumber,
-      transaction_index: 0,
-      transaction_hash: transfer.hash,
-      _getMetadata: getMetadata,
-    };
-  });
+  ];
 
   const transfersWithData = await Promise.all(
     allTransfers.map(async (transfer) => {
-      const { decimals, symbol } = await transfer._getMetadata();
-      const { _getMetadata, ...rest } = transfer;
-      return { ...rest, decimals, symbol };
+    const blockNumber = parseInt(transfer.blockNum, 16);
+    const timestamp = Date.parse(transfer.metadata.blockTimestamp) || 0;
+
+      const tokenMetadata = transfer.rawContract.address
+        ? await alchemy.core.getTokenMetadata(transfer.rawContract.address)
+        : { decimals: 18, symbol: transfer.asset || 'UNKNOWN' };
+
+      return {
+        from: transfer.from,
+        to: transfer.to ?? '',
+        value: transfer.value ? transfer.value.toString() : '0',
+        symbol: tokenMetadata.symbol ?? transfer.asset ?? 'UNKNOWN',
+        decimals: tokenMetadata.decimals ?? 18,
+        token: transfer.rawContract.address ?? '',
+        timestamp,
+        block_number: blockNumber,
+        transaction_index: 0,
+        transaction_hash: transfer.hash,
+      };
     }),
   );
 
@@ -89,5 +78,5 @@ export async function getTransfersByAddress(
     return b.block_number - a.block_number;
   });
 
-  return transfersWithData;
+  return transfersWithData.slice(0, limit);
 }

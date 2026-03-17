@@ -159,16 +159,21 @@ export const useCreateAgreementOrchestrator = ({
   const { trigger: createAgreement } = useSWRMutation(
     'createAgreementOrchestration',
     async (_, { arg }: { arg: z.infer<typeof schemaCreateAgreement> }) => {
+      type CreateAgreementArg = z.infer<typeof schemaCreateAgreement> & {
+        web3SpaceId?: number;
+        leadImage?: string | File;
+        attachments?: Array<string | File>;
+      };
+      const input = arg as CreateAgreementArg;
       startTask('CREATE_WEB2_AGREEMENT');
-      const inputCreateAgreementWeb2 = schemaCreateAgreementWeb2.parse(arg);
+      const inputCreateAgreementWeb2 = schemaCreateAgreementWeb2.parse(input);
       const createdAgreement = await web2.createAgreement(
         inputCreateAgreementWeb2,
       );
       completeTask('CREATE_WEB2_AGREEMENT');
 
-      let web3ProposalResult = undefined;
       const web2Slug = createdAgreement?.slug ?? web2.createdAgreement?.slug;
-      const web3SpaceId = (arg as any).web3SpaceId;
+      const { web3SpaceId } = input;
       try {
         if (config) {
           if (typeof web3SpaceId !== 'number') {
@@ -177,25 +182,24 @@ export const useCreateAgreementOrchestrator = ({
             );
           }
           startTask('CREATE_WEB3_AGREEMENT');
-          web3ProposalResult = await web3.createAgreement({
+          await web3.createAgreement({
             spaceId: web3SpaceId,
           });
           completeTask('CREATE_WEB3_AGREEMENT');
         }
 
         const hasFileUrls =
-          (typeof (arg as any).leadImage === 'string' &&
-            (arg as any).leadImage) ||
-          ((arg as any).attachments &&
-            Array.isArray((arg as any).attachments) &&
-            (arg as any).attachments.length > 0 &&
-            (arg as any).attachments[0] instanceof File === false);
+          (typeof input.leadImage === 'string' && input.leadImage) ||
+          (input.attachments &&
+            Array.isArray(input.attachments) &&
+            input.attachments.length > 0 &&
+            input.attachments[0] instanceof File === false);
 
         let filesToUpload = null;
         if (!hasFileUrls) {
           try {
-            filesToUpload = schemaCreateAgreementFiles.parse(arg);
-          } catch (e) {
+            filesToUpload = schemaCreateAgreementFiles.parse(input);
+          } catch {
             filesToUpload = null;
           }
         }
@@ -211,9 +215,9 @@ export const useCreateAgreementOrchestrator = ({
           startTask('UPLOAD_FILES');
           await agreementFiles.upload(
             {
-              leadImage: (arg as any).leadImage,
-              attachments: (arg as any).attachments,
-            } as any,
+              leadImage: input.leadImage,
+              attachments: input.attachments,
+            },
             web2Slug,
           );
           completeTask('UPLOAD_FILES');

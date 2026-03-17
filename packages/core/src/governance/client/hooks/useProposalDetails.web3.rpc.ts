@@ -6,6 +6,8 @@ import { getProposalDetails } from '../web3';
 import React from 'react';
 import { decodeTransaction } from './decoders';
 
+type ProposalTx = { target: `0x${string}`; data: `0x${string}` };
+
 export const useProposalDetailsWeb3Rpc = ({
   proposalId,
 }: {
@@ -158,7 +160,7 @@ export const useProposalDetailsWeb3Rpc = ({
       spaceActivityAccess: undefined,
     };
 
-    (transactions as any[]).forEach((tx) => {
+    (transactions as ProposalTx[]).forEach((tx) => {
       const decoded = decodeTransaction(tx);
 
       if (!decoded) return;

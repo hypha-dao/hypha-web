@@ -87,18 +87,7 @@ export const useJoinSpaceProposalHandler = ({
           getSpaceDetails({ spaceId: BigInt(spaceId) }),
         );
 
-        const [
-          unity,
-          quorum,
-          votingPowerSource,
-          tokenAdresses,
-          members,
-          exitMethod,
-          joinMethod,
-          createdAt,
-          creator,
-          executor,
-        ] = spaceDetails;
+        const [, , , , , , joinMethod] = spaceDetails;
 
         return joinMethod;
       } catch (error) {
@@ -144,7 +133,6 @@ export const useJoinSpaceProposalHandler = ({
     async (
       targetSpaceId: number,
       createdProposalId: number,
-      originalProposalId: number,
     ) => {
       try {
         if (!jwt) {
@@ -341,7 +329,6 @@ export const useJoinSpaceProposalHandler = ({
                 await createInviteProposal(
                   targetSpaceId,
                   createdProposalId,
-                  proposalId,
                 );
 
                 console.log(
