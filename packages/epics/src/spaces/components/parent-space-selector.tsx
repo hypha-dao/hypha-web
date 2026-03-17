@@ -69,10 +69,10 @@ export const ParentSpaceSelector = ({
               <>
                 <Image
                   src={
-                  (typeof option.avatarUrl === 'string'
-                    ? option.avatarUrl
-                    : DEFAULT_SPACE_AVATAR_IMAGE) as string
-                }
+                    (typeof option.avatarUrl === 'string'
+                      ? option.avatarUrl
+                      : DEFAULT_SPACE_AVATAR_IMAGE) as string
+                  }
                   alt={option.label}
                   width={24}
                   height={24}
@@ -86,10 +86,10 @@ export const ParentSpaceSelector = ({
                 <div className="flex items-center gap-2 truncate">
                   <Image
                     src={
-                  (typeof option.avatarUrl === 'string'
-                    ? option.avatarUrl
-                    : DEFAULT_SPACE_AVATAR_IMAGE) as string
-                }
+                      (typeof option.avatarUrl === 'string'
+                        ? option.avatarUrl
+                        : DEFAULT_SPACE_AVATAR_IMAGE) as string
+                    }
                     alt={option.label}
                     width={24}
                     height={24}

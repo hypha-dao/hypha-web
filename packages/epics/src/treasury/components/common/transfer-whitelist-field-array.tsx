@@ -182,8 +182,8 @@ export const TransferWhitelistFieldArray = ({
                           (typeof option.avatarUrl === 'string'
                             ? option.avatarUrl
                             : currentType === 'member'
-                              ? '/placeholder/default-profile.svg'
-                              : DEFAULT_SPACE_AVATAR_IMAGE) as string
+                            ? '/placeholder/default-profile.svg'
+                            : DEFAULT_SPACE_AVATAR_IMAGE) as string
                         }
                         alt={option.label}
                         width={24}
@@ -203,8 +203,8 @@ export const TransferWhitelistFieldArray = ({
                             (typeof option.avatarUrl === 'string'
                               ? option.avatarUrl
                               : currentType === 'member'
-                                ? '/placeholder/default-profile.svg'
-                                : DEFAULT_SPACE_AVATAR_IMAGE) as string
+                              ? '/placeholder/default-profile.svg'
+                              : DEFAULT_SPACE_AVATAR_IMAGE) as string
                           }
                           alt={option.label}
                           width={24}

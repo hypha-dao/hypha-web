@@ -216,14 +216,14 @@ export const useProposalDetailsWeb3Rpc = ({
 
         case 'payForSpaces':
           activateSpacesData = {
-            ...(decoded.data as Omit<(typeof activateSpacesData), 'tokenSymbol'>),
+            ...(decoded.data as Omit<typeof activateSpacesData, 'tokenSymbol'>),
             tokenSymbol: 'USDC',
           };
           break;
 
         case 'payInHypha':
           activateSpacesData = {
-            ...(decoded.data as Omit<(typeof activateSpacesData), 'tokenSymbol'>),
+            ...(decoded.data as Omit<typeof activateSpacesData, 'tokenSymbol'>),
             tokenSymbol: 'HYPHA',
           };
           break;
