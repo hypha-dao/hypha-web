@@ -9,6 +9,7 @@ import {
 import { hyphaTokenAddress } from '@hypha-platform/core/generated';
 import { AssetCard } from './asset-card';
 import { useAssetsSection, useTokenSupply } from '../../hooks';
+import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { Button } from '@hypha-platform/ui';
 import { Loader2 } from 'lucide-react';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -76,7 +77,9 @@ export const SpacePendingRewardsSection: FC<
   );
 
   const parsedRewardValue =
-    pendingRewards !== undefined ? Number(pendingRewards / 10n ** 18n) : 0;
+    pendingRewards !== undefined
+      ? Number(pendingRewards * 1_000_000n / 10n ** 18n) / 1_000_000
+      : 0;
 
   const baseHyphaAsset = originalAsset
     ? { ...originalAsset, value: parsedRewardValue }
@@ -156,7 +159,10 @@ export const SpacePendingRewardsSection: FC<
   return (
     <div className="flex flex-col w-full justify-center items-center gap-3">
       <div className="w-full flex justify-between">
-        <SectionFilter label="Rewards" />
+        <SectionFilter
+          label="Rewards"
+          count={`${formatCurrencyValue(parsedRewardValue)} HYPHA`}
+        />
         <Button
           title={
             !isAuthenticated

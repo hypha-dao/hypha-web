@@ -5,6 +5,7 @@ import { SectionFilter } from '@hypha-platform/ui/server';
 import { type Person, usePendingRewards } from '@hypha-platform/core/client';
 import { AssetCard } from './asset-card';
 import { useUserAssetsSection } from '../../hooks';
+import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { Button } from '@hypha-platform/ui';
 import { Loader2 } from 'lucide-react';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -65,7 +66,9 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
   );
 
   const parsedRewardValue =
-    pendingRewards !== undefined ? Number(pendingRewards / 10n ** 18n) : 0;
+    pendingRewards !== undefined
+      ? Number(pendingRewards * 1_000_000n / 10n ** 18n) / 1_000_000
+      : 0;
 
   const hyphaTokenAsset =
     pendingRewards !== undefined
@@ -104,7 +107,10 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
   return (
     <div className="flex flex-col w-full justify-center items-center gap-3">
       <div className="w-full flex justify-between">
-        <SectionFilter label={tProfile('rewards')} />
+        <SectionFilter
+          label={tProfile('rewards')}
+          count={`${formatCurrencyValue(parsedRewardValue)} HYPHA`}
+        />
         <Button
           title={
             !isMyProfile
