@@ -1,5 +1,9 @@
 name: Deploy Preview
 
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 on: [pull_request]
 
 env:
@@ -8,6 +12,7 @@ env:
   NEON_API_KEY: ${{ secrets.NEON_API_KEY }} # You can generate a an API key in your account settings
   NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }} # You can find this in your project settings
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+  VERCEL_PREVIEW_DOMAIN: ${{ secrets.VERCEL_PREVIEW_DOMAIN }}
   DEFAULT_DB_URL: ${{ secrets.POSTGRES_URL }}
   PRIVATE_KEY: ${{ secrets.EVM_SC_OWNER_PRIVATE_KEY }}
   DEFAULT_DB_AUTHENTICATED_URL: ${{ secrets.POSTGRES_AUTHENTICATED_URL }}
@@ -92,9 +97,52 @@ jobs:
       - name: Build Project Artifacts
         run: vercel build --token=${{ env.VERCEL_TOKEN }}
 
+      # vercel deploy --prebuilt returns a unique deployment URL each run. To keep
+      # a stable preview link per PR branch, we assign a wildcard-domain alias.
+      - name: Compute stable preview alias
+        if: env.VERCEL_PREVIEW_DOMAIN != ''
+        id: preview-alias
+        env:
+          BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          branch_slug=$(printf '%s' "$BRANCH_NAME" | tr '[:upper:]' '[:lower:]' | sed -E 's#[^a-z0-9]+#-#g; s#(^-|-$)##g; s#-+#-#g' | cut -c1-40)
+
+          if [ -z "$branch_slug" ]; then
+            branch_slug="pr-$PR_NUMBER"
+          fi
+
+          preview_alias="pr-$PR_NUMBER-$branch_slug.${VERCEL_PREVIEW_DOMAIN}"
+          echo "preview_alias=$preview_alias" >> "$GITHUB_OUTPUT"
+
       - name: Deploy Preview to Vercel
         id: deploy
-        run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }}) >> $GITHUB_OUTPUT
+        env:
+          PREVIEW_ALIAS: ${{ steps.preview-alias.outputs.preview_alias }}
+        run: |
+          deployment_url="$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }})"
+          preview_url="$deployment_url"
+
+          if [ -n "$PREVIEW_ALIAS" ]; then
+            vercel alias set "$deployment_url" "$PREVIEW_ALIAS" --token=${{ env.VERCEL_TOKEN }}
+            preview_url="https://$PREVIEW_ALIAS"
+          fi
+
+          {
+            echo "deployment_url=$deployment_url"
+            echo "preview_url=$preview_url"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### Preview deployment"
+            echo ""
+            echo "- Deployment URL: $deployment_url"
+            if [ -n "$PREVIEW_ALIAS" ]; then
+              echo "- Stable preview URL: $preview_url"
+            else
+              echo "- Stable preview URL: not configured (set VERCEL_PREVIEW_DOMAIN to enable)"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
   main:
     needs: [detect-changes]

@@ -3,10 +3,33 @@ on:
   pull_request:
     types: [closed]
 
+env:
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+  VERCEL_PREVIEW_DOMAIN: ${{ secrets.VERCEL_PREVIEW_DOMAIN }}
+
 jobs:
   delete-preview:
     runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
+      - name: Install Vercel CLI
+        if: env.VERCEL_PREVIEW_DOMAIN != ''
+        run: npm install --global vercel@latest
+
+      - name: Remove stable preview alias
+        if: env.VERCEL_PREVIEW_DOMAIN != ''
+        env:
+          BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          branch_slug=$(printf '%s' "$BRANCH_NAME" | tr '[:upper:]' '[:lower:]' | sed -E 's#[^a-z0-9]+#-#g; s#(^-|-$)##g; s#-+#-#g' | cut -c1-40)
+
+          if [ -z "$branch_slug" ]; then
+            branch_slug="pr-$PR_NUMBER"
+          fi
+
+          preview_alias="pr-$PR_NUMBER-$branch_slug.${VERCEL_PREVIEW_DOMAIN}"
+          vercel alias rm "$preview_alias" --yes --token="${VERCEL_TOKEN}" || true
+
       - name: Delete Neon Branch
         uses: neondatabase/delete-branch-action@v3
         with:
