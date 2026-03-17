@@ -6,6 +6,8 @@ import { base } from 'viem/chains';
 
 export type ClaimRewardsWeb3Input = {
   user: `0x${string}`;
+  /** Optional: space-specific HyphaToken address (as in claim-rewards.ts script) */
+  hyphaTokenAddress?: `0x${string}`;
 };
 
 export type ClaimRewardsWeb3Config = {
@@ -13,14 +15,10 @@ export type ClaimRewardsWeb3Config = {
 };
 
 export const claimRewards = (
-  {
-    user,
-  }: {
-    user: `0x${string}`;
-  },
+  { user, hyphaTokenAddress: customAddress }: ClaimRewardsWeb3Input,
   { chain = base.id }: ClaimRewardsWeb3Config = {},
 ) => {
-  const address = hyphaTokenAddress[chain];
+  const address = customAddress ?? hyphaTokenAddress[chain];
 
   const callConfig = {
     address,
