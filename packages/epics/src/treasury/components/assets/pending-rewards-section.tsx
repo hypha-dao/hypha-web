@@ -66,9 +66,7 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
   );
 
   const parsedRewardValue =
-    pendingRewards !== undefined
-      ? Number((pendingRewards * 1_000_000n) / 10n ** 18n) / 1_000_000
-      : 0;
+    pendingRewards !== undefined ? Number(pendingRewards) / 1e18 : 0;
 
   const hyphaTokenAsset =
     pendingRewards !== undefined
@@ -96,7 +94,7 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
     try {
       const txHash = await claim();
       await waitForClaimReceipt(txHash as `0x${string}`);
-      await updatePendingRewards();
+      await updatePendingRewards(0n, { revalidate: true });
       await updateUserAssets();
       setHasClaimed(true);
     } catch (error) {

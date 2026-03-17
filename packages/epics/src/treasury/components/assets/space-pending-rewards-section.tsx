@@ -77,9 +77,7 @@ export const SpacePendingRewardsSection: FC<
   );
 
   const parsedRewardValue =
-    pendingRewards !== undefined
-      ? Number((pendingRewards * 1_000_000n) / 10n ** 18n) / 1_000_000
-      : 0;
+    pendingRewards !== undefined ? Number(pendingRewards) / 1e18 : 0;
 
   const baseHyphaAsset = originalAsset
     ? { ...originalAsset, value: parsedRewardValue }
@@ -141,7 +139,7 @@ export const SpacePendingRewardsSection: FC<
     try {
       const txHash = await claim();
       await waitForClaimReceipt(txHash as `0x${string}`);
-      await updatePendingRewards();
+      await updatePendingRewards(0n, { revalidate: true });
       await updateSpaceAssets();
       setHasClaimed(true);
     } catch (error) {
