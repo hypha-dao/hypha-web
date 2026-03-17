@@ -5,7 +5,7 @@ const IMAGE_HOSTS = process.env.NEXT_PUBLIC_IMAGE_HOSTS?.split(', ') ?? [];
 const CONNECT_SOURCES =
   process.env.NEXT_PUBLIC_CONNECT_SOURCES?.split(', ') ?? [];
 
-function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
+function applyCsp(response: NextResponse): NextResponse {
   if (
     process.env.NODE_ENV === 'development' &&
     process.env.ENABLE_LOCALHOST_CSP !== 'true'
@@ -59,7 +59,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Apply CSP headers on top of the i18n response
-  return applyCsp(response, request);
+  return applyCsp(response);
 }
 
 export const config = {

@@ -10,6 +10,19 @@ import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
 
+const getErrorMessage = (error: unknown) => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'object' && error !== null && 'shortMessage' in error) {
+    const shortMessage = (error as { shortMessage?: unknown }).shortMessage;
+    if (typeof shortMessage === 'string') {
+      return shortMessage;
+    }
+  }
+  return JSON.stringify(error);
+};
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ spaceSlug: string }> },
@@ -40,9 +53,8 @@ export async function GET(
             getSpaceDetails({ spaceId: BigInt(space.web3SpaceId as number) }),
           )
         : [];
-    } catch (err: any) {
-      const errorMessage =
-        err?.message || err?.shortMessage || JSON.stringify(err);
+    } catch (err: unknown) {
+      const errorMessage = getErrorMessage(err);
       if (errorMessage.includes('rate limit') || errorMessage.includes('429')) {
         console.warn(
           'Rate limit exceeded when calling readContract:',

@@ -7,7 +7,7 @@ import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 import { Plugin } from '../../../../_components/plugins';
 import { notFound } from 'next/navigation';
 import { PATH_SELECT_CREATE_ACTION } from '@web/app/constants';
-import { findSpaceBySlug, getAllSpaces } from '@hypha-platform/core/server';
+import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 
 type PageProps = {

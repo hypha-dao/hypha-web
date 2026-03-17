@@ -150,7 +150,7 @@ export default async function DhoLayout({
               </div>
               <div className="flex">
                 <div className="font-bold text-1">
-                  {/* @ts-ignore: TODO: infer types from relations */}
+                  {/* @ts-expect-error TODO: infer types from relations */}
                   {spaceAgreements}
                 </div>
                 <div className="text-gray-500 ml-1 text-1">

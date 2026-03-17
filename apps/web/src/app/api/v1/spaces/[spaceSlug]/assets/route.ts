@@ -25,6 +25,29 @@ import { checkSpaceAccess } from '@web/utils/check-space-access';
 
 const EVC_TOKEN_ADDRESS = '0xEa6FC1ff9C204E7b40073cCB091Ca8ac30B0B80a';
 
+type TokenBalanceLike = {
+  tokenAddress?: string;
+  symbol?: string;
+  name?: string;
+  logo?: string;
+};
+
+const isTokenBalanceLike = (value: unknown): value is TokenBalanceLike =>
+  typeof value === 'object' && value !== null;
+
+const getErrorMessage = (error: unknown) => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'object' && error !== null && 'shortMessage' in error) {
+    const shortMessage = (error as { shortMessage?: unknown }).shortMessage;
+    if (typeof shortMessage === 'string') {
+      return shortMessage;
+    }
+  }
+  return JSON.stringify(error);
+};
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ spaceSlug: string }> },
@@ -83,9 +106,8 @@ export async function GET(
           getSpaceDecayingTokens({ spaceId }),
         ],
       });
-    } catch (err: any) {
-      const errorMessage =
-        err?.message || err?.shortMessage || JSON.stringify(err);
+    } catch (err: unknown) {
+      const errorMessage = getErrorMessage(err);
       if (errorMessage.includes('rate limit') || errorMessage.includes('429')) {
         console.warn(
           'Rate limit exceeded when calling readContract:',
@@ -114,9 +136,10 @@ export async function GET(
       );
     }
 
-    let externalTokens: any[] = [];
+    let externalTokens: TokenBalanceLike[] = [];
     try {
-      externalTokens = await getTokenBalancesByAddress(spaceAddress);
+      const tokenBalances = await getTokenBalancesByAddress(spaceAddress);
+      externalTokens = tokenBalances.filter(isTokenBalanceLike);
     } catch (error: unknown) {
       console.warn('Failed to fetch external token balances:', error);
     }

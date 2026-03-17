@@ -25,7 +25,7 @@ type PageProps = {
   params: Promise<ProfilePageParams>;
 };
 
-export async function generateMetadata(props: PageProps) {
+export async function generateMetadata() {
   return {
     title: 'User Profile | Hypha',
     description: 'Show Hypha account info.',
