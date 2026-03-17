@@ -9,13 +9,17 @@ Generate conventional commit messages by analyzing code changes and conversation
 
 ## Workflow
 
-### 1. Gather Context
+### 1. Format Before Commit
+
+- **Always** run `pnpm run format:fix` before staging or committing. This uses the project's Prettier config from `package.json`.
+
+### 2. Gather Context
 
 - Run `git status` and `git diff` (or `git diff --staged`) to analyze changes
 - Run `git log --oneline -10` to match the repository's commit style
 - Review conversation history for user intent, decisions, and breaking changes
 
-### 2. Classify Changes
+### 3. Classify Changes
 
 | Type | Use when |
 |---|---|
@@ -31,11 +35,11 @@ Generate conventional commit messages by analyzing code changes and conversation
 | `chore` | Other changes (not src or test) |
 | `revert` | Reverts a previous commit |
 
-### 3. Determine Scope
+### 4. Determine Scope
 
 Identify the affected area as a lowercase noun: component, module, or feature name (e.g., `auth`, `api`, `i18n`). Omit scope when the change spans multiple areas.
 
-### 4. Write Message
+### 5. Write Message
 
 Format: `<type>(<scope>): <subject>`
 
@@ -58,7 +62,13 @@ See `references/examples.md` for concrete examples by type.
 
 ## Executing Commits
 
-Use HEREDOC syntax for multi-line messages:
+**CRITICAL:** Always run the project's format script before committing:
+
+```bash
+pnpm run format:fix
+```
+
+Then stage and commit:
 
 ```bash
 git add <files> && git commit -m "$(cat <<'EOF'
@@ -75,6 +85,7 @@ In sandboxed environments (Cursor IDE), request `all` permissions to preserve GP
 
 ## Pre-Commit Checklist
 
+- [ ] **Format applied** — `pnpm run format:fix` has been run (required)
 - [ ] Correct files staged (`git status`)
 - [ ] Diff matches intent (`git diff --staged`)
 - [ ] Message follows conventional format
