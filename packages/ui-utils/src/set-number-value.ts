@@ -4,7 +4,7 @@ import type React from 'react';
 export const handleNumberChange = <
   TFieldValues extends FieldValues = FieldValues,
 >(
-  setValue: (valueName: string, value: any) => void,
+  setValue: (valueName: Path<TFieldValues>, value: string | number) => void,
   valueName: Path<TFieldValues>,
 ) => {
   return (e: React.ChangeEvent<HTMLInputElement>) => {

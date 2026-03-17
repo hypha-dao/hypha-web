@@ -182,7 +182,7 @@ const FormMessage = React.forwardRef<
     />
   ) : error ? (
     Object.entries(error)
-      .filter(([_, value]) => (value as FieldError)?.message)
+      .filter(([, value]) => (value as FieldError)?.message)
       .map(([key, value], index) => (
         <FormMessageError
           key={`${formMessageId}-${key}-${index}`}

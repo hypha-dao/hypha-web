@@ -1,7 +1,7 @@
 export function tryDecodeUriPart(value: string) {
   try {
     return decodeURIComponent(value);
-  } catch (_) {
+  } catch {
     return value;
   }
 }
