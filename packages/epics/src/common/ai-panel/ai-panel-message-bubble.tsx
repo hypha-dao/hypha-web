@@ -14,22 +14,14 @@ export function AiPanelMessageBubble({ message }: AiPanelMessageBubbleProps) {
   const isUser = message.role === 'user';
 
   return (
-    <div
-      className={cn(
-        'flex gap-2.5',
-        isUser && 'flex-row-reverse',
-      )}
-    >
+    <div className={cn('flex gap-2.5', isUser && 'flex-row-reverse')}>
       {!isUser && (
         <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary">
           <Bot className="h-3.5 w-3.5 text-primary-foreground" />
         </div>
       )}
       <div
-        className={cn(
-          'group max-w-[85%]',
-          isUser && 'flex flex-col items-end',
-        )}
+        className={cn('group max-w-[85%]', isUser && 'flex flex-col items-end')}
       >
         <div
           className={cn(

@@ -37,7 +37,7 @@ export const MOCK_WELCOME_MESSAGE: Message = {
 };
 
 export const MOCK_AI_RESPONSES = [
-  "Based on the current signal data, I can see a strong opportunity in the DeFi governance space. Three communities have shown 40%+ engagement spikes in the last 48 hours. Would you like me to generate a detailed breakdown?",
+  'Based on the current signal data, I can see a strong opportunity in the DeFi governance space. Three communities have shown 40%+ engagement spikes in the last 48 hours. Would you like me to generate a detailed breakdown?',
   "I've analyzed 127 signals across your tracked spaces. The most actionable insight is a convergence of treasury proposals in 3 DAOs that align with your stated objectives. Shall I draft a summary report?",
-  "The pattern suggests this is a coordination signal, not noise. Similar signals in Q3 preceded successful multi-DAO collaborations. I recommend prioritizing this for immediate conversation.",
+  'The pattern suggests this is a coordination signal, not noise. Similar signals in Q3 preceded successful multi-DAO collaborations. I recommend prioritizing this for immediate conversation.',
 ];

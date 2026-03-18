@@ -29,7 +29,10 @@ export function AiPanelMessages({
         ))}
 
         {showSuggestions && messages.length <= 1 && (
-          <AiPanelSuggestions suggestions={suggestions} onSelect={onSuggestionSelect} />
+          <AiPanelSuggestions
+            suggestions={suggestions}
+            onSelect={onSuggestionSelect}
+          />
         )}
       </div>
       <div ref={endRef} />

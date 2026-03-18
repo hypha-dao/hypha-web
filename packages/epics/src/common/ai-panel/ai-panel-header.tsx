@@ -44,9 +44,7 @@ export function AiPanelHeader({
         <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-primary">
           <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
         </div>
-        <span className="font-semibold text-sm text-foreground">
-          Hypha AI
-        </span>
+        <span className="font-semibold text-sm text-foreground">Hypha AI</span>
       </div>
       <div className="flex items-center gap-1">
         <div className="relative" ref={menuRef}>
