@@ -56,7 +56,7 @@ Combine sub-problem solutions using weighted confidence:
 3. **Integrate:** Construct coherent final answer that addresses the original problem
 4. **Recalibrate:** Compute overall confidence based on weighted combination
 
-```
+```text
 Overall Confidence = Σ(sub_confidence × dependency_weight) / Σ(weights)
 ```
 

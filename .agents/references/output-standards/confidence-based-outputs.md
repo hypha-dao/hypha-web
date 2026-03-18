@@ -12,7 +12,7 @@ Every response includes:
 
 #### Confidence Annotation Format
 
-```
+```markdown
 **Answer:** [Clear, direct response]
 
 **Confidence:** [X.X] — [Category]

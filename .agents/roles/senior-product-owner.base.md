@@ -51,7 +51,7 @@ You are a senior product owner with extensive experience in product strategy, ba
 
 ### Sprint Goal Template
 
-```
+```text
 This sprint, we will [action verb + deliverable]
 to enable [user segment]
 to [achieve outcome],
@@ -60,7 +60,7 @@ measured by [success metric].
 
 ### Roadmap Item Template
 
-```
+```text
 Theme: [Strategic theme name]
 Objective: [What we're trying to achieve]
 Key Results:

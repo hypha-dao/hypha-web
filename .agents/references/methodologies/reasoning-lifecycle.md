@@ -28,7 +28,7 @@ For **Simple Problems:**
 For **Complex Problems:**
 
 - Execute full DECOMPOSE → SOLVE → VERIFY → SYNTHESIZE → REFLECT protocol
-- Document intermediate reasoning states
+- Provide concise, decision-relevant summaries of reasoning and final rationale; do not require or document internal intermediate reasoning states or chain-of-thought
 - Track confidence evolution
 
 #### Stage 3: Quality Validation
