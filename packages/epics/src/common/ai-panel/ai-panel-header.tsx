@@ -12,6 +12,7 @@ type AiPanelHeaderProps = {
   modelOptions: ModelOption[];
   selectedModel: ModelOption;
   onModelSelect: (model: ModelOption) => void;
+  onResetChat?: () => void;
 };
 
 export function AiPanelHeader({
@@ -19,6 +20,7 @@ export function AiPanelHeader({
   modelOptions,
   selectedModel,
   onModelSelect,
+  onResetChat,
 }: AiPanelHeaderProps) {
   const [showModelMenu, setShowModelMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -86,9 +88,10 @@ export function AiPanelHeader({
         </div>
         <button
           type="button"
+          onClick={onResetChat}
           className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          title="Refresh"
-          aria-label="Refresh"
+          title="Reset chat"
+          aria-label="Reset chat"
         >
           <RefreshCw className="h-3.5 w-3.5" />
         </button>

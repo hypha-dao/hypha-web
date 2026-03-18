@@ -4,14 +4,23 @@ import { Bot, Copy, RefreshCw, ThumbsDown, ThumbsUp } from 'lucide-react';
 
 import { cn } from '@hypha-platform/ui-utils';
 
-import type { Message } from './mock-data';
+type UIMessagePart = { type: 'text'; text: string } | { type: string; [k: string]: unknown }
 
 type AiPanelMessageBubbleProps = {
-  message: Message;
+  message: {
+    id: string
+    role: 'user' | 'assistant' | 'system'
+    parts?: UIMessagePart[]
+  }
+  isStreaming?: boolean
 };
 
-export function AiPanelMessageBubble({ message }: AiPanelMessageBubbleProps) {
-  const isUser = message.role === 'user';
+export function AiPanelMessageBubble({ message, isStreaming }: AiPanelMessageBubbleProps) {
+  const isUser = message.role === 'user'
+  const textContent = message.parts
+    ?.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+    .map((p) => p.text)
+    .join('') ?? ''
 
   return (
     <div className={cn('flex gap-2.5', isUser && 'flex-row-reverse')}>
@@ -31,8 +40,8 @@ export function AiPanelMessageBubble({ message }: AiPanelMessageBubbleProps) {
               : 'rounded-tl-sm border border-border bg-muted text-foreground',
           )}
         >
-          {message.content}
-          {message.isStreaming && (
+          {textContent}
+          {isStreaming && (
             <span className="ml-1 inline-flex items-center gap-0.5">
               <span className="inline-block h-1 w-1 animate-pulse rounded-full bg-primary" />
               <span className="inline-block h-1 w-1 animate-pulse rounded-full bg-primary [animation-delay:0.2s]" />
@@ -40,7 +49,7 @@ export function AiPanelMessageBubble({ message }: AiPanelMessageBubbleProps) {
             </span>
           )}
         </div>
-        {!isUser && !message.isStreaming && (
+        {!isUser && !isStreaming && (
           <div className="mt-1.5 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
             <button
               type="button"
