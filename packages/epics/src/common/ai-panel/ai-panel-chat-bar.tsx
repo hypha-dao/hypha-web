@@ -120,8 +120,8 @@ export function AiPanelChatBar({
         />
 
         {/* Bottom bar */}
-        <div className="flex min-w-0 items-center justify-between px-3 pb-2.5">
-          <span className="text-xs text-muted-foreground">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 px-3 pb-2.5">
+          <span className="min-w-0 break-words text-xs text-muted-foreground">
             Shift+Enter for newline
           </span>
           <button

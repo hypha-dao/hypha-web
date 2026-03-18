@@ -39,22 +39,22 @@ export function AiPanelHeader({
   }, [showModelMenu]);
 
   return (
-    <div className="flex flex-shrink-0 items-center justify-between border-b border-border bg-background-2 px-4 py-3">
-      <div className="flex items-center gap-2">
-        <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-primary">
+    <div className="flex min-w-0 flex-shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-3">
+      <div className="flex min-w-0 shrink-0 items-center gap-2">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-primary">
           <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
         </div>
         <span className="font-semibold text-sm text-foreground">Hypha AI</span>
       </div>
-      <div className="flex items-center gap-1">
+      <div className="flex min-w-0 flex-wrap items-center justify-end gap-1">
         <div className="relative" ref={menuRef}>
           <button
             type="button"
             onClick={() => setShowModelMenu(!showModelMenu)}
-            className="flex items-center gap-1.5 rounded-lg border border-border bg-secondary px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex min-w-0 items-center gap-1.5 rounded-lg border border-border bg-secondary px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <SelectedIcon className="h-3 w-3 shrink-0" />
-            <span className="max-w-[80px] truncate">{selectedModel.label}</span>
+            <span className="min-w-0 truncate">{selectedModel.label}</span>
             <ChevronDown className="h-3 w-3 shrink-0" />
           </button>
           {showModelMenu && (
