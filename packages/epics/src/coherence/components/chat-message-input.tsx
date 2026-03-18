@@ -9,6 +9,7 @@ import {
 import { Button, ConfirmDialog, Input } from '@hypha-platform/ui';
 import { PaperPlaneIcon } from '@radix-ui/react-icons';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 export const ChatMessageInput = ({
   roomId,
@@ -19,6 +20,7 @@ export const ChatMessageInput = ({
   coherenceSlug: string;
   closeUrl: string;
 }) => {
+  const t = useTranslations('CoherenceTab');
   const { client, sendMessage: sendMatrixMessage } = useMatrix();
   const [input, setInput] = React.useState('');
   const { jwt: authToken } = useJwt();
@@ -47,10 +49,10 @@ export const ChatMessageInput = ({
     <div className="flex flex-col gap-3">
       <div className="flex flex-grow text-1 text-neutral-11 gap-3">
         <ConfirmDialog
-          title="Archive Conversation"
-          description="Do you really want to archive this conversation?"
-          customAcceptButtonText="Yes, archive"
-          customRejectButtonText="No, leave"
+          title={t('archiveConversation')}
+          description={t('archiveConfirm')}
+          customAcceptButtonText={t('yesArchive')}
+          customRejectButtonText={t('noLeave')}
           onAcceptClicked={handleArchive}
         >
           <Button
@@ -58,7 +60,7 @@ export const ChatMessageInput = ({
             colorVariant="neutral"
             className="bg-transparent text-neutral-11"
           >
-            Archive Conversation
+            {t('archiveConversation')}
           </Button>
         </ConfirmDialog>
         <Button
@@ -70,14 +72,14 @@ export const ChatMessageInput = ({
             //TODO
           }}
         >
-          Propose Agreement
+          {t('proposeAgreement')}
         </Button>
       </div>
       <div className="w-full space-y-2">
         <div className="flex flex-grow text-1 text-neutral-11">
           <Input
             className="w-full"
-            placeholder="Say something..."
+            placeholder={t('saySomething')}
             value={input}
             rightIcon={
               <Button

@@ -38,6 +38,7 @@ import { CoherenceTypeButton } from './coherence-type-button';
 import { CoherencePriorityButton } from './coherence-priority-button';
 import { ButtonClose } from '../../common/button-close';
 import { CardButtonColorVariant } from '../../common/card-button';
+import { useTranslations } from 'next-intl';
 
 type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
 
@@ -52,6 +53,7 @@ export const CreateSignalForm = ({
   successfulUrl,
   closeUrl,
 }: CreateSignalFormProps) => {
+  const t = useTranslations('CoherenceTab');
   const { person } = useMe();
   const { jwt: authToken } = useJwt();
   const router = useRouter();
@@ -89,27 +91,27 @@ export const CreateSignalForm = ({
       return `var(--${colorVariant}-10)`;
     };
     return COHERENCE_TYPE_OPTIONS.map(
-      ({ icon, title, description, type, colorVariant }) => ({
+      ({ icon, type, colorVariant }) => ({
         icon: icon as LucideReactIcon,
-        title,
-        description,
+        title: t(`types.${type}`),
+        description: t(`typeDescriptions.${type}`),
         type,
         colorVariant: colorVariant as CardButtonColorVariant,
         titleColor: computeColor(colorVariant),
       }),
     );
-  }, []);
+  }, [t]);
 
   const priorityOptions = React.useMemo(() => {
     return COHERENCE_PRIORITY_OPTIONS.map(
-      ({ title, priority, description, colorVariant }) => ({
-        title,
+      ({ priority, colorVariant }) => ({
+        title: t(`priorities.${priority}`),
         priority,
-        description,
+        description: t(`priorityDescriptions.${priority}`),
         colorVariant: colorVariant as CardButtonColorVariant,
       }),
     );
-  }, []);
+  }, [t]);
 
   const tagOptions = React.useMemo(() => {
     return COHERENCE_TAGS.map((type) => ({
@@ -180,11 +182,11 @@ export const CreateSignalForm = ({
       message={
         errorCreateCoherenceMutation ? (
           <div className="flex flex-col">
-            <div>Ouh Snap. There was an error</div>
-            <Button onClick={resetCreateCoherenceMutation}>Reset</Button>
+            <div>{t('errorOhSnap')}</div>
+            <Button onClick={resetCreateCoherenceMutation}>{t('reset')}</Button>
           </div>
         ) : (
-          <div>Creating new signal</div>
+          <div>{t('creatingNewSignal')}</div>
         )
       }
     >
@@ -214,7 +216,7 @@ export const CreateSignalForm = ({
                   <FormItem>
                     <FormControl>
                       <Input
-                        placeholder="Signal title..."
+                        placeholder={t('signalTitle')}
                         className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
                         rightIcon={<RequirementMark className="text-4" />}
                         {...field}
@@ -232,7 +234,7 @@ export const CreateSignalForm = ({
                   <FormItem>
                     <div className="w-full flex flex-col gap-3">
                       <FormLabel className="text-foreground">
-                        Type <RequirementMark />
+                        {t('type')} <RequirementMark />
                       </FormLabel>
                       <FormControl>
                         <span className="w-full grid grid-cols-2 gap-2">
@@ -272,7 +274,7 @@ export const CreateSignalForm = ({
                   <FormItem>
                     <div className="w-full flex flex-col gap-3">
                       <FormLabel className="text-foreground">
-                        Priority <RequirementMark />
+                        {t('priority')} <RequirementMark />
                       </FormLabel>
                       <FormControl>
                         <span className="w-full flex flex-row gap-2">
@@ -306,10 +308,10 @@ export const CreateSignalForm = ({
                 name="tags"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-foreground">Tags</FormLabel>
+                    <FormLabel className="text-foreground">{t('tags')}</FormLabel>
                     <FormControl>
                       <MultiSelect
-                        placeholder={'Select one or more'}
+                        placeholder={t('selectOneOrMore')}
                         options={tagOptions}
                         value={field.value}
                         allowToggleAll={false}
@@ -326,13 +328,13 @@ export const CreateSignalForm = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-foreground gap-1">
-                      Description <RequirementMark />
+                      {t('description')} <RequirementMark />
                     </FormLabel>
                     <FormControl>
                       <RichTextEditor
                         editorRef={null}
                         markdown={field.value}
-                        placeholder="Type your description here..."
+                        placeholder={t('descriptionPlaceholder')}
                         {...field}
                       />
                     </FormControl>
@@ -344,7 +346,7 @@ export const CreateSignalForm = ({
             </div>
           </div>
           <div className="flex justify-end w-full">
-            <Button type="submit">Publish</Button>
+            <Button type="submit">{t('publish')}</Button>
           </div>
         </form>
       </Form>

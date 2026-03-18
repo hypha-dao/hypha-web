@@ -15,6 +15,7 @@ import { Empty } from '../../common';
 import { Coherence, DirectionType } from '@hypha-platform/core/client';
 import React from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 type ConversationSectionProps = {
   basePath: string;
@@ -30,28 +31,6 @@ type ConversationSectionProps = {
   refresh: () => Promise<void>;
 };
 
-const orderOptions: {
-  value: CoherenceOrder;
-  label: string;
-  searchText: string;
-}[] = [
-  {
-    value: 'mostviews',
-    label: 'Most Views',
-    searchText: 'Most Members',
-  },
-  {
-    value: 'mostmessages',
-    label: 'Most Messages',
-    searchText: 'Most Agreements',
-  },
-  {
-    value: 'mostrecent',
-    label: 'Most Recent',
-    searchText: 'Most Recent',
-  },
-];
-
 export const ConversationSection: FC<ConversationSectionProps> = ({
   basePath,
   conversations,
@@ -65,9 +44,36 @@ export const ConversationSection: FC<ConversationSectionProps> = ({
   setHideArchived,
   refresh,
 }) => {
+  const t = useTranslations('CoherenceTab');
+  const tCommon = useTranslations('Common');
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
+
+  const orderOptions: {
+    value: CoherenceOrder;
+    label: string;
+    searchText: string;
+  }[] = React.useMemo(
+    () => [
+      {
+        value: 'mostviews',
+        label: t('mostViews'),
+        searchText: t('mostViews'),
+      },
+      {
+        value: 'mostmessages',
+        label: t('mostMessages'),
+        searchText: t('mostMessages'),
+      },
+      {
+        value: 'mostrecent',
+        label: t('mostRecent'),
+        searchText: t('mostRecent'),
+      },
+    ],
+    [t],
+  );
 
   const {
     pages,
@@ -104,7 +110,7 @@ export const ConversationSection: FC<ConversationSectionProps> = ({
         count={pagination?.total || 0}
         label={label || ''}
         hasSearch={hasSearch}
-        searchPlaceholder="Search conversation"
+        searchPlaceholder={t('searchConversation')}
         onChangeSearch={onUpdateSearch}
         inlineLabel={false}
         className="w-full items-end"
@@ -134,14 +140,14 @@ export const ConversationSection: FC<ConversationSectionProps> = ({
             className="text-[14px] self-center"
             htmlFor="hideArchivedCheckbox"
           >
-            Hide archived
+            {t('hideArchived')}
           </label>
         </div>
       </SectionFilter>
 
       {pagination?.totalPages === 0 ? (
         <Empty>
-          <p>List is empty</p>
+          <p>{t('listIsEmpty')}</p>
         </Empty>
       ) : (
         <div className="w-full space-y-2">
@@ -174,7 +180,9 @@ export const ConversationSection: FC<ConversationSectionProps> = ({
           isLoading={isLoading}
         >
           <Text>
-            {pagination?.totalPages === pages ? 'No more' : 'Load more'}
+            {pagination?.totalPages === pages
+              ? tCommon('noMore')
+              : tCommon('loadMore')}
           </Text>
         </SectionLoadMore>
       )}

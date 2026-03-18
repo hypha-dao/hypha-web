@@ -32,6 +32,7 @@ import {
 import React from 'react';
 import { CardButtonColorVariant } from '../../common';
 import { Users } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 type SignalCardProps = { isLoading: boolean; refresh: () => Promise<void> };
 
@@ -48,6 +49,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   messages = 0,
   refresh,
 }) => {
+  const t = useTranslations('CoherenceTab');
   const { jwt: authToken } = useJwt();
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
 
@@ -100,19 +102,19 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             {priority === 'high' && (
               <div className="flex flex-row gap-1 text-1 text-neutral-11">
                 <DotFilledIcon className="h-4 w-4 text-error-11" />
-                High Urgency
+                {t('highUrgency')}
               </div>
             )}
             {priority === 'medium' && (
               <div className="flex flex-row gap-1 text-1 text-neutral-11">
                 <DotFilledIcon className="h-4 w-4 text-warning-11" />
-                Medium Urgency
+                {t('mediumUrgency')}
               </div>
             )}
             {priority === 'low' && (
               <div className="flex flex-row gap-1 text-1 text-neutral-11">
                 <DotFilledIcon className="h-4 w-4 text-neutral-11" />
-                Low Urgency
+                {t('lowUrgency')}
               </div>
             )}
           </div>
@@ -144,7 +146,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           <div className="flex flex-row gap-1">
             <Skeleton loading={isLoading} height="16px" width="80px">
               <Users size={12} />
-              <div className="text-neutral-11 text-1">{messages} mentions</div>
+              <div className="text-neutral-11 text-1">
+                {t('mentions', { count: messages })}
+              </div>
             </Skeleton>
           </div>
           <div className="flex flex-row">
@@ -163,10 +167,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               }}
             >
               <ConfirmDialog
-                title="Unarchive Conversation"
-                description="Do you really want to unarchive this conversation?"
-                customAcceptButtonText="Yes, unarchive"
-                customRejectButtonText="No, leave"
+                title={t('unarchiveConversation')}
+                description={t('unarchiveConfirm')}
+                customAcceptButtonText={t('yesUnarchive')}
+                customRejectButtonText={t('noLeave')}
                 onAcceptClicked={handleUnarchive}
               >
                 <Button
@@ -174,7 +178,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                   colorVariant="accent"
                   className="w-full"
                 >
-                  Unarchive
+                  {t('unarchive')}
                 </Button>
               </ConfirmDialog>
             </div>
@@ -189,7 +193,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               }}
             >
               <ChatBubbleIcon />
-              Open conversation
+              {t('openConversation')}
             </Button>
           )}
 

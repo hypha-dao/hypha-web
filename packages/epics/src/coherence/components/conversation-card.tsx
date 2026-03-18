@@ -22,6 +22,7 @@ import {
   useMatrix,
   usePersonById,
 } from '@hypha-platform/core/client';
+import { useTranslations } from 'next-intl';
 
 type ConversationCardProps = {
   isLoading: boolean;
@@ -40,6 +41,7 @@ export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
   messages = 0,
   refresh,
 }) => {
+  const t = useTranslations('CoherenceTab');
   const [message, setMessage] = React.useState<string>('');
   const { isLoading: isPersonLoading, person: creator } = usePersonById({
     id: creatorId,
@@ -134,7 +136,7 @@ export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
             <div className="flex flex-grow text-1 text-neutral-11">
               <Input
                 className="w-full"
-                placeholder="Say something..."
+                placeholder={t('saySomething')}
                 value={message}
                 rightIcon={
                   <Button
@@ -172,10 +174,10 @@ export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
                 }}
               >
                 <ConfirmDialog
-                  title="Unarchive Conversation"
-                  description="Do you really want to unarchive this conversation?"
-                  customAcceptButtonText="Yes, unarchive"
-                  customRejectButtonText="No, leave"
+                  title={t('unarchiveConversation')}
+                  description={t('unarchiveConfirm')}
+                  customAcceptButtonText={t('yesUnarchive')}
+                  customRejectButtonText={t('noLeave')}
                   onAcceptClicked={handleUnarchive}
                 >
                   <Button
@@ -183,7 +185,7 @@ export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
                     colorVariant="accent"
                     className="w-full"
                   >
-                    Unarchive
+                    {t('unarchive')}
                   </Button>
                 </ConfirmDialog>
               </div>
@@ -198,7 +200,7 @@ export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
                   proposeAgreement();
                 }}
               >
-                Propose Agreement
+                {t('proposeAgreement')}
               </Button>
             )}
           </div>

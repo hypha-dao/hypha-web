@@ -9,6 +9,7 @@ import { CoherenceOrder } from '../types';
 import { Coherence, DirectionType } from '@hypha-platform/core/client';
 import { SignalSection } from './signal-section';
 import { ConversationSection } from './conversation-section';
+import { useTranslations } from 'next-intl';
 
 type CoherenceBlockProps = {
   lang: Locale;
@@ -21,6 +22,7 @@ export function CoherenceBlock({
   spaceSlug,
   order,
 }: CoherenceBlockProps) {
+  const t = useTranslations('CoherenceTab');
   const [hideArchived, setHideArchived] = React.useState(true);
   const { isAuthenticated } = useAuthentication();
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
@@ -49,7 +51,7 @@ export function CoherenceBlock({
         <>
           <SignalSection
             basePath={chatBasePath}
-            label="Signals"
+            label={t('signals')}
             hasSearch={true}
             signals={signals ?? []}
             isLoading={isSpaceLoading || isSignalsLoading}
@@ -60,7 +62,7 @@ export function CoherenceBlock({
         </>
       ) : (
         <Empty>
-          <p>Please, sign in to see signals and conversations</p>
+          <p>{t('signInToSee')}</p>
         </Empty>
       )}
     </div>
