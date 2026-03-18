@@ -1,3 +1,5 @@
+export * from './ai-left-panel';
+export * from './ai-left-panel-layout';
 export * from './authenticated-link-button';
 export * from './button-back';
 export * from './button-close';
