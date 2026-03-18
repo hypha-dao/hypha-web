@@ -16,7 +16,8 @@
     "@hypha-platform/storage-postgres": "workspace:*",
     "@hypha-platform/ui": "workspace:*",
     "@hypha-platform/ui-utils": "workspace:*",
-    "@wagmi/cli": "^2.2.0"
+    "@wagmi/cli": "^2.2.0",
+    "matrix-js-sdk": "^40.0.0"
   },
   "exports": {
     "./client": "./src/client.ts",
@@ -24,6 +25,8 @@
     "./space/server/actions": "./src/space/server/actions.ts",
     "./people/server/actions": "./src/people/server/actions.ts",
     "./governance/server/actions": "./src/governance/server/actions.ts",
+    "./coherence/server/actions": "./src/coherence/server/actions.ts",
+    "./matrix/server/actions": "./src/matrix/server/actions.ts",
     "./generated": "./src/generated.ts"
   }
 }

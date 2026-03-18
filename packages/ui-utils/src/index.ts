@@ -13,3 +13,5 @@ export * from './formatDuration';
 export * from './canConvertToBigInt';
 export * from './formatSeconds';
 export * from './formatDecayInterval';
+export * from './stripDescription';
+export * from './formatRelativeDate';

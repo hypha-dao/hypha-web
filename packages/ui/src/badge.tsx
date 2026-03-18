@@ -68,6 +68,8 @@ const badgeVariants = cva(
         warn: '',
         neutral: '',
         success: '',
+        tension: '',
+        insight: '',
       },
     },
     compoundVariants: [
@@ -97,6 +99,16 @@ const badgeVariants = cva(
         colorVariant: 'neutral',
         className: 'bg-neutral-9 text-neutral-contrast hover:bg-neutral-10',
       },
+      {
+        variant: 'solid',
+        colorVariant: 'insight',
+        className: 'bg-insight-9 text-insight-contrast hover:bg-insight-10',
+      },
+      {
+        variant: 'solid',
+        colorVariant: 'tension',
+        className: 'bg-tension-9 text-tension-contrast hover:bg-tension-10',
+      },
       // Soft variants
       {
         variant: 'soft',
@@ -122,6 +134,16 @@ const badgeVariants = cva(
         variant: 'soft',
         colorVariant: 'neutral',
         className: 'bg-neutral-3 text-neutral-11 hover:bg-neutral-4',
+      },
+      {
+        variant: 'soft',
+        colorVariant: 'insight',
+        className: 'bg-insight-3 text-insight-11 hover:bg-insight-4',
+      },
+      {
+        variant: 'soft',
+        colorVariant: 'tension',
+        className: 'bg-tension-3 text-tension-11 hover:bg-tension-4',
       },
       // Outline variants
       {
@@ -154,6 +176,18 @@ const badgeVariants = cva(
         className:
           'border-neutral-8 text-neutral-11 hover:border-neutral-9 hover:bg-neutral-2',
       },
+      {
+        variant: 'outline',
+        colorVariant: 'insight',
+        className:
+          'border-insight-8 text-insight-11 hover:border-insight-9 hover:bg-insight-2',
+      },
+      {
+        variant: 'outline',
+        colorVariant: 'tension',
+        className:
+          'border-tension-8 text-tension-11 hover:border-tension-9 hover:bg-tension-2',
+      },
       // Surface variants
       {
         variant: 'surface',
@@ -183,6 +217,18 @@ const badgeVariants = cva(
         colorVariant: 'neutral',
         className:
           'border-neutral-7 bg-neutral-2 text-neutral-11 hover:bg-neutral-3',
+      },
+      {
+        variant: 'surface',
+        colorVariant: 'insight',
+        className:
+          'border-insight-7 bg-insight-2 text-insight-11 hover:bg-insight-3',
+      },
+      {
+        variant: 'surface',
+        colorVariant: 'tension',
+        className:
+          'border-tension-7 bg-tension-2 text-tension-11 hover:bg-tension-3',
       },
     ],
     defaultVariants: {

@@ -3,6 +3,7 @@ export * from './ai-left-panel-layout';
 export * from './authenticated-link-button';
 export * from './button-back';
 export * from './button-close';
+export * from './card-button';
 export * from './empty';
 export * from './link-label';
 export * from './links';

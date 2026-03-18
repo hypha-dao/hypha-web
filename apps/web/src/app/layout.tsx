@@ -16,7 +16,7 @@ import {
   ConnectedButtonProfile,
 } from '@hypha-platform/epics';
 import { EvmProvider } from '@hypha-platform/evm';
-import { useMe } from '@hypha-platform/core/client';
+import { MatrixProvider, useMe } from '@hypha-platform/core/client';
 import { fileRouter } from '@hypha-platform/core/server';
 import { MenuTop } from '@hypha-platform/ui';
 import { ROOT_URL } from './constants';
@@ -120,6 +120,7 @@ export default async function RootLayout({
                 serviceWorkerPath={serviceWorkerPath}
               >
                 <div className="flex h-screen flex-col overflow-hidden">
+                  <MatrixProvider>
                   <MenuTop
                     logoHref={ROOT_URL}
                     openMenuLabel={tNav('openMenu')}
@@ -160,6 +161,7 @@ export default async function RootLayout({
                       </>
                     </AiLeftPanelLayout>
                   </div>
+                  </MatrixProvider>
                 </div>
               </NotificationSubscriber>
             </NextIntlClientProvider>
