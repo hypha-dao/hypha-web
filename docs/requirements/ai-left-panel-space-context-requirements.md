@@ -131,6 +131,13 @@ The assistant must have an explicit consultative bias:
 - **FR-11:** The assistant context builder SHALL retrieve proposals for the current space (title, status, summary, timestamps, authors).
 - **FR-12:** The assistant context builder SHALL retrieve proposal attachments metadata and textual extracts when available.
 - **FR-13:** The assistant context builder SHALL retrieve conversation summaries/signals from space-related chat rooms.
+- **FR-13A:** The assistant context builder SHALL have scoped access to content represented in the current space tabs:
+  - Coherence tab (signals, priorities, tags, status, related activity)
+  - Agreements tab (proposal content, status, attachments, decisions)
+  - Members tab (member list, relevant roles/participation metadata available to the user)
+  - Treasury tab (treasury-relevant records and available financial/proposal context shown to the user)
+- **FR-13B:** The assistant context builder SHALL retrieve core space metadata, including purpose, tags, and links.
+- **FR-13C:** For each signal with a linked Matrix room, the assistant SHALL retrieve and analyze discussion content from that signal's Matrix conversation (subject to authorization) so it can derive new candidate signals.
 - **FR-14:** Retrieval SHALL apply relevance ranking against current user query and context.
 - **FR-15:** Assistant responses SHALL include grounded references (at least source category and item identifiers) when claims are derived from space data.
 
@@ -192,6 +199,7 @@ Chat request body should include:
   - `spaceId` (resolved server-side or provided if trusted)
   - `pathname`
   - `activeTab`
+  - `enabledKnowledgeScopes` (coherence, agreements, members, treasury, space-metadata, matrix-signal-discussions)
   - `entityRefs` (proposal/chat/member ids)
   - `attachmentRefs` (upload ids/urls + metadata)
 
@@ -201,6 +209,8 @@ Chat request body should include:
 - **AC-2:** User can send text + file attachment in one turn; backend can consume persisted artifact references.
 - **AC-3:** Query "What should we prioritize next?" returns a ranked recommendation grounded in current space proposals/conversations.
 - **AC-4:** Query "Draft a signal from recent discussions" returns a prefilled signal draft (title, description, type, priority, tags) and user can confirm creation.
+- **AC-4A:** Recommendations and signal drafts can reference evidence from Coherence, Agreements, Members, and Treasury context plus space metadata (purpose, tags, links), limited to data the user is authorized to access.
+- **AC-4B:** For signals with Matrix discussions, assistant can use those discussions as evidence and explicitly reference the related signal/chat context when proposing new signals.
 - **AC-5:** Unauthenticated users are prompted to sign in and cannot access chat generation.
 - **AC-6:** Unauthorized users cannot retrieve private space documents via AI.
 
