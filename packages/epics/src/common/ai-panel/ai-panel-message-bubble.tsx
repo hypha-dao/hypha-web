@@ -1,6 +1,7 @@
 'use client';
 
-import { Bot, Copy, RefreshCw, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { Bot, Copy } from 'lucide-react';
 
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -22,6 +23,7 @@ export function AiPanelMessageBubble({
   message,
   isStreaming,
 }: AiPanelMessageBubbleProps) {
+  const [copied, setCopied] = useState(false);
   const isUser = message.role === 'user';
   const textParts =
     message.parts?.filter(
@@ -33,6 +35,17 @@ export function AiPanelMessageBubble({
       (p): p is { type: 'file'; mediaType?: string; url: string } =>
         p.type === 'file' && typeof (p as { url?: unknown }).url === 'string',
     ) ?? [];
+
+  const handleCopy = useCallback(async () => {
+    if (!textContent) return;
+    try {
+      await navigator.clipboard.writeText(textContent);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard API not available
+    }
+  }, [textContent]);
 
   return (
     <div className={cn('flex gap-2.5', isUser && 'flex-row-reverse')}>
@@ -91,31 +104,12 @@ export function AiPanelMessageBubble({
           <div className="mt-1.5 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
             <button
               type="button"
-              className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              title="Copy"
+              onClick={handleCopy}
+              disabled={!textContent}
+              className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+              title={copied ? 'Copied!' : 'Copy'}
             >
               <Copy className="h-3 w-3" />
-            </button>
-            <button
-              type="button"
-              className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              title="Thumbs up"
-            >
-              <ThumbsUp className="h-3 w-3" />
-            </button>
-            <button
-              type="button"
-              className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              title="Thumbs down"
-            >
-              <ThumbsDown className="h-3 w-3" />
-            </button>
-            <button
-              type="button"
-              className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              title="Refresh"
-            >
-              <RefreshCw className="h-3 w-3" />
             </button>
           </div>
         )}
