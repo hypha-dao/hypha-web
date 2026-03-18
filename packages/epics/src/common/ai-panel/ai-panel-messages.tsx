@@ -6,17 +6,19 @@ import { AiPanelMessageBubble } from './ai-panel-message-bubble';
 import { AiPanelSuggestions } from './ai-panel-suggestions';
 
 type UIMessage = {
-  id: string
-  role: 'user' | 'assistant' | 'system'
-  parts?: Array<{ type: 'text'; text: string } | { type: string; [k: string]: unknown }>
-}
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  parts?: Array<
+    { type: 'text'; text: string } | { type: string; [k: string]: unknown }
+  >;
+};
 
 type AiPanelMessagesProps = {
-  messages: UIMessage[]
-  suggestions: readonly string[]
-  showSuggestions: boolean
-  onSuggestionSelect: (text: string) => void
-  isStreaming?: boolean
+  messages: UIMessage[];
+  suggestions: readonly string[];
+  showSuggestions: boolean;
+  onSuggestionSelect: (text: string) => void;
+  isStreaming?: boolean;
 };
 
 export function AiPanelMessages({
@@ -26,11 +28,11 @@ export function AiPanelMessages({
   onSuggestionSelect,
   isStreaming = false,
 }: AiPanelMessagesProps) {
-  const endRef = useRef<HTMLDivElement>(null)
+  const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isStreaming])
+    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isStreaming]);
 
   const welcomeMessage: UIMessage = {
     id: 'welcome',
@@ -41,9 +43,9 @@ export function AiPanelMessages({
         text: "Hello! I'm your Hypha AI assistant. I can help you analyze signals, draft proposals, understand community dynamics, and coordinate across spaces. What would you like to explore?",
       },
     ],
-  }
+  };
 
-  const displayMessages = messages.length > 0 ? messages : [welcomeMessage]
+  const displayMessages = messages.length > 0 ? messages : [welcomeMessage];
 
   return (
     <div className="narrow-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto px-3 py-3">

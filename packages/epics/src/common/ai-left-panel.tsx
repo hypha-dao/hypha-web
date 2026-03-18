@@ -24,13 +24,7 @@ export function AiLeftPanel({ onClose, className }: AiLeftPanelProps) {
   const [selectedModel, setSelectedModel] = useState(MODEL_OPTIONS[0]!);
   const [showSuggestions, setShowSuggestions] = useState(true);
 
-  const {
-    messages,
-    sendMessage,
-    status,
-    stop,
-    setMessages,
-  } = useChat({
+  const { messages, sendMessage, status, stop, setMessages } = useChat({
     transport: new DefaultChatTransport({
       api: '/api/chat',
     }),
@@ -39,11 +33,11 @@ export function AiLeftPanel({ onClose, className }: AiLeftPanelProps) {
   const isStreaming = status === 'streaming' || status === 'submitted';
 
   const handleSend = () => {
-    const text = input.trim()
-    if (!text || isStreaming) return
-    sendMessage({ text }, { body: { modelId: selectedModel.id } })
-    setInput('')
-    setShowSuggestions(false)
+    const text = input.trim();
+    if (!text || isStreaming) return;
+    sendMessage({ text }, { body: { modelId: selectedModel.id } });
+    setInput('');
+    setShowSuggestions(false);
   };
 
   const handleSuggestionSelect = (text: string) => {
