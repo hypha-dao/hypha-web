@@ -1,5 +1,9 @@
 # AI Left Panel and Space Context Requirements
 
+> Note: Start from the MVP parity baseline defined in  
+> `docs/requirements/chat-signals-ai-prototype-parity-spec.md`.  
+> This document extends that baseline with next-level context and intelligence requirements.
+
 ## 1. Document Control
 
 - **Owner:** Product + Engineering
