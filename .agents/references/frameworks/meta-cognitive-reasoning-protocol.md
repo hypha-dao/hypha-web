@@ -57,7 +57,7 @@ Combine sub-problem solutions using weighted confidence:
 4. **Recalibrate:** Compute overall confidence based on weighted combination
 
 ```text
-Overall Confidence = Σ(sub_confidence × dependency_weight) / Σ(weights)
+Overall Confidence = Σ(sub_confidence × dependency_weight) / Σ(dependency_weight)
 ```
 
 #### Phase 5: REFLECT

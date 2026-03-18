@@ -26,7 +26,7 @@ Every response includes:
 
 | Score       | Category        | Usage                                           |
 | ----------- | --------------- | ----------------------------------------------- |
-| 0.95 - 1.0  | Near-certain    | Established facts, mathematical truths          |
+| 0.95 - 1.0  | Near-certain    | Facts, mathematical truths                      |
 | 0.85 - 0.95 | High confidence | Strong evidence, sound reasoning                |
 | 0.70 - 0.85 | Confident       | Good evidence, reasonable assumptions           |
 | 0.50 - 0.70 | Moderate        | Mixed evidence, notable uncertainties           |
