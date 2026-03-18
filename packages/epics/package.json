@@ -11,12 +11,14 @@
     "@hypha-platform/config-typescript": "workspace:*"
   },
   "dependencies": {
+    "@ai-sdk/react": "^3.0.107",
     "@hypha-platform/authentication": "workspace:*",
     "@hypha-platform/core": "workspace:*",
     "@hypha-platform/i18n": "workspace:*",
     "@hypha-platform/notifications": "workspace:*",
     "@hypha-platform/ui": "workspace:*",
     "@hypha-platform/ui-utils": "workspace:*",
+    "ai": "^6.0.105",
     "next-intl": "^4.8.3"
   },
   "exports": {
