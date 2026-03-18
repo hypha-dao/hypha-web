@@ -121,46 +121,50 @@ export default async function RootLayout({
               >
                 <div className="flex h-screen flex-col overflow-hidden">
                   <MatrixProvider>
-                  <MenuTop
-                    logoHref={ROOT_URL}
-                    openMenuLabel={tNav('openMenu')}
-                    closeMenuLabel={tNav('closeMenu')}
-                  >
-                    <ConnectedButtonProfile
-                      useAuthentication={useAuthentication}
-                      useMe={useMe}
-                      newUserRedirectPath="/profile/signup"
-                      baseRedirectPath="/my-spaces"
-                      navItems={[
-                        {
-                          label: tNav('network'),
-                          href: `/${locale}/network`,
-                        },
-                        {
-                          label: tNav('mySpaces'),
-                          href: `/${locale}/my-spaces`,
-                        },
-                      ]}
+                    <MenuTop
+                      logoHref={ROOT_URL}
+                      openMenuLabel={tNav('openMenu')}
+                      closeMenuLabel={tNav('closeMenu')}
+                    >
+                      <ConnectedButtonProfile
+                        useAuthentication={useAuthentication}
+                        useMe={useMe}
+                        newUserRedirectPath="/profile/signup"
+                        baseRedirectPath="/my-spaces"
+                        navItems={[
+                          {
+                            label: tNav('network'),
+                            href: `/${locale}/network`,
+                          },
+                          {
+                            label: tNav('mySpaces'),
+                            href: `/${locale}/my-spaces`,
+                          },
+                        ]}
+                      />
+                      {isLanguageSelectVisible && <ConnectedLanguageSelect />}
+                    </MenuTop>
+                    <NextSSRPlugin
+                      routerConfig={extractRouterConfig(fileRouter)}
                     />
-                    {isLanguageSelectVisible && <ConnectedLanguageSelect />}
-                  </MenuTop>
-                  <NextSSRPlugin routerConfig={extractRouterConfig(fileRouter)} />
-                  <div className="flex min-h-0 flex-1 flex-col overflow-hidden pt-9">
-                    <AiLeftPanelLayout>
-                      <>
-                        <div className="w-full shrink-0 pb-8">{children}</div>
-                        <Footer
-                          networkLabel={tFooter('network')}
-                          legalLabel={tFooter('legal')}
-                          hyphaServicesLabel={tFooter('hyphaServices')}
-                          hyphaTokenomicsLabel={tFooter('hyphaTokenomics')}
-                          licensingPolicyLabel={tFooter('licensingPolicy')}
-                          termsAndConditionsLabel={tFooter('termsAndConditions')}
-                          privacyPolicyLabel={tFooter('privacyPolicy')}
-                        />
-                      </>
-                    </AiLeftPanelLayout>
-                  </div>
+                    <div className="flex min-h-0 flex-1 flex-col overflow-hidden pt-9">
+                      <AiLeftPanelLayout>
+                        <>
+                          <div className="w-full shrink-0 pb-8">{children}</div>
+                          <Footer
+                            networkLabel={tFooter('network')}
+                            legalLabel={tFooter('legal')}
+                            hyphaServicesLabel={tFooter('hyphaServices')}
+                            hyphaTokenomicsLabel={tFooter('hyphaTokenomics')}
+                            licensingPolicyLabel={tFooter('licensingPolicy')}
+                            termsAndConditionsLabel={tFooter(
+                              'termsAndConditions',
+                            )}
+                            privacyPolicyLabel={tFooter('privacyPolicy')}
+                          />
+                        </>
+                      </AiLeftPanelLayout>
+                    </div>
                   </MatrixProvider>
                 </div>
               </NotificationSubscriber>

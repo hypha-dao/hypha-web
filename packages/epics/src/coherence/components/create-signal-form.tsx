@@ -90,27 +90,23 @@ export const CreateSignalForm = ({
     const computeColor = (colorVariant: string) => {
       return `var(--${colorVariant}-10)`;
     };
-    return COHERENCE_TYPE_OPTIONS.map(
-      ({ icon, type, colorVariant }) => ({
-        icon: icon as LucideReactIcon,
-        title: t(`types.${type}`),
-        description: t(`typeDescriptions.${type}`),
-        type,
-        colorVariant: colorVariant as CardButtonColorVariant,
-        titleColor: computeColor(colorVariant),
-      }),
-    );
+    return COHERENCE_TYPE_OPTIONS.map(({ icon, type, colorVariant }) => ({
+      icon: icon as LucideReactIcon,
+      title: t(`types.${type}`),
+      description: t(`typeDescriptions.${type}`),
+      type,
+      colorVariant: colorVariant as CardButtonColorVariant,
+      titleColor: computeColor(colorVariant),
+    }));
   }, [t]);
 
   const priorityOptions = React.useMemo(() => {
-    return COHERENCE_PRIORITY_OPTIONS.map(
-      ({ priority, colorVariant }) => ({
-        title: t(`priorities.${priority}`),
-        priority,
-        description: t(`priorityDescriptions.${priority}`),
-        colorVariant: colorVariant as CardButtonColorVariant,
-      }),
-    );
+    return COHERENCE_PRIORITY_OPTIONS.map(({ priority, colorVariant }) => ({
+      title: t(`priorities.${priority}`),
+      priority,
+      description: t(`priorityDescriptions.${priority}`),
+      colorVariant: colorVariant as CardButtonColorVariant,
+    }));
   }, [t]);
 
   const tagOptions = React.useMemo(() => {
@@ -308,7 +304,9 @@ export const CreateSignalForm = ({
                 name="tags"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-foreground">{t('tags')}</FormLabel>
+                    <FormLabel className="text-foreground">
+                      {t('tags')}
+                    </FormLabel>
                     <FormControl>
                       <MultiSelect
                         placeholder={t('selectOneOrMore')}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useParams } from 'next/navigation';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { LogIn } from 'lucide-react';
@@ -23,6 +24,9 @@ type AiLeftPanelProps = {
 };
 
 export function AiLeftPanel({ onClose, className }: AiLeftPanelProps) {
+  const params = useParams<{ id?: string }>();
+  const spaceSlug = params?.id ?? null;
+
   const {
     isAuthenticated,
     login,
@@ -57,7 +61,10 @@ export function AiLeftPanel({ onClose, className }: AiLeftPanelProps) {
         parts: [textPart, ...fileParts],
       },
       {
-        body: { modelId: selectedModel.id },
+        body: {
+          modelId: selectedModel.id,
+          ...(spaceSlug && { spaceSlug }),
+        },
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       },
     );

@@ -5,9 +5,23 @@ import { Bot, Copy } from 'lucide-react';
 
 import { cn } from '@hypha-platform/ui-utils';
 
+type ToolPart = {
+  type: `tool-${string}`;
+  toolCallId: string;
+  state:
+    | 'input-streaming'
+    | 'input-available'
+    | 'output-available'
+    | 'output-error';
+  input?: { slug?: string };
+  output?: { found: boolean; slug: string; space: unknown };
+  errorText?: string;
+};
+
 type UIMessagePart =
   | { type: 'text'; text: string }
   | { type: 'file'; mediaType?: string; url?: string }
+  | ToolPart
   | { type: string; [k: string]: unknown };
 
 type AiPanelMessageBubbleProps = {
@@ -34,6 +48,11 @@ export function AiPanelMessageBubble({
     message.parts?.filter(
       (p): p is { type: 'file'; mediaType?: string; url: string } =>
         p.type === 'file' && typeof (p as { url?: unknown }).url === 'string',
+    ) ?? [];
+  const toolParts =
+    message.parts?.filter(
+      (p): p is ToolPart =>
+        typeof p.type === 'string' && p.type.startsWith('tool-'),
     ) ?? [];
 
   const handleCopy = useCallback(async () => {
@@ -90,6 +109,55 @@ export function AiPanelMessageBubble({
                   </a>
                 ) : null,
               )}
+            </div>
+          )}
+          {toolParts.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              {toolParts.map((part) => (
+                <div
+                  key={part.toolCallId}
+                  className="rounded-lg border border-border bg-muted/50 px-2 py-1.5 text-xs"
+                >
+                  {part.state === 'input-streaming' && (
+                    <span className="text-muted-foreground">
+                      Looking up space…
+                    </span>
+                  )}
+                  {part.state === 'input-available' && (
+                    <span className="text-muted-foreground">
+                      Looking up space
+                      {part.input?.slug ? ` "${part.input.slug}"` : ''}…
+                    </span>
+                  )}
+                  {part.state === 'output-available' &&
+                    part.output &&
+                    (part.output.found && part.output.space ? (
+                      <span>
+                        Found{' '}
+                        <strong>
+                          {(part.output.space as { title?: string }).title ??
+                            part.output.slug}
+                        </strong>{' '}
+                        ({part.output.slug}) —{' '}
+                        {(part.output.space as { memberCount?: number })
+                          .memberCount ?? 0}{' '}
+                        members,{' '}
+                        {(part.output.space as { documentCount?: number })
+                          .documentCount ?? 0}{' '}
+                        agreements
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">
+                        No space found for slug &quot;{part.output.slug}&quot;
+                      </span>
+                    ))}
+                  {part.state === 'output-error' && (
+                    <span className="text-destructive">
+                      Error: {part.errorText ?? 'Unknown error'}
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
           )}
           {isStreaming && (
