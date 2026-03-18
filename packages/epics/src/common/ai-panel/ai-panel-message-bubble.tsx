@@ -6,6 +6,7 @@ import { cn } from '@hypha-platform/ui-utils';
 
 type UIMessagePart =
   | { type: 'text'; text: string }
+  | { type: 'file'; mediaType?: string; url?: string }
   | { type: string; [k: string]: unknown };
 
 type AiPanelMessageBubbleProps = {
@@ -22,11 +23,16 @@ export function AiPanelMessageBubble({
   isStreaming,
 }: AiPanelMessageBubbleProps) {
   const isUser = message.role === 'user';
-  const textContent =
-    message.parts
-      ?.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
-      .map((p) => p.text)
-      .join('') ?? '';
+  const textParts =
+    message.parts?.filter(
+      (p): p is { type: 'text'; text: string } => p.type === 'text',
+    ) ?? [];
+  const textContent = textParts.map((p) => p.text).join('');
+  const fileParts =
+    message.parts?.filter(
+      (p): p is { type: 'file'; mediaType?: string; url: string } =>
+        p.type === 'file' && typeof (p as { url?: unknown }).url === 'string',
+    ) ?? [];
 
   return (
     <div className={cn('flex gap-2.5', isUser && 'flex-row-reverse')}>
@@ -40,13 +46,39 @@ export function AiPanelMessageBubble({
       >
         <div
           className={cn(
-            'rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed',
+            'flex flex-col gap-2 rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed',
             isUser
               ? 'rounded-tr-sm border border-primary/20 bg-primary/10 text-foreground'
               : 'rounded-tl-sm border border-border bg-muted text-foreground',
           )}
         >
-          {textContent}
+          {textContent && textContent !== '(no text)' && (
+            <span>{textContent}</span>
+          )}
+          {fileParts.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {fileParts.map((part, i) =>
+                part.mediaType?.startsWith('image/') && part.url ? (
+                  <img
+                    key={i}
+                    src={part.url}
+                    alt=""
+                    className="max-h-32 max-w-full rounded-lg object-contain"
+                  />
+                ) : part.url ? (
+                  <a
+                    key={i}
+                    href={part.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary underline"
+                  >
+                    Attachment
+                  </a>
+                ) : null,
+              )}
+            </div>
+          )}
           {isStreaming && (
             <span className="ml-1 inline-flex items-center gap-0.5">
               <span className="inline-block h-1 w-1 animate-pulse rounded-full bg-primary" />

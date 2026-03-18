@@ -15,6 +15,7 @@ import {
   MODEL_OPTIONS,
   MOCK_SUGGESTIONS,
 } from './ai-panel';
+import { convertFilesToParts } from './ai-panel/convert-files-to-parts';
 
 type AiLeftPanelProps = {
   onClose: () => void;
@@ -29,6 +30,7 @@ export function AiLeftPanel({ onClose, className }: AiLeftPanelProps) {
     getAccessToken,
   } = useAuthentication();
   const [input, setInput] = useState('');
+  const [attachments, setAttachments] = useState<File[]>([]);
   const [selectedModel, setSelectedModel] = useState(MODEL_OPTIONS[0]!);
   const [showSuggestions, setShowSuggestions] = useState(true);
 
@@ -42,16 +44,25 @@ export function AiLeftPanel({ onClose, className }: AiLeftPanelProps) {
 
   const handleSend = async () => {
     const text = input.trim();
-    if (!text || isStreaming) return;
+    if ((!text && attachments.length === 0) || isStreaming) return;
     const token = await getAccessToken();
+
+    const textPart = { type: 'text' as const, text: text || '(no text)' };
+    const fileParts =
+      attachments.length > 0 ? await convertFilesToParts(attachments) : [];
+
     sendMessage(
-      { text },
+      {
+        role: 'user',
+        parts: [textPart, ...fileParts],
+      },
       {
         body: { modelId: selectedModel.id },
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       },
     );
     setInput('');
+    setAttachments([]);
     setShowSuggestions(false);
   };
 
@@ -151,6 +162,8 @@ export function AiLeftPanel({ onClose, className }: AiLeftPanelProps) {
         onChange={setInput}
         onSend={handleSend}
         onStop={handleStop}
+        attachments={attachments}
+        onAttachmentsChange={setAttachments}
         isStreaming={isStreaming}
       />
     </div>
