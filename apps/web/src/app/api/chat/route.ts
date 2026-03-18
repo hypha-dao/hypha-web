@@ -1,6 +1,8 @@
 import { convertToModelMessages, streamText } from 'ai';
 import { google } from '@ai-sdk/google';
 import type { UIMessage } from 'ai';
+import { headers } from 'next/headers';
+import { NextResponse } from 'next/server';
 
 export const maxDuration = 30;
 
@@ -17,6 +19,12 @@ function getModel(modelId: string) {
 }
 
 export async function POST(req: Request) {
+  const headersList = await headers();
+  const authToken = headersList.get('Authorization')?.split(' ')[1] || '';
+  if (!authToken) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const {
     messages,
     modelId = 'gemini-2.5-flash',
