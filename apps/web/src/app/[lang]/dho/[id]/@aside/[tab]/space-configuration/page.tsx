@@ -49,9 +49,47 @@ export default function SpaceConfiguration() {
     ) => {
       try {
         if (space) {
-          if (!space.parentId && updatedSpace.parentId) {
+          const wasArchived = space.flags?.includes('archived') ?? false;
+          const willBeArchived =
+            updatedSpace.flags?.includes('archived') ?? false;
+          const normalizedUpdatedSpace = willBeArchived
+            ? { ...updatedSpace, parentId: null }
+            : updatedSpace;
+
+          if (!wasArchived && willBeArchived) {
+            const archivedSpaceParentId = space.parentId ?? null;
+            const childSpaces =
+              organisationSpaces?.filter(
+                (orgSpace) => orgSpace.parentId === space.id,
+              ) ?? [];
+
+            for (const childSpace of childSpaces) {
+              const {
+                id,
+                description,
+                address,
+                web3SpaceId,
+                slug,
+                ...updates
+              } = childSpace;
+
+              await updateSpace({
+                id,
+                data: {
+                  ...updates,
+                  slug,
+                  parentId: archivedSpaceParentId,
+                  description: description as string | undefined,
+                  address: address as string | undefined,
+                  web3SpaceId: web3SpaceId as number | undefined,
+                },
+              });
+            }
+          }
+
+          if (!space.parentId && normalizedUpdatedSpace.parentId) {
             const foundInnerSpace = organisationSpaces?.find(
-              (inner) => inner.id === updatedSpace.parentId,
+              (inner) => inner.id === normalizedUpdatedSpace.parentId,
             );
             if (foundInnerSpace) {
               const {
@@ -75,8 +113,8 @@ export default function SpaceConfiguration() {
               });
             }
           }
-          setNewSpaceSlug(updatedSpace.slug || '');
-          await updateSpace({ id: space.id, data: updatedSpace });
+          setNewSpaceSlug(normalizedUpdatedSpace.slug || '');
+          await updateSpace({ id: space.id, data: normalizedUpdatedSpace });
         }
       } catch (e) {
         console.warn(e);
