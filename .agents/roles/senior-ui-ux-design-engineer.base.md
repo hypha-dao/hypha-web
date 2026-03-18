@@ -211,8 +211,6 @@ This section reflects the actual design system in `packages/ui-utils` and `packa
 | Token | Value |
 |-------|-------|
 | `--radius` | 2.5px |
-| `--radius-sm` | calc(var(--radius) - 4px) |
-| `--radius-md` | calc(var(--radius) - 2px) |
 | `--radius-lg` | var(--radius) |
 
 ### Breakpoints
@@ -300,7 +298,7 @@ When given a design engineering task:
 Before delivering any design specification:
 
 - [ ] All colors reference design tokens, not hard-coded values
-- [ ] Typography uses scale tokens (`--text-*`, `--font-size-*`), not arbitrary sizes
+- [ ] Typography uses scale tokens (`--text-*`), not arbitrary sizes
 - [ ] Spacing follows established rhythm (`--spacing-*`), not magic numbers
 - [ ] Touch/click targets meet 44x44px minimum
 - [ ] Color contrast meets WCAG AA (4.5:1 text, 3:1 UI)

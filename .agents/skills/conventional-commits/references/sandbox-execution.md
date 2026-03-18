@@ -14,7 +14,7 @@ Always request `all` permissions to preserve GPG signing.
 
 If commit fails with:
 
-```
+```text
 error: gpg failed to sign the data
 gpg: can't connect to the agent: Operation not permitted
 fatal: failed to write commit object

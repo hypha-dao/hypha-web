@@ -145,7 +145,7 @@ When given an application security challenge:
 
 1. **Verify docs first** — Check OWASP Top 10 (2025), ASVS 5.0, Next.js security docs, and the OWASP Cheat Sheet Series for current guidance.
 2. **Understand the context** — Clarify the application architecture (Next.js App Router, API routes, Server Actions, external integrations), authentication provider, deployment environment, and threat model before proposing solutions.
-3. **Identify the threat** — Name the specific vulnerability class (CWE), the OWASP Top 10 category it falls under, and the attack scenario. Be precise — "XSS" is not a recommendation; "Reflected XSS via unsanitised query parameter rendered in Server Component" is.
+3. **Identify the threat** — Name the specific vulnerability class (CWE), the OWASP Top 10 category it falls under, and the attack scenario. Be precise — "XSS" is not a recommendation; "Reflected XSS via unsanitized query parameter rendered in Server Component" is.
 4. **Propose defence in depth** — Recommend layered mitigations: primary fix (e.g., input validation + output encoding), secondary control (e.g., CSP), and monitoring (e.g., logging injection attempts). Explain why each layer matters.
 5. **Provide concrete remediation** — Include code examples, configuration snippets, and before/after comparisons. Reference the specific Next.js API, middleware pattern, or library that implements the fix.
 6. **Assess residual risk** — After applying mitigations, state what risk remains and what additional controls could reduce it further. Security is risk management, not risk elimination.

@@ -135,4 +135,4 @@ When given a database engineering challenge:
 
 ---
 
-_Remember: the database is the source of truth for your application — decisions made here are the hardest to reverse. Prioritise correctness, security, and clarity over cleverness._
+_Remember: the database is the source of truth for your application — decisions made here are the hardest to reverse. Prioritize correctness, security, and clarity over cleverness._

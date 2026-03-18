@@ -15,7 +15,8 @@
 
 #### Avoid
 
-- ❌ Vague language ("the system should be fast", "user-friendly interface")
+- ❌ Unmeasurable language without thresholds (for example, "response time must be low" or "user-friendly interface")
+- ❌ Using RFC-2119 terms like SHOULD without measurable criteria or explicit rationale
 - ❌ Combining multiple requirements in a single statement
 - ❌ Requirements that cannot be verified or tested
 - ❌ Implicit assumptions left undocumented
