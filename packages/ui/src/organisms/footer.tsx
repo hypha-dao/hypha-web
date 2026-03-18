@@ -35,7 +35,7 @@ export const Footer = ({
   privacyPolicyLabel = 'Privacy Policy',
 }: FooterProps) => {
   return (
-    <div className="bg-background-2">
+    <div className="bg-background-2 w-full">
       <Container>
         <div className="pt-6">
           <Logo width={140} />
