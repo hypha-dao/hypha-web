@@ -12,12 +12,15 @@ import {
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useSpaceMember } from '@hypha-platform/epics';
 import { useIsDelegate } from '@hypha-platform/core/client';
+import { useTranslations } from 'next-intl';
 
 interface ActionButtonsProps {
   web3SpaceId?: number;
 }
 
 export const ActionButtons = ({ web3SpaceId }: ActionButtonsProps) => {
+  const tDho = useTranslations('DHO');
+  const tCommon = useTranslations('Common');
   const pathname = usePathname();
   const { isAuthenticated } = useAuthentication();
   const { isMember } = useSpaceMember({ spaceId: web3SpaceId as number });
@@ -25,9 +28,9 @@ export const ActionButtons = ({ web3SpaceId }: ActionButtonsProps) => {
 
   const isDisabled = !isAuthenticated || (!isMember && !isDelegate);
   const tooltipMessage = !isAuthenticated
-    ? 'Please sign in to use this feature.'
+    ? tCommon('signIn')
     : !isMember && !isDelegate
-    ? 'Please join this space to use this feature.'
+    ? tCommon('joinSpaceToUse')
     : '';
 
   return (
@@ -39,16 +42,18 @@ export const ActionButtons = ({ web3SpaceId }: ActionButtonsProps) => {
             ? `${cleanPath(pathname)}${PATH_SELECT_SETTINGS_ACTION}`
             : {}
         }
-        title={tooltipMessage || 'Space Settings'}
+        title={tooltipMessage || tDho('actionButtons.spaceSettings')}
       >
         <Button colorVariant="accent" variant="outline" disabled={isDisabled}>
           <GearIcon className="sm:hidden" width={16} height={16} />
-          <span className="hidden sm:flex">Space Settings</span>
+          <span className="hidden sm:flex">
+            {tDho('actionButtons.spaceSettings')}
+          </span>
         </Button>
       </Link>
       <Link
         className={isDisabled ? 'cursor-not-allowed' : ''}
-        title={tooltipMessage || ''}
+        title={tooltipMessage || tDho('actionButtons.create')}
         href={
           isAuthenticated && (isMember || isDelegate)
             ? `${cleanPath(pathname)}${PATH_SELECT_CREATE_ACTION}`
@@ -57,7 +62,7 @@ export const ActionButtons = ({ web3SpaceId }: ActionButtonsProps) => {
       >
         <Button disabled={isDisabled} colorVariant="accent">
           <PlusIcon />
-          Create
+          {tDho('actionButtons.create')}
         </Button>
       </Link>
     </>

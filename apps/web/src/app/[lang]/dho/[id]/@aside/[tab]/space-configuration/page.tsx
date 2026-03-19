@@ -8,7 +8,7 @@ import {
   useUpdateSpaceOrchestrator,
 } from '@hypha-platform/core/client';
 import {
-  getDhoPathOverview,
+  getDhoPathAgreements,
   SchemaCreateSpaceForm,
   SidePanel,
   SpaceForm,
@@ -33,7 +33,7 @@ export default function SpaceConfiguration() {
 
   React.useEffect(() => {
     if (progress === 100 && !isPending && newSpaceSlug) {
-      router.push(getDhoPathOverview(lang as Locale, newSpaceSlug));
+      router.push(getDhoPathAgreements(lang as Locale, newSpaceSlug));
     }
   }, [progress, isPending, newSpaceSlug, lang]);
 

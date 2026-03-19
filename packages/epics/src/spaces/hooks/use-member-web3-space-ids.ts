@@ -19,6 +19,7 @@ export function useMemberWeb3SpaceIds({
     data: web3SpaceIds,
     isLoading,
     error,
+    mutate,
   } = useSWR(
     personAddress ? [personAddress, 'getMemberAndDelegatedSpaces'] : null,
     async ([address]) => {
@@ -99,5 +100,6 @@ export function useMemberWeb3SpaceIds({
     web3SpaceIds,
     isLoading,
     error,
+    mutate,
   };
 }

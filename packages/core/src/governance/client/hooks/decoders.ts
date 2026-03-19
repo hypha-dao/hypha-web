@@ -250,6 +250,22 @@ export function decodeTransaction(tx: Tx) {
                 spaceId: decoded.args[0],
               },
             }
+          : decoded.functionName === 'setSpaceDiscoverability'
+          ? {
+              type: 'setSpaceDiscoverability',
+              data: {
+                spaceId: decoded.args[0],
+                discoverability: decoded.args[1],
+              },
+            }
+          : decoded.functionName === 'setSpaceAccess'
+          ? {
+              type: 'setSpaceAccess',
+              data: {
+                spaceId: decoded.args[0],
+                access: decoded.args[1],
+              },
+            }
           : null;
       },
     },
@@ -266,6 +282,19 @@ export function decodeTransaction(tx: Tx) {
             }
           : null;
       },
+    },
+    {
+      abi: daoSpaceFactoryImplementationAbi,
+      handler: (decoded) =>
+        decoded.functionName === 'removeMember'
+          ? {
+              type: 'membershipExit',
+              data: {
+                space: decoded.args[0],
+                member: decoded.args[1],
+              },
+            }
+          : null,
     },
   ];
 

@@ -15,7 +15,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useConfig } from 'wagmi';
-import { useScrollToErrors } from '../../hooks';
+import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 
 type FormValues = z.infer<typeof schemaCreateAgreementForm>;
@@ -73,6 +73,13 @@ export const CreateProposeAContributionForm = ({
   });
 
   useScrollToErrors(form, formRef);
+  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+
+  React.useEffect(() => {
+    if (progress === 100 && successfulUrl) {
+      router.push(successfulUrl);
+    }
+  }, [progress, successfulUrl, router]);
 
   const handleCreate = async (data: FormValues) => {
     if (!data.recipient || !data.payouts || data.payouts.length === 0) {
@@ -116,6 +123,7 @@ export const CreateProposeAContributionForm = ({
           className="flex flex-col gap-5"
         >
           <CreateAgreementBaseFields
+            key={resubmitKey}
             creator={{
               avatar: person?.avatarUrl || '',
               name: person?.name || '',

@@ -2,6 +2,7 @@ import { Text } from '@radix-ui/themes';
 import { Card, Skeleton, Image, Badge } from '@hypha-platform/ui';
 import { formatCurrencyValue, formatDate } from '@hypha-platform/ui-utils';
 import { getDhoPathAgreements } from '@hypha-platform/epics';
+import { getTokenTypeLabel } from '../common/token-type-field';
 import { Locale } from '@hypha-platform/i18n';
 import Link from 'next/link';
 
@@ -10,6 +11,8 @@ type AssetCardProps = {
   name?: string;
   symbol?: string;
   value?: number;
+  /** Override value display (e.g. for small reward amounts) */
+  valueDisplay?: string;
   usdEqual?: number;
   type?: string;
   isLoading?: boolean;
@@ -29,6 +32,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   name,
   symbol,
   value,
+  valueDisplay,
   usdEqual,
   isLoading,
   supply,
@@ -64,7 +68,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
             className="mb-1 flex gap-1"
           >
             <Text className="text-4 font-medium text-secondary-foreground">
-              {formatCurrencyValue(value ?? 0)}
+              {valueDisplay ?? formatCurrencyValue(value ?? 0)}
             </Text>
           </Skeleton>
           <Skeleton width="80px" height="16px" loading={isLoading}>
@@ -75,9 +79,9 @@ export const AssetCard: React.FC<AssetCardProps> = ({
                   <Badge
                     colorVariant="accent"
                     variant="outline"
-                    className="w-fit capitalize h-fit"
+                    className="w-fit h-fit"
                   >
-                    {type}
+                    {getTokenTypeLabel(type)}
                   </Badge>
                 )}
               </span>

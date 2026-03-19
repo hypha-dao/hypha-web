@@ -10,7 +10,8 @@ import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { Button } from '@hypha-platform/ui';
 import { useMe } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
-import { getDhoPathOverview } from '../../common';
+import { useTranslations } from 'next-intl';
+import { getDhoPathAgreements } from '../../common';
 
 interface CreateSpaceFormProps {
   parentSpaceId: number | null;
@@ -25,6 +26,7 @@ export const CreateSubspaceForm = ({
   parentSpaceId,
   parentSpaceSlug,
 }: CreateSpaceFormProps) => {
+  const t = useTranslations('Spaces');
   const { lang } = useParams();
   const router = useRouter();
   const config = useConfig();
@@ -42,7 +44,7 @@ export const CreateSubspaceForm = ({
 
   React.useEffect(() => {
     if (progress === 100 && spaceSlug) {
-      router.push(getDhoPathOverview(lang as Locale, spaceSlug));
+      router.push(getDhoPathAgreements(lang as Locale, spaceSlug));
     }
   }, [progress, spaceSlug]);
 
@@ -55,8 +57,8 @@ export const CreateSubspaceForm = ({
       message={
         isError ? (
           <div className="flex flex-col">
-            <div>Ouh Snap. There was an error</div>
-            <Button onClick={reset}>Reset</Button>
+            <div>{t('errorOhSnap')}</div>
+            <Button onClick={reset}>{t('reset')}</Button>
           </div>
         ) : (
           <div>{currentAction}</div>
@@ -68,12 +70,12 @@ export const CreateSubspaceForm = ({
         creator={{ name: person?.name, surname: person?.surname }}
         closeUrl={successfulUrl}
         backUrl={backUrl}
-        backLabel="Back to Settings"
+        backLabel={t('backToSettings')}
         onSubmit={(values) => createSpace(values)}
         initialParentSpaceId={parentSpaceId as number}
         parentSpaceSlug={parentSpaceSlug}
         label="add"
-        slugIncorrectMessage="A space with this name already exists. Please choose a different name for your space."
+        slugIncorrectMessage={t('slugAlreadyExistsLong')}
       />
     </LoadingBackdrop>
   );

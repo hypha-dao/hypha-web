@@ -1,10 +1,15 @@
 'use client';
 
 import { Badge, Button, ConfirmDialog } from '@hypha-platform/ui';
-import { useExitSpace, useSpaceMember } from '../hooks';
+import { useExitSpace, useSpaceMember, useMemberWeb3SpaceIds } from '../hooks';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { useMe, useSpaceBySlug, Address } from '@hypha-platform/core/client';
+import { useParams, useRouter } from 'next/navigation';
 import React from 'react';
 import { Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { Locale } from '@hypha-platform/i18n';
+import { mutate as mutateCache, type Key } from 'swr';
 
 type ExitSpaceProps = {
   web3SpaceId: number;
@@ -12,16 +17,24 @@ type ExitSpaceProps = {
 };
 
 export const ExitSpace = ({ web3SpaceId, exitButton }: ExitSpaceProps) => {
-  const { isAuthenticated } = useAuthentication();
+  const t = useTranslations('Spaces');
+  const { isAuthenticated, user } = useAuthentication();
   const [showTooltip, setShowTooltip] = React.useState(false);
   const [justExit, setJustExit] = React.useState(false);
   const [isProcessing, setProcessing] = React.useState(false);
+  const router = useRouter();
+  const params = useParams<{ id?: string; lang?: Locale }>();
+  const { person } = useMe();
+  const { space: currentSpace } = useSpaceBySlug(params?.id || '');
 
   const { exitSpace, isExitingSpace, isDisabled } = useExitSpace({
     spaceId: web3SpaceId,
   });
   const { isMember, isMemberLoading, revalidateIsMember } = useSpaceMember({
     spaceId: web3SpaceId,
+  });
+  const { mutate: revalidateMemberSpaceIds } = useMemberWeb3SpaceIds({
+    personAddress: person?.address as Address | undefined,
   });
 
   const showLoader = isProcessing || isExitingSpace;
@@ -42,6 +55,38 @@ export const ExitSpace = ({ web3SpaceId, exitButton }: ExitSpaceProps) => {
       setJustExit(true);
       await exitSpace();
       await revalidateIsMember();
+
+      await revalidateMemberSpaceIds();
+
+      if (user?.wallet?.address && user.wallet.address !== person?.address) {
+        await mutateCache(
+          (key: Key) => {
+            if (!Array.isArray(key)) return false;
+            const [address, cacheKey] = key;
+            return (
+              typeof address === 'string' &&
+              address.toLowerCase() === user.wallet?.address?.toLowerCase() &&
+              cacheKey === 'getMemberAndDelegatedSpaces'
+            );
+          },
+          undefined,
+          { revalidate: true },
+        );
+      }
+
+      await mutateCache(
+        (key: Key) => {
+          if (!Array.isArray(key)) return false;
+          const [, cacheKey] = key;
+          return cacheKey === 'getMemberAndDelegatedSpaces';
+        },
+        undefined,
+        { revalidate: true },
+      );
+
+      if (currentSpace?.web3SpaceId === web3SpaceId && params?.lang) {
+        router.push(`/${params.lang}/my-spaces`);
+      }
     } catch (err) {
       setJustExit(false);
       console.error('Failed to exit space:', err);
@@ -49,7 +94,18 @@ export const ExitSpace = ({ web3SpaceId, exitButton }: ExitSpaceProps) => {
     } finally {
       setProcessing(false);
     }
-  }, [exitSpace, revalidateIsMember, disabled]);
+  }, [
+    exitSpace,
+    revalidateIsMember,
+    revalidateMemberSpaceIds,
+    currentSpace,
+    web3SpaceId,
+    params,
+    router,
+    disabled,
+    user,
+    person,
+  ]);
 
   React.useEffect(() => {
     if (!showTooltip) {
@@ -79,24 +135,20 @@ export const ExitSpace = ({ web3SpaceId, exitButton }: ExitSpaceProps) => {
       colorVariant="accent"
       variant="outline"
       className="relative"
-      title={
-        disabled
-          ? 'You need to be authorized and to be a member of current space to be able to exit'
-          : undefined
-      }
+      title={disabled ? t('exitSpaceDisabledTooltip') : undefined}
       disabled={disabled}
     >
       {showLoader && (
         <Loader2 className="animate-spin" width={16} height={16} />
       )}
-      Exit Space
+      {t('exitSpace')}
       {showTooltip && (
         <Badge
           variant="surface"
           colorVariant="error"
           className="absolute z-[1000] mt-[40px]"
         >
-          Could not exit space
+          {t('couldNotExitSpace')}
         </Badge>
       )}
     </Button>
@@ -108,10 +160,10 @@ export const ExitSpace = ({ web3SpaceId, exitButton }: ExitSpaceProps) => {
 
   return (
     <ConfirmDialog
-      title="Exit Space"
-      description="Do you really want to exit this space?"
-      customAcceptButtonText="Yes, leave"
-      customRejectButtonText="No, stay"
+      title={t('exitSpaceConfirmTitle')}
+      description={t('exitSpaceConfirmDescription')}
+      customAcceptButtonText={t('exitSpaceConfirmYes')}
+      customRejectButtonText={t('exitSpaceConfirmNo')}
       onAcceptClicked={handleExitSpace}
     >
       {button}

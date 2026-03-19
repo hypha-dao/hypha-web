@@ -17,7 +17,7 @@ import { useConfig } from 'wagmi';
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useSpaceTokenRequirementsByAddress } from '../hooks';
-import { useScrollToErrors } from '../../hooks';
+import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 
 interface SpaceToSpaceMembershipFormProps {
   successfulUrl: string;
@@ -60,6 +60,7 @@ export const SpaceToSpaceMembershipForm = ({
   });
 
   useScrollToErrors(form, formRef);
+  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
 
   const { jwt } = useJwt();
   const config = useConfig();
@@ -129,6 +130,7 @@ export const SpaceToSpaceMembershipForm = ({
           className="flex flex-col gap-5"
         >
           <CreateAgreementBaseFields
+            key={resubmitKey}
             creator={{
               avatar: person?.avatarUrl || '',
               name: person?.name || '',

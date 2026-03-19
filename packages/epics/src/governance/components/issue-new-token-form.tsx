@@ -17,7 +17,11 @@ import React from 'react';
 import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter } from 'next/navigation';
-import { useDbTokens, useScrollToErrors } from '../../hooks';
+import {
+  useDbTokens,
+  useScrollToErrors,
+  useResubmitProposalData,
+} from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 
 const extendedBaseSchema = baseSchemaIssueNewToken.merge(
@@ -28,12 +32,28 @@ const extendedBaseSchema = baseSchemaIssueNewToken.merge(
 
 export const fullSchemaIssueNewToken = extendedBaseSchema.superRefine(
   (data, ctx) => {
-    if (data.maxSupply > 0 && !data.maxSupplyType) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Please select a max supply type',
-        path: ['maxSupplyType'],
-      });
+    if (data.enableLimitedSupply === true) {
+      if (!data.maxSupplyType) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Please select a max supply type',
+          path: ['maxSupplyType'],
+        });
+      }
+
+      if (
+        data.maxSupply === undefined ||
+        data.maxSupply === null ||
+        isNaN(data.maxSupply) ||
+        data.maxSupply <= 0
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            'Enter a maximum supply greater than 0, or disable limited supply if you want unlimited supply.',
+          path: ['maxSupply'],
+        });
+      }
     }
 
     if (data.enableTokenPrice) {
@@ -122,6 +142,7 @@ export const IssueNewTokenForm = ({
       enableAdvancedTransferControls: false,
       transferWhitelist: undefined,
       enableProposalAutoMinting: true,
+      enableLimitedSupply: false,
       maxSupplyType: undefined,
       enableTokenPrice: false,
       referenceCurrency: undefined,
@@ -131,6 +152,7 @@ export const IssueNewTokenForm = ({
   });
 
   useScrollToErrors(form, formRef);
+  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
 
   const { tokens: dbTokens, refetchDbTokens } = useDbTokens();
 
@@ -169,7 +191,7 @@ export const IssueNewTokenForm = ({
       iconUrl: data.iconUrl || undefined,
       spaceId: spaceId as number,
       web3SpaceId: web3SpaceId as number,
-      transferable: data.type !== 'voice',
+      transferable: data.transferable ?? data.type !== 'voice',
       isVotingToken: data.type === 'voice',
       referencePrice: data.enableTokenPrice ? data.tokenPrice : undefined,
       referenceCurrency: data.enableTokenPrice
@@ -202,6 +224,7 @@ export const IssueNewTokenForm = ({
           className="flex flex-col gap-5"
         >
           <CreateAgreementBaseFields
+            key={resubmitKey}
             creator={{
               avatar: person?.avatarUrl || '',
               name: person?.name || '',

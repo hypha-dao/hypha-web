@@ -153,34 +153,49 @@ export const schemaCreateAgreementWeb2FileUrls = z.object(
 const isBrowserFile = (v: unknown): v is File =>
   typeof File !== 'undefined' && v instanceof File;
 
+const leadImageFileSchema = z
+  .custom<File>(isBrowserFile, { message: 'Please upload a valid file' })
+  .refine(
+    (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
+    'Your file is too large and exceeds the 4MB limit. Please upload a smaller file.',
+  )
+  .refine(
+    (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
+    'File must be an image (JPEG, PNG, GIF, WEBP).',
+  );
+
+const attachmentFileSchema = z
+  .custom<File>(isBrowserFile, { message: 'Please upload a valid file' })
+  .refine(
+    (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
+    (file) => ({
+      message: `Your file "${file.name}" is too large and exceeds the 4MB limit. Please upload a smaller file.`,
+    }),
+  )
+  .refine(
+    (file) => DEFAULT_FILE_ACCEPT.includes(file.type),
+    (file) => ({
+      message: `This file "${file.name}" format isn’t supported. Please upload a JPEG, PNG, WebP, or PDF (up to 4MB).`,
+    }),
+  );
+
 export const createAgreementFiles = {
   leadImage: z
-    .custom<File>(isBrowserFile, { message: 'Please upload a valid file' })
-    .refine(
-      (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-      'Your file is too large and exceeds the 4MB limit. Please upload a smaller file.',
-    )
-    .refine(
-      (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
-      'File must be an image (JPEG, PNG, GIF, WEBP).',
-    )
+    .union([
+      leadImageFileSchema,
+      z.string().url('Lead Image URL must be a valid URL'),
+    ])
     .optional(),
   attachments: z
     .array(
-      z
-        .custom<File>(isBrowserFile, { message: 'Please upload a valid file' })
-        .refine(
-          (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-          (file) => ({
-            message: `Your file "${file.name}" is too large and exceeds the 4MB limit. Please upload a smaller file.`,
-          }),
-        )
-        .refine(
-          (file) => DEFAULT_FILE_ACCEPT.includes(file.type),
-          (file) => ({
-            message: `This file "${file.name}" format isn’t supported. Please upload a JPEG, PNG, WebP, or PDF (up to 4MB).`,
-          }),
-        ),
+      z.union([
+        attachmentFileSchema,
+        z.string().url('Attachment URL must be a valid URL'),
+        z.object({
+          name: z.string().min(1, 'Attachment name is required'),
+          url: z.string().url('Attachment URL must be a valid URL'),
+        }),
+      ]),
     )
     .max(3, {
       message:
@@ -342,9 +357,19 @@ export const baseSchemaIssueNewToken = z.object({
     ])
     .transform((val) => (val === '' || val === null ? undefined : val)),
 
-  type: z.enum(['utility', 'credits', 'ownership', 'voice', 'impact'], {
-    required_error: 'Please select a token type',
-  }),
+  type: z.enum(
+    [
+      'utility',
+      'credits',
+      'ownership',
+      'voice',
+      'impact',
+      'community_currency',
+    ],
+    {
+      required_error: 'Please select a token type',
+    },
+  ),
 
   maxSupply: z.preprocess(
     (val) => Number(val),
@@ -370,6 +395,7 @@ export const baseSchemaIssueNewToken = z.object({
   transferWhitelist: transferWhitelistSchema.optional(),
 
   enableProposalAutoMinting: z.boolean(),
+  enableLimitedSupply: z.boolean().optional(),
   enableTokenPrice: z.boolean(),
   referenceCurrency: z.enum(REFERENCE_CURRENCIES).optional(),
   tokenPrice: z.preprocess((val) => {
@@ -383,11 +409,26 @@ export const baseSchemaIssueNewToken = z.object({
 
 export const schemaIssueNewToken = baseSchemaIssueNewToken.superRefine(
   (data, ctx) => {
-    if (data.maxSupply > 0 && !data.maxSupplyType) {
+    if (
+      (data.enableLimitedSupply === true || data.maxSupply > 0) &&
+      !data.maxSupplyType
+    ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Please select a max supply type',
         path: ['maxSupplyType'],
+      });
+    }
+
+    if (
+      data.maxSupplyType?.value === 'updatable' &&
+      (data.maxSupply == null || isNaN(data.maxSupply) || data.maxSupply <= 0)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'Max supply must be greater than 0 when updatable type is selected',
+        path: ['maxSupply'],
       });
     }
 
@@ -590,4 +631,22 @@ export const schemaSpaceToSpaceMembership = z.object({
     .string({ message: 'Please select a delegated voting member' })
     .min(1)
     .refine(isAddress, { message: 'Invalid Ethereum address' }),
+});
+
+export const schemaMembershipExit = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  label: z.literal('Membership Exit'),
+  space: z.number().min(1, { message: 'Please select a space to exit.' }),
+  member: z
+    .string({ message: 'Please select a member to remove' })
+    .min(1)
+    .refine(isAddress, { message: 'Invalid Ethereum address' }),
+});
+
+export const schemaChangeSpaceTransparencySettings = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  spaceDiscoverability: z.number().int().min(0).max(3),
+  spaceActivityAccess: z.number().int().min(0).max(3),
 });

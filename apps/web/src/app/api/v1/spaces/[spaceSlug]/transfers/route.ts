@@ -19,6 +19,7 @@ import {
 import { zeroAddress } from 'viem';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt, hasEmojiOrLink } from '@hypha-platform/ui-utils';
+import { checkSpaceAccess } from '@web/utils/check-space-access';
 
 /**
  * @summary Route to get ERC20 transfers of a space
@@ -37,10 +38,11 @@ import { canConvertToBigInt, hasEmojiOrLink } from '@hypha-platform/ui-utils';
  *        to 10
  */
 export async function GET(
-  { nextUrl, headers }: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ spaceSlug: string }> },
 ) {
   const { spaceSlug } = await params;
+  const { nextUrl, headers } = request;
 
   const authToken = headers.get('Authorization')?.split(' ')[1] || '';
   if (!authToken) {
@@ -56,6 +58,15 @@ export async function GET(
     const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
     if (!space || !canConvertToBigInt(space.web3SpaceId)) {
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
+    }
+
+    const { hasAccess, response } = await checkSpaceAccess(
+      request,
+      space.web3SpaceId as number,
+    );
+
+    if (!hasAccess && response) {
+      return response;
     }
 
     const spaceDetails = await web3Client.readContract(

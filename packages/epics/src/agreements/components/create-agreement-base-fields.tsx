@@ -1,6 +1,6 @@
 'use client';
 
-import { useFormContext } from 'react-hook-form';
+import { useFormContext, useWatch } from 'react-hook-form';
 import {
   Input,
   FormControl,
@@ -31,6 +31,7 @@ import {
   useJwt,
   NotifyProposalCreatedInput,
   useMe,
+  PostNotifyProposalCreatedInput,
 } from '@hypha-platform/core/client';
 import { useParams, useRouter } from 'next/navigation';
 import { formatDuration } from '@hypha-platform/ui-utils';
@@ -59,6 +60,9 @@ export type CreateAgreementFormProps = {
   progress: number;
 };
 
+type Callback = () => Promise<void>;
+type CallbackList = Array<Callback>;
+
 export function CreateAgreementBaseFields({
   creator,
   isLoading = false,
@@ -78,6 +82,51 @@ export function CreateAgreementBaseFields({
   if (!form) {
     return <div>Form context is missing!</div>;
   }
+
+  const [resubmitFormData, setResubmitFormData] = React.useState<{
+    leadImage?: string;
+    attachments?: (string | { name: string; url: string })[];
+  } | null>(null);
+  const [existingAttachments, setExistingAttachments] = React.useState<
+    (string | { name: string; url: string })[]
+  >([]);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const data = sessionStorage.getItem('resubmitFormData');
+      if (!data) return;
+
+      const parsed = JSON.parse(data) as {
+        leadImage?: string;
+        attachments?: (string | { name: string; url: string })[];
+        applied?: boolean;
+        [key: string]: any;
+      };
+
+      if (parsed.applied) {
+        sessionStorage.removeItem('resubmitFormData');
+        return;
+      }
+
+      setResubmitFormData(parsed);
+      if (parsed.attachments && parsed.attachments.length > 0) {
+        setExistingAttachments(parsed.attachments);
+      }
+
+      sessionStorage.setItem(
+        'resubmitFormData',
+        JSON.stringify({
+          ...parsed,
+          applied: true,
+        }),
+      );
+    } catch (error) {
+      console.error('Error reading resubmit form data:', error);
+      sessionStorage.removeItem('resubmitFormData');
+    }
+  }, []);
 
   const { space } = useSpaceBySlug(spaceSlug as string);
 
@@ -99,24 +148,40 @@ export function CreateAgreementBaseFields({
 
   const { person: me, isLoading: isLoadingMe } = useMe();
 
-  type Callback = () => void;
-  const [delayed, setDelayed] = React.useState<Array<Callback>>([]);
+  const [delayedCallbacks, setDelayedCallbacks] = React.useState<CallbackList>(
+    [],
+  );
 
   React.useEffect(() => {
     if (progress < 100) {
       return;
     }
-    if (delayed.length === 0) {
+    if (delayedCallbacks.length === 0) {
       return;
     }
-    for (const callback of delayed) {
-      callback?.();
-    }
-    setDelayed([]);
-  }, [progress, delayed, setDelayed]);
+    (async (callbacks) => {
+      for (const callback of callbacks) {
+        try {
+          await callback?.();
+        } catch (error) {
+          console.warn(error);
+        }
+      }
+    })([...delayedCallbacks]);
+    setDelayedCallbacks([]);
+  }, [progress, delayedCallbacks, setDelayedCallbacks]);
+
+  const progressRef = React.useRef(progress);
+  progressRef.current = progress;
 
   const postProposalCreated = React.useCallback(
-    async ({ spaceId, creator }: NotifyProposalCreatedInput) => {
+    async ({
+      spaceId,
+      creator,
+      proposalId,
+      url,
+      sendNotifications,
+    }: PostNotifyProposalCreatedInput) => {
       if (isLoadingMe || !me?.address || !space?.web3SpaceId) {
         return;
       }
@@ -127,28 +192,59 @@ export function CreateAgreementBaseFields({
         return;
       }
       if (successfulUrl) {
-        if (progress < 100) {
-          setDelayed((prev) => {
+        const sendNotificationsSafe = async (
+          args: NotifyProposalCreatedInput,
+        ) => {
+          try {
+            if (sendNotifications) {
+              await sendNotifications(args);
+            }
+          } catch (error) {
+            console.warn(
+              'Some issues appeared on send notifications on proposal created:',
+              error,
+            );
+          }
+        };
+        if (progressRef.current < 100) {
+          setDelayedCallbacks((prev) => {
             if (prev.length > 0) {
               // Normally should be called at most once
               return prev;
             }
             return [
               ...prev,
-              () => {
+              async () => {
+                await sendNotificationsSafe({
+                  proposalId,
+                  spaceId,
+                  creator,
+                  url,
+                });
                 router.push(successfulUrl);
               },
             ];
           });
         } else {
+          await sendNotificationsSafe({
+            proposalId,
+            spaceId,
+            creator,
+            url,
+          });
           router.push(successfulUrl);
         }
       }
     },
-    [router, successfulUrl, me, isLoadingMe, space, progress],
+    [router, successfulUrl, me, isLoadingMe, space],
   );
 
-  useProposalNotifications({ lang, spaceSlug, authToken, postProposalCreated });
+  useProposalNotifications({
+    lang,
+    spaceSlug,
+    authToken,
+    postProposalCreated,
+  });
 
   return (
     <>
@@ -276,6 +372,13 @@ export function CreateAgreementBaseFields({
                 onChange={field.onChange}
                 maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
                 enableImageResizer={true}
+                defaultImage={
+                  resubmitFormData?.leadImage || field.value
+                    ? typeof field.value === 'string'
+                      ? field.value
+                      : resubmitFormData?.leadImage
+                    : undefined
+                }
               />
             </FormControl>
             <FormMessage />
@@ -285,36 +388,71 @@ export function CreateAgreementBaseFields({
       <FormField
         control={form.control}
         name="description"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel className="text-foreground gap-1">
-              Proposal Content <RequirementMark />
-            </FormLabel>
-            <FormControl>
-              <RichTextEditor
-                editorRef={null}
-                markdown={field.value}
-                placeholder="Type your proposal content here..."
-                {...field}
-              />
-            </FormControl>
-            <FormDescription />
-            <FormMessage />
-          </FormItem>
-        )}
+        render={({ field }) => {
+          const descriptionValue = field.value || '';
+
+          return (
+            <FormItem>
+              <FormLabel className="text-foreground gap-1">
+                Proposal Content <RequirementMark />
+              </FormLabel>
+              <FormControl>
+                <RichTextEditor
+                  editorRef={null}
+                  markdown={descriptionValue}
+                  placeholder="Type your proposal content here..."
+                  onChange={(markdown) => field.onChange(markdown)}
+                />
+              </FormControl>
+              <FormDescription />
+              <FormMessage />
+            </FormItem>
+          );
+        }}
       />
       <FormField
         control={form.control}
         name="attachments"
-        render={({ field }) => (
-          <FormItem>
-            <FormControl>
-              <AddAttachment onChange={field.onChange} />
-            </FormControl>
-            <FormDescription />
-            <FormMessage />
-          </FormItem>
-        )}
+        render={({ field }) => {
+          const fieldValue = field.value || [];
+          const newFiles = Array.isArray(fieldValue)
+            ? fieldValue.filter((item) => item instanceof File)
+            : [];
+          const allAttachments = [...existingAttachments, ...newFiles];
+
+          return (
+            <FormItem>
+              <FormControl>
+                <AddAttachment
+                  onChange={(files) => {
+                    field.onChange(files);
+                    form.setValue(
+                      'attachments',
+                      [...existingAttachments, ...files] as any,
+                      { shouldValidate: false },
+                    );
+                  }}
+                  onExistingAttachmentsChange={(updated) => {
+                    setExistingAttachments(updated);
+                    form.setValue(
+                      'attachments',
+                      [...updated, ...newFiles] as any,
+                      { shouldValidate: false },
+                    );
+                  }}
+                  value={allAttachments.length > 0 ? allAttachments : undefined}
+                  defaultAttachments={
+                    existingAttachments.length > 0
+                      ? existingAttachments
+                      : undefined
+                  }
+                />
+              </FormControl>
+              <FormDescription />
+              <FormMessage />
+            </FormItem>
+          );
+        }}
       />
     </>
   );

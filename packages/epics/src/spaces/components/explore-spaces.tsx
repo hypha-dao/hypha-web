@@ -1,8 +1,14 @@
 'use client';
 
-import { Category, Space, SpaceOrder } from '@hypha-platform/core/client';
+import {
+  Category,
+  Space,
+  SpaceOrder,
+  isSpaceArchived,
+} from '@hypha-platform/core/client';
 import { SpaceCardList, SpaceSearch } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
+import { useTranslations } from 'next-intl';
 import { Text } from '@radix-ui/themes';
 import {
   Badge,
@@ -19,6 +25,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cva } from 'class-variance-authority';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { useFilterSpacesListWithDiscoverability } from '../hooks/use-spaces-discoverability-batch';
 
 interface ExploreSpacesProps {
   lang: Locale;
@@ -34,28 +41,6 @@ const categoriesIntersected = (
   categories2: Category[],
 ) => categories1.some((category) => categories2.includes(category));
 
-const orderOptions: {
-  value: SpaceOrder;
-  label: string;
-  searchText: string;
-}[] = [
-  {
-    value: 'mostmembers',
-    label: 'Most Members',
-    searchText: 'Most Members',
-  },
-  {
-    value: 'mostagreements',
-    label: 'Most Agreements',
-    searchText: 'Most Agreements',
-  },
-  {
-    value: 'mostrecent',
-    label: 'Most Recent',
-    searchText: 'Most Recent',
-  },
-];
-
 function toLowerHex<A extends `0x${string}`>(a: A): Lowercase<A> {
   return a.toLowerCase() as Lowercase<A>;
 }
@@ -63,10 +48,12 @@ function toLowerHex<A extends `0x${string}`>(a: A): Lowercase<A> {
 const CategoryLabel = ({
   selectedSpaces,
   categories,
+  allLabel,
   className,
 }: {
   selectedSpaces: Space[];
   categories?: Category[];
+  allLabel: string;
   className?: string | undefined;
 }) => {
   return (
@@ -89,7 +76,7 @@ const CategoryLabel = ({
         </Text>
       ) : (
         <Text className="text-4 text-left">
-          <Text className="text-4 ml-1 capitalize">All</Text>
+          <Text className="text-4 ml-1 capitalize">{allLabel}</Text>
           <Text className="text-4 ml-1 mr-1">|</Text>
           {selectedSpaces?.length}
         </Text>
@@ -106,19 +93,59 @@ export function ExploreSpaces({
   order,
   uniqueCategories,
 }: ExploreSpacesProps) {
+  const t = useTranslations('Network');
+  const tCommon = useTranslations('Common');
+  const tSpaces = useTranslations('Spaces');
+
+  const orderOptions: {
+    value: SpaceOrder;
+    label: string;
+    searchText: string;
+  }[] = [
+    {
+      value: 'mostmembers',
+      label: t('mostMembers'),
+      searchText: t('mostMembers'),
+    },
+    {
+      value: 'mostagreements',
+      label: t('mostAgreements'),
+      searchText: t('mostAgreements'),
+    },
+    {
+      value: 'mostrecent',
+      label: t('mostRecent'),
+      searchText: t('mostRecent'),
+    },
+  ];
+
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
 
-  const selectedSpaces = React.useMemo(
+  const nonArchivedSpaces = React.useMemo(
+    () => spaces.filter((space) => !isSpaceArchived(space)),
+    [spaces],
+  );
+
+  const categoryFilteredSpaces = React.useMemo(
     () =>
       categories && categories.length > 0
-        ? spaces.filter((space) =>
+        ? nonArchivedSpaces.filter((space) =>
             categoriesIntersected(space.categories, categories),
           )
-        : spaces,
-    [spaces, categories],
+        : nonArchivedSpaces,
+    [nonArchivedSpaces, categories],
   );
+
+  const {
+    filteredSpaces: selectedSpaces,
+    isLoading: isDiscoverabilityLoading,
+  } = useFilterSpacesListWithDiscoverability({
+    spaces: categoryFilteredSpaces,
+    useGeneralState: true,
+    excludeSpaceLevelFromNetwork: true,
+  });
 
   const agreementCount = React.useMemo(() => {
     return selectedSpaces.reduce(
@@ -238,8 +265,8 @@ export function ExploreSpaces({
         align="center"
         className="flex flex-col mb-16"
       >
-        <span>Many Spaces,</span>
-        <span>One Vibrant Network</span>
+        <span>{t('manySpaces')}</span>
+        <span>{t('oneVibrantNetwork')}</span>
       </Heading>
       <div className="flex justify-center">
         <SpaceSearch value={query} />
@@ -305,6 +332,7 @@ export function ExploreSpaces({
         <CategoryLabel
           selectedSpaces={selectedSpaces}
           categories={categories}
+          allLabel={t('all')}
           className="flex grow"
         />
         <div className="flex flex-col grow-0">
@@ -318,13 +346,13 @@ export function ExploreSpaces({
         </div>
         <Link
           className={!isAuthenticated ? 'cursor-not-allowed' : ''}
-          title={!isAuthenticated ? 'Please sign in to use this feature.' : ''}
+          title={!isAuthenticated ? tCommon('signIn') : ''}
           href={isAuthenticated ? `/${lang}/network/create` : {}}
           scroll={false}
         >
           <Button disabled={!isAuthenticated} className="ml-2">
             <PlusIcon />
-            Create Space
+            {tSpaces('createSpace')}
           </Button>
         </Link>
       </div>
@@ -338,7 +366,7 @@ export function ExploreSpaces({
             {selectedSpaces.length}
           </div>
           <div className="flex justify-center text-1 mt-2 text-neutral-500">
-            Spaces
+            {tCommon('Spaces')}
           </div>
         </div>
         <div className="flex flex-col">
@@ -346,7 +374,7 @@ export function ExploreSpaces({
             {uniqueMemberAddresses.size}
           </div>
           <div className="flex justify-center text-1 mt-2 text-neutral-500">
-            Members
+            {tCommon('Members')}
           </div>
         </div>
         <div className="flex flex-col">
@@ -354,7 +382,7 @@ export function ExploreSpaces({
             {agreementCount}
           </div>
           <div className="flex justify-center text-1 mt-2 text-neutral-500">
-            Agreements
+            {tCommon('Agreements')}
           </div>
         </div>
       </div>

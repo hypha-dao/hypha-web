@@ -7,3 +7,11 @@ export * from './use-has-space-paid';
 export * from './use-space-token-requirements';
 export * from './use-exit-space';
 export * from './use-space-member';
+export * from './use-action-gating';
+export * from './use-space-discoverability';
+export * from './use-user-space-state';
+export * from './use-spaces-discoverability-batch';
+export {
+  checkAccess,
+  checkDiscoverability,
+} from '../utils/transparency-access';

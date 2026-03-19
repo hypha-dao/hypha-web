@@ -8,6 +8,7 @@ import { getSpaceDetails } from '@hypha-platform/core/client';
 import { publicClient } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
+import { checkSpaceAccess } from '@web/utils/check-space-access';
 
 export async function GET(
   request: NextRequest,
@@ -16,10 +17,20 @@ export async function GET(
   const { spaceSlug } = await params;
 
   try {
-    // TODO: implement authorization
     const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
     if (!space) {
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
+    }
+
+    if (space.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
+      const { hasAccess, response } = await checkSpaceAccess(
+        request,
+        space.web3SpaceId as number,
+      );
+
+      if (!hasAccess && response) {
+        return response;
+      }
     }
 
     let spaceDetails;

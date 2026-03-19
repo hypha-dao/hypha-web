@@ -1,5 +1,7 @@
 import { Locale } from '@hypha-platform/i18n';
-import { MembersSection } from '@hypha-platform/epics';
+import { MembersSection, SpaceTabAccessWrapper } from '@hypha-platform/epics';
+import { findSpaceBySlug } from '@hypha-platform/core/server';
+import { db } from '@hypha-platform/storage-postgres';
 
 import { useMembers } from '@web/hooks/use-members';
 
@@ -14,16 +16,21 @@ export default async function MembershipPage(props: PageProps) {
 
   const { lang, id } = params;
 
+  const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
+  const web3SpaceId = spaceFromDb?.web3SpaceId;
+
   const basePath = getDhoPathMembers(lang as Locale, id as string);
 
   return (
-    <div className="flex flex-col gap-6 py-4">
-      <MembersSection
-        basePath={`${basePath}/person`}
-        useMembers={useMembers}
-        spaceSlug={id}
-        refreshInterval={2000}
-      />
-    </div>
+    <SpaceTabAccessWrapper spaceId={web3SpaceId as number} spaceSlug={id}>
+      <div className="flex flex-col gap-6 py-4">
+        <MembersSection
+          basePath={`${basePath}/person`}
+          useMembers={useMembers}
+          spaceSlug={id}
+          refreshInterval={2000}
+        />
+      </div>
+    </SpaceTabAccessWrapper>
   );
 }

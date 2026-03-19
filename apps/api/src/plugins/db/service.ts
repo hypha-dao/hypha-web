@@ -14,6 +14,8 @@ import {
   findPersonByAuth,
   verifyAuth,
   findTokenById,
+  findSpaceByIds,
+  findSpacesByAddresses,
 } from './query';
 
 export class DbService {
@@ -107,5 +109,13 @@ export class DbService {
     if (!authToken) throw new Error('No authorization token');
 
     return this.db.transaction((tx) => createAgreement(input, { db: tx }));
+  }
+
+  public async findSpaceByIds({ ids }: { ids: number[] }) {
+    return findSpaceByIds({ ids }, { db: this.db });
+  }
+
+  public async findSpacesByAddresses({ addresses }: { addresses: string[] }) {
+    return findSpacesByAddresses({ addresses }, { db: this.db });
   }
 }

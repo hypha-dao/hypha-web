@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "skills": {
+    "ai-sdk": {
+      "source": "vercel/ai",
+      "sourceType": "github",
+      "computedHash": "58ce68f628890c3925aea2b5435a649251ac182057541045c68fc19a27aaa0ec"
+    },
+    "autofix": {
+      "source": "coderabbitai/skills",
+      "sourceType": "github",
+      "computedHash": "2962bde0a90a52a211f7f752013b0e66997539841da2361e8ca8d14fc8fc20fd"
+    },
+    "code-review": {
+      "source": "coderabbitai/skills",
+      "sourceType": "github",
+      "computedHash": "7f793b91a34e2222e54572de0f8c52abdda222d4e06c1cd4ae959117c1c976e2"
+    },
+    "create-skill": {
+      "source": "siviter-xyz/dot-agent",
+      "sourceType": "github",
+      "computedHash": "117464d5a01acfbf3c7d3939a90df78e2196025f545bdded831aa4aa63a80080"
+    }
+  }
+}

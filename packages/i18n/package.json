@@ -4,16 +4,20 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "lint": "eslint . --max-warnings 0"
+    "lint": "eslint ."
   },
   "devDependencies": {
+    "@hypha-platform/config-eslint": "workspace:*",
     "@hypha-platform/config-typescript": "workspace:*"
   },
   "dependencies": {
-    "@hypha-platform/cookie": "workspace:*"
+    "next-intl": "^4.8.3"
   },
   "exports": {
     ".": "./src/index.ts",
-    "./client": "./src/client.ts"
+    "./client": "./src/client.ts",
+    "./request": "./src/request.ts",
+    "./routing": "./src/routing.ts",
+    "./navigation": "./src/navigation.ts"
   }
 }

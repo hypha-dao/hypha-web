@@ -1,7 +1,8 @@
 'use client';
 
-import { SelectAction } from '@hypha-platform/epics';
+import { SelectAction, useActionGating } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
+import { useTranslations } from 'next-intl';
 import {
   ArrowUpIcon,
   ArrowDownIcon,
@@ -10,78 +11,73 @@ import {
   RocketIcon,
   Share1Icon,
 } from '@radix-ui/react-icons';
-import { useFundWallet } from '@hypha-platform/epics';
-import { useParams } from 'next/navigation';
-import { useSpaceBySlug } from '@hypha-platform/core/client';
+
+type SelectCreateActionProps = {
+  daoSlug: string;
+  lang: Locale;
+  children?: React.ReactNode;
+};
 
 export const SelectCreateAction = ({
   daoSlug,
   lang,
-}: {
-  daoSlug: string;
-  lang: Locale;
-}) => {
-  const { id: spaceSlug } = useParams();
-  const { space } = useSpaceBySlug(spaceSlug as string);
-  const { fundWallet } = useFundWallet({
-    address: space?.address as `0x${string}`,
-  });
+  children,
+}: SelectCreateActionProps) => {
+  const { isPaymentExpired, fundWallet, space } = useActionGating(daoSlug);
+  const t = useTranslations('SelectCreateAction');
 
   const CREATE_ACTIONS = [
     {
       defaultDurationDays: 3,
-      title: 'Make a Collective Agreement',
-      description:
-        'Define and formalise a mutual understanding, policy, or decision among members of the space.',
+      title: t('actions.makeCollectiveAgreement.title'),
+      description: t('actions.makeCollectiveAgreement.description'),
       href: 'agreements/create',
       icon: <FileIcon />,
+      disabled: isPaymentExpired,
     },
     {
       defaultDurationDays: 4,
-      title: 'Propose a Contribution',
-      description:
-        'Propose a new contribution, such as work, knowledge, capital, or resources, for the space to consider.',
+      title: t('actions.proposeContribution.title'),
+      description: t('actions.proposeContribution.description'),
       href: 'agreements/create/propose-contribution',
       icon: <RocketIcon />,
+      disabled: isPaymentExpired,
     },
     {
       defaultDurationDays: 7,
-      title: 'Pay Expenses for Products or Services',
-      description:
-        'Make payments for products and services by transferring funds from your space treasury to another space, entity, or individual wallet.',
+      title: t('actions.payExpenses.title'),
+      description: t('actions.payExpenses.description'),
       href: 'agreements/create/pay-for-expenses',
       icon: <ArrowUpIcon />,
+      disabled: isPaymentExpired,
     },
     {
       defaultDurationDays: 7,
-      title: 'Accept Investment (Coming Soon)',
-      description:
-        'Receive capital from investors, members, or aligned spaces in exchange for native space tokens.',
+      title: t('actions.acceptInvestmentComingSoon.title'),
+      description: t('actions.acceptInvestmentComingSoon.description'),
       href: '#',
       icon: <PlusCircledIcon />,
       disabled: true,
     },
     {
       defaultDurationDays: 7,
-      title: 'Exchange Ownership (Coming Soon)',
-      description:
-        'Swap ownership between members or spaces, whether selling a stake or exchanging assets.',
+      title: t('actions.exchangeOwnershipComingSoon.title'),
+      description: t('actions.exchangeOwnershipComingSoon.description'),
       href: '#',
       icon: <PlusCircledIcon />,
       disabled: true,
     },
     {
       defaultDurationDays: 7,
-      title: 'Deploy Funds',
-      description:
-        'Allocate treasury funds for investments in other spaces in the network or for distributing resources across spaces within your organisation.',
+      title: t('actions.deployFunds.title'),
+      description: t('actions.deployFunds.description'),
       href: 'agreements/create/deploy-funds',
       icon: <Share1Icon />,
+      disabled: isPaymentExpired,
     },
     {
-      title: 'Deposit Funds',
-      description:
-        'Deposit funds into your treasury by copying the treasury address or scanning the QR code.',
+      title: t('actions.depositFunds.title'),
+      description: t('actions.depositFunds.description'),
       icon: <ArrowDownIcon />,
       onAction: () => {
         fundWallet();
@@ -91,12 +87,16 @@ export const SelectCreateAction = ({
   ];
   return (
     <SelectAction
-      title="Create a Proposal"
-      content="Select an action to contribute, collaborate, make decisions or manage resources within your space."
+      title={t('title')}
+      content={t('content')}
       actions={CREATE_ACTIONS.map((action) => ({
         ...action,
-        href: `/${lang}/dho/${daoSlug}/${action.href}`,
+        ...(action.href && {
+          href: `/${lang}/dho/${daoSlug}/${action.href}`,
+        }),
       }))}
-    />
+    >
+      {children}
+    </SelectAction>
   );
 };

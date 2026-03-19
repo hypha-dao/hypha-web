@@ -5,6 +5,9 @@ outputs:
   has_migrations:
     description: 'Whether there are changes in migration files'
     value: ${{ steps.changes.outputs.migrations }}
+  has_preview_deploy_changes:
+    description: 'Whether there are changes that require a preview deploy build'
+    value: ${{ steps.changes.outputs.preview_deploy }}
 
 runs:
   using: 'composite'
@@ -15,3 +18,11 @@ runs:
         filters: |
           migrations:
             - 'packages/storage-postgres/migrations/**'
+          preview_deploy:
+            - 'apps/**'
+            - 'packages/**'
+            - 'config/**'
+            - 'package.json'
+            - 'pnpm-lock.yaml'
+            - 'pnpm-workspace.yaml'
+            - 'turbo.json'

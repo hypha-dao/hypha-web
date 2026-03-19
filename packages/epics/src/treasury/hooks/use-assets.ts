@@ -3,6 +3,7 @@
 import React from 'react';
 import useSWR from 'swr';
 import { useParams } from 'next/navigation';
+import { useAuthentication } from '@hypha-platform/authentication';
 
 type OneChartPoint = {
   month: string;
@@ -64,6 +65,7 @@ export const useAssets = ({
   refreshInterval?: number;
 }): UseAssetsReturn => {
   const { id } = useParams<{ id: string }>();
+  const { getAccessToken } = useAuthentication();
 
   const endpoint = React.useMemo(() => {
     return `/api/v1/spaces/${id}/assets`;
@@ -72,9 +74,16 @@ export const useAssets = ({
   const { data, isLoading } = useSWR(
     [endpoint],
     async ([endpoint]) => {
-      const res = await fetch(endpoint, {
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const token = await getAccessToken();
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const res = await fetch(endpoint, { headers });
       if (!res.ok) {
         throw new Error(`Failed to fetch assets: ${res.statusText}`);
       }

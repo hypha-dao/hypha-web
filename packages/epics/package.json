@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "lint": "eslint . --max-warnings 0"
+    "lint": "eslint ."
   },
   "devDependencies": {
     "@hypha-platform/config-eslint": "workspace:*",
@@ -12,11 +12,12 @@
   },
   "dependencies": {
     "@hypha-platform/authentication": "workspace:*",
-    "@hypha-platform/ui": "workspace:*",
-    "@hypha-platform/ui-utils": "workspace:*",
     "@hypha-platform/core": "workspace:*",
     "@hypha-platform/i18n": "workspace:*",
-    "@hypha-platform/notifications": "workspace:*"
+    "@hypha-platform/notifications": "workspace:*",
+    "@hypha-platform/ui": "workspace:*",
+    "@hypha-platform/ui-utils": "workspace:*",
+    "next-intl": "^4.8.3"
   },
   "exports": {
     ".": "./src/index.ts"

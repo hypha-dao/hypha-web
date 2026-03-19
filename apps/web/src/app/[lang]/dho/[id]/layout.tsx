@@ -21,16 +21,19 @@ import Link from 'next/link';
 import { getAllSpaces, findSpaceBySlug } from '@hypha-platform/core/server';
 import { getDhoPathAgreements } from './@tab/agreements/constants';
 import { ActionButtons } from './_components/action-buttons';
+import { NestedSpacesButton } from './_components/nested-spaces-button';
 import {
   DEFAULT_SPACE_AVATAR_IMAGE,
   DEFAULT_SPACE_LEAD_IMAGE,
   fetchSpaceDetails,
   fetchSpaceProposalsIds,
+  isSpaceArchived,
 } from '@hypha-platform/core/client';
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
 import { Breadcrumbs } from './_components/breadcrumbs';
 import { canConvertToBigInt, formatDate } from '@hypha-platform/ui-utils';
+import { getTranslations } from 'next-intl/server';
 
 export default async function DhoLayout({
   aside,
@@ -44,6 +47,8 @@ export default async function DhoLayout({
   params: Promise<{ id: string; lang: Locale }>;
 }) {
   const { id: daoSlug, lang } = await params;
+  const tCommon = await getTranslations('Common');
+  const tSpaces = await getTranslations('Spaces');
 
   const spaceFromDb = await findSpaceBySlug({ slug: daoSlug }, { db });
   if (!spaceFromDb) {
@@ -92,7 +97,15 @@ export default async function DhoLayout({
     <div className="flex max-w-container-2xl mx-auto">
       <Container className="flex-grow min-w-0">
         <div className="mb-6 flex items-center">
-          <Breadcrumbs spaceId={spaceFromDb.id} />
+          <Breadcrumbs spaceId={spaceFromDb.id} lang={lang} />
+        </div>
+        <div className="relative flex justify-end mb-2">
+          {typeof spaceFromDb.web3SpaceId === 'number' && (
+            <NestedSpacesButton
+              web3SpaceId={spaceFromDb.web3SpaceId as number}
+              spaceSlug={daoSlug}
+            />
+          )}
         </div>
         <Card className="relative">
           <Image
@@ -131,14 +144,18 @@ export default async function DhoLayout({
             <div className="flex flex-row gap-y-2 gap-x-4">
               <div className="flex">
                 <div className="font-bold text-1">{spaceMembers}</div>
-                <div className="text-gray-500 ml-1 text-1">Members</div>
+                <div className="text-gray-500 ml-1 text-1">
+                  {tCommon('Members')}
+                </div>
               </div>
               <div className="flex">
                 <div className="font-bold text-1">
                   {/* @ts-ignore: TODO: infer types from relations */}
                   {spaceAgreements}
                 </div>
-                <div className="text-gray-500 ml-1 text-1">Agreements</div>
+                <div className="text-gray-500 ml-1 text-1">
+                  {tCommon('Agreements')}
+                </div>
               </div>
             </div>
             <div className="flex">
@@ -156,6 +173,9 @@ export default async function DhoLayout({
             web3SpaceId={spaceFromDb.web3SpaceId as number}
             isSandbox={spaceFromDb.flags.includes('sandbox')}
             isDemo={spaceFromDb.flags.includes('demo')}
+            isArchived={
+              spaceFromDb.flags.includes('archived') || spaceMembers === 0
+            }
             configPath={`${getDhoPathAgreements(
               lang,
               daoSlug,
@@ -171,7 +191,7 @@ export default async function DhoLayout({
           <Separator />
           <div className="border-primary-foreground">
             <Text className="text-4 font-medium pb-4 pt-4">
-              Spaces you might like
+              {tSpaces('spacesYouMightLike')}
             </Text>
             <Carousel className="my-6 mt-6">
               <CarouselContent className="pb-5" showScrollbar>
@@ -193,6 +213,7 @@ export default async function DhoLayout({
                         title={space.title as string}
                         isSandbox={space.flags?.includes('sandbox') ?? false}
                         isDemo={space.flags?.includes('demo') ?? false}
+                        isArchived={isSpaceArchived(space)}
                         web3SpaceId={space.web3SpaceId as number}
                         configPath={`${getDhoPathAgreements(
                           lang,

@@ -18,7 +18,7 @@ import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter } from 'next/navigation';
 import { VOTING_METHOD_TYPES } from '../hooks';
-import { useScrollToErrors } from '../../hooks';
+import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 
 type FormValues = z.infer<typeof schemaCreateProposalChangeVotingMethod>;
 
@@ -81,6 +81,7 @@ export const CreateProposalChangeVotingMethodForm = ({
   });
 
   useScrollToErrors(form, formRef);
+  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
 
   const { quorum = 0, unity = 0 } = form.watch('quorumAndUnity') ?? {};
 
@@ -165,6 +166,7 @@ export const CreateProposalChangeVotingMethodForm = ({
           className="flex flex-col gap-5"
         >
           <CreateAgreementBaseFields
+            key={resubmitKey}
             creator={{
               avatar: person?.avatarUrl || '',
               name: person?.name || '',

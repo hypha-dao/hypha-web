@@ -19,11 +19,17 @@ type FindAllSpacesProps = {
   search?: string;
   parentOnly?: boolean;
   omitSandbox?: boolean;
+  omitArchived?: boolean;
 };
 
 export const findAllSpaces = async (
   { db }: DbConfig,
-  { search, parentOnly = true, omitSandbox = false }: FindAllSpacesProps,
+  {
+    search,
+    parentOnly = true,
+    omitSandbox = false,
+    omitArchived = false,
+  }: FindAllSpacesProps,
 ) => {
   const results = await db
     .select({
@@ -49,6 +55,9 @@ export const findAllSpaces = async (
         parentOnly ? isNull(spaces.parentId) : undefined,
         omitSandbox
           ? not(sql`${spaces.flags} @> '["sandbox"]'::jsonb`)
+          : undefined,
+        omitArchived
+          ? not(sql`${spaces.flags} @> '["archived"]'::jsonb`)
           : undefined,
         search
           ? sql`(

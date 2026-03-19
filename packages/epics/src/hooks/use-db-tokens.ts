@@ -10,7 +10,13 @@ type Token = {
   name: string;
   symbol: string;
   maxSupply: number;
-  type: 'utility' | 'credits' | 'ownership' | 'voice' | 'impact';
+  type:
+    | 'utility'
+    | 'credits'
+    | 'ownership'
+    | 'voice'
+    | 'impact'
+    | 'community_currency';
   iconUrl?: string;
   transferable: boolean;
   isVotingToken: boolean;
@@ -19,6 +25,8 @@ type Token = {
   createdAt: Date;
   documentCount: number;
   address?: string;
+  referenceCurrency?: string | null;
+  referencePrice?: number | null;
 };
 
 type UseDbTokensReturn = {

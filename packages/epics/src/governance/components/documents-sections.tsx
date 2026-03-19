@@ -3,6 +3,7 @@
 import { DocumentSection } from './document-section';
 import { useSpaceDocumentsWithStatuses } from '../hooks/use-space-documents-with-statuses';
 import { Document, Order } from '@hypha-platform/core/client';
+import { useTranslations } from 'next-intl';
 
 type DocumentsSectionsProps = {
   lang: string;
@@ -17,6 +18,7 @@ export function DocumentsSections({
   web3SpaceId,
   order,
 }: DocumentsSectionsProps) {
+  const t = useTranslations('AgreementsTab');
   const { documents, isLoading } = useSpaceDocumentsWithStatuses({
     spaceId: web3SpaceId,
     spaceSlug,
@@ -31,7 +33,7 @@ export function DocumentsSections({
         basePath={`${basePath}/proposal`}
         web3SpaceId={web3SpaceId}
         documents={documents.onVoting}
-        label="On Voting"
+        label={t('onVoting')}
         hasSearch={true}
         isLoading={isLoading}
         firstPageSize={9}
@@ -41,7 +43,7 @@ export function DocumentsSections({
         basePath={`${basePath}/proposal`}
         web3SpaceId={web3SpaceId}
         documents={documents.accepted}
-        label="Accepted"
+        label={t('accepted')}
         hasSearch={true}
         isLoading={isLoading}
         firstPageSize={3}
@@ -51,7 +53,7 @@ export function DocumentsSections({
         basePath={`${basePath}/proposal`}
         web3SpaceId={web3SpaceId}
         documents={documents.rejected}
-        label="Rejected"
+        label={t('rejected')}
         hasSearch={true}
         isLoading={isLoading}
         firstPageSize={3}

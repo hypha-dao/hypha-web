@@ -21,6 +21,12 @@ export function TokenMaxSupplyField() {
     defaultValue: 0,
   });
 
+  const enableLimitedSupply = useWatch({
+    control,
+    name: 'enableLimitedSupply',
+    defaultValue: false,
+  });
+
   const handleMaxSupplyChange = handleNumberChange(setValue, 'maxSupply');
 
   return (
@@ -34,12 +40,12 @@ export function TokenMaxSupplyField() {
               <FormLabel className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
                 Max Supply
               </FormLabel>
-              <RequirementMark className="text-2" />
+              {enableLimitedSupply && <RequirementMark className="text-2" />}
             </div>
             <FormControl>
               <Input
                 type="number"
-                placeholder="Type an amount or 0 for unlimited supply"
+                placeholder="Type an amount"
                 value={maxSupply}
                 onChange={handleMaxSupplyChange}
                 name={field.name}
@@ -48,7 +54,6 @@ export function TokenMaxSupplyField() {
               />
             </FormControl>
           </div>
-          <FormMessage />
         </FormItem>
       )}
     />

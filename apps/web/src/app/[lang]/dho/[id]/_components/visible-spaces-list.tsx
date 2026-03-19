@@ -1,0 +1,282 @@
+'use client';
+
+import { useState, useMemo } from 'react';
+import { Locale } from '@hypha-platform/i18n';
+import { Space, DEFAULT_SPACE_AVATAR_IMAGE } from '@hypha-platform/core/client';
+import {
+  Card,
+  Button,
+  Badge,
+  Input,
+  Avatar,
+  AvatarImage,
+  Separator,
+} from '@hypha-platform/ui';
+import { PlusIcon } from '@radix-ui/react-icons';
+import Link from 'next/link';
+import { getDhoPathAgreements } from '@hypha-platform/epics';
+import {
+  useSpaceDiscoverability,
+  useUserSpaceState,
+  checkAccess,
+} from '@hypha-platform/epics';
+import type { VisibleSpace } from './types';
+import { useTranslations } from 'next-intl';
+
+type VisibleSpacesListProps = {
+  visibleSpaces: VisibleSpace[];
+  allSpaces: Space[];
+  lang: Locale;
+  entrySpaceId?: number;
+};
+
+type AddSpaceButtonProps = {
+  space: VisibleSpace;
+  allSpaces: Space[];
+  lang: Locale;
+};
+
+function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
+  const t = useTranslations('SelectNavigationAction');
+  const fullSpace = allSpaces.find((s) => s.id === space.id);
+  const web3SpaceId = fullSpace?.web3SpaceId;
+  const spaceSlug = fullSpace?.slug || space.slug;
+
+  if (!web3SpaceId || !spaceSlug) {
+    return (
+      <Button
+        variant="default"
+        size="default"
+        colorVariant="accent"
+        className="w-full md:w-auto"
+        disabled={true}
+        title={t('visibleSpaces.spaceInfoNotAvailable')}
+      >
+        <PlusIcon className="w-4 h-4" />
+        {t('visibleSpaces.addSpace')}
+      </Button>
+    );
+  }
+
+  const { access, isLoading: isAccessLoading } = useSpaceDiscoverability({
+    spaceId: BigInt(web3SpaceId),
+  });
+
+  const { userState, isLoading: isUserStateLoading } = useUserSpaceState({
+    spaceId: web3SpaceId,
+    spaceSlug,
+    space: fullSpace,
+  });
+
+  const hasAccess = checkAccess(access, userState);
+  const isLoading = isAccessLoading || isUserStateLoading;
+  const isDisabled = isLoading || !hasAccess;
+
+  const createSpacePath = `/${lang}/dho/${spaceSlug}/space/create`;
+
+  return (
+    <Link
+      href={hasAccess && !isLoading ? createSpacePath : '#'}
+      className={isDisabled ? 'cursor-not-allowed' : 'flex-1 md:flex-none'}
+      title={
+        isLoading
+          ? t('visibleSpaces.loading')
+          : !hasAccess
+          ? t('visibleSpaces.noAccessAddSpace')
+          : t('visibleSpaces.addSpace')
+      }
+    >
+      <Button
+        variant="default"
+        size="default"
+        colorVariant="accent"
+        className="w-full md:w-auto"
+        disabled={isDisabled}
+      >
+        <PlusIcon className="w-4 h-4" />
+        {t('visibleSpaces.addSpace')}
+      </Button>
+    </Link>
+  );
+}
+
+export function VisibleSpacesList({
+  visibleSpaces,
+  allSpaces,
+  lang,
+  entrySpaceId,
+}: VisibleSpacesListProps) {
+  const t = useTranslations('SelectNavigationAction');
+  const [searchQuery, setSearchQuery] = useState('');
+  const buildNestedPath = (space: VisibleSpace): string => {
+    if (space.root) {
+      return t('visibleSpaces.nestedRoot');
+    }
+
+    if (space.parentId) {
+      const parent = allSpaces.find((s) => s.id === space.parentId);
+      if (parent) {
+        return t('visibleSpaces.nestedIn', { parent: parent.title });
+      }
+    }
+
+    return t('visibleSpaces.nested');
+  };
+
+  const { rootSpace, descendantSpaces } = useMemo(() => {
+    const root = visibleSpaces.find((space) => space.root);
+    const descendants = visibleSpaces.filter((space) => !space.root);
+    return { rootSpace: root, descendantSpaces: descendants };
+  }, [visibleSpaces]);
+
+  const filteredSpaces = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return descendantSpaces;
+    }
+
+    const query = searchQuery.toLowerCase();
+    return descendantSpaces.filter((space) =>
+      space.name.toLowerCase().includes(query),
+    );
+  }, [descendantSpaces, searchQuery]);
+
+  const getCreateSpacePath = (spaceId: number, spaceSlug?: string) => {
+    if (!spaceSlug) return '#';
+    return `/${lang}/dho/${spaceSlug}/space/create`;
+  };
+
+  if (!rootSpace) {
+    return null;
+  }
+
+  const rootNestedPath = buildNestedPath(rootSpace);
+  const rootCreateSpacePath = getCreateSpacePath(rootSpace.id, rootSpace.slug);
+  const rootVisitSpacePath = rootSpace.slug
+    ? getDhoPathAgreements(lang, rootSpace.slug)
+    : '#';
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Card className="p-4">
+        <div className="flex flex-col md:flex-row md:items-center gap-4">
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            <Avatar className="w-12 h-12 flex-shrink-0">
+              <AvatarImage
+                src={rootSpace.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
+                alt={`${rootSpace.name} logo`}
+              />
+            </Avatar>
+
+            <div className="flex-1 min-w-0">
+              <div className="text-base font-medium text-foreground mb-1">
+                {rootSpace.name}
+              </div>
+              <Badge
+                variant="outline"
+                size={1}
+                colorVariant="neutral"
+                className="w-fit"
+              >
+                {rootNestedPath}
+              </Badge>
+            </div>
+          </div>
+
+          <div className="flex gap-2 flex-shrink-0 md:flex-shrink-0">
+            <AddSpaceButton
+              space={rootSpace}
+              allSpaces={allSpaces}
+              lang={lang}
+            />
+            <Link href={rootVisitSpacePath} className="flex-1 md:flex-none">
+              <Button
+                colorVariant="neutral"
+                variant="outline"
+                size="default"
+                disabled={rootSpace.id === entrySpaceId}
+                className="w-full md:w-auto"
+              >
+                {t('visibleSpaces.visitSpace')}
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </Card>
+
+      <Separator />
+
+      <div className="flex gap-2">
+        <Input
+          placeholder={t('visibleSpaces.searchSpaces')}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="flex-1"
+        />
+      </div>
+
+      <div className="flex flex-col gap-3">
+        {filteredSpaces.map((space) => {
+          const nestedPath = buildNestedPath(space);
+          const createSpacePath = getCreateSpacePath(space.id, space.slug);
+          const visitSpacePath = space.slug
+            ? getDhoPathAgreements(lang, space.slug)
+            : '#';
+
+          return (
+            <Card key={space.id} className="p-4">
+              <div className="flex flex-col md:flex-row md:items-center gap-4">
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <Avatar className="w-12 h-12 flex-shrink-0">
+                    <AvatarImage
+                      src={space.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
+                      alt={`${space.name} logo`}
+                    />
+                  </Avatar>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="text-base font-medium text-foreground mb-1">
+                      {space.name}
+                    </div>
+                    <Badge
+                      variant="outline"
+                      size={1}
+                      colorVariant="neutral"
+                      className="w-fit"
+                    >
+                      {nestedPath}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 flex-shrink-0 md:flex-shrink-0">
+                  <AddSpaceButton
+                    space={space}
+                    allSpaces={allSpaces}
+                    lang={lang}
+                  />
+                  <Link href={visitSpacePath} className="flex-1 md:flex-none">
+                    <Button
+                      colorVariant="neutral"
+                      variant="outline"
+                      size="default"
+                      disabled={space.id === entrySpaceId}
+                      className="w-full md:w-auto"
+                    >
+                      {t('visibleSpaces.visitSpace')}
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+
+      {filteredSpaces.length === 0 && (
+        <div className="text-center text-neutral-11 py-8">
+          {t('visibleSpaces.noSpacesFound')}
+        </div>
+      )}
+    </div>
+  );
+}

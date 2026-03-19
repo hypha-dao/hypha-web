@@ -49,5 +49,5 @@ export type SpaceOrder = (typeof SPACE_ORDERS)[number];
 /**
  * @todo fix duplication. Origin at `packages/storage-postgres/src/schema/flags.ts`
  */
-export const SPACE_FLAGS = ['sandbox', 'demo'] as const;
+export const SPACE_FLAGS = ['sandbox', 'demo', 'archived'] as const;
 export type SpaceFlags = (typeof SPACE_FLAGS)[number];

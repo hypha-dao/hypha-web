@@ -15,7 +15,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useConfig } from 'wagmi';
-import { useScrollToErrors } from '../../hooks';
+import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 
 type FormValues = z.infer<typeof schemaCreateAgreementForm>;
@@ -54,6 +54,7 @@ export const CreateAgreementForm = ({
   } = useCreateAgreementOrchestrator({ authToken: jwt, config });
 
   const formRef = React.useRef<HTMLFormElement>(null);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(fullSchemaCreateSpaceForm),
     defaultValues: {
@@ -67,6 +68,7 @@ export const CreateAgreementForm = ({
   });
 
   useScrollToErrors(form, formRef);
+  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
 
   const handleCreate = async (data: FormValues) => {
     await createAgreement({
@@ -105,6 +107,7 @@ export const CreateAgreementForm = ({
           className="flex flex-col gap-5"
         >
           <CreateAgreementBaseFields
+            key={resubmitKey}
             creator={{
               avatar: person?.avatarUrl || '',
               name: person?.name || '',

@@ -32,12 +32,19 @@ interface CreateTokenArgs {
   maxSupply: number;
   transferable: boolean;
   isVotingToken: boolean;
-  type: 'utility' | 'credits' | 'ownership' | 'voice' | 'impact';
+  type:
+    | 'utility'
+    | 'credits'
+    | 'ownership'
+    | 'voice'
+    | 'impact'
+    | 'community_currency';
   decayPercentage?: number;
   decayInterval?: number;
   fixedMaxSupply?: boolean;
   autoMinting?: boolean;
-  priceInUSD?: number;
+  tokenPrice?: number;
+  priceCurrencyFeed?: `0x${string}`;
   useTransferWhitelist?: boolean;
   useReceiveWhitelist?: boolean;
   initialTransferWhitelist?: `0x${string}`[];
@@ -76,13 +83,20 @@ export const useIssueTokenMutationsWeb3Rpc = ({
 
       const fixedMaxSupply = arg.fixedMaxSupply ?? false;
       const autoMinting = arg.autoMinting ?? true;
-      const priceInUSD = arg.priceInUSD ? BigInt(arg.priceInUSD) : 0n;
+      const tokenPrice = arg.tokenPrice ? BigInt(arg.tokenPrice) : 0n;
+      const priceCurrencyFeed =
+        arg.priceCurrencyFeed ??
+        ('0x0000000000000000000000000000000000000000' as `0x${string}`);
       const useTransferWhitelist = arg.useTransferWhitelist ?? false;
       const useReceiveWhitelist = arg.useReceiveWhitelist ?? false;
       const initialTransferWhitelist = arg.initialTransferWhitelist ?? [];
       const initialReceiveWhitelist = arg.initialReceiveWhitelist ?? [];
 
-      if (['utility', 'credits', 'impact'].includes(arg.type)) {
+      if (
+        ['utility', 'credits', 'impact', 'community_currency'].includes(
+          arg.type,
+        )
+      ) {
         txData = [
           {
             target: regularTokenFactoryAddress[chainId],
@@ -98,7 +112,8 @@ export const useIssueTokenMutationsWeb3Rpc = ({
                 arg.transferable,
                 fixedMaxSupply,
                 autoMinting,
-                priceInUSD,
+                tokenPrice,
+                priceCurrencyFeed,
                 useTransferWhitelist,
                 useReceiveWhitelist,
                 initialTransferWhitelist,
@@ -122,7 +137,8 @@ export const useIssueTokenMutationsWeb3Rpc = ({
                 BigInt(arg.maxSupply) * 10n ** 18n,
                 fixedMaxSupply,
                 autoMinting,
-                priceInUSD,
+                tokenPrice,
+                priceCurrencyFeed,
                 useTransferWhitelist,
                 useReceiveWhitelist,
                 initialTransferWhitelist,
@@ -156,7 +172,8 @@ export const useIssueTokenMutationsWeb3Rpc = ({
                 arg.transferable,
                 fixedMaxSupply,
                 autoMinting,
-                priceInUSD,
+                tokenPrice,
+                priceCurrencyFeed,
                 useTransferWhitelist,
                 useReceiveWhitelist,
                 initialTransferWhitelist,

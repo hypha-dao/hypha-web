@@ -27,6 +27,8 @@ import {
   ProposalEntryInfo,
   ProposalBuyHyphaTokensData,
   ProposalDelegatesData,
+  MembershipExitData,
+  ProposalTransparencySettingsInfo,
 } from '../../governance';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
 import { ButtonClose, ExpireProposalBanner } from '@hypha-platform/epics';
@@ -35,6 +37,7 @@ import { ProposalActivateSpacesData } from '../../governance/components/proposal
 import { useSpaceDocumentsWithStatuses } from '../../governance';
 import { isPast } from 'date-fns';
 import { useState, useEffect } from 'react';
+import { TransparencyLevel } from '../../spaces/components/transparency-level';
 
 type ProposalDetailProps = ProposalHeadProps & {
   documentId?: number;
@@ -53,6 +56,7 @@ type ProposalDetailProps = ProposalHeadProps & {
   onCheckProposalExpiration?: () => Promise<void>;
   isCheckingExpiration?: boolean;
   isVoting?: boolean;
+  onWithdrawSuccess?: () => Promise<void>;
 };
 
 type DocumentsArrays = {
@@ -83,6 +87,7 @@ export const ProposalDetail = ({
   onCheckProposalExpiration,
   isCheckingExpiration: externalIsCheckingExpiration,
   isVoting: externalIsVoting,
+  onWithdrawSuccess,
 }: ProposalDetailProps) => {
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: proposalId as number,
@@ -370,6 +375,34 @@ export const ProposalDetail = ({
           space={proposalDetails?.delegatesData.space}
         />
       ) : null}
+      {proposalDetails?.membershipExitData?.member ? (
+        <MembershipExitData
+          member={proposalDetails?.membershipExitData.member}
+          space={proposalDetails?.membershipExitData.space}
+        />
+      ) : null}
+      {proposalDetails?.transparencySettingsData &&
+      (proposalDetails.transparencySettingsData.spaceDiscoverability !==
+        undefined ||
+        proposalDetails.transparencySettingsData.spaceActivityAccess !==
+          undefined) ? (
+        <ProposalTransparencySettingsInfo
+          spaceDiscoverability={
+            proposalDetails.transparencySettingsData.spaceDiscoverability !==
+            undefined
+              ? (proposalDetails.transparencySettingsData
+                  .spaceDiscoverability as TransparencyLevel)
+              : undefined
+          }
+          spaceActivityAccess={
+            proposalDetails.transparencySettingsData.spaceActivityAccess !==
+            undefined
+              ? (proposalDetails.transparencySettingsData
+                  .spaceActivityAccess as TransparencyLevel)
+              : undefined
+          }
+        />
+      ) : null}
       <FormVoting
         unity={proposalDetails?.unityPercentage || 0}
         quorum={proposalDetails?.quorumPercentage || 0}
@@ -387,6 +420,16 @@ export const ProposalDetail = ({
         spaceDetails={spaceDetails as unknown as SpaceDetails}
         proposalStatus={proposalStatus}
         hideDurationData={hideDurationData()}
+        proposalId={proposalId ?? null}
+        proposalCreator={proposalDetails?.creator ?? null}
+        documentTitle={title}
+        documentDescription={content}
+        documentLeadImage={leadImage}
+        documentAttachments={attachments}
+        spaceSlug={spaceSlug}
+        closeUrl={closeUrl}
+        onWithdrawSuccess={onWithdrawSuccess}
+        label={label}
       />
     </div>
   );

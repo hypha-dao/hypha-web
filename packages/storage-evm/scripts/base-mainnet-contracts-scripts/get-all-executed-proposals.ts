@@ -195,7 +195,7 @@ async function getProposalVoters(
 
     const currentBlock = await provider.getBlockNumber();
 
-    let events: (ethers.EventLog | ethers.Log)[] = [];
+    const events: (ethers.EventLog | ethers.Log)[] = [];
 
     // Only use the working strategy: small chunk search
     console.log('Searching for votes using small chunks...');

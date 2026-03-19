@@ -11,6 +11,11 @@ export interface NotifyProposalRejectedInput {
   proposalId: bigint;
 }
 
+export interface PostNotifyProposalCreatedInput
+  extends NotifyProposalCreatedInput {
+  sendNotifications?: (arg: NotifyProposalCreatedInput) => Promise<void>;
+}
+
 export interface UseSendNotificationsReturn {
   notifyProposalCreated: (arg: NotifyProposalCreatedInput) => Promise<void>;
   notifyProposalAccepted: (arg: NotifyProposalAcceptedInput) => Promise<void>;

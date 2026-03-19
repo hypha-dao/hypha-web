@@ -1,6 +1,7 @@
 import {
   NotifyProposalCreatedInput,
   OnProposalCreatedInput,
+  PostNotifyProposalCreatedInput,
   useHookRegistry,
   useProposalEvents,
 } from '@hypha-platform/core/client';
@@ -12,7 +13,7 @@ export interface UseProposalNotificationsInput {
   lang: Locale;
   spaceSlug: string;
   authToken?: string | null;
-  postProposalCreated?: (arg: NotifyProposalCreatedInput) => Promise<void>;
+  postProposalCreated?: (arg: PostNotifyProposalCreatedInput) => Promise<void>;
 }
 
 export const useProposalNotifications = ({
@@ -31,18 +32,16 @@ export const useProposalNotifications = ({
     }: OnProposalCreatedInput) => {
       const url = getDhoUrlAgreements(lang, spaceSlug);
       try {
-        await notifyProposalCreated({ proposalId, spaceId, creator, url });
+        await postProposalCreated?.({
+          proposalId,
+          spaceId,
+          creator,
+          url,
+          sendNotifications: notifyProposalCreated,
+        });
       } catch (error) {
         console.warn(
-          'Some issues appeared on send notifications on proposal created:',
-          error,
-        );
-      }
-      try {
-        await postProposalCreated?.({ proposalId, spaceId, creator, url });
-      } catch (error) {
-        console.warn(
-          'Some issues appeared on notifications post preocessing after on proposal created:',
+          'Some issues appeared on notifications post preprocessing after on proposal created:',
           error,
         );
       }

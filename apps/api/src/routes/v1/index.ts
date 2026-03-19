@@ -3,7 +3,6 @@ import { FastifyInstance } from 'fastify';
 import { join } from 'node:path';
 import autoload from '@fastify/autoload';
 import dashboardRoutes from './dashboard';
-import spacesRoutes from './spaces';
 import walletRoutes from './wallet';
 
 export default async function v1Routes(app: FastifyInstance) {
@@ -12,7 +11,11 @@ export default async function v1Routes(app: FastifyInstance) {
     routeParams: true,
     options: { prefix: '/proposals' },
   });
+  app.register(autoload, {
+    dir: join(__dirname, 'spaces'),
+    routeParams: true,
+    options: { prefix: '/spaces' },
+  });
   app.register(dashboardRoutes, { prefix: '/dashboard' });
-  app.register(spacesRoutes, { prefix: '/spaces' });
   app.register(walletRoutes, { prefix: '/wallet' });
 }

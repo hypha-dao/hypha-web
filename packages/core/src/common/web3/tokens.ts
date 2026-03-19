@@ -10,6 +10,7 @@ export type Token = {
     | 'utility'
     | 'credits'
     | 'impact'
+    | 'community_currency'
     | null;
   transferable?: boolean;
 };
@@ -69,5 +70,6 @@ export const validTokenTypes = [
   'ownership',
   'voice',
   'impact',
+  'community_currency',
 ] as const;
 export type TokenType = (typeof validTokenTypes)[number];

@@ -121,7 +121,7 @@ export async function GET(
         const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
         let person = null;
         let space = null;
-        let tokenIcon = tokenMeta.icon;
+        const tokenIcon = tokenMeta.icon;
 
         person = await findPersonByWeb3Address(
           { address: counterpartyAddress },

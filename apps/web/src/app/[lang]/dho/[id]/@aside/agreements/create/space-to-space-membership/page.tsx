@@ -41,7 +41,8 @@ export default async function SpaceToSpaceMembershipPage({
   }
 
   const filteredSpaces = spaces?.filter(
-    (space) => space?.address && space.address.trim() !== '',
+    (space) =>
+      space?.address && space.address.trim() !== '' && space.id !== spaceId,
   );
   return (
     <SidePanel>

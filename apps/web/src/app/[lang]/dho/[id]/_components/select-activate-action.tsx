@@ -3,6 +3,7 @@
 import { SelectAction } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { isAbsoluteUrl } from '@hypha-platform/ui-utils';
+import { useTranslations } from 'next-intl';
 import {
   ArrowDownIcon,
   ArrowLeftIcon,
@@ -26,12 +27,12 @@ export const SelectActivateAction = ({
   const { fundWallet } = useFundWallet({
     address: space?.address as `0x${string}`,
   });
+  const t = useTranslations('SelectActivateAction');
 
   const SELECT_ACTIVATE_ACTIONS = [
     {
-      title: 'Deposit Funds',
-      description:
-        'Deposit funds into your treasury by copying the treasury address or scanning the QR code.',
+      title: t('actions.depositFunds.title'),
+      description: t('actions.depositFunds.description'),
       icon: <ArrowDownIcon />,
       baseTab: 'treasury',
       onAction: () => {
@@ -40,17 +41,15 @@ export const SelectActivateAction = ({
       disabled: !space?.address,
     },
     {
-      title: 'Buy Hypha Tokens (Rewards)',
-      description:
-        'Purchase Hypha tokens to participate in the network and earn rewards.',
+      title: t('actions.buyHyphaTokensRewards.title'),
+      description: t('actions.buyHyphaTokensRewards.description'),
       href: 'create/buy-hypha-tokens',
       baseTab: 'agreements',
       icon: <ArrowLeftIcon />,
     },
     {
-      title: 'Activate Space(s)',
-      description:
-        'Contribute HYPHA or USDC to activate your space(s) and support the Hypha Network.',
+      title: t('actions.activateSpaces.title'),
+      description: t('actions.activateSpaces.description'),
       href: 'create/activate-spaces',
       baseTab: 'agreements',
       icon: <ArrowRightIcon />,
@@ -76,8 +75,8 @@ export const SelectActivateAction = ({
 
   return (
     <SelectAction
-      title="Activate Space"
-      content="Choose one of the options below to activate your Space and unlock all the features available on the Hypha Network."
+      title={t('title')}
+      content={t('content')}
       actions={SELECT_ACTIVATE_ACTIONS.map((action) => {
         const href = computeHref(action);
         return {

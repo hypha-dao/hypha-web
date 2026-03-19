@@ -1,0 +1,401 @@
+{
+  "Common": {
+    "Assignments": "Affectations",
+    "Members": "Membres",
+    "Treasury": "Trésorerie",
+    "Agreements": "Accords",
+    "Spaces": "Espaces",
+    "loadMore": "Charger plus",
+    "noMore": "Plus aucun",
+    "createdOn": "Créé le {date}",
+    "signIn": "Veuillez vous connecter pour utiliser cette fonctionnalité.",
+    "joinSpaceToUse": "Veuillez rejoindre cet espace pour utiliser cette fonctionnalité.",
+    "back": "Retour",
+    "home": "Accueil",
+    "remove": "Supprimer",
+    "by": "par",
+    "otherMembers": "+ {count} autres membres",
+    "exploreSpaces": "Explorer les espaces",
+    "findCategory": "Trouver une catégorie",
+    "noSpacesYet": "Aucun espace créé ou rejoint pour le moment. Explorez notre réseau et rejoignez un espace, ou créez le vôtre."
+  },
+  "Navigation": {
+    "network": "Réseau",
+    "mySpaces": "Mes espaces",
+    "openMenu": "Ouvrir le menu",
+    "closeMenu": "Fermer le menu",
+    "selectLanguage": "Choisir la langue",
+    "myProfile": "Mon profil",
+    "notificationCentre": "Centre de notifications",
+    "switchToLightMode": "Passer en mode clair",
+    "switchToDarkMode": "Passer en mode sombre",
+    "updateMfa": "Mettre à jour la protection des fonds (MFA)",
+    "protectMfa": "Protéger les fonds (MFA)",
+    "logout": "Se déconnecter",
+    "viewProfile": "Voir le profil",
+    "delete": "Supprimer",
+    "signIn": "Se connecter",
+    "getStarted": "Commencer"
+  },
+  "DHO": {
+    "Dashboard": "Tableau de bord DHO",
+    "actionButtons": {
+      "spaceSettings": "Paramètres de l'espace",
+      "create": "Créer"
+    },
+    "nestedSpacesButton": {
+      "label": "Navigation des espaces",
+      "loading": "Chargement...",
+      "noAccess": "Vous n'avez pas accès à la navigation des espaces."
+    }
+  },
+  "SpaceSettingsAction": {
+    "title": "Paramètres de l'espace",
+    "content": "Accédez aux paramètres de votre espace et gérez-les, y compris son apparence, sa structure, ses méthodes, l'adhésion et la trésorerie.",
+    "groups": {
+      "overview": "Aperçu",
+      "agreements": "Accords",
+      "members": "Membres",
+      "treasury": "Trésorerie",
+      "extensionsPlugins": "Extensions et plug-ins",
+      "ecosystemVerticals": "Secteurs de l'écosystème"
+    },
+    "actions": {
+      "spaceConfiguration": {
+        "title": "Configuration de l'espace",
+        "description": "Personnalisez votre espace en définissant son objectif, en ajoutant des éléments de marque et en liant les réseaux sociaux."
+      },
+      "spaceTransparencyConfiguration": {
+        "title": "Configuration de la transparence de l'espace",
+        "description": "Définissez le niveau de transparence que vous souhaitez appliquer collectivement à votre espace."
+      },
+      "addSpace": {
+        "title": "Ajouter un espace",
+        "description": "Créez un nouvel espace au sein de votre organisation pour des activités, des équipes ou des projets."
+      },
+      "activateSpaces": {
+        "title": "Activer le(s) espace(s)",
+        "description": "Contribuez en HYPHA ou en USDC pour activer votre/vos espace(s) et soutenir le réseau Hypha."
+      },
+      "votingMethod": {
+        "title": "Méthode de vote",
+        "description": "Sélectionnez et configurez la méthode de vote pour la prise de décision au sein de votre espace."
+      },
+      "entryMethod": {
+        "title": "Méthode d'entrée",
+        "description": "Sélectionnez et configurez le processus par lequel de nouveaux membres rejoignent votre espace."
+      },
+      "membershipExit": {
+        "title": "Sortie de membre",
+        "description": "Retirez un membre de votre espace s'il enfreint les règles et politiques convenues."
+      },
+      "spaceToSpaceMembership": {
+        "title": "Adhésion espace-à-espace",
+        "description": "Permettez à votre espace de rejoindre un autre espace en tant que membre, avec la possibilité de participer à la gouvernance et de voter sur les propositions."
+      },
+      "issueNewToken": {
+        "title": "Émettre un nouveau token",
+        "description": "Créez un nouveau token pour l'utilité, la propriété, l'impact, les crédits, la voix ou la monnaie communautaire au sein de votre espace."
+      },
+      "mintTokensToSpaceTreasury": {
+        "title": "Frapper des tokens pour la trésorerie de l'espace",
+        "description": "Frappez des tokens dans la trésorerie de votre espace pour financer les opérations, distribuer des récompenses ou fournir de la liquidité."
+      },
+      "buyHyphaTokensRewards": {
+        "title": "Acheter des tokens Hypha (récompenses)",
+        "description": "Achetez des tokens Hypha pour participer au réseau et obtenir des récompenses."
+      },
+      "depositFunds": {
+        "title": "Déposer des fonds",
+        "description": "Déposez des fonds dans votre trésorerie en copiant l'adresse de la trésorerie ou en scannant le QR code."
+      },
+      "integrateSmartContractInSpace": {
+        "title": "Intégrer un smart contract dans l'espace (avancé)",
+        "description": "Permettez à votre espace de prendre la propriété multisig de vos smart contracts, afin que votre communauté gouverne directement les flux de valeur (tokenomics) depuis votre espace."
+      },
+      "exploreExtensionsMarketplaceComingSoon": {
+        "title": "Explorer le marché des extensions et plug-ins (bientôt disponible)",
+        "description": "Découvrez un écosystème grandissant d'outils et d'intégrations pour étendre les capacités de votre espace."
+      },
+      "hyphaEnergy": {
+        "title": "Hypha Energy",
+        "description": "Une plateforme dédiée à votre communauté ou hub d'énergie renouvelable, permettant le partage local d'énergie, la copropriété d'actifs énergétiques, la gouvernance et une distribution équitable de la valeur entre les membres."
+      }
+    }
+  },
+  "SelectCreateAction": {
+    "title": "Créer une proposition",
+    "content": "Sélectionnez une action pour contribuer, collaborer, prendre des décisions ou gérer les ressources au sein de votre espace.",
+    "actions": {
+      "makeCollectiveAgreement": {
+        "title": "Établir un accord collectif",
+        "description": "Définissez et formalisez une compréhension mutuelle, une politique ou une décision entre les membres de l'espace."
+      },
+      "proposeContribution": {
+        "title": "Proposer une contribution",
+        "description": "Proposez une nouvelle contribution, comme du travail, des connaissances, du capital ou des ressources, que l'espace pourra examiner."
+      },
+      "payExpenses": {
+        "title": "Payer des dépenses pour des produits ou services",
+        "description": "Effectuez des paiements pour des produits et services en transférant des fonds de la trésorerie de votre espace vers un autre espace, une entité ou un portefeuille individuel."
+      },
+      "acceptInvestmentComingSoon": {
+        "title": "Accepter un investissement (bientôt disponible)",
+        "description": "Recevez du capital d'investisseurs, de membres ou d'espaces alignés en échange des tokens natifs de l'espace."
+      },
+      "exchangeOwnershipComingSoon": {
+        "title": "Échanger la propriété (bientôt disponible)",
+        "description": "Échangez la propriété entre membres ou espaces, qu'il s'agisse de vendre une part ou d'échanger des actifs."
+      },
+      "deployFunds": {
+        "title": "Déployer des fonds",
+        "description": "Allouez des fonds de trésorerie à des investissements dans d'autres espaces du réseau ou à la distribution de ressources entre les espaces de votre organisation."
+      },
+      "depositFunds": {
+        "title": "Déposer des fonds",
+        "description": "Déposez des fonds dans votre trésorerie en copiant l'adresse de la trésorerie ou en scannant le QR code."
+      }
+    }
+  },
+  "SelectActivateAction": {
+    "title": "Activer l'espace",
+    "content": "Choisissez l'une des options ci-dessous pour activer votre espace et débloquer toutes les fonctionnalités disponibles sur le réseau Hypha.",
+    "actions": {
+      "depositFunds": {
+        "title": "Déposer des fonds",
+        "description": "Déposez des fonds dans votre trésorerie en copiant l'adresse de la trésorerie ou en scannant le QR code."
+      },
+      "buyHyphaTokensRewards": {
+        "title": "Acheter des tokens Hypha (récompenses)",
+        "description": "Achetez des tokens Hypha pour participer au réseau et obtenir des récompenses."
+      },
+      "activateSpaces": {
+        "title": "Activer le(s) espace(s)",
+        "description": "Contribuez en HYPHA ou en USDC pour activer votre/vos espace(s) et soutenir le réseau Hypha."
+      }
+    }
+  },
+  "SelectNavigationAction": {
+    "title": "Navigation des espaces",
+    "content": "Naviguez dans tous vos espaces sur une seule carte interactive pour voir comment ils sont connectés les uns aux autres. Visitez facilement les espaces imbriqués, explorez les adhésions espace-à-espace et suivez les flux de valeur dans votre écosystème direct.",
+    "tabs": {
+      "nestedSpaces": "Espaces imbriqués",
+      "spaceToSpace": "Espace-à-espace",
+      "valuesFlows": "Flux de valeur"
+    },
+    "comingSoon": {
+      "spaceToSpaceVisualization": "Visualisation espace-à-espace bientôt disponible",
+      "valuesFlowsVisualization": "Visualisation des flux de valeur bientôt disponible"
+    },
+    "visibleSpaces": {
+      "nestedRoot": "Racine",
+      "nestedIn": "Imbriqué dans {parent}",
+      "nested": "Imbriqué",
+      "spaceInfoNotAvailable": "Informations de l'espace indisponibles",
+      "addSpace": "Ajouter un espace",
+      "loading": "Chargement...",
+      "noAccessAddSpace": "Vous n'avez pas accès pour ajouter des espaces à cette organisation.",
+      "visitSpace": "Visiter l'espace",
+      "searchSpaces": "Rechercher des espaces",
+      "noSpacesFound": "Aucun espace trouvé"
+    }
+  },
+  "AgreementsTab": {
+    "onVoting": "En vote",
+    "accepted": "Acceptés",
+    "rejected": "Rejetés",
+    "searchDocuments": "Rechercher des documents",
+    "listIsEmpty": "La liste est vide"
+  },
+  "MembersTab": {
+    "searchMembers": "Rechercher des membres",
+    "delegateVoting": "Déléguer le vote",
+    "listIsEmpty": "La liste est vide",
+    "loading": "Chargement...",
+    "noMoreMembers": "Plus de membres",
+    "loadMoreMembers": "Charger plus de membres"
+  },
+  "TreasuryTab": {
+    "balance": "Solde",
+    "searchTokens": "Rechercher des tokens",
+    "hideSmallBalances": "Masquer les petits soldes",
+    "newToken": "Nouveau token",
+    "depositFunds": "Déposer des fonds",
+    "listIsEmpty": "La liste est vide",
+    "loadMoreAssets": "Charger plus d'actifs",
+    "transactions": "Transactions",
+    "searchTransactions": "Rechercher des transactions",
+    "noTransactionsFound": "Aucune transaction trouvée",
+    "loadMoreTransactions": "Charger plus de transactions"
+  },
+  "Footer": {
+    "network": "RÉSEAU",
+    "legal": "LÉGAL",
+    "hyphaServices": "Services Hypha",
+    "hyphaTokenomics": "Tokenomics Hypha",
+    "licensingPolicy": "Politique de licence",
+    "termsAndConditions": "Conditions générales",
+    "privacyPolicy": "Politique de confidentialité"
+  },
+  "Profile": {
+    "profilePage": "Page de profil",
+    "personNotFound": "Personne introuvable",
+    "redirectingToProfile": "Redirection vers le profil...",
+    "exportKeys": "Exporter les clés",
+    "copyUserId": "Copier l'ID utilisateur",
+    "copied": "Copié !",
+    "editProfile": "Modifier le profil",
+    "hyphaMemberSince": "Membre Hypha depuis {date}",
+    "rewards": "Récompenses",
+    "claim": "Réclamer",
+    "claimOnlyOnPersonalPage": "La réclamation est disponible uniquement sur votre page personnelle",
+    "rewardValueMustBeGreaterThanZero": "La valeur de la récompense doit être supérieure à 0",
+    "noRewardsFoundForUser": "Aucune récompense trouvée pour cet utilisateur",
+    "buyHypha": "Acheter HYPHA",
+    "actions": "Actions",
+    "noAssetsFoundForUser": "Aucun actif trouvé pour cet utilisateur"
+  },
+  "ProfileActions": {
+    "content": "Gérez vos fonds personnels, interagissez avec le réseau Hypha et contribuez directement avec votre portefeuille.",
+    "backToActions": "Retour aux actions",
+    "actions": {
+      "depositFunds": {
+        "title": "Déposer des fonds",
+        "description": "Ajoutez des tokens à votre portefeuille personnel en copiant l'adresse de votre portefeuille ou en scannant le QR code."
+      },
+      "transferFunds": {
+        "title": "Transférer des fonds",
+        "description": "Envoyez des tokens de votre portefeuille personnel à un membre, un espace ou une adresse personnalisée."
+      },
+      "buyHyphaTokensRewards": {
+        "title": "Acheter des tokens Hypha (récompenses)",
+        "description": "Achetez des tokens Hypha pour participer au réseau et obtenir des récompenses"
+      },
+      "activateSpaces": {
+        "title": "Activer le(s) espace(s)",
+        "description": "Parrainez et activez vos espaces préférés en contribuant en HYPHA ou en USDC, pour soutenir le réseau Hypha."
+      },
+      "migrateHyphaTokens": {
+        "title": "Migrer les tokens Hypha (Telos → Base)",
+        "description": "Déplacez vos tokens Hypha de la blockchain Telos vers le réseau Base. Lance l'expérience de migration."
+      }
+    },
+    "purchaseHypha": {
+      "title": "Acheter des tokens Hypha (récompenses)",
+      "content": "Utilisez l'USDC pour acheter des tokens Hypha, gagner des récompenses et participer à la gouvernance si vous le souhaitez."
+    },
+    "activateSpaces": {
+      "title": "Activer le(s) espace(s)",
+      "contentPrefix": "Parrainez et activez vos espaces préférés en contribuant en HYPHA ou en USDC, pour soutenir le réseau Hypha. Plus de détails dans",
+      "contentSuffix": "."
+    },
+    "transferFunds": {
+      "title": "Transférer des fonds",
+      "content": "Envoyez facilement des fonds depuis votre portefeuille vers un membre ou un espace."
+    },
+    "errors": {
+      "loadSpaces": "Impossible de charger les espaces. Veuillez réessayer plus tard."
+    }
+  },
+  "Network": {
+    "manySpaces": "De nombreux espaces,",
+    "oneVibrantNetwork": "Un réseau dynamique",
+    "findASpace": "Trouver un espace",
+    "createSpace": "Créer un espace",
+    "mostMembers": "Le plus de membres",
+    "mostAgreements": "Le plus d'accords",
+    "mostRecent": "Les plus récents",
+    "all": "Tous",
+    "exploreNetwork": "Explorer le réseau Hypha",
+    "seeAll": "Voir tout",
+    "noCategory": "Aucune catégorie"
+  },
+  "Proposals": {
+    "CreateNew": "Créer une nouvelle proposition",
+    "Create": "Créer une proposition"
+  },
+  "Spaces": {
+    "createSpace": "Créer un espace",
+    "addSpace": "Ajouter un espace",
+    "configureSpace": "Configurer l'espace",
+    "nameYourSpace": "Nommez votre espace...",
+    "createdBy": "Créé par",
+    "uploadSpaceBanner": "Téléverser",
+    "spaceBanner": "bannière de l'espace",
+    "purpose": "Objectif",
+    "purposePlaceholder": "Saisissez l'objectif de votre espace ici...",
+    "organisationLevel": "Niveau d'organisation",
+    "tags": "Étiquettes",
+    "selectOneOrMore": "Sélectionnez-en une ou plusieurs",
+    "spaceUniqueLink": "Lien unique de l'espace",
+    "spaceLinkDescription": "Le nom de votre espace est automatiquement ajouté à la fin de votre lien d'espace. Vous pouvez le modifier si nécessaire, mais il doit rester unique.",
+    "channels": "Canaux",
+    "activationMode": "Mode d'activation",
+    "sandboxMode": "Mode bac à sable",
+    "sandboxDescription": "Utilisez le mode bac à sable pour configurer et tester votre espace uniquement dans Mes espaces, en le partageant avec votre équipe via une URL tout en posant les bases d'un objectif régénératif.",
+    "pilotMode": "Mode pilote",
+    "pilotDescription": "Utilisez le mode pilote pour partager votre espace pour des démonstrations, la validation de cas d'usage ou comme modèle reproductible. Étendez votre portée, activez la participation des membres et recueillez des retours.",
+    "liveMode": "Mode actif",
+    "liveDescription": "Utilisez le mode actif pour rendre votre espace pleinement opérationnel et publiquement découvrable, générer une valeur durable et transformer votre objectif en impact régénératif.",
+    "archiveMode": "Mode archivage",
+    "archiveDescription": "Archivez cet espace pour suspendre temporairement l'activité ou le désactiver tout en conservant toutes les données et l'historique en sécurité. Vous pouvez le réactiver à tout moment en sélectionnant un autre mode d'activation.",
+    "organisationSpaces": "Espaces de l'organisation",
+    "myOtherSpaces": "Mes autres espaces",
+    "selectCategoryError": "Veuillez sélectionner au moins une catégorie de tags.",
+    "selectParentError": "Veuillez sélectionner un espace lié ou activer \"Espace racine\"",
+    "slugFieldRegex": "Ce champ ne peut contenir que des lettres minuscules, des chiffres, des tirets et des apostrophes.",
+    "slugAlreadyExists": "L'ID de l'espace existe déjà",
+    "slugAlreadyExistsLong": "Un espace avec ce nom existe déjà. Veuillez choisir un autre nom pour votre espace.",
+    "alreadyMember": "Déjà membre",
+    "invitePending": "Invitation en attente",
+    "requestInvite": "Demander une invitation",
+    "becomeMember": "Devenir membre",
+    "becomeMemberOrRequestInvite": "Devenir membre ou demander une invitation",
+    "inviteAlreadySubmitted": "Vous avez déjà soumis votre demande d'invitation. Votre proposition est désormais visible par les membres de l'espace pour examen. Si nécessaire, vous pourrez la soumettre à nouveau 24 heures après votre dernière soumission.",
+    "tokenRequirements": "Vous ne pouvez pas encore rejoindre. Remplissez les exigences en tokens pour obtenir l'accès.",
+    "exitSpace": "Quitter l'espace",
+    "couldNotExitSpace": "Impossible de quitter l'espace",
+    "exitSpaceConfirmTitle": "Quitter l'espace",
+    "exitSpaceConfirmDescription": "Voulez-vous vraiment quitter cet espace ?",
+    "exitSpaceConfirmYes": "Oui, quitter",
+    "exitSpaceConfirmNo": "Non, rester",
+    "exitSpaceDisabledTooltip": "Vous devez être autorisé et membre de l'espace actuel pour pouvoir le quitter",
+    "accessDeniedNotLoggedIn": "Vous avez besoin d'un compte actif pour accéder à cette section. Veuillez vous connecter ou cliquer sur Commencer pour en créer un.",
+    "signIn": "Se connecter",
+    "getStarted": "Commencer",
+    "accessDeniedNotMember": "Vous devez devenir membre pour accéder à cette fonctionnalité. Rejoignez l'espace maintenant pour voir l'activité de cet espace.",
+    "accessDenied": "Accès refusé",
+    "noSpaces": "Aucun espace",
+    "errorOhSnap": "Oups ! Une erreur s'est produite",
+    "reset": "Réinitialiser",
+    "backToSettings": "Retour aux paramètres",
+    "sandbox": "Bac à sable",
+    "pilot": "Pilote",
+    "archived": "Archivé",
+    "changeSpaceConfiguration": "Modifier la configuration de l'espace",
+    "trialBannerTitle": "Plus que {daysLeft} jours restants dans votre essai gratuit !",
+    "trialBannerSubtitle": "Contribuez 11 $ par mois en USDC ou en tokens Hypha au réseau Hypha pour débloquer l'accès complet à votre espace et poursuivre votre progression !",
+    "activateNow": "Activer maintenant",
+    "beforeExpiryBannerTitle": "Plus que {daysLeft} jours avant l'expiration de votre contribution au réseau Hypha !",
+    "beforeExpiryBannerSubtitle": "Ne perdez pas l'accès aux fonctionnalités de votre espace ! Renouvelez maintenant en contribuant 11 $ par mois en USDC ou en tokens Hypha au réseau Hypha.",
+    "renewNow": "Renouveler maintenant",
+    "expiredBannerTitle": "Votre contribution au réseau Hypha a expiré il y a {daysAgo} jours !",
+    "expiredBannerSubtitle": "Réactivez maintenant en contribuant 11 $ par mois en USDC ou en tokens Hypha au réseau Hypha et retrouvez l'accès à toutes les fonctionnalités de votre espace.",
+    "reactivateNow": "Réactiver maintenant",
+    "subscriptionBadgeActiveFreeTrialUntil": "Essai gratuit actif jusqu'au {date}",
+    "subscriptionBadgeRenewBefore": "Renouveler avant le {date}",
+    "subscriptionBadgeActiveUntil": "Actif jusqu'au {date}",
+    "subscriptionBadgeExpiredSince": "Expiré depuis le {date}",
+    "proposalCreationDisabled": "Création de proposition désactivée",
+    "proposalExpiredSubtitle": "Votre contribution au réseau Hypha a expiré {expiredElapsed}. Veuillez réactiver votre espace avant de soumettre une nouvelle proposition.",
+    "allYourSpaces": "Tous vos espaces,",
+    "inOnePlace": "au même endroit",
+    "spacesYouMightLike": "Espaces qui pourraient vous plaire",
+    "mySpacesLabel": "Mes espaces",
+    "hideArchivedSpaces": "Masquer les espaces archivés",
+    "creating": "Création de l'espace...",
+    "expiredToday": "aujourd'hui",
+    "expiredDayAgo": "il y a un jour",
+    "expiredDaysAgo": "il y a {count} jours"
+  }
+}

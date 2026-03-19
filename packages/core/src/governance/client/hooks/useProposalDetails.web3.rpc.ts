@@ -142,6 +142,22 @@ export const useProposalDetailsWeb3Rpc = ({
       duration: undefined,
     };
 
+    let membershipExitData: {
+      member?: string;
+      space?: bigint;
+    } = {
+      member: undefined,
+      space: undefined,
+    };
+
+    const transparencySettingsData: {
+      spaceDiscoverability?: number;
+      spaceActivityAccess?: number;
+    } = {
+      spaceDiscoverability: undefined,
+      spaceActivityAccess: undefined,
+    };
+
     (transactions as any[]).forEach((tx) => {
       const decoded = decodeTransaction(tx);
 
@@ -202,6 +218,22 @@ export const useProposalDetailsWeb3Rpc = ({
           minimumProposalDurationData = decoded.data;
           break;
 
+        case 'membershipExit':
+          membershipExitData = decoded.data;
+          break;
+
+        case 'setSpaceDiscoverability':
+          transparencySettingsData.spaceDiscoverability = Number(
+            decoded.data.discoverability,
+          );
+          break;
+
+        case 'setSpaceAccess':
+          transparencySettingsData.spaceActivityAccess = Number(
+            decoded.data.access,
+          );
+          break;
+
         default:
           break;
       }
@@ -230,6 +262,8 @@ export const useProposalDetailsWeb3Rpc = ({
       activateSpacesData,
       delegatesData,
       minimumProposalDurationData,
+      membershipExitData,
+      transparencySettingsData,
     };
   }, [data]);
 

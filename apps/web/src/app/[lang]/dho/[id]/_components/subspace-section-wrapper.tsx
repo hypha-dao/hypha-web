@@ -9,17 +9,23 @@ interface SubspaceSectionWrapperProps {
   lang: Locale;
   spaces: Space[];
   currentSpaceId: number;
+  currentSpaceWeb3Id?: number;
+  currentSpaceSlug?: string;
 }
 
 export const SubspaceSectionWrapper = ({
   lang,
   spaces,
   currentSpaceId,
+  currentSpaceWeb3Id,
+  currentSpaceSlug,
 }: SubspaceSectionWrapperProps) => (
   <SubspaceSection
     spaces={spaces}
     lang={lang}
     currentSpaceId={currentSpaceId}
+    currentSpaceWeb3Id={currentSpaceWeb3Id}
+    currentSpaceSlug={currentSpaceSlug}
     useMembers={useMembers}
   />
 );

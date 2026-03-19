@@ -11,9 +11,17 @@ type MenuTopProps = {
   children?: React.ReactNode;
   logoHref?: string;
   hrefTarget?: string;
+  openMenuLabel?: string;
+  closeMenuLabel?: string;
 };
 
-export const MenuTop = ({ children, logoHref, hrefTarget }: MenuTopProps) => {
+export const MenuTop = ({
+  children,
+  logoHref,
+  hrefTarget,
+  openMenuLabel = 'Open menu',
+  closeMenuLabel = 'Close menu',
+}: MenuTopProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
@@ -41,8 +49,9 @@ export const MenuTop = ({ children, logoHref, hrefTarget }: MenuTopProps) => {
         {/* Mobile Burger */}
         {children && (
           <button
+            type="button"
             className="md:hidden flex items-center"
-            aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-label={isMobileMenuOpen ? closeMenuLabel : openMenuLabel}
             aria-expanded={isMobileMenuOpen}
             aria-controls="mobile-menu"
             onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}

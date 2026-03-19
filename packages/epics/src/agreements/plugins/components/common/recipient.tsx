@@ -5,6 +5,7 @@ import { Image, Combobox } from '@hypha-platform/ui';
 import { WalletAddress } from './wallet-address';
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
 import { Space, Person } from '@hypha-platform/core/client';
+import { useFilterSpacesListWithDiscoverability } from '@hypha-platform/epics';
 
 export type RecipientType = 'member' | 'space';
 
@@ -40,14 +41,19 @@ export const Recipient = ({
   >(null);
   const [manualAddress, setManualAddress] = useState(value || '');
 
+  const { filteredSpaces } = useFilterSpacesListWithDiscoverability({
+    spaces,
+    useGeneralState: true,
+  });
+
   useEffect(() => {
     if (value) {
       const foundMember = members.find((r) => r.address === value);
-      const foundSpace = spaces.find((s) => s.address === value);
+      const foundSpace = filteredSpaces.find((s) => s.address === value);
       setSelected(foundMember || foundSpace || { address: value });
       setManualAddress(value);
     }
-  }, [value, members, spaces]);
+  }, [value, members, filteredSpaces]);
 
   const placeholder =
     recipientType === 'member' ? 'Select member...' : 'Select space...';
@@ -66,14 +72,14 @@ export const Recipient = ({
 
   const spaceOptions = useMemo(
     () =>
-      spaces.map((space) => ({
+      filteredSpaces.map((space) => ({
         value: String(space.address),
         label: space.title,
         searchText: space.title.toLowerCase(),
         avatarUrl: space.logoUrl,
         address: space.address,
       })),
-    [spaces],
+    [filteredSpaces],
   );
 
   const currentOptions =
@@ -85,7 +91,7 @@ export const Recipient = ({
       const found = currentOptions.find((option) => option.value === value);
 
       if (found) {
-        const source = recipientType === 'member' ? members : spaces;
+        const source = recipientType === 'member' ? members : filteredSpaces;
         const originalItem = source.find(
           (item) => item.address === found.value,
         );
@@ -97,7 +103,14 @@ export const Recipient = ({
         }
       }
     },
-    [currentOptions, members, spaces, recipientType, onChange, readOnly],
+    [
+      currentOptions,
+      members,
+      filteredSpaces,
+      recipientType,
+      onChange,
+      readOnly,
+    ],
   );
 
   const handleAddressChange = useCallback(
@@ -105,7 +118,7 @@ export const Recipient = ({
       if (readOnly) return;
       setManualAddress(address);
       const foundMember = members.find((r) => r.address === address);
-      const foundSpace = spaces.find((s) => s.address === address);
+      const foundSpace = filteredSpaces.find((s) => s.address === address);
 
       if (foundMember || foundSpace) {
         setSelected(foundMember || foundSpace || null);
@@ -115,7 +128,7 @@ export const Recipient = ({
         onChange?.({ address });
       }
     },
-    [members, spaces, onChange, readOnly],
+    [members, filteredSpaces, onChange, readOnly],
   );
 
   return (

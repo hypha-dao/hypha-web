@@ -1,10 +1,10 @@
 import { Static, Type } from 'typebox';
 
-export const label = Type.Union([
-  Type.Literal('contribution'),
-  Type.Literal('payment'),
-  Type.Literal('funding'),
-  Type.Literal('agreement'),
+export const label = Type.Enum([
+  'contribution',
+  'payment',
+  'funding',
+  'agreement',
 ]);
 
 export type Label = Static<typeof label>;

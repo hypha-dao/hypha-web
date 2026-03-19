@@ -18,7 +18,7 @@ import { useConfig } from 'wagmi';
 import { useRouter } from 'next/navigation';
 import { useAssets, useFundWallet } from '../../treasury';
 import React from 'react';
-import { useScrollToErrors } from '../../hooks';
+import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 
 const RECIPIENT_SPACE_ADDRESS = '0x3dEf11d005F8C85c93e3374B28fcC69B25a650Af';
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
@@ -82,6 +82,7 @@ export const BuyHyphaTokensForm = ({
   });
 
   useScrollToErrors(form, formRef);
+  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
 
   React.useEffect(() => {
     if (spaceDetails?.executor && web3SpaceId) {
@@ -167,6 +168,7 @@ export const BuyHyphaTokensForm = ({
           className="flex flex-col gap-5"
         >
           <CreateAgreementBaseFields
+            key={resubmitKey}
             creator={{
               avatar: person?.avatarUrl || '',
               name: person?.name || '',

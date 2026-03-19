@@ -9,6 +9,7 @@ import { Space } from '../../../../core/src/space';
 import { Loader2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import {
+  extractRevertReason,
   Person,
   personTransfer,
   useMe,
@@ -159,7 +160,9 @@ export const PeopleTransferForm = ({
             /Execution reverted with reason: (.*?)\./,
           );
           errorMessage =
-            match && match[1] ? match[1] : 'Contract execution failed.';
+            match && match[1]
+              ? extractRevertReason(match[1])
+              : 'Contract execution failed.';
         } else if (error.message.includes('user rejected')) {
           errorMessage =
             'Transaction was rejected. Please approve the transaction to proceed.';
