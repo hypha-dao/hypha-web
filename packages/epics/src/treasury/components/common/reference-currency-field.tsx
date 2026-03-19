@@ -1,6 +1,7 @@
 'use client';
 
 import { useFormContext, useWatch } from 'react-hook-form';
+import { CURRENCY_OPTIONS } from '@hypha-platform/core/client';
 import {
   FormField,
   FormItem,
@@ -41,17 +42,11 @@ export const ReferenceCurrencyField = () => {
                   <SelectValue placeholder="Select currency" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="USD">
-                    USD - United States Dollar
-                  </SelectItem>
-                  <SelectItem value="GBP">GBP - British Pound</SelectItem>
-                  <SelectItem value="CAD">CAD - Canadian Dollar</SelectItem>
-                  <SelectItem value="EUR">EUR - Euro</SelectItem>
-                  <SelectItem value="CNY">CNY - Chinese Yuan</SelectItem>
-                  <SelectItem value="CHF">CHF - Swiss Franc</SelectItem>
-                  <SelectItem value="JPY">JPY - Japanese Yen</SelectItem>
-                  <SelectItem value="AUD">AUD - Australian Dollar</SelectItem>
-                  <SelectItem value="HKD">HKD - Hong Kong Dollar</SelectItem>
+                  {CURRENCY_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </FormControl>
