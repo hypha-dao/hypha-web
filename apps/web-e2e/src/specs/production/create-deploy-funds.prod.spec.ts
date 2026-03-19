@@ -185,17 +185,19 @@ test.describe('Deploy Funds on Production', () => {
 
     // Click on the "qa testing" space
     console.log('🔘 Looking for "qa testing" space...');
-    const qaTestingSpace = page.locator('a[href*="/dho/"]', { hasText: /qa testing/i });
+    const qaTestingSpace = page.locator('a[href*="/dho/"]', {
+      hasText: /qa testing/i,
+    });
     await expect(qaTestingSpace).toBeVisible({ timeout: 10000 });
-    
+
     // Get the space name for logging
     const spaceName = await qaTestingSpace.textContent();
     console.log(`📍 Selected space: ${spaceName}`);
-    
+
     await qaTestingSpace.click();
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
-    
+
     // Navigate to agreements tab
     console.log('📍 Navigating to agreements...');
     const agreementsTab = page.locator('a[href*="/agreements"]').first();
@@ -214,26 +216,32 @@ test.describe('Deploy Funds on Production', () => {
 
     // Scroll down in the create menu to find "Deploy funds"
     console.log('📜 Scrolling to find "Deploy funds"...');
-    
+
     // Look for the deploy funds option (may need to scroll)
     const deployFundsOption = page.locator('text=Deploy funds').first();
-    
+
     // Try scrolling the menu if not visible
-    if (!(await deployFundsOption.isVisible({ timeout: 2000 }).catch(() => false))) {
+    if (
+      !(await deployFundsOption.isVisible({ timeout: 2000 }).catch(() => false))
+    ) {
       // Scroll down within the create menu
-      const createMenu = page.locator('[role="menu"], [role="dialog"], [class*="menu"], [class*="dropdown"]').first();
+      const createMenu = page
+        .locator(
+          '[role="menu"], [role="dialog"], [class*="menu"], [class*="dropdown"]',
+        )
+        .first();
       if (await createMenu.isVisible().catch(() => false)) {
         await createMenu.evaluate((el) => el.scrollBy(0, 300));
         await page.waitForTimeout(500);
       }
     }
-    
+
     // Select "Deploy funds" from the options
     console.log('📋 Selecting "Deploy funds"...');
     await deployFundsOption.scrollIntoViewIfNeeded();
     await expect(deployFundsOption).toBeVisible({ timeout: 5000 });
     await deployFundsOption.click();
-    
+
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
 
@@ -269,8 +277,8 @@ test.describe('Deploy Funds on Production', () => {
     console.log('📸 Uploading lead image...');
     const fileInputs = page.locator('input[type="file"]');
     const leadImageInput = fileInputs.first();
-    
-    if (await leadImageInput.count() > 0) {
+
+    if ((await leadImageInput.count()) > 0) {
       await leadImageInput.setInputFiles(leadImagePath);
       await page.waitForTimeout(1500); // Allow image to process
 
@@ -298,8 +306,10 @@ test.describe('Deploy Funds on Production', () => {
     const addAttachmentButton = page.locator('text=Add Attachment').first();
     await addAttachmentButton.scrollIntoViewIfNeeded();
     await page.waitForTimeout(500);
-    
-    if (await addAttachmentButton.isVisible({ timeout: 5000 }).catch(() => false)) {
+
+    if (
+      await addAttachmentButton.isVisible({ timeout: 5000 }).catch(() => false)
+    ) {
       const attachmentInput = page.locator('input[type="file"]').last();
       await attachmentInput.setInputFiles(attachmentPath);
       await page.waitForTimeout(1000);
@@ -310,12 +320,12 @@ test.describe('Deploy Funds on Production', () => {
 
     // Select recipient member - first click "Member" tab, then select from dropdown
     console.log('👤 Selecting recipient member...');
-    
+
     // Scroll to Recipient section first
     const recipientLabel = page.locator('text=Recipient').first();
     await recipientLabel.scrollIntoViewIfNeeded();
     await page.waitForTimeout(500);
-    
+
     // Click on "Member" tab first (as "Space" is selected by default)
     // Find the Member tab that's near the Space tab in the Recipient row
     console.log('🔘 Clicking Member tab...');
@@ -324,16 +334,20 @@ test.describe('Deploy Funds on Production', () => {
     await memberTab.click();
     await page.waitForTimeout(500);
     console.log('✅ Clicked Member tab');
-    
+
     // Now select member from dropdown
     const memberSelect = page.locator('text=Select member...').first();
     await page.waitForTimeout(500);
     if (await memberSelect.isVisible({ timeout: 5000 }).catch(() => false)) {
       await memberSelect.click();
       await page.waitForTimeout(1000);
-      
+
       // Wait for dropdown to open, then click on "Martin test" option
-      const martinOption = page.locator('[role="option"]:has-text("Martin test"), [data-radix-collection-item]:has-text("Martin test"), li:has-text("Martin test"), div[class*="option"]:has-text("Martin test")').first();
+      const martinOption = page
+        .locator(
+          '[role="option"]:has-text("Martin test"), [data-radix-collection-item]:has-text("Martin test"), li:has-text("Martin test"), div[class*="option"]:has-text("Martin test")',
+        )
+        .first();
       await martinOption.waitFor({ state: 'visible', timeout: 5000 });
       await martinOption.click();
       await page.waitForTimeout(1000);
@@ -392,23 +406,23 @@ test.describe('Deploy Funds on Production', () => {
 
     // Look for and click the submit/publish button
     console.log('🔍 Looking for Publish button...');
-    
+
     await page.screenshot({
       path: `test-results-production/create-deploy-funds-before-publish-${timestamp}.png`,
       fullPage: true,
     });
 
     const submitButton = page.locator('button:has-text("Publish")').last();
-    
+
     await submitButton.scrollIntoViewIfNeeded();
     await page.waitForTimeout(500);
-    
+
     await expect(submitButton).toBeVisible();
     await expect(submitButton).toBeEnabled();
 
     console.log('📝 Form filled, clicking Publish...');
     await submitButton.click();
-    
+
     console.log('✅ Publish button clicked!');
 
     // Wait for submission to complete
@@ -433,12 +447,18 @@ test.describe('Deploy Funds on Production', () => {
     // Check if any loading indicator is visible and wait for it to disappear
     for (const selector of loadingSelectors) {
       const loadingElement = page.locator(selector).first();
-      if (await loadingElement.isVisible({ timeout: 1000 }).catch(() => false)) {
-        console.log(`🔄 Loading detected (${selector}), waiting for completion...`);
+      if (
+        await loadingElement.isVisible({ timeout: 1000 }).catch(() => false)
+      ) {
+        console.log(
+          `🔄 Loading detected (${selector}), waiting for completion...`,
+        );
         // Wait for this loading indicator to disappear (up to 2 minutes)
-        await loadingElement.waitFor({ state: 'hidden', timeout: 120000 }).catch(() => {
-          console.log('⚠️ Loading indicator still visible after timeout');
-        });
+        await loadingElement
+          .waitFor({ state: 'hidden', timeout: 120000 })
+          .catch(() => {
+            console.log('⚠️ Loading indicator still visible after timeout');
+          });
         console.log('✅ Loading completed');
         break;
       }
@@ -455,10 +475,9 @@ test.describe('Deploy Funds on Production', () => {
 
     // Wait for navigation away from create page
     try {
-      await page.waitForURL(
-        (url) => !url.pathname.includes('/create'),
-        { timeout: 120000 },
-      );
+      await page.waitForURL((url) => !url.pathname.includes('/create'), {
+        timeout: 120000,
+      });
       console.log('✅ Navigation from create page detected!');
     } catch {
       await page.screenshot({
@@ -484,7 +503,9 @@ test.describe('Deploy Funds on Production', () => {
           'Deploy funds creation did not complete - still on create page',
         );
       }
-      throw new Error('Deploy funds creation did not complete in expected time');
+      throw new Error(
+        'Deploy funds creation did not complete in expected time',
+      );
     }
 
     console.log('✅ Deploy funds creation appears to have succeeded!');
@@ -528,7 +549,9 @@ test.describe('Deploy Funds on Production', () => {
     console.log(
       '║                                                                ║',
     );
-    console.log(`║  URL: ${createdDeployFundsUrl.substring(0, 54).padEnd(54)}║`);
+    console.log(
+      `║  URL: ${createdDeployFundsUrl.substring(0, 54).padEnd(54)}║`,
+    );
     console.log(
       '║                                                                ║',
     );
@@ -544,4 +567,3 @@ test.describe('Deploy Funds on Production', () => {
     expect(createdDeployFundsUrl).not.toContain('/create');
   });
 });
-

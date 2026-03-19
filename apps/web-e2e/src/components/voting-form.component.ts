@@ -35,13 +35,11 @@ export class VotingForm {
       .or(page.locator('[class*="FormVoting"]'));
 
     // Vote buttons - handle different label variations
-    this.voteYesButton = page
-      .getByTestId('vote-yes-button')
-      .or(
-        page.getByRole('button', {
-          name: /vote yes|consent|hell yeah|looks good/i,
-        }),
-      );
+    this.voteYesButton = page.getByTestId('vote-yes-button').or(
+      page.getByRole('button', {
+        name: /vote yes|consent|hell yeah|looks good/i,
+      }),
+    );
     this.voteNoButton = page
       .getByTestId('vote-no-button')
       .or(page.getByRole('button', { name: /vote no|object|no|not sure/i }));

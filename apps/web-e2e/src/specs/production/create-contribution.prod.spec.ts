@@ -185,17 +185,19 @@ test.describe('Propose Contribution on Production', () => {
 
     // Click on the "qa testing" space
     console.log('🔘 Looking for "qa testing" space...');
-    const qaTestingSpace = page.locator('a[href*="/dho/"]', { hasText: /qa testing/i });
+    const qaTestingSpace = page.locator('a[href*="/dho/"]', {
+      hasText: /qa testing/i,
+    });
     await expect(qaTestingSpace).toBeVisible({ timeout: 10000 });
-    
+
     // Get the space name for logging
     const spaceName = await qaTestingSpace.textContent();
     console.log(`📍 Selected space: ${spaceName}`);
-    
+
     await qaTestingSpace.click();
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
-    
+
     // Navigate to agreements tab (contributions are under agreements)
     console.log('📍 Navigating to agreements...');
     const agreementsTab = page.locator('a[href*="/agreements"]').first();
@@ -214,10 +216,12 @@ test.describe('Propose Contribution on Production', () => {
 
     // Select "Propose a Contribution" from the options
     console.log('📋 Selecting "Propose a Contribution"...');
-    const contributionOption = page.locator('text=Propose a Contribution').first();
+    const contributionOption = page
+      .locator('text=Propose a Contribution')
+      .first();
     await expect(contributionOption).toBeVisible({ timeout: 5000 });
     await contributionOption.click();
-    
+
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
 
@@ -253,8 +257,8 @@ test.describe('Propose Contribution on Production', () => {
     console.log('📸 Uploading lead image...');
     const fileInputs = page.locator('input[type="file"]');
     const leadImageInput = fileInputs.first();
-    
-    if (await leadImageInput.count() > 0) {
+
+    if ((await leadImageInput.count()) > 0) {
       await leadImageInput.setInputFiles(leadImagePath);
       await page.waitForTimeout(1500); // Allow image to process
 
@@ -283,8 +287,10 @@ test.describe('Propose Contribution on Production', () => {
     const addAttachmentButton = page.locator('text=Add Attachment').first();
     await addAttachmentButton.scrollIntoViewIfNeeded();
     await page.waitForTimeout(500);
-    
-    if (await addAttachmentButton.isVisible({ timeout: 5000 }).catch(() => false)) {
+
+    if (
+      await addAttachmentButton.isVisible({ timeout: 5000 }).catch(() => false)
+    ) {
       const attachmentInput = page.locator('input[type="file"]').last();
       await attachmentInput.setInputFiles(attachmentPath);
       await page.waitForTimeout(1000);
@@ -295,12 +301,12 @@ test.describe('Propose Contribution on Production', () => {
 
     // Select recipient member - first click "Member" tab, then select from dropdown
     console.log('👤 Selecting recipient member...');
-    
+
     // Scroll to Recipient section first
     const recipientLabel = page.locator('text=Recipient').first();
     await recipientLabel.scrollIntoViewIfNeeded();
     await page.waitForTimeout(500);
-    
+
     // Click on "Member" tab first (as "Space" is selected by default)
     // Find the Member tab that's near the Space tab in the Recipient row
     console.log('🔘 Clicking Member tab...');
@@ -309,16 +315,20 @@ test.describe('Propose Contribution on Production', () => {
     await memberTab.click();
     await page.waitForTimeout(500);
     console.log('✅ Clicked Member tab');
-    
+
     // Now select member from dropdown
     const memberSelect = page.locator('text=Select member...').first();
     await page.waitForTimeout(500);
     if (await memberSelect.isVisible({ timeout: 5000 }).catch(() => false)) {
       await memberSelect.click();
       await page.waitForTimeout(1000);
-      
+
       // Wait for dropdown to open, then click on "Martin test" option
-      const martinOption = page.locator('[role="option"]:has-text("Martin test"), [data-radix-collection-item]:has-text("Martin test"), li:has-text("Martin test"), div[class*="option"]:has-text("Martin test")').first();
+      const martinOption = page
+        .locator(
+          '[role="option"]:has-text("Martin test"), [data-radix-collection-item]:has-text("Martin test"), li:has-text("Martin test"), div[class*="option"]:has-text("Martin test")',
+        )
+        .first();
       await martinOption.waitFor({ state: 'visible', timeout: 5000 });
       await martinOption.click();
       await page.waitForTimeout(1000);
@@ -415,7 +425,7 @@ test.describe('Propose Contribution on Production', () => {
 
     // Look for and click the submit/publish button
     console.log('🔍 Looking for Publish button...');
-    
+
     // Take screenshot to see the form state
     await page.screenshot({
       path: `test-results-production/create-contribution-before-publish-${timestamp}.png`,
@@ -424,10 +434,10 @@ test.describe('Propose Contribution on Production', () => {
 
     // Find the Publish button using text
     const submitButton = page.locator('button:has-text("Publish")').last();
-    
+
     await submitButton.scrollIntoViewIfNeeded();
     await page.waitForTimeout(500);
-    
+
     await expect(submitButton).toBeVisible();
     await expect(submitButton).toBeEnabled();
 
@@ -435,7 +445,7 @@ test.describe('Propose Contribution on Production', () => {
 
     // Click publish using multiple methods to ensure it works
     await submitButton.click();
-    
+
     console.log('✅ Publish button clicked!');
 
     // Wait for submission to complete
@@ -475,10 +485,9 @@ test.describe('Propose Contribution on Production', () => {
     // Wait for navigation away from create page
     // This indicates the contribution was created successfully
     try {
-      await page.waitForURL(
-        (url) => !url.pathname.includes('/create'),
-        { timeout: 120000 },
-      );
+      await page.waitForURL((url) => !url.pathname.includes('/create'), {
+        timeout: 120000,
+      });
       console.log('✅ Navigation from create page detected!');
     } catch {
       // Take screenshot if something went wrong
@@ -506,7 +515,9 @@ test.describe('Propose Contribution on Production', () => {
           'Contribution creation did not complete - still on create page',
         );
       }
-      throw new Error('Contribution creation did not complete in expected time');
+      throw new Error(
+        'Contribution creation did not complete in expected time',
+      );
     }
 
     console.log('✅ Contribution creation appears to have succeeded!');
@@ -550,7 +561,9 @@ test.describe('Propose Contribution on Production', () => {
     console.log(
       '║                                                                ║',
     );
-    console.log(`║  URL: ${createdContributionUrl.substring(0, 54).padEnd(54)}║`);
+    console.log(
+      `║  URL: ${createdContributionUrl.substring(0, 54).padEnd(54)}║`,
+    );
     console.log(
       '║                                                                ║',
     );
@@ -566,4 +579,3 @@ test.describe('Propose Contribution on Production', () => {
     expect(createdContributionUrl).not.toContain('/create');
   });
 });
-

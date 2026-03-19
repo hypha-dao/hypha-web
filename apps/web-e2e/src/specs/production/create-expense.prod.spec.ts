@@ -185,17 +185,19 @@ test.describe('Pay Expenses on Production', () => {
 
     // Click on the "qa testing" space
     console.log('🔘 Looking for "qa testing" space...');
-    const qaTestingSpace = page.locator('a[href*="/dho/"]', { hasText: /qa testing/i });
+    const qaTestingSpace = page.locator('a[href*="/dho/"]', {
+      hasText: /qa testing/i,
+    });
     await expect(qaTestingSpace).toBeVisible({ timeout: 10000 });
-    
+
     // Get the space name for logging
     const spaceName = await qaTestingSpace.textContent();
     console.log(`📍 Selected space: ${spaceName}`);
-    
+
     await qaTestingSpace.click();
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
-    
+
     // Navigate to agreements tab
     console.log('📍 Navigating to agreements...');
     const agreementsTab = page.locator('a[href*="/agreements"]').first();
@@ -214,10 +216,12 @@ test.describe('Pay Expenses on Production', () => {
 
     // Select "Pay expenses for products or service" from the options
     console.log('📋 Selecting "Pay expenses for products or service"...');
-    const expenseOption = page.locator('text=Pay expenses for products or service').first();
+    const expenseOption = page
+      .locator('text=Pay expenses for products or service')
+      .first();
     await expect(expenseOption).toBeVisible({ timeout: 5000 });
     await expenseOption.click();
-    
+
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
 
@@ -253,8 +257,8 @@ test.describe('Pay Expenses on Production', () => {
     console.log('📸 Uploading lead image...');
     const fileInputs = page.locator('input[type="file"]');
     const leadImageInput = fileInputs.first();
-    
-    if (await leadImageInput.count() > 0) {
+
+    if ((await leadImageInput.count()) > 0) {
       await leadImageInput.setInputFiles(leadImagePath);
       await page.waitForTimeout(1500); // Allow image to process
 
@@ -282,8 +286,10 @@ test.describe('Pay Expenses on Production', () => {
     const addAttachmentButton = page.locator('text=Add Attachment').first();
     await addAttachmentButton.scrollIntoViewIfNeeded();
     await page.waitForTimeout(500);
-    
-    if (await addAttachmentButton.isVisible({ timeout: 5000 }).catch(() => false)) {
+
+    if (
+      await addAttachmentButton.isVisible({ timeout: 5000 }).catch(() => false)
+    ) {
       const attachmentInput = page.locator('input[type="file"]').last();
       await attachmentInput.setInputFiles(attachmentPath);
       await page.waitForTimeout(1000);
@@ -294,12 +300,12 @@ test.describe('Pay Expenses on Production', () => {
 
     // Select recipient member - first click "Member" tab, then select from dropdown
     console.log('👤 Selecting recipient member...');
-    
+
     // Scroll to Recipient section first
     const recipientLabel = page.locator('text=Recipient').first();
     await recipientLabel.scrollIntoViewIfNeeded();
     await page.waitForTimeout(500);
-    
+
     // Click on "Member" tab first (as "Space" is selected by default)
     // Find the Member tab that's near the Space tab in the Recipient row
     console.log('🔘 Clicking Member tab...');
@@ -308,16 +314,20 @@ test.describe('Pay Expenses on Production', () => {
     await memberTab.click();
     await page.waitForTimeout(500);
     console.log('✅ Clicked Member tab');
-    
+
     // Now select member from dropdown
     const memberSelect = page.locator('text=Select member...').first();
     await page.waitForTimeout(500);
     if (await memberSelect.isVisible({ timeout: 5000 }).catch(() => false)) {
       await memberSelect.click();
       await page.waitForTimeout(1000);
-      
+
       // Wait for dropdown to open, then click on "Martin test" option
-      const martinOption = page.locator('[role="option"]:has-text("Martin test"), [data-radix-collection-item]:has-text("Martin test"), li:has-text("Martin test"), div[class*="option"]:has-text("Martin test")').first();
+      const martinOption = page
+        .locator(
+          '[role="option"]:has-text("Martin test"), [data-radix-collection-item]:has-text("Martin test"), li:has-text("Martin test"), div[class*="option"]:has-text("Martin test")',
+        )
+        .first();
       await martinOption.waitFor({ state: 'visible', timeout: 5000 });
       await martinOption.click();
       await page.waitForTimeout(1000);
@@ -376,23 +386,23 @@ test.describe('Pay Expenses on Production', () => {
 
     // Look for and click the submit/publish button
     console.log('🔍 Looking for Publish button...');
-    
+
     await page.screenshot({
       path: `test-results-production/create-expense-before-publish-${timestamp}.png`,
       fullPage: true,
     });
 
     const submitButton = page.locator('button:has-text("Publish")').last();
-    
+
     await submitButton.scrollIntoViewIfNeeded();
     await page.waitForTimeout(500);
-    
+
     await expect(submitButton).toBeVisible();
     await expect(submitButton).toBeEnabled();
 
     console.log('📝 Form filled, clicking Publish...');
     await submitButton.click();
-    
+
     console.log('✅ Publish button clicked!');
 
     // Wait for submission to complete
@@ -430,10 +440,9 @@ test.describe('Pay Expenses on Production', () => {
 
     // Wait for navigation away from create page
     try {
-      await page.waitForURL(
-        (url) => !url.pathname.includes('/create'),
-        { timeout: 120000 },
-      );
+      await page.waitForURL((url) => !url.pathname.includes('/create'), {
+        timeout: 120000,
+      });
       console.log('✅ Navigation from create page detected!');
     } catch {
       await page.screenshot({
@@ -519,4 +528,3 @@ test.describe('Pay Expenses on Production', () => {
     expect(createdExpenseUrl).not.toContain('/create');
   });
 });
-

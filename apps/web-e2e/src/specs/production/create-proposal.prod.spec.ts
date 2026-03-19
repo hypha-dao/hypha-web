@@ -189,15 +189,15 @@ test.describe('Create Collective Agreement on Production', () => {
     console.log('🔘 Clicking on first space...');
     const firstSpace = page.locator('a[href*="/dho/"]').first();
     await expect(firstSpace).toBeVisible({ timeout: 10000 });
-    
+
     // Get the space name for logging
     const spaceName = await firstSpace.textContent();
     console.log(`📍 Selected space: ${spaceName}`);
-    
+
     await firstSpace.click();
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
-    
+
     // Navigate to agreements tab
     console.log('📍 Navigating to agreements...');
     const agreementsTab = page.locator('a[href*="/agreements"]').first();
@@ -216,10 +216,12 @@ test.describe('Create Collective Agreement on Production', () => {
 
     // Select "Make a Collective Agreement" from the options
     console.log('📋 Selecting "Make a Collective Agreement"...');
-    const agreementOption = page.locator('text=Make a Collective Agreement').first();
+    const agreementOption = page
+      .locator('text=Make a Collective Agreement')
+      .first();
     await expect(agreementOption).toBeVisible({ timeout: 5000 });
     await agreementOption.click();
-    
+
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
 
@@ -255,8 +257,8 @@ test.describe('Create Collective Agreement on Production', () => {
     console.log('📸 Uploading lead image...');
     const fileInputs = page.locator('input[type="file"]');
     const leadImageInput = fileInputs.first();
-    
-    if (await leadImageInput.count() > 0) {
+
+    if ((await leadImageInput.count()) > 0) {
       await leadImageInput.setInputFiles(leadImagePath);
       await page.waitForTimeout(1500); // Allow image to process
 
@@ -282,8 +284,12 @@ test.describe('Create Collective Agreement on Production', () => {
 
     // Upload attachment
     console.log('📎 Adding attachment...');
-    const addAttachmentButton = page.getByRole('button', { name: /add attachment/i });
-    if (await addAttachmentButton.isVisible({ timeout: 5000 }).catch(() => false)) {
+    const addAttachmentButton = page.getByRole('button', {
+      name: /add attachment/i,
+    });
+    if (
+      await addAttachmentButton.isVisible({ timeout: 5000 }).catch(() => false)
+    ) {
       // The AddAttachment component has a hidden file input inside the button
       // We need to find the file input inside or near the button
       const attachmentInput = page.locator('input[type="file"]').last();
@@ -330,7 +336,7 @@ test.describe('Create Collective Agreement on Production', () => {
 
     // Look for and click the submit/publish button
     console.log('🔍 Looking for Publish button...');
-    
+
     // Take screenshot to see the form state
     await page.screenshot({
       path: `test-results-production/create-agreement-before-publish-${timestamp}.png`,
@@ -339,10 +345,10 @@ test.describe('Create Collective Agreement on Production', () => {
 
     // Find the Publish button using text
     const submitButton = page.locator('button:has-text("Publish")').last();
-    
+
     await submitButton.scrollIntoViewIfNeeded();
     await page.waitForTimeout(500);
-    
+
     await expect(submitButton).toBeVisible();
     await expect(submitButton).toBeEnabled();
 
@@ -350,7 +356,7 @@ test.describe('Create Collective Agreement on Production', () => {
 
     // Click publish using multiple methods to ensure it works
     await submitButton.click();
-    
+
     console.log('✅ Publish button clicked!');
 
     // Wait for submission to complete
@@ -390,10 +396,9 @@ test.describe('Create Collective Agreement on Production', () => {
     // Wait for navigation away from create page
     // This indicates the agreement was created successfully
     try {
-      await page.waitForURL(
-        (url) => !url.pathname.includes('/create'),
-        { timeout: 120000 },
-      );
+      await page.waitForURL((url) => !url.pathname.includes('/create'), {
+        timeout: 120000,
+      });
       console.log('✅ Navigation from create page detected!');
     } catch {
       // Take screenshot if something went wrong
@@ -481,4 +486,3 @@ test.describe('Create Collective Agreement on Production', () => {
     expect(createdAgreementUrl).not.toContain('/create');
   });
 });
-

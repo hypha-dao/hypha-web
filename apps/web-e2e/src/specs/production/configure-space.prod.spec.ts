@@ -21,20 +21,21 @@ const AVAILABLE_TAGS = [
  */
 function getRandomTagsToToggle(): string[] {
   const tagsToToggle: string[] = [];
-  
+
   // Randomly decide for each tag whether to toggle it
   for (const tag of AVAILABLE_TAGS) {
-    if (Math.random() < 0.5) { // 50% chance to toggle each tag
+    if (Math.random() < 0.5) {
+      // 50% chance to toggle each tag
       tagsToToggle.push(tag);
     }
   }
-  
+
   // Ensure at least 1 tag is toggled
   if (tagsToToggle.length === 0) {
     const randomIndex = Math.floor(Math.random() * AVAILABLE_TAGS.length);
     tagsToToggle.push(AVAILABLE_TAGS[randomIndex]!);
   }
-  
+
   return tagsToToggle;
 }
 
@@ -45,10 +46,10 @@ function getRandomTagsToToggle(): string[] {
  */
 async function toggleTags(page: Page, tagsToToggle: string[]): Promise<void> {
   console.log('🏷️ Opening Tags dropdown...');
-  
+
   // Find and click the Tags dropdown
   const tagsDropdown = page.locator('text="Select one or more"').first();
-  
+
   if (await tagsDropdown.isVisible({ timeout: 3000 }).catch(() => false)) {
     await tagsDropdown.scrollIntoViewIfNeeded();
     await page.waitForTimeout(300);
@@ -60,39 +61,51 @@ async function toggleTags(page: Page, tagsToToggle: string[]): Promise<void> {
     const tagsLabel = page.locator('text="Tags"').first();
     if (await tagsLabel.isVisible({ timeout: 2000 }).catch(() => false)) {
       const dropdownNearTags = tagsLabel.locator('xpath=following::button[1]');
-      if (await dropdownNearTags.isVisible({ timeout: 2000 }).catch(() => false)) {
+      if (
+        await dropdownNearTags.isVisible({ timeout: 2000 }).catch(() => false)
+      ) {
         await dropdownNearTags.click();
         await page.waitForTimeout(800);
         console.log('✅ Tags dropdown opened (alt method)');
       }
     }
   }
-  
+
   // Toggle each tag
   for (const tagName of tagsToToggle) {
     console.log(`🔄 Toggling tag: ${tagName}...`);
-    
+
     // Find the tag option (it's a checkbox item in the dropdown)
     const tagOption = page.locator(`text="${tagName}"`).first();
-    
+
     if (await tagOption.isVisible({ timeout: 2000 }).catch(() => false)) {
       await tagOption.click();
       await page.waitForTimeout(300);
       console.log(`✅ Toggled: ${tagName}`);
     } else {
       // Try scrolling within the dropdown to find the tag
-      const dropdownContent = page.locator('[data-radix-popper-content-wrapper] [data-radix-scroll-area-viewport]').first();
-      
-      if (await dropdownContent.isVisible({ timeout: 1000 }).catch(() => false)) {
+      const dropdownContent = page
+        .locator(
+          '[data-radix-popper-content-wrapper] [data-radix-scroll-area-viewport]',
+        )
+        .first();
+
+      if (
+        await dropdownContent.isVisible({ timeout: 1000 }).catch(() => false)
+      ) {
         // Scroll within dropdown
         for (let i = 0; i < 3; i++) {
-          await dropdownContent.evaluate((el) => {
-            el.scrollTop += 100;
-          }).catch(() => {});
+          await dropdownContent
+            .evaluate((el) => {
+              el.scrollTop += 100;
+            })
+            .catch(() => {});
           await page.waitForTimeout(200);
-          
+
           const tagAfterScroll = page.locator(`text="${tagName}"`).first();
-          if (await tagAfterScroll.isVisible({ timeout: 500 }).catch(() => false)) {
+          if (
+            await tagAfterScroll.isVisible({ timeout: 500 }).catch(() => false)
+          ) {
             await tagAfterScroll.click();
             await page.waitForTimeout(300);
             console.log(`✅ Toggled: ${tagName} (after scroll)`);
@@ -102,7 +115,7 @@ async function toggleTags(page: Page, tagsToToggle: string[]): Promise<void> {
       }
     }
   }
-  
+
   // Close the dropdown by clicking outside or pressing Escape
   await page.keyboard.press('Escape');
   await page.waitForTimeout(500);
@@ -147,7 +160,7 @@ test.describe('Configure Space on Production', () => {
     page,
   }) => {
     const timestamp = Date.now();
-    
+
     // Generate random settings
     const tagsToToggle = getRandomTagsToToggle();
     const newPurpose = `QA testing - Updated by E2E test at ${new Date().toISOString()}`;
@@ -165,8 +178,12 @@ test.describe('Configure Space on Production', () => {
     console.log(
       '║  🎲 RANDOMIZED SETTINGS:                                       ║',
     );
-    console.log(`║    📝 Purpose: Will update with timestamp                      ║`);
-    console.log(`║    🏷️ Tags to toggle: ${tagsToToggle.length} tags                                   ║`);
+    console.log(
+      `║    📝 Purpose: Will update with timestamp                      ║`,
+    );
+    console.log(
+      `║    🏷️ Tags to toggle: ${tagsToToggle.length} tags                                   ║`,
+    );
     for (const tag of tagsToToggle) {
       console.log(`║      - ${tag.padEnd(54)}║`);
     }
@@ -183,34 +200,46 @@ test.describe('Configure Space on Production', () => {
 
     // Click on the "qa testing" space
     console.log('🔘 Looking for "QA TESTING" space...');
-    const qaTestingSpace = page.locator('a[href*="/dho/"]', { hasText: /qa testing/i });
+    const qaTestingSpace = page.locator('a[href*="/dho/"]', {
+      hasText: /qa testing/i,
+    });
     await expect(qaTestingSpace).toBeVisible({ timeout: 10000 });
-    
+
     const spaceName = await qaTestingSpace.textContent();
     console.log(`📍 Selected space: ${spaceName}`);
-    
+
     await qaTestingSpace.click();
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
 
     // Click on Space Settings
     console.log('⚙️ Opening Space Settings...');
-    const settingsButton = page.locator('a[href*="/settings"], button:has-text("Settings"), [aria-label*="settings"], [aria-label*="Settings"]').first();
-    
+    const settingsButton = page
+      .locator(
+        'a[href*="/settings"], button:has-text("Settings"), [aria-label*="settings"], [aria-label*="Settings"]',
+      )
+      .first();
+
     if (await settingsButton.isVisible({ timeout: 5000 }).catch(() => false)) {
       await settingsButton.click();
     } else {
-      const gearIcon = page.locator('svg[class*="gear"], svg[class*="cog"], [data-testid="settings"]').first();
+      const gearIcon = page
+        .locator(
+          'svg[class*="gear"], svg[class*="cog"], [data-testid="settings"]',
+        )
+        .first();
       if (await gearIcon.isVisible({ timeout: 3000 }).catch(() => false)) {
         await gearIcon.click();
       } else {
         const currentUrl = page.url();
-        const settingsUrl = currentUrl.replace('/overview', '/settings').replace(/\/$/, '') + '/settings';
+        const settingsUrl =
+          currentUrl.replace('/overview', '/settings').replace(/\/$/, '') +
+          '/settings';
         console.log(`📍 Navigating directly to: ${settingsUrl}`);
         await page.goto(settingsUrl);
       }
     }
-    
+
     await page.waitForTimeout(2000);
     console.log('✅ Space Settings opened');
 
@@ -228,10 +257,12 @@ test.describe('Configure Space on Production', () => {
 
     // Click on "Space Configuration" (first option under Overview)
     console.log('🔘 Clicking on "Space Configuration"...');
-    
+
     // Find by the description text
-    const spaceConfigCard = page.locator('text=Customise your space by setting its purpose').first();
-    
+    const spaceConfigCard = page
+      .locator('text=Customise your space by setting its purpose')
+      .first();
+
     if (await spaceConfigCard.isVisible({ timeout: 5000 }).catch(() => false)) {
       await spaceConfigCard.click({ force: true });
     } else {
@@ -239,7 +270,7 @@ test.describe('Configure Space on Production', () => {
       const spaceConfigText = page.locator('text=Space Configuration').first();
       await spaceConfigText.click({ force: true });
     }
-    
+
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
     console.log('✅ Space Configuration panel opened');
@@ -255,12 +286,15 @@ test.describe('Configure Space on Production', () => {
     // ========================================
     console.log('');
     console.log('📝 Editing Purpose field...');
-    
+
     // Find and edit the Purpose textarea
-    const purposeTextarea = page.locator('textarea').filter({
-      has: page.locator('xpath=ancestor::*[contains(., "Purpose")]')
-    }).first();
-    
+    const purposeTextarea = page
+      .locator('textarea')
+      .filter({
+        has: page.locator('xpath=ancestor::*[contains(., "Purpose")]'),
+      })
+      .first();
+
     if (await purposeTextarea.isVisible({ timeout: 3000 }).catch(() => false)) {
       await purposeTextarea.scrollIntoViewIfNeeded();
       await purposeTextarea.click();
@@ -269,9 +303,13 @@ test.describe('Configure Space on Production', () => {
     } else {
       // Try alternative: find textarea after "Purpose" label
       const purposeLabel = page.locator('text="Purpose"').first();
-      const textareaAfterLabel = purposeLabel.locator('xpath=following::textarea[1]');
-      
-      if (await textareaAfterLabel.isVisible({ timeout: 2000 }).catch(() => false)) {
+      const textareaAfterLabel = purposeLabel.locator(
+        'xpath=following::textarea[1]',
+      );
+
+      if (
+        await textareaAfterLabel.isVisible({ timeout: 2000 }).catch(() => false)
+      ) {
         await textareaAfterLabel.click();
         await textareaAfterLabel.fill(newPurpose);
         console.log(`✅ Purpose updated (alt method)`);
@@ -287,7 +325,7 @@ test.describe('Configure Space on Production', () => {
         }
       }
     }
-    
+
     await page.waitForTimeout(500);
 
     // Take screenshot after editing purpose
@@ -300,21 +338,25 @@ test.describe('Configure Space on Production', () => {
     // EDIT TAGS
     // ========================================
     console.log('');
-    console.log('🏷️ ═══════════════════════════════════════════════════════════');
+    console.log(
+      '🏷️ ═══════════════════════════════════════════════════════════',
+    );
     console.log('🏷️  CONFIGURING TAGS (RANDOMIZED)');
-    console.log('🏷️ ═══════════════════════════════════════════════════════════');
+    console.log(
+      '🏷️ ═══════════════════════════════════════════════════════════',
+    );
     console.log('');
-    
+
     // Scroll to Tags section
     const tagsLabel = page.locator('text="Tags"').first();
     if (await tagsLabel.isVisible({ timeout: 3000 }).catch(() => false)) {
       await tagsLabel.scrollIntoViewIfNeeded();
       await page.waitForTimeout(500);
     }
-    
+
     // Toggle the random tags
     await toggleTags(page, tagsToToggle);
-    
+
     await page.waitForTimeout(500);
 
     // Take screenshot after editing tags
@@ -328,17 +370,23 @@ test.describe('Configure Space on Production', () => {
     // ========================================
     console.log('');
     console.log('💾 Looking for Update button...');
-    
-    const scrollableContainers = page.locator('[data-radix-scroll-area-viewport], [class*="overflow-auto"], [class*="overflow-y"]');
-    
+
+    const scrollableContainers = page.locator(
+      '[data-radix-scroll-area-viewport], [class*="overflow-auto"], [class*="overflow-y"]',
+    );
+
     // Scroll down to find Update button
     for (let i = 0; i < 5; i++) {
-      const updateButton = page.locator('button:has-text("Update"), button:has-text("Save"), button:has-text("Apply"), button:has-text("Publish")').last();
-      
+      const updateButton = page
+        .locator(
+          'button:has-text("Update"), button:has-text("Save"), button:has-text("Apply"), button:has-text("Publish")',
+        )
+        .last();
+
       if (await updateButton.isVisible({ timeout: 2000 }).catch(() => false)) {
         await updateButton.scrollIntoViewIfNeeded();
         await page.waitForTimeout(300);
-        
+
         // Ensure button is enabled
         const isEnabled = await updateButton.isEnabled();
         if (isEnabled) {
@@ -350,13 +398,16 @@ test.describe('Configure Space on Production', () => {
           console.log('⚠️ Update button is disabled');
         }
       }
-      
+
       // Scroll more
       const count = await scrollableContainers.count();
       for (let j = 0; j < count; j++) {
-        await scrollableContainers.nth(j).evaluate((el) => {
-          el.scrollTop += 200;
-        }).catch(() => {});
+        await scrollableContainers
+          .nth(j)
+          .evaluate((el) => {
+            el.scrollTop += 200;
+          })
+          .catch(() => {});
       }
       await page.waitForTimeout(400);
       console.log(`📜 Scroll attempt ${i + 1} to find Update button...`);
@@ -381,7 +432,9 @@ test.describe('Configure Space on Production', () => {
       ]);
       console.log('✅ Settings saved successfully!');
     } catch {
-      console.log('⚠️ No explicit success message - settings may have auto-saved');
+      console.log(
+        '⚠️ No explicit success message - settings may have auto-saved',
+      );
     }
 
     // Final screenshot
@@ -404,13 +457,21 @@ test.describe('Configure Space on Production', () => {
     console.log(
       '║  🎲 APPLIED SETTINGS:                                          ║',
     );
-    console.log(`║    📝 Purpose: Updated with timestamp                          ║`);
-    console.log(`║    🏷️ Tags toggled: ${String(tagsToToggle.length).padEnd(41)}║`);
+    console.log(
+      `║    📝 Purpose: Updated with timestamp                          ║`,
+    );
+    console.log(
+      `║    🏷️ Tags toggled: ${String(tagsToToggle.length).padEnd(41)}║`,
+    );
     for (const tag of tagsToToggle.slice(0, 3)) {
       console.log(`║      - ${tag.padEnd(54)}║`);
     }
     if (tagsToToggle.length > 3) {
-      console.log(`║      ... and ${tagsToToggle.length - 3} more                                            ║`);
+      console.log(
+        `║      ... and ${
+          tagsToToggle.length - 3
+        } more                                            ║`,
+      );
     }
     console.log(
       '║                                                                ║',
@@ -424,4 +485,3 @@ test.describe('Configure Space on Production', () => {
     console.log('');
   });
 });
-

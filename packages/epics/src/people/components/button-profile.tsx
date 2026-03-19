@@ -241,7 +241,9 @@ export const ButtonProfile = ({
               label={item.label}
             />
           ))}
-          <Button data-testid="sign-in-button" onClick={onLogin}>{t('signIn')}</Button>
+          <Button data-testid="sign-in-button" onClick={onLogin}>
+            {t('signIn')}
+          </Button>
           <Button
             className="hidden md:flex"
             variant="outline"

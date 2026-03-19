@@ -126,13 +126,20 @@ async function createNewSpace(page: Page): Promise<string> {
   const timestamp = Date.now();
   const randomSuffix = Math.random().toString(36).substring(2, 6);
   const spaceName = `E2E S2S ${timestamp}${randomSuffix}`;
-  const spaceDescription = 'Space created for Space-to-Space membership E2E test. Safe to delete.';
+  const spaceDescription =
+    'Space created for Space-to-Space membership E2E test. Safe to delete.';
 
   console.log('');
-  console.log('╔════════════════════════════════════════════════════════════════╗');
-  console.log('║  🚀 STEP 1: CREATING NEW SPACE FOR SPACE-TO-SPACE TEST         ║');
+  console.log(
+    '╔════════════════════════════════════════════════════════════════╗',
+  );
+  console.log(
+    '║  🚀 STEP 1: CREATING NEW SPACE FOR SPACE-TO-SPACE TEST         ║',
+  );
   console.log(`║  Name: ${spaceName.padEnd(52)}║`);
-  console.log('╚════════════════════════════════════════════════════════════════╝');
+  console.log(
+    '╚════════════════════════════════════════════════════════════════╝',
+  );
   console.log('');
 
   // Navigate to my-spaces
@@ -141,7 +148,9 @@ async function createNewSpace(page: Page): Promise<string> {
   await page.waitForTimeout(2000);
 
   // Click "Create Space" button
-  const createSpaceButton = page.getByRole('link', { name: /create space/i }).first();
+  const createSpaceButton = page
+    .getByRole('link', { name: /create space/i })
+    .first();
   await expect(createSpaceButton).toBeVisible({ timeout: 10000 });
   await createSpaceButton.click();
 
@@ -151,9 +160,15 @@ async function createNewSpace(page: Page): Promise<string> {
   // Create test images for upload (logo and banner)
   const logoImageBuffer = createTestImageBuffer();
   const bannerImageBuffer = createTestImageBuffer(); // Different random color
-  
-  const logoPath = path.join(process.cwd(), `test-results-production/test-logo-s2s-${timestamp}.png`);
-  const bannerPath = path.join(process.cwd(), `test-results-production/test-banner-s2s-${timestamp}.png`);
+
+  const logoPath = path.join(
+    process.cwd(),
+    `test-results-production/test-logo-s2s-${timestamp}.png`,
+  );
+  const bannerPath = path.join(
+    process.cwd(),
+    `test-results-production/test-banner-s2s-${timestamp}.png`,
+  );
 
   // Ensure directory exists
   fs.mkdirSync(path.dirname(logoPath), { recursive: true });
@@ -193,7 +208,9 @@ async function createNewSpace(page: Page): Promise<string> {
   await page.waitForTimeout(1500);
 
   // Check if slug already exists
-  const slugErrorMessage = page.locator('text=/a space with this name already exists/i');
+  const slugErrorMessage = page.locator(
+    'text=/a space with this name already exists/i',
+  );
   if (await slugErrorMessage.isVisible().catch(() => false)) {
     console.log('⚠️ Slug already exists, adding extra randomness...');
     const extraSuffix = Math.random().toString(36).substring(2, 8);
@@ -204,7 +221,9 @@ async function createNewSpace(page: Page): Promise<string> {
   }
 
   // Fill in the description
-  const descriptionInput = page.getByPlaceholder(/type your space purpose here/i);
+  const descriptionInput = page.getByPlaceholder(
+    /type your space purpose here/i,
+  );
   await descriptionInput.waitFor({ state: 'visible', timeout: 5000 });
   await descriptionInput.fill(spaceDescription);
 
@@ -224,11 +243,15 @@ async function createNewSpace(page: Page): Promise<string> {
   console.log('📝 Form filled, submitting...');
   await submitButton.click();
 
-  console.log('⏳ Waiting for space creation (this may take up to 2 minutes)...');
+  console.log(
+    '⏳ Waiting for space creation (this may take up to 2 minutes)...',
+  );
 
   // Wait for navigation to the new space
   try {
-    await page.waitForURL(/\/dho\/[^/]+\/(overview|agreements)/, { timeout: 120000 });
+    await page.waitForURL(/\/dho\/[^/]+\/(overview|agreements)/, {
+      timeout: 120000,
+    });
     console.log('✅ Navigation to new space detected!');
   } catch {
     await page.screenshot({
@@ -256,66 +279,73 @@ async function createNewSpace(page: Page): Promise<string> {
 /**
  * Searches for and selects a space from the dropdown
  */
-async function selectSpaceFromDropdown(page: Page, spaceName: string): Promise<boolean> {
+async function selectSpaceFromDropdown(
+  page: Page,
+  spaceName: string,
+): Promise<boolean> {
   console.log(`🔍 Searching for space: ${spaceName}...`);
-  
+
   // First, scroll to find the "Space to join" section
   const spaceToJoinLabel = page.locator('text="Space to join"').first();
   if (await spaceToJoinLabel.isVisible({ timeout: 5000 }).catch(() => false)) {
     await spaceToJoinLabel.scrollIntoViewIfNeeded();
     await page.waitForTimeout(500);
   }
-  
+
   // Click on the "Find Space" dropdown button
-  const findSpaceDropdown = page.locator('button:has-text("Find Space")').first();
-  
+  const findSpaceDropdown = page
+    .locator('button:has-text("Find Space")')
+    .first();
+
   if (await findSpaceDropdown.isVisible({ timeout: 5000 }).catch(() => false)) {
     console.log('🔘 Clicking "Find Space" dropdown...');
     await findSpaceDropdown.scrollIntoViewIfNeeded();
     await page.waitForTimeout(300);
     await findSpaceDropdown.click();
     await page.waitForTimeout(1000);
-    
+
     // Wait for the dropdown popover to appear
     // The dropdown uses a popover with search input
     const popover = page.locator('[data-radix-popper-content-wrapper]').first();
     await popover.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
-    
+
     // Find the search input INSIDE the popover only
     // This avoids picking up other search inputs on the page
     const searchInput = popover.locator('input').first();
-    
+
     if (await searchInput.isVisible({ timeout: 3000 }).catch(() => false)) {
       console.log('📝 Found search input in dropdown, typing space name...');
-      
+
       // Use fill instead of click + fill to avoid interception issues
       await searchInput.fill(spaceName);
       await page.waitForTimeout(2000); // Wait for search results to load
       console.log(`📝 Typed space name: ${spaceName}`);
-      
+
       // Take screenshot to see search results
       await page.screenshot({
         path: `test-results-production/s2s-space-search-${Date.now()}.png`,
         fullPage: true,
       });
     } else {
-      console.log('⚠️ Search input not found in popover, trying keyboard input...');
+      console.log(
+        '⚠️ Search input not found in popover, trying keyboard input...',
+      );
       // If no search input visible, try typing directly (dropdown might accept keyboard)
       await page.keyboard.type(spaceName);
       await page.waitForTimeout(2000);
     }
-    
+
     // Look for the space in the dropdown options
     // The space name starts with "E2E S2S" so we can search for that
     const options = page.locator('[role="option"]');
     const optionCount = await options.count();
     console.log(`🔍 Found ${optionCount} options after search`);
-    
+
     // Try to find exact match first
     for (let i = 0; i < optionCount; i++) {
-      const text = await options.nth(i).textContent() || '';
+      const text = (await options.nth(i).textContent()) || '';
       console.log(`   Option ${i}: ${text.trim().substring(0, 50)}`);
-      
+
       if (text.includes(spaceName) || text.includes('E2E S2S')) {
         console.log(`✅ Found matching space: ${text.trim()}`);
         await options.nth(i).click();
@@ -324,11 +354,11 @@ async function selectSpaceFromDropdown(page: Page, spaceName: string): Promise<b
         return true;
       }
     }
-    
+
     // If no exact match, try partial match with the unique timestamp part
     const timestampPart = spaceName.replace('E2E S2S ', '');
     for (let i = 0; i < optionCount; i++) {
-      const text = await options.nth(i).textContent() || '';
+      const text = (await options.nth(i).textContent()) || '';
       if (text.includes(timestampPart)) {
         await options.nth(i).click();
         await page.waitForTimeout(500);
@@ -336,16 +366,18 @@ async function selectSpaceFromDropdown(page: Page, spaceName: string): Promise<b
         return true;
       }
     }
-    
+
     // If still no match, select first option if available
     if (optionCount > 0) {
-      const firstOptionText = await options.first().textContent() || '';
-      console.log(`⚠️ No exact match found, selecting first option: ${firstOptionText.trim()}`);
+      const firstOptionText = (await options.first().textContent()) || '';
+      console.log(
+        `⚠️ No exact match found, selecting first option: ${firstOptionText.trim()}`,
+      );
       await options.first().click();
       await page.waitForTimeout(500);
       return true;
     }
-    
+
     // Fallback: Use keyboard to select
     console.log('⚠️ Trying keyboard navigation...');
     await page.keyboard.press('ArrowDown');
@@ -354,7 +386,7 @@ async function selectSpaceFromDropdown(page: Page, spaceName: string): Promise<b
     await page.waitForTimeout(500);
     return true;
   }
-  
+
   console.log('⚠️ Could not find "Find Space" dropdown');
   return false;
 }
@@ -364,31 +396,37 @@ async function selectSpaceFromDropdown(page: Page, spaceName: string): Promise<b
  */
 async function selectDelegatedVotingMember(page: Page): Promise<boolean> {
   console.log('👥 Selecting Delegated Voting Member...');
-  
+
   // Find the "Find Member" dropdown
-  const findMemberDropdown = page.locator('button:has-text("Find Member"), [role="combobox"]:has-text("Find Member")').first();
-  
-  if (await findMemberDropdown.isVisible({ timeout: 5000 }).catch(() => false)) {
+  const findMemberDropdown = page
+    .locator(
+      'button:has-text("Find Member"), [role="combobox"]:has-text("Find Member")',
+    )
+    .first();
+
+  if (
+    await findMemberDropdown.isVisible({ timeout: 5000 }).catch(() => false)
+  ) {
     await findMemberDropdown.scrollIntoViewIfNeeded();
     await page.waitForTimeout(300);
     await findMemberDropdown.click();
     await page.waitForTimeout(1000);
-    
+
     // Look for member options
     const memberOptions = page.locator('[role="option"]');
     const optionCount = await memberOptions.count();
     console.log(`🔍 Found ${optionCount} member options`);
-    
+
     if (optionCount > 0) {
       // Select the first available member
       const firstMember = memberOptions.first();
-      const memberText = await firstMember.textContent() || 'Unknown';
+      const memberText = (await firstMember.textContent()) || 'Unknown';
       await firstMember.click();
       await page.waitForTimeout(500);
       console.log(`✅ Selected member: ${memberText.trim()}`);
       return true;
     }
-    
+
     // Fallback: Try keyboard navigation
     console.log('⚠️ Trying keyboard navigation for member selection...');
     await page.keyboard.press('ArrowDown');
@@ -398,7 +436,7 @@ async function selectDelegatedVotingMember(page: Page): Promise<boolean> {
     console.log('✅ Member selected via keyboard');
     return true;
   }
-  
+
   console.log('⚠️ Could not find member dropdown');
   return false;
 }
@@ -455,9 +493,15 @@ test.describe('Space-to-Space Membership on Production', () => {
     // STEP 2: NAVIGATE TO QA TESTING SPACE
     // ========================================
     console.log('');
-    console.log('╔════════════════════════════════════════════════════════════════╗');
-    console.log('║  📍 STEP 2: NAVIGATING TO QA TESTING SPACE                     ║');
-    console.log('╚════════════════════════════════════════════════════════════════╝');
+    console.log(
+      '╔════════════════════════════════════════════════════════════════╗',
+    );
+    console.log(
+      '║  📍 STEP 2: NAVIGATING TO QA TESTING SPACE                     ║',
+    );
+    console.log(
+      '╚════════════════════════════════════════════════════════════════╝',
+    );
     console.log('');
 
     await page.goto('/en/my-spaces');
@@ -466,7 +510,9 @@ test.describe('Space-to-Space Membership on Production', () => {
 
     // Click on the "qa testing" space
     console.log('🔘 Looking for "QA TESTING" space...');
-    const qaTestingSpace = page.locator('a[href*="/dho/"]', { hasText: /qa testing/i });
+    const qaTestingSpace = page.locator('a[href*="/dho/"]', {
+      hasText: /qa testing/i,
+    });
     await expect(qaTestingSpace).toBeVisible({ timeout: 10000 });
 
     await qaTestingSpace.click();
@@ -478,18 +524,30 @@ test.describe('Space-to-Space Membership on Production', () => {
     // STEP 3: OPEN SPACE SETTINGS
     // ========================================
     console.log('');
-    console.log('╔════════════════════════════════════════════════════════════════╗');
-    console.log('║  ⚙️  STEP 3: OPENING SPACE SETTINGS                             ║');
-    console.log('╚════════════════════════════════════════════════════════════════╝');
+    console.log(
+      '╔════════════════════════════════════════════════════════════════╗',
+    );
+    console.log(
+      '║  ⚙️  STEP 3: OPENING SPACE SETTINGS                             ║',
+    );
+    console.log(
+      '╚════════════════════════════════════════════════════════════════╝',
+    );
     console.log('');
 
-    const settingsButton = page.locator('a[href*="/settings"], button:has-text("Settings"), [aria-label*="settings"]').first();
+    const settingsButton = page
+      .locator(
+        'a[href*="/settings"], button:has-text("Settings"), [aria-label*="settings"]',
+      )
+      .first();
 
     if (await settingsButton.isVisible({ timeout: 5000 }).catch(() => false)) {
       await settingsButton.click();
     } else {
       const currentUrl = page.url();
-      const settingsUrl = currentUrl.replace('/overview', '/settings').replace(/\/$/, '') + '/settings';
+      const settingsUrl =
+        currentUrl.replace('/overview', '/settings').replace(/\/$/, '') +
+        '/settings';
       console.log(`📍 Navigating directly to: ${settingsUrl}`);
       await page.goto(settingsUrl);
     }
@@ -507,16 +565,28 @@ test.describe('Space-to-Space Membership on Production', () => {
     // STEP 4: SCROLL TO SPACE-TO-SPACE MEMBERSHIP
     // ========================================
     console.log('');
-    console.log('╔════════════════════════════════════════════════════════════════╗');
-    console.log('║  📜 STEP 4: FINDING SPACE-TO-SPACE MEMBERSHIP                  ║');
-    console.log('╚════════════════════════════════════════════════════════════════╝');
+    console.log(
+      '╔════════════════════════════════════════════════════════════════╗',
+    );
+    console.log(
+      '║  📜 STEP 4: FINDING SPACE-TO-SPACE MEMBERSHIP                  ║',
+    );
+    console.log(
+      '╚════════════════════════════════════════════════════════════════╝',
+    );
     console.log('');
 
-    const scrollableContainers = page.locator('[data-radix-scroll-area-viewport], [class*="overflow-auto"], [class*="overflow-y"]');
+    const scrollableContainers = page.locator(
+      '[data-radix-scroll-area-viewport], [class*="overflow-auto"], [class*="overflow-y"]',
+    );
 
     // Scroll to find Space-to-Space Membership
     for (let i = 0; i < 15; i++) {
-      const s2sVisible = await page.locator('text=Space-to-Space Membership').first().isVisible().catch(() => false);
+      const s2sVisible = await page
+        .locator('text=Space-to-Space Membership')
+        .first()
+        .isVisible()
+        .catch(() => false);
       if (s2sVisible) {
         console.log('✅ Found "Space-to-Space Membership" option');
         break;
@@ -524,9 +594,12 @@ test.describe('Space-to-Space Membership on Production', () => {
 
       const count = await scrollableContainers.count();
       for (let j = 0; j < count; j++) {
-        await scrollableContainers.nth(j).evaluate((el) => {
-          el.scrollTop += 150;
-        }).catch(() => {});
+        await scrollableContainers
+          .nth(j)
+          .evaluate((el) => {
+            el.scrollTop += 150;
+          })
+          .catch(() => {});
       }
 
       await page.waitForTimeout(400);
@@ -542,7 +615,9 @@ test.describe('Space-to-Space Membership on Production', () => {
     // Click on "Space-to-Space Membership" card
     console.log('🔘 Clicking on "Space-to-Space Membership"...');
 
-    const s2sCard = page.locator('text=Allow your space to join another space as a member').first();
+    const s2sCard = page
+      .locator('text=Allow your space to join another space as a member')
+      .first();
 
     if (await s2sCard.isVisible({ timeout: 5000 }).catch(() => false)) {
       await s2sCard.click({ force: true });
@@ -565,9 +640,15 @@ test.describe('Space-to-Space Membership on Production', () => {
     // STEP 5: FILL PROPOSAL DETAILS
     // ========================================
     console.log('');
-    console.log('╔════════════════════════════════════════════════════════════════╗');
-    console.log('║  📝 STEP 5: FILLING PROPOSAL DETAILS                           ║');
-    console.log('╚════════════════════════════════════════════════════════════════╝');
+    console.log(
+      '╔════════════════════════════════════════════════════════════════╗',
+    );
+    console.log(
+      '║  📝 STEP 5: FILLING PROPOSAL DETAILS                           ║',
+    );
+    console.log(
+      '╚════════════════════════════════════════════════════════════════╝',
+    );
     console.log('');
 
     // Generate proposal title and description
@@ -588,7 +669,9 @@ test.describe('Space-to-Space Membership on Production', () => {
     // Fill Proposal Description
     console.log('📝 Filling proposal description...');
     const descriptionEditor = page.locator('[contenteditable="true"]').first();
-    if (await descriptionEditor.isVisible({ timeout: 3000 }).catch(() => false)) {
+    if (
+      await descriptionEditor.isVisible({ timeout: 3000 }).catch(() => false)
+    ) {
       await descriptionEditor.scrollIntoViewIfNeeded();
       await descriptionEditor.click();
       await page.waitForTimeout(300);
@@ -608,10 +691,16 @@ test.describe('Space-to-Space Membership on Production', () => {
     // STEP 6: SELECT SPACE TO JOIN
     // ========================================
     console.log('');
-    console.log('╔════════════════════════════════════════════════════════════════╗');
-    console.log('║  🔍 STEP 6: SELECTING SPACE TO JOIN                            ║');
+    console.log(
+      '╔════════════════════════════════════════════════════════════════╗',
+    );
+    console.log(
+      '║  🔍 STEP 6: SELECTING SPACE TO JOIN                            ║',
+    );
     console.log(`║  Target: ${createdSpaceName.substring(0, 50).padEnd(50)}║`);
-    console.log('╚════════════════════════════════════════════════════════════════╝');
+    console.log(
+      '╚════════════════════════════════════════════════════════════════╝',
+    );
     console.log('');
 
     await selectSpaceFromDropdown(page, createdSpaceName);
@@ -626,9 +715,15 @@ test.describe('Space-to-Space Membership on Production', () => {
     // STEP 7: SELECT DELEGATED VOTING MEMBER
     // ========================================
     console.log('');
-    console.log('╔════════════════════════════════════════════════════════════════╗');
-    console.log('║  👥 STEP 7: SELECTING DELEGATED VOTING MEMBER                  ║');
-    console.log('╚════════════════════════════════════════════════════════════════╝');
+    console.log(
+      '╔════════════════════════════════════════════════════════════════╗',
+    );
+    console.log(
+      '║  👥 STEP 7: SELECTING DELEGATED VOTING MEMBER                  ║',
+    );
+    console.log(
+      '╚════════════════════════════════════════════════════════════════╝',
+    );
     console.log('');
 
     await selectDelegatedVotingMember(page);
@@ -643,9 +738,15 @@ test.describe('Space-to-Space Membership on Production', () => {
     // STEP 8: PUBLISH PROPOSAL
     // ========================================
     console.log('');
-    console.log('╔════════════════════════════════════════════════════════════════╗');
-    console.log('║  📤 STEP 8: PUBLISHING PROPOSAL                                ║');
-    console.log('╚════════════════════════════════════════════════════════════════╝');
+    console.log(
+      '╔════════════════════════════════════════════════════════════════╗',
+    );
+    console.log(
+      '║  📤 STEP 8: PUBLISHING PROPOSAL                                ║',
+    );
+    console.log(
+      '╚════════════════════════════════════════════════════════════════╝',
+    );
     console.log('');
 
     // Scroll down to find Publish button
@@ -662,16 +763,21 @@ test.describe('Space-to-Space Membership on Production', () => {
           console.log('✅ Publish button clicked!');
           break;
         } else {
-          console.log('⚠️ Publish button is disabled - checking for missing fields...');
+          console.log(
+            '⚠️ Publish button is disabled - checking for missing fields...',
+          );
         }
       }
 
       // Scroll more
       const count = await scrollableContainers.count();
       for (let j = 0; j < count; j++) {
-        await scrollableContainers.nth(j).evaluate((el) => {
-          el.scrollTop += 200;
-        }).catch(() => {});
+        await scrollableContainers
+          .nth(j)
+          .evaluate((el) => {
+            el.scrollTop += 200;
+          })
+          .catch(() => {});
       }
       await page.waitForTimeout(400);
     }
@@ -695,22 +801,43 @@ test.describe('Space-to-Space Membership on Production', () => {
       ]);
       console.log('✅ Proposal published successfully!');
     } catch {
-      console.log('⚠️ No explicit success message - proposal may have been submitted');
+      console.log(
+        '⚠️ No explicit success message - proposal may have been submitted',
+      );
     }
 
     // Log the result
     console.log('');
-    console.log('╔════════════════════════════════════════════════════════════════╗');
-    console.log('║  ✅ SPACE-TO-SPACE PROPOSAL COMPLETED                          ║');
-    console.log('║                                                                ║');
-    console.log('║  📝 Summary:                                                   ║');
-    console.log(`║    🆕 Created Space: ${createdSpaceName.substring(0, 40).padEnd(40)}║`);
-    console.log(`║    📋 Proposal: ${proposalTitle.substring(0, 44).padEnd(44)}║`);
-    console.log('║    🔗 Requested QA TESTING to join the new space               ║');
-    console.log('║                                                                ║');
-    console.log('║  ⚠️  These changes are now LIVE on production!                 ║');
-    console.log('╚════════════════════════════════════════════════════════════════╝');
+    console.log(
+      '╔════════════════════════════════════════════════════════════════╗',
+    );
+    console.log(
+      '║  ✅ SPACE-TO-SPACE PROPOSAL COMPLETED                          ║',
+    );
+    console.log(
+      '║                                                                ║',
+    );
+    console.log(
+      '║  📝 Summary:                                                   ║',
+    );
+    console.log(
+      `║    🆕 Created Space: ${createdSpaceName.substring(0, 40).padEnd(40)}║`,
+    );
+    console.log(
+      `║    📋 Proposal: ${proposalTitle.substring(0, 44).padEnd(44)}║`,
+    );
+    console.log(
+      '║    🔗 Requested QA TESTING to join the new space               ║',
+    );
+    console.log(
+      '║                                                                ║',
+    );
+    console.log(
+      '║  ⚠️  These changes are now LIVE on production!                 ║',
+    );
+    console.log(
+      '╚════════════════════════════════════════════════════════════════╝',
+    );
     console.log('');
   });
 });
-

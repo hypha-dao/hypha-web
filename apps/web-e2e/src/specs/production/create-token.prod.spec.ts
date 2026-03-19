@@ -40,10 +40,19 @@ function createTestImageBuffer(): Buffer {
   const idatCrc = crc32(Buffer.concat([Buffer.from('IDAT'), deflated]));
   const idatLen = Buffer.alloc(4);
   idatLen.writeUInt32BE(deflated.length, 0);
-  const idatChunk = Buffer.concat([idatLen, Buffer.from('IDAT'), deflated, idatCrc]);
+  const idatChunk = Buffer.concat([
+    idatLen,
+    Buffer.from('IDAT'),
+    deflated,
+    idatCrc,
+  ]);
 
   const iendCrc = crc32(Buffer.from('IEND'));
-  const iendChunk = Buffer.concat([Buffer.from([0, 0, 0, 0]), Buffer.from('IEND'), iendCrc]);
+  const iendChunk = Buffer.concat([
+    Buffer.from([0, 0, 0, 0]),
+    Buffer.from('IEND'),
+    iendCrc,
+  ]);
 
   return Buffer.concat([pngHeader, ihdrChunk, idatChunk, iendChunk]);
 }
@@ -84,7 +93,8 @@ function deflateStore(data: Buffer): Buffer {
 }
 
 function adler32(data: Buffer): Buffer {
-  let a = 1, b = 0;
+  let a = 1,
+    b = 0;
   for (let i = 0; i < data.length; i++) {
     a = (a + data[i]!) % 65521;
     b = (b + a) % 65521;
@@ -128,16 +138,16 @@ test.describe('Issue New Token on Production', () => {
     console.log('✅ Logged in successfully');
   });
 
-  test('should issue a new token in the QA TESTING space', async ({
-    page,
-  }) => {
+  test('should issue a new token in the QA TESTING space', async ({ page }) => {
     // Generate unique token name with timestamp
     const timestamp = Date.now();
     // Generate random letters only (no numbers) for token name
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     let randomLetters = '';
     for (let i = 0; i < 4; i++) {
-      randomLetters += letters.charAt(Math.floor(Math.random() * letters.length));
+      randomLetters += letters.charAt(
+        Math.floor(Math.random() * letters.length),
+      );
     }
     // Token name: letters only, no numbers
     const tokenName = `Test Token ${randomLetters}`;
@@ -166,12 +176,14 @@ test.describe('Issue New Token on Production', () => {
 
     // Click on the "qa testing" space
     console.log('🔘 Looking for "QA TESTING" space...');
-    const qaTestingSpace = page.locator('a[href*="/dho/"]', { hasText: /qa testing/i });
+    const qaTestingSpace = page.locator('a[href*="/dho/"]', {
+      hasText: /qa testing/i,
+    });
     await expect(qaTestingSpace).toBeVisible({ timeout: 10000 });
-    
+
     const spaceName = await qaTestingSpace.textContent();
     console.log(`📍 Selected space: ${spaceName}`);
-    
+
     await qaTestingSpace.click();
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
@@ -179,24 +191,34 @@ test.describe('Issue New Token on Production', () => {
     // Click on Space Settings (gear icon or settings link)
     console.log('⚙️ Opening Space Settings...');
     // Try to find settings button/link - could be a gear icon or "Settings" text
-    const settingsButton = page.locator('a[href*="/settings"], button:has-text("Settings"), [aria-label*="settings"], [aria-label*="Settings"]').first();
-    
+    const settingsButton = page
+      .locator(
+        'a[href*="/settings"], button:has-text("Settings"), [aria-label*="settings"], [aria-label*="Settings"]',
+      )
+      .first();
+
     if (await settingsButton.isVisible({ timeout: 5000 }).catch(() => false)) {
       await settingsButton.click();
     } else {
       // Try clicking on a gear/cog icon
-      const gearIcon = page.locator('svg[class*="gear"], svg[class*="cog"], [data-testid="settings"]').first();
+      const gearIcon = page
+        .locator(
+          'svg[class*="gear"], svg[class*="cog"], [data-testid="settings"]',
+        )
+        .first();
       if (await gearIcon.isVisible({ timeout: 3000 }).catch(() => false)) {
         await gearIcon.click();
       } else {
         // Navigate directly to settings URL
         const currentUrl = page.url();
-        const settingsUrl = currentUrl.replace('/overview', '/settings').replace(/\/$/, '') + '/settings';
+        const settingsUrl =
+          currentUrl.replace('/overview', '/settings').replace(/\/$/, '') +
+          '/settings';
         console.log(`📍 Navigating directly to: ${settingsUrl}`);
         await page.goto(settingsUrl);
       }
     }
-    
+
     await page.waitForTimeout(2000);
     console.log('✅ Space Settings clicked');
 
@@ -214,28 +236,36 @@ test.describe('Issue New Token on Production', () => {
 
     // Scroll down within the settings panel to find "Issue new token"
     console.log('📜 Scrolling within the settings panel...');
-    
+
     // Find the scrollable container - it's likely the panel that contains "Space Settings"
     // Look for scrollable elements in the right side panel
-    const scrollableContainers = page.locator('[data-radix-scroll-area-viewport], [class*="overflow-auto"], [class*="overflow-y"], [style*="overflow"]');
-    
+    const scrollableContainers = page.locator(
+      '[data-radix-scroll-area-viewport], [class*="overflow-auto"], [class*="overflow-y"], [style*="overflow"]',
+    );
+
     // Scroll multiple times to find Issue new token
     for (let i = 0; i < 5; i++) {
       // Check if Issue new token is visible
-      const issueTokenVisible = await page.locator('text=Issue New Token').isVisible().catch(() => false);
+      const issueTokenVisible = await page
+        .locator('text=Issue New Token')
+        .isVisible()
+        .catch(() => false);
       if (issueTokenVisible) {
         console.log('✅ Found "Issue New Token" button');
         break;
       }
-      
+
       // Try scrolling each scrollable container
       const count = await scrollableContainers.count();
       for (let j = 0; j < count; j++) {
-        await scrollableContainers.nth(j).evaluate((el) => {
-          el.scrollTop += 200;
-        }).catch(() => {});
+        await scrollableContainers
+          .nth(j)
+          .evaluate((el) => {
+            el.scrollTop += 200;
+          })
+          .catch(() => {});
       }
-      
+
       await page.waitForTimeout(500);
       console.log(`📜 Scroll attempt ${i + 1}...`);
     }
@@ -247,12 +277,16 @@ test.describe('Issue New Token on Production', () => {
     });
 
     // Find and click Issue New Token - it's the one with "Create a new token for utility" description
-    console.log('🔍 Looking for "Issue New Token" (with utility description)...');
-    
+    console.log(
+      '🔍 Looking for "Issue New Token" (with utility description)...',
+    );
+
     // Use the unique description text to find the right card
     // "Create a new token for utility, ownership, impact, cash credits, or voice within your space."
-    const issueTokenCard = page.locator('text=Create a new token for utility').first();
-    
+    const issueTokenCard = page
+      .locator('text=Create a new token for utility')
+      .first();
+
     await expect(issueTokenCard).toBeVisible({ timeout: 10000 });
     console.log('🔘 Clicking "Issue New Token" card...');
     await issueTokenCard.click({ force: true });
@@ -281,7 +315,9 @@ test.describe('Issue New Token on Production', () => {
     await descriptionEditor.scrollIntoViewIfNeeded();
     await descriptionEditor.click();
     await page.waitForTimeout(300);
-    await page.keyboard.type(`Creating a new token: ${tokenName} (${tokenSymbol}). This is a test token created by E2E automation.`);
+    await page.keyboard.type(
+      `Creating a new token: ${tokenName} (${tokenSymbol}). This is a test token created by E2E automation.`,
+    );
     console.log('✅ Description entered');
 
     // 3. Scroll down to General section
@@ -321,7 +357,10 @@ test.describe('Issue New Token on Production', () => {
     const tokenIconInput = page.locator('input[type="file"]').last();
     // Create a simple test image for the icon
     const iconBuffer = createTestImageBuffer();
-    const iconPath = path.join(process.cwd(), `test-results-production/test-token-icon-${timestamp}.png`);
+    const iconPath = path.join(
+      process.cwd(),
+      `test-results-production/test-token-icon-${timestamp}.png`,
+    );
     fs.writeFileSync(iconPath, iconBuffer);
     await tokenIconInput.setInputFiles(iconPath);
     await page.waitForTimeout(1000);
@@ -338,17 +377,21 @@ test.describe('Issue New Token on Production', () => {
 
     // Find and click the submit/create button
     console.log('🔍 Looking for Submit/Create button...');
-    const submitButton = page.locator('button:has-text("Create"), button:has-text("Submit"), button:has-text("Issue"), button[type="submit"]').last();
-    
+    const submitButton = page
+      .locator(
+        'button:has-text("Create"), button:has-text("Submit"), button:has-text("Issue"), button[type="submit"]',
+      )
+      .last();
+
     await submitButton.scrollIntoViewIfNeeded();
     await page.waitForTimeout(500);
-    
+
     await expect(submitButton).toBeVisible();
     await expect(submitButton).toBeEnabled();
 
     console.log('📝 Form filled, clicking Submit...');
     await submitButton.click();
-    
+
     console.log('✅ Submit button clicked!');
 
     // Wait for submission to complete
@@ -374,12 +417,18 @@ test.describe('Issue New Token on Production', () => {
     // Check if any loading indicator is visible and wait for it to disappear
     for (const selector of loadingSelectors) {
       const loadingElement = page.locator(selector).first();
-      if (await loadingElement.isVisible({ timeout: 1000 }).catch(() => false)) {
-        console.log(`🔄 Loading detected (${selector}), waiting for completion...`);
+      if (
+        await loadingElement.isVisible({ timeout: 1000 }).catch(() => false)
+      ) {
+        console.log(
+          `🔄 Loading detected (${selector}), waiting for completion...`,
+        );
         // Wait for this loading indicator to disappear (up to 2 minutes)
-        await loadingElement.waitFor({ state: 'hidden', timeout: 120000 }).catch(() => {
-          console.log('⚠️ Loading indicator still visible after timeout');
-        });
+        await loadingElement
+          .waitFor({ state: 'hidden', timeout: 120000 })
+          .catch(() => {
+            console.log('⚠️ Loading indicator still visible after timeout');
+          });
         console.log('✅ Loading completed');
         break;
       }
@@ -400,7 +449,9 @@ test.describe('Issue New Token on Production', () => {
       await Promise.race([
         page.waitForSelector('text=/success/i', { timeout: 30000 }),
         page.waitForSelector('text=/created/i', { timeout: 30000 }),
-        page.waitForURL((url) => !url.pathname.includes('/create'), { timeout: 30000 }),
+        page.waitForURL((url) => !url.pathname.includes('/create'), {
+          timeout: 30000,
+        }),
       ]);
       console.log('✅ Token creation appears to have succeeded!');
     } catch {
@@ -408,7 +459,7 @@ test.describe('Issue New Token on Production', () => {
         path: `test-results-production/token-error-${timestamp}.png`,
         fullPage: true,
       });
-      
+
       // Check for error messages
       const errorMessages = await page
         .locator('[data-slot="form-message"], [role="alert"], text=/error/i')
@@ -422,7 +473,7 @@ test.describe('Issue New Token on Production', () => {
           `Token creation failed with error: ${realErrors.join(', ')}`,
         );
       }
-      
+
       console.log('⚠️ Could not confirm token creation - check manually');
     }
 
@@ -457,4 +508,3 @@ test.describe('Issue New Token on Production', () => {
     console.log('');
   });
 });
-

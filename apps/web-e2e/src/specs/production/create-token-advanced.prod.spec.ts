@@ -40,10 +40,19 @@ function createTestImageBuffer(): Buffer {
   const idatCrc = crc32(Buffer.concat([Buffer.from('IDAT'), deflated]));
   const idatLen = Buffer.alloc(4);
   idatLen.writeUInt32BE(deflated.length, 0);
-  const idatChunk = Buffer.concat([idatLen, Buffer.from('IDAT'), deflated, idatCrc]);
+  const idatChunk = Buffer.concat([
+    idatLen,
+    Buffer.from('IDAT'),
+    deflated,
+    idatCrc,
+  ]);
 
   const iendCrc = crc32(Buffer.from('IEND'));
-  const iendChunk = Buffer.concat([Buffer.from([0, 0, 0, 0]), Buffer.from('IEND'), iendCrc]);
+  const iendChunk = Buffer.concat([
+    Buffer.from([0, 0, 0, 0]),
+    Buffer.from('IEND'),
+    iendCrc,
+  ]);
 
   return Buffer.concat([pngHeader, ihdrChunk, idatChunk, iendChunk]);
 }
@@ -84,7 +93,8 @@ function deflateStore(data: Buffer): Buffer {
 }
 
 function adler32(data: Buffer): Buffer {
-  let a = 1, b = 0;
+  let a = 1,
+    b = 0;
   for (let i = 0; i < data.length; i++) {
     a = (a + data[i]!) % 65521;
     b = (b + a) % 65521;
@@ -146,24 +156,24 @@ function generateRandomAdvancedSettings(): AdvancedSetting[] {
  */
 async function fillTokenPriceFields(page: Page): Promise<void> {
   console.log('📝 Filling Token Price fields...');
-  
+
   // Wait for the fields to appear
   await page.waitForTimeout(500);
-  
+
   // Select Reference Currency from dropdown
   console.log('🔽 Selecting Reference Currency...');
-  
+
   const currencyDropdown = page.locator('text="Select currency"').first();
-  
+
   if (await currencyDropdown.isVisible({ timeout: 3000 }).catch(() => false)) {
     await currencyDropdown.scrollIntoViewIfNeeded();
     await currencyDropdown.click();
     await page.waitForTimeout(500);
-    
+
     // Select the first available currency option
     const options = page.locator('[role="option"]');
     const optionCount = await options.count();
-    
+
     if (optionCount > 0) {
       // Select first currency option (usually USD or similar)
       const selectedOption = options.first();
@@ -175,10 +185,15 @@ async function fillTokenPriceFields(page: Page): Promise<void> {
     }
   } else {
     // Try alternative selector
-    const altDropdown = page.locator('button:has-text("Select"), [role="combobox"]').filter({
-      has: page.locator('xpath=ancestor::*[contains(., "Reference Currency")]')
-    }).first();
-    
+    const altDropdown = page
+      .locator('button:has-text("Select"), [role="combobox"]')
+      .filter({
+        has: page.locator(
+          'xpath=ancestor::*[contains(., "Reference Currency")]',
+        ),
+      })
+      .first();
+
     if (await altDropdown.isVisible({ timeout: 2000 }).catch(() => false)) {
       await altDropdown.click();
       await page.waitForTimeout(500);
@@ -189,14 +204,14 @@ async function fillTokenPriceFields(page: Page): Promise<void> {
       console.log('⚠️ Could not find Reference Currency dropdown');
     }
   }
-  
+
   await page.waitForTimeout(500);
-  
+
   // Fill Token Price (must be greater than 0)
   console.log('💰 Entering Token Price...');
-  
+
   const tokenPriceInput = page.getByPlaceholder('Enter token price').first();
-  
+
   if (await tokenPriceInput.isVisible({ timeout: 3000 }).catch(() => false)) {
     await tokenPriceInput.scrollIntoViewIfNeeded();
     await tokenPriceInput.click();
@@ -207,7 +222,9 @@ async function fillTokenPriceFields(page: Page): Promise<void> {
     const tokenPriceLabel = page.locator('text="Token Price"').last();
     if (await tokenPriceLabel.isVisible({ timeout: 2000 }).catch(() => false)) {
       // Find the nearest input
-      const nearbyInput = page.locator('input[type="number"], input[inputmode="numeric"]').last();
+      const nearbyInput = page
+        .locator('input[type="number"], input[inputmode="numeric"]')
+        .last();
       if (await nearbyInput.isVisible({ timeout: 2000 }).catch(() => false)) {
         await nearbyInput.scrollIntoViewIfNeeded();
         await nearbyInput.click();
@@ -218,7 +235,7 @@ async function fillTokenPriceFields(page: Page): Promise<void> {
       }
     }
   }
-  
+
   await page.waitForTimeout(500);
 }
 
@@ -228,18 +245,21 @@ async function fillTokenPriceFields(page: Page): Promise<void> {
  */
 async function fillLimitedSupplyFields(page: Page): Promise<void> {
   console.log('📝 Filling Limited Supply fields...');
-  
+
   // Wait for the fields to appear
   await page.waitForTimeout(500);
-  
+
   // Fill Max Supply amount (must be greater than 0)
-  const maxSupplyInput = page.locator('input[type="number"]').filter({
-    has: page.locator('xpath=ancestor::*[contains(., "Max Supply")]')
-  }).first();
-  
+  const maxSupplyInput = page
+    .locator('input[type="number"]')
+    .filter({
+      has: page.locator('xpath=ancestor::*[contains(., "Max Supply")]'),
+    })
+    .first();
+
   // Try alternative selectors for the Max Supply input
   let inputFound = false;
-  
+
   // Method 1: Look for input near "Max Supply" label
   const maxSupplyLabel = page.locator('text="Max Supply"').first();
   if (await maxSupplyLabel.isVisible({ timeout: 2000 }).catch(() => false)) {
@@ -252,10 +272,12 @@ async function fillLimitedSupplyFields(page: Page): Promise<void> {
       console.log('✅ Max Supply set to 1000000');
     }
   }
-  
+
   // Method 2: Try finding by placeholder or nearby elements
   if (!inputFound) {
-    const numberInputs = page.locator('input[type="number"], input[inputmode="numeric"]');
+    const numberInputs = page.locator(
+      'input[type="number"], input[inputmode="numeric"]',
+    );
     const count = await numberInputs.count();
     for (let i = 0; i < count; i++) {
       const input = numberInputs.nth(i);
@@ -271,28 +293,32 @@ async function fillLimitedSupplyFields(page: Page): Promise<void> {
       }
     }
   }
-  
+
   if (!inputFound) {
     console.log('⚠️ Could not find Max Supply input');
   }
-  
+
   await page.waitForTimeout(500);
-  
+
   // Select Max Supply Type from dropdown
   console.log('🔽 Selecting Max Supply Type...');
-  
-  const maxSupplyTypeDropdown = page.locator('text="Select max supply type"').first();
-  
-  if (await maxSupplyTypeDropdown.isVisible({ timeout: 3000 }).catch(() => false)) {
+
+  const maxSupplyTypeDropdown = page
+    .locator('text="Select max supply type"')
+    .first();
+
+  if (
+    await maxSupplyTypeDropdown.isVisible({ timeout: 3000 }).catch(() => false)
+  ) {
     await maxSupplyTypeDropdown.scrollIntoViewIfNeeded();
     await maxSupplyTypeDropdown.click();
     await page.waitForTimeout(500);
-    
+
     // Select the first option (either "Forever Immutable" or "Updatable Over Time")
     // Let's randomly choose one
     const options = page.locator('[role="option"]');
     const optionCount = await options.count();
-    
+
     if (optionCount > 0) {
       // Randomly select one of the options
       const randomIndex = Math.floor(Math.random() * optionCount);
@@ -310,10 +336,13 @@ async function fillLimitedSupplyFields(page: Page): Promise<void> {
     }
   } else {
     // Try alternative: look for dropdown button with "Max Supply Type" nearby
-    const dropdownButton = page.locator('button:has-text("Select"), [role="combobox"]').filter({
-      has: page.locator('xpath=ancestor::*[contains(., "Max Supply Type")]')
-    }).first();
-    
+    const dropdownButton = page
+      .locator('button:has-text("Select"), [role="combobox"]')
+      .filter({
+        has: page.locator('xpath=ancestor::*[contains(., "Max Supply Type")]'),
+      })
+      .first();
+
     if (await dropdownButton.isVisible({ timeout: 2000 }).catch(() => false)) {
       await dropdownButton.click();
       await page.waitForTimeout(500);
@@ -324,7 +353,7 @@ async function fillLimitedSupplyFields(page: Page): Promise<void> {
       console.log('⚠️ Could not find Max Supply Type dropdown');
     }
   }
-  
+
   await page.waitForTimeout(500);
 }
 
@@ -337,13 +366,13 @@ async function fillLimitedSupplyFields(page: Page): Promise<void> {
 async function toggleSwitchByLabel(
   page: Page,
   label: string,
-  shouldBeEnabled: boolean
+  shouldBeEnabled: boolean,
 ): Promise<boolean> {
   try {
     // Find the switch/toggle associated with the label
     // The switch is usually a sibling or nearby element to the label
     const labelElement = page.locator(`text="${label}"`).first();
-    
+
     if (!(await labelElement.isVisible({ timeout: 3000 }).catch(() => false))) {
       console.log(`⚠️ Label not found: ${label}`);
       return false;
@@ -351,29 +380,53 @@ async function toggleSwitchByLabel(
 
     // Find the toggle switch - it's typically a button with role="switch" or a similar toggle element
     // Try multiple strategies to find the toggle
-    let toggleElement = page.locator(`button[role="switch"]`).filter({
-      has: page.locator('..').filter({ hasText: label })
-    }).first();
+    let toggleElement = page
+      .locator(`button[role="switch"]`)
+      .filter({
+        has: page.locator('..').filter({ hasText: label }),
+      })
+      .first();
 
     // Alternative: find toggle near the label
-    if (!(await toggleElement.isVisible({ timeout: 1000 }).catch(() => false))) {
+    if (
+      !(await toggleElement.isVisible({ timeout: 1000 }).catch(() => false))
+    ) {
       // Look for toggle in the same row/container as the label
-      const container = labelElement.locator('xpath=ancestor::div[contains(@class, "flex") or contains(@class, "row")]').first();
-      toggleElement = container.locator('button[role="switch"], [data-state], input[type="checkbox"]').first();
+      const container = labelElement
+        .locator(
+          'xpath=ancestor::div[contains(@class, "flex") or contains(@class, "row")]',
+        )
+        .first();
+      toggleElement = container
+        .locator('button[role="switch"], [data-state], input[type="checkbox"]')
+        .first();
     }
 
     // Another alternative: look for the toggle by finding elements with data-state attribute
-    if (!(await toggleElement.isVisible({ timeout: 1000 }).catch(() => false))) {
+    if (
+      !(await toggleElement.isVisible({ timeout: 1000 }).catch(() => false))
+    ) {
       // Find all switches and match by proximity to label
-      toggleElement = page.locator(`text="${label}" >> xpath=following::button[@role="switch"][1]`).first();
+      toggleElement = page
+        .locator(
+          `text="${label}" >> xpath=following::button[@role="switch"][1]`,
+        )
+        .first();
     }
 
     // Final fallback: look for any toggle element right after or near the label text
-    if (!(await toggleElement.isVisible({ timeout: 1000 }).catch(() => false))) {
-      toggleElement = page.locator(`text="${label}"`).locator('xpath=following::*[@role="switch" or @data-state][1]').first();
+    if (
+      !(await toggleElement.isVisible({ timeout: 1000 }).catch(() => false))
+    ) {
+      toggleElement = page
+        .locator(`text="${label}"`)
+        .locator('xpath=following::*[@role="switch" or @data-state][1]')
+        .first();
     }
 
-    if (!(await toggleElement.isVisible({ timeout: 2000 }).catch(() => false))) {
+    if (
+      !(await toggleElement.isVisible({ timeout: 2000 }).catch(() => false))
+    ) {
       console.log(`⚠️ Toggle not found for: ${label}`);
       return false;
     }
@@ -388,7 +441,7 @@ async function toggleSwitchByLabel(
       await page.waitForTimeout(200);
       await toggleElement.click();
       await page.waitForTimeout(500);
-      
+
       const newState = await toggleElement.getAttribute('data-state');
       console.log(`🔄 Toggled "${label}": ${currentState} → ${newState}`);
     } else {
@@ -445,7 +498,9 @@ test.describe('Issue New Token with Random Advanced Settings on Production', () 
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     let randomLetters = '';
     for (let i = 0; i < 4; i++) {
-      randomLetters += letters.charAt(Math.floor(Math.random() * letters.length));
+      randomLetters += letters.charAt(
+        Math.floor(Math.random() * letters.length),
+      );
     }
     // Token name: letters only, no numbers
     const tokenName = `Test Token ${randomLetters}`;
@@ -488,12 +543,14 @@ test.describe('Issue New Token with Random Advanced Settings on Production', () 
 
     // Click on the "qa testing" space
     console.log('🔘 Looking for "QA TESTING" space...');
-    const qaTestingSpace = page.locator('a[href*="/dho/"]', { hasText: /qa testing/i });
+    const qaTestingSpace = page.locator('a[href*="/dho/"]', {
+      hasText: /qa testing/i,
+    });
     await expect(qaTestingSpace).toBeVisible({ timeout: 10000 });
-    
+
     const spaceName = await qaTestingSpace.textContent();
     console.log(`📍 Selected space: ${spaceName}`);
-    
+
     await qaTestingSpace.click();
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
@@ -501,24 +558,34 @@ test.describe('Issue New Token with Random Advanced Settings on Production', () 
     // Click on Space Settings (gear icon or settings link)
     console.log('⚙️ Opening Space Settings...');
     // Try to find settings button/link - could be a gear icon or "Settings" text
-    const settingsButton = page.locator('a[href*="/settings"], button:has-text("Settings"), [aria-label*="settings"], [aria-label*="Settings"]').first();
-    
+    const settingsButton = page
+      .locator(
+        'a[href*="/settings"], button:has-text("Settings"), [aria-label*="settings"], [aria-label*="Settings"]',
+      )
+      .first();
+
     if (await settingsButton.isVisible({ timeout: 5000 }).catch(() => false)) {
       await settingsButton.click();
     } else {
       // Try clicking on a gear/cog icon
-      const gearIcon = page.locator('svg[class*="gear"], svg[class*="cog"], [data-testid="settings"]').first();
+      const gearIcon = page
+        .locator(
+          'svg[class*="gear"], svg[class*="cog"], [data-testid="settings"]',
+        )
+        .first();
       if (await gearIcon.isVisible({ timeout: 3000 }).catch(() => false)) {
         await gearIcon.click();
       } else {
         // Navigate directly to settings URL
         const currentUrl = page.url();
-        const settingsUrl = currentUrl.replace('/overview', '/settings').replace(/\/$/, '') + '/settings';
+        const settingsUrl =
+          currentUrl.replace('/overview', '/settings').replace(/\/$/, '') +
+          '/settings';
         console.log(`📍 Navigating directly to: ${settingsUrl}`);
         await page.goto(settingsUrl);
       }
     }
-    
+
     await page.waitForTimeout(2000);
     console.log('✅ Space Settings clicked');
 
@@ -536,28 +603,36 @@ test.describe('Issue New Token with Random Advanced Settings on Production', () 
 
     // Scroll down within the settings panel to find "Issue new token"
     console.log('📜 Scrolling within the settings panel...');
-    
+
     // Find the scrollable container - it's likely the panel that contains "Space Settings"
     // Look for scrollable elements in the right side panel
-    const scrollableContainers = page.locator('[data-radix-scroll-area-viewport], [class*="overflow-auto"], [class*="overflow-y"], [style*="overflow"]');
-    
+    const scrollableContainers = page.locator(
+      '[data-radix-scroll-area-viewport], [class*="overflow-auto"], [class*="overflow-y"], [style*="overflow"]',
+    );
+
     // Scroll multiple times to find Issue new token
     for (let i = 0; i < 5; i++) {
       // Check if Issue new token is visible
-      const issueTokenVisible = await page.locator('text=Issue New Token').isVisible().catch(() => false);
+      const issueTokenVisible = await page
+        .locator('text=Issue New Token')
+        .isVisible()
+        .catch(() => false);
       if (issueTokenVisible) {
         console.log('✅ Found "Issue New Token" button');
         break;
       }
-      
+
       // Try scrolling each scrollable container
       const count = await scrollableContainers.count();
       for (let j = 0; j < count; j++) {
-        await scrollableContainers.nth(j).evaluate((el) => {
-          el.scrollTop += 200;
-        }).catch(() => {});
+        await scrollableContainers
+          .nth(j)
+          .evaluate((el) => {
+            el.scrollTop += 200;
+          })
+          .catch(() => {});
       }
-      
+
       await page.waitForTimeout(500);
       console.log(`📜 Scroll attempt ${i + 1}...`);
     }
@@ -569,12 +644,16 @@ test.describe('Issue New Token with Random Advanced Settings on Production', () 
     });
 
     // Find and click Issue New Token - it's the one with "Create a new token for utility" description
-    console.log('🔍 Looking for "Issue New Token" (with utility description)...');
-    
+    console.log(
+      '🔍 Looking for "Issue New Token" (with utility description)...',
+    );
+
     // Use the unique description text to find the right card
     // "Create a new token for utility, ownership, impact, cash credits, or voice within your space."
-    const issueTokenCard = page.locator('text=Create a new token for utility').first();
-    
+    const issueTokenCard = page
+      .locator('text=Create a new token for utility')
+      .first();
+
     await expect(issueTokenCard).toBeVisible({ timeout: 10000 });
     console.log('🔘 Clicking "Issue New Token" card...');
     await issueTokenCard.click({ force: true });
@@ -603,7 +682,9 @@ test.describe('Issue New Token with Random Advanced Settings on Production', () 
     await descriptionEditor.scrollIntoViewIfNeeded();
     await descriptionEditor.click();
     await page.waitForTimeout(300);
-    await page.keyboard.type(`Creating a new token with ADVANCED SETTINGS: ${tokenName} (${tokenSymbol}). This is a test token created by E2E automation with randomized advanced settings.`);
+    await page.keyboard.type(
+      `Creating a new token with ADVANCED SETTINGS: ${tokenName} (${tokenSymbol}). This is a test token created by E2E automation with randomized advanced settings.`,
+    );
     console.log('✅ Description entered');
 
     // 3. Scroll down to General section
@@ -643,7 +724,10 @@ test.describe('Issue New Token with Random Advanced Settings on Production', () 
     const tokenIconInput = page.locator('input[type="file"]').last();
     // Create a simple test image for the icon
     const iconBuffer = createTestImageBuffer();
-    const iconPath = path.join(process.cwd(), `test-results-production/test-token-advanced-icon-${timestamp}.png`);
+    const iconPath = path.join(
+      process.cwd(),
+      `test-results-production/test-token-advanced-icon-${timestamp}.png`,
+    );
     fs.writeFileSync(iconPath, iconBuffer);
     await tokenIconInput.setInputFiles(iconPath);
     await page.waitForTimeout(1000);
@@ -659,15 +743,21 @@ test.describe('Issue New Token with Random Advanced Settings on Production', () 
     // ADVANCED SETTINGS SECTION
     // ========================================
     console.log('');
-    console.log('🎛️ ═══════════════════════════════════════════════════════════');
+    console.log(
+      '🎛️ ═══════════════════════════════════════════════════════════',
+    );
     console.log('🎛️  CONFIGURING ADVANCED TOKEN SETTINGS (RANDOMIZED)');
-    console.log('🎛️ ═══════════════════════════════════════════════════════════');
+    console.log(
+      '🎛️ ═══════════════════════════════════════════════════════════',
+    );
     console.log('');
 
     // Scroll down to find Advanced Token Settings section
     console.log('📜 Scrolling to Advanced Token Settings section...');
-    
-    const advancedSection = page.locator('text=Advanced Token Settings').first();
+
+    const advancedSection = page
+      .locator('text=Advanced Token Settings')
+      .first();
     await advancedSection.scrollIntoViewIfNeeded();
     await page.waitForTimeout(500);
 
@@ -679,14 +769,19 @@ test.describe('Issue New Token with Random Advanced Settings on Production', () 
 
     // 8. Enable Advanced Settings toggle (REQUIRED to show the other settings)
     console.log('🔓 Enabling Advanced Settings toggle...');
-    
+
     // Find and click the "Enable Advanced Settings" toggle
-    const enableAdvancedToggle = page.locator('text="Enable Advanced Settings"').locator('xpath=following::*[@role="switch" or @data-state][1]').first();
-    
+    const enableAdvancedToggle = page
+      .locator('text="Enable Advanced Settings"')
+      .locator('xpath=following::*[@role="switch" or @data-state][1]')
+      .first();
+
     // Alternative selectors if the first doesn't work
     let advancedToggleFound = false;
-    
-    if (await enableAdvancedToggle.isVisible({ timeout: 2000 }).catch(() => false)) {
+
+    if (
+      await enableAdvancedToggle.isVisible({ timeout: 2000 }).catch(() => false)
+    ) {
       await enableAdvancedToggle.scrollIntoViewIfNeeded();
       await page.waitForTimeout(200);
       await enableAdvancedToggle.click();
@@ -694,18 +789,28 @@ test.describe('Issue New Token with Random Advanced Settings on Production', () 
       console.log('✅ Advanced Settings enabled (method 1)');
     } else {
       // Try finding by looking for any switch after "Enable Advanced Settings" text
-      const advancedToggleAlt = page.locator('button[role="switch"]').filter({
-        hasNot: page.locator('[data-state="checked"]')
-      }).first();
-      
+      const advancedToggleAlt = page
+        .locator('button[role="switch"]')
+        .filter({
+          hasNot: page.locator('[data-state="checked"]'),
+        })
+        .first();
+
       // Find the container with "Enable Advanced Settings" and get its switch
-      const advancedContainer = page.locator('div:has-text("Enable Advanced Settings")').filter({
-        has: page.locator('button[role="switch"]')
-      }).last();
-      
-      const toggleInContainer = advancedContainer.locator('button[role="switch"]').first();
-      
-      if (await toggleInContainer.isVisible({ timeout: 2000 }).catch(() => false)) {
+      const advancedContainer = page
+        .locator('div:has-text("Enable Advanced Settings")')
+        .filter({
+          has: page.locator('button[role="switch"]'),
+        })
+        .last();
+
+      const toggleInContainer = advancedContainer
+        .locator('button[role="switch"]')
+        .first();
+
+      if (
+        await toggleInContainer.isVisible({ timeout: 2000 }).catch(() => false)
+      ) {
         await toggleInContainer.scrollIntoViewIfNeeded();
         await page.waitForTimeout(200);
         await toggleInContainer.click();
@@ -717,13 +822,16 @@ test.describe('Issue New Token with Random Advanced Settings on Production', () 
     if (!advancedToggleFound) {
       // Last resort: click any unchecked switch near "Enable Advanced Settings"
       await page.evaluate(() => {
-        const text = Array.from(document.querySelectorAll('*')).find(el => 
-          el.textContent?.includes('Enable Advanced Settings') && 
-          !el.querySelector('*')
+        const text = Array.from(document.querySelectorAll('*')).find(
+          (el) =>
+            el.textContent?.includes('Enable Advanced Settings') &&
+            !el.querySelector('*'),
         );
         if (text) {
           const parent = text.closest('div');
-          const toggle = parent?.querySelector('button[role="switch"]') as HTMLElement;
+          const toggle = parent?.querySelector(
+            'button[role="switch"]',
+          ) as HTMLElement;
           if (toggle) toggle.click();
         }
       });
@@ -742,29 +850,41 @@ test.describe('Issue New Token with Random Advanced Settings on Production', () 
     // 9. Configure each advanced setting based on the random configuration
     console.log('');
     console.log('🎲 Applying randomized settings...');
-    
+
     // Scroll down to see all advanced settings
     const tokenSupplySection = page.locator('text=Token Supply').first();
-    if (await tokenSupplySection.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (
+      await tokenSupplySection.isVisible({ timeout: 2000 }).catch(() => false)
+    ) {
       await tokenSupplySection.scrollIntoViewIfNeeded();
     }
     await page.waitForTimeout(500);
 
     // Apply each setting
     for (const setting of advancedSettings) {
-      console.log(`🔧 Setting: ${setting.name} → ${setting.enabled ? 'ON' : 'OFF'}`);
-      const toggled = await toggleSwitchByLabel(page, setting.label, setting.enabled);
-      
+      console.log(
+        `🔧 Setting: ${setting.name} → ${setting.enabled ? 'ON' : 'OFF'}`,
+      );
+      const toggled = await toggleSwitchByLabel(
+        page,
+        setting.label,
+        setting.enabled,
+      );
+
       // If "Enable Limited Supply" is turned ON, fill in the required fields
-      if (setting.name === 'Enable Limited Supply' && setting.enabled && toggled) {
+      if (
+        setting.name === 'Enable Limited Supply' &&
+        setting.enabled &&
+        toggled
+      ) {
         await fillLimitedSupplyFields(page);
       }
-      
+
       // If "Enable Token Price" is turned ON, fill in the required fields
       if (setting.name === 'Enable Token Price' && setting.enabled && toggled) {
         await fillTokenPriceFields(page);
       }
-      
+
       await page.waitForTimeout(300);
     }
 
@@ -783,17 +903,21 @@ test.describe('Issue New Token with Random Advanced Settings on Production', () 
 
     // Find and click the submit/create button
     console.log('🔍 Looking for Publish button...');
-    const submitButton = page.locator('button:has-text("Publish"), button:has-text("Create"), button:has-text("Submit"), button:has-text("Issue"), button[type="submit"]').last();
-    
+    const submitButton = page
+      .locator(
+        'button:has-text("Publish"), button:has-text("Create"), button:has-text("Submit"), button:has-text("Issue"), button[type="submit"]',
+      )
+      .last();
+
     await submitButton.scrollIntoViewIfNeeded();
     await page.waitForTimeout(500);
-    
+
     await expect(submitButton).toBeVisible();
     await expect(submitButton).toBeEnabled();
 
     console.log('📝 Form filled with advanced settings, clicking Publish...');
     await submitButton.click();
-    
+
     console.log('✅ Publish button clicked!');
 
     // Wait for submission to complete
@@ -819,12 +943,18 @@ test.describe('Issue New Token with Random Advanced Settings on Production', () 
     // Check if any loading indicator is visible and wait for it to disappear
     for (const selector of loadingSelectors) {
       const loadingElement = page.locator(selector).first();
-      if (await loadingElement.isVisible({ timeout: 1000 }).catch(() => false)) {
-        console.log(`🔄 Loading detected (${selector}), waiting for completion...`);
+      if (
+        await loadingElement.isVisible({ timeout: 1000 }).catch(() => false)
+      ) {
+        console.log(
+          `🔄 Loading detected (${selector}), waiting for completion...`,
+        );
         // Wait for this loading indicator to disappear (up to 2 minutes)
-        await loadingElement.waitFor({ state: 'hidden', timeout: 120000 }).catch(() => {
-          console.log('⚠️ Loading indicator still visible after timeout');
-        });
+        await loadingElement
+          .waitFor({ state: 'hidden', timeout: 120000 })
+          .catch(() => {
+            console.log('⚠️ Loading indicator still visible after timeout');
+          });
         console.log('✅ Loading completed');
         break;
       }
@@ -845,7 +975,9 @@ test.describe('Issue New Token with Random Advanced Settings on Production', () 
       await Promise.race([
         page.waitForSelector('text=/success/i', { timeout: 30000 }),
         page.waitForSelector('text=/created/i', { timeout: 30000 }),
-        page.waitForURL((url) => !url.pathname.includes('/create'), { timeout: 30000 }),
+        page.waitForURL((url) => !url.pathname.includes('/create'), {
+          timeout: 30000,
+        }),
       ]);
       console.log('✅ Token creation appears to have succeeded!');
     } catch {
@@ -853,7 +985,7 @@ test.describe('Issue New Token with Random Advanced Settings on Production', () 
         path: `test-results-production/token-advanced-error-${timestamp}.png`,
         fullPage: true,
       });
-      
+
       // Check for error messages
       const errorMessages = await page
         .locator('[data-slot="form-message"], [role="alert"], text=/error/i')
@@ -867,7 +999,7 @@ test.describe('Issue New Token with Random Advanced Settings on Production', () 
           `Token creation failed with error: ${realErrors.join(', ')}`,
         );
       }
-      
+
       console.log('⚠️ Could not confirm token creation - check manually');
     }
 
@@ -913,4 +1045,3 @@ test.describe('Issue New Token with Random Advanced Settings on Production', () 
     console.log('');
   });
 });
-

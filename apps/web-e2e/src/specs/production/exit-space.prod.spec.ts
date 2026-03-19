@@ -126,13 +126,20 @@ async function createNewSpace(page: Page): Promise<string> {
   const timestamp = Date.now();
   const randomSuffix = Math.random().toString(36).substring(2, 6);
   const spaceName = `E2E Exit ${timestamp}${randomSuffix}`;
-  const spaceDescription = 'Space created for exit test. Will be exited immediately.';
+  const spaceDescription =
+    'Space created for exit test. Will be exited immediately.';
 
   console.log('');
-  console.log('╔════════════════════════════════════════════════════════════════╗');
-  console.log('║  🚀 STEP 1: CREATING NEW SPACE TO EXIT                         ║');
+  console.log(
+    '╔════════════════════════════════════════════════════════════════╗',
+  );
+  console.log(
+    '║  🚀 STEP 1: CREATING NEW SPACE TO EXIT                         ║',
+  );
   console.log(`║  Name: ${spaceName.padEnd(52)}║`);
-  console.log('╚════════════════════════════════════════════════════════════════╝');
+  console.log(
+    '╚════════════════════════════════════════════════════════════════╝',
+  );
   console.log('');
 
   // Navigate to my-spaces
@@ -141,7 +148,9 @@ async function createNewSpace(page: Page): Promise<string> {
   await page.waitForTimeout(2000);
 
   // Click "Create Space" button
-  const createSpaceButton = page.getByRole('link', { name: /create space/i }).first();
+  const createSpaceButton = page
+    .getByRole('link', { name: /create space/i })
+    .first();
   await expect(createSpaceButton).toBeVisible({ timeout: 10000 });
   await createSpaceButton.click();
 
@@ -151,9 +160,15 @@ async function createNewSpace(page: Page): Promise<string> {
   // Create test images for upload (logo and banner)
   const logoImageBuffer = createTestImageBuffer();
   const bannerImageBuffer = createTestImageBuffer();
-  
-  const logoPath = path.join(process.cwd(), `test-results-production/test-logo-exit-${timestamp}.png`);
-  const bannerPath = path.join(process.cwd(), `test-results-production/test-banner-exit-${timestamp}.png`);
+
+  const logoPath = path.join(
+    process.cwd(),
+    `test-results-production/test-logo-exit-${timestamp}.png`,
+  );
+  const bannerPath = path.join(
+    process.cwd(),
+    `test-results-production/test-banner-exit-${timestamp}.png`,
+  );
 
   // Ensure directory exists
   fs.mkdirSync(path.dirname(logoPath), { recursive: true });
@@ -193,7 +208,9 @@ async function createNewSpace(page: Page): Promise<string> {
   await page.waitForTimeout(1500);
 
   // Check if slug already exists
-  const slugErrorMessage = page.locator('text=/a space with this name already exists/i');
+  const slugErrorMessage = page.locator(
+    'text=/a space with this name already exists/i',
+  );
   if (await slugErrorMessage.isVisible().catch(() => false)) {
     console.log('⚠️ Slug already exists, adding extra randomness...');
     const extraSuffix = Math.random().toString(36).substring(2, 8);
@@ -204,7 +221,9 @@ async function createNewSpace(page: Page): Promise<string> {
   }
 
   // Fill in the description
-  const descriptionInput = page.getByPlaceholder(/type your space purpose here/i);
+  const descriptionInput = page.getByPlaceholder(
+    /type your space purpose here/i,
+  );
   await descriptionInput.waitFor({ state: 'visible', timeout: 5000 });
   await descriptionInput.fill(spaceDescription);
 
@@ -224,11 +243,15 @@ async function createNewSpace(page: Page): Promise<string> {
   console.log('📝 Form filled, submitting...');
   await submitButton.click();
 
-  console.log('⏳ Waiting for space creation (this may take up to 2 minutes)...');
+  console.log(
+    '⏳ Waiting for space creation (this may take up to 2 minutes)...',
+  );
 
   // Wait for navigation to the new space
   try {
-    await page.waitForURL(/\/dho\/[^/]+\/(overview|agreements)/, { timeout: 120000 });
+    await page.waitForURL(/\/dho\/[^/]+\/(overview|agreements)/, {
+      timeout: 120000,
+    });
     console.log('✅ Navigation to new space detected!');
   } catch {
     await page.screenshot({
@@ -301,9 +324,15 @@ test.describe('Exit Space on Production', () => {
     // STEP 2: NAVIGATE TO MY SPACES
     // ========================================
     console.log('');
-    console.log('╔════════════════════════════════════════════════════════════════╗');
-    console.log('║  📍 STEP 2: NAVIGATING TO MY SPACES                            ║');
-    console.log('╚════════════════════════════════════════════════════════════════╝');
+    console.log(
+      '╔════════════════════════════════════════════════════════════════╗',
+    );
+    console.log(
+      '║  📍 STEP 2: NAVIGATING TO MY SPACES                            ║',
+    );
+    console.log(
+      '╚════════════════════════════════════════════════════════════════╝',
+    );
     console.log('');
 
     await page.goto('/en/my-spaces');
@@ -321,15 +350,23 @@ test.describe('Exit Space on Production', () => {
     // STEP 3: FIND THE CREATED SPACE
     // ========================================
     console.log('');
-    console.log('╔════════════════════════════════════════════════════════════════╗');
-    console.log('║  🔍 STEP 3: FINDING THE CREATED SPACE                          ║');
-    console.log(`║  Looking for: ${createdSpaceName.substring(0, 45).padEnd(45)}║`);
-    console.log('╚════════════════════════════════════════════════════════════════╝');
+    console.log(
+      '╔════════════════════════════════════════════════════════════════╗',
+    );
+    console.log(
+      '║  🔍 STEP 3: FINDING THE CREATED SPACE                          ║',
+    );
+    console.log(
+      `║  Looking for: ${createdSpaceName.substring(0, 45).padEnd(45)}║`,
+    );
+    console.log(
+      '╚════════════════════════════════════════════════════════════════╝',
+    );
     console.log('');
 
     // Find the space card by name
     const spaceCard = page.locator(`text="${createdSpaceName}"`).first();
-    
+
     if (await spaceCard.isVisible({ timeout: 10000 }).catch(() => false)) {
       console.log('✅ Found the created space');
       await spaceCard.scrollIntoViewIfNeeded();
@@ -350,22 +387,35 @@ test.describe('Exit Space on Production', () => {
     // STEP 4: HOVER TO REVEAL EXIT BUTTON
     // ========================================
     console.log('');
-    console.log('╔════════════════════════════════════════════════════════════════╗');
-    console.log('║  🖱️  STEP 4: HOVERING TO REVEAL EXIT BUTTON                    ║');
-    console.log('╚════════════════════════════════════════════════════════════════╝');
+    console.log(
+      '╔════════════════════════════════════════════════════════════════╗',
+    );
+    console.log(
+      '║  🖱️  STEP 4: HOVERING TO REVEAL EXIT BUTTON                    ║',
+    );
+    console.log(
+      '╚════════════════════════════════════════════════════════════════╝',
+    );
     console.log('');
 
     // Find the space card container (the parent card element)
     // The card contains the space name and has the exit button
-    const spaceCardContainer = page.locator(`[class*="card"], [class*="Card"]`).filter({ hasText: createdSpaceName }).first();
-    
+    const spaceCardContainer = page
+      .locator(`[class*="card"], [class*="Card"]`)
+      .filter({ hasText: createdSpaceName })
+      .first();
+
     // Alternative: find by looking for a link/article containing the space name
     let cardToHover = spaceCardContainer;
     if (!(await cardToHover.isVisible({ timeout: 3000 }).catch(() => false))) {
       // Try finding by the space name text and going up to the card
-      cardToHover = page.locator(`a:has-text("${createdSpaceName}"), article:has-text("${createdSpaceName}"), div:has-text("${createdSpaceName}")`).first();
+      cardToHover = page
+        .locator(
+          `a:has-text("${createdSpaceName}"), article:has-text("${createdSpaceName}"), div:has-text("${createdSpaceName}")`,
+        )
+        .first();
     }
-    
+
     // Hover over the card to reveal the exit button
     console.log('🖱️ Hovering over space card...');
     await cardToHover.hover();
@@ -381,14 +431,24 @@ test.describe('Exit Space on Production', () => {
     // STEP 5: CLICK EXIT SPACE BUTTON
     // ========================================
     console.log('');
-    console.log('╔════════════════════════════════════════════════════════════════╗');
-    console.log('║  🚪 STEP 5: CLICKING EXIT SPACE BUTTON                         ║');
-    console.log('╚════════════════════════════════════════════════════════════════╝');
+    console.log(
+      '╔════════════════════════════════════════════════════════════════╗',
+    );
+    console.log(
+      '║  🚪 STEP 5: CLICKING EXIT SPACE BUTTON                         ║',
+    );
+    console.log(
+      '╚════════════════════════════════════════════════════════════════╝',
+    );
     console.log('');
 
     // Find and click the "Exit Space" button
-    const exitButton = page.locator('button:has-text("Exit Space"), [aria-label="Exit Space"], button[title="Exit Space"]').first();
-    
+    const exitButton = page
+      .locator(
+        'button:has-text("Exit Space"), [aria-label="Exit Space"], button[title="Exit Space"]',
+      )
+      .first();
+
     if (await exitButton.isVisible({ timeout: 5000 }).catch(() => false)) {
       console.log('🚪 Found Exit Space button, clicking...');
       await exitButton.click();
@@ -396,7 +456,9 @@ test.describe('Exit Space on Production', () => {
       console.log('✅ Exit Space button clicked');
     } else {
       // Try finding by icon or other attributes
-      const exitIcon = page.locator('[data-testid="exit-space"], svg[class*="exit"]').first();
+      const exitIcon = page
+        .locator('[data-testid="exit-space"], svg[class*="exit"]')
+        .first();
       if (await exitIcon.isVisible({ timeout: 3000 }).catch(() => false)) {
         await exitIcon.click();
         await page.waitForTimeout(1000);
@@ -404,7 +466,9 @@ test.describe('Exit Space on Production', () => {
       } else {
         // Try finding button with exit icon in the card area
         const cardExitButton = cardToHover.locator('button').first();
-        if (await cardExitButton.isVisible({ timeout: 3000 }).catch(() => false)) {
+        if (
+          await cardExitButton.isVisible({ timeout: 3000 }).catch(() => false)
+        ) {
           await cardExitButton.click();
           await page.waitForTimeout(1000);
           console.log('✅ Card button clicked');
@@ -424,14 +488,24 @@ test.describe('Exit Space on Production', () => {
     // STEP 6: CONFIRM EXIT
     // ========================================
     console.log('');
-    console.log('╔════════════════════════════════════════════════════════════════╗');
-    console.log('║  ✅ STEP 6: CONFIRMING EXIT                                    ║');
-    console.log('╚════════════════════════════════════════════════════════════════╝');
+    console.log(
+      '╔════════════════════════════════════════════════════════════════╗',
+    );
+    console.log(
+      '║  ✅ STEP 6: CONFIRMING EXIT                                    ║',
+    );
+    console.log(
+      '╚════════════════════════════════════════════════════════════════╝',
+    );
     console.log('');
 
     // Look for confirmation dialog and confirm button
-    const confirmButton = page.locator('button:has-text("Confirm"), button:has-text("Yes"), button:has-text("Exit"), button:has-text("Leave")').last();
-    
+    const confirmButton = page
+      .locator(
+        'button:has-text("Confirm"), button:has-text("Yes"), button:has-text("Exit"), button:has-text("Leave")',
+      )
+      .last();
+
     if (await confirmButton.isVisible({ timeout: 5000 }).catch(() => false)) {
       console.log('📝 Found confirmation button, clicking...');
       await confirmButton.click();
@@ -457,8 +531,11 @@ test.describe('Exit Space on Production', () => {
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
 
-    const spaceStillExists = await page.locator(`text="${createdSpaceName}"`).isVisible({ timeout: 5000 }).catch(() => false);
-    
+    const spaceStillExists = await page
+      .locator(`text="${createdSpaceName}"`)
+      .isVisible({ timeout: 5000 })
+      .catch(() => false);
+
     if (!spaceStillExists) {
       console.log('✅ Space no longer appears in My Spaces - exit successful!');
     } else {
@@ -467,17 +544,33 @@ test.describe('Exit Space on Production', () => {
 
     // Log the result
     console.log('');
-    console.log('╔════════════════════════════════════════════════════════════════╗');
-    console.log('║  ✅ EXIT SPACE TEST COMPLETED                                  ║');
-    console.log('║                                                                ║');
-    console.log('║  📝 Summary:                                                   ║');
-    console.log(`║    🆕 Created Space: ${createdSpaceName.substring(0, 40).padEnd(40)}║`);
-    console.log('║    🚪 Exited the space successfully                            ║');
-    console.log('║                                                                ║');
-    console.log('║  ⚠️  The space has been exited on production!                  ║');
-    console.log('╚════════════════════════════════════════════════════════════════╝');
+    console.log(
+      '╔════════════════════════════════════════════════════════════════╗',
+    );
+    console.log(
+      '║  ✅ EXIT SPACE TEST COMPLETED                                  ║',
+    );
+    console.log(
+      '║                                                                ║',
+    );
+    console.log(
+      '║  📝 Summary:                                                   ║',
+    );
+    console.log(
+      `║    🆕 Created Space: ${createdSpaceName.substring(0, 40).padEnd(40)}║`,
+    );
+    console.log(
+      '║    🚪 Exited the space successfully                            ║',
+    );
+    console.log(
+      '║                                                                ║',
+    );
+    console.log(
+      '║  ⚠️  The space has been exited on production!                  ║',
+    );
+    console.log(
+      '╚════════════════════════════════════════════════════════════════╝',
+    );
     console.log('');
   });
 });
-
-

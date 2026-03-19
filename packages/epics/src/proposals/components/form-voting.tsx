@@ -288,7 +288,10 @@ export const FormVoting = ({
   const isAcceptDisabled = isDisabled || voteText === 'yes';
 
   return (
-    <div data-testid="voting-form" className="flex flex-col gap-7 text-neutral-11">
+    <div
+      data-testid="voting-form"
+      className="flex flex-col gap-7 text-neutral-11"
+    >
       <VoterList documentSlug={documentSlug} />
       <div className="flex flex-col gap-6">
         <Skeleton

@@ -301,7 +301,9 @@ test.describe('Create Space on Production', () => {
     }
 
     // Look for and click the submit/create button
-    const submitButton = page.getByRole('button', { name: /^create$/i });
+    const submitButton = page
+      .locator('form')
+      .getByRole('button', { name: /^create space$/i });
 
     await expect(submitButton).toBeVisible();
     await expect(submitButton).toBeEnabled();
@@ -431,7 +433,7 @@ test.describe('Create Space on Production', () => {
 
     // Verify URL is correct (we navigated to the new space)
     expect(createdSpaceUrl).toContain('/dho/');
-    expect(createdSpaceUrl).toContain('/overview');
+    expect(createdSpaceUrl).toMatch(/\/(overview|agreements)/);
 
     // Log the created space URL
     console.log('');

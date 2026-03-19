@@ -185,36 +185,48 @@ test.describe('Create Nested Space on Production', () => {
 
     // Click on the "qa testing" space
     console.log('🔘 Looking for "QA TESTING" space...');
-    const qaTestingSpace = page.locator('a[href*="/dho/"]', { hasText: /qa testing/i });
+    const qaTestingSpace = page.locator('a[href*="/dho/"]', {
+      hasText: /qa testing/i,
+    });
     await expect(qaTestingSpace).toBeVisible({ timeout: 10000 });
-    
+
     const parentSpaceName = await qaTestingSpace.textContent();
     console.log(`📍 Selected parent space: ${parentSpaceName}`);
-    
+
     await qaTestingSpace.click();
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
 
     // Click on Space Settings
     console.log('⚙️ Opening Space Settings...');
-    const settingsButton = page.locator('a[href*="/settings"], button:has-text("Settings"), [aria-label*="settings"], [aria-label*="Settings"]').first();
-    
+    const settingsButton = page
+      .locator(
+        'a[href*="/settings"], button:has-text("Settings"), [aria-label*="settings"], [aria-label*="Settings"]',
+      )
+      .first();
+
     if (await settingsButton.isVisible({ timeout: 5000 }).catch(() => false)) {
       await settingsButton.click();
     } else {
       // Try clicking on a gear/cog icon
-      const gearIcon = page.locator('svg[class*="gear"], svg[class*="cog"], [data-testid="settings"]').first();
+      const gearIcon = page
+        .locator(
+          'svg[class*="gear"], svg[class*="cog"], [data-testid="settings"]',
+        )
+        .first();
       if (await gearIcon.isVisible({ timeout: 3000 }).catch(() => false)) {
         await gearIcon.click();
       } else {
         // Navigate directly to settings URL
         const currentUrl = page.url();
-        const settingsUrl = currentUrl.replace('/overview', '/settings').replace(/\/$/, '') + '/settings';
+        const settingsUrl =
+          currentUrl.replace('/overview', '/settings').replace(/\/$/, '') +
+          '/settings';
         console.log(`📍 Navigating directly to: ${settingsUrl}`);
         await page.goto(settingsUrl);
       }
     }
-    
+
     await page.waitForTimeout(2000);
     console.log('✅ Space Settings clicked');
 
@@ -232,19 +244,26 @@ test.describe('Create Nested Space on Production', () => {
 
     // Click on "Add Space" - it's the second option in the settings menu
     console.log('🔍 Looking for "Add Space" option...');
-    
+
     // Try to find "Add Space" option - it should be visible without scrolling as it's the second option
     const addSpaceOption = page.locator('text=Add Space').first();
-    
+
     // If not visible, try scrolling within the settings panel
-    if (!(await addSpaceOption.isVisible({ timeout: 2000 }).catch(() => false))) {
+    if (
+      !(await addSpaceOption.isVisible({ timeout: 2000 }).catch(() => false))
+    ) {
       console.log('📜 Scrolling to find "Add Space"...');
-      const scrollableContainers = page.locator('[data-radix-scroll-area-viewport], [class*="overflow-auto"], [class*="overflow-y"]');
+      const scrollableContainers = page.locator(
+        '[data-radix-scroll-area-viewport], [class*="overflow-auto"], [class*="overflow-y"]',
+      );
       const count = await scrollableContainers.count();
       for (let j = 0; j < count; j++) {
-        await scrollableContainers.nth(j).evaluate((el) => {
-          el.scrollTop = 0; // Scroll to top first
-        }).catch(() => {});
+        await scrollableContainers
+          .nth(j)
+          .evaluate((el) => {
+            el.scrollTop = 0; // Scroll to top first
+          })
+          .catch(() => {});
       }
       await page.waitForTimeout(500);
     }
@@ -288,8 +307,8 @@ test.describe('Create Nested Space on Production', () => {
     // Upload logo image (avatar) - it's the first file input in the form
     const fileInputs = page.locator('input[type="file"]');
     const logoInput = fileInputs.first();
-    
-    if (await logoInput.count() > 0) {
+
+    if ((await logoInput.count()) > 0) {
       await logoInput.setInputFiles(logoPath);
       await page.waitForTimeout(500); // Allow image to process
     }
@@ -298,7 +317,7 @@ test.describe('Create Nested Space on Production', () => {
 
     // Upload banner/lead image - it's the second file input
     const bannerInput = fileInputs.nth(1);
-    if (await bannerInput.count() > 0) {
+    if ((await bannerInput.count()) > 0) {
       await bannerInput.setInputFiles(bannerPath);
       await page.waitForTimeout(500);
     }
@@ -344,19 +363,26 @@ test.describe('Create Nested Space on Production', () => {
 
     // Select a random tag
     console.log('🏷️ Selecting a random tag...');
-    const tagSelector = page.locator('text=Select a tag, text=Select tag, button:has-text("tag"), [placeholder*="tag"]').first();
-    
+    const tagSelector = page
+      .locator(
+        'text=Select a tag, text=Select tag, button:has-text("tag"), [placeholder*="tag"]',
+      )
+      .first();
+
     // Try to find the tag dropdown - it might be labeled differently
-    const tagDropdown = page.locator('button:has-text("Select"), [role="combobox"]').filter({ hasText: /tag/i }).first();
-    
+    const tagDropdown = page
+      .locator('button:has-text("Select"), [role="combobox"]')
+      .filter({ hasText: /tag/i })
+      .first();
+
     if (await tagDropdown.isVisible({ timeout: 3000 }).catch(() => false)) {
       await tagDropdown.click();
       await page.waitForTimeout(500);
-      
+
       // Get all available tag options
       const tagOptions = page.locator('[role="option"]');
       const tagCount = await tagOptions.count();
-      
+
       if (tagCount > 0) {
         // Select a random tag
         const randomIndex = Math.floor(Math.random() * tagCount);
@@ -370,14 +396,20 @@ test.describe('Create Nested Space on Production', () => {
       }
     } else {
       // Try alternative selector for tags
-      const altTagSelector = page.locator('label:has-text("Tag") + div button, label:has-text("Tags") + div button').first();
-      if (await altTagSelector.isVisible({ timeout: 2000 }).catch(() => false)) {
+      const altTagSelector = page
+        .locator(
+          'label:has-text("Tag") + div button, label:has-text("Tags") + div button',
+        )
+        .first();
+      if (
+        await altTagSelector.isVisible({ timeout: 2000 }).catch(() => false)
+      ) {
         await altTagSelector.click();
         await page.waitForTimeout(500);
-        
+
         const tagOptions = page.locator('[role="option"]');
         const tagCount = await tagOptions.count();
-        
+
         if (tagCount > 0) {
           const randomIndex = Math.floor(Math.random() * tagCount);
           const selectedTag = tagOptions.nth(randomIndex);
@@ -426,7 +458,9 @@ test.describe('Create Nested Space on Production', () => {
     }
 
     // Look for and click the submit/create button - specifically the one inside the form
-    const submitButton = page.locator('form').getByRole('button', { name: 'Create' });
+    const submitButton = page
+      .locator('form')
+      .getByRole('button', { name: 'Create' });
 
     await expect(submitButton).toBeVisible();
     await expect(submitButton).toBeEnabled();
@@ -491,11 +525,17 @@ test.describe('Create Nested Space on Production', () => {
 
     for (const selector of loadingSelectors) {
       const loadingElement = page.locator(selector).first();
-      if (await loadingElement.isVisible({ timeout: 1000 }).catch(() => false)) {
-        console.log(`🔄 Loading detected (${selector}), waiting for completion...`);
-        await loadingElement.waitFor({ state: 'hidden', timeout: 120000 }).catch(() => {
-          console.log('⚠️ Loading indicator still visible after timeout');
-        });
+      if (
+        await loadingElement.isVisible({ timeout: 1000 }).catch(() => false)
+      ) {
+        console.log(
+          `🔄 Loading detected (${selector}), waiting for completion...`,
+        );
+        await loadingElement
+          .waitFor({ state: 'hidden', timeout: 120000 })
+          .catch(() => {
+            console.log('⚠️ Loading indicator still visible after timeout');
+          });
         console.log('✅ Loading completed');
         break;
       }
@@ -531,7 +571,9 @@ test.describe('Create Nested Space on Production', () => {
           'Nested space creation did not complete - still on create page',
         );
       }
-      throw new Error('Nested space creation did not complete in expected time');
+      throw new Error(
+        'Nested space creation did not complete in expected time',
+      );
     }
 
     console.log('✅ Nested space creation appears to have succeeded!');
@@ -578,7 +620,9 @@ test.describe('Create Nested Space on Production', () => {
     console.log(
       '║                                                                ║',
     );
-    console.log(`║  URL: ${createdNestedSpaceUrl.substring(0, 54).padEnd(54)}║`);
+    console.log(
+      `║  URL: ${createdNestedSpaceUrl.substring(0, 54).padEnd(54)}║`,
+    );
     console.log(
       '║                                                                ║',
     );
@@ -594,4 +638,3 @@ test.describe('Create Nested Space on Production', () => {
     expect(createdNestedSpaceUrl).toMatch(/\/dho\/[^/]+/);
   });
 });
-
