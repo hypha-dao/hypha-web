@@ -2,6 +2,18 @@
 
 A structured five-phase protocol for systematic problem-solving with explicit confidence tracking.
 
+#### Phase-to-Competency Mapping
+
+Use this mapping to align protocol execution with competency labels in `.agents/references/competencies/meta-cognitive-reasoning.md`:
+
+| Protocol Phase | Competency Label |
+| -------------- | ---------------- |
+| DECOMPOSE      | Problem Decomposition |
+| SOLVE          | Confidence Calibration |
+| VERIFY         | Logical Verification |
+| SYNTHESIZE     | Weighted Synthesis |
+| REFLECT        | Reflective Iteration |
+
 #### Phase 1: DECOMPOSE
 
 Break the complex problem into discrete sub-problems:
@@ -17,11 +29,14 @@ Address each sub-problem with explicit confidence assessment:
 
 | Confidence Level | Interpretation                           |
 | ---------------- | ---------------------------------------- |
-| 0.9 - 1.0        | High certainty, well-established facts   |
-| 0.7 - 0.9        | Confident, strong supporting evidence    |
-| 0.5 - 0.7        | Moderate, reasonable but uncertain       |
-| 0.3 - 0.5        | Low, significant gaps or ambiguity       |
-| 0.0 - 0.3        | Very low, speculative or insufficient    |
+| 0.95 - 1.00     | Near-certain, facts and mathematical truths |
+| 0.85 - 0.95     | High confidence, strong evidence and sound reasoning |
+| 0.70 - 0.85     | Confident, good evidence with reasonable assumptions |
+| 0.50 - 0.70     | Moderate, mixed evidence with notable uncertainties |
+| 0.30 - 0.50     | Low, significant gaps and speculative elements |
+| 0.00 - 0.30     | Very low, insufficient information and high speculation |
+
+This phase performs initial confidence calibration for each sub-problem; final overall confidence recalibration happens in SYNTHESIZE.
 
 For each sub-problem solution, document:
 
