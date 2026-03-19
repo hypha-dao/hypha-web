@@ -19,7 +19,7 @@ import {
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt, hasEmojiOrLink } from '@hypha-platform/ui-utils';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
-import { formatUnits } from 'viem';
+import { erc20Abi, formatUnits } from 'viem';
 
 const chainId = 8453;
 const vaultAddress =
@@ -53,6 +53,11 @@ export async function GET(
     const spaceId = BigInt(space.web3SpaceId as number);
 
     const rawDbTokens = await findAllTokens({ db }, { search: undefined });
+    const dbTokenByAddress = new Map(
+      rawDbTokens
+        .filter((token) => Boolean(token.address))
+        .map((token) => [token.address!.toLowerCase(), token]),
+    );
     const dbTokens = rawDbTokens.map((token) => ({
       agreementId: token.agreementId ?? undefined,
       spaceId: token.spaceId ?? undefined,
@@ -70,6 +75,7 @@ export async function GET(
       transferable: token.transferable,
       isVotingToken: token.isVotingToken,
       address: token.address ?? undefined,
+      createdAt: token.createdAt ?? undefined,
     }));
 
     let spaceTokens: readonly `0x${string}`[] = [];
@@ -159,6 +165,47 @@ export async function GET(
       contracts: backingTokensCalls,
     });
 
+    const vaultConfigCalls = vaultSpaceTokens.map((spaceToken) => ({
+      address: vaultAddress,
+      abi: tokenBackingVaultImplementationAbi,
+      functionName: 'getVaultConfig' as const,
+      args: [spaceId, spaceToken],
+    }));
+
+    const vaultConfigResults = await web3Client.multicall({
+      allowFailure: true,
+      blockTag: 'safe',
+      contracts: vaultConfigCalls,
+    });
+
+    const redemptionPriceCalls = vaultSpaceTokens.map((spaceToken) => ({
+      address: vaultAddress,
+      abi: tokenBackingVaultImplementationAbi,
+      functionName: 'getRedemptionPrice' as const,
+      args: [spaceId, spaceToken],
+    }));
+
+    const redemptionPriceResults = await web3Client.multicall({
+      allowFailure: true,
+      blockTag: 'safe',
+      contracts: redemptionPriceCalls,
+    });
+
+    const vaultSpaceTokenTotalSupplyCalls = vaultSpaceTokens.map(
+      (spaceToken) => ({
+        address: spaceToken,
+        abi: erc20Abi,
+        functionName: 'totalSupply' as const,
+        args: [],
+      }),
+    );
+
+    const vaultSpaceTokenTotalSupplyResults = await web3Client.multicall({
+      allowFailure: true,
+      blockTag: 'safe',
+      contracts: vaultSpaceTokenTotalSupplyCalls,
+    });
+
     const backingBalanceCalls: {
       address: typeof vaultAddress;
       abi: typeof tokenBackingVaultImplementationAbi;
@@ -218,6 +265,18 @@ export async function GET(
     const allAddresses = Array.from(allTokenAddresses) as `0x${string}`[];
     const prices = await getTokenPrice(allAddresses);
 
+    const resolveTokenPrice = (tokenAddress: `0x${string}`): number => {
+      const marketPrice = prices[tokenAddress] ?? 0;
+      if (marketPrice > 0) {
+        return marketPrice;
+      }
+      const dbToken = dbTokenByAddress.get(tokenAddress.toLowerCase());
+      const dbReferencePrice = Number(dbToken?.referencePrice ?? 0);
+      return Number.isFinite(dbReferencePrice) && dbReferencePrice > 0
+        ? dbReferencePrice
+        : 0;
+    };
+
     const decimalsMap = new Map<string, number>();
     for (const addr of allTokenAddresses) {
       try {
@@ -227,6 +286,31 @@ export async function GET(
         decimalsMap.set(addr.toLowerCase(), 18);
       }
     }
+
+    const totalSupplyByAddress = new Map<string, bigint>();
+    const allTokenAddressesForSupply = Array.from(
+      allTokenAddresses,
+    ) as `0x${string}`[];
+    const tokenTotalSupplyResults =
+      allTokenAddressesForSupply.length > 0
+        ? await web3Client.multicall({
+            allowFailure: true,
+            blockTag: 'safe',
+            contracts: allTokenAddressesForSupply.map((address) => ({
+              address,
+              abi: erc20Abi,
+              functionName: 'totalSupply' as const,
+              args: [],
+            })),
+          })
+        : [];
+    allTokenAddressesForSupply.forEach((address, idx) => {
+      const result = tokenTotalSupplyResults[idx];
+      totalSupplyByAddress.set(
+        address.toLowerCase(),
+        result?.status === 'success' ? result.result : 0n,
+      );
+    });
 
     let callIdx = 0;
     const vaults = vaultSpaceTokens.map((spaceToken, vaultIdx) => {
@@ -246,6 +330,15 @@ export async function GET(
         icon: string;
         value: number;
         usdEqual: number;
+        tokenPrice: number;
+        supply?: {
+          total: number;
+        };
+        space?: {
+          slug: string;
+          title: string;
+        };
+        createdAt?: Date;
       }[] = [];
 
       let totalUsd = 0;
@@ -257,11 +350,19 @@ export async function GET(
           balanceResult?.status === 'success' ? balanceResult.result : 0n;
         const decimals = decimalsMap.get(backingToken.toLowerCase()) ?? 18;
         const value = Number(formatUnits(balance, decimals));
-        const price = prices[backingToken] ?? 0;
+        const price = resolveTokenPrice(backingToken);
         const usdEqual = value * price;
         totalUsd += usdEqual;
 
         const meta = tokenMetaMap.get(backingToken.toLowerCase());
+        const backingTokenTotalSupply =
+          totalSupplyByAddress.get(backingToken.toLowerCase()) ?? 0n;
+        const backingTokenSupply =
+          backingTokenTotalSupply > 0n
+            ? {
+                total: Number(formatUnits(backingTokenTotalSupply, decimals)),
+              }
+            : undefined;
         collaterals.push({
           address: backingToken,
           symbol: meta?.symbol ?? '???',
@@ -269,8 +370,51 @@ export async function GET(
           icon: meta?.icon ?? '/placeholder/token-icon.svg',
           value,
           usdEqual,
+          tokenPrice: price,
+          supply: backingTokenSupply,
+          space: meta?.space,
+          createdAt: meta?.createdAt,
         });
       }
+
+      const vaultConfig = vaultConfigResults[vaultIdx];
+      const vaultConfigResult =
+        vaultConfig?.status === 'success' ? vaultConfig.result : undefined;
+      const redemptionEnabled = Boolean(
+        (vaultConfigResult as { redeemEnabled?: boolean } | undefined)
+          ?.redeemEnabled,
+      );
+
+      const redemptionPriceResult = redemptionPriceResults[vaultIdx];
+      const redemptionPriceRaw =
+        redemptionPriceResult?.status === 'success'
+          ? redemptionPriceResult.result?.[0] ?? 0n
+          : 0n;
+      const redemptionPrice =
+        Number(redemptionPriceRaw) > 0
+          ? Number(redemptionPriceRaw) / 1_000_000
+          : 0;
+
+      const spaceTokenTotalSupplyResult =
+        vaultSpaceTokenTotalSupplyResults[vaultIdx];
+      const spaceTokenTotalSupply =
+        spaceTokenTotalSupplyResult?.status === 'success'
+          ? spaceTokenTotalSupplyResult.result
+          : 0n;
+      const spaceTokenDecimals =
+        decimalsMap.get(spaceToken.toLowerCase()) ?? 18;
+      const totalIssuance = Number(
+        formatUnits(spaceTokenTotalSupply, spaceTokenDecimals),
+      );
+
+      const treasuryPrice = resolveTokenPrice(spaceToken);
+      const backingReferencePrice =
+        redemptionEnabled && redemptionPrice > 0
+          ? redemptionPrice
+          : treasuryPrice;
+      const backingDenominator = totalIssuance * backingReferencePrice;
+      const backingPercent =
+        backingDenominator > 0 ? (totalUsd / backingDenominator) * 100 : 0;
 
       return {
         spaceToken,
@@ -278,6 +422,7 @@ export async function GET(
         tokenSymbol,
         tokenIcon: spaceTokenMeta?.icon ?? '/placeholder/token-icon.svg',
         totalUsd,
+        backingPercent,
         collaterals,
       };
     });

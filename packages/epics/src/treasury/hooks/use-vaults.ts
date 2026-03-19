@@ -12,6 +12,15 @@ export type VaultCollateral = {
   icon: string;
   value: number;
   usdEqual: number;
+  tokenPrice?: number;
+  supply?: {
+    total: number;
+  };
+  space?: {
+    title: string;
+    slug: string;
+  };
+  createdAt?: Date;
 };
 
 export type Vault = {
@@ -20,6 +29,7 @@ export type Vault = {
   tokenSymbol: string;
   tokenIcon: string;
   totalUsd: number;
+  backingPercent: number;
   collaterals: VaultCollateral[];
 };
 
