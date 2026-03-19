@@ -59,6 +59,12 @@ contract RegularSpaceToken is
   string private _customName;
   string private _customSymbol;
 
+  // Mutual credit storage
+  uint256 public defaultCreditLimit;
+  mapping(address => uint256) public creditBalanceOf;
+  uint256[] internal _creditWhitelistedSpaceIds;
+  mapping(uint256 => bool) public isCreditWhitelistedSpace;
+
   // Events
   event MaxSupplyUpdated(uint256 oldMaxSupply, uint256 newMaxSupply);
   event TransferableUpdated(bool transferable);
@@ -81,6 +87,19 @@ contract RegularSpaceToken is
   event TransferWhitelistSpaceRemoved(uint256 indexed spaceId);
   event ReceiveWhitelistSpaceAdded(uint256 indexed spaceId);
   event ReceiveWhitelistSpaceRemoved(uint256 indexed spaceId);
+  event DefaultCreditLimitUpdated(uint256 oldLimit, uint256 newLimit);
+  event CreditUsed(
+    address indexed member,
+    uint256 amount,
+    uint256 newCreditBalance
+  );
+  event CreditRepaid(
+    address indexed member,
+    uint256 amount,
+    uint256 newCreditBalance
+  );
+  event CreditWhitelistSpaceAdded(uint256 indexed spaceId);
+  event CreditWhitelistSpaceRemoved(uint256 indexed spaceId);
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -101,7 +120,9 @@ contract RegularSpaceToken is
     bool _useTransferWhitelist,
     bool _useReceiveWhitelist,
     address[] memory _initialTransferWhitelist,
-    address[] memory _initialReceiveWhitelist
+    address[] memory _initialReceiveWhitelist,
+    uint256 _defaultCreditLimit,
+    uint256[] memory _initialCreditWhitelistSpaceIds
   ) public initializer {
     __ERC20_init(name, symbol);
     __ERC20Burnable_init();
@@ -135,6 +156,16 @@ contract RegularSpaceToken is
     // Set initial receive whitelist
     for (uint256 i = 0; i < _initialReceiveWhitelist.length; i++) {
       canReceive[_initialReceiveWhitelist[i]] = true;
+    }
+
+    // Initialize mutual credit
+    defaultCreditLimit = _defaultCreditLimit;
+    for (uint256 i = 0; i < _initialCreditWhitelistSpaceIds.length; i++) {
+      uint256 sid = _initialCreditWhitelistSpaceIds[i];
+      if (!isCreditWhitelistedSpace[sid]) {
+        isCreditWhitelistedSpace[sid] = true;
+        _creditWhitelistedSpaceIds.push(sid);
+      }
     }
   }
 
@@ -198,7 +229,9 @@ contract RegularSpaceToken is
       }
     }
 
+    _beforeCreditTransfer(sender, amount);
     _transfer(sender, to, amount);
+    _afterCreditTransfer(to, amount);
     return true;
   }
 
@@ -246,12 +279,16 @@ contract RegularSpaceToken is
       }
     }
 
+    _beforeCreditTransfer(from, amount);
+
     if (spender == transferHelper) {
       // Skip allowance check for TransferHelper because the helper contract ensures the user's intent.
     } else {
       _spendAllowance(from, spender, amount);
     }
+
     _transfer(from, to, amount);
+    _afterCreditTransfer(to, amount);
     return true;
   }
 
@@ -673,5 +710,180 @@ contract RegularSpaceToken is
     }
     // Check space-based whitelist
     return _isInReceiveWhitelistedSpace(account);
+  }
+
+  // =========================================================================
+  // Mutual credit view functions
+  // =========================================================================
+
+  /**
+   * @dev Credit limit for an account. Members of credit-whitelisted spaces
+   * get the defaultCreditLimit; everyone else gets 0.
+   */
+  function creditLimitOf(address account) public view returns (uint256) {
+    if (_isInCreditWhitelistedSpace(account)) {
+      return defaultCreditLimit;
+    }
+    return 0;
+  }
+
+  /**
+   * @dev Remaining credit an account can still use before hitting its limit.
+   */
+  function creditLimitLeftOf(address account) public view returns (uint256) {
+    uint256 limit = creditLimitOf(account);
+    uint256 used = creditBalanceOf[account];
+    if (used >= limit) {
+      return 0;
+    }
+    return limit - used;
+  }
+
+  /**
+   * @dev Net position: positive means net creditor, negative means net debtor.
+   */
+  function netBalanceOf(address account) public view returns (int256) {
+    return int256(balanceOf(account)) - int256(creditBalanceOf[account]);
+  }
+
+  function getCreditWhitelistedSpaces()
+    external
+    view
+    returns (uint256[] memory)
+  {
+    return _creditWhitelistedSpaceIds;
+  }
+
+  // =========================================================================
+  // Mutual credit administration (executor only)
+  // =========================================================================
+
+  function setDefaultCreditLimit(uint256 _limit) external {
+    require(
+      msg.sender == executor,
+      'Only executor can update default credit limit'
+    );
+    uint256 old = defaultCreditLimit;
+    defaultCreditLimit = _limit;
+    emit DefaultCreditLimitUpdated(old, _limit);
+  }
+
+  /**
+   * @dev Enable or update mutual credit in one call. Sets the default credit
+   * limit and adds the given space IDs to the credit whitelist.
+   */
+  function enableCredit(
+    uint256 _limit,
+    uint256[] calldata spaceIds
+  ) external {
+    require(msg.sender == executor, 'Only executor can enable credit');
+    uint256 old = defaultCreditLimit;
+    defaultCreditLimit = _limit;
+    emit DefaultCreditLimitUpdated(old, _limit);
+    for (uint256 i = 0; i < spaceIds.length; i++) {
+      if (!isCreditWhitelistedSpace[spaceIds[i]]) {
+        isCreditWhitelistedSpace[spaceIds[i]] = true;
+        _creditWhitelistedSpaceIds.push(spaceIds[i]);
+        emit CreditWhitelistSpaceAdded(spaceIds[i]);
+      }
+    }
+  }
+
+  function batchAddCreditWhitelistSpaces(
+    uint256[] calldata spaceIds
+  ) external {
+    require(
+      msg.sender == executor,
+      'Only executor can update credit whitelist'
+    );
+    for (uint256 i = 0; i < spaceIds.length; i++) {
+      if (!isCreditWhitelistedSpace[spaceIds[i]]) {
+        isCreditWhitelistedSpace[spaceIds[i]] = true;
+        _creditWhitelistedSpaceIds.push(spaceIds[i]);
+        emit CreditWhitelistSpaceAdded(spaceIds[i]);
+      }
+    }
+  }
+
+  function batchRemoveCreditWhitelistSpaces(
+    uint256[] calldata spaceIds
+  ) external {
+    require(
+      msg.sender == executor,
+      'Only executor can update credit whitelist'
+    );
+    for (uint256 j = 0; j < spaceIds.length; j++) {
+      uint256 sid = spaceIds[j];
+      if (isCreditWhitelistedSpace[sid]) {
+        isCreditWhitelistedSpace[sid] = false;
+        for (uint256 i = 0; i < _creditWhitelistedSpaceIds.length; i++) {
+          if (_creditWhitelistedSpaceIds[i] == sid) {
+            _creditWhitelistedSpaceIds[i] = _creditWhitelistedSpaceIds[
+              _creditWhitelistedSpaceIds.length - 1
+            ];
+            _creditWhitelistedSpaceIds.pop();
+            break;
+          }
+        }
+        emit CreditWhitelistSpaceRemoved(sid);
+      }
+    }
+  }
+
+  // =========================================================================
+  // Internal credit mechanics
+  // =========================================================================
+
+  /**
+   * @dev If sender cannot cover the transfer from their balance,
+   * mint the shortfall as credit (up to their limit).
+   */
+  function _beforeCreditTransfer(address from, uint256 amount) internal {
+    uint256 balance = balanceOf(from);
+    if (balance >= amount) {
+      return;
+    }
+
+    uint256 missing = amount - balance;
+    uint256 limit = creditLimitOf(from);
+    uint256 used = creditBalanceOf[from];
+    require(used + missing <= limit, 'Insufficient credit');
+
+    creditBalanceOf[from] = used + missing;
+    _mintWithSupplyChecks(from, missing);
+
+    emit CreditUsed(from, missing, creditBalanceOf[from]);
+  }
+
+  /**
+   * @dev If the receiver has outstanding credit debt,
+   * auto-repay from the incoming transfer by burning tokens.
+   */
+  function _afterCreditTransfer(address to, uint256 amount) internal {
+    uint256 debt = creditBalanceOf[to];
+    if (debt == 0) {
+      return;
+    }
+
+    uint256 repay = debt < amount ? debt : amount;
+    creditBalanceOf[to] = debt - repay;
+    _burn(to, repay);
+
+    emit CreditRepaid(to, repay, creditBalanceOf[to]);
+  }
+
+  function _isInCreditWhitelistedSpace(
+    address account
+  ) internal view returns (bool) {
+    for (uint256 i = 0; i < _creditWhitelistedSpaceIds.length; i++) {
+      uint256 sid = _creditWhitelistedSpaceIds[i];
+      if (
+        isCreditWhitelistedSpace[sid] &&
+        IDAOSpaceFactory(spacesContract).isMember(sid, account)
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 }

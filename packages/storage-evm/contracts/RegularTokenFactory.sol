@@ -7,9 +7,7 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import './storage/RegularTokenFactoryStorage.sol';
 import './RegularSpaceToken.sol';
 import './interfaces/IRegularTokenFactory.sol';
-import './interfaces/IRegularTokenVotingPower.sol';
 import './interfaces/IDAOSpaceFactory.sol';
-import './interfaces/IExecutor.sol';
 import '@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol';
 
 contract RegularTokenFactory is
@@ -66,11 +64,11 @@ contract RegularTokenFactory is
   }
 
   /**
-   * @dev Deploy a regular token (without decay)
+   * @dev Deploy a regular token with optional mutual credit support
    * @param spaceId The space ID to deploy the token for
    * @param name The token name
    * @param symbol The token symbol
-   * @param maxSupply The maximum token supply (0 for unlimited)
+   * @param maxSupply The maximum token supply (0 for unlimited). Does not cap credit mints.
    * @param transferable Whether the token can be transferred
    * @param fixedMaxSupply If true, maxSupply cannot be changed later
    * @param autoMinting If true, executor can auto-mint on transfer; if false, must mint separately
@@ -80,6 +78,8 @@ contract RegularTokenFactory is
    * @param useReceiveWhitelist If true, enforce receive whitelist
    * @param initialTransferWhitelist Initial addresses that can send tokens
    * @param initialReceiveWhitelist Initial addresses that can receive tokens
+   * @param defaultCreditLimit Default credit limit for members of whitelisted spaces (0 = no credit)
+   * @param initialCreditWhitelistSpaceIds Space IDs whose members receive credit eligibility
    * @return The address of the deployed token
    */
   function deployToken(
@@ -95,7 +95,9 @@ contract RegularTokenFactory is
     bool useTransferWhitelist,
     bool useReceiveWhitelist,
     address[] memory initialTransferWhitelist,
-    address[] memory initialReceiveWhitelist
+    address[] memory initialReceiveWhitelist,
+    uint256 defaultCreditLimit,
+    uint256[] memory initialCreditWhitelistSpaceIds
   ) public returns (address) {
     require(spacesContract != address(0), 'Spaces contract not set');
     require(
@@ -127,7 +129,9 @@ contract RegularTokenFactory is
       useTransferWhitelist,
       useReceiveWhitelist,
       initialTransferWhitelist,
-      initialReceiveWhitelist
+      initialReceiveWhitelist,
+      defaultCreditLimit,
+      initialCreditWhitelistSpaceIds
     );
 
     address tokenAddress = address(
