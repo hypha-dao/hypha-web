@@ -100,20 +100,39 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
       }[] = [];
       const spaceId = BigInt(arg.spaceId);
       const spaceToken = arg.spaceToken;
+      const validAddCollaterals =
+        arg.addCollaterals?.filter(
+          (c) => c.token && Number.parseFloat(c.amount) > 0,
+        ) ?? [];
+      const validRemoveCollaterals =
+        arg.removeCollaterals?.filter(
+          (c) => c.token && Number.parseFloat(c.amount) > 0,
+        ) ?? [];
       const willAddBacking =
-        arg.activateVault && Boolean(arg.addCollaterals?.length);
+        arg.activateVault && validAddCollaterals.length > 0;
       const vaultExists = await publicClient.readContract({
         address: vaultAddress,
         abi: tokenBackingVaultImplementationAbi,
         functionName: 'vaultExists',
         args: [spaceId, spaceToken],
       });
+      const currentVaultConfig = vaultExists
+        ? await publicClient.readContract({
+            address: vaultAddress,
+            abi: tokenBackingVaultImplementationAbi,
+            functionName: 'getVaultConfig',
+            args: [spaceId, spaceToken],
+          })
+        : null;
+      const currentRedeemEnabled = currentVaultConfig
+        ? currentVaultConfig.redeemEnabled
+        : false;
 
       // Approve Vault contract to spend tokens on behalf of the Space.
       // Must be the first transactions executed so addBackingToken can transfer tokens.
-      if (arg.addCollaterals?.length) {
+      if (validAddCollaterals.length) {
         const uniqueTokens = new Map<string, `0x${string}`>();
-        for (const c of arg.addCollaterals) {
+        for (const c of validAddCollaterals) {
           const key = c.token.toLowerCase();
           if (!uniqueTokens.has(key)) {
             uniqueTokens.set(key, c.token as `0x${string}`);
@@ -132,64 +151,113 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
         }
       }
 
-      if (willAddBacking && arg.addCollaterals?.length) {
-        const backingTokens = arg.addCollaterals.map(
-          (c) => c.token as `0x${string}`,
-        );
-        const priceFeeds = arg.addCollaterals.map(
-          (c) =>
-            ASSET_PRICE_FEED_BY_TOKEN[c.token.toLowerCase()] ??
-            (HYPH_TOKEN_PRICE_FEED as `0x${string}`),
-        );
-        const tokenDecimals: number[] = [];
-        const fundingAmounts: bigint[] = [];
-
-        for (const c of arg.addCollaterals) {
-          const decimals = await getTokenDecimals(c.token);
-          tokenDecimals.push(decimals);
-          fundingAmounts.push(parseUnits(c.amount, decimals));
+      if (willAddBacking && validAddCollaterals.length) {
+        let existingBackingTokens = new Set<string>();
+        if (vaultExists) {
+          const configuredBackingTokens = await publicClient.readContract({
+            address: vaultAddress,
+            abi: tokenBackingVaultImplementationAbi,
+            functionName: 'getBackingTokens',
+            args: [spaceId, spaceToken],
+          });
+          existingBackingTokens = new Set(
+            configuredBackingTokens.map((token) => token.toLowerCase()),
+          );
         }
 
-        const minimumBackingBps = BigInt(
-          (arg.minimumBackingPercent ?? 0) * 100,
+        const collateralsForAddBacking = validAddCollaterals.filter((c) =>
+          existingBackingTokens.has(c.token.toLowerCase()),
         );
-        const redemptionPrice = arg.tokenPrice
-          ? BigInt(
-              Math.round(parseFloat(arg.tokenPrice) * Number(PRICE_PRECISION)),
-            )
-          : 0n;
-        const currencyFeed =
-          (arg.referenceCurrency as `0x${string}`) ??
-          (CURRENCY_FEEDS.USD as `0x${string}`);
-        const maxRedemptionBps = BigInt((arg.maxRedemptionPercent ?? 0) * 100);
-        const maxRedemptionPeriodDays = BigInt(
-          arg.maxRedemptionPeriodDays ?? 0,
+        const collateralsForAddBackingToken = validAddCollaterals.filter(
+          (c) => !existingBackingTokens.has(c.token.toLowerCase()),
         );
 
-        transactions.push({
-          target: vaultAddress,
-          value: 0n,
-          data: encodeFunctionData({
-            abi: tokenBackingVaultImplementationAbi,
-            functionName: 'addBackingToken',
-            args: [
-              spaceId,
-              spaceToken,
-              backingTokens,
-              priceFeeds,
-              tokenDecimals,
-              fundingAmounts,
-              minimumBackingBps,
-              redemptionPrice,
-              currencyFeed,
-              maxRedemptionBps,
-              maxRedemptionPeriodDays,
-            ],
-          }),
-        });
+        if (collateralsForAddBacking.length > 0) {
+          const backingTokens = collateralsForAddBacking.map(
+            (c) => c.token as `0x${string}`,
+          );
+          const amounts: bigint[] = [];
+          for (const c of collateralsForAddBacking) {
+            const decimals = await getTokenDecimals(c.token);
+            amounts.push(parseUnits(c.amount, decimals));
+          }
+          transactions.push({
+            target: vaultAddress,
+            value: 0n,
+            data: encodeFunctionData({
+              abi: tokenBackingVaultImplementationAbi,
+              functionName: 'addBacking',
+              args: [spaceId, spaceToken, backingTokens, amounts],
+            }),
+          });
+        }
+
+        if (collateralsForAddBackingToken.length > 0) {
+          const backingTokens = collateralsForAddBackingToken.map(
+            (c) => c.token as `0x${string}`,
+          );
+          const priceFeeds = collateralsForAddBackingToken.map(
+            (c) =>
+              ASSET_PRICE_FEED_BY_TOKEN[c.token.toLowerCase()] ??
+              (HYPH_TOKEN_PRICE_FEED as `0x${string}`),
+          );
+          const tokenDecimals: number[] = [];
+          const fundingAmounts: bigint[] = [];
+
+          for (const c of collateralsForAddBackingToken) {
+            const decimals = await getTokenDecimals(c.token);
+            tokenDecimals.push(decimals);
+            fundingAmounts.push(parseUnits(c.amount, decimals));
+          }
+
+          const minimumBackingBps = BigInt(
+            (arg.minimumBackingPercent ?? 0) * 100,
+          );
+          const redemptionPrice = arg.tokenPrice
+            ? BigInt(
+                Math.round(
+                  parseFloat(arg.tokenPrice) * Number(PRICE_PRECISION),
+                ),
+              )
+            : 0n;
+          const currencyFeed =
+            (arg.referenceCurrency as `0x${string}`) ??
+            (CURRENCY_FEEDS.USD as `0x${string}`);
+          const maxRedemptionBps = BigInt(
+            (arg.maxRedemptionPercent ?? 0) * 100,
+          );
+          const maxRedemptionPeriodDays = BigInt(
+            arg.maxRedemptionPeriodDays ?? 0,
+          );
+
+          transactions.push({
+            target: vaultAddress,
+            value: 0n,
+            data: encodeFunctionData({
+              abi: tokenBackingVaultImplementationAbi,
+              functionName: 'addBackingToken',
+              args: [
+                spaceId,
+                spaceToken,
+                backingTokens,
+                priceFeeds,
+                tokenDecimals,
+                fundingAmounts,
+                minimumBackingBps,
+                redemptionPrice,
+                currencyFeed,
+                maxRedemptionBps,
+                maxRedemptionPeriodDays,
+              ],
+            }),
+          });
+        }
       }
 
-      if (willAddBacking || vaultExists) {
+      if (
+        (willAddBacking || vaultExists) &&
+        (!vaultExists || currentRedeemEnabled !== arg.enableRedemption)
+      ) {
         transactions.push({
           target: vaultAddress,
           value: 0n,
@@ -219,7 +287,7 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
       if (
         arg.tokenPrice &&
         arg.referenceCurrency &&
-        !arg.addCollaterals?.length
+        validAddCollaterals.length === 0
       ) {
         const redemptionPrice = BigInt(
           Math.round(parseFloat(arg.tokenPrice) * Number(PRICE_PRECISION)),
@@ -272,8 +340,8 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
         });
       }
 
-      if (arg.removeCollaterals?.length) {
-        for (const c of arg.removeCollaterals) {
+      if (validRemoveCollaterals.length) {
+        for (const c of validRemoveCollaterals) {
           const decimals = await getTokenDecimals(c.token);
           const amount = parseUnits(c.amount, decimals);
           transactions.push({
