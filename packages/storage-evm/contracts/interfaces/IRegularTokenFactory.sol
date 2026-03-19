@@ -21,7 +21,9 @@ interface IRegularTokenFactory {
     bool useTransferWhitelist,
     bool useReceiveWhitelist,
     address[] memory initialTransferWhitelist,
-    address[] memory initialReceiveWhitelist
+    address[] memory initialReceiveWhitelist,
+    uint256 defaultCreditLimit,
+    uint256[] memory initialCreditWhitelistSpaceIds
   ) external returns (address);
 
   function getSpaceToken(
