@@ -1,3 +1,5 @@
+import { SUPPORTED_CURRENCIES } from '../common/currency';
+
 export type Creator = {
   avatarUrl?: string;
   name?: string;
@@ -99,17 +101,7 @@ export type TokenBase = {
   token: Address;
 };
 
-export const REFERENCE_CURRENCIES = [
-  'USD',
-  'EUR',
-  'GBP',
-  'JPY',
-  'CNY',
-  'CAD',
-  'CHF',
-  'AUD',
-  'HKD',
-] as const;
+export const REFERENCE_CURRENCIES = SUPPORTED_CURRENCIES;
 
 export type ReferenceCurrency = (typeof REFERENCE_CURRENCIES)[number];
 
