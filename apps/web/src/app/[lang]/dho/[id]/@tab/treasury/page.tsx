@@ -31,11 +31,11 @@ export default async function TreasuryPage(props: PageProps) {
         <SpacePendingRewardsSection
           web3SpaceId={spaceFromDb?.web3SpaceId as number}
         />
+        <VaultsSection />
         <AssetsSection
           basePath={basePath}
           web3SpaceId={spaceFromDb?.web3SpaceId as number}
         />
-        <VaultsSection />
         <TransactionsSection spaceSlug={id} />
       </div>
     </SpaceTabAccessWrapper>

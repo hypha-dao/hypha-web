@@ -6,13 +6,18 @@ import { useVaults, type Vault } from '../../hooks/use-vaults';
 import { VaultCollateralCard } from './vault-collateral-card';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { Empty } from '../../../common';
+import { useParams } from 'next/navigation';
+import { Locale } from '@hypha-platform/i18n';
 
 const SingleVaultSection: FC<{
   vault: Vault;
   isLoading?: boolean;
 }> = ({ vault, isLoading }) => {
-  const title = `${vault.tokenSymbol} Vault`;
-  const totalLabel = `$ ${formatCurrencyValue(vault.totalUsd)}`;
+  const { lang } = useParams<{ lang: Locale }>();
+  const title = `${vault.tokenSymbol} Backing Vault`;
+  const totalLabel = `$${formatCurrencyValue(
+    vault.totalUsd,
+  )} Collateral | ${formatCurrencyValue(vault.backingPercent)}% Backed`;
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-3">
@@ -34,6 +39,15 @@ const SingleVaultSection: FC<{
                 symbol={collateral.symbol}
                 value={collateral.value}
                 usdEqual={collateral.usdEqual}
+                tokenPrice={collateral.tokenPrice}
+                supply={collateral.supply}
+                space={collateral.space}
+                createdAt={
+                  collateral.createdAt
+                    ? new Date(collateral.createdAt)
+                    : undefined
+                }
+                lang={lang}
                 isLoading={isLoading}
               />
             ))}
@@ -73,6 +87,7 @@ export const VaultsSection: FC = () => {
             tokenSymbol: '',
             tokenIcon: '',
             totalUsd: 0,
+            backingPercent: 0,
             collaterals: [],
           }}
           isLoading
