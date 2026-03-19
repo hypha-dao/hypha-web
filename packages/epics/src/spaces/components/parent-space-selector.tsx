@@ -13,6 +13,7 @@ export interface ParentSpaceSelectorProps {
     label: string;
   }[];
   isLoading: boolean;
+  isReadOnly?: boolean;
   parentSpaceId?: SpaceId;
   setParentSpaceId?: (parentId: SpaceId) => void;
   className?: string;
@@ -21,6 +22,7 @@ export interface ParentSpaceSelectorProps {
 export const ParentSpaceSelector = ({
   options,
   isLoading,
+  isReadOnly = false,
   parentSpaceId,
   setParentSpaceId,
   className,
@@ -58,7 +60,7 @@ export const ParentSpaceSelector = ({
           <Combobox
             options={options ?? []}
             initialValue={parentSpaceIdString}
-            disabled={checked || isLoading}
+            disabled={checked || isLoading || isReadOnly}
             onChange={(value: string) => {
               const parentId = Number.parseInt(value);
               setParentSpaceId?.(
@@ -101,6 +103,7 @@ export const ParentSpaceSelector = ({
               ref={checkboxRef}
               type="checkbox"
               checked={checked}
+              disabled={isLoading || isReadOnly}
               onChange={(e) => {
                 setChecked(e.target.checked);
                 setDirty(true);

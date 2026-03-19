@@ -7,6 +7,7 @@ import { VisibleSpacesList } from './visible-spaces-list';
 import {
   useOrganisationSpacesBySingleSlug,
   useSpaceBySlug,
+  isSpaceArchived,
 } from '@hypha-platform/core/client';
 import { Space } from '@hypha-platform/core/client';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@hypha-platform/ui';
@@ -91,23 +92,28 @@ export const SelectNavigationAction = ({
       useGeneralState: true,
     });
 
+  const nonArchivedSpaces = useMemo(
+    () => (filteredSpaces ?? []).filter((s) => !isSpaceArchived(s)),
+    [filteredSpaces],
+  );
+
   const isLoading = isLoadingSpace || isLoadingSpaces || isFilteringSpaces;
 
   const hierarchyData: HierarchyNode | null = useMemo(() => {
     if (!currentSpace || !filteredSpaces) return null;
 
-    const spacesWithCurrent = filteredSpaces.some(
+    const spacesWithCurrent = nonArchivedSpaces.some(
       (s) => s.id === currentSpace.id,
     )
-      ? filteredSpaces
-      : [...filteredSpaces, currentSpace];
+      ? nonArchivedSpaces
+      : [...nonArchivedSpaces, currentSpace];
 
     const accessibleSpaceIds = new Set(spacesWithCurrent.map((s) => s.id));
 
     const rootSpace = findRootSpace(currentSpace, spacesWithCurrent);
     if (!rootSpace) return null;
     return buildHierarchy(rootSpace, spacesWithCurrent, accessibleSpaceIds);
-  }, [currentSpace, filteredSpaces]);
+  }, [currentSpace, filteredSpaces, nonArchivedSpaces]);
 
   const handleVisibleSpacesChange = useCallback((spaces: VisibleSpace[]) => {
     const spacesKey = JSON.stringify(spaces.map((s) => s.id).sort());
@@ -169,10 +175,10 @@ export const SelectNavigationAction = ({
                   onVisibleSpacesChange={handleVisibleSpacesChange}
                 />
               )}
-              {visibleSpaces.length > 0 && filteredSpaces && (
+              {visibleSpaces.length > 0 && nonArchivedSpaces.length > 0 && (
                 <VisibleSpacesList
                   visibleSpaces={visibleSpaces}
-                  allSpaces={filteredSpaces}
+                  allSpaces={nonArchivedSpaces}
                   lang={lang}
                   entrySpaceId={currentSpace?.id}
                 />

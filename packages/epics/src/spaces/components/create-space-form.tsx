@@ -314,6 +314,19 @@ export const SpaceForm = ({
     [isDemo, isSandbox, isArchived],
   );
 
+  React.useEffect(() => {
+    if (!isArchived) {
+      return;
+    }
+
+    form.setValue('parentId', null, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+    form.clearErrors('parentId');
+  }, [form, isArchived]);
+
   const toggleSandbox = React.useCallback(() => {
     const current = form.getValues().flags ?? [];
     const next = current.includes('sandbox')
@@ -571,6 +584,7 @@ export const SpaceForm = ({
                   <ParentSpaceSelector
                     options={parentOptions}
                     isLoading={isOrganisationLoading || isMyLoading}
+                    isReadOnly={isArchived}
                     parentSpaceId={field.value}
                     setParentSpaceId={(parentId) => {
                       form.setValue('parentId', parentId ?? null, {
