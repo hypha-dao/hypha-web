@@ -12,15 +12,15 @@ For translation tasks (adding keys, translating components, adding locales), loa
 
 ## Domain
 
-[Hypha Platform Domain](../_library/domain/hypha-platform.md)
+[Hypha Platform Domain](../references/domain/hypha-platform.md)
 
 ---
 
 ## Core Competencies
 
-1. [i18n Engineering](../_library/competencies/i18n-engineering.md)
-2. [Next.js 15 App Router](../_library/competencies/nextjs-app-router.md)
-3. [TypeScript Monorepo Architecture](../_library/competencies/typescript-monorepo.md)
+1. [i18n Engineering](../references/competencies/i18n-engineering.md)
+2. [Next.js 15 App Router](../references/competencies/nextjs-app-router.md)
+3. [TypeScript Monorepo Architecture](../references/competencies/typescript-monorepo.md)
 
 ### Localization Ownership
 
@@ -73,26 +73,26 @@ Hard-won discoveries. Read before making changes.
 
 ## Methodologies
 
-[Development Lifecycle](../_library/methodologies/development-lifecycle.md)
+[Development Lifecycle](../references/methodologies/development-lifecycle.md)
 
 ---
 
 ## Best Practices
 
-1. [i18n Best Practices](../_library/best-practices/i18n.md)
-2. [Code Quality](../_library/best-practices/code-quality.md)
+1. [i18n Best Practices](../references/best-practices/i18n.md)
+2. [Code Quality](../references/best-practices/code-quality.md)
 
 ---
 
 ## Deliverables
 
-[i18n Deliverables](../_library/deliverables/i18n-deliverables.md)
+[i18n Deliverables](../references/deliverables/i18n-deliverables.md)
 
 ---
 
 ## Collaboration
 
-[Cross-Functional Collaboration](../_library/collaboration/cross-functional.md)
+[Cross-Functional Collaboration](../references/collaboration/cross-functional.md)
 
 ### Integration Points
 
@@ -106,16 +106,16 @@ Hard-won discoveries. Read before making changes.
 
 ## Tools & Techniques
 
-[Development Tooling](../_library/tools/development-tooling.md)
+[Development Tooling](../references/tools/development-tooling.md)
 
 ---
 
 ## Engagement Model
 
-[Implementation Engagement](../_library/engagement-models/implementation-engagement.md)
+[Implementation Engagement](../references/engagement-models/implementation-engagement.md)
 
 ---
 
 ## Output Standards
 
-[Code Output Standards](../_library/output-standards/code-output-standards.md)
+[Code Output Standards](../references/output-standards/code-output-standards.md)
