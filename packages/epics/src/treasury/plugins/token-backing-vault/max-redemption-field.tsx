@@ -29,7 +29,7 @@ export function MaxRedemptionField({
     <div className="flex flex-col gap-1 w-full">
       <div className="flex justify-between items-center w-full gap-2 flex-wrap">
         <span className="text-2 text-neutral-11 whitespace-nowrap items-center flex gap-1">
-          Maximum redemption %
+          Maximum Redemption %
           {isRequired && <RequirementMark className="text-2" />}
         </span>
         <div className="flex items-center gap-2 min-w-0 flex-1 justify-end">

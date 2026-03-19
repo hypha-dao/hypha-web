@@ -15,6 +15,14 @@ const CURRENCY_FEED_BY_ADDRESS = Object.fromEntries(
   CURRENCY_FEED_OPTIONS.map((opt) => [opt.value.toLowerCase(), opt.label]),
 );
 
+const formatCompactNumber = (value: string) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return value;
+  }
+  return numeric.toString();
+};
+
 interface ProposalTokenBackingVaultDataProps {
   spaceSlug: string;
   dbTokens?: DbToken[];
@@ -92,7 +100,9 @@ export function ProposalTokenBackingVaultData({
         )}
         {currentVault && currentVault.collaterals.length > 0 && (
           <div className="flex flex-col gap-2">
-            <div className="text-1 text-neutral-11">Current Backing Tokens</div>
+            <div className="text-1 text-neutral-11">
+              Current Backing Collaterals
+            </div>
             {currentVault.collaterals.map((collateral, i) => (
               <div
                 key={`${collateral.address}-${i}`}
@@ -149,7 +159,7 @@ export function ProposalTokenBackingVaultData({
         {redemptionPrice && (
           <TokenBackingVaultDetailRow
             label="Redemption Price"
-            value={`${redemptionPrice} ${currencyLabel}`}
+            value={`${formatCompactNumber(redemptionPrice)} ${currencyLabel}`}
           />
         )}
         {maxRedemptionPercent !== undefined &&
@@ -161,7 +171,7 @@ export function ProposalTokenBackingVaultData({
           )}
         {minimumBackingPercent !== undefined && (
           <TokenBackingVaultDetailRow
-            label="Minimum Backing"
+            label="Minimum Backing %"
             value={`${minimumBackingPercent}%`}
           />
         )}

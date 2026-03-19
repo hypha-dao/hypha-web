@@ -7,13 +7,14 @@ import {
   FormField,
   FormItem,
 } from '@hypha-platform/ui';
-import { useTokens, useTokenSupply } from '../../hooks';
+import { useTokens, useTokenSupply, useVaults } from '../../hooks';
 import { useFormContext } from 'react-hook-form';
 import { DbToken, Token } from '@hypha-platform/core/client';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useDbTokens } from '../../../hooks';
 import { Person, Space } from '@hypha-platform/core/client';
+import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { TransferWhitelistFieldArray } from '../../components/common/transfer-whitelist-field-array';
 import { SpaceTokenField } from './space-token-field';
 import { TokenSupplySection } from './token-supply-section';
@@ -63,6 +64,7 @@ export const TokenBackingVaultPlugin = ({
     vault?.enableAdvancedRedemptionControls ?? false;
 
   const { tokens: dbTokens } = useDbTokens();
+  const { vaults } = useVaults();
   const selectedToken = dbTokens
     .filter((t: DbToken) => t.address)
     .find(
@@ -73,6 +75,11 @@ export const TokenBackingVaultPlugin = ({
   const { supply, isLoading: isLoadingSupply } = useTokenSupply(
     selectedToken?.address as `0x${string}`,
   );
+  const currentVault = spaceToken
+    ? vaults.find(
+        (v) => v.spaceToken.toLowerCase() === spaceToken.toLowerCase(),
+      )
+    : undefined;
 
   return (
     <div className="flex flex-col gap-4">
@@ -108,6 +115,39 @@ export const TokenBackingVaultPlugin = ({
               supply={supply}
               isLoadingSupply={isLoadingSupply}
             />
+            {currentVault && currentVault.collaterals.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <div className="text-2 text-neutral-11">
+                  Current Backing Collaterals
+                </div>
+                {currentVault.collaterals.map((collateral, i) => (
+                  <div
+                    key={`${collateral.address}-${i}`}
+                    className="flex justify-between items-center text-1"
+                  >
+                    <div className="flex items-center gap-2">
+                      {collateral.icon && (
+                        <img
+                          src={collateral.icon}
+                          alt={collateral.symbol}
+                          className="w-4 h-4 rounded-full"
+                        />
+                      )}
+                      <span>{collateral.symbol}</span>
+                    </div>
+                    <span>
+                      {formatCurrencyValue(collateral.value)}{' '}
+                      {collateral.symbol}
+                      {collateral.usdEqual > 0 && (
+                        <span className="text-neutral-9 ml-1">
+                          (${formatCurrencyValue(collateral.usdEqual)})
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
             <ActivateVaultField />
             {showCollateralSections && (
               <>

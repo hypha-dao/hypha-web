@@ -36,10 +36,10 @@ export function MinimumBackingPercentField({
                 min={0}
                 max={100}
                 className="w-full"
-                {...field}
+                value={field.value ?? ''}
                 onChange={(e) =>
                   field.onChange(
-                    e.target.value === '' ? 0 : Number(e.target.value),
+                    e.target.value === '' ? undefined : Number(e.target.value),
                   )
                 }
               />

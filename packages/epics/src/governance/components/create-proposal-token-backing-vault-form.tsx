@@ -78,7 +78,7 @@ export const CreateProposalTokenBackingVaultForm = ({
         removeCollaterals: [],
         referenceCurrency: CURRENCY_FEED_OPTIONS[0].value,
         tokenPrice: undefined,
-        minimumBackingPercent: 0,
+        minimumBackingPercent: undefined,
         maxRedemptionPercent: undefined,
         maxRedemptionPeriodDays: undefined,
         redemptionStartDate: null,

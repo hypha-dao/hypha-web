@@ -723,7 +723,7 @@ export const schemaTokenBackingVault = z.object({
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message:
-              'Maximum redemption % is required when redemption is active. Enter 0 for no limit.',
+              'Maximum Redemption % is required when redemption is active. Enter 0 for no limit.',
             path: ['maxRedemptionPercent'],
           });
         }
@@ -735,7 +735,7 @@ export const schemaTokenBackingVault = z.object({
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message:
-              'Period (days) is required when redemption is active. Select a redemption period.',
+              'Period (days) is required when Redemption is active. Select a redemption period.',
             path: ['maxRedemptionPeriodDays'],
           });
         }
@@ -747,7 +747,7 @@ export const schemaTokenBackingVault = z.object({
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message:
-              'Authorise redemption from date is required when redemption is active.',
+              'Authorise Redemption from date is required when Redemption is active.',
             path: ['redemptionStartDate'],
           });
         }

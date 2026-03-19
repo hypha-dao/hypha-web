@@ -6,6 +6,14 @@ import { getProposalDetails } from '../web3';
 import React from 'react';
 import { decodeTransaction } from './decoders';
 
+const formatRedemptionPrice = (rawPrice: unknown) => {
+  const numeric = Number(rawPrice);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return undefined;
+  }
+  return (numeric / 1_000_000).toString();
+};
+
 export const useProposalDetailsWeb3Rpc = ({
   proposalId,
 }: {
@@ -275,10 +283,9 @@ export const useProposalDetailsWeb3Rpc = ({
               );
               tokenBackingVaultData.minimumBackingPercent =
                 Number(d.minimumBackingBps) / 100;
-              tokenBackingVaultData.redemptionPrice =
-                Number(d.redemptionPrice) > 0
-                  ? (Number(d.redemptionPrice) / 1_000_000).toFixed(6)
-                  : undefined;
+              tokenBackingVaultData.redemptionPrice = formatRedemptionPrice(
+                d.redemptionPrice,
+              );
               tokenBackingVaultData.currencyFeed =
                 d.redemptionPriceCurrencyFeed as string;
               tokenBackingVaultData.maxRedemptionPercent =
@@ -297,10 +304,9 @@ export const useProposalDetailsWeb3Rpc = ({
               );
               break;
             case 'setRedemptionPrice':
-              tokenBackingVaultData.redemptionPrice =
-                Number(d.price) > 0
-                  ? (Number(d.price) / 1_000_000).toFixed(6)
-                  : undefined;
+              tokenBackingVaultData.redemptionPrice = formatRedemptionPrice(
+                d.price,
+              );
               tokenBackingVaultData.currencyFeed = d.currencyFeed as string;
               break;
             case 'setMaxRedemptionPercentage':
