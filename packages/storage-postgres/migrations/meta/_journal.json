@@ -288,6 +288,13 @@
       "when": 1764157589485,
       "tag": "0040_empty_spot",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1774015634162,
+      "tag": "0041_rainy_green_goblin",
+      "breakpoints": true
     }
   ]
 }
