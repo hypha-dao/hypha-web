@@ -45,18 +45,22 @@ type AssetItem = {
   slug: string;
   address: string;
   createdAt?: Date;
+  referencePrice?: number | null;
+  referenceCurrency?: string | null;
 };
 
 type UseAssetsData = {
   assets: (Omit<AssetItem, 'createdAt'> & { createdAt?: string })[];
   isLoading: boolean;
   balance: number;
+  currency?: string;
 };
 
 type UseAssetsReturn = {
   assets: AssetItem[];
   isLoading: boolean;
   balance: number;
+  currency: string;
 };
 
 export const useAssets = ({
@@ -126,5 +130,6 @@ export const useAssets = ({
     assets: filteredAssets,
     isLoading,
     balance: hasValidData ? typedData.balance : 0,
+    currency: typedData?.currency || 'USD',
   };
 };

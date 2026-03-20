@@ -64,6 +64,7 @@ export type AssetItem = {
     slug: string;
   };
   address?: string;
+  referencePrice?: number | null;
   /**
    * Mutual credit info — only present for RegularSpaceToken instances that have
    * mutual credit configured. `netBalance` is negative when the holder owes credit.
@@ -86,6 +87,7 @@ type UseAssetsReturn = {
   assets: AssetItem[];
   isLoading: boolean;
   balance: number;
+  currency?: string;
   manualUpdate: () => Promise<void>;
 };
 
@@ -136,6 +138,7 @@ export const useUserAssets = ({
     assets: filteredAssets,
     isLoading,
     balance: hasValidData ? typedData.balance : 0,
+    currency: typedData?.currency || 'USD',
     manualUpdate: mutate,
   };
 };

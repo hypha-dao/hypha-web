@@ -40,6 +40,7 @@ type AssetCardProps = {
     netBalance: number;
     whitelistedSpaceIds: number[];
   };
+  referencePrice?: number | null;
 };
 
 export const AssetCard: React.FC<AssetCardProps> = ({
@@ -58,6 +59,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   type,
   createdAt,
   mutualCredit,
+  referencePrice,
 }) => {
   const tTreasury = useTranslations('TreasuryTab');
   const tAgreementFlow = useTranslations('AgreementFlow');
@@ -186,6 +188,17 @@ export const AssetCard: React.FC<AssetCardProps> = ({
           )}
         </div>
       ) : null}
+      {referencePrice !== null &&
+        referencePrice !== undefined &&
+        referenceCurrency && (
+          <div className="w-full flex flex-row gap-1">
+            <Text className="text-1 text-neutral-11">
+              {`Token Price: ${formatCurrencyValue(
+                referencePrice,
+              )} ${referenceCurrency}`}
+            </Text>
+          </div>
+        )}
       <div className="w-full flex flex-row gap-1">
         {createdAt instanceof Date && !Number.isNaN(createdAt.getTime()) && (
           <Text className="text-1 text-neutral-11">
