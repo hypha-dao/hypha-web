@@ -36,6 +36,14 @@ type GetSpaceBySlugStructuredContent = z.infer<
   typeof getSpaceBySlugOutputSchema
 >;
 
+function safeDateToISOString(value: unknown): string {
+  const candidate = new Date(value as string | number | Date);
+  if (Number.isNaN(candidate.getTime())) {
+    return new Date(0).toISOString();
+  }
+  return candidate.toISOString();
+}
+
 function buildGetSpaceBySlugNotFoundResult(
   slug: string,
 ): GetSpaceBySlugStructuredContent {
@@ -75,8 +83,8 @@ function buildGetSpaceBySlugFoundResult(
       subspaceCount: Array.isArray(space.subspaces)
         ? space.subspaces.length
         : 0,
-      createdAt: new Date(space.createdAt).toISOString(),
-      updatedAt: new Date(space.updatedAt).toISOString(),
+      createdAt: safeDateToISOString(space.createdAt),
+      updatedAt: safeDateToISOString(space.updatedAt),
     },
   };
 }
