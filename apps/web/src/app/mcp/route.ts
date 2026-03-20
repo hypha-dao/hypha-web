@@ -1,6 +1,9 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
-import { registerGetSpaceBySlugTool } from '@hypha-platform/mcp-tools';
+import {
+  registerGetSpaceBySlugTool,
+  registerGetSpaceProposalsBySpaceSlugTool,
+} from '@hypha-platform/mcp-tools';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -25,6 +28,7 @@ function createMcpServer(): McpServer {
   });
 
   registerGetSpaceBySlugTool(server);
+  registerGetSpaceProposalsBySpaceSlugTool(server);
 
   return server;
 }
