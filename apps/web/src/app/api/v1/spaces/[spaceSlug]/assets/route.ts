@@ -8,6 +8,9 @@ import {
   getTokenMeta,
   findAllTokens,
   getSupply,
+  findSelf,
+  getDb,
+  getUsdConversionRate,
 } from '@hypha-platform/core/server';
 import {
   getSpaceDetails,
@@ -30,8 +33,17 @@ export async function GET(
   { params }: { params: Promise<{ spaceSlug: string }> },
 ) {
   const { spaceSlug } = await params;
+  const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';
 
   try {
+    const self = authToken
+      ? await findSelf({ db: getDb({ authToken }) })
+      : null;
+    const requestedCurrency = request.nextUrl.searchParams.get('currency');
+    const { currency, rate: usdConversionRate } = await getUsdConversionRate(
+      requestedCurrency || self?.currency,
+    );
+
     const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
     if (!space || !canConvertToBigInt(space.web3SpaceId)) {
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
@@ -67,6 +79,9 @@ export async function GET(
       isVotingToken: token.isVotingToken,
       address: token.address ?? undefined,
       createdAt: token.createdAt ?? undefined,
+      referenceCurrency: token.referenceCurrency,
+      referencePrice:
+        token.referencePrice === null ? null : Number(token.referencePrice),
     }));
 
     let spaceDetails;
@@ -238,9 +253,12 @@ export async function GET(
       a.usdEqual === b.usdEqual ? b.value - a.value : b.usdEqual - a.usdEqual,
     );
 
+    const usdBalance = sorted.reduce((sum, asset) => sum + asset.usdEqual, 0);
+
     return NextResponse.json({
       assets: sorted,
-      balance: sorted.reduce((sum, asset) => sum + asset.usdEqual, 0),
+      balance: usdBalance * usdConversionRate,
+      currency,
     });
   } catch (error) {
     console.error('Failed to fetch assets:', error);
