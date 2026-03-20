@@ -1,1 +1,1 @@
-ALTER TABLE "people" ADD COLUMN "currency" text;
+ALTER TABLE "people" ADD COLUMN IF NOT EXISTS "currency" text;
