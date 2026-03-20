@@ -58,3 +58,6 @@ vitest.config.*.timestamp*
 
 # Turborepo
 .turbo
+
+# pnpm 
+.pnpm-store
