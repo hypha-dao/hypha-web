@@ -45,12 +45,15 @@ type AssetItem = {
     title: string;
     slug: string;
   };
+  referencePrice?: number | null;
+  referenceCurrency?: string | null;
 };
 
 type UseAssetsReturn = {
   assets: AssetItem[];
   isLoading: boolean;
   balance: number;
+  currency?: string;
   manualUpdate: () => Promise<void>;
 };
 
@@ -101,6 +104,7 @@ export const useUserAssets = ({
     assets: filteredAssets,
     isLoading,
     balance: hasValidData ? typedData.balance : 0,
+    currency: typedData?.currency || 'USD',
     manualUpdate: mutate,
   };
 };
