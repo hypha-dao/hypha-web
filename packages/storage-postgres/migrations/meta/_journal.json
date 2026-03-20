@@ -288,6 +288,13 @@
       "when": 1764157589485,
       "tag": "0040_empty_spot",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1765000000000,
+      "tag": "0041_clear_firefly",
+      "breakpoints": true
     }
   ]
 }
