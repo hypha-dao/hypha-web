@@ -8,6 +8,8 @@ import {
   getBalance,
   getTokenMeta,
   getSupply,
+  findSelf,
+  getUsdConversionRate,
 } from '@hypha-platform/core/server';
 import {
   TOKENS,
@@ -35,6 +37,12 @@ export async function GET(
   }
 
   try {
+    const self = await findSelf({ db: getDb({ authToken }) });
+    const requestedCurrency = request.nextUrl.searchParams.get('currency');
+    const { currency, rate: usdConversionRate } = await getUsdConversionRate(
+      requestedCurrency || self?.currency,
+    );
+
     const person = await findPersonBySlug(
       { slug: personSlug },
       { db: getDb({ authToken }) },
@@ -170,6 +178,9 @@ export async function GET(
       transferable: token.transferable,
       isVotingToken: token.isVotingToken,
       address: token.address ?? undefined,
+      referenceCurrency: token.referenceCurrency,
+      referencePrice:
+        token.referencePrice === null ? null : Number(token.referencePrice),
     }));
 
     const assets = await Promise.all(
@@ -238,9 +249,12 @@ export async function GET(
       a.usdEqual === b.usdEqual ? b.value - a.value : b.usdEqual - a.usdEqual,
     );
 
+    const usdBalance = sorted.reduce((sum, asset) => sum + asset.usdEqual, 0);
+
     return NextResponse.json({
       assets: sorted,
-      balance: sorted.reduce((sum, asset) => sum + asset.usdEqual, 0),
+      balance: usdBalance * usdConversionRate,
+      currency,
     });
   } catch (error) {
     console.error('Failed to fetch user assets:', error);

@@ -52,6 +52,8 @@ export type AssetItem = {
     slug: string;
   };
   address?: string;
+  referencePrice?: number | null;
+  referenceCurrency?: string | null;
 };
 
 type AssetsListProps = {
