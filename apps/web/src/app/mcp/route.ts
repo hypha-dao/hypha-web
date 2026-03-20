@@ -36,6 +36,55 @@ const getSpaceBySlugOutputSchema = z
   })
   .strict();
 
+type GetSpaceBySlugStructuredContent = z.infer<
+  typeof getSpaceBySlugOutputSchema
+>;
+
+function buildGetSpaceBySlugNotFoundResult(
+  slug: string,
+): GetSpaceBySlugStructuredContent {
+  return {
+    found: false,
+    slug,
+    space: null,
+  };
+}
+
+function buildGetSpaceBySlugFoundResult(
+  space: NonNullable<Awaited<ReturnType<typeof getSpaceBySlug>>>,
+  slug: string,
+): GetSpaceBySlugStructuredContent {
+  return {
+    found: true,
+    slug,
+    space: {
+      id: space.id,
+      slug: space.slug,
+      title: space.title,
+      description: space.description ?? null,
+      parentId: space.parentId ?? null,
+      web3SpaceId: space.web3SpaceId ?? null,
+      memberCount:
+        typeof space.memberCount === 'number'
+          ? space.memberCount
+          : Array.isArray(space.members)
+          ? space.members.length
+          : 0,
+      documentCount:
+        typeof space.documentCount === 'number'
+          ? space.documentCount
+          : Array.isArray(space.documents)
+          ? space.documents.length
+          : 0,
+      subspaceCount: Array.isArray(space.subspaces)
+        ? space.subspaces.length
+        : 0,
+      createdAt: new Date(space.createdAt).toISOString(),
+      updatedAt: new Date(space.updatedAt).toISOString(),
+    },
+  };
+}
+
 function createMcpServer(): McpServer {
   const server = new McpServer({
     name: 'hypha-web-mcp-server',
@@ -61,6 +110,8 @@ function createMcpServer(): McpServer {
       const space = await getSpaceBySlug({ slug });
 
       if (!space) {
+        const output = buildGetSpaceBySlugNotFoundResult(slug);
+
         return {
           content: [
             {
@@ -68,49 +119,17 @@ function createMcpServer(): McpServer {
               text: `No space found for slug "${slug}".`,
             },
           ],
-          structuredContent: {
-            found: false,
-            slug,
-            space: null,
-          },
+          structuredContent: output,
         };
       }
 
-      const output = {
-        found: true,
-        slug,
-        space: {
-          id: space.id,
-          slug: space.slug,
-          title: space.title,
-          description: space.description ?? null,
-          parentId: space.parentId ?? null,
-          web3SpaceId: space.web3SpaceId ?? null,
-          memberCount:
-            typeof space.memberCount === 'number'
-              ? space.memberCount
-              : Array.isArray(space.members)
-              ? space.members.length
-              : 0,
-          documentCount:
-            typeof space.documentCount === 'number'
-              ? space.documentCount
-              : Array.isArray(space.documents)
-              ? space.documents.length
-              : 0,
-          subspaceCount: Array.isArray(space.subspaces)
-            ? space.subspaces.length
-            : 0,
-          createdAt: new Date(space.createdAt).toISOString(),
-          updatedAt: new Date(space.updatedAt).toISOString(),
-        },
-      };
+      const output = buildGetSpaceBySlugFoundResult(space, slug);
 
       return {
         content: [
           {
             type: 'text',
-            text: `Found space "${output.space.title}" (${output.space.slug}).`,
+            text: `Found space "${space.title}" (${space.slug}).`,
           },
         ],
         structuredContent: output,
