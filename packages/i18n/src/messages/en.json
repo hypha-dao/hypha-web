@@ -1286,7 +1286,8 @@
       "uploadLeadImageLabel": "<accent>Upload</accent> an image",
       "labels": {
         "email": "Email",
-        "location": "Location"
+        "location": "Location",
+        "currency": "Currency"
       },
       "placeholders": {
         "firstName": "First Name",

@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import {
   type Person as SavedPerson,
+  CURRENCY_OPTIONS,
+  resolveSupportedCurrency,
   schemaEditPersonWeb2,
   editPersonFiles,
 } from '@hypha-platform/core/client';
@@ -20,6 +22,11 @@ import {
   UploadLeadImage,
   UploadAvatar,
   RequirementMark,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/ui-utils';
@@ -39,6 +46,7 @@ interface EditPersonSectionInput {
   description?: string;
   leadImageUrl?: string;
   location?: string;
+  currency?: string;
   email?: string;
   links?: string[];
 }
@@ -198,6 +206,7 @@ export const EditPersonSection = ({
       links: person?.links || [],
       email: person?.email || '',
       location: person?.location || '',
+      currency: resolveSupportedCurrency(person?.currency),
     },
     mode: 'onChange',
   });
@@ -430,6 +439,43 @@ export const EditPersonSection = ({
                             className="w-60"
                             {...field}
                           />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <Text className={cn('text-2', 'text-neutral-11')}>
+                  {tProfile('editForm.labels.currency')}
+                </Text>
+                <span className="flex items-center">
+                  <FormField
+                    control={form.control}
+                    name="currency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Select
+                            value={field.value || 'USD'}
+                            onValueChange={field.onChange}
+                            disabled={isLoading}
+                          >
+                            <SelectTrigger className="w-60">
+                              <SelectValue placeholder="Select currency" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {CURRENCY_OPTIONS.map((option) => (
+                                <SelectItem
+                                  key={option.value}
+                                  value={option.value}
+                                >
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </FormControl>
                         <FormMessage />
                       </FormItem>

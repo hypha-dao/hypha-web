@@ -3,6 +3,7 @@ import {
   DEFAULT_IMAGE_ACCEPT,
   UPLOADTHING_STANDARD_MAX_SIZE_LABEL,
 } from '../assets';
+import { SUPPORTED_CURRENCIES } from '../common/currency';
 
 import { z } from 'zod';
 import { isAddress } from 'viem';
@@ -35,6 +36,7 @@ const signupPersonWeb2Props = {
     .max(100, { message: 'Location must be at most 100 characters long' })
     .trim()
     .optional(),
+  currency: z.enum(SUPPORTED_CURRENCIES).optional(),
   address: z
     .string()
     .trim()
@@ -77,6 +79,7 @@ const editPersonWeb2Props = {
     .max(100, { message: 'Location must be at most 100 characters long' })
     .trim()
     .optional(),
+  currency: z.enum(SUPPORTED_CURRENCIES).optional(),
   links: z
     .array(
       z.string().url('Please enter a valid URL (e.g., https://example.com)'),

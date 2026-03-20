@@ -738,7 +738,8 @@
       "uploadLeadImageLabel": "<accent>Téléverser</accent> une image",
       "labels": {
         "email": "E-mail",
-        "location": "Localisation"
+        "location": "Localisation",
+        "currency": "Devise"
       },
       "placeholders": {
         "firstName": "Prénom",

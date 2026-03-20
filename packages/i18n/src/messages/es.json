@@ -1498,7 +1498,8 @@
       "uploadLeadImageLabel": "<accent>Subir</accent> una imagen",
       "labels": {
         "email": "Correo electrónico",
-        "location": "Ubicación"
+        "location": "Ubicación",
+        "currency": "Moneda"
       },
       "placeholders": {
         "firstName": "Nombre de pila",
