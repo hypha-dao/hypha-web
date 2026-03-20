@@ -41,8 +41,19 @@ function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
   const fullSpace = allSpaces.find((s) => s.id === space.id);
   const web3SpaceId = fullSpace?.web3SpaceId;
   const spaceSlug = fullSpace?.slug || space.slug;
+  const hasSpaceInfo = !!web3SpaceId && !!spaceSlug;
 
-  if (!web3SpaceId || !spaceSlug) {
+  const { access, isLoading: isAccessLoading } = useSpaceDiscoverability({
+    spaceId: web3SpaceId ? BigInt(web3SpaceId) : undefined,
+  });
+
+  const { userState, isLoading: isUserStateLoading } = useUserSpaceState({
+    spaceId: typeof web3SpaceId === 'number' ? web3SpaceId : undefined,
+    spaceSlug,
+    space: fullSpace,
+  });
+
+  if (!hasSpaceInfo) {
     return (
       <Button
         variant="default"
@@ -57,16 +68,6 @@ function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
       </Button>
     );
   }
-
-  const { access, isLoading: isAccessLoading } = useSpaceDiscoverability({
-    spaceId: BigInt(web3SpaceId),
-  });
-
-  const { userState, isLoading: isUserStateLoading } = useUserSpaceState({
-    spaceId: web3SpaceId,
-    spaceSlug,
-    space: fullSpace,
-  });
 
   const hasAccess = checkAccess(access, userState);
   const isLoading = isAccessLoading || isUserStateLoading;
