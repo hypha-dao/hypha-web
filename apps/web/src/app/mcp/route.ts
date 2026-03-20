@@ -4,6 +4,19 @@ import { registerGetSpaceBySlugTool } from '@hypha-platform/mcp-tools';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+const MCP_AUTH_HEADER = 'x-hypha-mcp-token';
+
+function isAuthorizedRequest(request: Request): boolean {
+  const configuredToken = process.env.HYPHA_MCP_AUTH_TOKEN;
+
+  // Auth is optional by default to preserve local/dev velocity.
+  if (!configuredToken) {
+    return true;
+  }
+
+  const providedToken = request.headers.get(MCP_AUTH_HEADER);
+  return providedToken === configuredToken;
+}
 
 function createMcpServer(): McpServer {
   const server = new McpServer({
@@ -17,6 +30,22 @@ function createMcpServer(): McpServer {
 }
 
 async function handleMcpRequest(request: Request): Promise<Response> {
+  if (!isAuthorizedRequest(request)) {
+    return Response.json(
+      {
+        jsonrpc: '2.0',
+        error: {
+          code: -32001,
+          message: 'Unauthorized',
+        },
+        id: null,
+      },
+      { status: 401 },
+    );
+  }
+
+  const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
+  const start = Date.now();
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
     enableJsonResponse: true,
@@ -26,9 +55,21 @@ async function handleMcpRequest(request: Request): Promise<Response> {
 
   try {
     await server.connect(transport);
-    return await transport.handleRequest(request);
+    const response = await transport.handleRequest(request);
+    console.info('MCP request handled', {
+      requestId,
+      method: request.method,
+      status: response.status,
+      durationMs: Date.now() - start,
+    });
+    return response;
   } catch (error) {
-    console.error('Error handling MCP request:', error);
+    console.error('Error handling MCP request', {
+      requestId,
+      method: request.method,
+      durationMs: Date.now() - start,
+      error,
+    });
     return Response.json(
       {
         jsonrpc: '2.0',
