@@ -2,7 +2,6 @@
 
 When the user has not specified a role, select the best-matching one based on the task.
 
-
 ## Roles
 
 | Role | File | Use when |
