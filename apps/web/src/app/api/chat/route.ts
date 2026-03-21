@@ -5,6 +5,7 @@ import { getSpaceBySlug } from '@hypha-platform/core/server';
 import {
   handleGetDocumentsBySpaceSlug,
   handleGetSpaceProposalsBySpaceSlug,
+  handleGetTokens,
 } from '@hypha-platform/mcp-tools';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
@@ -125,6 +126,29 @@ const getSpaceProposalsBySpaceSlugTool = tool({
   },
 });
 
+const getTokensTool = tool({
+  description:
+    'Lists Hypha tokens from the database with optional name/symbol search. Use this when users ask for tokens in the current space context.',
+  inputSchema: z.object({
+    search: z
+      .string()
+      .trim()
+      .optional()
+      .describe('Optional search across token name and symbol'),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(200)
+      .optional()
+      .describe('Maximum tokens to return (default 100, max 200)'),
+  }),
+  execute: async ({ search, limit }) => {
+    const result = await handleGetTokens({ search, limit });
+    return result.structuredContent;
+  },
+});
+
 function getModel(modelId: string) {
   switch (modelId) {
     case 'gemini-2.5-flash':
@@ -161,6 +185,7 @@ export async function POST(req: Request) {
       get_space_by_slug: getSpaceBySlugTool,
       get_documents_by_space_slug: getDocumentsBySpaceSlugTool,
       get_space_proposals_by_space_slug: getSpaceProposalsBySpaceSlugTool,
+      get_tokens: getTokensTool,
     },
     stopWhen: stepCountIs(5),
   });
