@@ -3,6 +3,7 @@ import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/
 import {
   registerGetSpaceBySlugTool,
   registerGetSpaceProposalsBySpaceSlugTool,
+  registerGetSpacesTool,
 } from '@hypha-platform/mcp-tools';
 
 export const runtime = 'nodejs';
@@ -29,6 +30,7 @@ function createMcpServer(): McpServer {
 
   registerGetSpaceBySlugTool(server);
   registerGetSpaceProposalsBySpaceSlugTool(server);
+  registerGetSpacesTool(server);
 
   return server;
 }
