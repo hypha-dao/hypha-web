@@ -5,6 +5,7 @@ import {
   registerGetSpaceByIdTool,
   registerGetSpaceBySlugTool,
   registerGetSpaceProposalsBySpaceSlugTool,
+  registerGetSubspacesBySpaceSlugTool,
   registerGetSpacesTool,
   registerGetPeopleBySpaceSlugTool,
   registerGetDocumentsBySpaceSlugTool,
@@ -37,6 +38,7 @@ function createMcpServer(): McpServer {
   registerGetSpaceByIdTool(server);
   registerGetSpaceBySlugTool(server);
   registerGetSpaceProposalsBySpaceSlugTool(server);
+  registerGetSubspacesBySpaceSlugTool(server);
   registerGetSpacesTool(server);
   registerGetPeopleBySpaceSlugTool(server);
   registerGetDocumentsBySpaceSlugTool(server);
