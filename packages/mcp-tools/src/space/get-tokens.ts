@@ -6,7 +6,7 @@ import { z } from 'zod';
 const MAX_LIMIT = 200;
 const DEFAULT_LIMIT = 100;
 
-export const getTokensInputSchema = {
+export const getTokensBySpaceSlugInputSchema = {
   slug: z
     .string()
     .trim()
@@ -28,7 +28,7 @@ export const getTokensInputSchema = {
     ),
 };
 
-export const getTokensOutputSchema = z
+export const getTokensBySpaceSlugOutputSchema = z
   .object({
     spaceFound: z.boolean(),
     slug: z.string(),
@@ -60,7 +60,9 @@ export const getTokensOutputSchema = z
   })
   .strict();
 
-type GetTokensStructuredContent = z.infer<typeof getTokensOutputSchema>;
+type GetTokensBySpaceSlugStructuredContent = z.infer<
+  typeof getTokensBySpaceSlugOutputSchema
+>;
 
 function safeDateToISOString(value: unknown): string | null {
   if (value == null) return null;
@@ -78,7 +80,7 @@ function normalizeFiniteNumber(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-export async function handleGetTokens({
+export async function handleGetTokensBySpaceSlug({
   slug,
   search,
   limit,
@@ -88,13 +90,13 @@ export async function handleGetTokens({
   limit?: number;
 }): Promise<{
   content: Array<{ type: 'text'; text: string }>;
-  structuredContent: GetTokensStructuredContent;
+  structuredContent: GetTokensBySpaceSlugStructuredContent;
 }> {
   const space = await findSpaceBySlug({ slug }, { db });
   const appliedLimit = Math.min(limit ?? DEFAULT_LIMIT, MAX_LIMIT) as number;
 
   if (!space) {
-    const output: GetTokensStructuredContent = {
+    const output: GetTokensBySpaceSlugStructuredContent = {
       spaceFound: false,
       slug,
       tokens: [],
@@ -142,7 +144,7 @@ export async function handleGetTokens({
     referencePrice: normalizeFiniteNumber(row.referencePrice),
   }));
 
-  const output: GetTokensStructuredContent = {
+  const output: GetTokensBySpaceSlugStructuredContent = {
     spaceFound: true,
     slug,
     tokens,
@@ -167,8 +169,8 @@ export function registerGetTokensBySpaceSlugTool(server: McpServer): void {
       title: 'Get Tokens By Space Slug',
       description:
         'Lists Hypha tokens for a specific space slug with optional name/symbol search. Results are ordered by token name and capped by limit.',
-      inputSchema: getTokensInputSchema,
-      outputSchema: getTokensOutputSchema,
+      inputSchema: getTokensBySpaceSlugInputSchema,
+      outputSchema: getTokensBySpaceSlugOutputSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -176,6 +178,6 @@ export function registerGetTokensBySpaceSlugTool(server: McpServer): void {
         openWorldHint: false,
       },
     },
-    handleGetTokens,
+    handleGetTokensBySpaceSlug,
   );
 }
