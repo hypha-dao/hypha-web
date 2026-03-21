@@ -1,5 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { findSpaceById, findSpaceBySlug } from '@hypha-platform/core/server';
+import { findSpaceById, getSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { z } from 'zod';
 
@@ -73,14 +73,19 @@ export async function handleGetSpaceById({ id }: { id: number }): Promise<{
     };
   }
 
-  const spaceWithRelations = await findSpaceBySlug(
-    { slug: spaceById.slug },
-    { db },
-  );
+  const spaceWithCounts = await getSpaceBySlug({ slug: spaceById.slug });
 
-  const memberCount = spaceWithRelations?.members?.length ?? 0;
-  const documentCount = spaceWithRelations?.documents?.length ?? 0;
-  const subspaceCount = spaceWithRelations?.subspaces?.length ?? 0;
+  const memberCount =
+    typeof spaceWithCounts?.memberCount === 'number'
+      ? spaceWithCounts.memberCount
+      : 0;
+  const documentCount =
+    typeof spaceWithCounts?.documentCount === 'number'
+      ? spaceWithCounts.documentCount
+      : 0;
+  const subspaceCount = Array.isArray(spaceWithCounts?.subspaces)
+    ? spaceWithCounts.subspaces.length
+    : 0;
 
   const output: GetSpaceByIdStructuredContent = {
     found: true,
