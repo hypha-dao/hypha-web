@@ -990,6 +990,9 @@ importers:
       '@hypha-platform/core':
         specifier: workspace:*
         version: link:../core
+      '@hypha-platform/storage-postgres':
+        specifier: workspace:*
+        version: link:../storage-postgres
       '@modelcontextprotocol/sdk':
         specifier: ^1.27.1
         version: 1.27.1(zod@3.25.76)
@@ -34036,7 +34039,7 @@ snapshots:
       inherits: 2.0.4
       ripemd160: 2.0.2
       safe-buffer: 5.2.1
-      sha.js: 2.4.11
+      sha.js: 2.4.12
 
   create-jest@29.7.0(@types/node@22.15.33)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@swc/core@1.5.29(@swc/helpers@0.5.17))(@types/node@22.15.33)(typescript@5.8.3)):
     dependencies:
@@ -41003,7 +41006,7 @@ snapshots:
       create-hmac: 1.1.7
       ripemd160: 2.0.2
       safe-buffer: 5.2.1
-      sha.js: 2.4.11
+      sha.js: 2.4.12
 
   peek-readable@5.4.2: {}
 
