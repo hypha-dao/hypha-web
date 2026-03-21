@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import {
+  registerCheckSpaceSlugExistsTool,
   registerGetSpaceBySlugTool,
   registerGetSpaceProposalsBySpaceSlugTool,
   registerGetSpacesTool,
@@ -31,6 +32,7 @@ function createMcpServer(): McpServer {
     version: '1.0.0',
   });
 
+  registerCheckSpaceSlugExistsTool(server);
   registerGetSpaceBySlugTool(server);
   registerGetSpaceProposalsBySpaceSlugTool(server);
   registerGetSpacesTool(server);
