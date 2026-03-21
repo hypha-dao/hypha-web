@@ -5,6 +5,7 @@ import {
   registerGetSpaceProposalsBySpaceSlugTool,
   registerGetSpacesTool,
   registerGetPeopleBySpaceSlugTool,
+  registerGetDocumentsBySpaceSlugTool,
 } from '@hypha-platform/mcp-tools';
 
 export const runtime = 'nodejs';
@@ -33,6 +34,7 @@ function createMcpServer(): McpServer {
   registerGetSpaceProposalsBySpaceSlugTool(server);
   registerGetSpacesTool(server);
   registerGetPeopleBySpaceSlugTool(server);
+  registerGetDocumentsBySpaceSlugTool(server);
 
   return server;
 }
