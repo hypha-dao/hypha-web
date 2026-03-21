@@ -1,17 +1,36 @@
-import { asc, eq, sql } from 'drizzle-orm';
+import { and, asc, eq, sql } from 'drizzle-orm';
 import { documents, tokens } from '@hypha-platform/storage-postgres';
 import { DbConfig } from '@hypha-platform/core/server';
 
 type FindAllTokensProps = {
   search?: string;
+  /** When set, returns tokens for a specific space id. */
+  spaceId?: number;
   /** When set, caps rows returned (after ordering by name). */
   limit?: number;
 };
 
 export const findAllTokens = async (
   { db }: DbConfig,
-  { search, limit }: FindAllTokensProps = {},
+  { search, spaceId, limit }: FindAllTokensProps = {},
 ) => {
+  const searchCondition = search
+    ? sql`(
+            -- Full-text search for exact word matches (highest priority)
+            (setweight(to_tsvector('english', ${tokens.name}), 'A') ||
+             setweight(to_tsvector('english', ${tokens.symbol}), 'B')
+            ) @@ plainto_tsquery('english', ${search})
+            OR
+            -- Partial word matching with ILIKE (case-insensitive)
+            ${tokens.name} ILIKE ${'%' + search + '%'}
+            OR
+            ${tokens.symbol} ILIKE ${'%' + search + '%'}
+          )`
+    : undefined;
+
+  const spaceCondition =
+    typeof spaceId === 'number' ? eq(tokens.spaceId, spaceId) : undefined;
+
   const query = db
     .select({
       id: tokens.id,
@@ -37,21 +56,7 @@ export const findAllTokens = async (
     })
     .from(tokens)
     .leftJoin(documents, eq(documents.id, tokens.agreementId))
-    .where(
-      search
-        ? sql`(
-            -- Full-text search for exact word matches (highest priority)
-            (setweight(to_tsvector('english', ${tokens.name}), 'A') ||
-             setweight(to_tsvector('english', ${tokens.symbol}), 'B')
-            ) @@ plainto_tsquery('english', ${search})
-            OR
-            -- Partial word matching with ILIKE (case-insensitive)
-            ${tokens.name} ILIKE ${'%' + search + '%'}
-            OR
-            ${tokens.symbol} ILIKE ${'%' + search + '%'}
-          )`
-        : undefined,
-    )
+    .where(and(spaceCondition, searchCondition))
     .groupBy(
       tokens.id,
       tokens.spaceId,

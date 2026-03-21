@@ -1,5 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { findAllTokens } from '@hypha-platform/core/server';
+import { findAllTokens, findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { z } from 'zod';
 
@@ -7,6 +7,11 @@ const MAX_LIMIT = 200;
 const DEFAULT_LIMIT = 100;
 
 export const getTokensInputSchema = {
+  slug: z
+    .string()
+    .trim()
+    .min(1, 'Space slug is required')
+    .describe('Hypha space slug, for example "hypha"'),
   search: z
     .string()
     .trim()
@@ -25,6 +30,8 @@ export const getTokensInputSchema = {
 
 export const getTokensOutputSchema = z
   .object({
+    spaceFound: z.boolean(),
+    slug: z.string(),
     tokens: z.array(
       z
         .object({
@@ -72,20 +79,43 @@ function normalizeFiniteNumber(value: unknown): number | null {
 }
 
 export async function handleGetTokens({
+  slug,
   search,
   limit,
 }: {
+  slug: string;
   search?: string;
   limit?: number;
 }): Promise<{
   content: Array<{ type: 'text'; text: string }>;
   structuredContent: GetTokensStructuredContent;
 }> {
+  const space = await findSpaceBySlug({ slug }, { db });
   const appliedLimit = Math.min(limit ?? DEFAULT_LIMIT, MAX_LIMIT) as number;
+
+  if (!space) {
+    const output: GetTokensStructuredContent = {
+      spaceFound: false,
+      slug,
+      tokens: [],
+      appliedLimit,
+    };
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `No space found for slug "${slug}".`,
+        },
+      ],
+      structuredContent: output,
+    };
+  }
 
   const rows = await findAllTokens(
     { db },
     {
+      spaceId: space.id,
       search: search?.length ? search : undefined,
       limit: appliedLimit,
     },
@@ -113,6 +143,8 @@ export async function handleGetTokens({
   }));
 
   const output: GetTokensStructuredContent = {
+    spaceFound: true,
+    slug,
     tokens,
     appliedLimit,
   };
@@ -121,20 +153,20 @@ export async function handleGetTokens({
     content: [
       {
         type: 'text',
-        text: `Found ${tokens.length} token(s) (limit ${appliedLimit}).`,
+        text: `Found ${tokens.length} token(s) for space "${space.title}" (${space.slug}) (limit ${appliedLimit}).`,
       },
     ],
     structuredContent: output,
   };
 }
 
-export function registerGetTokensTool(server: McpServer): void {
+export function registerGetTokensBySpaceSlugTool(server: McpServer): void {
   server.registerTool(
-    'get_tokens',
+    'get_tokens_by_space_slug',
     {
-      title: 'Get Tokens',
+      title: 'Get Tokens By Space Slug',
       description:
-        'Lists Hypha tokens from the database with optional name/symbol search. Results are ordered by token name and capped by limit.',
+        'Lists Hypha tokens for a specific space slug with optional name/symbol search. Results are ordered by token name and capped by limit.',
       inputSchema: getTokensInputSchema,
       outputSchema: getTokensOutputSchema,
       annotations: {
