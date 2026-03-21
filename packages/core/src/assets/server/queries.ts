@@ -1,16 +1,18 @@
-import { asc, eq, sql, and } from 'drizzle-orm';
+import { asc, eq, sql } from 'drizzle-orm';
 import { documents, tokens } from '@hypha-platform/storage-postgres';
 import { DbConfig } from '@hypha-platform/core/server';
 
 type FindAllTokensProps = {
   search?: string;
+  /** When set, caps rows returned (after ordering by name). */
+  limit?: number;
 };
 
 export const findAllTokens = async (
   { db }: DbConfig,
-  { search }: FindAllTokensProps = {},
+  { search, limit }: FindAllTokensProps = {},
 ) => {
-  const results = await db
+  const query = db
     .select({
       id: tokens.id,
       spaceId: tokens.spaceId,
@@ -70,6 +72,11 @@ export const findAllTokens = async (
       tokens.referencePrice,
     )
     .orderBy(asc(tokens.name));
+
+  const results =
+    typeof limit === 'number' && limit > 0
+      ? await query.limit(limit)
+      : await query;
 
   return results;
 };
