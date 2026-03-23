@@ -5,13 +5,22 @@ import { getSpaceBySlug } from '@hypha-platform/core/server';
 import {
   handleGetDocumentsBySpaceSlug,
   handleGetSpaceProposalsBySpaceSlug,
-  handleGetTokens,
+  handleGetTokensBySpaceSlug,
 } from '@hypha-platform/mcp-tools';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 export const maxDuration = 30;
+const OPENROUTER_DEBUG = process.env.OPENROUTER_DEBUG === 'true';
+function isAbortLikeError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const maybeError = error as { name?: string; message?: string };
+  return (
+    maybeError.name === 'AbortError' ||
+    maybeError.message?.toLowerCase().includes('aborted') === true
+  );
+}
 
 const BASE_SYSTEM_PROMPT =
   'You are Hypha AI, a helpful assistant for the Hypha DAO platform. You help users analyze signals, draft proposals, understand community dynamics, and coordinate across spaces. Be concise and helpful.';
@@ -126,30 +135,44 @@ const getSpaceProposalsBySpaceSlugTool = tool({
   },
 });
 
-const getTokensTool = tool({
-  description:
-    'Lists Hypha tokens from the database with optional name/symbol search. Use this when users ask for tokens in the current space context.',
-  inputSchema: z.object({
-    search: z
-      .string()
-      .trim()
-      .optional()
-      .describe('Optional search across token name and symbol'),
-    limit: z
-      .number()
-      .int()
-      .min(1)
-      .max(200)
-      .optional()
-      .describe('Maximum tokens to return (default 100, max 200)'),
-  }),
-  execute: async ({ search, limit }) => {
-    const result = await handleGetTokens({ search, limit });
-    return result.structuredContent;
-  },
-});
+function createGetTokensTool(spaceSlug: string | null | undefined) {
+  return tool({
+    description:
+      'Lists Hypha tokens for the current space from the database with optional name/symbol search. Only works when the user is viewing a space (space context is sent with the chat request).',
+    inputSchema: z.object({
+      search: z
+        .string()
+        .trim()
+        .optional()
+        .describe('Optional search across token name and symbol'),
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(200)
+        .optional()
+        .describe('Maximum tokens to return (default 100, max 200)'),
+    }),
+    execute: async ({ search, limit }) => {
+      const slug = spaceSlug?.trim();
+      if (!slug) {
+        return {
+          spaceFound: false,
+          slug: '',
+          tokens: [],
+          appliedLimit: Math.min(limit ?? 100, 200),
+        };
+      }
+      const result = await handleGetTokensBySpaceSlug({ slug, search, limit });
+      return result.structuredContent;
+    },
+  });
+}
 
 export async function POST(req: Request) {
+  const debugRequestId = `chat-${Date.now().toString(36)}-${Math.random()
+    .toString(36)
+    .slice(2, 8)}`;
   const headersList = await headers();
   const authToken = headersList.get('Authorization')?.split(' ')[1] || '';
   if (!authToken) {
@@ -164,6 +187,15 @@ export async function POST(req: Request) {
     spaceSlug?: string | null;
   } = await req.json();
 
+  if (OPENROUTER_DEBUG) {
+    console.log('[chat][openrouter][start]', {
+      debugRequestId,
+      model: 'openrouter/auto',
+      messageCount: messages.length,
+      spaceSlug: spaceSlug ?? null,
+    });
+  }
+
   const result = streamText({
     model: openrouter('openrouter/auto'),
     system: buildSystemPrompt(spaceSlug),
@@ -172,10 +204,79 @@ export async function POST(req: Request) {
       get_space_by_slug: getSpaceBySlugTool,
       get_documents_by_space_slug: getDocumentsBySpaceSlugTool,
       get_space_proposals_by_space_slug: getSpaceProposalsBySpaceSlugTool,
-      get_tokens: getTokensTool,
+      get_tokens: createGetTokensTool(spaceSlug),
     },
     stopWhen: stepCountIs(5),
+    onStepFinish: (event) => {
+      if (!OPENROUTER_DEBUG) return;
+
+      console.log('[chat][openrouter][step-finish]', {
+        debugRequestId,
+        stepNumber: event.stepNumber,
+        provider: event.model.provider,
+        modelId: event.model.modelId,
+        finishReason: event.finishReason,
+        responseId: event.response?.id,
+        usage: event.usage,
+        openrouterProviderMetadata:
+          event.providerMetadata &&
+          typeof event.providerMetadata === 'object' &&
+          'openrouter' in event.providerMetadata
+            ? (event.providerMetadata as { openrouter?: unknown }).openrouter
+            : undefined,
+      });
+    },
+    onFinish: (event) => {
+      if (!OPENROUTER_DEBUG) return;
+
+      const generationId = event.response?.id;
+      const generationUrl = generationId
+        ? `https://openrouter.ai/api/v1/generation?id=${generationId}`
+        : null;
+
+      console.log('[chat][openrouter][finish]', {
+        debugRequestId,
+        provider: event.model.provider,
+        modelId: event.model.modelId,
+        responseId: generationId,
+        generationUrl,
+        finishReason: event.finishReason,
+        totalUsage: event.totalUsage,
+        warnings: event.warnings,
+      });
+    },
+    onError: ({ error }) => {
+      if (isAbortLikeError(error)) {
+        if (OPENROUTER_DEBUG) {
+          console.warn('[chat][openrouter][abort]', { debugRequestId });
+        }
+        return;
+      }
+      console.error('[chat][openrouter][error]', {
+        debugRequestId,
+        message: error instanceof Error ? error.message : String(error),
+        error,
+      });
+    },
   });
 
-  return result.toUIMessageStreamResponse();
+  return result.toUIMessageStreamResponse({
+    headers: {
+      'x-hypha-chat-debug-id': debugRequestId,
+    },
+    onError: (error) => {
+      if (isAbortLikeError(error)) {
+        if (OPENROUTER_DEBUG) {
+          console.warn('[chat][ui-stream][abort]', { debugRequestId });
+        }
+        return '';
+      }
+      console.error('[chat][ui-stream][error]', {
+        debugRequestId,
+        message: error instanceof Error ? error.message : String(error),
+        error,
+      });
+      return 'An error occurred while generating the response.';
+    },
+  });
 }

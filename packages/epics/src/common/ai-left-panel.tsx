@@ -23,6 +23,7 @@ type AiLeftPanelProps = {
 };
 
 export function AiLeftPanel({ onClose, className }: AiLeftPanelProps) {
+  const CLIENT_CHAT_DEBUG = process.env.NEXT_PUBLIC_CHAT_DEBUG === 'true';
   const params = useParams<{ id?: string }>();
   const spaceSlug = params?.id ?? null;
 
@@ -40,6 +41,21 @@ export function AiLeftPanel({ onClose, className }: AiLeftPanelProps) {
     transport: new DefaultChatTransport({
       api: '/api/chat',
     }),
+    onError: (error) => {
+      if (!CLIENT_CHAT_DEBUG) return;
+      console.error('[chat][client][error]', {
+        message: error instanceof Error ? error.message : String(error),
+        error,
+      });
+    },
+    onFinish: ({ message }) => {
+      if (!CLIENT_CHAT_DEBUG) return;
+      console.log('[chat][client][finish]', {
+        messageId: message.id,
+        role: message.role,
+        partCount: message.parts?.length ?? 0,
+      });
+    },
   });
 
   const isStreaming = status === 'streaming' || status === 'submitted';
@@ -47,7 +63,28 @@ export function AiLeftPanel({ onClose, className }: AiLeftPanelProps) {
   const handleSend = async () => {
     const text = input.trim();
     if ((!text && attachments.length === 0) || isStreaming) return;
-    const token = await getAccessToken();
+
+    if (CLIENT_CHAT_DEBUG) {
+      console.log('[chat][client][send-click]', {
+        textLength: text.length,
+        attachmentCount: attachments.length,
+        isStreaming,
+        spaceSlug,
+      });
+    }
+
+    let token = '';
+    try {
+      token = (await getAccessToken()) ?? '';
+    } catch (error) {
+      if (CLIENT_CHAT_DEBUG) {
+        console.error('[chat][client][token-error]', {
+          message: error instanceof Error ? error.message : String(error),
+          error,
+        });
+      }
+      return;
+    }
 
     const textPart = { type: 'text' as const, text: text || '(no text)' };
     const fileParts =
@@ -65,6 +102,13 @@ export function AiLeftPanel({ onClose, className }: AiLeftPanelProps) {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       },
     );
+
+    if (CLIENT_CHAT_DEBUG) {
+      console.log('[chat][client][send-dispatched]', {
+        hasAuthToken: Boolean(token),
+        bodyHasSpaceSlug: Boolean(spaceSlug),
+      });
+    }
     setInput('');
     setAttachments([]);
     setShowSuggestions(false);

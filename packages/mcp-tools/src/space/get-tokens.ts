@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 const MAX_LIMIT = 200;
 const DEFAULT_LIMIT = 100;
+const MCP_TOOLS_DEBUG = process.env.MCP_TOOLS_DEBUG === 'true';
 
 export const getTokensBySpaceSlugInputSchema = {
   slug: z
@@ -92,8 +93,19 @@ export async function handleGetTokensBySpaceSlug({
   content: Array<{ type: 'text'; text: string }>;
   structuredContent: GetTokensBySpaceSlugStructuredContent;
 }> {
-  const space = await findSpaceBySlug({ slug }, { db });
+  const startedAt = Date.now();
   const appliedLimit = Math.min(limit ?? DEFAULT_LIMIT, MAX_LIMIT) as number;
+
+  if (MCP_TOOLS_DEBUG) {
+    console.log('[mcp-tools][get_tokens_by_space_slug][start]', {
+      slug,
+      hasSearch: Boolean(search?.trim().length),
+      limit,
+      appliedLimit,
+    });
+  }
+
+  const space = await findSpaceBySlug({ slug }, { db });
 
   if (!space) {
     const output: GetTokensBySpaceSlugStructuredContent = {
@@ -122,6 +134,17 @@ export async function handleGetTokensBySpaceSlug({
       limit: appliedLimit,
     },
   );
+
+  if (MCP_TOOLS_DEBUG) {
+    console.log('[mcp-tools][get_tokens_by_space_slug][query-result]', {
+      slug,
+      spaceId: space.id,
+      tokenRowCount: rows.length,
+      durationMs: Date.now() - startedAt,
+      search: search?.trim() || null,
+      appliedLimit,
+    });
+  }
 
   const tokens = rows.map((row) => ({
     id: row.id,

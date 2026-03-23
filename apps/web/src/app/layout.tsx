@@ -87,7 +87,12 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const shouldInjectToolbar = process.env.NODE_ENV === 'development';
+  // Opt-in only: rendering <VercelToolbar /> without `vercel link` + config logs a
+  // warning and can throw in dev; errors then surface as opaque stacks inside
+  // next-devtools. See https://vercel.com/docs/workflow-collaboration/vercel-toolbar
+  const shouldInjectToolbar =
+    process.env.NODE_ENV === 'development' &&
+    process.env.NEXT_PUBLIC_VERCEL_TOOLBAR === 'true';
   const isLanguageSelectVisible = await showLanguageSelect();
   const locale = await getLocale();
   const messages = await getMessages();

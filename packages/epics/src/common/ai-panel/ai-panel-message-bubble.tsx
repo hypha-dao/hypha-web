@@ -14,7 +14,7 @@ type ToolPart = {
     | 'output-available'
     | 'output-error';
   input?: { slug?: string };
-  output?: { found: boolean; slug: string; space: unknown };
+  output?: unknown;
   errorText?: string;
 };
 
@@ -65,6 +65,60 @@ export function AiPanelMessageBubble({
       // clipboard API not available
     }
   }, [textContent]);
+
+  const renderToolOutput = useCallback((output: unknown) => {
+    if (!output || typeof output !== 'object') {
+      return (
+        <span className="text-muted-foreground">Tool call completed.</span>
+      );
+    }
+
+    const value = output as {
+      found?: boolean;
+      slug?: string;
+      space?: { title?: string; memberCount?: number; documentCount?: number };
+      spaceFound?: boolean;
+      tokens?: unknown[];
+    };
+
+    // get_space_by_slug tool output
+    if ('found' in value) {
+      if (value.found && value.space) {
+        return (
+          <span>
+            Found <strong>{value.space.title ?? value.slug ?? 'space'}</strong>{' '}
+            ({value.slug ?? 'unknown'}) - {value.space.memberCount ?? 0}{' '}
+            members, {value.space.documentCount ?? 0} agreements
+          </span>
+        );
+      }
+      return (
+        <span className="text-muted-foreground">
+          No space found for slug &quot;{value.slug ?? 'unknown'}&quot;
+        </span>
+      );
+    }
+
+    // get_tokens tool output
+    if ('spaceFound' in value) {
+      if (!value.spaceFound) {
+        return (
+          <span className="text-muted-foreground">
+            No space found for slug &quot;{value.slug ?? 'unknown'}&quot;
+          </span>
+        );
+      }
+      const tokenCount = Array.isArray(value.tokens) ? value.tokens.length : 0;
+      return (
+        <span className="text-muted-foreground">
+          Retrieved {tokenCount} token{tokenCount === 1 ? '' : 's'} for space
+          &quot;{value.slug ?? 'unknown'}&quot;.
+        </span>
+      );
+    }
+
+    return <span className="text-muted-foreground">Tool call completed.</span>;
+  }, []);
 
   return (
     <div className={cn('flex gap-2.5', isUser && 'flex-row-reverse')}>
@@ -130,27 +184,7 @@ export function AiPanelMessageBubble({
                     </span>
                   )}
                   {part.state === 'output-available' &&
-                    part.output &&
-                    (part.output.found && part.output.space ? (
-                      <span>
-                        Found{' '}
-                        <strong>
-                          {(part.output.space as { title?: string }).title ??
-                            part.output.slug}
-                        </strong>{' '}
-                        ({part.output.slug}) —{' '}
-                        {(part.output.space as { memberCount?: number })
-                          .memberCount ?? 0}{' '}
-                        members,{' '}
-                        {(part.output.space as { documentCount?: number })
-                          .documentCount ?? 0}{' '}
-                        agreements
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">
-                        No space found for slug &quot;{part.output.slug}&quot;
-                      </span>
-                    ))}
+                    renderToolOutput(part.output)}
                   {part.state === 'output-error' && (
                     <span className="text-destructive">
                       Error: {part.errorText ?? 'Unknown error'}
