@@ -57,6 +57,8 @@ export const CreateAgreementForm = ({
     fullSchemaCreateSpaceForm,
     tAgreementFlow,
   );
+  const resolvedLabel =
+    label ?? tAgreementFlow('createActionForms.defaultAgreement');
 
   const formRef = React.useRef<HTMLFormElement>(null);
 
@@ -78,7 +80,7 @@ export const CreateAgreementForm = ({
   const handleCreate = async (data: FormValues) => {
     await createAgreement({
       ...data,
-      label: label,
+      label: resolvedLabel,
       spaceId: spaceId as number,
       ...(typeof web3SpaceId === 'number' ? { web3SpaceId } : {}),
     });
@@ -123,9 +125,7 @@ export const CreateAgreementForm = ({
             closeUrl={closeUrl || successfulUrl}
             backUrl={backUrl}
             isLoading={false}
-            label={
-              label ?? tAgreementFlow('createActionForms.defaultAgreement')
-            }
+            label={resolvedLabel}
             progress={progress}
           />
           <div className="flex justify-end w-full">
