@@ -139,15 +139,22 @@ export const BuyHyphaTokensForm = ({
                 {
                   token: paymentAsset?.symbol ?? 'USDC',
                   topUpLink: (chunks) => (
-                    <span
+                    <button
+                      type="button"
                       onClick={() => {
                         setInsufficientFunds(false);
                         fundWallet();
                       }}
-                      className="font-bold cursor-pointer text-accent-9 underline"
+                      aria-label={tAgreementFlow(
+                        'buyHyphaTokensForm.insufficientFunds.topUpWith',
+                        {
+                          token: paymentAsset?.symbol ?? 'USDC',
+                        },
+                      )}
+                      className="font-bold cursor-pointer text-accent-9 underline bg-transparent border-0 p-0"
                     >
                       {chunks}
-                    </span>
+                    </button>
                   ),
                 },
               )}
