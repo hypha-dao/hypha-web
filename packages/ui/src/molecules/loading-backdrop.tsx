@@ -8,6 +8,7 @@ type LoadingBackdrop = {
   className?: string;
   message?: React.ReactElement;
   showKeepWindowOpenMessage?: boolean;
+  keepWindowOpenMessage?: React.ReactNode;
   fullHeight?: boolean;
 };
 
@@ -18,6 +19,7 @@ export const LoadingBackdrop = ({
   className,
   message,
   showKeepWindowOpenMessage = false,
+  keepWindowOpenMessage = 'Please keep this window open until the progress bar completes.',
   fullHeight = false,
 }: LoadingBackdrop) => {
   return (
@@ -35,7 +37,7 @@ export const LoadingBackdrop = ({
           <Progress value={progress} className="h-2 w-3/4 max-w-md" />
           {showKeepWindowOpenMessage && (
             <div className="text-center text-sm font-medium">
-              Please keep this window open until the progress bar completes.
+              {keepWindowOpenMessage}
             </div>
           )}
           <div className="text-center text-sm">{message}</div>

@@ -486,6 +486,20 @@
         }
       }
     },
+    "loadingBackdrop": {
+      "keepWindowOpen": "Veuillez laisser cette fenêtre ouverte jusqu’à la fin de la barre de progression."
+    },
+    "proposalLoader": {
+      "processingVote": "Traitement du vote...",
+      "savingVote": "Enregistrement du vote...",
+      "gettingUpdatedData": "Récupération des données mises à jour...",
+      "voteProcessed": "Vote traité !",
+      "somethingWentWrong": "Une erreur s’est produite.",
+      "pleaseWait": "Veuillez patienter...",
+      "retry": "Réessayer",
+      "transactionRevertedUnknownReason": "La transaction a été annulée pour une raison inconnue.",
+      "unknownErrorOccurred": "Une erreur inconnue s’est produite."
+    },
     "plugins": {
       "activateSpaces": {
         "checkOut": "Récapitulatif",

@@ -486,6 +486,20 @@
         }
       }
     },
+    "loadingBackdrop": {
+      "keepWindowOpen": "Please keep this window open until the progress bar completes."
+    },
+    "proposalLoader": {
+      "processingVote": "Processing vote...",
+      "savingVote": "Saving vote...",
+      "gettingUpdatedData": "Getting updated data...",
+      "voteProcessed": "Vote processed!",
+      "somethingWentWrong": "Something went wrong.",
+      "pleaseWait": "Please wait...",
+      "retry": "Retry",
+      "transactionRevertedUnknownReason": "Transaction reverted for unknown reason.",
+      "unknownErrorOccurred": "An unknown error occurred."
+    },
     "plugins": {
       "activateSpaces": {
         "checkOut": "Check out",

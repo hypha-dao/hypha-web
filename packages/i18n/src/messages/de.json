@@ -486,6 +486,20 @@
         }
       }
     },
+    "loadingBackdrop": {
+      "keepWindowOpen": "Bitte lassen Sie dieses Fenster geöffnet, bis der Fortschrittsbalken abgeschlossen ist."
+    },
+    "proposalLoader": {
+      "processingVote": "Abstimmung wird verarbeitet...",
+      "savingVote": "Abstimmung wird gespeichert...",
+      "gettingUpdatedData": "Aktualisierte Daten werden geladen...",
+      "voteProcessed": "Abstimmung verarbeitet!",
+      "somethingWentWrong": "Etwas ist schiefgelaufen.",
+      "pleaseWait": "Bitte warten...",
+      "retry": "Erneut versuchen",
+      "transactionRevertedUnknownReason": "Transaktion wurde aus unbekanntem Grund zurückgesetzt.",
+      "unknownErrorOccurred": "Ein unbekannter Fehler ist aufgetreten."
+    },
     "plugins": {
       "activateSpaces": {
         "checkOut": "Übersicht",

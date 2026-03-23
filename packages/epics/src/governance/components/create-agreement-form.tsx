@@ -87,6 +87,7 @@ export const CreateAgreementForm = ({
   return (
     <LoadingBackdrop
       showKeepWindowOpenMessage={true}
+      keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       progress={progress}
       isLoading={isPending}
       fullHeight={true}

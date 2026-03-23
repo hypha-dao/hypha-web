@@ -130,6 +130,7 @@ export default function SpaceConfiguration() {
     <SidePanel>
       <LoadingBackdrop
         showKeepWindowOpenMessage={true}
+        keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
         fullHeight={true}
         progress={progress}
         isLoading={isBusy}
