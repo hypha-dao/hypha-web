@@ -535,7 +535,7 @@
     "selectParentError": "Bitte wählen Sie einen verknüpften Space oder aktivieren Sie „Root Space“",
     "slugFieldRegex": "Dieses Feld darf nur Kleinbuchstaben, Zahlen, Bindestriche und Apostrophe enthalten.",
     "slugAlreadyExists": "Space-ID existiert bereits",
-    "slugAlreadyExistsLong": "Ein Space mit diesem Namen existiert bereits. Bitte wählen Sie einen anderen Namen für Ihren Space.",
+    "slugAlreadyExistsLong": "Ein Space mit dieser Space-ID existiert bereits. Bitte wählen Sie eine andere Space-ID für Ihren Space.",
     "alreadyMember": "Bereits Mitglied",
     "invitePending": "Einladung ausstehend",
     "requestInvite": "Einladung anfordern",
