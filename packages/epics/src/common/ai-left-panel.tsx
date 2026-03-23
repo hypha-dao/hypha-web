@@ -13,7 +13,6 @@ import {
   AiPanelHeader,
   AiPanelMessages,
   AiPanelChatBar,
-  MODEL_OPTIONS,
   MOCK_SUGGESTIONS,
 } from './ai-panel';
 import { convertFilesToParts } from './ai-panel/convert-files-to-parts';
@@ -35,7 +34,6 @@ export function AiLeftPanel({ onClose, className }: AiLeftPanelProps) {
   } = useAuthentication();
   const [input, setInput] = useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
-  const [selectedModel, setSelectedModel] = useState(MODEL_OPTIONS[0]!);
   const [showSuggestions, setShowSuggestions] = useState(true);
 
   const { messages, sendMessage, status, stop, setMessages } = useChat({
@@ -62,7 +60,6 @@ export function AiLeftPanel({ onClose, className }: AiLeftPanelProps) {
       },
       {
         body: {
-          modelId: selectedModel.id,
           ...(spaceSlug && { spaceSlug }),
         },
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -95,13 +92,7 @@ export function AiLeftPanel({ onClose, className }: AiLeftPanelProps) {
           className,
         )}
       >
-        <AiPanelHeader
-          onClose={onClose}
-          modelOptions={MODEL_OPTIONS}
-          selectedModel={selectedModel}
-          onModelSelect={setSelectedModel}
-          onResetChat={handleResetChat}
-        />
+        <AiPanelHeader onClose={onClose} onResetChat={handleResetChat} />
         <div className="flex min-w-0 flex-1 items-center justify-center">
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         </div>
@@ -117,13 +108,7 @@ export function AiLeftPanel({ onClose, className }: AiLeftPanelProps) {
           className,
         )}
       >
-        <AiPanelHeader
-          onClose={onClose}
-          modelOptions={MODEL_OPTIONS}
-          selectedModel={selectedModel}
-          onModelSelect={setSelectedModel}
-          onResetChat={handleResetChat}
-        />
+        <AiPanelHeader onClose={onClose} onResetChat={handleResetChat} />
         <div className="flex min-w-0 flex-1 flex-col items-center justify-center gap-4 px-6 py-8">
           <p className="text-center text-sm text-muted-foreground">
             Sign in to use Hypha AI
@@ -148,13 +133,7 @@ export function AiLeftPanel({ onClose, className }: AiLeftPanelProps) {
         className,
       )}
     >
-      <AiPanelHeader
-        onClose={onClose}
-        modelOptions={MODEL_OPTIONS}
-        selectedModel={selectedModel}
-        onModelSelect={setSelectedModel}
-        onResetChat={handleResetChat}
-      />
+      <AiPanelHeader onClose={onClose} onResetChat={handleResetChat} />
 
       <AiPanelMessages
         messages={messages}

@@ -1,5 +1,5 @@
 import { convertToModelMessages, stepCountIs, streamText, tool } from 'ai';
-import { google } from '@ai-sdk/google';
+import { openrouter } from '@openrouter/ai-sdk-provider';
 import type { UIMessage } from 'ai';
 import { getSpaceBySlug } from '@hypha-platform/core/server';
 import {
@@ -149,15 +149,6 @@ const getTokensTool = tool({
   },
 });
 
-function getModel(modelId: string) {
-  switch (modelId) {
-    case 'gemini-2.5-flash':
-      return google('gemini-2.5-flash');
-    default:
-      return google('gemini-2.5-flash');
-  }
-}
-
 export async function POST(req: Request) {
   const headersList = await headers();
   const authToken = headersList.get('Authorization')?.split(' ')[1] || '';
@@ -167,18 +158,14 @@ export async function POST(req: Request) {
 
   const {
     messages,
-    modelId = 'gemini-2.5-flash',
     spaceSlug,
   }: {
     messages: UIMessage[];
-    modelId?: string;
     spaceSlug?: string | null;
   } = await req.json();
 
-  const model = getModel(modelId);
-
   const result = streamText({
-    model,
+    model: openrouter('openrouter/auto'),
     system: buildSystemPrompt(spaceSlug),
     messages: await convertToModelMessages(messages),
     tools: {

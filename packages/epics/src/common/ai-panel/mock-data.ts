@@ -1,16 +1,3 @@
-import type { LucideIcon } from 'lucide-react';
-import { Zap } from 'lucide-react';
-
-export type ModelOption = {
-  id: string;
-  label: string;
-  icon: LucideIcon;
-};
-
-export const MODEL_OPTIONS: ModelOption[] = [
-  { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', icon: Zap },
-];
-
 export const MOCK_SUGGESTIONS = [
   'Analyze recent signals',
   'Summarize top conversations',
