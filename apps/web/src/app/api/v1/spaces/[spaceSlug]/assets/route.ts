@@ -72,9 +72,10 @@ export async function GET(
     const referencePriceByAddress: Record<string, number> = {};
     rawDbTokens.forEach((t) => {
       if (t.address && t.referencePrice != null) {
-        referencePriceByAddress[t.address.toLowerCase()] = Number(
-          t.referencePrice,
-        );
+        const parsed = Number(t.referencePrice);
+        if (Number.isFinite(parsed) && parsed >= 0) {
+          referencePriceByAddress[t.address.toLowerCase()] = parsed;
+        }
       }
     });
 

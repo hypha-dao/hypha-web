@@ -291,14 +291,19 @@ export async function GET(
     };
 
     const decimalsMap = new Map<string, number>();
-    for (const addr of allTokenAddresses) {
-      try {
-        const decimals = await getTokenDecimals(addr as `0x${string}`);
-        decimalsMap.set(addr.toLowerCase(), decimals);
-      } catch {
-        decimalsMap.set(addr.toLowerCase(), 18);
-      }
-    }
+    const decimalsResults = await Promise.all(
+      Array.from(allTokenAddresses).map(async (addr) => {
+        try {
+          const decimals = await getTokenDecimals(addr as `0x${string}`);
+          return { addr: addr.toLowerCase(), decimals };
+        } catch {
+          return { addr: addr.toLowerCase(), decimals: 18 };
+        }
+      }),
+    );
+    decimalsResults.forEach(({ addr, decimals }) => {
+      decimalsMap.set(addr, decimals);
+    });
 
     const totalSupplyByAddress = new Map<string, bigint>();
     const allTokenAddressesForSupply = Array.from(
@@ -325,6 +330,8 @@ export async function GET(
       );
     });
 
+    // callIdx follows the exact insertion order used when building
+    // backingBalanceCalls (vaultSpaceTokens -> backingTokens).
     let callIdx = 0;
     const vaults = vaultSpaceTokens.map((spaceToken, vaultIdx) => {
       const spaceTokenMeta = tokenMetaMap.get(spaceToken.toLowerCase());

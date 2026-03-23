@@ -6,6 +6,5 @@ export * from './public-client';
 export * from './tokens';
 export * from './token-backing-vault';
 export * from './allowed-spaces';
-export * from './token-backing-vault';
 
 export * from '../server/extract-revert-reason';
