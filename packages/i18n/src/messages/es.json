@@ -742,7 +742,33 @@
     "listIsEmpty": "La lista está vacía",
     "loading": "Cargando...",
     "noMoreMembers": "No más miembros",
-    "loadMoreMembers": "Cargar más miembros"
+    "loadMoreMembers": "Cargar más miembros",
+    "memberDetail": {
+      "statusBadge": {
+        "active": "Activo",
+        "voting": "En votación",
+        "completed": "Completado",
+        "rejected": "Rechazado",
+        "inactive": "Inactivo",
+        "applicant": "Candidato"
+      }
+    },
+    "delegateSection": {
+      "title": "Delegar a un miembro",
+      "description": "Selecciona un miembro de este espacio para recibir tu poder de voto.",
+      "delegatedVotingMember": "Miembro delegado con derecho a voto",
+      "findMember": "Buscar miembro",
+      "noMembersFound": "No se encontraron miembros.",
+      "save": "Guardar",
+      "delegating": "Delegando...",
+      "undelegate": "Quitar delegación",
+      "undelegating": "Quitando delegación...",
+      "success": "¡Delegación completada con éxito!",
+      "errors": {
+        "selectMember": "Selecciona un miembro",
+        "selectSpace": "Selecciona un espacio"
+      }
+    }
   },
   "TreasuryTab": {
     "balance": "Balance",

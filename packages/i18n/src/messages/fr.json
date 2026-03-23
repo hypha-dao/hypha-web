@@ -270,7 +270,33 @@
     "listIsEmpty": "La liste est vide",
     "loading": "Chargement...",
     "noMoreMembers": "Plus de membres",
-    "loadMoreMembers": "Charger plus de membres"
+    "loadMoreMembers": "Charger plus de membres",
+    "memberDetail": {
+      "statusBadge": {
+        "active": "Actif",
+        "voting": "En vote",
+        "completed": "Terminé",
+        "rejected": "Rejeté",
+        "inactive": "Inactif",
+        "applicant": "Candidat"
+      }
+    },
+    "delegateSection": {
+      "title": "Déléguer à un membre",
+      "description": "Sélectionnez un membre de cet espace pour recevoir votre pouvoir de vote.",
+      "delegatedVotingMember": "Membre votant délégué",
+      "findMember": "Trouver un membre",
+      "noMembersFound": "Aucun membre trouvé.",
+      "save": "Enregistrer",
+      "delegating": "Délégation...",
+      "undelegate": "Annuler la délégation",
+      "undelegating": "Annulation...",
+      "success": "Délégation effectuée avec succès !",
+      "errors": {
+        "selectMember": "Veuillez sélectionner un membre",
+        "selectSpace": "Veuillez sélectionner un espace"
+      }
+    }
   },
   "TreasuryTab": {
     "balance": "Solde",

@@ -270,7 +270,33 @@
     "listIsEmpty": "Liste ist leer",
     "loading": "Wird geladen...",
     "noMoreMembers": "Keine weiteren Mitglieder",
-    "loadMoreMembers": "Mehr Mitglieder laden"
+    "loadMoreMembers": "Mehr Mitglieder laden",
+    "memberDetail": {
+      "statusBadge": {
+        "active": "Aktiv",
+        "voting": "In Abstimmung",
+        "completed": "Abgeschlossen",
+        "rejected": "Abgelehnt",
+        "inactive": "Inaktiv",
+        "applicant": "Bewerber"
+      }
+    },
+    "delegateSection": {
+      "title": "An Mitglied delegieren",
+      "description": "Wählen Sie ein Mitglied dieses Space aus, das Ihr Stimmrecht erhalten soll.",
+      "delegatedVotingMember": "Delegiertes stimmberechtigtes Mitglied",
+      "findMember": "Mitglied finden",
+      "noMembersFound": "Keine Mitglieder gefunden.",
+      "save": "Speichern",
+      "delegating": "Wird delegiert...",
+      "undelegate": "Delegierung aufheben",
+      "undelegating": "Delegierung wird aufgehoben...",
+      "success": "Delegierung erfolgreich abgeschlossen!",
+      "errors": {
+        "selectMember": "Bitte wählen Sie ein Mitglied aus",
+        "selectSpace": "Bitte wählen Sie einen Space aus"
+      }
+    }
   },
   "TreasuryTab": {
     "balance": "Kontostand",

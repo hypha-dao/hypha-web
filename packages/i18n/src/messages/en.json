@@ -270,7 +270,33 @@
     "listIsEmpty": "List is empty",
     "loading": "Loading...",
     "noMoreMembers": "No more members",
-    "loadMoreMembers": "Load more members"
+    "loadMoreMembers": "Load more members",
+    "memberDetail": {
+      "statusBadge": {
+        "active": "Active",
+        "voting": "On voting",
+        "completed": "Completed",
+        "rejected": "Rejected",
+        "inactive": "Inactive",
+        "applicant": "Applicant"
+      }
+    },
+    "delegateSection": {
+      "title": "Delegate to Member",
+      "description": "Select a member of this space to receive your voting power.",
+      "delegatedVotingMember": "Delegated Voting Member",
+      "findMember": "Find Member",
+      "noMembersFound": "No members found.",
+      "save": "Save",
+      "delegating": "Delegating...",
+      "undelegate": "Undelegate",
+      "undelegating": "Undelegating...",
+      "success": "Delegation completed successfully!",
+      "errors": {
+        "selectMember": "Please select a member",
+        "selectSpace": "Please select a space"
+      }
+    }
   },
   "TreasuryTab": {
     "balance": "Balance",

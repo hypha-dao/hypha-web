@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { MemberSpaces } from './member-spaces';
 import { Address, Space } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
+import { useTranslations } from 'next-intl';
 
 type MemberType = {
   avatarUrl?: string;
@@ -32,6 +33,8 @@ export const MemberDetail = ({
   member,
   spaces,
 }: MemberDetailProps) => {
+  const tCommon = useTranslations('Common');
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex gap-5 justify-between">
@@ -42,7 +45,7 @@ export const MemberDetail = ({
             colorVariant="neutral"
             className="flex items-center"
           >
-            Close
+            {tCommon('close')}
             <RxCross1 className="ml-2" />
           </Button>
         </Link>
