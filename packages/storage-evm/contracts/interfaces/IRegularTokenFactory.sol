@@ -23,7 +23,10 @@ interface IRegularTokenFactory {
     address[] memory initialTransferWhitelist,
     address[] memory initialReceiveWhitelist,
     uint256 defaultCreditLimit,
-    uint256[] memory initialCreditWhitelistSpaceIds
+    uint256[] memory initialCreditWhitelistSpaceIds,
+    address paymentToken,
+    uint256 paymentTokenPricePerToken,
+    uint256 tokensForSale
   ) external returns (address);
 
   function getSpaceToken(

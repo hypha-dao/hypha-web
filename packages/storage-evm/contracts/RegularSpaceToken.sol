@@ -6,6 +6,8 @@ import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import './interfaces/IDAOSpaceFactory.sol';
 
 contract RegularSpaceToken is
@@ -15,6 +17,8 @@ contract RegularSpaceToken is
   OwnableUpgradeable,
   UUPSUpgradeable
 {
+  using SafeERC20 for IERC20;
+
   uint256 public spaceId;
   uint256 public maxSupply;
   bool public transferable;
@@ -65,6 +69,12 @@ contract RegularSpaceToken is
   uint256[] internal _creditWhitelistedSpaceIds;
   mapping(uint256 => bool) public isCreditWhitelistedSpace;
 
+  // Primary sale configuration (upgrade-safe: appended at end of storage vars)
+  address public paymentToken;
+  uint256 public paymentTokenPricePerToken; // 6 decimals, priced per 1e18 token units
+  uint256 public tokensForSale; // 18 decimals, 0 means sale disabled
+  uint256 public tokensSold;
+
   // Events
   event MaxSupplyUpdated(uint256 oldMaxSupply, uint256 newMaxSupply);
   event TransferableUpdated(bool transferable);
@@ -100,6 +110,17 @@ contract RegularSpaceToken is
   );
   event CreditWhitelistSpaceAdded(uint256 indexed spaceId);
   event CreditWhitelistSpaceRemoved(uint256 indexed spaceId);
+  event TokenSaleConfigured(
+    address indexed paymentToken,
+    uint256 paymentTokenPricePerToken,
+    uint256 tokensForSale
+  );
+  event TokensPurchased(
+    address indexed buyer,
+    uint256 tokenAmount,
+    uint256 paymentAmount,
+    address indexed treasury
+  );
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -122,7 +143,10 @@ contract RegularSpaceToken is
     address[] memory _initialTransferWhitelist,
     address[] memory _initialReceiveWhitelist,
     uint256 _defaultCreditLimit,
-    uint256[] memory _initialCreditWhitelistSpaceIds
+    uint256[] memory _initialCreditWhitelistSpaceIds,
+    address _paymentToken,
+    uint256 _paymentTokenPricePerToken,
+    uint256 _tokensForSale
   ) public initializer {
     __ERC20_init(name, symbol);
     __ERC20Burnable_init();
@@ -166,6 +190,14 @@ contract RegularSpaceToken is
         isCreditWhitelistedSpace[sid] = true;
         _creditWhitelistedSpaceIds.push(sid);
       }
+    }
+
+    // Optional initial sale configuration. Keeping zero values means "sale disabled".
+    if (_paymentToken != address(0)) {
+      paymentToken = _paymentToken;
+      paymentTokenPricePerToken = _paymentTokenPricePerToken;
+      tokensForSale = _tokensForSale;
+      tokensSold = 0;
     }
   }
 
@@ -419,6 +451,93 @@ contract RegularSpaceToken is
     priceCurrencyFeed = currencyFeed;
     emit PriceInUSDUpdated(oldPrice, newPrice);
     emit PriceCurrencyUpdated(newPrice, currencyFeed);
+  }
+
+  /**
+   * @dev Configure direct token sale in a payment token.
+   * @param _paymentToken Payment token contract address
+   * @param _paymentTokenPricePerToken Price per 1 token (1e18 units), in payment-token decimals
+   * @param _tokensForSale Total amount available for sale (18 decimals)
+   */
+  function configureTokenSale(
+    address _paymentToken,
+    uint256 _paymentTokenPricePerToken,
+    uint256 _tokensForSale
+  ) external {
+    require(msg.sender == executor, 'Only executor can configure token sale');
+    require(_paymentToken != address(0), 'Payment token cannot be zero address');
+    require(_paymentTokenPricePerToken > 0, 'Price must be greater than zero');
+    require(
+      _tokensForSale >= tokensSold,
+      'Tokens for sale cannot be less than already sold'
+    );
+
+    paymentToken = _paymentToken;
+    paymentTokenPricePerToken = _paymentTokenPricePerToken;
+    tokensForSale = _tokensForSale;
+
+    // Keep existing price fields aligned with sale pricing for consistency.
+    priceInUSD = _paymentTokenPricePerToken;
+    tokenPrice = _paymentTokenPricePerToken;
+    priceCurrencyFeed = address(0);
+
+    emit TokenSaleConfigured(
+      _paymentToken,
+      _paymentTokenPricePerToken,
+      _tokensForSale
+    );
+  }
+
+  /**
+   * @dev Purchase regular space tokens with the configured payment token.
+   * Payment tokens are sent directly to the space treasury (executor address).
+   * @param tokenAmount Amount of tokens to buy (18 decimals)
+   */
+  function buyTokens(uint256 tokenAmount) external {
+    require(!archived, 'Token is archived');
+    require(paymentToken != address(0), 'Token sale is not configured');
+    require(paymentTokenPricePerToken > 0, 'Token sale price not set');
+    require(tokensForSale > 0, 'Token sale is disabled');
+    require(tokenAmount > 0, 'Token amount must be greater than zero');
+    require(tokensSold + tokenAmount <= tokensForSale, 'Not enough tokens left');
+    require(
+      canAccountReceive(msg.sender),
+      'Buyer not whitelisted to receive tokens'
+    );
+
+    // Convert token amount (18 decimals) into payment-token amount.
+    uint256 paymentAmount = (tokenAmount * paymentTokenPricePerToken) / 1e18;
+    require(paymentAmount > 0, 'Payment amount too small');
+
+    tokensSold += tokenAmount;
+    IERC20(paymentToken).safeTransferFrom(msg.sender, executor, paymentAmount);
+    _mintWithSupplyChecks(msg.sender, tokenAmount);
+
+    emit TokensPurchased(msg.sender, tokenAmount, paymentAmount, executor);
+  }
+
+  /**
+   * @dev Get active token sale details.
+   * @return salePaymentToken Address of payment token used for purchases
+   * @return salePricePerToken Price per 1 token (1e18 units), in payment-token decimals
+   * @return tokensLeftToSell Remaining amount available for sale (18 decimals)
+   */
+  function getTokenSaleDetails()
+    external
+    view
+    returns (
+      address salePaymentToken,
+      uint256 salePricePerToken,
+      uint256 tokensLeftToSell
+    )
+  {
+    salePaymentToken = paymentToken;
+    salePricePerToken = paymentTokenPricePerToken;
+    if (tokensForSale > tokensSold) {
+      tokensLeftToSell = tokensForSale - tokensSold;
+    } else {
+      tokensLeftToSell = 0;
+    }
   }
 
   /**

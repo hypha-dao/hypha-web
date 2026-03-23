@@ -70,7 +70,12 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
       _useTransferWhitelist,
       _useReceiveWhitelist,
       _initialTransferWhitelist,
-      _initialReceiveWhitelist
+      _initialReceiveWhitelist,
+      0,
+      new uint256[](0),
+      address(0),
+      0,
+      0
     );
     require(
       _decayPercentage <= 10000,
