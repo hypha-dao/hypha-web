@@ -216,6 +216,7 @@ export const SpaceWithNumberOfMonthsField = ({
             placeholder={tAgreementFlow(
               'plugins.spaceWithMonths.selectSpacePlaceholder',
             )}
+            searchPlaceholder={tSpaces('search')}
             onChange={handleSpaceChange}
             renderOption={(option) => (
               <>
