@@ -557,6 +557,61 @@ await vault.updatePriceFeed(spaceId, spaceTokenAddress, backingTokenAddress, new
 
 ---
 
+## Add these frontend actions (no contract changes needed)
+
+You can implement this in `@hypha-platform/core` using read-contract helpers + hooks (same pattern as other web3 actions in the repo).
+
+### 1) Action for "redeemable tokens" dropdown
+
+Goal: only show space tokens that have a vault configured.
+
+Suggested helper actions:
+
+- `getVaultExists({ spaceId, spaceToken, chain })`
+  - Contract: `TokenBackingVault`
+  - Call: `vaultExists(spaceId, spaceToken)` -> `boolean`
+
+- `getSpaceRedeemableTokens({ spaceId, chain })`
+  - Read all token addresses for the space from factories:
+    - regular: `RegularTokenFactory.getSpaceToken(spaceId)`
+    - decaying: `DecayingTokenFactory.getSpaceToken(spaceId)`
+    - ownership: `OwnershipTokenFactory.getSpaceToken(spaceId)`
+  - Filter out zero addresses and duplicates.
+  - For each token, call `vaultExists(spaceId, token)`.
+  - Return only tokens where `vaultExists == true`.
+
+Optional stricter filter ("redeemable now", not only "has vault"):
+- also read `getVaultConfig(spaceId, token)` and require:
+  - `redeemEnabled == true`
+  - `redemptionStartDate == 0 || now >= redemptionStartDate`
+
+### 2) Action for "backing tokens" dropdown
+
+Goal: after user selects a token, show only tokens available in that token's vault.
+
+Suggested helper action:
+
+- `getVaultBackingTokens({ spaceId, spaceToken, chain })`
+  - Contract: `TokenBackingVault`
+  - Call: `getBackingTokens(spaceId, spaceToken)` -> `address[]`
+  - Use this list directly as the second dropdown options.
+
+Optional UX enrichment:
+- For each returned backing token, also call:
+  - `getBackingBalance(spaceId, spaceToken, backingToken)` to hide disabled/empty options if desired.
+  - token metadata (`symbol`, `decimals`) for labels.
+
+### Do we need to add anything to the contract?
+
+No. The current contract already exposes everything needed:
+
+- `vaultExists(spaceId, spaceToken)` for filtering redeemable source tokens.
+- `getBackingTokens(spaceId, spaceToken)` for target token options.
+
+No Solidity changes are required for these two dropdown behaviors.
+
+---
+
 ## Constants
 
 | Constant | Value | Description |
