@@ -829,6 +829,23 @@
     "searchTransactions": "Transações de pesquisa",
     "noTransactionsFound": "Nenhuma transação encontrada",
     "loadMoreTransactions": "Carregar mais transações",
+    "rewardsSection": {
+      "title": "Recompensas",
+      "claim": "Resgatar",
+      "signInToClaimRewards": "Faça login para resgatar recompensas",
+      "onlySpaceMembersCanClaimRewards": "Somente membros do espaço podem resgatar recompensas",
+      "noRewardsToClaim": "Não há recompensas para resgatar",
+      "signInToViewSpaceRewards": "Faça login para ver as recompensas do espaço"
+    },
+    "vaultsSection": {
+      "title": "Cofres de lastro",
+      "vaultTitle": "Cofre de lastro de {symbol}",
+      "totalLabel": "${amount} em colateral | {percent}% lastreado",
+      "updateBackingVault": "Atualizar cofre de lastro",
+      "noCollateralInVault": "Não há colateral neste cofre",
+      "signInToUpdateBackingVault": "Faça login para atualizar o cofre de lastro",
+      "joinSpaceToUpdateBackingVault": "Entre no espaço para atualizar o cofre de lastro"
+    },
     "assetCard": {
       "fromSpace": "de {spaceTitle}",
       "totalIssuance": "Emissão total: {value}",

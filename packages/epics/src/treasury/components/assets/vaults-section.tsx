@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useIsDelegate, useSpaceBySlug } from '@hypha-platform/core/client';
 import { useSpaceMember } from '../../../spaces';
+import { useTranslations } from 'next-intl';
 
 const SingleVaultSection: FC<{
   vault: Vault;
@@ -29,10 +30,14 @@ const SingleVaultSection: FC<{
   updateVaultHref,
   updateDisabledTitle,
 }) => {
-  const title = `${vault.tokenSymbol} Backing Vault`;
-  const totalLabel = `$${formatCurrencyValue(
-    vault.totalUsd,
-  )} Collateral | ${formatCurrencyValue(vault.backingPercent)}% Backed`;
+  const tTreasury = useTranslations('TreasuryTab');
+  const translatedTitle = tTreasury('vaultsSection.vaultTitle', {
+    symbol: vault.tokenSymbol,
+  });
+  const totalLabel = tTreasury('vaultsSection.totalLabel', {
+    amount: formatCurrencyValue(vault.totalUsd),
+    percent: formatCurrencyValue(vault.backingPercent),
+  });
   const perVaultUpdateHref = `${updateVaultHref}&spaceToken=${encodeURIComponent(
     vault.spaceToken,
   )}`;
@@ -40,21 +45,21 @@ const SingleVaultSection: FC<{
   return (
     <div className="flex flex-col w-full justify-center items-center gap-3">
       <div className="w-full flex items-center justify-between gap-2">
-        <SectionFilter label={title} count={totalLabel} />
+        <SectionFilter label={translatedTitle} count={totalLabel} />
         {canUpdateVault ? (
           <Link href={perVaultUpdateHref} scroll={false}>
-            <Button>Update Backing Vault</Button>
+            <Button>{tTreasury('vaultsSection.updateBackingVault')}</Button>
           </Link>
         ) : (
           <Button disabled title={updateDisabledTitle}>
-            Update Backing Vault
+            {tTreasury('vaultsSection.updateBackingVault')}
           </Button>
         )}
       </div>
       <div className="w-full">
         {vault.collaterals.length === 0 && !isLoading ? (
           <Empty>
-            <p>No collateral in this vault</p>
+            <p>{tTreasury('vaultsSection.noCollateralInVault')}</p>
           </Empty>
         ) : (
           <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
@@ -91,6 +96,7 @@ const SingleVaultSection: FC<{
 };
 
 export const VaultsSection: FC = () => {
+  const tTreasury = useTranslations('TreasuryTab');
   const { lang, id } = useParams<{ lang: Locale; id: string }>();
   const { vaults, isLoading } = useVaults();
   const { space } = useSpaceBySlug(id);
@@ -102,8 +108,8 @@ export const VaultsSection: FC = () => {
   const canUpdateVault = isAuthenticated && (isMember || isDelegate);
   const updateVaultHref = `/${lang}/dho/${id}/treasury/create/token-backing-vault?hideBack=true`;
   const updateDisabledTitle = !isAuthenticated
-    ? 'Please sign in to update backing vault'
-    : 'Join the space to update backing vault';
+    ? tTreasury('vaultsSection.signInToUpdateBackingVault')
+    : tTreasury('vaultsSection.joinSpaceToUpdateBackingVault');
 
   if (vaults.length === 0 && !isLoading) {
     return null;
@@ -112,7 +118,7 @@ export const VaultsSection: FC = () => {
   return (
     <div className="flex flex-col w-full justify-center items-center gap-6">
       <div className="w-full">
-        <h3 className="text-4">Backing Vaults</h3>
+        <h3 className="text-4">{tTreasury('vaultsSection.title')}</h3>
       </div>
       {vaults.map((vault, index) => (
         <SingleVaultSection

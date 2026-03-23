@@ -312,6 +312,23 @@
     "searchTransactions": "Search transactions",
     "noTransactionsFound": "No transactions found",
     "loadMoreTransactions": "Load more transactions",
+    "rewardsSection": {
+      "title": "Rewards",
+      "claim": "Claim",
+      "signInToClaimRewards": "Please sign in to claim rewards",
+      "onlySpaceMembersCanClaimRewards": "Only space members can claim rewards",
+      "noRewardsToClaim": "No rewards to claim",
+      "signInToViewSpaceRewards": "Sign in to view space rewards"
+    },
+    "vaultsSection": {
+      "title": "Backing Vaults",
+      "vaultTitle": "{symbol} Backing Vault",
+      "totalLabel": "${amount} Collateral | {percent}% Backed",
+      "updateBackingVault": "Update Backing Vault",
+      "noCollateralInVault": "No collateral in this vault",
+      "signInToUpdateBackingVault": "Please sign in to update backing vault",
+      "joinSpaceToUpdateBackingVault": "Join the space to update backing vault"
+    },
     "assetCard": {
       "fromSpace": "from {spaceTitle}",
       "totalIssuance": "Total Issuance: {value}",

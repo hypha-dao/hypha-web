@@ -312,6 +312,23 @@
     "searchTransactions": "Rechercher des transactions",
     "noTransactionsFound": "Aucune transaction trouvée",
     "loadMoreTransactions": "Charger plus de transactions",
+    "rewardsSection": {
+      "title": "Récompenses",
+      "claim": "Réclamer",
+      "signInToClaimRewards": "Veuillez vous connecter pour réclamer les récompenses",
+      "onlySpaceMembersCanClaimRewards": "Seuls les membres de l’espace peuvent réclamer les récompenses",
+      "noRewardsToClaim": "Aucune récompense à réclamer",
+      "signInToViewSpaceRewards": "Connectez-vous pour voir les récompenses de l’espace"
+    },
+    "vaultsSection": {
+      "title": "Coffres de garantie",
+      "vaultTitle": "{symbol} Coffre de garantie",
+      "totalLabel": "${amount} de garanties | {percent}% couvert",
+      "updateBackingVault": "Mettre à jour le coffre de garantie",
+      "noCollateralInVault": "Aucune garantie dans ce coffre",
+      "signInToUpdateBackingVault": "Veuillez vous connecter pour mettre à jour le coffre de garantie",
+      "joinSpaceToUpdateBackingVault": "Rejoignez l’espace pour mettre à jour le coffre de garantie"
+    },
     "assetCard": {
       "fromSpace": "de {spaceTitle}",
       "totalIssuance": "Émission totale : {value}",

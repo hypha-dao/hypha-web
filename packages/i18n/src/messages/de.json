@@ -312,6 +312,23 @@
     "searchTransactions": "Transaktionen suchen",
     "noTransactionsFound": "Keine Transaktionen gefunden",
     "loadMoreTransactions": "Mehr Transaktionen laden",
+    "rewardsSection": {
+      "title": "Belohnungen",
+      "claim": "Einlösen",
+      "signInToClaimRewards": "Bitte melden Sie sich an, um Belohnungen einzulösen",
+      "onlySpaceMembersCanClaimRewards": "Nur Space-Mitglieder können Belohnungen einlösen",
+      "noRewardsToClaim": "Keine Belohnungen zum Einlösen",
+      "signInToViewSpaceRewards": "Melden Sie sich an, um Space-Belohnungen anzuzeigen"
+    },
+    "vaultsSection": {
+      "title": "Sicherungsvaults",
+      "vaultTitle": "{symbol} Sicherungsvault",
+      "totalLabel": "${amount} Sicherheiten | {percent}% gedeckt",
+      "updateBackingVault": "Sicherungsvault aktualisieren",
+      "noCollateralInVault": "Keine Sicherheiten in diesem Vault",
+      "signInToUpdateBackingVault": "Bitte melden Sie sich an, um den Sicherungsvault zu aktualisieren",
+      "joinSpaceToUpdateBackingVault": "Treten Sie dem Space bei, um den Sicherungsvault zu aktualisieren"
+    },
     "assetCard": {
       "fromSpace": "von {spaceTitle}",
       "totalIssuance": "Gesamtausgabe: {value}",

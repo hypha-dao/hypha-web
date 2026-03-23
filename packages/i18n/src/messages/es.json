@@ -829,6 +829,23 @@
     "searchTransactions": "Buscar transacciones",
     "noTransactionsFound": "No se encontraron transacciones",
     "loadMoreTransactions": "Cargar más transacciones",
+    "rewardsSection": {
+      "title": "Recompensas",
+      "claim": "Reclamar",
+      "signInToClaimRewards": "Inicia sesión para reclamar recompensas",
+      "onlySpaceMembersCanClaimRewards": "Solo los miembros del espacio pueden reclamar recompensas",
+      "noRewardsToClaim": "No hay recompensas para reclamar",
+      "signInToViewSpaceRewards": "Inicia sesión para ver las recompensas del espacio"
+    },
+    "vaultsSection": {
+      "title": "Bóvedas de respaldo",
+      "vaultTitle": "Bóveda de respaldo de {symbol}",
+      "totalLabel": "${amount} en colateral | {percent}% respaldado",
+      "updateBackingVault": "Actualizar bóveda de respaldo",
+      "noCollateralInVault": "No hay colateral en esta bóveda",
+      "signInToUpdateBackingVault": "Inicia sesión para actualizar la bóveda de respaldo",
+      "joinSpaceToUpdateBackingVault": "Únete al espacio para actualizar la bóveda de respaldo"
+    },
     "assetCard": {
       "fromSpace": "de {spaceTitle}",
       "totalIssuance": "Emisión total: {value}",
