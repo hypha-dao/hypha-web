@@ -158,13 +158,18 @@ export const POST = proposalCreatedSigningKey
         const spacesWithPeople = (await Promise.allSettled(fetchingData))
           .filter((res) => res.status === 'fulfilled')
           .map(({ value }) => value)
-          .filter((space) => space.people.length > 0 && space.space?.slug);
+          .filter(
+            (entry) =>
+              entry.people.length > 0 &&
+              Boolean(entry.space?.slug) &&
+              Boolean(entry.space?.title),
+          );
 
         const notificationParams = spacesWithPeople.map(
           ({ space, people }) => ({
             slugs: people.map(({ slug }) => slug!),
-            spaceTitle: space?.title,
-            spaceSlug: space?.slug,
+            spaceTitle: space!.title,
+            spaceSlug: space!.slug,
           }),
         );
 
