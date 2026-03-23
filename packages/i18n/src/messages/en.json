@@ -966,7 +966,7 @@
       },
       "spaceTransparencySettings": {
         "title": "Space Transparency",
-        "description": "Define the level of transparency you collectively want to apply to your space. Please note that, regardless of the choice you make below, only direct member can take action in the space.",
+        "description": "Define the level of transparency you collectively want to apply to your space. Please note that, regardless of the choice you make below, only direct members can take action in the space.",
         "discoverability": "Space Discoverability",
         "activityAccess": "Space Activity Access"
       },
