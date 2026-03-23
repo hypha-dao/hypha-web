@@ -241,10 +241,14 @@ export const IssueNewTokenForm = ({
       if (!errors || typeof errors !== 'object') return errors;
       if (Array.isArray(errors)) {
         const localizedArray = errors.map(localizeErrors);
+        const localizedArrayWithMeta = localizedArray as unknown as Record<
+          string,
+          unknown
+        >;
 
         for (const [key, value] of Object.entries(errors)) {
           if (!/^\d+$/.test(key)) {
-            (localizedArray as unknown as Record<string, unknown>)[key] =
+            localizedArrayWithMeta[key] =
               value && typeof value === 'object'
                 ? localizeErrors(value)
                 : value;
