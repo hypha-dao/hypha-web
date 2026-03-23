@@ -405,7 +405,8 @@
     "linkedTo": "Linked to",
     "rootSpace": "Root Space",
     "rootSpaceDescription": "Marking this space as a Root Space will make it independent. It will no longer be linked to the current organisation, and all of its linked spaces will move with it.",
-    "search": "Search..."
+    "search": "Search...",
+    "addYourUrl": "Add your URL"
   },
   "AgreementFlow": {
     "labels": {

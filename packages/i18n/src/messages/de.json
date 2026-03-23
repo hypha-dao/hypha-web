@@ -405,7 +405,8 @@
     "linkedTo": "Verknüpft mit",
     "rootSpace": "Root-Space",
     "rootSpaceDescription": "Wenn Sie diesen Space als Root-Space markieren, wird er unabhängig. Er ist dann nicht mehr mit der aktuellen Organisation verknüpft, und alle mit ihm verknüpften Spaces werden mitverschoben.",
-    "search": "Suchen..."
+    "search": "Suchen...",
+    "addYourUrl": "Füge deine URL hinzu"
   },
   "AgreementFlow": {
     "labels": {

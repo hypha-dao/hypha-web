@@ -663,6 +663,7 @@ export const SpaceForm = ({
                   links={field.value}
                   onChange={field.onChange}
                   errors={form.formState.errors.links}
+                  placeholder={tSpaces('addYourUrl')}
                 />
               </FormControl>
               <FormMessage />
