@@ -143,11 +143,11 @@
         "general": {
           "title": "General",
           "description": "Seleccione su tipo de token y personalice su nombre, símbolo e ícono para una identificación clara.",
-          "tokenTypeLabel": "Tipo de ficha",
+          "tokenTypeLabel": "Tipo de token",
           "tokenTypePlaceholder": "Seleccione un tipo de token",
           "tokenTypeOptions": {
             "utility": {
-              "label": "Ficha de utilidad",
+              "label": "Token de utilidad",
               "description": "utilizado para el acceso o la funcionalidad dentro del espacio"
             },
             "ownership": {
@@ -155,7 +155,7 @@
               "description": "refleja participación o equidad en el espacio"
             },
             "impact": {
-              "label": "Ficha de impacto",
+              "label": "Token de impacto",
               "description": "valora resultados sociales, económicos y ambientales mensurables"
             },
             "credits": {
@@ -163,7 +163,7 @@
               "description": "Créditos canjeables que se pueden canjear por moneda fiduciaria."
             },
             "voice": {
-              "label": "Ficha de voz",
+              "label": "Token de voz",
               "description": "Proporciona voz en la gestión o toma de decisiones dentro del espacio."
             },
             "community_currency": {
@@ -173,9 +173,9 @@
           },
           "tokenNameLabel": "Nombre del token",
           "tokenNamePlaceholder": "Escribe un nombre",
-          "tokenSymbolLabel": "Símbolo de ficha",
+          "tokenSymbolLabel": "Símbolo de token",
           "tokenSymbolPlaceholder": "Escribe un símbolo",
-          "tokenIconLabel": "Icono de ficha"
+          "tokenIconLabel": "Icono de token"
         },
         "advancedSettings": {
           "title": "Configuración avanzada de token (opcional)",
@@ -326,7 +326,7 @@
       },
       "tokenPayoutField": {
         "amount": "Cantidad",
-        "selectToken": "Seleccione una ficha",
+        "selectToken": "Seleccione un token",
         "noTokensFound": "No se encontraron tokens",
         "by": "por",
         "bySpace": "de {space}"
@@ -347,7 +347,7 @@
         "oneMemberOneVoteDescription": "Cada miembro tiene la misma voz en las decisiones, sin ponderación por rol, tokens o intereses, lo que garantiza la igualdad y el poder compartido. Comúnmente utilizado en espacios comunitarios o ecosistémicos.",
         "oneVoiceOneVoteTitle": "1 Voz 1 Voto",
         "oneVoiceOneVoteDescription": "Cada voto está vinculado a tokens de voz obtenidos, que reflejan contribuciones, reputación y compromiso, pero decae con la inactividad para fomentar el compromiso. Comúnmente utilizado en equipos centrales o grupos de contribuyentes.",
-        "oneTokenOneVoteTitle": "1 ficha 1 voto",
+        "oneTokenOneVoteTitle": "1 token 1 voto",
         "oneTokenOneVoteDescription": "El poder de voto es proporcional a la cantidad de tokens que se poseen, alineando la influencia con la participación. Comúnmente utilizado en flujos de valor, tesorería o espacios de inversión.",
         "clickHere": "Haz clic aquí",
         "voiceTokenTooltipPrefix": "Para seleccionar este método de votación, primero debe emitir su token de voz.",
@@ -367,7 +367,7 @@
       "entryMethodTokenField": {
         "requiredMinTokenNumberOptional": "Requerido Mín. Número de token (opcional)",
         "typeAmount": "Escribe una cantidad",
-        "selectToken": "Seleccione una ficha"
+        "selectToken": "Seleccione un token"
       },
       "transparency": {
         "publicTitle": "Público",
@@ -386,7 +386,7 @@
       "mintTokens": {
         "mintToSpaceTreasury": "Tesoro de la menta al espacio",
         "description": "Acuña tokens en tu tesorería espacial para financiar operaciones, distribuir recompensas o proporcionar liquidez.",
-        "selectToken": "Seleccionar ficha",
+        "selectToken": "Seleccionar token",
         "tokenSupply": "Suministro de tokens",
         "unlimitedSupply": "Suministro ilimitado",
         "issuanceToDate": "Emisión hasta la fecha",
@@ -831,7 +831,7 @@
     "balance": "Balance",
     "searchTokens": "Fichas de búsqueda",
     "hideSmallBalances": "Ocultar saldos pequeños",
-    "newToken": "Nueva ficha",
+    "newToken": "Nuevo token",
     "depositFunds": "Depositar fondos",
     "listIsEmpty": "La lista está vacía",
     "loadMoreAssets": "Cargar más activos",
@@ -862,7 +862,7 @@
       "createdOn": "Creado en {date}"
     },
     "transactionCard": {
-      "tokenIconAlt": "Icono de ficha",
+      "tokenIconAlt": "Icono de token",
       "memo": "Memorándum",
       "type": {
         "transfer": "Transferir",
@@ -1162,7 +1162,7 @@
     "labels": {
       "unknown": "Desconocido",
       "custom": "Costumbre",
-      "token": "Simbólico",
+      "token": "Token",
       "amount": "Cantidad",
       "usdcAmount": "USDC Monto",
       "hyphaAmount": "HYPHA Monto",
@@ -1176,13 +1176,13 @@
       "logoForSpace": "Logotipo para {title}",
       "payWith": "Paga con",
       "totalAmountInHypha": "Importe total en HYPHA",
-      "hyphaTokenIcon": "Hypha Icono de ficha",
+      "hyphaTokenIcon": "Icono del token Hypha",
       "totalAmountInUsdc": "Importe total en USDC",
       "usdcIcon": "USDC Icono",
-      "tokenType": "Tipo de ficha",
+      "tokenType": "Tipo de token",
       "tokenName": "Nombre del token",
-      "tokenSymbol": "Símbolo de ficha",
-      "tokenIcon": "Icono de ficha",
+      "tokenSymbol": "Símbolo de token",
+      "tokenIcon": "Icono de token",
       "tokenIconFor": "Icono de token para {symbol}",
       "maxSupply": "Suministro máximo",
       "unlimited": "Ilimitado",
@@ -1231,7 +1231,7 @@
       "space": "Espacio"
     },
     "votingPower": {
-      "oneTokenOneVote": "1 ficha 1 voto",
+      "oneTokenOneVote": "1 token 1 voto",
       "oneMemberOneVote": "1 Miembro 1 Voto",
       "oneVoiceOneVote": "1 Voz 1 Voto"
     },
