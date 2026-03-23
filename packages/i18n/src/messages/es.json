@@ -384,14 +384,14 @@
         "activitySpace": "El acceso a su actividad espacial está restringido a los miembros del espacio."
       },
       "mintTokens": {
-        "mintToSpaceTreasury": "Tesoro de la menta al espacio",
+        "mintToSpaceTreasury": "Acuñar a la tesorería del espacio",
         "description": "Acuña tokens en tu tesorería espacial para financiar operaciones, distribuir recompensas o proporcionar liquidez.",
         "selectToken": "Seleccionar token",
         "tokenSupply": "Suministro de tokens",
         "unlimitedSupply": "Suministro ilimitado",
         "issuanceToDate": "Emisión hasta la fecha",
-        "mintAmountLimit": "Límite de cantidad de menta",
-        "exceedsLimit": "La cantidad de tokens solicitados excede el límite de cantidad de Mint. Por favor ingrese un valor hasta {limit}",
+        "mintAmountLimit": "Límite de cantidad a acuñar",
+        "exceedsLimit": "La cantidad de tokens solicitados excede el límite de cantidad a acuñar. Por favor ingresa un valor hasta {limit}",
         "noTokensPrefix": "Tu espacio aún no ha creado un token,",
         "clickHere": "haga clic aquí",
         "noTokensSuffix": "emitir primero un token"
