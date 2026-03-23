@@ -334,7 +334,7 @@ export const IssueNewTokenForm = ({
       enableTokenPrice: false,
       referenceCurrency: undefined,
       tokenPrice: undefined,
-      label: 'Issue New Token',
+      label: tAgreementFlow('labels.issueNewToken'),
     },
     mode: 'onChange',
   });
