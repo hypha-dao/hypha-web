@@ -1,8 +1,8 @@
 # CodeRabbit Configuration
 version: 1
 
-# Review settings
-review:
+# Review settings (see https://docs.coderabbit.ai/reference/configuration)
+reviews:
   request_changes_workflow: true
   # Default review language
   default_language: en-US
@@ -11,11 +11,9 @@ review:
   auto_review:
     enabled: true
 
-  # Auto-approve PRs that have no critical or warning findings
+  # Approve once CodeRabbit threads are resolved and pre-merge checks pass
   auto_approve:
     enabled: true
-    allowed_summary_severities:
-      - 'info'
 
   # Configure the review engine based on languages
   engines:
