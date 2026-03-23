@@ -126,7 +126,7 @@ export const TokenPayoutField = ({
                       </span>
                       {token?.type && (
                         <div className="rounded-lg text-[10px] text-accent-11 border-1 border-accent-11 px-2 py-0.75">
-                          {getTokenTypeLabel(token.type)}
+                          {getTokenTypeLabel(token.type, tAgreementFlow)}
                         </div>
                       )}
                     </span>

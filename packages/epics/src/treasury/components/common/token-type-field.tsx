@@ -52,7 +52,50 @@ export const TOKEN_TYPE_OPTIONS = [
   },
 ];
 
-export function getTokenTypeLabel(type: string): string {
+export const TOKEN_TYPE_I18N_KEYS = {
+  utility: {
+    label: 'plugins.issueNewToken.general.tokenTypeOptions.utility.label',
+    description:
+      'plugins.issueNewToken.general.tokenTypeOptions.utility.description',
+  },
+  ownership: {
+    label: 'plugins.issueNewToken.general.tokenTypeOptions.ownership.label',
+    description:
+      'plugins.issueNewToken.general.tokenTypeOptions.ownership.description',
+  },
+  impact: {
+    label: 'plugins.issueNewToken.general.tokenTypeOptions.impact.label',
+    description:
+      'plugins.issueNewToken.general.tokenTypeOptions.impact.description',
+  },
+  credits: {
+    label: 'plugins.issueNewToken.general.tokenTypeOptions.credits.label',
+    description:
+      'plugins.issueNewToken.general.tokenTypeOptions.credits.description',
+  },
+  voice: {
+    label: 'plugins.issueNewToken.general.tokenTypeOptions.voice.label',
+    description:
+      'plugins.issueNewToken.general.tokenTypeOptions.voice.description',
+  },
+  community_currency: {
+    label:
+      'plugins.issueNewToken.general.tokenTypeOptions.community_currency.label',
+    description:
+      'plugins.issueNewToken.general.tokenTypeOptions.community_currency.description',
+  },
+} as const;
+
+export function getTokenTypeLabel(type: string, tAgreementFlow?: any): string {
+  const tokenTypeI18nKeys =
+    TOKEN_TYPE_I18N_KEYS[type as keyof typeof TOKEN_TYPE_I18N_KEYS];
+
+  if (tokenTypeI18nKeys?.label && tAgreementFlow) {
+    return tAgreementFlow(
+      tokenTypeI18nKeys.label as Parameters<typeof tAgreementFlow>[0],
+    );
+  }
+
   return TOKEN_TYPE_OPTIONS.find((o) => o.value === type)?.label ?? type;
 }
 
@@ -67,14 +110,12 @@ export function TokenTypeField({ onValueChange }: TokenTypeFieldProps) {
   const tokenTypeOptions = TOKEN_TYPE_OPTIONS.map((option) => ({
     ...option,
     label: tAgreementFlow(
-      `plugins.issueNewToken.general.tokenTypeOptions.${option.value}.label` as Parameters<
-        typeof tAgreementFlow
-      >[0],
+      TOKEN_TYPE_I18N_KEYS[option.value as keyof typeof TOKEN_TYPE_I18N_KEYS]
+        .label as Parameters<typeof tAgreementFlow>[0],
     ),
     description: tAgreementFlow(
-      `plugins.issueNewToken.general.tokenTypeOptions.${option.value}.description` as Parameters<
-        typeof tAgreementFlow
-      >[0],
+      TOKEN_TYPE_I18N_KEYS[option.value as keyof typeof TOKEN_TYPE_I18N_KEYS]
+        .description as Parameters<typeof tAgreementFlow>[0],
     ),
   }));
 
