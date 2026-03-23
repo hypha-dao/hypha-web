@@ -829,13 +829,13 @@
   },
   "TreasuryTab": {
     "balance": "Balance",
-    "searchTokens": "Fichas de búsqueda",
+    "searchTokens": "Buscar tokens",
     "hideSmallBalances": "Ocultar saldos pequeños",
     "newToken": "Nuevo token",
     "depositFunds": "Depositar fondos",
     "listIsEmpty": "La lista está vacía",
     "loadMoreAssets": "Cargar más activos",
-    "transactions": "Actas",
+    "transactions": "Transacciones",
     "searchTransactions": "Buscar transacciones",
     "noTransactionsFound": "No se encontraron transacciones",
     "loadMoreTransactions": "Cargar más transacciones",
@@ -866,7 +866,7 @@
       "memo": "Memorándum",
       "type": {
         "transfer": "Transferir",
-        "mint": "Menta",
+        "mint": "Acuñar",
         "burn": "Quemar"
       },
       "direction": {
