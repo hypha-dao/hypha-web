@@ -1233,7 +1233,7 @@
     "votingPower": {
       "oneTokenOneVote": "1 jeton 1 vote",
       "oneMemberOneVote": "1 membre 1 vote",
-      "oneVoiceOneVote": "1 voix 1 voix"
+      "oneVoiceOneVote": "1 voix 1 vote"
     },
     "voters": {
       "votes": "Votes",
