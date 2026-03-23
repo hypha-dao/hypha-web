@@ -20,7 +20,7 @@ export type VaultCollateral = {
     title: string;
     slug: string;
   };
-  createdAt?: Date;
+  createdAt?: string | Date;
 };
 
 export type Vault = {
@@ -63,9 +63,8 @@ export const useVaults = ({
   );
 
   const { data, isLoading, mutate } = useSWR<UseVaultsData>(
-    [endpoint],
+    endpoint ? [endpoint] : null,
     async ([url]) => {
-      if (!url) return { vaults: [] };
       const token = await getAccessToken();
       const headers: HeadersInit = { 'Content-Type': 'application/json' };
       if (token) {
@@ -75,7 +74,21 @@ export const useVaults = ({
       if (!res.ok) {
         throw new Error(`Failed to fetch vaults: ${res.statusText}`);
       }
-      return res.json();
+      const payload = (await res.json()) as UseVaultsData;
+      return {
+        vaults: (payload.vaults ?? []).map((vault) => ({
+          ...vault,
+          redemptionStartDate: vault.redemptionStartDate
+            ? new Date(vault.redemptionStartDate)
+            : undefined,
+          collaterals: (vault.collaterals ?? []).map((collateral) => ({
+            ...collateral,
+            createdAt: collateral.createdAt
+              ? new Date(collateral.createdAt)
+              : undefined,
+          })),
+        })),
+      };
     },
     { refreshInterval },
   );

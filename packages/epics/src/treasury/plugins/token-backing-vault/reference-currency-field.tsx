@@ -13,6 +13,7 @@ import {
 } from '@hypha-platform/ui';
 import { useFormContext } from 'react-hook-form';
 import { CURRENCY_FEED_OPTIONS } from '@hypha-platform/core/client';
+import React from 'react';
 
 type ReferenceCurrencyFieldProps = {
   isRequired?: boolean;
@@ -21,7 +22,18 @@ type ReferenceCurrencyFieldProps = {
 export function ReferenceCurrencyField({
   isRequired = false,
 }: ReferenceCurrencyFieldProps) {
-  const { control } = useFormContext();
+  const { control, getValues, setValue } = useFormContext();
+
+  React.useEffect(() => {
+    const currentValue = getValues('tokenBackingVault.referenceCurrency');
+    if (!currentValue) {
+      setValue(
+        'tokenBackingVault.referenceCurrency',
+        CURRENCY_FEED_OPTIONS[0].value,
+        { shouldDirty: false },
+      );
+    }
+  }, [getValues, setValue]);
 
   return (
     <FormField

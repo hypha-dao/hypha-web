@@ -132,6 +132,10 @@ export const TokenBackingVaultPlugin = ({
     if (prefilledTokenRef.current === normalizedToken) return;
 
     if (!currentVault) {
+      setValue('tokenBackingVault.addCollaterals', [], { shouldDirty: false });
+      setValue('tokenBackingVault.removeCollaterals', [], {
+        shouldDirty: false,
+      });
       setValue('tokenBackingVault.activateVault', true, { shouldDirty: false });
       setValue('tokenBackingVault.enableRedemption', false, {
         shouldDirty: false,
@@ -175,6 +179,10 @@ export const TokenBackingVaultPlugin = ({
         ? parsedStartDate
         : null;
 
+    setValue('tokenBackingVault.addCollaterals', [], { shouldDirty: false });
+    setValue('tokenBackingVault.removeCollaterals', [], {
+      shouldDirty: false,
+    });
     setValue('tokenBackingVault.activateVault', true, { shouldDirty: false });
     setValue(
       'tokenBackingVault.enableRedemption',
@@ -217,6 +225,9 @@ export const TokenBackingVaultPlugin = ({
       Boolean(currentVault.whitelistEnabled),
       { shouldDirty: false },
     );
+    setValue('tokenBackingVault.redemptionWhitelist', [], {
+      shouldDirty: false,
+    });
     prefilledTokenRef.current = normalizedToken;
   }, [spaceToken, currentVault, isLoadingVaults, setValue]);
 

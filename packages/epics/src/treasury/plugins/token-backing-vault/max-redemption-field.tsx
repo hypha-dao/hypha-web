@@ -46,15 +46,21 @@ export function MaxRedemptionField({
                     placeholder="0 = no limit"
                     className="w-full"
                     value={field.value ?? ''}
-                    onChange={(e) =>
-                      field.onChange(
-                        e.target.value === ''
-                          ? undefined
-                          : Number(e.target.value),
-                      )
-                    }
+                    onChange={(e) => {
+                      if (e.target.value === '') {
+                        field.onChange(undefined);
+                        return;
+                      }
+                      const parsed = Number(e.target.value);
+                      if (!Number.isFinite(parsed)) {
+                        field.onChange(undefined);
+                        return;
+                      }
+                      field.onChange(Math.max(0, Math.min(100, parsed)));
+                    }}
                   />
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -81,21 +87,12 @@ export function MaxRedemptionField({
                     </SelectContent>
                   </Select>
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
         </div>
       </div>
-      <FormField
-        control={control}
-        name="tokenBackingVault.maxRedemptionPercent"
-        render={() => <FormMessage />}
-      />
-      <FormField
-        control={control}
-        name="tokenBackingVault.maxRedemptionPeriodDays"
-        render={() => <FormMessage />}
-      />
     </div>
   );
 }

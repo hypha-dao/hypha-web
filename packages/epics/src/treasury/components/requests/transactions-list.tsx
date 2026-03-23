@@ -4,6 +4,7 @@ import { TransferWithEntity } from '../../hooks';
 import { ZeroAddress } from 'ethers';
 import { tokenBackingVaultImplementationAddress } from '@hypha-platform/core/generated';
 import { useVaults } from '../../hooks/use-vaults';
+import { useChainId } from 'wagmi';
 
 type TransactionsListProps = {
   transfers: TransferWithEntity[];
@@ -17,9 +18,12 @@ export const TransactionsList: FC<TransactionsListProps> = ({
   isLoading,
 }) => {
   const { vaults } = useVaults();
+  const chainId = useChainId();
   const vaultAddress =
     tokenBackingVaultImplementationAddress[
-      8453 as keyof typeof tokenBackingVaultImplementationAddress
+      Number(
+        chainId || 8453,
+      ) as keyof typeof tokenBackingVaultImplementationAddress
     ]?.toLowerCase();
   const firstVault = vaults[0];
   const singleVaultName =
@@ -32,11 +36,12 @@ export const TransactionsList: FC<TransactionsListProps> = ({
       {transfers.map((transfer, index) => {
         const counterpartyAddress =
           transfer.counterparty === 'from' ? transfer.from : transfer.to;
-        const transferTokenAddress = (
+        const tokenAddress =
           transfer.contractAddress ??
-          (transfer as unknown as { token?: string }).token ??
-          ''
-        ).toLowerCase();
+          ('token' in transfer && typeof transfer.token === 'string'
+            ? transfer.token
+            : '');
+        const transferTokenAddress = tokenAddress.toLowerCase();
         const matchedVault = vaults.find((vault) =>
           vault.collaterals.some(
             (collateral) =>
