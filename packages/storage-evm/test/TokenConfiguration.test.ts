@@ -203,6 +203,13 @@ describe('Token Configuration Tests', function () {
         false, // useReceiveWhitelist
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        0, // defaultCreditLimit
+        [], // initialCreditWhitelistSpaceIds
+        ethers.ZeroAddress, // paymentToken
+        0, // paymentTokenPricePerToken
+        0, // tokensForSale
+        0, // purchaseEligibilityMode (space only)
+        [], // initialPurchaseWhitelistSpaceIds
       );
 
       const receipt = await tx.wait();
@@ -252,6 +259,13 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        0,
+        [],
+        ethers.ZeroAddress,
+        0,
+        0,
+        0,
+        [],
       );
 
       const receipt = await tx.wait();
@@ -294,6 +308,13 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        0,
+        [],
+        ethers.ZeroAddress,
+        0,
+        0,
+        0,
+        [],
       );
 
       const receipt = await tx.wait();
@@ -343,6 +364,13 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        0,
+        [],
+        ethers.ZeroAddress,
+        0,
+        0,
+        0,
+        [],
       );
 
       const receipt = await tx.wait();
@@ -390,6 +418,13 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        0,
+        [],
+        ethers.ZeroAddress,
+        0,
+        0,
+        0,
+        [],
       );
 
       const receipt = await tx.wait();
@@ -449,6 +484,13 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        0,
+        [],
+        ethers.ZeroAddress,
+        0,
+        0,
+        0,
+        [],
       );
 
       const receipt = await tx.wait();
@@ -505,6 +547,13 @@ describe('Token Configuration Tests', function () {
         true, // useReceiveWhitelist = true
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        0,
+        [],
+        ethers.ZeroAddress,
+        0,
+        0,
+        0,
+        [],
       );
 
       const receipt = await tx.wait();
@@ -678,6 +727,13 @@ describe('Token Configuration Tests', function () {
             false, // useReceiveWhitelist = false
             [],
             [],
+            0,
+            [],
+            ethers.ZeroAddress,
+            0,
+            0,
+            0,
+            [],
           );
 
         const receipt = await tx.wait();
@@ -735,6 +791,13 @@ describe('Token Configuration Tests', function () {
             true, // useTransferWhitelist = true
             true, // useReceiveWhitelist = true
             [],
+            [],
+            0,
+            [],
+            ethers.ZeroAddress,
+            0,
+            0,
+            0,
             [],
           );
 
@@ -811,6 +874,13 @@ describe('Token Configuration Tests', function () {
             true, // useTransferWhitelist = true
             true, // useReceiveWhitelist = true
             [],
+            [],
+            0,
+            [],
+            ethers.ZeroAddress,
+            0,
+            0,
+            0,
             [],
           );
 
@@ -891,6 +961,13 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        0,
+        [],
+        ethers.ZeroAddress,
+        0,
+        0,
+        0,
+        [],
       );
 
       const receipt = await tx.wait();
@@ -928,6 +1005,13 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        0,
+        [],
+        ethers.ZeroAddress,
+        0,
+        0,
+        0,
+        [],
       );
 
       const receipt = await tx.wait();
@@ -972,6 +1056,13 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        0,
+        [],
+        ethers.ZeroAddress,
+        0,
+        0,
+        0,
+        [],
       );
 
       const receipt = await tx.wait();
@@ -1013,6 +1104,13 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        0,
+        [],
+        ethers.ZeroAddress,
+        0,
+        0,
+        0,
+        [],
       );
 
       const receipt = await tx.wait();
@@ -1078,6 +1176,13 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        0,
+        [],
+        ethers.ZeroAddress,
+        0,
+        0,
+        0,
+        [],
       );
 
       const receipt = await tx.wait();
@@ -1155,6 +1260,8 @@ describe('Token Configuration Tests', function () {
   describe('7. Decaying Token Configuration', function () {
     it('Should deploy decaying token with all new configurations', async function () {
       const priceInUSD = 3000000n; // $3.00
+      const purchaseModeCustomSpaces = 1;
+      const initialPurchaseWhitelist = [spaceId];
 
       const tx = await decayingTokenFactory
         .connect(executorSigner)
@@ -1174,6 +1281,11 @@ describe('Token Configuration Tests', function () {
           [], // initialReceiveWhitelist
           100, // 1% decay
           3600, // 1 hour
+          ethers.ZeroAddress, // paymentToken (sale disabled)
+          0, // paymentTokenPricePerToken
+          0, // tokensForSale
+          purchaseModeCustomSpaces,
+          initialPurchaseWhitelist,
         );
 
       const receipt = await tx.wait();
@@ -1202,6 +1314,12 @@ describe('Token Configuration Tests', function () {
       expect(await token.useReceiveWhitelist()).to.be.false;
       expect(await token.decayPercentage()).to.equal(100);
       expect(await token.decayRate()).to.equal(3600);
+      expect(await token.purchaseEligibilityMode()).to.equal(
+        purchaseModeCustomSpaces,
+      );
+      expect(await token.getPurchaseWhitelistedSpaces()).to.deep.equal(
+        initialPurchaseWhitelist,
+      );
     });
 
     describe('Decay parameter updates', function () {
@@ -1224,6 +1342,11 @@ describe('Token Configuration Tests', function () {
             [],
             100, // 1%
             3600, // 1 hour
+            ethers.ZeroAddress,
+            0,
+            0,
+            0,
+            [],
           );
 
         const receipt = await tx.wait();
@@ -1284,6 +1407,7 @@ describe('Token Configuration Tests', function () {
   describe('8. Ownership Token Configuration', function () {
     it('Should deploy ownership token with all new configurations', async function () {
       const priceInUSD = 10000000n; // $10.00
+      const purchaseModeAllSpaces = 2;
 
       const tx = await ownershipTokenFactory
         .connect(executorSigner)
@@ -1300,6 +1424,11 @@ describe('Token Configuration Tests', function () {
           true, // useReceiveWhitelist
           [], // initialTransferWhitelist
           [], // initialReceiveWhitelist
+          ethers.ZeroAddress, // paymentToken (sale disabled)
+          0, // paymentTokenPricePerToken
+          0, // tokensForSale
+          purchaseModeAllSpaces,
+          [], // initialPurchaseWhitelistSpaceIds
         );
 
       const receipt = await tx.wait();
@@ -1327,6 +1456,9 @@ describe('Token Configuration Tests', function () {
       expect(await token.transferable()).to.be.true; // Always true for ownership tokens
       expect(await token.useTransferWhitelist()).to.be.false;
       expect(await token.useReceiveWhitelist()).to.be.true;
+      expect(await token.purchaseEligibilityMode()).to.equal(
+        purchaseModeAllSpaces,
+      );
     });
   });
 
@@ -1351,6 +1483,13 @@ describe('Token Configuration Tests', function () {
             false,
             [], // initialTransferWhitelist
             [], // initialReceiveWhitelist
+            0,
+            [],
+            ethers.ZeroAddress,
+            0,
+            0,
+            0,
+            [],
           );
 
         const receipt = await tx.wait();
@@ -1420,6 +1559,13 @@ describe('Token Configuration Tests', function () {
             false,
             [], // initialTransferWhitelist
             [], // initialReceiveWhitelist
+            0,
+            [],
+            ethers.ZeroAddress,
+            0,
+            0,
+            0,
+            [],
           );
 
         const receipt = await tx.wait();
@@ -1481,6 +1627,13 @@ describe('Token Configuration Tests', function () {
             false,
             [], // initialTransferWhitelist
             [], // initialReceiveWhitelist
+            0,
+            [],
+            ethers.ZeroAddress,
+            0,
+            0,
+            0,
+            [],
           );
 
         const receipt = await tx.wait();
@@ -1552,6 +1705,11 @@ describe('Token Configuration Tests', function () {
             [], // initialReceiveWhitelist
             100, // 1% decay
             3600, // 1 hour
+            ethers.ZeroAddress,
+            0,
+            0,
+            0,
+            [],
           );
 
         const receipt = await tx.wait();
@@ -1661,6 +1819,11 @@ describe('Token Configuration Tests', function () {
             false,
             [], // initialTransferWhitelist
             [], // initialReceiveWhitelist
+            ethers.ZeroAddress,
+            0,
+            0,
+            0,
+            [],
           );
 
         const receipt = await tx.wait();
@@ -1777,6 +1940,13 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        0,
+        [],
+        ethers.ZeroAddress,
+        0,
+        0,
+        0,
+        [],
       );
 
       const receipt = await tx.wait();
@@ -1844,6 +2014,13 @@ describe('Token Configuration Tests', function () {
             false,
             [], // initialTransferWhitelist
             [], // initialReceiveWhitelist
+            0,
+            [],
+            ethers.ZeroAddress,
+            0,
+            0,
+            0,
+            [],
           );
 
         const receipt = await tx.wait();
@@ -2044,6 +2221,11 @@ describe('Token Configuration Tests', function () {
             [], // initialReceiveWhitelist
             100, // 1% decay
             3600, // 1 hour
+            ethers.ZeroAddress,
+            0,
+            0,
+            0,
+            [],
           );
 
         const receipt = await tx.wait();
@@ -2207,6 +2389,11 @@ describe('Token Configuration Tests', function () {
             false,
             [], // initialTransferWhitelist
             [], // initialReceiveWhitelist
+            ethers.ZeroAddress,
+            0,
+            0,
+            0,
+            [],
           );
 
         const receipt = await tx.wait();
@@ -2312,6 +2499,13 @@ describe('Token Configuration Tests', function () {
             false,
             [], // initialTransferWhitelist
             [], // initialReceiveWhitelist
+            0,
+            [],
+            ethers.ZeroAddress,
+            0,
+            0,
+            0,
+            [],
           );
 
         const receipt = await tx.wait();
@@ -2376,6 +2570,13 @@ describe('Token Configuration Tests', function () {
             true, // useReceiveWhitelist
             [], // initialTransferWhitelist
             [], // initialReceiveWhitelist
+            0,
+            [],
+            ethers.ZeroAddress,
+            0,
+            0,
+            0,
+            [],
           );
 
         const receipt = await tx.wait();
@@ -2449,6 +2650,13 @@ describe('Token Configuration Tests', function () {
         true, // only whitelisted can receive
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        0,
+        [],
+        ethers.ZeroAddress,
+        0,
+        0,
+        0,
+        [],
       );
 
       const receipt = await tx.wait();
@@ -2510,6 +2718,13 @@ describe('Token Configuration Tests', function () {
         true, // only whitelisted can receive
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        0,
+        [],
+        ethers.ZeroAddress,
+        0,
+        0,
+        0,
+        [],
       );
 
       const receipt = await tx.wait();
@@ -2608,6 +2823,13 @@ describe('Token Configuration Tests', function () {
         true, // useReceiveWhitelist
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        0,
+        [],
+        ethers.ZeroAddress,
+        0,
+        0,
+        0,
+        [],
       );
 
       const receipt = await tx.wait();
@@ -2972,6 +3194,13 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        0,
+        [],
+        ethers.ZeroAddress,
+        0,
+        0,
+        0,
+        [],
       );
 
       const receipt = await tx.wait();
@@ -3077,6 +3306,13 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        0,
+        [],
+        ethers.ZeroAddress,
+        0,
+        0,
+        0,
+        [],
       );
 
       const receipt = await tx.wait();
@@ -3120,6 +3356,13 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        0,
+        [],
+        ethers.ZeroAddress,
+        0,
+        0,
+        0,
+        [],
       );
 
       const receipt = await tx.wait();
@@ -3229,6 +3472,11 @@ describe('Token Configuration Tests', function () {
           [], // initialReceiveWhitelist
           100, // 1% decay
           3600, // 1 hour
+          ethers.ZeroAddress,
+          0,
+          0,
+          0,
+          [],
         );
 
       const receipt = await tx.wait();
@@ -3274,6 +3522,11 @@ describe('Token Configuration Tests', function () {
           false,
           [], // initialTransferWhitelist
           [], // initialReceiveWhitelist
+          ethers.ZeroAddress,
+          0,
+          0,
+          0,
+          [],
         );
 
       const receipt = await tx.wait();
@@ -3303,6 +3556,519 @@ describe('Token Configuration Tests', function () {
 
       expect(await ownershipToken.name()).to.equal('Ownership Updated');
       expect(await ownershipToken.symbol()).to.equal('OUPD');
+    });
+  });
+
+  describe('16. Mutual Credit', function () {
+    const CREDIT_SPACES_CONTRACT = '0xc8B8454D2F9192FeCAbc2C6F5d88F6434A2a9cd9';
+
+    async function setupMockCreditMembership(
+      whitelistedSpaceIds: bigint[] = [spaceId],
+      memberAddresses: string[] = [alice.address, bob.address],
+    ) {
+      const MockDAOSpaceFactory = await ethers.getContractFactory(
+        'MockDAOSpaceFactory',
+      );
+      const mock = await MockDAOSpaceFactory.deploy();
+      const mockCode = await ethers.provider.getCode(await mock.getAddress());
+      await ethers.provider.send('hardhat_setCode', [
+        CREDIT_SPACES_CONTRACT,
+        mockCode,
+      ]);
+
+      const creditSpacesFactory = await ethers.getContractAt(
+        'MockDAOSpaceFactory',
+        CREDIT_SPACES_CONTRACT,
+      );
+
+      for (const sid of whitelistedSpaceIds) {
+        await creditSpacesFactory.setExecutor(sid, executorSigner.address);
+        for (const memberAddress of memberAddresses) {
+          await creditSpacesFactory.setMember(sid, memberAddress, true);
+        }
+      }
+    }
+
+    async function deployRegularWithMutualCredit(
+      {
+        tokenName = 'Credit Token',
+        tokenSymbol = 'CRED',
+        defaultCreditLimit = ethers.parseEther('100'),
+        initialCreditWhitelistSpaceIds = [spaceId],
+      }: {
+        tokenName?: string;
+        tokenSymbol?: string;
+        defaultCreditLimit?: bigint;
+        initialCreditWhitelistSpaceIds?: bigint[];
+      } = {},
+    ) {
+      const tx = await regularTokenFactory.connect(executorSigner).deployToken(
+        spaceId,
+        tokenName,
+        tokenSymbol,
+        ethers.parseEther('1000000'),
+        true,
+        false,
+        true,
+        0,
+        ethers.ZeroAddress,
+        false,
+        false,
+        [],
+        [],
+        defaultCreditLimit,
+        initialCreditWhitelistSpaceIds,
+        ethers.ZeroAddress,
+        0,
+        0,
+        0,
+        [],
+      );
+
+      const receipt = await tx.wait();
+      const tokenDeployedEvent = receipt?.logs
+        .map((log: any) => {
+          try {
+            return regularTokenFactory.interface.parseLog(log);
+          } catch {
+            return null;
+          }
+        })
+        .find((event: any) => event && event.name === 'TokenDeployed');
+      const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+      return await ethers.getContractAt('RegularSpaceToken', tokenAddress);
+    }
+
+    it('Should initialize mutual credit config from deployToken', async function () {
+      await setupMockCreditMembership();
+      const creditLimit = ethers.parseEther('75');
+      const token = await deployRegularWithMutualCredit({
+        defaultCreditLimit: creditLimit,
+        initialCreditWhitelistSpaceIds: [spaceId],
+      });
+
+      expect(await token.defaultCreditLimit()).to.equal(creditLimit);
+      expect(await token.creditLimitOf(alice.address)).to.equal(creditLimit);
+      expect(await token.creditLimitOf(charlie.address)).to.equal(0);
+      expect(await token.getCreditWhitelistedSpaces()).to.deep.equal([spaceId]);
+    });
+
+    it('Should use credit when sender balance is insufficient', async function () {
+      await setupMockCreditMembership();
+      const token = await deployRegularWithMutualCredit();
+      const amount = ethers.parseEther('40');
+
+      await expect(token.connect(alice).transfer(bob.address, amount))
+        .to.emit(token, 'CreditUsed')
+        .withArgs(alice.address, amount, amount);
+
+      expect(await token.creditBalanceOf(alice.address)).to.equal(amount);
+      expect(await token.balanceOf(bob.address)).to.equal(amount);
+      expect(await token.totalSupply()).to.equal(amount);
+      expect(await token.netBalanceOf(alice.address)).to.equal(-amount);
+    });
+
+    it('Should enforce credit limit when transfer exceeds available credit', async function () {
+      await setupMockCreditMembership();
+      const limit = ethers.parseEther('10');
+      const token = await deployRegularWithMutualCredit({
+        defaultCreditLimit: limit,
+      });
+
+      await expect(
+        token.connect(alice).transfer(bob.address, ethers.parseEther('11')),
+      ).to.be.revertedWith('Insufficient credit');
+    });
+
+    it('Should auto-repay debt when debtor receives tokens', async function () {
+      await setupMockCreditMembership();
+      const token = await deployRegularWithMutualCredit();
+
+      await token.connect(alice).transfer(bob.address, ethers.parseEther('50'));
+      expect(await token.creditBalanceOf(alice.address)).to.equal(
+        ethers.parseEther('50'),
+      );
+
+      await expect(token.connect(bob).transfer(alice.address, ethers.parseEther('20')))
+        .to.emit(token, 'CreditRepaid')
+        .withArgs(
+          alice.address,
+          ethers.parseEther('20'),
+          ethers.parseEther('30'),
+        );
+
+      expect(await token.creditBalanceOf(alice.address)).to.equal(
+        ethers.parseEther('30'),
+      );
+      // Alice receives 20 then immediately burns 20 to repay debt.
+      expect(await token.balanceOf(alice.address)).to.equal(0);
+      expect(await token.balanceOf(bob.address)).to.equal(ethers.parseEther('30'));
+    });
+
+    it('Should support credit admin functions and enforce access control', async function () {
+      await setupMockCreditMembership();
+      const token = await deployRegularWithMutualCredit({
+        defaultCreditLimit: 0n,
+        initialCreditWhitelistSpaceIds: [],
+      });
+
+      await expect(token.connect(executorSigner).setDefaultCreditLimit(123n))
+        .to.emit(token, 'DefaultCreditLimitUpdated')
+        .withArgs(0n, 123n);
+      expect(await token.defaultCreditLimit()).to.equal(123n);
+
+      await expect(
+        token.connect(executorSigner).batchAddCreditWhitelistSpaces([spaceId]),
+      )
+        .to.emit(token, 'CreditWhitelistSpaceAdded')
+        .withArgs(spaceId);
+      expect(await token.creditLimitOf(alice.address)).to.equal(123n);
+
+      await expect(
+        token.connect(executorSigner).batchRemoveCreditWhitelistSpaces([spaceId]),
+      )
+        .to.emit(token, 'CreditWhitelistSpaceRemoved')
+        .withArgs(spaceId);
+      expect(await token.creditLimitOf(alice.address)).to.equal(0);
+
+      await expect(token.connect(alice).setDefaultCreditLimit(1)).to.be.revertedWith(
+        'Only executor can update default credit limit',
+      );
+      await expect(
+        token.connect(bob).batchAddCreditWhitelistSpaces([spaceId]),
+      ).to.be.revertedWith('Only executor can update credit whitelist');
+      await expect(
+        token.connect(charlie).batchRemoveCreditWhitelistSpaces([spaceId]),
+      ).to.be.revertedWith('Only executor can update credit whitelist');
+    });
+  });
+
+  describe('17. Token Purchase', function () {
+    const PURCHASE_SPACES_CONTRACT = '0xc8B8454D2F9192FeCAbc2C6F5d88F6434A2a9cd9';
+
+    async function setupMockPurchaseMembership(
+      entries: { sid: bigint; members: string[] }[],
+    ) {
+      const MockDAOSpaceFactory = await ethers.getContractFactory(
+        'MockDAOSpaceFactory',
+      );
+      const mock = await MockDAOSpaceFactory.deploy();
+      const mockCode = await ethers.provider.getCode(await mock.getAddress());
+      await ethers.provider.send('hardhat_setCode', [
+        PURCHASE_SPACES_CONTRACT,
+        mockCode,
+      ]);
+
+      const spaces = await ethers.getContractAt(
+        'MockDAOSpaceFactory',
+        PURCHASE_SPACES_CONTRACT,
+      );
+
+      for (const entry of entries) {
+        await spaces.setExecutor(entry.sid, executorSigner.address);
+        for (const memberAddress of entry.members) {
+          await spaces.setMember(entry.sid, memberAddress, true);
+        }
+      }
+    }
+
+    async function deploySaleToken(
+      {
+        useReceiveWhitelist = false,
+        paymentTokenAddress = ethers.ZeroAddress,
+        paymentTokenPricePerToken = 0n,
+        tokensForSale = 0n,
+        purchaseEligibilityMode = 0,
+        initialPurchaseWhitelistSpaceIds = [] as bigint[],
+      }: {
+        useReceiveWhitelist?: boolean;
+        paymentTokenAddress?: string;
+        paymentTokenPricePerToken?: bigint;
+        tokensForSale?: bigint;
+        purchaseEligibilityMode?: number;
+        initialPurchaseWhitelistSpaceIds?: bigint[];
+      } = {},
+    ) {
+      const tx = await regularTokenFactory.connect(executorSigner).deployToken(
+        spaceId,
+        'Sale Token',
+        'SALE',
+        ethers.parseEther('1000000'),
+        true,
+        false,
+        true,
+        0,
+        ethers.ZeroAddress,
+        false,
+        useReceiveWhitelist,
+        [],
+        [],
+        0,
+        [],
+        paymentTokenAddress,
+        paymentTokenPricePerToken,
+        tokensForSale,
+        purchaseEligibilityMode,
+        initialPurchaseWhitelistSpaceIds,
+      );
+
+      const receipt = await tx.wait();
+      const tokenDeployedEvent = receipt?.logs
+        .map((log: any) => {
+          try {
+            return regularTokenFactory.interface.parseLog(log);
+          } catch {
+            return null;
+          }
+        })
+        .find((event: any) => event && event.name === 'TokenDeployed');
+      const tokenAddress = tokenDeployedEvent.args.tokenAddress;
+      return await ethers.getContractAt('RegularSpaceToken', tokenAddress);
+    }
+
+    async function deployPaymentToken() {
+      const MockERC20 = await ethers.getContractFactory('MockERC20');
+      const paymentToken = await MockERC20.deploy('Mock USDC', 'mUSDC', 6);
+      return paymentToken;
+    }
+
+    it('Should initialize sale config at deployment and expose sale details getter', async function () {
+      await setupMockPurchaseMembership([
+        { sid: spaceId, members: [alice.address, bob.address] },
+      ]);
+      const paymentToken = await deployPaymentToken();
+      const salePrice = 2_500_000n; // 2.5 payment tokens per 1 token
+      const saleCap = ethers.parseEther('100');
+      const token = await deploySaleToken({
+        paymentTokenAddress: await paymentToken.getAddress(),
+        paymentTokenPricePerToken: salePrice,
+        tokensForSale: saleCap,
+      });
+
+      const sale = await token.getTokenSaleDetails();
+      expect(sale.salePaymentToken).to.equal(await paymentToken.getAddress());
+      expect(sale.salePricePerToken).to.equal(salePrice);
+      expect(sale.tokensLeftToSell).to.equal(saleCap);
+    });
+
+    it('Should let executor configure and reconfigure sale later', async function () {
+      await setupMockPurchaseMembership([
+        { sid: spaceId, members: [alice.address, bob.address] },
+      ]);
+      const paymentTokenA = await deployPaymentToken();
+      const paymentTokenB = await deployPaymentToken();
+      const token = await deploySaleToken();
+
+      await expect(
+        token
+          .connect(executorSigner)
+          .configureTokenSale(
+            await paymentTokenA.getAddress(),
+            1_000_000n,
+            ethers.parseEther('200'),
+          ),
+      )
+        .to.emit(token, 'TokenSaleConfigured')
+        .withArgs(
+          await paymentTokenA.getAddress(),
+          1_000_000n,
+          ethers.parseEther('200'),
+        );
+
+      await token
+        .connect(executorSigner)
+        .configureTokenSale(
+          await paymentTokenB.getAddress(),
+          2_000_000n,
+          ethers.parseEther('500'),
+        );
+
+      const sale = await token.getTokenSaleDetails();
+      expect(sale.salePaymentToken).to.equal(await paymentTokenB.getAddress());
+      expect(sale.salePricePerToken).to.equal(2_000_000n);
+      expect(sale.tokensLeftToSell).to.equal(ethers.parseEther('500'));
+    });
+
+    it('Should route payment token to treasury and mint purchased tokens', async function () {
+      await setupMockPurchaseMembership([
+        { sid: spaceId, members: [alice.address, bob.address] },
+      ]);
+      const paymentToken = await deployPaymentToken();
+      const token = await deploySaleToken({
+        paymentTokenAddress: await paymentToken.getAddress(),
+        paymentTokenPricePerToken: 2_000_000n,
+        tokensForSale: ethers.parseEther('100'),
+      });
+
+      const buyAmount = ethers.parseEther('3');
+      const expectedPayment = 6_000_000n; // 3 * 2.0 with 6 decimals
+
+      await paymentToken.mint(alice.address, expectedPayment);
+      await paymentToken.connect(alice).approve(await token.getAddress(), expectedPayment);
+
+      await expect(token.connect(alice).buyTokens(buyAmount))
+        .to.emit(token, 'TokensPurchased')
+        .withArgs(alice.address, buyAmount, expectedPayment, executorSigner.address);
+
+      expect(await paymentToken.balanceOf(executorSigner.address)).to.equal(
+        expectedPayment,
+      );
+      expect(await token.balanceOf(alice.address)).to.equal(buyAmount);
+      expect(await token.tokensSold()).to.equal(buyAmount);
+
+      const sale = await token.getTokenSaleDetails();
+      expect(sale.tokensLeftToSell).to.equal(ethers.parseEther('97'));
+    });
+
+    it('Should require buyer approval before purchase', async function () {
+      await setupMockPurchaseMembership([
+        { sid: spaceId, members: [alice.address, bob.address] },
+      ]);
+      const paymentToken = await deployPaymentToken();
+      const token = await deploySaleToken({
+        paymentTokenAddress: await paymentToken.getAddress(),
+        paymentTokenPricePerToken: 1_000_000n,
+        tokensForSale: ethers.parseEther('100'),
+      });
+
+      await paymentToken.mint(alice.address, 10_000_000n);
+
+      await expect(
+        token.connect(alice).buyTokens(ethers.parseEther('1')),
+      ).to.be.reverted;
+    });
+
+    it('Should enforce sale cap and prevent overselling', async function () {
+      await setupMockPurchaseMembership([
+        { sid: spaceId, members: [alice.address, bob.address] },
+      ]);
+      const paymentToken = await deployPaymentToken();
+      const cap = ethers.parseEther('5');
+      const token = await deploySaleToken({
+        paymentTokenAddress: await paymentToken.getAddress(),
+        paymentTokenPricePerToken: 1_000_000n,
+        tokensForSale: cap,
+      });
+
+      await paymentToken.mint(alice.address, 10_000_000n);
+      await paymentToken.connect(alice).approve(await token.getAddress(), 10_000_000n);
+
+      await token.connect(alice).buyTokens(ethers.parseEther('5'));
+      await expect(
+        token.connect(alice).buyTokens(ethers.parseEther('1')),
+      ).to.be.revertedWith('Not enough tokens left');
+    });
+
+    it('Should default to issuer-space-only purchases', async function () {
+      await setupMockPurchaseMembership([
+        { sid: spaceId, members: [alice.address] },
+      ]);
+
+      const paymentToken = await deployPaymentToken();
+      const token = await deploySaleToken({
+        paymentTokenAddress: await paymentToken.getAddress(),
+        paymentTokenPricePerToken: 1_000_000n,
+        tokensForSale: ethers.parseEther('100'),
+      });
+
+      await paymentToken.mint(alice.address, 10_000_000n);
+      await paymentToken.mint(charlie.address, 10_000_000n);
+      await paymentToken.connect(alice).approve(await token.getAddress(), 10_000_000n);
+      await paymentToken
+        .connect(charlie)
+        .approve(await token.getAddress(), 10_000_000n);
+
+      await token.connect(alice).buyTokens(ethers.parseEther('1'));
+      expect(await token.balanceOf(alice.address)).to.equal(ethers.parseEther('1'));
+
+      await expect(
+        token.connect(charlie).buyTokens(ethers.parseEther('1')),
+      ).to.be.revertedWith('Buyer not eligible to purchase');
+    });
+
+    it('Should allow custom-space purchase whitelist mode', async function () {
+      const customSpaceId = 777n;
+      await setupMockPurchaseMembership([
+        { sid: customSpaceId, members: [bob.address] },
+      ]);
+
+      const paymentToken = await deployPaymentToken();
+      const token = await deploySaleToken({
+        paymentTokenAddress: await paymentToken.getAddress(),
+        paymentTokenPricePerToken: 1_000_000n,
+        tokensForSale: ethers.parseEther('100'),
+        purchaseEligibilityMode: 1, // custom spaces
+        initialPurchaseWhitelistSpaceIds: [customSpaceId],
+      });
+
+      await paymentToken.mint(bob.address, 10_000_000n);
+      await paymentToken.connect(bob).approve(await token.getAddress(), 10_000_000n);
+      await token.connect(bob).buyTokens(ethers.parseEther('1'));
+      expect(await token.balanceOf(bob.address)).to.equal(ethers.parseEther('1'));
+
+      await token
+        .connect(executorSigner)
+        .setPurchaseEligibilityMode(1);
+      await expect(
+        token.connect(alice).buyTokens(ethers.parseEther('1')),
+      ).to.be.revertedWith('Buyer not eligible to purchase');
+    });
+
+    it('Should allow all-spaces purchase mode and runtime reconfiguration', async function () {
+      const anotherSpaceId = 888n;
+      await setupMockPurchaseMembership([
+        { sid: anotherSpaceId, members: [charlie.address] },
+      ]);
+
+      const paymentToken = await deployPaymentToken();
+      const token = await deploySaleToken({
+        paymentTokenAddress: await paymentToken.getAddress(),
+        paymentTokenPricePerToken: 1_000_000n,
+        tokensForSale: ethers.parseEther('100'),
+      });
+
+      await paymentToken.mint(charlie.address, 10_000_000n);
+      await paymentToken
+        .connect(charlie)
+        .approve(await token.getAddress(), 10_000_000n);
+
+      // Default mode is issuer-space-only, so Charlie (not in issuer space) cannot buy.
+      await expect(
+        token.connect(charlie).buyTokens(ethers.parseEther('1')),
+      ).to.be.revertedWith('Buyer not eligible to purchase');
+
+      await expect(token.connect(executorSigner).setPurchaseEligibilityMode(2))
+        .to.emit(token, 'PurchaseEligibilityModeUpdated')
+        .withArgs(2);
+
+      await token.connect(charlie).buyTokens(ethers.parseEther('1'));
+      expect(await token.balanceOf(charlie.address)).to.equal(
+        ethers.parseEther('1'),
+      );
+
+      // Reconfigure to custom spaces and allow Charlie by adding anotherSpaceId.
+      await token.connect(executorSigner).setPurchaseEligibilityMode(1);
+      await token
+        .connect(executorSigner)
+        .batchAddPurchaseWhitelistSpaces([anotherSpaceId]);
+      expect(await token.getPurchaseWhitelistedSpaces()).to.deep.equal([
+        anotherSpaceId,
+      ]);
+    });
+
+    it('Should only allow executor to configure sale', async function () {
+      const paymentToken = await deployPaymentToken();
+      const token = await deploySaleToken();
+
+      await expect(
+        token
+          .connect(alice)
+          .configureTokenSale(
+            await paymentToken.getAddress(),
+            1_000_000n,
+            ethers.parseEther('10'),
+          ),
+      ).to.be.revertedWith('Only executor can configure token sale');
     });
   });
 });

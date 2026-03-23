@@ -20,7 +20,12 @@ interface IOwnershipTokenFactory {
     bool useTransferWhitelist,
     bool useReceiveWhitelist,
     address[] memory initialTransferWhitelist,
-    address[] memory initialReceiveWhitelist
+    address[] memory initialReceiveWhitelist,
+    address paymentToken,
+    uint256 paymentTokenPricePerToken,
+    uint256 tokensForSale,
+    uint8 purchaseEligibilityMode,
+    uint256[] memory initialPurchaseWhitelistSpaceIds
   ) external returns (address);
 
   function getSpaceToken(

@@ -18,6 +18,9 @@ contract RegularSpaceToken is
   UUPSUpgradeable
 {
   using SafeERC20 for IERC20;
+  uint8 public constant PURCHASE_MODE_SPACE_ONLY = 0;
+  uint8 public constant PURCHASE_MODE_CUSTOM_SPACES = 1;
+  uint8 public constant PURCHASE_MODE_ALL_SPACES = 2;
 
   uint256 public spaceId;
   uint256 public maxSupply;
@@ -74,6 +77,9 @@ contract RegularSpaceToken is
   uint256 public paymentTokenPricePerToken; // 6 decimals, priced per 1e18 token units
   uint256 public tokensForSale; // 18 decimals, 0 means sale disabled
   uint256 public tokensSold;
+  uint8 public purchaseEligibilityMode; // 0: issuer space only, 1: custom spaces, 2: any space
+  uint256[] internal _purchaseWhitelistedSpaceIds;
+  mapping(uint256 => bool) public isPurchaseWhitelistedSpace;
 
   // Events
   event MaxSupplyUpdated(uint256 oldMaxSupply, uint256 newMaxSupply);
@@ -121,6 +127,9 @@ contract RegularSpaceToken is
     uint256 paymentAmount,
     address indexed treasury
   );
+  event PurchaseEligibilityModeUpdated(uint8 mode);
+  event PurchaseWhitelistSpaceAdded(uint256 indexed spaceId);
+  event PurchaseWhitelistSpaceRemoved(uint256 indexed spaceId);
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -146,7 +155,9 @@ contract RegularSpaceToken is
     uint256[] memory _initialCreditWhitelistSpaceIds,
     address _paymentToken,
     uint256 _paymentTokenPricePerToken,
-    uint256 _tokensForSale
+    uint256 _tokensForSale,
+    uint8 _purchaseEligibilityMode,
+    uint256[] memory _initialPurchaseWhitelistSpaceIds
   ) public initializer {
     __ERC20_init(name, symbol);
     __ERC20Burnable_init();
@@ -198,6 +209,19 @@ contract RegularSpaceToken is
       paymentTokenPricePerToken = _paymentTokenPricePerToken;
       tokensForSale = _tokensForSale;
       tokensSold = 0;
+    }
+
+    require(
+      _purchaseEligibilityMode <= PURCHASE_MODE_ALL_SPACES,
+      'Invalid purchase eligibility mode'
+    );
+    purchaseEligibilityMode = _purchaseEligibilityMode;
+    for (uint256 i = 0; i < _initialPurchaseWhitelistSpaceIds.length; i++) {
+      uint256 sid = _initialPurchaseWhitelistSpaceIds[i];
+      if (!isPurchaseWhitelistedSpace[sid]) {
+        isPurchaseWhitelistedSpace[sid] = true;
+        _purchaseWhitelistedSpaceIds.push(sid);
+      }
     }
   }
 
@@ -501,8 +525,8 @@ contract RegularSpaceToken is
     require(tokenAmount > 0, 'Token amount must be greater than zero');
     require(tokensSold + tokenAmount <= tokensForSale, 'Not enough tokens left');
     require(
-      canAccountReceive(msg.sender),
-      'Buyer not whitelisted to receive tokens'
+      canAccountPurchase(msg.sender),
+      'Buyer not eligible to purchase'
     );
 
     // Convert token amount (18 decimals) into payment-token amount.
@@ -538,6 +562,63 @@ contract RegularSpaceToken is
     } else {
       tokensLeftToSell = 0;
     }
+  }
+
+  /**
+   * @dev Update purchase eligibility mode.
+   * 0: members of issuer space only (default)
+   * 1: members of custom whitelisted spaces
+   * 2: members of any space
+   */
+  function setPurchaseEligibilityMode(uint8 mode) external {
+    require(
+      msg.sender == executor,
+      'Only executor can update purchase eligibility mode'
+    );
+    require(mode <= PURCHASE_MODE_ALL_SPACES, 'Invalid purchase eligibility mode');
+    purchaseEligibilityMode = mode;
+    emit PurchaseEligibilityModeUpdated(mode);
+  }
+
+  function batchAddPurchaseWhitelistSpaces(uint256[] calldata spaceIds) external {
+    require(msg.sender == executor, 'Only executor can update purchase whitelist');
+    for (uint256 i = 0; i < spaceIds.length; i++) {
+      if (!isPurchaseWhitelistedSpace[spaceIds[i]]) {
+        isPurchaseWhitelistedSpace[spaceIds[i]] = true;
+        _purchaseWhitelistedSpaceIds.push(spaceIds[i]);
+        emit PurchaseWhitelistSpaceAdded(spaceIds[i]);
+      }
+    }
+  }
+
+  function batchRemovePurchaseWhitelistSpaces(
+    uint256[] calldata spaceIds
+  ) external {
+    require(msg.sender == executor, 'Only executor can update purchase whitelist');
+    for (uint256 j = 0; j < spaceIds.length; j++) {
+      uint256 sid = spaceIds[j];
+      if (isPurchaseWhitelistedSpace[sid]) {
+        isPurchaseWhitelistedSpace[sid] = false;
+        for (uint256 i = 0; i < _purchaseWhitelistedSpaceIds.length; i++) {
+          if (_purchaseWhitelistedSpaceIds[i] == sid) {
+            _purchaseWhitelistedSpaceIds[i] = _purchaseWhitelistedSpaceIds[
+              _purchaseWhitelistedSpaceIds.length - 1
+            ];
+            _purchaseWhitelistedSpaceIds.pop();
+            break;
+          }
+        }
+        emit PurchaseWhitelistSpaceRemoved(sid);
+      }
+    }
+  }
+
+  function getPurchaseWhitelistedSpaces()
+    external
+    view
+    returns (uint256[] memory)
+  {
+    return _purchaseWhitelistedSpaceIds;
   }
 
   /**
@@ -831,6 +912,19 @@ contract RegularSpaceToken is
     return _isInReceiveWhitelistedSpace(account);
   }
 
+  function canAccountPurchase(address account) public view returns (bool) {
+    if (purchaseEligibilityMode == PURCHASE_MODE_SPACE_ONLY) {
+      return IDAOSpaceFactory(spacesContract).isMember(spaceId, account);
+    }
+    if (purchaseEligibilityMode == PURCHASE_MODE_CUSTOM_SPACES) {
+      return _isInPurchaseWhitelistedSpace(account);
+    }
+    if (purchaseEligibilityMode == PURCHASE_MODE_ALL_SPACES) {
+      return _isInAnySpace(account);
+    }
+    return false;
+  }
+
   // =========================================================================
   // Mutual credit view functions
   // =========================================================================
@@ -1004,5 +1098,26 @@ contract RegularSpaceToken is
       }
     }
     return false;
+  }
+
+  function _isInPurchaseWhitelistedSpace(
+    address account
+  ) internal view returns (bool) {
+    for (uint256 i = 0; i < _purchaseWhitelistedSpaceIds.length; i++) {
+      uint256 sid = _purchaseWhitelistedSpaceIds[i];
+      if (
+        isPurchaseWhitelistedSpace[sid] &&
+        IDAOSpaceFactory(spacesContract).isMember(sid, account)
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function _isInAnySpace(address account) internal view returns (bool) {
+    uint256[] memory memberSpaces = IDAOSpaceFactory(spacesContract)
+      .getMemberSpaces(account);
+    return memberSpaces.length > 0;
   }
 }

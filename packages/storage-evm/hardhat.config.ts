@@ -33,6 +33,7 @@ const config: HardhatUserConfig = {
   },
   networks: {
     hardhat: {
+      allowUnlimitedContractSize: true,
       forking: {
         url: process.env.RPC_URL || 'https://mainnet.base.org',
         enabled: true,

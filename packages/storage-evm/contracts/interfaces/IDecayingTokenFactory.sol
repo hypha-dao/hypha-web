@@ -25,7 +25,12 @@ interface IDecayingTokenFactory {
     address[] memory initialTransferWhitelist,
     address[] memory initialReceiveWhitelist,
     uint256 decayPercentage,
-    uint256 decayInterval
+    uint256 decayInterval,
+    address paymentToken,
+    uint256 paymentTokenPricePerToken,
+    uint256 tokensForSale,
+    uint8 purchaseEligibilityMode,
+    uint256[] memory initialPurchaseWhitelistSpaceIds
   ) external returns (address);
 
   function getSpaceToken(
