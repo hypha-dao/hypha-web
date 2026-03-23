@@ -191,6 +191,19 @@ export async function GET(
       contracts: redemptionPriceCalls,
     });
 
+    const maxRedemptionCalls = vaultSpaceTokens.map((spaceToken) => ({
+      address: vaultAddress,
+      abi: tokenBackingVaultImplementationAbi,
+      functionName: 'getMaxRedemptionPercentage' as const,
+      args: [spaceId, spaceToken],
+    }));
+
+    const maxRedemptionResults = await web3Client.multicall({
+      allowFailure: true,
+      blockTag: 'safe',
+      contracts: maxRedemptionCalls,
+    });
+
     const vaultSpaceTokenTotalSupplyCalls = vaultSpaceTokens.map(
       (spaceToken) => ({
         address: spaceToken,
@@ -394,6 +407,32 @@ export async function GET(
         Number(redemptionPriceRaw) > 0
           ? Number(redemptionPriceRaw) / 1_000_000
           : 0;
+      const redemptionCurrencyFeed =
+        redemptionPriceResult?.status === 'success'
+          ? redemptionPriceResult.result?.[1]
+          : undefined;
+      const maxRedemptionResult = maxRedemptionResults[vaultIdx];
+      const maxRedemptionBps =
+        maxRedemptionResult?.status === 'success'
+          ? maxRedemptionResult.result?.[0] ?? 0n
+          : 0n;
+      const maxRedemptionPeriodDays =
+        maxRedemptionResult?.status === 'success'
+          ? Number(maxRedemptionResult.result?.[1] ?? 0n)
+          : 0;
+      const minimumBackingPercent =
+        Number(
+          (vaultConfigResult as { minimumBackingBps?: bigint } | undefined)
+            ?.minimumBackingBps ?? 0n,
+        ) / 100;
+      const redemptionStartDateSeconds = Number(
+        (vaultConfigResult as { redemptionStartDate?: bigint } | undefined)
+          ?.redemptionStartDate ?? 0n,
+      );
+      const redemptionStartDate =
+        redemptionStartDateSeconds > 0
+          ? new Date(redemptionStartDateSeconds * 1000)
+          : undefined;
 
       const spaceTokenTotalSupplyResult =
         vaultSpaceTokenTotalSupplyResults[vaultIdx];
@@ -423,6 +462,17 @@ export async function GET(
         tokenIcon: spaceTokenMeta?.icon ?? '/placeholder/token-icon.svg',
         totalUsd,
         backingPercent,
+        redemptionEnabled,
+        redemptionPrice,
+        redemptionCurrencyFeed,
+        minimumBackingPercent,
+        maxRedemptionPercent: Number(maxRedemptionBps) / 100,
+        maxRedemptionPeriodDays,
+        redemptionStartDate,
+        whitelistEnabled: Boolean(
+          (vaultConfigResult as { whitelistEnabled?: boolean } | undefined)
+            ?.whitelistEnabled,
+        ),
         collaterals,
       };
     });

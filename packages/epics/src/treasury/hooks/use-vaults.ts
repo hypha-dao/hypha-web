@@ -30,6 +30,14 @@ export type Vault = {
   tokenIcon: string;
   totalUsd: number;
   backingPercent: number;
+  redemptionEnabled?: boolean;
+  redemptionPrice?: number;
+  redemptionCurrencyFeed?: `0x${string}`;
+  minimumBackingPercent?: number;
+  maxRedemptionPercent?: number;
+  maxRedemptionPeriodDays?: number;
+  redemptionStartDate?: string | Date;
+  whitelistEnabled?: boolean;
   collaterals: VaultCollateral[];
 };
 
