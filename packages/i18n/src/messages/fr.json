@@ -17,7 +17,8 @@
     "otherMembers": "+ {count} autres membres",
     "exploreSpaces": "Explorer les espaces",
     "findCategory": "Trouver une catégorie",
-    "noSpacesYet": "Aucun espace créé ou rejoint pour le moment. Explorez notre réseau et rejoignez un espace, ou créez le vôtre."
+    "noSpacesYet": "Aucun espace créé ou rejoint pour le moment. Explorez notre réseau et rejoignez un espace, ou créez le vôtre.",
+    "close": "Fermer"
   },
   "Navigation": {
     "network": "Réseau",
