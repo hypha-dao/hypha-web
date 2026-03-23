@@ -56,7 +56,11 @@ const PROPOSAL_ERROR_KEY_MAP: Record<string, string> = {
     'proposalErrors.autoExecutionVotingDurationRequired',
   'Please select a token to pursue with this voting method.':
     'proposalErrors.selectVotingToken',
+  'Please select a backing collateral':
+    'proposalErrors.backingCollateralRequired',
   'Please enter amount': 'proposalErrors.enterAmount',
+  'Invalid token address': 'proposalErrors.invalidTokenAddress',
+  'Invalid address': 'proposalErrors.invalidAddress',
   'Token address is required': 'proposalErrors.tokenAddressRequired',
   'Should be integer': 'proposalErrors.integerRequired',
   'Choose a token to mint': 'proposalErrors.chooseTokenToMint',
@@ -70,6 +74,16 @@ const PROPOSAL_ERROR_KEY_MAP: Record<string, string> = {
     'plugins.paymentSchedule.errors.totalPercentageMax',
   'The future payment date must be later than the current date':
     'plugins.paymentSchedule.errors.futureDateMustBeLater',
+  'Token price is required when redemption is active. Enter a price greater than 0.':
+    'proposalErrors.redemptionTokenPriceRequired',
+  'Reference currency is required when redemption is active.':
+    'proposalErrors.redemptionReferenceCurrencyRequired',
+  'Maximum Redemption % is required when redemption is active. Enter 0 for no limit.':
+    'proposalErrors.redemptionMaxPercentRequired',
+  'Period (days) is required when Redemption is active. Select a redemption period.':
+    'proposalErrors.redemptionPeriodDaysRequired',
+  'Authorise Redemption from date is required when Redemption is active.':
+    'proposalErrors.redemptionStartDateRequired',
 };
 
 export const resolveProposalErrorTranslation = (

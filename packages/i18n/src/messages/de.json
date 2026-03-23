@@ -678,10 +678,18 @@
       "selectMemberAndTokens": "Bitte wählen Sie ein Mitglied aus und geben Sie die zuzuweisende Anzahl von Tokens an.",
       "autoExecutionVotingDurationRequired": "Die Auto-Ausführung ist deaktiviert. Bitte legen Sie eine Mindestabstimmungsdauer fest.",
       "selectVotingToken": "Bitte wählen Sie einen Token für diese Abstimmungsmethode aus.",
+      "backingCollateralRequired": "Bitte wählen Sie eine Sicherheitenposition aus",
       "enterAmount": "Bitte geben Sie einen Betrag ein",
+      "invalidTokenAddress": "Ungültige Token-Adresse",
+      "invalidAddress": "Ungültige Adresse",
       "tokenAddressRequired": "Token-Adresse ist erforderlich",
       "integerRequired": "Muss eine ganze Zahl sein",
-      "chooseTokenToMint": "Wählen Sie einen zu prägenden Token aus"
+      "chooseTokenToMint": "Wählen Sie einen zu prägenden Token aus",
+      "redemptionTokenPriceRequired": "Der Token-Preis ist erforderlich, wenn die Rücknahme aktiv ist. Geben Sie einen Preis größer als 0 ein.",
+      "redemptionReferenceCurrencyRequired": "Die Referenzwährung ist erforderlich, wenn die Rücknahme aktiv ist.",
+      "redemptionMaxPercentRequired": "Der maximale Rücknahmeprozentsatz ist erforderlich, wenn die Rücknahme aktiv ist. Geben Sie 0 für kein Limit ein.",
+      "redemptionPeriodDaysRequired": "Der Zeitraum (Tage) ist erforderlich, wenn die Rücknahme aktiv ist. Wählen Sie einen Rücknahmezeitraum aus.",
+      "redemptionStartDateRequired": "Das Datum „Rücknahme autorisieren ab“ ist erforderlich, wenn die Rücknahme aktiv ist."
     },
     "issueNewTokenForm": {
       "duplicateToken": "Ein Token mit demselben Namen und Symbol existiert bereits in Ihrem Space. Bitte ändern Sie entweder den Namen oder das Symbol, um fortzufahren.",

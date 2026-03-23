@@ -1,7 +1,6 @@
 'use client';
 
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import {
   schemaTokenBackingVault,
   createAgreementFiles,
@@ -18,6 +17,7 @@ import { useConfig } from 'wagmi';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useTranslations } from 'next-intl';
+import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 
 const fullSchemaTokenBackingVault =
   schemaTokenBackingVault.extend(createAgreementFiles);
@@ -43,6 +43,10 @@ export const CreateProposalTokenBackingVaultForm = ({
 }: CreateProposalTokenBackingVaultFormProps) => {
   const tSpaces = useTranslations('Spaces');
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const resolver = useLocalizedProposalResolver(
+    fullSchemaTokenBackingVault,
+    tAgreementFlow,
+  );
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
@@ -62,7 +66,7 @@ export const CreateProposalTokenBackingVaultForm = ({
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
-    resolver: zodResolver(fullSchemaTokenBackingVault),
+    resolver,
     defaultValues: {
       title: '',
       description: '',

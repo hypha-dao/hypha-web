@@ -9,7 +9,23 @@ import {
   RequirementMark,
 } from '@hypha-platform/ui';
 import { useFormContext } from 'react-hook-form';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import {
+  enUS,
+  de,
+  fr,
+  es,
+  ptBR,
+  type Locale as DateFnsLocale,
+} from 'date-fns/locale';
+
+const DATE_FNS_LOCALES: Record<string, DateFnsLocale> = {
+  en: enUS,
+  de,
+  fr,
+  es,
+  pt: ptBR,
+};
 
 type RedemptionStartDateFieldProps = {
   isRequired?: boolean;
@@ -18,7 +34,9 @@ type RedemptionStartDateFieldProps = {
 export function RedemptionStartDateField({
   isRequired = false,
 }: RedemptionStartDateFieldProps) {
+  const locale = useLocale();
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const dateLocale = DATE_FNS_LOCALES[locale] ?? enUS;
   const { control } = useFormContext();
 
   return (
@@ -38,6 +56,7 @@ export function RedemptionStartDateField({
               <DatePicker
                 mode="single"
                 value={field.value ?? undefined}
+                locale={dateLocale}
                 placeholder={tAgreementFlow(
                   'plugins.tokenBackingVault.selectDate',
                 )}

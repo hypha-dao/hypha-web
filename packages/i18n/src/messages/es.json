@@ -56,10 +56,18 @@
       "selectMemberAndTokens": "Selecciona un miembro y especifica la cantidad de tokens a asignar.",
       "autoExecutionVotingDurationRequired": "La autoejecución está deshabilitada. Define una duración mínima de votación.",
       "selectVotingToken": "Selecciona un token para este método de votación.",
+      "backingCollateralRequired": "Selecciona un colateral de respaldo",
       "enterAmount": "Ingresa un monto",
+      "invalidTokenAddress": "Dirección de token inválida",
+      "invalidAddress": "Dirección inválida",
       "tokenAddressRequired": "La dirección del token es obligatoria",
       "integerRequired": "Debe ser un número entero",
-      "chooseTokenToMint": "Elige un token para acuñar"
+      "chooseTokenToMint": "Elige un token para acuñar",
+      "redemptionTokenPriceRequired": "El precio del token es obligatorio cuando la redención está activa. Ingresa un precio mayor que 0.",
+      "redemptionReferenceCurrencyRequired": "La moneda de referencia es obligatoria cuando la redención está activa.",
+      "redemptionMaxPercentRequired": "El % máximo de redención es obligatorio cuando la redención está activa. Ingresa 0 para no tener límite.",
+      "redemptionPeriodDaysRequired": "El período (días) es obligatorio cuando la redención está activa. Selecciona un período de redención.",
+      "redemptionStartDateRequired": "La fecha \"Autorizar redención desde\" es obligatoria cuando la redención está activa."
     },
     "plugins": {
       "paymentSchedule": {

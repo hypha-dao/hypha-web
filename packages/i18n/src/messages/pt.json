@@ -56,10 +56,18 @@
       "selectMemberAndTokens": "Selecione um membro e informe a quantidade de tokens a alocar.",
       "autoExecutionVotingDurationRequired": "A execução automática está desativada. Defina uma duração mínima de votação.",
       "selectVotingToken": "Selecione um token para este método de votação.",
+      "backingCollateralRequired": "Selecione um colateral de lastro",
       "enterAmount": "Digite um valor",
+      "invalidTokenAddress": "Endereço do token inválido",
+      "invalidAddress": "Endereço inválido",
       "tokenAddressRequired": "O endereço do token é obrigatório",
       "integerRequired": "Deve ser um número inteiro",
-      "chooseTokenToMint": "Escolha um token para cunhar"
+      "chooseTokenToMint": "Escolha um token para cunhar",
+      "redemptionTokenPriceRequired": "O preço do token é obrigatório quando o resgate está ativo. Informe um preço maior que 0.",
+      "redemptionReferenceCurrencyRequired": "A moeda de referência é obrigatória quando o resgate está ativo.",
+      "redemptionMaxPercentRequired": "O percentual máximo de resgate é obrigatório quando o resgate está ativo. Insira 0 para sem limite.",
+      "redemptionPeriodDaysRequired": "O período (dias) é obrigatório quando o resgate está ativo. Selecione um período de resgate.",
+      "redemptionStartDateRequired": "A data \"Autorizar resgate desde\" é obrigatória quando o resgate está ativo."
     },
     "plugins": {
       "paymentSchedule": {

@@ -678,10 +678,18 @@
       "selectMemberAndTokens": "Veuillez sélectionner un membre et indiquer le nombre de tokens à attribuer.",
       "autoExecutionVotingDurationRequired": "L'auto-exécution est désactivée. Veuillez définir une durée minimale de vote.",
       "selectVotingToken": "Veuillez sélectionner un token pour cette méthode de vote.",
+      "backingCollateralRequired": "Veuillez sélectionner une garantie de réserve",
       "enterAmount": "Veuillez saisir un montant",
+      "invalidTokenAddress": "Adresse de token invalide",
+      "invalidAddress": "Adresse invalide",
       "tokenAddressRequired": "L'adresse du token est requise",
       "integerRequired": "Doit être un entier",
-      "chooseTokenToMint": "Choisissez un token à frapper"
+      "chooseTokenToMint": "Choisissez un token à frapper",
+      "redemptionTokenPriceRequired": "Le prix du token est requis lorsque le rachat est activé. Saisissez un prix supérieur à 0.",
+      "redemptionReferenceCurrencyRequired": "La devise de référence est requise lorsque le rachat est activé.",
+      "redemptionMaxPercentRequired": "Le pourcentage maximal de rachat est requis lorsque le rachat est activé. Saisissez 0 pour aucune limite.",
+      "redemptionPeriodDaysRequired": "La période (jours) est requise lorsque le rachat est activé. Sélectionnez une période de rachat.",
+      "redemptionStartDateRequired": "La date \"Autoriser le rachat à partir du\" est requise lorsque le rachat est activé."
     },
     "issueNewTokenForm": {
       "duplicateToken": "Un token avec le même nom et symbole existe déjà dans votre espace. Veuillez modifier le nom ou le symbole pour continuer.",

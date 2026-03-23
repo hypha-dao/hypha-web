@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { format } from 'date-fns';
+import { format, Locale } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
 
 import { cn } from '@hypha-platform/ui-utils';
@@ -16,6 +16,7 @@ interface DatePickerProps {
   onChange?: (date: Date | DateRange | undefined) => void;
   placeholder?: string;
   className?: string;
+  locale?: Locale;
 }
 
 export function DatePicker({
@@ -24,6 +25,7 @@ export function DatePicker({
   onChange,
   placeholder = 'Select a date',
   className,
+  locale,
 }: DatePickerProps) {
   const [internalValue, setInternalValue] = React.useState<
     Date | DateRange | undefined
@@ -40,13 +42,17 @@ export function DatePicker({
     if (!selected) return placeholder;
 
     if (mode === 'single' && selected instanceof Date) {
-      return format(selected, 'PPP');
+      return format(selected, 'PPP', { locale });
     }
 
     if (mode === 'range' && typeof selected === 'object') {
       const { from, to } = selected as DateRange;
-      if (from && to) return `${format(from, 'PPP')} - ${format(to, 'PPP')}`;
-      if (from) return `${format(from, 'PPP')} - ...`;
+      if (from && to) {
+        return `${format(from, 'PPP', { locale })} - ${format(to, 'PPP', {
+          locale,
+        })}`;
+      }
+      if (from) return `${format(from, 'PPP', { locale })} - ...`;
     }
 
     return placeholder;
@@ -73,6 +79,7 @@ export function DatePicker({
           mode={mode}
           selected={selected as any}
           onSelect={handleSelect as any}
+          locale={locale}
           initialFocus
         />
       </PopoverContent>
