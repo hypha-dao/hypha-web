@@ -211,6 +211,11 @@ export const useCreateTokenBackingVaultOrchestrator = ({
             redemptionWhitelist: arg.tokenBackingVault.redemptionWhitelist,
           });
           completeTask('CREATE_WEB3_AGREEMENT');
+        } else if (config) {
+          // Keep orchestration progressing when wagmi config exists
+          // but web3SpaceId is unavailable and Web3 step is intentionally skipped.
+          startTask('CREATE_WEB3_AGREEMENT');
+          completeTask('CREATE_WEB3_AGREEMENT');
         }
         const files = schemaCreateAgreementFiles.parse(arg);
         if (files.attachments?.length || files.leadImage) {

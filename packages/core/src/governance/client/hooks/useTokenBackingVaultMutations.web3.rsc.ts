@@ -284,11 +284,7 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
         });
       }
 
-      if (
-        arg.tokenPrice &&
-        arg.referenceCurrency &&
-        validAddCollaterals.length === 0
-      ) {
+      if (arg.tokenPrice && arg.referenceCurrency) {
         const redemptionPrice = BigInt(
           Math.round(parseFloat(arg.tokenPrice) * Number(PRICE_PRECISION)),
         );
