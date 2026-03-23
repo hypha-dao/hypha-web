@@ -1233,7 +1233,7 @@
     "votingPower": {
       "oneTokenOneVote": "1 Token 1 Stimme",
       "oneMemberOneVote": "1 Mitglied 1 Stimme",
-      "oneVoiceOneVote": "1 Stimme 1 Stimme"
+      "oneVoiceOneVote": "1 Voice 1 Stimme"
     },
     "voters": {
       "votes": "Stimmen",
