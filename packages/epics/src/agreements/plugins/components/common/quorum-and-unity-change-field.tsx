@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { useTheme } from 'next-themes';
 import {
@@ -27,16 +26,13 @@ export function QuorumAndUnityChangerField({
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
-  const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
+  const matchedPresetTitle =
+    VOTING_METHOD_TEMPLATES.find(
+      (p) => p.quorum === fieldValue.quorum && p.unity === fieldValue.unity,
+    )?.title ?? null;
 
   const handleChange = (values: { quorum: number; unity: number }) => {
     setValue(name, values, { shouldValidate: true });
-    const preset = VOTING_METHOD_TEMPLATES.find(
-      (p) => p.quorum === values.quorum && p.unity === values.unity,
-    );
-    if (!preset) {
-      setSelectedPreset(null);
-    }
   };
 
   const handlePresetClick = (preset: {
@@ -45,7 +41,6 @@ export function QuorumAndUnityChangerField({
     quorum: number;
     unity: number;
   }) => {
-    setSelectedPreset(preset.title);
     setValue(
       name,
       { quorum: preset.quorum, unity: preset.unity },
@@ -71,7 +66,7 @@ export function QuorumAndUnityChangerField({
         <FormItem>
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 mb-2">
             {VOTING_METHOD_TEMPLATES.map((preset) => {
-              const isSelected = selectedPreset === preset.title;
+              const isSelected = matchedPresetTitle === preset.title;
               return (
                 <Button
                   key={preset.title}
