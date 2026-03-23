@@ -99,7 +99,18 @@ export const EditPersonSection = ({
 
   const localizeErrors = (errors: unknown): unknown => {
     if (!errors || typeof errors !== 'object') return errors;
-    if (Array.isArray(errors)) return errors.map(localizeErrors);
+    if (Array.isArray(errors)) {
+      const localizedArray = errors.map(localizeErrors);
+
+      for (const [key, value] of Object.entries(errors)) {
+        if (!/^\d+$/.test(key)) {
+          (localizedArray as Record<string, unknown>)[key] =
+            value && typeof value === 'object' ? localizeErrors(value) : value;
+        }
+      }
+
+      return localizedArray;
+    }
 
     const localized = { ...(errors as Record<string, unknown>) };
 
