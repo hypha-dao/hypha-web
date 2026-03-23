@@ -1,6 +1,7 @@
 'use client';
 
 import { TransparencyLevel } from '../../spaces/components/transparency-level';
+import { useTranslations } from 'next-intl';
 
 interface ProposalTransparencySettingsInfoProps {
   spaceDiscoverability?: TransparencyLevel;
@@ -9,20 +10,21 @@ interface ProposalTransparencySettingsInfoProps {
 
 const getTransparencyLevelLabel = (
   level: TransparencyLevel | undefined,
+  tProposalDetails: any,
 ): string => {
-  if (level === undefined) return 'Unknown';
+  if (level === undefined) return tProposalDetails('labels.unknown');
 
   switch (level) {
     case TransparencyLevel.PUBLIC:
-      return 'Public';
+      return tProposalDetails('transparencyLevel.public');
     case TransparencyLevel.NETWORK:
-      return 'Network';
+      return tProposalDetails('transparencyLevel.network');
     case TransparencyLevel.ORGANISATION:
-      return 'Organisation';
+      return tProposalDetails('transparencyLevel.organisation');
     case TransparencyLevel.SPACE:
-      return 'Space';
+      return tProposalDetails('transparencyLevel.space');
     default:
-      return 'Unknown';
+      return tProposalDetails('labels.unknown');
   }
 };
 
@@ -30,6 +32,7 @@ export const ProposalTransparencySettingsInfo = ({
   spaceDiscoverability,
   spaceActivityAccess,
 }: ProposalTransparencySettingsInfoProps) => {
+  const tProposalDetails = useTranslations('ProposalDetails');
   if (spaceDiscoverability === undefined && spaceActivityAccess === undefined) {
     return null;
   }
@@ -37,17 +40,20 @@ export const ProposalTransparencySettingsInfo = ({
   return (
     <div className="flex flex-col gap-4">
       <span className="text-neutral-11 text-2 font-medium">
-        Transparency Settings
+        {tProposalDetails('sections.transparencySettings')}
       </span>
       <div className="flex flex-col gap-5">
         {spaceDiscoverability !== undefined && (
           <>
             <div className="flex justify-between items-center">
               <div className="text-1 text-neutral-11 w-full">
-                Space Discoverability
+                {tProposalDetails('labels.spaceDiscoverability')}
               </div>
               <div className="text-1 text-nowrap">
-                {getTransparencyLevelLabel(spaceDiscoverability)}
+                {getTransparencyLevelLabel(
+                  spaceDiscoverability,
+                  tProposalDetails,
+                )}
               </div>
             </div>
           </>
@@ -56,10 +62,13 @@ export const ProposalTransparencySettingsInfo = ({
           <>
             <div className="flex justify-between items-center">
               <div className="text-1 text-neutral-11 w-full">
-                Space Activity Access
+                {tProposalDetails('labels.spaceActivityAccess')}
               </div>
               <div className="text-1 text-nowrap">
-                {getTransparencyLevelLabel(spaceActivityAccess)}
+                {getTransparencyLevelLabel(
+                  spaceActivityAccess,
+                  tProposalDetails,
+                )}
               </div>
             </div>
           </>

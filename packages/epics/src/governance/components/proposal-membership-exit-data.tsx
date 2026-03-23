@@ -4,6 +4,7 @@ import { Image } from '@hypha-platform/ui';
 import { usePersonByWeb3Address, useSpacesByWeb3IdsClient } from '../hooks';
 import { useDbSpaces } from '../../hooks';
 import { EthAddress } from '../../people';
+import { useTranslations } from 'next-intl';
 
 interface MembershipExitDataProps {
   member?: string;
@@ -14,6 +15,7 @@ export const MembershipExitData = ({
   member,
   space,
 }: MembershipExitDataProps) => {
+  const tProposalDetails = useTranslations('ProposalDetails');
   const { person } = usePersonByWeb3Address(member as `0x${string}`);
   const { spaces } = useSpacesByWeb3IdsClient([space as bigint]);
   const destructuredSpace = spaces?.[0];
@@ -26,7 +28,9 @@ export const MembershipExitData = ({
   return (
     <div className="flex flex-col gap-5">
       <div className="flex w-full justify-between items-center">
-        <span className="text-2 text-neutral-11">Exiting Member</span>
+        <span className="text-2 text-neutral-11">
+          {tProposalDetails('labels.exitingMember')}
+        </span>
         {person ? (
           <span className="flex gap-2 text-2 text-neutral-11">
             <Image
@@ -59,7 +63,9 @@ export const MembershipExitData = ({
         )}
       </div>
       <div className="flex w-full justify-between items-center">
-        <span className="text-2 text-neutral-11">Exit From</span>
+        <span className="text-2 text-neutral-11">
+          {tProposalDetails('labels.exitFrom')}
+        </span>
         <span className="flex gap-2 text-2 text-neutral-11">
           <Image
             className="w-[24px] h-[24px] rounded-lg"

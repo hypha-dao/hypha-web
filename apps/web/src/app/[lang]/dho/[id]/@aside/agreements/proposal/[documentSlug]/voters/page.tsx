@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import {
   ButtonClose,
   FullVoterList,
@@ -13,9 +13,10 @@ import { useDocumentBySlug } from '@web/hooks/use-document-by-slug';
 import { useProposalDetailsWeb3Rpc } from '@hypha-platform/core/client';
 import { Separator } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
+import { useTranslations } from 'next-intl';
 
 export default function VotersOverlay() {
-  const router = useRouter();
+  const tCommon = useTranslations('Common');
   const { documentSlug, lang, id } = useParams();
   const { document } = useDocumentBySlug(documentSlug as string);
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
@@ -43,7 +44,7 @@ export default function VotersOverlay() {
           />
           <div className="flex justify-center gap-1">
             <ButtonBack
-              label="Back"
+              label={tCommon('back')}
               backUrl={`${getDhoPathAgreements(
                 lang as Locale,
                 id as string,

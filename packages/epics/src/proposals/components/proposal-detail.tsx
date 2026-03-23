@@ -38,6 +38,7 @@ import { useSpaceDocumentsWithStatuses } from '../../governance';
 import { isPast } from 'date-fns';
 import { useState, useEffect } from 'react';
 import { TransparencyLevel } from '../../spaces/components/transparency-level';
+import { useTranslations } from 'next-intl';
 
 type ProposalDetailProps = ProposalHeadProps & {
   documentId?: number;
@@ -89,6 +90,7 @@ export const ProposalDetail = ({
   isVoting: externalIsVoting,
   onWithdrawSuccess,
 }: ProposalDetailProps) => {
+  const tProposalDetails = useTranslations('ProposalDetails');
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: proposalId as number,
   });
@@ -338,7 +340,9 @@ export const ProposalDetail = ({
       ))}
       {Boolean(proposalDetails?.transfers?.length) && (
         <div className="flex flex-col gap-4">
-          <span className="text-neutral-11 text-2 font-medium">Payment</span>
+          <span className="text-neutral-11 text-2 font-medium">
+            {tProposalDetails('sections.payment')}
+          </span>
           {proposalDetails?.transfers.map((tx, idx) => (
             <ProposalTransactionItem
               key={idx}

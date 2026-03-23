@@ -1034,5 +1034,158 @@
     "createActionForms": {
       "defaultAgreement": "Vereinbarung"
     }
+  },
+  "ProposalDetails": {
+    "status": {
+      "accepted": "Akzeptiert",
+      "rejected": "Abgelehnt",
+      "onVoting": "Zur Abstimmung"
+    },
+    "badges": {
+      "space": "Raum",
+      "delegate": "Delegieren",
+      "member": "Mitglied",
+      "active": "Aktiv"
+    },
+    "sections": {
+      "payment": "Zahlung",
+      "transparencySettings": "Transparenzeinstellungen",
+      "decaySettings": "Decay-Einstellungen",
+      "transferWhitelists": "Whitelists übertragen",
+      "fromWhitelist": "Von der Whitelist",
+      "toWhitelist": "Zur Whitelist"
+    },
+    "labels": {
+      "unknown": "Unbekannt",
+      "custom": "Brauch",
+      "token": "Token",
+      "amount": "Menge",
+      "usdcAmount": "USDC Betrag",
+      "hyphaAmount": "HYPHA Betrag",
+      "joiningSpace": "Dem Space beitreten",
+      "delegatedVotingMember": "Delegiertes stimmberechtigtes Mitglied",
+      "exitingMember": "Austretendes Mitglied",
+      "exitFrom": "Ausstieg aus",
+      "entryMethod": "Eingabemethode",
+      "spaces": "Räume",
+      "months": "Monate",
+      "logoForSpace": "Logo für {title}",
+      "payWith": "Bezahlen Sie mit",
+      "totalAmountInHypha": "Gesamtbetrag in HYPHA",
+      "hyphaTokenIcon": "Hypha Token-Symbol",
+      "totalAmountInUsdc": "Gesamtbetrag in USDC",
+      "usdcIcon": "USDC-Symbol",
+      "tokenType": "Token-Typ",
+      "tokenName": "Tokenname",
+      "tokenSymbol": "Token-Symbol",
+      "tokenIcon": "Token-Symbol",
+      "tokenIconFor": "Token-Symbol für {symbol}",
+      "maxSupply": "Maximales Angebot",
+      "unlimited": "Unbegrenzt",
+      "transferable": "Übertragbar",
+      "yes": "Ja",
+      "no": "NEIN",
+      "maxSupplyType": "Maximaler Versorgungstyp",
+      "immutable": "Unveränderlich",
+      "updatable": "Aktualisierbar",
+      "autoMinting": "Automatische Prägung",
+      "enabled": "Ermöglicht",
+      "disabled": "Deaktiviert",
+      "tokenPrice": "Token-Preis",
+      "decayPercentage": "Zerfallsprozentsatz",
+      "decayInterval": "Abklingintervall",
+      "spaceDiscoverability": "Auffindbarkeit des Weltraums",
+      "spaceActivityAccess": "Zugang zu Weltraumaktivitäten",
+      "votingMethod": "Abstimmungsmethode",
+      "quorum": "Quorum",
+      "unity": "Einheit",
+      "votingPeriod": "Abstimmungszeitraum",
+      "votingPower": "Stimmmacht",
+      "defaultAvatar": "Standard-Avatar"
+    },
+    "entryMethods": {
+      "openAccess": "Open Access",
+      "tokenBased": "Tokenbasiert",
+      "inviteOnly": "Nur auf Einladung"
+    },
+    "transparencyLevel": {
+      "public": "Öffentlich",
+      "network": "Netzwerk",
+      "organisation": "Organisation",
+      "space": "Raum"
+    },
+    "votingPower": {
+      "oneTokenOneVote": "1 Token 1 Stimme",
+      "oneMemberOneVote": "1 Mitglied 1 Stimme",
+      "oneVoiceOneVote": "1 Stimme 1 Stimme"
+    },
+    "voters": {
+      "votes": "Stimmen",
+      "personVoted": "{name} hat {vote} gestimmt",
+      "andMore": "und {count} mehr",
+      "voted": "Stimmte {vote}"
+    },
+    "voting": {
+      "voteClosed": "Abstimmung geschlossen",
+      "voteWillCloseIn": "Diese Abstimmung endet im {duration}",
+      "voteClosingSoon": "Die Abstimmung endet bald",
+      "voteNo": "Nein stimmen",
+      "voteYes": "Ja stimmen",
+      "object": "Objekt",
+      "consent": "Zustimmung",
+      "no": "Nein",
+      "hellYeah": "Verdammt, ja",
+      "notSure": "Nicht sicher",
+      "looksGood": "Sieht gut aus",
+      "quorumMinParticipation": "Quorum (Mindestbeteiligung)",
+      "unityMinAlignment": "Einheit (Mindestausrichtung)",
+      "proposalVotingIconAlt": "Symbol für die Mindestabstimmung des Vorschlags",
+      "autoExecution": "Automatische Ausführung",
+      "toVote": "{duration} zum Abstimmen",
+      "youVoted": "Du hast {vote} abgestimmt",
+      "voteValueYes": "Ja",
+      "voteValueNo": "Nein"
+    },
+    "withdrawResubmit": {
+      "title": "Ihren Vorschlag zurückziehen oder bearbeiten und erneut einreichen?",
+      "withdrawDialogTitle": "Vorschlag zurückziehen",
+      "withdrawDialogDescription": "Sind Sie sicher, dass Sie diesen Vorschlag zurückziehen möchten? Es wird nicht mehr auf dem Angebotsbildschirm angezeigt und kann nicht wiederhergestellt werden.",
+      "withdraw": "Zurückziehen",
+      "cancel": "Stornieren",
+      "withdrawing": "Rückzug...",
+      "resubmitDialogTitle": "Vorschlag erneut einreichen",
+      "resubmitDialogDescription": "Möchten Sie diesen Vorschlag wirklich erneut einreichen? Der aktuelle Vorschlag wird zurückgezogen, ein neuer mit Ihren Inhalten erstellt und die Stimmen werden zurückgesetzt.",
+      "resubmit": "Erneut einreichen",
+      "processing": "Verarbeitung..."
+    },
+    "expireBanner": {
+      "checkingMembership": "Mitgliedschaft wird geprüft...",
+      "processing": "Verarbeitung...",
+      "actionCompleted": "Aktion abgeschlossen",
+      "title": "Die Abstimmungsperiode ist beendet.",
+      "confirmDecision": "Entscheidung bestätigen",
+      "states": {
+        "noParticipation": {
+          "subtitle": "Für diesen Vorschlag wurden keine Stimmen registriert. Ohne jegliche Beteiligung wird dieser Vorschlag abgelehnt.",
+          "completedMessage": "Entscheidung protokolliert: Vorschlag aufgrund fehlender Beteiligung abgelehnt."
+        },
+        "insufficientParticipation": {
+          "subtitle": "Die Beteiligung war zu gering, um diesem Vorschlag zuzustimmen. Dieser Vorschlag wird abgelehnt.",
+          "completedMessage": "Entscheidung protokolliert: Vorschlag wegen unzureichender Beteiligung abgelehnt."
+        },
+        "lackAlignment": {
+          "subtitle": "Die Beteiligung war ausreichend, aber die Unterstützung war zu geteilt. Dieser Vorschlag wird abgelehnt.",
+          "completedMessage": "Entscheidung protokolliert: Vorschlag aufgrund mangelnder Abstimmung abgelehnt."
+        },
+        "approved": {
+          "subtitle": "Dieser Vorschlag hat alle Anforderungen erfüllt und wird als neue Vereinbarung genehmigt.",
+          "completedMessage": "Entscheidung aufgezeichnet: Vorschlag genehmigt und in den Abschnitt „Angenommen“ verschoben."
+        },
+        "insufficientParticipationAndAlignment": {
+          "subtitle": "Die Beteiligung war zu gering und die Unterstützung zu gespalten. Dieser Vorschlag wird abgelehnt.",
+          "completedMessage": "Entscheidung protokolliert: Vorschlag aufgrund unzureichender Beteiligung und mangelnder Abstimmung abgelehnt."
+        }
+      }
+    }
   }
 }

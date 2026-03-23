@@ -10,7 +10,7 @@ import { formatDecayInterval } from '@hypha-platform/ui-utils';
 import { usePersonByWeb3Address } from '../hooks';
 import { useDbSpaces } from '../../hooks';
 import { PersonAvatar } from '../../people/components/person-avatar';
-import { getTokenTypeLabel } from '../../treasury/components/common/token-type-field';
+import { useTranslations } from 'next-intl';
 
 interface ProposalTokenItemProps {
   name?: string;
@@ -35,6 +35,7 @@ interface WhitelistAddressItemProps {
 }
 
 const WhitelistAddressItem = ({ address }: WhitelistAddressItemProps) => {
+  const tProposalDetails = useTranslations('ProposalDetails');
   const { spaces: dbSpaces } = useDbSpaces({
     parentOnly: false,
   });
@@ -72,7 +73,7 @@ const WhitelistAddressItem = ({ address }: WhitelistAddressItemProps) => {
               src="/placeholder/default-profile.svg"
               width={24}
               height={24}
-              alt="Default avatar"
+              alt={tProposalDetails('labels.defaultAvatar')}
             />
             <div className="text-1">
               <EthAddress address={address} />
@@ -101,6 +102,8 @@ export const ProposalTokenItem = ({
   decayPercentage,
   decayInterval,
 }: ProposalTokenItemProps) => {
+  const tProposalDetails = useTranslations('ProposalDetails');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const originalSupply = initialSupply ? Number(initialSupply / 10n ** 18n) : 0;
   const { id } = useParams();
   const { space } = useSpaceBySlug(id as string);
@@ -117,63 +120,99 @@ export const ProposalTokenItem = ({
 
   const referencePrice = dbToken?.referencePrice;
 
-  const tokenType = dbToken?.type ? getTokenTypeLabel(dbToken.type) : '';
+  const tokenType = dbToken?.type
+    ? tAgreementFlow(
+        `plugins.issueNewToken.general.tokenTypeOptions.${dbToken.type}.label` as Parameters<
+          typeof tAgreementFlow
+        >[0],
+      )
+    : '';
 
   return (
     <div className="flex flex-col gap-5">
       <div className="flex justify-between items-center">
-        <div className="text-1 text-neutral-11 w-full">Token Type</div>
+        <div className="text-1 text-neutral-11 w-full">
+          {tProposalDetails('labels.tokenType')}
+        </div>
         <div className="text-1 text-nowrap">{tokenType}</div>
       </div>
       <div className="flex justify-between items-center">
-        <div className="text-1 text-neutral-11 w-full">Token Name</div>
+        <div className="text-1 text-neutral-11 w-full">
+          {tProposalDetails('labels.tokenName')}
+        </div>
         <div className="text-1 text-nowrap">{name}</div>
       </div>
       <div className="flex justify-between items-center">
-        <div className="text-1 text-neutral-11 w-full">Token Symbol</div>
+        <div className="text-1 text-neutral-11 w-full">
+          {tProposalDetails('labels.tokenSymbol')}
+        </div>
         <div className="text-1">{symbol}</div>
       </div>
       <div className="flex justify-between items-center">
-        <div className="text-1 text-neutral-11 w-full">Token Icon</div>
+        <div className="text-1 text-neutral-11 w-full">
+          {tProposalDetails('labels.tokenIcon')}
+        </div>
         <Image
           className="rounded-full w-7 h-7"
           width={32}
           height={32}
           src={tokenIcon || '/placeholder/neutral-token-icon.svg'}
-          alt={`Token icon for ${symbol}`}
+          alt={tProposalDetails('labels.tokenIconFor', {
+            symbol: symbol ?? '',
+          })}
         />
       </div>
       <div className="flex justify-between items-center">
-        <div className="text-1 text-neutral-11 w-full">Max Supply</div>
+        <div className="text-1 text-neutral-11 w-full">
+          {tProposalDetails('labels.maxSupply')}
+        </div>
         <div className="text-1">
           {Number(originalSupply) === 0
-            ? 'Unlimited'
+            ? tProposalDetails('labels.unlimited')
             : formatCurrencyValue(Number(originalSupply))}
         </div>
       </div>
       {transferable !== undefined && (
         <div className="flex justify-between items-center">
-          <div className="text-1 text-neutral-11 w-full">Transferable</div>
-          <div className="text-1">{transferable ? 'Yes' : 'No'}</div>
+          <div className="text-1 text-neutral-11 w-full">
+            {tProposalDetails('labels.transferable')}
+          </div>
+          <div className="text-1">
+            {transferable
+              ? tProposalDetails('labels.yes')
+              : tProposalDetails('labels.no')}
+          </div>
         </div>
       )}
       {fixedMaxSupply !== undefined && (
         <div className="flex justify-between items-center">
-          <div className="text-1 text-neutral-11 w-full">Max Supply Type</div>
+          <div className="text-1 text-neutral-11 w-full">
+            {tProposalDetails('labels.maxSupplyType')}
+          </div>
           <div className="text-1">
-            {fixedMaxSupply ? 'Immutable' : 'Updatable'}
+            {fixedMaxSupply
+              ? tProposalDetails('labels.immutable')
+              : tProposalDetails('labels.updatable')}
           </div>
         </div>
       )}
       {autoMinting !== undefined && (
         <div className="flex justify-between items-center">
-          <div className="text-1 text-neutral-11 w-full">Auto Minting</div>
-          <div className="text-1">{autoMinting ? 'Enabled' : 'Disabled'}</div>
+          <div className="text-1 text-neutral-11 w-full">
+            {tProposalDetails('labels.autoMinting')}
+          </div>
+          <div className="text-1">
+            {autoMinting
+              ? tProposalDetails('labels.enabled')
+              : tProposalDetails('labels.disabled')}
+          </div>
         </div>
       )}
       {referencePrice && (
         <div className="flex justify-between items-center text-nowrap">
-          <div className="text-1 text-neutral-11 w-full">Token Price</div>
+          <div className="text-1 text-neutral-11 w-full">
+            {tProposalDetails('labels.tokenPrice')}
+          </div>
           <div className="text-1">
             {formatCurrencyValue(referencePrice)} {referenceCurrency}
           </div>
@@ -184,17 +223,17 @@ export const ProposalTokenItem = ({
           <Separator />
           <div className="flex flex-col gap-4">
             <div className="text-1 text-neutral-11 font-medium">
-              Decay Settings
+              {tProposalDetails('sections.decaySettings')}
             </div>
             <div className="flex justify-between items-center">
               <div className="text-1 text-neutral-11 w-full">
-                Decay Percentage
+                {tProposalDetails('labels.decayPercentage')}
               </div>
               <div className="text-1">{Number(decayPercentage)}%</div>
             </div>
             <div className="flex justify-between items-center">
               <div className="text-1 text-neutral-11 w-full">
-                Decay Interval
+                {tProposalDetails('labels.decayInterval')}
               </div>
               <div className="text-1 text-nowrap">
                 {formatDecayInterval(decayInterval)}
@@ -210,13 +249,13 @@ export const ProposalTokenItem = ({
           <Separator />
           <div className="flex flex-col gap-4">
             <div className="text-1 text-neutral-11 font-medium">
-              Transfer Whitelists
+              {tProposalDetails('sections.transferWhitelists')}
             </div>
             {initialTransferWhitelist &&
               initialTransferWhitelist.length > 0 && (
                 <div className="flex flex-col gap-4">
                   <div className="text-1 text-neutral-11 font-bold">
-                    From Whitelist
+                    {tProposalDetails('sections.fromWhitelist')}
                   </div>
                   <div className="flex flex-col gap-4">
                     {initialTransferWhitelist.map((addr, idx) => (
@@ -228,7 +267,7 @@ export const ProposalTokenItem = ({
             {initialReceiveWhitelist && initialReceiveWhitelist.length > 0 && (
               <div className="flex flex-col gap-4">
                 <div className="text-1 text-neutral-11 font-bold">
-                  To Whitelist
+                  {tProposalDetails('sections.toWhitelist')}
                 </div>
                 <div className="flex flex-col gap-4">
                   {initialReceiveWhitelist.map((addr, idx) => (

@@ -36,6 +36,7 @@ export const ProposalHead = ({
   proposalStatus,
 }: ProposalHeadProps) => {
   const tCommon = useTranslations('Common');
+  const tProposalDetails = useTranslations('ProposalDetails');
   const format = useFormatter();
   const displayName =
     creator?.type === 'space'
@@ -55,11 +56,20 @@ export const ProposalHead = ({
   } => {
     switch (proposalStatus) {
       case 'accepted':
-        return { text: 'Accepted', colorVariant: 'success' };
+        return {
+          text: tProposalDetails('status.accepted'),
+          colorVariant: 'success',
+        };
       case 'rejected':
-        return { text: 'Rejected', colorVariant: 'error' };
+        return {
+          text: tProposalDetails('status.rejected'),
+          colorVariant: 'error',
+        };
       case 'onVoting':
-        return { text: 'On Voting', colorVariant: 'warn' };
+        return {
+          text: tProposalDetails('status.onVoting'),
+          colorVariant: 'warn',
+        };
       default:
         return { text: '', colorVariant: 'neutral' };
     }
@@ -116,7 +126,7 @@ export const ProposalHead = ({
                   colorVariant="neutral"
                   isLoading={isLoading}
                 >
-                  Space
+                  {tProposalDetails('badges.space')}
                 </Badge>
               )}
               {proposalStatus && (
@@ -134,7 +144,7 @@ export const ProposalHead = ({
                   colorVariant="accent"
                   isLoading={isLoading}
                 >
-                  Delegate
+                  {tProposalDetails('badges.delegate')}
                 </Badge>
               )}
             </div>

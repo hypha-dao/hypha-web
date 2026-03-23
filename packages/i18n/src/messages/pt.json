@@ -1030,5 +1030,158 @@
     "rootSpaceDescription": "Marcar este espaço como Root Space o tornará independente. Não estará mais vinculado à organização atual e todos os seus espaços vinculados se moverão com ele.",
     "search": "Procurar...",
     "addYourUrl": "Adicione seu URL"
+  },
+  "ProposalDetails": {
+    "status": {
+      "accepted": "Aceito",
+      "rejected": "Rejeitado",
+      "onVoting": "Na votação"
+    },
+    "badges": {
+      "space": "Espaço",
+      "delegate": "Delegar",
+      "member": "Membro",
+      "active": "Ativo"
+    },
+    "sections": {
+      "payment": "Pagamento",
+      "transparencySettings": "Configurações de transparência",
+      "decaySettings": "Configurações de deterioração",
+      "transferWhitelists": "Transferir listas brancas",
+      "fromWhitelist": "Da lista branca",
+      "toWhitelist": "Para colocar na lista de permissões"
+    },
+    "labels": {
+      "unknown": "Desconhecido",
+      "custom": "Personalizado",
+      "token": "Símbolo",
+      "amount": "Quantia",
+      "usdcAmount": "USDC Valor",
+      "hyphaAmount": "HYPHA Valor",
+      "joiningSpace": "Entrando no Espaço",
+      "delegatedVotingMember": "Membro Votante Delegado",
+      "exitingMember": "Membro Saindo",
+      "exitFrom": "Sair de",
+      "entryMethod": "Método de entrada",
+      "spaces": "Espaços",
+      "months": "Meses",
+      "logoForSpace": "Logotipo para {title}",
+      "payWith": "Pague com",
+      "totalAmountInHypha": "Valor total em HYPHA",
+      "hyphaTokenIcon": "Hypha Ícone de token",
+      "totalAmountInUsdc": "Valor total em USDC",
+      "usdcIcon": "USDC Ícone",
+      "tokenType": "Tipo de token",
+      "tokenName": "Nome do token",
+      "tokenSymbol": "Símbolo simbólico",
+      "tokenIcon": "Ícone de token",
+      "tokenIconFor": "Ícone de token para {symbol}",
+      "maxSupply": "Fornecimento máximo",
+      "unlimited": "Ilimitado",
+      "transferable": "Transferível",
+      "yes": "Sim",
+      "no": "Não",
+      "maxSupplyType": "Tipo de fornecimento máximo",
+      "immutable": "Imutável",
+      "updatable": "Atualizável",
+      "autoMinting": "Cunhagem automática",
+      "enabled": "Habilitado",
+      "disabled": "Desabilitado",
+      "tokenPrice": "Preço do token",
+      "decayPercentage": "Porcentagem de decaimento",
+      "decayInterval": "Intervalo de decaimento",
+      "spaceDiscoverability": "Descoberta Espacial",
+      "spaceActivityAccess": "Acesso à atividade espacial",
+      "votingMethod": "Método de votação",
+      "quorum": "Quorum",
+      "unity": "Unidade",
+      "votingPeriod": "Período de votação",
+      "votingPower": "Poder de voto",
+      "defaultAvatar": "Avatar padrão"
+    },
+    "entryMethods": {
+      "openAccess": "Acesso aberto",
+      "tokenBased": "Baseado em token",
+      "inviteOnly": "Somente convite"
+    },
+    "transparencyLevel": {
+      "public": "Público",
+      "network": "Rede",
+      "organisation": "Organização",
+      "space": "Espaço"
+    },
+    "votingPower": {
+      "oneTokenOneVote": "1 token 1 voto",
+      "oneMemberOneVote": "1 membro 1 voto",
+      "oneVoiceOneVote": "1 Voz 1 Voto"
+    },
+    "voters": {
+      "votes": "Votos",
+      "personVoted": "{name} votou {vote}",
+      "andMore": "e {count} mais",
+      "voted": "Votou {vote}"
+    },
+    "voting": {
+      "voteClosed": "Votação encerrada",
+      "voteWillCloseIn": "Esta votação será encerrada em {duration}",
+      "voteClosingSoon": "Votação encerrando em breve",
+      "voteNo": "Votar não",
+      "voteYes": "Votar sim",
+      "object": "Objeto",
+      "consent": "Consentimento",
+      "no": "Não",
+      "hellYeah": "Claro que sim",
+      "notSure": "Não tenho certeza",
+      "looksGood": "Parece bom",
+      "quorumMinParticipation": "Quórum (Participação Mínima)",
+      "unityMinAlignment": "Unidade (alinhamento mínimo)",
+      "proposalVotingIconAlt": "Ícone de votação mínima da proposta",
+      "autoExecution": "Execução automática",
+      "toVote": "{duration} para votar",
+      "youVoted": "Você votou em {vote}",
+      "voteValueYes": "sim",
+      "voteValueNo": "não"
+    },
+    "withdrawResubmit": {
+      "title": "Retirar sua proposta ou editar e enviar novamente?",
+      "withdrawDialogTitle": "Retirar Proposta",
+      "withdrawDialogDescription": "Tem certeza de que deseja retirar esta proposta? Ela não aparecerá mais na tela de propostas e não poderá ser recuperada.",
+      "withdraw": "Retirar",
+      "cancel": "Cancelar",
+      "withdrawing": "Retirando...",
+      "resubmitDialogTitle": "Reenviar proposta",
+      "resubmitDialogDescription": "Tem certeza de que deseja reenviar esta proposta? A proposta atual será retirada, uma nova será criada com o seu conteúdo e os votos serão zerados.",
+      "resubmit": "Reenviar",
+      "processing": "Processamento..."
+    },
+    "expireBanner": {
+      "checkingMembership": "Verificando associação...",
+      "processing": "Processamento...",
+      "actionCompleted": "Ação concluída",
+      "title": "O período de votação terminou.",
+      "confirmDecision": "Confirmar decisão",
+      "states": {
+        "noParticipation": {
+          "subtitle": "Nenhum voto foi registrado para esta proposta. Sem qualquer participação, esta proposta será rejeitada.",
+          "completedMessage": "Decisão registrada: Proposta rejeitada por não participação."
+        },
+        "insufficientParticipation": {
+          "subtitle": "A participação foi muito baixa para que esta proposta fosse aprovada. Esta proposta será rejeitada.",
+          "completedMessage": "Decisão registrada: Proposta rejeitada por participação insuficiente."
+        },
+        "lackAlignment": {
+          "subtitle": "A participação foi suficiente, mas o apoio foi demasiado dividido. Esta proposta será rejeitada.",
+          "completedMessage": "Decisão registrada: Proposta rejeitada por falta de alinhamento."
+        },
+        "approved": {
+          "subtitle": "Esta proposta atendeu a todos os requisitos e foi aprovada como um novo acordo.",
+          "completedMessage": "Decisão registrada: Proposta aprovada e movida para a seção Aceita."
+        },
+        "insufficientParticipationAndAlignment": {
+          "subtitle": "A participação foi muito baixa e o apoio muito dividido. Esta proposta será rejeitada.",
+          "completedMessage": "Decisão registrada: Proposta rejeitada por participação insuficiente e falta de alinhamento."
+        }
+      }
+    }
   }
 }

@@ -1034,5 +1034,158 @@
     "createActionForms": {
       "defaultAgreement": "Accord"
     }
+  },
+  "ProposalDetails": {
+    "status": {
+      "accepted": "Accepté",
+      "rejected": "Rejeté",
+      "onVoting": "Sur le vote"
+    },
+    "badges": {
+      "space": "Espace",
+      "delegate": "Déléguer",
+      "member": "Membre",
+      "active": "Actif"
+    },
+    "sections": {
+      "payment": "Paiement",
+      "transparencySettings": "Paramètres de transparence",
+      "decaySettings": "Paramètres de décroissance",
+      "transferWhitelists": "Transférer les listes blanches",
+      "fromWhitelist": "À partir de la liste blanche",
+      "toWhitelist": "Vers la liste blanche"
+    },
+    "labels": {
+      "unknown": "Inconnu",
+      "custom": "Coutume",
+      "token": "Jeton",
+      "amount": "Montant",
+      "usdcAmount": "USDC Montant",
+      "hyphaAmount": "HYPHA Montant",
+      "joiningSpace": "Rejoindre l'espace",
+      "delegatedVotingMember": "Membre votant délégué",
+      "exitingMember": "Membre sortant",
+      "exitFrom": "Quitter depuis",
+      "entryMethod": "Méthode de saisie",
+      "spaces": "Espaces",
+      "months": "Mois",
+      "logoForSpace": "Logo pour {title}",
+      "payWith": "Payer avec",
+      "totalAmountInHypha": "Montant total en HYPHA",
+      "hyphaTokenIcon": "Hypha Icône de jeton",
+      "totalAmountInUsdc": "Montant total en USDC",
+      "usdcIcon": "Icône USDC",
+      "tokenType": "Type de jeton",
+      "tokenName": "Nom du jeton",
+      "tokenSymbol": "Symbole du jeton",
+      "tokenIcon": "Icône de jeton",
+      "tokenIconFor": "Icône de jeton pour {symbol}",
+      "maxSupply": "Approvisionnement maximum",
+      "unlimited": "Illimité",
+      "transferable": "Transférable",
+      "yes": "Oui",
+      "no": "Non",
+      "maxSupplyType": "Type d'alimentation maximum",
+      "immutable": "Immuable",
+      "updatable": "Possibilité de mise à jour",
+      "autoMinting": "Frappe automatique",
+      "enabled": "Activé",
+      "disabled": "Désactivé",
+      "tokenPrice": "Prix ​​du jeton",
+      "decayPercentage": "Pourcentage de décroissance",
+      "decayInterval": "Intervalle de décroissance",
+      "spaceDiscoverability": "Découvrabilité de l'espace",
+      "spaceActivityAccess": "Accès aux activités spatiales",
+      "votingMethod": "Méthode de vote",
+      "quorum": "Quorum",
+      "unity": "Unité",
+      "votingPeriod": "Période de vote",
+      "votingPower": "Pouvoir de vote",
+      "defaultAvatar": "Avatar par défaut"
+    },
+    "entryMethods": {
+      "openAccess": "Accès libre",
+      "tokenBased": "Basé sur un jeton",
+      "inviteOnly": "Sur invitation uniquement"
+    },
+    "transparencyLevel": {
+      "public": "Publique",
+      "network": "Réseau",
+      "organisation": "Organisation",
+      "space": "Espace"
+    },
+    "votingPower": {
+      "oneTokenOneVote": "1 jeton 1 vote",
+      "oneMemberOneVote": "1 membre 1 vote",
+      "oneVoiceOneVote": "1 voix 1 voix"
+    },
+    "voters": {
+      "votes": "Votes",
+      "personVoted": "{name} a voté {vote}",
+      "andMore": "et {count} plus",
+      "voted": "A voté {vote}"
+    },
+    "voting": {
+      "voteClosed": "Vote clos",
+      "voteWillCloseIn": "Ce vote se terminera dans {duration}",
+      "voteClosingSoon": "Clôture des votes bientôt",
+      "voteNo": "Votez non",
+      "voteYes": "Votez oui",
+      "object": "Objet",
+      "consent": "Consentement",
+      "no": "Non",
+      "hellYeah": "Carrément oui",
+      "notSure": "Pas sûr",
+      "looksGood": "Ça a l'air bien",
+      "quorumMinParticipation": "Quorum (Participation min.)",
+      "unityMinAlignment": "Unité (alignement min.)",
+      "proposalVotingIconAlt": "Icône de vote minimum pour la proposition",
+      "autoExecution": "Exécution automatique",
+      "toVote": "{duration} pour voter",
+      "youVoted": "Vous avez voté {vote}",
+      "voteValueYes": "Oui",
+      "voteValueNo": "Non"
+    },
+    "withdrawResubmit": {
+      "title": "Retirer votre proposition ou la modifier et la soumettre à nouveau ?",
+      "withdrawDialogTitle": "Retirer la proposition",
+      "withdrawDialogDescription": "Êtes-vous sûr de vouloir retirer cette proposition ? Elle n'apparaîtra plus sur l'écran des propositions et ne pourra pas être récupérée.",
+      "withdraw": "Retirer",
+      "cancel": "Annuler",
+      "withdrawing": "Retrait...",
+      "resubmitDialogTitle": "Soumettre à nouveau la proposition",
+      "resubmitDialogDescription": "Êtes-vous sûr de vouloir soumettre à nouveau cette proposition ? La proposition actuelle sera retirée, une nouvelle sera créée avec votre contenu et les votes seront réinitialisés.",
+      "resubmit": "Soumettre à nouveau",
+      "processing": "Traitement..."
+    },
+    "expireBanner": {
+      "checkingMembership": "Vérification de l'adhésion...",
+      "processing": "Traitement...",
+      "actionCompleted": "Action terminée",
+      "title": "La période de vote est terminée.",
+      "confirmDecision": "Confirmer la décision",
+      "states": {
+        "noParticipation": {
+          "subtitle": "Aucun vote n'a été enregistré pour cette proposition. Sans aucune participation, cette proposition sera rejetée.",
+          "completedMessage": "Décision enregistrée : Proposition rejetée pour non-participation."
+        },
+        "insufficientParticipation": {
+          "subtitle": "La participation était trop faible pour que cette proposition soit approuvée. Cette proposition sera rejetée.",
+          "completedMessage": "Décision enregistrée : Proposition rejetée pour cause de participation insuffisante."
+        },
+        "lackAlignment": {
+          "subtitle": "La participation était suffisante, mais le soutien était trop partagé. Cette proposition sera rejetée.",
+          "completedMessage": "Décision enregistrée : Proposition rejetée pour manque d'alignement."
+        },
+        "approved": {
+          "subtitle": "Cette proposition a satisfait à toutes les exigences et est approuvée en tant que nouvel accord.",
+          "completedMessage": "Décision enregistrée : Proposition approuvée et déplacée vers la section Acceptée."
+        },
+        "insufficientParticipationAndAlignment": {
+          "subtitle": "La participation était trop faible et le soutien trop partagé. Cette proposition sera rejetée.",
+          "completedMessage": "Décision enregistrée : Proposition rejetée en raison d'une participation insuffisante et d'un manque d'alignement."
+        }
+      }
+    }
   }
 }

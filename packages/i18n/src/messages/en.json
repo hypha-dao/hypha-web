@@ -1034,5 +1034,158 @@
     "createActionForms": {
       "defaultAgreement": "Agreement"
     }
+  },
+  "ProposalDetails": {
+    "status": {
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "onVoting": "On Voting"
+    },
+    "badges": {
+      "space": "Space",
+      "delegate": "Delegate",
+      "member": "Member",
+      "active": "Active"
+    },
+    "sections": {
+      "payment": "Payment",
+      "transparencySettings": "Transparency Settings",
+      "decaySettings": "Decay Settings",
+      "transferWhitelists": "Transfer Whitelists",
+      "fromWhitelist": "From Whitelist",
+      "toWhitelist": "To Whitelist"
+    },
+    "labels": {
+      "unknown": "Unknown",
+      "custom": "Custom",
+      "token": "Token",
+      "amount": "Amount",
+      "usdcAmount": "USDC Amount",
+      "hyphaAmount": "HYPHA Amount",
+      "joiningSpace": "Joining Space",
+      "delegatedVotingMember": "Delegated Voting Member",
+      "exitingMember": "Exiting Member",
+      "exitFrom": "Exit From",
+      "entryMethod": "Entry Method",
+      "spaces": "Spaces",
+      "months": "Months",
+      "logoForSpace": "Logo for {title}",
+      "payWith": "Pay with",
+      "totalAmountInHypha": "Total amount in HYPHA",
+      "hyphaTokenIcon": "Hypha Token Icon",
+      "totalAmountInUsdc": "Total amount in USDC",
+      "usdcIcon": "USDC Icon",
+      "tokenType": "Token Type",
+      "tokenName": "Token Name",
+      "tokenSymbol": "Token Symbol",
+      "tokenIcon": "Token Icon",
+      "tokenIconFor": "Token icon for {symbol}",
+      "maxSupply": "Max Supply",
+      "unlimited": "Unlimited",
+      "transferable": "Transferable",
+      "yes": "Yes",
+      "no": "No",
+      "maxSupplyType": "Max Supply Type",
+      "immutable": "Immutable",
+      "updatable": "Updatable",
+      "autoMinting": "Auto Minting",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "tokenPrice": "Token Price",
+      "decayPercentage": "Decay Percentage",
+      "decayInterval": "Decay Interval",
+      "spaceDiscoverability": "Space Discoverability",
+      "spaceActivityAccess": "Space Activity Access",
+      "votingMethod": "Voting Method",
+      "quorum": "Quorum",
+      "unity": "Unity",
+      "votingPeriod": "Voting Period",
+      "votingPower": "Voting Power",
+      "defaultAvatar": "Default avatar"
+    },
+    "entryMethods": {
+      "openAccess": "Open Access",
+      "tokenBased": "Token Based",
+      "inviteOnly": "Invite Only"
+    },
+    "transparencyLevel": {
+      "public": "Public",
+      "network": "Network",
+      "organisation": "Organisation",
+      "space": "Space"
+    },
+    "votingPower": {
+      "oneTokenOneVote": "1 Token 1 Vote",
+      "oneMemberOneVote": "1 Member 1 Vote",
+      "oneVoiceOneVote": "1 Voice 1 Vote"
+    },
+    "voters": {
+      "votes": "Votes",
+      "personVoted": "{name} voted {vote}",
+      "andMore": "and {count} more",
+      "voted": "Voted {vote}"
+    },
+    "voting": {
+      "voteClosed": "Vote closed",
+      "voteWillCloseIn": "This vote will close in {duration}",
+      "voteClosingSoon": "Vote closing soon",
+      "voteNo": "Vote no",
+      "voteYes": "Vote yes",
+      "object": "Object",
+      "consent": "Consent",
+      "no": "No",
+      "hellYeah": "Hell yeah",
+      "notSure": "Not sure",
+      "looksGood": "Looks good",
+      "quorumMinParticipation": "Quorum (Min. Participation)",
+      "unityMinAlignment": "Unity (Min. Alignment)",
+      "proposalVotingIconAlt": "Proposal minimum voting icon",
+      "autoExecution": "Auto-Execution",
+      "toVote": "{duration} to Vote",
+      "youVoted": "You voted {vote}",
+      "voteValueYes": "yes",
+      "voteValueNo": "no"
+    },
+    "withdrawResubmit": {
+      "title": "Withdraw your proposal or edit and submit again?",
+      "withdrawDialogTitle": "Withdraw Proposal",
+      "withdrawDialogDescription": "Are you sure you want to withdraw this proposal? It will no longer appear on the Proposal screen and cannot be recovered.",
+      "withdraw": "Withdraw",
+      "cancel": "Cancel",
+      "withdrawing": "Withdrawing...",
+      "resubmitDialogTitle": "Resubmit Proposal",
+      "resubmitDialogDescription": "Are you sure you want to resubmit this proposal? The current proposal will be withdrawn, a new one will be created with your content, and votes will be reset.",
+      "resubmit": "Resubmit",
+      "processing": "Processing..."
+    },
+    "expireBanner": {
+      "checkingMembership": "Checking membership...",
+      "processing": "Processing...",
+      "actionCompleted": "Action completed",
+      "title": "The voting period has ended.",
+      "confirmDecision": "Confirm Decision",
+      "states": {
+        "noParticipation": {
+          "subtitle": "No votes were recorded for this proposal. Without any participation, this proposal will be rejected.",
+          "completedMessage": "Decision recorded: Proposal rejected due to no participation."
+        },
+        "insufficientParticipation": {
+          "subtitle": "Participation was too low for this proposal to be approved. This proposal will be rejected.",
+          "completedMessage": "Decision recorded: Proposal rejected due to insufficient participation."
+        },
+        "lackAlignment": {
+          "subtitle": "Participation was sufficient, but support was too divided. This proposal will be rejected.",
+          "completedMessage": "Decision recorded: Proposal rejected due to lack of alignment."
+        },
+        "approved": {
+          "subtitle": "This proposal has met all requirements and is approved as a new agreement.",
+          "completedMessage": "Decision recorded: Proposal approved and moved to the Accepted section."
+        },
+        "insufficientParticipationAndAlignment": {
+          "subtitle": "Participation was too low, and support was too divided. This proposal will be rejected.",
+          "completedMessage": "Decision recorded: Proposal rejected due to insufficient participation and lack of alignment."
+        }
+      }
+    }
   }
 }
