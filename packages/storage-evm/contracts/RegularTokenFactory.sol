@@ -80,6 +80,9 @@ contract RegularTokenFactory is
    * @param initialReceiveWhitelist Initial addresses that can receive tokens
    * @param defaultCreditLimit Default credit limit for members of whitelisted spaces (0 = no credit)
    * @param initialCreditWhitelistSpaceIds Space IDs whose members receive credit eligibility
+   * @param paymentToken Payment token contract for direct purchases (address(0) disables initial sale)
+   * @param paymentTokenPricePerToken Price per 1 token (1e18 units), in payment-token decimals
+   * @param tokensForSale Total amount of tokens initially available for sale (18 decimals)
    * @return The address of the deployed token
    */
   function deployToken(
@@ -97,7 +100,10 @@ contract RegularTokenFactory is
     address[] memory initialTransferWhitelist,
     address[] memory initialReceiveWhitelist,
     uint256 defaultCreditLimit,
-    uint256[] memory initialCreditWhitelistSpaceIds
+    uint256[] memory initialCreditWhitelistSpaceIds,
+    address paymentToken,
+    uint256 paymentTokenPricePerToken,
+    uint256 tokensForSale
   ) public returns (address) {
     require(spacesContract != address(0), 'Spaces contract not set');
     require(
@@ -131,7 +137,10 @@ contract RegularTokenFactory is
       initialTransferWhitelist,
       initialReceiveWhitelist,
       defaultCreditLimit,
-      initialCreditWhitelistSpaceIds
+      initialCreditWhitelistSpaceIds,
+      paymentToken,
+      paymentTokenPricePerToken,
+      tokensForSale
     );
 
     address tokenAddress = address(
