@@ -63,13 +63,13 @@
         "label": "Cronograma de Pagamento",
         "immediately": "Imediatamente",
         "futurePayment": "Pagamento Futuro",
-        "milestones": "Conquistas",
+        "milestones": "Marcos",
         "date": "Data",
         "selectDate": "Selecione uma data",
         "add": "Adicionar"
       },
       "activateSpaces": {
-        "checkOut": "Confira",
+        "checkOut": "Resumo",
         "totalContribution": "Contribuição total:",
         "payWith": "Pague com:",
         "totalAmountIn": "Valor total em {token}:",
@@ -78,9 +78,9 @@
       },
       "buyHyphaTokens": {
         "purchaseAmount": "Valor da compra",
-        "receiveHyphaTokens": "Nosso espaço receberá tokens {amount} HYPHA (1 HYPHA = {price} USD)",
-        "hyphaSentTo": "HIPHA enviada para",
-        "usdcPaidTo": "USDC pago para"
+        "receiveHyphaTokens": "Nosso espaço receberá {amount} tokens HYPHA (1 HYPHA = {price} USD)",
+        "hyphaSentTo": "HYPHA enviado para",
+        "usdcPaidTo": "USDC pago a"
       },
       "issueNewToken": {
         "general": {
@@ -446,7 +446,7 @@
       "proposalMinimumVotingIconAlt": "Ícone de votação mínima da proposta",
       "autoExecution": "Execução automática",
       "toVote": "{duration} para votar",
-      "uploadImageLabel": "<accent>Ucarregar</accent> uma imagem",
+      "uploadImageLabel": "<accent>Carregar</accent> uma imagem",
       "addAttachmentLabel": "Adicionar anexo (JPEG, PNG, WebP ou PDF — máximo 4 MB)",
       "proposalContent": "Conteúdo da proposta",
       "proposalContentPlaceholder": "Digite o conteúdo da sua proposta aqui...",
@@ -461,7 +461,7 @@
             "selectBlockTypeTooltip": "Selecione o tipo de bloco",
             "placeholder": "Tipo de bloco"
           },
-          "bold": "Audacioso",
+          "bold": "Negrito",
           "italic": "itálico",
           "underline": "Sublinhado",
           "bulletedList": "Lista com marcadores",
@@ -614,7 +614,7 @@
         "description": "Compre tokens Hypha para participar da rede e ganhar recompensas."
       },
       "depositFunds": {
-        "title": "Fundos de depósito",
+        "title": "Depositar fundos",
         "description": "Deposite fundos em seu tesouro copiando o endereço do tesouro ou digitalizando o código QR."
       },
       "integrateSmartContractInSpace": {
@@ -660,7 +660,7 @@
         "description": "Aloque fundos de tesouraria para investimentos em outros espaços da rede ou para distribuição de recursos entre espaços da sua organização."
       },
       "depositFunds": {
-        "title": "Fundos de depósito",
+        "title": "Depositar fundos",
         "description": "Deposite fundos em seu tesouro copiando o endereço do tesouro ou digitalizando o código QR."
       }
     }
@@ -670,7 +670,7 @@
     "content": "Escolha uma das opções abaixo para ativar seu Espaço e desbloquear todos os recursos disponíveis na Rede Hypha.",
     "actions": {
       "depositFunds": {
-        "title": "Fundos de depósito",
+        "title": "Depositar fundos",
         "description": "Deposite fundos em seu tesouro copiando o endereço do tesouro ou digitalizando o código QR."
       },
       "buyHyphaTokensRewards": {
@@ -781,11 +781,11 @@
     "claimOnlyOnPersonalPage": "A reivindicação está disponível apenas na sua página pessoal",
     "rewardValueMustBeGreaterThanZero": "O valor da recompensa deve ser maior que 0",
     "noRewardsFoundForUser": "Nenhuma recompensa encontrada para este usuário",
-    "buyHypha": "Compre HIPHA",
+    "buyHypha": "Compre HYPHA",
     "actions": "Ações",
     "noAssetsFoundForUser": "Nenhum recurso encontrado para este usuário",
     "editForm": {
-      "uploadLeadImageLabel": "<accent>Ucarregar</accent> uma imagem",
+      "uploadLeadImageLabel": "<accent>Carregar</accent> uma imagem",
       "labels": {
         "email": "E-mail",
         "location": "Localização"
@@ -824,7 +824,7 @@
     "backToActions": "Voltar às ações",
     "actions": {
       "depositFunds": {
-        "title": "Fundos de depósito",
+        "title": "Depositar fundos",
         "description": "Adicione tokens à sua carteira pessoal copiando o endereço da sua carteira ou digitalizando o código QR."
       },
       "transferFunds": {
@@ -848,9 +848,9 @@
       "title": "Compre tokens Hypha (recompensas)",
       "content": "Use USDC para comprar Hypha, ganhar recompensas e participar da governança, se desejar.",
       "form": {
-        "receiveHyphaTokens": "Você receberá tokens {amount} HYPHA (1 HYPHA = {price} USD)",
+        "receiveHyphaTokens": "Você receberá {amount} tokens HYPHA (1 HYPHA = {price} USD)",
         "actions": {
-          "purchasing": "Compras",
+          "purchasing": "Comprando",
           "buy": "Comprar"
         },
         "success": {
@@ -866,7 +866,7 @@
           "smartWalletNotConnected": "A carteira inteligente não está conectada. Conecte sua carteira e tente novamente.",
           "contractExecutionFailed": "A execução do contrato falhou.",
           "transactionRejected": "A transação foi rejeitada. Aprove a transação para prosseguir.",
-          "noValidSpaces": "Não há vagas válidas disponíveis. Por favor, tente novamente mais tarde."
+          "noValidSpaces": "Não há espaços válidos disponíveis. Por favor, tente novamente mais tarde."
         }
       }
     },
@@ -897,7 +897,7 @@
           "smartWalletNotConnected": "A carteira inteligente não está conectada. Conecte sua carteira e tente novamente.",
           "contractExecutionFailed": "A execução do contrato falhou.",
           "transactionRejected": "A transação foi rejeitada. Aprove a transação para prosseguir.",
-          "noValidSpaces": "Não há vagas válidas disponíveis. Por favor, tente novamente mais tarde."
+          "noValidSpaces": "Não há espaços válidos disponíveis. Por favor, tente novamente mais tarde."
         }
       }
     },

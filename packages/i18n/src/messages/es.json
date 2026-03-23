@@ -69,7 +69,7 @@
         "add": "Agregar"
       },
       "activateSpaces": {
-        "checkOut": "Verificar",
+        "checkOut": "Resumen",
         "totalContribution": "Contribución Total:",
         "payWith": "Paga con:",
         "totalAmountIn": "Importe total en {token}:",
@@ -78,8 +78,8 @@
       },
       "buyHyphaTokens": {
         "purchaseAmount": "Monto de la compra",
-        "receiveHyphaTokens": "Nuestro espacio recibirá tokens HYPHA {amount} (1 HYPHA = {price} USD)",
-        "hyphaSentTo": "HYPHA enviada a",
+        "receiveHyphaTokens": "Nuestro espacio recibirá {amount} tokens HYPHA (1 HYPHA = {price} USD)",
+        "hyphaSentTo": "HYPHA enviado a",
         "usdcPaidTo": "USDC pagado a"
       },
       "issueNewToken": {
@@ -373,7 +373,7 @@
       "publish": "Publicar"
     },
     "pageErrors": {
-      "loadSpaces": "No se pudieron cargar los espacios. Inténtelo de nuevo más tarde."
+      "loadSpaces": "No se pudieron cargar los espacios. Inténtalo de nuevo más tarde."
     },
     "spaceConfiguration": {
       "update": "Actualizar",
@@ -446,7 +446,7 @@
       "proposalMinimumVotingIconAlt": "Ícono de votación mínima de propuesta",
       "autoExecution": "Ejecución automática",
       "toVote": "{duration} para votar",
-      "uploadImageLabel": "<accent>Usubir</accent> una imagen",
+      "uploadImageLabel": "<accent>Subir</accent> una imagen",
       "addAttachmentLabel": "Agregar archivo adjunto (JPEG, PNG, WebP o PDF, máximo 4 MB)",
       "proposalContent": "Contenido de la propuesta",
       "proposalContentPlaceholder": "Escriba el contenido de su propuesta aquí...",
@@ -461,11 +461,11 @@
             "selectBlockTypeTooltip": "Seleccionar tipo de bloque",
             "placeholder": "Tipo de bloque"
           },
-          "bold": "Atrevido",
+          "bold": "Negrita",
           "italic": "Itálico",
           "underline": "Subrayar",
           "bulletedList": "Lista con viñetas",
-          "numberedList": "lista numerada",
+          "numberedList": "Lista numerada",
           "undo": "Deshacer {shortcut}",
           "redo": "Rehacer {shortcut}"
         }
@@ -476,12 +476,12 @@
     },
     "proposalLoader": {
       "processingVote": "Procesando voto...",
-      "savingVote": "Voto salvador...",
+      "savingVote": "Guardando voto...",
       "gettingUpdatedData": "Obteniendo datos actualizados...",
       "voteProcessed": "¡Voto procesado!",
       "somethingWentWrong": "Algo salió mal.",
       "pleaseWait": "Espere por favor...",
-      "retry": "Rever",
+      "retry": "Reintentar",
       "transactionRevertedUnknownReason": "Transacción revertida por motivo desconocido.",
       "unknownErrorOccurred": "Se produjo un error desconocido."
     },
@@ -510,18 +510,18 @@
   "NotificationCentre": {
     "title": "Centro de notificaciones",
     "loading": {
-      "keepWindowOpen": "Mantenga esta ventana abierta hasta que se complete la barra de progreso."
+      "keepWindowOpen": "Mantén esta ventana abierta hasta que se complete la barra de progreso."
     },
     "subscribe": {
       "title": "Suscríbete a notificaciones",
-      "subscribe": "Suscribir",
+      "subscribe": "Suscribirse",
       "unsubscribe": "Darse de baja",
-      "subscribedDescription": "Estás suscrito a notificaciones. Haga clic en cancelar suscripción en cualquier momento para dejar de recibir alertas.",
-      "unsubscribedDescription": "Haga clic en suscribirse para recibir notificaciones. Algunos navegadores bloquean las notificaciones de forma predeterminada, por lo que es posible que tengas que habilitarlas usando el ícono del candado al lado de la barra de direcciones o en la configuración de tu navegador."
+      "subscribedDescription": "Estás suscrito a notificaciones. Haz clic en cancelar suscripción en cualquier momento para dejar de recibir alertas.",
+      "unsubscribedDescription": "Haz clic en suscribirte para recibir notificaciones. Algunos navegadores bloquean las notificaciones por defecto, así que puede que tengas que habilitarlas usando el ícono del candado junto a la barra de direcciones o en la configuración de tu navegador."
     },
     "channels": {
       "title": "Canales de notificación",
-      "description": "Elija cómo desea recibir notificaciones:",
+      "description": "Elige cómo quieres recibir notificaciones:",
       "emailNotifications": "Notificaciones por correo electrónico",
       "toEmail": "a {email}",
       "browserNotifications": "Notificaciones del navegador (anteriormente \"Notificaciones emergentes de escritorio\")",
@@ -541,7 +541,7 @@
       }
     },
     "actions": {
-      "retry": "Rever",
+      "retry": "Reintentar",
       "savePreferences": "Guardar preferencias"
     }
   },
@@ -614,7 +614,7 @@
         "description": "Compre tokens Hypha para participar en la red y ganar recompensas."
       },
       "depositFunds": {
-        "title": "Fondos de depósito",
+        "title": "Depositar fondos",
         "description": "Deposite fondos en su tesorería copiando la dirección de la tesorería o escaneando el código QR."
       },
       "integrateSmartContractInSpace": {
@@ -626,7 +626,7 @@
         "description": "Descubra un ecosistema en crecimiento de herramientas e integraciones para ampliar las capacidades de su espacio."
       },
       "hyphaEnergy": {
-        "title": "Energía hifa",
+        "title": "Energía Hypha",
         "description": "Una plataforma dedicada para su comunidad o centro de energía renovable, que permite compartir energía local, copropiedad de activos energéticos, gobernanza y distribución de valor justo entre los miembros."
       }
     }
@@ -660,7 +660,7 @@
         "description": "Asigne fondos de tesorería para inversiones en otros espacios de la red o para distribuir recursos entre espacios dentro de su organización."
       },
       "depositFunds": {
-        "title": "Fondos de depósito",
+        "title": "Depositar fondos",
         "description": "Deposite fondos en su tesorería copiando la dirección de la tesorería o escaneando el código QR."
       }
     }
@@ -670,7 +670,7 @@
     "content": "Elija una de las siguientes opciones para activar su Espacio y desbloquear todas las funciones disponibles en Hypha Network.",
     "actions": {
       "depositFunds": {
-        "title": "Fondos de depósito",
+        "title": "Depositar fondos",
         "description": "Deposite fondos en su tesorería copiando la dirección de la tesorería o escaneando el código QR."
       },
       "buyHyphaTokensRewards": {
@@ -775,7 +775,7 @@
     "copyUserId": "Copiar ID de usuario",
     "copied": "¡Copiado!",
     "editProfile": "Editar perfil",
-    "hyphaMemberSince": "Miembro de hifa desde {date}",
+    "hyphaMemberSince": "Miembro de Hypha desde {date}",
     "rewards": "Recompensas",
     "claim": "Afirmar",
     "claimOnlyOnPersonalPage": "El reclamo solo está disponible en su página personal",
@@ -785,7 +785,7 @@
     "actions": "Comportamiento",
     "noAssetsFoundForUser": "No se encontraron activos para este usuario",
     "editForm": {
-      "uploadLeadImageLabel": "<accent>Usubir</accent> una imagen",
+      "uploadLeadImageLabel": "<accent>Subir</accent> una imagen",
       "labels": {
         "email": "Correo electrónico",
         "location": "Ubicación"
@@ -799,8 +799,8 @@
         "location": "Ubicación"
       },
       "actions": {
-        "retry": "Rever",
-        "save": "Ahorrar"
+        "retry": "Reintentar",
+        "save": "Guardar"
       },
       "errors": {
         "firstNameRequired": "Por favor ingresa tu nombre",
@@ -820,16 +820,16 @@
     }
   },
   "ProfileActions": {
-    "content": "Administre sus fondos personales, interactúe con la red Hypha y contribuya directamente usando su billetera.",
+    "content": "Administra tus fondos personales, interactúa con la red Hypha y contribuye directamente usando tu billetera.",
     "backToActions": "Volver a acciones",
     "actions": {
       "depositFunds": {
-        "title": "Fondos de depósito",
-        "description": "Agregue tokens a su billetera personal copiando la dirección de su billetera o escaneando el código QR."
+        "title": "Depositar fondos",
+        "description": "Agrega tokens a tu billetera personal copiando la dirección de tu billetera o escaneando el código QR."
       },
       "transferFunds": {
         "title": "Transferir fondos",
-        "description": "Envíe tokens desde su billetera personal a un miembro, espacio o dirección personalizada."
+        "description": "Envía tokens desde tu billetera personal a un miembro, espacio o dirección personalizada."
       },
       "buyHyphaTokensRewards": {
         "title": "Comprar tokens Hypha (recompensas)",
@@ -837,47 +837,47 @@
       },
       "activateSpaces": {
         "title": "Activar espacios",
-        "description": "Patrocine y active su(s) espacio(s) favorito(s) contribuyendo con HYPHA o USDC, apoyando a Hypha Network."
+        "description": "Patrocina y activa tus espacios favoritos contribuyendo con HYPHA o USDC, apoyando a Hypha Network."
       },
       "migrateHyphaTokens": {
         "title": "Migrar tokens Hypha (Telos → Base)",
-        "description": "Mueva sus tokens Hypha de la cadena de bloques Telos a la red Base. Inicia la experiencia de migración."
+        "description": "Mueve tus tokens Hypha de la cadena de bloques Telos a la red Base. Inicia la experiencia de migración."
       }
     },
     "purchaseHypha": {
       "title": "Comprar tokens Hypha (recompensas)",
-      "content": "Utilice USDC para comprar Hypha, ganar recompensas y participar en la gobernanza si así lo desea.",
+      "content": "Usa USDC para comprar Hypha, ganar recompensas y participar en la gobernanza si quieres.",
       "form": {
-        "receiveHyphaTokens": "Recibirás tokens HYPHA {amount} (1 HYPHA = {price} USD)",
+        "receiveHyphaTokens": "Recibirás {amount} tokens HYPHA (1 HYPHA = {price} USD)",
         "actions": {
-          "purchasing": "Adquisitivo",
+          "purchasing": "Comprando",
           "buy": "Comprar"
         },
         "success": {
-          "purchased": "Has comprado con éxito tus tokens Hypha. Aparecerán en su cuenta de billetera en unos segundos."
+          "purchased": "Has comprado con éxito tus tokens Hypha. Aparecerán en tu cuenta de billetera en unos segundos."
         },
         "errors": {
-          "purchaseAmountRequired": "Por favor ingrese un monto de compra.",
-          "recipientRequired": "Por favor agregue un destinatario o dirección de billetera",
+          "purchaseAmountRequired": "Ingresa un monto de compra.",
+          "recipientRequired": "Agrega un destinatario o una dirección de billetera",
           "invalidEthereumAddress": "Dirección de Ethereum no válida",
           "paymentTokenNotConfigured": "El token de pago no está configurado.",
           "invalidTokenSelected": "Token no válido seleccionado.",
-          "purchaseProcessingFailed": "Se produjo un error al procesar su compra. Por favor inténtalo de nuevo.",
-          "smartWalletNotConnected": "La billetera inteligente no está conectada. Conecte su billetera e inténtelo nuevamente.",
+          "purchaseProcessingFailed": "Se produjo un error al procesar tu compra. Inténtalo de nuevo.",
+          "smartWalletNotConnected": "La billetera inteligente no está conectada. Conecta tu billetera e inténtalo de nuevo.",
           "contractExecutionFailed": "La ejecución del contrato falló.",
-          "transactionRejected": "La transacción fue rechazada. Apruebe la transacción para continuar.",
-          "noValidSpaces": "No hay espacios válidos disponibles. Inténtelo de nuevo más tarde."
+          "transactionRejected": "La transacción fue rechazada. Aprueba la transacción para continuar.",
+          "noValidSpaces": "No hay espacios válidos disponibles. Inténtalo de nuevo más tarde."
         }
       }
     },
     "activateSpaces": {
       "title": "Activar espacios",
-      "contentPrefix": "Patrocine y active su(s) espacio(s) favorito(s) contribuyendo con HYPHA o USDC, apoyando a Hypha Network. Más detalles en",
+      "contentPrefix": "Patrocina y activa tus espacios favoritos contribuyendo con HYPHA o USDC, apoyando a Hypha Network. Más detalles en",
       "contentSuffix": ".",
       "form": {
         "icons": {
           "usdcAlt": "Icono del USDC",
-          "hyphaAlt": "Icono de token de hifa"
+          "hyphaAlt": "Icono del token HYPHA"
         },
         "actions": {
           "activating": "Activando",
@@ -887,17 +887,17 @@
           "activated": "¡Los espacios que seleccionaste han sido activados exitosamente!"
         },
         "errors": {
-          "selectSpaceToActivate": "Por favor seleccione un espacio para activar.",
-          "monthsRequired": "Por favor ingrese el número de meses para activar.",
+          "selectSpaceToActivate": "Selecciona un espacio para activar.",
+          "monthsRequired": "Ingresa el número de meses para activar.",
           "atLeastOneSpace": "Se debe agregar al menos un espacio.",
-          "recipientRequired": "Por favor agregue un destinatario o dirección de billetera",
+          "recipientRequired": "Agrega un destinatario o una dirección de billetera",
           "invalidEthereumAddress": "Dirección de Ethereum no válida",
           "invalidWalletAddress": "Dirección de billetera no válida",
-          "activationProcessingFailed": "Se produjo un error al procesar su activación. Por favor inténtalo de nuevo.",
-          "smartWalletNotConnected": "La billetera inteligente no está conectada. Conecte su billetera e inténtelo nuevamente.",
+          "activationProcessingFailed": "Se produjo un error al procesar tu activación. Inténtalo de nuevo.",
+          "smartWalletNotConnected": "La billetera inteligente no está conectada. Conecta tu billetera e inténtalo de nuevo.",
           "contractExecutionFailed": "La ejecución del contrato falló.",
-          "transactionRejected": "La transacción fue rechazada. Apruebe la transacción para continuar.",
-          "noValidSpaces": "No hay espacios válidos disponibles. Inténtelo de nuevo más tarde."
+          "transactionRejected": "La transacción fue rechazada. Aprueba la transacción para continuar.",
+          "noValidSpaces": "No hay espacios válidos disponibles. Inténtalo de nuevo más tarde."
         }
       }
     },
@@ -909,7 +909,7 @@
       }
     },
     "errors": {
-      "loadSpaces": "No se pudieron cargar los espacios. Inténtelo de nuevo más tarde."
+      "loadSpaces": "No se pudieron cargar los espacios. Inténtalo de nuevo más tarde."
     }
   },
   "Network": {
@@ -947,11 +947,11 @@
     "channels": "Canales",
     "activationMode": "Modo de activación",
     "sandboxMode": "Modo caja de arena",
-    "sandboxDescription": "Utilice el modo Sandbox para configurar y probar su espacio solo en Mis espacios, compartiéndolo con su equipo a través de URL mientras sienta las bases para un propósito regenerativo.",
+    "sandboxDescription": "Usa el modo Sandbox para configurar y probar tu espacio solo en Mis espacios, compartiéndolo con tu equipo a través de URL mientras sientas las bases para un propósito regenerativo.",
     "pilotMode": "Modo piloto",
-    "pilotDescription": "Utilice el modo piloto para compartir su espacio para demostraciones, validación de casos de uso o como plantilla replicable. Amplíe su alcance, active la participación de los miembros y recopile comentarios.",
+    "pilotDescription": "Usa el modo piloto para compartir tu espacio para demostraciones, validación de casos de uso o como plantilla replicable. Amplía tu alcance, activa la participación de los miembros y recopila comentarios.",
     "liveMode": "Modo en vivo",
-    "liveDescription": "Utilice el modo en vivo para hacer que su espacio sea completamente operativo y visible públicamente, generando valor sostenible y convirtiendo su propósito en impacto regenerativo.",
+    "liveDescription": "Usa el modo en vivo para hacer que tu espacio sea completamente operativo y visible públicamente, generando valor sostenible y convirtiendo tu propósito en impacto regenerativo.",
     "archiveMode": "Modo de archivo",
     "archiveDescription": "Archive este espacio para pausar temporalmente la actividad o desactivarla mientras mantiene seguros todos los datos y el historial. Puedes reactivarlo en cualquier momento seleccionando un modo de activación diferente.",
     "organisationSpaces": "Espacios de organización",
