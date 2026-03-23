@@ -244,7 +244,7 @@ export const IssueNewTokenForm = ({
 
         for (const [key, value] of Object.entries(errors)) {
           if (!/^\d+$/.test(key)) {
-            (localizedArray as Record<string, unknown>)[key] =
+            (localizedArray as unknown as Record<string, unknown>)[key] =
               value && typeof value === 'object'
                 ? localizeErrors(value)
                 : value;
