@@ -38,6 +38,44 @@
     "signIn": "Anmelden",
     "getStarted": "Loslegen"
   },
+  "NotificationCentre": {
+    "title": "Benachrichtigungszentrum",
+    "loading": {
+      "keepWindowOpen": "Bitte lassen Sie dieses Fenster geöffnet, bis der Fortschrittsbalken abgeschlossen ist."
+    },
+    "subscribe": {
+      "title": "Benachrichtigungen abonnieren",
+      "subscribe": "Abonnieren",
+      "unsubscribe": "Abbestellen",
+      "subscribedDescription": "Sie haben Benachrichtigungen abonniert. Klicken Sie jederzeit auf „Abbestellen“, um keine Hinweise mehr zu erhalten.",
+      "unsubscribedDescription": "Klicken Sie auf „Abonnieren“, um Benachrichtigungen zu erhalten. Einige Browser blockieren Benachrichtigungen standardmäßig, daher müssen Sie sie möglicherweise über das Schloss-Symbol neben der Adressleiste oder in den Browsereinstellungen aktivieren."
+    },
+    "channels": {
+      "title": "Benachrichtigungskanäle",
+      "description": "Wählen Sie aus, wie Sie Benachrichtigungen erhalten möchten:",
+      "emailNotifications": "E-Mail-Benachrichtigungen",
+      "toEmail": "an {email}",
+      "browserNotifications": "Browser-Benachrichtigungen (früher „Desktop-Pop-up-Benachrichtigungen“)",
+      "yes": "Ja",
+      "no": "Nein"
+    },
+    "subscriptions": {
+      "title": "Benachrichtigen, wenn...",
+      "comingSoon": "Demnächst",
+      "newProposalOpen": {
+        "title": "Ein neuer Vorschlag ist zur Abstimmung geöffnet",
+        "description": "In allen Spaces, in denen Sie Mitglied sind."
+      },
+      "proposalApprovedOrRejected": {
+        "title": "Ein Vorschlag wird angenommen oder abgelehnt",
+        "description": "In allen Spaces, in denen Sie Mitglied sind."
+      }
+    },
+    "actions": {
+      "retry": "Erneut versuchen",
+      "savePreferences": "Einstellungen speichern"
+    }
+  },
   "DHO": {
     "Dashboard": "DHO Übersicht",
     "actionButtons": {

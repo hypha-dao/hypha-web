@@ -38,6 +38,44 @@
     "signIn": "Sign in",
     "getStarted": "Get started"
   },
+  "NotificationCentre": {
+    "title": "Notification Centre",
+    "loading": {
+      "keepWindowOpen": "Please keep this window open until the progress bar completes."
+    },
+    "subscribe": {
+      "title": "Subscribe to Notifications",
+      "subscribe": "Subscribe",
+      "unsubscribe": "Unsubscribe",
+      "subscribedDescription": "You’re subscribed to notifications. Click unsubscribe at any time to stop receiving alerts.",
+      "unsubscribedDescription": "Click subscribe to receive notifications. Some browsers block notifications by default, so you may need to enable them using the padlock icon next to the address bar or in your browser’s settings."
+    },
+    "channels": {
+      "title": "Notification Channels",
+      "description": "Choose how you’d like to receive notifications:",
+      "emailNotifications": "Email Notifications",
+      "toEmail": "to {email}",
+      "browserNotifications": "Browser Notifications (formerly \"Desktop Pop-up Notifications\")",
+      "yes": "Yes",
+      "no": "No"
+    },
+    "subscriptions": {
+      "title": "Get Notified When...",
+      "comingSoon": "Coming Soon",
+      "newProposalOpen": {
+        "title": "A new proposal is open for vote",
+        "description": "In any of the spaces you're a member of."
+      },
+      "proposalApprovedOrRejected": {
+        "title": "A proposal is approved or rejected",
+        "description": "In any of the spaces you're a member of."
+      }
+    },
+    "actions": {
+      "retry": "Retry",
+      "savePreferences": "Save Preferences"
+    }
+  },
   "DHO": {
     "Dashboard": "DHO Dashboard",
     "actionButtons": {

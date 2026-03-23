@@ -5,8 +5,10 @@ import { NotificationCentreForm, SidePanel } from '@hypha-platform/epics';
 import { useNotifications } from '@hypha-platform/notifications/client';
 import { LoadingBackdrop } from '@hypha-platform/ui';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 export default function AsideNotificationCentrePage() {
+  const tNotificationCentre = useTranslations('NotificationCentre');
   const { person, isLoading } = useMe();
   const pathname = usePathname();
   const closeUrl = pathname.substring(0, pathname.lastIndexOf('/'));
@@ -24,6 +26,7 @@ export default function AsideNotificationCentrePage() {
     <SidePanel>
       <LoadingBackdrop
         showKeepWindowOpenMessage={true}
+        keepWindowOpenMessage={tNotificationCentre('loading.keepWindowOpen')}
         fullHeight={true}
         progress={progress}
         isLoading={isBusy}

@@ -38,6 +38,44 @@
     "signIn": "Se connecter",
     "getStarted": "Commencer"
   },
+  "NotificationCentre": {
+    "title": "Centre de notifications",
+    "loading": {
+      "keepWindowOpen": "Veuillez laisser cette fenêtre ouverte jusqu’à la fin de la barre de progression."
+    },
+    "subscribe": {
+      "title": "S’abonner aux notifications",
+      "subscribe": "S’abonner",
+      "unsubscribe": "Se désabonner",
+      "subscribedDescription": "Vous êtes abonné aux notifications. Cliquez sur « Se désabonner » à tout moment pour ne plus recevoir d’alertes.",
+      "unsubscribedDescription": "Cliquez sur « S’abonner » pour recevoir des notifications. Certains navigateurs bloquent les notifications par défaut, vous devrez donc peut-être les activer via l’icône de cadenas à côté de la barre d’adresse ou dans les paramètres de votre navigateur."
+    },
+    "channels": {
+      "title": "Canaux de notification",
+      "description": "Choisissez comment vous souhaitez recevoir les notifications :",
+      "emailNotifications": "Notifications par e-mail",
+      "toEmail": "à {email}",
+      "browserNotifications": "Notifications du navigateur (anciennement « Notifications pop-up bureau »)",
+      "yes": "Oui",
+      "no": "Non"
+    },
+    "subscriptions": {
+      "title": "Être notifié quand...",
+      "comingSoon": "Bientôt disponible",
+      "newProposalOpen": {
+        "title": "Une nouvelle proposition est ouverte au vote",
+        "description": "Dans n’importe lequel des espaces dont vous êtes membre."
+      },
+      "proposalApprovedOrRejected": {
+        "title": "Une proposition est approuvée ou rejetée",
+        "description": "Dans n’importe lequel des espaces dont vous êtes membre."
+      }
+    },
+    "actions": {
+      "retry": "Réessayer",
+      "savePreferences": "Enregistrer les préférences"
+    }
+  },
   "DHO": {
     "Dashboard": "Tableau de bord DHO",
     "actionButtons": {
