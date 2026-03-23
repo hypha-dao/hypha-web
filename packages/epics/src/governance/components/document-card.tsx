@@ -64,8 +64,14 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
 }) => {
   const tCommon = useTranslations('Common');
   const format = useFormatter();
-  const formatDateTime = (date: string | number | Date) =>
-    format.dateTime(new Date(date), {
+  const formatDateTime = (date: string | number | Date) => {
+    const parsedDate = date instanceof Date ? date : new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return '';
+    }
+
+    return format.dateTime(parsedDate, {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -73,6 +79,7 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
       minute: '2-digit',
       second: '2-digit',
     });
+  };
   const type = React.useMemo(() => {
     switch (status) {
       case 'accepted':
