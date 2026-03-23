@@ -400,7 +400,10 @@
     "creating": "Création de l'espace...",
     "expiredToday": "aujourd'hui",
     "expiredDayAgo": "il y a un jour",
-    "expiredDaysAgo": "il y a {count} jours"
+    "expiredDaysAgo": "il y a {count} jours",
+    "linkedTo": "Lié à",
+    "rootSpace": "Espace racine",
+    "rootSpaceDescription": "Marquer cet espace comme Espace racine le rendra indépendant. Il ne sera plus lié à l’organisation actuelle, et tous ses espaces liés seront déplacés avec lui."
   },
   "AgreementFlow": {
     "labels": {

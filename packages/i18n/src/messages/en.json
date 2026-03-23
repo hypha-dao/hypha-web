@@ -400,7 +400,10 @@
     "creating": "Creating Space...",
     "expiredToday": "today",
     "expiredDayAgo": "day ago",
-    "expiredDaysAgo": "{count} days ago"
+    "expiredDaysAgo": "{count} days ago",
+    "linkedTo": "Linked to",
+    "rootSpace": "Root Space",
+    "rootSpaceDescription": "Marking this space as a Root Space will make it independent. It will no longer be linked to the current organisation, and all of its linked spaces will move with it."
   },
   "AgreementFlow": {
     "labels": {

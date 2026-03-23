@@ -3,6 +3,7 @@
 import { DEFAULT_SPACE_AVATAR_IMAGE } from '@hypha-platform/core/client';
 import { Combobox, Input, Image, Label } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { useTranslations } from 'next-intl';
 import React from 'react';
 
 type SpaceId = number | null | undefined;
@@ -27,6 +28,7 @@ export const ParentSpaceSelector = ({
   setParentSpaceId,
   className,
 }: ParentSpaceSelectorProps) => {
+  const tSpaces = useTranslations('Spaces');
   const checkboxRef = React.useRef(null);
   const checkboxId = `checkbox-${crypto.randomUUID()}`;
   const [checked, setChecked] = React.useState(!parentSpaceId);
@@ -52,7 +54,9 @@ export const ParentSpaceSelector = ({
       >
         <span className="flex flex-row">
           <div className="pt-1 pb-1 align-middle">
-            <Label className="text-sm text-neutral-11">Linked to</Label>
+            <Label className="text-sm text-neutral-11">
+              {tSpaces('linkedTo')}
+            </Label>
           </div>
         </span>
         <span className="flex grow"></span>
@@ -112,18 +116,14 @@ export const ParentSpaceSelector = ({
           </div>
           <div className="pt-1 pb-1 align-middle">
             <Label htmlFor={checkboxId} className="text-sm text-neutral-11">
-              Root Space
+              {tSpaces('rootSpace')}
             </Label>
           </div>
         </span>
       </div>
       {dirty && checked && (
         <span className="text-1 text-neutral-11">
-          <span>
-            Marking this space as a Root Space will make it independent. It will
-            no longer be linked to the current organisation, and all of its
-            linked spaces will move with it.
-          </span>
+          <span>{tSpaces('rootSpaceDescription')}</span>
         </span>
       )}
     </div>

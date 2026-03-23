@@ -400,7 +400,10 @@
     "creating": "Space wird erstellt...",
     "expiredToday": "heute",
     "expiredDayAgo": "vor einem Tag",
-    "expiredDaysAgo": "vor {count} Tagen"
+    "expiredDaysAgo": "vor {count} Tagen",
+    "linkedTo": "Verknüpft mit",
+    "rootSpace": "Root-Space",
+    "rootSpaceDescription": "Wenn Sie diesen Space als Root-Space markieren, wird er unabhängig. Er ist dann nicht mehr mit der aktuellen Organisation verknüpft, und alle mit ihm verknüpften Spaces werden mitverschoben."
   },
   "AgreementFlow": {
     "labels": {
