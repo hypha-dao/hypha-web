@@ -39,6 +39,8 @@ export async function getTokenMeta(
   Omit<Token, 'address'> & {
     space?: { slug: string; title: string };
     createdAt?: Date;
+    referencePrice?: number | null;
+    referenceCurrency?: string | null;
   }
 > {
   const stable = TOKENS.find(
@@ -66,6 +68,8 @@ export async function getTokenMeta(
       icon,
       ...(space && { space: { slug: space.slug, title: space.title } }),
       ...(createdAt && { createdAt }),
+      referencePrice: dbToken?.referencePrice ?? null,
+      referenceCurrency: dbToken?.referenceCurrency ?? null,
     };
   }
 
@@ -128,6 +132,8 @@ export async function getTokenMeta(
       type: hyphaTokenType || dbToken?.type || null,
       ...(space && { space: { slug: space.slug, title: space.title } }),
       ...(createdAt && { createdAt }),
+      referencePrice: dbToken?.referencePrice ?? null,
+      referenceCurrency: dbToken?.referenceCurrency ?? null,
     };
   } catch (error: any) {
     console.error(`Failed to fetch token info for ${tokenAddress}:`, error);

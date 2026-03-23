@@ -25,6 +25,8 @@ type AssetCardProps = {
   };
   lang?: Locale;
   createdAt?: Date;
+  referencePrice?: number | null;
+  referenceCurrency?: string | null;
 };
 
 export const AssetCard: React.FC<AssetCardProps> = ({
@@ -40,6 +42,8 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   lang,
   type,
   createdAt,
+  referencePrice,
+  referenceCurrency,
 }) => {
   return (
     <Card className="w-full h-full p-5 mb-2 flex flex-col justify-between">
@@ -105,6 +109,17 @@ export const AssetCard: React.FC<AssetCardProps> = ({
           </Text>
         )}
       </div>
+      {referencePrice !== null &&
+        referencePrice !== undefined &&
+        referenceCurrency && (
+          <div className="w-full flex flex-row gap-1">
+            <Text className="text-1 text-neutral-11">
+              {`Token Price: ${formatCurrencyValue(
+                referencePrice,
+              )} ${referenceCurrency}`}
+            </Text>
+          </div>
+        )}
       <div className="w-full flex flex-row gap-1">
         {createdAt instanceof Date && !Number.isNaN(createdAt.getTime()) && (
           <Text className="text-1 text-neutral-11">

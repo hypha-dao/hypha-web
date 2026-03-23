@@ -9,6 +9,7 @@ export interface Person {
   leadImageUrl?: string;
   description?: string;
   location?: string;
+  currency?: string;
   nickname?: string;
   address?: string;
   links?: string[];
@@ -24,4 +25,5 @@ export interface EditPersonInput {
   nickname?: string;
   description?: string;
   leadImageUrl?: string;
+  currency?: string;
 }
