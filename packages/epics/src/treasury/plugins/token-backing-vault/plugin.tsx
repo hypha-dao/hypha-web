@@ -9,12 +9,17 @@ import {
 } from '@hypha-platform/ui';
 import { useTokens, useTokenSupply, useVaults } from '../../hooks';
 import { useFormContext } from 'react-hook-form';
-import { DbToken, Token } from '@hypha-platform/core/client';
+import {
+  CURRENCY_FEED_OPTIONS,
+  DbToken,
+  Token,
+} from '@hypha-platform/core/client';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useDbTokens } from '../../../hooks';
 import { Person, Space } from '@hypha-platform/core/client';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
+import React from 'react';
 import { TransferWhitelistFieldArray } from '../../components/common/transfer-whitelist-field-array';
 import { SpaceTokenField } from './space-token-field';
 import { TokenSupplySection } from './token-supply-section';
@@ -48,7 +53,8 @@ export const TokenBackingVaultPlugin = ({
   spaces = [],
 }: TokenBackingVaultPluginProps) => {
   const { lang } = useParams();
-  const { control, watch, getValues } = useFormContext();
+  const searchParams = useSearchParams();
+  const { control, watch, getValues, setValue } = useFormContext();
   const { tokens, isLoading } = useTokens({ spaceSlug });
   const filteredTokens = tokens.filter(
     (t: ExtendedToken) => t?.space?.slug === spaceSlug,
@@ -64,7 +70,7 @@ export const TokenBackingVaultPlugin = ({
     vault?.enableAdvancedRedemptionControls ?? false;
 
   const { tokens: dbTokens } = useDbTokens();
-  const { vaults } = useVaults();
+  const { vaults, isLoading: isLoadingVaults } = useVaults();
   const selectedToken = dbTokens
     .filter((t: DbToken) => t.address)
     .find(
@@ -80,6 +86,124 @@ export const TokenBackingVaultPlugin = ({
         (v) => v.spaceToken.toLowerCase() === spaceToken.toLowerCase(),
       )
     : undefined;
+  const presetTokenRef = React.useRef<string | null>(null);
+  const prefilledTokenRef = React.useRef<string | undefined>(undefined);
+
+  React.useEffect(() => {
+    const requestedSpaceToken = searchParams.get('spaceToken');
+    if (!requestedSpaceToken) return;
+    if (presetTokenRef.current === requestedSpaceToken.toLowerCase()) return;
+    const hasMatchingToken = filteredTokens.some(
+      (token: ExtendedToken) =>
+        token.address?.toLowerCase() === requestedSpaceToken.toLowerCase(),
+    );
+    if (!hasMatchingToken) return;
+
+    setValue('tokenBackingVault.spaceToken', requestedSpaceToken, {
+      shouldDirty: false,
+      shouldTouch: false,
+    });
+    presetTokenRef.current = requestedSpaceToken.toLowerCase();
+  }, [searchParams, filteredTokens, setValue]);
+
+  React.useEffect(() => {
+    if (!spaceToken) {
+      prefilledTokenRef.current = undefined;
+      return;
+    }
+    if (isLoadingVaults) return;
+
+    const normalizedToken = spaceToken.toLowerCase();
+    if (prefilledTokenRef.current === normalizedToken) return;
+
+    if (!currentVault) {
+      setValue('tokenBackingVault.activateVault', true, { shouldDirty: false });
+      setValue('tokenBackingVault.enableRedemption', false, {
+        shouldDirty: false,
+      });
+      setValue(
+        'tokenBackingVault.referenceCurrency',
+        CURRENCY_FEED_OPTIONS[0].value,
+        { shouldDirty: false },
+      );
+      setValue('tokenBackingVault.tokenPrice', undefined, {
+        shouldDirty: false,
+      });
+      setValue('tokenBackingVault.minimumBackingPercent', undefined, {
+        shouldDirty: false,
+      });
+      setValue('tokenBackingVault.maxRedemptionPercent', undefined, {
+        shouldDirty: false,
+      });
+      setValue('tokenBackingVault.maxRedemptionPeriodDays', undefined, {
+        shouldDirty: false,
+      });
+      setValue('tokenBackingVault.redemptionStartDate', null, {
+        shouldDirty: false,
+      });
+      setValue('tokenBackingVault.enableAdvancedRedemptionControls', false, {
+        shouldDirty: false,
+      });
+      setValue('tokenBackingVault.redemptionWhitelist', [], {
+        shouldDirty: false,
+      });
+      prefilledTokenRef.current = normalizedToken;
+      return;
+    }
+
+    const parsedStartDate = currentVault.redemptionStartDate
+      ? new Date(currentVault.redemptionStartDate)
+      : null;
+    const validStartDate =
+      parsedStartDate instanceof Date &&
+      !Number.isNaN(parsedStartDate.getTime())
+        ? parsedStartDate
+        : null;
+
+    setValue('tokenBackingVault.activateVault', true, { shouldDirty: false });
+    setValue(
+      'tokenBackingVault.enableRedemption',
+      Boolean(currentVault.redemptionEnabled),
+      { shouldDirty: false },
+    );
+    setValue(
+      'tokenBackingVault.referenceCurrency',
+      currentVault.redemptionCurrencyFeed ?? CURRENCY_FEED_OPTIONS[0].value,
+      { shouldDirty: false },
+    );
+    setValue(
+      'tokenBackingVault.tokenPrice',
+      currentVault.redemptionPrice !== undefined &&
+        currentVault.redemptionPrice > 0
+        ? String(currentVault.redemptionPrice)
+        : undefined,
+      { shouldDirty: false },
+    );
+    setValue(
+      'tokenBackingVault.minimumBackingPercent',
+      currentVault.minimumBackingPercent,
+      { shouldDirty: false },
+    );
+    setValue(
+      'tokenBackingVault.maxRedemptionPercent',
+      currentVault.maxRedemptionPercent,
+      { shouldDirty: false },
+    );
+    setValue(
+      'tokenBackingVault.maxRedemptionPeriodDays',
+      currentVault.maxRedemptionPeriodDays,
+      { shouldDirty: false },
+    );
+    setValue('tokenBackingVault.redemptionStartDate', validStartDate, {
+      shouldDirty: false,
+    });
+    setValue(
+      'tokenBackingVault.enableAdvancedRedemptionControls',
+      Boolean(currentVault.whitelistEnabled),
+      { shouldDirty: false },
+    );
+    prefilledTokenRef.current = normalizedToken;
+  }, [spaceToken, currentVault, isLoadingVaults, setValue]);
 
   return (
     <div className="flex flex-col gap-4">
