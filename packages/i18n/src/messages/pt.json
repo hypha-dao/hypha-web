@@ -462,7 +462,7 @@
             "placeholder": "Tipo de bloco"
           },
           "bold": "Negrito",
-          "italic": "itálico",
+          "italic": "Itálico",
           "underline": "Sublinhado",
           "bulletedList": "Lista com marcadores",
           "numberedList": "Lista numerada",
@@ -765,7 +765,7 @@
     "hyphaTokenomics": "Hypha Tokenomics",
     "licensingPolicy": "Política de licenciamento",
     "termsAndConditions": "Termos e Condições",
-    "privacyPolicy": "política de Privacidade"
+    "privacyPolicy": "Política de Privacidade"
   },
   "Profile": {
     "profilePage": "Página de perfil",
