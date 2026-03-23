@@ -359,7 +359,29 @@
     },
     "purchaseHypha": {
       "title": "Hypha-Tokens kaufen (Belohnungen)",
-      "content": "Verwenden Sie USDC, um Hypha zu kaufen, Belohnungen zu erhalten und auf Wunsch an der Governance teilzunehmen."
+      "content": "Verwenden Sie USDC, um Hypha zu kaufen, Belohnungen zu erhalten und auf Wunsch an der Governance teilzunehmen.",
+      "form": {
+        "receiveHyphaTokens": "Sie erhalten {amount} HYPHA-Token (1 HYPHA = {price} USD)",
+        "actions": {
+          "purchasing": "Kauf wird durchgeführt",
+          "buy": "Kaufen"
+        },
+        "success": {
+          "purchased": "Sie haben Ihre Hypha-Tokens erfolgreich gekauft. Sie werden in wenigen Sekunden in Ihrem Wallet-Konto angezeigt."
+        },
+        "errors": {
+          "purchaseAmountRequired": "Bitte geben Sie einen Kaufbetrag ein.",
+          "recipientRequired": "Bitte fügen Sie einen Empfänger oder eine Wallet-Adresse hinzu",
+          "invalidEthereumAddress": "Ungültige Ethereum-Adresse",
+          "paymentTokenNotConfigured": "Zahlungstoken ist nicht konfiguriert.",
+          "invalidTokenSelected": "Ungültiger Token ausgewählt.",
+          "purchaseProcessingFailed": "Beim Verarbeiten Ihres Kaufs ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.",
+          "smartWalletNotConnected": "Smart Wallet ist nicht verbunden. Bitte verbinden Sie Ihre Wallet und versuchen Sie es erneut.",
+          "contractExecutionFailed": "Ausführung des Smart Contracts fehlgeschlagen.",
+          "transactionRejected": "Transaktion wurde abgelehnt. Bitte genehmigen Sie die Transaktion, um fortzufahren.",
+          "noValidSpaces": "Keine gültigen Spaces verfügbar. Bitte versuchen Sie es später erneut."
+        }
+      }
     },
     "activateSpaces": {
       "title": "Space(s) aktivieren",
