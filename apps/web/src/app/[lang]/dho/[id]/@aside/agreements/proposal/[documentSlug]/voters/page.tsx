@@ -39,7 +39,7 @@ export default function VotersOverlay() {
             createDate={
               proposalDetails?.startTime
                 ? new Date(proposalDetails.startTime)
-                : new Date()
+                : undefined
             }
           />
           <div className="flex justify-center gap-1">
