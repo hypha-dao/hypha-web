@@ -8,6 +8,11 @@ import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { Empty } from '../../../common';
 import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
+import { Button } from '@hypha-platform/ui';
+import Link from 'next/link';
+import { useAuthentication } from '@hypha-platform/authentication';
+import { useIsDelegate, useSpaceBySlug } from '@hypha-platform/core/client';
+import { useSpaceMember } from '../../../spaces';
 
 const SingleVaultSection: FC<{
   vault: Vault;
@@ -64,7 +69,16 @@ const SingleVaultSection: FC<{
 };
 
 export const VaultsSection: FC = () => {
+  const { lang, id } = useParams<{ lang: Locale; id: string }>();
   const { vaults, isLoading } = useVaults();
+  const { space } = useSpaceBySlug(id);
+  const spaceId = space?.web3SpaceId as number | undefined;
+  const { isAuthenticated } = useAuthentication();
+  const { isDelegate } = useIsDelegate({ spaceId });
+  const { isMember } = useSpaceMember({ spaceId });
+
+  const canUpdateVault = isAuthenticated && (isMember || isDelegate);
+  const updateVaultHref = `/${lang}/dho/${id}/treasury/create/token-backing-vault?hideBack=true`;
 
   if (vaults.length === 0 && !isLoading) {
     return null;
@@ -72,6 +86,25 @@ export const VaultsSection: FC = () => {
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-6">
+      <div className="w-full flex items-center justify-between">
+        <h3 className="text-4">Backing Vaults</h3>
+        {canUpdateVault ? (
+          <Link href={updateVaultHref} scroll={false}>
+            <Button>Update Backing Vault</Button>
+          </Link>
+        ) : (
+          <Button
+            disabled
+            title={
+              !isAuthenticated
+                ? 'Please sign in to update backing vault'
+                : 'Join the space to update backing vault'
+            }
+          >
+            Update Backing Vault
+          </Button>
+        )}
+      </div>
       {vaults.map((vault, index) => (
         <SingleVaultSection
           key={`${vault.spaceToken}-${index}`}
