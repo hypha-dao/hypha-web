@@ -82,6 +82,11 @@ contract OwnershipTokenFactory is
    * @param useReceiveWhitelist If true, enforce receive whitelist
    * @param initialTransferWhitelist Initial addresses that can send tokens
    * @param initialReceiveWhitelist Initial addresses that can receive tokens
+   * @param paymentToken ERC20 payment token for token purchases (address(0) disables sale)
+   * @param paymentTokenPricePerToken Payment token amount per 1 token unit
+   * @param tokensForSale Max amount of tokens available for purchase
+   * @param purchaseEligibilityMode 0=issuer space only, 1=custom spaces, 2=all spaces
+   * @param initialPurchaseWhitelistSpaceIds Space IDs allowed when mode = custom spaces
    * @return The address of the deployed token
    */
   function deployOwnershipToken(
@@ -96,7 +101,12 @@ contract OwnershipTokenFactory is
     bool useTransferWhitelist,
     bool useReceiveWhitelist,
     address[] memory initialTransferWhitelist,
-    address[] memory initialReceiveWhitelist
+    address[] memory initialReceiveWhitelist,
+    address paymentToken,
+    uint256 paymentTokenPricePerToken,
+    uint256 tokensForSale,
+    uint8 purchaseEligibilityMode,
+    uint256[] memory initialPurchaseWhitelistSpaceIds
   ) public returns (address) {
     require(spacesContract != address(0), 'Spaces contract not set');
     require(
@@ -128,7 +138,12 @@ contract OwnershipTokenFactory is
       useTransferWhitelist,
       useReceiveWhitelist,
       initialTransferWhitelist,
-      initialReceiveWhitelist
+      initialReceiveWhitelist,
+      paymentToken,
+      paymentTokenPricePerToken,
+      tokensForSale,
+      purchaseEligibilityMode,
+      initialPurchaseWhitelistSpaceIds
     );
 
     address tokenAddress = address(

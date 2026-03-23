@@ -85,6 +85,11 @@ contract DecayingTokenFactory is
    * @param initialReceiveWhitelist Initial addresses that can receive tokens
    * @param decayPercentage The decay percentage in basis points (0-10000)
    * @param decayInterval The interval in seconds between decay periods
+   * @param paymentToken ERC20 payment token for token purchases (address(0) disables sale)
+   * @param paymentTokenPricePerToken Payment token amount per 1 token unit
+   * @param tokensForSale Max amount of tokens available for purchase
+   * @param purchaseEligibilityMode 0=issuer space only, 1=custom spaces, 2=all spaces
+   * @param initialPurchaseWhitelistSpaceIds Space IDs allowed when mode = custom spaces
    * @return The address of the deployed token
    */
   function deployDecayingToken(
@@ -102,7 +107,12 @@ contract DecayingTokenFactory is
     address[] memory initialTransferWhitelist,
     address[] memory initialReceiveWhitelist,
     uint256 decayPercentage,
-    uint256 decayInterval
+    uint256 decayInterval,
+    address paymentToken,
+    uint256 paymentTokenPricePerToken,
+    uint256 tokensForSale,
+    uint8 purchaseEligibilityMode,
+    uint256[] memory initialPurchaseWhitelistSpaceIds
   ) public returns (address) {
     require(spacesContract != address(0), 'Spaces contract not set');
     require(
@@ -141,7 +151,12 @@ contract DecayingTokenFactory is
       initialTransferWhitelist,
       initialReceiveWhitelist,
       decayPercentage,
-      decayInterval
+      decayInterval,
+      paymentToken,
+      paymentTokenPricePerToken,
+      tokensForSale,
+      purchaseEligibilityMode,
+      initialPurchaseWhitelistSpaceIds
     );
 
     address tokenAddress = address(

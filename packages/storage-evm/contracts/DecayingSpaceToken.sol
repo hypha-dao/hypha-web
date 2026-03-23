@@ -54,7 +54,12 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
     address[] memory _initialTransferWhitelist,
     address[] memory _initialReceiveWhitelist,
     uint256 _decayPercentage,
-    uint256 _decayInterval
+    uint256 _decayInterval,
+    address _paymentToken,
+    uint256 _paymentTokenPricePerToken,
+    uint256 _tokensForSale,
+    uint8 _purchaseEligibilityMode,
+    uint256[] memory _initialPurchaseWhitelistSpaceIds
   ) public initializer {
     RegularSpaceToken.initialize(
       name,
@@ -73,9 +78,11 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
       _initialReceiveWhitelist,
       0,
       new uint256[](0),
-      address(0),
-      0,
-      0
+      _paymentToken,
+      _paymentTokenPricePerToken,
+      _tokensForSale,
+      _purchaseEligibilityMode,
+      _initialPurchaseWhitelistSpaceIds
     );
     require(
       _decayPercentage <= 10000,

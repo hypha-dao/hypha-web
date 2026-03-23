@@ -56,7 +56,12 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
     bool _useTransferWhitelist,
     bool _useReceiveWhitelist,
     address[] memory _initialTransferWhitelist,
-    address[] memory _initialReceiveWhitelist
+    address[] memory _initialReceiveWhitelist,
+    address _paymentToken,
+    uint256 _paymentTokenPricePerToken,
+    uint256 _tokensForSale,
+    uint8 _purchaseEligibilityMode,
+    uint256[] memory _initialPurchaseWhitelistSpaceIds
   ) public initializer {
     require(
       _spacesContract != address(0),
@@ -79,9 +84,11 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
       _initialReceiveWhitelist,
       0,
       new uint256[](0),
-      address(0),
-      0,
-      0
+      _paymentToken,
+      _paymentTokenPricePerToken,
+      _tokensForSale,
+      _purchaseEligibilityMode,
+      _initialPurchaseWhitelistSpaceIds
     );
     ownershipSpacesContract = _spacesContract;
   }

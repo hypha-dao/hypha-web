@@ -83,6 +83,8 @@ contract RegularTokenFactory is
    * @param paymentToken Payment token contract for direct purchases (address(0) disables initial sale)
    * @param paymentTokenPricePerToken Price per 1 token (1e18 units), in payment-token decimals
    * @param tokensForSale Total amount of tokens initially available for sale (18 decimals)
+   * @param purchaseEligibilityMode 0=issuer space only, 1=custom spaces, 2=all spaces
+   * @param initialPurchaseWhitelistSpaceIds Space IDs used when mode=custom spaces
    * @return The address of the deployed token
    */
   function deployToken(
@@ -103,7 +105,9 @@ contract RegularTokenFactory is
     uint256[] memory initialCreditWhitelistSpaceIds,
     address paymentToken,
     uint256 paymentTokenPricePerToken,
-    uint256 tokensForSale
+    uint256 tokensForSale,
+    uint8 purchaseEligibilityMode,
+    uint256[] memory initialPurchaseWhitelistSpaceIds
   ) public returns (address) {
     require(spacesContract != address(0), 'Spaces contract not set');
     require(
@@ -140,7 +144,9 @@ contract RegularTokenFactory is
       initialCreditWhitelistSpaceIds,
       paymentToken,
       paymentTokenPricePerToken,
-      tokensForSale
+      tokensForSale,
+      purchaseEligibilityMode,
+      initialPurchaseWhitelistSpaceIds
     );
 
     address tokenAddress = address(
