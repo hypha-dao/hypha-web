@@ -2,11 +2,11 @@
 
 import { Text } from '@radix-ui/themes';
 import { Card, Skeleton, Image, Badge } from '@hypha-platform/ui';
-import { formatCurrencyValue, formatDate } from '@hypha-platform/ui-utils';
+import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { getDhoPathAgreements } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 
 type AssetCardProps = {
   icon?: string;
@@ -47,6 +47,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
 }) => {
   const tTreasury = useTranslations('TreasuryTab');
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const format = useFormatter();
   const tokenTypeLabel =
     type &&
     tAgreementFlow.has(
@@ -138,7 +139,14 @@ export const AssetCard: React.FC<AssetCardProps> = ({
         {createdAt instanceof Date && !Number.isNaN(createdAt.getTime()) && (
           <Text className="text-1 text-neutral-11">
             {tTreasury('assetCard.createdOn', {
-              date: formatDate(createdAt, true),
+              date: format.dateTime(createdAt, {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+              }),
             })}
           </Text>
         )}

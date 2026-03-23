@@ -14,9 +14,9 @@ import {
 } from '@hypha-platform/ui';
 import { ExitIcon } from '@radix-ui/react-icons';
 import { SpaceModeLabel } from './space-mode-label';
-import { cn, formatDate } from '@hypha-platform/ui-utils';
+import { cn } from '@hypha-platform/ui-utils';
 import { ExitSpace } from './exit-space';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 
 type SpaceCardProps = {
   description: string;
@@ -59,6 +59,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
 }) => {
   const t = useTranslations('Spaces');
   const tCommon = useTranslations('Common');
+  const format = useFormatter();
   return (
     <Card
       className={cn('group relative w-full h-full flex flex-col', className)}
@@ -155,7 +156,14 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
                     <Skeleton loading={isLoading} height="16px" width="80px">
                       <div className="text-neutral-11 text-1">
                         {tCommon('createdOn', {
-                          date: formatDate(createdAt, true),
+                          date: format.dateTime(createdAt, {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                          }),
                         })}
                       </div>
                     </Skeleton>

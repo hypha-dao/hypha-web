@@ -5,7 +5,8 @@ import { Badge, Skeleton } from '@hypha-platform/ui';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { useParams } from 'next/navigation';
 import { useIsDelegate, useSpaceBySlug } from '@hypha-platform/core/client';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
+import React from 'react';
 
 export type CreatorType = {
   avatar?: string;
@@ -22,7 +23,7 @@ export type ProposalHeadProps = {
   status?: string;
   isLoading?: boolean;
   label?: string;
-  createDate?: string;
+  createDate?: string | Date;
   proposalStatus?: string | null;
 };
 
@@ -35,6 +36,7 @@ export const ProposalHead = ({
   proposalStatus,
 }: ProposalHeadProps) => {
   const tCommon = useTranslations('Common');
+  const format = useFormatter();
   const displayName =
     creator?.type === 'space'
       ? creator.name
@@ -71,6 +73,24 @@ export const ProposalHead = ({
     spaceId: currentSpace?.web3SpaceId as number,
     userAddress: creator?.address as `0x${string}`,
   });
+  const formattedCreateDate = React.useMemo(() => {
+    if (!createDate) return null;
+
+    const date = createDate instanceof Date ? createDate : new Date(createDate);
+    if (Number.isNaN(date.getTime())) {
+      return typeof createDate === 'string' ? createDate : null;
+    }
+
+    return format.dateTime(date, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  }, [createDate, format]);
+
   return (
     <div className="flex gap-3 w-full">
       <div className="flex items-center space-x-3">
@@ -133,8 +153,8 @@ export const ProposalHead = ({
             <Skeleton height="16px" width="80px" loading={isLoading}>
               <Text className="text-1 text-gray-500">
                 {displayName}{' '}
-                {createDate && (
-                  <>· {tCommon('createdOn', { date: createDate })}</>
+                {formattedCreateDate && (
+                  <>· {tCommon('createdOn', { date: formattedCreateDate })}</>
                 )}
               </Text>
             </Skeleton>

@@ -12,9 +12,9 @@ import {
   Image,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
-import { cn, formatDate } from '@hypha-platform/ui-utils';
+import { cn } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 
 type Member = {
   avatar: string;
@@ -50,6 +50,7 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
   const avatarSize = 'w-[24px] h-[24px]';
   const skeletonSize = '24px';
   const tCommon = useTranslations('Common');
+  const format = useFormatter();
   return (
     <Card className={cn('h-full w-full', className)}>
       <CardHeader className="p-0 rounded-tl-md rounded-tr-md overflow-hidden h-[150px]">
@@ -140,7 +141,16 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
           <div className="flex flex-row">
             <Skeleton loading={isLoading} height="16px" width="80px">
               <div className="text-neutral-11 text-1">
-                {tCommon('createdOn', { date: formatDate(createdAt, true) })}
+                {tCommon('createdOn', {
+                  date: format.dateTime(createdAt, {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                  }),
+                })}
               </div>
             </Skeleton>
           </div>

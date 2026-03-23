@@ -6,15 +6,17 @@ import { Text } from '@radix-ui/themes';
 import { useSpaceDelegate } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
-import { formatDate } from '@hypha-platform/ui-utils';
 import { useEvents } from '@hypha-platform/core/client';
 import React from 'react';
+import { useFormatter, useTranslations } from 'next-intl';
 
 export const SpaceMemberCard: React.FC<{
   hostSpaceId?: number;
   space: Space;
   isLoading?: boolean;
 }> = ({ hostSpaceId: spaceId, space, isLoading }) => {
+  const tCommon = useTranslations('Common');
+  const format = useFormatter();
   const { id: spaceSlug } = useParams();
   const { space: currentSpace } = useSpaceBySlug(spaceSlug as string);
   const { person: delegator } = useSpaceDelegate({
@@ -80,7 +82,18 @@ export const SpaceMemberCard: React.FC<{
             >
               <Text className="text-1 text-gray-500">
                 {joinEvent && (
-                  <>Joined space on {formatDate(joinEvent.createdAt, true)}</>
+                  <>
+                    {tCommon('joinedSpaceOn', {
+                      date: format.dateTime(new Date(joinEvent.createdAt), {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                      }),
+                    })}
+                  </>
                 )}
               </Text>
             </Skeleton>

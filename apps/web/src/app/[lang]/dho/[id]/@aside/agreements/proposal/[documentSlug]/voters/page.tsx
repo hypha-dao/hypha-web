@@ -11,7 +11,6 @@ import {
 } from '@hypha-platform/epics';
 import { useDocumentBySlug } from '@web/hooks/use-document-by-slug';
 import { useProposalDetailsWeb3Rpc } from '@hypha-platform/core/client';
-import { formatDate } from '@hypha-platform/ui-utils';
 import { Separator } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
 
@@ -36,7 +35,11 @@ export default function VotersOverlay() {
             title={document?.title}
             status={document?.state}
             label={document?.label || ''}
-            createDate={formatDate(proposalDetails?.startTime ?? new Date())}
+            createDate={
+              proposalDetails?.startTime
+                ? new Date(proposalDetails.startTime)
+                : new Date()
+            }
           />
           <div className="flex justify-center gap-1">
             <ButtonBack

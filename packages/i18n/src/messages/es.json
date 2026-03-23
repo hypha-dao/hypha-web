@@ -1,1 +1,8 @@
-{}
+{
+  "Common": {
+    "createdOn": "Creado el {date}",
+    "acceptedOn": "Aceptado el {date}",
+    "rejectedOn": "Rechazado el {date}",
+    "joinedSpaceOn": "Se unió al espacio el {date}"
+  }
+}

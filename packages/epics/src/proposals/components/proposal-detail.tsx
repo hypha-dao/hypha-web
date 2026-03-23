@@ -4,7 +4,6 @@ import { formatISO } from 'date-fns';
 import { FormVoting } from './form-voting';
 import { ProposalHead, ProposalHeadProps } from './proposal-head';
 import { Separator, AttachmentList, Skeleton } from '@hypha-platform/ui';
-import { formatDate } from '@hypha-platform/ui-utils';
 import Image from 'next/image';
 import {
   useProposalDetailsWeb3Rpc,
@@ -256,10 +255,11 @@ export const ProposalDetail = ({
           status={status}
           isLoading={isLoading}
           label={label}
-          createDate={formatDate(
-            proposalDetails?.startTime ?? new Date(),
-            true,
-          )}
+          createDate={
+            proposalDetails?.startTime
+              ? new Date(proposalDetails.startTime)
+              : new Date()
+          }
           proposalStatus={proposalStatus}
         />
         <ButtonClose closeUrl={closeUrl} />

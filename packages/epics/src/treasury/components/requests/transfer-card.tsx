@@ -3,10 +3,9 @@
 import { Text } from '@radix-ui/themes';
 import { Card, Badge, Skeleton } from '@hypha-platform/ui';
 import { CalendarIcon } from '@radix-ui/react-icons';
-import { formatDate } from '@hypha-platform/ui-utils';
 import { Amount } from '@hypha-platform/ui/server';
 import { ZeroAddress } from 'ethers';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 
 type TransferCardProps = {
   name?: string;
@@ -44,6 +43,7 @@ export const TransferCard: React.FC<TransferCardProps> = ({
   memo,
 }) => {
   const tTreasury = useTranslations('TreasuryTab');
+  const format = useFormatter();
   const displayName = title
     ? title
     : name
@@ -126,7 +126,16 @@ export const TransferCard: React.FC<TransferCardProps> = ({
               <div className="flex h-full justify-end items-end text-neutral-11">
                 <CalendarIcon className="mr-1" />
                 <Text className="text-1">
-                  {date ? formatDate(date, true) : null}
+                  {date
+                    ? format.dateTime(new Date(date), {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                      })
+                    : null}
                 </Text>
               </div>
             </Skeleton>

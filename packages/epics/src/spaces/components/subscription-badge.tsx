@@ -10,7 +10,7 @@ import { useSpaceMember } from '../hooks';
 import { useAuthentication } from '@hypha-platform/authentication';
 import Link from 'next/link';
 import { useIsDelegate } from '@hypha-platform/core/client';
-import { useLocale, useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 
 interface SubscriptionBadgeProps extends Omit<BadgeProps, 'isLoading'> {
   web3SpaceId: number;
@@ -25,7 +25,7 @@ export function SubscriptionBadge({
 }: SubscriptionBadgeProps) {
   const tCommon = useTranslations('Common');
   const tSpaces = useTranslations('Spaces');
-  const locale = useLocale();
+  const format = useFormatter();
   const pathname = usePathname();
   const { payments, isLoading } = useSpacePayments({
     spaceId: BigInt(web3SpaceId),
@@ -59,7 +59,7 @@ export function SubscriptionBadge({
 
   const formatDate = (timestamp: bigint) => {
     const date = new Date(Number(timestamp) * 1000);
-    return date.toLocaleDateString(locale, {
+    return format.dateTime(date, {
       month: 'short',
       day: 'numeric',
       year: 'numeric',

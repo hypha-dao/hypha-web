@@ -11,10 +11,10 @@ import { Image } from '@hypha-platform/ui';
 import { PersonLabel } from '../../people/components/person-label';
 import { type Creator } from '../../people/components/person-label';
 import { type BadgeItem, BadgesList } from '@hypha-platform/ui';
-import { formatDate, stripMarkdown } from '@hypha-platform/ui-utils';
+import { stripMarkdown } from '@hypha-platform/ui-utils';
 import { DocumentStatus, useEvents } from '@hypha-platform/core/client';
 import React from 'react';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 
 interface Document {
   id?: number;
@@ -63,6 +63,16 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
   status,
 }) => {
   const tCommon = useTranslations('Common');
+  const format = useFormatter();
+  const formatDateTime = (date: string | number | Date) =>
+    format.dateTime(new Date(date), {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
   const type = React.useMemo(() => {
     switch (status) {
       case 'accepted':
@@ -135,15 +145,23 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
             loading={isLoading || isLoadingEvents}
           >
             {type === 'executeProposal' && event && (
-              <>Accepted on {formatDate(event.createdAt, true)}</>
+              <>
+                {tCommon('acceptedOn', {
+                  date: formatDateTime(event.createdAt),
+                })}
+              </>
             )}
             {type === 'rejectProposal' && event && (
-              <>Rejected on {formatDate(event.createdAt, true)}</>
+              <>
+                {tCommon('rejectedOn', {
+                  date: formatDateTime(event.createdAt),
+                })}
+              </>
             )}
             {!type && createdAt && (
               <>
                 {tCommon('createdOn', {
-                  date: formatDate(createdAt, true),
+                  date: formatDateTime(createdAt),
                 })}
               </>
             )}
