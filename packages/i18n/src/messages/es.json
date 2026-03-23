@@ -549,7 +549,8 @@
       "toEmail": "a {email}",
       "browserNotifications": "Notificaciones del navegador (anteriormente \"Notificaciones emergentes de escritorio\")",
       "yes": "Sí",
-      "no": "No"
+      "no": "No",
+      "emailNotificationsWithEmail": "Notificaciones por correo electrónico ({email})"
     },
     "subscriptions": {
       "title": "Recibe una notificación cuando...",
@@ -561,7 +562,8 @@
       "proposalApprovedOrRejected": {
         "title": "Una propuesta es aprobada o rechazada.",
         "description": "En cualquiera de los espacios de los que eres miembro."
-      }
+      },
+      "labelWithComingSoon": "{title} ({comingSoon})"
     },
     "actions": {
       "retry": "Reintentar",

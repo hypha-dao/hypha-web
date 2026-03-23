@@ -71,7 +71,8 @@
       "toEmail": "à {email}",
       "browserNotifications": "Notifications du navigateur (anciennement « Notifications pop-up bureau »)",
       "yes": "Oui",
-      "no": "Non"
+      "no": "Non",
+      "emailNotificationsWithEmail": "Notifications par e-mail ({email})"
     },
     "subscriptions": {
       "title": "Être notifié quand...",
@@ -83,7 +84,8 @@
       "proposalApprovedOrRejected": {
         "title": "Une proposition est approuvée ou rejetée",
         "description": "Dans n’importe lequel des espaces dont vous êtes membre."
-      }
+      },
+      "labelWithComingSoon": "{title} ({comingSoon})"
     },
     "actions": {
       "retry": "Réessayer",

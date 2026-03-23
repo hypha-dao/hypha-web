@@ -234,16 +234,14 @@ export const NotificationCentreForm = ({
             </span>
             <span className="text-2 text-neutral-11 flex flex-row justify-between">
               <FormLabel>
-                {tNotificationCentre('channels.emailNotifications')}{' '}
-                {notificationEmail && (
-                  <>
-                    (
-                    {tNotificationCentre('channels.toEmail', {
-                      email: notificationEmail,
-                    })}
+                {notificationEmail
+                  ? tNotificationCentre(
+                      'channels.emailNotificationsWithEmail',
+                      {
+                        email: notificationEmail,
+                      },
                     )
-                  </>
-                )}
+                  : tNotificationCentre('channels.emailNotifications')}
               </FormLabel>
               <FormField
                 control={form.control}
@@ -329,18 +327,20 @@ export const NotificationCentreForm = ({
                                   }}
                                 />
                                 <FormLabel htmlFor={checkboxId}>
-                                  {localizedSubscription?.title ??
-                                    subscription.title}
-                                  {subscription.disabled && (
-                                    <span>
-                                      {' '}
-                                      (
-                                      {tNotificationCentre(
-                                        'subscriptions.comingSoon',
-                                      )}
+                                  {subscription.disabled
+                                    ? tNotificationCentre(
+                                        'subscriptions.labelWithComingSoon',
+                                        {
+                                          title:
+                                            localizedSubscription?.title ??
+                                            subscription.title,
+                                          comingSoon: tNotificationCentre(
+                                            'subscriptions.comingSoon',
+                                          ),
+                                        },
                                       )
-                                    </span>
-                                  )}
+                                    : localizedSubscription?.title ??
+                                      subscription.title}
                                 </FormLabel>
                               </div>
                             </span>

@@ -549,7 +549,8 @@
       "toEmail": "para {email}",
       "browserNotifications": "Notificações do navegador (anteriormente \"Notificações pop-up na área de trabalho\")",
       "yes": "Sim",
-      "no": "Não"
+      "no": "Não",
+      "emailNotificationsWithEmail": "Notificações por e-mail ({email})"
     },
     "subscriptions": {
       "title": "Seja notificado quando...",
@@ -561,7 +562,8 @@
       "proposalApprovedOrRejected": {
         "title": "Uma proposta é aprovada ou rejeitada",
         "description": "Em qualquer um dos espaços dos quais você é membro."
-      }
+      },
+      "labelWithComingSoon": "{title} ({comingSoon})"
     },
     "actions": {
       "retry": "Tentar novamente",
