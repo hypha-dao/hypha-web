@@ -17,6 +17,7 @@ import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useConfig } from 'wagmi';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
+import { useTranslations } from 'next-intl';
 
 type FormValues = z.infer<typeof schemaCreateAgreementForm>;
 
@@ -38,6 +39,8 @@ export const CreateProposeAContributionForm = ({
   web3SpaceId,
   plugin,
 }: CreateProposeAContributionFormProps) => {
+  const tSpaces = useTranslations('Spaces');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
@@ -68,7 +71,7 @@ export const CreateProposeAContributionForm = ({
           token: undefined,
         },
       ],
-      label: 'Contribution',
+      label: tAgreementFlow('labels.contribution'),
     },
   });
 
@@ -108,8 +111,8 @@ export const CreateProposeAContributionForm = ({
       message={
         isError ? (
           <div className="flex flex-col">
-            <div>Ouh Snap. There was an error</div>
-            <Button onClick={reset}>Reset</Button>
+            <div>{tSpaces('errorOhSnap')}</div>
+            <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (
           <div>{currentAction}</div>
@@ -133,13 +136,13 @@ export const CreateProposeAContributionForm = ({
             closeUrl={successfulUrl}
             backUrl={backUrl}
             isLoading={false}
-            label="Contribution"
+            label={tAgreementFlow('labels.contribution')}
             progress={progress}
           />
           {plugin}
           <Separator />
           <div className="flex justify-end w-full">
-            <Button type="submit">Publish</Button>
+            <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>
           </div>
         </form>
       </Form>

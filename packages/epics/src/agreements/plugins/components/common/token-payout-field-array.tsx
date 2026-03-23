@@ -12,6 +12,7 @@ import {
 } from '@hypha-platform/ui';
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
 import { TokenType } from '@hypha-platform/core/client';
+import { useTranslations } from 'next-intl';
 
 export interface Token {
   icon: string;
@@ -33,8 +34,11 @@ interface TokenPayoutFieldArrayProps {
 export const TokenPayoutFieldArray = ({
   tokens,
   name = 'payouts',
-  label = 'Payment Request',
+  label,
 }: TokenPayoutFieldArrayProps) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
+  const resolvedLabel =
+    label ?? tAgreementFlow('plugins.tokenPayoutFieldArray.paymentRequest');
   const { control } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     control,
@@ -60,7 +64,7 @@ export const TokenPayoutFieldArray = ({
     <div className="flex flex-col gap-2 w-full">
       <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
         <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
-          {label} <RequirementMark />
+          {resolvedLabel} <RequirementMark />
         </label>
         <div className="flex flex-col gap-2 grow min-w-0">
           {fields.map((field, index) => (
@@ -78,7 +82,11 @@ export const TokenPayoutFieldArray = ({
                           tokens={tokens}
                         />
                       </FormControl>
-                      <FormMessage custom="Please enter an amount and select a token." />
+                      <FormMessage
+                        custom={tAgreementFlow(
+                          'plugins.tokenPayoutFieldArray.enterAmountAndToken',
+                        )}
+                      />
                     </FormItem>
                   )}
                 />
@@ -97,7 +105,7 @@ export const TokenPayoutFieldArray = ({
       <div className="flex justify-end w-full">
         <Button className="w-fit" onClick={handleAddField} variant="ghost">
           <PlusIcon />
-          Add
+          {tAgreementFlow('plugins.tokenPayoutFieldArray.add')}
         </Button>
       </div>
     </div>

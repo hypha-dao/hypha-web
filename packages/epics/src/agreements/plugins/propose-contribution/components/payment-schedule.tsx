@@ -17,6 +17,7 @@ import { ChevronDownIcon } from '@radix-ui/themes';
 import { validateMilestones, validateFutureDate } from '../validation';
 import { MilestoneField } from './milestone-field';
 import { Cross2Icon } from '@radix-ui/react-icons';
+import { useTranslations } from 'next-intl';
 
 // TODO: will be implemented after MVP
 // const options = ['Immediately', 'Future Payment', 'Milestones'] as const;
@@ -30,6 +31,7 @@ export interface PaymentScheduleProps {
 export function PaymentSchedule({
   name = 'paymentSchedule',
 }: PaymentScheduleProps) {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { watch, setValue, control } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     control,
@@ -63,7 +65,9 @@ export function PaymentSchedule({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col md:flex-row w-full md:justify-between md:items-center gap-4">
-        <label className="text-sm text-neutral-11">Payment Schedule</label>
+        <label className="text-sm text-neutral-11">
+          {tAgreementFlow('plugins.paymentSchedule.label')}
+        </label>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -71,7 +75,15 @@ export function PaymentSchedule({
               colorVariant="neutral"
               className="flex gap-2 justify-between w-full md:w-fit font-normal"
             >
-              <span>{selectedOption}</span>
+              <span>
+                {selectedOption === 'Immediately'
+                  ? tAgreementFlow('plugins.paymentSchedule.immediately')
+                  : selectedOption === 'Future Payment'
+                  ? tAgreementFlow('plugins.paymentSchedule.futurePayment')
+                  : selectedOption === 'Milestones'
+                  ? tAgreementFlow('plugins.paymentSchedule.milestones')
+                  : selectedOption}
+              </span>
               <ChevronDownIcon className="size-2" />
             </Button>
           </DropdownMenuTrigger>
@@ -85,7 +97,11 @@ export function PaymentSchedule({
                     'bg-accent text-accent-foreground',
                 )}
               >
-                {option}
+                {option === 'Immediately'
+                  ? tAgreementFlow('plugins.paymentSchedule.immediately')
+                  : option === 'Future Payment'
+                  ? tAgreementFlow('plugins.paymentSchedule.futurePayment')
+                  : tAgreementFlow('plugins.paymentSchedule.milestones')}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -95,10 +111,12 @@ export function PaymentSchedule({
       {selectedOption === 'Future Payment' && (
         <div className="flex flex-col w-full gap-2">
           <div className="flex w-full justify-between items-center gap-2">
-            <Label className="text-sm text-neutral-11">Date</Label>
+            <Label className="text-sm text-neutral-11">
+              {tAgreementFlow('plugins.paymentSchedule.date')}
+            </Label>
             <DatePicker
               mode="single"
-              placeholder="Select a date"
+              placeholder={tAgreementFlow('plugins.paymentSchedule.selectDate')}
               className="w-fit"
               onChange={(val) => setValue(`${name}.futureDate`, val as Date)}
             />
@@ -143,7 +161,7 @@ export function PaymentSchedule({
             className="w-fit mt-2"
           >
             <PlusIcon className="w-4 h-4 mr-1" />
-            Add
+            {tAgreementFlow('plugins.paymentSchedule.add')}
           </Button>
           {milestoneValidationResult !== true && (
             <p className="text-error-9 text-sm mt-2">

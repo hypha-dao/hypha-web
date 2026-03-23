@@ -12,11 +12,11 @@ import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
 import { useCreateDeployFundsOrchestrator } from '@hypha-platform/core/client';
-import { useRouter } from 'next/navigation';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useConfig } from 'wagmi';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
+import { useTranslations } from 'next-intl';
 
 const fullSchemaCreateDeployFundsForm =
   schemaCreateAgreementForm.extend(createAgreementFiles);
@@ -38,7 +38,8 @@ export const CreateDeployFundsForm = ({
   web3SpaceId,
   plugin,
 }: CreateDeployFundsFormProps) => {
-  const router = useRouter();
+  const tSpaces = useTranslations('Spaces');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
@@ -100,11 +101,9 @@ export const CreateDeployFundsForm = ({
         amount: amount ?? '0',
         token: token ?? '',
       })),
-      label: 'Funding',
+      label: tAgreementFlow('labels.funding'),
     });
   };
-
-  console.log('form errors:', form.formState.errors);
 
   return (
     <LoadingBackdrop
@@ -115,8 +114,8 @@ export const CreateDeployFundsForm = ({
       message={
         isError ? (
           <div className="flex flex-col">
-            <div>Ouh Snap. There was an error</div>
-            <Button onClick={reset}>Reset</Button>
+            <div>{tSpaces('errorOhSnap')}</div>
+            <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (
           <div>{currentAction}</div>
@@ -140,13 +139,13 @@ export const CreateDeployFundsForm = ({
             closeUrl={successfulUrl}
             backUrl={backUrl}
             isLoading={false}
-            label="Funding"
+            label={tAgreementFlow('labels.funding')}
             progress={progress}
           />
           {plugin}
           <Separator />
           <div className="flex justify-end w-full">
-            <Button type="submit">Publish</Button>
+            <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>
           </div>
         </form>
       </Form>
