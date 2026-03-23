@@ -403,7 +403,8 @@
     "expiredDaysAgo": "il y a {count} jours",
     "linkedTo": "Lié à",
     "rootSpace": "Espace racine",
-    "rootSpaceDescription": "Marquer cet espace comme Espace racine le rendra indépendant. Il ne sera plus lié à l’organisation actuelle, et tous ses espaces liés seront déplacés avec lui."
+    "rootSpaceDescription": "Marquer cet espace comme Espace racine le rendra indépendant. Il ne sera plus lié à l’organisation actuelle, et tous ses espaces liés seront déplacés avec lui.",
+    "search": "Rechercher..."
   },
   "AgreementFlow": {
     "labels": {

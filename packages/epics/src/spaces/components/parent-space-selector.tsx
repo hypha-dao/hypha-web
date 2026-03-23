@@ -64,6 +64,7 @@ export const ParentSpaceSelector = ({
           <Combobox
             options={options ?? []}
             initialValue={parentSpaceIdString}
+            searchPlaceholder={tSpaces('search')}
             disabled={checked || isLoading || isReadOnly}
             onChange={(value: string) => {
               const parentId = Number.parseInt(value);
