@@ -21,7 +21,10 @@
     "exploreSpaces": "Explorar espacios",
     "findCategory": "Encuentra una categoría",
     "noSpacesYet": "Aún no se han creado ni se han unido espacios. Explora nuestra red y únete a un Espacio, o crea el tuyo propio.",
-    "close": "Cerca"
+    "close": "Cerca",
+    "notFoundOops": "¡Oooops!",
+    "notFoundCouldNotFindPage": "No pudimos encontrar esta página",
+    "notFoundDescription": "La página que buscas puede haber sido eliminada, haber cambiado de nombre o no estar disponible temporalmente."
   },
   "AgreementFlow": {
     "proposalErrors": {
