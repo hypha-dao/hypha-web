@@ -2,6 +2,8 @@ import { FC } from 'react';
 import { TransferCard } from './transfer-card';
 import { TransferWithEntity } from '../../hooks';
 import { ZeroAddress } from 'ethers';
+import { tokenBackingVaultImplementationAddress } from '@hypha-platform/core/generated';
+import { useVaults } from '../../hooks/use-vaults';
 
 type TransactionsListProps = {
   transfers: TransferWithEntity[];
@@ -14,28 +16,65 @@ export const TransactionsList: FC<TransactionsListProps> = ({
   activeSort,
   isLoading,
 }) => {
+  const { vaults } = useVaults();
+  const vaultAddress =
+    tokenBackingVaultImplementationAddress[
+      8453 as keyof typeof tokenBackingVaultImplementationAddress
+    ]?.toLowerCase();
+  const firstVault = vaults[0];
+  const singleVaultName =
+    vaults.length === 1 && firstVault
+      ? `${firstVault.tokenSymbol} Backing Vault`
+      : undefined;
+
   return (
     <div className="w-full mt-2">
-      {transfers.map((transfer, index) => (
-        <TransferCard
-          key={`${transfer.transactionHash}-${index}`}
-          name={transfer.person?.name}
-          surname={transfer.person?.surname}
-          title={transfer.space?.title}
-          avatar={transfer.person?.avatarUrl || transfer.space?.avatarUrl}
-          tokenIcon={transfer.tokenIcon}
-          value={transfer.value}
-          symbol={transfer.symbol}
-          date={transfer.timestamp}
-          isLoading={isLoading}
-          direction={transfer.direction}
-          counterparty={transfer.counterparty}
-          from={transfer.from}
-          to={transfer.to}
-          isMint={transfer.from === ZeroAddress}
-          memo={transfer.memo}
-        />
-      ))}
+      {transfers.map((transfer, index) => {
+        const counterpartyAddress =
+          transfer.counterparty === 'from' ? transfer.from : transfer.to;
+        const transferTokenAddress = (
+          transfer.contractAddress ??
+          (transfer as unknown as { token?: string }).token ??
+          ''
+        ).toLowerCase();
+        const matchedVault = vaults.find((vault) =>
+          vault.collaterals.some(
+            (collateral) =>
+              collateral.address.toLowerCase() === transferTokenAddress,
+          ),
+        );
+        const isVaultCounterparty =
+          !!vaultAddress &&
+          counterpartyAddress?.toLowerCase() === vaultAddress &&
+          !transfer.space?.title;
+        const vaultDisplayName = matchedVault
+          ? `${matchedVault.tokenSymbol} Backing Vault`
+          : singleVaultName ?? 'Token Backing Vault';
+
+        return (
+          <TransferCard
+            key={`${transfer.transactionHash}-${index}`}
+            name={transfer.person?.name}
+            surname={transfer.person?.surname}
+            title={
+              transfer.space?.title ||
+              (isVaultCounterparty ? vaultDisplayName : undefined)
+            }
+            avatar={transfer.person?.avatarUrl || transfer.space?.avatarUrl}
+            tokenIcon={transfer.tokenIcon}
+            value={transfer.value}
+            symbol={transfer.symbol}
+            date={transfer.timestamp}
+            isLoading={isLoading}
+            direction={transfer.direction}
+            counterparty={transfer.counterparty}
+            from={transfer.from}
+            to={transfer.to}
+            isMint={transfer.from === ZeroAddress}
+            memo={transfer.memo}
+          />
+        );
+      })}
       {isLoading && (
         <div className="w-full grid grid-cols-1 gap-2 mt-2">
           <TransferCard isLoading={isLoading} />
