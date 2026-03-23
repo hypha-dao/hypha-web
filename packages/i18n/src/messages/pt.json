@@ -282,7 +282,8 @@
         "amount": "Quantia",
         "selectToken": "Selecione um token",
         "noTokensFound": "Nenhum token encontrado",
-        "by": "por"
+        "by": "por",
+        "bySpace": "de {space}"
       },
       "spaceToSpaceMembership": {
         "space": "Espaço",

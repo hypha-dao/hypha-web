@@ -132,8 +132,9 @@ export const TokenPayoutField = ({
                     </span>
                     {token?.space?.title ? (
                       <span className="text-1 text-accent-11">
-                        {tAgreementFlow('plugins.tokenPayoutField.by')}{' '}
-                        {token?.space?.title}
+                        {tAgreementFlow('plugins.tokenPayoutField.bySpace', {
+                          space: token.space.title,
+                        })}
                       </span>
                     ) : null}
                   </div>

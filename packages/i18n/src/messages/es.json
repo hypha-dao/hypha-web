@@ -282,7 +282,8 @@
         "amount": "Cantidad",
         "selectToken": "Seleccione una ficha",
         "noTokensFound": "No se encontraron tokens",
-        "by": "por"
+        "by": "por",
+        "bySpace": "de {space}"
       },
       "spaceToSpaceMembership": {
         "space": "Espacio",

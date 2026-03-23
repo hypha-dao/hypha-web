@@ -955,7 +955,8 @@
         "amount": "Amount",
         "selectToken": "Select a token",
         "noTokensFound": "No tokens found",
-        "by": "by"
+        "by": "by",
+        "bySpace": "by {space}"
       },
       "spaceToSpaceMembership": {
         "space": "Space",
