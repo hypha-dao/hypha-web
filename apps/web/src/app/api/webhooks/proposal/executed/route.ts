@@ -95,14 +95,17 @@ export const POST = proposalExecutedSigningKey
           );
       },
       async (events) => {
-        const fetchingProposals = events
+        const safeProposalIds = events
           .map(({ args }) => args.proposalId)
-          .map(async (id) => {
-            return await findDocumentWithSpaceByIdRaw(
-              { id: Number(id) },
-              { db },
-            );
-          });
+          .filter(
+            (id) =>
+              id <= BigInt(Number.MAX_SAFE_INTEGER) &&
+              id >= BigInt(Number.MIN_SAFE_INTEGER),
+          )
+          .map((id) => Number(id));
+        const fetchingProposals = safeProposalIds.map(async (id) => {
+          return await findDocumentWithSpaceByIdRaw({ id }, { db });
+        });
         const proposalsWithSpaces = (
           await Promise.allSettled(fetchingProposals)
         )
