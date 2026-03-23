@@ -806,7 +806,8 @@
         "completed": "Concluído",
         "rejected": "Rejeitado",
         "inactive": "Inativo",
-        "applicant": "Candidato"
+        "applicant": "Candidato",
+        "unknown": "Desconhecido"
       }
     },
     "delegateSection": {

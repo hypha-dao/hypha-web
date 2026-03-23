@@ -44,9 +44,23 @@ export const MemberHead = ({
   isLoading,
 }: MemberHeadProps) => {
   const tMembersTab = useTranslations('MembersTab');
-  const statusKey = status?.toLowerCase() as keyof typeof STATUS_BADGE_VARIANTS;
-  const statusBadgeConfig = STATUS_BADGE_VARIANTS[statusKey];
-  const statusTranslationKey = STATUS_BADGE_TRANSLATION_KEYS[statusKey];
+  const normalizedStatus = (status || '').toLowerCase();
+  const statusKey = normalizedStatus as keyof typeof STATUS_BADGE_VARIANTS;
+  const statusBadgeConfig = STATUS_BADGE_VARIANTS[statusKey] ?? {
+    variant: 'surface',
+    colorVariant: 'neutral',
+  };
+  const statusTranslationKey = STATUS_BADGE_TRANSLATION_KEYS[statusKey] as
+    | keyof typeof STATUS_BADGE_TRANSLATION_KEYS
+    | undefined;
+  const statusLabel =
+    statusTranslationKey !== undefined
+      ? tMembersTab(
+          `memberDetail.statusBadge.${statusTranslationKey}` as Parameters<
+            typeof tMembersTab
+          >[0],
+        )
+      : status || tMembersTab('memberDetail.statusBadge.inactive');
 
   return (
     <div className="flex">
@@ -68,19 +82,13 @@ export const MemberHead = ({
       <div className="flex justify-between items-center w-full">
         <div className="flex flex-col">
           <div className="flex gap-x-1">
-            {statusBadgeConfig && statusTranslationKey ? (
-              <Badge
-                isLoading={isLoading}
-                variant={statusBadgeConfig.variant}
-                colorVariant={statusBadgeConfig.colorVariant}
-              >
-                {tMembersTab(
-                  `memberDetail.statusBadge.${statusTranslationKey}` as Parameters<
-                    typeof tMembersTab
-                  >[0],
-                )}
-              </Badge>
-            ) : null}
+            <Badge
+              isLoading={isLoading}
+              variant={statusBadgeConfig.variant}
+              colorVariant={statusBadgeConfig.colorVariant}
+            >
+              {statusLabel}
+            </Badge>
           </div>
 
           <Skeleton

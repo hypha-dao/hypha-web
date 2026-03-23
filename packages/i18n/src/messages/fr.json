@@ -280,7 +280,8 @@
         "completed": "Terminé",
         "rejected": "Rejeté",
         "inactive": "Inactif",
-        "applicant": "Candidat"
+        "applicant": "Candidat",
+        "unknown": "Inconnu"
       }
     },
     "delegateSection": {
