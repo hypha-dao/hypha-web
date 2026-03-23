@@ -1,10 +1,12 @@
+'use client';
+
 import { Text } from '@radix-ui/themes';
 import { Card, Skeleton, Image, Badge } from '@hypha-platform/ui';
 import { formatCurrencyValue, formatDate } from '@hypha-platform/ui-utils';
 import { getDhoPathAgreements } from '@hypha-platform/epics';
-import { getTokenTypeLabel } from '../common/token-type-field';
 import { Locale } from '@hypha-platform/i18n';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 type AssetCardProps = {
   icon?: string;
@@ -43,6 +45,22 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   type,
   createdAt,
 }) => {
+  const tTreasury = useTranslations('TreasuryTab');
+  const tAgreementFlow = useTranslations('AgreementFlow');
+  const tokenTypeLabel =
+    type &&
+    tAgreementFlow.has(
+      `plugins.issueNewToken.general.tokenTypeOptions.${type}.label` as Parameters<
+        typeof tAgreementFlow
+      >[0],
+    )
+      ? tAgreementFlow(
+          `plugins.issueNewToken.general.tokenTypeOptions.${type}.label` as Parameters<
+            typeof tAgreementFlow
+          >[0],
+        )
+      : type;
+
   return (
     <Card className="w-full h-full p-5 mb-2 flex flex-col justify-between">
       <div className="w-full flex flex-row items-center mb-2">
@@ -83,7 +101,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
                     variant="outline"
                     className="w-fit h-fit"
                   >
-                    {getTokenTypeLabel(type)}
+                    {tokenTypeLabel}
                   </Badge>
                 )}
               </span>
@@ -92,7 +110,9 @@ export const AssetCard: React.FC<AssetCardProps> = ({
                   href={getDhoPathAgreements(lang as Locale, space.slug)}
                   className="text-accent-11 text-1 text-ellipsis overflow-hidden hover:underline"
                 >
-                  from {space.title}
+                  {tTreasury('assetCard.fromSpace', {
+                    spaceTitle: space.title,
+                  })}
                 </Link>
               ) : null}
             </span>
@@ -108,14 +128,18 @@ export const AssetCard: React.FC<AssetCardProps> = ({
         )}
         {supply?.total !== undefined && (
           <Text className="text-1 text-neutral-11">
-            {`Total Issuance: ${formatCurrencyValue(supply.total)}`}
+            {tTreasury('assetCard.totalIssuance', {
+              value: formatCurrencyValue(supply.total),
+            })}
           </Text>
         )}
       </div>
       <div className="w-full flex flex-row gap-1">
         {createdAt instanceof Date && !Number.isNaN(createdAt.getTime()) && (
           <Text className="text-1 text-neutral-11">
-            {`Created on ${formatDate(createdAt, true)}`}
+            {tTreasury('assetCard.createdOn', {
+              date: formatDate(createdAt, true),
+            })}
           </Text>
         )}
       </div>

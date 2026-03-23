@@ -1,9 +1,12 @@
+'use client';
+
 import { Text } from '@radix-ui/themes';
 import { Card, Badge, Skeleton } from '@hypha-platform/ui';
 import { CalendarIcon } from '@radix-ui/react-icons';
 import { formatDate } from '@hypha-platform/ui-utils';
 import { Amount } from '@hypha-platform/ui/server';
 import { ZeroAddress } from 'ethers';
+import { useTranslations } from 'next-intl';
 
 type TransferCardProps = {
   name?: string;
@@ -40,6 +43,7 @@ export const TransferCard: React.FC<TransferCardProps> = ({
   to,
   memo,
 }) => {
+  const tTreasury = useTranslations('TreasuryTab');
   const displayName = title
     ? title
     : name
@@ -62,7 +66,7 @@ export const TransferCard: React.FC<TransferCardProps> = ({
           >
             <img
               src={tokenIcon || '/placeholder/token-icon.svg'}
-              alt="Token Icon"
+              alt={tTreasury('transactionCard.tokenIconAlt')}
               className="w-[64px] h-[64px] rounded-full object-cover"
             />
           </Skeleton>
@@ -83,7 +87,11 @@ export const TransferCard: React.FC<TransferCardProps> = ({
                   variant="surface"
                   colorVariant="accent"
                 >
-                  {isMint ? 'Mint' : isBurn() ? 'Burn' : 'Transfer'}
+                  {isMint
+                    ? tTreasury('transactionCard.type.mint')
+                    : isBurn()
+                    ? tTreasury('transactionCard.type.burn')
+                    : tTreasury('transactionCard.type.transfer')}
                 </Badge>
                 <Badge
                   isLoading={isLoading}
@@ -92,7 +100,9 @@ export const TransferCard: React.FC<TransferCardProps> = ({
                     isMint || direction === 'incoming' ? 'success' : 'error'
                   }
                 >
-                  {counterparty === 'from' ? 'In' : 'Out'}
+                  {counterparty === 'from'
+                    ? tTreasury('transactionCard.direction.in')
+                    : tTreasury('transactionCard.direction.out')}
                 </Badge>
               </div>
               <Amount isLoading={isLoading} value={value} />
@@ -100,9 +110,13 @@ export const TransferCard: React.FC<TransferCardProps> = ({
                 <Skeleton loading={isLoading} width="80px" height="16px">
                   <Text className="text-1 text-neutral-11">
                     {displayName
-                      ? `${
-                          counterparty === 'from' ? 'From' : 'To'
-                        } ${displayName}`
+                      ? counterparty === 'from'
+                        ? tTreasury('transactionCard.counterparty.from', {
+                            name: displayName,
+                          })
+                        : tTreasury('transactionCard.counterparty.to', {
+                            name: displayName,
+                          })
                       : null}
                   </Text>
                 </Skeleton>
@@ -121,7 +135,7 @@ export const TransferCard: React.FC<TransferCardProps> = ({
 
         {memo && (
           <div className="mt-3 pt-3 border-t border-neutral-6 text-2 text-neutral-11">
-            Memo: <Text>{memo}</Text>
+            {tTreasury('transactionCard.memo')}: <Text>{memo}</Text>
           </div>
         )}
       </div>

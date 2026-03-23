@@ -269,7 +269,29 @@
     "transactions": "Transactions",
     "searchTransactions": "Search transactions",
     "noTransactionsFound": "No transactions found",
-    "loadMoreTransactions": "Load more transactions"
+    "loadMoreTransactions": "Load more transactions",
+    "assetCard": {
+      "fromSpace": "from {spaceTitle}",
+      "totalIssuance": "Total Issuance: {value}",
+      "createdOn": "Created on {date}"
+    },
+    "transactionCard": {
+      "tokenIconAlt": "Token icon",
+      "memo": "Memo",
+      "type": {
+        "transfer": "Transfer",
+        "mint": "Mint",
+        "burn": "Burn"
+      },
+      "direction": {
+        "in": "In",
+        "out": "Out"
+      },
+      "counterparty": {
+        "from": "From {name}",
+        "to": "To {name}"
+      }
+    }
   },
   "Footer": {
     "network": "NETWORK",

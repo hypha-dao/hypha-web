@@ -269,7 +269,29 @@
     "transactions": "Transaktionen",
     "searchTransactions": "Transaktionen suchen",
     "noTransactionsFound": "Keine Transaktionen gefunden",
-    "loadMoreTransactions": "Mehr Transaktionen laden"
+    "loadMoreTransactions": "Mehr Transaktionen laden",
+    "assetCard": {
+      "fromSpace": "von {spaceTitle}",
+      "totalIssuance": "Gesamtausgabe: {value}",
+      "createdOn": "Erstellt am {date}"
+    },
+    "transactionCard": {
+      "tokenIconAlt": "Token-Icon",
+      "memo": "Memo",
+      "type": {
+        "transfer": "Transfer",
+        "mint": "Prägung",
+        "burn": "Verbrennung"
+      },
+      "direction": {
+        "in": "Eingang",
+        "out": "Ausgang"
+      },
+      "counterparty": {
+        "from": "Von {name}",
+        "to": "An {name}"
+      }
+    }
   },
   "Footer": {
     "network": "NETZWERK",
