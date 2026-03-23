@@ -46,14 +46,16 @@ export const TransferSection = ({
           <EnableAdvancedTransferControlsField />
           {enableAdvancedTransferControls && (
             <>
-              <span className="text-2 text-neutral-11">
-                {tAgreementFlow(
-                  'plugins.issueNewToken.transfer.autoWhitelistedNotice',
-                  {
-                    spaceName,
-                  },
-                )}
-              </span>
+              {spaceName ? (
+                <span className="text-2 text-neutral-11">
+                  {tAgreementFlow(
+                    'plugins.issueNewToken.transfer.autoWhitelistedNotice',
+                    {
+                      spaceName,
+                    },
+                  )}
+                </span>
+              ) : null}
               <TransferWhitelistFieldArray
                 name="transferWhitelist.to"
                 label={tAgreementFlow(
