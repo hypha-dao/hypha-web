@@ -555,6 +555,134 @@
         "hyphaSentTo": "HYPHA envoyé à",
         "usdcPaidTo": "USDC payé à"
       },
+      "issueNewToken": {
+        "general": {
+          "title": "Général",
+          "description": "Sélectionnez le type de token et personnalisez son nom, son symbole et son icône pour une identification claire.",
+          "tokenTypeLabel": "Type de token",
+          "tokenTypePlaceholder": "Sélectionnez un type de token",
+          "tokenTypeOptions": {
+            "utility": {
+              "label": "Token utilitaire",
+              "description": "utilisé pour l'accès ou des fonctionnalités au sein de l'espace"
+            },
+            "ownership": {
+              "label": "Token de propriété",
+              "description": "reflète une participation ou une part de propriété dans l'espace"
+            },
+            "impact": {
+              "label": "Token d'impact",
+              "description": "valorise des résultats sociaux, économiques et environnementaux mesurables"
+            },
+            "credits": {
+              "label": "Crédits de trésorerie",
+              "description": "crédits échangeables contre une monnaie fiduciaire"
+            },
+            "voice": {
+              "label": "Token de voix",
+              "description": "donne une voix dans la gestion ou la prise de décision au sein de l'espace"
+            },
+            "community_currency": {
+              "label": "Monnaie communautaire",
+              "description": "monnaie locale utilisée pour les transactions et l'échange de valeur dans la communauté"
+            }
+          },
+          "tokenNameLabel": "Nom du token",
+          "tokenNamePlaceholder": "Saisissez un nom",
+          "tokenSymbolLabel": "Symbole du token",
+          "tokenSymbolPlaceholder": "Saisissez un symbole",
+          "tokenIconLabel": "Icône du token"
+        },
+        "advancedSettings": {
+          "title": "Paramètres avancés du token (optionnel)",
+          "description": "Les paramètres par défaut sont préconfigurés pour un usage standard. Activez les paramètres avancés uniquement si vous souhaitez configurer des plafonds d’offre, un mint manuel, des politiques de transfert et des listes blanches, ou définir une valeur de token.",
+          "enable": "Activer les paramètres avancés"
+        },
+        "supply": {
+          "title": "Offre du token",
+          "description": "Choisissez une offre de token fixe ou illimitée. Sélectionnez « Offre limitée » pour définir une quantité maximale de tokens, soit de manière permanente, soit avec une possibilité de mise à jour ultérieure.",
+          "enableLimited": "Activer l'offre limitée",
+          "maxSupplyLabel": "Offre maximale",
+          "maxSupplyPlaceholder": "Saisissez un montant",
+          "maxSupplyTypeLabel": "Type d'offre maximale",
+          "maxSupplyTypePlaceholder": "Sélectionnez le type d'offre maximale",
+          "maxSupplyTypeOptions": {
+            "immutable": "Définitif et immuable",
+            "updatable": "Modifiable dans le temps"
+          },
+          "maxSupplyTypeHelp": "Choisir « Définitif et immuable » verrouille l’offre maximale de façon permanente et bloque toute modification future. Sélectionnez « Modifiable dans le temps » si vous souhaitez pouvoir augmenter le plafond plus tard (par exemple via des libérations progressives ou par jalons), ou laissez l’offre limitée désactivée pour conserver une offre illimitée."
+        },
+        "autoMint": {
+          "title": "Auto-mint des tokens via les propositions",
+          "description": "Lorsqu'il est activé, des tokens sont automatiquement mintés vers la trésorerie à chaque proposition approuvée. Désactivez cette option si vous préférez gérer un budget prédéfini en mintant manuellement des tokens dans la trésorerie à l'avance.",
+          "enable": "Activer l'auto-mint via proposition",
+          "disabledNotice": "L’auto-mint est désactivé. Les tokens doivent désormais être émis via une proposition de mint distincte, accessible dans les paramètres."
+        },
+        "transfer": {
+          "title": "Transfert de token",
+          "description": "Contrôlez qui peut envoyer et recevoir votre token. Vous pouvez le rendre entièrement transférable, limiter les transferts aux comptes ou espaces en liste blanche, ou désactiver totalement les transferts pour un contrôle maximal.",
+          "transferable": "Transférable",
+          "advancedControlsDescription": "Pour plus de contrôle, vous pouvez activer en option une liste blanche. Cela restreint les transferts de tokens aux membres, espaces ou adresses blockchain que vous spécifiez. Si vous n’activez pas cette option, les tokens restent librement transférables à tous les comptes.",
+          "advancedControls": "Optionnel : Contrôles avancés des transferts",
+          "autoWhitelistedNotice": "{spaceName} et ses membres sont automatiquement ajoutés à la liste blanche. Le fait d’ajouter des espace(s) et/ou membre(s) ci-dessous leur permet d’envoyer (« From » Whitelist) ou de recevoir (« To » Whitelist) des tokens lorsque la liste blanche est activée.",
+          "toWhitelistLabel": "Whitelist « To »",
+          "toWhitelistDescription": "Définissez quels membres ou espaces sont autorisés à recevoir des tokens. Ajoutez des membres ou des espaces, incluez des adresses blockchain et choisissez si la liste blanche s’applique à tout l’espace ou uniquement à son compte de trésorerie.",
+          "fromWhitelistLabel": "Whitelist « From »",
+          "fromWhitelistDescription": "Définissez quels membres ou espaces sont autorisés à envoyer des tokens. Ajoutez des membres ou des espaces, incluez des adresses blockchain et choisissez si la liste blanche s’applique à tout l’espace ou uniquement à son compte de trésorerie.",
+          "whitelist": {
+            "memberOrSpace": "Membre ou espace",
+            "memberOrSpaceDescription": "Choisissez si cette entrée cible un membre individuel ou un espace entier.",
+            "member": "Membre",
+            "space": "Espace",
+            "selectMember": "Sélectionnez un membre",
+            "selectSpace": "Sélectionnez un espace",
+            "selectMemberPlaceholder": "Sélectionnez un membre...",
+            "selectSpacePlaceholder": "Sélectionnez un espace...",
+            "noMembersFound": "Aucun membre ne correspond à votre recherche.",
+            "noSpacesFound": "Aucun espace ne correspond à votre recherche.",
+            "blockchainAddress": "Adresse blockchain",
+            "spaceAccessScope": "Portée d'accès de l'espace",
+            "spaceAccessScopeDescription": "Définissez si les transferts doivent inclure tous les membres de l’espace ou uniquement le compte de l’espace.",
+            "spaceOnly": "Espace uniquement",
+            "spaceAndMembers": "Espace et membres",
+            "remove": "Supprimer",
+            "add": "Ajouter"
+          }
+        },
+        "value": {
+          "title": "Valeur du token dans la trésorerie",
+          "description": "Définissez une valeur initiale pour votre token. Le prix de référence est affiché dans votre trésorerie et aide les membres à comprendre la valeur de marché initiale du token.",
+          "enable": "Activer le prix du token",
+          "referenceCurrencyLabel": "Devise de référence",
+          "referenceCurrencyPlaceholder": "Sélectionnez une devise",
+          "tokenPriceLabel": "Prix du token",
+          "tokenPricePlaceholder": "Saisissez le prix du token",
+          "currencies": {
+            "usd": "Dollar américain",
+            "gbp": "Livre sterling",
+            "cad": "Dollar canadien",
+            "eur": "Euro",
+            "cny": "Yuan chinois",
+            "chf": "Franc suisse",
+            "jpy": "Yen japonais",
+            "aud": "Dollar australien",
+            "hkd": "Dollar de Hong Kong"
+          }
+        },
+        "decay": {
+          "advancedSettings": "Paramètres avancés de décroissance",
+          "frequencyLabel": "Fréquence de décroissance de la voix",
+          "frequencyPlaceholder": "Période de décroissance",
+          "timeFormatPlaceholder": "Sélectionnez le format de temps",
+          "timeFormats": {
+            "weeks": "Semaines",
+            "months": "Mois",
+            "years": "Années"
+          },
+          "percentageLabel": "Pourcentage de décroissance de la voix",
+          "percentagePlaceholder": "Décroissance"
+        }
+      },
       "quorumAndUnity": {
         "title": "Méthode de vote",
         "description": "Sélectionnez un modèle de méthode de vote, ou ajustez les valeurs de quorum et d’unité avec les curseurs.",

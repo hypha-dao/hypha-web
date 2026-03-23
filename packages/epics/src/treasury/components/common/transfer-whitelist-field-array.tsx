@@ -21,6 +21,7 @@ import {
   Space,
 } from '@hypha-platform/core/client';
 import { useFilterSpacesListWithDiscoverability } from '@hypha-platform/epics';
+import { useTranslations } from 'next-intl';
 
 type WhitelistType = 'member' | 'space';
 
@@ -46,6 +47,7 @@ export const TransferWhitelistFieldArray = ({
   spaces = [],
 }: TransferWhitelistFieldArrayProps) => {
   const { control, setValue, watch } = useFormContext();
+  const tAgreementFlow = useTranslations('AgreementFlow');
 
   const { filteredSpaces } = useFilterSpacesListWithDiscoverability({
     spaces,
@@ -113,7 +115,13 @@ export const TransferWhitelistFieldArray = ({
               ? spaceOptions
               : memberOptions;
           const placeholder =
-            currentType === 'member' ? 'Select member...' : 'Select space...';
+            currentType === 'member'
+              ? tAgreementFlow(
+                  'plugins.issueNewToken.transfer.whitelist.selectMemberPlaceholder',
+                )
+              : tAgreementFlow(
+                  'plugins.issueNewToken.transfer.whitelist.selectSpacePlaceholder',
+                );
 
           return (
             <div
@@ -123,11 +131,14 @@ export const TransferWhitelistFieldArray = ({
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div className="flex flex-col gap-1">
                   <span className="text-2 text-neutral-11">
-                    Member or Space
+                    {tAgreementFlow(
+                      'plugins.issueNewToken.transfer.whitelist.memberOrSpace',
+                    )}
                   </span>
                   <span className="text-1 text-neutral-10">
-                    Choose whether this entry targets an individual member or an
-                    entire space.
+                    {tAgreementFlow(
+                      'plugins.issueNewToken.transfer.whitelist.memberOrSpaceDescription',
+                    )}
                   </span>
                 </div>
                 <FormField
@@ -143,10 +154,14 @@ export const TransferWhitelistFieldArray = ({
                     >
                       <TabsList triggerVariant="switch">
                         <TabsTrigger variant="switch" value="member">
-                          Member
+                          {tAgreementFlow(
+                            'plugins.issueNewToken.transfer.whitelist.member',
+                          )}
                         </TabsTrigger>
                         <TabsTrigger variant="switch" value="space">
-                          Space
+                          {tAgreementFlow(
+                            'plugins.issueNewToken.transfer.whitelist.space',
+                          )}
                         </TabsTrigger>
                       </TabsList>
                     </Tabs>
@@ -157,8 +172,12 @@ export const TransferWhitelistFieldArray = ({
               <div className="flex flex-col gap-2">
                 <span className="text-2 text-neutral-11">
                   {currentType === 'member'
-                    ? 'Select a member'
-                    : 'Select a space'}
+                    ? tAgreementFlow(
+                        'plugins.issueNewToken.transfer.whitelist.selectMember',
+                      )
+                    : tAgreementFlow(
+                        'plugins.issueNewToken.transfer.whitelist.selectSpace',
+                      )}
                 </span>
                 <Combobox
                   key={`${name}.${index}.combobox-${currentType}-${
@@ -172,8 +191,12 @@ export const TransferWhitelistFieldArray = ({
                   }
                   emptyListMessage={
                     currentType === 'member'
-                      ? 'No members match your search.'
-                      : 'No spaces match your search.'
+                      ? tAgreementFlow(
+                          'plugins.issueNewToken.transfer.whitelist.noMembersFound',
+                        )
+                      : tAgreementFlow(
+                          'plugins.issueNewToken.transfer.whitelist.noSpacesFound',
+                        )
                   }
                   renderOption={(option) => (
                     <>
@@ -226,7 +249,9 @@ export const TransferWhitelistFieldArray = ({
                 render={({ field }) => (
                   <FormItem className="flex flex-col gap-2">
                     <span className="text-2 text-neutral-11">
-                      Blockchain Address
+                      {tAgreementFlow(
+                        'plugins.issueNewToken.transfer.whitelist.blockchainAddress',
+                      )}
                     </span>
                     <Input
                       placeholder="0x..."
@@ -247,18 +272,25 @@ export const TransferWhitelistFieldArray = ({
                       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                         <div className="flex flex-col gap-1">
                           <span className="text-2 text-neutral-11">
-                            Space Access Scope
+                            {tAgreementFlow(
+                              'plugins.issueNewToken.transfer.whitelist.spaceAccessScope',
+                            )}
                           </span>
                           <span className="text-1 text-neutral-10">
-                            Toggle whether transfers should include the entire
-                            space membership or only the space account.
+                            {tAgreementFlow(
+                              'plugins.issueNewToken.transfer.whitelist.spaceAccessScopeDescription',
+                            )}
                           </span>
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="text-2 text-neutral-11">
                             {field.value === false
-                              ? 'Space only'
-                              : 'Space & Members'}
+                              ? tAgreementFlow(
+                                  'plugins.issueNewToken.transfer.whitelist.spaceOnly',
+                                )
+                              : tAgreementFlow(
+                                  'plugins.issueNewToken.transfer.whitelist.spaceAndMembers',
+                                )}
                           </span>
                           <Switch
                             checked={field.value ?? true}
@@ -278,7 +310,9 @@ export const TransferWhitelistFieldArray = ({
                   className="gap-2 text-2"
                 >
                   <Cross2Icon />
-                  Remove
+                  {tAgreementFlow(
+                    'plugins.issueNewToken.transfer.whitelist.remove',
+                  )}
                 </Button>
               </div>
             </div>
@@ -292,7 +326,7 @@ export const TransferWhitelistFieldArray = ({
           className="gap-2 text-2"
         >
           <PlusIcon />
-          Add
+          {tAgreementFlow('plugins.issueNewToken.transfer.whitelist.add')}
         </Button>
       </div>
     </div>

@@ -11,9 +11,11 @@ import {
   RequirementMark,
 } from '@hypha-platform/ui';
 import { handleNumberChange } from '@hypha-platform/ui-utils';
+import { useTranslations } from 'next-intl';
 
 export function TokenMaxSupplyField() {
   const { setValue, control } = useFormContext();
+  const tAgreementFlow = useTranslations('AgreementFlow');
 
   const maxSupply = useWatch({
     control,
@@ -38,14 +40,16 @@ export function TokenMaxSupplyField() {
           <div className="flex justify-between items-center">
             <div className="flex gap-1 w-full">
               <FormLabel className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
-                Max Supply
+                {tAgreementFlow('plugins.issueNewToken.supply.maxSupplyLabel')}
               </FormLabel>
               {enableLimitedSupply && <RequirementMark className="text-2" />}
             </div>
             <FormControl>
               <Input
                 type="number"
-                placeholder="Type an amount"
+                placeholder={tAgreementFlow(
+                  'plugins.issueNewToken.supply.maxSupplyPlaceholder',
+                )}
                 value={maxSupply}
                 onChange={handleMaxSupplyChange}
                 name={field.name}

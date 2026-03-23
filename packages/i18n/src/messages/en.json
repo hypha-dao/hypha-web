@@ -555,6 +555,134 @@
         "hyphaSentTo": "HYPHA sent to",
         "usdcPaidTo": "USDC paid to"
       },
+      "issueNewToken": {
+        "general": {
+          "title": "General",
+          "description": "Select your token type and customize its name, symbol, and icon for clear identification.",
+          "tokenTypeLabel": "Token Type",
+          "tokenTypePlaceholder": "Select a token type",
+          "tokenTypeOptions": {
+            "utility": {
+              "label": "Utility Token",
+              "description": "used for access or functionality within the space"
+            },
+            "ownership": {
+              "label": "Ownership Token",
+              "description": "reflects stake or equity in the space"
+            },
+            "impact": {
+              "label": "Impact Token",
+              "description": "values measurable social, economic, and environmental outcomes"
+            },
+            "credits": {
+              "label": "Cash Credits",
+              "description": "redeemable credits that can be exchanged for fiat currency"
+            },
+            "voice": {
+              "label": "Voice Token",
+              "description": "provides a voice in management or decision making within the space"
+            },
+            "community_currency": {
+              "label": "Community Currency",
+              "description": "local currency used for transactions and value exchange within the community"
+            }
+          },
+          "tokenNameLabel": "Token Name",
+          "tokenNamePlaceholder": "Type a name",
+          "tokenSymbolLabel": "Token Symbol",
+          "tokenSymbolPlaceholder": "Type a symbol",
+          "tokenIconLabel": "Token Icon"
+        },
+        "advancedSettings": {
+          "title": "Advanced Token Settings (Optional)",
+          "description": "Defaults are pre-configured for standard use. Only enable advanced settings if you'd like to configure supply caps, manual minting, transfer policies and whitelists, or set a token value.",
+          "enable": "Enable Advanced Settings"
+        },
+        "supply": {
+          "title": "Token Supply",
+          "description": "Choose a fixed or unlimited token supply. Select “Limited Supply” to set a maximum token amount, either permanently or with an option to update in the future.",
+          "enableLimited": "Enable Limited Supply",
+          "maxSupplyLabel": "Max Supply",
+          "maxSupplyPlaceholder": "Type an amount",
+          "maxSupplyTypeLabel": "Max Supply Type",
+          "maxSupplyTypePlaceholder": "Select max supply type",
+          "maxSupplyTypeOptions": {
+            "immutable": "Forever Immutable",
+            "updatable": "Updatable Over Time"
+          },
+          "maxSupplyTypeHelp": "Choosing \"Forever Immutable\" locks in the maximum supply permanently and blocks any future changes. Select \"Updatable Over Time\" if you may raise the cap later (for example via gradual or milestone-based releases), or leave limited supply turned off to keep supply unlimited."
+        },
+        "autoMint": {
+          "title": "Auto-Mint Tokens via Proposals",
+          "description": "When enabled, tokens are automatically minted to the treasury each time a proposal is approved. Disable this if you prefer to manage a pre-set budget by minting tokens to the treasury manually in advance.",
+          "enable": "Enable Proposal Auto-Minting",
+          "disabledNotice": "Auto-minting is disabled. Tokens must now be issued through a separate minting proposal, which can be accessed in the settings."
+        },
+        "transfer": {
+          "title": "Token Transfer",
+          "description": "Control who can send and receive your token. You can make it fully transferable, restrict transfers to whitelisted accounts or spaces, or disable transfers entirely for maximum control.",
+          "transferable": "Transferable",
+          "advancedControlsDescription": "For more control, you can optionally enable whitelisting. This restricts token transfers to only selected members, spaces, or blockchain addresses that you specify. If you don’t enable this option, tokens remain freely transferable to all accounts.",
+          "advancedControls": "Optional: Advanced Transfer Controls",
+          "autoWhitelistedNotice": "{spaceName} and its members are automatically whitelisted. Listing space(s) and/or member(s) below allows them to send (\"From\" Whitelist) or receive (\"To\" Whitelist) tokens when whitelisting is enabled.",
+          "toWhitelistLabel": "“To” Whitelist",
+          "toWhitelistDescription": "Define which members or spaces are allowed to receive tokens. Add members or spaces, include blockchain addresses, and choose if the whitelisting applies to an entire space or just its treasury account.",
+          "fromWhitelistLabel": "“From” Whitelist",
+          "fromWhitelistDescription": "Define which members or spaces are allowed to send tokens. Add members or spaces, include blockchain addresses, and choose if the whitelisting applies to an entire space or just its treasury account.",
+          "whitelist": {
+            "memberOrSpace": "Member or Space",
+            "memberOrSpaceDescription": "Choose whether this entry targets an individual member or an entire space.",
+            "member": "Member",
+            "space": "Space",
+            "selectMember": "Select a member",
+            "selectSpace": "Select a space",
+            "selectMemberPlaceholder": "Select member...",
+            "selectSpacePlaceholder": "Select space...",
+            "noMembersFound": "No members match your search.",
+            "noSpacesFound": "No spaces match your search.",
+            "blockchainAddress": "Blockchain Address",
+            "spaceAccessScope": "Space Access Scope",
+            "spaceAccessScopeDescription": "Toggle whether transfers should include the entire space membership or only the space account.",
+            "spaceOnly": "Space only",
+            "spaceAndMembers": "Space & Members",
+            "remove": "Remove",
+            "add": "Add"
+          }
+        },
+        "value": {
+          "title": "Token Value on Treasury",
+          "description": "Set an initial value for your token. The reference price is displayed in your treasury and helps members understand the token’s starting market value.",
+          "enable": "Enable Token Price",
+          "referenceCurrencyLabel": "Reference Currency",
+          "referenceCurrencyPlaceholder": "Select currency",
+          "tokenPriceLabel": "Token Price",
+          "tokenPricePlaceholder": "Enter token price",
+          "currencies": {
+            "usd": "United States Dollar",
+            "gbp": "British Pound",
+            "cad": "Canadian Dollar",
+            "eur": "Euro",
+            "cny": "Chinese Yuan",
+            "chf": "Swiss Franc",
+            "jpy": "Japanese Yen",
+            "aud": "Australian Dollar",
+            "hkd": "Hong Kong Dollar"
+          }
+        },
+        "decay": {
+          "advancedSettings": "Advanced Decay Settings",
+          "frequencyLabel": "Voice Decay Frequency",
+          "frequencyPlaceholder": "Decay period",
+          "timeFormatPlaceholder": "Select time format",
+          "timeFormats": {
+            "weeks": "Weeks",
+            "months": "Months",
+            "years": "Years"
+          },
+          "percentageLabel": "Voice Decay Percentage",
+          "percentagePlaceholder": "Decay"
+        }
+      },
       "quorumAndUnity": {
         "title": "Voting Method",
         "description": "Select a voting method template, or adjust Quorum and Unity values with the sliders.",

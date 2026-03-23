@@ -2,25 +2,27 @@
 
 import { FormLabel } from '@hypha-platform/ui';
 import { EnableProposalAutoMintingField } from './enable-proposal-auto-minting-field';
+import { useTranslations } from 'next-intl';
 
 export const AutoMintSection = ({
   enableProposalAutoMinting,
 }: {
   enableProposalAutoMinting: boolean;
 }) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
+
   return (
     <div className="flex flex-col gap-4">
-      <FormLabel>Auto-Mint Tokens via Proposals</FormLabel>
+      <FormLabel>
+        {tAgreementFlow('plugins.issueNewToken.autoMint.title')}
+      </FormLabel>
       <span className="text-2 text-neutral-11">
-        When enabled, tokens are automatically minted to the treasury each time
-        a proposal is approved. Disable this if you prefer to manage a pre-set
-        budget by minting tokens to the treasury manually in advance.
+        {tAgreementFlow('plugins.issueNewToken.autoMint.description')}
       </span>
       <EnableProposalAutoMintingField />
       {!enableProposalAutoMinting && (
         <span className="text-2 text-neutral-11">
-          Auto-minting is disabled. Tokens must now be issued through a separate
-          minting proposal, which can be accessed in the settings.
+          {tAgreementFlow('plugins.issueNewToken.autoMint.disabledNotice')}
         </span>
       )}
     </div>

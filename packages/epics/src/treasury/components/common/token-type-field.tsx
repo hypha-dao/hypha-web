@@ -14,6 +14,7 @@ import {
   SelectItem,
   RequirementMark,
 } from '@hypha-platform/ui';
+import { useTranslations } from 'next-intl';
 
 export const TOKEN_TYPE_OPTIONS = [
   {
@@ -61,6 +62,21 @@ type TokenTypeFieldProps = {
 
 export function TokenTypeField({ onValueChange }: TokenTypeFieldProps) {
   const { control } = useFormContext();
+  const tAgreementFlow = useTranslations('AgreementFlow');
+
+  const tokenTypeOptions = TOKEN_TYPE_OPTIONS.map((option) => ({
+    ...option,
+    label: tAgreementFlow(
+      `plugins.issueNewToken.general.tokenTypeOptions.${option.value}.label` as Parameters<
+        typeof tAgreementFlow
+      >[0],
+    ),
+    description: tAgreementFlow(
+      `plugins.issueNewToken.general.tokenTypeOptions.${option.value}.description` as Parameters<
+        typeof tAgreementFlow
+      >[0],
+    ),
+  }));
 
   return (
     <FormField
@@ -70,7 +86,8 @@ export function TokenTypeField({ onValueChange }: TokenTypeFieldProps) {
         <FormItem>
           <div className="flex justify-between items-center">
             <FormLabel className="text-2 text-neutral-11 w-full gap-1">
-              Token Type <RequirementMark className="text-2" />
+              {tAgreementFlow('plugins.issueNewToken.general.tokenTypeLabel')}{' '}
+              <RequirementMark className="text-2" />
             </FormLabel>
             <FormControl>
               <Select
@@ -81,10 +98,14 @@ export function TokenTypeField({ onValueChange }: TokenTypeFieldProps) {
                 }}
               >
                 <SelectTrigger className="h-auto">
-                  <SelectValue placeholder="Select a token type" />
+                  <SelectValue
+                    placeholder={tAgreementFlow(
+                      'plugins.issueNewToken.general.tokenTypePlaceholder',
+                    )}
+                  />
                 </SelectTrigger>
                 <SelectContent className="p-2">
-                  {TOKEN_TYPE_OPTIONS.map(({ value, label, description }) => (
+                  {tokenTypeOptions.map(({ value, label, description }) => (
                     <SelectItem key={value} value={value}>
                       <div className="flex flex-col text-left">
                         <span className="text-1 font-medium">{label}</span>

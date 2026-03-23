@@ -1,6 +1,9 @@
+'use client';
+
 import { FormLabel, Switch } from '@hypha-platform/ui';
 import { TokenMaxSupplyField } from './token-max-supply-field';
 import { TokenMaxSupplyTypeField } from './token-max-supply-type-field';
+import { useTranslations } from 'next-intl';
 
 export const TokenSupplySection = ({
   enableLimitedSupply,
@@ -9,16 +12,20 @@ export const TokenSupplySection = ({
   enableLimitedSupply: boolean;
   setEnableLimitedSupply: (value: boolean) => void;
 }) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
+
   return (
     <div className="flex flex-col gap-4">
-      <FormLabel>Token Supply</FormLabel>
+      <FormLabel>
+        {tAgreementFlow('plugins.issueNewToken.supply.title')}
+      </FormLabel>
       <span className="text-2 text-neutral-11">
-        Choose a fixed or unlimited token supply. Select “Limited Supply” to set
-        a maximum token amount, either permanently or with an option to update
-        in the future.
+        {tAgreementFlow('plugins.issueNewToken.supply.description')}
       </span>
       <div className="flex w-full justify-between items-center text-2 text-neutral-11">
-        <span>Enable Limited Supply</span>
+        <span>
+          {tAgreementFlow('plugins.issueNewToken.supply.enableLimited')}
+        </span>
         <Switch
           checked={enableLimitedSupply}
           onCheckedChange={setEnableLimitedSupply}

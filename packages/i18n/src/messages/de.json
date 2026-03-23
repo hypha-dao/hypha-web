@@ -555,6 +555,134 @@
         "hyphaSentTo": "HYPHA gesendet an",
         "usdcPaidTo": "USDC gezahlt an"
       },
+      "issueNewToken": {
+        "general": {
+          "title": "Allgemein",
+          "description": "Wählen Sie den Typ Ihres Tokens und passen Sie Name, Symbol und Icon für eine eindeutige Identifikation an.",
+          "tokenTypeLabel": "Token-Typ",
+          "tokenTypePlaceholder": "Wählen Sie einen Token-Typ",
+          "tokenTypeOptions": {
+            "utility": {
+              "label": "Utility-Token",
+              "description": "wird für Zugriff oder Funktionalität innerhalb des Spaces verwendet"
+            },
+            "ownership": {
+              "label": "Ownership-Token",
+              "description": "spiegelt Beteiligung oder Eigenkapital im Space wider"
+            },
+            "impact": {
+              "label": "Impact-Token",
+              "description": "bewertet messbare soziale, wirtschaftliche und ökologische Ergebnisse"
+            },
+            "credits": {
+              "label": "Cash Credits",
+              "description": "einlösbare Guthaben, die gegen Fiat-Währung getauscht werden können"
+            },
+            "voice": {
+              "label": "Voice-Token",
+              "description": "ermöglicht Mitsprache bei Verwaltung oder Entscheidungsfindung im Space"
+            },
+            "community_currency": {
+              "label": "Community-Währung",
+              "description": "lokale Währung für Transaktionen und Werteaustausch innerhalb der Community"
+            }
+          },
+          "tokenNameLabel": "Token-Name",
+          "tokenNamePlaceholder": "Geben Sie einen Namen ein",
+          "tokenSymbolLabel": "Token-Symbol",
+          "tokenSymbolPlaceholder": "Geben Sie ein Symbol ein",
+          "tokenIconLabel": "Token-Icon"
+        },
+        "advancedSettings": {
+          "title": "Erweiterte Token-Einstellungen (optional)",
+          "description": "Standardeinstellungen sind für den üblichen Einsatz vorkonfiguriert. Aktivieren Sie erweiterte Einstellungen nur, wenn Sie Angebotslimits, manuelle Prägung, Transferregeln und Whitelists konfigurieren oder einen Token-Wert festlegen möchten.",
+          "enable": "Erweiterte Einstellungen aktivieren"
+        },
+        "supply": {
+          "title": "Token-Angebot",
+          "description": "Wählen Sie ein festes oder unbegrenztes Token-Angebot. Wählen Sie „Begrenztes Angebot“, um eine maximale Token-Menge festzulegen – entweder dauerhaft oder mit späterer Aktualisierungsmöglichkeit.",
+          "enableLimited": "Begrenztes Angebot aktivieren",
+          "maxSupplyLabel": "Maximales Angebot",
+          "maxSupplyPlaceholder": "Geben Sie einen Betrag ein",
+          "maxSupplyTypeLabel": "Typ des maximalen Angebots",
+          "maxSupplyTypePlaceholder": "Typ des maximalen Angebots wählen",
+          "maxSupplyTypeOptions": {
+            "immutable": "Dauerhaft unveränderlich",
+            "updatable": "Über die Zeit aktualisierbar"
+          },
+          "maxSupplyTypeHelp": "Wenn Sie „Dauerhaft unveränderlich“ wählen, wird das maximale Angebot dauerhaft festgelegt und spätere Änderungen werden verhindert. Wählen Sie „Über die Zeit aktualisierbar“, wenn Sie das Limit später erhöhen möchten (z. B. durch schrittweise oder meilensteinbasierte Freigaben), oder lassen Sie „Begrenztes Angebot“ deaktiviert, um das Angebot unbegrenzt zu halten."
+        },
+        "autoMint": {
+          "title": "Token per Vorschlag automatisch prägen",
+          "description": "Wenn aktiviert, werden bei jeder genehmigten Vorschlag automatisch Token in die Treasury geprägt. Deaktivieren Sie dies, wenn Sie ein festes Budget bevorzugen und Token vorab manuell in die Treasury prägen möchten.",
+          "enable": "Automatische Prägung per Vorschlag aktivieren",
+          "disabledNotice": "Die automatische Prägung ist deaktiviert. Token müssen nun über einen separaten Prägevorschlag ausgegeben werden, der in den Einstellungen verfügbar ist."
+        },
+        "transfer": {
+          "title": "Token-Transfer",
+          "description": "Steuern Sie, wer Ihr Token senden und empfangen kann. Sie können es vollständig übertragbar machen, Transfers auf Whitelist-Konten oder Spaces beschränken oder Transfers vollständig deaktivieren.",
+          "transferable": "Übertragbar",
+          "advancedControlsDescription": "Für mehr Kontrolle können Sie optional eine Whitelist aktivieren. Dadurch werden Token-Transfers auf ausgewählte Mitglieder, Spaces oder Blockchain-Adressen beschränkt, die Sie festlegen. Wenn Sie diese Option nicht aktivieren, bleiben Tokens für alle Konten frei übertragbar.",
+          "advancedControls": "Optional: Erweiterte Transferkontrollen",
+          "autoWhitelistedNotice": "{spaceName} und seine Mitglieder sind automatisch auf der Whitelist. Wenn Sie unten Space(s) und/oder Mitglied(er) auflisten, können diese bei aktivierter Whitelist Tokens senden („From“-Whitelist) oder empfangen („To“-Whitelist).",
+          "toWhitelistLabel": "„To“-Whitelist",
+          "toWhitelistDescription": "Legen Sie fest, welche Mitglieder oder Spaces Tokens empfangen dürfen. Fügen Sie Mitglieder oder Spaces hinzu, ergänzen Sie Blockchain-Adressen und wählen Sie, ob die Whitelist für einen gesamten Space oder nur dessen Treasury-Konto gilt.",
+          "fromWhitelistLabel": "„From“-Whitelist",
+          "fromWhitelistDescription": "Legen Sie fest, welche Mitglieder oder Spaces Tokens senden dürfen. Fügen Sie Mitglieder oder Spaces hinzu, ergänzen Sie Blockchain-Adressen und wählen Sie, ob die Whitelist für einen gesamten Space oder nur dessen Treasury-Konto gilt.",
+          "whitelist": {
+            "memberOrSpace": "Mitglied oder Space",
+            "memberOrSpaceDescription": "Wählen Sie, ob dieser Eintrag ein einzelnes Mitglied oder einen gesamten Space betrifft.",
+            "member": "Mitglied",
+            "space": "Space",
+            "selectMember": "Mitglied auswählen",
+            "selectSpace": "Space auswählen",
+            "selectMemberPlaceholder": "Mitglied auswählen...",
+            "selectSpacePlaceholder": "Space auswählen...",
+            "noMembersFound": "Keine passenden Mitglieder gefunden.",
+            "noSpacesFound": "Keine passenden Spaces gefunden.",
+            "blockchainAddress": "Blockchain-Adresse",
+            "spaceAccessScope": "Space-Zugriffsbereich",
+            "spaceAccessScopeDescription": "Legen Sie fest, ob Transfers die gesamte Space-Mitgliedschaft oder nur das Space-Konto einschließen sollen.",
+            "spaceOnly": "Nur Space",
+            "spaceAndMembers": "Space & Mitglieder",
+            "remove": "Entfernen",
+            "add": "Hinzufügen"
+          }
+        },
+        "value": {
+          "title": "Token-Wert in der Treasury",
+          "description": "Legen Sie einen Anfangswert für Ihr Token fest. Der Referenzpreis wird in Ihrer Treasury angezeigt und hilft Mitgliedern, den Startmarktwert des Tokens zu verstehen.",
+          "enable": "Token-Preis aktivieren",
+          "referenceCurrencyLabel": "Referenzwährung",
+          "referenceCurrencyPlaceholder": "Währung auswählen",
+          "tokenPriceLabel": "Token-Preis",
+          "tokenPricePlaceholder": "Token-Preis eingeben",
+          "currencies": {
+            "usd": "US-Dollar",
+            "gbp": "Britisches Pfund",
+            "cad": "Kanadischer Dollar",
+            "eur": "Euro",
+            "cny": "Chinesischer Yuan",
+            "chf": "Schweizer Franken",
+            "jpy": "Japanischer Yen",
+            "aud": "Australischer Dollar",
+            "hkd": "Hongkong-Dollar"
+          }
+        },
+        "decay": {
+          "advancedSettings": "Erweiterte Decay-Einstellungen",
+          "frequencyLabel": "Voice-Decay-Frequenz",
+          "frequencyPlaceholder": "Decay-Zeitraum",
+          "timeFormatPlaceholder": "Zeitformat auswählen",
+          "timeFormats": {
+            "weeks": "Wochen",
+            "months": "Monate",
+            "years": "Jahre"
+          },
+          "percentageLabel": "Voice-Decay-Prozentsatz",
+          "percentagePlaceholder": "Decay"
+        }
+      },
       "quorumAndUnity": {
         "title": "Abstimmungsmethode",
         "description": "Wählen Sie eine Abstimmungsmethoden-Vorlage oder passen Sie Quorum- und Unity-Werte mit den Reglern an.",

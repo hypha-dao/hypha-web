@@ -14,6 +14,7 @@ import {
 import { PercentIcon } from 'lucide-react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { handleNumberChange } from '@hypha-platform/ui-utils';
+import { useTranslations } from 'next-intl';
 
 type TimeFormat = 'Weeks' | 'Months' | 'Years';
 
@@ -34,6 +35,7 @@ type DecaySettingsProps = {
 };
 
 export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const initialTimeFormat = value
     ? (Object.entries(TIME_FORMAT_TO_SECONDS).find(
         ([_, seconds]) => (value.decayInterval as number) % seconds === 0,
@@ -89,7 +91,8 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
     <>
       <div className="flex justify-between items-center gap-3">
         <FormLabel className="text-2 text-neutral-11 gap-1">
-          Voice Decay Frequency <RequirementMark className="text-2" />
+          {tAgreementFlow('plugins.issueNewToken.decay.frequencyLabel')}{' '}
+          <RequirementMark className="text-2" />
         </FormLabel>
         <div className="flex justify-between flex-row flex-1 gap-3 max-w-[50%]">
           <div className="flex flex-col flex-1 min-w-10">
@@ -98,19 +101,37 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
               type="number"
               value={decayPeriod}
               onChange={handleDecayPeriodChange}
-              placeholder="Decay period"
+              placeholder={tAgreementFlow(
+                'plugins.issueNewToken.decay.frequencyPlaceholder',
+              )}
             />
           </div>
 
           <div className="flex flex-col flex-1">
             <Select value={timeFormat} onValueChange={handleTimeFormatChange}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select time format" />
+                <SelectValue
+                  placeholder={tAgreementFlow(
+                    'plugins.issueNewToken.decay.timeFormatPlaceholder',
+                  )}
+                />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Weeks">Weeks</SelectItem>
-                <SelectItem value="Months">Months</SelectItem>
-                <SelectItem value="Years">Years</SelectItem>
+                <SelectItem value="Weeks">
+                  {tAgreementFlow(
+                    'plugins.issueNewToken.decay.timeFormats.weeks',
+                  )}
+                </SelectItem>
+                <SelectItem value="Months">
+                  {tAgreementFlow(
+                    'plugins.issueNewToken.decay.timeFormats.months',
+                  )}
+                </SelectItem>
+                <SelectItem value="Years">
+                  {tAgreementFlow(
+                    'plugins.issueNewToken.decay.timeFormats.years',
+                  )}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -118,7 +139,8 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
       </div>
       <div className="flex justify-between items-center gap-3">
         <FormLabel className="text-2 text-neutral-11 gap-1">
-          Voice Decay Percentage <RequirementMark className="text-2" />
+          {tAgreementFlow('plugins.issueNewToken.decay.percentageLabel')}{' '}
+          <RequirementMark className="text-2" />
         </FormLabel>
         <div className="flex flex-col flex-1 max-w-[25%]">
           <Input
@@ -128,7 +150,9 @@ export const DecaySettings = ({ value, onChange }: DecaySettingsProps) => {
             max={100}
             value={decayPercent}
             onChange={handleDecayPercentChange}
-            placeholder="Decay"
+            placeholder={tAgreementFlow(
+              'plugins.issueNewToken.decay.percentagePlaceholder',
+            )}
             rightIcon={<PercentIcon size={'14px'} />}
           />
         </div>

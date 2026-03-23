@@ -10,9 +10,11 @@ import {
   Input,
   RequirementMark,
 } from '@hypha-platform/ui';
+import { useTranslations } from 'next-intl';
 
 export function TokenNameField() {
   const { control } = useFormContext();
+  const tAgreementFlow = useTranslations('AgreementFlow');
 
   return (
     <FormField
@@ -22,10 +24,16 @@ export function TokenNameField() {
         <FormItem>
           <div className="flex justify-between items-center">
             <FormLabel className="text-2 text-neutral-11 w-full gap-1">
-              Token Name <RequirementMark className="text-2" />
+              {tAgreementFlow('plugins.issueNewToken.general.tokenNameLabel')}{' '}
+              <RequirementMark className="text-2" />
             </FormLabel>
             <FormControl>
-              <Input placeholder="Type a name" {...field} />
+              <Input
+                placeholder={tAgreementFlow(
+                  'plugins.issueNewToken.general.tokenNamePlaceholder',
+                )}
+                {...field}
+              />
             </FormControl>
           </div>
           <FormMessage />
