@@ -58,7 +58,16 @@ export const POST = proposalCreatedSigningKey
         const dbData = resultFetchingDbData
           .filter((res) => res.status === 'fulfilled')
           .map(({ value }) => value);
-        if (dbData.length === 0) {
+        const completeDbData = dbData.filter(
+          (data) => data.person?.slug && data.space?.slug,
+        );
+        const skippedCreatorEntries = dbData.length - completeDbData.length;
+        if (skippedCreatorEntries > 0) {
+          console.warn(
+            `Skipped ${skippedCreatorEntries} proposal creation creator notifications due to missing person/space DB data.`,
+          );
+        }
+        if (completeDbData.length === 0) {
           console.warn(
             'Zero creators and spaces found in the DB for the "ProposalCreation" event.',
             'Proposal IDs:',
@@ -68,7 +77,7 @@ export const POST = proposalCreatedSigningKey
           return;
         }
 
-        const notificationParams = dbData.map((data) => ({
+        const notificationParams = completeDbData.map((data) => ({
           proposalCreatorSlug: data.person?.slug,
           creatorName: data.person?.name,
           spaceTitle: data.space?.title,
@@ -149,7 +158,7 @@ export const POST = proposalCreatedSigningKey
         const spacesWithPeople = (await Promise.allSettled(fetchingData))
           .filter((res) => res.status === 'fulfilled')
           .map(({ value }) => value)
-          .filter((space) => space.people.length > 0);
+          .filter((space) => space.people.length > 0 && space.space?.slug);
 
         const notificationParams = spacesWithPeople.map(
           ({ space, people }) => ({
