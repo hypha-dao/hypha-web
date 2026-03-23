@@ -252,7 +252,7 @@
         "exitingMember": "Miembro saliente"
       },
       "spaceToSpaceMembershipSelector": {
-        "findSpace": "encontrar espacio",
+        "findSpace": "Encontrar espacio",
         "findMember": "Buscar miembro",
         "spaceToJoin": "Espacio para unirse",
         "delegatedVotingMember": "Miembro delegado con derecho a voto"
@@ -281,7 +281,7 @@
         "oneVoiceOneVoteDescription": "Cada voto está vinculado a tokens de voz obtenidos, que reflejan contribuciones, reputación y compromiso, pero decae con la inactividad para fomentar el compromiso. Comúnmente utilizado en equipos centrales o grupos de contribuyentes.",
         "oneTokenOneVoteTitle": "1 ficha 1 voto",
         "oneTokenOneVoteDescription": "El poder de voto es proporcional a la cantidad de tokens que se poseen, alineando la influencia con la participación. Comúnmente utilizado en flujos de valor, tesorería o espacios de inversión.",
-        "clickHere": "haga clic aquí",
+        "clickHere": "Haz clic aquí",
         "voiceTokenTooltipPrefix": "Para seleccionar este método de votación, primero debe emitir su token de voz.",
         "voiceTokenTooltipSuffix": "para crear tu token de voz",
         "tokenTooltipPrefix": "Para seleccionar este método de votación, primero debe emitir un token.",
@@ -336,7 +336,7 @@
         "addSpace": "Agregar espacio",
         "selectSpace": "Seleccionar espacio",
         "selectSpacePlaceholder": "Seleccione espacio...",
-        "findSpace": "encontrar espacio",
+        "findSpace": "Encontrar espacio",
         "numberOfMonths": "Número de meses",
         "typeAmount": "Escribe una cantidad",
         "otherSpaces": "Otros espacios"
@@ -492,7 +492,7 @@
   "Navigation": {
     "network": "Red",
     "mySpaces": "Mis espacios",
-    "openMenu": "abrir menú",
+    "openMenu": "Abrir menú",
     "closeMenu": "Cerrar menú",
     "selectLanguage": "Seleccionar idioma",
     "myProfile": "Mi perfil",
@@ -505,7 +505,7 @@
     "viewProfile": "Ver perfil",
     "delete": "Borrar",
     "signIn": "Iniciar sesión",
-    "getStarted": "empezar"
+    "getStarted": "Empezar"
   },
   "NotificationCentre": {
     "title": "Centro de notificaciones",
@@ -698,7 +698,7 @@
     "visibleSpaces": {
       "nestedRoot": "Raíz",
       "nestedIn": "Anidado en {parent}",
-      "nested": "anidado",
+      "nested": "Anidado",
       "spaceInfoNotAvailable": "Información del espacio no disponible",
       "addSpace": "Agregar espacio",
       "loading": "Cargando...",
@@ -765,7 +765,7 @@
     "hyphaTokenomics": "Tokenómica Hypha",
     "licensingPolicy": "Política de licencias",
     "termsAndConditions": "Términos y condiciones",
-    "privacyPolicy": "política de privacidad"
+    "privacyPolicy": "Política de privacidad"
   },
   "Profile": {
     "profilePage": "Página de perfil",
@@ -913,7 +913,7 @@
     }
   },
   "Network": {
-    "manySpaces": "muchos espacios,",
+    "manySpaces": "Muchos espacios,",
     "oneVibrantNetwork": "Una red vibrante",
     "findASpace": "Encuentra un espacio",
     "createSpace": "Crear espacio",
@@ -972,8 +972,8 @@
     "couldNotExitSpace": "No se pudo salir del espacio",
     "exitSpaceConfirmTitle": "Salir del espacio",
     "exitSpaceConfirmDescription": "¿Realmente quieres salir de este espacio?",
-    "exitSpaceConfirmYes": "si, vete",
-    "exitSpaceConfirmNo": "no, quédate",
+    "exitSpaceConfirmYes": "Sí, salir",
+    "exitSpaceConfirmNo": "No, quedarse",
     "exitSpaceDisabledTooltip": "Necesitas estar autorizado y ser miembro del espacio actual para poder salir",
     "accessDeniedNotLoggedIn": "Necesita una cuenta activa para acceder a esta sección. Inicie sesión o haga clic en Comenzar para crear uno.",
     "signIn": "Iniciar sesión",
