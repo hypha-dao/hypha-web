@@ -1155,16 +1155,16 @@
       "voteValueNo": "Nein"
     },
     "withdrawResubmit": {
-      "title": "Ihren Vorschlag zurückziehen oder bearbeiten und erneut einreichen?",
+      "title": "Vorschlag zurückziehen oder bearbeiten und erneut einreichen?",
       "withdrawDialogTitle": "Vorschlag zurückziehen",
-      "withdrawDialogDescription": "Sind Sie sicher, dass Sie diesen Vorschlag zurückziehen möchten? Es wird nicht mehr auf dem Angebotsbildschirm angezeigt und kann nicht wiederhergestellt werden.",
+      "withdrawDialogDescription": "Möchten Sie diesen Vorschlag wirklich zurückziehen? Er wird nicht mehr in der Vorschlagsansicht angezeigt und kann nicht wiederhergestellt werden.",
       "withdraw": "Zurückziehen",
-      "cancel": "Stornieren",
-      "withdrawing": "Rückzug...",
+      "cancel": "Abbrechen",
+      "withdrawing": "Wird zurückgezogen...",
       "resubmitDialogTitle": "Vorschlag erneut einreichen",
       "resubmitDialogDescription": "Möchten Sie diesen Vorschlag wirklich erneut einreichen? Der aktuelle Vorschlag wird zurückgezogen, ein neuer mit Ihren Inhalten erstellt und die Stimmen werden zurückgesetzt.",
       "resubmit": "Erneut einreichen",
-      "processing": "Verarbeitung..."
+      "processing": "Wird verarbeitet..."
     },
     "expireBanner": {
       "checkingMembership": "Mitgliedschaft wird geprüft...",

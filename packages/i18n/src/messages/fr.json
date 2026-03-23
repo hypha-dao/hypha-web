@@ -1160,7 +1160,7 @@
       "withdrawDialogDescription": "Êtes-vous sûr de vouloir retirer cette proposition ? Elle n'apparaîtra plus sur l'écran des propositions et ne pourra pas être récupérée.",
       "withdraw": "Retirer",
       "cancel": "Annuler",
-      "withdrawing": "Retrait...",
+      "withdrawing": "Retrait en cours...",
       "resubmitDialogTitle": "Soumettre à nouveau la proposition",
       "resubmitDialogDescription": "Êtes-vous sûr de vouloir soumettre à nouveau cette proposition ? La proposition actuelle sera retirée, une nouvelle sera créée avec votre contenu et les votes seront réinitialisés.",
       "resubmit": "Soumettre à nouveau",

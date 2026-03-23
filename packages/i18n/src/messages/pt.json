@@ -1160,7 +1160,7 @@
       "resubmitDialogTitle": "Reenviar proposta",
       "resubmitDialogDescription": "Tem certeza de que deseja reenviar esta proposta? A proposta atual será retirada, uma nova será criada com o seu conteúdo e os votos serão zerados.",
       "resubmit": "Reenviar",
-      "processing": "Processamento..."
+      "processing": "Processando..."
     },
     "expireBanner": {
       "checkingMembership": "Verificando associação...",

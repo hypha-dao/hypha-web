@@ -1151,12 +1151,12 @@
       "voteValueNo": "No"
     },
     "withdrawResubmit": {
-      "title": "¿Retirar su propuesta o editarla y enviarla nuevamente?",
+      "title": "¿Retirar tu propuesta o editarla y enviarla de nuevo?",
       "withdrawDialogTitle": "Retirar propuesta",
       "withdrawDialogDescription": "¿Seguro que quieres retirar esta propuesta? Ya no aparecerá en la pantalla de propuestas y no se podrá recuperar.",
       "withdraw": "Retirar",
       "cancel": "Cancelar",
-      "withdrawing": "Retirándose...",
+      "withdrawing": "Retirando...",
       "resubmitDialogTitle": "Volver a enviar propuesta",
       "resubmitDialogDescription": "¿Seguro que quieres reenviar esta propuesta? La propuesta actual se retirará, se creará una nueva con tu contenido y se reiniciarán los votos.",
       "resubmit": "Reenviar",
