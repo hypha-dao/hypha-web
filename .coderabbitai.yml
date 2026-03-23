@@ -7,6 +7,16 @@ review:
   # Default review language
   default_language: en-US
 
+  # Automatically review new PRs
+  auto_review:
+    enabled: true
+
+  # Auto-approve PRs that have no critical or warning findings
+  auto_approve:
+    enabled: true
+    allowed_summary_severities:
+      - 'info'
+
   # Configure the review engine based on languages
   engines:
     typescript:
