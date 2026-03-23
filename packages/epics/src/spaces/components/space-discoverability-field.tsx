@@ -12,34 +12,7 @@ import {
   TransparencyLevel,
   TransparencyOption,
 } from './transparency-level';
-
-const discoverabilityOptions: TransparencyOption[] = [
-  {
-    id: TransparencyLevel.PUBLIC,
-    title: 'Public',
-    description: 'Your space is publicly discoverable.',
-    disabled: false,
-  },
-  {
-    id: TransparencyLevel.NETWORK,
-    title: 'Network',
-    description: 'Your space is only discoverable by Hypha Network Members.',
-    disabled: false,
-  },
-  {
-    id: TransparencyLevel.ORGANISATION,
-    title: 'Organisation',
-    description:
-      'Your space is only discoverable by members of your organisation.',
-    disabled: false,
-  },
-  {
-    id: TransparencyLevel.SPACE,
-    title: 'Space',
-    description: 'Your space is only discoverable by space members.',
-    disabled: false,
-  },
-];
+import { useTranslations } from 'next-intl';
 
 export function SpaceDiscoverabilityField({
   value,
@@ -48,6 +21,35 @@ export function SpaceDiscoverabilityField({
   value?: TransparencyLevel;
   onChange?: (selected: TransparencyLevel) => void;
 }) {
+  const tAgreementFlow = useTranslations('AgreementFlow');
+  const discoverabilityOptions: TransparencyOption[] = [
+    {
+      id: TransparencyLevel.PUBLIC,
+      title: tAgreementFlow('plugins.transparency.publicTitle'),
+      description: tAgreementFlow('plugins.transparency.discoverabilityPublic'),
+      disabled: false,
+    },
+    {
+      id: TransparencyLevel.NETWORK,
+      title: tAgreementFlow('plugins.transparency.networkTitle'),
+      description: tAgreementFlow('plugins.transparency.discoverabilityNetwork'),
+      disabled: false,
+    },
+    {
+      id: TransparencyLevel.ORGANISATION,
+      title: tAgreementFlow('plugins.transparency.organisationTitle'),
+      description: tAgreementFlow(
+        'plugins.transparency.discoverabilityOrganisation',
+      ),
+      disabled: false,
+    },
+    {
+      id: TransparencyLevel.SPACE,
+      title: tAgreementFlow('plugins.transparency.spaceTitle'),
+      description: tAgreementFlow('plugins.transparency.discoverabilitySpace'),
+      disabled: false,
+    },
+  ];
   const { control } = useFormContext();
   return (
     <FormField

@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Image, Combobox } from '@hypha-platform/ui';
 import { Space, Person } from '@hypha-platform/core/client';
 import { useFilterSpacesListWithDiscoverability } from '@hypha-platform/epics';
+import { useTranslations } from 'next-intl';
 
 type SpaceToSpaceMembershipSelectorProps = {
   memberOptions?: Person[];
@@ -18,6 +19,7 @@ export const SpaceToSpaceMembershipSelector = ({
   onChange,
   value,
 }: SpaceToSpaceMembershipSelectorProps) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const [selected, setSelected] = useState<Person | Space | null>(null);
 
   const { filteredSpaces } = useFilterSpacesListWithDiscoverability({
@@ -33,8 +35,12 @@ export const SpaceToSpaceMembershipSelector = ({
     }
   }, [value, memberOptions, filteredSpaces]);
   const isSpace = filteredSpaces.length > 0 && memberOptions.length === 0;
-  const placeholder = isSpace ? 'Find Space' : 'Find Member';
-  const title = isSpace ? 'Space to join' : 'Delegated Voting Member';
+  const placeholder = isSpace
+    ? tAgreementFlow('plugins.spaceToSpaceMembershipSelector.findSpace')
+    : tAgreementFlow('plugins.spaceToSpaceMembershipSelector.findMember');
+  const title = isSpace
+    ? tAgreementFlow('plugins.spaceToSpaceMembershipSelector.spaceToJoin')
+    : tAgreementFlow('plugins.spaceToSpaceMembershipSelector.delegatedVotingMember');
 
   const options = useMemo(() => {
     const memberItems = memberOptions.map((member) => ({

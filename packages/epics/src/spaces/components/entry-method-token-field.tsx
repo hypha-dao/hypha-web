@@ -12,6 +12,7 @@ import {
 } from '@hypha-platform/ui';
 import { Address } from '@hypha-platform/core/client';
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface Token {
   icon: string;
@@ -33,6 +34,7 @@ export const EntryMethodTokenField = ({
   onChange,
   tokens,
 }: EntryMethodTokenFieldProps) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const [displayAmount, setDisplayAmount] = useState(
     String(value.amount ?? ''),
   );
@@ -65,7 +67,7 @@ export const EntryMethodTokenField = ({
   return (
     <div className="flex flex-col md:flex-row gap-4 md:justify-between w-full">
       <label className="text-2 text-neutral-11 flex items-center">
-        Required Min. Token Number (Optional)
+        {tAgreementFlow('plugins.entryMethodTokenField.requiredMinTokenNumberOptional')}
       </label>
       <div className="flex gap-2 items-center">
         <Input
@@ -73,7 +75,7 @@ export const EntryMethodTokenField = ({
           type="number"
           step="any"
           inputMode="decimal"
-          placeholder="Type an amount"
+          placeholder={tAgreementFlow('plugins.entryMethodTokenField.typeAmount')}
           onChange={(e) => handleAmountChange(e.target.value)}
           onBlur={() => {
             const next = displayAmount;
@@ -115,7 +117,7 @@ export const EntryMethodTokenField = ({
                   </>
                 ) : (
                   <span className="text-2 text-neutral-11 text-nowrap">
-                    Select a token
+                    {tAgreementFlow('plugins.entryMethodTokenField.selectToken')}
                   </span>
                 )}
               </div>

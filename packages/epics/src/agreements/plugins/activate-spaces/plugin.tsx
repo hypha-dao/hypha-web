@@ -19,6 +19,7 @@ import {
 import { useActivateSpaces } from '../../../people/hooks/use-activate-hypha-spaces';
 import { SpaceWithNumberOfMonthsFieldArray } from '../../../people';
 import React from 'react';
+import { useTranslations } from 'next-intl';
 
 type ActivateSpacesPluginProps = {
   spaceSlug?: string;
@@ -31,6 +32,7 @@ export const ActivateSpacesPlugin = ({
   spaceSlug,
   spaces,
 }: ActivateSpacesPluginProps) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { control, setValue } = useFormContext();
 
   const watchedSpaces = useWatch({ control, name: 'spaces' });
@@ -67,17 +69,19 @@ export const ActivateSpacesPlugin = ({
         name="spaces"
       />
       <Separator />
-      <Label>Check out</Label>
+      <Label>{tAgreementFlow('plugins.activateSpaces.checkOut')}</Label>
       <div className="flex w-full justify-between items-center">
         <span className="text-2 text-neutral-11 w-full">
-          Total Contribution:
+          {tAgreementFlow('plugins.activateSpaces.totalContribution')}
         </span>
         <span className="text-2 text-neutral-11 text-nowrap">
           $ {totalUSDC.toLocaleString(undefined, { minimumFractionDigits: 2 })}
         </span>
       </div>
       <div className="flex w-full justify-between items-center">
-        <span className="text-2 text-neutral-11">Pay with:</span>
+        <span className="text-2 text-neutral-11">
+          {tAgreementFlow('plugins.activateSpaces.payWith')}
+        </span>
         <Tabs
           value={watchedPaymentToken}
           onValueChange={(value) =>
@@ -96,7 +100,9 @@ export const ActivateSpacesPlugin = ({
       </div>
       <div className="flex w-full justify-between items-center">
         <span className="text-2 text-neutral-11 w-full">
-          Total amount in {watchedPaymentToken}:
+          {tAgreementFlow('plugins.activateSpaces.totalAmountIn', {
+            token: watchedPaymentToken,
+          })}
         </span>
         <span className="text-2 text-neutral-11 text-nowrap">
           {watchedPaymentToken === 'USDC' ? (
@@ -134,7 +140,7 @@ export const ActivateSpacesPlugin = ({
       </div>
       <Separator />
       <RecipientField
-        label="Paid by"
+        label={tAgreementFlow('plugins.activateSpaces.paidBy')}
         members={[]}
         spaces={buyerSpace}
         defaultRecipientType="space"
@@ -144,7 +150,7 @@ export const ActivateSpacesPlugin = ({
       />
       <Separator />
       <RecipientField
-        label="Paid to"
+        label={tAgreementFlow('plugins.activateSpaces.paidTo')}
         members={[]}
         spaces={recipientSpace}
         defaultRecipientType="space"

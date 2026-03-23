@@ -15,9 +15,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useConfig } from 'wagmi';
 import React from 'react';
-import { useRouter } from 'next/navigation';
 import { useSpaceTokenRequirementsByAddress } from '../hooks';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+import { useTranslations } from 'next-intl';
 
 interface SpaceToSpaceMembershipFormProps {
   successfulUrl: string;
@@ -40,6 +40,8 @@ export const SpaceToSpaceMembershipForm = ({
   web3SpaceId,
   spaces,
 }: SpaceToSpaceMembershipFormProps) => {
+  const tSpaces = useTranslations('Spaces');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { person } = useMe();
 
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -55,7 +57,7 @@ export const SpaceToSpaceMembershipForm = ({
       spaceId: spaceId ?? undefined,
       space: undefined,
       member: undefined,
-      label: 'Space To Space',
+      label: tAgreementFlow('labels.spaceToSpace'),
     },
   });
 
@@ -64,7 +66,6 @@ export const SpaceToSpaceMembershipForm = ({
 
   const { jwt } = useJwt();
   const config = useConfig();
-  const router = useRouter();
   const {
     spaceToSpaceAction,
     reset,
@@ -115,8 +116,8 @@ export const SpaceToSpaceMembershipForm = ({
       message={
         isError ? (
           <div className="flex flex-col">
-            <div>Ouh Snap. There was an error</div>
-            <Button onClick={reset}>Reset</Button>
+            <div>{tSpaces('errorOhSnap')}</div>
+            <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (
           <div>{currentAction}</div>
@@ -139,9 +140,9 @@ export const SpaceToSpaceMembershipForm = ({
             successfulUrl={successfulUrl}
             closeUrl={successfulUrl}
             backUrl={backUrl}
-            backLabel="Back to Settings"
+            backLabel={tSpaces('backToSettings')}
             isLoading={false}
-            label="Space To Space"
+            label={tAgreementFlow('labels.spaceToSpace')}
             progress={progress}
           />
           {children}
@@ -153,7 +154,7 @@ export const SpaceToSpaceMembershipForm = ({
               disabled={hasTokenRequirements && !hasEnoughTokens}
               type="submit"
             >
-              Publish
+              {tAgreementFlow('buttons.publish')}
             </Button>
           </div>
 

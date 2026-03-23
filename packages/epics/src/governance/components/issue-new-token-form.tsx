@@ -23,6 +23,7 @@ import {
   useResubmitProposalData,
 } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
+import { useTranslations } from 'next-intl';
 
 const extendedBaseSchema = baseSchemaIssueNewToken.merge(
   z.object({
@@ -99,6 +100,8 @@ export const IssueNewTokenForm = ({
   web3SpaceId,
   plugin,
 }: IssueNewTokenFormProps) => {
+  const tSpaces = useTranslations('Spaces');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
@@ -136,7 +139,6 @@ export const IssueNewTokenForm = ({
         decayInterval: 2592000,
         decayPercentage: 1,
       },
-      label: 'Issue New Token',
       isVotingToken: false,
       transferable: true,
       enableAdvancedTransferControls: false,
@@ -147,6 +149,7 @@ export const IssueNewTokenForm = ({
       enableTokenPrice: false,
       referenceCurrency: undefined,
       tokenPrice: undefined,
+      label: tAgreementFlow('labels.issueNewToken'),
     },
     mode: 'onChange',
   });
@@ -182,7 +185,7 @@ export const IssueNewTokenForm = ({
 
     if (dbTokens?.length && duplicateToken) {
       setFormError(
-        'A token with the same name and symbol already exists in your space. Please modify either the name or symbol to proceed.',
+        tAgreementFlow('issueNewTokenForm.duplicateToken'),
       );
       return;
     }
@@ -209,8 +212,8 @@ export const IssueNewTokenForm = ({
       message={
         isError ? (
           <div className="flex flex-col">
-            <div>Ouh Snap. There was an error</div>
-            <Button onClick={reset}>Reset</Button>
+            <div>{tSpaces('errorOhSnap')}</div>
+            <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (
           <div>{currentAction}</div>
@@ -233,9 +236,9 @@ export const IssueNewTokenForm = ({
             successfulUrl={successfulUrl}
             closeUrl={closeUrl || successfulUrl}
             backUrl={backUrl}
-            backLabel="Back to settings"
+            backLabel={tSpaces('backToSettings')}
             isLoading={false}
-            label="Issue New Token"
+            label={tAgreementFlow('labels.issueNewToken')}
             progress={progress}
           />
           {plugin}
@@ -247,7 +250,7 @@ export const IssueNewTokenForm = ({
               </div>
             )}
             <div className="flex justify-end w-full">
-              <Button type="submit">Publish</Button>
+              <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>
             </div>
           </div>
         </form>
