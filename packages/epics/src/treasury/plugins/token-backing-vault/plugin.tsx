@@ -93,13 +93,14 @@ export const TokenBackingVaultPlugin = ({
     const requestedSpaceToken = searchParams.get('spaceToken');
     if (!requestedSpaceToken) return;
     if (presetTokenRef.current === requestedSpaceToken.toLowerCase()) return;
-    const hasMatchingToken = filteredTokens.some(
+    const matchedToken = filteredTokens.find(
       (token: ExtendedToken) =>
         token.address?.toLowerCase() === requestedSpaceToken.toLowerCase(),
     );
-    if (!hasMatchingToken) return;
+    if (!matchedToken?.address) return;
 
-    setValue('tokenBackingVault.spaceToken', requestedSpaceToken, {
+    // Use the exact address string from Select options so UI shows selected token.
+    setValue('tokenBackingVault.spaceToken', matchedToken.address, {
       shouldDirty: false,
       shouldTouch: false,
     });
