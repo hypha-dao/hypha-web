@@ -296,7 +296,41 @@
     "noRewardsFoundForUser": "Aucune récompense trouvée pour cet utilisateur",
     "buyHypha": "Acheter HYPHA",
     "actions": "Actions",
-    "noAssetsFoundForUser": "Aucun actif trouvé pour cet utilisateur"
+    "noAssetsFoundForUser": "Aucun actif trouvé pour cet utilisateur",
+    "editForm": {
+      "uploadLeadImageLabel": "<accent>Téléverser</accent> une image",
+      "labels": {
+        "email": "E-mail",
+        "location": "Localisation"
+      },
+      "placeholders": {
+        "firstName": "Prénom",
+        "lastName": "Nom",
+        "nickname": "Pseudo",
+        "lifePurpose": "Décrivez ici votre raison d’être...",
+        "email": "E-mail",
+        "location": "Localisation"
+      },
+      "actions": {
+        "retry": "Réessayer",
+        "save": "Enregistrer"
+      },
+      "errors": {
+        "firstNameRequired": "Veuillez saisir votre prénom",
+        "lastNameRequired": "Veuillez saisir votre nom",
+        "nicknameRequired": "Veuillez choisir un pseudo",
+        "nicknameMaxLength": "Le pseudo ne doit pas dépasser 12 caractères",
+        "descriptionMaxLength": "La description ne doit pas dépasser 300 caractères",
+        "emailInvalid": "Veuillez saisir une adresse e-mail valide",
+        "emailMaxLength": "L’e-mail doit comporter au maximum 100 caractères",
+        "locationMaxLength": "La localisation doit comporter au maximum 100 caractères",
+        "urlInvalid": "Veuillez saisir une URL valide (ex. : https://example.com)",
+        "avatarUrlInvalid": "L’URL de l’avatar doit être une URL valide",
+        "leadImageUrlInvalid": "L’URL de l’image principale doit être une URL valide",
+        "fileTooLarge": "Votre fichier est trop volumineux et dépasse la limite de 4 Mo. Veuillez téléverser un fichier plus petit",
+        "fileMustBeImage": "Le fichier doit être une image (JPEG, PNG, GIF, WEBP)"
+      }
+    }
   },
   "ProfileActions": {
     "content": "Gérez vos fonds personnels, interagissez avec le réseau Hypha et contribuez directement avec votre portefeuille.",

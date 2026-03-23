@@ -296,7 +296,41 @@
     "noRewardsFoundForUser": "No rewards found for this user",
     "buyHypha": "Buy HYPHA",
     "actions": "Actions",
-    "noAssetsFoundForUser": "No assets found for this user"
+    "noAssetsFoundForUser": "No assets found for this user",
+    "editForm": {
+      "uploadLeadImageLabel": "<accent>Upload</accent> an image",
+      "labels": {
+        "email": "Email",
+        "location": "Location"
+      },
+      "placeholders": {
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "nickname": "Nickname",
+        "lifePurpose": "Type your life purpose here...",
+        "email": "Email",
+        "location": "Location"
+      },
+      "actions": {
+        "retry": "Retry",
+        "save": "Save"
+      },
+      "errors": {
+        "firstNameRequired": "Please enter your first name",
+        "lastNameRequired": "Please enter your last name",
+        "nicknameRequired": "Please choose a nickname",
+        "nicknameMaxLength": "Nickname length should not exceed 12 characters",
+        "descriptionMaxLength": "Description length should not exceed 300 characters",
+        "emailInvalid": "Please enter a valid email address",
+        "emailMaxLength": "Email must be at most 100 characters long",
+        "locationMaxLength": "Location must be at most 100 characters long",
+        "urlInvalid": "Please enter a valid URL (e.g., https://example.com)",
+        "avatarUrlInvalid": "Avatar URL must be a valid URL",
+        "leadImageUrlInvalid": "Lead Image URL must be a valid URL",
+        "fileTooLarge": "Your file is too large and exceeds the 4MB limit. Please upload a smaller file",
+        "fileMustBeImage": "File must be an image (JPEG, PNG, GIF, WEBP)"
+      }
+    }
   },
   "ProfileActions": {
     "content": "Manage your personal funds, interact with the Hypha network, and contribute directly using your wallet.",

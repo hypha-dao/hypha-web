@@ -296,7 +296,41 @@
     "noRewardsFoundForUser": "Für diesen Benutzer wurden keine Belohnungen gefunden",
     "buyHypha": "HYPHA kaufen",
     "actions": "Aktionen",
-    "noAssetsFoundForUser": "Keine Assets für diesen Benutzer gefunden"
+    "noAssetsFoundForUser": "Keine Assets für diesen Benutzer gefunden",
+    "editForm": {
+      "uploadLeadImageLabel": "<accent>Bild</accent> hochladen",
+      "labels": {
+        "email": "E-Mail",
+        "location": "Standort"
+      },
+      "placeholders": {
+        "firstName": "Vorname",
+        "lastName": "Nachname",
+        "nickname": "Spitzname",
+        "lifePurpose": "Beschreiben Sie hier Ihren Lebenszweck...",
+        "email": "E-Mail",
+        "location": "Standort"
+      },
+      "actions": {
+        "retry": "Erneut versuchen",
+        "save": "Speichern"
+      },
+      "errors": {
+        "firstNameRequired": "Bitte geben Sie Ihren Vornamen ein",
+        "lastNameRequired": "Bitte geben Sie Ihren Nachnamen ein",
+        "nicknameRequired": "Bitte wählen Sie einen Spitznamen",
+        "nicknameMaxLength": "Der Spitzname darf nicht länger als 12 Zeichen sein",
+        "descriptionMaxLength": "Die Beschreibung darf nicht länger als 300 Zeichen sein",
+        "emailInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+        "emailMaxLength": "Die E-Mail darf höchstens 100 Zeichen lang sein",
+        "locationMaxLength": "Der Standort darf höchstens 100 Zeichen lang sein",
+        "urlInvalid": "Bitte geben Sie eine gültige URL ein (z. B. https://example.com)",
+        "avatarUrlInvalid": "Die Avatar-URL muss eine gültige URL sein",
+        "leadImageUrlInvalid": "Die Lead-Image-URL muss eine gültige URL sein",
+        "fileTooLarge": "Ihre Datei ist zu groß und überschreitet das 4MB-Limit. Bitte laden Sie eine kleinere Datei hoch",
+        "fileMustBeImage": "Die Datei muss ein Bild sein (JPEG, PNG, GIF, WEBP)"
+      }
+    }
   },
   "ProfileActions": {
     "content": "Verwalten Sie Ihre persönlichen Mittel, interagieren Sie mit dem Hypha-Netzwerk und tragen Sie direkt mit Ihrer Wallet bei.",
