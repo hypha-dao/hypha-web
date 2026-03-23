@@ -3,6 +3,7 @@ version: 1
 
 # Review settings
 review:
+  request_changes_workflow: true
   # Default review language
   default_language: en-US
 
