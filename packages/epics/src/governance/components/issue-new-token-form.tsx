@@ -205,7 +205,7 @@ export const IssueNewTokenForm = ({
   const translateIssueNewTokenError = React.useCallback(
     (message: string) => {
       const tooLargeMatch = message.match(
-        /^Your file "(.+)" is too large and exceeds the 4MB limit\. Please upload a smaller file\.$/,
+        /^Your file "(.+)" is too large and exceeds the 4MB limit\. Please upload a smaller file\.?$/,
       );
       if (tooLargeMatch?.[1]) {
         return tAgreementFlow(
@@ -217,7 +217,7 @@ export const IssueNewTokenForm = ({
       }
 
       const unsupportedFormatMatch = message.match(
-        /^This file "(.+)" format isn’t supported\. Please upload a JPEG, PNG, WebP, or PDF \(up to 4MB\)\.$/,
+        /^This file "(.+)" format isn[’']t supported\. Please upload a JPEG, PNG, WebP, or PDF \(up to 4MB\)\.?$/,
       );
       if (unsupportedFormatMatch?.[1]) {
         return tAgreementFlow(
