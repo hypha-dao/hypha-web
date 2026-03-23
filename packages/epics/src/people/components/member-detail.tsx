@@ -1,3 +1,5 @@
+'use client';
+
 import { MemberHead } from './member-head';
 import { Skeleton, Button, Separator } from '@hypha-platform/ui';
 import { RxCross1 } from 'react-icons/rx';
