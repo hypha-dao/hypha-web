@@ -43,7 +43,7 @@ export function TokenPriceField({
         <FormItem>
           <div className="flex justify-between items-center w-full">
             <span className="text-2 text-neutral-11 whitespace-nowrap items-center w-full flex gap-1">
-              Token Price
+              Redemption Price
               {isRequired && <RequirementMark className="text-2" />}
             </span>
             <FormControl className="w-full">
