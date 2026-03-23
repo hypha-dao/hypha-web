@@ -645,7 +645,8 @@
         "please": "Veuillez",
         "topUpWith": "approvisionner votre compte avec {token}",
         "buyHyphaTokens": "acheter des tokens Hypha",
-        "toProceed": "pour continuer."
+        "toProceed": "pour continuer.",
+        "fullMessage": "Le solde du portefeuille de l'espace est insuffisant. Veuillez <topUpLink>approvisionner votre compte avec {token}</topUpLink> pour continuer."
       }
     },
     "buyHyphaTokensForm": {

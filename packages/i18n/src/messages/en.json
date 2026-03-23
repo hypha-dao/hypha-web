@@ -645,7 +645,8 @@
         "please": "Please",
         "topUpWith": "top up your account with {token}",
         "buyHyphaTokens": "buy Hypha tokens",
-        "toProceed": "to proceed."
+        "toProceed": "to proceed.",
+        "fullMessage": "Space wallet balance is insufficient. Please <topUpLink>top up your account with {token}</topUpLink> to proceed."
       }
     },
     "buyHyphaTokensForm": {

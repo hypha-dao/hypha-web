@@ -454,7 +454,8 @@
         "please": "Por favor",
         "topUpWith": "recarga tu cuenta con {token}",
         "buyHyphaTokens": "comprar tokens Hypha",
-        "toProceed": "para proceder."
+        "toProceed": "para proceder.",
+        "fullMessage": "El saldo de la billetera del espacio es insuficiente. <topUpLink>Recarga con {token}</topUpLink> para continuar."
       }
     },
     "buyHyphaTokensForm": {

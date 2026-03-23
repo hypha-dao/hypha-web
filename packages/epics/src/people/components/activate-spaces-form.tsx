@@ -341,44 +341,31 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
         </div>
         {errors.root && (
           <div className="text-2 text-foreground">
-            {errors.root.message === 'insufficient_funds' ? (
-              <>
-                {tAgreementFlow(
-                  'activateSpacesForm.insufficientFunds.spaceWalletBalanceInsufficient',
-                )}{' '}
-                {tAgreementFlow('activateSpacesForm.insufficientFunds.please')}{' '}
-                {paymentToken === 'HYPHA' ? (
-                  <Link
-                    href={`/${lang}/profile/${person?.nickname}/actions/purchase-hypha-tokens`}
-                    className="font-bold cursor-pointer text-accent-9 underline"
-                  >
-                    {tAgreementFlow(
-                      'activateSpacesForm.insufficientFunds.topUpWith',
-                      {
-                        token: paymentToken,
-                      },
-                    )}
-                  </Link>
-                ) : (
-                  <span
-                    onClick={fundWallet}
-                    className="font-bold cursor-pointer text-accent-9 underline"
-                  >
-                    {tAgreementFlow(
-                      'activateSpacesForm.insufficientFunds.topUpWith',
-                      {
-                        token: paymentToken,
-                      },
-                    )}
-                  </span>
-                )}{' '}
-                {tAgreementFlow(
-                  'activateSpacesForm.insufficientFunds.toProceed',
-                )}
-              </>
-            ) : (
-              errors.root.message
-            )}
+            {errors.root.message === 'insufficient_funds'
+              ? tAgreementFlow.rich(
+                  'activateSpacesForm.insufficientFunds.fullMessage',
+                  {
+                    token: paymentToken,
+                    topUpLink: (chunks) =>
+                      paymentToken === 'HYPHA' ? (
+                        <Link
+                          href={`/${lang}/profile/${person?.nickname}/actions/purchase-hypha-tokens`}
+                          className="font-bold cursor-pointer text-accent-9 underline"
+                        >
+                          {chunks}
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={fundWallet}
+                          className="font-bold cursor-pointer text-accent-9 underline"
+                        >
+                          {chunks}
+                        </button>
+                      ),
+                  },
+                )
+              : errors.root.message}
           </div>
         )}
       </form>
