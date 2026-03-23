@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Skeleton,
   Card,
@@ -12,6 +14,7 @@ import { type BadgeItem, BadgesList } from '@hypha-platform/ui';
 import { formatDate, stripMarkdown } from '@hypha-platform/ui-utils';
 import { DocumentStatus, useEvents } from '@hypha-platform/core/client';
 import React from 'react';
+import { useTranslations } from 'next-intl';
 
 interface Document {
   id?: number;
@@ -59,6 +62,7 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
   createdAt,
   status,
 }) => {
+  const tCommon = useTranslations('Common');
   const type = React.useMemo(() => {
     switch (status) {
       case 'accepted':
@@ -137,7 +141,11 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
               <>Rejected on {formatDate(event.createdAt, true)}</>
             )}
             {!type && createdAt && (
-              <>Created on {formatDate(createdAt, true)}</>
+              <>
+                {tCommon('createdOn', {
+                  date: formatDate(createdAt, true),
+                })}
+              </>
             )}
           </Skeleton>
         </div>

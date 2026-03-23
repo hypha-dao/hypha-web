@@ -160,7 +160,9 @@ export default async function DhoLayout({
             </div>
             <div className="flex">
               <div className="text-gray-500 text-1">
-                Created on {formatDate(spaceFromDb.createdAt, true)}
+                {tCommon('createdOn', {
+                  date: formatDate(spaceFromDb.createdAt, true),
+                })}
               </div>
             </div>
           </div>

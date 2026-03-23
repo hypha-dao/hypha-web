@@ -5,6 +5,7 @@ import { Badge, Skeleton } from '@hypha-platform/ui';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { useParams } from 'next/navigation';
 import { useIsDelegate, useSpaceBySlug } from '@hypha-platform/core/client';
+import { useTranslations } from 'next-intl';
 
 export type CreatorType = {
   avatar?: string;
@@ -33,6 +34,7 @@ export const ProposalHead = ({
   createDate,
   proposalStatus,
 }: ProposalHeadProps) => {
+  const tCommon = useTranslations('Common');
   const displayName =
     creator?.type === 'space'
       ? creator.name
@@ -130,7 +132,10 @@ export const ProposalHead = ({
 
             <Skeleton height="16px" width="80px" loading={isLoading}>
               <Text className="text-1 text-gray-500">
-                {displayName} {createDate && <>· Created on {createDate}</>}
+                {displayName}{' '}
+                {createDate && (
+                  <>· {tCommon('createdOn', { date: createDate })}</>
+                )}
               </Text>
             </Skeleton>
           </div>
