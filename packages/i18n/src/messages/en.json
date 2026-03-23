@@ -464,7 +464,27 @@
       "autoExecution": "Auto-Execution",
       "toVote": "{duration} to Vote",
       "proposalContent": "Proposal Content",
-      "proposalContentPlaceholder": "Type your proposal content here..."
+      "proposalContentPlaceholder": "Type your proposal content here...",
+      "editor": {
+        "toolbar": {
+          "blockTypes": {
+            "paragraph": "Paragraph",
+            "quote": "Quote",
+            "heading": "Heading {level}"
+          },
+          "blockTypeSelect": {
+            "selectBlockTypeTooltip": "Select block type",
+            "placeholder": "Block type"
+          },
+          "bold": "Bold",
+          "italic": "Italic",
+          "underline": "Underline",
+          "bulletedList": "Bulleted list",
+          "numberedList": "Numbered list",
+          "undo": "Undo {shortcut}",
+          "redo": "Redo {shortcut}"
+        }
+      }
     },
     "plugins": {
       "activateSpaces": {

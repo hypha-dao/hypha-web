@@ -464,7 +464,27 @@
       "autoExecution": "Automatische Ausführung",
       "toVote": "{duration} zum Abstimmen",
       "proposalContent": "Vorschlagsinhalt",
-      "proposalContentPlaceholder": "Geben Sie hier Ihren Vorschlagsinhalt ein..."
+      "proposalContentPlaceholder": "Geben Sie hier Ihren Vorschlagsinhalt ein...",
+      "editor": {
+        "toolbar": {
+          "blockTypes": {
+            "paragraph": "Absatz",
+            "quote": "Zitat",
+            "heading": "Überschrift {level}"
+          },
+          "blockTypeSelect": {
+            "selectBlockTypeTooltip": "Blocktyp auswählen",
+            "placeholder": "Blocktyp"
+          },
+          "bold": "Fett",
+          "italic": "Kursiv",
+          "underline": "Unterstrichen",
+          "bulletedList": "Aufzählungsliste",
+          "numberedList": "Nummerierte Liste",
+          "undo": "Rückgängig {shortcut}",
+          "redo": "Wiederholen {shortcut}"
+        }
+      }
     },
     "plugins": {
       "activateSpaces": {

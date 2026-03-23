@@ -75,6 +75,22 @@ export function CreateAgreementBaseFields({
   progress,
 }: CreateAgreementFormProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const translateEditor = React.useCallback(
+    (
+      key: string,
+      defaultValue: string | undefined,
+      interpolations?: Record<string, string | number>,
+    ) => {
+      const translationKey = `createAgreementBaseFields.editor.${key}`;
+
+      if (!tAgreementFlow.has(translationKey)) {
+        return defaultValue ?? key;
+      }
+
+      return tAgreementFlow(translationKey, interpolations);
+    },
+    [tAgreementFlow],
+  );
   const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
   const { jwt: authToken } = useJwt();
   const router = useRouter();
@@ -421,6 +437,7 @@ export function CreateAgreementBaseFields({
                 <RichTextEditor
                   editorRef={null}
                   markdown={descriptionValue}
+                  translation={translateEditor}
                   placeholder={tAgreementFlow(
                     'createAgreementBaseFields.proposalContentPlaceholder',
                   )}
