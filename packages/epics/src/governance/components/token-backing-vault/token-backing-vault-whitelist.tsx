@@ -13,8 +13,8 @@ export function TokenBackingVaultWhitelist({
     <div className="flex flex-col gap-2">
       <div className="text-1 text-neutral-11">Redemption Whitelist Enabled</div>
       <div className="flex flex-col gap-1">
-        {addresses.map((addr, i) => (
-          <TokenBackingVaultWhitelistAddressItem key={i} address={addr} />
+        {addresses.map((addr) => (
+          <TokenBackingVaultWhitelistAddressItem key={addr} address={addr} />
         ))}
       </div>
     </div>

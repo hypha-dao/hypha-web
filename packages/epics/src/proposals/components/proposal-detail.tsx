@@ -404,11 +404,13 @@ export const ProposalDetail = ({
           }
         />
       ) : null}
-      <ProposalTokenBackingVaultData
-        spaceSlug={spaceSlug}
-        dbTokens={dbTokens}
-        {...(proposalDetails?.tokenBackingVaultData ?? {})}
-      />
+      {proposalDetails?.tokenBackingVaultData ? (
+        <ProposalTokenBackingVaultData
+          spaceSlug={spaceSlug}
+          dbTokens={dbTokens}
+          {...proposalDetails.tokenBackingVaultData}
+        />
+      ) : null}
       <FormVoting
         unity={proposalDetails?.unityPercentage || 0}
         quorum={proposalDetails?.quorumPercentage || 0}

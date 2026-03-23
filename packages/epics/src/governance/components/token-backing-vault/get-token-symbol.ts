@@ -2,7 +2,7 @@ import { TOKENS } from '@hypha-platform/core/client';
 import type { DbToken } from '@hypha-platform/core/client';
 
 export function getTokenSymbol(
-  address: string,
+  address: string | undefined,
   dbTokens?: DbToken[],
   spaceTokens?: { address?: string; symbol?: string }[],
 ): string {

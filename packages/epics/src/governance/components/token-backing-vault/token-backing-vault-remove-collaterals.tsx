@@ -19,7 +19,7 @@ export function TokenBackingVaultRemoveCollaterals({
       <div className="text-1 text-neutral-11">Withdraw Collaterals</div>
       {collaterals.map((c, i) => (
         <TokenBackingVaultCollateralItem
-          key={i}
+          key={`${c.token}-${i}`}
           token={c.token}
           amount={c.amount}
           dbTokens={dbTokens}

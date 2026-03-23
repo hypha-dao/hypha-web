@@ -18,11 +18,13 @@ export function TokenBackingVaultCollateralItem({
   spaceTokens,
 }: TokenBackingVaultCollateralItemProps) {
   const symbol = getTokenSymbol(token, dbTokens, spaceTokens);
+  const parsedAmount = Number.parseFloat(amount);
+  const safeAmount = Number.isFinite(parsedAmount) ? parsedAmount : 0;
   return (
     <div className="flex justify-between items-center text-1">
       <span>{symbol}</span>
       <span>
-        {formatCurrencyValue(parseFloat(amount))} {symbol}
+        {formatCurrencyValue(safeAmount)} {symbol}
       </span>
     </div>
   );

@@ -38,9 +38,9 @@ export default async function TokenBackingVaultPage({
     ? undefined
     : `${closeUrl}${PATH_SELECT_SETTINGS_ACTION}`;
 
-  let spaces = [] as Space[];
-  const peoples: Person[] = await findAllPeopleWithoutPagination({ db });
-  const filteredPeoples = peoples.filter(
+  let spaces: Space[] = [];
+  const people: Person[] = await findAllPeopleWithoutPagination({ db });
+  const filteredPeople = people.filter(
     (person) => person.address && person.address.trim() !== '',
   );
 
@@ -71,7 +71,7 @@ export default async function TokenBackingVaultPage({
             name="token-backing-vault"
             spaceSlug={slug}
             spaces={filteredSpaces}
-            members={filteredPeoples}
+            members={filteredPeople}
           />
         }
       />
