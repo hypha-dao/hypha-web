@@ -303,7 +303,7 @@ export const IssueNewTokenForm = ({
         errors: localizeErrors(result.errors) as typeof result.errors,
       };
     };
-  }, [localizeErrors]);
+  }, [fullSchemaIssueNewToken, localizeErrors]);
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
