@@ -151,18 +151,30 @@ export const NotificationCentreForm = ({
   const subscriptionTextMap = React.useMemo(
     () => ({
       [TAG_SUB_NEW_PROPOSAL_OPEN]: {
-        title: tNotificationCentre('subscriptions.newProposalOpen.title'),
-        description: tNotificationCentre(
+        title: tNotificationCentre.has('subscriptions.newProposalOpen.title')
+          ? tNotificationCentre('subscriptions.newProposalOpen.title')
+          : undefined,
+        description: tNotificationCentre.has(
           'subscriptions.newProposalOpen.description',
-        ),
+        )
+          ? tNotificationCentre('subscriptions.newProposalOpen.description')
+          : undefined,
       },
       [TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED]: {
-        title: tNotificationCentre(
+        title: tNotificationCentre.has(
           'subscriptions.proposalApprovedOrRejected.title',
-        ),
-        description: tNotificationCentre(
+        )
+          ? tNotificationCentre(
+              'subscriptions.proposalApprovedOrRejected.title',
+            )
+          : undefined,
+        description: tNotificationCentre.has(
           'subscriptions.proposalApprovedOrRejected.description',
-        ),
+        )
+          ? tNotificationCentre(
+              'subscriptions.proposalApprovedOrRejected.description',
+            )
+          : undefined,
       },
     }),
     [tNotificationCentre],
