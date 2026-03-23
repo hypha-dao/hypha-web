@@ -463,6 +463,7 @@
       "proposalMinimumVotingIconAlt": "Proposal minimum voting icon",
       "autoExecution": "Auto-Execution",
       "toVote": "{duration} to Vote",
+      "uploadImageLabel": "<accent>Upload</accent> an image",
       "proposalContent": "Proposal Content",
       "proposalContentPlaceholder": "Type your proposal content here...",
       "editor": {

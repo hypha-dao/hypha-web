@@ -463,6 +463,7 @@
       "proposalMinimumVotingIconAlt": "Symbol für minimale Abstimmungsdauer",
       "autoExecution": "Automatische Ausführung",
       "toVote": "{duration} zum Abstimmen",
+      "uploadImageLabel": "<accent>Bild</accent> hochladen",
       "proposalContent": "Vorschlagsinhalt",
       "proposalContentPlaceholder": "Geben Sie hier Ihren Vorschlagsinhalt ein...",
       "editor": {

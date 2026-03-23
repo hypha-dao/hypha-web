@@ -463,6 +463,7 @@
       "proposalMinimumVotingIconAlt": "Icône de durée minimale de vote",
       "autoExecution": "Exécution automatique",
       "toVote": "{duration} pour voter",
+      "uploadImageLabel": "<accent>Téléverser</accent> une image",
       "proposalContent": "Contenu de la proposition",
       "proposalContentPlaceholder": "Saisissez ici le contenu de votre proposition...",
       "editor": {

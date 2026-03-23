@@ -408,6 +408,14 @@ export function CreateAgreementBaseFields({
                 onChange={field.onChange}
                 maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
                 enableImageResizer={true}
+                uploadText={tAgreementFlow.rich(
+                  'createAgreementBaseFields.uploadImageLabel',
+                  {
+                    accent: (chunks) => (
+                      <span className="text-accent-11">{chunks}</span>
+                    ),
+                  },
+                )}
                 defaultImage={
                   resubmitFormData?.leadImage || field.value
                     ? typeof field.value === 'string'
