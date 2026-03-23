@@ -2,6 +2,7 @@
 
 import { Slider } from '@hypha-platform/ui';
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface QuorumAndUnityChangerProps {
   quorum: number;
@@ -16,6 +17,7 @@ export function QuorumAndUnityChanger({
   onChange,
   disabled,
 }: QuorumAndUnityChangerProps) {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const [localQuorum, setLocalQuorum] = useState(quorum);
   const [localUnity, setLocalUnity] = useState(unity);
 
@@ -45,7 +47,7 @@ export function QuorumAndUnityChanger({
     <div className="space-y-4">
       <div className="flex items-center gap-4">
         <label className="text-2 text-neutral-11 w-full">
-          Quorum (Min. Participation)
+          {tAgreementFlow('plugins.quorumAndUnity.quorumMinParticipation')}
         </label>
         <div className="w-full max-w-[340px] flex items-center gap-2">
           <Slider
@@ -62,7 +64,7 @@ export function QuorumAndUnityChanger({
 
       <div className="flex items-center gap-4">
         <label className="text-2 text-neutral-11 w-full">
-          Unity (Min. Alignment)
+          {tAgreementFlow('plugins.quorumAndUnity.unityMinAlignment')}
         </label>
         <div className="w-full max-w-[340px] flex items-center gap-2">
           <Slider

@@ -236,6 +236,16 @@
           "d14": "14 dias",
           "d21": "21 dias",
           "d30": "30 dias"
+        },
+        "quorumMinParticipation": "Quórum (Participação mín.)",
+        "unityMinAlignment": "Unidade (Alinhamento mín.)",
+        "templates": {
+          "pareto8020": "80-20 Pareto",
+          "majorityVote": "Voto da maioria",
+          "minorityVote": "Voto da minoria",
+          "consensus": "Consenso",
+          "consent": "Consentimento",
+          "hearing": "Audiência"
         }
       },
       "recipient": {
