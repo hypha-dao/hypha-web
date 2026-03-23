@@ -101,6 +101,10 @@
         "title": "Frapper des tokens pour la trésorerie de l'espace",
         "description": "Frappez des tokens dans la trésorerie de votre espace pour financer les opérations, distribuer des récompenses ou fournir de la liquidité."
       },
+      "tokenBackingVault": {
+        "title": "Coffre-fort de garantie de token",
+        "description": "Créez un coffre-fort de garantie de token, définissez les règles et restrictions de rachat, la date de début et le prix de rachat, et autorisez l'ajout ou le retrait de garanties au coffre-fort."
+      },
       "buyHyphaTokensRewards": {
         "title": "Acheter des tokens Hypha (récompenses)",
         "description": "Achetez des tokens Hypha pour participer au réseau et obtenir des récompenses."

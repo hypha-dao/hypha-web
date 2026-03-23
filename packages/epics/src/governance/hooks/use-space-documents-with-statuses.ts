@@ -119,6 +119,14 @@ const getDocumentBadges = (document: Document) => {
         colorVariant: 'accent',
       });
       break;
+    case 'Backing Vault':
+      badges.push({
+        label: 'Backing Vault',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
     default:
       break;
   }

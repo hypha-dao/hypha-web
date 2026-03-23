@@ -69,6 +69,16 @@ export async function GET(
       createdAt: token.createdAt ?? undefined,
     }));
 
+    const referencePriceByAddress: Record<string, number> = {};
+    rawDbTokens.forEach((t) => {
+      if (t.address && t.referencePrice != null) {
+        const parsed = Number(t.referencePrice);
+        if (Number.isFinite(parsed) && parsed >= 0) {
+          referencePriceByAddress[t.address.toLowerCase()] = parsed;
+        }
+      }
+    });
+
     let spaceDetails;
     let spaceTokens;
     try {
@@ -201,11 +211,15 @@ export async function GET(
           if (token.address.toLowerCase() === EVC_TOKEN_ADDRESS) {
             rate = 1;
           }
+          if (rate === 0) {
+            rate = referencePriceByAddress[token.address.toLowerCase()] ?? 0;
+          }
           const decimals = await getTokenDecimals(token.address);
           return {
             ...meta,
             address: token.address,
             value: amount,
+            tokenPrice: rate,
             usdEqual: rate * amount,
             chartData: [],
             transactions: [],

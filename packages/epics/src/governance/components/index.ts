@@ -20,6 +20,8 @@ export * from './space-to-space-membership-form';
 export * from './proposal-delegates-data';
 export * from './vote-proposal-button';
 export * from './mint-tokens-to-space-treasury-form';
+export * from './create-proposal-token-backing-vault-form';
+export * from './token-backing-vault';
 export * from './membership-exit-form';
 export * from './proposal-membership-exit-data';
 export * from './create-proposal-change-space-transparency-settings-form';
