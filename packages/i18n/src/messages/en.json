@@ -1007,7 +1007,7 @@
         "discoverabilityOrganisation": "Your space is only discoverable by members of your organisation.",
         "discoverabilitySpace": "Your space is only discoverable by space members.",
         "activityPublic": "Access to your space activity is not restricted and visible publicly.",
-        "activityNetwork": "Access to your spaces activity is restricted to Hypha Network members.",
+        "activityNetwork": "Access to your space's activity is restricted to Hypha Network members.",
         "activityOrganisation": "Access to your space activity is restricted to members of your organisation.",
         "activitySpace": "Access to your space activity is restricted to space members."
       },
