@@ -93,6 +93,44 @@
         "hyphaSentTo": "HYPHA enviado para",
         "usdcPaidTo": "USDC pago a"
       },
+      "tokenBackingVault": {
+        "title": "Cofre de lastro de token",
+        "description": "Crie um cofre de lastro de token, defina regras e restrições de resgate, configure a data de início e o preço de resgate e autorize a adição ou retirada de colaterais do cofre.",
+        "noTokens": "Seu espaço ainda não criou um token, <link>clique aqui</link> para emitir um token primeiro.",
+        "selectTokenLabel": "Selecionar token",
+        "noTokenFound": "Nenhum token encontrado",
+        "selectTokenPlaceholder": "Selecione um token",
+        "tokenSupplyLabel": "Fornecimento de tokens",
+        "unlimitedSupply": "Fornecimento ilimitado",
+        "issuanceToDate": "Emissão até o momento",
+        "currentBackingCollaterals": "Colaterais atuais",
+        "activateVault": "Ativar cofre",
+        "addCollaterals": "Adicionar colaterais ao cofre",
+        "addCollateralsDescription": "Adicione colaterais de lastro da tesouraria ao cofre.",
+        "removeCollaterals": "Remover colaterais do cofre",
+        "removeCollateralsDescription": "Retire colaterais de lastro do cofre para a tesouraria.",
+        "backingCollateral": "Colateral de lastro",
+        "enableRedemption": "Ativar resgate",
+        "setRedemptionPrice": "Definir preço de resgate",
+        "referenceCurrency": "Moeda de referência",
+        "redemptionPrice": "Preço de resgate",
+        "minimumBackingPercent": "Percentual mínimo de lastro",
+        "maximumRedemptionPercent": "Percentual máximo de resgate",
+        "maxRedemptionNoLimit": "0 = sem limite",
+        "per": "por",
+        "selectPeriod": "Selecionar período",
+        "periodDays": "{count, plural, one {# dia} other {# dias}}",
+        "authoriseRedemptionFrom": "Autorizar resgate a partir de",
+        "selectDate": "Selecionar uma data",
+        "optionalAdvancedRedemptionControls": "Opcional: controles avançados de resgate",
+        "redemptionWhitelistLabel": "Lista de permissões de resgate",
+        "redemptionWhitelistDescription": "Especifique quais membros ou espaços estão autorizados a resgatar tokens.",
+        "enterRedemptionPrice": "Insira o preço de resgate",
+        "leaveBlankUseTokenPrice": "Deixe em branco para usar o preço do token ({price} {currency})",
+        "leaveBlankForTokenContractPrice": "Deixe em branco para usar o preço do contrato do token",
+        "add": "Adicionar",
+        "remove": "Remover"
+      },
       "issueNewToken": {
         "general": {
           "title": "Em geral",
@@ -384,6 +422,7 @@
       "spaceToSpace": "Espaço para Espaço",
       "issueNewToken": "Emitir novo token",
       "treasuryMinting": "Cunhagem de Tesouro",
+      "backingVault": "Cofre de lastro",
       "buyHyphaTokensRewards": "Compre tokens Hypha (recompensas)",
       "spaceTransparency": "Transparência Espacial",
       "collectiveAgreement": "Acordo Coletivo",
@@ -633,6 +672,10 @@
       "mintTokensToSpaceTreasury": {
         "title": "Mint Tokens para Tesouro Espacial",
         "description": "Crie tokens em seu tesouro espacial para financiar operações, distribuir recompensas ou fornecer liquidez."
+      },
+      "tokenBackingVault": {
+        "title": "Cofre de lastro de token",
+        "description": "Crie um cofre de lastro de token, defina regras e restrições de resgate, configure a data de início e o preço de resgate e autorize a adição ou retirada de colaterais do cofre."
       },
       "buyHyphaTokensRewards": {
         "title": "Compre tokens Hypha (recompensas)",
@@ -1135,6 +1178,18 @@
       "unity": "Unidade",
       "votingPeriod": "Período de votação",
       "votingPower": "Poder de voto",
+      "tokenBackingVault": "Cofre de lastro de token",
+      "spaceToken": "Token do espaço",
+      "currentBackingCollaterals": "Colaterais atuais",
+      "addCollaterals": "Adicionar colaterais",
+      "withdrawCollaterals": "Retirar colaterais",
+      "redemptionEnabled": "Resgate ativado",
+      "redemptionWhitelistEnabled": "Lista de permissões de resgate ativada",
+      "redemptionStartDate": "Data de início do resgate",
+      "redemptionPrice": "Preço de resgate",
+      "maxRedemption": "Resgate máximo",
+      "maxRedemptionValue": "{percent}% em {days} dias",
+      "minimumBackingPercent": "Percentual mínimo de lastro",
       "defaultAvatar": "Avatar padrão"
     },
     "entryMethods": {

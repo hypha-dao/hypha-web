@@ -2,8 +2,10 @@
 
 import { FormField, FormItem, FormControl, Switch } from '@hypha-platform/ui';
 import { useFormContext } from 'react-hook-form';
+import { useTranslations } from 'next-intl';
 
 export function ActivateVaultField() {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { control, setValue } = useFormContext();
 
   return (
@@ -13,7 +15,9 @@ export function ActivateVaultField() {
       render={({ field }) => (
         <FormItem>
           <div className="flex w-full justify-between items-center text-2 text-neutral-11">
-            <span>Activate Vault</span>
+            <span>
+              {tAgreementFlow('plugins.tokenBackingVault.activateVault')}
+            </span>
             <FormControl>
               <Switch
                 checked={field.value}

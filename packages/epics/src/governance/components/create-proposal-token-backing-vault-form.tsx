@@ -14,10 +14,10 @@ import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
-import { useRouter } from 'next/navigation';
 import { useConfig } from 'wagmi';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
+import { useTranslations } from 'next-intl';
 
 const fullSchemaTokenBackingVault =
   schemaTokenBackingVault.extend(createAgreementFiles);
@@ -41,7 +41,8 @@ export const CreateProposalTokenBackingVaultForm = ({
   web3SpaceId,
   plugin,
 }: CreateProposalTokenBackingVaultFormProps) => {
-  const router = useRouter();
+  const tSpaces = useTranslations('Spaces');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
@@ -104,14 +105,15 @@ export const CreateProposalTokenBackingVaultForm = ({
   return (
     <LoadingBackdrop
       showKeepWindowOpenMessage={true}
+      keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       fullHeight={true}
       progress={progress}
       isLoading={isPending}
       message={
         isError ? (
           <div className="flex flex-col">
-            <div>Ouh Snap. There was an error</div>
-            <Button onClick={reset}>Reset</Button>
+            <div>{tSpaces('errorOhSnap')}</div>
+            <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (
           <div>{currentAction}</div>
@@ -134,9 +136,9 @@ export const CreateProposalTokenBackingVaultForm = ({
             successfulUrl={successfulUrl}
             closeUrl={closeUrl || successfulUrl}
             backUrl={backUrl}
-            backLabel="Back to settings"
+            backLabel={tSpaces('backToSettings')}
             isLoading={false}
-            label="Backing Vault"
+            label={tAgreementFlow('labels.backingVault')}
             progress={progress}
           />
           {plugin}
@@ -148,7 +150,7 @@ export const CreateProposalTokenBackingVaultForm = ({
               </div>
             )}
             <div className="flex justify-end w-full">
-              <Button type="submit">Publish</Button>
+              <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>
             </div>
           </div>
         </form>

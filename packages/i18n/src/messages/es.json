@@ -93,6 +93,44 @@
         "hyphaSentTo": "HYPHA enviado a",
         "usdcPaidTo": "USDC pagado a"
       },
+      "tokenBackingVault": {
+        "title": "Bóveda de respaldo de token",
+        "description": "Crea una bóveda de respaldo de token, define reglas y restricciones de redención, establece la fecha de inicio y el precio de redención, y autoriza la adición o el retiro de colaterales de la bóveda.",
+        "noTokens": "Tu espacio aún no ha creado un token, <link>haz clic aquí</link> para emitir primero un token.",
+        "selectTokenLabel": "Seleccionar token",
+        "noTokenFound": "No se encontró ningún token",
+        "selectTokenPlaceholder": "Selecciona un token",
+        "tokenSupplyLabel": "Suministro de tokens",
+        "unlimitedSupply": "Suministro ilimitado",
+        "issuanceToDate": "Emisión a la fecha",
+        "currentBackingCollaterals": "Colaterales actuales",
+        "activateVault": "Activar bóveda",
+        "addCollaterals": "Agregar colaterales a la bóveda",
+        "addCollateralsDescription": "Agrega colaterales de respaldo desde la tesorería a la bóveda.",
+        "removeCollaterals": "Quitar colaterales de la bóveda",
+        "removeCollateralsDescription": "Retira colaterales de respaldo de la bóveda hacia la tesorería.",
+        "backingCollateral": "Colateral de respaldo",
+        "enableRedemption": "Habilitar redención",
+        "setRedemptionPrice": "Definir precio de redención",
+        "referenceCurrency": "Moneda de referencia",
+        "redemptionPrice": "Precio de redención",
+        "minimumBackingPercent": "Porcentaje mínimo de respaldo",
+        "maximumRedemptionPercent": "Porcentaje máximo de redención",
+        "maxRedemptionNoLimit": "0 = sin límite",
+        "per": "por",
+        "selectPeriod": "Seleccionar período",
+        "periodDays": "{count, plural, one {# día} other {# días}}",
+        "authoriseRedemptionFrom": "Autorizar redención desde",
+        "selectDate": "Selecciona una fecha",
+        "optionalAdvancedRedemptionControls": "Opcional: controles avanzados de redención",
+        "redemptionWhitelistLabel": "Lista blanca de redención",
+        "redemptionWhitelistDescription": "Especifica qué miembros o espacios están autorizados para redimir tokens.",
+        "enterRedemptionPrice": "Ingresa el precio de redención",
+        "leaveBlankUseTokenPrice": "Déjalo en blanco para usar el precio del token ({price} {currency})",
+        "leaveBlankForTokenContractPrice": "Déjalo en blanco para usar el precio del contrato del token",
+        "add": "Agregar",
+        "remove": "Eliminar"
+      },
       "issueNewToken": {
         "general": {
           "title": "General",
@@ -384,6 +422,7 @@
       "spaceToSpace": "Espacio al espacio",
       "issueNewToken": "Emitir nuevo token",
       "treasuryMinting": "Acuñación del Tesoro",
+      "backingVault": "Bóveda de respaldo",
       "buyHyphaTokensRewards": "Comprar tokens Hypha (recompensas)",
       "spaceTransparency": "Transparencia espacial",
       "collectiveAgreement": "Convenio Colectivo",
@@ -633,6 +672,10 @@
       "mintTokensToSpaceTreasury": {
         "title": "Fichas de acuñación para la tesorería espacial",
         "description": "Acuña tokens en tu tesorería espacial para financiar operaciones, distribuir recompensas o proporcionar liquidez."
+      },
+      "tokenBackingVault": {
+        "title": "Bóveda de respaldo de token",
+        "description": "Crea una bóveda de respaldo de token, define reglas y restricciones de redención, establece la fecha de inicio y el precio de redención, y autoriza la adición o el retiro de colaterales de la bóveda."
       },
       "buyHyphaTokensRewards": {
         "title": "Comprar tokens Hypha (recompensas)",
@@ -1135,6 +1178,18 @@
       "unity": "Unidad",
       "votingPeriod": "Período de votación",
       "votingPower": "Poder de voto",
+      "tokenBackingVault": "Bóveda de respaldo de token",
+      "spaceToken": "Token del espacio",
+      "currentBackingCollaterals": "Colaterales actuales",
+      "addCollaterals": "Agregar colaterales",
+      "withdrawCollaterals": "Retirar colaterales",
+      "redemptionEnabled": "Redención habilitada",
+      "redemptionWhitelistEnabled": "Lista blanca de redención habilitada",
+      "redemptionStartDate": "Fecha de inicio de redención",
+      "redemptionPrice": "Precio de redención",
+      "maxRedemption": "Redención máxima",
+      "maxRedemptionValue": "{percent}% en {days} días",
+      "minimumBackingPercent": "Porcentaje mínimo de respaldo",
       "defaultAvatar": "Avatar predeterminado"
     },
     "entryMethods": {

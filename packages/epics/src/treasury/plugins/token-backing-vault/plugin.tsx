@@ -20,6 +20,7 @@ import { useDbTokens } from '../../../hooks';
 import { Person, Space } from '@hypha-platform/core/client';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import { TransferWhitelistFieldArray } from '../../components/common/transfer-whitelist-field-array';
 import { SpaceTokenField } from './space-token-field';
 import { TokenSupplySection } from './token-supply-section';
@@ -52,6 +53,7 @@ export const TokenBackingVaultPlugin = ({
   members = [],
   spaces = [],
 }: TokenBackingVaultPluginProps) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { lang } = useParams();
   const searchParams = useSearchParams();
   const { control, watch, getValues, setValue } = useFormContext();
@@ -235,10 +237,11 @@ export const TokenBackingVaultPlugin = ({
     <div className="flex flex-col gap-4">
       <Skeleton loading={isLoading} width="100%" height={90}>
         <div className="flex flex-col gap-4">
-          <FormLabel>Token Backing Vault</FormLabel>
+          <FormLabel>
+            {tAgreementFlow('plugins.tokenBackingVault.title')}
+          </FormLabel>
           <span className="text-2 text-neutral-11">
-            Create a token backing vault, define redemption rules and
-            restrictions, set the start date and redemption price.
+            {tAgreementFlow('plugins.tokenBackingVault.description')}
           </span>
         </div>
 
@@ -246,15 +249,17 @@ export const TokenBackingVaultPlugin = ({
 
         {filteredTokens.length === 0 && (
           <div className="text-2 text-foreground">
-            Your space has not yet created a token,{' '}
-            <Link
-              href={`/${lang}/dho/${spaceSlug}/agreements/create/issue-new-token`}
-              className="text-accent-9 underline"
-              onClick={(e) => e.stopPropagation()}
-            >
-              click here
-            </Link>{' '}
-            to first issue a token
+            {tAgreementFlow.rich('plugins.tokenBackingVault.noTokens', {
+              link: (chunks) => (
+                <Link
+                  href={`/${lang}/dho/${spaceSlug}/agreements/create/issue-new-token`}
+                  className="text-accent-9 underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {chunks}
+                </Link>
+              ),
+            })}
           </div>
         )}
 
@@ -268,7 +273,9 @@ export const TokenBackingVaultPlugin = ({
             {currentVault && currentVault.collaterals.length > 0 && (
               <div className="flex flex-col gap-2">
                 <div className="text-2 text-neutral-11">
-                  Current Backing Collaterals
+                  {tAgreementFlow(
+                    'plugins.tokenBackingVault.currentBackingCollaterals',
+                  )}
                 </div>
                 {currentVault.collaterals.map((collateral, i) => (
                   <div
@@ -311,7 +318,11 @@ export const TokenBackingVaultPlugin = ({
               <>
                 <Separator />
                 <div className="flex flex-col gap-4">
-                  <FormLabel>Set Redemption Price</FormLabel>
+                  <FormLabel>
+                    {tAgreementFlow(
+                      'plugins.tokenBackingVault.setRedemptionPrice',
+                    )}
+                  </FormLabel>
                   <ReferenceCurrencyField isRequired />
                   <TokenPriceField
                     tokenReferencePrice={selectedToken?.referencePrice}
@@ -333,8 +344,12 @@ export const TokenBackingVaultPlugin = ({
                       <FormItem>
                         <TransferWhitelistFieldArray
                           name="tokenBackingVault.redemptionWhitelist"
-                          label="Redemption Whitelist"
-                          description="Specify which members or spaces are authorised to redeem tokens."
+                          label={tAgreementFlow(
+                            'plugins.tokenBackingVault.redemptionWhitelistLabel',
+                          )}
+                          description={tAgreementFlow(
+                            'plugins.tokenBackingVault.redemptionWhitelistDescription',
+                          )}
                           members={members}
                           spaces={spaces}
                         />

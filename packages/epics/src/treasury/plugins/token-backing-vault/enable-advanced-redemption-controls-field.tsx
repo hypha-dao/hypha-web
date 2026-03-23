@@ -2,8 +2,10 @@
 
 import { FormField, FormItem, FormControl, Switch } from '@hypha-platform/ui';
 import { useFormContext } from 'react-hook-form';
+import { useTranslations } from 'next-intl';
 
 export function EnableAdvancedRedemptionControlsField() {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { control, setValue } = useFormContext();
 
   return (
@@ -14,7 +16,9 @@ export function EnableAdvancedRedemptionControlsField() {
         <FormItem>
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <span className="text-2 text-neutral-11">
-              Optional: Advanced Redemption Controls
+              {tAgreementFlow(
+                'plugins.tokenBackingVault.optionalAdvancedRedemptionControls',
+              )}
             </span>
             <FormControl>
               <Switch
