@@ -97,10 +97,15 @@ export const EditPersonSection = ({
     [tProfile],
   );
 
-  const localizeErrors = (errors: unknown): unknown => {
+  const localizeErrorsRef = useRef<(errors: unknown) => unknown>(
+    () => undefined,
+  );
+  localizeErrorsRef.current = (errors: unknown): unknown => {
     if (!errors || typeof errors !== 'object') return errors;
     if (Array.isArray(errors)) {
-      const localizedArray = errors.map(localizeErrors);
+      const localizedArray = errors.map((entry) =>
+        localizeErrorsRef.current(entry),
+      );
       const localizedArrayWithMeta = localizedArray as unknown as Record<
         string,
         unknown
@@ -109,7 +114,9 @@ export const EditPersonSection = ({
       for (const [key, value] of Object.entries(errors)) {
         if (!/^\d+$/.test(key)) {
           localizedArrayWithMeta[key] =
-            value && typeof value === 'object' ? localizeErrors(value) : value;
+            value && typeof value === 'object'
+              ? localizeErrorsRef.current(value)
+              : value;
         }
       }
 
@@ -141,12 +148,16 @@ export const EditPersonSection = ({
       )
         continue;
       if (value && typeof value === 'object') {
-        localized[key] = localizeErrors(value);
+        localized[key] = localizeErrorsRef.current(value);
       }
     }
 
     return localized;
   };
+  const localizeErrors = useCallback(
+    (errors: unknown): unknown => localizeErrorsRef.current(errors),
+    [],
+  );
 
   const resolver = useMemo(
     () =>
