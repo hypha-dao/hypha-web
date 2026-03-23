@@ -1,7 +1,6 @@
 'use client';
 
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import {
   createAgreementFiles,
   schemaActivateSpaces,
@@ -24,6 +23,7 @@ import { isAddress } from 'ethers';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
+import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 
 const RECIPIENT_SPACE_ADDRESS = '0x695f21B04B22609c4ab9e5886EB0F65cDBd464B6';
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
@@ -76,10 +76,14 @@ export const ActivateSpacesFormSpace = ({
 
   const { activateSpaces, reset, currentAction, isError, isPending, progress } =
     useActivateSpacesOrchestrator({ authToken: jwt, config });
+  const resolver = useLocalizedProposalResolver(
+    combinedSchemaActivateSpaces,
+    tAgreementFlow,
+  );
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
-    resolver: zodResolver(combinedSchemaActivateSpaces),
+    resolver,
     mode: 'onChange',
     defaultValues: {
       title: '',

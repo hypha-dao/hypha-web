@@ -599,6 +599,32 @@
         "toProceed": "to proceed."
       }
     },
+    "proposalErrors": {
+      "recipientRequired": "Please add a recipient or wallet address",
+      "invalidEthereumAddress": "Invalid Ethereum address",
+      "amountGreaterThanZero": "Amount must be greater than 0",
+      "amountRequired": "Please enter amount",
+      "tokenRequired": "Please select a token",
+      "atLeastOnePayoutRequired": "At least one payout is required",
+      "purchaseAmountRequired": "Please enter a purchase amount.",
+      "selectSpaceToActivate": "Please select a space to activate.",
+      "monthsToActivateRequired": "Please enter the number of months to activate.",
+      "selectSpaceToJoin": "Please select a space to join",
+      "selectDelegatedVotingMember": "Please select a delegated voting member",
+      "selectSpaceToExit": "Please select a space to exit.",
+      "selectMemberToRemove": "Please select a member to remove",
+      "invalidWalletAddress": "Invalid wallet address",
+      "selectMember": "Please select a member.",
+      "invalidMemberAddress": "Invalid member address.",
+      "positiveTokenNumberRequired": "Please specify a positive number of tokens.",
+      "selectMemberAndTokens": "Please select a member and specify the number of tokens to allocate.",
+      "autoExecutionVotingDurationRequired": "Auto-execution is disabled. Please set a minimum voting duration.",
+      "selectVotingToken": "Please select a token to pursue with this voting method.",
+      "enterAmount": "Please enter amount",
+      "tokenAddressRequired": "Token address is required",
+      "integerRequired": "Should be integer",
+      "chooseTokenToMint": "Choose a token to mint"
+    },
     "issueNewTokenForm": {
       "duplicateToken": "A token with the same name and symbol already exists in your space. Please modify either the name or symbol to proceed.",
       "errors": {
@@ -974,7 +1000,15 @@
         "milestones": "Milestones",
         "date": "Date",
         "selectDate": "Select a date",
-        "add": "Add"
+        "add": "Add",
+        "errors": {
+          "milestonesEmpty": "Milestones cannot be empty",
+          "missingStartDate": "Each milestone must have a start date",
+          "firstMilestoneFuture": "First milestone must be in the future",
+          "milestoneOrder": "Milestone {current} must be after milestone {previous}",
+          "totalPercentageMax": "Total percentage cannot exceed 100%",
+          "futureDateMustBeLater": "The future payment date must be later than the current date"
+        }
       },
       "milestoneField": {
         "milestone": "Milestone {index}",

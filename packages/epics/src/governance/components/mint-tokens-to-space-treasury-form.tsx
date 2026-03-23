@@ -1,7 +1,6 @@
 'use client';
 
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import {
   schemaMintTokensToSpaceTreasury,
   createAgreementFiles,
@@ -17,6 +16,7 @@ import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useTranslations } from 'next-intl';
+import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 
 type FormValues = z.infer<typeof schemaMintTokensToSpaceTreasury>;
 
@@ -57,12 +57,16 @@ export const MintTokensToSpaceTreasuryForm = ({
     authToken: jwt,
     config,
   });
+  const resolver = useLocalizedProposalResolver(
+    fullSchemaMintTokensToSpaceTreasury,
+    tAgreementFlow,
+  );
 
   const [formError, setFormError] = React.useState<string | null>(null);
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
-    resolver: zodResolver(fullSchemaMintTokensToSpaceTreasury),
+    resolver,
     defaultValues: {
       title: '',
       description: '',

@@ -4,5 +4,45 @@
     "acceptedOn": "Aceptado el {date}",
     "rejectedOn": "Rechazado el {date}",
     "joinedSpaceOn": "Se unió al espacio el {date}"
+  },
+  "AgreementFlow": {
+    "proposalErrors": {
+      "recipientRequired": "Agrega un destinatario o una dirección de cartera",
+      "invalidEthereumAddress": "Dirección de Ethereum inválida",
+      "amountGreaterThanZero": "El monto debe ser mayor que 0",
+      "amountRequired": "Ingresa un monto",
+      "tokenRequired": "Selecciona un token",
+      "atLeastOnePayoutRequired": "Se requiere al menos un pago",
+      "purchaseAmountRequired": "Ingresa un monto de compra.",
+      "selectSpaceToActivate": "Selecciona un espacio para activar.",
+      "monthsToActivateRequired": "Ingresa la cantidad de meses para activar.",
+      "selectSpaceToJoin": "Selecciona un espacio para unirte",
+      "selectDelegatedVotingMember": "Selecciona un miembro delegado para votar",
+      "selectSpaceToExit": "Selecciona un espacio para salir.",
+      "selectMemberToRemove": "Selecciona un miembro para eliminar",
+      "invalidWalletAddress": "Dirección de cartera inválida",
+      "selectMember": "Selecciona un miembro.",
+      "invalidMemberAddress": "Dirección de miembro inválida.",
+      "positiveTokenNumberRequired": "Especifica un número positivo de tokens.",
+      "selectMemberAndTokens": "Selecciona un miembro y especifica la cantidad de tokens a asignar.",
+      "autoExecutionVotingDurationRequired": "La autoejecución está deshabilitada. Define una duración mínima de votación.",
+      "selectVotingToken": "Selecciona un token para este método de votación.",
+      "enterAmount": "Ingresa un monto",
+      "tokenAddressRequired": "La dirección del token es obligatoria",
+      "integerRequired": "Debe ser un número entero",
+      "chooseTokenToMint": "Elige un token para acuñar"
+    },
+    "plugins": {
+      "paymentSchedule": {
+        "errors": {
+          "milestonesEmpty": "Los hitos no pueden estar vacíos",
+          "missingStartDate": "Cada hito debe tener una fecha de inicio",
+          "firstMilestoneFuture": "El primer hito debe estar en el futuro",
+          "milestoneOrder": "El hito {current} debe ser posterior al hito {previous}",
+          "totalPercentageMax": "El porcentaje total no puede superar el 100%",
+          "futureDateMustBeLater": "La fecha de pago futuro debe ser posterior a la fecha actual"
+        }
+      }
+    }
   }
 }

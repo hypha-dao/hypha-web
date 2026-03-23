@@ -11,6 +11,7 @@ import {
 } from '@hypha-platform/ui';
 import { Space, Person } from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
+import { resolveProposalErrorTranslation } from '../../../utils/proposal-error-translations';
 
 export function RecipientField({
   members,
@@ -42,27 +43,39 @@ export function RecipientField({
       <FormField
         control={control}
         name={name}
-        render={({ field: { value, onChange } }) => (
-          <FormItem>
-            <FormControl>
-              <Recipient
-                value={value}
-                onChange={(recipient) => {
-                  onChange(recipient.address);
-                }}
-                members={members}
-                spaces={spaces}
-                defaultRecipientType={defaultRecipientType}
-                readOnly={readOnly}
-                emptyMembersMessage={emptyMembersMessage}
-                emptySpacesMessage={emptySpacesMessage}
-                label={label}
-                showTabs={showTabs}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
+        render={({ field: { value, onChange }, fieldState: { error } }) => {
+          const translation = error?.message
+            ? resolveProposalErrorTranslation(error.message)
+            : null;
+          const customMessage = translation
+            ? tAgreementFlow(
+                translation.key as Parameters<typeof tAgreementFlow>[0],
+                translation.values,
+              )
+            : undefined;
+
+          return (
+            <FormItem>
+              <FormControl>
+                <Recipient
+                  value={value}
+                  onChange={(recipient) => {
+                    onChange(recipient.address);
+                  }}
+                  members={members}
+                  spaces={spaces}
+                  defaultRecipientType={defaultRecipientType}
+                  readOnly={readOnly}
+                  emptyMembersMessage={emptyMembersMessage}
+                  emptySpacesMessage={emptySpacesMessage}
+                  label={label}
+                  showTabs={showTabs}
+                />
+              </FormControl>
+              <FormMessage custom={customMessage} />
+            </FormItem>
+          );
+        }}
       />
       {withMemoField && (
         <FormField

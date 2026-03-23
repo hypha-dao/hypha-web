@@ -1,7 +1,7 @@
 'use client';
 
 import { useFieldArray, useFormContext } from 'react-hook-form';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -18,6 +18,7 @@ import { validateMilestones, validateFutureDate } from '../validation';
 import { MilestoneField } from './milestone-field';
 import { Cross2Icon } from '@radix-ui/react-icons';
 import { useTranslations } from 'next-intl';
+import { resolveProposalErrorTranslation } from '../../../utils/proposal-error-translations';
 
 // TODO: will be implemented after MVP
 // const options = ['Immediately', 'Future Payment', 'Milestones'] as const;
@@ -43,6 +44,31 @@ export function PaymentSchedule({
   const futureDate = watch(`${name}.futureDate`);
   const milestoneValidationResult = validateMilestones(milestones);
   const futureDateValidationResult = validateFutureDate(futureDate);
+  const translateValidationResult = React.useCallback(
+    (value: true | string) => {
+      if (value === true) {
+        return value;
+      }
+
+      const translation = resolveProposalErrorTranslation(value);
+
+      if (!translation) {
+        return value;
+      }
+
+      return tAgreementFlow(
+        translation.key as Parameters<typeof tAgreementFlow>[0],
+        translation.values,
+      );
+    },
+    [tAgreementFlow],
+  );
+  const milestoneValidationMessage = translateValidationResult(
+    milestoneValidationResult,
+  );
+  const futureDateValidationMessage = translateValidationResult(
+    futureDateValidationResult,
+  );
 
   useEffect(() => {
     if (!selectedOption) {
@@ -121,9 +147,9 @@ export function PaymentSchedule({
               onChange={(val) => setValue(`${name}.futureDate`, val as Date)}
             />
           </div>
-          {futureDateValidationResult !== true && (
+          {futureDateValidationMessage !== true && (
             <p className="text-error-9 text-sm mt-2 text-end">
-              {futureDateValidationResult as string}
+              {futureDateValidationMessage as string}
             </p>
           )}
         </div>
@@ -163,9 +189,9 @@ export function PaymentSchedule({
             <PlusIcon className="w-4 h-4 mr-1" />
             {tAgreementFlow('plugins.paymentSchedule.add')}
           </Button>
-          {milestoneValidationResult !== true && (
+          {milestoneValidationMessage !== true && (
             <p className="text-error-9 text-sm mt-2">
-              {milestoneValidationResult as string}
+              {milestoneValidationMessage as string}
             </p>
           )}
         </div>

@@ -4,5 +4,45 @@
     "acceptedOn": "Aceito em {date}",
     "rejectedOn": "Rejeitado em {date}",
     "joinedSpaceOn": "Entrou no espaço em {date}"
+  },
+  "AgreementFlow": {
+    "proposalErrors": {
+      "recipientRequired": "Adicione um destinatário ou endereço de carteira",
+      "invalidEthereumAddress": "Endereço Ethereum inválido",
+      "amountGreaterThanZero": "O valor deve ser maior que 0",
+      "amountRequired": "Digite um valor",
+      "tokenRequired": "Selecione um token",
+      "atLeastOnePayoutRequired": "Pelo menos um pagamento é obrigatório",
+      "purchaseAmountRequired": "Digite um valor de compra.",
+      "selectSpaceToActivate": "Selecione um espaço para ativar.",
+      "monthsToActivateRequired": "Digite o número de meses para ativar.",
+      "selectSpaceToJoin": "Selecione um espaço para participar",
+      "selectDelegatedVotingMember": "Selecione um membro delegado para votação",
+      "selectSpaceToExit": "Selecione um espaço para sair.",
+      "selectMemberToRemove": "Selecione um membro para remover",
+      "invalidWalletAddress": "Endereço de carteira inválido",
+      "selectMember": "Selecione um membro.",
+      "invalidMemberAddress": "Endereço do membro inválido.",
+      "positiveTokenNumberRequired": "Informe um número positivo de tokens.",
+      "selectMemberAndTokens": "Selecione um membro e informe a quantidade de tokens a alocar.",
+      "autoExecutionVotingDurationRequired": "A execução automática está desativada. Defina uma duração mínima de votação.",
+      "selectVotingToken": "Selecione um token para este método de votação.",
+      "enterAmount": "Digite um valor",
+      "tokenAddressRequired": "O endereço do token é obrigatório",
+      "integerRequired": "Deve ser um número inteiro",
+      "chooseTokenToMint": "Escolha um token para cunhar"
+    },
+    "plugins": {
+      "paymentSchedule": {
+        "errors": {
+          "milestonesEmpty": "Os marcos não podem estar vazios",
+          "missingStartDate": "Cada marco deve ter uma data de início",
+          "firstMilestoneFuture": "O primeiro marco deve estar no futuro",
+          "milestoneOrder": "O marco {current} deve ser após o marco {previous}",
+          "totalPercentageMax": "A porcentagem total não pode exceder 100%",
+          "futureDateMustBeLater": "A data de pagamento futuro deve ser posterior à data atual"
+        }
+      }
+    }
   }
 }

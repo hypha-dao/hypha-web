@@ -1,6 +1,5 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Address,
   createAgreementFiles,
@@ -22,6 +21,7 @@ import { useSpaceTokenRequirementsByAddress } from '../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { useTranslations } from 'next-intl';
+import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 
 const schemaCreateProposalChangeEntryMethod =
   schemaChangeEntryMethod.extend(createAgreementFiles);
@@ -73,6 +73,10 @@ export const CreateProposalChangeEntryMethodForm = ({
     isPending,
     progress,
   } = useChangeEntryMethodOrchestrator({ authToken: jwt, config });
+  const resolver = useLocalizedProposalResolver(
+    schemaCreateProposalChangeEntryMethod,
+    tAgreementFlow,
+  );
 
   const defaultValues = React.useMemo(() => {
     return {
@@ -92,7 +96,7 @@ export const CreateProposalChangeEntryMethodForm = ({
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
-    resolver: zodResolver(schemaCreateProposalChangeEntryMethod),
+    resolver,
     defaultValues: defaultValues,
   });
 

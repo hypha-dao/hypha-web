@@ -12,12 +12,12 @@ import {
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useConfig } from 'wagmi';
 import React from 'react';
 import { useSpaceTokenRequirementsByAddress } from '../hooks';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { useTranslations } from 'next-intl';
+import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 
 interface SpaceToSpaceMembershipFormProps {
   successfulUrl: string;
@@ -43,10 +43,14 @@ export const SpaceToSpaceMembershipForm = ({
   const tSpaces = useTranslations('Spaces');
   const tAgreementFlow = useTranslations('AgreementFlow');
   const { person } = useMe();
+  const resolver = useLocalizedProposalResolver(
+    combinedSchemaSpaceToSpaceMembership,
+    tAgreementFlow,
+  );
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
-    resolver: zodResolver(combinedSchemaSpaceToSpaceMembership),
+    resolver,
     mode: 'onChange',
     defaultValues: {
       title: '',

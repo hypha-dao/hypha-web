@@ -1,6 +1,5 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import {
   schemaChangeSpaceTransparencySettings,
   useMe,
@@ -18,6 +17,7 @@ import { useScrollToErrors } from '../../hooks';
 import { TransparencyLevel } from '../../spaces/components/transparency-level';
 import { useSpaceDiscoverability } from '../../spaces/hooks/use-space-discoverability';
 import { useTranslations } from 'next-intl';
+import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 
 type FormValues = z.infer<typeof schemaChangeSpaceTransparencySettings>;
 
@@ -52,6 +52,10 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
     authToken: jwt,
     config,
   });
+  const resolver = useLocalizedProposalResolver(
+    schemaChangeSpaceTransparencySettings,
+    tAgreementFlow,
+  );
 
   const {
     discoverability,
@@ -63,7 +67,7 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
-    resolver: zodResolver(schemaChangeSpaceTransparencySettings),
+    resolver,
     defaultValues: {
       title: '',
       description: '',

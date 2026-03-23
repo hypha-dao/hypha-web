@@ -1,7 +1,6 @@
 'use client';
 
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import {
   schemaCreateAgreementForm,
   createAgreementFiles,
@@ -17,6 +16,7 @@ import { useConfig } from 'wagmi';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useTranslations } from 'next-intl';
+import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 
 const fullSchemaCreateDeployFundsForm =
   schemaCreateAgreementForm.extend(createAgreementFiles);
@@ -51,10 +51,14 @@ export const CreateDeployFundsForm = ({
     isPending,
     progress,
   } = useCreateDeployFundsOrchestrator({ authToken: jwt, config });
+  const resolver = useLocalizedProposalResolver(
+    fullSchemaCreateDeployFundsForm,
+    tAgreementFlow,
+  );
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
-    resolver: zodResolver(fullSchemaCreateDeployFundsForm),
+    resolver,
     defaultValues: {
       title: '',
       description: '',

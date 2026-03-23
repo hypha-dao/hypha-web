@@ -599,6 +599,32 @@
         "toProceed": "um fortzufahren."
       }
     },
+    "proposalErrors": {
+      "recipientRequired": "Bitte fügen Sie einen Empfänger oder eine Wallet-Adresse hinzu",
+      "invalidEthereumAddress": "Ungültige Ethereum-Adresse",
+      "amountGreaterThanZero": "Der Betrag muss größer als 0 sein",
+      "amountRequired": "Bitte geben Sie einen Betrag ein",
+      "tokenRequired": "Bitte wählen Sie einen Token aus",
+      "atLeastOnePayoutRequired": "Mindestens eine Auszahlung ist erforderlich",
+      "purchaseAmountRequired": "Bitte geben Sie einen Kaufbetrag ein.",
+      "selectSpaceToActivate": "Bitte wählen Sie einen Space zur Aktivierung aus.",
+      "monthsToActivateRequired": "Bitte geben Sie die Anzahl der Monate für die Aktivierung ein.",
+      "selectSpaceToJoin": "Bitte wählen Sie einen Space zum Beitreten aus",
+      "selectDelegatedVotingMember": "Bitte wählen Sie ein delegiertes Abstimmungsmitglied aus",
+      "selectSpaceToExit": "Bitte wählen Sie einen Space zum Verlassen aus.",
+      "selectMemberToRemove": "Bitte wählen Sie ein zu entfernendes Mitglied aus",
+      "invalidWalletAddress": "Ungültige Wallet-Adresse",
+      "selectMember": "Bitte wählen Sie ein Mitglied aus.",
+      "invalidMemberAddress": "Ungültige Mitgliedsadresse.",
+      "positiveTokenNumberRequired": "Bitte geben Sie eine positive Anzahl von Tokens an.",
+      "selectMemberAndTokens": "Bitte wählen Sie ein Mitglied aus und geben Sie die zuzuweisende Anzahl von Tokens an.",
+      "autoExecutionVotingDurationRequired": "Die Auto-Ausführung ist deaktiviert. Bitte legen Sie eine Mindestabstimmungsdauer fest.",
+      "selectVotingToken": "Bitte wählen Sie einen Token für diese Abstimmungsmethode aus.",
+      "enterAmount": "Bitte geben Sie einen Betrag ein",
+      "tokenAddressRequired": "Token-Adresse ist erforderlich",
+      "integerRequired": "Muss eine ganze Zahl sein",
+      "chooseTokenToMint": "Wählen Sie einen zu prägenden Token aus"
+    },
     "issueNewTokenForm": {
       "duplicateToken": "Ein Token mit demselben Namen und Symbol existiert bereits in Ihrem Space. Bitte ändern Sie entweder den Namen oder das Symbol, um fortzufahren.",
       "errors": {
@@ -974,7 +1000,15 @@
         "milestones": "Meilensteine",
         "date": "Datum",
         "selectDate": "Datum auswählen",
-        "add": "Hinzufügen"
+        "add": "Hinzufügen",
+        "errors": {
+          "milestonesEmpty": "Meilensteine dürfen nicht leer sein",
+          "missingStartDate": "Jeder Meilenstein muss ein Startdatum haben",
+          "firstMilestoneFuture": "Der erste Meilenstein muss in der Zukunft liegen",
+          "milestoneOrder": "Meilenstein {current} muss nach Meilenstein {previous} liegen",
+          "totalPercentageMax": "Die Gesamtprozentzahl darf 100% nicht überschreiten",
+          "futureDateMustBeLater": "Das zukünftige Zahlungsdatum muss nach dem aktuellen Datum liegen"
+        }
       },
       "milestoneField": {
         "milestone": "Meilenstein {index}",

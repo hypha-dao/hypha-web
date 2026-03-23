@@ -1,7 +1,6 @@
 'use client';
 
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import {
   createAgreementFiles,
   schemaBuyHyphaTokens,
@@ -19,6 +18,7 @@ import { useAssets, useFundWallet } from '../../treasury';
 import React from 'react';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { useTranslations } from 'next-intl';
+import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 
 const RECIPIENT_SPACE_ADDRESS = '0x3dEf11d005F8C85c93e3374B28fcC69B25a650Af';
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
@@ -61,10 +61,14 @@ export const BuyHyphaTokensForm = ({
 
   const { buyHyphaTokens, reset, currentAction, isError, isPending, progress } =
     useBuyHyphaTokensOrchestrator({ authToken: jwt, config });
+  const resolver = useLocalizedProposalResolver(
+    conbinedSchemaBuyHyphaTokens,
+    tAgreementFlow,
+  );
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
-    resolver: zodResolver(conbinedSchemaBuyHyphaTokens),
+    resolver,
     mode: 'onChange',
     defaultValues: {
       title: '',

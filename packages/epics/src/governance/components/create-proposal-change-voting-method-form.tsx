@@ -2,7 +2,6 @@
 
 import { CreateAgreementBaseFields } from '../../agreements/components';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import {
   schemaCreateProposalChangeVotingMethod,
   useMe,
@@ -19,6 +18,7 @@ import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { VOTING_METHOD_TYPES } from '../hooks';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { useTranslations } from 'next-intl';
+import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 
 type FormValues = z.infer<typeof schemaCreateProposalChangeVotingMethod>;
 
@@ -54,13 +54,17 @@ export const CreateProposalChangeVotingMethodForm = ({
     isPending,
     progress,
   } = useCreateChangeVotingMethodOrchestrator({ authToken: jwt, config });
+  const resolver = useLocalizedProposalResolver(
+    schemaCreateProposalChangeVotingMethod,
+    tAgreementFlow,
+  );
   const { votingPowerToken, voicePowerToken } = useTokensVotingPower({
     spaceId: BigInt(web3SpaceId as number),
   });
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
-    resolver: zodResolver(schemaCreateProposalChangeVotingMethod),
+    resolver,
     defaultValues: {
       title: '',
       description: '',

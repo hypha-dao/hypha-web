@@ -1,6 +1,5 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import {
   createAgreementFiles,
   schemaMembershipExit,
@@ -17,6 +16,7 @@ import { useConfig } from 'wagmi';
 import { Button, Form, LoadingBackdrop, Separator } from '@hypha-platform/ui';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useTranslations } from 'next-intl';
+import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 
 const combinedSchemaMembershipExit =
   schemaMembershipExit.extend(createAgreementFiles);
@@ -40,10 +40,14 @@ export const MembershipExitForm = ({
   const tSpaces = useTranslations('Spaces');
   const tAgreementFlow = useTranslations('AgreementFlow');
   const { person, isLoading: isPersonLoading } = useMe();
+  const resolver = useLocalizedProposalResolver(
+    combinedSchemaMembershipExit,
+    tAgreementFlow,
+  );
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
-    resolver: zodResolver(combinedSchemaMembershipExit),
+    resolver,
     mode: 'onChange',
     defaultValues: {
       label: 'Membership Exit',
