@@ -67,7 +67,9 @@ export const EntryMethodTokenField = ({
   return (
     <div className="flex flex-col md:flex-row gap-4 md:justify-between w-full">
       <label className="text-2 text-neutral-11 flex items-center">
-        {tAgreementFlow('plugins.entryMethodTokenField.requiredMinTokenNumberOptional')}
+        {tAgreementFlow(
+          'plugins.entryMethodTokenField.requiredMinTokenNumberOptional',
+        )}
       </label>
       <div className="flex gap-2 items-center">
         <Input
@@ -75,7 +77,9 @@ export const EntryMethodTokenField = ({
           type="number"
           step="any"
           inputMode="decimal"
-          placeholder={tAgreementFlow('plugins.entryMethodTokenField.typeAmount')}
+          placeholder={tAgreementFlow(
+            'plugins.entryMethodTokenField.typeAmount',
+          )}
           onChange={(e) => handleAmountChange(e.target.value)}
           onBlur={() => {
             const next = displayAmount;
@@ -117,7 +121,9 @@ export const EntryMethodTokenField = ({
                   </>
                 ) : (
                   <span className="text-2 text-neutral-11 text-nowrap">
-                    {tAgreementFlow('plugins.entryMethodTokenField.selectToken')}
+                    {tAgreementFlow(
+                      'plugins.entryMethodTokenField.selectToken',
+                    )}
                   </span>
                 )}
               </div>

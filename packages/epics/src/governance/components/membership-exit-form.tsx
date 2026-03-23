@@ -46,7 +46,7 @@ export const MembershipExitForm = ({
     resolver: zodResolver(combinedSchemaMembershipExit),
     mode: 'onChange',
     defaultValues: {
-      label: tAgreementFlow('labels.membershipExit'),
+      label: 'Membership Exit',
       title: '',
       description: '',
       leadImage: undefined,

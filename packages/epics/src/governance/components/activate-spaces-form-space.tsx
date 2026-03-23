@@ -91,7 +91,7 @@ export const ActivateSpacesFormSpace = ({
       spaces: [{ spaceId: 0, months: 0 }],
       paymentToken: 'HYPHA',
       recipient: RECIPIENT_SPACE_ADDRESS,
-      label: tAgreementFlow('labels.activateSpaces'),
+      label: 'Activate Spaces',
     },
   });
 
@@ -158,7 +158,8 @@ export const ActivateSpacesFormSpace = ({
               {tAgreementFlow(
                 'activateSpacesForm.insufficientFunds.spaceWalletBalanceInsufficient',
               )}
-              <br /> {tAgreementFlow('activateSpacesForm.insufficientFunds.please')}{' '}
+              <br />{' '}
+              {tAgreementFlow('activateSpacesForm.insufficientFunds.please')}{' '}
               {paymentTokenForTopUp === 'USDC' ? (
                 <span
                   onClick={() => {

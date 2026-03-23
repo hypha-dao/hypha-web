@@ -101,7 +101,7 @@ export const CreatePayForExpensesForm = ({
         amount: amount ?? '0',
         token: token ?? '',
       })),
-      label: tAgreementFlow('labels.expenses'),
+      label: 'Expenses',
     });
   };
 

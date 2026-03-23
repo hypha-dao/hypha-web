@@ -108,7 +108,10 @@ export const SpaceWithNumberOfMonthsField = ({
     }
     if (mySpacesOptions.length > 0) {
       result.push(
-        { value: COMBOBOX_TITLE, label: tAgreementFlow('plugins.spaceWithMonths.otherSpaces') },
+        {
+          value: COMBOBOX_TITLE,
+          label: tAgreementFlow('plugins.spaceWithMonths.otherSpaces'),
+        },
         ...mySpacesOptions,
       );
     }
@@ -210,7 +213,9 @@ export const SpaceWithNumberOfMonthsField = ({
           </span>
           <Combobox
             options={options}
-            placeholder={tAgreementFlow('plugins.spaceWithMonths.selectSpacePlaceholder')}
+            placeholder={tAgreementFlow(
+              'plugins.spaceWithMonths.selectSpacePlaceholder',
+            )}
             onChange={handleSpaceChange}
             renderOption={(option) => (
               <>

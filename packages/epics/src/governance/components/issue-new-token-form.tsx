@@ -149,7 +149,7 @@ export const IssueNewTokenForm = ({
       enableTokenPrice: false,
       referenceCurrency: undefined,
       tokenPrice: undefined,
-      label: tAgreementFlow('labels.issueNewToken'),
+      label: 'Issue New Token',
     },
     mode: 'onChange',
   });
@@ -184,9 +184,7 @@ export const IssueNewTokenForm = ({
     });
 
     if (dbTokens?.length && duplicateToken) {
-      setFormError(
-        tAgreementFlow('issueNewTokenForm.duplicateToken'),
-      );
+      setFormError(tAgreementFlow('issueNewTokenForm.duplicateToken'));
       return;
     }
     await createIssueToken({

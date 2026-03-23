@@ -40,7 +40,9 @@ export const EntryMethod = ({ onChange, value }: EntryMethodProps) => {
       title: tAgreementFlow('plugins.entryMethod.inviteRequestTitle'),
       disabled: false,
       icon: <PlusCircledIcon />,
-      description: tAgreementFlow('plugins.entryMethod.inviteRequestDescription'),
+      description: tAgreementFlow(
+        'plugins.entryMethod.inviteRequestDescription',
+      ),
     },
     {
       id: EntryMethodType.TOKEN_BASED,

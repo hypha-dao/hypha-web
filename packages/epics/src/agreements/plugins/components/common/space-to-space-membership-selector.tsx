@@ -40,7 +40,9 @@ export const SpaceToSpaceMembershipSelector = ({
     : tAgreementFlow('plugins.spaceToSpaceMembershipSelector.findMember');
   const title = isSpace
     ? tAgreementFlow('plugins.spaceToSpaceMembershipSelector.spaceToJoin')
-    : tAgreementFlow('plugins.spaceToSpaceMembershipSelector.delegatedVotingMember');
+    : tAgreementFlow(
+        'plugins.spaceToSpaceMembershipSelector.delegatedVotingMember',
+      );
 
   const options = useMemo(() => {
     const memberItems = memberOptions.map((member) => ({

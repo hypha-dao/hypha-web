@@ -43,7 +43,9 @@ export const VotingMethodSelector = ({
   const votingMethods: VotingMethod[] = [
     {
       id: '1m1v',
-      title: tAgreementFlow('plugins.votingMethodSelector.oneMemberOneVoteTitle'),
+      title: tAgreementFlow(
+        'plugins.votingMethodSelector.oneMemberOneVoteTitle',
+      ),
       description: tAgreementFlow(
         'plugins.votingMethodSelector.oneMemberOneVoteDescription',
       ),
@@ -51,7 +53,9 @@ export const VotingMethodSelector = ({
     },
     {
       id: '1v1v',
-      title: tAgreementFlow('plugins.votingMethodSelector.oneVoiceOneVoteTitle'),
+      title: tAgreementFlow(
+        'plugins.votingMethodSelector.oneVoiceOneVoteTitle',
+      ),
       description: tAgreementFlow(
         'plugins.votingMethodSelector.oneVoiceOneVoteDescription',
       ),
@@ -59,7 +63,9 @@ export const VotingMethodSelector = ({
     },
     {
       id: '1t1v',
-      title: tAgreementFlow('plugins.votingMethodSelector.oneTokenOneVoteTitle'),
+      title: tAgreementFlow(
+        'plugins.votingMethodSelector.oneTokenOneVoteTitle',
+      ),
       description: tAgreementFlow(
         'plugins.votingMethodSelector.oneTokenOneVoteDescription',
       ),
@@ -81,7 +87,9 @@ export const VotingMethodSelector = ({
           disabled: method.disabled || !hasVoiceToken,
           disabledTooltip: !hasVoiceToken ? (
             <div className="p-2">
-              {tAgreementFlow('plugins.votingMethodSelector.voiceTokenTooltipPrefix')}{' '}
+              {tAgreementFlow(
+                'plugins.votingMethodSelector.voiceTokenTooltipPrefix',
+              )}{' '}
               <Link
                 href={`/${lang}/dho/${id}/agreements/create/issue-new-token`}
                 className="text-accent-9 underline"
@@ -89,7 +97,9 @@ export const VotingMethodSelector = ({
               >
                 {tAgreementFlow('plugins.votingMethodSelector.clickHere')}
               </Link>{' '}
-              {tAgreementFlow('plugins.votingMethodSelector.voiceTokenTooltipSuffix')}
+              {tAgreementFlow(
+                'plugins.votingMethodSelector.voiceTokenTooltipSuffix',
+              )}
             </div>
           ) : undefined,
         };
@@ -101,7 +111,9 @@ export const VotingMethodSelector = ({
           disabled: method.disabled || !hasVotingTokens,
           disabledTooltip: !hasVotingTokens ? (
             <div className="p-2">
-              {tAgreementFlow('plugins.votingMethodSelector.tokenTooltipPrefix')}{' '}
+              {tAgreementFlow(
+                'plugins.votingMethodSelector.tokenTooltipPrefix',
+              )}{' '}
               <Link
                 href={`/${lang}/dho/${id}/agreements/create/issue-new-token`}
                 className="text-accent-9 underline"
@@ -109,7 +121,9 @@ export const VotingMethodSelector = ({
               >
                 {tAgreementFlow('plugins.votingMethodSelector.clickHere')}
               </Link>{' '}
-              {tAgreementFlow('plugins.votingMethodSelector.tokenTooltipSuffix')}
+              {tAgreementFlow(
+                'plugins.votingMethodSelector.tokenTooltipSuffix',
+              )}
             </div>
           ) : undefined,
         };

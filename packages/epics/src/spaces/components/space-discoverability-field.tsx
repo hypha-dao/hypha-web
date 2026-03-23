@@ -32,7 +32,9 @@ export function SpaceDiscoverabilityField({
     {
       id: TransparencyLevel.NETWORK,
       title: tAgreementFlow('plugins.transparency.networkTitle'),
-      description: tAgreementFlow('plugins.transparency.discoverabilityNetwork'),
+      description: tAgreementFlow(
+        'plugins.transparency.discoverabilityNetwork',
+      ),
       disabled: false,
     },
     {

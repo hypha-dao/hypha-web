@@ -57,7 +57,7 @@ export const SpaceToSpaceMembershipForm = ({
       spaceId: spaceId ?? undefined,
       space: undefined,
       member: undefined,
-      label: tAgreementFlow('labels.spaceToSpace'),
+      label: 'Space To Space',
     },
   });
 

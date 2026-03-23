@@ -33,7 +33,9 @@ export const MilestoneField = ({
       <div className="flex items-center gap-2">
         <Input
           {...register(percentageFieldName, {
-            required: tAgreementFlow('plugins.milestoneField.percentageRequired'),
+            required: tAgreementFlow(
+              'plugins.milestoneField.percentageRequired',
+            ),
             min: {
               value: 0,
               message: tAgreementFlow('plugins.milestoneField.percentageMin'),

@@ -78,7 +78,7 @@ export const BuyHyphaTokensForm = ({
         token: PAYMENT_TOKEN?.address ?? '',
       },
       recipient: RECIPIENT_SPACE_ADDRESS,
-      label: tAgreementFlow('labels.buyHyphaTokensRewards'),
+      label: 'Buy Hypha Tokens',
     },
   });
 
@@ -132,7 +132,8 @@ export const BuyHyphaTokensForm = ({
               {tAgreementFlow(
                 'buyHyphaTokensForm.insufficientFunds.walletBalanceInsufficient',
               )}
-              <br /> {tAgreementFlow('buyHyphaTokensForm.insufficientFunds.please')}{' '}
+              <br />{' '}
+              {tAgreementFlow('buyHyphaTokensForm.insufficientFunds.please')}{' '}
               <span
                 onClick={() => {
                   setInsufficientFunds(false);

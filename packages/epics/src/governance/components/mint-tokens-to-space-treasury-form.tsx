@@ -70,7 +70,7 @@ export const MintTokensToSpaceTreasuryForm = ({
       attachments: undefined,
       spaceId: spaceId ?? undefined,
       creatorId: person?.id,
-      label: tAgreementFlow('labels.treasuryMinting'),
+      label: 'Treasury Minting',
       mint: {
         amount: undefined,
         token: undefined,

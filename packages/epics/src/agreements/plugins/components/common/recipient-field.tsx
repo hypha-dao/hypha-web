@@ -76,7 +76,9 @@ export function RecipientField({
               <FormControl>
                 <Textarea
                   {...field}
-                  placeholder={tAgreementFlow('plugins.recipient.memoPlaceholder')}
+                  placeholder={tAgreementFlow(
+                    'plugins.recipient.memoPlaceholder',
+                  )}
                   value={field.value || ''}
                   onChange={field.onChange}
                 />

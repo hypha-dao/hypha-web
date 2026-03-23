@@ -73,7 +73,7 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
       creatorId: person?.id,
       spaceDiscoverability: discoverability ?? TransparencyLevel.PUBLIC,
       spaceActivityAccess: access ?? TransparencyLevel.ORGANISATION,
-      label: tAgreementFlow('labels.spaceTransparency'),
+      label: 'Space Transparency',
     },
   });
 

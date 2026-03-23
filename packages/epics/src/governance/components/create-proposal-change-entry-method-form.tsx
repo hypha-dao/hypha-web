@@ -86,7 +86,7 @@ export const CreateProposalChangeEntryMethodForm = ({
         ? (Number(spaceDetails.joinMethod) as EntryMethodType)
         : EntryMethodType.OPEN_ACCESS,
       tokenBase: undefined,
-      label: tAgreementFlow('labels.entryMethod'),
+      label: 'Entry Method',
     };
   }, [spaceId, person, spaceDetails]);
 

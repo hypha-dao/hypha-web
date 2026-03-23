@@ -203,7 +203,9 @@ export const ChangeVotingMethodPlugin = ({
               <FormMessage />
               {isQuorumTooLow && (
                 <span className="text-2 text-neutral-11">
-                  {tAgreementFlow('plugins.quorumAndUnity.autoExecutionDisabled')}
+                  {tAgreementFlow(
+                    'plugins.quorumAndUnity.autoExecutionDisabled',
+                  )}
                 </span>
               )}
             </FormItem>
@@ -219,7 +221,9 @@ export const ChangeVotingMethodPlugin = ({
                 <FormItem>
                   <span className="flex justify-between w-full">
                     <Label className="w-full flex items-center">
-                      {tAgreementFlow('plugins.quorumAndUnity.minimumVotingDuration')}
+                      {tAgreementFlow(
+                        'plugins.quorumAndUnity.minimumVotingDuration',
+                      )}
                       <RequirementMark className="text-2 ml-1" />
                     </Label>
                     <FormControl>

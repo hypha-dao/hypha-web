@@ -58,7 +58,9 @@ export const MintTokensToSpaceTreasuryPlugin = ({
     <div className="flex flex-col gap-4">
       <Skeleton loading={isLoading} width={'100%'} height={90}>
         <div className="flex flex-col gap-4">
-          <FormLabel>{tAgreementFlow('plugins.mintTokens.mintToSpaceTreasury')}</FormLabel>
+          <FormLabel>
+            {tAgreementFlow('plugins.mintTokens.mintToSpaceTreasury')}
+          </FormLabel>
           <span className="text-2 text-neutral-11">
             {tAgreementFlow('plugins.mintTokens.description')}{' '}
           </span>
