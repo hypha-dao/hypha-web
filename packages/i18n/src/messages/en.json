@@ -464,6 +464,7 @@
       "autoExecution": "Auto-Execution",
       "toVote": "{duration} to Vote",
       "uploadImageLabel": "<accent>Upload</accent> an image",
+      "addAttachmentLabel": "Add Attachment (JPEG, PNG, WebP, or PDF — max 4MB)",
       "proposalContent": "Proposal Content",
       "proposalContentPlaceholder": "Type your proposal content here...",
       "editor": {

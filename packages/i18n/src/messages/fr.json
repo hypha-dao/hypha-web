@@ -464,6 +464,7 @@
       "autoExecution": "Exécution automatique",
       "toVote": "{duration} pour voter",
       "uploadImageLabel": "<accent>Téléverser</accent> une image",
+      "addAttachmentLabel": "Ajouter une pièce jointe (JPEG, PNG, WebP ou PDF — max 4 MB)",
       "proposalContent": "Contenu de la proposition",
       "proposalContentPlaceholder": "Saisissez ici le contenu de votre proposition...",
       "editor": {

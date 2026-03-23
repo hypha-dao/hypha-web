@@ -464,6 +464,7 @@
       "autoExecution": "Automatische Ausführung",
       "toVote": "{duration} zum Abstimmen",
       "uploadImageLabel": "<accent>Bild</accent> hochladen",
+      "addAttachmentLabel": "Anhang hinzufügen (JPEG, PNG, WebP oder PDF — max. 4 MB)",
       "proposalContent": "Vorschlagsinhalt",
       "proposalContentPlaceholder": "Geben Sie hier Ihren Vorschlagsinhalt ein...",
       "editor": {

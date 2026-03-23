@@ -472,6 +472,9 @@ export function CreateAgreementBaseFields({
             <FormItem>
               <FormControl>
                 <AddAttachment
+                  label={tAgreementFlow(
+                    'createAgreementBaseFields.addAttachmentLabel',
+                  )}
                   onChange={(files) => {
                     field.onChange(files);
                     form.setValue(
