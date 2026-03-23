@@ -22,7 +22,7 @@ function getAdaptiveMaxFractionDigits(num: number): number {
 
 export const formatCurrencyValue = (
   num: number | string,
-  locale: 'en-US' | 'de-DE' = 'en-US',
+  locale: string = 'en-US',
   options: Intl.NumberFormatOptions = {
     minimumFractionDigits: DEFAULT_MIN_FRACTION_DIGITS,
     maximumFractionDigits: DEFAULT_MAX_FRACTION_DIGITS,
