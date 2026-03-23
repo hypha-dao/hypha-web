@@ -103,13 +103,15 @@ const extendedBaseSchema = baseSchemaIssueNewToken.merge(
   }),
 );
 
-export const fullSchemaIssueNewToken = extendedBaseSchema.superRefine(
-  (data, ctx) => {
+const createFullSchemaIssueNewToken = (tAgreementFlow: any) =>
+  extendedBaseSchema.superRefine((data, ctx) => {
     if (data.enableLimitedSupply === true) {
       if (!data.maxSupplyType) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Please select a max supply type',
+          message: tAgreementFlow(
+            'issueNewTokenForm.errors.maxSupplyTypeRequired',
+          ),
           path: ['maxSupplyType'],
         });
       }
@@ -122,8 +124,9 @@ export const fullSchemaIssueNewToken = extendedBaseSchema.superRefine(
       ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message:
-            'Enter a maximum supply greater than 0, or disable limited supply if you want unlimited supply.',
+          message: tAgreementFlow(
+            'issueNewTokenForm.errors.maxSupplyLimitedPositiveOrDisable',
+          ),
           path: ['maxSupply'],
         });
       }
@@ -133,7 +136,9 @@ export const fullSchemaIssueNewToken = extendedBaseSchema.superRefine(
       if (!data.referenceCurrency) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Please select a reference currency',
+          message: tAgreementFlow(
+            'issueNewTokenForm.errors.referenceCurrencyRequired',
+          ),
           path: ['referenceCurrency'],
         });
       }
@@ -145,15 +150,16 @@ export const fullSchemaIssueNewToken = extendedBaseSchema.superRefine(
       ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Please enter a token price greater than 0',
+          message: tAgreementFlow(
+            'issueNewTokenForm.errors.tokenPricePositive',
+          ),
           path: ['tokenPrice'],
         });
       }
     }
-  },
-);
+  });
 
-type FormValues = z.infer<typeof fullSchemaIssueNewToken>;
+type FormValues = z.infer<typeof extendedBaseSchema>;
 
 interface IssueNewTokenFormProps {
   spaceId: number | undefined | null;
@@ -191,6 +197,10 @@ export const IssueNewTokenForm = ({
   const agreementSlug = agreement?.slug;
 
   const [formError, setFormError] = React.useState<string | null>(null);
+  const fullSchemaIssueNewToken = React.useMemo(
+    () => createFullSchemaIssueNewToken(tAgreementFlow),
+    [tAgreementFlow],
+  );
 
   const translateIssueNewTokenError = React.useCallback(
     (message: string) => {
