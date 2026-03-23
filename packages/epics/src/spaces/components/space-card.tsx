@@ -126,7 +126,13 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
               height="26px"
             >
               <div
-                className="text-1 text-neutral-11 mb-4 h-10 leading-5 line-clamp-2"
+                className="text-1 text-neutral-11 mb-4 line-clamp-2"
+                style={{
+                  lineHeight:
+                    'calc(var(--text-1--line-height) * var(--text-1))',
+                  minHeight:
+                    'calc(var(--text-1--line-height) * var(--text-1) * 2)',
+                }}
                 title={description}
               >
                 {description}
