@@ -633,7 +633,8 @@
         "walletBalanceInsufficient": "Ihr Wallet-Guthaben reicht nicht aus, um diese Transaktion abzuschließen.",
         "please": "Bitte",
         "topUpWith": "laden Sie Ihr Konto mit {token} auf",
-        "toProceed": "um fortzufahren."
+        "toProceed": "um fortzufahren.",
+        "fullMessage": "Ihr Wallet-Guthaben ist nicht ausreichend. Bitte <topUpLink>laden Sie mit {token} auf</topUpLink>, um fortzufahren."
       }
     },
     "proposalErrors": {

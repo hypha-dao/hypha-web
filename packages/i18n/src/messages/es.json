@@ -415,7 +415,8 @@
         "walletBalanceInsufficient": "El saldo de su billetera no es suficiente para completar esta transacción.",
         "please": "Por favor",
         "topUpWith": "recarga tu cuenta con {token}",
-        "toProceed": "para proceder."
+        "toProceed": "para proceder.",
+        "fullMessage": "El saldo de tu billetera es insuficiente. <topUpLink>Recarga con {token}</topUpLink> para continuar."
       }
     },
     "issueNewTokenForm": {

@@ -415,7 +415,8 @@
         "walletBalanceInsufficient": "O saldo da sua carteira é insuficiente para concluir esta transação.",
         "please": "Por favor",
         "topUpWith": "recarregue sua conta com {token}",
-        "toProceed": "para prosseguir."
+        "toProceed": "para prosseguir.",
+        "fullMessage": "O saldo da sua carteira é insuficiente. <topUpLink>Recarregue com {token}</topUpLink> para continuar."
       }
     },
     "issueNewTokenForm": {

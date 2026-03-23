@@ -633,7 +633,8 @@
         "walletBalanceInsufficient": "Le solde de votre portefeuille est insuffisant pour finaliser cette transaction.",
         "please": "Veuillez",
         "topUpWith": "approvisionner votre compte avec {token}",
-        "toProceed": "pour continuer."
+        "toProceed": "pour continuer.",
+        "fullMessage": "Le solde de votre portefeuille est insuffisant. Veuillez <topUpLink>recharger avec {token}</topUpLink> pour continuer."
       }
     },
     "proposalErrors": {

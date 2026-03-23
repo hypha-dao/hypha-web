@@ -633,7 +633,8 @@
         "walletBalanceInsufficient": "Your wallet balance is insufficient to complete this transaction.",
         "please": "Please",
         "topUpWith": "top up your account with {token}",
-        "toProceed": "to proceed."
+        "toProceed": "to proceed.",
+        "fullMessage": "Your wallet balance is insufficient. Please <topUpLink>top up with {token}</topUpLink> to proceed."
       }
     },
     "proposalErrors": {

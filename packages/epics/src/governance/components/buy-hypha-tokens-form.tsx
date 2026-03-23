@@ -134,26 +134,23 @@ export const BuyHyphaTokensForm = ({
         insufficientFunds ? (
           <div className="flex flex-col text-center gap-2 justify-center items-center">
             <span>
-              {tAgreementFlow(
-                'buyHyphaTokensForm.insufficientFunds.walletBalanceInsufficient',
+              {tAgreementFlow.rich(
+                'buyHyphaTokensForm.insufficientFunds.fullMessage',
+                {
+                  token: paymentAsset?.symbol ?? 'USDC',
+                  topUpLink: (chunks) => (
+                    <span
+                      onClick={() => {
+                        setInsufficientFunds(false);
+                        fundWallet();
+                      }}
+                      className="font-bold cursor-pointer text-accent-9 underline"
+                    >
+                      {chunks}
+                    </span>
+                  ),
+                },
               )}
-              <br />{' '}
-              {tAgreementFlow('buyHyphaTokensForm.insufficientFunds.please')}{' '}
-              <span
-                onClick={() => {
-                  setInsufficientFunds(false);
-                  fundWallet();
-                }}
-                className="font-bold cursor-pointer text-accent-9 underline"
-              >
-                {tAgreementFlow(
-                  'buyHyphaTokensForm.insufficientFunds.topUpWith',
-                  {
-                    token: paymentAsset?.symbol ?? 'USDC',
-                  },
-                )}
-              </span>{' '}
-              {tAgreementFlow('buyHyphaTokensForm.insufficientFunds.toProceed')}
             </span>
             <Button
               className="w-fit"
