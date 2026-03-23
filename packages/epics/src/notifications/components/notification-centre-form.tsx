@@ -146,6 +146,7 @@ export const NotificationCentreForm = ({
 
   const yesLabel = tNotificationCentre('channels.yes');
   const noLabel = tNotificationCentre('channels.no');
+  const notificationEmail = person?.email ?? '';
 
   const subscriptionTextMap = React.useMemo(
     () => ({
@@ -222,11 +223,11 @@ export const NotificationCentreForm = ({
             <span className="text-2 text-neutral-11 flex flex-row justify-between">
               <FormLabel>
                 {tNotificationCentre('channels.emailNotifications')}{' '}
-                {person && (
+                {notificationEmail && (
                   <>
                     (
                     {tNotificationCentre('channels.toEmail', {
-                      email: person.email,
+                      email: notificationEmail,
                     })}
                     )
                   </>
