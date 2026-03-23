@@ -29,6 +29,7 @@ import { useFundWallet } from '../../treasury';
 import { z } from 'zod';
 import { isAddress } from 'ethers';
 import { useScrollToErrors } from '../../hooks';
+import { useTranslations } from 'next-intl';
 
 interface ActivateSpacesFormProps {
   spaces: Space[];
@@ -42,6 +43,8 @@ type FormValues = z.infer<typeof schema>;
 const RECIPIENT_SPACE_ADDRESS = '0x695f21B04B22609c4ab9e5886EB0F65cDBd464B6';
 
 export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
+  const tActions = useTranslations('ProfileActions');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { person, isLoading: isPersonLoading } = useMe();
   const { lang } = useParams();
   const { fundWallet } = useFundWallet({
@@ -50,8 +53,80 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
   const recipientSpace =
     spaces?.filter((s) => s?.address === RECIPIENT_SPACE_ADDRESS) || [];
   const formRef = useRef<HTMLFormElement>(null);
+  const baseResolver = useMemo(() => zodResolver(schema), []);
+  const translateActivateSpacesError = useMemo(
+    () => (message: string) => {
+      const normalizedMessage = message.trim();
+      const map: Record<string, string> = {
+        'Please select a space to activate.':
+          'activateSpaces.form.errors.selectSpaceToActivate',
+        'Please enter the number of months to activate.':
+          'activateSpaces.form.errors.monthsRequired',
+        'At least one space must be added':
+          'activateSpaces.form.errors.atLeastOneSpace',
+        'Please add a recipient or wallet address':
+          'activateSpaces.form.errors.recipientRequired',
+        'Invalid Ethereum address':
+          'activateSpaces.form.errors.invalidEthereumAddress',
+        'Invalid wallet address':
+          'activateSpaces.form.errors.invalidWalletAddress',
+      };
+
+      const key = map[normalizedMessage];
+      return key
+        ? tActions(key as Parameters<typeof tActions>[0])
+        : normalizedMessage;
+    },
+    [tActions],
+  );
+  const resolver = useMemo(() => {
+    const localizeErrors = (errors: unknown): unknown => {
+      if (!errors || typeof errors !== 'object') return errors;
+      if (Array.isArray(errors)) return errors.map(localizeErrors);
+
+      const localized = { ...(errors as Record<string, unknown>) };
+
+      if (typeof localized.message === 'string') {
+        localized.message = translateActivateSpacesError(localized.message);
+      }
+
+      if (localized.types && typeof localized.types === 'object') {
+        const localizedTypes: Record<string, unknown> = { ...localized.types };
+        for (const [typeKey, typeValue] of Object.entries(localizedTypes)) {
+          if (typeof typeValue === 'string') {
+            localizedTypes[typeKey] = translateActivateSpacesError(typeValue);
+          }
+        }
+        localized.types = localizedTypes;
+      }
+
+      for (const [key, value] of Object.entries(localized)) {
+        if (
+          key === 'message' ||
+          key === 'type' ||
+          key === 'ref' ||
+          key === 'types'
+        )
+          continue;
+        if (value && typeof value === 'object') {
+          localized[key] = localizeErrors(value);
+        }
+      }
+
+      return localized;
+    };
+
+    return async (...args: Parameters<typeof baseResolver>) => {
+      const result = await baseResolver(...args);
+      return {
+        ...result,
+        errors: localizeErrors(result.errors) as typeof result.errors,
+      };
+    };
+  }, [baseResolver, translateActivateSpacesError]);
+
   const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver,
     mode: 'onChange',
     defaultValues: {
       paymentToken: 'HYPHA',
@@ -79,7 +154,6 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
   const {
     control,
     handleSubmit,
-    watch,
     setValue,
     setError,
     formState: { errors },
@@ -112,13 +186,15 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
       form.reset();
     } catch (error) {
       console.error('Activation failed:', error);
-      let errorMessage: string =
-        'An error occurred while processing your activation. Please try again.';
+      let errorMessage: string = tActions(
+        'activateSpaces.form.errors.activationProcessingFailed',
+      );
 
       if (error instanceof Error) {
         if (error.message.includes('Smart wallet client not available')) {
-          errorMessage =
-            'Smart wallet is not connected. Please connect your wallet and try again.';
+          errorMessage = tActions(
+            'activateSpaces.form.errors.smartWalletNotConnected',
+          );
         } else if (
           error.message.includes('ERC20: transfer amount exceeds balance') ||
           error.message.includes('Insufficient HYPHA balance')
@@ -131,10 +207,11 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
           errorMessage =
             match && match[1]
               ? extractRevertReason(match[1])
-              : 'Contract execution failed.';
+              : tActions('activateSpaces.form.errors.contractExecutionFailed');
         } else if (error.message.includes('user rejected')) {
-          errorMessage =
-            'Transaction was rejected. Please approve the transaction to proceed.';
+          errorMessage = tActions(
+            'activateSpaces.form.errors.transactionRejected',
+          );
         }
       }
       setError('root', { message: errorMessage });
@@ -144,7 +221,7 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
   if (!spaces || spaces.length === 0) {
     return (
       <div className="text-error text-sm">
-        No valid spaces available. Please try again later.
+        {tActions('activateSpaces.form.errors.noValidSpaces')}
       </div>
     );
   }
@@ -158,17 +235,19 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
       >
         <SpaceWithNumberOfMonthsFieldArray spaces={spaces} name="spaces" />
         <Separator />
-        <Label>Check out</Label>
+        <Label>{tAgreementFlow('plugins.activateSpaces.checkOut')}</Label>
         <div className="flex w-full justify-between items-center">
           <span className="text-2 text-neutral-11 w-full">
-            Total Contribution:
+            {tAgreementFlow('plugins.activateSpaces.totalContribution')}
           </span>
           <span className="text-2 text-neutral-11 text-nowrap">
             $ {totalUSDC}
           </span>
         </div>
         <div className="flex w-full justify-between items-center">
-          <span className="text-2 text-neutral-11">Pay with:</span>
+          <span className="text-2 text-neutral-11">
+            {tAgreementFlow('plugins.activateSpaces.payWith')}
+          </span>
           <Tabs
             value={paymentToken}
             onValueChange={(value) =>
@@ -187,7 +266,9 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
         </div>
         <div className="flex w-full justify-between items-center">
           <span className="text-2 text-neutral-11 w-full">
-            Total amount in {paymentToken}:
+            {tAgreementFlow('plugins.activateSpaces.totalAmountIn', {
+              token: paymentToken,
+            })}
           </span>
           <span className="text-2 text-neutral-11 text-nowrap">
             {paymentToken === 'USDC' ? (
@@ -197,7 +278,7 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
                     src="/placeholder/usdc-icon.svg"
                     width={24}
                     height={24}
-                    alt="USDC Icon"
+                    alt={tActions('activateSpaces.form.icons.usdcAlt')}
                   />
                 }
                 value={totalUSDC.toLocaleString(undefined, {
@@ -212,7 +293,7 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
                     src="/placeholder/space-avatar-image.svg"
                     width={24}
                     height={24}
-                    alt="Hypha Token Icon"
+                    alt={tActions('activateSpaces.form.icons.hyphaAlt')}
                   />
                 }
                 value={totalHYPHA.toLocaleString(undefined, {
@@ -225,7 +306,7 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
         </div>
         <Separator />
         <RecipientField
-          label="Paid by"
+          label={tAgreementFlow('plugins.activateSpaces.paidBy')}
           members={buyerMember}
           defaultRecipientType="member"
           readOnly={true}
@@ -234,7 +315,7 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
         />
         <Separator />
         <RecipientField
-          label="Paid to"
+          label={tAgreementFlow('plugins.activateSpaces.paidTo')}
           members={[]}
           spaces={recipientSpace}
           defaultRecipientType="space"
@@ -246,15 +327,15 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
           {isActivating ? (
             <div className="flex items-center gap-2 text-sm text-neutral-10">
               <Loader2 className="animate-spin w-4 h-4" />
-              Purchasing
+              {tActions('activateSpaces.form.actions.activating')}
             </div>
           ) : showSuccessMessage ? (
             <div className="text-2 font-bold text-foreground">
-              The spaces you selected have been successfully activated!
+              {tActions('activateSpaces.form.success.activated')}
             </div>
           ) : (
             <Button type="submit" disabled={isActivating}>
-              Activate
+              {tActions('activateSpaces.form.actions.activate')}
             </Button>
           )}
         </div>
@@ -262,24 +343,38 @@ export const ActivateSpacesForm = ({ spaces }: ActivateSpacesFormProps) => {
           <div className="text-2 text-foreground">
             {errors.root.message === 'insufficient_funds' ? (
               <>
-                Your wallet balance is insufficient to complete this
-                transaction. Please{' '}
+                {tAgreementFlow(
+                  'activateSpacesForm.insufficientFunds.spaceWalletBalanceInsufficient',
+                )}{' '}
+                {tAgreementFlow('activateSpacesForm.insufficientFunds.please')}{' '}
                 {paymentToken === 'HYPHA' ? (
                   <Link
                     href={`/${lang}/profile/${person?.nickname}/actions/purchase-hypha-tokens`}
                     className="font-bold cursor-pointer text-accent-9 underline"
                   >
-                    top up your account with {paymentToken}
+                    {tAgreementFlow(
+                      'activateSpacesForm.insufficientFunds.topUpWith',
+                      {
+                        token: paymentToken,
+                      },
+                    )}
                   </Link>
                 ) : (
                   <span
                     onClick={fundWallet}
                     className="font-bold cursor-pointer text-accent-9 underline"
                   >
-                    top up your account with {paymentToken}
+                    {tAgreementFlow(
+                      'activateSpacesForm.insufficientFunds.topUpWith',
+                      {
+                        token: paymentToken,
+                      },
+                    )}
                   </span>
                 )}{' '}
-                to proceed.
+                {tAgreementFlow(
+                  'activateSpacesForm.insufficientFunds.toProceed',
+                )}
               </>
             ) : (
               errors.root.message

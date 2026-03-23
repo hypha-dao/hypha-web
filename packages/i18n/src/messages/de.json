@@ -386,7 +386,33 @@
     "activateSpaces": {
       "title": "Space(s) aktivieren",
       "contentPrefix": "Sponsern und aktivieren Sie Ihre bevorzugten Spaces, indem Sie HYPHA oder USDC beitragen und so das Hypha-Netzwerk unterstützen. Weitere Details in",
-      "contentSuffix": "."
+      "contentSuffix": ".",
+      "form": {
+        "icons": {
+          "usdcAlt": "USDC-Icon",
+          "hyphaAlt": "Hypha-Token-Icon"
+        },
+        "actions": {
+          "activating": "Wird aktiviert",
+          "activate": "Aktivieren"
+        },
+        "success": {
+          "activated": "Die ausgewählten Spaces wurden erfolgreich aktiviert!"
+        },
+        "errors": {
+          "selectSpaceToActivate": "Bitte wählen Sie einen Space zur Aktivierung aus.",
+          "monthsRequired": "Bitte geben Sie die Anzahl der Monate für die Aktivierung ein.",
+          "atLeastOneSpace": "Mindestens ein Space muss hinzugefügt werden",
+          "recipientRequired": "Bitte fügen Sie einen Empfänger oder eine Wallet-Adresse hinzu",
+          "invalidEthereumAddress": "Ungültige Ethereum-Adresse",
+          "invalidWalletAddress": "Ungültige Wallet-Adresse",
+          "activationProcessingFailed": "Beim Verarbeiten Ihrer Aktivierung ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.",
+          "smartWalletNotConnected": "Smart Wallet ist nicht verbunden. Bitte verbinden Sie Ihre Wallet und versuchen Sie es erneut.",
+          "contractExecutionFailed": "Ausführung des Smart Contracts fehlgeschlagen.",
+          "transactionRejected": "Transaktion wurde abgelehnt. Bitte genehmigen Sie die Transaktion, um fortzufahren.",
+          "noValidSpaces": "Keine gültigen Spaces verfügbar. Bitte versuchen Sie es später erneut."
+        }
+      }
     },
     "transferFunds": {
       "title": "Mittel übertragen",

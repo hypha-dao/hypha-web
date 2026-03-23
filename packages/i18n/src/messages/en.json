@@ -386,7 +386,33 @@
     "activateSpaces": {
       "title": "Activate Space(s)",
       "contentPrefix": "Sponsor and activate your favourite space(s) by contributing HYPHA or USDC, supporting the Hypha Network. More details in",
-      "contentSuffix": "."
+      "contentSuffix": ".",
+      "form": {
+        "icons": {
+          "usdcAlt": "USDC icon",
+          "hyphaAlt": "Hypha token icon"
+        },
+        "actions": {
+          "activating": "Activating",
+          "activate": "Activate"
+        },
+        "success": {
+          "activated": "The spaces you selected have been successfully activated!"
+        },
+        "errors": {
+          "selectSpaceToActivate": "Please select a space to activate.",
+          "monthsRequired": "Please enter the number of months to activate.",
+          "atLeastOneSpace": "At least one space must be added",
+          "recipientRequired": "Please add a recipient or wallet address",
+          "invalidEthereumAddress": "Invalid Ethereum address",
+          "invalidWalletAddress": "Invalid wallet address",
+          "activationProcessingFailed": "An error occurred while processing your activation. Please try again.",
+          "smartWalletNotConnected": "Smart wallet is not connected. Please connect your wallet and try again.",
+          "contractExecutionFailed": "Contract execution failed.",
+          "transactionRejected": "Transaction was rejected. Please approve the transaction to proceed.",
+          "noValidSpaces": "No valid spaces available. Please try again later."
+        }
+      }
     },
     "transferFunds": {
       "title": "Transfer Funds",
