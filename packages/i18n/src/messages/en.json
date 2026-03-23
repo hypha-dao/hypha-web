@@ -390,7 +390,10 @@
     },
     "transferFunds": {
       "title": "Transfer Funds",
-      "content": "Easily send funds from your wallet to a member or a space."
+      "content": "Easily send funds from your wallet to a member or a space.",
+      "form": {
+        "amountLabel": "Amount"
+      }
     },
     "errors": {
       "loadSpaces": "Failed to load spaces. Please try again later."

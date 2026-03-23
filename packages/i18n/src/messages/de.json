@@ -390,7 +390,10 @@
     },
     "transferFunds": {
       "title": "Mittel übertragen",
-      "content": "Senden Sie ganz einfach Mittel aus Ihrer Wallet an ein Mitglied oder einen Space."
+      "content": "Senden Sie ganz einfach Mittel aus Ihrer Wallet an ein Mitglied oder einen Space.",
+      "form": {
+        "amountLabel": "Betrag"
+      }
     },
     "errors": {
       "loadSpaces": "Spaces konnten nicht geladen werden. Bitte versuchen Sie es später erneut."

@@ -390,7 +390,10 @@
     },
     "transferFunds": {
       "title": "Transférer des fonds",
-      "content": "Envoyez facilement des fonds depuis votre portefeuille vers un membre ou un espace."
+      "content": "Envoyez facilement des fonds depuis votre portefeuille vers un membre ou un espace.",
+      "form": {
+        "amountLabel": "Montant"
+      }
     },
     "errors": {
       "loadSpaces": "Impossible de charger les espaces. Veuillez réessayer plus tard."

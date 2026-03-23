@@ -22,6 +22,7 @@ import { useJwt } from '@hypha-platform/core/client';
 import { useUserAssets } from '../../treasury/hooks';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 interface Token {
   icon: string;
@@ -44,6 +45,7 @@ export const PeopleTransferForm = ({
   tokens,
   updateAssets,
 }: PeopleTransferFormType) => {
+  const tActions = useTranslations('ProfileActions');
   const { person } = useMe();
   const { fundWallet } = useFundWallet({
     address: person?.address as `0x${string}`,
@@ -187,7 +189,7 @@ export const PeopleTransferForm = ({
           />
           <Separator />
           <TokenPayoutFieldArray
-            label="Amount"
+            label={tActions('transferFunds.form.amountLabel')}
             tokens={tokens}
             name="payouts"
           />
