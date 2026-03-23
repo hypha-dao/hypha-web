@@ -379,7 +379,7 @@
       },
       "migrateHyphaTokens": {
         "title": "Migrer les tokens Hypha (Telos → Base)",
-        "description": "Déplacez vos tokens Hypha de la blockchain Telos vers le réseau Base. Lance l'expérience de migration."
+        "description": "Déplacez vos tokens Hypha de la blockchain Telos vers le réseau Base. Cela lance l'expérience de migration."
       }
     },
     "purchaseHypha": {
@@ -401,7 +401,7 @@
           "paymentTokenNotConfigured": "Le token de paiement n'est pas configuré.",
           "invalidTokenSelected": "Token sélectionné invalide.",
           "purchaseProcessingFailed": "Une erreur est survenue lors du traitement de votre achat. Veuillez réessayer.",
-          "smartWalletNotConnected": "Le smart wallet n'est pas connecté. Veuillez connecter votre portefeuille et réessayer.",
+          "smartWalletNotConnected": "Le portefeuille intelligent n'est pas connecté. Veuillez connecter votre portefeuille et réessayer.",
           "contractExecutionFailed": "L'exécution du contrat a échoué.",
           "transactionRejected": "La transaction a été rejetée. Veuillez approuver la transaction pour continuer.",
           "noValidSpaces": "Aucun espace valide disponible. Veuillez réessayer plus tard."
@@ -432,7 +432,7 @@
           "invalidEthereumAddress": "Adresse Ethereum invalide",
           "invalidWalletAddress": "Adresse de portefeuille invalide",
           "activationProcessingFailed": "Une erreur est survenue lors du traitement de votre activation. Veuillez réessayer.",
-          "smartWalletNotConnected": "Le smart wallet n'est pas connecté. Veuillez connecter votre portefeuille et réessayer.",
+          "smartWalletNotConnected": "Le portefeuille intelligent n'est pas connecté. Veuillez connecter votre portefeuille et réessayer.",
           "contractExecutionFailed": "L'exécution du contrat a échoué.",
           "transactionRejected": "La transaction a été rejetée. Veuillez approuver la transaction pour continuer.",
           "noValidSpaces": "Aucun espace valide disponible. Veuillez réessayer plus tard."

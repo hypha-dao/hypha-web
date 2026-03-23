@@ -116,8 +116,8 @@
         "description": "Erstellen Sie einen neuen Space innerhalb Ihrer Organisation für Aktivitäten, Teams oder Projekte."
       },
       "activateSpaces": {
-        "title": "Space(s) aktivieren",
-        "description": "Tragen Sie HYPHA oder USDC bei, um Ihren/Ihre Space(s) zu aktivieren und das Hypha-Netzwerk zu unterstützen."
+        "title": "Spaces aktivieren",
+        "description": "Tragen Sie HYPHA oder USDC bei, um Ihre Spaces zu aktivieren und das Hypha-Netzwerk zu unterstützen."
       },
       "votingMethod": {
         "title": "Abstimmungsmethode",
@@ -216,8 +216,8 @@
         "description": "Kaufen Sie Hypha-Tokens, um am Netzwerk teilzunehmen und Belohnungen zu erhalten."
       },
       "activateSpaces": {
-        "title": "Space(s) aktivieren",
-        "description": "Tragen Sie HYPHA oder USDC bei, um Ihren/Ihre Space(s) zu aktivieren und das Hypha-Netzwerk zu unterstützen."
+        "title": "Spaces aktivieren",
+        "description": "Tragen Sie HYPHA oder USDC bei, um Ihre Spaces zu aktivieren und das Hypha-Netzwerk zu unterstützen."
       }
     }
   },
@@ -374,12 +374,12 @@
         "description": "Kaufen Sie Hypha-Tokens, um am Netzwerk teilzunehmen und Belohnungen zu erhalten"
       },
       "activateSpaces": {
-        "title": "Space(s) aktivieren",
+        "title": "Spaces aktivieren",
         "description": "Sponsern und aktivieren Sie Ihre bevorzugten Spaces, indem Sie HYPHA oder USDC beitragen und so das Hypha-Netzwerk unterstützen."
       },
       "migrateHyphaTokens": {
         "title": "Hypha-Tokens migrieren (Telos → Base)",
-        "description": "Verschieben Sie Ihre Hypha-Tokens von der Telos-Blockchain in das Base-Netzwerk. Startet die Migration."
+        "description": "Verschieben Sie Ihre Hypha-Tokens von der Telos-Blockchain in das Base-Netzwerk. Damit starten Sie die Migration."
       }
     },
     "purchaseHypha": {
@@ -409,7 +409,7 @@
       }
     },
     "activateSpaces": {
-      "title": "Space(s) aktivieren",
+      "title": "Spaces aktivieren",
       "contentPrefix": "Sponsern und aktivieren Sie Ihre bevorzugten Spaces, indem Sie HYPHA oder USDC beitragen und so das Hypha-Netzwerk unterstützen. Weitere Details in",
       "contentSuffix": ".",
       "form": {
@@ -798,7 +798,7 @@
           "transferable": "Übertragbar",
           "advancedControlsDescription": "Für mehr Kontrolle können Sie optional eine Whitelist aktivieren. Dadurch werden Token-Transfers auf ausgewählte Mitglieder, Spaces oder Blockchain-Adressen beschränkt, die Sie festlegen. Wenn Sie diese Option nicht aktivieren, bleiben Tokens für alle Konten frei übertragbar.",
           "advancedControls": "Optional: Erweiterte Transferkontrollen",
-          "autoWhitelistedNotice": "{spaceName} und seine Mitglieder sind automatisch auf der Whitelist. Wenn Sie unten Space(s) und/oder Mitglied(er) auflisten, können diese bei aktivierter Whitelist Tokens senden („From“-Whitelist) oder empfangen („To“-Whitelist).",
+          "autoWhitelistedNotice": "{spaceName} und seine Mitglieder sind automatisch auf der Whitelist. Wenn Sie unten Spaces und/oder Mitglieder hinzufügen, können diese bei aktivierter Whitelist Tokens senden („From“-Whitelist) oder empfangen („To“-Whitelist).",
           "toWhitelistLabel": "„To“-Whitelist",
           "toWhitelistDescription": "Legen Sie fest, welche Mitglieder oder Spaces Tokens empfangen dürfen. Fügen Sie Mitglieder oder Spaces hinzu, ergänzen Sie Blockchain-Adressen und wählen Sie, ob die Whitelist für einen gesamten Space oder nur dessen Treasury-Konto gilt.",
           "fromWhitelistLabel": "„From“-Whitelist",
@@ -976,7 +976,7 @@
         "noTokensSuffix": "um zuerst einen Token auszugeben"
       },
       "spaceWithMonths": {
-        "spaces": "Space(s)",
+        "spaces": "Spaces",
         "contribution": "Beitrag:",
         "contributionPerMonthPerSpace": "$11 pro Monat pro Space",
         "removeSpace": "Space entfernen",
