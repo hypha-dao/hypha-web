@@ -25,6 +25,14 @@ const DATE_FNS_LOCALES: Record<string, DateFnsLocale> = {
   fr,
   es,
   pt: ptBR,
+  'pt-br': ptBR,
+};
+
+const resolveDateFnsLocale = (locale: string): DateFnsLocale => {
+  const normalized = locale.toLowerCase().replace('_', '-');
+  const baseLocale = normalized.split('-')[0];
+
+  return DATE_FNS_LOCALES[normalized] ?? DATE_FNS_LOCALES[baseLocale] ?? enUS;
 };
 
 type RedemptionStartDateFieldProps = {
@@ -36,7 +44,7 @@ export function RedemptionStartDateField({
 }: RedemptionStartDateFieldProps) {
   const locale = useLocale();
   const tAgreementFlow = useTranslations('AgreementFlow');
-  const dateLocale = DATE_FNS_LOCALES[locale] ?? enUS;
+  const dateLocale = resolveDateFnsLocale(locale);
   const { control } = useFormContext();
 
   return (
