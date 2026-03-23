@@ -17,17 +17,39 @@ import { useSpaceMember } from '../../../spaces';
 const SingleVaultSection: FC<{
   vault: Vault;
   isLoading?: boolean;
-}> = ({ vault, isLoading }) => {
-  const { lang } = useParams<{ lang: Locale }>();
+  lang: Locale;
+  canUpdateVault: boolean;
+  updateVaultHref: string;
+  updateDisabledTitle: string;
+}> = ({
+  vault,
+  isLoading,
+  lang,
+  canUpdateVault,
+  updateVaultHref,
+  updateDisabledTitle,
+}) => {
   const title = `${vault.tokenSymbol} Backing Vault`;
   const totalLabel = `$${formatCurrencyValue(
     vault.totalUsd,
   )} Collateral | ${formatCurrencyValue(vault.backingPercent)}% Backed`;
+  const perVaultUpdateHref = `${updateVaultHref}&spaceToken=${encodeURIComponent(
+    vault.spaceToken,
+  )}`;
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-3">
-      <div className="w-full flex justify-between">
+      <div className="w-full flex items-center justify-between gap-2">
         <SectionFilter label={title} count={totalLabel} />
+        {canUpdateVault ? (
+          <Link href={perVaultUpdateHref} scroll={false}>
+            <Button>Update Backing Vault</Button>
+          </Link>
+        ) : (
+          <Button disabled title={updateDisabledTitle}>
+            Update Backing Vault
+          </Button>
+        )}
       </div>
       <div className="w-full">
         {vault.collaterals.length === 0 && !isLoading ? (
@@ -79,6 +101,9 @@ export const VaultsSection: FC = () => {
 
   const canUpdateVault = isAuthenticated && (isMember || isDelegate);
   const updateVaultHref = `/${lang}/dho/${id}/treasury/create/token-backing-vault?hideBack=true`;
+  const updateDisabledTitle = !isAuthenticated
+    ? 'Please sign in to update backing vault'
+    : 'Join the space to update backing vault';
 
   if (vaults.length === 0 && !isLoading) {
     return null;
@@ -86,30 +111,18 @@ export const VaultsSection: FC = () => {
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-6">
-      <div className="w-full flex items-center justify-between">
+      <div className="w-full">
         <h3 className="text-4">Backing Vaults</h3>
-        {canUpdateVault ? (
-          <Link href={updateVaultHref} scroll={false}>
-            <Button>Update Backing Vault</Button>
-          </Link>
-        ) : (
-          <Button
-            disabled
-            title={
-              !isAuthenticated
-                ? 'Please sign in to update backing vault'
-                : 'Join the space to update backing vault'
-            }
-          >
-            Update Backing Vault
-          </Button>
-        )}
       </div>
       {vaults.map((vault, index) => (
         <SingleVaultSection
           key={`${vault.spaceToken}-${index}`}
           vault={vault}
           isLoading={isLoading}
+          lang={lang}
+          canUpdateVault={canUpdateVault}
+          updateVaultHref={updateVaultHref}
+          updateDisabledTitle={updateDisabledTitle}
         />
       ))}
       {isLoading && vaults.length === 0 && (
@@ -124,6 +137,10 @@ export const VaultsSection: FC = () => {
             collaterals: [],
           }}
           isLoading
+          lang={lang}
+          canUpdateVault={canUpdateVault}
+          updateVaultHref={updateVaultHref}
+          updateDisabledTitle={updateDisabledTitle}
         />
       )}
     </div>
