@@ -86,26 +86,40 @@ export const TokenBackingVaultPlugin = ({
         (v) => v.spaceToken.toLowerCase() === spaceToken.toLowerCase(),
       )
     : undefined;
-  const presetTokenRef = React.useRef<string | null>(null);
   const prefilledTokenRef = React.useRef<string | undefined>(undefined);
 
   React.useEffect(() => {
     const requestedSpaceToken = searchParams.get('spaceToken');
     if (!requestedSpaceToken) return;
-    if (presetTokenRef.current === requestedSpaceToken.toLowerCase()) return;
-    const matchedToken = filteredTokens.find(
-      (token: ExtendedToken) =>
-        token.address?.toLowerCase() === requestedSpaceToken.toLowerCase(),
-    );
-    if (!matchedToken?.address) return;
+    const normalizedRequested = requestedSpaceToken.toLowerCase();
+    if (spaceToken?.toLowerCase() === normalizedRequested) return;
 
-    // Use the exact address string from Select options so UI shows selected token.
-    setValue('tokenBackingVault.spaceToken', matchedToken.address, {
+    // Apply requested token immediately; options can load later.
+    setValue('tokenBackingVault.spaceToken', requestedSpaceToken, {
       shouldDirty: false,
       shouldTouch: false,
     });
-    presetTokenRef.current = requestedSpaceToken.toLowerCase();
-  }, [searchParams, filteredTokens, setValue]);
+  }, [searchParams, setValue, spaceToken]);
+
+  React.useEffect(() => {
+    const requestedSpaceToken = searchParams.get('spaceToken');
+    if (!requestedSpaceToken) return;
+    const normalizedRequested = requestedSpaceToken.toLowerCase();
+    const matchedToken = filteredTokens.find(
+      (token: ExtendedToken) =>
+        token.address?.toLowerCase() === normalizedRequested,
+    );
+    if (!matchedToken?.address) return;
+    if (spaceToken?.toLowerCase() !== normalizedRequested) return;
+
+    // Normalize to exact Select option value so UI reflects selected item.
+    if (spaceToken !== matchedToken.address) {
+      setValue('tokenBackingVault.spaceToken', matchedToken.address, {
+        shouldDirty: false,
+        shouldTouch: false,
+      });
+    }
+  }, [searchParams, filteredTokens, spaceToken, setValue]);
 
   React.useEffect(() => {
     if (!spaceToken) {
