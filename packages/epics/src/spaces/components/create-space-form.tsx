@@ -611,6 +611,7 @@ export const SpaceForm = ({
               <FormControl>
                 <MultiSelect
                   placeholder={tSpaces('selectOneOrMore')}
+                  searchPlaceholder={tSpaces('search')}
                   options={categoryOptions}
                   value={field.value}
                   allowToggleAll={false}
