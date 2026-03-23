@@ -1143,7 +1143,7 @@
     "status": {
       "accepted": "Accepté",
       "rejected": "Rejeté",
-      "onVoting": "Sur le vote"
+      "onVoting": "En cours de vote"
     },
     "badges": {
       "space": "Espace",
@@ -1161,7 +1161,7 @@
     },
     "labels": {
       "unknown": "Inconnu",
-      "custom": "Coutume",
+      "custom": "Personnalisé",
       "token": "Jeton",
       "amount": "Montant",
       "usdcAmount": "USDC Montant",
@@ -1170,7 +1170,7 @@
       "delegatedVotingMember": "Membre votant délégué",
       "exitingMember": "Membre sortant",
       "exitFrom": "Quitter depuis",
-      "entryMethod": "Méthode de saisie",
+      "entryMethod": "Méthode d'entrée",
       "spaces": "Espaces",
       "months": "Mois",
       "logoForSpace": "Logo pour {title}",
@@ -1189,7 +1189,7 @@
       "transferable": "Transférable",
       "yes": "Oui",
       "no": "Non",
-      "maxSupplyType": "Type d'alimentation maximum",
+      "maxSupplyType": "Type d'approvisionnement maximum",
       "immutable": "Immuable",
       "updatable": "Possibilité de mise à jour",
       "autoMinting": "Frappe automatique",
