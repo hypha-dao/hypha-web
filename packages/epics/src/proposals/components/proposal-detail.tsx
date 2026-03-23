@@ -260,7 +260,7 @@ export const ProposalDetail = ({
           createDate={
             proposalDetails?.startTime
               ? new Date(proposalDetails.startTime)
-              : new Date()
+              : undefined
           }
           proposalStatus={proposalStatus}
         />
