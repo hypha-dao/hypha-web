@@ -107,6 +107,7 @@ export function AiPanelChatBar({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const dictationBaseRef = useRef('');
   const [isListening, setIsListening] = useState(false);
 
   useEffect(() => {
@@ -179,6 +180,8 @@ export function AiPanelChatBar({
       return;
     }
 
+    dictationBaseRef.current = value;
+
     const recognition = new SpeechRecognitionCtor();
     recognitionRef.current = recognition;
     recognition.continuous = true;
@@ -187,11 +190,17 @@ export function AiPanelChatBar({
 
     recognition.onresult = (e: SpeechRecognitionResultEvent) => {
       const results = Array.from(e.results) as SpeechRecognitionResult[];
-      const transcript = results.map((r) => r[0]?.transcript ?? '').join('');
-      if (transcript) {
-        onChange(value + (value ? ' ' : '') + transcript);
-        autoResize();
-      }
+      const dictated = results.map((r) => r[0]?.transcript ?? '').join('');
+      if (!dictated) return;
+
+      const base = dictationBaseRef.current;
+      const needsSpace =
+        base.length > 0 &&
+        dictated.length > 0 &&
+        !base.endsWith(' ') &&
+        !dictated.startsWith(' ');
+      onChange(base + (needsSpace ? ' ' : '') + dictated);
+      autoResize();
     };
 
     recognition.onend = () => {
