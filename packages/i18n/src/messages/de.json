@@ -1161,7 +1161,7 @@
     },
     "labels": {
       "unknown": "Unbekannt",
-      "custom": "Brauch",
+      "custom": "Benutzerdefiniert",
       "token": "Token",
       "amount": "Menge",
       "usdcAmount": "USDC Betrag",
