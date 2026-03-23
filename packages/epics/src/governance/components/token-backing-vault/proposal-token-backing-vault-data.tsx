@@ -74,7 +74,7 @@ export function ProposalTokenBackingVaultData({
     (removeCollaterals?.length ?? 0) > 0 ||
     enableRedemption !== undefined ||
     redemptionStartDate ||
-    redemptionPrice ||
+    redemptionPrice !== undefined ||
     maxRedemptionPercent !== undefined ||
     minimumBackingPercent !== undefined ||
     whitelistEnabled !== undefined ||
@@ -156,10 +156,12 @@ export function ProposalTokenBackingVaultData({
             value={formatDate(redemptionStartDate, true)}
           />
         )}
-        {redemptionPrice && (
+        {redemptionPrice !== undefined && (
           <TokenBackingVaultDetailRow
             label="Redemption Price"
-            value={`${formatCompactNumber(redemptionPrice)} ${currencyLabel}`}
+            value={`${formatCompactNumber(redemptionPrice)} ${
+              currencyLabel ?? 'USD'
+            }`}
           />
         )}
         {maxRedemptionPercent !== undefined &&

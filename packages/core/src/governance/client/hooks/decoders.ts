@@ -476,6 +476,16 @@ export function decodeTransaction(tx: Tx) {
         const spaceToken = decoded.args[1] as string;
         const base = { spaceId, spaceToken };
         switch (decoded.functionName) {
+          case 'addBacking':
+            return {
+              type: 'tokenBackingVault',
+              data: {
+                action: 'addBacking',
+                ...base,
+                backingTokens: decoded.args[2] as `0x${string}`[],
+                fundingAmounts: decoded.args[3] as bigint[],
+              },
+            };
           case 'addBackingToken':
             return {
               type: 'tokenBackingVault',

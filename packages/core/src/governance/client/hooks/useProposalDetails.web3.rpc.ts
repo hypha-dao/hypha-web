@@ -14,6 +14,20 @@ const formatRedemptionPrice = (rawPrice: unknown) => {
   return (numeric / 1_000_000).toString();
 };
 
+const resolveTokenDecimals = (address: string) => {
+  const normalized = address.toLowerCase();
+  if (
+    normalized === '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913' ||
+    normalized === '0x60a3e35cc302bfa44cb288bc5a4f316fdb1adb42'
+  ) {
+    return 6;
+  }
+  if (normalized === '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf') {
+    return 8;
+  }
+  return 18;
+};
+
 export const useProposalDetailsWeb3Rpc = ({
   proposalId,
 }: {
@@ -271,16 +285,18 @@ export const useProposalDetailsWeb3Rpc = ({
               const backingTokens = d.backingTokens as `0x${string}`[];
               const fundingAmounts = d.fundingAmounts as bigint[];
               const tokenDecimals = d.tokenDecimals as number[];
-              tokenBackingVaultData.addCollaterals = backingTokens.map(
-                (token, i) => ({
-                  token,
-                  amount: (
-                    Number(fundingAmounts[i]) /
-                    10 ** (tokenDecimals[i] ?? 18)
-                  ).toString(),
-                  decimals: tokenDecimals[i] ?? 18,
-                }),
-              );
+              const nextCollaterals = backingTokens.map((token, i) => ({
+                token,
+                amount: (
+                  Number(fundingAmounts[i]) /
+                  10 ** (tokenDecimals[i] ?? 18)
+                ).toString(),
+                decimals: tokenDecimals[i] ?? 18,
+              }));
+              tokenBackingVaultData.addCollaterals = [
+                ...(tokenBackingVaultData.addCollaterals ?? []),
+                ...nextCollaterals,
+              ];
               tokenBackingVaultData.minimumBackingPercent =
                 Number(d.minimumBackingBps) / 100;
               tokenBackingVaultData.redemptionPrice = formatRedemptionPrice(
@@ -293,6 +309,26 @@ export const useProposalDetailsWeb3Rpc = ({
               tokenBackingVaultData.maxRedemptionPeriodDays = Number(
                 d.maxRedemptionPeriodDays,
               );
+              break;
+            }
+            case 'addBacking': {
+              const backingTokens = d.backingTokens as `0x${string}`[];
+              const fundingAmounts = d.fundingAmounts as bigint[];
+              const nextCollaterals = backingTokens.map((token, i) => {
+                const decimals = resolveTokenDecimals(token);
+                return {
+                  token,
+                  amount: (
+                    Number(fundingAmounts[i]) /
+                    10 ** decimals
+                  ).toString(),
+                  decimals,
+                };
+              });
+              tokenBackingVaultData.addCollaterals = [
+                ...(tokenBackingVaultData.addCollaterals ?? []),
+                ...nextCollaterals,
+              ];
               break;
             }
             case 'setRedeemEnabled':
@@ -322,13 +358,7 @@ export const useProposalDetailsWeb3Rpc = ({
               break;
             case 'withdrawBacking': {
               const addr = (d.backingToken as string)?.toLowerCase();
-              const decimals =
-                addr === '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913' ||
-                addr === '0x60a3e35cc302bfa44cb288bc5a4f316fdb1adb42'
-                  ? 6
-                  : addr === '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf'
-                  ? 8
-                  : 18;
+              const decimals = resolveTokenDecimals(addr);
               const entry = {
                 token: d.backingToken as string,
                 amount: (Number(d.amount) / 10 ** decimals).toString(),
