@@ -24,7 +24,15 @@
     "close": "Close",
     "notFoundOops": "Oooops!",
     "notFoundCouldNotFindPage": "We couldn’t find this page",
-    "notFoundDescription": "The page you are looking for might have been removed, had its name changed, or is temporarily unavailable"
+    "notFoundDescription": "The page you are looking for might have been removed, had its name changed, or is temporarily unavailable",
+    "errorTryAgain": "Try again",
+    "errorRefreshPage": "Refresh Page",
+    "errorMaintenanceTitle": "We'll Be Back Shortly!",
+    "errorMaintenanceDescription": "Hypha is taking a short break while we roll out updates. We'll be back soon with exciting improvements on the way!",
+    "errorLoadOverviewTab": "Oops, something went wrong. Couldn't load overview tab.",
+    "errorLoadMembersTab": "Oops, something went wrong. Couldn't load members tab.",
+    "errorLoadAgreementsTab": "Oops, something went wrong. Couldn't load agreements tab.",
+    "errorLoadTreasuryTab": "Oops, something went wrong. Couldn't load treasury tab."
   },
   "Navigation": {
     "network": "Network",

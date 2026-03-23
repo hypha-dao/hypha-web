@@ -24,7 +24,15 @@
     "close": "Fechar",
     "notFoundOops": "Oooops!",
     "notFoundCouldNotFindPage": "Não conseguimos encontrar esta página",
-    "notFoundDescription": "A página que você procura pode ter sido removida, renomeada ou está temporariamente indisponível."
+    "notFoundDescription": "A página que você procura pode ter sido removida, renomeada ou está temporariamente indisponível.",
+    "errorTryAgain": "Tentar novamente",
+    "errorRefreshPage": "Atualizar página",
+    "errorMaintenanceTitle": "Voltaremos em breve!",
+    "errorMaintenanceDescription": "A Hypha está fazendo uma breve pausa enquanto aplicamos atualizações. Voltaremos em breve com melhorias empolgantes!",
+    "errorLoadOverviewTab": "Ops, algo deu errado. Não foi possível carregar a aba de visão geral.",
+    "errorLoadMembersTab": "Ops, algo deu errado. Não foi possível carregar a aba de membros.",
+    "errorLoadAgreementsTab": "Ops, algo deu errado. Não foi possível carregar a aba de acordos.",
+    "errorLoadTreasuryTab": "Ops, algo deu errado. Não foi possível carregar a aba de tesouraria."
   },
   "AgreementFlow": {
     "proposalErrors": {

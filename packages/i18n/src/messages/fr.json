@@ -24,7 +24,15 @@
     "close": "Fermer",
     "notFoundOops": "Oooops !",
     "notFoundCouldNotFindPage": "Nous n’avons pas trouvé cette page",
-    "notFoundDescription": "La page que vous recherchez a peut-être été supprimée, renommée ou est temporairement indisponible."
+    "notFoundDescription": "La page que vous recherchez a peut-être été supprimée, renommée ou est temporairement indisponible.",
+    "errorTryAgain": "Réessayer",
+    "errorRefreshPage": "Rafraîchir la page",
+    "errorMaintenanceTitle": "Nous revenons dans un instant !",
+    "errorMaintenanceDescription": "Hypha fait une courte pause pendant le déploiement des mises à jour. Nous revenons bientôt avec de nouvelles améliorations !",
+    "errorLoadOverviewTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet aperçu.",
+    "errorLoadMembersTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet membres.",
+    "errorLoadAgreementsTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet accords.",
+    "errorLoadTreasuryTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet trésorerie."
   },
   "Navigation": {
     "network": "Réseau",

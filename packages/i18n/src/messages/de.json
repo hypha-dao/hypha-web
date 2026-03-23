@@ -24,7 +24,15 @@
     "close": "Schließen",
     "notFoundOops": "Oooops!",
     "notFoundCouldNotFindPage": "Wir konnten diese Seite nicht finden",
-    "notFoundDescription": "Die Seite, die Sie suchen, wurde möglicherweise entfernt, umbenannt oder ist vorübergehend nicht verfügbar."
+    "notFoundDescription": "Die Seite, die Sie suchen, wurde möglicherweise entfernt, umbenannt oder ist vorübergehend nicht verfügbar.",
+    "errorTryAgain": "Erneut versuchen",
+    "errorRefreshPage": "Seite aktualisieren",
+    "errorMaintenanceTitle": "Wir sind gleich zurück!",
+    "errorMaintenanceDescription": "Hypha macht eine kurze Pause, während wir Updates ausrollen. Wir sind bald mit spannenden Verbesserungen zurück!",
+    "errorLoadOverviewTab": "Ups, etwas ist schiefgelaufen. Der Überblick-Tab konnte nicht geladen werden.",
+    "errorLoadMembersTab": "Ups, etwas ist schiefgelaufen. Der Mitglieder-Tab konnte nicht geladen werden.",
+    "errorLoadAgreementsTab": "Ups, etwas ist schiefgelaufen. Der Vereinbarungen-Tab konnte nicht geladen werden.",
+    "errorLoadTreasuryTab": "Ups, etwas ist schiefgelaufen. Der Treasury-Tab konnte nicht geladen werden."
   },
   "Navigation": {
     "network": "Netzwerk",

@@ -1,4 +1,5 @@
 import { Button } from '@hypha-platform/ui';
+import { useTranslations } from 'next-intl';
 import React from 'react';
 
 export function ErrorComponent({
@@ -10,6 +11,7 @@ export function ErrorComponent({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const tCommon = useTranslations('Common');
   React.useEffect(() => {
     console.error(error);
   }, [error]);
@@ -17,7 +19,7 @@ export function ErrorComponent({
   return (
     <div className="flex flex-col items-center justify-center p-8 gap-4">
       <h2>{message}</h2>
-      <Button onClick={reset}>Try again</Button>
+      <Button onClick={reset}>{tCommon('errorTryAgain')}</Button>
     </div>
   );
 }

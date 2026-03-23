@@ -24,7 +24,15 @@
     "close": "Cerca",
     "notFoundOops": "¡Oooops!",
     "notFoundCouldNotFindPage": "No pudimos encontrar esta página",
-    "notFoundDescription": "La página que buscas puede haber sido eliminada, haber cambiado de nombre o no estar disponible temporalmente."
+    "notFoundDescription": "La página que buscas puede haber sido eliminada, haber cambiado de nombre o no estar disponible temporalmente.",
+    "errorTryAgain": "Intentar de nuevo",
+    "errorRefreshPage": "Actualizar página",
+    "errorMaintenanceTitle": "¡Volvemos enseguida!",
+    "errorMaintenanceDescription": "Hypha está haciendo una breve pausa mientras desplegamos actualizaciones. ¡Volvemos pronto con mejoras emocionantes!",
+    "errorLoadOverviewTab": "Ups, algo salió mal. No se pudo cargar la pestaña de resumen.",
+    "errorLoadMembersTab": "Ups, algo salió mal. No se pudo cargar la pestaña de miembros.",
+    "errorLoadAgreementsTab": "Ups, algo salió mal. No se pudo cargar la pestaña de acuerdos.",
+    "errorLoadTreasuryTab": "Ups, algo salió mal. No se pudo cargar la pestaña de tesorería."
   },
   "AgreementFlow": {
     "proposalErrors": {
