@@ -16,6 +16,7 @@ export const people = pgTable(
     description: text('description'),
     email: text('email').unique(),
     location: text('location'),
+    currency: text('currency'),
     name: text('name'),
     surname: text('surname'),
     nickname: text('nickname'),
