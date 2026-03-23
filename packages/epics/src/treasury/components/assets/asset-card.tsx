@@ -89,7 +89,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
             className="mb-1 flex gap-1"
           >
             <Text className="text-4 font-medium text-secondary-foreground">
-              {valueDisplay ?? formatCurrencyValue(value ?? 0)}
+              {valueDisplay ?? formatCurrencyValue(value ?? 0, lang)}
             </Text>
           </Skeleton>
           <Skeleton width="80px" height="16px" loading={isLoading}>
@@ -130,7 +130,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
         {supply?.total !== undefined && (
           <Text className="text-1 text-neutral-11">
             {tTreasury('assetCard.totalIssuance', {
-              value: formatCurrencyValue(supply.total),
+              value: formatCurrencyValue(supply.total, lang),
             })}
           </Text>
         )}
