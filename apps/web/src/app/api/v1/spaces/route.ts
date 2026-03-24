@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSpacesByWeb3Ids, getAllSpaces } from '@hypha-platform/core/server';
+import {
+  getSpacesByWeb3Ids,
+  getAllSpaces,
+  getSpacesBySlugs,
+} from '@hypha-platform/core/server';
 
 type Web3SpaceIds = number[] | undefined;
+type Slugs = string[] | undefined;
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,6 +18,12 @@ export async function GET(request: NextRequest) {
           .filter((id) => !Number.isNaN(id))
       : undefined;
 
+    const slugs: Slugs = queryParams.has('slugs')
+      ? (queryParams.get('slugs')?.split(',') ?? [])
+          .map((slug) => slug.trim())
+          .filter(Boolean)
+      : undefined;
+
     const parentOnlyParam = queryParams.get('parentOnly');
     const parentOnly =
       parentOnlyParam !== null ? parentOnlyParam === 'true' : undefined;
@@ -22,6 +33,9 @@ export async function GET(request: NextRequest) {
     if (web3SpaceIds) {
       const options = parentOnly !== undefined ? { parentOnly } : undefined;
       spaces = await getSpacesByWeb3Ids(web3SpaceIds, options);
+    } else if (slugs) {
+      const options = parentOnly !== undefined ? { parentOnly } : undefined;
+      spaces = await getSpacesBySlugs(slugs, options);
     } else {
       spaces = await getAllSpaces({ parentOnly });
     }
